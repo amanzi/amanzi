@@ -15,8 +15,8 @@
 #include "Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
-// TODO: We are using depreciated parts of boost::filesystem
-#define BOOST_FILESYSTEM_VERSION 2
+
+#define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include "time_step_manager.hh"
@@ -361,7 +361,7 @@ void MPC::cycle_driver() {
     // re-initialize the state object
     restart->read_state(*S, restart_from_filename);
     iter = S->get_cycle();
-
+    
     if (!reset_times_.empty()) {
       while (reset_times_.front()<S->get_time()) {
         reset_times_.erase(reset_times_.begin());
@@ -591,6 +591,7 @@ void MPC::cycle_driver() {
         double c_dT(chemistry_dT);
         int ntc(1);
 
+	S->set_intermediate_time(S->initial_time());
 
         if (chemistry_enabled) {
           Amanzi::timer_manager.start("Chemistry PK");

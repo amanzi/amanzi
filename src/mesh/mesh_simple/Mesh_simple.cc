@@ -44,7 +44,7 @@ Mesh_simple::Mesh_simple (double x0, double y0,
                           const Epetra_MpiComm *communicator,
                           const AmanziGeometry::GeometricModelPtr &gm) 
 {
-  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generated 2D meshes"));
+  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
   
 
@@ -70,6 +70,30 @@ Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
     Mesh::set_geometric_model(gm);
 
   generate_(gspec);
+}
+
+//--------------------------------------
+// Constructor - Construct a new mesh from a subset of an existing mesh
+//--------------------------------------
+
+Mesh_simple::Mesh_simple (const Mesh *inmesh, 
+                          const std::vector<std::string>& setnames, 
+                          const Entity_kind setkind,
+                          const bool flatten,
+                          const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_simple::Mesh_simple (const Mesh_simple& inmesh, 
+                          const std::vector<std::string>& setnames, 
+                          const Entity_kind setkind,
+                          const bool flatten,
+                          const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
 }
 
 
@@ -414,7 +438,7 @@ AmanziMesh::Cell_type Mesh_simple::cell_get_type(const AmanziMesh::Entity_ID cel
 }
         
     
-unsigned int Mesh_simple::GID(const AmanziMesh::Entity_ID lid, 
+Entity_ID Mesh_simple::GID(const AmanziMesh::Entity_ID lid, 
 			      const AmanziMesh::Entity_kind kind) const
 {
   return lid;  // Its a serial code
@@ -729,33 +753,6 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 
 }
 
-
-    
-//
-// Mesh Topology for viz  
-//----------------------
-//
-// We need a special function because certain types of degenerate
-// hexes will not be recognized as any standard element type (hex,
-// pyramid, prism or tet). The original topology of this element 
-// without any collapsed nodes will be returned by this call.
-
-
-// Original cell type 
-
-AmanziMesh::Cell_type Mesh_simple::cell_get_type_4viz(const AmanziMesh::Entity_ID cellid) const 
-{
-  return AmanziMesh::HEX;
-}
-    
-    
-// See cell_get_nodes for details on node ordering
-    
-void Mesh_simple::cell_get_nodes_4viz (const AmanziMesh::Entity_ID cellid, 
-                                       AmanziMesh::Entity_ID_List *nodeids) const 
-{
-  cell_get_nodes(cellid, nodeids);
-}
     
     
 const Epetra_Map& Mesh_simple::cell_epetra_map (bool include_ghost) const
@@ -809,7 +806,7 @@ unsigned int Mesh_simple::get_set_size (const std::string setname,
 void Mesh_simple::get_set_entities (const AmanziMesh::Set_ID set_id, 
 				    const AmanziMesh::Entity_kind kind, 
 				    const AmanziMesh::Parallel_type ptype, 
-				    AmanziMesh::Set_ID_List *setents) const
+				    AmanziMesh::Entity_ID_List *setents) const
 {
   AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
   AmanziGeometry::RegionPtr rgn = gm->FindRegion(set_id);
@@ -820,7 +817,7 @@ void Mesh_simple::get_set_entities (const AmanziMesh::Set_ID set_id,
 void Mesh_simple::get_set_entities (const char *setname, 
 				    const AmanziMesh::Entity_kind kind, 
 				    const AmanziMesh::Parallel_type ptype, 
-				    AmanziMesh::Set_ID_List *setents) const
+				    AmanziMesh::Entity_ID_List *setents) const
 {
   std::string setname1(setname);
   get_set_entities(setname1,kind,ptype,setents);
@@ -829,7 +826,7 @@ void Mesh_simple::get_set_entities (const char *setname,
 void Mesh_simple::get_set_entities (const std::string setname, 
 				    const AmanziMesh::Entity_kind kind, 
 				    const AmanziMesh::Parallel_type ptype, 
-				    AmanziMesh::Set_ID_List *setents) const
+				    AmanziMesh::Entity_ID_List *setents) const
 {
   // we ignore ptype since this is a serial implementation
 
@@ -841,7 +838,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
   switch (kind) {
     case AmanziMesh::FACE:
       {
-      std::vector<Set_ID> ss;
+      Entity_ID_List ss;
 
       // Does this set exist?
 
@@ -1083,7 +1080,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
       }
     case AmanziMesh::CELL:
       {
-      std::vector<Set_ID> cs; // cell set
+      Entity_ID_List cs; // cell set
           
       int ncs = element_blocks_.size();
       bool found = false;
@@ -1148,7 +1145,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
       }
   case AmanziMesh::NODE:
     {
-      std::vector<Set_ID> ns;
+      Entity_ID_List ns;
 
       // Does this set exist?
 

@@ -4,7 +4,7 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "State.hpp"
-#include "Mesh_STK.hh"
+#include "MeshFactory.hh"
 #include "Vis.hpp"
 
 
@@ -92,9 +92,10 @@ SUITE(VISUALIZATION) {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Vis V(plist, &comm);   
 
-    // make a simple mesh
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> Mesh
-      = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, &comm));
+    // make a basic mesh
+    Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh
+      = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
     V.create_files(*Mesh);
     

@@ -77,6 +77,18 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
       try {
         RegionPtr regptr = new BoxRegion(reg_name, reg_id, p0, p1);        
+
+        // Verify that we have a usable box
+
+        if (comm->MyPID() == 0) {
+          int ndeg=0;
+          if (((BoxRegionPtr) regptr)->is_degenerate(&ndeg) && ndeg > 1) {
+            std::cerr << "\n" << "Box region \"" << reg_name << "\" is degenerate in 2 or more directions" << std::endl;
+            std::cerr << "This means it is a line or point in 3D, or it is a point in 2D" << std::endl;
+            std::cerr << "The code can only ask for nodes (not cells or faces) on this region" << std::endl << std::endl;
+          }
+        }
+
         return regptr;
       }
       catch (Errors::Message mesg) {

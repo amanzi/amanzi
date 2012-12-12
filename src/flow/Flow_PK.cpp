@@ -75,6 +75,21 @@ Epetra_Map* Flow_PK::CreateSuperMap()
 
 
 /* ******************************************************************
+* Process 
+****************************************************************** */
+void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
+                                       std::vector<double>& rainfall_factor)
+{
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_submodel[f] & FLOW_BC_SUBMODEL_RAINFALL) {
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      rainfall_factor[f] = fabs(normal[dim - 1]) / mesh_->face_area(f);
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Add a boundary marker to used faces.
 * WARNING: we can skip update of ghost boundary faces, b/c they 
 * should be always owned. 
@@ -83,47 +98,72 @@ void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_faces, const double atm_pressure,
-    std::vector<int>& bc_markers, std::vector<double>& bc_values)
+    const std::vector<double>& rainfall_factor,
+    const std::vector<int>& bc_submodel,
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   int flag_essential_bc = 0;
-  for (int n = 0; n < bc_markers.size(); n++) {
-    bc_markers[n] = FLOW_BC_FACE_NULL;
-    bc_values[n] = 0.0;
+  bc_tuple zero = {0.0, 0.0};
+  for (int n = 0; n < bc_model.size(); n++) {
+    bc_model[n] = FLOW_BC_FACE_NULL;
+    bc_values[n] = zero;
   }
 
   Amanzi::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
-    bc_markers[f] = FLOW_BC_FACE_PRESSURE;
-    bc_values[f] = bc->second;
+    bc_model[f] = FLOW_BC_FACE_PRESSURE;
+    bc_values[f][0] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
-    bc_markers[f] = FLOW_BC_FACE_HEAD;
-    bc_values[f] = bc->second;
+    bc_model[f] = FLOW_BC_FACE_HEAD;
+    bc_values[f][0] = bc->second;
     flag_essential_bc = 1;
   }
 
   for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
     int f = bc->first;
-    bc_markers[f] = FLOW_BC_FACE_FLUX;
-    bc_values[f] = bc->second;
+    bc_model[f] = FLOW_BC_FACE_FLUX;
+    bc_values[f][0] = bc->second * rainfall_factor[f];
   }
 
   int nseepage = 0;
   for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
     int f = bc->first;
 
-    if (pressure_faces[f] < atm_pressure) {
-      bc_markers[f] = FLOW_BC_FACE_FLUX;
-      bc_values[f] = bc->second;
-      nseepage++;
-    } else {
-      bc_markers[f] = FLOW_BC_FACE_PRESSURE;
-      bc_values[f] = atm_pressure;
-      flag_essential_bc = 1;
+    if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN) {
+      if (pressure_faces[f] < atm_pressure) {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        bc_values[f][0] = bc->second * rainfall_factor[f];
+        nseepage++;
+      } else {
+        bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
+        bc_values[f][0] = atm_pressure;
+        bc_values[f][1] = bc->second * rainfall_factor[f];
+        flag_essential_bc = 1;
+      }
+    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_STOMP) {
+      double preg = atm_pressure / FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+      double pmin = atm_pressure + preg / 2;
+      double pmax = atm_pressure + 1.5 * preg;
+      if (pressure_faces[f] < pmax) {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        bc_values[f][0] = bc->second * rainfall_factor[f];
+        nseepage++;
+      } else if (pressure_faces[f] > pmin) {
+        bc_model[f] = FLOW_BC_FACE_MIXED;
+        bc_values[f][0] = atm_pressure;
+        bc_values[f][1] = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+      } else {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        double f = 2.0 - 2 * (pressure_faces[f] - atm_pressure) / preg;
+        double q = (7.0 - 2 * f - f * f) / 8;
+        bc_values[f][0] = q * bc->second; 
+        nseepage++;
+      }
     }
   }
 
@@ -131,14 +171,14 @@ void Flow_PK::ProcessBoundaryConditions(
   AmanziMesh::Entity_ID_List cells;
   int missed = 0;
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers[f] == FLOW_BC_FACE_NULL) {
+    if (bc_model[f] == FLOW_BC_FACE_NULL) {
       cells.clear();
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_markers[f] = FLOW_BC_FACE_FLUX;
-        bc_values[f] = 0.0;
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        bc_values[f][0] = 0.0;
         missed++;
       }
     }
@@ -165,7 +205,7 @@ void Flow_PK::ProcessBoundaryConditions(
     }
   }
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Flow PK: assigned zero flux boundary condition to%7d faces\n", missed);
+    std::printf("Flow PK: assign zero flux boundary condition to%7d faces\n", missed);
   }
   nseepage_prev = nseepage;
 }
@@ -174,16 +214,31 @@ void Flow_PK::ProcessBoundaryConditions(
 /* ******************************************************************
 * Add a boundary marker to owned faces.                                          
 ****************************************************************** */
-void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_markers,
+void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_model,
                                       std::vector<double>& bc_values,
                                       Epetra_Vector& pressure_faces)
 {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
-        bc_markers[f] == FLOW_BC_FACE_HEAD) {
+    if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
+        bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
+        bc_model[f] == FLOW_BC_FACE_HEAD) {
       pressure_faces[f] = bc_values[f];
     }
+  }
+}
+
+
+/* ******************************************************************
+*  Calculate inner product e^T K e in each cell.                                               
+****************************************************************** */
+void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)
+{
+  for (int c = 0; c < K.size(); c++) {
+    Kxy[c] = 0.0;
+    int idim = std::max<int>(1, K[c].size() - 1);
+    for (int i = 0; i < idim; i++) Kxy[c] += K[c](i, i);
+    Kxy[c] /= idim;
   }
 }
 
@@ -206,10 +261,10 @@ void Flow_PK::AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 * Routine updates elemental discretization matrices and must be 
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
-                                   const Epetra_Vector& Krel_cells,
-                                   const Epetra_Vector& Krel_faces,
-                                   Matrix_MFD* matrix_operator)
+void Flow_PK::AddGravityFluxes_MFD(
+    std::vector<WhetStone::Tensor>& K,
+    const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+    Matrix_MFD* matrix_operator)
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim);
@@ -229,7 +284,12 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * gravity) * normal) * dirs[n] * Krel_cells[c] * Krel_faces[f];
+      double outward_flux = ((K[c] * gravity) * normal) * dirs[n]; 
+      if (method == FLOW_RELATIVE_PERM_CENTERED) {
+        outward_flux *= Krel_cells[c];
+      } else {
+        outward_flux *= Krel_faces[f];
+      }
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
     }
@@ -238,12 +298,42 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 
 
 /* ******************************************************************
+*                                             
+****************************************************************** */
+void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
+                                  const Epetra_Vector& Krel_faces,
+                                  const Epetra_Vector& pressure_faces,
+                                  const Epetra_Vector& flux,
+                                  Matrix_MFD* matrix_operator)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    Epetra_SerialDenseVector& Bcf = matrix_operator->Acf_cells()[c];
+    double& Fc = matrix_operator->Fc_cells()[c];
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      double factor = flux[f] * dirs[n] * dKdP_faces[f] / Krel_faces[f];
+
+      Bcf[n] += factor;
+      Fc += factor * pressure_faces[f];
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
-                                         const Epetra_Vector& Krel_cells,
-                                         const Epetra_Vector& Krel_faces,
-                                         Epetra_Vector& darcy_mass_flux)
+void Flow_PK::AddGravityFluxes_DarcyFlux(
+    std::vector<WhetStone::Tensor>& K,
+    const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+    Epetra_Vector& darcy_mass_flux)
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim);
@@ -254,6 +344,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
+    // AmanziGeometry::Point Kg = K[c] * gravity;
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -262,10 +353,39 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       if (f < nfaces_owned && !flag[f]) {
-        darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c] * Krel_faces[f];
+        if (method == FLOW_RELATIVE_PERM_NONE) {
+           darcy_mass_flux[f] += ((K[c] * gravity) * normal);
+        } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
+          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c];
+        } else {
+          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
+        }
         flag[f] = 1;
       }
     }
+  }
+}
+
+
+/* ******************************************************************
+* BDF methods need a good initial guess.
+* This method gives a less smoother solution than in Flow 1.0.
+* WARNING: Each owned face must have at least one owned cell. 
+* Probability that this assumption is violated is close to zero. 
+* Even when it happens, the code will not crash.
+****************************************************************** */
+void Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    cells.clear();
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    int ncells = cells.size();
+
+    double face_value = 0.0;
+    for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
+    ufaces[f] = face_value / ncells;
   }
 }
 
@@ -303,7 +423,7 @@ void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 /* ******************************************************************
 * Calculate change of water volume per second due to boundary flux.                                          
 ****************************************************************** */
-double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers, Epetra_Vector& darcy_flux)
+double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Vector& darcy_flux)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
@@ -314,7 +434,7 @@ double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_markers, Epetra_
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if (bc_markers[f] != FLOW_BC_FACE_NULL && f < nfaces_owned) {
+      if (bc_model[f] != FLOW_BC_FACE_NULL && f < nfaces_owned) {
         if (fdirs[i] >= 0) {
           volume -= darcy_flux[f];
         } else {

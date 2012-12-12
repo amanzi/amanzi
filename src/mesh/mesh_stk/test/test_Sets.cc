@@ -79,7 +79,7 @@ SUITE (STK_SETS)
 			      {0,6,11,42,47,51,75,80,84}};
     
 
-    std::string infilename = "test/hex_4x4x4.xml";
+    std::string infilename = "test/hex_3x3x3_read.xml";
     Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
     Teuchos::ParameterList reg_spec(xmlreader.getParameters());
@@ -88,9 +88,9 @@ SUITE (STK_SETS)
 
     Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm);
 
-    // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
+    // Load a mesh consisting of 3x3x3 elements
 
-    Amanzi::AmanziMesh::Mesh_STK mesh("test/hex_4x4x4_ss.exo",comm,gm);
+    Amanzi::AmanziMesh::Mesh_STK mesh("test/hex_3x3x3_ss.exo",comm,gm);
 
 
     Teuchos::ParameterList::ConstIterator i;
@@ -371,7 +371,7 @@ SUITE (STK_SETS)
 			      {78,82,86,-1,-1,-1,-1,-1,-1}};
 
 
-    std::string infilename = "test/hex_3x3x3.xml";
+    std::string infilename = "test/hex_3x3x3_gen.xml";
     Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
     Teuchos::ParameterList reg_spec(xmlreader.getParameters());
@@ -380,7 +380,7 @@ SUITE (STK_SETS)
 
     Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm);
 
-    // Create a mesh consisting of 3x3x3 elements (4x4x4 nodes)
+    // Create a mesh consisting of 3x3x3 elements
 
     Amanzi::AmanziMesh::Mesh_STK mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm, gm); 
 

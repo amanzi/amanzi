@@ -31,7 +31,6 @@ private:
   int myprocid, numprocs;
 
   Mesh_ptr mesh;
-  //    MSTKComm *mstkcomm; Not defined - will define if we need it
 
   int serial_run;
   
@@ -64,11 +63,6 @@ private:
   MSet_ptr AllCells, OwnedCells, GhostCells;
 
 
-  // Attribute handle to store cell_type and original cell_type
-
-  MAttrib_ptr celltype_att, orig_celltype_att, orig_celltopo_att;
-      
-
   // Local ID to MSTK handle map
 
   std::vector<MEntity_ptr> vtx_id_to_handle;
@@ -86,6 +80,9 @@ private:
   
   bool *faceflip;
 
+  // Attribute to precompute and store celltype
+
+  MAttrib_ptr celltype_att;
 
   // Parent entity attribute - populated if the mesh is derived from
   // another mesh
@@ -128,6 +125,13 @@ private:
 			     int ny, int nz);
   int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
 			     double x1, double y1, int nx, int ny);
+
+  void extract_mstk_mesh(const Mesh_MSTK& inmesh,
+                         const std::vector<std::string>& setnames,
+                         const Entity_kind setkind,
+                         const bool flatten = false,
+                         const bool extrude = false);
+
 public:
 
   // Constructors that read the mesh from a file
@@ -172,6 +176,12 @@ public:
   // dimensional space or to extrude the mesh to give higher
   // dimensional cells
 
+  Mesh_MSTK(const Mesh *inmesh,
+            const std::vector<std::string>& setnames,
+            const Entity_kind setkind,
+            const bool flatten = false,
+            const bool extrude = false);
+
   Mesh_MSTK(const Mesh_MSTK& inmesh,
             const std::vector<std::string>& setnames,
             const Entity_kind setkind,
@@ -214,7 +224,7 @@ public:
     
   // Global ID of any entity
     
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
     
@@ -328,29 +338,6 @@ public:
 			       const Parallel_type ptype,
 			       Entity_ID_List *nadj_cellids) const;
 
-
-    
-  //
-  // Mesh Topology for viz  
-  //----------------------
-  //
-  // We need a special function because certain types of degenerate
-  // hexes will not be recognized as any standard element type (hex,
-  // pyramid, prism or tet). The original topology of this element 
-  // without any collapsed nodes will be returned by this call.
-    
-    
-  // Original cell type 
-    
-  Cell_type cell_get_type_4viz(const Entity_ID cellid) const;
-    
-    
-  // See cell_get_nodes for details on node ordering
-    
-  void cell_get_nodes_4viz (const Entity_ID cellid, 
-			    Entity_ID_List *nodeids) const;
-    
-    
     
   //
   // Mesh entity geometry

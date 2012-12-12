@@ -176,7 +176,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 
   // populate the global matrix
   Spp_->PutScalar(0.0);
-  for (int f = 0; f < nfaces_owned; f++) {
+  for (AmanziMesh::Entity_ID f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int mcells = cells.size();
 
@@ -187,10 +187,10 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
       cells_GID[n] = cmap_wghost.GID(c);
 
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int i = FindPosition<int>(faces, f);
+      int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
       Bpp(n, n) = Dcc[c] / faces.size();
       if (c < ncells_owned) {
-        int i = FindPosition<int>(faces, f);
+        int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
         Acf_copy[n] = Acf_cells_[c][i];
       } else {
         Acf_copy[n] = Acf_parallel[f];
@@ -207,15 +207,6 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
   }
   (*Spp_).GlobalAssemble(); 
-}
-
-
-/* ******************************************************************
-* Compute the face Schur complement of 2x2 block matrix.
-****************************************************************** */
-void Matrix_MFD_TPFA::ComputeSchurComplement(
-    std::vector<int>& bc_markers, std::vector<double>& bc_values)
-{
 }
 
 

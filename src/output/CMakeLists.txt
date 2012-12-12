@@ -25,8 +25,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -41,10 +39,6 @@ if(ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIRS})
     include_directories(${STK_SOURCE_DIR})
 endif()
-
-
-# Need to move this up to the root level -- lpritch
-add_definitions("-DUSE_MPI")
 
 #
 # Library: output
@@ -73,7 +67,12 @@ file(GLOB output_inc_files "*.h*")
 
 add_amanzi_library(output 
                    SOURCE ${output_source_files} HEADERS ${output_inc_files}
-                   LINK_LIBS simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list})
+                   LINK_LIBS mesh geometry error_handling ${output_tpl_list})
+
+foreach( lib ${output_tpl_list} )
+    print_variable(lib)
+    # message(STATUS "DEBUG: lib=$lib")
+endforeach()
 
 #
 # Binaries
@@ -96,34 +95,36 @@ add_amanzi_executable(unscramble_restart
 #
 if (BUILD_TESTS)
 
+   include_directories(${MESH_FACTORY_SOURCE_DIR})
+
     # Add UnitTest
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Test: gmv_output
     add_amanzi_test(gmv_output test_gmv_output
                     SOURCE     test/Main.cc test/test_gmv.cc
-		    LINK_LIBS  output ${UnitTest_LIBRARIES}
+		    LINK_LIBS  output mesh_factory ${UnitTest_LIBRARIES}
 		    KIND unit)
 
     # Test: cgns_output
     if (ENABLE_CGNS)
       add_amanzi_test(cgns_output test_cgns_output
 	              SOURCE      test/Main.cc test/test_cgns.cc
-		      LINK_LIBS   output ${UnitTest_LIBRARIES}
+		      LINK_LIBS   output mesh_factory ${UnitTest_LIBRARIES}
 		      KIND int)
     endif()
 
     # Test: hdf5_output
     add_amanzi_test(hdf5_output test_hdf5_output
                     SOURCE      test/Main.cc test/test_hdf5.cc
-		    LINK_LIBS   output ${UnitTest_LIBRARIES}
+		    LINK_LIBS   output mesh_factory ${UnitTest_LIBRARIES}
 		    KIND int)
 
     # Test: hdf5_mpi_output
     if (ENABLE_STK_Mesh)
         add_amanzi_test(hdf5mpi_output test_hdf5mpi_output
                         SOURCE         test/Main.cc test/test_hdf5mpi.cc
-		        LINK_LIBS      stk_mesh output ${UnitTest_LIBRARIES}
+		        LINK_LIBS      output mesh_factory ${UnitTest_LIBRARIES}
 			NPROCS         2
 		        KIND           int)
     endif()

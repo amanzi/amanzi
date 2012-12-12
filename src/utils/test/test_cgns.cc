@@ -1,6 +1,6 @@
 #include "UnitTest++.h"
 #include "../cgns_mesh.hh"
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 
 
 TEST(CGNS) {
@@ -17,7 +17,13 @@ TEST(CGNS) {
   string cgns_datafile1 = "test_data.cgns";
   string cgns_fullfile = "test_cgns_full.cgns";
 
-  Mesh_maps_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(SIMPLE);
+
+  MeshFactory factory(&comm);
+  factory.preferences(prefs);
+  Teuchos::RCP<Mesh> Mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
     
   unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
   unsigned int num_cells = Mesh.count_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);

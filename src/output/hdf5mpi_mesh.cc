@@ -233,7 +233,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   if (TrackXdmf() && viz_comm_.MyPID() == 0) {
     //TODO(barker): if implement type tracking, then update this as needed
     ctype_ = mesh_maps.cell_get_type(0); 
-    cname_ = "Mixed"; //AmanziMesh::Data::type_to_name(ctype_);
+    cname_ = "Mixed"; 
     xmfFilename = filename + ".xmf";
     xdmfMeshFilename_ = xmfFilename;
     createXdmfMesh_(xmfFilename);

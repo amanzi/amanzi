@@ -12,7 +12,7 @@
 
 // Unless this example is enhanced, it does lesser testing than test_hex_3x3x2.cc
 
-TEST(MOAB_HEX_4x4x4)
+TEST(MOAB_HEX_3x3x3)
 {
 
   int i, j, k, err, nc, nf, nv;
@@ -29,7 +29,7 @@ TEST(MOAB_HEX_4x4x4)
 
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_4x4x4_ss.exo",comm.get());
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss.exo",comm.get());
 
   nf = mesh.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);

@@ -1263,7 +1263,6 @@ namespace Amanzi {
                         {
                             const ParameterList& rsslist = rslist.sublist(rlabel);
 #if 0
-
                             if (rlabel==porosity_file_str || rlabel==porosity_uniform_str){
                               if (mtest["Porosity"]) {
                                 std::string str = "More than one of: (\""+porosity_file_str+"\", \""+porosity_uniform_str+

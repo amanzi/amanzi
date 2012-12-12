@@ -895,5 +895,31 @@ Entity_ID Mesh::cell_get_cell_below(const Entity_ID cellid) const {
   return cell_cellbelow[cellid];
 }
 
+std::string Mesh::cell_type_to_name (const Cell_type type)
+{
+
+  switch (type)
+  {
+    case TRI:
+      return "triangle";
+    case QUAD:
+      return "quad";
+    case POLYGON:
+      return "polygon";
+    case TET:
+      return "tetrahedron";
+    case PYRAMID:
+      return "pyramid";
+    case PRISM:
+      return "prism";
+    case HEX:
+      return "hexahedron";
+    case POLYHED:
+      return "polyhedron";
+    default:
+      return "unknown";
+  }
+}
+
 } // close namespace AmanziMesh
 } // close namespace Amanzi

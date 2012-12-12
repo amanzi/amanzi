@@ -388,6 +388,7 @@ public:
 #ifdef MG_USE_FBOXLIB
   void advance_richard  (Real time,
 			 Real dt); 
+#endif
 
   bool advance_multilevel_richards_flow (Real  time,
                                          Real  dt,
@@ -400,17 +401,12 @@ public:
                       Real& dt_taken,
                       Real& dt_suggest);
 
-#endif
   bool advance_richards_transport_chemistry(Real  t,
 					    Real  dt,
 					    int   iteration,
 					    Real& dt_new, 
 					    bool  do_subcycle,
 					    bool  do_recursive);
-
-  bool advance_multilevel_saturated (Real  time,
-				     Real  dt,
-				     Real& dt_new);
 
   void advance_tracer  (Real time,
 			Real dt);
@@ -436,7 +432,7 @@ public:
   // This code assumes that the physical domain size of the current
   // problem is the same as that of the one that generated the pltfile.
   // It also assumes that the pltfile has at least as many levels as does
-  // the current problem, and that the reference ratios between levels are
+  // the current problem, and that the refinement ratios between levels are
   // the same for the current problem.
   //
   void fill_from_plotfile (MultiFab&          mf,
@@ -612,6 +608,8 @@ public:
 				int  corrector,
 				MultiFab* u_mac = 0);
 
+  void richard_init_to_steady();
+
 #ifdef MG_USE_FBOXLIB
   void richard_eqb_update (MultiFab* u_mac = 0);
 
@@ -621,9 +619,6 @@ public:
 
   RichardNLSdata::Reason richard_composite_update (Real dt, 
 						   RichardNLSdata& nl_data);
-
-  void richard_init_to_steady();
-
 #endif
 
   void scalar_adjust_constraint (int  first_scalar,

@@ -32,6 +32,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "mfd3d.hpp"
 
 #include "Flow_State.hpp"
+#include "Flow_typedefs.hpp"
 
 #include "Ifpack.h" 
 // note that if trilinos is compiled with hypre support, then
@@ -49,13 +50,13 @@ class Matrix_MFD : public Epetra_Operator {
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDrhsVectors();
-  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
+  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
-  void ApplyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+  void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   virtual void AssembleGlobalMatrices();
-  virtual void ComputeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+  virtual void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
   double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
@@ -95,9 +96,14 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_Vector>& rhs_faces() { return rhs_faces_; }
 
   Teuchos::RCP<Epetra_FECrsMatrix>& Aff() { return Aff_; }
+  Teuchos::RCP<Epetra_FECrsMatrix>& Sff() { return Sff_; }
   Teuchos::RCP<Epetra_Vector>& Acc() { return Acc_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
+
+#ifdef HAVE_HYPRE
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff() { return IfpHypre_Sff_; }
+#endif
 
   int nokay() { return nokay_; }
   int npassed() { return npassed_; }
@@ -134,13 +140,13 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
   Teuchos::ParameterList ifp_plist_;
 
+  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
+
 #ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
   double hypre_tol, hypre_strong_threshold;
   int hypre_nsmooth, hypre_ncycles;
 #endif
-
-  int nokay_, npassed_;  // performance of algorithms generating mass matrices 
 
  private:
   void operator=(const Matrix_MFD& matrix);

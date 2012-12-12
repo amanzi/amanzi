@@ -16,9 +16,7 @@ bool Parameters::valid () const
     result &= (dimensions_ <= 3);
     result &= (num_nodes_ > 0);
     result &= (num_elements_ > 0);
-    result &= (num_element_blocks_ >= 0);
-    result &= (num_node_sets_ >= 0);
-    result &= (num_side_sets_ >= 0);
+    result &= (num_element_blocks_ > 0);
 
     result &= (element_block_ids_.size () == num_element_blocks_);
     result &= (node_set_ids_.size () == num_node_sets_);

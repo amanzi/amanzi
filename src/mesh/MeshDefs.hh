@@ -29,7 +29,7 @@ namespace AmanziMesh {
 
 // Necessary typedefs and enumerations
       
-typedef int Entity_ID;
+typedef long long int Entity_ID; 
 typedef int Set_ID;
 typedef std::string Set_Name;
 typedef std::vector<Entity_ID> Entity_ID_List;

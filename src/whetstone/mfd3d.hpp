@@ -51,69 +51,66 @@ class MFD3D {
   ~MFD3D() {};
 
   // primary methods
-  int darcy_mass(int cell, const Tensor& permeability,
-                 Teuchos::SerialDenseMatrix<int, double>& M);
-  int darcy_mass_inverse(int cell, const Tensor& permeability,
+  int DarcyMass(int cell, const Tensor& permeability,
+               Teuchos::SerialDenseMatrix<int, double>& M);
+  int DarcyMassInverse(int cell, const Tensor& permeability,
+                       Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseSO(int cell, const Tensor& permeability,
                          Teuchos::SerialDenseMatrix<int, double>& W);
-  int darcy_mass_inverse_SO(int cell, const Tensor& permeability,
-                            Teuchos::SerialDenseMatrix<int, double>& W);
-  int darcy_mass_inverse_hex(int cell, const Tensor& permeability,
-                             Teuchos::SerialDenseMatrix<int, double>& W);
-  int darcy_mass_inverse_diagonal(int cell, const Tensor& permeability,
-                                  Teuchos::SerialDenseMatrix<int, double>& W);
-  int darcy_mass_inverse_optimized(int cell, const Tensor& permeability,
-                                   Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseHex(int cell, const Tensor& permeability,
+                          Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseDiagonal(int cell, const Tensor& permeability,
+                               Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseOptimized(int cell, const Tensor& permeability,
+                                Teuchos::SerialDenseMatrix<int, double>& W);
 
-  int elasticity_stiffness(int cell, const Tensor& deformation,
-                           Teuchos::SerialDenseMatrix<int, double>& A); 
+  int ElasticityStiffness(int cell, const Tensor& deformation,
+                          Teuchos::SerialDenseMatrix<int, double>& A); 
 
   // suppporting primary methods
-  int L2_consistency(int cell, const Tensor& T,
-                     Teuchos::SerialDenseMatrix<int, double>& N,
-                     Teuchos::SerialDenseMatrix<int, double>& Mc);
-  int L2_consistency_inverse(int cell, const Tensor& permeability,
-                             Teuchos::SerialDenseMatrix<int, double>& R,
-                             Teuchos::SerialDenseMatrix<int, double>& Wc);
-  int H1_consistency(int cell, const Tensor& T,
-                     Teuchos::SerialDenseMatrix<int, double>& N,
-                     Teuchos::SerialDenseMatrix<int, double>& Mc);
-  int H1_consistency_elasticity(int cell, const Tensor& T,
-                                Teuchos::SerialDenseMatrix<int, double>& N,
-                                Teuchos::SerialDenseMatrix<int, double>& Ac);
+  int L2consistency(int cell, const Tensor& T,
+                    Teuchos::SerialDenseMatrix<int, double>& N,
+                    Teuchos::SerialDenseMatrix<int, double>& Mc);
+  int L2consistencyInverse(int cell, const Tensor& permeability,
+                           Teuchos::SerialDenseMatrix<int, double>& R,
+                           Teuchos::SerialDenseMatrix<int, double>& Wc);
+  int H1consistency(int cell, const Tensor& T,
+                    Teuchos::SerialDenseMatrix<int, double>& N,
+                    Teuchos::SerialDenseMatrix<int, double>& Mc);
+  int H1consistencyElasticity(int cell, const Tensor& T,
+                              Teuchos::SerialDenseMatrix<int, double>& N,
+                              Teuchos::SerialDenseMatrix<int, double>& Ac);
 
-  void gramm_schmidt(Teuchos::SerialDenseMatrix<int, double>& N);
+  void GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N);
 
-  void stability_scalar(int cell,
-                        Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, and W for the inverse matrix
-                        Teuchos::SerialDenseMatrix<int, double>& Mc,
-                        Teuchos::SerialDenseMatrix<int, double>& M);
-  int stability_monotone_hex(int cell, const Tensor& T,
-                             Teuchos::SerialDenseMatrix<int, double>& Mc,
-                             Teuchos::SerialDenseMatrix<int, double>& M);
-  int stability_optimized(int cell,
-                          Teuchos::SerialDenseMatrix<int, double>& N,
-                          Teuchos::SerialDenseMatrix<int, double>& Mc,
-                          Teuchos::SerialDenseMatrix<int, double>& M);
+  void StabilityScalar(int cell,
+                       Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, and W for the inverse matrix
+                       Teuchos::SerialDenseMatrix<int, double>& Mc,
+                       Teuchos::SerialDenseMatrix<int, double>& M);
+  int StabilityMonotoneHex(int cell, const Tensor& T,
+                           Teuchos::SerialDenseMatrix<int, double>& Mc,
+                           Teuchos::SerialDenseMatrix<int, double>& M);
+  int StabilityOptimized(const Tensor& T,
+                         Teuchos::SerialDenseMatrix<int, double>& N,
+                         Teuchos::SerialDenseMatrix<int, double>& Mc,
+                         Teuchos::SerialDenseMatrix<int, double>& M);
 
   // MFD extension of VAG scheme
-  void calculate_harmonic_points(int face, 
-                                 std::vector<Tensor>& T, 
-                                 AmanziGeometry::Point& harmonic_point,
-                                 double& harmonic_point_weight);
+  void CalculateHarmonicPoints(int face, std::vector<Tensor>& T, 
+                               AmanziGeometry::Point& harmonic_point,
+                               double& harmonic_point_weight);
 
-  int dispersion_corner_fluxes(int node,
-                               int cell,
-                               Tensor& dispersion,
-                               std::vector<AmanziGeometry::Point>& corner_points,
-                               double cell_value,
-                               std::vector<double>& corner_values,
-                               std::vector<double>& corner_fluxes);
+  int DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
+                             std::vector<AmanziGeometry::Point>& corner_points,
+                             double cell_value,
+                             std::vector<double>& corner_values,
+                             std::vector<double>& corner_fluxes);
 
   // extension of mesh API
   int cell_get_face_adj_cell(const int cell, const int face);
 
  private:
-  int find_position(int v, AmanziMesh::Entity_ID_List nodes);
+  int FindPosition(int v, AmanziMesh::Entity_ID_List nodes);
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 };
 

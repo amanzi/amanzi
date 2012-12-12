@@ -1953,18 +1953,21 @@ PorousMedia::richard_init_to_steady()
                 }
               }
             }
+#ifdef MG_USE_FBOXLIB
             else
             {
               ret = richard_composite_update(dt,nld);
             }
+#endif
             total_num_Newton_iterations += nld.NLIterationsTaken();
           }
+#ifdef MG_USE_FBOXLIB
           else {
             int curr_nwt_iter = steady_limit_iterations;
             ret = richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
             total_num_Newton_iterations += curr_nwt_iter;
           }
-
+#endif
           if (ret == RichardNLSdata::RICHARD_SUCCESS) {
             prev_abs_err = abs_err;
             MultiFab::Add(tmp,get_new_data(Press_Type),nc,0,1,0);
@@ -3321,6 +3324,7 @@ PorousMedia::advance_richard (Real time,
   //}
   dt_eig = std::min(dt_eig,dt_nwt); 
 }
+#endif
 
 bool
 PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
@@ -3406,10 +3410,12 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
             }
         }
     }
+#ifdef MG_USE_FBOXLIB
     else
     {
         ret = richard_composite_update(dt_flow,nld);
     }
+#endif
 
     bool cont = nld.AdjustDt(dt_flow,ret,dt_flow_new); 
 
@@ -3436,169 +3442,6 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   }
   
   return step_ok;
-}
-#endif
-
-bool
-PorousMedia::advance_multilevel_saturated (Real  time,
-					   Real  dt,
-					   Real& dt_new)
-{
-  // 
-  // Time stepping for saturated flow with subcycling
-  //
-  bool step_ok = true;
-  if (level == 0  &&  transport_tracers > 0)
-  {
-    int finest_level = parent->finestLevel();
-    int nlevs = finest_level + 1;
-    
-    // Lazily build structure to save state at "time".  If we must subcycle, the
-    // algorithm will overwrite old_time data as it goes.  This saved_state
-    // must include all state types involved in this subcycle; we make a set
-    // of ids and set them manually to minimize the overhead of this
-    std::set<int> types_advanced;
-    types_advanced.insert(State_Type);
-    Array<PArray<MultiFab> > saved_states;
-    
-    // Subcycle each level independently so that coarse data is available for
-    // fine grid boundary conditions
-    for (int lev=0; lev<nlevs; lev++)
-      {
-	PorousMedia& fine_lev = getLevel(lev);	
-
-	// Set velocity (u_mac_curr) from bc at t+dt
-	fine_lev.set_vel_from_bcs(time+dt,fine_lev.u_mac_curr);
-
-	if (lev == 0) 
-	  fine_lev.create_umac_grown(fine_lev.u_mac_curr,
-				     fine_lev.u_macG_trac);
-	else 
-	  {
-	    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-	    fine_lev.GetCrseUmac(u_macG_crse,time);
-	    fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
-				       fine_lev.u_macG_trac); 
-	  }
-	
-        int ltracer = ncomps+ntracers-1;
-	
-        MultiFab& S_new = fine_lev.get_new_data(State_Type);
-        MultiFab& S_old = fine_lev.get_old_data(State_Type);
-
-        MultiFab Stmp(fine_lev.grids,1,1); 
-        for (int i=ncomps;i<=ltracer;i++)
-        {
-            MultiFab::Copy(Stmp,S_old,i,0,1,1);
-            MultiFab::Multiply(Stmp,S_old,0,0,1,1);
-            Stmp.divide(S_new,0,1,1);
-            MultiFab::Copy(S_old,Stmp,0,i,1,1);
-        }
-        MultiFab::Copy(S_old,S_new,0,0,1,1);
-
-
-        int n_subcycle_transport = 0;
-	Real t_subcycle_transport = time;
-	Real tmax_subcycle_transport = time + dt;
-        fine_lev.predictDT(fine_lev.u_macG_trac,tmax_subcycle_transport);
-        
-        // Reduce dt_eig to avoid extremely small transport steps at end of subcycle interval
-        Real dt_eig_save = fine_lev.dt_eig;
-        if (dt_eig_save < dt) {
-            int num_subcycles = std::max(1,(int)(dt / fine_lev.dt_eig) + 1);
-            fine_lev.dt_eig = dt / num_subcycles;
-        }
-        Real dt_subcycle_transport = std::min(fine_lev.dt_eig,dt);
-        Real t_eps = 1.e-8*dt_subcycle_transport;
-
-        std::map<int,MultiFab*> saved_states;
-        bool continue_subcycle_transport = true;
-
-        if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
-            std::cout << "  TRANSPORT: "
-                      << " TIME = " << t_subcycle_transport
-                      << " : " <<  tmax_subcycle_transport << std::endl;
-        }
-
-        while (continue_subcycle_transport)
-        {
-            if (n_subcycle_transport > 0 && saved_states.size()==0) {
-                for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
-                {
-                    const MultiFab& old = fine_lev.get_old_data(*it);                          
-                    saved_states[*it] = new MultiFab(old.boxArray(), old.nComp(), old.nGrow());
-                    MultiFab::Copy(*saved_states[*it],old,0,0,old.nComp(),old.nGrow());
-                }
-            }
-
-            PMAmr* p = dynamic_cast<PMAmr*>(parent); BL_ASSERT(p);
-            p->setCumTime(t_subcycle_transport);
-
-            fine_lev.setTimeLevel(t_subcycle_transport+dt_subcycle_transport,
-				  dt_subcycle_transport,dt_subcycle_transport);
-	    
-	    if (verbose > 1 &&  ParallelDescriptor::IOProcessor()) {
-	      std::cout << "    TRANSPORT: Subcycle: " << n_subcycle_transport
-			<< " TIME = " << t_subcycle_transport
-			<< " : " <<  t_subcycle_transport + dt_subcycle_transport
-			<< ", DT_SUB = " << dt_subcycle_transport  << std::endl;
-	    }
-	    
-            fine_lev.tracer_advection(fine_lev.u_macG_trac,dt_subcycle_transport,ncomps,ltracer,true);
-            t_subcycle_transport += dt_subcycle_transport;
-            
-            Real subcycle_time_remaining = tmax_subcycle_transport - t_subcycle_transport;
-            if (subcycle_time_remaining < t_eps) {
-	      t_subcycle_transport = tmax_subcycle_transport;
-              subcycle_time_remaining = 0;
-            }
-            
-            if (subcycle_time_remaining > 0)
-            {
-	      fine_lev.predictDT(fine_lev.u_macG_trac,t_subcycle_transport);
-                if (fine_lev.dt_eig < dt_subcycle_transport) {
-                    int num_subcycles = std::max(1,(int)(subcycle_time_remaining / fine_lev.dt_eig) + 1);
-                    dt_subcycle_transport = subcycle_time_remaining / num_subcycles;
-                }
-                dt_subcycle_transport = std::min(dt_subcycle_transport,subcycle_time_remaining);
-                BL_ASSERT(dt_subcycle_transport > 0);
-                fine_lev.dt_eig = dt_subcycle_transport;
-
-                // Advance the state data structures
-                for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
-                     it!=End; ++it) 
-                {
-                    fine_lev.state[*it].allocOldData();
-                    fine_lev.state[*it].swapTimeLevels(dt_subcycle_transport);
-                }
-            }
-            else {
-                continue_subcycle_transport = false;
-            }
-            n_subcycle_transport++;
-        }
-        if (!saved_states.empty()) {
-            for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); 
-                 it!=End; ++it) 
-            {
-                MultiFab& old = get_old_data(*it);                          
-                MultiFab::Copy(old,*saved_states[*it],0,0,old.nComp(),old.nGrow());
-                delete saved_states[*it];
-            }
-        }
-                
-        // Restore dt_eig
-        fine_lev.dt_eig = dt_eig_save;
-
-        // Bring all states up to current time, and reinstate original dt info
-        for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) 
-        {
-            fine_lev.state[*it].setTimeLevel(time+dt,dt,dt);
-        }
-      }
-  }
-  parent->setCumTime(time); // reset to start of subcycled time period
-  return true;
 }
 
 void
@@ -6506,8 +6349,6 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   return retVal;
 }
 
-
-
 //
 // Richard equation: Time-dependent solver.  Only doing a first-order implicit scheme
 //
@@ -6692,7 +6533,6 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 
   return retVal;
 }
-
 #endif
 
 //

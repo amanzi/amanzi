@@ -28,7 +28,10 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
   Epetra_Vector* solution_old_faces = FS->CreateFaceView(solution_old);
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
-  if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_gmres);
+  if (is_matrix_symmetric) 
+      solver->SetAztecOption(AZ_solver, AZ_cg);
+  else 
+      solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -38,25 +41,25 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     CalculateRelativePermeability(solution_old);
 
     double time = Tp + dTp;
-    UpdateBoundaryConditions(time, *solution_old_faces);
+    UpdateSourceBoundaryData(time, *solution_old_faces);
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, matrix_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix_);
-    matrix_->ApplyBoundaryConditions(bc_markers, bc_values);
+    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces);
+    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, preconditioner_);
+    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
-    preconditioner_->ApplyBoundaryConditions(bc_markers, bc_values);
+    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers, bc_values);
+    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // call AztecOO solver

@@ -22,8 +22,6 @@ project(FLOW)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_SIMPLE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
@@ -44,8 +42,6 @@ if (ENABLE_CGNS)
     include_directories(${CGNS_INCLUDE_DIRS})
 endif()
 
-# Need to move this to roo level -- lpritch
-add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: flow
 #
@@ -54,9 +50,9 @@ set(flow_src_files Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
                    Darcy_PK.cpp Darcy_TI.cpp Darcy_BC_Head.cpp Darcy_IO.cpp 
                    Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp
                    Richards_SteadyState.cpp Richards_Picard.cpp Richards_AztecOO.cpp
-                   Richards_Bundles.cpp Richards_Devel.cpp Richards_AndersonAcceleration.cpp
-                   Matrix_MFD.cpp Matrix_MFD_TPFA.cpp Matrix_VAG.cpp 
-                  WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
+                   Richards_Bundles.cpp Richards_Devel.cpp Richards_AndersonMixing.cpp
+                   Matrix_MFD.cpp Matrix_MFD_TPFA.cpp Matrix_MFD_PLambda.cpp Matrix_VAG.cpp 
+                   WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
@@ -83,8 +79,6 @@ if (BUILD_TESTS)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Add the STK mesh source directory
-    include_directories(${STK_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
@@ -98,10 +92,7 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
-        include_directories(${MSTK_INCLUDE_DIRS})
-        include_directories(${MSTK_SOURCE_DIR})
-
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory simple_mesh mstk_mesh state flow whetstone)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone)
  
         # Test: miscaleneous Darcy flow routines
         add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp)
@@ -152,7 +143,7 @@ if (BUILD_TESTS)
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
-    set(amanzi_libs geometry mesh mesh_factory simple_mesh state flow whetstone)
+    set(amanzi_libs geometry mesh mesh_factory state flow whetstone)
  
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
@@ -167,7 +158,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
-    set(amanzi_libs geometry mesh mesh_factory simple_mesh flow state whetstone solvers output)
+    set(amanzi_libs geometry mesh mesh_factory flow state whetstone solvers output)
     
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit

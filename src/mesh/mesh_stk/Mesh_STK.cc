@@ -20,13 +20,15 @@
 namespace bl = boost::lambda;
 
 #include <Shards_CellTopology.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMHelpers.hpp>
+#include <stk_mesh/fem/FEMMetaData.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 
-#include "Entity_map.hh"
 #include "Mesh_STK_Impl.hh"
 #include "Mesh_STK.hh"
 #include "stk_mesh_error.hh"
+#include "dbc.hh"
+#include "errors.hh"
 
 static const int ZERO = 0;
 
@@ -51,13 +53,35 @@ const unsigned int Mesh_STK::num_kinds_ =
 // -------------------------------------------------------------
 Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
   : mesh_(mesh), 
-    entity_map_(3),                   // FIXME: can be 2; take from mesh
     map_owned_(), map_used_()
 {
   Mesh::set_comm(mesh->communicator());
   build_maps_();
 }
 
+//--------------------------------------
+// Constructor - Construct a new mesh from a subset of an existing mesh
+//--------------------------------------
+
+Mesh_STK::Mesh_STK (const Mesh *inmesh, 
+                    const std::vector<std::string>& setnames, 
+                    const Entity_kind setkind,
+                    const bool flatten,
+                    const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_STK::Mesh_STK (const Mesh_STK& inmesh, 
+                    const std::vector<std::string>& setnames, 
+                    const Entity_kind setkind,
+                    const bool flatten,
+                    const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
 
 Mesh_STK::~Mesh_STK(void)
 {
@@ -118,13 +142,13 @@ Mesh_STK::cell_get_type(const Entity_ID cellid) const
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;        // need 1-based for stk::mesh
 
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(CELL));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(CELL));
   stk::mesh::Entity* cell(mesh_->id_to_entity(rank, global_cell_id));
 
   // FIXME: Throw instead?
   ASSERT(cell != NULL);
 
-  const CellTopologyData* topo = stk::mesh::get_cell_topology (*cell);
+  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*cell).getCellTopologyData();
 
   // FIXME: Polyhedral, 2D not yet supported
 
@@ -157,14 +181,14 @@ Mesh_STK::num_entities (const Entity_kind kind,
                         const Parallel_type ptype) const
 {
   ASSERT(entity_valid_kind(kind));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
   return mesh_->count_entities(rank, ptype);
 }
 
 // -------------------------------------------------------------
 // Mesh_STK::GID
 // -------------------------------------------------------------
-unsigned int 
+Entity_ID
 Mesh_STK::GID(const Entity_ID lid, const Entity_kind kind) const
 {
   ASSERT(entity_valid_kind(kind));
@@ -253,9 +277,9 @@ Mesh_STK::cell_get_faces_and_dirs (const Entity_ID cellid,
   for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
        f != stk_face_ids.end(); f++) {
     stk::mesh::EntityId global_face_id(*f);
-    ASSERT(this->face_epetra_map(true).MyGID(global_face_id));
+    ASSERT(this->face_epetra_map(true).MyGID((long long int) global_face_id));
     stk::mesh::EntityId local_face_id = 
-        this->face_epetra_map(true).LID(global_face_id);
+      this->face_epetra_map(true).LID((long long int) global_face_id);
     outfaceids->push_back(local_face_id);
   }
 }
@@ -278,9 +302,9 @@ Mesh_STK::cell_get_nodes (const Entity_ID cellid,
   outnodeids->clear();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
-    ASSERT(this->node_epetra_map(true).MyGID(global_node_id));
+    ASSERT(this->node_epetra_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
-        this->node_epetra_map(true).LID(global_node_id);
+      this->node_epetra_map(true).LID((long long int) global_node_id);
     outnodeids->push_back(local_node_id);
   }
 }
@@ -302,9 +326,9 @@ Mesh_STK::face_get_nodes (const Entity_ID faceid,
   outnodeids->clear();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
-    ASSERT(this->node_epetra_map(true).MyGID(global_node_id));
+    ASSERT(this->node_epetra_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
-        this->node_epetra_map(true).LID(global_node_id);
+      this->node_epetra_map(true).LID((long long int) global_node_id);
     outnodeids->push_back(local_node_id);
   }
   ASSERT(!outnodeids->empty());
@@ -326,7 +350,7 @@ Mesh_STK::node_get_cells(const Entity_ID nodeid,
 
   outcellids->clear();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
-    Entity_ID local_cell_id(this->cell_epetra_map(true).LID(*i));
+    Entity_ID local_cell_id(this->cell_epetra_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(CELL, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
       outcellids->push_back(local_cell_id);
@@ -351,7 +375,7 @@ Mesh_STK::node_get_faces(const Entity_ID nodeid,
   std::for_each(face_ids.begin(), face_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
   outfaceids->clear();
   for (STK::Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
-    Entity_ID local_face_id(this->face_epetra_map(true).LID(*i));
+    Entity_ID local_face_id(this->face_epetra_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_face_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
       outfaceids->push_back(local_face_id);
@@ -407,7 +431,7 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
 
   outcellids->clear();
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
-    Entity_ID local_cell_id(this->cell_epetra_map(true).LID(*i));
+    Entity_ID local_cell_id(this->cell_epetra_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
       outcellids->push_back(local_cell_id);
@@ -469,29 +493,6 @@ void Mesh_STK::cell_get_node_adj_cells(const Entity_ID cellid,
       }
     }
   }
-}
-
-
-// -------------------------------------------------------------
-// Mesh_STK::cell_get_type_4viz
-// -------------------------------------------------------------
-Cell_type 
-Mesh_STK::cell_get_type_4viz(const Entity_ID cellid) const
-{
-  // FIXME: degenerate cells
-  return cell_get_type(cellid);
-}
-
-
-// -------------------------------------------------------------
-// Mesh_STK::cell_get_nodes_4viz
-// -------------------------------------------------------------
-void 
-Mesh_STK::cell_get_nodes_4viz (const Entity_ID cellid, 
-                               Entity_ID_List *nodeids) const
-{
-  // FIXME: degenerate cells
-  cell_get_nodes(cellid, nodeids);
 }
 
 
@@ -737,7 +738,7 @@ Mesh_STK::get_set_entities (const std::string setname,
 {
 
   ASSERT (entity_valid_ptype(ptype));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
+  stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
 
   stk::mesh::Part *part;
 
@@ -852,7 +853,7 @@ Mesh_STK::build_maps_ ()
 
   for (unsigned int i = 0; i < num_kinds_; i++) {
     Entity_kind kind(kinds_[i]);
-    stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
+    stk::mesh::EntityRank rank = mesh_->kind_to_rank (kind);
 
     STK::Entity_vector entities;
     std::vector<int> entity_ids;

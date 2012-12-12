@@ -67,7 +67,6 @@ class Darcy_PK : public Flow_PK {
   void ProcessShiftWaterTableList();
   void CalculateShiftWaterTable(const std::string region);
 
-  void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
   double ErrorEstimate(double* dTfactor);
 
   // linear solvers
@@ -77,7 +76,6 @@ class Darcy_PK : public Flow_PK {
   // io members
   void ProcessParameterList();
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
-  void ProcessStringSourceDistribution(const std::string name, int* method);
 
   // control methods
   void PrintStatistics() const;
@@ -94,8 +92,9 @@ class Darcy_PK : public Flow_PK {
   AmanziGeometry::Point& gravity() { return gravity_; }
 
   // extension of STL
-  void set_intersection(const std::vector<int>& v1, 
-                        const std::vector<int>& v2, std::vector<int>* vv);
+  void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 
+                        const std::vector<AmanziMesh::Entity_ID>& v2, 
+                        std::vector<AmanziMesh::Entity_ID>* vv);
 
  private:
   Teuchos::ParameterList dp_list_;
@@ -121,7 +120,6 @@ class Darcy_PK : public Flow_PK {
 
   int num_itrs_trs;  // Parameters for transient solver
   double dT_desirable_;
-  int dT_method_;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
@@ -136,9 +134,11 @@ class Darcy_PK : public Flow_PK {
   BoundaryFunction* bc_head;
   BoundaryFunction* bc_flux;
   BoundaryFunction* bc_seepage;
-  std::vector<int> bc_markers;  // Used faces marked with boundary conditions
-  std::vector<double> bc_values;
+
+  std::vector<int> bc_model, bc_submodel;  // Support of boundary conditions.
+  std::vector<bc_tuple> bc_values;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
+  std::vector<double> rainfall_factor;
 
   DomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 
@@ -148,7 +148,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  int mfd3d_method, ini_with_darcy;
+  int mfd3d_method;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 

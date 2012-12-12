@@ -30,9 +30,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 
-# Need to move this up to the root -- lpritch
-add_definitions("-DUSE_MPI")
-
 #
 # Library: functions
 #

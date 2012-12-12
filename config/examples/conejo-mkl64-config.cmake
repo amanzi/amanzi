@@ -5,21 +5,22 @@
 #
 # Machine: Conejo (LANL)
 # OS: Linux Red Hat EL5 x86_64
-# Compiler: Intel 11.1 with ACML 32 bit ints
+# Compiler: Intel 11.1 with MKL 10.3 libraries
 # MPI: OpenMPI 1.4.3
 #
 # Usage:
-#   (1) Load the default Intel, OpenMPI and ACML modules
-#        module load intel openmpi-intel acml-intel
+#   (1) Load the default Intel, OpenMPI and  MKL modules
+#        module load intel openmpi-intel mkl/10.3
 #   (2) Configure 
-#       cmake -C <root path>/conejo-acml-int32-config.cmake <root directory amanzi>/amanzi/config/SuperBuild
+#       cmake -C <root path>/conejo-config.cmake <root directory amanzi>/amanzi/config/SuperBuild
 # 
 # ############################################################################ #
 
 # --- Machine specific directories
 set(ASCEM_PROJECT_DIR "/usr/projects/ascem" CACHE PATH "ASCEM project directory")
 set(MPI_ROOT "$ENV{MPI_ROOT}" CACHE PATH "MPI installation location")
-set(AMCL_ROOT "/opt/ACML/acml-4.3.0/ifort64/lib" CACHE PATH "ACML installation location")
+set(MKL_ROOT "$ENV{MKLROOT}" CACHE PATH "MKL installation location")
+set(MKL_ARCH "intel64" CACHE STRING "MKL arch type")
 
 # --- Set the build type Release == minimal -O3 optimization
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "CMake build type") 
@@ -41,16 +42,16 @@ set(DISABLE_EXTERNAL_DOWNLOAD TRUE CACHE BOOL "Disable external web site downloa
 set(TPL_DOWNLOAD_DIR "${ASCEM_PROJECT_DIR}/tpls/source_files" CACHE PATH "Location of the TPL distribution files")
 
 # --- LAPACK/BLAS Definitions
-set(ENABLE_BLA_Search TRUE CACHE BOOL "Activate the CMake BLAS/LAPACK search")
-set(BLA_VENDOR "ACML" CACHE STRING "Set CMake vendor search to ACML")
-
-
-# --- Solver Capabilities
-set(ENABLE_HYPRE TRUE CACHE BOOL "Flag to activate HYPRE build")
+# Vendor string Intel10_64lp 64-bit MKL libraries. ONLY vendor string that found correct libraries.
+set(BLA_VENDOR "Intel10_64lp" CACHE STRING "Search for 64-bit MKL libraries")
 
 # --- Mesh Capabilities
 # Structured mesh code does not compile with Intel Fortran 
 set(ENABLE_Structured FALSE CACHE BOOL "Flag for structured mesh capability")
 
+# --- Solver Capabilities
+#
+set(ENABLE_HYPRE TRUE CACHE BOOL "Enable the HYPRE preconditioner package")
+
 # --- TPL Installation location
-set(TPL_INSTALL_PREFIX "${ASCEM_PROJECT_DIR}/tpls/installs/openmpi-intel-acml" CACHE PATH "ASCEM TPL installation location")
+set(TPL_INSTALL_PREFIX "${ASCEM_PROJECT_DIR}/tpls/installs/openmpi-intel-mkl64" CACHE PATH "ASCEM TPL installation location")

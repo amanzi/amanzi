@@ -58,17 +58,17 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.darcy_mass_inverse_hex(c, K[c], Mff);
+        ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
       else
-        ok = mfd.darcy_mass_inverse(c, K[c], Mff);
+        ok = mfd.DarcyMassInverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.darcy_mass_inverse_diagonal(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.darcy_mass_inverse_SO(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
-      ok = mfd.darcy_mass_inverse_optimized(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
     } else {
-      ok = mfd.darcy_mass_inverse(c, K[c], Mff);
+      ok = mfd.DarcyMassInverse(c, K[c], Mff);
     }
 
     Mff_cells_.push_back(Mff);
@@ -92,7 +92,8 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
 void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
-                                            Epetra_Vector& Krel_faces)
+                                            Epetra_Vector& Krel_faces,
+                                            int method)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
@@ -113,12 +114,17 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (Krel_cells[c] == 1.0) {
+    if (method == FLOW_RELATIVE_PERM_NONE) {
+      double* braw = Bff.values();
+      double* mraw = Mff.values();
+      for (int n = 0; n < nfaces * nfaces; n++) braw[n] = mraw[n];
+    } else if (method == FLOW_RELATIVE_PERM_CENTERED ||
+               method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {  // centered permeability for diffusion
       for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
     } else {
       for (int n = 0; n < nfaces; n++)
-        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c] * Krel_faces[faces[m]];
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];
     }
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -195,7 +201,7 @@ void Matrix_MFD::CreateMFDrhsVectors()
 * creates elemental rigth-hand-sides.                                           
 ****************************************************************** */
 void Matrix_MFD::ApplyBoundaryConditions(
-    std::vector<int>& bc_markers, std::vector<double>& bc_values)
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
@@ -214,19 +220,31 @@ void Matrix_MFD::ApplyBoundaryConditions(
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_markers[f] == FLOW_BC_FACE_HEAD) {
+      double value = bc_values[f][0];
+
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
+          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
+          bc_model[f] == FLOW_BC_FACE_HEAD) {
         for (int m = 0; m < nfaces; m++) {
-          Ff[m] -= Bff(m, n) * bc_values[f];
+          Ff[m] -= Bff(m, n) * value;
           Bff(n, m) = Bff(m, n) = 0.0;
         }
-        Fc -= Bcf(n) * bc_values[f];
+        Fc -= Bcf(n) * value;
         Bcf(n) = Bfc(n) = 0.0;
 
         Bff(n, n) = 1.0;
-        Ff[n] = bc_values[f];
-      } else if (bc_markers[f] == FLOW_BC_FACE_FLUX) {
-        Ff[n] -= bc_values[f] * mesh_->face_area(f);
+        Ff[n] = value;
+      } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
+        Ff[n] -= value * mesh_->face_area(f);
+      } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
+        double area = mesh_->face_area(f);
+        Ff[n] += value * area;
+        Bff(n, n) += bc_values[f][1] * area;
+      }
+
+      // Additional work required for seepage boundary condition.
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+        Fc -= bc_values[f][1] * mesh_->face_area(f);
       }
     }
   }
@@ -288,8 +306,7 @@ void Matrix_MFD::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 
 
 /* ******************************************************************
-* Convert elemental mass matrices into stiffness matrices and 
-* assemble them into four global matrices. 
+* Assebmle elemental mass matrices into four global matrices. 
 * We need an auxiliary GHOST-based vector to assemble the RHS.
 ****************************************************************** */
 void Matrix_MFD::AssembleGlobalMatrices()
@@ -313,13 +330,13 @@ void Matrix_MFD::AssembleGlobalMatrices()
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
     (*Acc_)[c] = Acc_cells_[c];
-    (*Acf_).ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
-    (*Aff_).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
+    Acf_->ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
+    Aff_->SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
 
     if (!flag_symmetry_)
-        (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
+        Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
   }
-  (*Aff_).GlobalAssemble();
+  Aff_->GlobalAssemble();
 
   // We repeat some of the loops for code clarity.
   Epetra_Vector rhs_faces_wghost(fmap_wghost);
@@ -345,7 +362,7 @@ void Matrix_MFD::AssembleGlobalMatrices()
 * Compute the face Schur complement of 2x2 block matrix.
 ****************************************************************** */
 void Matrix_MFD::ComputeSchurComplement(
-    std::vector<int>& bc_markers, std::vector<double>& bc_values)
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   Sff_->PutScalar(0.0);
 
@@ -369,8 +386,9 @@ void Matrix_MFD::ComputeSchurComplement(
 
     for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
       int f = faces_LID[n];
-      if (bc_markers[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_markers[f] == FLOW_BC_FACE_HEAD) {
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
+          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
+          bc_model[f] == FLOW_BC_FACE_HEAD) {
         for (int m = 0; m < nfaces; m++) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }
@@ -424,8 +442,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE
-    // read some boomer amg parameters
-    hypre_ncycles = prec_list.get<int>("cycle applications", 5);
+    hypre_ncycles = prec_list.get<int>("cycle applications", 5);  // Boomer AMG parameters
     hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
     hypre_tol = prec_list.get<double>("tolerance", 0.0);
     hypre_strong_threshold = prec_list.get<double>("strong threshold", 0.0);
@@ -448,6 +465,7 @@ void Matrix_MFD::UpdatePreconditioner()
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
+
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
     functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
@@ -458,7 +476,7 @@ void Matrix_MFD::UpdatePreconditioner()
     functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol)); 
     functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
 
-    Teuchos::ParameterList hypre_list;
+    Teuchos::ParameterList hypre_list("Preconditioner List");
     // hypre_list.set("Solver", PCG);
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
@@ -484,7 +502,7 @@ void Matrix_MFD::UpdatePreconditioner()
 
 
 /* ******************************************************************
-* Parallel matvec product Aff_cells * X.                                              
+* Parallel matvec product A * X.                                              
 ****************************************************************** */
 int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {

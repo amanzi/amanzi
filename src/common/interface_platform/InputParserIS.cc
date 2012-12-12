@@ -12,9 +12,10 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
-#define BOOST_FILESYSTEM_VERSION 2
+#define  BOOST_FILESYTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
+#include "boost/format.hpp"
 
 
 namespace Amanzi {
@@ -478,7 +479,7 @@ Teuchos::ParameterList get_Regions_List(Teuchos::ParameterList* plist) {
           std::string file = rlist.sublist((rlist.name(i))).sublist("Region: Labeled Set").get<std::string>("File");
           boost::filesystem::path meshfile_path(meshfile);
           boost::filesystem::path labeled_set_meshfile_path(file);
-          if (!boost::filesystem::equivalent(meshfile_path, labeled_set_meshfile_path)) {
+          if (meshfile != file) {
             Errors::Message message("There is a labeled set region that refers to a mesh file that is different from the mesh file that is defined in the Mesh list: " + file);
             Exceptions::amanzi_throw(message);
           }
@@ -549,10 +550,28 @@ Teuchos::ParameterList translate_Mesh_List(Teuchos::ParameterList* plist) {
 
           // Assume that if the framework is unspecified then stk::mesh is used
           // This is obviously a kludge but I don't know how to get around it
-          if (numproc_ > 1 && (framework == "Unspecified" || framework == "stk::mesh")) {
-            std::string par_file = file.replace(file.size()-4,4,std::string(".par"));
+          //
+          // We also have to be able to tell if we have prepartitioned
+          // files or if we have one file that we want to partition
 
-            fn_list.set<std::string>("File",par_file);
+          if (numproc_ > 1) {
+            std::string par_file(file);
+            par_file.replace(file.size()-4,4,std::string(".par"));
+
+            // attach the right extensions as required by Nemesis file naming conventions
+            // in which files are named as mymesh.par.N.r where N = numproc and r is rank
+
+            int rank = numproc_-1;
+            int ndigits = (int)floor(log10(numproc_)) + 1;
+            std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+            std::string par_file_w_ext = boost::str(boost::format(fmt) % par_file % numproc_ % rank);
+            boost::filesystem::path p(par_file_w_ext);
+
+            if (boost::filesystem::exists(p))             
+              fn_list.set<std::string>("File",par_file); // Nemesis file exists. Use the .par extension
+            else
+              fn_list.set<std::string>("File",file); // Use original .exo file extension 
+
           } else {
             // don't translate the suffix if this is a serial run
             fn_list.set<std::string>("File",file);

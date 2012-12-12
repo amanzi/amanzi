@@ -32,8 +32,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D::darcy_mass(int cell, const Tensor& permeability,
-                      Teuchos::SerialDenseMatrix<int, double>& M)
+int MFD3D::DarcyMass(int cell, const Tensor& permeability,
+                     Teuchos::SerialDenseMatrix<int, double>& M)
 {
   int d = mesh_->space_dimension();
 
@@ -48,10 +48,10 @@ int MFD3D::darcy_mass(int cell, const Tensor& permeability,
   Tensor permeability_inv(permeability);
   permeability_inv.inverse();
 
-  int ok = L2_consistency(cell, permeability_inv, N, Mc);
+  int ok = L2consistency(cell, permeability_inv, N, Mc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  stability_scalar(cell, N, Mc, M);
+  StabilityScalar(cell, N, Mc, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -59,8 +59,8 @@ int MFD3D::darcy_mass(int cell, const Tensor& permeability,
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse(int cell, const Tensor& permeability,
-                              Teuchos::SerialDenseMatrix<int, double>& W)
+int MFD3D::DarcyMassInverse(int cell, const Tensor& permeability,
+                            Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
 
@@ -72,10 +72,10 @@ int MFD3D::darcy_mass_inverse(int cell, const Tensor& permeability,
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
 
-  int ok = L2_consistency_inverse(cell, permeability, R, Wc);
+  int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  stability_scalar(cell, R, Wc, W);
+  StabilityScalar(cell, R, Wc, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -83,8 +83,8 @@ int MFD3D::darcy_mass_inverse(int cell, const Tensor& permeability,
 /* ******************************************************************
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse_hex(int cell, const Tensor& permeability,
-                                  Teuchos::SerialDenseMatrix<int, double>& W)
+int MFD3D::DarcyMassInverseHex(int cell, const Tensor& permeability,
+                               Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
 
@@ -96,11 +96,11 @@ int MFD3D::darcy_mass_inverse_hex(int cell, const Tensor& permeability,
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
 
-  int ok = L2_consistency_inverse(cell, permeability, R, Wc);
+  int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  int flag = stability_monotone_hex(cell, permeability, Wc, W);
-  if (flag) stability_scalar(cell, R, Wc, W);
+  int flag = StabilityMonotoneHex(cell, permeability, Wc, W);
+  if (flag) StabilityScalar(cell, R, Wc, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -109,8 +109,8 @@ int MFD3D::darcy_mass_inverse_hex(int cell, const Tensor& permeability,
 * This is a debug version of the above routine for a scalar tensor
 * and an orthogonal brick element.
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse_diagonal(int cell, const Tensor& permeability,
-                                       Teuchos::SerialDenseMatrix<int, double>& W)
+int MFD3D::DarcyMassInverseDiagonal(int cell, const Tensor& permeability,
+                                    Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
@@ -133,8 +133,8 @@ int MFD3D::darcy_mass_inverse_diagonal(int cell, const Tensor& permeability,
 /* ******************************************************************
 * Second-generation MFD method as inlemented in RC1.
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse_SO(int cell, const Tensor& permeability,
-                                 Teuchos::SerialDenseMatrix<int, double>& W)
+int MFD3D::DarcyMassInverseSO(int cell, const Tensor& permeability,
+                              Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
 
@@ -200,9 +200,9 @@ int MFD3D::darcy_mass_inverse_SO(int cell, const Tensor& permeability,
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d; i++) {
-      int k = find_position(corner_faces[i], faces);
+      int k = FindPosition(corner_faces[i], faces);
       for (int j = i; j < d; j++) {
-        int l = find_position(corner_faces[j], faces);
+        int l = FindPosition(corner_faces[j], faces);
         W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs[k] * fdirs[l];
         W(l, k) = W(k, l);
       }
@@ -231,8 +231,8 @@ int MFD3D::darcy_mass_inverse_SO(int cell, const Tensor& permeability,
 /* ******************************************************************
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
-int MFD3D::darcy_mass_inverse_optimized(int cell, const Tensor& permeability,
-                                        Teuchos::SerialDenseMatrix<int, double>& W)
+int MFD3D::DarcyMassInverseOptimized(int cell, const Tensor& permeability,
+                                     Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
 
@@ -244,10 +244,10 @@ int MFD3D::darcy_mass_inverse_optimized(int cell, const Tensor& permeability,
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
 
-  int ok = L2_consistency_inverse(cell, permeability, R, Wc);
+  int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = stability_optimized(cell, R, Wc, W);
+  ok = StabilityOptimized(permeability, R, Wc, W);
   return ok;
 }
 
@@ -257,9 +257,9 @@ int MFD3D::darcy_mass_inverse_optimized(int cell, const Tensor& permeability,
 * Only upper triangular part of Mc is calculated.
 * Darcy flux is scaled by area!
 ****************************************************************** */
-int MFD3D::L2_consistency(int cell, const Tensor& T,
-                          Teuchos::SerialDenseMatrix<int, double>& N,
-                          Teuchos::SerialDenseMatrix<int, double>& Mc)
+int MFD3D::L2consistency(int cell, const Tensor& T,
+                         Teuchos::SerialDenseMatrix<int, double>& N,
+                         Teuchos::SerialDenseMatrix<int, double>& Mc)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
@@ -304,9 +304,9 @@ int MFD3D::L2_consistency(int cell, const Tensor& T,
 * fluxes. Only the upper triangular part of Wc is calculated.
 * Darcy flux is scaled by area!
 ****************************************************************** */
-int MFD3D::L2_consistency_inverse(int cell, const Tensor& T,
-                                  Teuchos::SerialDenseMatrix<int, double>& R,
-                                  Teuchos::SerialDenseMatrix<int, double>& Wc)
+int MFD3D::L2consistencyInverse(int cell, const Tensor& T,
+                                Teuchos::SerialDenseMatrix<int, double>& R,
+                                Teuchos::SerialDenseMatrix<int, double>& Wc)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -348,9 +348,9 @@ int MFD3D::L2_consistency_inverse(int cell, const Tensor& T,
 * Consistency condition for stiffness matrix in heat conduction. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
-int MFD3D::H1_consistency(int cell, const Tensor& T,
-                          Teuchos::SerialDenseMatrix<int, double>& N,
-                          Teuchos::SerialDenseMatrix<int, double>& Ac)
+int MFD3D::H1consistency(int cell, const Tensor& T,
+                         Teuchos::SerialDenseMatrix<int, double>& N,
+                         Teuchos::SerialDenseMatrix<int, double>& Ac)
 {
   AmanziMesh::Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -396,7 +396,7 @@ int MFD3D::H1_consistency(int cell, const Tensor& T,
       v3 = v1^v2;
       double u = dirs[i] * norm(v3) / (4 * area);
 
-      int pos = find_position(v, nodes);
+      int pos = FindPosition(v, nodes);
       for (int k = 0; k < d; k++) N(pos, k) += normal[k] * u;
     }
   }
@@ -426,9 +426,9 @@ int MFD3D::H1_consistency(int cell, const Tensor& T,
 * Consistency condition for stifness matrix in geomechanics. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
-int MFD3D::H1_consistency_elasticity(int cell, const Tensor& T,
-                                     Teuchos::SerialDenseMatrix<int, double>& N,
-                                     Teuchos::SerialDenseMatrix<int, double>& Ac)
+int MFD3D::H1consistencyElasticity(int cell, const Tensor& T,
+                                   Teuchos::SerialDenseMatrix<int, double>& N,
+                                   Teuchos::SerialDenseMatrix<int, double>& Ac)
 {
   return WHETSTONE_ELEMENTAL_MATRIX_OK;  // (lipnikov@lanl.gov)
 }
@@ -437,12 +437,12 @@ int MFD3D::H1_consistency_elasticity(int cell, const Tensor& T,
 /* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
-void MFD3D::stability_scalar(int cell,
-                             Teuchos::SerialDenseMatrix<int, double>& N,
-                             Teuchos::SerialDenseMatrix<int, double>& Mc,
-                             Teuchos::SerialDenseMatrix<int, double>& M)
+void MFD3D::StabilityScalar(int cell,
+                            Teuchos::SerialDenseMatrix<int, double>& N,
+                            Teuchos::SerialDenseMatrix<int, double>& Mc,
+                            Teuchos::SerialDenseMatrix<int, double>& M)
 {
-  gramm_schmidt(N);
+  GrammSchmidt(N);
 
   int nrows = Mc.numRows();
   int ncols = N.numCols();
@@ -474,9 +474,9 @@ void MFD3D::stability_scalar(int cell,
 /* ******************************************************************
 * A simple monotone stability term for a 2D or 3D brick element. 
 ****************************************************************** */
-int MFD3D::stability_monotone_hex(int cell, const Tensor& T,
-                                  Teuchos::SerialDenseMatrix<int, double>& Mc,
-                                  Teuchos::SerialDenseMatrix<int, double>& M)
+int MFD3D::StabilityMonotoneHex(int cell, const Tensor& T,
+                                Teuchos::SerialDenseMatrix<int, double>& Mc,
+                                Teuchos::SerialDenseMatrix<int, double>& M)
 {
   int d = mesh_->space_dimension();
   int nrows = 2 * d;
@@ -564,15 +564,21 @@ int MFD3D::stability_monotone_hex(int cell, const Tensor& T,
 * A simple optimization procedure that must return a diagonal mass
 * matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
 * The algorithm minimizes off-diagonal entries in the mass matrix.
+* WARNING: the routine is used for inverse of mass matrix only.
 ****************************************************************** */
-int MFD3D::stability_optimized(int cell,
-                               Teuchos::SerialDenseMatrix<int, double>& N,
-                               Teuchos::SerialDenseMatrix<int, double>& Mc,
-                               Teuchos::SerialDenseMatrix<int, double>& M)
+int MFD3D::StabilityOptimized(const Tensor& T,
+                              Teuchos::SerialDenseMatrix<int, double>& N,
+                              Teuchos::SerialDenseMatrix<int, double>& Mc,
+                              Teuchos::SerialDenseMatrix<int, double>& M)
 {
   int d = mesh_->space_dimension();
   int nrows = N.numRows();
   int ncols = N.numCols();
+
+  // find correct scaling of a stability term
+  double lower, upper, eigmin = Mc(0, 0);
+  // T.spectral_bounds(&lower, &upper);
+  for (int k = 1; k < nrows; k++) eigmin = std::min<double>(eigmin, Mc(k, k));
 
   // find null space of N^T
   Teuchos::SerialDenseMatrix<int, double> U(nrows, nrows);
@@ -659,12 +665,10 @@ int MFD3D::stability_optimized(int cell,
     lapack.SYEV('N', 'U', mcols, Ptmp.values(), mcols, S, work, size, &info); 
     if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
-    if (S[0] > 0.0) {
+    if (S[0] > eigmin) {
       break;
     } else if (loop == 2) {
-      double trace = 0.0;
-      for (int k = 0; k < nrows; k++) trace += Mc(k, k);
-      for (int k = 0; k < mcols; k++) if (P(k, k) == 0.0) P(k, k) = trace / (nrows * d);
+      for (int k = 0; k < mcols; k++) if (P(k, k) == 0.0) P(k, k) = eigmin;
     }
   }
 
@@ -696,7 +700,7 @@ int MFD3D::stability_optimized(int cell,
 /* ******************************************************************
 * Conventional Gramm-Schimdt orthogonalization of colums of matrix N. 
 ****************************************************************** */
-void MFD3D::gramm_schmidt(Teuchos::SerialDenseMatrix<int, double>& N)
+void MFD3D::GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N)
 {
   int nrows = N.numRows();
   int ncols = N.numCols();
@@ -739,7 +743,7 @@ int MFD3D::cell_get_face_adj_cell(const int cell, const int face)
 /* ******************************************************************
 * Returns position of the number v in the list of nodes.  
 ****************************************************************** */
-int MFD3D::find_position(int v, AmanziMesh::Entity_ID_List nodes)
+int MFD3D::FindPosition(int v, AmanziMesh::Entity_ID_List nodes)
 {
   for (int i = 0; i < nodes.size(); i++) {
     if (nodes[i] == v) return i;

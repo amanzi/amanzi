@@ -9,14 +9,14 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{5.0,1.0,1.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{5.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array double" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -41,17 +41,17 @@
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array string" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
+        <Parameter name="Component 0" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
       </ParameterList>  
       <!--
       <ParameterList name="BC 1">
-        <Parameter name="Component 0" type="Array double" value="{0.0, 0.0}"/>
-        <Parameter name="Regions" type="Array string" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
+        <Parameter name="Component 0" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
         <Parameter name="Type" type="string" value="Dispersion Flux"/>
       </ParameterList>  
       -->

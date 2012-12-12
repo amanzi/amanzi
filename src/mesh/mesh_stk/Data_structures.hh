@@ -1,7 +1,7 @@
 #ifndef _DATA_STRUCTURES_H_
 #define _DATA_STRUCTURES_H_
 
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <Teuchos_RCPDecl.hpp>
 

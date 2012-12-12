@@ -65,8 +65,9 @@ public:
     hi_corner->set(p1_);
   }
 
-  // Is the box degenerate - zero length in one direction?
-  bool is_degenerate() const;
+  // Is the box degenerate - zero length in one or more directions and
+  // if so in how many directions?
+  bool is_degenerate(int *ndeg) const;
 
 protected:
   

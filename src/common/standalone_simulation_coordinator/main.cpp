@@ -13,6 +13,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -72,7 +73,10 @@ int main(int argc, char *argv[]) {
  
     // read the main parameter list
     Teuchos::ParameterList driver_parameter_list;
-    Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+    // DEPRECATED    Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+    Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
+    driver_parameter_list = xmlreader.getParameters();
+
     const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
     driver_parameter_list.set<string>("input file name", xmlInFileName);
     

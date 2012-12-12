@@ -9,9 +9,9 @@ cd @METIS_source_dir@
 #5.0.xmake install
 
 # Manual install required for 4.0.x versions
-metis_lib_dir=@TPL_INSTALL_PREFIX@/lib
-metis_include_dir=@TPL_INSTALL_PREFIX@/include
-metis_bin_dir=@TPL_INSTALL_PREFIX@/bin
+metis_lib_dir=@METIS_install_dir@/lib
+metis_include_dir=@METIS_install_dir@/include
+metis_bin_dir=@METIS_install_dir@/bin
 if [ ! -e ${metis_lib_dir} ]; then mkdir -p ${metis_lib_dir} ; fi
 if [ ! -e ${metis_include_dir} ]; then mkdir -p ${metis_include_dir} ; fi
 if [ ! -e ${metis_bin_dir} ]; then mkdir -p ${metis_bin_dir} ; fi

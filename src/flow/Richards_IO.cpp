@@ -58,18 +58,33 @@ void Richards_PK::ProcessParameterList()
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list_.sublist("boundary conditions", true)));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
-  bc_pressure = bc_factory.createPressure();
-  bc_head = bc_factory.createStaticHead(atm_pressure, rho, gravity_);
-  bc_flux = bc_factory.createMassFlux();
-  bc_seepage = bc_factory.createSeepageFace();
+  bc_pressure = bc_factory.CreatePressure(bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho, gravity_, bc_submodel);
+  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+  bc_seepage = bc_factory.CreateSeepageFace(bc_submodel);
 
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
+  ProcessStaticBCsubmodels(bc_submodel, rainfall_factor);
 
+  /*
   double time = T_physics;
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
+  */
+
+  // Create the source object if any
+  if (rp_list_.isSublist("source terms")) {
+    string distribution_method_name = rp_list_.get<string>("source and sink distribution method", "none");
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(rp_list_.sublist("source terms", true));
+    FlowSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.createSource();
+  } else {
+    src_sink = NULL;
+  }
 
   // Create water retention models
   if (! rp_list_.isSublist("Water retention models")) {
@@ -250,6 +265,8 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
     *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (name == "arithmetic mean") {
     *method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+  } else if (name == "upwind experimental") {
+    *method = AmanziFlow::FLOW_RELATIVE_PERM_EXPERIMENTAL;
   } else {
     msg << "Richards Problem: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);
@@ -410,6 +427,12 @@ void Richards_PK::AnalysisTI_Specs()
       msg << "Richards PK: cannot re-initialize Darcy solver without developer password.";
       Exceptions::amanzi_throw(msg);
     }
+  }
+
+  if (ti_specs_igs_.dT_method == FLOW_DT_ADAPTIVE || 
+      ti_specs_sss_.dT_method == FLOW_DT_ADAPTIVE) {
+    msg << "Richards PK: adaptive time stepping is allowed only for transient phase.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

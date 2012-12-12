@@ -15,6 +15,10 @@ if(NOT PERL_FOUND)
   message(FATAL_ERROR "Could not locate Perl. METIS build requires Perl")
 endif()
 
+# Define the install directory. Do this before configuring scripts below
+set(METIS_install_dir ${TPL_INSTALL_PREFIX}/${METIS_BUILD_TARGET}-${METIS_VERSION})
+print_variable(METIS_install_dir)
+
 # Build the configure script
 set(METIS_sh_configure ${METIS_prefix_dir}/metis-configure-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/metis-configure-step.sh.in
@@ -44,6 +48,7 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/metis-build-step.cmake.in
 set(METIS_BUILD_COMMAND ${CMAKE_COMMAND} -P ${METIS_cmake_build})	
 
 # --- Define the install command
+
 
 # Build the install script
 set(METIS_sh_install ${METIS_prefix_dir}/metis-install-step.sh)
@@ -76,11 +81,12 @@ ExternalProject_Add(${METIS_BUILD_TARGET}
                     BUILD_COMMAND     ${METIS_BUILD_COMMAND}        # Build command
                     BUILD_IN_SOURCE   ${METIS_BUILD_IN_SOURCE}      # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}          # Install directory
+                    INSTALL_DIR      ${METIS_install_dir}          # Install directory
 		    INSTALL_COMMAND  ${METIS_INSTALL_COMMAND}       # Install command
                     # -- Output control
                     ${METIS_logging_args})
 
-# MSTK needs the full library name
+# --- Build variables needed outside this file MSTK needs the full library name
 include(BuildLibraryName)
-build_library_name(metis METIS_LIBRARY STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(METIS_DIR ${METIS_install_dir})
+build_library_name(metis METIS_LIBRARY STATIC APPEND_PATH "${METIS_DIR}/lib")

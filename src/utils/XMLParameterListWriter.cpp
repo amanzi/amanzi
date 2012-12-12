@@ -73,35 +73,35 @@ XMLObject Amanzi_XMLParameterListWriter::toXML(const ParameterEntry& entry) cons
     {
       const Array<int>
         &a = any_cast<Array<int> >(entry.getAny(false));
-      type = "Array int";
+      type = "Array(int)";
       value = a.toString();
     }
   else if (entry.isType<Array<short> >())
     {
       const Array<short>
         &a = any_cast<Array<short> >(entry.getAny(false));
-      type = "Array short";
+      type = "Array(short)";
       value = a.toString();
     }
   else if (entry.isType<Array<float> >())
     {
       const Array<float>
         &a = any_cast<Array<float> >(entry.getAny(false));
-      type = "Array float";
+      type = "Array(float)";
       value = a.toString();
     }
   else if (entry.isType<Array<double> >())
     {
       const Array<double>
         &a = any_cast<Array<double> >(entry.getAny(false));
-      type = "Array double";
+      type = "Array(double)";
       value = Amanzi_toString(a);
     }
   else if (entry.isType<Array<std::string> >())
     {
       const Array<std::string>
         &a = any_cast<Array<std::string> >(entry.getAny(false));
-      type = "Array string";
+      type = "Array(string)";
       value = a.toString();
     }
   else

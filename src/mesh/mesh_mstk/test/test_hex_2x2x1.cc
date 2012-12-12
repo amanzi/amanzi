@@ -4,14 +4,13 @@
 
 #include "../Mesh_MSTK.hh"
 
+#include "MeshAudit.hh"
 
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 
-#include "mpi.h"
 
-
-TEST(MSTK_HEX_3x3x2)
+TEST(MSTK_HEX_2x2x1)
 {
 
   int i, j, k, err, nc, nf, nv;
@@ -52,40 +51,40 @@ TEST(MSTK_HEX_3x3x2)
   Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD)); 
 
 
-  // Load a simple 2 element hex mesh 
+  // Load a simple 4 element hex mesh 
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_3x3x2_ss.exo",comm.get(),3);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_2x2x1_ss.exo",comm.get(),3));
   
   
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
   
   for (i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point coords;
     
-    coords.init(mesh.space_dimension()); 
+    coords.init(mesh->space_dimension()); 
     
-    mesh.node_get_coordinates(i,&coords);
+    mesh->node_get_coordinates(i,&coords);
     CHECK_EQUAL(xyz[i][0],coords[0]);
     CHECK_EQUAL(xyz[i][1],coords[1]);
     CHECK_EQUAL(xyz[i][2],coords[2]);
   }
   
   
-  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  nf = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
   
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
   
   for (i = 0; i < nc; i++) {
-    mesh.cell_get_nodes(i,&cnodes);
-    mesh.cell_get_faces_and_dirs(i,&faces,&facedirs,true);
+    mesh->cell_get_nodes(i,&cnodes);
+    mesh->cell_get_faces_and_dirs(i,&faces,&facedirs,true);
     
     for (j = 0; j < 6; j++) {
       
-      mesh.face_get_nodes(faces[j],&fnodes);
-      mesh.face_get_coordinates(faces[j],&fcoords);
+      mesh->face_get_nodes(faces[j],&fnodes);
+      mesh->face_get_coordinates(faces[j],&fcoords);
       
 
       for (k = 0; k < 4; k++)
@@ -122,7 +121,7 @@ TEST(MSTK_HEX_3x3x2)
     }
 
   
-    mesh.cell_get_coordinates(i,&ccoords);
+    mesh->cell_get_coordinates(i,&ccoords);
     
     for (j = 0; j < 8; j++)
       CHECK_ARRAY_EQUAL(xyz[cnodes[cnstd[j]]],ccoords[j],3);
@@ -133,20 +132,28 @@ TEST(MSTK_HEX_3x3x2)
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
   std::vector<int> c2fdirs(6);
-  Epetra_Map cell_map(mesh.cell_epetra_map(true));
-  Epetra_Map face_map(mesh.face_epetra_map(false));
+  Epetra_Map cell_map(mesh->cell_epetra_map(true));
+  Epetra_Map face_map(mesh->face_epetra_map(false));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
-      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
-      mesh.cell_get_faces_and_dirs(c, &c2f, &c2fdirs);
+      CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
+      mesh->cell_get_faces_and_dirs(c, &c2f, &c2fdirs);
       for (int j=0; j<6; j++)
   	{
-  	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
+  	  int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
   	  CHECK( f == c2f[j] );
   	}
 
     }
 
+  std::stringstream fname;
+  fname << "test/mstk_hex_2x2x1.out";
+  std::ofstream fout(fname.str().c_str());
+  Amanzi::MeshAudit auditor(mesh,fout);
+  auditor.Verify();
+
+
+  
 }
 

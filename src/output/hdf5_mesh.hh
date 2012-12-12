@@ -4,7 +4,6 @@
 #include <string>
 
 #include "Mesh.hh"
-#include "Element_types.hh"
 #include "errors.hh"
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"

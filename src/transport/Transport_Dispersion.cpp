@@ -116,7 +116,7 @@ void Transport_PK::PopulateHarmonicPointsValues(int component,
 
   for (int f = 0; f < nfaces_owned; f++) {
     double weight;
-    mfd.calculate_harmonic_points(f, dispersion_tensor, harmonic_points[f], weight);
+    mfd.CalculateHarmonicPoints(f, dispersion_tensor, harmonic_points[f], weight);
     harmonic_points_weight[f] = weight;
 
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -166,8 +166,8 @@ void Transport_PK::AddDispersiveFluxes(int component,
         corner_values.push_back(harmonic_points_value[f]);
       }
 
-      mfd.dispersion_corner_fluxes(
-          v, c, dispersion_tensor[c], corner_points, value, corner_values, corner_fluxes);
+      mfd.DispersionCornerFluxes(v, c, dispersion_tensor[c], 
+                                 corner_points, value, corner_values, corner_fluxes);
 
       for (int i = 0; i < nfaces; i++) {
         int f = faces[i];

@@ -4,16 +4,14 @@
 #include "UnitTest++.h"
 #include <vector>
 
-#include "Mesh_STK.hh"
-#include "Exodus_readers.hh"
-#include "Parallel_Exodus_file.hh"
-
+#include "MeshFactory.hh"
 #include "State.hpp"
 #include "Transport_PK.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "MeshAudit.hh"
 
@@ -41,12 +39,22 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_parallel_stk.xml";
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
+
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  parameter_list = xmlreader.getParameters();
 
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_STK("test/cube_4x4x4.par", comm, gm));
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(STKMESH);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory("test/cube_4x4x4.par", gm);
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();

@@ -6,14 +6,30 @@
 # --------------------------------------------------------------------------- #
 
 # Compiler Definitions
-set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER@ CACHE FILEPATH "SuperBuild C Compiler" )
-set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER@ CACHE FILEPATH "SuperBuild C++ Compiler" )
-set(CMAKE_Fortran_COMPILER @CMAKE_Fortran_COMPILER@ CACHE FILEPATH "SuperBuild Fortran Compiler")
+set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER_USE@ CACHE FILEPATH "SuperBuild C Compiler" )
+set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER_USE@ CACHE FILEPATH "SuperBuild C++ Compiler" )
+set(CMAKE_Fortran_COMPILER @CMAKE_Fortran_COMPILER_USE@ CACHE FILEPATH "SuperBuild Fortran Compiler")
 
-# MPI Definitions
-set(MPI_EXEC @MPI_EXEC@ CACHE FILEPATH "MPI executable to launch parallel tests")
-set(MPI_EXEC_NUMPROCS_FLAG @MPI_EXEC_NUMPROCS_FLAG@ CACHE STRING "MPI executable flag to set number of MPI ranks")
-set(MPI_EXEC_MAX_NUMPROCS @MPI_EXEC_MAX_NUMPROCS@ CACHE STRING "Maximum number of MPI ranks to run parallel tests")
+# Compiler Flags
+set(CMAKE_C_FLAGS "@CMAKE_C_FLAGS@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_C_FLAGS_DEBUG "@CMAKE_C_FLAGS_DEBUG@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_C_FLAGS_RELEASE "@CMAKE_C_FLAGS_RELEASE@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_C_FLAGS_MINSIZEREL "@CMAKE_C_FLAGS_MINSIZEREL@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "@CMAKE_C_FLAGS_RELWITHDEBINFO@" CACHE STRING "SuperBuild C compiler flags")
+
+set(CMAKE_CXX_FLAGS "@CMAKE_CXX_FLAGS@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_CXX_FLAGS_DEBUG "@CMAKE_CXX_FLAGS_DEBUG@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_CXX_FLAGS_RELEASE "@CMAKE_CXX_FLAGS_RELEASE@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_CXX_FLAGS_MINSIZEREL "@CMAKE_CXX_FLAGS_MINSIZEREL@" CACHE STRING "SuperBuild C compiler flags")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "@CMAKE_CXX_FLAGS_RELWITHDEBINFO@" CACHE STRING "SuperBuild C compiler flags")
+
+set(CMAKE_Fortran_FLAGS "@CMAKE_Fortran_FLAGS@" CACHE STRING "SuperBuild Fortran compiler flags")
+set(CMAKE_Fortran_FLAGS_DEBUG "@CMAKE_Fortran_FLAGS_DEBUG@" CACHE STRING "SuperBuild Fortran compiler flags")
+set(CMAKE_Fortran_FLAGS_RELEASE "@CMAKE_Fortran_FLAGS_RELEASE@" CACHE STRING "SuperBuild Fortran compiler flags")
+set(CMAKE_Fortran_FLAGS_MINSIZEREL "@CMAKE_Fortran_FLAGS_MINSIZEREL@" CACHE STRING "SuperBuild Fortran compiler flags")
+set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "@CMAKE_Fortran_FLAGS_RELWITHDEBINFO@" CACHE STRING "SuperBuild Fortran compiler flags")
+
+
 
 # Mesh type settings
 set(ENABLE_Structured @ENABLE_Structured@ CACHE BOOL "Enable structured mesh capability")
@@ -28,12 +44,23 @@ set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mes
 # Third Party Libraries (TPL)
 # --------------------------------------------------------------------------- #
 
+# MPI Definitions
+set(MPI_EXEC @MPI_EXEC@ CACHE FILEPATH "MPI executable to launch parallel tests")
+set(MPI_EXEC_NUMPROCS_FLAG @MPI_EXEC_NUMPROCS_FLAG@ CACHE STRING "MPI executable flag to set number of MPI ranks")
+set(MPI_EXEC_MAX_NUMPROCS @MPI_EXEC_MAX_NUMPROCS@ CACHE STRING "Maximum number of MPI ranks to run parallel tests")
+
+# LAPACK
+set(LAPACK_LIBRARIES @LAPACK_LIBRARIES@ CACHE FILEPATH "LAPACK libraries")
+
+# BLAS
+set(BLAS_LIBRARIES @LAPACK_LIBRARIES@ CACHE FILEPATH "BLAS libraries")
+
 # UnitTest
 set(ENABLE_TESTS @ENABLE_TESTS@ CACHE BOOL "Build the tests")
 set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 
 # METIS  
-set(METIS_DIR  @TPL_INSTALL_PREFIX@ CACHE PATH "METIS installation prefix")
+set(METIS_DIR  @METIS_DIR@ CACHE PATH "METIS installation prefix")
 
 # CCSE
 set(CCSE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CCSE installation prefix")
@@ -76,5 +103,8 @@ set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
 set(ENABLE_PETSC @ENABLE_PETSC@ CACHE BOOL "Build PETSc interfaces")
 set(PETSC_DIR @PETSC_DIR@ CACHE PATH "PETSc installation prefix")
 
+# HYPRE
+set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interface")
+
 # Trilinos
-set(Trilinos_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
+set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")

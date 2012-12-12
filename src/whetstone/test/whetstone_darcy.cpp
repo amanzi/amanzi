@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#include "Mesh_simple.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
 #include "Mesh.hh"
@@ -40,7 +40,14 @@ TEST(DARCY_MASS) {
 #endif
 
   int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, comm)); 
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
  
   MFD3D mfd(mesh);
 
@@ -52,8 +59,8 @@ TEST(DARCY_MASS) {
   Teuchos::SerialDenseMatrix<int, double> Mc(nfaces, nfaces);
   Teuchos::SerialDenseMatrix<int, double> M(nfaces, nfaces);
 
-  int ok = mfd.L2_consistency(cell, T, N, Mc);
-  mfd.stability_scalar(cell, N, Mc, M);
+  int ok = mfd.L2consistency(cell, T, N, Mc);
+  mfd.StabilityScalar(cell, N, Mc, M);
 
   printf("Mass matrix for cell %3d\n", cell);
   for (int i=0; i<6; i++) {
@@ -79,7 +86,13 @@ TEST(DARCY_INVERSE_MASS) {
 #endif
 
   int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, comm)); 
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory factory(comm);
+  factory.preference(pref);
+  RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
  
   MFD3D mfd(mesh);
 
@@ -91,8 +104,8 @@ TEST(DARCY_INVERSE_MASS) {
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
   Teuchos::SerialDenseMatrix<int, double> W(nfaces, nfaces);
 
-  int ok = mfd.L2_consistency_inverse(cell, T, R, Wc);
-  mfd.stability_scalar(cell, R, Wc, W);
+  int ok = mfd.L2consistencyInverse(cell, T, R, Wc);
+  mfd.StabilityScalar(cell, R, Wc, W);
 
   printf("Inverse of mass matrix for cell %3d\n", cell);
   for (int i=0; i<6; i++) {

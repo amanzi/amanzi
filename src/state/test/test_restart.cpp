@@ -5,7 +5,7 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "State.hpp"
-#include "Mesh_STK.hh"
+#include "MeshFactory.hh"
 #include "Restart.hpp"
 
 
@@ -163,9 +163,9 @@ SUITE(RESTART) {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Restart R(plist, &comm);   
 
-    // make a simple mesh
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> Mesh
-      = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, &comm));
+    Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh
+      = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
     // create a state object with some data in it
     int number_of_components = 2;

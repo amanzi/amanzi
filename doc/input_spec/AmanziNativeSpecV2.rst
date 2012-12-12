@@ -9,7 +9,8 @@ Amanzi Native XML Input Specification V2
 ParameterList XML
 =================
 
-The Amanzi input file is an ASCII text XML-formatted file that must be framed at the beginning and end by the following statements:
+The Amanzi input file is an ASCII text XML-formatted file that must be framed 
+at the beginning and end by the following statements:
 
 
 .. code-block:: xml
@@ -18,25 +19,41 @@ The Amanzi input file is an ASCII text XML-formatted file that must be framed at
 
   </ParameterList>
 
-The value in the "name" can be anything ("Main" in this example).  A ParameterList consists of just two types of entries: Parameter and ParameterList.  ParameterLists are labeled with a `"name`" [string], while Parameters have a separate fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can be any of the following: double, float, short, int, bool, string, Array double, Array float, Array short, Array int, Array bool, Array string.  The value of the parameter is given in quotes (e.g. "2.7e3").  Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
+The value in the "name" can be anything ("Main" in this example).  
+A ParameterList consists of just two types of entries: Parameter and ParameterList.  
+ParameterLists are labeled with a `"name`" [string], while Parameters have a separate 
+fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can 
+be any of the following: double, float, short, int, bool, string, Array(double), Array(float), 
+Array(short), Array(int), Array(bool), Array(string).  
+The value of the parameter is given in quotes (e.g. "2.7e3").  
+Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
 
 .. code-block:: xml
 
   <ParameterList name="Sub">
     <Parameter name="CFL" type="double" value="0.9"/>
-    <Parameter name="ratio" type="Array int" value="{2, 2, 4}"/>
+    <Parameter name="ratio" type="Array(int)" value="{2, 2, 4}"/>
   </ParameterList>
 
-In this example, the sublist "Sub" has a parameter named "CFL" that is a "double" and has the value of 0.9, and a Teuchos::Array<int>
-parameter named "ratio" such that ratio[0] = 2. ratio[1]=2 and ratio[2]=4.
+In this example, the sublist "Sub" has a parameter named "CFL" that is a "double" and has 
+the value of 0.9, and a Teuchos::Array<int> parameter named "ratio" such that ratio[0] = 2, 
+ratio[1]=2, and ratio[2]=4.
 
 
 Syntax of the Specification
 ===========================
 
-* Input specification for each ParameterList entry consists of two parts.  First, a bulleted list defines the usage syntax and available options.  This is followed by example snipets of XML code to demonstrate usage.
+* Input specification for each ParameterList entry consists of two parts.  
+  First, a bulleted list defines the usage syntax and available options.  
+  This is followed by example snipets of XML code to demonstrate usage.
 
-* In many cases, the input specifies data for a particular parameterized model, and Amanzi supports a number of parameterizations.  For example, initial data might be uniform (the value is required), or linear in y (the value and its gradient are required).  Where Amanzi supports a number of parameterized models for quantity Z, the available models will be listed by name, and then will be described in the subsequent section.  For example, the specification might begin with the following:
+* In many cases, the input specifies data for a particular parameterized model, and Amanzi 
+  supports a number of parameterizations.  
+  For example, initial data might be uniform (the value is required), or linear in y (the value 
+  and its gradient are required).  
+  Where Amanzi supports a number of parameterized models for quantity Z, the available 
+  models will be listed by name, and then will be described in the subsequent section.  
+  For example, the specification might begin with the following:
 
 
  * `"X`" [list] 
@@ -113,13 +130,13 @@ Here is an example
 .. code-block:: xml
 
   <ParameterList name="State">
-    <Parameter name="Component Solutes" type="Array string" value="{3H}"/>
+    <Parameter name="Component Solutes" type="Array(string)" value="{3H}"/>
     <Parameter name="Constant viscosity" type="double" value="0.001"/>
     <Parameter name="Constant water density" type="double" value="997.16"/>
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.81"/>
-    <Parameter name="Material Names" type="Array string" value="{Mesh block 1, Mesh block 2}"/>
+    <Parameter name="Material Names" type="Array(string)" value="{Mesh block 1, Mesh block 2}"/>
 
     <ParameterList name="Mesh block Gordon aquifer">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
@@ -129,8 +146,8 @@ Here is an example
       <Parameter name="Region" type="string" value="Gordon aquifer"/>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, -9793.52}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 60}"/>
+        <Parameter name="gradient" type="Array(double)" value="{0, -9793.52}"/>
+        <Parameter name="reference coordinate" type="Array(double)" value="{0, 60}"/>
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
@@ -185,8 +202,8 @@ and krel_sat.txt using the following optional commands (that go to `"Richards Pr
 
 .. code-block:: xml
 
-    <Parameter name="calculate krel-pc curves" type="Array double" value="{0.0, 0.1, 3000.0}"/>
-    <Parameter name="calculate krel-sat curves" type="Array double" value="{0.0001, 0.01, 1.0}"/>
+    <Parameter name="calculate krel-pc curves" type="Array(double)" value="{0.0, 0.1, 3000.0}"/>
+    <Parameter name="calculate krel-sat curves" type="Array(double)" value="{0.0001, 0.01, 1.0}"/>
 
 The triple of doubles means the starting capillary pressure (resp., saturation), the period, and 
 the final capillary pressure (resp., saturation).
@@ -205,7 +222,7 @@ conditions are supported:
 
 * `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a surface region.
   This is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
-  boundary condition is used implicitly.
+  boundary condition is used implicitly. 
 
 * `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a surface region.
 
@@ -222,7 +239,7 @@ of the other available functions:
      <ParameterList name="boundary conditions">
        <ParameterList name="pressure">
          <ParameterList name="BC 0">
-           <Parameter name="regions" type="Array string" value="{West side Top, East side Top}"/>
+           <Parameter name="regions" type="Array(string)" value="{West side Top, East side Top}"/>
            <ParameterList name="boundary pressure">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="101325.0"/>
@@ -233,7 +250,8 @@ of the other available functions:
 
        <ParameterList name="mass flux">
          <ParameterList name="BC 1">
-           <Parameter name="regions" type="Array string" value="{North side, South side}"/>
+           <Parameter name="regions" type="Array(string)" value="{North side, South side}"/>
+           <Parameter name="rainfall" type="bool" value="false"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="0.0"/>
@@ -244,7 +262,7 @@ of the other available functions:
 
        <ParameterList name="static head">
          <ParameterList name="BC 2">
-           <Parameter name="regions" type="Array string" value="{West side Bottom}"/>
+           <Parameter name="regions" type="Array(string)" value="{West side Bottom}"/>
            <ParameterList name="water table elevation">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="10.0"/>
@@ -255,7 +273,7 @@ of the other available functions:
 
        <ParameterList name="seepage face">
          <ParameterList name="BC 3">
-           <Parameter name="regions" type="Array string" value="{East side Bottom}"/>
+           <Parameter name="regions" type="Array(string)" value="{East side Bottom}"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="1.0"/>
@@ -264,6 +282,39 @@ of the other available functions:
          </ParameterList>
        </ParameterList>
      </ParameterList>
+
+The above boundary conditions are the four major models supported by Amanzi. In addition to
+that each model may support a few submodels. A submodel is defined by additional
+parameters described below. Mix and match of parameters is allowed.
+
+* `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
+  vector and the actual influx depends on boundary slope. Default value is `"false`".
+
+* `"relative to the top`" [bool] indicates that the static head is defined with respect
+  to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+  Default falue is `"false`". 
+
+* `"submodel`" [string] indicates different models for seepage face boundary condition.
+  It can take values `"pflotran`" and `"stomp`". The first option leads to discontinous
+  change of boundary condition type, influx to pressure. The second option is described
+  in the document of mathematical models.
+
+Here is an examle:
+
+.. code-block:: xml
+
+       <ParameterList name="seepage face">
+         <ParameterList name="BC 3">
+           <Parameter name="regions" type="Array(string)" value="{Foo}"/>
+           <Parameter name="rainfall" type="bool" value="true"/>
+           <Parameter name="submodel" type="string" value="pflotran"/>
+           <ParameterList name="outward mass flux">
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="1.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
 
 
 Sources and Sinks
@@ -277,7 +328,7 @@ Again, constant functions can be replaced by any of the available time-functions
 
      <ParameterList name="source terms">
        <ParameterList name="SRC 0">
-         <Parameter name="regions" type="Array string" value="{Well east}"/>
+         <Parameter name="regions" type="Array(string)" value="{Well east}"/>
          <ParameterList name="sink">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.1"/>
@@ -286,7 +337,7 @@ Again, constant functions can be replaced by any of the available time-functions
        </ParameterList>
 
        <ParameterList name="SRC 1">
-         <Parameter name="regions" type="Array string" value="{Well west}"/>
+         <Parameter name="regions" type="Array(string)" value="{Well west}"/>
          <ParameterList name="sink">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.2"/>
@@ -317,7 +368,7 @@ The remaining `"Flow`" parameters are
   in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
   is defined over a few regions, Q will be distributed independently over each region.
 
-* `"relative position of water table`" [Array string] collects regions where
+* `"relative position of water table`" [Array(string)] collects regions where
   the static head is set up with respect to the top side. For example, zero head
   can be specified on the top of a boundary side using this array.
 
@@ -347,7 +398,7 @@ nonlinear solvers during calculation of the initial guess time integration. Here
      <Parameter name="clipping saturation value" type="double" value="0.9"/>
      <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-     <Parameter name="error control options" type="Array string" value="{pressure}"/>
+     <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
      <ParameterList name="Picard">
        <Parameter name="convergence tolerance" type="double" value="1e-08"/>
@@ -371,7 +422,7 @@ nonlinear solvers during steady state time integration. Here is an example:
      <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
      <Parameter name="preconditoner" type="string" value="Trilinos ML"/>
      <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
-     <Parameter name="error control options" type="Array string" value="{pressure, saturation}"/>
+     <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="time stepping strategy" type="string" value="adaptive"/>
 
      <ParameterList name="nonlinear solver BDF1">
@@ -403,7 +454,7 @@ The parameters used here are
 
 * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
 
-* `"error control options`" [Array string] lists various error control options. 
+* `"error control options`" [Array(string)] lists various error control options. 
   A nonlinear solver is terminated when all listed options are passed. 
   The available options are `"pressure`", `"saturation`", and `"residual`". 
   All errors are relative, i.e. dimensionless. 
@@ -445,17 +496,17 @@ is used. Note that the boundary condition is set up separately for each componen
       <Parameter name="advective limiter" type="string" value="Tensorial"/>
 
       <ParameterList name="West Boundary for H+">
-        <Parameter name="H+" type="Array double" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array string" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
+        <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
       </ParameterList>  
 
       <ParameterList name="East Boundary for TC-99">
-        <Parameter name="TC-99" type="Array double" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
+        <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
       </ParameterList>  
     </ParameterList>  
 
@@ -548,11 +599,11 @@ Usage:
 
  * [S] `"Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
-  * [S] `"Domain Low Coordinate`" [Array double] Location of low corner of domain
+  * [S] `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
 
-  * [S] `"Domain High Coordinate`" [Array double] Location of high corner of domain
+  * [S] `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
 
-  * [S] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+  * [S] `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
  * [U] `"Unstructured`" [list] accepts instructions to either (1) read or, (2) generate an unstructured mesh.
 
@@ -566,11 +617,11 @@ Usage:
 
    * [U] `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
-    * [U] `"Domain Low Coordinate`" [Array double] Location of low corner of domain
+    * [U] `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
 
-    * [U] `"Domain High Coordinate`" [Array double] Location of high corner of domain
+    * [U] `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
 
-    * [U] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+    * [U] `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
    * [U] `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
@@ -585,9 +636,9 @@ Example of `"Structured`" mesh:
 
    <ParameterList name="Mesh">
      <ParameterList name="Structured"/>
-       <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
-       <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-       <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+       <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
+       <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+       <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
      </ParameterList>   
    </ParameterList>
 
@@ -599,9 +650,9 @@ Example of `"Unstructured`" mesh generated internally:
      <ParameterList name="Unstructured"/>
        <ParameterList name="Generate Mesh"/>
          <ParameterList name="Uniform Structured"/>
-           <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
-           <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-           <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+           <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
+           <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
+           <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
          </ParameterList>   
        </ParameterList>   
      </ParameterList>   
@@ -648,9 +699,9 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 |  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
 +================================+=========================================+==============================+========================================================================+
-| `"Region: Point"`  [SU]        | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
+| `"Region: Point"`  [SU]        | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"` [SU]           | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
+| `"Region: Box"` [SU]           | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
@@ -730,20 +781,20 @@ Example:
   <ParameterList name="Regions">
     <ParameterList name="Top Section">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 5}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 8}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 5}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 8}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Middle Section">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 3}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 5}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 3}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom Section">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 3}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 3}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Inflow Surface">
@@ -756,8 +807,8 @@ Example:
     </ParamterList>
     <ParameterList name="Outflow plane">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5, 0.5, 0.5}"/>
-        <Parameter name="Direction" type="Array double" value="{0, 0, 1}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, 0, 1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Sand">
@@ -782,9 +833,9 @@ Boundary condition functions utilize a parameterized model for time variations t
 
 .. code-block:: xml
 
-      <Parameter name="Times" type="Array double" value="{1, 2, 3}"/>
-      <Parameter name="Time Values" type="Array double" value="{10, 20, 30}"/>
-      <Parameter name="Time Functions" type="Array string" value="{Constant, Linear}"/>    
+      <Parameter name="Times" type="Array(double)" value="{1, 2, 3}"/>
+      <Parameter name="Time Values" type="Array(double)" value="{10, 20, 30}"/>
+      <Parameter name="Time Functions" type="Array(string)" value="{Constant, Linear}"/>    
 
 
 This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
@@ -805,7 +856,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", `"times`", and TSPS (see below).
 
-    * `"Variables`" [Array string] a list of field quantities taken from the list of 
+    * `"Variables`" [Array(string)] a list of field quantities taken from the list of 
       available field quantities:
 
       * Volumetric water content [volume water / bulk volume]
@@ -823,9 +874,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
       * TSPS [list] user defined label, a sublist that contains one parameter, the start period stop definition
 
-        * `"start period stop`" [Array double] the first entry is the start time, the second it the time period, and the third the stop time, or -1 for an indifinite stop time. 
+        * `"start period stop`" [Array(double)] the first entry is the start time, the second it the time period, and the third the stop time, or -1 for an indifinite stop time. 
 
-    * `"times`" [Array double] an array of observation times.
+    * `"times`" [Array(double)] an array of observation times.
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
@@ -845,22 +896,22 @@ Example:
       <Parameter name="Region" type="string" value="some point region name"/>
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>
       <Parameter name="Variable" type="string" value="Volumetric water content"/>
-      <Parameter name="times" type="Array doulbe" value="{100000.0, 200000.0}"/>
-      <Parameter name="cycles" type="Array int" value="{100000, 200000, 400000, 500000}"/>
+      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
+      <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
       <ParameterList name="time start period stop">
          <ParameterList name="some name">
-	    <Parameter name="start period stop" type="Array double" value="{0.0, 1000.0, 100000}"/>
+	    <Parameter name="start period stop" type="Array(double)" value="{0.0, 1000.0, 100000}"/>
 	 </ParameterList>
          <ParameterList name="some other name">
-	    <Parameter name="start period stop" type="Array double" value="{200000.0, 2000.0, -1.0}"/>
+	    <Parameter name="start period stop" type="Array(double)" value="{200000.0, 2000.0, -1.0}"/>
 	 </ParameterList>
       </ParameterList>
       <ParameterList name="cycle start period stop">
          <ParameterList name="some name">
-	    <Parameter name="start period stop" type="Array int" value="{0, 100, -1}"/>
+	    <Parameter name="start period stop" type="Array(int)" value="{0, 100, -1}"/>
          </ParameterList>
          <ParameterList name="some other name">
-	    <Parameter name="start period stop" type="Array int" value="{0, 51, 299999}"/>
+	    <Parameter name="start period stop" type="Array(int)" value="{0, 51, 299999}"/>
          </ParameterList>	 
       </ParameterList>      
     </ParameterList>
@@ -914,17 +965,17 @@ at intervals corresponding to the numerical time step values; writes are control
 
    * CSPS [list] can accept the only the parameter `"start period stop`".
     
-    *  `"start period stop`" [Array int] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
+    *  `"start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
 
   * `"time start period stop`" [list] this is a list of start period stop definitions, each of which must be a sublist
 
    * TSPS [list] can accept only the parameter `"start period stop`".
 
-    * `"start period stop`" [Array double] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+    * `"start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
   * `"times`" an array of discrete times that at which a visualization dump shall be written.
 
-  * `"Regions`" [Array string] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
+  * `"Regions`" [Array(string)] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
 
 Example:
 
@@ -935,15 +986,15 @@ Example:
   
     <ParameterList name="cycle start period stop">
       <ParameterList name="some unique name">
-        <Parameter name="start period stop" type="Array int" value="{0, 100, -1}"/>
+        <Parameter name="start period stop" type="Array(int)" value="{0, 100, -1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time start period stop">
       <ParameterList name="some unique name">
-        <Parameter name="start period stop" type="Array double" value="{0.0, 10.0, -1.0}"/>
+        <Parameter name="start period stop" type="Array(double)" value="{0.0, 10.0, -1.0}"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="times" type="Array double" value="{100.0, 300.0, 450.0}"/>
+    <Parameter name="times" type="Array(double)" value="{100.0, 300.0, 450.0}"/>
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.

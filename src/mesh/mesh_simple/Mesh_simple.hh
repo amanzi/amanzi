@@ -44,6 +44,24 @@ public:
 		const Epetra_MpiComm *communicator,
 		const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
   
+  // Construct a mesh by extracting a subset of entities from another
+  // mesh. In some cases like extracting a surface mesh from a volume
+  // mesh, constructor can be asked to "flatten" the mesh to a lower
+  // dimensional space or to extrude the mesh to give higher
+  // dimensional cells
+
+  Mesh_simple(const Mesh_simple& inmesh,
+              const std::vector<std::string>& setnames,
+              const Entity_kind setkind,
+              const bool flatten = false,
+              const bool extrude = false);
+
+  Mesh_simple(const Mesh *inmesh,
+              const std::vector<std::string>& setnames,
+              const Entity_kind setkind,
+              const bool flatten = false,
+              const bool extrude = false);
+
   virtual ~Mesh_simple ();
   
   void update ();
@@ -74,7 +92,7 @@ public:
     
   // Global ID of any entity
     
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
     
@@ -191,29 +209,6 @@ public:
 			       const Parallel_type ptype,
 			       std::vector<Entity_ID> *nadj_cellids) const;
 
-
-    
-  //
-  // Mesh Topology for viz  
-  //----------------------
-  //
-  // We need a special function because certain types of degenerate
-  // hexes will not be recognized as any standard element type (hex,
-  // pyramid, prism or tet). The original topology of this element 
-  // without any collapsed nodes will be returned by this call.
-    
-    
-  // Original cell type 
-    
-  Cell_type cell_get_type_4viz(const Entity_ID cellid) const;
-    
-    
-  // See cell_get_nodes for details on node ordering
-    
-  void cell_get_nodes_4viz (const Entity_ID cellid, 
-			    std::vector<Entity_ID> *nodeids) const;
-    
-    
     
   //
   // Mesh entity geometry
@@ -290,18 +285,18 @@ public:
   void get_set_entities (const Set_ID setid, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
+			 Entity_ID_List *entids) const; 
 
   void get_set_entities (const Set_Name setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
+			 Entity_ID_List *entids) const; 
 
 
   void get_set_entities (const char *setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
+			 Entity_ID_List *entids) const; 
 
 
 
@@ -349,7 +344,7 @@ private:
   // after the class construction even though the class is instantiated
   // as a constant class
 
-  mutable std::vector<std::vector<Set_ID> > side_sets_;
+  mutable std::vector<std::vector<Entity_ID> > side_sets_;
   mutable std::vector<std::vector<Entity_ID> > element_blocks_;
   mutable std::vector<std::vector<Entity_ID> > node_sets_;
   mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;

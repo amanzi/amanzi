@@ -40,6 +40,7 @@ class TI_Specs {
     preconditioner_name = "Hypre AMG";
     preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
     num_itrs = max_itrs = 0;
+    dT_method = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
     dTfactor = 1.0;
     atol = rtol = 1e-3;
@@ -47,7 +48,7 @@ class TI_Specs {
     initialize_with_darcy = false;
     clip_saturation = -1.0;
     clip_pressure = -1e+10;
-    pressure_lambda_constraints = false;
+    pressure_lambda_constraints = true;
   }
   ~TI_Specs() {};
 
@@ -60,6 +61,7 @@ class TI_Specs {
   int preconditioner_method;
   int num_itrs, max_itrs;
 
+  int dT_method;
   double T0, T1, dT0, dTmax, dTfactor;
   double atol, rtol, residual_tol; 
 

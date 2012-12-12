@@ -43,34 +43,34 @@ TEST(MSTK_HEX1)
 
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_2x2x2_ss.exo",comm.get(),3);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_1x1x1_ss.exo",comm.get(),3));
 
 
   // Check number of nodes and their coordinates
 
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
+  nv = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point coords;
 
-    coords.init(mesh.space_dimension());
+    coords.init(mesh->space_dimension());
 
-    mesh.node_get_coordinates(i,&coords);
+    mesh->node_get_coordinates(i,&coords);
     CHECK_ARRAY_EQUAL(xyz[i],coords,3);
   }
 
 
   // Check number of cells and their face nodes and their face coordinates
   
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
   // Check cell coordinates directly
 
-  mesh.cell_get_nodes(0,&cellnodes);
-  mesh.cell_get_coordinates(0,&ccoords);
+  mesh->cell_get_nodes(0,&cellnodes);
+  mesh->cell_get_coordinates(0,&ccoords);
     
   for (j = 0; j < 8; j++) {
     CHECK_ARRAY_EQUAL(xyz[cellnodes[j]],ccoords[j],3);
@@ -78,11 +78,11 @@ TEST(MSTK_HEX1)
 
 
     
-  mesh.cell_get_faces_and_dirs(0,&faces,&facedirs,true);
+  mesh->cell_get_faces_and_dirs(0,&faces,&facedirs,true);
 
   for (j = 0; j < 6; j++) {
-    mesh.face_get_nodes(faces[j],&facenodes);
-    mesh.face_get_coordinates(faces[j],&fcoords);
+    mesh->face_get_nodes(faces[j],&facenodes);
+    mesh->face_get_coordinates(faces[j],&fcoords);
 
 
     for (k = 0; k < 4; k++)

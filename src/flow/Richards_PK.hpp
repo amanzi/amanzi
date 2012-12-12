@@ -26,6 +26,7 @@ Authors: Neil Carlson (version 1)
 
 #include "Flow_PK.hpp"
 #include "Flow_BC_Factory.hpp"
+#include "Flow_Source_Factory.hpp"
 #include "Matrix_MFD.hpp"
 #include "WaterRetentionModel.hpp"
 #include "TI_Specs.hpp"
@@ -54,6 +55,7 @@ class Richards_PK : public Flow_PK {
   void InitializeSteadySaturated();
 
   int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
+  int AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF2(TI_Specs& ti_specs);
@@ -84,6 +86,10 @@ class Richards_PK : public Flow_PK {
   void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
   void CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
   void CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
+  void AverageRelativePermeability();
+
+  void CalculateDerivativePermeabilityFace(const Epetra_Vector& p);
+  void CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vector& p);
 
   void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
@@ -95,6 +101,8 @@ class Richards_PK : public Flow_PK {
                                 double Tp, double dTp, bool flag_update_ML);
 
   void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
+  void UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces);
+  double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers
   void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner);
@@ -117,13 +125,13 @@ class Richards_PK : public Flow_PK {
   void AnalysisTI_Specs();
 
   // water retention models
-  void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
+  void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds);
+  void DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
   void PopulateMapC2MB();
 
   // initization members
-  void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
   void ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& pressure_cells);
 
@@ -140,6 +148,7 @@ class Richards_PK : public Flow_PK {
   AmanziGeometry::Point& gravity() { return gravity_; }
 
   // developement members
+  bool SetSymmetryProperty();
   void ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
                                    const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
@@ -173,7 +182,7 @@ class Richards_PK : public Flow_PK {
   double functional_max_norm;
   int functional_max_cell;
 
-  TI_Specs ti_specs_igs_;  // Tree time integration phases
+  TI_Specs ti_specs_igs_;  // Three time integration phases
   int ti_method_igs, error_control_igs_;
   TI_Specs ti_specs_sss_;
   int ti_method_sss, error_control_sss_;
@@ -190,21 +199,31 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
   Teuchos::RCP<Epetra_Vector> rhs_faces;
 
+  Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
+  Teuchos::RCP<Epetra_Vector> pdot_cells;
+
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
 
   BoundaryFunction* bc_pressure;  // Pressure BC.
   BoundaryFunction* bc_head;  // Static pressure head BC.
   BoundaryFunction* bc_flux;  // Outward mass flux BC.
   BoundaryFunction* bc_seepage;  // Seepage face BC.
-  std::vector<int> bc_markers;  // Used faces are marked with boundary conditions.
-  std::vector<double> bc_values;
+  std::vector<int> bc_model, bc_submodel; 
+  std::vector<bc_tuple> bc_values;
+  std::vector<double> rainfall_factor;
+
+  DomainFunction* src_sink;  // Source and sink terms
+  int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
+  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
   std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
 
   int Krel_method;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
-  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability
+  Teuchos::RCP<Epetra_Vector> Krel_faces;
+  Teuchos::RCP<Epetra_Vector> dKdP_cells;  // derivative of realitive permeability 
+  Teuchos::RCP<Epetra_Vector> dKdP_faces;
 
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;

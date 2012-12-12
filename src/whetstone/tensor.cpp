@@ -67,7 +67,7 @@ int Tensor::init(const int d, const int rank)
 /* ******************************************************************
 * Trace operation with tensors of rank 1 and 2
 ****************************************************************** */
-double Tensor::trace()
+double Tensor::trace() const
 {
   double s = 0.0;
   if (rank_ <= 2) {
@@ -149,6 +149,36 @@ double Tensor::determinant()
         - data_[0] * data_[5] * data_[7]; 
   }
   return det;
+}
+
+
+/* ******************************************************************
+* Spectral bounds of symmetric tensors of rank 1 and 2
+****************************************************************** */
+void Tensor::spectral_bounds(double* lower, double* upper) const
+{
+  if (size_ == 1) {
+    *lower = data_[0];
+    *upper = data_[0];
+
+  } else if (size_ == 2) {
+    double a = data_[0] - data_[3];
+    double c = data_[1];
+    double D = sqrt(a * a + 4 * c * c);
+    double trace = data_[0] + data_[3];
+
+    *lower = (trace - D) / 2;
+    *upper = (trace + D) / 2;
+  } else if (rank_ <= 2) {
+    Teuchos::LAPACK<int, double> lapack;
+    int ipiv[size_], lwork(3*size_), info;
+    double S[size_], work[lwork];
+    
+    Tensor T(*this);
+    lapack.SYEV('N', 'U', size_, T.data(), size_, S, work, lwork, &info);
+    *lower = S[0];
+    *upper = S[size_ - 1];
+  }
 }
 
 

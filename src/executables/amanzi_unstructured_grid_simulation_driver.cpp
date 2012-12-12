@@ -290,12 +290,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     if (verify_mesh_param) {
       bool verify = expert_mesh_params.get<bool>("Verify Mesh");
       if (verify) {
-        std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
+        if (rank == 0)
+          std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
         if (size == 1) {
           Amanzi::MeshAudit mesh_auditor(mesh);
           int status = mesh_auditor.Verify();
           if (status == 0) {
-            std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
+            if (rank == 0)
+              std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
           } else {
             std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
             return Amanzi::Simulator::FAIL;

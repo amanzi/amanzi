@@ -55,12 +55,12 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 1)
-set(CCSE_VERSION_PATCH 2)
+set(CCSE_VERSION_PATCH 3)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        0620e3d7cc07be6c5f4a13a1d0e3f2f9) 
+set(CCSE_MD5_SUM        c524ea40dc0f04ae13607d7a2522fb7d)
 
 #
 # TPL: UnitTest
@@ -88,13 +88,13 @@ set(CGNS_MD5_SUM        42063efdf726c81300a51c3495d3224e)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 48)
+set(Boost_VERSION_MINOR 51)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.gz)
-set(Boost_MD5_SUM        313a11e97eb56eb7efd18325354631be) 
+set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
+set(Boost_MD5_SUM        4b6bd483b692fd138aef84ed2c8eb679) 
 
 #
 # TPL: BoostCmake
@@ -105,7 +105,7 @@ set(BoostCmake_VERSION_PATCH 1)
 set(BoostCmake_VERSION        ${BoostCmake_VERSION_MAJOR}.${BoostCmake_VERSION_MINOR}.${BoostCmake_VERSION_PATCH})
 set(BoostCmake_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(BoostCmake_ARCHIVE_FILE   boost-cmake-cmake-${BoostCmake_VERSION}.tar.gz)
-set(BoostCmake_MD5_SUM        c85221a1bf8b45537538249b9e912f4c) 
+set(BoostCmake_MD5_SUM        ) 
 
 #
 # TPL: HDF5
@@ -119,15 +119,15 @@ set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)      
 
 #
-# TPL: netCDF
+# TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 1)
-set(NetCDF_VERSION_PATCH 3)
+set(NetCDF_VERSION_MINOR 2)
+set(NetCDF_VERSION_PATCH 1.1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        ead16cb3b671f767396387dcb3c1a814)
+set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc) 
 
 #
 # ASCEM-IO
@@ -142,23 +142,30 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 # TPL: ExodusII
 #
-set(ExodusII_VERSION_MAJOR 4)
-set(ExodusII_VERSION_MINOR 98)
+option(ENABLE_EXODUS498 "Use the 4.98 version of ExodusII" OFF)
+if ( ENABLE_EXODUS498 )
+  set(ExodusII_VERSION_MAJOR 4)
+  set(ExodusII_VERSION_MINOR 98)
+  set(ExodusII_MD5_SUM        4480e641d6ada58f5d8ecb7172e76791) 
+else()
+  set(ExodusII_VERSION_MAJOR 5)
+  set(ExodusII_VERSION_MINOR 22)
+  set(ExodusII_MD5_SUM        b5f537d7028f2c8cf6b4ba3e8a469dbe) 
+endif()
 set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
 set(ExodusII_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
-set(ExodusII_MD5_SUM       4480e641d6ada58f5d8ecb7172e76791)
 
 #
 # TPL: MSTK
 #
-set(MSTK_VERSION_MAJOR 1)
-set(MSTK_VERSION_MINOR 86)
-set(MSTK_VERSION_PATCH rc2)
+set(MSTK_VERSION_MAJOR 2)
+set(MSTK_VERSION_MINOR 00)
+set(MSTK_VERSION_PATCH)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        f3341a9b9ece7403ebaf054a2c7d0861)
+set(MSTK_MD5_SUM        f80cc2fada6f27ea6b3b32437d65d449)
 
 #
 # TPL: MOAB
@@ -226,21 +233,21 @@ set(PETSc_MD5_SUM        b9b5b42ffb6c619e4f7ee6b29134dc5f)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 10)
-set(Trilinos_VERSION_MINOR 6)
-set(Trilinos_VERSION_PATCH 4)
+set(Trilinos_VERSION_MAJOR 11)
+set(Trilinos_VERSION_MINOR 0)
+set(Trilinos_VERSION_PATCH 3)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.gz)
-set(Trilinos_MD5_SUM        75b393e633bde4d9565df304f84b52e4) 
+set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.bz2)
+set(Trilinos_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7) 
 
 #
 # TPL: SEACAS
 #  SEACAS is available in Trilinos 10.8 and above
-set(SEACAS_VERSION_MAJOR 10)
-set(SEACAS_VERSION_MINOR 10)
-set(SEACAS_VERSION_PATCH 1)
+set(SEACAS_VERSION_MAJOR 11)
+set(SEACAS_VERSION_MINOR 0)
+set(SEACAS_VERSION_PATCH 3)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}.${SEACAS_VERSION_MINOR}.${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.gz)
-set(SEACAS_MD5_SUM        66a61dfbacbc1130536dd945e8f4dee2) 
+set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.bz2)
+set(SEACAS_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7) 

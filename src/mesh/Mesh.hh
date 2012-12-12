@@ -114,8 +114,9 @@ class Mesh
   virtual
   Cell_type cell_get_type(const Entity_ID cellid) const = 0;
 
+  // Cell type name
 
-
+  std::string cell_type_to_name(const Cell_type type);
 
   //
   // General mesh information
@@ -133,7 +134,7 @@ class Mesh
   // Global ID of any entity
 
   virtual
-  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const = 0;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const = 0;
 
 
 
@@ -270,30 +271,6 @@ class Mesh
 
 
   //
-  // Mesh Topology for viz
-  //----------------------
-  //
-  // We need a special function because certain types of degenerate
-  // hexes will not be recognized as any standard element type (hex,
-  // pyramid, prism or tet). The original topology of this element
-  // without any collapsed nodes will be returned by this call.
-
-
-  // Original cell type
-
-  virtual
-  Cell_type cell_get_type_4viz(const Entity_ID cellid) const = 0;
-
-
-  // See cell_get_nodes for details on node ordering
-
-  virtual
-  void cell_get_nodes_4viz (const Entity_ID cellid,
-                            Entity_ID_List *nodeids) const = 0;
-
-
-
-  //
   // Mesh entity geometry
   //--------------
   //
@@ -352,10 +329,12 @@ class Mesh
   // stored, then call recompute_geometric_quantities). 
   //
   // If cellid is not specified, the normal is the natural normal of
-  // the face. If cellid is specified, the normal is the outward normal
-  // with respect to the cell. In planar and solid meshes, the normal
-  // with respect to the cell on one side of the face is just the
-  // negative of the normal with respect to the cell on the other
+  // the face. This means that at boundaries, the normal may point in
+  // or out of the domain depending on how the face is defined. On the
+  // other hand, if cellid is specified, the normal is the outward
+  // normal with respect to the cell. In planar and solid meshes, the
+  // normal with respect to the cell on one side of the face is just
+  // the negative of the normal with respect to the cell on the other
   // side. In general surfaces meshes, this will not be true at C1
   // discontinuities
 

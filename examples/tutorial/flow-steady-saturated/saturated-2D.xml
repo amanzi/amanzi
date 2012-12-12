@@ -53,9 +53,9 @@
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array int" value="{10, 5, 5}"/>
-          <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0,  0.0}" />
-          <Parameter name="Domain High Corner" type="Array double" value="{100.0, 50.0, 50.0}" />
+          <Parameter name="Number of Cells" type="Array(int)" value="{10, 5, 5}"/>
+          <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0,  0.0}" />
+          <Parameter name="Domain High Corner" type="Array(double)" value="{100.0, 50.0, 50.0}" />
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -72,8 +72,8 @@
     -->
     <ParameterList name="Entire Domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{100.0,50.0,50.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{100.0,50.0,50.0}"/>
       </ParameterList>
     </ParameterList>
     <!--
@@ -81,14 +81,14 @@
     -->
     <ParameterList name="Upstream">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{0.0,50.0,50.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.0,50.0,50.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Downstream">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{100.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{100.0,50.0,50.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{100.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{100.0,50.0,50.0}"/>
       </ParameterList>
     </ParameterList>
     <!-- 
@@ -96,7 +96,7 @@
     -->
     <ParameterList name="Well 1">
       <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array double" value="{20.5, 24.5, 24.5}"/>
+	<Parameter name="Coordinate" type="Array(double)" value="{20.5, 24.5, 24.5}"/>
       </ParameterList>
     </ParameterList>
 
@@ -110,7 +110,7 @@
   -->
   <ParameterList name="Material Properties">
     <ParameterList name="Soil">
-      <Parameter name="Assigned Regions" type="Array string" value="{Entire Domain}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
       <ParameterList name="Porosity: Uniform">
         <Parameter name="Value" type="double" value="0.25"/>
       </ParameterList>
@@ -138,7 +138,7 @@
       </ParameterList>
       <ParameterList name="Phase Components">
         <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array string" value="{Foo}"/>
+          <Parameter name="Component Solutes" type="Array(string)" value="{Foo}"/>
         </ParameterList>
       </ParameterList>
 
@@ -154,7 +154,7 @@
 
     <ParameterList name="Initial Condition">
 
-      <Parameter name="Assigned Regions" type="Array string" value="{Entire Domain}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
       
       <ParameterList name="IC: Uniform Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
@@ -173,20 +173,20 @@
   <ParameterList name="Boundary Conditions">
 
     <ParameterList name="Upstream BC">
-      <Parameter name="Assigned Regions" type="Array string" value="{Upstream}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Upstream}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-        <Parameter name="Values" type="Array double" value="{4e5, 4e5}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Values" type="Array(double)" value="{4e5, 4e5}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Downstream BC">
-      <Parameter name="Assigned Regions" type="Array string" value="{Downstream}"/>
+      <Parameter name="Assigned Regions" type="Array(string)" value="{Downstream}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
-        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
-	<Parameter name="Values" type="Array double" value="{2e5, 2e5}"/>	 		
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+	<Parameter name="Values" type="Array(double)" value="{2e5, 2e5}"/>	 		
       </ParameterList>
     </ParameterList>
 
@@ -196,7 +196,7 @@
 
     <ParameterList name="Time Macros">
       <ParameterList name="Steady State">
-	<Parameter name="Values" type="Array double" value="{0.}"/>
+	<Parameter name="Values" type="Array(double)" value="{0.}"/>
       </ParameterList>
     </ParameterList>
 
@@ -215,7 +215,7 @@
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="steady-flow"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macro" type="Array string" value="{Steady State}"/>
+      <Parameter name="Time Macro" type="Array(string)" value="{Steady State}"/>
     </ParameterList>
 
   </ParameterList>

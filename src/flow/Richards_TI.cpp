@@ -62,6 +62,10 @@ void Richards_PK::fun(
       }
     }
   }
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
+     std::printf("Richards PK: evaluating functional at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
+  }
 }
 
 

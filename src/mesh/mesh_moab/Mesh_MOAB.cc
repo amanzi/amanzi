@@ -164,6 +164,31 @@ namespace AmanziMesh
 
 }
 
+//--------------------------------------
+// Constructor - Construct a new mesh from a subset of an existing mesh
+//--------------------------------------
+
+Mesh_MOAB::Mesh_MOAB (const Mesh *inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+Mesh_MOAB::Mesh_MOAB (const Mesh_MOAB& inmesh, 
+                      const std::vector<std::string>& setnames, 
+                      const Entity_kind setkind,
+                      const bool flatten,
+                      const bool extrude)
+{  
+  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
+  Exceptions::amanzi_throw(mesg);
+}
+
+
 
 Mesh_MOAB::~Mesh_MOAB() {
   delete cell_map_wo_ghosts_;
@@ -1749,37 +1774,6 @@ void Mesh_MOAB::cell_get_node_adj_cells(const Entity_ID cellid,
 }
 
 
-    
-//
-// Mesh Topology for viz  
-//----------------------
-//
-// We need a special function because certain types of degenerate
-// hexes will not be recognized as any standard element type (hex,
-// pyramid, prism or tet). The original topology of this element 
-// without any collapsed nodes will be returned by this call.
-
-
-// Original cell type 
-
-Cell_type Mesh_MOAB::cell_get_type_4viz(const Entity_ID cellid) const 
-{
-  return HEX;
-}
-    
-    
-// See cell_get_nodes for details on node ordering
-
-void Mesh_MOAB::cell_get_nodes_4viz (const Entity_ID cellid, 
-				     Entity_ID_List *nodeids) const
-{
-  cell_get_nodes(cellid, nodeids);
-}
-    
-    
-
-
-
 // Epetra map for cells - basically a structure specifying the
 // global IDs of cells owned or used by this processor
 
@@ -1962,7 +1956,7 @@ void Mesh_MOAB::init_node_map ()
 }
 
 
-unsigned int Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const {
+Entity_ID Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const {
   MBEntityHandle ent;
   Entity_ID gid;
 

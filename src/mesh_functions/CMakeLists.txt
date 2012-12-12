@@ -30,9 +30,6 @@ include_directories(${MESH_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-# Need to move this up to the root -- lpritch
-add_definitions("-DUSE_MPI")
-
 #
 # Library: mesh_functions
 #

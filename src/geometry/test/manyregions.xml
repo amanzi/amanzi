@@ -1,36 +1,36 @@
 <ParameterList name="Regions">
   <ParameterList name="Top Section">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="String" value="Sideset1"/>
-      <Parameter name="File" type="String" value="mesh.exo"/>
-      <Parameter name="Format" type="String" value="Exodus II"/>
-      <Parameter name="Entity" type="String" value="FACE"/>
+      <Parameter name="Label" type="string" value="Sideset1"/>
+      <Parameter name="File" type="string" value="mesh.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="FACE"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top Section">
     <ParameterList name="Region: Box">
-      <Parameter name="Low Coordinate" type="Array double" value="{9, 8, 3}"/>
-      <Parameter name="High Coordinate" type="Array double" value="{11, 1.5, 1}"/>
+      <Parameter name="Low Coordinate" type="Array(double)" value="{9, 8, 3}"/>
+      <Parameter name="High Coordinate" type="Array(double)" value="{11, 1.5, 1}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top Section">
     <ParameterList name="Region: Box">
-      <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 5}"/>
-      <Parameter name="High Coordinate" type="Array double" value="{4, 5, 8}"/>
+      <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 5}"/>
+      <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 8}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Middle">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="String" value="CellSet2"/>
-      <Parameter name="File" type="String" value="mesh.exo"/>
-      <Parameter name="Format" type="String" value="Exodus II"/>
-      <Parameter name="Entity" type="String" value="CELL"/>
+      <Parameter name="Label" type="string" value="CellSet2"/>
+      <Parameter name="File" type="string" value="mesh.exo"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="Entity" type="string" value="CELL"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Side Plane">
     <ParameterList name="Region: Plane">
-      <Parameter name="Location" type="Array double" value="{2, 3, 5}"/>
-      <Parameter name="Direction" type="Array double" value="{1, 1, 0}"/>
+      <Parameter name="Location" type="Array(double)" value="{2, 3, 5}"/>
+      <Parameter name="Direction" type="Array(double)" value="{1, 1, 0}"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

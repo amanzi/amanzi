@@ -4,7 +4,10 @@
 # Build TPL:  HYPRE 
 #    
 # --- Define all the directories and common external project flags
-define_external_project_args(HYPRE TARGET hypre BUILD_IN_SOURCE)
+define_external_project_args(HYPRE 
+                             TARGET hypre
+                             DEPENDS ${MPI_PROJECT}
+                             BUILD_IN_SOURCE)
 
 # --- Define configure parameters
 
@@ -23,6 +26,36 @@ set(cpp_flag_list
     ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(hypre_cppflags ${cpp_flags_list})
+
+# Disable OpenMP with HYPRE for now
+# Is OpenMP available
+#if ( ENABLE_OpenMP )
+# find_package(OpenMP)
+
+ set(hypre_openmp_opt)
+# if ( OPENMP_FOUND )
+#   set(hypre_openmp_opt --with-openmp)
+# endif()
+#else()
+ set(hypre_openmp_opt --without-openmp)
+#endif()
+print_variable(hypre_openmp_opt)
+
+# Locate LAPACK and BLAS
+
+set(hypre_blas_opt)
+find_package(BLAS)
+if ( BLAS_FOUND )
+  set(hypre_blas_opt --with-blas)
+endif()
+
+set(hypre_lapack_opt)
+find_package(LAPACK)
+if ( LAPACK_FOUND )
+  set(hypre_lapack_opt --with-lapack)
+endif()
+
+set(hypre_fortran_opt --disable-fortran)
 
 # Build the configure script
 set(HYPRE_sh_configure ${HYPRE_prefix_dir}/hypre-configure-step.sh)
@@ -88,3 +121,9 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
 		    INSTALL_COMMAND  ${HYPRE_INSTALL_COMMAND}
                     # -- Output control
                     ${HYPRE_logging_args})
+
+# --- Useful variables that depend on HYPRE
+include(BuildLibraryName)
+set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
+build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")

@@ -13,9 +13,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "Mesh_MSTK.hh"
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
@@ -46,12 +46,22 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/transport_2D.xml";
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  // DEPRECATED   updateParametersFromXmlFile(xmlFileName, &parameter_list);
+
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  parameter_list = xmlreader.getParameters();
 
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_10x10_ss.exo", (Epetra_MpiComm *)comm, 2, gm));
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
   
   /* create a MPC state with two component */
   int num_components = 2;

@@ -24,6 +24,7 @@ Usage:
 
 #include "Flow_State.hpp"
 #include "Flow_constants.hpp"
+#include "Flow_typedefs.hpp"
 #include "Matrix_MFD.hpp"
 #include "TI_Specs.hpp"
 
@@ -53,29 +54,39 @@ class Flow_PK : public BDF2::fnBase {
   virtual void CommitState(Teuchos::RCP<Flow_State> FS) = 0;
 
   // boundary condition members
+  void ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
+                                std::vector<double>& rainfall_factor);
   void ProcessBoundaryConditions(
       BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
       BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
       const Epetra_Vector& pressure_faces, const double atm_pressure,
-      std::vector<int>& bc_markers, std::vector<double>& bc_values);
+      const std::vector<double>& rainfall_factor,
+      const std::vector<int>& bc_submodel,
+      std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  void ApplyBoundaryConditions(std::vector<int>& bc_markers,
+  void ApplyBoundaryConditions(std::vector<int>& bc_model,
                                std::vector<double>& bc_values,
                                Epetra_Vector& pressure_faces);
 
+  void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
   void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
-  double WaterVolumeChangePerSecond(std::vector<int>& bc_markers, Epetra_Vector& darcy_flux);
+  double WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Vector& darcy_flux);
 
   // gravity members
-  void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
-                            const Epetra_Vector& Krel_cells,
-                            const Epetra_Vector& Krel_faces, 
-                            Matrix_MFD* matrix);
-  void AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
-                                  const Epetra_Vector& Krel_cells,
-                                  const Epetra_Vector& Krel_faces,
-                                  Epetra_Vector& darcy_mass_flux);
+  void AddGravityFluxes_MFD(
+      std::vector<WhetStone::Tensor>& K,
+      const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+      Matrix_MFD* matrix);
+  void AddGravityFluxes_DarcyFlux(
+      std::vector<WhetStone::Tensor>& K,
+      const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
+      Epetra_Vector& darcy_mass_flux);
+
+  // Picard-Newton members
+  void AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,
+                           const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,
+                           Matrix_MFD* matrix);
 
   // access members 
   Teuchos::RCP<Flow_State> flow_state() { return FS; }
@@ -91,10 +102,12 @@ class Flow_PK : public BDF2::fnBase {
   
   // miscallenous members
   Epetra_Map* CreateSuperMap();
+  void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
   void IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
   // io members
   void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
+  void ProcessStringSourceDistribution(const std::string name, int* method);
   void ProcessStringMFD3D(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
   void ProcessStringPreconditioner(const std::string name, int* preconditioner);

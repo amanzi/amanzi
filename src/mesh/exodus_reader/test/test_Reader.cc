@@ -26,7 +26,7 @@ struct Exodus_file_holder
 
 struct Tiny_File : Exodus_file_holder
 {
-  Tiny_File () : Exodus_file_holder (test_file_path("hex_2x2x2_ss.exo").c_str()) { }
+  Tiny_File () : Exodus_file_holder (test_file_path("hex_1x1x1_ss.exo").c_str()) { }
 };
 
 struct Big_File : Exodus_file_holder
@@ -34,9 +34,9 @@ struct Big_File : Exodus_file_holder
   Big_File () : Exodus_file_holder (test_file_path("htc_rad_test-random.exo").c_str()) { }
 };
 
-struct quad_4x4 : Exodus_file_holder
+struct quad_3x3 : Exodus_file_holder
 {
-  quad_4x4 () : Exodus_file_holder (test_file_path("quad_4x4_ss.exo").c_str()) { }
+  quad_3x3 () : Exodus_file_holder (test_file_path("quad_3x3_ss.exo").c_str()) { }
 };
 
 struct prism : Exodus_file_holder
@@ -56,23 +56,23 @@ struct mixed : Exodus_file_holder
 
 struct hex_split_2_0 : Exodus_file_holder
 {
-  hex_split_2_0() : Exodus_file_holder (split_file_path("hex_4x4x4_ss.par.2.0").c_str()) { }
+  hex_split_2_0() : Exodus_file_holder (split_file_path("hex_3x3x3_ss.par.2.0").c_str()) { }
 };
 
 struct hex_split_2_1 : Exodus_file_holder
 {
-  hex_split_2_1() : Exodus_file_holder (split_file_path("hex_4x4x4_ss.par.2.1").c_str()) { }
+  hex_split_2_1() : Exodus_file_holder (split_file_path("hex_3x3x3_ss.par.2.1").c_str()) { }
 };
 
 
 struct hex11_split_2_0 : Exodus_file_holder
 {
-  hex11_split_2_0() : Exodus_file_holder (split_file_path("hex_11x11x11_ss.par.2.0").c_str()) { }
+  hex11_split_2_0() : Exodus_file_holder (split_file_path("hex_10x10x10_ss.par.2.0").c_str()) { }
 };
 
 struct hex11_split_2_1 : Exodus_file_holder
 {
-  hex11_split_2_1() : Exodus_file_holder (split_file_path("hex_11x11x11_ss.par.2.1").c_str()) { }
+  hex11_split_2_1() : Exodus_file_holder (split_file_path("hex_10x10x10_ss.par.2.1").c_str()) { }
 };
 
 
@@ -164,10 +164,10 @@ SUITE (Big_File)
 
 }
 
-SUITE (quad_4x4)
+SUITE (quad_3x3)
 {
 
-  TEST_FIXTURE (quad_4x4, Parameters)
+  TEST_FIXTURE (quad_3x3, Parameters)
   {
     const Amanzi::AmanziMesh::Data::Parameters &params (data->parameters ());
 
@@ -183,7 +183,7 @@ SUITE (quad_4x4)
     CHECK_EQUAL (params.num_side_sets_, 11);
   };
 
-  TEST_FIXTURE (quad_4x4, Side_Sets)
+  TEST_FIXTURE (quad_3x3, Side_Sets)
   {
 
     {

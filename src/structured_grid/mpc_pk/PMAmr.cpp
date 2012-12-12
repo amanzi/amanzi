@@ -160,11 +160,17 @@ PMAmr::init (Real t_start,
                        cumtime, dt_level[0], level_steps[0], 0);
 
         if (write_plot) {
+            int file_name_digits_tmp = file_name_digits;
+            file_name_digits = plot_file_digits;
             writePlotFile();
+            file_name_digits = file_name_digits_tmp;
         }
 
         if (write_check) {
+            int file_name_digits_tmp = file_name_digits;
+            file_name_digits = chk_file_digits;
             checkPoint();
+            file_name_digits = file_name_digits_tmp;
         }
     }
 }
@@ -506,12 +512,18 @@ PMAmr::coarseTimeStep (Real stop_time)
 
     if (write_check || (to_checkpoint==1))
     {
+        int file_name_digits_tmp = file_name_digits;
+        file_name_digits = chk_file_digits;
         checkPoint();
+        file_name_digits = file_name_digits_tmp;
     }
 
     if (write_plot)
     {
+        int file_name_digits_tmp = file_name_digits;
+        file_name_digits = plot_file_digits;
         writePlotFile();
+        file_name_digits = file_name_digits_tmp;
     }
 
     if (to_stop)

@@ -25,8 +25,6 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_SIMPLE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
@@ -41,9 +39,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
-
-# Need to move this to roo level -- lpritch
-add_definitions("-DUSE_MPI")
 
 #
 # Library: time_integration

@@ -37,7 +37,12 @@ void Flow_PK::ProcessSublistTimeIntegration(
     ti_specs.clip_saturation = list.get<double>("clipping saturation value", -1.0);
     ti_specs.clip_pressure = list.get<double>("clipping pressure value", -1e+10);
 
-    ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints", false);
+    if (list.isParameter("enforce pressure-lambda constraints"))
+        ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints");
+
+    ti_specs.dT_method = 0;
+    std::string dT_name = list.get<string>("time stepping strategy", "simple");
+    if (dT_name == "adaptive") ti_specs.dT_method = FLOW_DT_ADAPTIVE;
 
     Teuchos::ParameterList& tmp_list = list.sublist(name);
     ti_specs.residual_tol = tmp_list.get<double>("convergence tolerance", FLOW_TI_NONLINEAR_RESIDUAL_TOLERANCE);
@@ -76,6 +81,25 @@ void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
   } else if (name == "extreme") {
     *verbosity = FLOW_VERBOSITY_EXTREME;
     verbosity_AztecOO = AZ_all;
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "none") {
+    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_NONE;
+  } else if (name == "volume") {
+    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_VOLUME;
+  } else if (name == "permeability") {
+    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_PERMEABILITY;
+  } else {
+    msg << "Darcy PK: unknown source normalization method has been specified.";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
