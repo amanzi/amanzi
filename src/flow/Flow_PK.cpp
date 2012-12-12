@@ -312,8 +312,8 @@ void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
                                   const Epetra_Vector& flux,
                                   Matrix_MFD_PLambda* matrix_operator)
 {
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Ucc_cells = matrix_operator->Ucc_cells();
-  Ucc_cells.clear();
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces = matrix_operator->Acc_faces();
+  Acc_faces.clear();
 
   AmanziMesh::Entity_ID_List cells;
 
@@ -321,13 +321,13 @@ void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Ucc(ncells, ncells);
+    Teuchos::SerialDenseMatrix<int, double> Bcc(ncells, ncells);
 
     double factor = flux[f] * dKdP_faces[f] / Krel_faces[f];
-    Ucc(0, 0) = factor;
-    Ucc(0, 1) = -factor;
+    Bcc(0, 0) = factor;
+    Bcc(0, 1) = -factor;
 
-    Ucc_cells.push_back(Ucc);
+    Acc_faces.push_back(Bcc);
   }
 }
 

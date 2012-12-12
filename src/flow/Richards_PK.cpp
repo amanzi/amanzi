@@ -365,7 +365,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     if (ini_with_darcy) {
       std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
       if (ti_specs.clip_saturation > 0.0) {
-        std::printf("%7s clipping saturation value: %5.2g [-]\n", "", ti_specs.clip_saturation);
+        std::printf("%7s clipping saturation value: %9.4g [-]\n", "", ti_specs.clip_saturation);
       } else if (ti_specs.clip_pressure > -5 * atm_pressure) {
         std::printf("%7s clipping pressure value: %9.4g [Pa]\n", "", ti_specs.clip_pressure);
       }
