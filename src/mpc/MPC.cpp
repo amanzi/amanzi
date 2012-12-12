@@ -523,7 +523,7 @@ void MPC::cycle_driver() {
             Amanzi::timer_manager.start("Flow PK");
             if (flow_enabled) FPK->InitTransient(S->get_time(), mpc_dT);
             Amanzi::timer_manager.stop("Flow PK");
-          }
+	  }
         }
       }
       // steady flow is special, it might redo a time step, so we print
@@ -779,6 +779,9 @@ void MPC::cycle_driver() {
       if (observations) observations->make_observations(*S);
 
       // write visualization if requested
+      // force a vis dump and checkpoint in certain cases,
+      // such as at the end of the simulation, and
+      // at switch-over time
       bool force(false);
       if (abs(S->get_time() - T1) < 1e-7) {
         force = true;
@@ -800,8 +803,18 @@ void MPC::cycle_driver() {
         S->write_vis(*visualization, chemistry_enabled, force);
       }
 
+      
+      // figure out if in the next iteration, we
+      // will reset the time integrator, if so we
+      // force a checkpoint
+      bool force_checkpoint(false);
+      if (! ti_mode == STEADY) 
+        if (!reset_times_.empty()) 
+	  if (S->get_time() == reset_times_.front())
+	    force_checkpoint = true;
+
       // write restart dump if requested
-      restart->dump_state(*S, force);
+      restart->dump_state(*S, force || force_checkpoint);
       Amanzi::timer_manager.stop("I/O");
 
     }
