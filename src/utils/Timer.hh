@@ -13,6 +13,7 @@
 #include <string>
 #include <iostream>
 
+#include "mpi.h"
 
 namespace Amanzi 
 {
@@ -44,6 +45,11 @@ public:
   clock_t  getTicks();
   double   getTime();
   ~Timer();
+  void     parSync(MPI_Comm);
+
+  double   getAvgTime() { return _avg_elapsed; }
+  double   getMaxTime() { return _max_elapsed; }
+  double   getMinTime() { return _min_elapsed; }
 
 private:
   std::string     _name;               //!< Name of the timer (defaults to "Timer + _numTimerInstances")
@@ -55,6 +61,8 @@ private:
   clock_t         _runningTotal;       //!< Used to keep track of running totals, etc.
   unsigned        _numInvocations;     //!< Number of times the timer has been started/restarted
   Type            _type;               //!< Type of the timer (average, accumulate, etc.)
+
+  double          _max_elapsed, _min_elapsed, _avg_elapsed;
 };
 
 } //end of namespace Amanzi

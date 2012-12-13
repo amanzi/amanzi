@@ -10,7 +10,6 @@
 #include "Timer.hh"
 #include <sstream>
 
-
 namespace Amanzi
 {
 
@@ -22,7 +21,7 @@ unsigned Timer::_numTimerInstances = 0;
  *  \brief      Includes an option for naming the timer - for printout
  *  \param[in]  Name of the timer
  */
-Timer::Timer(std::string name, Type type) : _startTime(0), _stopTime(0), _running(false), _name(name), _type(type), _runningTotal(0), _numInvocations(1)
+Timer::Timer(std::string name, Type type) : _startTime(0), _stopTime(0), _running(false), _name(name), _type(type), _runningTotal(0), _numInvocations(1), _avg_elapsed(0.0), _max_elapsed(0.0), _min_elapsed(0.0)
 {
   // We increment the number of timer instances and grab the current number 
   // for our own
@@ -167,10 +166,10 @@ double Timer::getTime()
     switch (_type)
     {
       case ACCUMULATE:
-        return ( _runningTotal+(clock() - _startTime) ) / (double)CLOCKS_PER_SEC;
+        return ( _runningTotal+(clock() - _startTime) ) / static_cast<double>(CLOCKS_PER_SEC);
         break;
       case ONCE:
-        return ( clock() - _startTime ) / (double)CLOCKS_PER_SEC;
+        return ( clock() - _startTime ) / static_cast<double>(CLOCKS_PER_SEC);
         break;
       default:
         throw "That type of timer doesn't make sense to grab while running";
@@ -179,27 +178,40 @@ double Timer::getTime()
   }
   else
   {
+    double time(0.0);
     switch (_type)
     {
       case AVERAGE:
-        return ( _runningTotal / _numInvocations ) / (double)CLOCKS_PER_SEC;
+        return ( _runningTotal / _numInvocations ) / static_cast<double>(CLOCKS_PER_SEC);
         break;
       case ACCUMULATE:
-        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        return ( _runningTotal / static_cast<double>(CLOCKS_PER_SEC) );
         break;
       case ONCE:
-        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        return ( _runningTotal / static_cast<double>(CLOCKS_PER_SEC) );
         break;
       case MAXIMUM:
-        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        return ( _runningTotal / static_cast<double>(CLOCKS_PER_SEC) );
         break;
       case MINIMUM:
-        return ( _runningTotal / (double)CLOCKS_PER_SEC );
+        return ( _runningTotal / static_cast<double>(CLOCKS_PER_SEC) );
         break;
       default:
         break;
-    }
+    } 
   }
+}
+
+void Timer::parSync(MPI_Comm comm) {
+
+  double elapsed = getTime();
+
+  MPI_Allreduce(&elapsed, &_max_elapsed, 1, MPI_DOUBLE, MPI_MAX, comm);
+  MPI_Allreduce(&elapsed, &_min_elapsed, 1, MPI_DOUBLE, MPI_MIN, comm);
+  MPI_Allreduce(&elapsed, &_avg_elapsed, 1, MPI_DOUBLE, MPI_SUM, comm);
+  int numpe(1);
+  MPI_Comm_size(comm, &numpe);
+  _avg_elapsed /= static_cast<double>(numpe);
 }
 
 /**
@@ -212,7 +224,8 @@ std::ostream& operator<<(std::ostream& os, Timer& t)
   if (t._running)
     os  << t._name << " is currently at " << t.getTime() << " seconds.";
   else
-    os << t._name << " completed in " << t.getTime() << " seconds.";
+    os << t._name << " completed in avg=" << t.getAvgTime() << ", min="  << t.getMinTime() << 
+        ", max=" << t.getMaxTime() << " seconds.";
 
   return os;
 }

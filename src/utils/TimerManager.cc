@@ -120,7 +120,7 @@ std::ostream& operator <<(std::ostream& os, TimerManager& tm) {
 
   // Print info for each of the timers
   for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=tm._timer.begin(); it!=tm._timer.end(); ++it) {
-    os.width(40);
+    os.width(30);
     os.fill('.');
     os << *(it->second) << std::endl;
   }
@@ -128,4 +128,16 @@ std::ostream& operator <<(std::ostream& os, TimerManager& tm) {
   return os;
 }
 
+
+void TimerManager::parSync(MPI_Comm comm) {
+ for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
+   (it->second)->parSync(comm);
+ 
+}
+
+
+
+
 } // end of namespace Amanzi
+
+

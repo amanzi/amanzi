@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
     }
  
     Amanzi::timer_manager.stop( "Full Simulation" );
+    Amanzi::timer_manager.parSync(mpi_comm);
     if (rank == 0) {
         std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
         
