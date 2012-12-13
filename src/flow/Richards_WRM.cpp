@@ -361,11 +361,8 @@ void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g,
   FS->CopyMasterMultiCell2GhostMultiCell(Kg_copy);
 #endif
 
-  AmanziGeometry::Point Kg(dim);
-  Kg_unit.clear();
   for (int c = 0; c < ncells_wghost; c++) {
-    for (int i = 0; i < dim; i++) Kg[i] = Kg_copy[i][c];
-    Kg_unit.push_back(Kg);
+    for (int i = 0; i < dim; i++) Kg_unit[c][i] = Kg_copy[i][c];
   }
 } 
 

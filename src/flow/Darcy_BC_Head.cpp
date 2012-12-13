@@ -155,8 +155,6 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
     edges.push_back(p1);
   }
 #endif
-  // if (MyPID == 0) for (int i = 0; i < nedges; i++)
-  //   printf("i= %5d  x = %12.6f %12.6f  %12.6f\n", i, edges[i][0], edges[i][1], edges[i][2]);
 
   // calculate head shift
   double edge_length, tol_edge, a, b;

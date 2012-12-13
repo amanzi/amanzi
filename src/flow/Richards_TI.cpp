@@ -63,9 +63,9 @@ void Richards_PK::fun(
     }
   }
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Flow PK: evaluating functional at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
-  }
+  // DEBUG
+  // if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME)
+  //    std::printf("Flow PK: evaluating functional at T=%10.5e [sec] dT=%9.4e [sec]\n", Tp, dTp);
 }
 
 
@@ -85,10 +85,6 @@ void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, i
 {
   ComputePreconditionerMFD(u, preconditioner_, Tp, dTp, true);
   ierr = 0;
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Flow PK: updating preconditioner at T(sec)=%10.5e dT(sec)=%9.4e\n", Tp, dTp);
-  }
 }
 
 

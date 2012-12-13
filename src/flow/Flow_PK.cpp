@@ -194,7 +194,7 @@ void Flow_PK::ProcessBoundaryConditions(
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
   if (! flag_essential_bc && MyPID == 0 && verbosity >= FLOW_VERBOSITY_LOW) {
-    std::printf("Flow PK: WARNING: No essential boundary conditions, the solver may fail\n");
+    std::printf("Flow PK: WARNING: no essential boundary conditions, solver may fail\n");
   }
 
   // verbose output

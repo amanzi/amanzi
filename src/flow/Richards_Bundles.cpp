@@ -63,14 +63,15 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces)
       p_faces, atm_pressure, rainfall_factor,
       bc_submodel, bc_model, bc_values);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Flow PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
-  }
+  // DEBUG
+  // if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME)
+  //     std::printf("Flow PK: updating source/boundary data at T=%14.9e [sec]\n", Tp);
 }
 
 
 /* ******************************************************************
 * A wrapper for updating boundary conditions.
+* Warning: routine is marked as obsolete.
 ****************************************************************** */
 void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
 {
@@ -82,10 +83,6 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
       bc_pressure, bc_head, bc_flux, bc_seepage,
       p_faces, atm_pressure, rainfall_factor,
       bc_submodel, bc_model, bc_values);
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-     std::printf("Flow PK: updating boundary conditions at T(sec)=%14.9e\n", Tp);
-  }
 }
 
 

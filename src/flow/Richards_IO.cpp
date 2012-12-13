@@ -188,7 +188,7 @@ void Richards_PK::ProcessParameterList()
     ProcessStringErrorOptions(sss_list, &error_control_sss_);
 
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("Richards Problem: there is no sublist for steady-state calculations.\n");
+    printf("Flow PK: mandatory sublist for steady-state calculations is missing.\n");
   }
 
   // Time integrator for period III, called transient time integrator
@@ -210,7 +210,7 @@ void Richards_PK::ProcessParameterList()
     ProcessStringErrorOptions(trs_list, &error_control_trs_);
 
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("Warning: Richards Problem has no sublist <transient time integration>.\n");
+    printf("Flow PK: missing sublist \"transient time integrator\".\n");
   }
 
   // allowing developer to use non-standard simulation modes
@@ -374,7 +374,7 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     if (list.isParameter("calculate krel-pc curves")) {
-      std::printf("Flow PK: saving krel-pc curves in file krel_pc.txt\n");
+      std::printf("Flow PK: saving krel-pc curves in file krel_pc.txt...\n");
       ofstream ofile;
       ofile.open("krel_pc.txt");
 
@@ -393,7 +393,7 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
     }
 
     if (list.isParameter("calculate krel-sat curves")) {
-      std::printf("Flow PK: saving krel-sat curves in file krel_sat.txt\n");
+      std::printf("Flow PK: saving krel-sat curves in file krel_sat.txt...\n");
       ofstream ofile;
       ofile.open("krel_sat.txt");
 
@@ -424,14 +424,14 @@ void Richards_PK::AnalysisTI_Specs()
   Errors::Message msg;
   if (ti_specs_igs_.initialize_with_darcy) {
     if (ti_specs_sss_.initialize_with_darcy || ti_specs_trs_.initialize_with_darcy) { 
-      msg << "Flow PK: cannot re-initialize Darcy solver without developer password.";
+      msg << "Flow PK: cannot re-initialize pressure without developer password.";
       Exceptions::amanzi_throw(msg);
     }
   }
 
   if (ti_specs_igs_.dT_method == FLOW_DT_ADAPTIVE || 
       ti_specs_sss_.dT_method == FLOW_DT_ADAPTIVE) {
-    msg << "Flow PK: adaptive time stepping is allowed only for transient phase.";
+    msg << "Flow PK: adaptive time stepping is allowed only for transient TI phase.";
     Exceptions::amanzi_throw(msg);
   }
 }

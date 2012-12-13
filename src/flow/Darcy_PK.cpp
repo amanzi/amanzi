@@ -282,7 +282,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
-    std::printf("Flow PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+    std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
   }
 
   // Well modeling
@@ -309,12 +309,13 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
-    std::printf("Flow PK: initializing transient flow: T(sec)=%10.5e dT(sec)=%9.4e\n", T0, dT0);
-    std::printf("          source/sink distribution method (id) %1d\n", src_sink_distribution);
-    std::printf("          time stepping strategy is %2d\n", ti_specs_sss.dT_method);
+    std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs_sss.ti_method_name.c_str());
+    std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
+    std::printf("%5s time stepping strategy id %2d\n", "", ti_specs_sss.dT_method);
+    std::printf("%5s source/sink distribution method id %2d\n", "", src_sink_distribution);
+    std::printf("%5s preconditioner: \"%s\"\n", " ", ti_specs_sss.preconditioner_name.c_str());
     if (ti_specs_sss.initialize_with_darcy)
-        std::printf("          will enforce consistency of initial and boundary data\n");
-    std::printf("***********************************************************\n");
+        std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
   }
 
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -332,7 +333,8 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
-    std::printf("Flow PK: successful and passed matrices: %8d %8d\n", nokay, npassed);   
+    std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
+    std::printf("***********************************************************\n");
   }
 
   // Well modeling
@@ -400,7 +402,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   double linear_residual = solver->ScaledResidual();
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::printf("Flow PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
 }
 
@@ -471,7 +473,7 @@ int Darcy_PK::Advance(double dT_MPC)
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
-    std::printf("Flow PK: pressure solver(%8.3e, %4d)\n", linear_residual, num_itrs);
+    std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
 
   // calculate time derivative and 2nd-order solution approximation

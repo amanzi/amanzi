@@ -217,7 +217,7 @@ void Richards_PK::InitPK()
 
   if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY || 
       Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-    // Kgravity_unit.resize(ncells_wghost);  Resize does not work properly.
+    Kgravity_unit.resize(ncells_wghost);
     SetAbsolutePermeabilityTensor(K);
     CalculateKVectorUnit(gravity_, Kgravity_unit);
   }
@@ -360,6 +360,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
     std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
     std::printf("%5s time stepping strategy id %2d\n", "", ti_specs.dT_method);
+    std::printf("%5s source/sink distribution method id %2d\n", "", src_sink_distribution);
     std::printf("%5s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
 
     if (ini_with_darcy) {
@@ -616,7 +617,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
     mass_bc += mass_bc_dT;
     if (MyPID == 0)
-        std::printf("Flow PK: water mass [kg] = %10.5e, total boundary flux [kg] = %10.5e\n", mass_amanzi, mass_bc);
+        std::printf("Flow PK: water mass =%10.5e [kg], total boundary flux = %10.5e [kg]\n", mass_amanzi, mass_bc);
   }
 
   dT = dTnext;
