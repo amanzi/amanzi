@@ -204,7 +204,7 @@ void Flow_PK::ProcessBoundaryConditions(
     double area_tmp = area_seepage;
     mesh_->get_comm()->SumAll(&missed_tmp, &missed, 1);
     mesh_->get_comm()->SumAll(&area_tmp, &area_seepage, 1);
-    // mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
+    mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
       std::printf("Flow PK: seepage face has changed: %9.4e [m^2]\n", area_seepage);

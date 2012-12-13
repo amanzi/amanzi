@@ -390,10 +390,11 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
 ****************************************************************** */
 double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew)
 { 
+  double relaxation = 1.0;
+
   Epetra_Vector dSdP(mesh_->cell_map(false));
   DerivedSdP(uold, dSdP);
 
-  double relaxation = 1.0;
   for (int c = 0; c < ncells_owned; c++) {
     double diff = dSdP[c] * fabs(unew[c] - uold[c]);
     if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);

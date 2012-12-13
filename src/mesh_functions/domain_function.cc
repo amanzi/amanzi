@@ -101,6 +101,9 @@ void DomainFunction::ComputeDistribute(double t)
       domain_volume += mesh_->cell_volume(*d);
     }
 
+    double volume_tmp = domain_volume;
+    mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
+
     for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
       for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
@@ -127,6 +130,9 @@ void DomainFunction::ComputeDistribute(double t, double* weight)
     for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
       domain_volume += weight[*d] * mesh_->cell_volume(*d);
     }
+
+    double volume_tmp = domain_volume;
+    mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
     for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
