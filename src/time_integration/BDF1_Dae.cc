@@ -368,6 +368,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve failed " << itr << " iterations (max), error = " << error << std::endl;
       }
+      state.currentpclag = 0;
       throw itr;
     }
 
@@ -469,6 +470,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       if (itr < state.minitr) {
 	state.currentpclag = std::min(state.currentpclag+1, state.maxpclag);
 	state.ntol_multiplier_current = std::max(1.0,state.ntol_multiplier_current*state.ntol_multiplier_damp);
+	throw itr;
+      }
+      if (itr > state.mitr) {
+	state.currentpclag = 0;
 	throw itr;
       }
       if (itr > state.maxitr) {
