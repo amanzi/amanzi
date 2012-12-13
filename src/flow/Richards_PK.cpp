@@ -279,7 +279,7 @@ void Richards_PK::InitializeSteadySaturated()
 
 
 /* ******************************************************************
-* Additional initialization of itial guess calculation.
+* Specific initialization of the initial pressure guess calculation.
 ****************************************************************** */
 void Richards_PK::InitPicard(double T0)
 {

@@ -315,17 +315,29 @@ void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces = matrix_operator->Acc_faces();
   Acc_faces.clear();
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells, faces;
+  std::vector<int> dirs;
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     Teuchos::SerialDenseMatrix<int, double> Bcc(ncells, ncells);
-
     double factor = flux[f] * dKdP_faces[f] / Krel_faces[f];
-    Bcc(0, 0) = factor;
-    Bcc(0, 1) = -factor;
+
+    if (ncells == 1) {
+      if (factor > 0.0) Bcc(0, 0) = factor;
+    } else {
+      int c = cells[0];
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      int k = FindPosition(f, faces);
+      factor *= dirs[k];
+
+      int i = (factor > 0.0) ? 0 : 1;
+      Bcc(i, i) = fabs(factor);
+      Bcc(1 - i, i) = -fabs(factor);
+    }
 
     Acc_faces.push_back(Bcc);
   }
@@ -449,6 +461,18 @@ double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Ve
     }
   }
   return volume;
+}
+
+
+/* ******************************************************************
+* Returns position of face f in the list faces.  
+****************************************************************** */
+int Flow_PK::FindPosition(int f, AmanziMesh::Entity_ID_List faces)
+{
+  for (int i = 0; i < faces.size(); i++) {
+    if (faces[i] == f) return i;
+  }
+  return -1;
 }
 
 

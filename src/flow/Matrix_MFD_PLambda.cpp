@@ -65,7 +65,6 @@ void Matrix_MFD_PLambda::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_
   graph.GlobalAssemble();  // Symbolic graph is complete.
 
   // create global matrices
-  Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
   APLambda_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, graph));
   APLambda_->GlobalAssemble();
 
@@ -118,17 +117,19 @@ void Matrix_MFD_PLambda::AssembleGlobalMatrices()
   }
 
   // advection part
-  AmanziMesh::Entity_ID_List cells;
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int f = 0; f < nfaces; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
+  if (Acc_faces_.size() > 0) {
+    AmanziMesh::Entity_ID_List cells;
+    for (int f = 0; f < nfaces; f++) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
 
-    for (int n = 0; n < ncells; n++) dof_GID[n] = cells[n];
+      for (int n = 0; n < ncells; n++) dof_GID[n] = cells[n];
 
-    Teuchos::SerialDenseMatrix<int, double>& Bcc = Acc_faces_[f];
-    APLambda_->SumIntoGlobalValues(ncells, dof_GID, Bcc.values());
+      Teuchos::SerialDenseMatrix<int, double>& Bcc = Acc_faces_[f];
+      APLambda_->SumIntoGlobalValues(ncells, dof_GID, Bcc.values());
+    }
   }
   APLambda_->GlobalAssemble();
 

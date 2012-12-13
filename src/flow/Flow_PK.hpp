@@ -105,6 +105,7 @@ class Flow_PK : public BDF2::fnBase {
   Epetra_Map* CreateSuperMap();
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
   void IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
+  int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // io members
   void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
