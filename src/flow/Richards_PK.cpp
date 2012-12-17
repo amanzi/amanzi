@@ -175,10 +175,10 @@ void Richards_PK::InitPK()
 
   // Select a proper matrix class
   if (experimental_solver) {
-    matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
-    preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
-    // matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
-    // preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
+//     matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
+//     preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
+    matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
+    preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
   } else {
     matrix_ = new Matrix_MFD(FS, *super_map_);
     preconditioner_ = new Matrix_MFD(FS, *super_map_);
@@ -235,7 +235,7 @@ void Richards_PK::InitPK()
     PopulateMapC2MB();
   }
 
-  // data for Picard-Newton
+  // data for Picard-Newton and Analytical Jacobian
   dKdP_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   dKdP_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
 
@@ -671,6 +671,17 @@ void Richards_PK::ComputePreconditionerMFD(
   if (flag_update_ML) AddTimeDerivative_MFD(*u_cells, dTp, matrix_operator);
   matrix_operator->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_operator->AssembleGlobalMatrices();
+ 
+  if (experimental_solver&&flag_update_ML){
+          Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_operator);
+          if (matrix_tpfa==0) std::cerr<<"Richards_PK:: cannot convert to Matrix_MFD_TPFA\n";
+
+          matrix_tpfa -> AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
+                                          *Krel_cells, *dKdP_cells,
+                                          *Krel_faces, *dKdP_faces);
+
+  }
+
   if (flag_update_ML) {
     matrix_operator->ComputeSchurComplement(bc_model, bc_values);
     matrix_operator->UpdatePreconditioner();

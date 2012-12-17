@@ -136,7 +136,10 @@ double WRM_vanGenuchten::dKdPc(double pc)
     else
       dkds = (2 * (1.0 - y) + x / (1.0 - x)) * se; 
 
+    dkds /= (1 - sr_);
+
     return dkds * dsdp;
+
   } else {
     return 0.0;
   }
