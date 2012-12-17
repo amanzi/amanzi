@@ -217,7 +217,6 @@ void Richards_PK::InitPK()
 
   if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY || 
       Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-    Kgravity_unit.resize(ncells_wghost);
     SetAbsolutePermeabilityTensor(K);
     CalculateKVectorUnit(gravity_, Kgravity_unit);
   }
@@ -429,7 +428,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
     std::printf("%5s discretization method: \"%s\"\n", "", mfd3d_method_name.c_str());
-    std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
+    std::printf("%7s successful and passed matrices: %d %d\n", "", nokay, npassed);   
     std::printf("***********************************************************\n");
   }
 
@@ -679,11 +678,6 @@ void Richards_PK::ComputePreconditionerMFD(
     rhs = matrix_operator->rhs();
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
   }
-
-  // DEBUG
-  // Matrix_Audit audit(mesh_, matrix_opeartor);
-  // audit.InitAudit();
-  // audit.RunAudit();
 }
 
 

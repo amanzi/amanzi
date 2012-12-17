@@ -281,11 +281,12 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   Epetra_Vector& flux = FS->ref_darcy_flux();
+  Epetra_Vector  flux_new(flux);
 
   if (is_matrix_symmetric)
       solver->SetAztecOption(AZ_solver, AZ_cg);
   else 
-      solver->SetAztecOption(AZ_solver, AZ_gmres);
+      solver->SetAztecOption(AZ_solver, AZ_cgs);
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -326,18 +327,19 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     }
 
     // create algebraic problem
+    rhs = matrix_->rhs();  // export RHS from the matrix class
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
-    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_faces, flux, static_cast<Matrix_MFD_PLambda*>(matrix_));
+    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_cells, flux, *rhs, static_cast<Matrix_MFD_PLambda*>(matrix_));
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
-    rhs = matrix_->rhs();  // export RHS from the matrix class
 
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
+    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_cells, flux, residual, static_cast<Matrix_MFD_PLambda*>(preconditioner_));
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleGlobalMatrices();
     preconditioner_->ComputeSchurComplement(bc_model, bc_values);
@@ -354,7 +356,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    solver->Iterate((long long int)max_itrs_linear, convergence_tol_linear);
+    solver->Iterate(max_itrs_linear, convergence_tol_linear);
     int num_itrs_linear = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
 
@@ -367,14 +369,21 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
           "", itrs, L2error, relaxation, linear_residual, num_itrs_linear);
     }
 
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux_new);
+    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux_new);
+
     int ndof = ncells_owned + nfaces_owned;
     for (int c = 0; c < ndof; c++) {
       solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
       solution_old[c] = solution_new[c];
     }
 
-    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
+    for (int f = 0; f < nfaces_owned; f++) {
+      flux[f] = (1.0 - relaxation) * flux[f] + relaxation * flux_new[f];
+    }
+
+    // DEBUG
+    CommitState(FS); WriteGMVfile(FS);
 
     T_physics += dT;
     itrs++;
@@ -392,6 +401,7 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const E
 { 
   double relaxation = 1.0;
 
+  /*
   Epetra_Vector dSdP(mesh_->cell_map(false));
   DerivedSdP(uold, dSdP);
 
@@ -399,11 +409,13 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const E
     double diff = dSdP[c] * fabs(unew[c] - uold[c]);
     if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
   }
+  */
 
   for (int c = 0; c < ncells_owned; c++) {
     double diff = fabs(unew[c] - uold[c]);
-    double umax = std::max(fabs(unew[c]), fabs(uold[c]));
-    if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+    // double umax = std::max(fabs(unew[c]), fabs(uold[c]));
+    double umax = fabs(uold[c]);
+    if (diff > 1e-1 * umax) relaxation = std::min(relaxation, 1e-1 * umax / diff);
   }
 
 #ifdef HAVE_MPI
