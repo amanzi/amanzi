@@ -36,18 +36,50 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   void AssembleGlobalMatrices();
   void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
+  
+   void AnalyticJacobian(const Epetra_Vector& solution,
+                        int dim,
+                        int Krel_method,
+                        std::vector<int>& bc_markers, 
+                        Epetra_Vector& Krel_cells, 
+                        Epetra_Vector& dK_dP_cells,
+                        Epetra_Vector& Krel_faces, 
+                        Epetra_Vector& dK_dP_faces);
+
 
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   void InitPreconditioner(int method, Teuchos::ParameterList& prec_list);
   void UpdatePreconditioner();
+  
+  void AddCol2NumJacob(int irow, Epetra_Vector& r);
+  void CompareJacobians();
 
   const char* Label() const { return strdup("Matrix MFD_TPFA"); }
 
  private:
+         
+  void ComputeJacobianLocal(int mcells,
+                            int face_id,
+                            int dim,
+                            int Krel_method,
+                            std::vector<int>& bc_markers,
+                            double dist,
+                            double *pres,
+                            double *perm_abs_vert,
+                            double *perm_abs_horz,
+                            double *k_rel,
+                            double *dk_dp_cell,
+                            AmanziGeometry::Point& normal,
+                            Teuchos::SerialDenseMatrix<int, double>& Jpp);
+  
+  
+         
+         
   Teuchos::RCP<Epetra_Vector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
+  Teuchos::RCP<Epetra_FECrsMatrix> NumJac_;  // Numerical Jacobian
 
 #ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Spp_;

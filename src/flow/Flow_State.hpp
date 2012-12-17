@@ -41,7 +41,9 @@ class Flow_State {
 
   // data management
   void CopyMasterCell2GhostCell(Epetra_Vector& v);
+  void CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vhost);
   void CopyMasterFace2GhostFace(Epetra_Vector& v);
+  void CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vhost);
   void CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
   void CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 

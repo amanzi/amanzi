@@ -21,7 +21,7 @@ namespace AmanziFlow {
 
 template<class T>
 int FindPosition(const std::vector<T>& v, const T& value) {
-  for (int i = 0; i < v.size(); i++) 
+  for (int i = 0; i < v.size(); i++)
      if (v[i] == value) return i;
   return -1;
 }
@@ -80,7 +80,7 @@ void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
 void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
-{ 
+{
   Matrix_MFD::SymbolicAssembleGlobalMatrices(super_map);
 
   const Epetra_Map& cmap = mesh_->cell_map(false);
@@ -98,7 +98,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    for (int n = 0; n < ncells; n++) 
+    for (int n = 0; n < ncells; n++)
         cells_GID[n] = cmap_wghost.GID(cells[n]);
 
     pp_graph.InsertGlobalIndices(ncells, cells_GID, ncells, cells_GID);
@@ -145,7 +145,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
   for (int f = 0; f < nfaces_owned; f++) (*rhs_faces_)[f] /= (*Dff_)[f];
   (*Acf_).Multiply(false, *rhs_faces_, Tc);
   for (int c = 0; c < ncells_owned; c++) (*rhs_cells_)[c] -= Tc[c];
-  
+
   rhs_faces_->PutScalar(0.0);
 
   // create a with-ghost copy of Acc
@@ -158,7 +158,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];
   double Acf_copy[2];
-  
+
   // create auxiliaty with-ghost copy of Acf_cells
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   Epetra_Vector Acf_parallel(fmap_wghost);
@@ -201,12 +201,277 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
       for (int m = n; m < mcells; m++) {
         Bpp(n, m) -= Acf_copy[n] * Acf_copy[m] / (*Dff_)[f];
         Bpp(m, n) = Bpp(n, m);
-      }        
+      }
     }
-    
+
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
   }
-  (*Spp_).GlobalAssemble(); 
+  (*Spp_).GlobalAssemble();
+}
+
+void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
+                                       int dim,
+                                       int Krel_method,
+                                       std::vector<int>& bc_markers,
+                                       Epetra_Vector& Krel_cells,
+                                       Epetra_Vector& dK_dP_cells,
+                                       Epetra_Vector& Krel_faces,
+                                       Epetra_Vector& dK_dP_faces)
+{
+     AmanziMesh::Entity_ID_List faces;
+     std::vector<int> dirs;
+     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+     int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+     const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+     AmanziMesh::Entity_ID_List cells;
+
+     int cells_LID[2], cells_GID[2];
+     double perm_abs_vert[2];
+     double perm_abs_horz[2];
+     double k_rel[2];
+     double dk_dp[2];
+     double pres[2];
+     AmanziGeometry::Point cntr_cell[2];
+     double dist;
+
+     //     cout<<"Before Analytic\n";
+     //     std::cout<<(*Spp_)<<endl;
+
+     Epetra_Vector pres_gh(cmap_wghost);
+
+//      Epetra_Vector pressure_vec(solution);
+     FS->CopyMasterCell2GhostCell(solution, pres_gh);
+
+     Epetra_Vector perm_vert_gh(cmap_wghost);
+     Epetra_Vector& perm_vert_vec = FS->ref_vertical_permeability();
+     FS->CopyMasterCell2GhostCell(perm_vert_vec, perm_vert_gh);
+
+     Epetra_Vector perm_horz_gh(cmap_wghost);
+     Epetra_Vector& perm_horz_vec = FS->ref_horizontal_permeability();
+     FS->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
+
+     Epetra_Vector Krel_gh(cmap_wghost);
+     FS->CopyMasterCell2GhostCell(Krel_cells, Krel_gh);
+
+     Epetra_Vector dK_dP_gh(cmap_wghost);
+     FS->CopyMasterCell2GhostCell(dK_dP_cells, dK_dP_gh);
+
+
+
+     for (int f = 0; f < nfaces_owned; f++){
+                mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+                int mcells = cells.size();
+                Teuchos::SerialDenseMatrix<int, double> Jpp(mcells, mcells);
+                AmanziGeometry::Point face_cntr = mesh_->face_centroid(f);
+
+                for (int n = 0; n < mcells; n++) {
+                        cells_LID[n] = cells[n];
+                        cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
+                        perm_abs_vert[n] = perm_vert_gh[cells_LID[n]];
+                        perm_abs_horz[n] = perm_horz_gh[cells_LID[n]];
+                        pres[n] = pres_gh[cells_LID[n]];
+                        //                        pres[n] = solution[cells_LID[n]];
+                        k_rel[n] = Krel_gh[cells_LID[n]];
+                        dk_dp[n] = dK_dP_gh[cells_LID[n]];
+                        cntr_cell[n] = mesh_->cell_centroid(cells_LID[n]);
+                }
+                if (mcells == 2){                {
+                  dist = norm(cntr_cell[0] - cntr_cell[1]);
+                }
+                else if (mcells == 1)
+                {
+                  dist = norm(cntr_cell[0] - face_cntr);
+                  k_rel[0] = Krel_faces[f];
+                  dk_dp[0] = dK_dP_faces[f];
+                }
+
+                AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
+                normal *= 1./ mesh_->face_area(f);
+
+                ComputeJacobianLocal(mcells, f, dim, Krel_method, bc_markers, dist,  pres,
+                                     perm_abs_vert, perm_abs_horz, k_rel, dk_dp, normal, Jpp);
+
+
+                (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
+     }
+     Spp_->GlobalAssemble();
+      // cout << "AnalyticJacobian Spp\n";
+      //         std::cout<<(*Spp_)<<endl;
+      //          cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
+     //     exit(0);
+}
+
+//
+void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
+                                           int face_id,
+                                           int dim,
+                                           int Krel_method,
+                                           std::vector<int>& bc_markers,
+                                           double dist,
+                                           double *pres,
+                                           double *perm_abs_vert,
+                                           double *perm_abs_horz,
+                                           double *k_rel,
+                                           double *dk_dp_cell,
+                                           AmanziGeometry::Point& normal,
+                                           Teuchos::SerialDenseMatrix<int, double>& Jpp
+                                          ){
+
+        double K[2];
+        double dKrel_dp[2];
+
+        double rho_w = FS->ref_fluid_density();
+
+
+        for (int c = 0; c < mcells; c++) {
+                K[c] = 0.;
+                for (int i = 0;i < dim-1; i++)  K[c] += normal[i]*normal[i]*perm_abs_horz[c];
+                K[c] += normal[dim-1]*normal[dim-1]*perm_abs_vert[c];
+                K[c] /= FS->ref_fluid_viscosity();
+        }
+
+        double Kabs_dist;
+
+        if (mcells == 1) {
+                Kabs_dist = K[0]/dist;
+        }
+        else
+        {
+                Kabs_dist = 2*K[0]*K[1]/(dist*(K[0] + K[1]));
+        }
+
+        double rho = FS->ref_fluid_density();
+        AmanziGeometry::Point gravity(dim);
+        for (int i = 0; i < dim; i++) gravity[i] = (*(FS->gravity()))[i] * rho;
+
+        double grn = dist*gravity*normal;
+
+//         cout<<"grn "<<grn<<endl;
+//         for (int i = 0; i < dim; i++) cout<<"dist "<<(*(FS->gravity()))[i]<<endl;
+
+        double dphi = pres[0] - pres[1] + grn;
+
+        if (mcells == 2){
+          //                cout<<"pres[0] "<<pres[0]<<" pres[1] "<<pres[1]<<" grv "<<grn<<endl;
+                if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
+                        if (grn*Kabs_dist > FLOW_RELATIVE_PERM_TOLERANCE){    // Upwind
+                                dKrel_dp[0] = dk_dp_cell[0];
+                                dKrel_dp[1] = 0.;
+                        }
+                        else if (grn*Kabs_dist < -FLOW_RELATIVE_PERM_TOLERANCE){    // Upwind
+                                dKrel_dp[0] = 0.;
+                                dKrel_dp[1] = dk_dp_cell[1];
+                        }
+                        else if (fabs(grn*Kabs_dist) < FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
+                                dKrel_dp[0] = 0.5*dk_dp_cell[0];
+                                dKrel_dp[1] = 0.5*dk_dp_cell[1];
+                        }
+                } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+                        if (dphi > FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
+                                dKrel_dp[0] = dk_dp_cell[0];
+                                dKrel_dp[1] = 0.;
+                        }
+                        else if (dphi < -FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
+                                dKrel_dp[0] = 0.;
+                                dKrel_dp[1] = dk_dp_cell[1];
+                        }
+                        else if (fabs(dphi) < FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
+                                dKrel_dp[0] = 0.5*dk_dp_cell[0];
+                                dKrel_dp[1] = 0.5*dk_dp_cell[1];
+                        }
+                } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
+                        dKrel_dp[0] = 0.5*dk_dp_cell[0];
+                        dKrel_dp[1] = 0.5*dk_dp_cell[1];
+                }
+                // cout<<Kabs_dist*dKrel_dp[0]<<" "<<dphi<<" "<<rho_w*mesh_->face_area(face_id)<<endl;
+                // cout<<"dKrel_dp[0] "<<dKrel_dp[0] <<" dKrel_dp[1] "<<dKrel_dp[1]<<endl;
+
+                Jpp(0, 0) =  -Kabs_dist*dphi*dKrel_dp[0]*rho_w*mesh_->face_area(face_id);
+                Jpp(0, 1) =  -Kabs_dist*dphi*dKrel_dp[1]*rho_w*mesh_->face_area(face_id);
+                Jpp(1, 0) = -Jpp(0, 0);
+                Jpp(1, 1) = -Jpp(0, 1);
+
+                //                 cout<<"Jpp_local"<<endl;
+                 // for (int i=0;i<2;i++){
+                 //   for (int j=0;j<2;j++) cout<<Jpp(i,j)<<" ";
+                 //   cout<<endl;
+                 // }
+                 // cout<<endl;
+//                 exit(0);
+        }
+        else if (mcells == 1){
+                 if ((bc_markers[face_id] == FLOW_BC_FACE_PRESSURE) || (bc_markers[face_id] == FLOW_BC_FACE_HEAD)) {
+                         Jpp(0,0) =  -Kabs_dist*dphi*dk_dp_cell[0]*rho_w*mesh_->face_area(face_id);
+                 }
+                 else
+                        Jpp(0,0) = 0.;
+        }
+
+}
+
+void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r){
+
+        WhetStone::MFD3D mfd3d(mesh_);
+
+        AmanziMesh::Entity_ID_List faces;
+        std::vector<int> dirs;
+
+        mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+        int mfaces = faces.size();
+        int indices;
+        double values;
+
+        indices = cell;
+        values = r[cell];
+
+        NumJac_->ReplaceGlobalValues(cell, 1, &values, &indices);
+
+        for (int i=0; i<mfaces; i++){
+                int c_adj = mfd3d.cell_get_face_adj_cell(cell, faces[i]);
+        //        cout<<cell<<" - c_adj "<<c_adj<<endl;
+                if (c_adj >= 0) {
+                    values = r[c_adj];
+                    NumJac_->ReplaceGlobalValues(c_adj, 1, &values, &indices);
+                }
+
+        }
+//         cout<<"NonZeros "<<NumJac_->NumGlobalEntries(cell)<<endl;;
+
+        NumJac_->GlobalAssemble();
+
+ //       std::cout<<"NumJac_ "<<r[cell]<<"\n";
+ //       std::cout<<(*NumJac_)<<endl;
+
+}
+
+void Matrix_MFD_TPFA::CompareJacobians(){
+
+        int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+        double ErrMax = 0;
+        double ErrL2 = 0;
+        double NormL2 = 0;
+        double NormMax = 0;
+
+
+        for (int cell=0; cell<ncells_owned; cell++){
+                int nonzeros = NumJac_->NumGlobalEntries(cell);
+
+
+                for (int i=0;i<nonzeros;i++){
+                        ErrL2 += ((*NumJac_)[cell][i] - (*Spp_)[cell][i])*((*NumJac_)[cell][i] - (*Spp_)[cell][i]);
+                        ErrMax = max(fabs((*NumJac_)[cell][i] - (*Spp_)[cell][i]), ErrMax);
+                        NormL2 += (*NumJac_)[cell][i] * (*NumJac_)[cell][i];
+                        NormMax = max((*NumJac_)[cell][i], NormMax);
+                }
+        }
+
+        ErrL2 = sqrt(ErrL2/NormL2);
+
+        cout<<"Error L2  "<<ErrL2<<endl;
+        cout<<"Error Max "<<ErrMax/NormMax<<endl;
+
 }
 
 
@@ -248,13 +513,13 @@ void Matrix_MFD_TPFA::UpdatePreconditioner()
     IfpHypre_Spp_ = Teuchos::rcp(new Ifpack_Hypre(&*Spp_));
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
     functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold)); 
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol)); 
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
+    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold));
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol));
+    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
 
     Teuchos::ParameterList hypre_list;
     // hypre_list.set("Solver", PCG);
@@ -262,7 +527,7 @@ void Matrix_MFD_TPFA::UpdatePreconditioner()
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
     hypre_list.set("NumFunctions", 8);
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs); 
+    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
 
     IfpHypre_Spp_->SetParameters(hypre_list);
     IfpHypre_Spp_->Initialize();
@@ -308,7 +573,7 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
   Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
 
   int ierr = (*Spp_).Multiply(false, Xc, Yc);
- 
+
   if (ierr) {
     Errors::Message msg("Matrix_MFD_TPFA::Apply has failed to calculate y = A*x.");
     Exceptions::amanzi_throw(msg);
@@ -355,7 +620,7 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
   Epetra_Vector Tc(cmap);
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Xc, Tc);
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
+  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE
     ierr = IfpHypre_Spp_->ApplyInverse(Xc, Tc);
 #endif
