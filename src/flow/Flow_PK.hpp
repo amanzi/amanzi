@@ -87,7 +87,7 @@ class Flow_PK : public BDF2::fnBase {
   // Picard-Newton members
   void AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,
                            const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,
-                           Matrix_MFD_PLambda* matrix);
+                           Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix);
 
   // access members 
   Teuchos::RCP<Flow_State> flow_state() { return FS; }

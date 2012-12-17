@@ -306,11 +306,10 @@ void Flow_PK::AddGravityFluxes_MFD(
 /* ******************************************************************
 *                                             
 ****************************************************************** */
-void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
-                                  const Epetra_Vector& Krel_faces,
-                                  const Epetra_Vector& pressure_faces,
-                                  const Epetra_Vector& flux,
-                                  Matrix_MFD_PLambda* matrix_operator)
+void Flow_PK::AddNewtonFluxes_MFD(
+    const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,
+    const Epetra_Vector& pressure_cells, const Epetra_Vector& flux,
+    Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix_operator)
 {
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces = matrix_operator->Acc_faces();
   Acc_faces.clear();
@@ -325,18 +324,27 @@ void Flow_PK::AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces,
     Teuchos::SerialDenseMatrix<int, double> Bcc(ncells, ncells);
     double factor = flux[f] * dKdP_faces[f] / Krel_faces[f];
 
+    int c1 = cells[0];
+    mesh_->cell_get_faces_and_dirs(c1, &faces, &dirs);
+
+    int k = FindPosition(f, faces);
+    factor *= dirs[k];
+
     if (ncells == 1) {
-      if (factor > 0.0) Bcc(0, 0) = factor;
+      if (factor > 0.0) { 
+        Bcc(0, 0) = factor;
+        rhs[c1] += factor * pressure_cells[c1];
+      }
     } else {
-      int c = cells[0];
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-      int k = FindPosition(f, faces);
-      factor *= dirs[k];
-
       int i = (factor > 0.0) ? 0 : 1;
-      Bcc(i, i) = fabs(factor);
-      Bcc(1 - i, i) = -fabs(factor);
+      factor = fabs(factor);
+      Bcc(i, i) = factor;
+      Bcc(1 - i, i) = -factor;
+
+      c1 = cells[i];
+      int c2 = cells[1 - i];
+      rhs[c1] += factor * pressure_cells[c1];
+      rhs[c2] -= factor * pressure_cells[c1];
     }
 
     Acc_faces.push_back(Bcc);

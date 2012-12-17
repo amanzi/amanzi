@@ -164,7 +164,9 @@ int Matrix_MFD_PLambda::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y
 
 
 /* ******************************************************************
-*  Parallel matvec product inv(Prec) * X.                                       
+* Parallel matvec product inv(Prec) * X. 
+* For some unknwon reasons, interface with Hypre requires to 
+* re-define arguments of ApplyInverse().  
 ****************************************************************** */
 int Matrix_MFD_PLambda::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
@@ -172,7 +174,10 @@ int Matrix_MFD_PLambda::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
     MLprec->ApplyInverse(X, Y);
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
 #ifdef HAVE_HYPRE
-    IfpHypre_Sff_->ApplyInverse(static_cast<Epetra_MultiVector>(X), Y);
+    Epetra_MultiVector XX(X);
+    Epetra_MultiVector YY(Y);
+    IfpHypre_Sff_->ApplyInverse(XX, YY);
+    Y = YY;
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ifp_prec_->ApplyInverse(X, Y);
