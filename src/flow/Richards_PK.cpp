@@ -47,14 +47,14 @@ namespace AmanziFlow {
 Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   // initialize pointers (Do we need smart pointers here? lipnikov@lanl.gov)
-  bc_pressure = NULL; 
+  bc_pressure = NULL;
   bc_head = NULL;
   bc_flux = NULL;
-  bc_seepage = NULL; 
+  bc_seepage = NULL;
 
-  super_map_ = NULL; 
-  solver = NULL; 
-  matrix_ = NULL; 
+  super_map_ = NULL;
+  solver = NULL;
+  matrix_ = NULL;
   preconditioner_ = NULL;
 
   bdf2_dae = NULL;
@@ -63,7 +63,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   Flow_PK::Init(FS_MPC);
   FS = FS_MPC;
 
-  // extract two critical sublists 
+  // extract two critical sublists
   Teuchos::ParameterList flow_list;
   if (global_list.isSublist("Flow")) {
     flow_list = global_list.sublist("Flow");
@@ -136,6 +136,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
   internal_tests = 0;
   experimental_solver = false;
+  IsPureNewton = false;
 }
 
 
@@ -179,6 +180,7 @@ void Richards_PK::InitPK()
 //     preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
     matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
     preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
+    IsPureNewton = true;
   } else {
     matrix_ = new Matrix_MFD(FS, *super_map_);
     preconditioner_ = new Matrix_MFD(FS, *super_map_);
@@ -395,7 +397,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   std::string ti_method_name(ti_specs.ti_method_name);
   if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF2").sublist("BDF2 parameters");
-    if (! tmp_list.isSublist("VerboseObject"))
+    if (!tmp_list.isSublist("VerboseObject"))
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
 
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(tmp_list));
@@ -673,13 +675,12 @@ void Richards_PK::ComputePreconditionerMFD(
   matrix_operator->AssembleGlobalMatrices();
  
   if (experimental_solver&&flag_update_ML){
-          Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_operator);
-          if (matrix_tpfa==0) std::cerr<<"Richards_PK:: cannot convert to Matrix_MFD_TPFA\n";
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_operator);
+    if (matrix_tpfa==0) std::cerr<<"Richards_PK:: cannot convert to Matrix_MFD_TPFA\n";
 
-          matrix_tpfa -> AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
+    matrix_tpfa -> AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
                                           *Krel_cells, *dKdP_cells,
                                           *Krel_faces, *dKdP_faces);
-
   }
 
   if (flag_update_ML) {

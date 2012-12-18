@@ -49,6 +49,8 @@ class fnBase {
   // this predictor this function returns true if the predictor was
   // modified, false if not
   virtual bool modify_predictor(double h, Epetra_Vector& up) { return false;}
+
+  bool IsPureNewton;
 };
 
 }  // namespace BDF2

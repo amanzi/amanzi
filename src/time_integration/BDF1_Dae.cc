@@ -400,13 +400,16 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
 
-    // compute the accellerated correction
-    if (itr>1) {
-      fpa->nka_correction(nev_du, preconditioned_f, state.damp);
+    if (fn.IsPureNewton){
+      nev_du = *preconditioned_f;
     } else {
-      fpa->nka_correction(nev_du, preconditioned_f);
+      // compute the accellerated correction
+      if (itr>1) {
+	fpa->nka_correction(nev_du, preconditioned_f, state.damp);
+      } else {
+	fpa->nka_correction(nev_du, preconditioned_f);
+      }
     }
-
     // copy result into an Epetra_Vector.
     du = nev_du.getEpetraVector();  
     

@@ -63,6 +63,7 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
+
  private:
   double rmin;
   double rmax;
@@ -78,6 +79,7 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   nka* fpa;
   BDF2::SolutionHistory* sh_;
   BDF2::fnBase& fn;
+
 
   const Epetra_BlockMap& map;
 
