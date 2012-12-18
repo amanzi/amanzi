@@ -1,0 +1,108 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+/*
+  Evaluates the conductivity of surface flow according to a Manning approach.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+#include "independent_variable_field_evaluator.hh"
+#include "manning_conductivity_evaluator.hh"
+
+namespace Amanzi {
+namespace Flow {
+namespace FlowRelations {
+
+ManningConductivityEvaluator::ManningConductivityEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
+  slope_regularization_ = plist_.get<double>("slope regularization epsilon", 1.e-8);
+  manning_exp_ = plist_.get<double>("Manning exponent", 0.6666666666666667);
+  manning_key_ = "manning_coefficient";
+  pres_key_ = plist_.get<std::string>("height key", "ponded_depth");
+  slope_key_ = "slope_magnitude";
+
+  my_key_ = "overland_conductivity";
+  setLinePrefix(my_key_+std::string(" evaluator"));
+
+  dependencies_.insert(pres_key_);
+  dependencies_.insert(slope_key_);
+}
+
+
+ManningConductivityEvaluator::ManningConductivityEvaluator(const ManningConductivityEvaluator& other) :
+    SecondaryVariableFieldEvaluator(other),
+    slope_regularization_(other.slope_regularization_),
+    pres_key_(other.pres_key_),
+    slope_key_(other.slope_key_),
+    manning_exp_(other.manning_exp_),
+    manning_key_(other.manning_key_) {}
+
+
+Teuchos::RCP<FieldEvaluator>
+ManningConductivityEvaluator::Clone() const {
+  return Teuchos::rcp(new ManningConductivityEvaluator(*this));
+}
+
+
+// Required methods from SecondaryVariableFieldEvaluator
+void ManningConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+        const Teuchos::Ptr<CompositeVector>& result) {
+
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
+  Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
+  Teuchos::RCP<const CompositeVector> mann = S->GetFieldData(manning_key_);
+
+  double exponent = manning_exp_ + 1.0;
+
+  for (CompositeVector::name_iterator comp=result->begin();
+       comp!=result->end(); ++comp) {
+    const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp,false);
+    const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
+    const Epetra_MultiVector& mann_v = *mann->ViewComponent(*comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+    int ncomp = result->size(*comp, false);
+    for (int i=0; i!=ncomp; ++i) {
+      double scaling = mann_v[0][i] *
+        std::sqrt(std::max(slope_v[0][i], slope_regularization_));
+
+      if (pres_v[0][i] > 0.0) {
+        result_v[0][i] = std::pow(std::abs(pres_v[0][i]), exponent) / scaling;
+      } else {
+        result_v[0][i] = 0.0;
+      }
+    }
+  }
+}
+
+
+void ManningConductivityEvaluator::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
+
+  ASSERT(0);
+  // not implemented, likely not needed.
+}
+
+
+void ManningConductivityEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+  // special EnsureCompatibility to add in a evaluator for Manning's Coef.
+
+  // add the evaluator, which is just a function for Manning's Coef
+  S->RequireField(manning_key_);
+  dependencies_.insert(manning_key_);
+  Teuchos::ParameterList mann_plist = plist_.sublist("Manning coefficient");
+  mann_plist.set("evaluator name", manning_key_);
+  Teuchos::RCP<FieldEvaluator> mann_fm =
+    Teuchos::rcp(new IndependentVariableFieldEvaluator(mann_plist));
+  S->SetFieldEvaluator(manning_key_, mann_fm);
+
+  // Call the base class's method.
+  SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
+};
+
+
+} //namespace
+} //namespace
+} //namespace
+
