@@ -217,7 +217,8 @@ void Richards_PK::ProcessParameterList()
   if (! rp_list_.isParameter("developer access granted")) AnalysisTI_Specs();
 
   // experimental solver
-  experimental_solver = rp_list_.get<bool>("experimental solver", false);
+  string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");
+  ProcessStringExperimentalSolver(experimental_solver_name, &experimental_solver_);
 
   // optional debug output
   CalculateWRMcurves(rp_list_);
@@ -341,6 +342,21 @@ void Richards_PK::ProcessStringLinearSolver(
   Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
   *max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
   *convergence_tol = tmp_list.get<double>("error tolerance", 1e-10);
+}
+
+
+/* ****************************************************************
+* Process string for the relative permeability
+**************************************************************** */
+void Richards_PK::ProcessStringExperimentalSolver(const std::string name, int* method)
+{
+  if (name == "newton") {
+    *method = AmanziFlow::FLOW_SOLVER_NEWTON;
+  } else if (name == "picard-newton") {
+    *method = AmanziFlow::FLOW_SOLVER_PICARD_NEWTON;
+  } else {
+    *method = AmanziFlow::FLOW_SOLVER_NKA;
+  }
 }
 
 

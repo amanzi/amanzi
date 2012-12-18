@@ -120,7 +120,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
 
-  // miscalleneous
+  // miscalleneous default parameters
   block_picard = 1;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
@@ -135,7 +135,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   verbosity = FLOW_VERBOSITY_HIGH;
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
   internal_tests = 0;
-  experimental_solver = false;
+  experimental_solver_ = FLOW_SOLVER_NKA;
   IsPureNewton = false;
 }
 
@@ -175,9 +175,10 @@ void Richards_PK::InitPK()
   ProcessParameterList();
 
   // Select a proper matrix class
-  if (experimental_solver) {
-//     matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
-//     preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+    matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
+    preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
+  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
     preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
     IsPureNewton = true;
@@ -294,7 +295,7 @@ void Richards_PK::InitPicard(double T0)
   // calculate initial guess: cleaning is required (lipnikov@lanl.gov)
   T_physics = ti_specs_igs_.T0;
   dT = ti_specs_igs_.dT0;
-  if (experimental_solver) 
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) 
     AdvanceToSteadyState_PicardNewton(ti_specs_igs_);
   else
     AdvanceToSteadyState_Picard(ti_specs_igs_);
@@ -674,13 +675,17 @@ void Richards_PK::ComputePreconditionerMFD(
   matrix_operator->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_operator->AssembleGlobalMatrices();
  
-  if (experimental_solver&&flag_update_ML){
+  if (experimental_solver_ == FLOW_SOLVER_NEWTON && flag_update_ML) {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_operator);
-    if (matrix_tpfa==0) std::cerr<<"Richards_PK:: cannot convert to Matrix_MFD_TPFA\n";
+    if (matrix_tpfa == 0) {
+      Errors::Message msg;
+      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
+      Exceptions::amanzi_throw(msg);
+    }
 
-    matrix_tpfa -> AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
-                                          *Krel_cells, *dKdP_cells,
-                                          *Krel_faces, *dKdP_faces);
+    matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
+                                  *Krel_cells, *dKdP_cells,
+                                  *Krel_faces, *dKdP_faces);
   }
 
   if (flag_update_ML) {
@@ -782,7 +787,8 @@ bool Richards_PK::SetSymmetryProperty()
   bool sym = false;
   if ((Krel_method == FLOW_RELATIVE_PERM_CENTERED) ||
       (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL)) sym = true;
-  if (experimental_solver) sym = false;
+  if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
+      experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) sym = false;
 
   return sym;
 }

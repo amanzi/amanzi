@@ -115,6 +115,7 @@ class Richards_PK : public Flow_PK {
   void ProcessParameterList();
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringExperimentalSolver(const std::string name, int* method);
   void ProcessStringRelativePermeability(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
   void VerifyStringMualemBurdine(const std::string name);
@@ -227,7 +228,7 @@ class Richards_PK : public Flow_PK {
 
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
-  bool experimental_solver; 
+  int experimental_solver_; 
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 
   double mass_bc, mass_amanzi;
