@@ -88,6 +88,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
     Teuchos::RCP<PrimaryVariableFieldEvaluator> peval =
       Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(peval_fe);
 
+
     // project energy and water content
     double dt_next = S_next_->time() - S_inter_->time();
     double dt_prev = S_inter_->time() - S_work_->time();
@@ -118,15 +119,19 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
     Epetra_MultiVector wc_t(wc0), e_t(e0);
     Epetra_MultiVector cor_wc(wc0), cor_e(e0);
 
+    // -- scaling for the norms
+    double wc_scale = 10.;
+    double e_scale = 10000.;
+
     // -- project
     wc_t = wc0;
     e_t = e0;
     double dt_ratio = (dt_next + dt_prev) / dt_prev;
     wc_t.Update(dt_ratio, wc1, 1. - dt_ratio);
     e_t.Update(dt_ratio, e1, 1. - dt_ratio);
-    //    std::cout << "S0 wc,e: " << wc0[0][99] << ", " << e0[0][99] << std::endl;
-    //    std::cout << "S1 wc,e: " << wc1[0][99] << ", " << e1[0][99] << std::endl;
-    //    std::cout << "Desired wc,e: " << wc_t[0][99] << ", " << e_t[0][99] << std::endl;
+    *out_ << "S0 wc,e: " << wc0[0][99] << ", " << e0[0][99] << std::endl;
+    *out_ << "S1 wc,e: " << wc1[0][99] << ", " << e1[0][99] << std::endl;
+    *out_ << "Desired wc,e: " << wc_t[0][99] << ", " << e_t[0][99] << std::endl;
 
     // -- copy guess for T,p, and the resulting e,wc into S_work_, which we will use for this
     T2 = T1;
@@ -150,8 +155,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
     int ncells = temp_guess->size("cell",false);
     for (int c=0; c!=ncells; ++c) {
       if (sat_g[0][c] > 1.e-2) {
-        e2[0][c] = ( e1[0][c] - e_t[0][c]) / e_t[0][c];
-        wc2[0][c] = ( wc1[0][c] - wc_t[0][c]) / wc_t[0][c];
+        e2[0][c] = ( e1[0][c] - e_t[0][c]) / (cv[0][c]*e_scale);
+        wc2[0][c] = ( wc1[0][c] - wc_t[0][c]) / (cv[0][c]*wc_scale);
       } else {
         e2[0][c] = 0.;
         wc2[0][c] = 0.;
@@ -163,10 +168,9 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
     wc2.NormInf(&norm_wc_prev);
     e2.NormInf(&norm_e_prev);
     norm_prev = std::max(norm_e_prev, norm_wc_prev);
-    //    std::cout << "Init Norm = " << norm_prev << std::endl;
+    *out_ << "Init Norm = " << norm_prev << std::endl;
 
     // DEBUG find cell that is most of norm
-    /*
     int badc = 0;
     for (int c=0; c!=ncells; ++c) {
       if (std::abs(std::abs(wc2[0][c]) - norm_prev) < 1.e-10 ||
@@ -175,22 +179,21 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
         std::cout << "Found bad cell: " << badc << std::endl;
       }
     }
-    */
 
     // scale back to res, not relative res
     for (int c=0; c!=ncells; ++c) {
-      e2[0][c] = e2[0][c] * e_t[0][c];
-      wc2[0][c] = wc2[0][c] * wc_t[0][c];
+      e2[0][c] = e2[0][c] * (cv[0][c]*e_scale);
+      wc2[0][c] = wc2[0][c] * (cv[0][c]*wc_scale);
     }
 
-    //    std::cout << "Init p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
-    //    std::cout << "Init wc,e: " << wc1[0][badc] << ", " << e1[0][badc] << std::endl;
-    //    std::cout << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
+    *out_ << "Init p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
+    *out_ << "Init wc,e: " << wc1[0][badc] << ", " << e1[0][badc] << std::endl;
+    *out_ << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
 
     // iterate nonlinear solve
     bool converged = false;
     while (!converged) {
-      //    std::cout << "Res p,T: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
+      *out_ << "Res p,T: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
 
       // cor <-- J^-1 * res
       for (int c=0; c!=ncells; ++c) {
@@ -225,13 +228,13 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
         cor_wc[0][c] = (dedT*res_wc - dwcdT*res_e) / detJ;
         cor_e[0][c] = (-dedp*res_wc + dwcdp*res_e) / detJ;
       }
-      //    std::cout << "Cor p,T: " << cor_wc[0][badc] << ", " << cor_e[0][badc] << std::endl;
+      *out_ << "Cor p,T: " << cor_wc[0][badc] << ", " << cor_e[0][badc] << std::endl;
 
 
       // x_n+1 = x_n - cor
       T2.Update(-1.0, cor_e, 1.0);
       p2.Update(-1.0, cor_wc, 1.0);
-      //    std::cout << "Next p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
+      *out_ << "Next p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
 
       // evaluate e(p,T), wc(p,T)
       Teval->SetFieldAsChanged();
@@ -241,12 +244,12 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
 
       // e(p,T) - e_t, the desired solution
       // e2/wc2 now have the updated values of e(p,T)
-      //    std::cout << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
-      //    std::cout << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
+      *out_ << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
+      *out_ << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
       for (int c=0; c!=ncells; ++c) {
         if (sat_g[0][c] > 1.e-2) {
-          e2[0][c] = ( e2[0][c] - e_t[0][c]) / e_t[0][c];
-          wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / wc_t[0][c];
+          e2[0][c] = ( e2[0][c] - e_t[0][c]) / (cv[0][c]*e_scale);
+          wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / (cv[0][c]*wc_scale);
         } else {
           e2[0][c] = 0.;
           wc2[0][c] = 0.;
@@ -259,10 +262,9 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
       e2.NormInf(&norm_e);
       norm_t = std::max(norm_e, norm_wc);
 
-      //    std::cout << "New Norm = " << norm_t << std::endl;
+      *out_ << "New Norm = " << norm_t << std::endl;
 
       // DEBUG find cell that is most of norm
-      /*
       badc = 0;
       for (int c=0; c!=ncells; ++c) {
         if (std::abs(std::abs(wc2[0][c]) - norm_t) < 1.e-10 ||
@@ -271,24 +273,23 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
           std::cout << "Found bad cell: " << badc << std::endl;
         }
       }
-      */
 
       // scale back to res, not relative res
       for (int c=0; c!=ncells; ++c) {
-        e2[0][c] = e2[0][c] * e_t[0][c];
-        wc2[0][c] = wc2[0][c] * wc_t[0][c];
+        e2[0][c] = e2[0][c] * (cv[0][c]*e_scale);
+        wc2[0][c] = wc2[0][c] * (cv[0][c]*wc_scale);
       }
 
       double damp = 1.;
-      //    std::cout << "damping required? " << (norm_t > norm_prev) << std::endl;
+      *out_ << "damping required? " << (norm_t > norm_prev) << std::endl;
       while (norm_t > norm_prev) { // backtrack
         damp = damp * .5;
-        //    std::cout << std::endl;
-        //    std::cout << "Backtracking with damping of " << damp << std::endl;
+        *out_ << std::endl;
+        *out_ << "Backtracking with damping of " << damp << std::endl;
         // backtrack the correction
         T2.Update(damp, cor_e, 1.0);
         p2.Update(damp, cor_wc, 1.0);
-        //    std::cout << "Damped p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
+        *out_ << "Damped p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
 
         // evaluate e(p,T), wc(p,T)
         Teval->SetFieldAsChanged();
@@ -297,12 +298,12 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
         S_work_->GetFieldEvaluator("energy")->HasFieldChanged(S_work_.ptr(),name_);
 
         // update res
-        //    std::cout << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
-        //    std::cout << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
+        *out_ << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
+        *out_ << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
         for (int c=0; c!=ncells; ++c) {
           if (sat_g[0][c] > 1.e-2) {
-            e2[0][c] = ( e2[0][c] - e_t[0][c]) / e_t[0][c];
-            wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / wc_t[0][c];
+            e2[0][c] = ( e2[0][c] - e_t[0][c]) / (cv[0][c]*e_scale);
+            wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / (cv[0][c]*wc_scale);
           } else {
             e2[0][c] = 0.;
             wc2[0][c] = 0.;
@@ -313,15 +314,15 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
         wc2.NormInf(&norm_wc);
         e2.NormInf(&norm_e);
         norm_t = std::max(norm_e, norm_wc);
-        //    std::cout << "Damped New Norm (target) = " << norm_t << ", " << norm_prev << std::endl;
+        *out_ << "Damped New Norm (target) = " << norm_t << ", " << norm_prev << std::endl;
 
         // scale back to res, not relative res
         for (int c=0; c!=ncells; ++c) {
-          e2[0][c] = e2[0][c] * e_t[0][c];
-          wc2[0][c] = wc2[0][c] * wc_t[0][c];
+          e2[0][c] = e2[0][c] * (cv[0][c]*e_scale);
+          wc2[0][c] = wc2[0][c] * (cv[0][c]*wc_scale);
         }
 
-        //    std::cout << "damping continued? " << (norm_t > norm_prev) << std::endl;
+        *out_ << "damping continued? " << (norm_t > norm_prev) << std::endl;
       }
 
       converged = (norm_t < 1.e-6);
@@ -500,6 +501,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
 
     const Epetra_MultiVector& sat_g = *S_next_->GetFieldData("saturation_gas")
       ->ViewComponent("cell",false);
+    const Epetra_MultiVector& cv = *S_inter_->GetFieldData("cell_volume")
+      ->ViewComponent("cell",false);
 
     // UNSATURATED ZONE
     // work is done in S_inter -- get the T and p evaluators
@@ -538,6 +541,10 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
     Epetra_MultiVector wc_t(wc0), e_t(e0);
     Epetra_MultiVector cor_wc(wc0), cor_e(e0);
 
+    // -- scaling for the norms
+    double wc_scale = 10.;
+    double e_scale = 10000.;
+
     // -- project
     wc_t = wc0;
     e_t = e0;
@@ -570,8 +577,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
     int ncells = temp_guess->size("cell",false);
     for (int c=0; c!=ncells; ++c) {
       if (sat_g[0][c] > 1.e-2) {
-        e2[0][c] = ( e1[0][c] - e_t[0][c]) / e_t[0][c];
-        wc2[0][c] = ( wc1[0][c] - wc_t[0][c]) / wc_t[0][c];
+        e2[0][c] = ( e1[0][c] - e_t[0][c]) / (cv[0][c]*e_scale);
+        wc2[0][c] = ( wc1[0][c] - wc_t[0][c]) / (cv[0][c]*wc_scale);
       } else {
         e2[0][c] = 0.;
         wc2[0][c] = 0.;
@@ -583,34 +590,32 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
     wc2.NormInf(&norm_wc_prev);
     e2.NormInf(&norm_e_prev);
     norm_prev = std::max(norm_e_prev, norm_wc_prev);
-    //    std::cout << "Init Norm = " << norm_prev << std::endl;
+    *out_ << "Init Norm = " << norm_prev << std::endl;
 
     // DEBUG find cell that is most of norm
-    /*
     int badc = 0;
     for (int c=0; c!=ncells; ++c) {
       if (std::abs(std::abs(wc2[0][c]) - norm_prev) < 1.e-10 ||
           std::abs(std::abs(e2[0][c]) - norm_prev) < 1.e-10) {
         badc = c;
-        //    std::cout << "Found bad cell: " << badc << std::endl;
+        *out_ << "Found bad cell: " << badc << std::endl;
       }
     }
-    */
 
     // scale back to res, not relative res
     for (int c=0; c!=ncells; ++c) {
-      e2[0][c] = e2[0][c] * e_t[0][c];
-      wc2[0][c] = wc2[0][c] * wc_t[0][c];
+      e2[0][c] = e2[0][c] * (cv[0][c]*e_scale);
+      wc2[0][c] = wc2[0][c] * (cv[0][c]*wc_scale);
     }
 
-    //    std::cout << "Init p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
-    //    std::cout << "Init wc,e: " << wc1[0][badc] << ", " << e1[0][badc] << std::endl;
-    //    std::cout << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
+    *out_ << "Init p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
+    *out_ << "Init wc,e: " << wc1[0][badc] << ", " << e1[0][badc] << std::endl;
+    *out_ << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
 
     // iterate nonlinear solve
     bool converged = false;
     while (!converged) {
-      //    std::cout << "Res p,T: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
+      *out_ << "Res p,T: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
 
       // cor <-- J^-1 * res
       for (int c=0; c!=ncells; ++c) {
@@ -645,13 +650,13 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
         cor_wc[0][c] = (dedT*res_wc - dwcdT*res_e) / detJ;
         cor_e[0][c] = (-dedp*res_wc + dwcdp*res_e) / detJ;
       }
-      //    std::cout << "Cor p,T: " << cor_wc[0][badc] << ", " << cor_e[0][badc] << std::endl;
+      *out_ << "Cor p,T: " << cor_wc[0][badc] << ", " << cor_e[0][badc] << std::endl;
 
 
       // x_n+1 = x_n - cor
       T2.Update(-1.0, cor_e, 1.0);
       p2.Update(-1.0, cor_wc, 1.0);
-      //    std::cout << "Next p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
+      *out_ << "Next p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
 
       // evaluate e(p,T), wc(p,T)
       Teval->SetFieldAsChanged();
@@ -661,12 +666,12 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
 
       // e(p,T) - e_t, the desired solution
       // e2/wc2 now have the updated values of e(p,T)
-      //    std::cout << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
-      //    std::cout << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
+      *out_ << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
+      *out_ << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
       for (int c=0; c!=ncells; ++c) {
         if (sat_g[0][c] > 1.e-2) {
-          e2[0][c] = ( e2[0][c] - e_t[0][c]) / e_t[0][c];
-          wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / wc_t[0][c];
+          e2[0][c] = ( e2[0][c] - e_t[0][c]) / (cv[0][c]*e_scale);
+          wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / (cv[0][c]*wc_scale);
         } else {
           e2[0][c] = 0.;
           wc2[0][c] = 0.;
@@ -679,10 +684,9 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
       e2.NormInf(&norm_e);
       norm_t = std::max(norm_e, norm_wc);
 
-      //    std::cout << "New Norm = " << norm_t << std::endl;
+      *out_ << "New Norm = " << norm_t << std::endl;
 
       // DEBUG find cell that is most of norm
-      /*
       badc = 0;
       for (int c=0; c!=ncells; ++c) {
         if (std::abs(std::abs(wc2[0][c]) - norm_t) < 1.e-10 ||
@@ -691,24 +695,23 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
           std::cout << "Found bad cell: " << badc << std::endl;
         }
       }
-      */
 
       // scale back to res, not relative res
       for (int c=0; c!=ncells; ++c) {
-        e2[0][c] = e2[0][c] * e_t[0][c];
-        wc2[0][c] = wc2[0][c] * wc_t[0][c];
+        e2[0][c] = e2[0][c] * (cv[0][c]*e_scale);
+        wc2[0][c] = wc2[0][c] * (cv[0][c]*wc_scale);
       }
 
       double damp = 1.;
-      //    std::cout << "damping required? " << (norm_t > norm_prev) << std::endl;
+      *out_ << "damping required? " << (norm_t > norm_prev) << std::endl;
       while (norm_t > norm_prev) { // backtrack
         damp = damp * .5;
-        //    std::cout << std::endl;
-        //    std::cout << "Backtracking with damping of " << damp << std::endl;
+        *out_ << std::endl;
+        *out_ << "Backtracking with damping of " << damp << std::endl;
         // backtrack the correction
         T2.Update(damp, cor_e, 1.0);
         p2.Update(damp, cor_wc, 1.0);
-        //    std::cout << "Damped p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
+        *out_ << "Damped p,T: " << p2[0][badc] << ", " << T2[0][badc] << std::endl;
 
         // evaluate e(p,T), wc(p,T)
         Teval->SetFieldAsChanged();
@@ -717,12 +720,12 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
         S_work_->GetFieldEvaluator("energy")->HasFieldChanged(S_work_.ptr(),name_);
 
         // update res
-        //    std::cout << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
-        //    std::cout << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
+        *out_ << "Current wc,e: " << wc2[0][badc] << ", " << e2[0][badc] << std::endl;
+        *out_ << "Desired wc,e: " << wc_t[0][badc] << ", " << e_t[0][badc] << std::endl;
         for (int c=0; c!=ncells; ++c) {
           if (sat_g[0][c] > 1.e-2) {
-            e2[0][c] = ( e2[0][c] - e_t[0][c]) / e_t[0][c];
-            wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / wc_t[0][c];
+            e2[0][c] = ( e2[0][c] - e_t[0][c]) / (cv[0][c]*e_scale);
+            wc2[0][c] = ( wc2[0][c] - wc_t[0][c]) / (cv[0][c]*wc_scale);
           } else {
             e2[0][c] = 0.;
             wc2[0][c] = 0.;
@@ -733,15 +736,15 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
         wc2.NormInf(&norm_wc);
         e2.NormInf(&norm_e);
         norm_t = std::max(norm_e, norm_wc);
-        //    std::cout << "Damped New Norm (target) = " << norm_t << ", " << norm_prev << std::endl;
+        *out_ << "Damped New Norm (target) = " << norm_t << ", " << norm_prev << std::endl;
 
         // scale back to res, not relative res
         for (int c=0; c!=ncells; ++c) {
-          e2[0][c] = e2[0][c] * e_t[0][c];
-          wc2[0][c] = wc2[0][c] * wc_t[0][c];
+          e2[0][c] = e2[0][c] * (cv[0][c]*e_scale);
+          wc2[0][c] = wc2[0][c] * (cv[0][c]*wc_scale);
         }
 
-        //    std::cout << "damping continued? " << (norm_t > norm_prev) << std::endl;
+        *out_ << "damping continued? " << (norm_t > norm_prev) << std::endl;
       }
 
       converged = (norm_t < 1.e-6);
