@@ -45,6 +45,7 @@ public:
       coupled_to_surface_via_flux_(false),
       coupled_to_surface_via_residual_(false),
       infiltrate_only_if_unfrozen_(false),
+      modify_predictor_with_consistent_faces_(false),
       niter_(0) {
     // set a few parameters before setup
     plist_.set("solution key", "pressure");
@@ -83,6 +84,8 @@ public:
 
   // setting the solution as changed should also communicate faces
   virtual void changed_solution();
+
+  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
 
 protected:
   // Create of physical evaluators.
@@ -133,6 +136,8 @@ protected:
   double surface_head_eps_;
   int niter_;
   bool infiltrate_only_if_unfrozen_;
+  bool modify_predictor_with_consistent_faces_;
+
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability

@@ -266,5 +266,35 @@ bool TwoPhase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   return true;
 }
 
+bool TwoPhase::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+  if (modify_predictor_with_consistent_faces_) {
+    // derive consistent constraints
+
+    // update boundary conditions
+    bc_temperature_->Compute(S_next_->time());
+    bc_flux_->Compute(S_next_->time());
+    UpdateBoundaryConditions_();
+
+    // div K_e grad u
+    S_next_->GetFieldEvaluator("thermal_conductivity")
+      ->HasFieldChanged(S_next_.ptr(), "energy_pk");
+    Teuchos::RCP<const CompositeVector> thermal_conductivity =
+      S_next_->GetFieldData("thermal_conductivity");
+
+    preconditioner_->CreateMFDrhsVectors();
+
+    // skip accumulation terms, they're not needed
+    // Assemble and precompute the Schur complement for inversion.
+    preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+    preconditioner_->AssembleGlobalMatrices();
+
+    // derive the consistent faces, involves a solve
+    preconditioner_->UpdateConsistentFaceConstraints(u->data());
+    return true;
+  }
+
+  return PKPhysicalBDFBase::modify_predictor(h, u);
+}
+
 } // namespace Energy
 } // namespace Amanzi

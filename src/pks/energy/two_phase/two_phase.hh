@@ -43,6 +43,7 @@ public:
   TwoPhase(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
       PKPhysicalBDFBase(plist, solution),
+      modify_predictor_with_consistent_faces_(false),
       niter_(0) {
     plist_.set("solution key", "temperature");
   }
@@ -82,7 +83,9 @@ public:
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
- protected:
+  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
+
+protected:
   // for now, several points of entry into the science, as I'm not sure where
   // things will settle for a Phalanx-like system
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
@@ -118,6 +121,7 @@ protected:
   // constraint on max dT
   double dT_max_;
   bool assemble_preconditioner_;
+  bool modify_predictor_with_consistent_faces_;
 
 
 private:

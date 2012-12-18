@@ -518,20 +518,12 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));
   Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
-  
-  
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc_ inv(Acc_) Xc
   int ierr;
-  
   ierr  = Tc.ReciprocalMultiply(1.0, *Acc_, *X.ViewComponent("cell", false), 0.0);
-  
-  
   ierr |= (*Afc_).Multiply(true, Tc, Tf);  // Afc_ is kept in transpose form
   Tf.Update(1.0, *X.ViewComponent("face", false), -1.0);
- 
- 
-//   exit(0);
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
   if (prec_method_ == TRILINOS_ML) {
@@ -544,16 +536,13 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #endif
-  } 
+  }
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
 
   Tc.Update(1.0, *X.ViewComponent("cell", false), -1.0);
-  
-  
-  ierr |= Y->ViewComponent("cell", false)->ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
-  
 
+  ierr |= Y->ViewComponent("cell", false)->ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
 
   if (ierr) {
     Errors::Message msg("MatrixMFD::ApplyInverse has failed in calculating y = A*x.");
@@ -788,6 +777,42 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
     lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
 
     for (int i=0; i!=dim; ++i) (*velocity)("cell",i,c) = rhs_cell[i];
+  }
+}
+
+
+// development methods
+/* ******************************************************************
+* Reduce the pressure-lambda-system to lambda-system via ellimination
+* of the known pressure. Structure of the global system is preserved
+* but off-diagola blocks are zeroed-out.
+****************************************************************** */
+void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::RCP<CompositeVector>& u) {
+  Teuchos::RCP<Epetra_MultiVector> uc = u->ViewComponent("cell", false);
+  Teuchos::RCP<Epetra_MultiVector> rhs_f = rhs_->ViewComponent("face", false);
+
+  Teuchos::RCP<Epetra_MultiVector> update_f = Teuchos::rcp(new Epetra_MultiVector(*rhs_f));
+  Afc_->Multiply(true, *uc, *update_f);  // Afc is kept in the transpose form.
+  rhs_f->Update(-1.0, *update_f, 1.0);
+
+  // Replace the schur complement so it can be used as a face-only system
+  *Sff_ = *Aff_;
+
+  // Update the preconditioner with a solver
+  UpdatePreconditioner();
+
+  // Use this entry to get appropriate faces.
+  int ierr;
+  if (prec_method_ == TRILINOS_ML) {
+    ierr = ml_prec_->ApplyInverse(*rhs_f, *u->ViewComponent("face",false));
+  } else if (prec_method_ == TRILINOS_ILU) {
+    ierr = ilu_prec_->ApplyInverse(*rhs_f, *u->ViewComponent("face",false));
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    ierr = ifp_prec_->ApplyInverse(*rhs_f, *u->ViewComponent("face",false));
+#ifdef HAVE_HYPRE
+  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
+    ierr = IfpHypre_Sff_->ApplyInverse(*rhs_f, *u->ViewComponent("face",false));
+#endif
   }
 }
 
