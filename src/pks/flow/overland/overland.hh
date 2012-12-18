@@ -1,4 +1,4 @@
-/#* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
@@ -30,15 +30,15 @@ namespace Flow {
 class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandFlow(Teuchos::ParameterList& plist, 
-               const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, solution),
-    PKPhysicalBDFBase(plist, solution),
-    standalone_mode_(false),
-    is_source_term_(false),
-    is_coupling_term_(false),
-    coupled_to_surface_via_residual_(false),
-    surface_head_eps_(0.) {
+  OverlandFlow(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, solution),
+      PKPhysicalBDFBase(plist, solution),
+      standalone_mode_(false),
+      is_source_term_(false),
+      is_coupling_term_(false),
+      coupled_to_surface_via_residual_(false),
+      surface_head_eps_(0.),
+      update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("solution key", "ponded_depth");
   }
 
@@ -107,8 +107,16 @@ private:
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  private:
+  enum FluxUpdateMode {
+    UPDATE_FLUX_ITERATION = 0,
+    UPDATE_FLUX_TIMESTEP = 1,
+    UPDATE_FLUX_VIS = 2,
+    UPDATE_FLUX_NEVER = 3
+  };
+
   // control switches
   bool standalone_mode_; // domain mesh == surface mesh
+  FluxUpdateMode update_flux_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
