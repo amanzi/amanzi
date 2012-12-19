@@ -16,6 +16,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Deform;
 
   // first message
   std::cout << "Test: DeformMesh using a simple quadrilateral mesh" << endl;
