@@ -119,7 +119,7 @@ void Flow_PK::ProcessBoundaryConditions(
 
   for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
     int f = bc->first;
-    bc_model[f] = FLOW_BC_FACE_HEAD;
+    bc_model[f] = FLOW_BC_FACE_PRESSURE;
     bc_values[f][0] = bc->second;
     flag_essential_bc = 1;
   }
@@ -220,16 +220,15 @@ void Flow_PK::ProcessBoundaryConditions(
 /* ******************************************************************
 * Add a boundary marker to owned faces.                                          
 ****************************************************************** */
-void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_model,
-                                      std::vector<double>& bc_values,
-                                      Epetra_Vector& pressure_faces)
+void Flow_PK::ApplyEssentialBoundaryConditions(std::vector<int>& bc_model,
+                                               std::vector<bc_tuple>& bc_values,
+                                               Epetra_Vector& pressure_faces)
 {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) {
     if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-        bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
-        bc_model[f] == FLOW_BC_FACE_HEAD) {
-      pressure_faces[f] = bc_values[f];
+        bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      pressure_faces[f] = bc_values[f][0];
     }
   }
 }

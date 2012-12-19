@@ -223,8 +223,7 @@ void Matrix_MFD::ApplyBoundaryConditions(
       double value = bc_values[f][0];
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
-          bc_model[f] == FLOW_BC_FACE_HEAD) {
+          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
         for (int m = 0; m < nfaces; m++) {
           Ff[m] -= Bff(m, n) * value;
           Bff(n, m) = Bff(m, n) = 0.0;
@@ -387,8 +386,7 @@ void Matrix_MFD::ComputeSchurComplement(
     for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
       int f = faces_LID[n];
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE ||
-          bc_model[f] == FLOW_BC_FACE_HEAD) {
+          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
         for (int m = 0; m < nfaces; m++) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }

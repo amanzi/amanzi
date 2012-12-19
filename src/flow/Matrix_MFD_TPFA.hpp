@@ -7,6 +7,7 @@ The terms of use and "as is" disclaimer for this license are
 provided in the top-level COPYRIGHT file.
 
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+         Daniil Svyatskiy (dasvyat@lanl.gov)
 
 The class provides a different implementation of solvers than in 
 the base class. In particular, Lagrange multipliers are elliminated

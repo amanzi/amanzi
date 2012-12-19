@@ -25,9 +25,8 @@ const int FLOW_STATUS_TRANSIENT_STATE = 8;
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
 const int FLOW_BC_FACE_PRESSURE_SEEPAGE = 2; 
-const int FLOW_BC_FACE_HEAD = 3; 
-const int FLOW_BC_FACE_FLUX = 4;
-const int FLOW_BC_FACE_MIXED = 5;
+const int FLOW_BC_FACE_FLUX = 3;
+const int FLOW_BC_FACE_MIXED = 4;
 
 const int FLOW_BC_SUBMODEL_RAINFALL = 1;
 const int FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN = 2;

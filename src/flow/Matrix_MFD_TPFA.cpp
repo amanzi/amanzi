@@ -7,6 +7,7 @@ The terms of use and "as is" disclaimer for this license are
 provided in the top-level COPYRIGHT file.
 
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+         Daniil Svyatskiy (dasvyat@lanl.gov)
 */
 
 #include <vector>
@@ -401,8 +402,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
         }
         else if (mcells == 1){
                  if ((bc_models[face_id] == FLOW_BC_FACE_PRESSURE) ||
-                         (bc_models[face_id] == FLOW_BC_FACE_PRESSURE_SEEPAGE) ||
-                         (bc_models[face_id] == FLOW_BC_FACE_HEAD)) {
+                         (bc_models[face_id] == FLOW_BC_FACE_PRESSURE_SEEPAGE)) {
                                 Jpp(0,0) = -Kabs_dist*dphi*dk_dp_cell[0]*rho_w*mesh_->face_area(face_id);
                  }
                  else
