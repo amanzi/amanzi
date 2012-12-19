@@ -37,6 +37,10 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
 
   if (modified) {
     // calculate consistent faces
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+      *out_ << "Calculating consistent faces to go along with modified cells." << std::endl;
+    }
+
     Teuchos::RCP<TreeVector> temp_guess = u->SubVector("energy");
     Teuchos::RCP<TreeVector> pres_guess = u->SubVector("flow");
     flow_pk->modify_predictor(h, pres_guess);
@@ -186,7 +190,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
       if (std::abs(std::abs(wc2[0][c]) - norm_prev) < 1.e-10 ||
           std::abs(std::abs(e2[0][c]) - norm_prev) < 1.e-10) {
         badc = c;
-        std::cout << "Found bad cell: " << badc << std::endl;
+        *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
       }
     }
 
@@ -280,7 +284,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_heuristic(double h, Teucho
         if (std::abs(std::abs(wc2[0][c]) - norm_t) < 1.e-10 ||
             std::abs(std::abs(e2[0][c]) - norm_t) < 1.e-10) {
           badc = c;
-          std::cout << "Found bad cell: " << badc << std::endl;
+          *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
         }
       }
 
@@ -609,7 +613,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
       if (std::abs(std::abs(wc2[0][c]) - norm_prev) < 1.e-10 ||
           std::abs(std::abs(e2[0][c]) - norm_prev) < 1.e-10) {
         badc = c;
-        *out_ << "Found bad cell: " << badc << std::endl;
+        *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
       }
     }
 
@@ -703,7 +707,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
         if (std::abs(std::abs(wc2[0][c]) - norm_t) < 1.e-10 ||
             std::abs(std::abs(e2[0][c]) - norm_t) < 1.e-10) {
           badc = c;
-          std::cout << "Found bad cell: " << badc << std::endl;
+          *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
         }
       }
 
