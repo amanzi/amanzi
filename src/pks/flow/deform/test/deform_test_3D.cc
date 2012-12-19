@@ -29,8 +29,9 @@ TEST(ADVANCE_WITH_SIMPLE) {
   
   // read parameter list from input XML file
   Teuchos::ParameterList plist;
-  string xml_fname = "test/simple_mesh_deform_test_3D.xml";
-  updateParametersFromXmlFile(xml_fname, &plist);
+  string xml_fname = "test/simple_mesh_deform_test_2D.xml";
+  Teuchos::Ptr<Teuchos::ParameterList> plist_p(&plist);
+  updateParametersFromXmlFile(xml_fname, plist_p);
 
   // intantiate the mesh: get the region list
   Teuchos::ParameterList region_list = 
