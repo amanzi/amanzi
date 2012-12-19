@@ -240,7 +240,7 @@ void Flow_PK::ApplyBoundaryConditions(std::vector<int>& bc_model,
 ****************************************************************** */
 void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)
 {
-  for (int c = 0; c < K.size(); c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     Kxy[c] = 0.0;
     int idim = std::max<int>(1, K[c].size() - 1);
     for (int i = 0; i < idim; i++) Kxy[c] += K[c](i, i);

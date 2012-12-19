@@ -82,25 +82,21 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
 
-      if (bc_model[f] != FLOW_BC_FACE_NULL){
+      if (bc_model[f] != FLOW_BC_FACE_NULL){  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
             bc_model[f] == FLOW_BC_FACE_HEAD) {
           double pc = atm_pressure - bc_values[f][0];
           (*Krel_faces)[f] = WRM[0]->k_relative(pc);
-//        (*dKrel_dp_faces)[f] = WRM[0]->dKdPc(pc);
+        } else {
+          (*Krel_faces)[f] = (*Krel_cells)[c];
         }
-        else {
-          (*Krel_faces)[f] = (*Krel_cells)[c];  // The boundary face.
-//           (*dKrel_dp_faces)[f] = (*dKrel_dp_cells)[c];
-        }
-      }
-      else {
+      } else {
         if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
-                (*Krel_faces)[f] = (*Krel_cells)[c];  // The upwind face.
-//         } else if (bc_model[f] != FLOW_BC_FACE_NULL) {
-//                 (*Krel_faces)[f] = (*Krel_cells)[c];  // The boundary face.
+          (*Krel_faces)[f] = (*Krel_cells)[c];  // The upwind face.
+        // } else if (bc_model[f] != FLOW_BC_FACE_NULL) {
+        //   (*Krel_faces)[f] = (*Krel_cells)[c];  // The boundary face.
         } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
-                (*Krel_faces)[f] += (*Krel_cells)[c] / 2;  // Almost vertical face.
+          (*Krel_faces)[f] += (*Krel_cells)[c] / 2;  // Almost vertical face.
         } 
       }
     }

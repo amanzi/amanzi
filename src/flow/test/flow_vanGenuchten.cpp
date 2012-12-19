@@ -49,7 +49,7 @@ TEST(vanGenuchten) {
 
   // check smoothing at p = 0.998 * p_atm
   pc = 0.002 * p_atm;
-  CHECK_CLOSE(vG.k_relative(pc), 6.40454234e-1, 1e-9);
+  CHECK_CLOSE(vG.k_relative(pc), 6.404827195147e-1, 1e-9);
 }
 
 

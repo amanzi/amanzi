@@ -247,9 +247,10 @@ void Flow_State::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMod
 #endif
 }
 
+
 /* *******************************************************************
 * Copy face-based data from master to ghost positions.              
-* WARNING: vector vhost must contain ghost cells.              
+* WARNING: vector vghost must contain ghost cells.              
 ******************************************************************* */
 void Flow_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vghost)
 {
@@ -257,13 +258,13 @@ void Flow_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector&
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
   const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
   Epetra_Import importer(target_cmap, source_cmap);
-
-  
+ 
   vghost.Import(v, importer, Insert);
 #else
   vghost = v;
 #endif
 }
+
 
 /* *******************************************************************
 * Copy face-based data from master to ghost positions.              
@@ -275,8 +276,7 @@ void Flow_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector&
   const Epetra_BlockMap& source_cmap = mesh_->face_map(false);
   const Epetra_BlockMap& target_cmap = mesh_->face_map(true);
   Epetra_Import importer(target_cmap, source_cmap);
-
-  
+ 
   vghost.Import(v, importer, Insert);
 #else
   vghost = v;
@@ -285,7 +285,7 @@ void Flow_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector&
 
 
 /* *******************************************************************
-* Lp norm of the vector v1         
+* Lp norm of the vector v1.    
 ******************************************************************* */
 double Flow_State::normLpCell(const Epetra_Vector& v1, double p)
 {

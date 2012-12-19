@@ -203,7 +203,7 @@ void Richards_PK::InitPK()
   if (time >= 0.0) T_physics = time;
 
   // Process other fundamental structures.
-  K.resize(ncells_owned);
+  K.resize(ncells_wghost);
   is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
@@ -423,7 +423,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < K.size(); c++) K[c] *= rho / mu;
+  for (int c = 0; c < ncells_wghost; c++) K[c] *= rho / mu;
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
   preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
@@ -706,14 +706,21 @@ void Richards_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& 
   const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
   const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
 
-  for (int c = 0; c < K.size(); c++) {
-    if (vertical_permeability[c] == horizontal_permeability[c]) {
+  const Epetra_BlockMap& cmap_wghost = mesh_->cell_map(true);
+  Epetra_Vector perm_vert_gh(cmap_wghost);
+  Epetra_Vector perm_horz_gh(cmap_wghost);
+
+  FS->CopyMasterCell2GhostCell(vertical_permeability, perm_vert_gh);
+  FS->CopyMasterCell2GhostCell(horizontal_permeability, perm_horz_gh);
+
+  for (int c = 0; c < ncells_wghost; c++) {
+    if (perm_vert_gh[c] == perm_horz_gh[c]) {
       K[c].init(dim, 1);
-      K[c](0, 0) = vertical_permeability[c];
+      K[c](0, 0) = perm_vert_gh[c];
     } else {
       K[c].init(dim, 2);
-      for (int i = 0; i < dim-1; i++) K[c](i, i) = horizontal_permeability[c];
-      K[c](dim-1, dim-1) = vertical_permeability[c];
+      for (int i = 0; i < dim-1; i++) K[c](i, i) = perm_horz_gh[c];
+      K[c](dim-1, dim-1) = perm_vert_gh[c];
     }
   }
 }

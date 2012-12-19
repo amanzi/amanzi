@@ -136,7 +136,7 @@ double WRM_vanGenuchten::dKdPc(double pc)
     else
       dkds = (2 * (1.0 - y) + x / (1.0 - x)) * se; 
 
-    dkds /= (1 - sr_);
+    dkds /= (1 - sr_);  // This factor is due to dSdSe.
 
     return dkds * dsdp;
 
