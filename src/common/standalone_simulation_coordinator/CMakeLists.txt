@@ -18,6 +18,7 @@ include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 # The interfaces
 include_directories(${INTERFACE_PLATFORM_DIR})
+include_directories(${AMANZI_BINARY_DIR}) # required to pick up amanzi_version.hh
 
 #
 # The structured grid pieces
