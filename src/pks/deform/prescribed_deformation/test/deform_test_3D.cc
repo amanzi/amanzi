@@ -28,27 +28,47 @@ TEST(ADVANCE_WITH_SIMPLE) {
 #endif
   
   // read parameter list from input XML file
-  Teuchos::ParameterList plist;
+  Teuchos::Ptr<Teuchos::ParameterList> plist;
   string xml_fname = "test/simple_mesh_deform_test_3D.xml";
-  updateParametersFromXmlFile(xml_fname, &plist);
+  updateParametersFromXmlFile(xml_fname, plist);
 
   // intantiate the mesh: get the region list
-  Teuchos::ParameterList region_list = 
-    plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList& region_list = 
+    plist->get<Teuchos::ParameterList>("Regions");
   
   // intantiate the mesh: build the geometric model
   const int dim3D = 3 ;
   GeometricModelPtr gm = 
     new GeometricModel(dim3D, region_list, (Epetra_MpiComm *)comm);
   
-  // intantiate the mesh: build the geometric model
+  // intantiate the mesh: build the geometric model (big domain by default)
   string fname = string("./test/tmp_proto_fs.exo") ;
-  Teuchos::RCP<Mesh> mesh = 
+  
+  // select a small subset of the domain
+  bool do_subset_flag = false ;
+  if ( do_subset_flag ) {
+    fname = string("./test/poly0_subset_proto_fs.exo");
+  }
+  
+  // this version uses three meshes:
+  // mesh0 : starting mesh
+  // mesh1 : final mesh (which is input from file fname)
+  // mesh  : current mesh
+  Teuchos::RCP<Mesh> mesh0 = 
+    Teuchos::rcp(new Mesh_MSTK(fname.c_str(), comm, gm));
+
+  Teuchos::RCP<Mesh> mesh1 = 
+    Teuchos::rcp(new Mesh_MSTK(fname.c_str(), comm, gm));
+
+  Teuchos::RCP<Mesh> mesh  = 
     Teuchos::rcp(new Mesh_MSTK(fname.c_str(), comm, gm));
 
   // create and initialize the deform mesh class
-  DeformMesh deform_test(plist,mesh);
-  deform_test.layer_profile();
+  DeformMesh deform_test(*plist,mesh0,mesh1,mesh);
+  
+  // get the list of nodes on the top
+  //deform_test.mesh_deformation();
+  //deform_test.analyze_final_mesh();
 
   // say goodbye and exit
   deform_test.print_goodbye();
