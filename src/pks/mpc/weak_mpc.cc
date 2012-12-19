@@ -27,6 +27,7 @@ double WeakMPC::get_dt() {
        pk != sub_pks_.end(); ++pk) {
     dt = std::min<double>(dt, (*pk)->get_dt());
   }
+  return dt;
 };
 
 // -----------------------------------------------------------------------------

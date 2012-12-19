@@ -1,5 +1,9 @@
 #include "deform.hh"
 
+namespace Amanzi {
+namespace Deform {
+
+
 // -------------------------------------------------------------
 // CONSTRUCTORS
 // -------------------------------------------------------------
@@ -1069,3 +1073,5 @@ void DeformMesh::analyze_final_mesh() {
   }
 }
 
+}
+}
