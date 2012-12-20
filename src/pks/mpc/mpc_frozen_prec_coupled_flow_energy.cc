@@ -43,8 +43,36 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
 
     Teuchos::RCP<TreeVector> temp_guess = u->SubVector("energy");
     Teuchos::RCP<TreeVector> pres_guess = u->SubVector("flow");
-    flow_pk->modify_predictor(h, pres_guess);
-    energy_pk->modify_predictor(h, temp_guess);
+
+    if (consistent_by_average_) {
+      Teuchos::RCP<CompositeVector> temp_guess_cv = temp_guess->data();
+      Teuchos::RCP<CompositeVector> pres_guess_cv = pres_guess->data();
+
+      // update faces from averages of cells
+      temp_guess_cv->ScatterMasterToGhosted("cell");
+      pres_guess_cv->ScatterMasterToGhosted("cell");
+      AmanziMesh::Entity_ID_List cells;
+
+      int f_owned = temp_guess_cv->size("face");
+      for (int f=0; f!=f_owned; ++f) {
+        cells.clear();
+        temp_guess_cv->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+        if (cells.size() == 2) {
+          (*temp_guess_cv)("face",f) = ((*temp_guess_cv)("cell",cells[0]) +
+                  (*temp_guess_cv)("cell",cells[1])) / 2.0;
+          (*pres_guess_cv)("face",f) = ((*pres_guess_cv)("cell",cells[0]) +
+                  (*pres_guess_cv)("cell",cells[1])) / 2.0;
+        } else {
+          (*temp_guess_cv)("face",f) = (*temp_guess_cv)("cell",cells[0]);
+          (*pres_guess_cv)("face",f) = (*pres_guess_cv)("cell",cells[0]);
+        }
+      }
+
+    } else {
+      // update faces from consistent constraints
+      flow_pk->modify_predictor(h, pres_guess);
+      energy_pk->modify_predictor(h, temp_guess);
+    }
   }
 
   return modified;
@@ -1142,6 +1170,9 @@ void MPCFrozenCoupledFlowEnergy::setup(const Teuchos::Ptr<State>& S) {
     Errors::Message message(std::string("Invalid predictor type ")+predictor_string);
     Exceptions::amanzi_throw(message);
   }
+
+  // this is only for testing, do not use!
+  consistent_by_average_ = plist_.get<bool>("evaluate face consistency via averages", false);
 }
 
 // -- Initialize owned (dependent) variables.
