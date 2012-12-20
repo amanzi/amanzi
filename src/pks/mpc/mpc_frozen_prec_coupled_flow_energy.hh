@@ -21,7 +21,8 @@ public:
   MPCFrozenCoupledFlowEnergy(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCCoupledFlowEnergy(plist, soln) {}
+      MPCCoupledFlowEnergy(plist, soln),
+      consistent_by_average_(false) {}
 
   // Virtual destructor
   virtual ~MPCFrozenCoupledFlowEnergy() {}
@@ -61,6 +62,7 @@ protected:
   double the_res_norm_;
   bool modify_thaw_to_prev_;
   PredictorType predictor_type_;
+  bool consistent_by_average_;
 
   Teuchos::RCP<State> S_work_;
 

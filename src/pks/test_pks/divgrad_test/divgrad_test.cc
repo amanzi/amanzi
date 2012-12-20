@@ -6,12 +6,10 @@
   License: BSD
   Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 ------------------------------------------------------------------------- */
-#include "matrix_mfd.cc"
+
 #include "bc_factory.hh"
 
 #include "divgrad_test.hh"
-
-#define DEBUG_FLAG 0
 
 namespace Amanzi {
 namespace TestPKs {
@@ -105,8 +103,25 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
 
   // derive consistent faces
   Teuchos::RCP<CompositeVector> soln = S->GetFieldData(key_, name_);
+
+  bool fail = TestRegularFaceValues_(soln);
+  if (fail) {
+    std::cout << "Failed test, which is good" << std::endl;
+  } else {
+    std::cout << "Passed test, which is BAD!" << std::endl;
+  }
+  ASSERT(fail);
+
   matrix_->UpdateConsistentFaceConstraints(soln);
 
+  // test for correctness -- this should only work for regular meshes
+  fail = TestRegularFaceValues_(soln);
+  if (fail) {
+    std::cout << "Failed test, which is BAD!" << std::endl;
+  } else {
+    std::cout << "Passed test, which is good" << std::endl;
+  }
+  ASSERT(!fail);
 };
 
 
@@ -147,6 +162,49 @@ DivGradTest::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres)
   }
 };
 
+
+bool DivGradTest::TestRegularFaceValues_(const Teuchos::RCP<CompositeVector>& pres) {
+  double eps(1.e-8);
+  int nfail = 0;
+
+  int nfaces = pres->size("face");
+  for (int f=0; f!=nfaces; ++f) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+
+    if (cells.size() == 1) {
+      if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
+        if (std::abs( (*pres)("face",f) - bc_values_[f] ) > eps) nfail++;
+      } else {
+        if (bc_markers_[f] == Operators::MFD_BC_NULL) {
+          bc_values_[f] = 0.0;
+        }
+
+        AmanziGeometry::Point fpoint = mesh_->face_centroid(f);
+        AmanziGeometry::Point cpoint = mesh_->cell_centroid(cells[0]);
+        double dx = std::sqrt((fpoint - cpoint)*(fpoint - cpoint));
+
+        double dp = std::abs(bc_values_[f])*dx;
+        double p = (*pres)("cell",cells[0]);
+        if (bc_values_[f] > 0) {
+          p = p + dp;
+        } else {
+          p = p - dp;
+        }
+        if (std::abs( (*pres)("face",f) - p ) > eps) nfail++;
+      }
+    } else {
+      double p = ((*pres)("cell",cells[0]) + (*pres)("cell",cells[1])) / 2.0;
+      if (std::abs( (*pres)("face",f) - p ) > eps) nfail++;
+    }
+  }
+
+  if (nfail > 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 } // namespace
 } // namespace

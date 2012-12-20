@@ -11,6 +11,7 @@
 #define PK_TESTS_DIVGRAD_TEST_HH_
 
 #include "boundary_function.hh"
+#include "matrix_mfd.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_base.hh"
@@ -18,7 +19,7 @@
 namespace Amanzi {
 
 // forward declarations
-namespace Operators { class MatrixMFD; }
+
 
 namespace TestPKs {
 
@@ -57,6 +58,7 @@ protected:
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres);
+  virtual bool TestRegularFaceValues_(const Teuchos::RCP<CompositeVector>& pres);
 
 protected:
   // mathematical operators
