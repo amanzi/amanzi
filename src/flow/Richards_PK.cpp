@@ -215,6 +215,9 @@ void Richards_PK::InitPK()
   Krel_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
 
+  dKdP_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));  // for P-N and Newton
+  dKdP_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+
   Krel_cells->PutScalar(1.0);  // we start with fully saturated media
   Krel_faces->PutScalar(1.0);
 
@@ -237,10 +240,6 @@ void Richards_PK::InitPK()
     map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
     PopulateMapC2MB();
   }
-
-  // data for Picard-Newton and Analytical Jacobian
-  dKdP_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-  dKdP_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
 
   flow_status_ = FLOW_STATUS_INIT;
 }

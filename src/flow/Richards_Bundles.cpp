@@ -13,6 +13,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Flow_State.hpp"
 #include "Matrix_MFD.hpp"
 #include "Matrix_MFD_TPFA.hpp"
+#include "Matrix_MFD_PLambda.hpp"
 #include "Richards_PK.hpp"
 
 namespace Amanzi {
@@ -50,7 +51,6 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
-  // use code from Richards_Bundles.cpp (lipnikov@lanl.gov)
   CalculateRelativePermeability(u);
   UpdateSourceBoundaryData(Tp, *u_faces);
 
@@ -73,6 +73,17 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
                                   *Krel_cells, *dKdP_cells,
                                   *Krel_faces, *dKdP_faces);
+  } else if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+    Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
+    if (matrix_plambda == 0) {
+      Errors::Message msg;
+      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_PLAMBDA\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    Epetra_Vector& flux = FS->ref_darcy_flux();
+    rhs = preconditioner_->rhs();
+    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
   }
 
   preconditioner_->ComputeSchurComplement(bc_model, bc_values);
@@ -156,6 +167,7 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
 /* ******************************************************************
 * A wrapper for generating a steady state problem. 
 * Warning: Krel must be initialized before calling this routine. 
+* OBSOLETE routine: It will eventually phase away.
 ****************************************************************** */
 void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner)
 { 
@@ -179,6 +191,7 @@ void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bo
 /* ******************************************************************
 * A wrapper for generating a transient problem. 
 * Warning: Krel must be initialized before calling this routine. 
+* OBSOLETE routine: It will eventually phase away.
 ****************************************************************** */
 void Richards_PK::AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp,
                                                Epetra_Vector& p, bool add_preconditioner)

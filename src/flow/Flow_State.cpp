@@ -354,17 +354,17 @@ void Flow_State::set_fluid_density(double rho)
 
 
 /* *******************************************************************
- * DEBUG: create constant fluid viscosity
- ****************************************************************** */
+* DEBUG: create constant fluid viscosity
+******************************************************************* */
 void Flow_State::set_fluid_viscosity(double mu)
 {
-  *fluid_viscosity_ = mu;  // verify that it is positive (lipnikov@lanl.gov)
+  *fluid_viscosity_ = mu;
 }
 
 
 /* *******************************************************************
- * DEBUG: create constant porosity
- ****************************************************************** */
+* DEBUG: create constant porosity
+******************************************************************* */
 void Flow_State::set_porosity(double phi)
 {
   porosity_->PutScalar(phi);
@@ -372,8 +372,8 @@ void Flow_State::set_porosity(double phi)
 
 
 /* *******************************************************************
- * DEBUG: create hydrostatic pressure with p0 at height z0.
- ****************************************************************** */
+* DEBUG: create hydrostatic pressure with p0 at height z0.
+******************************************************************* */
 void Flow_State::set_pressure_hydrostatic(double z0, double p0)
 {
   int dim = mesh_->space_dimension();
