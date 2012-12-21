@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
 
     std::string cm_3_name = "CM3";
     Array<int> cm_3_cycles;
+    cm_3_cycles.push_back(0);
     cm_3_cycles.push_back(8);
     cm_3_cycles.push_back(9);
     cm_3_cycles.push_back(11);
@@ -39,7 +40,7 @@ int main(int argc, char* argv[])
 
 
     std::string tm_1_name = "TM1";
-    Real tm_1_start = 4;
+    Real tm_1_start = 0;
     Real tm_1_period = 4;
     Real tm_1_stop = -1;
     EventCoord::TimeEvent te1(tm_1_start, tm_1_period, tm_1_stop);
@@ -47,6 +48,7 @@ int main(int argc, char* argv[])
 
     std::string tm_2_name = "TM2";
     Array<Real> tm_2_times;
+    tm_2_times.push_back(0);
     tm_2_times.push_back(4.5);
     tm_2_times.push_back(4.51);
     tm_2_times.push_back(4.52);
@@ -58,9 +60,20 @@ int main(int argc, char* argv[])
     Real time_new, time_old = 0;
     const Real dt_def = 0.5;
     const Real dt_eps = dt_def*1.e-8;
+    int iter_init = 0;
     int diter = 1;
     int iterMAX = 25;
-    Array<std::string> eventList;
+    bool verbose = true;
+
+    Array<std::string> eventList = event_coord.InitEvent(time_old,iter_init);
+    if (verbose && eventList.size()>0) {
+      std::cout << "tinit = " << time_old;
+      for (int j=0; j<eventList.size(); ++j) {
+        std::cout << ", event: " << eventList[j] << " ";
+      }
+      std::cout << std::endl;
+    }
+
     for (int iter=0; iter<iterMAX; iter+=diter) {
 
         std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time_old,dt_def,iter,diter);
@@ -81,11 +94,13 @@ int main(int argc, char* argv[])
         // time_new to when that event(s) would occur.  At this new cycle and time, we would
         // typically then process the list of events that have occurred:
         // 
-        //  std::cout << "t=" << time_new << " dt = " << time_new - time_old << " iter=" << iter+diter ;
-        //  for (int j=0; j<eventList.size(); ++j) {
-        //      std::cout << ", event: " << eventList[j] << " ";
-        //}
-        //  std::cout << std::endl;
+        if (verbose) {
+          std::cout << "told = " << time_old << " tnew = " << time_new << " dt = " << time_new - time_old << " iter=" << iter+diter ;
+          for (int j=0; j<eventList.size(); ++j) {
+            std::cout << ", event: " << eventList[j] << " ";
+          }
+          std::cout << std::endl;
+        }
 
         // increment the base time and continue
         time_old = time_new;

@@ -102,6 +102,65 @@ c ::: kpedge in y-dir
       
       end
 
+      subroutine FORT_INITKAPPA3 (kappadata, DIMS(kappadata), 
+     &     kappa,DIMS(kappa),lo,hi,ratio)
+      implicit none
+      integer DIMDEC(kappadata)
+      integer DIMDEC(kappa)
+      integer lo(SDIM), hi(SDIM)
+      integer ratio(SDIM)
+      REAL_T  kappadata(DIMV(kappadata))
+      REAL_T  kappa(DIMV(kappa))
+
+      integer i,j,ii,jj,fi,fj,n
+      REAL_T  fac
+
+      kappa(:,:) = zero
+      fac = 1.d0
+      do n=1,SDIM
+         fac = fac * DBLE(ratio(n))
+      enddo
+
+      do j = lo(2), hi(2)
+         fj = ratio(2)*j
+         do i = lo(1), hi(1)
+            fi = ratio(1)*i
+            do ii = 0,ratio(1)-1
+               do jj = 0,ratio(2)-1
+                  kappa(i,j) = kappa(i,j) + one/kappadata(fi+ii,fj+jj)
+               end do
+            end do
+            kappa(i,j) = fac / kappa(i,j)
+         end do
+      end do
+      end
+
+      subroutine FORT_INITKEDGE (cdat, DIMS(cdat), edat, DIMS(edat), lo, hi, dir)
+      implicit none
+      integer DIMDEC(cdat)
+      integer DIMDEC(edat)
+      integer lo(SDIM), hi(SDIM)
+      integer dir
+      REAL_T  cdat(DIMV(cdat))
+      REAL_T  edat(DIMV(edat))
+
+      integer i,j
+
+      if (dir .eq. 0) then
+         do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+               edat(i,j) = 2.d0 / (1.d0/cdat(i,j) + 1.d0/cdat(i-1,j))
+            enddo
+         enddo
+      else
+         do j = lo(2), hi(2)+1
+            do i = lo(1), hi(1)
+               edat(i,j) = 2.d0 / (1.d0/cdat(i,j) + 1.d0/cdat(i,j-1))
+            enddo
+         enddo
+      endif
+      end
+
 c ::: ----------------------------------------------------------
 c ::: Define the permeability, kappa.
 c :::    Kappa is defined with 3 ghost cells on each side to 
@@ -111,129 +170,127 @@ c ::: ----------------------------------------------------------
       subroutine FORT_INITKAPPA2 (kappadata, DIMS(kappadata), 
      &     kappa,DIMS(kappa),
      &     kappax,DIMS(kpx),kappay,DIMS(kpy),
-     &     lo,hi,currlev,maxlev,fratio)
+     &     lo,hi,ratio,ng)
 
 
       integer DIMDEC(kappadata)
       integer DIMDEC(kappa),DIMDEC(kpx),DIMDEC(kpy)
       integer lo(SDIM), hi(SDIM)
-      integer currlev,maxlev
-      integer fratio
+      integer ratio(SDIM)
+      integer ng
       REAL_T  kappadata(DIMV(kappadata),SDIM)
       REAL_T  kappa(DIMV(kappa))
       REAL_T  kappax(DIMV(kpx)),kappay(DIMV(kpy))
 
-      integer i,j,k,l,ratio,n
+      integer i,j,k,l,n
       integer fi,fj
       integer imin,imax,jmin,jmax
       REAL_T  k1, k2, kl1, kl2
-
-      ratio = fratio**(maxlev-currlev)
 
       imin = lo(1) -1
       jmin = lo(2) -1
       imax = hi(1) +1
       jmax = hi(2) +1
 
-      do j = lo(2)-3, hi(2)+3
-         fj = ratio*j
-         do i = lo(1)-3, hi(1)+3         
-            fi = ratio*i
+      do j = lo(2)-ng, hi(2)+ng
+         fj = ratio(2)*j
+         do i = lo(1)-ng, hi(1)+ng         
+            fi = ratio(1)*i
             kappa(i,j) = zero
-            do k = 0,ratio-1
-               do l = 0,ratio-1
+            do k = 0,ratio(1)-1
+               do l = 0,ratio(2)-1
                   do n = 1,SDIM
                      kappa(i,j) = kappa(i,j) + one/kappadata(fi+k,fj+l,n)
                   end do
                end do
             end do
-            kappa(i,j) = dble(SDIM*ratio*ratio)/kappa(i,j)
+            kappa(i,j) = dble(SDIM*ratio(1)*ratio(2))/kappa(i,j)
          end do
       end do
 
 #if 1
 c    ::: kpedge in x-dir
       do i = imin, imax+1
-         fi = ratio*i
+         fi = ratio(1)*i
          do j = jmin, jmax  
-            fj = ratio*j
+            fj = ratio(2)*j
             kappax(i,j) = zero            
-            do k = 0,ratio-1
+            do k = 0,ratio(2)-1
                kl1 = 0
                kl2 = 0
-               do l = 0,ratio-1
+               do l = 0,ratio(1)-1
                   kl1 = kl1 + one/kappadata(fi+l,fj+k,1)
                   kl2 = kl2 + one/kappadata(fi-1-l,fj+k,1)
                end do
-               kappax(i,j) = kappax(i,j) + two*ratio/(kl1 + kl2)
+               kappax(i,j) = kappax(i,j) + two*ratio(1)/(kl1 + kl2)
             enddo
-            kappax(i,j) = kappax(i,j)/DBLE(ratio)
+            kappax(i,j) = kappax(i,j)/DBLE(ratio(2))
          end do
       end do
          
 c     ::: kpedge in y-dir
       do j = jmin, jmax+1
-         fj = ratio*j
+         fj = ratio(2)*j
          do i = imin, imax         
-            fi = ratio*i
+            fi = ratio(1)*i
             kappay(i,j) = zero
-            do k = 0,ratio-1   
+            do k = 0,ratio(1)-1   
                kl1 = 0
                kl2 = 0
-               do l = 0,ratio-1
+               do l = 0,ratio(2)-1
                   kl1 = kl1 + one/kappadata(fi+k,fj+l,2)
                   kl2 = kl2 + one/kappadata(fi+k,fj-1-l,2)
                end do
-               kappay(i,j) = kappay(i,j) + two*ratio/(kl1 + kl2)
+               kappay(i,j) = kappay(i,j) + two*ratio(2)/(kl1 + kl2)
             end do
-            kappay(i,j) = kappay(i,j)/DBLE(ratio)
+            kappay(i,j) = kappay(i,j)/DBLE(ratio(1))
          end do
       end do
 #else
 c    ::: kpedge in x-dir
       do i = imin, imax+1
-         fi = ratio*i
+         fi = ratio(1)*i
          do j = jmin, jmax  
-            fj = ratio*j
+            fj = ratio(2)*j
             kappax(i,j) = zero            
             k1 = 0
             k2 = 0
-            do k = 0,ratio-1
+            do k = 0,ratio(2)-1
                kl1 = 0
                kl2 = 0
-               do l = 0,ratio-1
+               do l = 0,ratio(1)-1
                   kl1 = kl1 + one/kappadata(fi+l,fj+k,1)
                   kl2 = kl2 + one/kappadata(fi-1-l,fj+k,1)
                end do
-               k1 = k1 + dble(ratio)/kl1
-               k2 = k2 + dble(ratio)/kl2
+               k1 = k1 + dble(ratio(1))/kl1
+               k2 = k2 + dble(ratio(1))/kl2
             end do
-            k1 = k1/dble(ratio)
-            k2 = k2/dble(ratio)          
+            k1 = k1/dble(ratio(2))
+            k2 = k2/dble(ratio(2))          
             kappax(i,j) = two/(one/k1 + one/k2)
          end do
       end do
          
 c     ::: kpedge in y-dir
       do j = jmin, jmax+1
-         fj = ratio*j
+         fj = ratio(2)*j
          do i = imin, imax         
-            fi = ratio*i
+            fi = ratio(1)*i
             kappay(i,j) = zero
             k1 = 0
             k2 = 0
-            do k = 0,ratio-1   
+            do k = 0,ratio(1)-1   
                kl1 = 0
                kl2 = 0
-               do l = 0,ratio-1
+               do l = 0,ratio(2)-1
                   kl1 = kl1 + one/kappadata(fi+k,fj+l,2)
                   kl2 = kl2 + one/kappadata(fi+k,fj-1-l,2)
                end do
-               k1 = k1 + dble(ratio)/kl1
-               k2 = k2 + dble(ratio)/kl2
+               k1 = k1 + dble(ratio(2))/kl1
+               k2 = k2 + dble(ratio(2))/kl2
             end do
-            k1 = k1/dble(ratio)
-            k2 = k2/dble(ratio)          
+            k1 = k1/dble(ratio(1))
+            k2 = k2/dble(ratio(1))          
             kappay(i,j) = two/(one/k1 + one/k2)
          end do
       end do
@@ -364,23 +421,23 @@ c ::: -----------------------------------------------------------
       integer DIMDEC(phi)
       integer DIMDEC(phidata)
       integer lo(SDIM), hi(SDIM)
-      integer ratio
+      integer ratio(SDIM)
       REAL_T  phi(DIMV(phi))
       REAL_T  phidata(DIMV(phidata))
 
       integer   i,j,k,l,fi,fj
 
       do j = lo(2), hi(2)
-         fj = ratio*j
+         fj = ratio(2)*j
          do i = lo(1), hi(1)         
-            fi = ratio*i
+            fi = ratio(1)*i
             phi(i,j) = zero
-            do k = 0,ratio-1
-               do l = 0,ratio-1
+            do k = 0,ratio(1)-1
+               do l = 0,ratio(2)-1
                   phi(i,j) = phi(i,j) + phidata(fi+k,fj+l)
                end do
             end do
-            phi(i,j) = phi(i,j)/dble(ratio*ratio)
+            phi(i,j) = phi(i,j)/dble(ratio(1)*ratio(2))
 
          end do
       end do

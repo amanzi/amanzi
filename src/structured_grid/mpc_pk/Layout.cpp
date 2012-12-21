@@ -285,9 +285,7 @@ Layout::Rebuild(int _nLevs)
     nGrow = 1;
     BL_ASSERT(parent);
 
-    if (nLevs<0) nLevs = parent->finestLevel() + 1;
-    BL_ASSERT(nLevs <= parent->finestLevel()+1);
-
+    nLevs = (_nLevs < 0 ? parent->finestLevel() + 1 : nLevs);
     gridArray.resize(nLevs);
     geomArray.resize(nLevs);
     refRatio.resize(nLevs-1);

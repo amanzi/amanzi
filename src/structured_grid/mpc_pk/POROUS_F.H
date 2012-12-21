@@ -4,6 +4,8 @@
 #ifdef BL_LANG_FORT
 #    define FORT_INITKAPPA   initkappa
 #    define FORT_INITKAPPA2  initkappa2
+#    define FORT_INITKAPPA3  initkappa3
+#    define FORT_INITKEDGE   initkedge
 #    define FORT_INITPHI     initphi
 #    define FORT_INITPHI2    initphi2
 #    define FORT_CRSENMAT    crsenmat
@@ -16,6 +18,8 @@
 #  if  defined(BL_FORT_USE_UPPERCASE)
 #    define FORT_INITKAPPA   INITKAPPA
 #    define FORT_INITKAPPA2  INITKAPPA2
+#    define FORT_INITKAPPA3  INITKAPPA3
+#    define FORT_INITKEDGE   INITKEDGE
 #    define FORT_INITPHI     INITPHI
 #    define FORT_INITPHI2    INITPHI2
 #    define FORT_CRSENMAT    CRSENKMAT
@@ -26,6 +30,9 @@
 #    define FORT_PERIODIC    PERIODICRAND
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_INITKAPPA   initkappa
+#    define FORT_INITKAPPA2  initkappa2
+#    define FORT_INITKAPPA3  initkappa3
+#    define FORT_INITKEDGE   initkedge
 #    define FORT_INITPHI     initphi
 #    define FORT_INITPHI2    initphi2
 #    define FORT_CRSENMAT    crsenmat
@@ -37,6 +44,8 @@
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_INITKAPPA   initkappa_
 #    define FORT_INITKAPPA2  initkappa2_
+#    define FORT_INITKAPPA3  initkappa3_
+#    define FORT_INITKEDGE   initkedge_
 #    define FORT_INITPHI     initphi_
 #    define FORT_INITPHI2    initphi2_
 #    define FORT_CRSENMAT    crsenmat_
@@ -73,9 +82,15 @@ extern "C" {
 #if (BL_SPACEDIM == 3)
 			const Real* kappaz,ARLIM_P(kz_lo), ARLIM_P(kz_hi),
 #endif
-			const int* lo, const int* hi,
-			const int* currlev, const int* maxlev, int* fratio);
+			const int* lo, const int* hi, const int* fratio, const int* ng);
 
+  void FORT_INITKAPPA3 (const Real* kappadat,ARLIM_P(kd_lo), ARLIM_P(kd_hi),
+			Real* kappa,ARLIM_P(k_lo), ARLIM_P(k_hi),
+			const int* lo, const int* hi, const int* fratio);
+
+  void FORT_INITKEDGE (const Real* cdat,ARLIM_P(c_lo), ARLIM_P(c_hi),
+                       Real*       edat,ARLIM_P(e_lo), ARLIM_P(e_hi),
+                       const int* lo, const int* hi, const int* dir);
 
   void FORT_INITPHI (const Real* rock_phi,
 		     ARLIM_P(p_lo), ARLIM_P(p_hi),

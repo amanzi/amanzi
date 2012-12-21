@@ -139,6 +139,62 @@ process_events(bool& write_plotfile_after_step,
     return dt_new;
 }
 
+static void
+initial_events(bool& write_plotfile_now,
+               bool& write_checkpoint_now,
+               Array<int>& observations_now,
+               bool& begin_tpc_now,
+               EventCoord& event_coord,
+               Real time, int iter)
+{
+    write_plotfile_now = false;
+    write_checkpoint_now = false;
+    begin_tpc_now = false;
+    Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
+    Array<std::string>& vis_time_macros = PorousMedia::vis_time_macros;
+    Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
+    Array<std::string>& tpc_labels = PorousMedia::tpc_labels;
+
+    Array<std::string> eventList = event_coord.InitEvent(time,iter);
+    PArray<Observation>& observations = PorousMedia::TheObservationArray();
+
+    for (int j=0; j<eventList.size(); ++j) {
+      
+      for (int i=0; i<observations.size(); ++i) {
+        Observation& observation = observations[i];
+        const std::string& event_label = observation.event_label;
+        
+        if (eventList[j] == event_label) {
+          observations_now.push_back(i);
+        }
+      }
+      
+      for (int k=0; k<vis_cycle_macros.size(); ++k) {
+        if (eventList[j] == vis_cycle_macros[k]) {
+          write_plotfile_now = true;
+        }
+      }
+
+      for (int k=0; k<vis_time_macros.size(); ++k) {
+        if (eventList[j] == vis_time_macros[k]) {
+          write_plotfile_now = true;
+        }
+      }
+
+      for (int k=0; k<chk_cycle_macros.size(); ++k) {
+        if (eventList[j] == chk_cycle_macros[k]) {
+          write_checkpoint_now = true;
+        }
+      }
+      
+      for (int k=0; k<tpc_labels.size(); ++k) {
+        if (eventList[j] == tpc_labels[k]) {
+          begin_tpc_now = true;
+        }
+      }
+    }
+}
+
 
 void
 PMAmr::init (Real t_start,
@@ -156,8 +212,8 @@ PMAmr::init (Real t_start,
         bool write_plot, write_check, begin_tpc;
         Array<int> initial_observations;
 
-        process_events(write_plot,write_check,initial_observations,begin_tpc,event_coord,
-                       cumtime, dt_level[0], level_steps[0], 0);
+        initial_events(write_plot,write_check,initial_observations,begin_tpc,event_coord,
+                       cumtime, level_steps[0]);
 
         if (write_plot) {
             int file_name_digits_tmp = file_name_digits;

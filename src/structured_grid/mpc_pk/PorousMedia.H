@@ -406,7 +406,8 @@ public:
 					    int   iteration,
 					    Real& dt_new, 
 					    bool  do_subcycle,
-					    bool  do_recursive);
+					    bool  do_recursive,
+                                            bool  use_cached_sat);
 
   void advance_tracer  (Real time,
 			Real dt);
@@ -572,10 +573,12 @@ public:
 
 
   void tracer_advection (MultiFab* u_mac,
-			 Real dt,
 			 int  first_scalar,
 			 int  last_scalar,
-			 bool reflux_on_this_call);
+			 bool reflux_on_this_call,
+                         bool use_cached_sat);
+
+  void cache_component_saturations(int nGrow);
 
   // Update scalars, (viscous solve in scalar_update).
   //
@@ -763,7 +766,7 @@ public:
   // Reflux function.
   //
   virtual void reflux ();
-  void reflux(int sComp, int nComp);
+  void reflux(FluxRegister& fr, int sComp, int nComp);
 
   virtual void avgDown (); // Average down for all the state types.
   void avgDown (int comp); // Average down for a single StateType scalar
@@ -1394,6 +1397,11 @@ protected:
 			   std::ostream&  os,
 			   VisMF::How     how,
 			   bool           dump_old);
+
+  bool component_saturations_cached;
+  MultiFab *sat_old_cached, *sat_new_cached;
+  Real t_sat_old_cached, t_sat_new_cached;
+
 };
 
 #endif /*_PorousMedia_H_*/

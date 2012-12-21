@@ -398,6 +398,9 @@
     <ParameterList name="Output">
       <ParameterList name="Time Macros"/>
       <ParameterList name="Cycle Macros">
+        <ParameterList name="Every_step">
+          <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
+        </ParameterList>
         <ParameterList name="Every_1.0_1000.0_-1">
           <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
         </ParameterList>
@@ -405,10 +408,10 @@
       <ParameterList name="Variable Macros"/>
       <ParameterList name="Observation Data"/>
       <ParameterList name="Visualization Data">
-        <Parameter name="Regions" type="Array(string)" value="{Crib_216-B-17,Crib_216-B-18}"/>
+       <!-- <Parameter name="Regions" type="Array(string)" value="{Crib_216-B-17,Crib_216-B-18}"/> -->
         <Parameter name="File Name Base" type="string" value="plot"/>
         <Parameter name="File Name Digits" type="string" value="5"/>
-        <Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
+        <Parameter name="Cycle Macro" type="string" value="Every_step"/>
       </ParameterList>
       <ParameterList name="Checkpoint Data">
         <Parameter name="File Name Base" type="string" value="checkpoint"/>
