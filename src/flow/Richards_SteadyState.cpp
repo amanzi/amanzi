@@ -194,17 +194,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
         *solution_faces, atm_pressure, rainfall_factor,
         bc_submodel, bc_model, bc_values);
 
-    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
-        Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-        Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-      CalculateRelativePermeabilityFace(*solution_cells);
-      Krel_cells->PutScalar(1.0);
-    } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-      CalculateRelativePermeabilityFace(*solution_cells);
-    } else {
-      CalculateRelativePermeabilityCell(*solution_cells);
-      Krel_faces->PutScalar(1.0);
-    }
+    // update permeabilities
+    CalculateRelativePermeability(*solution);
 
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
@@ -313,18 +304,8 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
         *solution_faces, atm_pressure, rainfall_factor,
         bc_submodel, bc_model, bc_values);
 
-    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
-        Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-        Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-      CalculateRelativePermeabilityFace(*solution_cells);
-      Krel_cells->PutScalar(1.0);
-      CalculateDerivativePermeabilityFace(*solution_cells);
-    } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-      CalculateRelativePermeabilityFace(*solution_cells);
-    } else {
-      CalculateRelativePermeabilityCell(*solution_cells);
-      Krel_faces->PutScalar(1.0);
-    }
+    // update permeabilities
+    CalculateRelativePermeability(*solution);
 
     // create algebraic problem
     rhs = matrix_->rhs();  // export RHS from the matrix class

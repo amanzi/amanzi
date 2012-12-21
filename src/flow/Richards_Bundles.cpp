@@ -19,7 +19,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Gathers together routines to compute MFD matrices Axx(u).                            
+* Gathers together routines to compute MFD matrices.                            
 ****************************************************************** */
 void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
 {
@@ -42,8 +42,8 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
 
 
 /* ******************************************************************
-* Gathers together routines to compute MFD matrices Axx(u).
-* preconditioner Sff(u) using internal time step dT.                             
+* Gathers together routines to compute MFD matrices Axx(u) and
+* preconditioner Sff(u) using time step dT.                             
 ****************************************************************** */
 void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, double dTp)
 {
@@ -93,6 +93,10 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
       Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     CalculateRelativePermeabilityFace(*u_cells);
     Krel_cells->PutScalar(1.0);
+    if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
+        experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+      CalculateDerivativePermeabilityFace(*solution_cells);
+    }
   } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
     CalculateRelativePermeabilityFace(*u_cells);
   } else {

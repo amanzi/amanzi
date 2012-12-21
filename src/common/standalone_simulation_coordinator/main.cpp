@@ -51,17 +51,15 @@ int main(int argc, char *argv[]) {
 #endif
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
+  int rank = mpiSession.getRank();
 
   // make sure only PE0 can write to std::cout  --  NO...do not do this!!
-  int rank;
-  rank = mpiSession.getRank();
-  //if (rank != 0) cout.rdbuf(0);
+  // if (rank != 0) cout.rdbuf(0);
 
   try {
-
     Teuchos::CommandLineProcessor CLP;
 
-    CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"
+    CLP.setDocString("The Amanzi driver reads an XML input file and\n"
                      "runs a reactive flow and transport simulation.\n");
 
     std::string xmlInFileName = "options.xml";
@@ -200,7 +198,6 @@ int main(int argc, char *argv[]) {
     Amanzi::timer_manager.parSync(mpi_comm);
     if (rank == 0) {
       std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
-
       std::cout << Amanzi::timer_manager << std::endl;
     }
     delete simulator;

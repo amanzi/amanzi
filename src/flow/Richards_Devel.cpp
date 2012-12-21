@@ -45,19 +45,9 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
-    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
-        Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-        Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-      CalculateRelativePermeabilityFace(*solution_cells);
-      Krel_cells->PutScalar(1.0);
-    } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-      CalculateRelativePermeabilityFace(*solution_cells);
-      Krel_faces->PutScalar(1.0);
-    } else {
-      CalculateRelativePermeabilityCell(*solution_cells);
-      Krel_faces->PutScalar(1.0);
-    }
-
+    // update permeabilities
+    CalculateRelativePermeability(*solution);
+ 
     // update boundary conditions
     double time = T_physics + dT;
     bc_pressure->Compute(time);
