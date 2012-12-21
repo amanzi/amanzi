@@ -12,8 +12,8 @@ Authors: Neil Carlson (version 1)
 
 #include <vector>
 
-#include "Epetra_Vector.h"
 #include "Epetra_Import.h"
+#include "Epetra_Vector.h"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -21,9 +21,10 @@ Authors: Neil Carlson (version 1)
 #include "mfd3d.hpp"
 #include "tensor.hpp"
 
-#include "Flow_State.hpp"
-#include "Flow_constants.hpp"
 #include "Darcy_PK.hpp"
+#include "Flow_constants.hpp"
+#include "Flow_Source_Factory.hpp"
+#include "Flow_State.hpp"
 #include "Matrix_MFD.hpp"
 #include "Matrix_MFD_TPFA.hpp"
 
@@ -114,6 +115,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;  // will be changed (lipnikov@lanl.gov)
   verbosity = FLOW_VERBOSITY_HIGH;
+  src_sink = NULL;
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
 }
 
@@ -285,9 +287,20 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
     std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
   }
 
-  // Well modeling
+  // Well modeling (one-time call)
   if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
+  // Initialize source
+  if (src_sink != NULL) {
+    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
+      src_sink->Compute(T0);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
+      src_sink->ComputeDistribute(T0);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+      src_sink->ComputeDistribute(T0, Kxy->Values());
+    } 
   }
 
   // make initial guess consistent with boundary conditions
@@ -337,9 +350,20 @@ void Darcy_PK::InitTransient(double T0, double dT0)
     std::printf("***********************************************************\n");
   }
 
-  // Well modeling
+  // Well modeling (one-time call)
   if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
+  }
+
+  // Initialize source
+  if (src_sink != NULL) {
+    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
+      src_sink->Compute(T0);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
+      src_sink->ComputeDistribute(T0);
+    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+      src_sink->ComputeDistribute(T0, Kxy->Values());
+    } 
   }
 
   // make initial guess consistent with boundary conditions
