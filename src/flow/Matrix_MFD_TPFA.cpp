@@ -485,7 +485,7 @@ void Matrix_MFD_TPFA::InitPreconditioner(int method, Teuchos::ParameterList& pre
 
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     ML_list = prec_list;
-    MLprec = new ML_Epetra::MultiLevelPreconditioner(*Spp_, ML_list, false);
+    MLprec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Spp_, ML_list, false));
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE
     // read some boomer amg parameters

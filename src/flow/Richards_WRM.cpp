@@ -83,8 +83,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
       double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
 
       if (bc_model[f] != FLOW_BC_FACE_NULL){  // The boundary face.
-        if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
-	    (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE)) {
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           double pc = atm_pressure - bc_values[f][0];
           (*Krel_faces)[f] = WRM[0]->k_relative(pc);
         } else {
@@ -126,19 +125,18 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
       int f = faces[n];
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
-        if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
-	    (flux[f] * dirs[n] < -tol)) {
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[f] * dirs[n] < -tol) {
           double pc = atm_pressure - bc_values[f][0];
           (*Krel_faces)[f] = WRM[0]->k_relative(pc);
         } else {
           (*Krel_faces)[f] = (*Krel_cells)[c];
         }
       } else {
-	if (flux[f] * dirs[n] > tol) {
-	  (*Krel_faces)[f] = (*Krel_cells)[c];  // The upwind face.
-	} else if (fabs(flux[f]) <= tol) { 
-	  (*Krel_faces)[f] += (*Krel_cells)[c] / 2;  // Almost vertical face.
-	}
+        if (flux[f] * dirs[n] > tol) {
+          (*Krel_faces)[f] = (*Krel_cells)[c];  // The upwind face.
+        } else if (fabs(flux[f]) <= tol) { 
+          (*Krel_faces)[f] += (*Krel_cells)[c] / 2;  // Almost vertical face.
+        }
       }
     }
   }

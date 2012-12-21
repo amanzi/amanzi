@@ -631,7 +631,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 ****************************************************************** */
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
-  ComputePreconditionerMFD(u, matrix_, T, 0.0, false);  // Calculate only stiffness matrix.
+  AssembleMatrixMFD(u, T);
   double norm_udot = matrix_->ComputeNegativeResidual(u, udot);
 
   Epetra_Vector* udot_cells = FS->CreateCellView(udot);
@@ -649,52 +649,6 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
   // udot_faces->PutScalar(0.0);
 
   return norm_udot;
-}
-
-
-/* ******************************************************************
-* Gathers together routines to compute MFD matrices Axx(u) and 
-* preconditioner Sff(u) using internal time step dT.                             
-****************************************************************** */
-void Richards_PK::ComputePreconditionerMFD(
-    const Epetra_Vector& u, Matrix_MFD* matrix_operator,
-    double Tp, double dTp, bool flag_update_ML)
-{
-  Epetra_Vector* u_cells = FS->CreateCellView(u);
-  Epetra_Vector* u_faces = FS->CreateFaceView(u);
-
-  // use code from Richards_Bundles.cpp (lipnikov@lanl.gov)
-  CalculateRelativePermeability(u);
-  UpdateSourceBoundaryData(Tp, *u_faces);
-
-  // setup a new algebraic problem
-  matrix_operator->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
-  matrix_operator->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_operator);
-  if (flag_update_ML) AddTimeDerivative_MFD(*u_cells, dTp, matrix_operator);
-  matrix_operator->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_operator->AssembleGlobalMatrices();
- 
-  if (experimental_solver_ == FLOW_SOLVER_NEWTON && flag_update_ML) {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_operator);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-
-    matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
-                                  *Krel_cells, *dKdP_cells,
-                                  *Krel_faces, *dKdP_faces);
-  }
-
-  if (flag_update_ML) {
-    matrix_operator->ComputeSchurComplement(bc_model, bc_values);
-    matrix_operator->UpdatePreconditioner();
-  } else {
-    rhs = matrix_operator->rhs();
-    if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
-  }
 }
 
 

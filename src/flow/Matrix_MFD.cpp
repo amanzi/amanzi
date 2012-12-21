@@ -437,7 +437,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
 
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     ML_list = prec_list;
-    MLprec = new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false);
+    MLprec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false));
   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
 #ifdef HAVE_HYPRE
     hypre_ncycles = prec_list.get<int>("cycle applications", 5);  // Boomer AMG parameters
