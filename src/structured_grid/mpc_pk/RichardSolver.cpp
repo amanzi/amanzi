@@ -11,7 +11,7 @@
 static bool use_fd_jac_DEF = true;
 static bool use_dense_Jacobian_DEF = false;
 static int upwind_krel_DEF = 1;
-static int pressure_maxorder_DEF = 4;
+static int pressure_maxorder_DEF = 3;
 static Real errfd_DEF = 1.e-8;
 static int max_ls_iterations_DEF = 10;
 static Real min_ls_factor_DEF = 1.e-8;
@@ -24,7 +24,7 @@ static Real atol_DEF = 1e-10;
 static Real rtol_DEF = 1e-20;
 static Real stol_DEF = 1e-12;
 static bool scale_soln_before_solve_DEF = true;
-static bool semi_analytic_J_DEF = true;
+static bool semi_analytic_J_DEF = false; // There is a bug in this, or at least a set of solver configs reqd
 static bool centered_diff_J_DEF = true;
 static Real variable_switch_saturation_threshold_DEF = -0.9999;
 
@@ -143,12 +143,12 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     KappaCC = new MFTower(layout,kappacc,nLevs);
   }
   else {
-      KappaCC = 0;
+    KappaCC = 0;
   }
   Lambda = new MFTower(layout,lambda,nLevs);
   Porosity = new MFTower(layout,porosity,nLevs);
   PCapParams = new MFTower(layout,pcap_params,nLevs);
-  KappaEC.resize(BL_SPACEDIM);
+  KappaEC.resize(BL_SPACEDIM, PArrayManage);
   for (int d=0; d<BL_SPACEDIM; ++d) {
     KappaEC.set(d, new MFTower(layout,kappaEC[d],nLevs));
   }
@@ -1466,14 +1466,6 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         }
 
         int iters = nld->NLIterationsTaken() + 1;
-#if 0
-        Real dt = rs->GetDt();
-        Real epsilon = std::max(1.e-13,3.e-7/dt);
-        PetscErrorCode ierr1 = MatFDColoringSetParameters(rs->GetMatFDColoring(),epsilon,PETSC_DEFAULT);        
-        ierr1 = VecNorm(y,NORM_2,&ynorm);
-
-        //std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
-#endif
     }
 
     return ierr;

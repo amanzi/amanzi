@@ -219,7 +219,9 @@ public:
   friend class Diffusion;
   friend class Observation;
 
-    RichardNLSdata BuildInitNLS();
+  enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
+
+  RichardNLSdata BuildInitNLS();
 
   PorousMedia ();
 
@@ -1021,6 +1023,7 @@ public:
     1: single-phase flow with precipitate
     2: 2-phase 2-component flow
     3: polymer flow (2-phase 3-component)
+    4: saturated (perhaps same as 0??)
   */
   static std::string model_name;
   static int model;
@@ -1312,7 +1315,7 @@ protected:
   static int  max_step;
   static Real stop_time;
   static bool do_richard_sat_solve;
-  static std::string execution_mode;
+  static ExecutionMode execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;
   static Array<Real> tpc_start_times;

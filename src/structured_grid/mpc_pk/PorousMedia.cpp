@@ -349,11 +349,6 @@ PorousMedia::setup_bound_desc()
           {
             tbc_descriptor_map[n][face] = BCDesc(ccBndBox,myTBCs);
           }
-#if 0
-          else {
-            std::cerr << "No tracer BCs responsible for filling tracers on face: " << face << std::endl;
-          }
-#endif
         }
       }
     }
@@ -588,9 +583,7 @@ PorousMedia::PorousMedia (Amr&            papa,
   for (int dir = 0; dir < BL_SPACEDIM; dir++)
     {
       BoxArray edge_gridskp(grids);
-      //edge_gridskp.surroundingNodes(dir).grow(1);
       edge_gridskp.surroundingNodes(dir);
-      //kpedge[dir].define(edge_gridskp,1,0,Fab_allocate);
       kpedge[dir].define(edge_gridskp,1,1,Fab_allocate);
       kpedge[dir].setVal(1.e40);
     }
@@ -821,9 +814,7 @@ PorousMedia::restart (Amr&          papa,
   for (int dir = 0; dir < BL_SPACEDIM; dir++)
     {
       BoxArray edge_gridskp(grids);
-      //edge_gridskp.surroundingNodes(dir).grow(1);
       edge_gridskp.surroundingNodes(dir);
-      //kpedge[dir].define(edge_gridskp,1,0,Fab_allocate);
       kpedge[dir].define(edge_gridskp,1,1,Fab_allocate);
       kpedge[dir].setVal(1.e40);
     }
@@ -1628,14 +1619,6 @@ RichardNLSdata::AdjustDt(Real                dt,
         if (num_consecutive_failures_1 <= max_num_consecutive_failures_1)
         {
             dt_new = dt * time_step_retry_factor;
-#if 0
-            // If the last increase was immediately undone, cut back on the dt adjustment knobs...
-            //  FIXME: needs more tweaking
-            if (num_consecutive_success == 0) {
-                time_step_increase_factor = 0.5*(1 + time_step_increase_factor);
-                time_step_retry_factor = 0.5*(1 + time_step_retry_factor);
-            }
-#endif
         }
         else
         {
@@ -1720,14 +1703,6 @@ RichardNLSdata::AdjustDt(Real                dt,
         if (num_consecutive_failures_1 <= max_num_consecutive_failures_1)
         {
             dt_new = dt * time_step_retry_factor;
-#if 0
-            // If the last increase was immediately undone, cut back on the dt adjustment knobs...
-            //  FIXME: needs more tweaking
-            if (num_consecutive_success == 0) {
-                time_step_increase_factor = 0.5*(1 + time_step_increase_factor);
-                time_step_retry_factor = 0.5*(1 + time_step_retry_factor);
-            }
-#endif
         }
         else
         {
@@ -2065,7 +2040,7 @@ PorousMedia::richard_init_to_steady()
           if (ret == RichardNLSdata::RICHARD_SUCCESS) {
             k++;
             t += dt;
-            if (execution_mode=="init_to_steady") {
+            if (execution_mode==INIT_TO_STEADY) {
               solved = false; // Do not kick out early
             }
             else {
@@ -2526,22 +2501,9 @@ PorousMedia::ml_step_driver(Real  t,
 
     while (continue_dt_iteration) {
 
-      if (ntracers>0 && do_tracer_transport && execution_mode=="init_to_steady") {
+      if (ntracers>0 && do_tracer_transport && execution_mode==INIT_TO_STEADY) {
 	transport_tracers = t >= switch_time;
       }
-            
-#if 0
-      if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
-	for (int lev=0; lev<=level; ++lev) {
-	  std::cout << "  ";
-	}
-	std::cout << "ADVANCE grids on level = " << level 
-		  << " at time = " << t
-		  << ", attempting with dt = " << dt_this_attempt
-		  << std::endl;
-      }
-#endif
-      
       step_ok = multilevel_advance(t,dt_this_attempt,amr_iteration,amr_ncycle,dt_suggest);
 
       if (step_ok) {
@@ -2567,7 +2529,7 @@ PorousMedia::advance (Real time,
 
   Real dt_return = -1.e20;
 
-  if (ntracers>0 && do_tracer_transport && execution_mode=="init_to_steady")
+  if (ntracers>0 && do_tracer_transport && execution_mode==INIT_TO_STEADY)
   {
       transport_tracers = time >= switch_time;
   }
@@ -7556,7 +7518,7 @@ PorousMedia::GetUserInputInitDt()
 {
     Real user_input_dt_init = -1;
 
-    if (execution_mode=="init_to_steady")
+    if (execution_mode==INIT_TO_STEADY)
     {
         Real cum_time = parent->cumTime(); // Time evolved to so far
         Real start_time = parent->startTime(); // Time simulation started from
@@ -7565,7 +7527,7 @@ PorousMedia::GetUserInputInitDt()
     } 
     else 
     {
-        user_input_dt_init = execution_mode=="transient"  ?  dt_init  :  steady_init_time_step;
+        user_input_dt_init = execution_mode==TRANSIENT  ?  dt_init  :  steady_init_time_step;
     }
     return user_input_dt_init;        
 }
@@ -7641,7 +7603,7 @@ PorousMedia::computeNewDt (int                   finest_level,
       // Compute CFL stability for solutes
       if (solute_transport_limits_dt && ntracers>0 && do_tracer_transport)
       {
-          if (execution_mode!="init_to_steady" || (state[State_Type].curTime() >= switch_time)) {
+          if (execution_mode!=INIT_TO_STEADY || (state[State_Type].curTime() >= switch_time)) {
               PorousMedia* pm0 = dynamic_cast<PorousMedia*>(&parent->getLevel(0));
               dt_eig_local = pm0->estTimeStep(pm0->u_mac_curr);
               int n_factor = 1;
@@ -7658,7 +7620,7 @@ PorousMedia::computeNewDt (int                   finest_level,
           dt_init_local = GetUserInputInitDt();
       }
       else {
-        Real transient_start = (execution_mode=="init_to_steady" ? switch_time : start_time);
+        Real transient_start = (execution_mode==INIT_TO_STEADY ? switch_time : start_time);
         in_transient_period = cum_time >= transient_start;
         if (cum_time == transient_start) {
           dt_init_local = GetUserInputInitDt();
@@ -8041,24 +8003,6 @@ PorousMedia::post_regrid (int lbase,
   if (level == lbase) {
     PMAmr::GetLayout().Rebuild();
   }
-
-  //if (level > lbase)
-  {
-    //
-    // Alloc MultiFab to hold rock quantities
-    //
-    if (kpedge   == 0) {
-      kpedge = new MultiFab[BL_SPACEDIM];
-      for (int dir = 0; dir < BL_SPACEDIM; dir++)
-	{
-	  BoxArray edge_grids(grids);
-	  //edge_grids.surroundingNodes(dir).grow(1);
-	  edge_grids.surroundingNodes(dir);
-	  //kpedge[dir].define(edge_grids,1,0,Fab_allocate);
-	  kpedge[dir].define(edge_grids,1,1,Fab_allocate);
-	}
-    }	      
-  }
 }
 
 void 
@@ -8120,6 +8064,7 @@ PorousMedia::init_rock_properties ()
   {
     if (permeability_from_fine)
     {
+#if 1
       BoxArray cba = BoxArray(grids).grow(nGrowHYP);
       BoxArray cban = BoxArray(cba);
       cban.removeOverlap(); // Target region for coarsening
@@ -8194,14 +8139,14 @@ PorousMedia::init_rock_properties ()
           Box ebox = Box(cbox).surroundingNodes(d);
           const FArrayBox& cdat = (*kappa)[mfi];
           FArrayBox& edat = kpedge[d][mfi];
+          BL_ASSERT(edat.box().contains(ebox));
           FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
                          edat.dataPtr(), ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
                          cbox.loVect(),cbox.hiVect(),&d); // FIXME: Modify to support vector kappa_cc
         }
       }
-
-
-#if 0
+#else
+      // This version is pretty general, but requires considerable memory
       BoxArray tba(grids);
       tba.maxSize(new_crse_grid_size);
       MultiFab tkappa(tba,1,nGrowHYP);
@@ -8579,43 +8524,43 @@ PorousMedia::post_init_state ()
   //
   int  finest_level = parent->finestLevel();
   for (int lev=0;lev<= finest_level;lev++)
+  {
+    PorousMedia& pm = getLevel(lev);
+    for (int i = 0; i < num_state_type; i++)
     {
-      PorousMedia& pm = getLevel(lev);
-      for (int i = 0; i < num_state_type; i++)
-	{
-	  pm.state[i].allocOldData();
-	  MultiFab& od = pm.get_old_data(i);
-	  MultiFab& nd = pm.get_new_data(i);
-	  MultiFab::Copy(od,nd,0,0,nd.nComp(),0);
-	}
+      pm.state[i].allocOldData();
+      MultiFab& od = pm.get_old_data(i);
+      MultiFab& nd = pm.get_new_data(i);
+      MultiFab::Copy(od,nd,0,0,nd.nComp(),0);
     }
+  }
 
   if (model == model_list["richard"]) {
-      if (do_richard_init_to_steady) {
-          richard_init_to_steady();        
+    if (do_richard_init_to_steady) {
+      richard_init_to_steady();        
+    }
+    else 
+    {
+      PMAmr* pmamr = PMParent();
+      int  finest_level = parent->finestLevel();
+        
+      if (steady_use_PETSc_snes) {
+        // Compute initial velocity field
+        RSParams rsparams;
+        SetRichardSolverParameters(rsparams,"Initial-Velocity-Eval");
+        RichardSolver rs(*pmamr,rsparams,PMAmr::GetLayout());
+        rs.ResetRhoSat();
+        rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->startTime());
       }
-      else 
-      {
-          PMAmr* pmamr = PMParent();
-	  int  finest_level = parent->finestLevel();
-
-          if (steady_use_PETSc_snes) {
-              // Compute initial velocity field
-              RSParams rsparams;
-              SetRichardSolverParameters(rsparams,"Initial-Velocity-Eval");
-	      RichardSolver rs(*pmamr,rsparams,PMAmr::GetLayout());
-              rs.ResetRhoSat();
-              rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->startTime());
-          }
-          else {
-              for (int k = 0; k <= finest_level; k++) {
-                  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(k));
-                  BL_ASSERT(pm);
-                  int nc = 0; // Component of water in state
-                  pm->compute_vel_phase(pm->u_mac_curr,nc,pmamr->startTime());
-              }
-          }
+      else {
+        for (int k = 0; k <= finest_level; k++) {
+          PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(k));
+          BL_ASSERT(pm);
+          int nc = 0; // Component of water in state
+          pm->compute_vel_phase(pm->u_mac_curr,nc,pmamr->startTime());
+        }
       }
+    }
   }
 
   PorousMedia::initial_step = true;
@@ -8625,9 +8570,9 @@ PorousMedia::post_init_state ()
   // so that conserved data is consistant between levels.
   //
   for (int k = finest_level-1; k>= 0; k--)
-    {
-      getLevel(k).avgDown();
-    }
+  {
+    getLevel(k).avgDown();
+  }
 }
 
 //
@@ -11605,7 +11550,7 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
                               bool tadj_verbose)
 {                              
     // HACK
-    // If exec_mode is "init_to_steady", then build an adjusted eval time such that
+    // If exec_mode is INIT_TO_STEADY, then build an adjusted eval time such that
     // if t^n+1 = switch_time, we are approaching switch_time, eval bcs just prior
     // if t^n = switch time, we are leaving switch_time, eval exactly at that time
     Real t_eval = time;

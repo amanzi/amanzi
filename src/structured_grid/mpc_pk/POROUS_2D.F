@@ -109,31 +109,77 @@ c ::: kpedge in y-dir
       integer DIMDEC(kappa)
       integer lo(SDIM), hi(SDIM)
       integer ratio(SDIM)
+c     FIXME: add support for vector kappa
       REAL_T  kappadata(DIMV(kappadata))
       REAL_T  kappa(DIMV(kappa))
 
-      integer i,j,ii,jj,fi,fj,n
-      REAL_T  fac
+      integer i,j,ii,jj,fi,fj
 
       kappa(:,:) = zero
-      fac = 1.d0
-      do n=1,SDIM
-         fac = fac * DBLE(ratio(n))
-      enddo
-
-      do j = lo(2), hi(2)
-         fj = ratio(2)*j
-         do i = lo(1), hi(1)
-            fi = ratio(1)*i
-            do ii = 0,ratio(1)-1
-               do jj = 0,ratio(2)-1
+      do jj = 0,ratio(2)-1
+         do ii = 0,ratio(1)-1
+            do j = lo(2), hi(2)
+               fj = ratio(2)*j
+               do i = lo(1), hi(1)
+                  fi = ratio(1)*i
                   kappa(i,j) = kappa(i,j) + one/kappadata(fi+ii,fj+jj)
                end do
             end do
-            kappa(i,j) = fac / kappa(i,j)
          end do
       end do
+      kappa(:,:) = DBLE(ratio(1)*ratio(2)) / kappa(:,:)
       end
+
+      subroutine FORT_INITKAPPA3A (kappadata, DIMS(kappadata),
+     &     kappa,DIMS(kappa),lo,hi,ratio)
+      implicit none
+      integer DIMDEC(kappadata)
+      integer DIMDEC(kappa)
+      integer lo(SDIM), hi(SDIM)
+      integer ratio(SDIM)
+      REAL_T  kappadata(DIMV(kappadata),SDIM)
+      REAL_T  kappa(DIMV(kappa),SDIM)
+
+      integer i,j,ii,jj,fi,fj
+      REAL_T ktmp
+
+      kappa(:,:,:) = zero
+
+c     ::: x-dir  Harmonic in x, arithmetic in y
+      do j = lo(2),hi(2)
+         fj = ratio(2)*j
+         do i = lo(1),hi(1)
+            fi = ratio(1)*i
+            do jj = 0,ratio(2)-1
+               ktmp = zero
+               do ii = 0,ratio(1)-1
+                  ktmp = ktmp + one/kappadata(fi+ii,fj+jj,1)
+               enddo
+               kappa(i,j,1) = kappa(i,j,1) + ratio(1) / ktmp
+            end do
+         end do
+      end do
+
+c     ::: y-dir  Harmonic in y, arithmetic in x
+      do j = lo(2),hi(2)
+         fj = ratio(2)*j
+         do i = lo(1),hi(1)
+            fi = ratio(1)*i
+            do ii = 0,ratio(1)-1
+               ktmp = zero
+               do jj = 0,ratio(2)-1
+                  ktmp = ktmp + one/kappadata(fi+ii,fj+jj,2)
+               enddo
+               kappa(i,j,2) = kappa(i,j,2) + ratio(2) / ktmp
+            end do
+         end do
+      end do
+
+      kappa(:,:,1) = kappa(:,:,1) / DBLE(ratio(2))
+      kappa(:,:,2) = kappa(:,:,2) / DBLE(ratio(1))
+
+      end
+
 
       subroutine FORT_INITKEDGE (cdat, DIMS(cdat), edat, DIMS(edat), lo, hi, dir)
       implicit none
@@ -141,6 +187,7 @@ c ::: kpedge in y-dir
       integer DIMDEC(edat)
       integer lo(SDIM), hi(SDIM)
       integer dir
+c     FIXME: add support for vector kappa
       REAL_T  cdat(DIMV(cdat))
       REAL_T  edat(DIMV(edat))
 
@@ -178,123 +225,78 @@ c ::: ----------------------------------------------------------
       integer lo(SDIM), hi(SDIM)
       integer ratio(SDIM)
       integer ng
-      REAL_T  kappadata(DIMV(kappadata),SDIM)
+c     FIXME: add support for vector kappa
+      REAL_T  kappadata(DIMV(kappadata))
       REAL_T  kappa(DIMV(kappa))
       REAL_T  kappax(DIMV(kpx)),kappay(DIMV(kpy))
 
-      integer i,j,k,l,n
+      integer i,j,ii,jj,n
       integer fi,fj
       integer imin,imax,jmin,jmax
-      REAL_T  k1, k2, kl1, kl2
+      REAL_T  k1, k2, kl1, kl2, fac
 
       imin = lo(1) -1
       jmin = lo(2) -1
       imax = hi(1) +1
       jmax = hi(2) +1
 
+      kappa(:,:)  = zero
+      kappax(:,:) = zero
+      kappay(:,:) = zero
+
+      fac = dble(SDIM*ratio(1)*ratio(2))
       do j = lo(2)-ng, hi(2)+ng
          fj = ratio(2)*j
          do i = lo(1)-ng, hi(1)+ng         
             fi = ratio(1)*i
-            kappa(i,j) = zero
-            do k = 0,ratio(1)-1
-               do l = 0,ratio(2)-1
+            do ii = 0,ratio(1)-1
+               do jj = 0,ratio(2)-1
                   do n = 1,SDIM
-                     kappa(i,j) = kappa(i,j) + one/kappadata(fi+k,fj+l,n)
+                     kappa(i,j) = kappa(i,j) + one/kappadata(fi+ii,fj+jj)
                   end do
                end do
             end do
-            kappa(i,j) = dble(SDIM*ratio(1)*ratio(2))/kappa(i,j)
          end do
       end do
 
-#if 1
-c    ::: kpedge in x-dir
+c    ::: kpedge in x-dir: Harmonic in x, arithmetic in y
       do i = imin, imax+1
          fi = ratio(1)*i
          do j = jmin, jmax  
             fj = ratio(2)*j
-            kappax(i,j) = zero            
-            do k = 0,ratio(2)-1
+            do jj = 0,ratio(2)-1
                kl1 = 0
                kl2 = 0
-               do l = 0,ratio(1)-1
-                  kl1 = kl1 + one/kappadata(fi+l,fj+k,1)
-                  kl2 = kl2 + one/kappadata(fi-1-l,fj+k,1)
+               do ii = 0,ratio(1)-1
+                  kl1 = kl1 + one/kappadata(fi+ii,fj+jj)
+                  kl2 = kl2 + one/kappadata(fi-1-ii,fj+jj)
                end do
                kappax(i,j) = kappax(i,j) + two*ratio(1)/(kl1 + kl2)
             enddo
-            kappax(i,j) = kappax(i,j)/DBLE(ratio(2))
          end do
       end do
          
-c     ::: kpedge in y-dir
+c     ::: kpedge in y-dir Harmonic in y, arithmetic in x
       do j = jmin, jmax+1
          fj = ratio(2)*j
-         do i = imin, imax         
+         do i = imin, imax
             fi = ratio(1)*i
-            kappay(i,j) = zero
-            do k = 0,ratio(1)-1   
+            do ii = 0,ratio(1)-1
                kl1 = 0
                kl2 = 0
-               do l = 0,ratio(2)-1
-                  kl1 = kl1 + one/kappadata(fi+k,fj+l,2)
-                  kl2 = kl2 + one/kappadata(fi+k,fj-1-l,2)
+               do jj = 0,ratio(2)-1
+                  kl1 = kl1 + one/kappadata(fi+ii,fj+jj)
+                  kl2 = kl2 + one/kappadata(fi+ii,fj-1-jj)
                end do
                kappay(i,j) = kappay(i,j) + two*ratio(2)/(kl1 + kl2)
             end do
-            kappay(i,j) = kappay(i,j)/DBLE(ratio(1))
          end do
       end do
-#else
-c    ::: kpedge in x-dir
-      do i = imin, imax+1
-         fi = ratio(1)*i
-         do j = jmin, jmax  
-            fj = ratio(2)*j
-            kappax(i,j) = zero            
-            k1 = 0
-            k2 = 0
-            do k = 0,ratio(2)-1
-               kl1 = 0
-               kl2 = 0
-               do l = 0,ratio(1)-1
-                  kl1 = kl1 + one/kappadata(fi+l,fj+k,1)
-                  kl2 = kl2 + one/kappadata(fi-1-l,fj+k,1)
-               end do
-               k1 = k1 + dble(ratio(1))/kl1
-               k2 = k2 + dble(ratio(1))/kl2
-            end do
-            k1 = k1/dble(ratio(2))
-            k2 = k2/dble(ratio(2))          
-            kappax(i,j) = two/(one/k1 + one/k2)
-         end do
-      end do
-         
-c     ::: kpedge in y-dir
-      do j = jmin, jmax+1
-         fj = ratio(2)*j
-         do i = imin, imax         
-            fi = ratio(1)*i
-            kappay(i,j) = zero
-            k1 = 0
-            k2 = 0
-            do k = 0,ratio(1)-1   
-               kl1 = 0
-               kl2 = 0
-               do l = 0,ratio(2)-1
-                  kl1 = kl1 + one/kappadata(fi+k,fj+l,2)
-                  kl2 = kl2 + one/kappadata(fi+k,fj-1-l,2)
-               end do
-               k1 = k1 + dble(ratio(2))/kl1
-               k2 = k2 + dble(ratio(2))/kl2
-            end do
-            k1 = k1/dble(ratio(1))
-            k2 = k2/dble(ratio(1))          
-            kappay(i,j) = two/(one/k1 + one/k2)
-         end do
-      end do
-#endif
+
+      kappa(:,:)  = DBLE(SDIM*ratio(1)*ratio(2)) / kappa(:,:)
+      kappax(:,:) = kappax(:,:) / DBLE(ratio(2))
+      kappay(:,:) = kappay(:,:) / DBLE(ratio(1))
+
       end
 
 

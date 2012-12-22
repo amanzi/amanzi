@@ -346,7 +346,7 @@ bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
 Real PorousMedia::richard_variable_switch_saturation_threshold;
 
-std::string PorousMedia::execution_mode;
+PorousMedia::ExecutionMode PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
 Array<Real> PorousMedia::tpc_start_times;
 Array<Real> PorousMedia::tpc_initial_time_steps;
@@ -615,7 +615,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::use_funccount      = false;
 
   PorousMedia::do_simple           = 0;
-  PorousMedia::do_multilevel_full  = 0;
+  PorousMedia::do_multilevel_full  = 1;
   PorousMedia::do_reflux           = 1;
   PorousMedia::do_correct          = 0;
   PorousMedia::no_corrector        = 0;
@@ -625,7 +625,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
   PorousMedia::do_richard_sat_solve = false;
-  PorousMedia::execution_mode      = "transient";
+  PorousMedia::execution_mode      = PorousMedia::INVALID;
   PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
   PorousMedia::tpc_start_times.resize(0);
@@ -648,24 +648,26 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::richard_init_to_steady_verbose = 1;
   PorousMedia::steady_min_iterations = 10;
+  PorousMedia::steady_min_iterations_2 = 0;
   PorousMedia::steady_max_iterations = 15;
   PorousMedia::steady_limit_iterations = 20;
   PorousMedia::steady_time_step_reduction_factor = 0.8;
   PorousMedia::steady_time_step_increase_factor = 1.25;
+  PorousMedia::steady_time_step_increase_factor_2 = 10;
   PorousMedia::steady_time_step_retry_factor_1 = 0.5;
-  PorousMedia::steady_time_step_retry_factor_2 = 0.1;
-  PorousMedia::steady_time_step_retry_factor_f = 0.01;
+  PorousMedia::steady_time_step_retry_factor_2 = 0.01;
+  PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
   PorousMedia::steady_max_consecutive_failures_2 = 4;
   PorousMedia::steady_init_time_step = 1.e2;
   PorousMedia::steady_max_time_steps = 8000;
   PorousMedia::steady_max_time_step_size = 1.e12;
   PorousMedia::steady_max_psuedo_time = 1.e10;
-  PorousMedia::steady_max_num_consecutive_success = 3;
+  PorousMedia::steady_max_num_consecutive_success = 15;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
-  PorousMedia::steady_consecutive_increase_reduction_factor = 0.15;
-  PorousMedia::steady_use_PETSc_snes = false;
+  PorousMedia::steady_consecutive_increase_reduction_factor = 0.4;
+  PorousMedia::steady_use_PETSc_snes = true;
   PorousMedia::steady_abort_on_psuedo_timestep_failure = false;
   PorousMedia::steady_limit_function_evals = 1e8;
   PorousMedia::steady_abs_tolerance = 1.e-10;
@@ -1929,13 +1931,26 @@ void PorousMedia::read_prob()
   max_step  = -1;    
   stop_time = -1.0;  
 
-  pp.query("execution_mode",execution_mode);
-  BL_ASSERT(execution_mode=="transient" || execution_mode=="steady" || execution_mode=="init_to_steady");
+  std::string exec_mode_in_str; 
+  pp.get("execution_mode",exec_mode_in_str);
+  if (exec_mode_in_str == "transient") {
+    execution_mode = TRANSIENT;
+  } else if (exec_mode_in_str == "init_to_steady") {
+    execution_mode = INIT_TO_STEADY;
+  } else if (exec_mode_in_str == "steady") {
+    execution_mode = STEADY;
+  } else {
+    ParallelDescriptor::Barrier();
+    if (ParallelDescriptor::IOProcessor()) {
+      std::string str = "Unrecognized execution_mode: \"" + exec_mode_in_str + "\"";
+      BoxLib::Abort(str.c_str());
+    }
+  }
 
   pp.query("max_step",max_step);
   pp.query("stop_time",stop_time);
 
-  if (execution_mode=="init_to_steady") {
+  if (execution_mode==INIT_TO_STEADY) {
     pp.get("switch_time",switch_time);
     std::string event_name = "Switch_Time";
     BL_ASSERT(stop_time >= switch_time);
@@ -2004,8 +2019,8 @@ void PorousMedia::read_prob()
 
   if (setup_tracer_transport && 
       ( model==model_list["steady-saturated"]
-        || (execution_mode=="init_to_steady" && switch_time<=0)
-        || (execution_mode!="init_to_steady" && do_tracer_transport) ) ) {
+        || (execution_mode==INIT_TO_STEADY && switch_time<=0)
+        || (execution_mode!=INIT_TO_STEADY && do_tracer_transport) ) ) {
       transport_tracers = true;
   }
     

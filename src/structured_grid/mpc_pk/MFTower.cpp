@@ -777,30 +777,6 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
                         IVScit it=perpInterpLevDir.find(iv);
                         if (it!=perpInterpLevDir.end()) {
 			    const Stencil& s = it->second;
-#if 0
-                            // Sort the stencil values to ensure repeatable arithmetic
-                            std::multimap<Real,Node> sinv;
-                            for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
-                              sinv.insert(std::pair<Real,Node>(it->second,it->first));
-                            }
-			  
-                            for (int n=0; n<nComp; ++n) {
-                              Real res = 0;
-                              for (std::multimap<Real,Node>::const_iterator it=sinv.begin(), End=sinv.end(); it!=End; ++it) {
-                                const IntVect& ivs=(it->second).iv;
-                                int slev = (it->second).level;
-                                if (slev==lev) {
-                                  BL_ASSERT(fineFab.box().contains(ivs));
-                                  res += fineFab(ivs,sComp+n) * it->first;
-                                }
-                                else if (slev==lev-1) {
-                                  BL_ASSERT(crseFab->box().contains(ivs));
-                                  res += (*crseFab)(ivs,sComp+n) * it->first;
-                                }
-                              }
-                              fineFab(iv,sComp+n) = res;
-                            }
-#else
                             for (int n=0; n<nComp; ++n) {
                                 Real res = 0;
                                 for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
@@ -817,7 +793,6 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
                                 }
                                 fineFab(iv,sComp+n) = res;
                             }
-#endif
                         }
                     }
                 }
