@@ -29,7 +29,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-  void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
+void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 {
   flow_status_ = FLOW_STATUS_NULL;
 
@@ -47,6 +47,7 @@ namespace AmanziFlow {
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   nseepage_prev = 0;
+  ti_phase_counter = 0;
 }
 
 

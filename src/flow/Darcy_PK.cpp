@@ -113,6 +113,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   dT_desirable_ = dT;
 
   // miscalleneous
+  ti_specs = NULL;
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;
   verbosity = FLOW_VERBOSITY_HIGH;
   src_sink = NULL;
@@ -137,6 +138,8 @@ Darcy_PK::~Darcy_PK()
   delete bc_head;
   delete bc_flux;
   delete bc_seepage;
+
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
 }
 
 
@@ -270,6 +273,7 @@ void Darcy_PK::InitializeSteadySaturated()
 ****************************************************************** */
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
   ti_specs = &ti_specs_sss;
 
   InitNextTI(T0, dT0, ti_specs_sss);
@@ -285,6 +289,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
   ti_specs = &ti_specs_sss;
 
   InitNextTI(T0, dT0, ti_specs_sss);
@@ -499,6 +504,10 @@ int Darcy_PK::Advance(double dT_MPC)
   } else {
     dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
   }
+
+  dt_tuple times(time, dT_MPC);
+  ti_specs->dT_history.push_back(times);
+
   return 0;
 }
 

@@ -69,6 +69,8 @@ class TI_Specs {
   bool initialize_with_darcy;  // initialization options
   double clip_saturation, clip_pressure;
   bool pressure_lambda_constraints;
+
+  std::vector<std::pair<double, double> > dT_history;  // statistics (relocate to debug?)
 };
 
 }  // namespace AmanziFlow

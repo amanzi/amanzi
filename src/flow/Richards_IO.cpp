@@ -390,9 +390,9 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     if (list.isParameter("calculate krel-pc curves")) {
-      std::printf("Flow PK: saving krel-pc curves in file krel_pc.txt...\n");
+      std::printf("Flow PK: saving krel-pc curves in file flow_krel_pc.txt...\n");
       ofstream ofile;
-      ofile.open("krel_pc.txt");
+      ofile.open("flow_krel_pc.txt");
 
       std::vector<double> spe;
       spe = list.get<Teuchos::Array<double> >("calculate krel-pc curves").toVector();
@@ -409,9 +409,9 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
     }
 
     if (list.isParameter("calculate krel-sat curves")) {
-      std::printf("Flow PK: saving krel-sat curves in file krel_sat.txt...\n");
+      std::printf("Flow PK: saving krel-sat curves in file flow_krel_sat.txt...\n");
       ofstream ofile;
-      ofile.open("krel_sat.txt");
+      ofile.open("flow_krel_sat.txt");
 
       std::vector<double> spe;
       spe = list.get<Teuchos::Array<double> >("calculate krel-sat curves").toVector();

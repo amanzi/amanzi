@@ -121,6 +121,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 #endif
 
   // miscalleneous default parameters
+  ti_specs = NULL;
   block_picard = 1;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
@@ -152,6 +153,8 @@ Richards_PK::~Richards_PK()
   delete bc_flux;
   delete bc_head;
   delete bc_seepage;
+
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
 }
 
 
@@ -310,6 +313,7 @@ void Richards_PK::InitPicard(double T0)
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
   ti_specs = &ti_specs_sss_;
 
   InitNextTI(T0, dT0, ti_specs_sss_);
@@ -333,6 +337,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
   ti_specs = &ti_specs_trs_;
 
   InitNextTI(T0, dT0, ti_specs_trs_);
@@ -562,6 +567,9 @@ int Richards_PK::Advance(double dT_MPC)
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
     dTnext = std::min<double>(dT_MPC * dTfactor, ti_specs_trs_.dTmax);
   }
+
+  dt_tuple times(time, dT_MPC);
+  ti_specs->dT_history.push_back(times);
 
   ti_specs->num_itrs++;
   return 0;
