@@ -265,69 +265,55 @@ void Darcy_PK::InitializeSteadySaturated()
 
 
 /* ******************************************************************
-* Separate initialization of solver may be required for steady state
-* and transient runs.       
+* Specific initialization of a steady state time integration phase.
+* WARNING: now it is equivalent to transient phase.
 ****************************************************************** */
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
-  set_time(T0, dT0);
-  dT_desirable_ = dT0;  // The minimum desirable time step from now on.
+  ti_specs = &ti_specs_sss;
 
-  Epetra_Vector& pressure = FS->ref_pressure();
-  *solution_cells = pressure;
+  InitNextTI(T0, dT0, ti_specs_sss);
 
-  // initialize mass matrices
-  SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
-  matrix_->CreateMFDmassMatrices(mfd3d_method, K);
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    int nokay = matrix_->nokay();
-    int npassed = matrix_->npassed();
-    std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
-  }
-
-  // Well modeling (one-time call)
-  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell(K, *Kxy);
-  }
-
-  // Initialize source
-  if (src_sink != NULL) {
-    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
-      src_sink->Compute(T0);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
-      src_sink->ComputeDistribute(T0);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, Kxy->Values());
-    } 
-  }
-
-  // make initial guess consistent with boundary conditions
-  if (ti_specs_sss.initialize_with_darcy) {
-    ti_specs_sss.initialize_with_darcy = false;
-    DeriveFaceValuesFromCellValues(pressure, *solution_faces);
-    SolveFullySaturatedProblem(T0, *solution);
-    pressure = *solution_cells;
-  }
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
 }
 
 
 /* ******************************************************************
-* Initialization analyzes status of matrix/preconditioner pair.      
+* Specific initialization of a transient time integration phase.  
 ****************************************************************** */
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
+  ti_specs = &ti_specs_sss;
+
+  InitNextTI(T0, dT0, ti_specs_sss);
+
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4
+
+  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
+
+  // DEBUG
+  // SolveFullySaturatedProblem(0.0, *solution);
+  // CommitState(FS); WriteGMVfile(FS); exit(0);
+}
+
+
+/* ******************************************************************
+* Generic initialization of a next time integration phase.
+****************************************************************** */
+void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
+{
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     std::printf("***********************************************************\n");
-    std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs_sss.ti_method_name.c_str());
+    std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
     std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
-    std::printf("%5s time stepping strategy id %2d\n", "", ti_specs_sss.dT_method);
+    std::printf("%5s time stepping strategy id %2d\n", "", ti_specs.dT_method);
     std::printf("%5s source/sink distribution method id %2d\n", "", src_sink_distribution);
-    std::printf("%5s preconditioner: \"%s\"\n", " ", ti_specs_sss.preconditioner_name.c_str());
-    if (ti_specs_sss.initialize_with_darcy)
+    std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n", "", 
+        ti_specs.ls_specs.convergence_tol, ti_specs.ls_specs.max_itrs);
+    std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
+    if (ti_specs.initialize_with_darcy)
         std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
   }
 
@@ -336,7 +322,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 
   set_time(T0, dT0);
   dT_desirable_ = dT0;  // The minimum desirable time step from now on.
-  num_itrs_trs = 0;
+  ti_specs.num_itrs = 0;
 
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
@@ -367,18 +353,12 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   }
 
   // make initial guess consistent with boundary conditions
-  if (ti_specs_sss.initialize_with_darcy) {
-    ti_specs_sss.initialize_with_darcy = false;
+  if (ti_specs.initialize_with_darcy) {
+    ti_specs.initialize_with_darcy = false;
     DeriveFaceValuesFromCellValues(pressure, *solution_faces);
     SolveFullySaturatedProblem(T0, *solution);
     pressure = *solution_cells;
   }
-
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
-
-  // DEBUG
-  // SolveFullySaturatedProblem(0.0, *solution);
-  // CommitState(FS); WriteGMVfile(FS); exit(0);
 }
 
 
@@ -492,7 +472,7 @@ int Darcy_PK::Advance(double dT_MPC)
   double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
 
   solver->Iterate(max_itrs, convergence_tol);
-  num_itrs_trs++;
+  ti_specs->num_itrs++;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver->NumIters();

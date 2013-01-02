@@ -155,7 +155,7 @@ void Richards_PK::ProcessParameterList()
     Teuchos::ParameterList& igs_list = rp_list_.sublist("initial guess pseudo time integrator");
 
     std::string ti_method_name = igs_list.get<string>("time integration method", "none");
-    ProcessStringTimeIntegration(ti_method_name, &ti_method_igs);
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_igs_.ti_method);
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
     ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
 
@@ -166,7 +166,7 @@ void Richards_PK::ProcessParameterList()
     LinearSolver_Specs& ls_specs = ti_specs_igs_.ls_specs;
     ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
 
-    ProcessStringErrorOptions(igs_list, &error_control_igs_);
+    ProcessStringErrorOptions(igs_list, &ti_specs_igs_.error_control_options);
   }
 
   // Time integrator for period II, temporary called steady-state time integrator
@@ -174,7 +174,7 @@ void Richards_PK::ProcessParameterList()
     Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
 
     std::string ti_method_name = sss_list.get<string>("time integration method", "none");
-    ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_sss_.ti_method);
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
     ti_specs_sss_.ti_method_name = "steady state time integrator";
 
@@ -185,7 +185,7 @@ void Richards_PK::ProcessParameterList()
     LinearSolver_Specs& ls_specs = ti_specs_sss_.ls_specs;
     ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
 
-    ProcessStringErrorOptions(sss_list, &error_control_sss_);
+    ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
 
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Flow PK: mandatory sublist for steady-state calculations is missing.\n");
@@ -196,7 +196,7 @@ void Richards_PK::ProcessParameterList()
     Teuchos::ParameterList& trs_list = rp_list_.sublist("transient time integrator");
 
     string ti_method_name = trs_list.get<string>("time integration method", "none");
-    ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_trs_.ti_method);
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
     ti_specs_trs_.ti_method_name = "transient time integrator";
 
@@ -207,7 +207,7 @@ void Richards_PK::ProcessParameterList()
     LinearSolver_Specs& ls_specs = ti_specs_trs_.ls_specs;
     ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
 
-    ProcessStringErrorOptions(trs_list, &error_control_trs_);
+    ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
 
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Flow PK: missing sublist \"transient time integrator\".\n");

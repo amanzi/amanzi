@@ -42,6 +42,7 @@ class Darcy_PK : public Flow_PK {
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
   void InitPicard(double T0) {};  // not used yet.
+  void InitNextTI(double T0, double dT0, TI_Specs ti_specs);
 
   double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
@@ -116,10 +117,13 @@ class Darcy_PK : public Flow_PK {
   Matrix_MFD* matrix_;
   Matrix_MFD* preconditioner_;
 
-  TI_Specs ti_specs_sss;  // Parameters for steady-state solution
+  int error_control_;
 
-  int num_itrs_trs;  // Parameters for transient solver
-  double dT_desirable_;
+  TI_Specs ti_specs_sss;  // Two time integration phases
+  TI_Specs ti_specs_trs;
+  TI_Specs* ti_specs;
+
+  double dT_desirable_; // Parameters for transient solver
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

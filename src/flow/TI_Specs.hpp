@@ -35,11 +35,12 @@ class LinearSolver_Specs {
 class TI_Specs {
  public:
   TI_Specs() { 
-    ti_method = 0;
+    ti_method = FLOW_TIME_INTEGRATION_BDF1;
     ti_method_name = "steady state time integrator";
     preconditioner_name = "Hypre AMG";
     preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
     num_itrs = max_itrs = 0;
+    error_control_options = 0;
     dT_method = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
     dTfactor = 1.0;
@@ -61,7 +62,7 @@ class TI_Specs {
   int preconditioner_method;
   int num_itrs, max_itrs;
 
-  int dT_method;
+  int dT_method, error_control_options;
   double T0, T1, dT0, dTmax, dTfactor;
   double atol, rtol, residual_tol; 
 

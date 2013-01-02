@@ -185,14 +185,11 @@ class Richards_PK : public Flow_PK {
   int functional_max_cell;
 
   TI_Specs ti_specs_igs_;  // Three time integration phases
-  int ti_method_igs, error_control_igs_;
   TI_Specs ti_specs_sss_;
-  int ti_method_sss, error_control_sss_;
   TI_Specs ti_specs_trs_;
-  int ti_method_trs, error_control_trs_; 
+  TI_Specs* ti_specs;
 
-  //double absolute_tol, relative_tol;  // Generic parameters (igs, sss or trs)
-  int ti_method, num_itrs_nonlinear, max_itrs_linear;
+  int max_itrs_linear;  // Generic parameters (igs, sss or trs)
   double convergence_tol_linear;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution

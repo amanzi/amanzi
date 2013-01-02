@@ -68,23 +68,54 @@ void Darcy_PK::ProcessParameterList()
   string mfd3d_method_name = dp_list_.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method); 
 
-  // Time integrator for period I, temporary called steady state time integrator
-  Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");
+  // Time integrator for period I, temporary called steady-state time integrator
+  bool ti_flag = true;
 
-  string ti_method_name = sss_list.get<string>("time integration method", "none");
-  ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss);
+  if (dp_list_.isSublist("steady state time integrator")) {
+    Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");
 
-  if (sss_list.isParameter("preconditioner")) {
-    ti_specs_sss.preconditioner_name = sss_list.get<string>("preconditioner");
-    ProcessStringPreconditioner(ti_specs_sss.preconditioner_name, &ti_specs_sss.preconditioner_method);
-  } else {
-    msg << "Flow PK: steady state time integrator does not define a preconditioner.";
-    Exceptions::amanzi_throw(msg);
+    string ti_method_name = sss_list.get<string>("time integration method", "none");
+    ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss);
+
+    if (sss_list.isParameter("preconditioner")) {
+      ti_specs_sss.preconditioner_name = sss_list.get<string>("preconditioner");
+      ProcessStringPreconditioner(ti_specs_sss.preconditioner_name, &ti_specs_sss.preconditioner_method);
+    } else {
+      msg << "Flow PK: steady state time integrator does not define a preconditioner.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
+    LinearSolver_Specs& ls_specs = ti_specs_sss.ls_specs;
+    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+
+    ti_flag = true;
   }
 
-  std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
-  LinearSolver_Specs& ls_specs = ti_specs_sss.ls_specs;
-  ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+  if (dp_list_.isSublist("transient time integrator")) {
+    Teuchos::ParameterList& trs_list = dp_list_.sublist("transient time integrator");
+
+    string ti_method_name = trs_list.get<string>("time integration method", "none");
+    ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs);
+
+    if (trs_list.isParameter("preconditioner")) {
+      ti_specs_trs.preconditioner_name = trs_list.get<string>("preconditioner");
+      ProcessStringPreconditioner(ti_specs_trs.preconditioner_name, &ti_specs_trs.preconditioner_method);
+    } else {
+      msg << "Flow PK: steady state time integrator does not define a preconditioner.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
+    LinearSolver_Specs& ls_specs = ti_specs_trs.ls_specs;
+    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+
+    ti_flag = true;
+  }
+
+  if (!ti_flag && verbosity >= FLOW_VERBOSITY_LOW) {
+    printf("Flow PK: missing sublist \"steady state time integrator\" or \"transient time integrator\".\n");
+  }
 }
 
 
