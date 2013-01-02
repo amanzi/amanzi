@@ -219,7 +219,9 @@ public:
   friend class Diffusion;
   friend class Observation;
 
-    RichardNLSdata BuildInitNLS();
+  enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
+
+  RichardNLSdata BuildInitNLS();
 
   PorousMedia ();
 
@@ -406,7 +408,8 @@ public:
 					    int   iteration,
 					    Real& dt_new, 
 					    bool  do_subcycle,
-					    bool  do_recursive);
+					    bool  do_recursive,
+                                            bool  use_cached_sat);
 
   void advance_tracer  (Real time,
 			Real dt);
@@ -572,10 +575,12 @@ public:
 
 
   void tracer_advection (MultiFab* u_mac,
-			 Real dt,
 			 int  first_scalar,
 			 int  last_scalar,
-			 bool reflux_on_this_call);
+			 bool reflux_on_this_call,
+                         bool use_cached_sat);
+
+  void cache_component_saturations(int nGrow);
 
   // Update scalars, (viscous solve in scalar_update).
   //
@@ -763,7 +768,7 @@ public:
   // Reflux function.
   //
   virtual void reflux ();
-  void reflux(int sComp, int nComp);
+  void reflux(FluxRegister& fr, int sComp, int nComp);
 
   virtual void avgDown (); // Average down for all the state types.
   void avgDown (int comp); // Average down for a single StateType scalar
@@ -1018,6 +1023,7 @@ public:
     1: single-phase flow with precipitate
     2: 2-phase 2-component flow
     3: polymer flow (2-phase 3-component)
+    4: saturated (perhaps same as 0??)
   */
   static std::string model_name;
   static int model;
@@ -1309,7 +1315,7 @@ protected:
   static int  max_step;
   static Real stop_time;
   static bool do_richard_sat_solve;
-  static std::string execution_mode;
+  static ExecutionMode execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;
   static Array<Real> tpc_start_times;
@@ -1394,6 +1400,11 @@ protected:
 			   std::ostream&  os,
 			   VisMF::How     how,
 			   bool           dump_old);
+
+  bool component_saturations_cached;
+  MultiFab *sat_old_cached, *sat_new_cached;
+  Real t_sat_old_cached, t_sat_new_cached;
+
 };
 
 #endif /*_PorousMedia_H_*/

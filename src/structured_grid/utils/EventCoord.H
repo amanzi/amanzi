@@ -37,6 +37,7 @@ struct EventCoord
         virtual bool IsCycle() const {return true;}
         virtual bool IsTime() const {return false;}
         bool ThisEventDue(int cycle, int dcycle) const;
+        bool ThisEventInit(int cycle) const;
         virtual Event* Clone() const {return new CycleEvent(*this);}
 
         int start, period, stop;
@@ -58,6 +59,7 @@ struct EventCoord
         virtual bool IsCycle() const {return false;}
         virtual bool IsTime() const {return true;}
         bool ThisEventDue(Real time, Real dt, Real& dt_red) const;
+        bool ThisEventInit(Real time) const;
         virtual Event* Clone() const {return new TimeEvent(*this);}
 
         Real start, period, stop;
@@ -67,6 +69,7 @@ struct EventCoord
 
     ~EventCoord();
     std::pair<Real,Array<std::string> > NextEvent(Real time, Real dt, int  cycle, int dcycle) const;
+    Array<std::string> InitEvent(Real time, int  cycle) const;
 
     void Register(const std::string& label, const Event*  event);
     bool EventRegistered(const std::string& label) const;

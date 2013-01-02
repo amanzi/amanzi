@@ -223,6 +223,7 @@ namespace Amanzi {
             }
             struc_out_list.set<bool>("echo_inputs",echo_inputs);
 
+            int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
             //
             // Set flow model
             //
@@ -570,7 +571,6 @@ namespace Amanzi {
             //
             // Verbosity implementation
             //
-            int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
             if (v_val == "None") {
 	      prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
             }
@@ -951,7 +951,7 @@ namespace Amanzi {
                 }
             }
         }
-
+      
         static std::string dirStr[6] = {"-X", "-Y", "-Z", "+X", "+Y", "+Z"};
         std::pair<bool,int>orient(const std::string& dir)
         {
@@ -1283,17 +1283,20 @@ namespace Amanzi {
                             }
                             else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
 				     rlabel=="Intrinsic Permeability: Uniform") {
-                                Array<double> array_p(2);
+                              //Array<double> array_p(2);
+                                Array<double> array_p(1);
 				if (rlabel=="Intrinsic Permeability: Anisotropic Uniform") {
-				  array_p[1] = rsslist.get<double>("Vertical");
-				  array_p[0] = rsslist.get<double>("Horizontal");
+				  array_p[0] = rsslist.get<double>("Vertical");
+				  //array_p[1] = rsslist.get<double>("Vertical");
+				  //array_p[0] = rsslist.get<double>("Horizontal");
+				  //array_p[0] = array_p[1];
 				}
 				else {
 				  array_p[0] = rsslist.get<double>("Value");
-				  array_p[1] = array_p[0];
+				  //array_p[1] = array_p[0];
 				}
                                 // convert from m^2 to mDa
-                                for (int k=0; k<2; k++) {
+                                for (int k=0; k<array_p.size(); k++) {
                                     array_p[k] *= 1.01325e15;
                                 }
                                 rsublist.set("permeability",array_p);

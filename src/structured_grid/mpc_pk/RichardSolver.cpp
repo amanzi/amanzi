@@ -11,7 +11,7 @@
 static bool use_fd_jac_DEF = true;
 static bool use_dense_Jacobian_DEF = false;
 static int upwind_krel_DEF = 1;
-static int pressure_maxorder_DEF = 4;
+static int pressure_maxorder_DEF = 3;
 static Real errfd_DEF = 1.e-8;
 static int max_ls_iterations_DEF = 10;
 static Real min_ls_factor_DEF = 1.e-8;
@@ -24,7 +24,7 @@ static Real atol_DEF = 1e-10;
 static Real rtol_DEF = 1e-20;
 static Real stol_DEF = 1e-12;
 static bool scale_soln_before_solve_DEF = true;
-static bool semi_analytic_J_DEF = true;
+static bool semi_analytic_J_DEF = false; // There is a bug in this, or at least a set of solver configs reqd
 static bool centered_diff_J_DEF = true;
 static Real variable_switch_saturation_threshold_DEF = -0.9999;
 
@@ -122,8 +122,15 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   PArray<MultiFab> kappacc(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
   PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
+  Array<PArray<MultiFab> > kappaEC(BL_SPACEDIM);
 
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    kappaEC[d].resize(nLevs,PArrayNoManage);
+  }
   for (int lev=0; lev<nLevs; ++lev) {
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      kappaEC[d].set(lev,&(pm[lev].KappaEC()[d]));
+    }
     lambda.set(lev,pm[lev].LambdaCC_Curr());
     porosity.set(lev,pm[lev].Porosity());
     pcap_params.set(lev,pm[lev].PCapParams());
@@ -136,32 +143,30 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     KappaCC = new MFTower(layout,kappacc,nLevs);
   }
   else {
-      KappaCC = 0;
+    KappaCC = 0;
   }
   Lambda = new MFTower(layout,lambda,nLevs);
   Porosity = new MFTower(layout,porosity,nLevs);
   PCapParams = new MFTower(layout,pcap_params,nLevs);
+  KappaEC.resize(BL_SPACEDIM, PArrayManage);
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    KappaEC.set(d, new MFTower(layout,kappaEC[d],nLevs));
+  }
       
-  // Because kpedge has a weird boxarray, we maintain our own copy....should fix this
-  ktmp.resize(BL_SPACEDIM);
   ctmp.resize(BL_SPACEDIM);
   Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   Alpha = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   
-  Kappa.resize(BL_SPACEDIM,PArrayManage);
   RichardCoefs.resize(BL_SPACEDIM,PArrayManage);
   DarcyVelocity.resize(BL_SPACEDIM,PArrayManage);
   for (int d=0; d<BL_SPACEDIM; ++d) {
     PArray<MultiFab> utmp(nLevs,PArrayNoManage);
-    ktmp[d].resize(nLevs,PArrayManage);
     ctmp[d].resize(nLevs,PArrayManage);
     for (int lev=0; lev<nLevs; ++lev) {
       BoxArray ba = BoxArray(lambda[lev].boxArray()).surroundingNodes(d);
-      ktmp[d].set(lev, new MultiFab(ba,1,0)); ktmp[d][lev].copy(pm[lev].KappaEC()[d]);
       ctmp[d].set(lev, new MultiFab(ba,1,0));
       utmp.set(lev,&(pm[lev].UMac_Curr()[d]));
     }
-    Kappa.set(d,new MFTower(layout,ktmp[d],nLevs));
     DarcyVelocity.set(d, new MFTower(layout,utmp,nLevs));
     RichardCoefs.set(d, new MFTower(layout,ctmp[d],nLevs));
     utmp.clear();
@@ -253,12 +258,11 @@ RichardSolver::~RichardSolver()
 
     for (int d=0; d<BL_SPACEDIM; ++d) {
         ctmp[d].clear();
-        ktmp[d].clear();
     }
 
     DarcyVelocity.clear();
     RichardCoefs.clear();
-    Kappa.clear();
+    KappaEC.clear();
 
     delete Alpha;
     delete Rhs;
@@ -804,8 +808,8 @@ RichardSolver::XmultYZ(MFTower&       X,
 	  }
 
 	  FORT_RS_XMULTYZ(Xfab.dataPtr(dComp),ARLIM(Xfab.loVect()), ARLIM(Xfab.hiVect()),
-			  tfabY.dataPtr(),ARLIM(Yfab.loVect()), ARLIM(Yfab.hiVect()),
-			  tfabZ.dataPtr(),ARLIM(Zfab.loVect()), ARLIM(Zfab.hiVect()),
+			  tfabY.dataPtr(),ARLIM(tfabY.loVect()), ARLIM(tfabY.hiVect()),
+			  tfabZ.dataPtr(),ARLIM(tfabZ.loVect()), ARLIM(tfabZ.hiVect()),
 			  gbox.loVect(), gbox.hiVect(), &nComp);
         }
     }
@@ -907,7 +911,7 @@ RichardSolver::UpdateDarcyVelocity(MFTower& pressure,
 				   Real     t)
 {
   ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),
-                       GetLambda(),GetKappa(),GetDensity(),GetGravity(),t);
+                       GetLambda(),GetKappaEC(),GetDensity(),GetGravity(),t);
 }
 
 void 
@@ -959,15 +963,15 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
     const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
     CenterToEdgeUpwind(GetRichardCoefs(),lambda,darcy_vel,nComp,pressure_bc);
 
-    // Get Darcy flux = - lambda * kappa * (Grad(p) + rho.g)
+    // Get Darcy velocity = - lambda * kappa * (Grad(p) + rho.g)
     for (int d=0; d<BL_SPACEDIM; ++d) {
         XmultYZ(darcy_vel[d],GetRichardCoefs()[d],kappa[d]);
     }    
 
-    // Overwrite fluxes at boundary with boundary conditions
+    // Overwrite face velocities at boundary with boundary conditions
     SetInflowVelocity(darcy_vel,t);
 
-    // Average down fluxes
+    // Average down velocities
     int sComp = 0;
     for (int d=0; d<BL_SPACEDIM; ++d) {
       MFTower::AverageDown(darcy_vel[d],sComp,nComp,nLevs);
@@ -992,7 +996,7 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
   // Get the Darcy flux
   UpdateDarcyVelocity(pressure,t);
 
-  // Get the divergence of the Darcy Flux
+  // Get the divergence of the Darcy velocity
   int sComp=0;
   int dComp=0;
   int nComp=1;
@@ -1092,13 +1096,13 @@ void RichardSolver::CreateJac(Mat& J,
       FArrayBox& jfaby = jacflux[1][mfi];
       FArrayBox& vfabx = GetDarcyVelocity()[0][lev][mfi];
       FArrayBox& vfaby = GetDarcyVelocity()[1][lev][mfi];
-      FArrayBox& kfabx = GetKappa()[0][lev][mfi];
-      FArrayBox& kfaby = GetKappa()[1][lev][mfi];
+      FArrayBox& kfabx = GetKappaEC()[0][lev][mfi];
+      FArrayBox& kfaby = GetKappaEC()[1][lev][mfi];
       
 #if (BL_SPACEDIM==3)
       FArrayBox& jfabz = jacflux[2][mfi];
       FArrayBox& vfabz = GetDarcyVelocity()[2][lev][mfi];
-      FArrayBox& kfabz = GetKappa()[2][lev][mfi];
+      FArrayBox& kfabz = GetKappaEC()[2][lev][mfi];
 #endif
       FArrayBox& ldfab = GetLambda()[lev][mfi];
       FArrayBox& prfab = pressure[lev][mfi];
@@ -1462,14 +1466,6 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         }
 
         int iters = nld->NLIterationsTaken() + 1;
-#if 0
-        Real dt = rs->GetDt();
-        Real epsilon = std::max(1.e-13,3.e-7/dt);
-        PetscErrorCode ierr1 = MatFDColoringSetParameters(rs->GetMatFDColoring(),epsilon,PETSC_DEFAULT);        
-        ierr1 = VecNorm(y,NORM_2,&ynorm);
-
-        //std::cout << "Iter: " << iters << "  Setting eps*dt: " << epsilon*dt << " ynorm: " << ynorm << std::endl;
-#endif
     }
 
     return ierr;
