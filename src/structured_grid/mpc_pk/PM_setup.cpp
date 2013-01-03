@@ -346,6 +346,8 @@ bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
 Real PorousMedia::richard_variable_switch_saturation_threshold;
 
+RichardSolver* PorousMedia::richard_solver;
+
 PorousMedia::ExecutionMode PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
 Array<Real> PorousMedia::tpc_start_times;
@@ -692,7 +694,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_semi_analytic_J = false;
   PorousMedia::richard_variable_switch_saturation_threshold = -1;
 
-  PorousMedia::echo_inputs         = 0;
+  PorousMedia::echo_inputs    = 0;
+  PorousMedia::richard_solver = 0;
 }
 
 std::pair<std::string,std::string>

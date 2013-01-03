@@ -180,6 +180,7 @@ PorousMedia::CleanupStatics ()
 #ifdef AMANZI
     delete amanzi::chemistry::chem_out;
 #endif
+    delete richard_solver;
 }
 
 void
@@ -2730,12 +2731,14 @@ PorousMedia::multilevel_advance (Real  time,
       state[State_Type].setNewTimeLevel(time+dt);
       bool use_cached_sat = true;
       cache_component_saturations(nGrowHYP);
-      
+
       bool do_subcycle_tc = true;
       bool do_recursive = true;
       bool step_ok_tc = advance_richards_transport_chemistry(time,dt,iteration,dt_suggest_tc,
                                                              do_subcycle_tc,do_recursive,use_cached_sat);
-      if (!step_ok_tc) { // Transport/chem step failed, even with subcycling, kick out
+      if (step_ok_tc) {
+        reinstate_component_saturations();
+      } else {
         dt_new = dt_suggest_tc;
         return false;
       }
@@ -2822,6 +2825,28 @@ PorousMedia::cache_component_saturations(int nGrow)
     (*sat_new_cached)[S_fpi].copy(S_fpi());
     for (int n=0; n<ncomps; ++n) {
       (*sat_new_cached)[S_fpi].mult(1/density[n],n,1);
+    }
+  }
+}
+
+void
+PorousMedia::reinstate_component_saturations()
+{
+  component_saturations_cached = false;
+  BL_ASSERT(sat_old_cached && sat_old_cached->boxArray() == grids);
+  MultiFab& S_old = get_old_data(State_Type);
+  for (MFIter mfi(*sat_old_cached); mfi.isValid(); ++mfi) {
+    S_old[mfi].copy((*sat_old_cached)[mfi],0,0,ncomps);
+    for (int n=0; n<ncomps; ++n) {
+      S_old[mfi].mult(density[n],n,1);
+    }
+  }
+  BL_ASSERT(sat_new_cached && sat_new_cached->boxArray() == grids);
+  MultiFab& S_new = get_new_data(State_Type);
+  for (MFIter mfi(*sat_new_cached); mfi.isValid(); ++mfi) {
+    S_new[mfi].copy((*sat_new_cached)[mfi],0,0,ncomps);
+    for (int n=0; n<ncomps; ++n) {
+      S_new[mfi].mult(density[n],n,1);
     }
   }
 }
@@ -3013,6 +3038,11 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 							 dt_new_fine, do_subcycle_fine, do_recursive, use_cached_sat);
 	  fine_step_ok &= dt_fine<=dt_new_fine;
 	}
+
+        if (use_cached_sat) {
+          reinstate_component_saturations();
+        }
+
         post_timestep(iteration);  // If do_recursive, do here, otherwise this called explicitly by main timestepper
       }
       
@@ -8000,8 +8030,30 @@ PorousMedia::post_regrid (int lbase,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_regrid()");
 
+#if 1
   if (level == lbase) {
     PMAmr::GetLayout().Rebuild();
+  }
+#else
+  if (level == lbase  && steady_use_PETSc_snes) {
+
+    // NOTE: If grids change at any level, the layout (and RS) is no longer valid
+    Layout& layout = PMAmr::GetLayout();
+    PMAmr* pm_parent = PMParent();
+    int new_nLevs = new_finest - lbase + 1;
+
+    if (!(layout.IsCompatible(pm_parent,new_nLevs))) {
+      if (richard_solver != 0) {
+        delete richard_solver;
+      }
+
+      layout.Rebuild();
+
+      RSParams rsparams;
+      SetRichardSolverParameters(rsparams,"FlowAdvance");
+      richard_solver = new RichardSolver(*pm_parent,rsparams,layout);
+    }
+#endif
   }
 }
 

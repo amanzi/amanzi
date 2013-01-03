@@ -581,6 +581,7 @@ public:
                          bool use_cached_sat);
 
   void cache_component_saturations(int nGrow);
+  void reinstate_component_saturations();
 
   // Update scalars, (viscous solve in scalar_update).
   //
@@ -1054,6 +1055,7 @@ protected:
 
   void SetRichardSolverParameters(RSParams&          rsparams,
                                   const std::string& IDstring) const;
+  static RichardSolver* richard_solver;
 
   // Deals with the ghost cells 
   AuxBoundaryData aux_boundary_data_old;

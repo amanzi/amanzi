@@ -602,6 +602,45 @@ Layout::SetNodeIds(BaseFab<int>& idFab, int lev, int grid) const
     }
 }
 
+// Helper function
+bool geoms_are_equivalent(const Geometry& lhs,
+                          const Geometry& rhs)
+{
+  // Based on constructor for Geometry, these checks should be sufficient
+  // (this is a hack, since the Geometry interface may change...the test should
+  // really be a member of Geometry...may move there later)
+  bool retVal = true;
+  retVal &= lhs.Domain() == rhs.Domain();
+  retVal &= lhs.Coord() == rhs.Coord();
+  for (int d=0; d<BL_SPACEDIM && retVal; ++d) {
+    retVal &= lhs.isPeriodic(d) == rhs.isPeriodic(d);
+    retVal &= lhs.ProbDomain().lo(d) == rhs.ProbDomain().lo(d);
+    retVal &= lhs.ProbDomain().hi(d) == rhs.ProbDomain().hi(d);
+  }
+  return retVal;
+}
+
+bool
+Layout::IsCompatible(Amr* _parent, int _nLevs)
+{
+  if (_parent != parent) {
+    return false;
+  }
+
+  int nLevsTMP = (_nLevs < 0 ? parent->finestLevel() + 1 : _nLevs);
+  if (nLevsTMP != nLevs) {
+    return false;
+  }
+
+  bool retVal = true;
+  for (int lev=0; lev<nLevs && retVal; ++lev) {
+    retVal &= (gridArray[lev] == _parent->boxArray(lev))
+      &&      geoms_are_equivalent(geomArray[lev],parent->Geom(lev))
+      &&  ( (lev >= nLevs-1) || refRatio[lev] == parent->refRatio(lev) );
+  }
+  return retVal;
+}
+
 bool
 Layout::IsCompatible(const MFTower& mft) const
 {

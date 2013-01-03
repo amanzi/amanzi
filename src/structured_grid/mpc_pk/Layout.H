@@ -111,6 +111,7 @@ struct Layout
     const Array<IntVect>& RefRatio() const {return refRatio;}
 
     bool IsCompatible(const MFTower& mft) const;
+    bool IsCompatible(Amr* parent, int  nLevs = -1);
 
     const MultiFab& Volume(int lev) const;
     const MultiFab& Area(int lev, int dir) const;
