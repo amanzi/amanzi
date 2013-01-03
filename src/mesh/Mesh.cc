@@ -14,8 +14,18 @@ namespace AmanziMesh
 
 int Mesh::compute_geometric_quantities() const {
 
+  // this might be called after mesh deformation,
+  // so we make sure that the arrays that are 
+  // being initialized are empty
+  cell_volumes.clear();
+  cell_centroids.clear();
+  face_areas.clear();
+  face_centroids.clear();
+  face_normal0.clear();  
+  face_normal1.clear();  
+ 
   int ncells = num_entities(CELL,USED);
-
+  
   for (int i = 0; i < ncells; i++) {
     double volume;
     AmanziGeometry::Point centroid(spacedim);

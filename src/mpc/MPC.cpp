@@ -432,6 +432,15 @@ void MPC::cycle_driver() {
 
     // then start time stepping
     while ((S->get_time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
+
+      // log that we are starting a time step
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+        *out << setprecision(5);
+        *out << "Starting cycle " << iter;
+        *out << " at time(y) = "<< fixed << S->get_time() / (365.25*60*60*24);
+        *out << std::endl;
+      }
+
       // determine the time step we are now going to take
       double chemistry_dT = 1e+99, transport_dT = 1e+99, flow_dT = 1e+99;
       double mpc_dT = 1e+99, limiter_dT = 1e+99, observation_dT = 1e+99;
@@ -526,6 +535,14 @@ void MPC::cycle_driver() {
 	  }
         }
       }
+
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+        *out << setprecision(5);
+        *out << "Cycle " << iter;
+        *out << " proposed time step before flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
+        *out << std::endl;
+      }
+      
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow
       // first advance flow
@@ -577,9 +594,8 @@ void MPC::cycle_driver() {
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);
-        *out << "Cycle = " << iter;
-        *out << ",  Time(y) = "<< fixed << S->get_time() / (365.25*60*60*24);
-        *out << ",  dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
+        *out << "Cycle " << iter;
+        *out << " time step after flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
         *out << " " << limitstring;
         *out << std::endl;
       }
@@ -753,6 +769,14 @@ void MPC::cycle_driver() {
 
       }
 
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+        *out << setprecision(5);
+        *out << "Cycle " << iter;
+        *out << " complete.";
+        *out << std::endl;
+      }      
+
+      
       // update the times in the state object
       S->advance_time(mpc_dT);
 
