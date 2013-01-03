@@ -8053,8 +8053,8 @@ PorousMedia::post_regrid (int lbase,
       SetRichardSolverParameters(rsparams,"FlowAdvance");
       richard_solver = new RichardSolver(*pm_parent,rsparams,layout);
     }
-#endif
   }
+#endif
 }
 
 void 
