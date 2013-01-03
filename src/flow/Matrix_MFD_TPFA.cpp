@@ -210,6 +210,13 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
   (*Spp_).GlobalAssemble();
 }
 
+/************************************************
+*
+* Computation of the part of the jacobian which depends on
+* analytical derivatives of relative permeabilities
+*
+*************************************************/
+
 void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
                                        int dim,
                                        int Krel_method,
@@ -296,11 +303,18 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
                 (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
      }
      Spp_->GlobalAssemble();
-      // cout << "AnalyticJacobian Spp\n";
-      //         std::cout<<(*Spp_)<<endl;
-      //          cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
-     //     exit(0);
+ //     cout << "AnalyticJacobian Spp\n";
+ //             std::cout<<(*Spp_)<<endl;
+ //               cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
+ //     exit(0);
 }
+
+/*************************************************
+*
+* Computation of a local submatrix of 
+* Analytical Jacobian (nonlinear part) on a particular face.
+*
+*****************************************/
 
 //
 void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
@@ -387,8 +401,8 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
                 // cout<<Kabs_dist*dKrel_dp[0]<<" "<<dphi<<" "<<rho_w*mesh_->face_area(face_id)<<endl;
                 // cout<<"dKrel_dp[0] "<<dKrel_dp[0] <<" dKrel_dp[1] "<<dKrel_dp[1]<<endl;
 
-                Jpp(0, 0) = -Kabs_dist*dphi*dKrel_dp[0]*rho_w*mesh_->face_area(face_id);
-                Jpp(0, 1) = -Kabs_dist*dphi*dKrel_dp[1]*rho_w*mesh_->face_area(face_id);
+                Jpp(0, 0) = Kabs_dist*dphi*dKrel_dp[0]*rho_w*mesh_->face_area(face_id);
+                Jpp(0, 1) = Kabs_dist*dphi*dKrel_dp[1]*rho_w*mesh_->face_area(face_id);
                 Jpp(1, 0) = -Jpp(0, 0);
                 Jpp(1, 1) = -Jpp(0, 1);
 
