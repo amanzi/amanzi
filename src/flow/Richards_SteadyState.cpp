@@ -383,18 +383,22 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const E
 { 
   double relaxation = 1.0;
 
-  Epetra_Vector dSdP(mesh_->cell_map(false));
-  DerivedSdP(uold, dSdP);
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
+    Epetra_Vector dSdP(mesh_->cell_map(false));
+    DerivedSdP(uold, dSdP);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    double diff = dSdP[c] * fabs(unew[c] - uold[c]);
-    if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
+    for (int c = 0; c < ncells_owned; c++) {
+      double diff = dSdP[c] * fabs(unew[c] - uold[c]);
+      if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
+    }
   }
 
-  for (int c = 0; c < ncells_owned; c++) {
-    double diff = fabs(unew[c] - uold[c]);
-    double umax = std::max(fabs(unew[c]), fabs(uold[c]));
-    if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
+    for (int c = 0; c < ncells_owned; c++) {
+      double diff = fabs(unew[c] - uold[c]);
+      double umax = std::max(fabs(unew[c]), fabs(uold[c]));
+      if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+    }
   }
 
 #ifdef HAVE_MPI
