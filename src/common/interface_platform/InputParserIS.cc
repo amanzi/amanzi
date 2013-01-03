@@ -857,6 +857,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   double tol = LIN_SOLVE_TOL;
   int maxiter = LIN_SOLVE_MAXITER;
   std::string method = LIN_SOLVE_METHOD;
+  std::string prec = LIN_SOLVE_PREC;
   // get values from Execution control list if they exist
   if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
     Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -870,12 +871,15 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
           maxiter = num_list.get<int>("linear solver maximum iterations");
         if (num_list.isParameter("linear solver method"))
           method = num_list.get<std::string>("linear solver method");
+	if (num_list.isParameter("linear solver method")) 
+	  prec = num_list.get<std::string>("linear solver preconditioner");
       }
     }
   }
   aztecoo_list.set<double>("error tolerance", tol);
   aztecoo_list.set<std::string>("iterative method", method);
   aztecoo_list.set<int>("maximum number of iterations", maxiter);
+  aztecoo_list.set<std::string>("preconditioner", prec);
   
   return solver_list;
 }
