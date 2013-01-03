@@ -72,9 +72,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 # More unstructured grid pieces
 #
 if ( ENABLE_Unstructured )
-  if(ENABLE_CGNS)
-      include_directories(${CGNS_INCLUDE_DIRS})
-  endif()    
 endif()
 
 

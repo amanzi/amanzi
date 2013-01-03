@@ -62,9 +62,6 @@ endif()
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-if(ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDE_DIRS})
-endif()    
 if(ENABLE_MOAB_Mesh)
     include_directories(${MOAB_INCLUDE_DIRS})
     include_directories(${MOAB_SOURCE_DIR})
@@ -143,15 +140,13 @@ add_amanzi_executable(verify_mesh
 # verify_hex uses deprecated boost::filesystem
 # methods needs to pass version information to the
 # prepoccessor
-if ( ENABLE_CGNS )
-    add_amanzi_executable(verify_hex
-                          SOURCE verify_hex.cc
-                          LINK_LIBS mesh_factory
-                                    mesh mesh_audit
-                                    output ${Boost_LIBRARIES} ${CGNS_LIBRARIES})
-    set_target_properties(verify_hex PROPERTIES
-                          COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")
-endif()
+add_amanzi_executable(verify_hex
+                      SOURCE verify_hex.cc
+                      LINK_LIBS mesh_factory
+                                mesh mesh_audit
+                                output ${Boost_LIBRARIES} )
+set_target_properties(verify_hex PROPERTIES
+                      COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")
 
 #
 # Binary: verify_deform

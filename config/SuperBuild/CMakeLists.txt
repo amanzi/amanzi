@@ -475,11 +475,6 @@ if ( ENABLE_Structured )
             -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
 endif()
 
-# CGNS
-include(${SuperBuild_BUILD_FILES_DIR}/Build_CGNS.cmake) 
-append_set(Amanzi_TPL_CMAKE_ARGS 
-          -DENABLE_CGNS:BOOL=TRUE
-          -DCGNS_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 # Boost
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
 #TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
@@ -668,7 +663,6 @@ if ( BUILD_Amanzi )
 		          ${Boost_BUILD_TARGET}
 		          ${MSTK_BUILD_TARGET}
 		          ${MOAB_BUILD_TARGET}
-		          ${CGNS_BUILD_TARGET}
 		          ${CCSE_BUILD_TARGET}
 		          ${Trilinos_BUILD_TARGET})
 

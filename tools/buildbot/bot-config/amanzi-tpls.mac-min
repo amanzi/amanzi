@@ -1,6 +1,6 @@
 # use your package manager to install available packages, for example:
 #
-# sudo port install cmake boost unittest-cpp cgnslib
+# sudo port install cmake boost unittest-cpp 
 
 PREFIX=${HOME}/projects/amanzi/amanzi-libs
 SOURCE=${HOME}/projects/amanzi/amanzi-tpl-source
@@ -10,7 +10,6 @@ MPI_PREFIX=/usr
 BOOST_PREFIX=/opt/local
 HDF5_PREFIX=${PREFIX}
 NETCDF_PREFIX=${PREFIX}
-CGNS_PREFIX=/opt/local
 UNITTEST_PREFIX=/opt/local
 ZLIB_PREFIX=${PREFIX}
 CURL_PREFIX=/opt/local

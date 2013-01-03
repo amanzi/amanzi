@@ -178,14 +178,6 @@ MOAB_PREFIX=${PREFIX}
 MOAB_VERSION=r4276
 
 #
-# CGNS
-#
-BUILD_CGNS=0
-CGNS_PREFIX=${PREFIX}
-CGNS_VERSION=2.5
-CGNS_PATCH=4
-
-#
 # Trilinos
 #
 BUILD_TRILINOS=0
@@ -222,7 +214,6 @@ function help_message {
     -A              Build ASCEM-IO
     -b              Build Boost
     -e              Build Exodus
-    -g              Build CGNS
     -H              Build HDF5
     -k              Build MSTK
     -m              Build MOAB
@@ -373,7 +364,6 @@ function print_build_status {
     echo "BUILD_MOAB=$BUILD_MOAB          MOAB_PREFIX=$PREFIX"
     echo "BUILD_METIS=$BUILD_METIS        METIS_PREFIX=$PREFIX"
     echo "BUILD_MSTK=$BUILD_MSTK          MSTK_PREFIX=$PREFIX"
-    echo "BUILD_CGNS=$BUILD_CGNS          CGNS_PREFIX=$CGNS_PREFIX"
     echo "BUILD_UNITTEST=$BUILD_UNITTEST  UNITTEST_PREFIX=$UNITTEST_PREFIX"
     echo "BUILD_TRILINOS=$BUILD_TRILINOS  TRILINOS_PREFIX=$PREFIX"
 
@@ -773,44 +763,6 @@ function build_metis {
 
 ################################################################################
 #
-# cgns
-#
-################################################################################
-function build_cgns {
-    if [ ${CGNS_PREFIX} == ${PREFIX} ]; then
-        # Simple configure from amanzi do_configure stript
-        # Build without Fortran, 64bit support and largefiles (>2Gb)
-
-        CGNS_DIR=${PREFIX}/cgns/cgnslib_${CGNS_VERSION}
-        rm -rf ${CGNS_DIR}
-        mkdir -p ${PREFIX}/cgns
-        tar ${TAR_FLAGS} ${DOWNLOAD_DIRECTORY}/cgnslib_${CGNS_VERSION}-${CGNS_PATCH}.tar.gz -C ${PREFIX}/cgns
-        cd ${CGNS_DIR}
-        
-        ./configure --prefix=${PREFIX} \
-            --enable-lfs \
-            --enable-64bit \
-            --with-fortran=no
-        
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make -j ${MAKE_NP}
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        #make check
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make install
-    else
-        echo Using cgns from ${CGNS_PREFIX}
-    fi
-}
-
-################################################################################
-#
 # Trilinos 
 #
 ################################################################################
@@ -1102,8 +1054,6 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D ENABLE_MSTK_Mesh:BOOL=ON \\
         -D MSTK_DIR:FILEPATH=${MSTK_PREFIX} \\
         -D METIS_DIR:FILEPATH=${METIS_PREFIX} \\
-        -D ENABLE_CGNS:BOOL=ON \\
-        -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${TRILINOS_PREFIX}/trilinos-${TRILINOS_VERSION}-install \\
 	-D ENABLE_Unstructured:Bool=ON \\
@@ -1158,12 +1108,11 @@ do
   case $flag in
       h) PRINT_HELP=1;;
       d) DOWNLOAD_DIRECTORY=${OPTARG};;
-      a) BUILD_BOOST=1; BUILD_EXODUS=1; BUILD_CGNS=1; BUILD_HDF5=1; BUILD_MSTK=1; BUILD_MOAB=1; BUILD_NETCDF=1; BUILD_METIS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CURL=1; BUILD_ZLIB=1;;
+      a) BUILD_BOOST=1; BUILD_EXODUS=1; BUILD_HDF5=1; BUILD_MSTK=1; BUILD_MOAB=1; BUILD_NETCDF=1; BUILD_METIS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CURL=1; BUILD_ZLIB=1;;
 	  A) BUILD_ASCEMIO=1;;
       b) BUILD_BOOST=1;;
       B) BUILD_AMANZI_SCRIPT=1;;
       e) BUILD_EXODUS=1;;
-      g) BUILD_CGNS=1;;
       H) BUILD_HDF5=1;;
       k) BUILD_MSTK=1;;
       m) BUILD_MOAB=1;;
@@ -1252,11 +1201,6 @@ fi
 
 if [ $BUILD_METIS -eq 1 ]; then
     build_metis
-    cd ${SCRIPT_DIR}
-fi
-
-if [ $BUILD_CGNS -eq 1 ]; then
-    build_cgns
     cd ${SCRIPT_DIR}
 fi
 

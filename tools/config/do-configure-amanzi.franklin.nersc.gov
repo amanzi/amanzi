@@ -61,8 +61,6 @@ SOURCE=$HOME/ASCEM-Code/amanzi/src
   -D Trilinos_DIR:FILEPATH=$TRILINOS_DIR \
   -D UnitTest_DIR:FILEPATH=$UnitTestplusplus_DIR \
   -D UnitTest_INCLUDE_DIR:FILEPATH=$UnitTestplusplus_INCLUDE_DIR \
-  -D ENABLE_CGNS:BOOL=ON \
-  -D CGNS_DIR:FILEPATH=$CGNS_DIR \
   ${SOURCE} 
 
 

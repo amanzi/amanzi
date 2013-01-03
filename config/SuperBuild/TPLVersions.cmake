@@ -73,18 +73,6 @@ set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.zip)
 set(UnitTest_MD5_SUM       bd373a53403ed51ea1bbb60b1952d7e3) 
 
 #
-# TPL: CGNS
-#
-set(CGNS_VERSION_MAJOR 2)
-set(CGNS_VERSION_MINOR 5)
-set(CGNS_VERSION_PATCH 4)
-set(CGNS_VERSION ${CGNS_VERSION_MAJOR}.${CGNS_VERSION_MINOR}-${CGNS_VERSION_PATCH})
-set(CGNS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(CGNS_ARCHIVE_FILE   cgnslib_${CGNS_VERSION}.tar.gz)
-set(CGNS_MD5_SUM        42063efdf726c81300a51c3495d3224e) 
-
-
-#
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
