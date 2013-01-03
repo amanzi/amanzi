@@ -31,9 +31,6 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
-if(ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDE_DIRS})
-endif()    
 if(ENABLE_STK_Mesh)
     add_definitions("-DHAVE_STK_MESH")
     include_directories(${STK_INCLUDE_DIRS})
@@ -44,7 +41,7 @@ endif()
 # Library: output
 #
 
-# GMV is always built, CGNS if enabled
+# GMV is always built
 file(GLOB output_source_files "gmv*.c" "gmv*.cc")
 set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
@@ -56,12 +53,6 @@ list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 file(GLOB hdf5mpi_source "hdf5mpi_mesh*.cc")
 list(APPEND output_source_files "${hdf5mpi_source}")
 list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
-
-if(ENABLE_CGNS)
-    file(GLOB cgns_source "cgns*.cc")
-    list(APPEND output_source_files "${cgns_source}")
-    list(APPEND output_tpl_list ${CGNS_LIBRARIES})
-endif()
 
 file(GLOB output_inc_files "*.h*")
 
@@ -105,14 +96,6 @@ if (BUILD_TESTS)
                     SOURCE     test/Main.cc test/test_gmv.cc
 		    LINK_LIBS  output mesh_factory ${UnitTest_LIBRARIES}
 		    KIND unit)
-
-    # Test: cgns_output
-    if (ENABLE_CGNS)
-      add_amanzi_test(cgns_output test_cgns_output
-	              SOURCE      test/Main.cc test/test_cgns.cc
-		      LINK_LIBS   output mesh_factory ${UnitTest_LIBRARIES}
-		      KIND int)
-    endif()
 
     # Test: hdf5_output
     add_amanzi_test(hdf5_output test_hdf5_output

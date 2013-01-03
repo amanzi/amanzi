@@ -355,20 +355,6 @@ else()
 endif() 
 
 ##############################################################################
-# CGNS - http://www.cgns.sourceforge.net/
-##############################################################################
-option(ENABLE_CGNS  "Build Amanzi output library with CGNS" OFF)
-set_feature_info(CGNS
-                  ENABLE_CGNS
-                 "CFD General Notation System"
-                 "http://cgns.sourceforge.net"
-                 "Required to produce VisIt files"
-                 )
-if (ENABLE_CGNS)
-    find_package(CGNS REQUIRED)
-endif() 
-
-##############################################################################
 # UnitTest++ - http://unittest-cpp.sourceforge.net/
 ##############################################################################
 option(ENABLE_UnitTest "Build Amanzi unit tests. Requires UnitTest++" ON)

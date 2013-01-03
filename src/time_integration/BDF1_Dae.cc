@@ -329,12 +329,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     } 
   }
   
-//   utmp.Update(-1, u, 1);
-//   
-//   double val;
-//   
-//     std::cout<<"After solve_bce??? "<< val<<"\n";
-//   exit(0);
 }
 
 
@@ -357,21 +351,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
   Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
       Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
-
-// u[0] = 91531.0e0;
-// u[1] = 71944.0e0;
-// u[2] = 52357.0e0;
-// u[3] = 32770.0e0;
-// u[4] = 13183.0e0;
-// u[5] = -6404.0e0;
-// u[6] = -25991.0e0;
-// u[7] = -45578.0e0;
-// u[8] = -65165.0e0;
-// u[9]  = -84752.0e0;
-// u[10]  = -104339.0e0;
-// u[11]  = -123926.0e0;
-
-// u0 = u;
 
 
 
@@ -478,8 +457,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     u.Update(-1.0,du,1.0);
 
 
-     for (int i=0;i<12;i++) cout << u[i]<<" ";
-       cout<<endl;
 
     // compute error norm for the purpose of convergence testing, we use the
     // norm provided in the model evaluator
@@ -494,8 +471,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
       }
-//      cout<<"Exit Check for convergence \n";
-//      exit(0);
 
       if (itr < state.minitr) {
 	state.currentpclag = std::min(state.currentpclag+1, state.maxpclag);

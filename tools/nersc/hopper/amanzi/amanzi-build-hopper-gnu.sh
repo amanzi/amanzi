@@ -210,8 +210,6 @@ if [[ $AMANZI_CONFIG -eq 1 ]]; then
         -D MSTK_DIR:FILEPATH=${MSTK_DIR} \
 	-D MSTK_LIBRARY_DIR:FILEPATH=${MSTK_DIR}/lib/x86_64_Linux \
         -D METIS_DIR:FILEPATH=${METIS_DIR} \
-        -D ENABLE_CGNS:BOOL=ON \
-        -D CGNS_DIR:FILEPATH=${CGNS_DIR} \
         -D ENABLE_STK_Mesh:BOOL=ON \
         -D Trilinos_DIR:FILEPATH=${TRILINOS_DIR} \
 	-D ENABLE_Unstructured:Bool=ON \
