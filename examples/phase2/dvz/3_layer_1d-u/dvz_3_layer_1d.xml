@@ -49,7 +49,7 @@
       </ParameterList>
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
-          <Parameter name="steady max iterations" type="int" value="15"/>
+          <Parameter name="steady max iterations" type="int" value="15" comment="bla bla"/>
           <Parameter name="steady min iterations" type="int" value="10"/>
           <Parameter name="steady limit iterations" type="int" value="20"/>
           <Parameter name="steady nonlinear tolerance" type="double" value="1e-4"/>

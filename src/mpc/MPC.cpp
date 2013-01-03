@@ -769,14 +769,6 @@ void MPC::cycle_driver() {
 
       }
 
-      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << setprecision(5);
-        *out << "Cycle " << iter;
-        *out << " complete.";
-        *out << std::endl;
-      }      
-
-      
       // update the times in the state object
       S->advance_time(mpc_dT);
 
@@ -793,6 +785,13 @@ void MPC::cycle_driver() {
         Amanzi::timer_manager.start("Chemistry PK");
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
         Amanzi::timer_manager.stop("Chemistry PK");
+      }
+
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+        *out << setprecision(5);
+        *out << "Cycle " << iter;
+        *out << " complete, new time = " << S->get_time() / (365.25*60*60*24);
+        *out << std::endl;
       }
 
       // advance the iteration count
@@ -857,8 +856,8 @@ void MPC::cycle_driver() {
   // some final output
   if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
   {
-    *out << "Cycle = " << iter;
-    *out << ",  Time(years) = "<< S->get_time()/ (365.25*60*60*24);
+    *out << "Simulation complete at cycle " << iter;
+    *out << " and Time(y) = "<< S->get_time()/ (365.25*60*60*24);
     *out << std::endl;
   }
 
