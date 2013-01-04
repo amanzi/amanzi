@@ -575,8 +575,6 @@ public:
 
 
   void tracer_advection (MultiFab* u_mac,
-			 int  first_scalar,
-			 int  last_scalar,
 			 bool reflux_on_this_call,
                          bool use_cached_sat);
 
@@ -595,11 +593,6 @@ public:
 				int  first_scalar,
 				int  last_scalar,
 				int  corrector);
-  void tracer_advection_update (Real dt,
-				int  first_scalar,
-				int  last_scalar,
-				int  corrector);
-
 
   void scalar_diffusion_update (Real dt,
 				int  first_scalar,

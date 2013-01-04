@@ -317,23 +317,23 @@ extern "C"
 			int* use_forces_in_trans, int* iconserv,
 			Real* gravity, Real* eigmax);
 
-   void FORT_ESTATE_TRACER(const Real* s_dat, ARLIM_P(s_lo),ARLIM_P(s_hi),
-			   const Real* sn_dat, ARLIM_P(sn_lo),ARLIM_P(sn_hi),
-			   const Real* st_dat, ARLIM_P(st_lo),ARLIM_P(st_hi),
+   void FORT_ESTATE_TRACER(const Real* s_dat,   ARLIM_P(s_lo),ARLIM_P(s_hi),
+			   const Real* sn_dat,  ARLIM_P(sn_lo),ARLIM_P(sn_hi),
+			   const Real* st_dat,  ARLIM_P(st_lo),ARLIM_P(st_hi),
 			   const Real* stn_dat, ARLIM_P(stn_lo),ARLIM_P(stn_hi),
 			   const Real* slx_dat, Real* slxscr, 
 			   const Real* xlo_dat, const Real* xhi_dat,
 			   const Real* uedge_dat, ARLIM_P(ue_lo), ARLIM_P(ue_hi),
-			   const Real* stx,       ARLIM_P(stx_lo),ARLIM_P(stx_hi),
+			   Real* stx,             ARLIM_P(stx_lo),ARLIM_P(stx_hi),
 			   const Real* sly_dat, Real* slyscr,
 			   const Real* ylo_dat, const Real* yhi_dat,
 			   const Real* vedge_dat, ARLIM_P(ve_lo), ARLIM_P(ve_hi),
-			   const Real* sty,       ARLIM_P(sty_lo),ARLIM_P(sty_hi),
+			   Real* sty,             ARLIM_P(sty_lo),ARLIM_P(sty_hi),
 #if (BL_SPACEDIM == 3)
 			   const Real* slz_dat, Real* slzscr,
 			   const Real* zlo_dat, const Real* zhi_dat,
 			   const Real* wedge_dat, ARLIM_P(we_lo), ARLIM_P(we_hi),
-			   const Real* stz,       ARLIM_P(stz_lo),ARLIM_P(stz_hi),
+			   Real* stz,             ARLIM_P(stz_lo),ARLIM_P(stz_hi),
 #endif
 			   const Real* rphi_dat,  ARLIM_P(rphi_lo),  ARLIM_P(rphi_hi),
 			   ARLIM_P(ww_lo), ARLIM_P(ww_hi),
@@ -434,17 +434,15 @@ extern "C"
 			      const Real* vol_dat, ARLIM_P(v_lo),ARLIM_P(v_hi),
 			      const int* lo, const int* hi, const int* nscal);
    
-   void FORT_CONVSCALMINMAX (const Real* Sold_dat, 
-                             ARLIM_P(slo), ARLIM_P(shi),
-                             const Real* Snew_dat, 
-                             ARLIM_P(snlo), ARLIM_P(snhi),
+   void FORT_CONVSCALMINMAX (Real* Sold_dat, ARLIM_P(slo), ARLIM_P(shi),
+                             Real* Snew_dat, ARLIM_P(snlo), ARLIM_P(snhi),
 #if (BL_SPACEDIM == 3)
 			     const Real* smin_dat, const Real* smax_dat,
 			     ARLIM_P(lo),ARLIM_P(hi),
 #endif
 			     const int* lo, const int* hi, const int* bc);
 
-   void FORT_CONSSCALMINMAX (const Real* Sold_dat, const Real* Snew_dat, 
+   void FORT_CONSSCALMINMAX (Real* Sold_dat, Real* Snew_dat, 
                              ARLIM_P(slo), ARLIM_P(shi),
 #if (BL_SPACEDIM == 3)
 			     const Real* smin_dat, const Real* smax_dat,
@@ -458,34 +456,36 @@ extern "C"
 			const int* lo, const int* hi, Real* dt, int* num_comp);
    
    void FORT_UPDATE_AOFS_TF(const Real* SOdat, ARLIM_P(slo), ARLIM_P(shi), 
-			    const Real* SNdat, ARLIM_P(slo), ARLIM_P(shi),
+			    Real*       SNdat, ARLIM_P(slo), ARLIM_P(shi),
 			    const Real* AOdat, ARLIM_P(alo), ARLIM_P(ahi),
 			    const Real*  pdat, ARLIM_P(plo), ARLIM_P(phi),
 			    const Real* tfdat, ARLIM_P(tlo), ARLIM_P(thi),
 			    const int* lo, const int* hi, 
 			    Real* dt, int* num_comp);
 
-   void FORT_UPDATE_AOFS_TRACER(const Real* SOdat, ARLIM_P(slo), ARLIM_P(shi), 
-				const Real* SNdat, ARLIM_P(slo), ARLIM_P(shi),
+   void FORT_UPDATE_AOFS_TRACER(const Real* COdat, ARLIM_P(colo), ARLIM_P(cohi), 
+				Real*       CNdat, ARLIM_P(cnlo), ARLIM_P(cnhi),
+				const Real* SOdat, ARLIM_P(solo), ARLIM_P(sohi), 
+				const Real* SNdat, ARLIM_P(snlo), ARLIM_P(snhi),
 				const Real* AOdat, ARLIM_P(alo), ARLIM_P(ahi),
 				const Real* tfdat, ARLIM_P(tlo), ARLIM_P(thi),
 				const Real*  pdat, ARLIM_P(plo), ARLIM_P(phi),
 				const int* lo, const int* hi, 
 				const int* idx_total, const int* idx_total_n,
-				Real* dt, int* num_comp);
+				const Real* dt, const int* ncomps, const int* ntracers);
    
    void FORT_SUM_TF_DIVU_VISC(const Real* Sdat,  ARLIM_P(slo), ARLIM_P(shi),
-			      const Real* Tfdat, ARLIM_P(tlo), ARLIM_P(thi),
+			      Real*       Tfdat, ARLIM_P(tlo), ARLIM_P(thi),
 			      const Real* DUdat, ARLIM_P(dlo), ARLIM_P(dhi),
 			      const Real* VIdat, ARLIM_P(vlo), ARLIM_P(vhi),
 			      const int* tlo, const int* thi, 
-			      int* num_comp, int* iconserv);
+			      const int* num_comp, const int* iconserv);
    
    void FORT_SUM_TF_DIVU(const Real* Sdat,  ARLIM_P(slo), ARLIM_P(shi),
-			 const Real* Tfdat, ARLIM_P(tlo), ARLIM_P(thi),
+			 Real*       Tfdat, ARLIM_P(tlo), ARLIM_P(thi),
 			 const Real* DUdat, ARLIM_P(dlo), ARLIM_P(dhi),
 			 const int* tlo, const int* thi, 
-			 int* num_comp, int* iconserv);
+			 const int* num_comp, const int* iconserv);
    
    void FORT_SET_PARAMS(const int& slope_order,
 			const int& use_unlimited_slopes);
