@@ -39,6 +39,18 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
  
   rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
+
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+    Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(matrix_);
+    if (matrix_plambda == 0) {
+      Errors::Message msg;
+      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_PLAMBDA\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    Epetra_Vector& flux = FS->ref_darcy_flux();
+    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
+  }
 }
 
 

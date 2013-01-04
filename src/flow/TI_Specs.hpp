@@ -37,7 +37,7 @@ class TI_Specs {
   TI_Specs() { 
     ti_method = FLOW_TIME_INTEGRATION_BDF1;
     ti_method_name = "undefined";
-    preconditioner_name = "Hypre AMG";
+    preconditioner_name = "undefined";
     preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
     num_itrs = max_itrs = 0;
     error_control_options = 0;

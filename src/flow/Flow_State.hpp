@@ -46,6 +46,7 @@ class Flow_State {
   void CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vhost);
   void CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
   void CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
+  void CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 
   Epetra_Vector* CreateCellView(const Epetra_Vector& u) const;
   Epetra_Vector* CreateFaceView(const Epetra_Vector& u) const;

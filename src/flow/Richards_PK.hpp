@@ -115,7 +115,8 @@ class Richards_PK : public Flow_PK {
   // io members
   void ProcessParameterList();
   void ProcessStringTimeIntegration(const std::string name, int* method);
-  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
+  void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance, 
+                                 std::string* preconditioner_name);
   void ProcessStringExperimentalSolver(const std::string name, int* method);
   void ProcessStringRelativePermeability(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
