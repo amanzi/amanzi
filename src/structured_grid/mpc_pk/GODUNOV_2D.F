@@ -2587,7 +2587,6 @@ c ::: compute part of advective tendency that depends on the flux convergence
             end do
          end do
       end do
-
       end
 
       subroutine riemann_solver_lin(flux,vel,vlo,vhi,DIMS(v),
@@ -4998,12 +4997,14 @@ c
       end 
 
       subroutine FORT_UPDATE_AOFS_TRACER(
-     &     s,       DIMS(s),
+     &     co,      DIMS(co),
+     &     cn,      DIMS(cn),
+     &     so,      DIMS(so),
      &     sn,      DIMS(sn),
      &     aofs,    DIMS(aofs),
      &     tforces, DIMS(tf),
      &     rockphi, DIMS(rockphi),
-     &     lo,hi,idx_total, idx_total_n, dt,nvar)
+     &     lo, hi,idx_total, idx_total_n, dt, nc, nt)
 
       implicit none
 c
@@ -5013,8 +5014,10 @@ c
 
 #include "probdata.H"
 
-      integer i, j, n, idx, nvar
-      integer DIMDEC(s)
+      integer nc, nt
+      integer DIMDEC(co)
+      integer DIMDEC(cn)
+      integer DIMDEC(so)
       integer DIMDEC(sn)
       integer DIMDEC(aofs)
       integer DIMDEC(tf)
@@ -5023,35 +5026,35 @@ c
       integer idx_total_n
       integer idx_total(idx_total_n)
       REAL_T  dt
-      REAL_T  s(DIMV(s),nvar)
-      REAL_T  sn(DIMV(sn),nvar)
-      REAL_T  aofs(DIMV(aofs),nvar)
-      REAL_T  tforces(DIMV(tf),nvar-ncomps)
+      REAL_T  co(DIMV(co),nt)
+      REAL_T  cn(DIMV(cn),nt)
+      REAL_T  so(DIMV(so),nc)
+      REAL_T  sn(DIMV(sn),nc)
+      REAL_T  aofs(DIMV(aofs),nt)
+      REAL_T  tforces(DIMV(tf),nt)
       REAL_T  rockphi(DIMV(rockphi))
-      REAL_T  sat,satn
+
+      integer i, j, n, idx
       integer cWater
 
 c     First update all tracers with no change
-      sn(:,:,ncomps+1:nvar) = s(:,:,ncomps+1:nvar)
+      cn(:,:,1:nt) = co(:,:,1:nt)
 
 c     Then, advect/force those in the "Total" group
 c     FIXME: Assume first component is water, and that all tracers of interest are in water
       cWater = 1
 
-c     idx_total is an array of 0-based arrays selecting a subset of the tracers
-c     in the "Total" group
+c     idx_total is an array of 0-based indices selecting a subset of the tracers to update
 
       do n = 1,idx_total_n
          idx = idx_total(n) + 1
 
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
-               sat = s(i,j,cWater)/rhoval(cWater)
-               satn = sn(i,j,cWater)/rhoval(cWater)
-               if (satn .gt. zero) then
-                  sn(i,j,idx) = (sat*s(i,j,idx)
-     &                 - dt*aofs(i,j,idx)/rockphi(i,j))/satn
-     &                 + dt*tforces(i,j,idx-ncomps)
+               if (sn(i,j,cWater) .gt. zero) then
+                  cn(i,j,idx) = (so(i,j,cWater)*co(i,j,idx)
+     &                 - dt*aofs(i,j,idx)/rockphi(i,j))/sn(i,j,cWater)
+     &                 + dt*tforces(i,j,idx)
                end if
             end do
          end do

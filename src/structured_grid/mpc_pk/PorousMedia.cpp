@@ -3007,8 +3007,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         // getViscFluxReg(level+1).setVal(0); Currently unused
       }
       bool do_reflux_this_call = true;
-      int last_tracer = first_tracer + ntracers - 1;
-      tracer_advection(u_macG_trac,first_tracer,last_tracer,do_reflux_this_call,use_cached_sat);
+      tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat);
 
       bool step_ok_chem = true;
       if (do_chem>0) {
@@ -3219,9 +3218,9 @@ PorousMedia::advance_incompressible (Real time,
 
       if (transport_tracers > 0)
 	{
-	  int ltracer = ncomps+ntracers-1;
           bool use_cached_sat = false;
-	  tracer_advection(u_macG_trac,ncomps,ltracer,true,use_cached_sat);
+          bool reflux_on_this_call = true;
+	  tracer_advection(u_macG_trac,reflux_on_this_call,use_cached_sat);
 	}
 
       predictDT(u_macG_prev, time);
@@ -3307,9 +3306,9 @@ PorousMedia::advance_incompressible (Real time,
 
       if (transport_tracers > 0)
 	{
-	  int ltracer = ncomps+ntracers-1;
+          bool reflux_on_this_call = true;
           bool use_cached_sat = false;
-	  tracer_advection(u_macG_trac,ncomps,ltracer,true,use_cached_sat);
+	  tracer_advection(u_macG_trac,reflux_on_this_call,use_cached_sat);
 	}
 
       // predict the next time step.  
@@ -3407,9 +3406,9 @@ PorousMedia::advance_richard (Real time,
 
   if (transport_tracers > 0)
     {
-      int ltracer = ncomps+ntracers-1;
+      bool reflux_on_this_call = true;
       bool use_cached_sat = false;
-      tracer_advection(u_macG_trac,ncomps,ltracer,true,use_cached_sat);
+      tracer_advection(u_macG_trac,reflux_on_this_call,use_cached_sat);
     }
 
   // predict the next time step. 
@@ -3574,9 +3573,9 @@ PorousMedia::advance_tracer (Real time,
   BL_ASSERT(transport_tracers > 0);
   BL_ASSERT(ntracers > 0);
     
-  int ltracer = ncomps+ntracers-1;
+  bool reflux_on_this_call = true;
   bool use_cached_sat = false;
-  tracer_advection(u_macG_trac,ncomps,ltracer,true,use_cached_sat); 
+  tracer_advection(u_macG_trac,reflux_on_this_call,use_cached_sat);
 }
 
 void
@@ -4410,7 +4409,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
       int state_ind = 0;
       int use_conserv_diff = (advectionType[state_ind] == Conservative);
       
-      godunov->Sum_tf_divu_visc(S_fpi(),tforces,state_ind,nscal,
+      godunov->Sum_tf_divu_visc(S_fpi(),state_ind,tforces,state_ind,nscal,
 				visc_terms[i],state_ind,
 				(*divu_fp)[i],use_conserv_diff);
       
@@ -4628,56 +4627,6 @@ PorousMedia::scalar_advection_update (Real dt,
   // Write out the min and max of each component of the new state.
   //
   if (corrector || verbose > 3) check_minmax();
-}
-
-void
-PorousMedia::tracer_advection_update (Real dt,
-                                      int  first_scalar,
-                                      int  last_scalar,
-				      int  corrector)
-{
-  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection_update()");
-
-  BL_ASSERT(transport_tracers > 0);
-
-  MultiFab&  S_old    = get_old_data(State_Type);
-  MultiFab&  S_new    = get_new_data(State_Type);
-  MultiFab&  Aofs     = *aofs;
-  MultiFab&  Rockphi  = *rock_phi;
-  FArrayBox  tforces;
-    
-  int nscal = ncomps + ntracers;
-    
-  //
-  // Advect only the Total
-  //
-  const Array<int>& idx_total = group_map["Total"];
-
-  if (ntracers > 0) 
-  {
-      if (idx_total.size()) 
-      {
-          Real pcTime = state[State_Type].curTime();
-          for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
-          {
-              const int i = mfi.index();
-              getForce_Tracer(tforces,i,0,0,ntracers,pcTime);
-              
-              godunov->Add_aofs_tracer(S_old[i],S_new[i],0,nscal,
-                                       Aofs[i],0,tforces,0,Rockphi[i],grids[i],
-                                       idx_total,dt);
-              
-          }
-      }
-      else {
-          MultiFab::Copy(S_new,S_old,ncomps,ncomps,ntracers,0);
-      }
-  }
-  S_new.FillBoundary();
-  //
-  // Write out the min and max of each component of the new state.
-  //
-  if (corrector || verbose > 3) check_minmax(first_scalar,last_scalar);
 }
 
 void
@@ -4901,108 +4850,100 @@ PorousMedia::diffuse_adjust_dominant(MultiFab&              Phi_new,
 //
 void
 PorousMedia::tracer_advection (MultiFab* u_macG,
-                               int  fscalar,
-                               int  lscalar,
                                bool reflux_on_this_call,
                                bool use_cached_sat)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
 
   BL_ASSERT(transport_tracers > 0);
-  //
-  // Get simulation parameters.
-  //
-  const Real* dx        = geom.CellSize();
-  const Real  prev_time = state[State_Type].prevTime();
-  const Real  cur_time  = state[State_Type].curTime();
-  const Real  dt        = cur_time - prev_time;
-  int nscal             = ntracers;
-    
-  //
-  // Get the viscous terms.
-  //
-  MultiFab visc_terms(grids,nscal,1);
-  visc_terms.setVal(0);
 
-  //
-  // Set up the grid loop.
-  //
-  FArrayBox flux[BL_SPACEDIM], tforces;
+  const Array<int>& idx_total = group_map["Total"];
+  const int   first_tracer = ncomps;
 
-  Array<int> state_bc;
+  if (idx_total.size()) {
 
-  MultiFab* divu_fp = new MultiFab(grids,1,1);
-  (*divu_fp).setVal(0.);
+    const Real* dx           = geom.CellSize();
+    const Real  prev_time    = state[State_Type].prevTime();
+    const Real  cur_time     = state[State_Type].curTime();
+    const Real  dt           = cur_time - prev_time;
 
-  MultiFab fluxes[BL_SPACEDIM];
-  if (reflux_on_this_call && do_reflux && level < parent->finestLevel())
+    //
+    // Get the viscous terms.
+    //
+    MultiFab visc_terms(grids,ntracers,1);
+    visc_terms.setVal(0);
+
+    MultiFab divu(grids,1,1);
+    divu.setVal(0.);
+
+    FArrayBox flux[BL_SPACEDIM], tforces;
+    Array<int> state_bc;
+    MultiFab fluxes[BL_SPACEDIM];
+    if (reflux_on_this_call && do_reflux && level < parent->finestLevel())
     {
       for (int i = 0; i < BL_SPACEDIM; i++)
-        {
-	  BoxArray ba = grids;
-	  ba.surroundingNodes(i);
-	  fluxes[i].define(ba, nscal, 0, Fab_allocate);
+      {
+        BoxArray ba = grids;
+        ba.surroundingNodes(i);
+        fluxes[i].define(ba, ntracers, 0, Fab_allocate);
+      }
+    }
+
+    MultiFab sat_old(grids,ncomps,nGrowHYP);
+    MultiFab sat_new(grids,ncomps,nGrowHYP);
+
+    if (use_cached_sat) {
+      for (MFIter mfi(sat_old); mfi.isValid(); ++mfi) {
+        const Box& gbox = sat_old[mfi].box();
+        sat_old[mfi].linInterp((*sat_old_cached)[mfi],gbox,0,(*sat_new_cached)[mfi],gbox,0,
+                               t_sat_old_cached,t_sat_new_cached,prev_time,gbox,0,ncomps);
+        sat_new[mfi].linInterp((*sat_old_cached)[mfi],gbox,0,(*sat_new_cached)[mfi],gbox,0,
+                               t_sat_old_cached,t_sat_new_cached,cur_time,gbox,0,ncomps);
+      }
+    }
+    else {
+      Real t_sat_old = prev_time;
+      for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
+                                   t_sat_old,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
+        sat_old[S_fpi].copy(S_fpi());
+        for (int n=0; n<ncomps; ++n) {
+          sat_old[S_fpi].mult(1/density[n],n,1);
         }
-    }
-
-  MultiFab sat_old(grids,ncomps,nGrowHYP);
-  MultiFab sat_new(grids,ncomps,nGrowHYP);
-  if (use_cached_sat) {
-    for (MFIter mfi(sat_old); mfi.isValid(); ++mfi) {
-      const Box& gbox = sat_old[mfi].box();
-      sat_old[mfi].linInterp((*sat_old_cached)[mfi],gbox,0,(*sat_new_cached)[mfi],gbox,0,
-                             t_sat_old_cached,t_sat_new_cached,prev_time,gbox,0,ncomps);
-      sat_new[mfi].linInterp((*sat_old_cached)[mfi],gbox,0,(*sat_new_cached)[mfi],gbox,0,
-                             t_sat_old_cached,t_sat_new_cached,cur_time,gbox,0,ncomps);
-    }
-  }
-  else {
-    Real t_sat_old = prev_time;
-    for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
-                                 t_sat_old,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-      sat_old[S_fpi].copy(S_fpi());
-      for (int n=0; n<ncomps; ++n) {
-        sat_old[S_fpi].mult(1/density[n],n,1);
       }
-    }
-
-    Real t_sat_new = cur_time;
-    for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowHYP,
-                                 t_sat_new,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-      sat_new[S_fpi].copy(S_fpi());
-      for (int n=0; n<ncomps; ++n) {
-        sat_new[S_fpi].mult(1/density[n],n,1);
-      }
-    }
-  }
- 
-  for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
-			       prev_time,State_Type,fscalar,nscal),
-	 Sn_fpi(*this,get_new_data(State_Type),nGrowHYP,
-		cur_time,State_Type,fscalar,nscal);
-         S_fpi.isValid() && Sn_fpi.isValid();  ++S_fpi,++Sn_fpi)
-    {
-      const int i = S_fpi.index();
-      getForce_Tracer(tforces,i,1,fscalar,nscal,cur_time);
-
-      godunov->Setup_tracer(grids[i], flux[0], flux[1],
-#if (BL_SPACEDIM == 3)  
-			    flux[2], 	    
-#endif		 
-			    nscal);
-
-      int aofs_ind  = ncomps;
-      int state_ind = 0;
-      int use_conserv_diff = (advectionType[state_ind] == Conservative);
-
-      godunov->Sum_tf_divu_visc(S_fpi(),tforces,state_ind,nscal,
-				visc_terms[i],state_ind,
-				(*divu_fp)[i],use_conserv_diff);
       
-      state_bc = getBCArray(State_Type,i,state_ind,1);
+      Real t_sat_new = cur_time;
+      for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowHYP,
+                                   t_sat_new,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
+        sat_new[S_fpi].copy(S_fpi());
+        for (int n=0; n<ncomps; ++n) {
+          sat_new[S_fpi].mult(1/density[n],n,1);
+        }
+      }
+    }
+
+    int Aidx = first_tracer;
+    int Cidx, Sidx, Fidx, Vidx, DUidx;
+    Cidx = Sidx = Fidx = Vidx = DUidx = 0;
+    int use_conserv_diff = (advectionType[first_tracer] == Conservative);
+
+    for (FillPatchIterator C_old_fpi(*this,get_old_data(State_Type),nGrowHYP,
+                                     prev_time,State_Type,first_tracer,ntracers),
+           C_new_fpi(*this,get_new_data(State_Type),nGrowHYP,
+                     cur_time,State_Type,first_tracer,ntracers);
+         C_old_fpi.isValid() && C_new_fpi.isValid();  ++C_old_fpi,++C_new_fpi)
+    {
+      const int i = C_old_fpi.index();
+      getForce_Tracer(tforces,i,1,first_tracer,ntracers,cur_time);
+
+      godunov->Setup_tracer(grids[i], D_DECL(flux[0],flux[1],flux[2]), ntracers);
+
+      godunov->Sum_tf_divu_visc(C_old_fpi(),Cidx,tforces,Fidx,ntracers,
+				visc_terms[i],Vidx,divu[i],use_conserv_diff);
+
+      state_bc = getBCArray(State_Type,i,ncomps,1); // FIXME: Assume bc same for all tracers
 
       BL_ASSERT(aofs->size()>i);
-      BL_ASSERT(divu_fp->size()>i);
+      BL_ASSERT(divu.size()>i);
       BL_ASSERT(rock_phi->size()>i);
       BL_ASSERT(area[0].size()>i);
       BL_ASSERT(area[1].size()>i);
@@ -5013,42 +4954,56 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 #if (BL_SPACEDIM == 3)                        
 			    area[2][i], u_macG[2][i], flux[2], 
 #endif
-			    S_fpi(), Sn_fpi(), sat_old[S_fpi], sat_new[S_fpi], tforces,
-			    (*divu_fp)[i] , state_ind,
-			    (*aofs)[i]    , aofs_ind,
-			    (*rock_phi)[i], 
-			    use_conserv_diff,
-			    state_ind,state_bc.dataPtr(),volume[i],
-			    nscal);
+			    C_old_fpi(), C_new_fpi(), Cidx, 
+                            sat_old[C_old_fpi], sat_new[C_new_fpi], Sidx, 
+                            tforces, Fidx, divu[i] , DUidx,
+			    (*aofs)[i], Aidx, (*rock_phi)[i], use_conserv_diff,
+			    state_bc.dataPtr(), volume[i], ntracers);
 
-      if (reflux_on_this_call)
-	{
-	  if (do_reflux)
-	    {
-	      if (level < parent->finestLevel())
-		{
-		  for (int d = 0; d < BL_SPACEDIM; d++)
-		    fluxes[d][i].copy(flux[d]);
-		}
+      // FIXME: Time-center the force term for the update?
+      godunov->Add_aofs_tracer(C_old_fpi(),C_new_fpi(), Cidx, ntracers,
+                               sat_old[i], sat_new[i], Sidx, ncomps,
+                               (*aofs)[i], Aidx, tforces, Fidx, (*rock_phi)[i],
+                               grids[i], idx_total, dt);
 
-	      if (level > 0)
-		{
-		  for (int d = 0; d < BL_SPACEDIM; d++)
-		    advflux_reg->FineAdd(flux[d],d,i,0,fscalar,nscal,dt);
-		}
-	    }
-	}
+      // Copy new tracer concentrations into "new" state
+      get_new_data(State_Type)[i].copy(C_new_fpi(),Cidx,first_tracer,ntracers);
+
+      if (do_reflux && reflux_on_this_call) {
+
+        if (level < parent->finestLevel()) {
+          for (int d = 0; d < BL_SPACEDIM; d++)
+            fluxes[d][i].copy(flux[d]);
+        }
+
+        if (level > 0) {
+          for (int d = 0; d < BL_SPACEDIM; d++)
+            advflux_reg->FineAdd(flux[d],d,i,0,first_tracer,ntracers,dt);
+        }
+      }
     }
 
-  delete divu_fp;
-
-  if (do_reflux && level < parent->finestLevel() && reflux_on_this_call)
+    if (do_reflux && level < parent->finestLevel() && reflux_on_this_call)
     {
       for (int d = 0; d < BL_SPACEDIM; d++)
-	getAdvFluxReg(level+1).CrseInit(fluxes[d],d,0,fscalar,nscal,-dt);
+        getAdvFluxReg(level+1).CrseInit(fluxes[d],d,0,first_tracer,ntracers,-dt);
     }
-  int corrector = 1;
-  tracer_advection_update (dt, fscalar, lscalar, corrector);
+
+  } else {
+
+    MultiFab::Copy(get_new_data(State_Type),get_old_data(State_Type),first_tracer,first_tracer,ntracers,0);
+
+  }
+
+  get_new_data(State_Type).FillBoundary(first_tracer,ntracers);
+
+  //
+  // Write out the min and max of each component of the new state.
+  //
+  if (verbose > 3) {
+    const int last_tracer = first_tracer + ntracers - 1;
+    check_minmax(first_tracer,last_tracer);
+  }
 }
 
 DistributionMapping
