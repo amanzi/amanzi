@@ -1,7 +1,7 @@
 <!-- unit test input for the chemistry process kernel -->
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
   <ParameterList name="General Description">
     <Parameter name="Model Name" type="string" value="chemistry process kernel integration test"/>
     <Parameter name="Description" type="string" value="chemistry process kernel integration test"/>
