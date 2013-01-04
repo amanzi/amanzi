@@ -306,8 +306,9 @@ PMAmr::pm_timeStep (int  level,
 
             if (level_count[i] >= regrid_int[i] && amr_level[i].okToRegrid())
             {
+              if (i==0) {
                 regrid(i,time);
-
+              }
                 //
                 // Compute new dt after regrid if at level 0 and compute_new_dt_on_regrid.
                 //
