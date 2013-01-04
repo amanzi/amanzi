@@ -92,9 +92,8 @@ void Tensor::inverse()
     data_[0] = data_[3] / det;
     data_[3] = a / det;
 
-    a = data_[1];
-    data_[1] = -data_[2] / det;
-    data_[2] = -a / det;
+    data_[1] /= -det;
+    data_[2] /= -det;
 
   } else if (rank_ <= 2) {
     Teuchos::LAPACK<int, double> lapack;
