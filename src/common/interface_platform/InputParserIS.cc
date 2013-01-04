@@ -16,7 +16,7 @@
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/format.hpp"
-
+#include "boost/lexical_cast.hpp"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -2145,19 +2145,37 @@ void check_AmanziInputVersion(Teuchos::ParameterList* plist) {
   }
 
   int major, minor, micro;
+
+  std::stringstream ss;
+  ss << version;
+  std::string ver;
   
-  major = version[0] - '0';
-  minor = version[2] - '0';
-  micro = version[4] - '0';
-  
-  
+  try {
+    getline(ss,ver,'.');
+    major = boost::lexical_cast<int>(ver);
+    
+    getline(ss,ver,'.');
+    minor = boost::lexical_cast<int>(ver);
+    
+    getline(ss,ver);
+    micro = boost::lexical_cast<int>(ver);
+  } 
+  catch (...) {
+    Exceptions::amanzi_throw(Errors::Message("The version string in the input file '"+version+"' has the wrong format, please use X.Y.Z, where X, Y, and Z are integers."));
+  }
+
+
+  std::cout << major << "." << minor << "." << micro << std::endl;
 
   if ((major != AMANZI_INPUT_VERSION_MAJOR) || 
       (minor != AMANZI_INPUT_VERSION_MINOR) ||
       (micro != AMANZI_INPUT_VERSION_MICRO)) {
-    std::stringstream ss;
-    ss << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;
-    Exceptions::amanzi_throw(Errors::Message("The input format version "+version+" does not match the required version "+ss.str()));
+    std::stringstream ss_ver_reqd;
+    ss_ver_reqd << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;
+    std::stringstream ss_ver_inp;
+    ss_ver_inp << major << "." << minor << "." << micro;
+
+    Exceptions::amanzi_throw(Errors::Message("The input format version "+ss_ver_inp.str()+" does not match the required version "+ss_ver_reqd.str()));
   }
 }
 
