@@ -436,8 +436,8 @@ void MPC::cycle_driver() {
       // log that we are starting a time step
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);
-        *out << "Starting cycle " << iter;
-        *out << " at time(y) = "<< fixed << S->get_time() / (365.25*60*60*24);
+        *out << "Cycle " << iter;
+        *out << ": starting time step at time(y) = "<< scientific << S->get_time() / (365.25*60*60*24);
         *out << std::endl;
       }
 
@@ -539,7 +539,7 @@ void MPC::cycle_driver() {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
         *out << setprecision(5);
         *out << "Cycle " << iter;
-        *out << " proposed time step before flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
+        *out << ": proposed time step before flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
         *out << std::endl;
       }
       
@@ -595,7 +595,7 @@ void MPC::cycle_driver() {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);
         *out << "Cycle " << iter;
-        *out << " time step after flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
+        *out << ": time step after flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
         *out << " " << limitstring;
         *out << std::endl;
       }
@@ -790,7 +790,7 @@ void MPC::cycle_driver() {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);
         *out << "Cycle " << iter;
-        *out << " complete, new time = " << S->get_time() / (365.25*60*60*24);
+        *out << ": complete, new time = " << S->get_time() / (365.25*60*60*24);
         *out << std::endl;
       }
 

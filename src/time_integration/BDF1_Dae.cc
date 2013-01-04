@@ -71,8 +71,8 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.damp = paramList_->get<double>("nonlinear iteration damping factor",1.0);
   state.uhist_size = paramList_->get<int>("nonlinear iteration initial guess extrapolation order",1);
   state.uhist_size++;
-  state.ntol_multiplier = paramList_->get<double>("nonlinear iteration initial timestep factor",1.0);
-  state.ntol_multiplier_damp = paramList_->get<double>("nonlinear iteration initial timestep factor damping",1.0);
+  state.ntol_multiplier = paramList_->get<double>("restart tolerance relaxation factor",1.0);
+  state.ntol_multiplier_damp = paramList_->get<double>("restart tolerance relaxation factor damping",1.0);
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;

@@ -135,7 +135,7 @@ Version
 =======
 
 Each input set contains at the top level a string variable `"Amanzi Input Format Version`".  As of the most recent update of this specification, the
-current version of the Amanzi input is `"1.0.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
+current version of the Amanzi input is `"1.1.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
 evolving input specification version can be found *here*.
 
 * [SU] "Amanzi Input Format Version" [string] Three part version string

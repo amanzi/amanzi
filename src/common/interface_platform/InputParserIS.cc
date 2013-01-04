@@ -983,8 +983,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	sti_bdf1_param.set<int>("max divergent iterations",ST_MAX_DIVERGENT_ITERATIONS);
 	sti_bdf1_param.set<double>("nonlinear iteration damping factor",ST_NONLIN_DAMP);
 	sti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD);
-	sti_bdf1_param.set<double>("nonlinear iteration initial timestep factor",ST_NONLIN_INIT_TS_FACTOR);
-	sti_bdf1_param.set<double>("nonlinear iteration initial timestep factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP);	    	
+	sti_bdf1_param.set<double>("restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR);
+	sti_bdf1_param.set<double>("restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP);	    	
 
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
 	  Teuchos::ParameterList& ncp_list =  plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -1015,10 +1015,10 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 					 num_list.get<double>("steady nonlinear iteration damping factor",ST_NONLIN_DAMP));
 	      sti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",
 				      num_list.get<int>("steady nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD));
-	      sti_bdf1_param.set<double>("nonlinear iteration initial timestep factor", 
-					 num_list.get<double>("steady nonlinear iteration initial timestep factor",ST_NONLIN_INIT_TS_FACTOR));
-	      sti_bdf1_param.set<double>("nonlinear iteration initial timestep factor damping", 
-					 num_list.get<double>("steady nonlinear iteration initial timestep factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP));
+	      sti_bdf1_param.set<double>("restart tolerance relaxation factor", 
+					 num_list.get<double>("steady restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR));
+	      sti_bdf1_param.set<double>("restart tolerance relaxation factor damping", 
+					 num_list.get<double>("steady restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP));
 	      steady_time_integrator.set<std::string>("preconditioner",
 						      num_list.get<std::string>("steady preconditioner",ST_PRECOND));
 	    }
@@ -1049,8 +1049,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	tti_bdf1_param.set<int>("max divergent iterations",TR_MAX_DIVERGENT_ITERATIONS);
 	tti_bdf1_param.set<double>("nonlinear iteration damping factor",TR_NONLIN_DAMP);
 	tti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",TR_NONLIN_INIT_GUESS_EXTR_ORD);
-	tti_bdf1_param.set<double>("nonlinear iteration initial timestep factor",TR_NONLIN_INIT_TS_FACTOR);
-	tti_bdf1_param.set<double>("nonlinear iteration initial timestep factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP);
+	tti_bdf1_param.set<double>("restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR);
+	tti_bdf1_param.set<double>("restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP);
 
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
 	  Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -1079,10 +1079,10 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 					 num_list.get<double>("transient nonlinear iteration damping factor",TR_NONLIN_DAMP));
 	      tti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",
 				      num_list.get<int>("transient nonlinear iteration initial guess extrapolation order",TR_NONLIN_INIT_GUESS_EXTR_ORD));
-	      tti_bdf1_param.set<double>("nonlinear iteration initial timestep factor", 
-					 num_list.get<double>("transient nonlinear iteration initial timestep factor",TR_NONLIN_INIT_TS_FACTOR));
-	      tti_bdf1_param.set<double>("nonlinear iteration initial timestep factor damping", 
-					 num_list.get<double>("transient nonlinear iteration initial timestep factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP));
+	      tti_bdf1_param.set<double>("restart tolerance relaxation factor", 
+					 num_list.get<double>("transient restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR));
+	      tti_bdf1_param.set<double>("restart tolerance relaxation factor damping", 
+					 num_list.get<double>("transient restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP));
 	      transient_time_integrator.set<std::string>("preconditioner",
 							 num_list.get<std::string>("transient preconditioner",TR_PRECOND));
 	    }
