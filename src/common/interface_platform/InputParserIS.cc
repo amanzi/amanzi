@@ -41,6 +41,9 @@ bool compareEpsilon(T& first, T eps) {
 Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   numproc_ = numproc;
 
+  // first make sure the version is correct
+  check_AmanziInputVersion(plist);
+
   Teuchos::ParameterList new_list, tmp_list;
 
   init_global_info(plist);
@@ -2133,6 +2136,33 @@ void output_boundary_conditions( Teuchos::ParameterList* plist ) {
   }
   //         exit(0);
 }
+
+void check_AmanziInputVersion(Teuchos::ParameterList* plist) {
+
+  std::string version = plist->get<std::string>("Amanzi Input Format Version","FAIL");
+  if (version == "FAIL") {
+    Exceptions::amanzi_throw(Errors::Message("The input file does not specify an input format version"));
+  }
+
+  int major, minor, micro;
+  
+  major = version[0] - '0';
+  minor = version[2] - '0';
+  micro = version[4] - '0';
+  
+  
+
+  if ((major != AMANZI_INPUT_VERSION_MAJOR) || 
+      (minor != AMANZI_INPUT_VERSION_MINOR) ||
+      (micro != AMANZI_INPUT_VERSION_MICRO)) {
+    std::stringstream ss;
+    ss << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;
+    Exceptions::amanzi_throw(Errors::Message("The input format version "+version+" does not match the required version "+ss.str()));
+  }
+}
+
+
+
 
 
 }

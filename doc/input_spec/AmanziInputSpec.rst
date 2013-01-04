@@ -145,7 +145,7 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
   </ParameterList>
 
 General Description
