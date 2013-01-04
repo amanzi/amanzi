@@ -403,6 +403,8 @@ public:
                       Real& dt_taken,
                       Real& dt_suggest);
 
+  void advance_richards_transport_dt(Real t);
+
   bool advance_richards_transport_chemistry(Real  t,
 					    Real  dt,
 					    int   iteration,

@@ -109,25 +109,27 @@ c ::: kpedge in y-dir
       integer DIMDEC(kappa)
       integer lo(SDIM), hi(SDIM)
       integer ratio(SDIM)
-c     FIXME: add support for vector kappa
-      REAL_T  kappadata(DIMV(kappadata))
-      REAL_T  kappa(DIMV(kappa))
+      REAL_T  kappadata(DIMV(kappadata),SDIM)
+      REAL_T  kappa(DIMV(kappa),SDIM)
 
-      integer i,j,ii,jj,fi,fj
+      integer i,j,ii,jj,fi,fj,k
 
-      kappa(:,:) = zero
+      kappa(:,:,:) = zero
       do jj = 0,ratio(2)-1
          do ii = 0,ratio(1)-1
             do j = lo(2), hi(2)
                fj = ratio(2)*j
                do i = lo(1), hi(1)
                   fi = ratio(1)*i
-                  kappa(i,j) = kappa(i,j) + one/kappadata(fi+ii,fj+jj)
+                  do k = 1,SDIM
+                     kappa(i,j,k) = kappa(i,j,k) + 
+     &                    one/kappadata(fi+ii,fj+jj,k)
+                  end do
                end do
             end do
          end do
       end do
-      kappa(:,:) = DBLE(ratio(1)*ratio(2)) / kappa(:,:)
+      kappa(:,:,:) = DBLE(ratio(1)*ratio(2)) / kappa(:,:,:)
       end
 
       subroutine FORT_INITKAPPA3A (kappadata, DIMS(kappadata),
@@ -181,28 +183,32 @@ c     ::: y-dir  Harmonic in y, arithmetic in x
       end
 
 
-      subroutine FORT_INITKEDGE (cdat, DIMS(cdat), edat, DIMS(edat), lo, hi, dir)
+      subroutine FORT_INITKEDGE (cdat, DIMS(cdat), edat, DIMS(edat), 
+     &     lo, hi, dir)
       implicit none
       integer DIMDEC(cdat)
       integer DIMDEC(edat)
       integer lo(SDIM), hi(SDIM)
       integer dir
 c     FIXME: add support for vector kappa
-      REAL_T  cdat(DIMV(cdat))
+      REAL_T  cdat(DIMV(cdat),SDIM)
       REAL_T  edat(DIMV(edat))
 
-      integer i,j
+      integer i,j,nc
 
+      nc = dir+1
       if (dir .eq. 0) then
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)+1
-               edat(i,j) = 2.d0 / (1.d0/cdat(i,j) + 1.d0/cdat(i-1,j))
+               edat(i,j) = 2.d0 / 
+     &              (1.d0/cdat(i,j,nc) + 1.d0/cdat(i-1,j,nc))
             enddo
          enddo
       else
          do j = lo(2), hi(2)+1
             do i = lo(1), hi(1)
-               edat(i,j) = 2.d0 / (1.d0/cdat(i,j) + 1.d0/cdat(i,j-1))
+               edat(i,j) = 2.d0 / 
+     &              (1.d0/cdat(i,j,nc) + 1.d0/cdat(i,j-1,nc))
             enddo
          enddo
       endif

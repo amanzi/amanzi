@@ -1405,10 +1405,11 @@ PorousMedia::read_rock(int do_chem)
           BoxLib::Abort(std::string("No porosity function specified for rock: \""+rname).c_str());
         }
 
-        Array<Real> rpermeability; ppr.getarr("permeability",rpermeability,0,ppr.countval("permeability"));
-        //BL_ASSERT(rpermeability.size() == 2); // Horizontal, Vertical  FIXME: Not supported yet
-        BL_ASSERT(rpermeability.size() == 1); // Horizontal, Vertical
-
+        Array<Real> rpermeabilityin; ppr.getarr("permeability",rpermeabilityin,0,ppr.countval("permeability"));
+        BL_ASSERT(rpermeabilityin.size() == 2); // Horizontal, Vertical  
+	// rpermeability will always be of size BL_SPACEDIM
+	Array<Real> rpermeability(BL_SPACEDIM,rpermeabilityin[1]);
+	for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rpermeabilityin[0];
         // The permeability is specified in mDa.  
         // This needs to be multiplied with 1e-10 to be consistent 
         // with the other units in the code.  What this means is that
@@ -1804,7 +1805,7 @@ PorousMedia::read_rock(int do_chem)
 
         if (kappadata == 0) {
 
-          kappadata = new MultiFab(ba,1,0,Fab_allocate); // FIXME: Mod to support vector
+            kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate); // FIXME: Mod to support vector
         
             for (int i=0; i<rocks.size(); ++i) 
             {
@@ -1817,8 +1818,7 @@ PorousMedia::read_rock(int do_chem)
                 r.problo = problo;
                 r.probhi = probhi;
                 r.build_kmap(*kappadata, gsfile);
-            }
-
+            } 
 	    std::string permeability_plotfile_out;
 	    pp.query("permeability_plotfile_out", permeability_plotfile_out);
 	    if (!permeability_plotfile_out.empty()) {

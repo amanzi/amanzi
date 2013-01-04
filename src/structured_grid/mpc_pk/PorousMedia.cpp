@@ -2734,6 +2734,7 @@ PorousMedia::multilevel_advance (Real  time,
 
       bool do_subcycle_tc = true;
       bool do_recursive = true;
+      advance_richards_transport_dt(time);
       bool step_ok_tc = advance_richards_transport_chemistry(time,dt,iteration,dt_suggest_tc,
                                                              do_subcycle_tc,do_recursive,use_cached_sat);
       if (step_ok_tc) {
@@ -2776,6 +2777,7 @@ PorousMedia::multilevel_advance (Real  time,
 
     bool do_subcycle_tc = false;
     bool do_recursive = false;
+    advance_richards_transport_dt(time);
     step_ok = advance_richards_transport_chemistry(time,dt,iteration,dt_new,do_subcycle_tc,do_recursive,use_cached_sat);
   }
 
@@ -2851,6 +2853,46 @@ PorousMedia::reinstate_component_saturations()
   }
 }
 
+void
+PorousMedia::advance_richards_transport_dt(Real t)
+{
+  int finest_level = parent->finestLevel();
+  Real dt_min = 1e20;
+  for (int lev=0; lev<=finest_level; ++lev) {
+    
+    PorousMedia& pml = getLevel(lev);   
+    if (lev == 0) {
+      pml.create_umac_grown(pml.u_mac_curr,pml.u_macG_trac);
+    } else {
+      PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+      const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(lev-1));
+      Real t_crse_curr = pm->state[State_Type].curTime();
+      pml.GetCrseUmac(u_macG_crse,t_crse_curr);
+      pml.create_umac_grown(pml.u_mac_curr,u_macG_crse,pml.u_macG_trac); 
+    }
+    if (pml.u_macG_prev == 0) {
+      pml.u_macG_prev = pml.AllocateUMacG();
+    }
+    if (pml.u_macG_curr == 0) {
+      pml.u_macG_curr = pml.AllocateUMacG();
+    }
+
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      MultiFab::Copy(pml.u_macG_prev[d],pml.u_macG_curr[d],0,0,1,0);
+      MultiFab::Copy(pml.u_macG_curr[d],pml.u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
+    }
+    pml.predictDT(pml.u_macG_trac,t);
+    dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
+
+  }
+
+  for (int lev=finest_level; lev>=0; --lev) {
+    PorousMedia& pml = getLevel(lev);   
+    pml.dt_eig = dt_min;
+    dt_min = dt_min*parent->nCycle(lev);
+  }
+}
+
 bool
 PorousMedia::advance_richards_transport_chemistry (Real  t,
 						   Real  dt,
@@ -2873,29 +2915,29 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     state[State_Type].setOldTimeLevel(t);
     MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
 
-    if (level == 0) {
-      create_umac_grown(u_mac_curr,u_macG_trac);
-    } else {
-      PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-      const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
-      Real t_crse_curr = pm->state[State_Type].curTime();
-      GetCrseUmac(u_macG_crse,t_crse_curr);
-      create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac); 
-    }
+    //if (level == 0) {
+    //  create_umac_grown(u_mac_curr,u_macG_trac);
+    //} else {
+    //  PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+    //  const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
+    //  Real t_crse_curr = pm->state[State_Type].curTime();
+    //  GetCrseUmac(u_macG_crse,t_crse_curr);
+    //  create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac); 
+    //}
 
-    if (u_macG_prev == 0) {
-      u_macG_prev = AllocateUMacG();
-    }
-    if (u_macG_curr == 0) {
-      u_macG_curr = AllocateUMacG();
-    }
+    //if (u_macG_prev == 0) {
+    //  u_macG_prev = AllocateUMacG();
+    //}
+    //if (u_macG_curr == 0) {
+    //  u_macG_curr = AllocateUMacG();
+    //}
 
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      MultiFab::Copy(u_macG_prev[d],u_macG_curr[d],0,0,1,0);
-      MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
-    }
+    //for (int d=0; d<BL_SPACEDIM; ++d) {
+    //  MultiFab::Copy(u_macG_prev[d],u_macG_curr[d],0,0,1,0);
+    //  MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
+    //}
     
-    predictDT(u_macG_trac,t);
+    //predictDT(u_macG_trac,t);
     Real dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
     if (!do_subcycle && dt_cfl < dt) {
       dt_new = dt_cfl;
@@ -3036,7 +3078,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	  fine_step_ok = 
 	    pm_fine.advance_richards_transport_chemistry(t_subtr+(i-1)*dt_fine, dt_fine, i,
 							 dt_new_fine, do_subcycle_fine, do_recursive, use_cached_sat);
-	  fine_step_ok &= dt_fine<=dt_new_fine;
+	  fine_step_ok &= dt_fine<=dt_new_fine;	
 	}
 
         if (use_cached_sat) {
@@ -3078,6 +3120,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
           std::cout << "Richards transport/chem step unwind at level = " << level << std::endl;
         }
         MultiFab::Copy(state[State_Type].newData(),state[State_Type].oldData(),first_tracer,first_tracer,ntracers,0);
+	
       } // end of recover
 
     }
@@ -8117,6 +8160,7 @@ PorousMedia::init_rock_properties ()
     if (permeability_from_fine)
     {
 #if 1
+    
       BoxArray cba = BoxArray(grids).grow(nGrowHYP);
       BoxArray cban = BoxArray(cba);
       cban.removeOverlap(); // Target region for coarsening
@@ -8163,12 +8207,10 @@ PorousMedia::init_rock_properties ()
         IntVect cshift(Box(fine.box()).coarsen(rr).smallEnd() - crse.box().smallEnd());
         crse.shift(cshift);
         const Box& cbox = crse.box();
-        BL_ASSERT(fine.box().contains(Box(cbox).refine(rr)));        
-        
+        BL_ASSERT(fine.box().contains(Box(cbox).refine(rr))); 
         FORT_INITKAPPA3(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
                         crse.dataPtr(),ARLIM(crse.loVect()),ARLIM(crse.hiVect()),
                         cbox.loVect(),cbox.hiVect(),rrvect);
-
         crse.shift(-cshift);
         BL_ASSERT(crse.norm(0,0,nComp) < 1.e40);
       }
@@ -8179,17 +8221,23 @@ PorousMedia::init_rock_properties ()
       crse2.copy(crse_src_data,0,0,crse_src_data.nComp());
       crse_src_data.clear();
 
-      for (MFIter mfi(*kappa); mfi.isValid(); ++mfi) {
-        (*kappa)[mfi].copy(crse2[mfi],0,0,crse2.nComp());
-      }
+      MultiFab kappatmp((*kappa).boxArray(),BL_SPACEDIM,(*kappa).nGrow());
+
+      for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
+        kappatmp[mfi].copy(crse2[mfi],0,0,crse2.nComp());
+      }      
+      (*kappa).setVal(0.);
+      for (int d=0; d<BL_SPACEDIM; d++)
+	MultiFab::Add(*kappa,kappatmp,d,0,1,(*kappa).nGrow());
+      (*kappa).mult(1.0/BL_SPACEDIM);
 
       // Now generate kpedge data, since we have kappa with valid grow data already
-      for (MFIter mfi(*kappa); mfi.isValid(); ++mfi) {
+      for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
         for (int d=0; d<BL_SPACEDIM; ++d) {
           const Box& cbox = mfi.validbox();
 
           Box ebox = Box(cbox).surroundingNodes(d);
-          const FArrayBox& cdat = (*kappa)[mfi];
+          const FArrayBox& cdat = kappatmp[mfi];
           FArrayBox& edat = kpedge[d][mfi];
           BL_ASSERT(edat.box().contains(ebox));
           FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),

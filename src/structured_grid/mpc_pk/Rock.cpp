@@ -228,9 +228,6 @@ void Rock::set_constant_kval(MultiFab&     mfdata,
 			     const Region& region_local,
                              int           nGrow) const
 {
-  if (permeability.size()>1) {
-    BoxLib::Error("Anisotropic permeability not yet supported");
-  }
   set_constant_val(mfdata,region_local,permeability,nGrow);
 }
 

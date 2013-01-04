@@ -1283,17 +1283,17 @@ namespace Amanzi {
                             }
                             else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
 				     rlabel=="Intrinsic Permeability: Uniform") {
-                              //Array<double> array_p(2);
-                                Array<double> array_p(1);
+                                Array<double> array_p(2);
+                                //Array<double> array_p(1);
 				if (rlabel=="Intrinsic Permeability: Anisotropic Uniform") {
-				  array_p[0] = rsslist.get<double>("Vertical");
-				  //array_p[1] = rsslist.get<double>("Vertical");
-				  //array_p[0] = rsslist.get<double>("Horizontal");
+				  //array_p[0] = rsslist.get<double>("Vertical");
+				  array_p[1] = rsslist.get<double>("Vertical");
+				  array_p[0] = rsslist.get<double>("Horizontal");
 				  //array_p[0] = array_p[1];
 				}
 				else {
 				  array_p[0] = rsslist.get<double>("Value");
-				  //array_p[1] = array_p[0];
+				  array_p[1] = array_p[0];
 				}
                                 // convert from m^2 to mDa
                                 for (int k=0; k<array_p.size(); k++) {
