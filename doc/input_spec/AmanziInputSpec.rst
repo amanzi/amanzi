@@ -187,9 +187,9 @@ Usage:
 
   * [SU] `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
 
-  * [S]`"Single-phase`" [string]: Single phase, fully saturated flow
+  * [SU] `"Single-phase`" [string]: Single phase, fully saturated flow
 
-  * [S]`"Multi-phase`" [string]: Multiple phase, variably saturated flow
+  * [S] `"Multi-phase`" [string]: Multiple phase, variably saturated flow
 
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
