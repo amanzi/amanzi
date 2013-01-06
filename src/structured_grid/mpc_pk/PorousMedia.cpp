@@ -692,6 +692,8 @@ PorousMedia::restart (Amr&          papa,
   //    getLevel(k).setTimeLevel(strt_time,dt,dt);
   //}
 
+  std::cout << "DO I come here at all? " << level << std::endl ;
+
   if (verbose>2 && ParallelDescriptor::IOProcessor()) {
     Real dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
     std::cout << "Estimated time step from level " << level << " = " << dt_cfl << '\n';
@@ -819,9 +821,7 @@ PorousMedia::restart (Amr&          papa,
       kpedge[dir].define(edge_gridskp,1,1,Fab_allocate);
       kpedge[dir].setVal(1.e40);
     }
-  
   init_rock_properties();
-
   //
   // Alloc MultiFab to hold u_mac
   //
@@ -1399,7 +1399,6 @@ PorousMedia::initData ()
       }
 
     }
-    
     is_grid_changed_after_regrid = false;
         
 #ifdef AMANZI
@@ -2130,6 +2129,7 @@ PorousMedia::richard_init_to_steady()
 void
 PorousMedia::init (AmrLevel& old)
 {
+
   init_rock_properties();
 
   PorousMedia*  oldns     = (PorousMedia*) &old;
@@ -2183,7 +2183,6 @@ PorousMedia::init (AmrLevel& old)
 	}
       is_grid_changed_after_regrid = false;
     }
-
 
   /*  if (!is_grid_changed_after_regrid && model == model_list["richard"])
     {
@@ -2499,7 +2498,7 @@ PorousMedia::ml_step_driver(Real  t,
     int dt_iter = 0;
     bool step_ok = false;
     bool continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
-
+    
     while (continue_dt_iteration) {
 
       if (ntracers>0 && do_tracer_transport && execution_mode==INIT_TO_STEADY) {
@@ -2771,13 +2770,35 @@ PorousMedia::multilevel_advance (Real  time,
     // Set velocity (u_mac_curr) from bc at t+dt
     set_vel_from_bcs(time+dt,u_mac_curr); 
 
+    if (level == 0) 
+      create_umac_grown(u_mac_curr,u_macG_trac);
+    else {
+      PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+      const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
+      Real t_crse_curr = pm->state[State_Type].curTime();
+      GetCrseUmac(u_macG_crse,t_crse_curr);
+      create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac); 
+    } 
+    if (u_macG_prev == 0) {
+      u_macG_prev = AllocateUMacG();
+    }
+    if (u_macG_curr == 0) {
+      u_macG_curr = AllocateUMacG();
+    }
+
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      MultiFab::Copy(u_macG_prev[d],u_macG_curr[d],0,0,1,0);
+      MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
+    }
+
+    predictDT(u_macG_trac,time);
+    
     // Cache saturations at time and time+dt
     bool use_cached_sat = true;
     cache_component_saturations(nGrowHYP);
 
     bool do_subcycle_tc = false;
     bool do_recursive = false;
-    advance_richards_transport_dt(time);
     step_ok = advance_richards_transport_chemistry(time,dt,iteration,dt_new,do_subcycle_tc,do_recursive,use_cached_sat);
   }
 
@@ -2858,7 +2879,7 @@ PorousMedia::advance_richards_transport_dt(Real t)
 {
   int finest_level = parent->finestLevel();
   Real dt_min = 1e20;
-  for (int lev=0; lev<=finest_level; ++lev) {
+  for (int lev=level; lev<=finest_level; ++lev) {
     
     PorousMedia& pml = getLevel(lev);   
     if (lev == 0) {
@@ -2883,9 +2904,7 @@ PorousMedia::advance_richards_transport_dt(Real t)
     }
     pml.predictDT(pml.u_macG_trac,t);
     dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
-
   }
-
   for (int lev=finest_level; lev>=0; --lev) {
     PorousMedia& pml = getLevel(lev);   
     pml.dt_eig = dt_min;
@@ -2915,31 +2934,9 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     state[State_Type].setOldTimeLevel(t);
     MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
 
-    //if (level == 0) {
-    //  create_umac_grown(u_mac_curr,u_macG_trac);
-    //} else {
-    //  PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-    //  const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
-    //  Real t_crse_curr = pm->state[State_Type].curTime();
-    //  GetCrseUmac(u_macG_crse,t_crse_curr);
-    //  create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac); 
-    //}
-
-    //if (u_macG_prev == 0) {
-    //  u_macG_prev = AllocateUMacG();
-    //}
-    //if (u_macG_curr == 0) {
-    //  u_macG_curr = AllocateUMacG();
-    //}
-
-    //for (int d=0; d<BL_SPACEDIM; ++d) {
-    //  MultiFab::Copy(u_macG_prev[d],u_macG_curr[d],0,0,1,0);
-    //  MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
-    //}
-    
-    //predictDT(u_macG_trac,t);
     Real dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
-    if (!do_subcycle && dt_cfl < dt) {
+    Real t_eps = 1.e-6*dt_cfl;
+    if (!do_subcycle && dt-dt_cfl > t_eps) {
       dt_new = dt_cfl;
       return false;
     }
@@ -2947,7 +2944,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     Real t_subtr = t;
     Real tmax_subtr = t+dt;
     Real dt_subtr = std::min(dt_cfl,dt);
-    Real t_eps = 1.e-6*dt_cfl;
     bool continue_subtr = true;
     std::map<int,MultiFab*> saved_states;
     int n_subtr = 0;
@@ -3441,7 +3437,6 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   }
   bool step_ok = false;
   dt_flow_new = dt_flow;
-
   // Lazily build structure to save state at time=t.  If we must subcycle, the
   // algorithm will overwrite old_time data as it goes.  This saved_state
   // must include all state types involved in this subcycle; we make a set
@@ -5258,6 +5253,7 @@ PorousMedia::advance_chemistry (Real time,
   MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
   MultiFab& Fcnt_new = get_new_data(FuncCount_Type);
 
+  MultiFab::Copy(S_new,S_old,0,0,ncomps,S_new.nGrow());
 
   BL_ASSERT(S_old.nComp() >= ncomps+ntracers);
   for (int ithread = 0; ithread < tnum; ithread++)
@@ -7964,7 +7960,6 @@ PorousMedia::post_timestep (int crse_iteration)
           Ssync = new MultiFab(grids,NUM_SCALARS,1);
 	}
         Ssync->setVal(0);
-
 	reflux();
         avgDown();
 	mac_sync();
@@ -8965,7 +8960,6 @@ PorousMedia::avgDown (const BoxArray& cgrids,
   MultiFab crse_fvolume(crse_S_fine_BA,1,0);
 
   crse_fvolume.copy(cvolume);
-
   for (MFIter mfi(S_fine); mfi.isValid(); ++mfi)
     {
       const int i = mfi.index();
@@ -10064,6 +10058,7 @@ PorousMedia::avgDown ()
   //
   // Average down the state at the new time.
   //
+  
   MultiFab& S_crse = get_new_data(State_Type);
   MultiFab& S_fine = fine_lev.get_new_data(State_Type);
   avgDown(grids,fgrids,S_crse,S_fine,volume,fvolume,level,level+1,0,S_crse.nComp(),fine_ratio);
@@ -10074,10 +10069,9 @@ PorousMedia::avgDown ()
   MultiFab& P_crse = get_new_data(Press_Type);
   MultiFab& P_fine = fine_lev.get_new_data(Press_Type);
   avgDown(grids,fgrids,P_crse,P_fine,volume,fvolume,level,level+1,0,1,fine_ratio);
-
-  if (do_reflux && u_macG_curr != 0)
+  if (do_reflux && u_macG_curr != 0 && fine_lev.u_macG_curr !=0)
     SyncEAvgDown(u_macG_curr,level,fine_lev.u_macG_curr,level+1);
-
+ 
 #ifdef AMANZI
   if (do_chem>0)
     {
