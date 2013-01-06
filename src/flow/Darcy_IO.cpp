@@ -75,7 +75,9 @@ void Darcy_PK::ProcessParameterList()
     Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");
 
     string ti_method_name = sss_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_sss.ti_method);
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss);
+    ti_specs_sss.ti_method_name = "steady state time integrator";
 
     if (sss_list.isParameter("preconditioner")) {
       ti_specs_sss.preconditioner_name = sss_list.get<string>("preconditioner");
@@ -96,7 +98,9 @@ void Darcy_PK::ProcessParameterList()
     Teuchos::ParameterList& trs_list = dp_list_.sublist("transient time integrator");
 
     string ti_method_name = trs_list.get<string>("time integration method", "none");
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_trs.ti_method);
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs);
+    ti_specs_trs.ti_method_name = "transient time integrator";
 
     if (trs_list.isParameter("preconditioner")) {
       ti_specs_trs.preconditioner_name = trs_list.get<string>("preconditioner");

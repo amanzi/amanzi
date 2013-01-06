@@ -65,6 +65,27 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
 
 /* ****************************************************************
+* Process string for the time integration method.
+**************************************************************** */
+void Flow_PK::ProcessStringTimeIntegration(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "Picard") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
+  } else if (name == "backward Euler") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
+  } else if (name == "BDF1") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
+  } else if (name == "BDF2") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+  } else {
+    msg << "Flow PK: unknown time integration method has been specified.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
 * Process string for the discretization method.
 **************************************************************** */
 void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
