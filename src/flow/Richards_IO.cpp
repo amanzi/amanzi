@@ -159,10 +159,11 @@ void Richards_PK::ProcessParameterList()
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
     ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
 
+    ti_specs_igs_.preconditioner_name = FindStringPreconditioner(igs_list);
+    ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
+
     std::string linear_solver_name = FindStringLinearSolver(igs_list, solver_list_);
-    LinearSolver_Specs& ls_specs = ti_specs_igs_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol, 
-                              &ti_specs_igs_.preconditioner_name);
+    ProcessStringLinearSolver(linear_solver_name, &ti_specs_igs_.ls_specs);
 
     ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
     ProcessStringErrorOptions(igs_list, &ti_specs_igs_.error_control_options);
@@ -177,10 +178,15 @@ void Richards_PK::ProcessParameterList()
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
     ti_specs_sss_.ti_method_name = "steady state time integrator";
 
-    std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
-    LinearSolver_Specs& ls_specs = ti_specs_sss_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol,
-                              &ti_specs_sss_.preconditioner_name);
+    ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
+    ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
+
+    if (ti_specs_sss_.initialize_with_darcy == true || 
+        ti_specs_sss_.ti_method == FLOW_TIME_INTEGRATION_PICARD ||
+        ti_specs_sss_.ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
+      std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
+      ProcessStringLinearSolver(linear_solver_name, &ti_specs_sss_.ls_specs);
+    }
 
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
@@ -198,10 +204,15 @@ void Richards_PK::ProcessParameterList()
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
     ti_specs_trs_.ti_method_name = "transient time integrator";
 
-    std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
-    LinearSolver_Specs& ls_specs = ti_specs_trs_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol,
-                              &ti_specs_trs_.preconditioner_name);
+    ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
+    ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
+
+    if (ti_specs_trs_.initialize_with_darcy == true || 
+        ti_specs_trs_.ti_method == FLOW_TIME_INTEGRATION_PICARD ||
+        ti_specs_trs_.ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
+      std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
+      ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
+    }
 
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
     ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
@@ -326,8 +337,7 @@ void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* meth
 /* ****************************************************************
 * Process string for the linear solver.
 **************************************************************** */
-void Richards_PK::ProcessStringLinearSolver(
-    const std::string name, int* max_itrs, double* convergence_tol, std::string* preconditioner_name)
+void Richards_PK::ProcessStringLinearSolver(const std::string name, LinearSolver_Specs* ls_specs)
 {
   Errors::Message msg;
 
@@ -337,10 +347,16 @@ void Richards_PK::ProcessStringLinearSolver(
   }
 
   Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
-  *max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
-  *convergence_tol = tmp_list.get<double>("error tolerance", 1e-10);
+  ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
+  ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-10);
 
-  *preconditioner_name = FindStringPreconditioner(tmp_list);
+  ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
+  ProcessStringPreconditioner(ls_specs->preconditioner_name, &ls_specs->preconditioner_method);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_LOW) {
+    std::printf("Flow PK: LS preconditioner \"%s\" will be replaced by TI preconditioner.\n", 
+        ls_specs->preconditioner_name.c_str());
+  }
 }
 
 
@@ -370,7 +386,7 @@ std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& 
   if (list.isParameter("preconditioner")) {
     name = list.get<string>("preconditioner");
   } else {
-    msg << "Flow PK: specified linear solver does not define <preconditioner>.";
+    msg << "Flow PK: parameter <preconditioner> is missing either in TI or LS list.";
     Exceptions::amanzi_throw(msg);
   }
 
