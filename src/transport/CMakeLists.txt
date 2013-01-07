@@ -75,6 +75,11 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_advance_simple.cpp
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(transport_limiters transport_limiters
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_limiters.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     add_amanzi_test(transport_convergence transport_convergence
                     KIND unit
                     SOURCE test/Main.cc test/transport_convergence.cpp

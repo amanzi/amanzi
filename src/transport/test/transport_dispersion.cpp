@@ -70,11 +70,11 @@ TEST(DISPERSION) {
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);
-  TS->analytic_darcy_flux(u);
-  TS->analytic_total_component_concentration(f_step);
-  TS->analytic_porosity(1.0);
-  TS->analytic_water_saturation(1.0);
-  TS->analytic_water_density(1.0);
+  TS->AnalyticDarcyFlux(u);
+  TS->AnalyticTotalComponentConcentration(f_step);
+  TS->AnalyticPorosity(1.0);
+  TS->AnalyticWaterSaturation(1.0);
+  TS->AnalyticWaterDensity(1.0);
 
   Transport_PK TPK(parameter_list, TS);
   TPK.set_standalone_mode(true);

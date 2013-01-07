@@ -79,7 +79,7 @@ void Flow_PK::ProcessStringTimeIntegration(const std::string name, int* method)
   } else if (name == "BDF2") {
     *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
   } else {
-    msg << "Flow PK: unknown time integration method has been specified.";
+    msg << "Flow PK: time integration method \"" << name.c_str() << "\" is not known.";
     Exceptions::amanzi_throw(msg);
   }
 }

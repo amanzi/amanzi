@@ -12,9 +12,21 @@
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
-        <Parameter name="method" type="string" value="none"/>
+        <Parameter name="time integration method" type="string" value="backward Euler"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO CG"/>
+
+        <ParameterList name="backward Euler">
+          <Parameter name="absolute error tolerance" type="double" value="0.1"/>
+          <Parameter name="relative error tolerance" type="double" value="1e-5"/>
+          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
+          <Parameter name="maximal number of iterations" type="int" value="200"/>
+          <Parameter name="start time" type="double" value="0.0"/>
+          <Parameter name="end time" type="double" value="100.0"/>
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
+          <Parameter name="initial time step" type="double" value="0.1"/>
+          <Parameter name="maximum time step" type="double" value="1.0"/>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="source terms">

@@ -119,6 +119,12 @@ class Transport_PK : public Explicit_TI::fnBase {
   // control members
   void PrintStatistics() const;
   void WriteGMVfile(Teuchos::RCP<Transport_State> TS) const;
+
+  // limiters
+  void LimiterBarthJespersen(const int component,
+                             Teuchos::RCP<Epetra_Vector> scalar_field, 
+                             Teuchos::RCP<Epetra_MultiVector> gradient, 
+                             Teuchos::RCP<Epetra_Vector> limiter);
  
  private:
   // advection members
@@ -129,11 +135,6 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // time integration members
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-
-  void LimiterBarthJespersen(const int component,
-                             Teuchos::RCP<Epetra_Vector> scalar_field, 
-                             Teuchos::RCP<Epetra_MultiVector> gradient, 
-                             Teuchos::RCP<Epetra_Vector> limiter);
 
   void LimiterTensorial(const int component,
                         Teuchos::RCP<Epetra_Vector> scalar_field, 
