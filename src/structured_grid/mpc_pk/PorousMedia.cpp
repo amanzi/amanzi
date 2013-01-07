@@ -684,16 +684,6 @@ PorousMedia::restart (Amr&          papa,
   AmrLevel::restart(papa,is,bReadSpecial);
   is >> dt_eig;
 
-  //int finest_level = parent->finestLevel();
-  //for (int k = 0; k <= finest_level; k++)
-  //{
-  //    Real dt = parent->dtLevel()[k];
-  //    Real strt_time =  static_cast<const PMAmr*>(parent)->StartTime();
-  //    getLevel(k).setTimeLevel(strt_time,dt,dt);
-  //}
-
-  std::cout << "DO I come here at all? " << level << std::endl ;
-
   if (verbose>2 && ParallelDescriptor::IOProcessor()) {
     Real dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
     std::cout << "Estimated time step from level " << level << " = " << dt_cfl << '\n';
@@ -2129,7 +2119,6 @@ PorousMedia::richard_init_to_steady()
 void
 PorousMedia::init (AmrLevel& old)
 {
-
   init_rock_properties();
 
   PorousMedia*  oldns     = (PorousMedia*) &old;
@@ -2217,6 +2206,8 @@ PorousMedia::init (AmrLevel& old)
 void
 PorousMedia::init ()
 {
+  init_rock_properties();
+
   BL_ASSERT(level > 0);
     
   MultiFab& S_new = get_new_data(State_Type);
@@ -2268,7 +2259,6 @@ PorousMedia::init ()
     }
 #endif
 
-  init_rock_properties();
   old_intersect_new = grids;
 }
 
@@ -3112,9 +3102,10 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 
         // recover from failed step by rolling back tracer update at this level
         if (ParallelDescriptor::IOProcessor()) {
-          std::cout << "Richards transport/chem step unwind at level = " << level << std::endl;
+          std::cout << "Richards transport/chem step failed, unwind failed attempt at level = " << level << std::endl;
         }
         MultiFab::Copy(state[State_Type].newData(),state[State_Type].oldData(),first_tracer,first_tracer,ntracers,0);
+        return false;
 	
       } // end of recover
 
