@@ -210,13 +210,11 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
   (*Spp_).GlobalAssemble();
 }
 
-/************************************************
-*
+
+/* ******************************************************************
 * Computation of the part of the jacobian which depends on
 * analytical derivatives of relative permeabilities
-*
-*************************************************/
-
+****************************************************************** */
 void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
                                        int dim,
                                        int Krel_method,
@@ -309,14 +307,11 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
  //     exit(0);
 }
 
-/*************************************************
-*
+
+/* ******************************************************************
 * Computation of a local submatrix of 
 * Analytical Jacobian (nonlinear part) on a particular face.
-*
-*****************************************/
-
-//
+****************************************************************** */
 void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
                                            int face_id,
                                            int dim,
@@ -425,6 +420,10 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 
 }
 
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
 void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r){
 
         WhetStone::MFD3D mfd3d(mesh_);
@@ -460,6 +459,10 @@ void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r){
 
 }
 
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
 void Matrix_MFD_TPFA::CompareJacobians(){
 
         int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
