@@ -360,9 +360,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnTypInvV,PCapParamsMFT,2); CHKPETSC(ierr); // sigma = 1/P_typ
 
-  // HACK
-  //ierr = VecSet(SolnTypInvV,1); CHKPETSC(ierr);
-
   if (params.scale_soln_before_solve) {
       ierr = VecPointwiseMult(SolnV,SolnV,SolnTypInvV); // Mult(w,x,y): w=x.y  -- Scale IC
   }
@@ -1228,7 +1225,7 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     Real dt = rs->GetDt();
     rs->DpDtResidual(fMFT,xMFT,t,dt);
 
-#if 1
+#if 0
     // Scale residual by cell volume/sqrt(total volume)
     Real sqrt_total_volume_inv = std::sqrt(1/TotalVolume());
     int nComp = 1;
@@ -1240,6 +1237,7 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     }
 #endif
 
+    
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
     if (rs->Parameters().scale_soln_before_solve) {
@@ -1572,17 +1570,17 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
     void *fctx;
 
     Real ls_factor = 1;
-    ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);
-    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+    ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
+    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);CHKPETSC(ierr);
 
     Vec& F = rs->GetResidualV();
     Vec& G = rs->GetTrialResV();
     
     (*func)(snes,p,F,fctx);
-    ierr = VecNorm(F,NORM_2,&fnorm);
+    ierr = VecNorm(F,NORM_2,&fnorm);CHKPETSC(ierr);
 
     (*func)(snes,pnew,G,fctx);
-    ierr = VecNorm(G,NORM_2,&gnorm);    
+    ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
 
     if (record_entire_solve) {
         RecordSolve(record_file,p,dp,pnew,F,G,check_ctx);
@@ -1602,9 +1600,9 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
             ls_factor = rsp.min_ls_factor;
         }
 
-        ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);
+        ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
         (*func)(snes,pnew,G,fctx);
-        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
+        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);CHKPETSC(ierr);
         norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
         
         if (ls_factor < 1 
@@ -1654,7 +1652,7 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
         int iters = nld->NLIterationsTaken() + 1;
     }
 
-    return ierr;
+    PetscFunctionReturn(ierr);
 }
 
 #endif
