@@ -381,16 +381,6 @@ PMAmr::pm_timeStep (int  level,
     level_steps[level]++;
     level_count[level]++;
 
-    if (verbose > 2 && ParallelDescriptor::IOProcessor())
-    {
-        for (int lev=0; lev<=level; ++lev) {
-	  std::cout << "  ";
-	}
-        std::cout << "Advanced " << amr_level[level].countCells()
-                  << " cells at level " << level
-                  << std::endl;
-    }
-
 #ifdef USE_STATIONDATA
     station.report(time+dt_level[level],level,amr_level[level]);
 #endif
