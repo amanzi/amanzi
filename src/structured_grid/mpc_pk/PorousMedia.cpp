@@ -2148,54 +2148,56 @@ PorousMedia::init (AmrLevel& old)
     
   setTimeLevel(cur_time,dt_old,dt_new);
     
-  //
-  // Get best state data: from old. 
-  // FIXME: What to do for parts of State_Type that are not comps or tracers?
-  //
-  for (FillPatchIterator fpi(old,S_new,0,cur_time,State_Type,0,ncomps+ntracers);
-       fpi.isValid();
-       ++fpi)
-  {
-    S_new[fpi.index()].copy(fpi(),0,0,ncomps+ntracers);
-  }
-  //
-  // Subsequent pressure solve will give the correct pressure.
-  // 
-  for (FillPatchIterator fpi(old,P_new,0,cur_time,Press_Type,0,1);
-       fpi.isValid();
-       ++fpi)
-  {
+  for (FillPatchIterator fpi(old,P_new,0,cur_time,Press_Type,0,1); fpi.isValid(); ++fpi) {
     P_new[fpi.index()].copy(fpi());
   }
 
+  if (model == model_list["richard"]) {
+    calcInvPressure(S_new,P_new);
+  } else {
+    for (FillPatchIterator fpi(old,S_new,0,cur_time,State_Type,0,ncomps); fpi.isValid(); ++fpi) {
+      S_new[fpi.index()].copy(fpi(),0,0,ncomps);
+    }
+  }
+
+  if (ntracers>0) {
+    if (transport_tracers>0) {
+      FillCoarsePatch(S_new,0,cur_time,State_Type,ncomps,ntracers);
+    }
+    else {
+      // FIXME
+      // If !setup_tracer_transport, we dont have the bc descriptors, so we punt
+      S_new.setVal(0.0,ncomps,ntracers);
+    }
+  }
+
+  // If the grids have changed, the pressure fill-patch above will not, in general, create
+  // a pressure field that satisfies the elliptic constraint and boundary conditions. Also,
+  // any interpolation of the velocity field created from the pressure may not be consistent.
   //
-  // Get best edge-centered velocity data: from old.
-  //
-  const BoxArray& old_grids = oldns->grids;
-  is_grid_changed_after_regrid = true;
-  if (old_grids == grids)
-    {
-      for (int dir=0; dir<BL_SPACEDIM; ++dir)
-	{
-	  u_mac_curr[dir].copy(oldns->u_mac_curr[dir]);
-	  rhs_RhoD[dir].copy(oldns->rhs_RhoD[dir]);
-	  u_macG_trac[dir].copy(oldns->u_macG_trac[dir]);
-	}
+  // FIXME: This check on grids is only single-level...even if this levels grids
+  //        havent changed, other levels might have, and the same issue is a problem
+
+  if (model == model_list["steady-saturated"]) {
+
+    set_vel_from_bcs(cur_time,u_mac_curr);
+
+  }
+  else if (model != model_list["richard"]) {
+
+    // If grids are same, copy velocity fields over, otherwise mark to recompute
+    //  prior to using.  Note: model="richard" always recomputes velocity before using.
+    const BoxArray& old_grids = oldns->grids;
+    is_grid_changed_after_regrid = true;
+    if (old_grids == grids) {
+      for (int dir=0; dir<BL_SPACEDIM; ++dir) {
+        u_mac_curr[dir].copy(oldns->u_mac_curr[dir]);
+        rhs_RhoD[dir].copy(oldns->rhs_RhoD[dir]);
+        u_macG_trac[dir].copy(oldns->u_macG_trac[dir]);
+      }
       is_grid_changed_after_regrid = false;
     }
-
-
-  /*  if (!is_grid_changed_after_regrid && model == model_list["richard"])
-    {
-      MultiFab P_tmp(grids,1,1);
-      MultiFab::Copy(P_tmp,P_new,0,0,1,1);
-      P_tmp.mult(-1.0);
-      calcInvCapillary(S_new,P_tmp);
-      }*/
-
-  //
-  // Get best cell-centered velocity data: from old.
-  //
+  }
 
 #ifdef AMANZI
   if (do_chem>0)
@@ -2220,6 +2222,8 @@ PorousMedia::init ()
 {
   BL_ASSERT(level > 0);
     
+  init_rock_properties();
+
   MultiFab& S_new = get_new_data(State_Type);
   MultiFab& P_new = get_new_data(Press_Type);
   MultiFab& U_cor = get_new_data(  Vcr_Type);
@@ -2248,18 +2252,26 @@ PorousMedia::init ()
   //
   // Get best coarse state, pressure and velocity data.
   //
-  FillCoarsePatch(S_new,0,cur_time,State_Type,0,ncomps);
-  if (ntracers>0) {
-      if (transport_tracers>0) {
-          FillCoarsePatch(S_new,0,cur_time,State_Type,ncomps,ntracers);
-      }
-      else {
-          // FIXME
-          // If !setup_tracer_transport, we dont have the bc descriptors, so we punt
-          S_new.setVal(0.0,ncomps,ntracers);
-      }
-  }
   FillCoarsePatch(P_new,0,cur_time,Press_Type,0,1);
+
+  if (model == model_list["richard"]) {
+    calcInvPressure (S_new,P_new); 
+  } 
+  else {
+    FillCoarsePatch(S_new,0,cur_time,State_Type,0,ncomps);
+  }
+
+  if (ntracers>0) {
+    if (transport_tracers>0) {
+      FillCoarsePatch(S_new,0,cur_time,State_Type,ncomps,ntracers);
+    }
+    else {
+      // FIXME
+      // If !setup_tracer_transport, we dont have the bc descriptors, so we punt
+      S_new.setVal(0.0,ncomps,ntracers);
+    }
+  }
+
   U_cor.setVal(0.);
 
 #ifdef AMANZI
@@ -2269,7 +2281,6 @@ PorousMedia::init ()
     }
 #endif
 
-  init_rock_properties();
   old_intersect_new = grids;
 }
 
@@ -5583,8 +5594,6 @@ PorousMedia::advance_chemistry (Real time,
       S_new.copy(tmp,0,0,ncomps);
     }
 #endif
-
-  std::cout << "********************** Level" << level << " filling new tracers, setting tn.tnp1" << std::endl;
 
   // Bring all states up to current time, and reinstate original dt info
   for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) {
