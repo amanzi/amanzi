@@ -28,6 +28,7 @@ Click the file icon or select File->Open from the menu bar. Select your data fil
 
 .. figure:: figs/pv_apply.png
    :align: center
+   :height: 3 in
 
    After selecting file to open, click the Apply button in the Properties Window.
 
@@ -47,6 +48,7 @@ Select the item in the Pipeline Browser you wish to display the mesh for.  From 
 
 .. figure:: figs/pv_edges.png
    :align: center
+   :height: 3 in
 
    Display the mesh edges by selecting "Surface With Edges" in the Style panel of the Display window or in the Style Toolbar (indicated by red circle).
 
@@ -57,6 +59,7 @@ Select the item in the Pipeline Browser you wish to display a field for.  Any fi
 
 .. figure:: figs/pv_color.png
    :align: center
+   :height: 3 in
 
    Display a field by selecting the field from the "Color By" drop down list in the Color panel of the Display window or the Toolbar at the top (indicated by red circle).
 
@@ -67,6 +70,7 @@ Select the color contour icon from the Toolbar at the top of the ParaView window
 
 .. figure:: figs/pv_contour.png
    :align: center
+   :height: 3 in
 
    A color scale can be added using the options in the Color panel of the Display window.  These options are also accessible in the Toolbar at the top.
 
