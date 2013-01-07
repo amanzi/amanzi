@@ -13,6 +13,7 @@ Contents:
 
    install/index.rst
    testing/index.rst
+   viz/index.rst
 
 Indices and tables
 ==================

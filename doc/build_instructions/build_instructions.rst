@@ -63,7 +63,7 @@ The script can be run from the source directory. On most
 UNIX flavored systems, this script will build and install Amanzi and all the required
 TPLs with little information from the user. The script has prerequisites for
 compilers, ``LAPACK``/``BLAS`` and ``MPI``. Please read 
-Amanzi Third Party Library (TPL) Build System section for more information.
+:ref:`TPLs` section for more information and :ref:`bootstrap` for installing using the ``bootstrap.sh``.
 
 We recommended that users install the TPLs in separate directory, since a full TPL build
 should be an infrequent task. This is the default behavior of the ``bootstrap.sh`` 
@@ -140,14 +140,6 @@ ENABLE_DBC:
         :Default: ON
         :Description: Enable design by contract build.
         :Dependencies:
-
-
-ENABLE_CGNS:
-
-        :Default: OFF
-        :Description: Build support to create CGNS visualization files.
-        :Dependencies: CGNS, requires a specific version. See Software Requirements
-                       for more information.
 
 
 ENABLE_Config_Report:
