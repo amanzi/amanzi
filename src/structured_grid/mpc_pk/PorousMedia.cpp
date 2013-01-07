@@ -2977,8 +2977,9 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	}
 	std::cout << "TRANSPORT: Level: " << level 
 		  << " TIME = " << t_subtr
-		  << " : " << t_subtr+dt_subtr;
-        if (n_subtr!=0 || (t_subtr+dt_subtr < tmax_subtr)) {
+		  << " : " << t_subtr+dt_subtr
+		  << " (dt,dt/dt_cfl: " << dt_subtr << ", " << dt_subtr / dt_cfl << ")";
+        if (n_subtr!=0 || (t_subtr+dt_subtr < tmax_subtr - t_eps)) {
           std::cout << " Subcycle: " << n_subtr << ", dt_sub: " << dt_subtr;
         }
         std::cout << std::endl;
@@ -3113,8 +3114,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 
     // Bring state up to current time, and reinstate original dt info
     state[State_Type].setTimeLevel(t+dt,dt,dt);
-
-    predictDT(u_macG_trac,t+dt); // based on the new "new" state
     dt_new = (do_subcycle ? max_n_subcycle_transport : 1) * dt_cfl;
   }
 
