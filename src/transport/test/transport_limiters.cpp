@@ -39,10 +39,9 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  /* read parameter list */
+  // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_limiters.xml";
-
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();  
  

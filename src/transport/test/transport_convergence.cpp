@@ -43,13 +43,11 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "TEST: convergence analysis of the donor scheme" << endl;
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
 
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_convergence.xml";
-  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
-
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
 

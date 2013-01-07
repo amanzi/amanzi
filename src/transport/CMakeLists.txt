@@ -85,9 +85,10 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_convergence.cpp
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # add_executable(transport_dispersion test/Main.cc test/transport_dispersion.cpp)
-    # target_link_libraries(transport_dispersion ${amanzi_libs} ${UnitTest_LIBRARIES})
-    # add_amanzi_test(transport_dispersion transport_dispersion KIND unit)
+    add_amanzi_test(transport_dispersion transport_dispersion
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_dispersion.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
         set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions)
