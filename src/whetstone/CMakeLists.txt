@@ -53,6 +53,12 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_darcy.cpp
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test 2: various operations with tensors 
+    add_amanzi_test(whetstone_tensors whetstone_tensors
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_tensors.cpp
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 
