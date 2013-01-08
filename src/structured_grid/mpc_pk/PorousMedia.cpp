@@ -2483,8 +2483,11 @@ PorousMedia::ml_step_driver(Real  t,
                             Real& dt_suggest)
 {
     Real dt_min = 1.e-20 * dt_try;
-    int max_dt_iters = (level==0 ? max_dt_iters_flow : 1);
-    
+    int max_dt_iters = 1; // By default, do not subcycle this process
+    if (model == model_list["richard"])  {
+      max_dt_iters = max_dt_iters_flow;
+    }
+
     Real dt_this_attempt = dt_try;
     int dt_iter = 0;
     bool step_ok = false;
@@ -2751,45 +2754,23 @@ PorousMedia::multilevel_advance (Real  time,
     // Timestep control:
     //   Time-explicit CFL, chemistry difficulty
 
-    // "Advance saturation", here need to pull tracers up in time as well since they are stored
-    //  with the saturations
-    state[State_Type].setNewTimeLevel(time);
-    state[State_Type].allocOldData();
-    state[State_Type].swapTimeLevels(dt);
-    MultiFab::Copy(state[State_Type].newData(),state[State_Type].oldData(),0,0,ncomps+ntracers,0);
+    // Initialize velocity field, set "new time" for state the same across levels, copy over saturation
+    int finest_level = parent->finestLevel();
+    for (int lev=level; lev<=finest_level; ++lev) {
+      PorousMedia& pml = getLevel(lev);
+      StateData& sd = pml.get_state_data(State_Type);
+      sd.setNewTimeLevel(time+dt);
+      pml.set_saturated_velocity(time+dt,time+dt);
 
-    // Set velocity (u_mac_curr) from bc at t+dt
-    set_vel_from_bcs(time+dt,u_mac_curr); 
-
-    if (level == 0) 
-      create_umac_grown(u_mac_curr,u_macG_trac);
-    else {
-      PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
-      const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
-      Real t_crse_curr = pm->state[State_Type].curTime();
-      GetCrseUmac(u_macG_crse,t_crse_curr);
-      create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac); 
-    } 
-    if (u_macG_prev == 0) {
-      u_macG_prev = AllocateUMacG();
+      sd.allocOldData();
+      sd.setOldTimeLevel(time);
+      MultiFab::Copy(sd.oldData(),sd.newData(),0,0,ncomps,0);
     }
-    if (u_macG_curr == 0) {
-      u_macG_curr = AllocateUMacG();
-    }
+    advance_saturated_transport_dt(); // FIXME: If u is really time-dependent, this must be done through the subcycle
 
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      MultiFab::Copy(u_macG_prev[d],u_macG_curr[d],0,0,1,0);
-      MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
-    }
-
-    predictDT(u_macG_trac,time);
-    
-    // Cache saturations at time and time+dt
-    bool use_cached_sat = true;
-    cache_component_saturations(nGrowHYP);
-
+    bool use_cached_sat = false;
     bool do_subcycle_tc = false;
-    bool do_recursive = false;
+    bool do_recursive = true;
     step_ok = advance_richards_transport_chemistry(time,dt,iteration,dt_new,do_subcycle_tc,do_recursive,use_cached_sat);
   }
 
@@ -2903,6 +2884,51 @@ PorousMedia::advance_richards_transport_dt(Real t)
   }
 }
 
+void
+PorousMedia::set_saturated_velocity(Real t_this, Real t_crse)
+{
+  // Set velocity (u_mac_curr) from bc, then set u_macG_curr (and u_macG_trac)
+  set_vel_from_bcs(t_this,u_mac_curr);
+
+  if (level == 0) {
+    create_umac_grown(u_mac_curr,u_macG_trac);
+  } else {
+    PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+    const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
+    GetCrseUmac(u_macG_crse,t_crse);
+    create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac);
+  }
+  if (u_macG_curr == 0) {
+    u_macG_curr = AllocateUMacG();
+  }
+
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0);
+  }
+}
+
+void
+PorousMedia::advance_saturated_transport_dt()
+{
+  // Based on velocity fields in u_macG_trac at all levels, set dt_eig on all levels to satisfy
+  // cfl restriction, accounting for recursive subcycling.
+  //
+  int finest_level = parent->finestLevel();
+  Real dt_min = 1e20;
+  for (int lev=level; lev<=finest_level; ++lev) {
+    PorousMedia& pml = getLevel(lev);
+    Real curr_time = pml.get_state_data(State_Type).curTime();
+    pml.predictDT(pml.u_macG_trac,curr_time);
+    dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
+  }
+
+  for (int lev=finest_level; lev>=0; --lev) {
+    PorousMedia& pml = getLevel(lev);
+    pml.dt_eig = dt_min;
+    dt_min = dt_min*parent->nCycle(lev);
+  }
+}
+
 bool
 PorousMedia::advance_richards_transport_chemistry (Real  t,
 						   Real  dt,
@@ -2921,7 +2947,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     // Set up "old" state with tracers from previous "new" state
     int first_tracer = ncomps;
     state[State_Type].setNewTimeLevel(t+dt);
-    BL_ASSERT(state[State_Type].hasOldData());
+    state[State_Type].allocOldData();
     state[State_Type].setOldTimeLevel(t);
     MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
 
@@ -2979,7 +3005,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	std::cout << "TRANSPORT: Level: " << level 
 		  << " TIME = " << t_subtr
 		  << " : " << t_subtr+dt_subtr
-		  << " (dt,dt/dt_cfl: " << dt_subtr << ", " << dt_subtr / dt_cfl << ")";
+		  << " (dt: " << dt_subtr << ")";
         if (n_subtr!=0 || (t_subtr+dt_subtr < tmax_subtr - t_eps)) {
           std::cout << " Subcycle: " << n_subtr << ", dt_sub: " << dt_subtr;
         }
@@ -3072,10 +3098,13 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
           reinstate_component_saturations();
         }
 
-        post_timestep(iteration);  // If do_recursive, do here, otherwise this called explicitly by main timestepper
+        //post_timestep(iteration);  // If do_recursive, do here, otherwise this called explicitly by main timestepper
       }
       
       if (fine_step_ok) {
+
+        post_timestep(iteration);
+
         t_subtr += dt_subtr;
         
         Real subcycle_time_remaining = tmax_subtr - t_subtr;
@@ -3089,7 +3118,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
           // Prepare the state data structures (set "new" to "old", and set times correspondingly)
           state[State_Type].swapTimeLevels(dt_subtr); // FIXME: we actually need to set new and old times only for tracers, not saturations....
           
-          predictDT(u_macG_trac,t_subtr); // based on the new "old" state
+          //predictDT(u_macG_trac,t_subtr); // based on the new "old" state
           if (dt_cfl < dt_subtr) {
             int num_subcycles = std::max(1,(int)(subcycle_time_remaining / dt_cfl) + 1);
             dt_subtr = subcycle_time_remaining / num_subcycles;
@@ -7461,10 +7490,9 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
       
       if (model == model_list["single-phase"])
 	{
-	  godunov->esteig_lin (grids[i], u_macG[0][i], u_macG[1][i],
-#if (BL_SPACEDIM == 3)    
-			       u_macG[2][i],
-#endif
+	  godunov->esteig_lin (grids[i], D_DECL(u_macG[0][i],
+                                                u_macG[1][i],
+                                                u_macG[2][i]),
 			       (*rock_phi)[i], eigmax_m);
 	}
       else if (model == model_list["two-phase"])
@@ -7472,11 +7500,10 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 	  const int n_kr_coef = kr_coef->nComp();
 	  if (do_cpl_advect)
 	    {
-	      godunov->esteig_cpl (grids[i], dx,
-				   u_macG[0][i],kpedge[0][i],
-				   u_macG[1][i],kpedge[1][i],
-#if (BL_SPACEDIM == 3)    
-				   u_macG[2][i],kpedge[2][i],
+	      godunov->esteig_cpl (grids[i], dx, u_macG[0][i], kpedge[0][i],
+                                                 u_macG[1][i], kpedge[1][i],
+#if BL_SPACEDIM == 3
+                                                 u_macG[2][i], kpedge[2][i],
 #endif
 				   S_fpi(), (*pcnp1_cc)[i],
 				   (*rock_phi)[i], 
@@ -7484,11 +7511,10 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 				   state_bc.dataPtr(),eigmax_m);
 	    }
 	  else
-	    godunov->esteig (grids[i], dx,
-			     u_macG[0][i],kpedge[0][i],
-			     u_macG[1][i],kpedge[1][i],
-#if (BL_SPACEDIM == 3)    
-			     u_macG[2][i],kpedge[2][i],
+	    godunov->esteig (grids[i], dx, u_macG[0][i], kpedge[0][i],
+                                           u_macG[1][i], kpedge[1][i],
+#if BL_SPACEDIM==3
+                                           u_macG[2][i],kpedge[2][i],
 #endif
 			     S_fpi(),(*rock_phi)[i], 
 			     (*kr_coef)[i], n_kr_coef,
@@ -7497,10 +7523,9 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
     
       if (transport_tracers > 0)
 	{
-	  godunov->esteig_trc (grids[i], u_macG[0][i], u_macG[1][i],
-#if (BL_SPACEDIM == 3)    
-			       u_macG[2][i],
-#endif
+	  godunov->esteig_trc (grids[i], D_DECL(u_macG[0][i],
+                                                u_macG[1][i],
+                                                u_macG[2][i]),
 			       S_fpi(),1,(*rock_phi)[i] ,eigmax_m);
 	}
 

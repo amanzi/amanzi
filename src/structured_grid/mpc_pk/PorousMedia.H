@@ -405,6 +405,8 @@ public:
 
   void advance_richards_transport_dt(Real t);
 
+  void advance_saturated_transport_dt();
+
   bool advance_richards_transport_chemistry(Real  t,
 					    Real  dt,
 					    int   iteration,
@@ -412,6 +414,8 @@ public:
 					    bool  do_subcycle,
 					    bool  do_recursive,
                                             bool  use_cached_sat);
+
+  void set_saturated_velocity(Real t_this, Real t_crse);
 
   void advance_tracer  (Real time,
 			Real dt);
