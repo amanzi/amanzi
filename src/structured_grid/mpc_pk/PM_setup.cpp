@@ -900,11 +900,13 @@ PorousMedia::variableSetUp ()
           cbcs[i] = bc;
       }
 
+      FORT_AUXPARAMS(&num_aux_chem_variables);
+
       desc_lst.addDescriptor(Aux_Chem_Type,IndexType::TheCellType(),
                              StateDescriptor::Point,0,num_aux_chem_variables,
                              &cell_cons_interp);
       desc_lst.setComponent(Aux_Chem_Type,0,aux_chem_variables,cbcs,
-                            BndryFunc(FORT_ONE_N_FILL,FORT_ALL_T_FILL));
+                            BndryFunc(FORT_ONE_A_FILL,FORT_ALL_A_FILL));
 
   }
 
@@ -965,10 +967,12 @@ PorousMedia::variableSetUp ()
   if (do_chem>0)
     {
       // add function count
+      int nfunccountghost = 0;
+      if (do_full_strang) nfunccountghost=1;
       desc_lst.addDescriptor(FuncCount_Type, IndexType::TheCellType(),
-			     StateDescriptor::Point,1,1, &cell_cons_interp);
+			     StateDescriptor::Point,nfunccountghost,1, &cell_cons_interp);
       desc_lst.setComponent(FuncCount_Type, 0, "FuncCount", 
-			    bc, BndryFunc(FORT_ONE_N_FILL));
+			    bc, BndryFunc(FORT_ONE_A_FILL));
     }
 #endif
 

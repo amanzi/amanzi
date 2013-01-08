@@ -933,6 +933,7 @@ public:
   void dirichletStateBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
   void dirichletTracerBC(FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
   void dirichletPressBC (FArrayBox& fab, Real time);
+  void dirichletDefaultBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            Real               t);

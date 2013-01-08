@@ -2176,8 +2176,7 @@ PorousMedia::init (AmrLevel& old)
 
   /*  if (!is_grid_changed_after_regrid && model == model_list["richard"])
     {
-      MultiFab P_tmp(grids,1,1);
-      MultiFab::Copy(P_tmp,P_new,0,0,1,1);
+      MultiFab P_tmp(grids      MultiFab::Copy(P_tmp,P_new,0,0,1,1);
       P_tmp.mult(-1.0);
       calcInvCapillary(S_new,P_tmp);
       }*/
@@ -2189,8 +2188,18 @@ PorousMedia::init (AmrLevel& old)
 #ifdef AMANZI
   if (do_chem>0)
     {
-      MultiFab& FC_new  = get_new_data(FuncCount_Type); 
       
+      MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
+      MultiFab& Aux_old = oldns->get_new_data(Aux_Chem_Type);
+      int Aux_ncomp = Aux_new.nComp();
+      for (FillPatchIterator fpi(old,Aux_new,0,cur_time,Aux_Chem_Type,0,Aux_ncomp);
+	   fpi.isValid();
+	   ++fpi)
+	{
+	  Aux_new[fpi.index()].copy(fpi(),0,0,Aux_ncomp);
+	}
+
+      MultiFab& FC_new  = get_new_data(FuncCount_Type); 
       for (FillPatchIterator fpi(old,FC_new,FC_new.nGrow(),cur_time,FuncCount_Type,0,1);
 	   fpi.isValid();
            ++fpi)
@@ -5305,7 +5314,18 @@ PorousMedia::advance_chemistry (Real time,
   //
   // This gets set by the chemistry solver.
   //
-  fcnCntTemp.define(ba, 1, 0, dm, Fab_allocate);
+  fcnCntTemp.define(ba, 1, 0, dm, Fab_allocate); 
+  if (ngrow_tmp == 0)
+    {
+      fcnCntTemp.copy(Fcnt_old,0,0,1);
+    }
+  else
+    {
+      MultiFab FcnGrow(BoxArray(Fcnt_old.boxArray()).grow(ngrow_tmp), 1, 0);
+      for (MFIter mfi(Fcnt_old); mfi.isValid(); ++mfi)
+	FcnGrow[mfi].copy(Fcnt_old[mfi],0,0,1);
+      fcnCntTemp.copy(FcnGrow,0,0,1);  // Parallel copy.
+    }
   //
   // It's cheaper to just build a new volume than doing a parallel copy
   // from the existing one.  Additionally this also works when ngrow > 0.
@@ -5385,7 +5405,6 @@ PorousMedia::advance_chemistry (Real time,
   for (MFIter mfi(stateTemp); mfi.isValid(); ++mfi) {
     setPhysBoundaryValues(stateTemp[mfi],State_Type,time,0,0,ncomps+ntracers);
   }
-
   // Point-by-point, load initial state and auxiliary data and call chemistry integrator
   for (MFIter mfi(stateTemp); mfi.isValid() && chem_ok; ++mfi) {
     Box box = mfi.validbox();
@@ -5418,106 +5437,102 @@ PorousMedia::advance_chemistry (Real time,
 
       for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End; thread_box.next(iv)) {
 	
-	// check if there anything to do here
-	bool allzero = true;
-	bool skip_cell = fab(iv,0) < tagVal+0.1;
-	for (int i = 0; i < ntracers && !skip_cell; ++i) {
-	  allzero &= (fab(iv, ncomps+i) == 0); // FIXME: I dont think zero is the correct condition to check here...
+	// Fill local struct
+	bool is_neg = false;
+	for (int i = 0; i < ntracers; ++i) {
+	  TheComponent.total[i] = fab(iv,ncomps+i);
+	  if (std::abs(TheComponent.total[i]) < 1.e-16) TheComponent.total[i] = 0;
+	  if (TheComponent.total[i] < 0) is_neg = true;
+	  TheComponent.free_ion[i] = aux_fab(iv,guess_comp[i]);
+	  if (using_sorption) {
+	    TheComponent.total_sorbed[i] = aux_fab(iv, sorbed_comp[i]);
+	  }
+	  if (nsorption_isotherms > 0) {
+	    TheComponent.isotherm_kd[i] = aux_fab(iv,kd_comp[i]);
+	    if (sorption_isotherm_label_map[tNames[i]].count("Freundlich_n")) {
+	      TheComponent.isotherm_freundlich_n[i] = aux_fab(iv,freundlich_n_comp[i]);
+	    }
+	    else {
+	      TheComponent.isotherm_langmuir_b[i] = aux_fab(iv,langmuir_b_comp[i]);
+	    }
+	  }
+	  // FIXME:
+	  //if (ncation_exchange_capacities > 0) {
+	  //TheComponent.cation_exchange_capacity = aux_fab(iv,cation_exchange_capacity_comp);
+	  //}
 	}
-	skip_cell |= allzero;
-
-	if (!skip_cell) {
-
-	  // Fill local struct
-	  for (int i = 0; i < ntracers; ++i) {
-	    TheComponent.total[i] = fab(iv,ncomps+i);
-	    TheComponent.free_ion[i] = aux_fab(iv,guess_comp[i]);
-	    if (using_sorption) {
-	      TheComponent.total_sorbed[i] = aux_fab(iv, sorbed_comp[i]);
-	    }
-	    if (nsorption_isotherms > 0) {
-	      TheComponent.isotherm_kd[i] = aux_fab(iv,kd_comp[i]);
-	      if (sorption_isotherm_label_map[tNames[i]].count("Freundlich_n")) {
-		TheComponent.isotherm_freundlich_n[i] = aux_fab(iv,freundlich_n_comp[i]);
-	      }
-	      else {
-		TheComponent.isotherm_langmuir_b[i] = aux_fab(iv,langmuir_b_comp[i]);
-	      }
-	    }
-	    // FIXME:
-	    //if (ncation_exchange_capacities > 0) {
-	    //TheComponent.cation_exchange_capacity = aux_fab(iv,cation_exchange_capacity_comp);
-	    //}
-	  }
-	  // TODO: loop over minerals, surface complexation sites
-			      
-	  TheParameter.porosity   = phi_fab(iv,0);
-	  TheParameter.saturation = std::min(1., std::max(0., fab(iv,0) / density[0]));
-	  TheParameter.volume     = vol_fab(iv,0);
-	  TheParameter.water_density = density[0];
+	// TODO: loop over minerals, surface complexation sites
+	
+	TheParameter.porosity   = phi_fab(iv,0);
+	TheParameter.saturation = std::min(1., std::max(0., fab(iv,0) / density[0]));
+	TheParameter.volume     = vol_fab(iv,0);
+	TheParameter.water_density = density[0];
+	
+	chem_ok = true;
+	amanzi::chemistry::Beaker::SolverStatus stat;
+	try {
 	  
-	  chem_ok = true;
-	  amanzi::chemistry::Beaker::SolverStatus stat;
-	  try {
-
-	    if (verbose_chemistry>0) {
-	      TheComponent.Display("-- before rxn step: \n");
-	    }
-	    TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
-	    stat = TheChemSolve.status();
-	    fct_fab(iv,0) = use_funccount ? stat.num_rhs_evaluations : 1;
-	    if (verbose_chemistry>0) {
-	      TheComponent.Display("-- after rxn step: \n");
-	    }
-
-	  } catch (const amanzi::chemistry::ChemistryException& geochem_error) {
-
-	    if (verbose_chemistry>0) {
-	      std::cout << "CHEMSITRY FAILED on level " << level << " at " << iv << " : ";
-	      for (int icmp = 0; icmp < ntracers; icmp++)
-		std::cout << fab(iv,icmp+ncomps) << ' ';
-	      std::cout << std::endl;
-	      TheComponent.Display("components: ");
-	      if (abort_on_chem_fail) {
-		BoxLib::Abort(geochem_error.what());
-	      }
-	    } else {
-	      chem_ok = false;
-	    }
-
+	  //if (verbose_chemistry>0) {
+	  if (is_neg) {
+	    std::cout << "level = " << level << " " << iv << std::endl;
+	    TheComponent.Display("-- before rxn step: \n");
 	  }
-
-	  // If successful update the state variables.
-	  if (chem_ok) {
-	    for (int i = 0; i < ntracers; ++i) {
-	      fab(iv, ncomps+i) = TheComponent.total[i];
-	      aux_fab(iv,guess_comp[i]) = TheComponent.free_ion[i];
-	      if (using_sorption) {
-		aux_fab(iv,sorbed_comp[i]) = TheComponent.total_sorbed[i];
-	      }
-	      if (nsorption_isotherms) {
-		aux_fab(iv,kd_comp[i]) = TheComponent.isotherm_kd[i];
-		aux_fab(iv,freundlich_n_comp[i]) = TheComponent.isotherm_freundlich_n[i];
-		aux_fab(iv,langmuir_b_comp[i]) = TheComponent.isotherm_langmuir_b[i];
-	      }
-	    }
-	    // FIXME:
-	    //if (ncation_exchange > 0) {
-	    //  aux_fab(iv,cation_exchange_capacity_comp) = TheComponent.cation_exchange_capacity;
-	    //}
-	    
-	    // TODO: loop over minerals, porosity, etc
+	  TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
+	  stat = TheChemSolve.status();
+	  fct_fab(iv,0) = use_funccount ? stat.num_rhs_evaluations : 1;
+	  if (is_neg) {
+	  //if (verbose_chemistry>0) {
+	    TheComponent.Display("-- after rxn step: \n");
 	  }
+	  
+	} catch (const amanzi::chemistry::ChemistryException& geochem_error) {
+	  
+	  if (verbose_chemistry>-1) {
+	    std::cout << "CHEMSITRY FAILED on level " << level << " at " << iv << " : ";
+	    for (int icmp = 0; icmp < ntracers; icmp++)
+	      std::cout << fab(iv,icmp+ncomps) << ' ';
+	    std::cout << std::endl;
+	    TheComponent.Display("components: ");
+	    if (abort_on_chem_fail) {
+	      BoxLib::Abort(geochem_error.what());
+	    }
+	  } else {
+	    chem_ok = false;
+	  }
+	  
+	}
+
+	// If successful update the state variables.
+	if (chem_ok) {
+	  for (int i = 0; i < ntracers; ++i) {
+	    fab(iv, ncomps+i) = TheComponent.total[i];
+	    aux_fab(iv,guess_comp[i]) = TheComponent.free_ion[i];
+	    if (using_sorption) {
+	      aux_fab(iv,sorbed_comp[i]) = TheComponent.total_sorbed[i];
+	    }
+	    if (nsorption_isotherms) {
+	      aux_fab(iv,kd_comp[i]) = TheComponent.isotherm_kd[i];
+	      aux_fab(iv,freundlich_n_comp[i]) = TheComponent.isotherm_freundlich_n[i];
+	      aux_fab(iv,langmuir_b_comp[i]) = TheComponent.isotherm_langmuir_b[i];
+	    }
+	  }
+	  // FIXME:
+	  //if (ncation_exchange > 0) {
+	  //  aux_fab(iv,cation_exchange_capacity_comp) = TheComponent.cation_exchange_capacity;
+	  //}
+	  
+	  // TODO: loop over minerals, porosity, etc
 	}
       }
     }
   }
+  
   phiTemp.clear();
   volTemp.clear();
     
   S_new.copy(stateTemp,ncomps,ncomps,ntracers); // Parallel copy, tracers only
   stateTemp.clear();
-    
+
   Aux_new.copy(auxTemp,0,0,Aux_new.nComp()); // Parallel copy, everything.
   auxTemp.clear();
     
@@ -5546,7 +5561,6 @@ PorousMedia::advance_chemistry (Real time,
 	
       grownFcnt.copy(fcnCntTemp); // Parallel copy.
       fcnCntTemp.clear();
-	
       for (MFIter mfi(grownFcnt); mfi.isValid(); ++mfi)
 	Fcnt_new[mfi].copy(grownFcnt[mfi]);
     }
@@ -8959,7 +8973,7 @@ PorousMedia::avgDown (const BoxArray& cgrids,
       avgDown(S_fine[i],crse_S_fine[i],fvolume[i],crse_fvolume[i],
 	      f_level,c_level,crse_S_fine_BA[i],scomp,ncomp,fratio);
     }
-
+  
   S_crse.copy(crse_S_fine,0,scomp,ncomp);
 }
 
@@ -10067,6 +10081,11 @@ PorousMedia::avgDown ()
 #ifdef AMANZI
   if (do_chem>0)
     {
+      MultiFab& Aux_crse = get_new_data(Aux_Chem_Type);
+      MultiFab& Aux_fine = fine_lev.get_new_data(Aux_Chem_Type);
+      avgDown(grids,fgrids,Aux_crse,Aux_fine,volume,fvolume,
+	      level,level+1,0,Aux_crse.nComp(),fine_ratio);
+
       MultiFab& FC_crse = get_new_data(FuncCount_Type);
       MultiFab& FC_fine = fine_lev.get_new_data(FuncCount_Type);
       avgDown(grids,fgrids,FC_crse,FC_fine,volume,fvolume,
@@ -11529,6 +11548,11 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
     else if (state_indx==Press_Type) {
       dirichletPressBC(dest,time);
     }
+    // FIXME: This does not seem to be working.  Used the fortran FORT_XXX_A_FILL function instead 
+    // to enhance FOEXTRAP boundaries for all.
+    //else  {
+    //  dirichletDefaultBC(dest,time);
+    //}
 }
 
 void
@@ -11759,6 +11783,32 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
         }
     }    
 }  
+
+void
+PorousMedia::dirichletDefaultBC (FArrayBox& fab, Real time)
+{
+    int nComp = fab.nComp();
+    FArrayBox bndFab;
+
+    if (tbc_descriptor_map.size()) 
+      {
+	const Box domain = geom.Domain();
+	const Real* dx   = geom.CellSize();
+            
+	for (std::map<Orientation,BCDesc>::const_iterator
+	       it=tbc_descriptor_map[0].begin(); it!=tbc_descriptor_map[0].end(); ++it) 
+            {
+	      const Box bndBox = Box(it->second.first) & fab.box();
+                if (bndBox.ok()) {
+                    bndFab.resize(bndBox,nComp);
+		    bndFab.setVal(0.);
+                    fab.copy(bndFab,0,0,nComp);
+                }
+            }
+      }    
+}
+
+
 
 MultiFab*
 PorousMedia::derive (const std::string& name,
