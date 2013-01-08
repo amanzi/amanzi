@@ -388,23 +388,6 @@ PMAmr::pm_timeStep (int  level,
 #ifdef USE_SLABSTAT
     AmrLevel::get_slabstat_lst().update(amr_level[level],time,dt_level[level]);
 #endif
-    //
-    // Advance grids at higher level.
-    //
-    if (level < finest_level)
-    {
-        const int lev_fine = level+1;
-
-        if (sub_cycle)
-        {
-            const int ncycle = n_cycle[lev_fine];
-
-            for (int i = 1; i <= ncycle; i++)
-                pm_timeStep(lev_fine,time+(i-1)*dt_level[lev_fine],i,ncycle,stop_time);
-        }
-    }
-
-    amr_level[level].post_timestep(iteration);
 }
 
 void

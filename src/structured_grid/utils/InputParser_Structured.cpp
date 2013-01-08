@@ -705,8 +705,8 @@ namespace Amanzi {
                             }
                             if (max_level > 0) {
                                 if (do_amr_subcycling) {
-                                    if (regrid_int.size() < max_level) {
-                                        MyAbort("Must provide a regridding interval for each refined level");
+                                    if (regrid_int.size() != max_level && regrid_int.size() != 1) {
+                                        MyAbort("Must provide either a single regridding interval for all refinement levels, or one for each");
                                     }
                                 }
                                 else {
