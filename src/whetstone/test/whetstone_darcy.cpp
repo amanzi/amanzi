@@ -64,9 +64,12 @@ TEST(DARCY_MASS) {
 
   printf("Mass matrix for cell %3d\n", cell);
   for (int i=0; i<6; i++) {
-    for (int j=0; j<6; j++ ) printf("%8.3f ", M(i, j)); 
+    for (int j=0; j<6; j++ ) printf("%8.4f ", M(i, j)); 
     printf("\n");
   }
+
+  // verify mass matrix
+  for (int i=0; i<6; i++) CHECK(M(i, i) > 0.0);
 
   delete comm;
 }
@@ -109,9 +112,13 @@ TEST(DARCY_INVERSE_MASS) {
 
   printf("Inverse of mass matrix for cell %3d\n", cell);
   for (int i=0; i<6; i++) {
-    for (int j=0; j<6; j++ ) printf("%8.3f ", W(i, j)); 
+    for (int j=0; j<6; j++ ) printf("%8.4f ", W(i, j)); 
     printf("\n");
   }
+
+  // verify inverse mass matrix
+  for (int i=0; i<6; i++) CHECK(W(i, i) > 0.0);
+
 
   delete comm;
 }

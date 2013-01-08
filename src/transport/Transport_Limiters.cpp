@@ -294,6 +294,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
   std::vector<int> fdirs;
 
   for (int c = 0; c < ncells_owned; c++) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
@@ -305,8 +306,9 @@ void Transport_PK::LimiterBarthJespersen(const int component,
 
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-        u1f = lifting.getValue(c, xcf);
         u1 = (*scalar_field)[c];
+        for (int i = 0; i < dim; i++) gradient_c1[i] = (*gradient)[i][c1];
+        u1f = u1 + gradient_c1 * (xcf - xc);
 
         a = u1f - u1;
         if (fabs(a) > TRANSPORT_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1))) {

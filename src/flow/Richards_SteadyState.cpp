@@ -27,13 +27,14 @@ int Richards_PK::AdvanceToSteadyState()
   dT = ti_specs_sss_.dT0;
 
   int ierr = 0;
-  if (ti_method_sss == FLOW_TIME_INTEGRATION_PICARD) {
+  int ti_method = ti_specs_sss_.ti_method;
+  if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     ierr = AdvanceToSteadyState_Picard(ti_specs_sss_);
-  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
+  } else if (ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
     ierr = AdvanceToSteadyState_BackwardEuler(ti_specs_sss_);
-  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF1) {
+  } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     ierr = AdvanceToSteadyState_BDF1(ti_specs_sss_);
-  } else if (ti_method_sss == FLOW_TIME_INTEGRATION_BDF2) {
+  } else if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     ierr = AdvanceToSteadyState_BDF2(ti_specs_sss_);
   }
 
@@ -382,18 +383,22 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const E
 { 
   double relaxation = 1.0;
 
-  Epetra_Vector dSdP(mesh_->cell_map(false));
-  DerivedSdP(uold, dSdP);
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
+    Epetra_Vector dSdP(mesh_->cell_map(false));
+    DerivedSdP(uold, dSdP);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    double diff = dSdP[c] * fabs(unew[c] - uold[c]);
-    if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
+    for (int c = 0; c < ncells_owned; c++) {
+      double diff = dSdP[c] * fabs(unew[c] - uold[c]);
+      if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
+    }
   }
 
-  for (int c = 0; c < ncells_owned; c++) {
-    double diff = fabs(unew[c] - uold[c]);
-    double umax = std::max(fabs(unew[c]), fabs(uold[c]));
-    if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+  if (error_control_ & FLOW_TI_ERROR_CONTROL_PRESSURE) {
+    for (int c = 0; c < ncells_owned; c++) {
+      double diff = fabs(unew[c] - uold[c]);
+      double umax = std::max(fabs(unew[c]), fabs(uold[c]));
+      if (diff > 1e-2 * umax) relaxation = std::min(relaxation, 1e-2 * umax / diff);
+    }
   }
 
 #ifdef HAVE_MPI

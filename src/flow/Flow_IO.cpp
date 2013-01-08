@@ -65,6 +65,27 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
 
 /* ****************************************************************
+* Process string for the time integration method.
+**************************************************************** */
+void Flow_PK::ProcessStringTimeIntegration(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "Picard") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
+  } else if (name == "backward Euler") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
+  } else if (name == "BDF1") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
+  } else if (name == "BDF2") {
+    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
+  } else {
+    msg << "Flow PK: time integration method \"" << name.c_str() << "\" is not known.";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
 * Process string for the discretization method.
 **************************************************************** */
 void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
@@ -172,6 +193,29 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
   }
   return name;
 }
+
+
+/* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
+{
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    printf("Flow PK: saving krel-pc curves in file flow_dt_history.txt...\n");
+
+    char file_name[30];
+    sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);
+
+    ofstream ofile;
+    ofile.open(file_name);
+
+    for (double n = 0; n < dT_history.size(); n++) {
+      ofile << setprecision(10) << dT_history[n].first / FLOW_YEAR << " " << dT_history[n].second << endl;
+    }
+    ofile.close();
+  }
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

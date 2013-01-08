@@ -1,3 +1,5 @@
+.. _TPLs:
+
 =============================================
 Amanzi Third Party Library (TPL) Build System
 =============================================
@@ -29,12 +31,11 @@ Users are required to provide the following to build
 
 On most UNIX-like OS (including Mac OSX) systems, the entire TPL software stack can
 be built using the ``bootstrap.sh`` shell script found in the config directory. The script
-searches for CMake and will build CMake 2.8.7, if it does not locate the cmake command. 
-At this time, the script does not build compilers, ``MPI``, ``LAPACK`` or ``BLAS``. See the
-compilers_ section on how to obtain a supported compiler, the MPI_ section for ``MPI`` support
-and LAPACK_ for ``LAPACK`` and ``BLAS`` suggestions. 
+searches for CMake and will build CMake 2.8.8, if it does not locate the cmake command. The script also searches for a working mpi installation and will build OpenMPI 1.4.4 if it does not locate mpi.
+At this time, the script does not build compilers, ``LAPACK`` or ``BLAS``. See the
+compilers_ section on how to obtain a supported compiler and LAPACK_ for ``LAPACK`` and ``BLAS`` suggestions. See the MPI_ section on how to obtain and install other mpi implementations.
 
-The ``boostrap.sh`` script will create two build directories, one for the TPLs, TPL_BUILD, and amanzi,
+The ``boostrap.sh`` script will create two build directories, one for the TPLs, TPL_BUILD, and one for amanzi,
 amanzi-build, in the directory the script is called from. Users can control the 
 install location of the TPLs and Amanzi through command line arguments.
 The command ::
@@ -49,7 +50,7 @@ stored under a directory labeled::
   <TPL name lowercase>/<TPL name lowercase>-timestamps.
 
 Each step step is recorded with ``STDOUT`` and ``STDERR`` outputs stored
-in seprate files. Any bug report related to the TPLs should include these log files. 
+in separate files. Any bug report related to the TPLs should include these log files. 
 
 .. _compilers:
 
@@ -239,30 +240,25 @@ Read the ``ATLAS`` documentation on how to build ``ATLAS`` with a full ``LAPACK`
 ``ATLAS`` downloads are available at http://math-atlas.sourceforge.net.
 
 
-Getting SuperBuild
-------------------
+Building TPLs and Amanzi Using ``Boostrap.sh``
+----------------------------------------------
 
-SuperBuild is a separate CMake project in the Amanzi repository. You will need 
-a clone of the Amanzi repository, ::
+The script ``bootstrap.sh`` is located in the ``config`` directory.  See ``bootstrap.sh --help`` for a full list of options and default settings.  The script will create two subdirectories in the currect directory.  The first is TPL_BUILD used for downloading and builing the TPLs.  The second is amanzi-build used for building Amanzi.  The TPLs and Amanzi will be installed in the directory specified by the option ``--prefix``.
 
-  hg clone https://software.lanl.gov/ascem/hg/amanzi
+See the :ref:`bootstrap` section for instructions building using ``Bootstrap.sh``.
 
-The root directory for SuperBuild is ``amanzi/config/SuperBuild``. 
-
-
-Building TPLs From The Command Line
------------------------------------
+Building TPLs From The Command Line using CMake
+-----------------------------------------------
 
 We recommend that users run the provided ``bootstrap.sh`` script in the ``config`` directory, to build
 the TPLs. The instructions in this section are for advanced users and developers.
 
 The steps to build entire suite of TPL software from the command line are
 
-    1. Configure with cmake 
-       :: 
+    1. Configure with cmake:: 
 
         cmake  \
-           -D CMAKE_C_COMPILER=/full/path/mpicc \
+               -D CMAKE_C_COMPILER=/full/path/mpicc \
 	       -D CMAKE_CXX_COMPILER=/full/path/mpicxx \
 	       -D CMAKE_Fortran_COMPILER=/full/path/mpif90 \
 	       -D TPL_INSTALL_PREFIX=/full/path/to/tpls
@@ -291,13 +287,13 @@ For example ::
 will build and link amanzi linked against the TPLs built with this 
 project, reducing the need for complicated build scripts.
 
-Invoking SuperBuild From The Command Line
------------------------------------------
+Building Amanzi From The Command Line using CMake
+-------------------------------------------------
 
 SuperBuild is the term the project uses to describe a complete software build, beginning
 with CMake and ending at Amanzi.
 
-To envoke SuperBuild Amanzi from the command line do the following,
+To invoke SuperBuild Amanzi from the command line do the following,
 
     1. Install CMake. See http://www.cmake.org for more information.
 
@@ -382,7 +378,7 @@ the Trilinos build point to tuned BLAS and LAPACK libraries. On most systems,
 the BLAS and LAPACK libraries are found in standard system libraries
 (/usr/lib or /usr/lib64).  However on large scale clusters these libraries
 are typically generic implementations and will not provide optimal performance.
-Such meachines have tuned BLAS/LAPACK libraries. Please consult the support
+Such machines have tuned BLAS/LAPACK libraries. Please consult the support
 documentation for these machines to find the recommended libraries.
 
 To guide the search for BLAS/LAPACK libraries, add ``-D ENABLE_BLA_Search:BOOL=TRUE``

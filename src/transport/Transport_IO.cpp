@@ -57,17 +57,7 @@ void Transport_PK::ProcessParameterList()
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
   string dispersivity_name = transport_list.get<string>("dispersivity model", "isotropic");
-  if (dispersivity_name == "isotropic") {
-    dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC;
-  } else if (dispersivity_name == "Bear") {
-    dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_BEAR;
-  } else if (dispersivity_name == "Lichtner") {
-    dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
-  } else {
-    Errors::Message msg;
-    msg << "Dispersivity model is wrong (isotropic, Bear, Lichtner)." << "\n";
-    Exceptions::amanzi_throw(msg);
-  }
+  ProcessStringDispersionModel(dispersivity_name, &dispersivity_model);
 
   dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
   dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
@@ -106,50 +96,71 @@ void Transport_PK::ProcessParameterList()
       
       bool flag_BCX = false;
       for (int i = 0; i < number_components; i++) {
-	char tcc_char_name[20];
+        char tcc_char_name[20];
 	
-	sprintf(tcc_char_name, "Component %d", i);
-	string tcc_name(tcc_char_name);
-	string tcc_name_alt(TS->get_component_name(i));
+        sprintf(tcc_char_name, "Component %d", i);
+        string tcc_name(tcc_char_name);
+	      string tcc_name_alt(TS->get_component_name(i));
 		
-	if (BC_list.isParameter(tcc_name) || BC_list.isParameter(tcc_name_alt)) {
-	  flag_BCX = true;
-	  std::vector<std::string> regions, functions;
-	  std::vector<double> times, values;
+        if (BC_list.isParameter(tcc_name) || BC_list.isParameter(tcc_name_alt)) {
+          flag_BCX = true;
+          std::vector<std::string> regions, functions;
+          std::vector<double> times, values;
 	  
-	  regions = BC_list.get<Teuchos::Array<std::string> >("Regions").toVector();
-	  times = BC_list.get<Teuchos::Array<double> >("Times").toVector();
-	  if (BC_list.isParameter(tcc_name)) {
-	    values = BC_list.get<Teuchos::Array<double> >(tcc_name).toVector();
-	  } else if ( BC_list.isParameter(tcc_name_alt)) {
-	    values = BC_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
-	  }
-	  functions = BC_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
+          regions = BC_list.get<Teuchos::Array<std::string> >("Regions").toVector();
+          times = BC_list.get<Teuchos::Array<double> >("Times").toVector();
+          if (BC_list.isParameter(tcc_name)) {
+            values = BC_list.get<Teuchos::Array<double> >(tcc_name).toVector();
+          } else if ( BC_list.isParameter(tcc_name_alt)) {
+            values = BC_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
+          }
+          functions = BC_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
 	  
-	  int nfunctions = functions.size();  // convert strings to forms
-	  std::vector<TabularFunction::Form> forms(functions.size());
-	  for (int k = 0; k < nfunctions; k++) {
-	    forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
-	  }
+          int nfunctions = functions.size();  // convert strings to forms
+          std::vector<TabularFunction::Form> forms(functions.size());
+          for (int k = 0; k < nfunctions; k++) {
+            forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
+          }
 	  
-	  Teuchos::RCP<Function> f;
-	  f = Teuchos::rcp(new TabularFunction(times, values, forms));
+          Teuchos::RCP<Function> f;
+          f = Teuchos::rcp(new TabularFunction(times, values, forms));
 	  
-	  BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
-	  bnd_fun->Define(regions, f);
-	  bcs.push_back(bnd_fun);
-	  bcs_tcc_index.push_back(i);
-	  break;
-	}
+          BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
+          bnd_fun->Define(regions, f);
+          bcs.push_back(bnd_fun);
+          bcs_tcc_index.push_back(i);
+          break;
+        }
       }
       if (! flag_BCX) {
-	Errors::Message msg;
-	msg << "Sublist BC X was not found.\n";
-	Exceptions::amanzi_throw(msg);
+        Errors::Message msg;
+        msg << "Sublist BC X was not found.\n";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }
 }
+
+
+/* ****************************************************************
+* Process string for the discretization method.
+**************************************************************** */
+void Transport_PK::ProcessStringDispersionModel(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "isotropic") {
+    *method = TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC;
+  } else if (name == "Bear") {
+    *method = TRANSPORT_DISPERSIVITY_MODEL_BEAR;
+  } else if (name == "Lichtner") {
+    *method = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
+  } else {
+    Errors::Message msg;
+    msg << "Dispersivity model is wrong (isotropic, Bear, Lichtner).\n";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
 
 /* ****************************************************************
 * Process string for the discretization method.

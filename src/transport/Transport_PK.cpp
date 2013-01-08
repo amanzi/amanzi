@@ -573,19 +573,17 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 
     for (int c = 0; c < ncells_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
 
-    /*
     // DISPERSIVE FLUXES
     if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
-      calculate_dispersion_tensor();
+      CalculateDispersionTensor();
 
-      std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated once (lipnikov@lanl.gov)
-      std::vector<double> bc_face_values(number_wghost_faces);
+      std::vector<int> bc_face_id(nfaces_wghost);  // must be allocated once (lipnikov@lanl.gov)
+      std::vector<double> bc_face_values(nfaces_wghost);
 
       ExtractBoundaryConditions(i, bc_face_id, bc_face_values);
       PopulateHarmonicPointsValues(i, tcc, bc_face_id, bc_face_values);
       AddDispersiveFluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
     }
-    */
   }
 
   if (internal_tests) {

@@ -59,7 +59,7 @@
     <ParameterList name="Richards Problem">
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="101325"/>
-      <Parameter name="discretization method" type="string" value="monotone mfd"/>
+      <Parameter name="discretization method" type="string" value="optimized mfd"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -69,8 +69,8 @@
         <Parameter name="time integration method" type="string" value="Picard"/>
         <Parameter name="initialize with darcy" type="bool" value="true"/>
         <Parameter name="clipping saturation value" type="double" value="0.6"/>
-        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
         <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
+        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
         <ParameterList name="Picard">
           <Parameter name="convergence tolerance" type="double" value="1e-7"/>
@@ -149,6 +149,7 @@
       <Parameter name="error tolerance" type="double" value="1e-9"/>
       <Parameter name="iterative method" type="string" value="GMRES"/>
       <Parameter name="maximum number of iterations" type="int" value="200"/>
+      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
     </ParameterList>
   </ParameterList>
 

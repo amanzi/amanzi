@@ -267,6 +267,27 @@ void Flow_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector&
 
 
 /* *******************************************************************
+* Transfers cell-based data from ghost to master positions and 
+* performs the operation 'mode' there. 
+* WARNING: Vector v must contain ghost cells.              
+******************************************************************* */
+void Flow_State::CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMode mode)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
+  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
+  Epetra_Import importer(target_cmap, source_cmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vv(View, source_cmap, vdata);
+
+  vv.Export(v, importer, mode);
+#endif
+}
+
+
+/* *******************************************************************
 * Copy face-based data from master to ghost positions.              
 * WARNING: vector vhost must contain ghost cells.              
 ******************************************************************* */

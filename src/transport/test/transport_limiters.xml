@@ -1,0 +1,57 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="MSTK"/>
+  </ParameterList>    
+   
+  <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+ 
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="spatial discretization order" type="int" value="1"/>   
+    <Parameter name="temporal discretization order" type="int" value="1"/>   
+    <Parameter name="advection limiter" type="string" value="Tensorial"/>
+
+    <!-- developers parameters --> 
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+    <!-- end of developers parameters -->
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="4"/>
+      <ParameterList name="BC 0">
+        <Parameter name="Component 0" type="Array(double)" value="{10.0, 10.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.0}"/>
+      </ParameterList>  
+    </ParameterList>  
+   </ParameterList>
+</ParameterList>
+

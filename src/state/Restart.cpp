@@ -4,6 +4,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include "boost/filesystem.hpp"
+
 Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
   plist(plist_), disabled(false), comm(comm_), restart_output(NULL)
 {
@@ -36,6 +38,24 @@ void Amanzi::Restart::read_parameters(Teuchos::ParameterList& plist)
 {
   filebasename = plist.get<string>("File Name Base","amanzi_restart");
   filenamedigits = plist.get<int>("File Name Digits",5);
+
+  boost::filesystem::path fbn(filebasename);
+  boost::filesystem::path parent = fbn.parent_path();
+  if (!parent.empty()) {
+    // we need to check whether the parent path exists
+    if (!boost::filesystem::exists(parent)) {
+      Errors::Message m("The file path '"+parent.string()+"' used for checkpoints does not exist.");
+      Exceptions::amanzi_throw(m);    
+    }
+    if (!boost::filesystem::is_directory(parent)) {
+      Errors::Message m("The file path '"+parent.string()+"' used for checkpoints is not a directory.");
+      Exceptions::amanzi_throw(m);    
+    }
+    if ( (boost::filesystem::status(parent).permissions() & boost::filesystem::owner_write) == 0) {
+      Errors::Message m("The directory '"+parent.string()+"' used for checkpoints is not writeable.");
+      Exceptions::amanzi_throw(m);       
+    }
+  }  
 
   number_of_cycle_intervals = 0;
 

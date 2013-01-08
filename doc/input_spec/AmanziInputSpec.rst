@@ -135,7 +135,7 @@ Version
 =======
 
 Each input set contains at the top level a string variable `"Amanzi Input Format Version`".  As of the most recent update of this specification, the
-current version of the Amanzi input is `"1.0.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
+current version of the Amanzi input is `"1.1.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
 evolving input specification version can be found *here*.
 
 * [SU] "Amanzi Input Format Version" [string] Three part version string
@@ -145,7 +145,7 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
   </ParameterList>
 
 General Description
@@ -187,9 +187,9 @@ Usage:
 
   * [SU] `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
 
-  * [S]`"Single-phase`" [string]: Single phase, fully saturated flow
+  * [SU] `"Single-phase`" [string]: Single phase, fully saturated flow
 
-  * [S]`"Multi-phase`" [string]: Multiple phase, variably saturated flow
+  * [S] `"Multi-phase`" [string]: Multiple phase, variably saturated flow
 
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
@@ -205,7 +205,7 @@ Usage:
 
    * [SU] `"Initial Time Step`" [double]: The initial time step for the steady calculation.
 
-   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
+   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
 
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
@@ -215,7 +215,7 @@ Usage:
    
    * [SU] `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
-   * [S]`"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
+   * [S] `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
    * [S] `"Maximum Time Step Size`" [double]: The maximum time step size allowed.
 
@@ -235,18 +235,18 @@ Usage:
 
    * [U] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
-   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver.
+   * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
 
  * [U] `"Time Period Control`" (Optional)
 
   * [U] `"Start Times`" [Array double]: List of times at which the current time-integrator will be reinitialized.
   * [U] `"Initial Time Step`"[Array double]: The initial time step for each time period. If unspecified, Amanzi 
     will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
-  * `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
+  * [S] `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
     scaled by this factor (default value: 1)
-  * `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
+  * [S] `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
 
- * [SU] `"Verbosity`" [string]: Defaults to `"Medium`"
+ * [SU] `"Verbosity`" [string]: (default: `"Medium`")
 
   * [SU] `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
 
@@ -266,137 +266,125 @@ Usage:
 
    * [U] `"Transport Process Kernel`" [list] Control parameters for the transport methods
 
-     * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
+     * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default: `"Explicit First-Order`")
 
-     * [U] `"transport subcycling`" [bool] turn transport subcycling on or off. The default is false (ie. subcycling is off).
+     * [U] `"transport subcycling`" [bool] Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`")
 
    * [U] `"Chemistry Process Kernel`" [list]: Control parameters for the reactive transport methods
 
-     * [U] `"max chemistry to transport timestep ratio`" [double] when both chemistry and transport process kernels are on, the chemistry time step will be limited such that the ratio of (chemistry time step)/(transport time step) < this parameter. By default this parameter equals 10.0. I this parameter is set for example to 10.0, then we limit the chemistry time step to 10 times what the current transport time step is, such that for each chemistry sub-cycle, there will be at most 10 transport sub cycles. 
+     * [U] `"max chemistry to transport timestep ratio`" [double] when both chemistry and transport process kernels are on, the chemistry time step will be limited such that the ratio of (chemistry time step)/(transport time step) < this parameter. By default this parameter equals 1.0. If this parameter is set for example to 10.0, then we limit the chemistry time step to 10 times what the current transport time step is, such that for each chemistry sub-cycle, there will be at most 10 transport sub cycles. (default: `"1.0`", suggested range: 0.2 ... 10.0)
 
    * [U] `"Steady-State Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
 
-     * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. 
+     * [U] `"steady max iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"steady time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
 
-     * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`.
+     * [U] `"steady min iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"steady time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
 
-     * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. 
+     * [U] `"steady limit iterations"` [int] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
-     * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
+     * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation. (default: `"1.0e-5`", suggested range: 1.0e-8 ... 1.0e-6)
 
-     * [U] `"steady nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping).
+     * [U] `"steady nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
  
-     * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor.
+     * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor.
+     * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
-     * [U] `"steady max time step"` [double] During the steady state solve, the time step is limited to the value specified here.
+     * [U] `"steady max time step"` [double] During the steady state solve, the time step is limited to the value specified here. (default: `"1.0e+10`", suggested range: 1.0e+8 ... 1.0e+10)
 
-     * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is lagged this amount of iterations during the nonlinear solve. For example, if a value of 4 is specified here, the preconditioner is updated at the beginning of each nonlinear solve and then in each fourth iteration during each nonlinear solve. To force a preconditioner in each iteration of each nonlinear solve, set this parameter to one (very expensive, but also very robust), and to disable updates of the preconditioner, except at the beginning of each nonlinear solve, set this parameter to a value larger than `"steady limit iterations"`.
+     * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is lagged this amount of iterations during the nonlinear solve. For example, if a value of 4 is specified here, the preconditioner is updated at the beginning of each nonlinear solve and then in each fourth iteration during each nonlinear solve. To force a preconditioner in each iteration of each nonlinear solve, set this parameter to one (very expensive, but also very robust), and to disable updates of the preconditioner, except at the beginning of each nonlinear solve, set this parameter to a value larger than `"steady limit iterations"`. (default: `"5`", suggested range: 0 ... 10)
 
-     * [U] `"steady error rel tol"` [double] The values specified here and in `"steady error abs tol"` give the user control over the norm that is used in the steady state computation. We refer to the value in `"steady error rel tol"` as rtol and to the value specified in `"steady error abs tol"` as atol. Then these parameters are used in the norm computation in the following way: norm = max_{all cells} ( | pressure update in the cell | / ( atol + rtol * | pressure in the cell | ).  For example, to specify an infinity norm on the pressure update, a user would set atol=1.0 and rtol = 0.0.
+     * [U] `"steady max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"steady max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. (default: `"3`", suggested range: 3 ... 8)
 
-     * [U] `"steady error abs tol"` [double] See `"steady error rel tol"`.
-
-     * [U] `"steady max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"steady max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. 
-
-     * [U] `"steady nonlinear iteration initial timestep factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps after the time integrator restart. The parameter `"steady nonlinear iteration initial timestep factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"steady nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. 
-
-     * [U] `"steady nonlinear iteration initial timestep factor damping`" [double] see the parameter `"steady nonlinear iteration initial timestep factor`".
-
-     * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`".
+     * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
    * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
 
-     * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. 
+     * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
 
-     * [U] `"transient min iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"transient time step increase factor"`.
+     * [U] `"transient min iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased by the factor specified in `"transient time step increase factor"`. (default: `"10`", suggested range: 5 ... 15)
 
-     * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. 
+     * [U] `"transient limit iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is cut in half and the current time step is repeated. (default: `"20`", suggested range: 20 ... 50)
 
-     * [U] `"transient nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the transient computation.
+     * [U] `"transient nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the transient computation. (default: `"1.0e-5`", suggested range: 1.0e-6 ... 1.0e-5)
 
-     * [U] `"transient nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping).
+     * [U] `"transient nonlinear iteration damping factor"` [double] Damp the nonlinear iteration (fixed point iteration) by this factor, the default is 1.0 (no damping). (default: `"1.0`", suggested range: 0.1 ... 1.0)
 
-     * [U] `"transient time step reduction factor"` [double] When time step reduction is necessary during the transient calculation, use this factor.
+     * [U] `"transient time step reduction factor"` [double] When time step reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [U] `"transient time step increase factor"` [double] When time step increase is possible during the transient calculation, use this factor.
+     * [U] `"transient time step increase factor"` [double] When time step increase is possible during the transient calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
 
-     * [U] `"transient max time step"` [double] During the transient solve, the time step is limited to the value specified here.
+     * [U] `"transient max time step"` [double] During the transient solve, the time step is limited to the value specified here. (default: `"1.0e+8`", suggested range: 1.0e+8 ... 10e+10)
 
-     * [U] `"transient max preconditioner lag iterations"` [int] During the transient solve, the preconditioner is lagged this amount of iterations during the nonlinear solve. For example, if a value of 4 is specified here, the preconditioner is updated at the beginning of each nonlinear solve and then in each fourth iteration during each nonlinear solve. To force a preconditioner in each iteration of each nonlinear solve, set this parameter to one (very expensive, but also very robust), and to disable updates of the preconditioner, except at the beginning of each nonlinear solve, set this parameter to a value larger than `"transient limit iterations"`.
+     * [U] `"transient max preconditioner lag iterations"` [int] During the transient solve, the preconditioner is lagged this amount of iterations during the nonlinear solve. For example, if a value of 4 is specified here, the preconditioner is updated at the beginning of each nonlinear solve and then in each fourth iteration during each nonlinear solve. To force a preconditioner in each iteration of each nonlinear solve, set this parameter to one (very expensive, but also very robust), and to disable updates of the preconditioner, except at the beginning of each nonlinear solve, set this parameter to a value larger than `"transient limit iterations"`. (default: `"5`", suggested range: 0 ... 10)
 
-     * [U] `"transient error rel tol"` [double] The values specified here and in `"transient error abs tol"` give the user control over the norm that is used in the steady state computation. We refer to the value in `"transient error rel tol"` as rtol and to the value specified in `"transient error abs tol"` as atol. Then these parameters are used in the norm computation in the following way: norm = max_{all cells} ( | pressure update in the cell | / ( atol + rtol * | pressure in the cell | ).  For example, to specify an infinity norm on the pressure update, a user would set atol=1.0 and rtol = 0.0. 
+     * [U] `"transient max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"transient max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. (default: `"3`", suggested range: 3 ... 8)
 
-     * [U] `"transient error abs tol"` [double] See `"transient error rel tol"`.
+     * [U] `"transient restart tolerance relaxation factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps after the time integrator restart. The parameter `"transient restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"transient nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
 
-     * [U] `"transient max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"transient max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated.
+     * [U] `"transient restart tolerance relaxation factor damping`" [double] see `"transient nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter. (default: `"1.0`", suggested range: 0.001 ... 1.0)
 
-     * [U] `"transient nonlinear iteration initial timestep factor`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter.
-
-     * [U] `"transient nonlinear iteration initial timestep factor`" [double] see `"steady nonlinear iteration initial timestep factor`" for a detailed explanation of this parameter.
-
-     * [U] `"transient preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`".
+     * [U] `"transient preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
    * [U] `"Steady-State Psuedo-Time Implicit Solver`" [list] Parameters for Damped Picard iteration to reach steady-state
 
-     * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution.
+     * [U] `"pseudo time integrator initialize with darcy`" [bool] Initialize the pseudo time integrator (Picard) with a Darcy solution. (default: `"true`")
 
-     * [U] `"pseudo time integrator clipping saturation value`" [double]
+     * [U] `"pseudo time integrator clipping saturation value`" [double] (default: 0.9, suggested range: 0.7 ... 0.95)
 
-     * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currrently only Picard is supported).
+     * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currrently only Picard is supported). (default: `"Picard`")
 
-     * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method.
+     * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method. (default: `"Hypre AMG`")
 
-     * [U] `"pseudo time integrator linear solver`" [string] select the linear solver to be used in the pseudo time integration method.
+     * [U] `"pseudo time integrator linear solver`" [string] select the linear solver to be used in the pseudo time integration method. (default: `"AztecOO`")
 
-     * [U] `"pseudo time integrator error control options`" [Array string]
+     * [U] `"pseudo time integrator error control options`" [Array string] (default: `"pressure`")
 
-     * [U] `"pseudo time integrator picard convergence tolerance`" [double] Picard convergence tolerance.
+     * [U] `"pseudo time integrator picard convergence tolerance`" [double] Picard convergence tolerance. (default: `"1.0e-8`", suggested range: 1.0e-10 ... 1.0e-4)
 
-     * [U] `"pseudo time integrator picard maximum number of iterations`" [int] Picard maximum number of iterations.
+     * [U] `"pseudo time integrator picard maximum number of iterations`" [int] Picard maximum number of iterations. (default: `"400`", suggested range: 50 ... 1000)
 
    * [U] `"Linear Solver`" [list] Parameters for the linear solver used in single-phase steady-state solves, and in the damped Picard iteration to reach steady-state.
 
-     * [U] `"linear solver tolerance`" [double] Set the tolerance for the AztecOO linear solver that may be used in a saturated steady state computation.
+     * [U] `"linear solver tolerance`" [double] Set the tolerance for the AztecOO linear solver that may be used in a saturated steady state computation. (default: `"1.0e-16`", suggested range: 1.0e-20 ... 1.0e-14)
 
-     * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation.
+     * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation. (default: `"100`", suggested range: 50 ... 1000)
  
-     * [U] `"linear solver method`" [string] Select the AztecOO linear solver that may be used in a saturated steady state computation. For example, GMRES.
+     * [U] `"linear solver preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for linear problems, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 
      * [U] `"Trilinos ML`" Parameter used by Trilinos multi-level solver, ML
 
-       * [U] `"ML smoother type`" [string] The smoother to be used by ML, valid paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`".
+       * [U] `"ML smoother type`" [string] The smoother to be used by ML, valid paramters are `"Jacobi`" (default), `"Gauss-Seidel`", and `"ILU`". (default: `"Jacobi`")
 
-       * [U] `"ML aggregation threshold`" [double] This parameter influences the coarsening strategy of ML. The default is 0.0, which is a good choice for regular meshes. For meshes that have high aspect ratio cells, it is worth trying to set this parameter to something positive, but small, for example 0.0001.
+       * [U] `"ML aggregation threshold`" [double] This parameter influences the coarsening strategy of ML. The default is 0.0, which is a good choice for regular meshes. For meshes that have high aspect ratio cells, it is worth trying to set this parameter to something positive, but small, for example 0.0001. (default: `"0.0`", suggested range: 0.0 ... 0.1)
 
-       * [U] `"ML smoother sweeps`" [int] The smoother will be called this many times before and after the coarse grid correction in the multilevel algorithm. (The default is 3.)
+       * [U] `"ML smoother sweeps`" [int] The smoother will be called this many times before and after the coarse grid correction in the multilevel algorithm. (default: `"3`", suggested range: 1 ... 5) 
 
-       * [U] `"ML cycle applications`" [int] This is the number of V-cycles that are performed in each preconditioner invocation. (The default is 2).
+       * [U] `"ML cycle applications`" [int] This is the number of V-cycles that are performed in each preconditioner invocation. (default: `"2`", suggested range: 1 ... 5).
 
      * [U] `"Hypre AMG`" Parameters used by Hypre Algebraic Multigrid solver, BoomerAMG
 
-       * [U] `"Hypre AMG tolerance`" [double] set a tolerance stopping criterion for the Hypre BoomerAMG preconditioner. If this is greater zero, then the preconditioner will run as many V-cycles as necessary to reach this prescribed accuracy, up to the maximum number of cycles that can also be specified as a parameter (see `"Hypre AMG cycle applications`").
+       * [U] `"Hypre AMG tolerance`" [double] set a tolerance stopping criterion for the Hypre BoomerAMG preconditioner. If this is greater zero, then the preconditioner will run as many V-cycles as necessary to reach this prescribed accuracy, up to the maximum number of cycles that can also be specified as a parameter (see `"Hypre AMG cycle applications`"). (default: `"0.0`", suggested range: 0.0 ... 0.1)
 
-       * [U] `"Hypre AMG cycle applications`" [int] the maximum number of V-cycles that are performed per preconditioner invocation. Note that if  `"Hypre AMG tolerance`" is zero, then this is the exact number of V-cycles that are performed per preconditioner invocation.
+       * [U] `"Hypre AMG cycle applications`" [int] the maximum number of V-cycles that are performed per preconditioner invocation. Note that if  `"Hypre AMG tolerance`" is zero, then this is the exact number of V-cycles that are performed per preconditioner invocation. (default: `"5`", suggested range: 1 ... 5)
 
-       * [U] `"Hypre AMG smoother sweeps`" [int] the number of both pre and post smoothing sweeps.
+       * [U] `"Hypre AMG smoother sweeps`" [int] the number of both pre and post smoothing sweeps. (default: `"3`", suggested range: 1 ... 5)
 
-       * [U] `"Hypre AMG strong threshold`" [double] set this to 0.25 for a 2D problem, and to 0.5 for a 3D problem. 
+       * [U] `"Hypre AMG strong threshold`" [double] set this to 0.25 for a 2D problem, and to 0.5 for a 3D problem. (default: `"0.5`", suggested range: 0.2 ... 0.8) 
 
      * [U] `"Block ILU`" Parameters used by Trilinos Block ILU
 
-       * [U] `"Block ILU overlap`" [int] specify the domain decomposition overlap that will be used in constructing the additive Schwarz block ILU preconditioner.
+       * [U] `"Block ILU overlap`" [int] specify the domain decomposition overlap that will be used in constructing the additive Schwarz block ILU preconditioner. (default: `"0`", suggested range: 0 ... 3)
 
-       * [U] `"Block ILU relax value`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: relax value`".
+       * [U] `"Block ILU relax value`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: relax value`". (default: `"1.0`", suggested range: )
 
-       * [U] `"Block ILU relative threshold`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: relative threshold`".
+       * [U] `"Block ILU relative threshold`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: relative threshold`". (default: `"1.0`", see Ifpack manual) 
 
-       * [U] `"Block ILU absolute threshold`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: absolute threshold`".
+       * [U] `"Block ILU absolute threshold`" [double] corresponds to the Trilinos Ifpack ILU parameter `"fact: absolute threshold`". (default: `"0.0`", see Ifpack manual)
 
-       * [U] `"Block ILU level of fill`" [int] corresponds to the Trilinos Ifpack ILU parameter `"fact: level-of-fill`".
+       * [U] `"Block ILU level of fill`" [int] corresponds to the Trilinos Ifpack ILU parameter `"fact: level-of-fill`". (default: `"0`", suggested range: 0 ... 2)
 
 
 

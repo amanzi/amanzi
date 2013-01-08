@@ -155,7 +155,7 @@ void Richards_PK::ProcessParameterList()
     Teuchos::ParameterList& igs_list = rp_list_.sublist("initial guess pseudo time integrator");
 
     std::string ti_method_name = igs_list.get<string>("time integration method", "none");
-    ProcessStringTimeIntegration(ti_method_name, &ti_method_igs);
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_igs_.ti_method);
     ProcessSublistTimeIntegration(igs_list, ti_method_name, ti_specs_igs_);
     ti_specs_igs_.ti_method_name = "initial guess pseudo time integrator";
 
@@ -163,10 +163,10 @@ void Richards_PK::ProcessParameterList()
     ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
 
     std::string linear_solver_name = FindStringLinearSolver(igs_list, solver_list_);
-    LinearSolver_Specs& ls_specs = ti_specs_igs_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+    ProcessStringLinearSolver(linear_solver_name, &ti_specs_igs_.ls_specs);
 
-    ProcessStringErrorOptions(igs_list, &error_control_igs_);
+    ProcessStringPreconditioner(ti_specs_igs_.preconditioner_name, &ti_specs_igs_.preconditioner_method);
+    ProcessStringErrorOptions(igs_list, &ti_specs_igs_.error_control_options);
   }
 
   // Time integrator for period II, temporary called steady-state time integrator
@@ -174,18 +174,22 @@ void Richards_PK::ProcessParameterList()
     Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
 
     std::string ti_method_name = sss_list.get<string>("time integration method", "none");
-    ProcessStringTimeIntegration(ti_method_name, &ti_method_sss);
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_sss_.ti_method);
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
     ti_specs_sss_.ti_method_name = "steady state time integrator";
 
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
-    LinearSolver_Specs& ls_specs = ti_specs_sss_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+    if (ti_specs_sss_.initialize_with_darcy == true || 
+        ti_specs_sss_.ti_method == FLOW_TIME_INTEGRATION_PICARD ||
+        ti_specs_sss_.ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
+      std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
+      ProcessStringLinearSolver(linear_solver_name, &ti_specs_sss_.ls_specs);
+    }
 
-    ProcessStringErrorOptions(sss_list, &error_control_sss_);
+    ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
+    ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
 
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Flow PK: mandatory sublist for steady-state calculations is missing.\n");
@@ -196,18 +200,22 @@ void Richards_PK::ProcessParameterList()
     Teuchos::ParameterList& trs_list = rp_list_.sublist("transient time integrator");
 
     string ti_method_name = trs_list.get<string>("time integration method", "none");
-    ProcessStringTimeIntegration(ti_method_name, &ti_method_trs);
+    ProcessStringTimeIntegration(ti_method_name, &ti_specs_trs_.ti_method);
     ProcessSublistTimeIntegration(trs_list, ti_method_name, ti_specs_trs_);
     ti_specs_trs_.ti_method_name = "transient time integrator";
 
     ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
-    LinearSolver_Specs& ls_specs = ti_specs_trs_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+    if (ti_specs_trs_.initialize_with_darcy == true || 
+        ti_specs_trs_.ti_method == FLOW_TIME_INTEGRATION_PICARD ||
+        ti_specs_trs_.ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
+      std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
+      ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
+    }
 
-    ProcessStringErrorOptions(trs_list, &error_control_trs_);
+    ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
+    ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
 
   } else if (verbosity >= FLOW_VERBOSITY_LOW) {
     printf("Flow PK: missing sublist \"transient time integrator\".\n");
@@ -306,31 +314,9 @@ void Richards_PK::VerifyWRMparameters(double m, double alpha, double sr, double 
 
 
 /* ****************************************************************
-* Process string for the time integration method.
-**************************************************************** */
-void Richards_PK::ProcessStringTimeIntegration(const std::string name, int* method)
-{
-  Errors::Message msg;
-  if (name == "Picard") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_PICARD;
-  } else if (name == "backward Euler") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BACKWARD_EULER;
-  } else if (name == "BDF1") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF1;
-  } else if (name == "BDF2") {
-    *method = AmanziFlow::FLOW_TIME_INTEGRATION_BDF2;
-  } else {
-    msg << "Flow PK: unknown time integration method has been specified.";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-/* ****************************************************************
 * Process string for the linear solver.
 **************************************************************** */
-void Richards_PK::ProcessStringLinearSolver(
-    const std::string name, int* max_itrs, double* convergence_tol)
+void Richards_PK::ProcessStringLinearSolver(const std::string name, LinearSolver_Specs* ls_specs)
 {
   Errors::Message msg;
 
@@ -340,8 +326,16 @@ void Richards_PK::ProcessStringLinearSolver(
   }
 
   Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
-  *max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
-  *convergence_tol = tmp_list.get<double>("error tolerance", 1e-10);
+  ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
+  ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-10);
+
+  ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
+  ProcessStringPreconditioner(ls_specs->preconditioner_name, &ls_specs->preconditioner_method);
+
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_LOW) {
+    std::printf("Flow PK: LS preconditioner \"%s\" will be replaced by TI preconditioner.\n", 
+        ls_specs->preconditioner_name.c_str());
+  }
 }
 
 
@@ -371,12 +365,12 @@ std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& 
   if (list.isParameter("preconditioner")) {
     name = list.get<string>("preconditioner");
   } else {
-    msg << "Flow PK: steady state time integrator does not define <preconditioner>.";
+    msg << "Flow PK: parameter <preconditioner> is missing either in TI or LS list.";
     Exceptions::amanzi_throw(msg);
   }
 
   if (! preconditioner_list_.isSublist(name)) {
-    msg << "Flow PK: steady state preconditioner does not exist.";
+    msg << "Flow PK: preconditioner \"" << name.c_str() << "\" does not exist.";
     Exceptions::amanzi_throw(msg);
   }
   return name;
@@ -390,9 +384,9 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     if (list.isParameter("calculate krel-pc curves")) {
-      std::printf("Flow PK: saving krel-pc curves in file krel_pc.txt...\n");
+      std::printf("Flow PK: saving krel-pc curves in file flow_krel_pc.txt...\n");
       ofstream ofile;
-      ofile.open("krel_pc.txt");
+      ofile.open("flow_krel_pc.txt");
 
       std::vector<double> spe;
       spe = list.get<Teuchos::Array<double> >("calculate krel-pc curves").toVector();
@@ -409,9 +403,9 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
     }
 
     if (list.isParameter("calculate krel-sat curves")) {
-      std::printf("Flow PK: saving krel-sat curves in file krel_sat.txt...\n");
+      std::printf("Flow PK: saving krel-sat curves in file flow_krel_sat.txt...\n");
       ofstream ofile;
-      ofile.open("krel_sat.txt");
+      ofile.open("flow_krel_sat.txt");
 
       std::vector<double> spe;
       spe = list.get<Teuchos::Array<double> >("calculate krel-sat curves").toVector();

@@ -42,65 +42,70 @@ TEST(DISPERSION) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: dispersion" << endl;
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
 
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_dispersion.xml";
-  
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
 
   // create an MSTK mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
-  int nx = 20;
+  GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
 
-  MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 1, 1); 
+  MeshFactory factory(comm);
+  factory.preference(pref);
+  int nx = 20;
+  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 1, 1, gm); 
 
   // create a transport states with one component
   int num_components = 1;
-  State mpc_state(num_components, mesh);
+  State mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);
-  TS->analytic_darcy_flux(u);
-  TS->analytic_total_component_concentration(f_step);
-  TS->analytic_porosity(1.0);
-  TS->analytic_water_saturation(1.0);
-  TS->analytic_water_density(1.0);
+  TS->AnalyticDarcyFlux(u);
+  TS->AnalyticTotalComponentConcentration(f_step);
+  TS->AnalyticPorosity(1.0);
+  TS->AnalyticWaterSaturation(1.0);
+  TS->AnalyticWaterDensity(1.0);
 
-  Transport_PK TPK(parameter_list, TS);
-  TPK.set_standalone_mode(true);
-  TPK.print_statistics();
-  TPK.verbosity_level = 0;
+  // create transport PK  
+  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
+  TPK.InitPK();
+  TPK.PrintStatistics();
+  TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
 
   // advance the state
   int i, k, iter = 0;
   double T = 0.0, T1 = 1.0;
 
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Transport_State> TS_next = TPK.transport_state_next();
+  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
 
   double dT, dT0;
-  dT0 = TPK.calculate_transport_dT();
+  dT0 = TPK.CalculateTransportDt();
 
   while (T < T1) {
-    dT = std::min(TPK.calculate_transport_dT(), T1 - T);
+    dT = std::min(TPK.CalculateTransportDt(), T1 - T);
     dT = std::min(dT, dT0);
-    for (int k=0; k<nx; k++) printf("%10.8f\n", (*tcc_next)[0][k]); 
-    printf("\n");
+    // for (int k=0; k<nx; k++) printf("%10.8f\n", (*tcc_next)[0][k]); 
+    // printf("\n");
 
-    TPK.advance(dT);
+    TPK.Advance(dT);
     T += dT;
-    //TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+    TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
 
     *tcc = *tcc_next;
     iter++;

@@ -121,11 +121,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 #endif
 
   // miscalleneous default parameters
+  ti_specs = NULL;
   block_picard = 1;
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
-
-  ti_method_sss = FLOW_TIME_INTEGRATION_BDF1;  // time integration (TI) parameters
-  ti_method_trs = FLOW_TIME_INTEGRATION_BDF2;
 
   mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
   mfd3d_method_preconditioner_ = FLOW_MFD3D_OPTIMIZED;
@@ -155,6 +153,8 @@ Richards_PK::~Richards_PK()
   delete bc_flux;
   delete bc_head;
   delete bc_seepage;
+
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
 }
 
 
@@ -284,12 +284,11 @@ void Richards_PK::InitializeSteadySaturated()
 ****************************************************************** */
 void Richards_PK::InitPicard(double T0)
 {
-  ti_method = ti_method_igs;
+  ti_specs = &ti_specs_igs_;
+  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
+  error_control_ |= ti_specs->error_control_options;
 
   InitNextTI(T0, 0.0, ti_specs_igs_);
-
-  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
-  error_control_ |= error_control_igs_;
 
   // calculate initial guess: cleaning is required (lipnikov@lanl.gov)
   T_physics = ti_specs_igs_.T0;
@@ -313,13 +312,14 @@ void Richards_PK::InitPicard(double T0)
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
-  ti_method = ti_method_sss;
-
-  InitNextTI(T0, dT0, ti_specs_sss_);
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  ti_specs = &ti_specs_sss_;
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4;
-  error_control_ |= error_control_sss_;
+  error_control_ |= ti_specs->error_control_options;
+
+  InitNextTI(T0, dT0, ti_specs_sss_);
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
 
@@ -336,13 +336,14 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
-  ti_method = ti_method_trs;
-
-  InitNextTI(T0, dT0, ti_specs_trs_);
+  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  ti_specs = &ti_specs_trs_;
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4
-  error_control_ |= error_control_trs_;
+  error_control_ |= ti_specs->error_control_options;
+
+  InitNextTI(T0, dT0, ti_specs_trs_);
 
   flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
@@ -362,7 +363,10 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
     std::printf("%5s time stepping strategy id %2d\n", "", ti_specs.dT_method);
     std::printf("%5s source/sink distribution method id %2d\n", "", src_sink_distribution);
-    std::printf("%5s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
+    std::printf("%5s error control options: %X\n", "", error_control_);
+    std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n", "", 
+        ti_specs.ls_specs.convergence_tol, ti_specs.ls_specs.max_itrs);
+    std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
 
     if (ini_with_darcy) {
       std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
@@ -395,7 +399,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);
-  if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
+  if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF2").sublist("BDF2 parameters");
     if (!tmp_list.isSublist("VerboseObject"))
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
@@ -404,7 +408,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
     bdf2_dae->setParameterList(bdf2_list);
 
-  } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+  } else if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     Teuchos::ParameterList tmp_list = rp_list_.sublist(ti_method_name).sublist("BDF1").sublist("BDF1 parameters");
     if (! tmp_list.isSublist("VerboseObject"))
         tmp_list.sublist("VerboseObject") = rp_list_.sublist("VerboseObject");
@@ -430,7 +434,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
     std::printf("%5s discretization method: \"%s\"\n", "", mfd3d_method_name.c_str());
-    std::printf("%7s successful and passed matrices: %d %d\n", "", nokay, npassed);   
+    std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
     std::printf("***********************************************************\n");
   }
 
@@ -475,7 +479,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   }
 
   // nonlinear solver control options
-  num_itrs_nonlinear = 0;
+  ti_specs.num_itrs = 0;
   block_picard = 0;
 }
 
@@ -485,7 +489,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 ****************************************************************** */
 double Richards_PK::CalculateFlowDt()
 {
-  if (ti_method == FLOW_TIME_INTEGRATION_PICARD && block_picard == 1) dT *= 1e+4;
+  if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD && block_picard == 1) dT *= 1e+4;
   return dT;
 }
 
@@ -503,17 +507,17 @@ int Richards_PK::Advance(double dT_MPC)
 
   // predict water mass change during time step
   time = T_physics;
-  if (num_itrs_nonlinear == 0) {  // initialization
+  if (ti_specs->num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     ComputeUDot(time, *solution, udot);
 
-    if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
+    if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
 
-    } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+    } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       bdf1_dae->set_initial_state(time, *solution, udot);
 
-    } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
+    } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
       if (flow_status_ == FLOW_STATUS_STEADY_STATE) {
         AdvanceToSteadyState();
         block_picard = 1;  // We will wait for transient initialization.
@@ -522,24 +526,24 @@ int Richards_PK::Advance(double dT_MPC)
 
     int ierr;
     update_precon(time, *solution, dT, ierr);
-    num_itrs_nonlinear++;
+    ti_specs->num_itrs++;
   }
 
-  if (ti_method == FLOW_TIME_INTEGRATION_BDF2) {
+  if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
     T_physics = bdf2_dae->most_recent_time();
 
-  } else if (ti_method == FLOW_TIME_INTEGRATION_BDF1) {
+  } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
     bdf1_dae->bdf1_step(dT, *solution, dTnext);
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
 
     T_physics = bdf1_dae->most_recent_time();
 
-  } else if (ti_method == FLOW_TIME_INTEGRATION_PICARD) {
+  } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     if (block_picard == 0) {
       PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
       //AndersonAccelerationTimeStep(time, dT, dTnext);
@@ -550,7 +554,7 @@ int Richards_PK::Advance(double dT_MPC)
 
   // Calculate time derivative and 2nd-order solution approximation.
   // Estimate of a time step multiplier overrides the above estimate.
-  if (ti_specs_trs_.dT_method == FLOW_DT_ADAPTIVE) {
+  if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
     Epetra_Vector& pressure = FS->ref_pressure();  // pressure at t^n
 
     for (int c = 0; c < ncells_owned; c++) {
@@ -564,7 +568,10 @@ int Richards_PK::Advance(double dT_MPC)
     dTnext = std::min<double>(dT_MPC * dTfactor, ti_specs_trs_.dTmax);
   }
 
-  num_itrs_nonlinear++;
+  dt_tuple times(time, dT_MPC);
+  ti_specs->dT_history.push_back(times);
+
+  ti_specs->num_itrs++;
   return 0;
 }
 

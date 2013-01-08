@@ -5,6 +5,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
+#include "boost/filesystem.hpp"
 
 Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
     plist(plist_), disabled(false), comm(comm_), hasCycleData_(false), viz_output(NULL)
@@ -24,7 +25,25 @@ Amanzi::Vis::Vis (): disabled(true), hasCycleData_(false), viz_output(NULL)
 void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 {
   filebasename = plist.get<string>("File Name Base","amanzi_vis");
-
+  
+  boost::filesystem::path fbn(filebasename);
+  boost::filesystem::path parent = fbn.parent_path();
+  if (!parent.empty()) {
+    // we need to check whether the parent path exists
+    if (!boost::filesystem::exists(parent)) {
+      Errors::Message m("The file path '"+parent.string()+"' used for visualization does not exist.");
+      Exceptions::amanzi_throw(m);    
+    }
+    if (!boost::filesystem::is_directory(parent)) {
+      Errors::Message m("The file path '"+parent.string()+"' used for visualization is not a directory.");
+      Exceptions::amanzi_throw(m);    
+    }
+    if ( (boost::filesystem::status(parent).permissions() & boost::filesystem::owner_write) == 0) {
+      Errors::Message m("The directory '"+parent.string()+"' used for visualization is not writeable.");
+      Exceptions::amanzi_throw(m);       
+    }
+  }
+  
   // get the time start period stop data and discrete times
   if (plist.isSublist("time start period stop")) {
     Teuchos::ParameterList& tsps_list = plist.sublist("time start period stop");

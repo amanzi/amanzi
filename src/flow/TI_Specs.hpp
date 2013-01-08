@@ -23,23 +23,28 @@ class LinearSolver_Specs {
   LinearSolver_Specs() {
     num_itrs = 0;
     max_itrs = 100;
-    convergence_tol = 1e-10;
+    convergence_tol = 1e-14;
+    preconditioner_name = "undefined";
+    preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;
   }
   ~LinearSolver_Specs() {};
 
  public:
   int num_itrs, max_itrs;
+  std::string preconditioner_name;
+  int preconditioner_method;
   double convergence_tol; 
 };
 
 class TI_Specs {
  public:
   TI_Specs() { 
-    ti_method = 0;
-    ti_method_name = "steady state time integrator";
-    preconditioner_name = "Hypre AMG";
-    preconditioner_method = FLOW_PRECONDITIONER_TRILINOS_ML;
+    ti_method = FLOW_TIME_INTEGRATION_BDF1;
+    ti_method_name = "undefined";
+    preconditioner_name = "undefined";
+    preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;
     num_itrs = max_itrs = 0;
+    error_control_options = 0;
     dT_method = 0;
     T0 = T1 = dT0 = dTmax = 0.0;
     dTfactor = 1.0;
@@ -61,13 +66,15 @@ class TI_Specs {
   int preconditioner_method;
   int num_itrs, max_itrs;
 
-  int dT_method;
+  int dT_method, error_control_options;
   double T0, T1, dT0, dTmax, dTfactor;
   double atol, rtol, residual_tol; 
 
   bool initialize_with_darcy;  // initialization options
   double clip_saturation, clip_pressure;
   bool pressure_lambda_constraints;
+
+  std::vector<std::pair<double, double> > dT_history;  // statistics (relocate to debug?)
 };
 
 }  // namespace AmanziFlow

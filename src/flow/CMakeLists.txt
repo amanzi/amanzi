@@ -38,9 +38,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
-if (ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDE_DIRS})
-endif()
 
 #
 # Library: flow

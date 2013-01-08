@@ -36,7 +36,7 @@ namespace po = boost::program_options;
 #include "MeshAudit.hh"
 #include "MeshException.hh"
 
-#include "cgns_mesh_par.hh"
+#include "hdf5mpi_mesh.hh"
 
 // -------------------------------------------------------------
 // grab_filename
@@ -62,34 +62,36 @@ grab_filename(const bf::path& some_path) {
 }
 
 // -------------------------------------------------------------
-// dump_cgns
+// dump_output
 // -------------------------------------------------------------
 /** 
- * Dump a CGNS file using the mesh specified by @c maps. Include a
+ * Dump a viz file using the mesh specified by @c maps. Include a
  * solution field for cells that identifies which process owns them.
  * 
  * @param me this process' id
  * @param maps mesh to output
- * @param cgnsout CGNS format file to produce
+ * @param filenameout HDF5/XDMF format file to produce
  */
 void
-dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& cgnsout)
+dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& filenameout)
 {
-  Amanzi::CGNS_PAR::create_mesh_file(mesh, cgnsout);
+  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*mesh.get_comm());
+  viz_output->setTrackXdmf(true);
+  viz_output->createMeshFile(mesh, filenameout);
+  viz_output->createDataFile(filenameout);
 
   const Epetra_Map& cmap(mesh.cell_epetra_map(false));
   Epetra_Vector part(cmap);
   int nmycell(cmap.NumMyElements());
   std::vector<int> myidx(nmycell, 0);
 
-  Amanzi::CGNS_PAR::open_data_file(cgnsout);
-  Amanzi::CGNS_PAR::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
+  viz_output->createTimestep(0.0, 0);
 
   std::vector<double> mypart(nmycell, static_cast<double>(me+1.0));
   for (unsigned int i = 0; i < nmycell; i++) myidx[i] = i;
   part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
   
-  Amanzi::CGNS_PAR::write_field_data(part, "Partition");
+  viz_output->writeCellDataReal(part, "Partition");
 
   std::fill(mypart.begin(), mypart.end(), -1);
 
@@ -109,10 +111,12 @@ dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& cgns
   // }
 
   part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
-  Amanzi::CGNS_PAR::write_field_data(part, "Block");
+  viz_output->writeCellDataReal(part, "Block");
 
 
-  Amanzi::CGNS_PAR::close_data_file();
+  viz_output->endTimestep();
+
+  delete viz_output;
 }
 
 
@@ -163,7 +167,7 @@ main(int argc, char **argv)
   double xorigin(0.0), yorigin(0.0), zorigin(0.0);
   std::string inname;
   std::string outname("verify_hex");
-  std::string outcgns;
+  std::string outfilename;
 
   bool dosimple(false);
   bool doaudit(true);
@@ -232,9 +236,7 @@ main(int argc, char **argv)
     dosimple = (vm.count("simple") > 0);
 
     outname = vm["output"].as<std::string>();
-    outcgns = outname;
-    outcgns += ".cgns";
-
+    outfilename = outname;
 
   } catch (po::error& e) {
     if (me == 0) {
@@ -321,7 +323,7 @@ main(int argc, char **argv)
 
   // dump it out
 
-  dump_cgns(me, *mesh, outcgns);
+  dump_output(me, *mesh, outfilename);
 
   return 0;
 }

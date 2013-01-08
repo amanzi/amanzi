@@ -29,7 +29,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-  void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
+void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 {
   flow_status_ = FLOW_STATUS_NULL;
 
@@ -47,6 +47,7 @@ namespace AmanziFlow {
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   nseepage_prev = 0;
+  ti_phase_counter = 0;
 }
 
 
@@ -313,6 +314,10 @@ void Flow_PK::AddNewtonFluxes_MFD(
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces = matrix_operator->Acc_faces();
   Acc_faces.clear();
 
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  Epetra_Vector rhs_wghost(cmap_wghost);
+  for (int c = 0; c < ncells_owned; c++) rhs_wghost[c] = rhs[c];
+
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
 
@@ -332,7 +337,7 @@ void Flow_PK::AddNewtonFluxes_MFD(
     if (ncells == 1) {
       if (factor > 0.0) { 
         Bcc(0, 0) = factor;
-        rhs[c1] += factor * pressure_cells[c1];
+        rhs_wghost[c1] += factor * pressure_cells[c1];
       }
     } else {
       int i = (factor > 0.0) ? 0 : 1;
@@ -342,12 +347,15 @@ void Flow_PK::AddNewtonFluxes_MFD(
 
       c1 = cells[i];
       int c2 = cells[1 - i];
-      rhs[c1] += factor * pressure_cells[c1];
-      rhs[c2] -= factor * pressure_cells[c1];
+      rhs_wghost[c1] += factor * pressure_cells[c1];
+      rhs_wghost[c2] -= factor * pressure_cells[c1];
     }
 
     Acc_faces.push_back(Bcc);
   }
+
+  FS->CombineGhostCell2MasterCell(rhs_wghost, Add);
+  for (int c = 0; c < ncells_owned; c++) rhs[c] = rhs_wghost[c];
 }
 
 

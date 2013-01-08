@@ -111,9 +111,11 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessSublistTimeIntegration(Teuchos::ParameterList& list, const std::string name, TI_Specs& ti_specs);
   void ProcessStringSourceDistribution(const std::string name, int* method);
   void ProcessStringMFD3D(const std::string name, int* method);
+  void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
   void ProcessStringPreconditioner(const std::string name, int* preconditioner);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list, const Teuchos::ParameterList& solver_list);
+  void OutputTimeHistory(std::vector<dt_tuple>& dT_history);
 
  public:
   int ncells_owned, ncells_wghost;
@@ -124,6 +126,7 @@ class Flow_PK : public BDF2::fnBase {
  
   Teuchos::RCP<Flow_State> FS;
   
+  int ti_phase_counter;  
   double T_physics, dT, dTnext;
   int flow_status_;
   int dim;
