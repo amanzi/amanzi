@@ -80,6 +80,7 @@ VisIt consists of two windows.  First is the Main window where menus and options
 
 .. figure:: figs/visit_screen1.png
    :align: center
+   :height: 3 in
 
    The left window is the Main window.  The right window is the Visualization window.
 
@@ -104,6 +105,7 @@ To switch between different mesh regions available, click the Variables icon and
 
 .. figure:: figs/visit_mesh.png 
    :align: center
+   :height: 3 in
 
    Adding a Mesh Plot.
 
@@ -114,11 +116,13 @@ To add a plot to the visualization window for a field, click the Add icon in the
 
 .. figure:: figs/visit_psuedo.png 
    :align: center
+   :height: 3 in
 
    Adding a Psuedocolor Plot.
 
 .. figure:: figs/visit_var.png
    :align: center
+   :height: 3 in
 
    Changing the variable displayed with the Psuedocolor Plot.
 
