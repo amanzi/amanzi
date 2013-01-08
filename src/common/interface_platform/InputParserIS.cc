@@ -2163,9 +2163,6 @@ void check_AmanziInputVersion(Teuchos::ParameterList* plist) {
     Exceptions::amanzi_throw(Errors::Message("The version string in the input file '"+version+"' has the wrong format, please use X.Y.Z, where X, Y, and Z are integers."));
   }
 
-
-  std::cout << major << "." << minor << "." << micro << std::endl;
-
   if ((major != AMANZI_INPUT_VERSION_MAJOR) || 
       (minor != AMANZI_INPUT_VERSION_MINOR) ||
       (micro != AMANZI_INPUT_VERSION_MICRO)) {
