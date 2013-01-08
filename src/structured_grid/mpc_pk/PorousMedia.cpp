@@ -1962,6 +1962,7 @@ PorousMedia::richard_init_to_steady()
               int retCode = rs->Solve(t+dt, dt, k, nld);
               if (retCode >= 0) {
                 ret = RichardNLSdata::RICHARD_SUCCESS;
+                rs->UpdateDarcyVelocity(rs->GetPressure(),t+dt);
               } 
               else {
                 if (ret == -3) {
@@ -3501,6 +3502,7 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     int retCode = rs->Solve(t_flow+dt_flow, dt_flow, 1, nld);
     if (retCode > 0) {
       ret = RichardNLSdata::RICHARD_SUCCESS;
+      rs->UpdateDarcyVelocity(rs->GetPressure(),t_flow+dt_flow);
     } 
     else {
       if (ret == -3 || ret == 0) {

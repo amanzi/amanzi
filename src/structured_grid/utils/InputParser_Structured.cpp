@@ -669,6 +669,11 @@ namespace Amanzi {
                             // AMR Options
                             //
                             const ParameterList& amr_list = num_list.sublist(amr_str);
+                            std::string amr_subcycling_str = "Do AMR Subcycling";
+                            if (amr_list.isParameter(amr_subcycling_str)) {
+                                do_amr_subcycling = amr_list.get<bool>(amr_subcycling_str);
+                            }
+
                             std::string num_level_str = "Number Of AMR Levels";
                             if (amr_list.isParameter(num_level_str)) {
                                 num_levels = amr_list.get<int>(num_level_str);
