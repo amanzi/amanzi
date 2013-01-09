@@ -265,7 +265,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   Epetra_Vector usav(map);
   usav = u;
 
-  if (h < 10.0 * state.eps * tlast) {
+  if (h < 10.0 * state.eps * std::max<double>(fabs(tlast),1.0) ) {
     std::string msg = "BDF1 failed: Time step crash";
     Errors::Message m(msg);
     Exceptions::amanzi_throw(m);
