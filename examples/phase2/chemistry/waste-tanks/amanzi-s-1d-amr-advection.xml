@@ -22,12 +22,12 @@
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="3"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{2, 2, 4}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{1}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
         <Parameter name="Maximum Grid Size" type="Array(int)" value="{32, 32, 32, 32}"/>
-        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1}"/>
+        <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{2, 2, 2, 2}"/>
         <Parameter name="Refinement Indicators" type="Array(string)" value="{Tc-99 Gradient Ref}"/>
-        <Parameter name="grid_log" type="string" value="grdlog"/>
+        <Parameter name="Do AMR Subcycling" type="bool" value="True"/>
 
         <ParameterList name="Tc-99 Gradient Ref">
           <Parameter name="Adjacent Difference Greater" type="double" value="0.1"/>
