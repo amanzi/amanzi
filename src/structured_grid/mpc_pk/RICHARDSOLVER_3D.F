@@ -327,7 +327,7 @@ c     Note: This routine modifies only dp, and only if s^{k}<sTOL
                
                if (.not. is_saturated) then
                   call get_dcplds(dpcdse,rs_old,rhoval,tphi,kappa(i,j,k),
-     &                 l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
+     &                 l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
                   ds = -ls_factor*(one-l_sat_res)*dp(i,j,k,1)/dpcdse
                   s_new = s_old - ds
                   s_new = MIN(one,MAX(zero,s_new))

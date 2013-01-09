@@ -218,7 +218,7 @@ c     On input, Res contains Div(rho.DarcyVel)
       integer i,j
       integer l_cpl_type
       REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpcdse, tphi, pcap_new
-      REAL_T  rs_old, s_old, s_new, ds, p_new, pcap_old, rs_new
+      REAL_T  rs_old, s_old, s_new, ds, p_new, pcap_old, rs_new, ds_1
       logical is_saturated
       REAL_T  saturated_s_thresh
       parameter (saturated_s_thresh = 1.d0 - 1.d-8)
@@ -241,37 +241,21 @@ c     Get s^{k+1,*} = s^{k}  -  (ds/dp)^k . fac.dp,  ds/dp = - 1 / [(dpc/dse).(d
 c     If s^{k+1,*} < sTOL, then s^{k+1} = s^{k+1,*}, p^{k+1} from s^{k+1}
 c       else p^{k+1} = p^{k} - fac.dp, s^{k+1} from p^{k+1}
 c
-c     Note: This routine modifies only dp, and only if s^{k}<sTOL
-
             rs_old = rhosat(i,j,1) 
             s_old = rs_old / rhoval(1)
-            is_saturated = (s_old .ge. saturated_s_thresh)
-
-            if (.not. is_saturated) then
-               call get_dcplds(dpcdse,rs_old,rhoval,tphi,kappa(i,j),
-     &              l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
-               ds = -ls_factor*(one-l_sat_res)*dp(i,j,1)/dpcdse
-               s_new = s_old - ds
-               s_new = MIN(one,MAX(zero,s_new))
-               ds = s_new - s_old
-               is_saturated = (s_new .ge. sTOL)
-            endif
             
-            if (.not. is_saturated) then
-               call get_cpl(pcap_old,rs_old,rhoval(1),tphi,
+            call get_dcplds(dpcdse,rs_old,rhoval(1),tphi,kappa(i,j),
+     &           l_sigma,ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
+            ds = -ls_factor*(one-l_sat_res)*dp(i,j,1)/dpcdse
+            
+            s_new = s_old - ds
+            s_new = MIN(one,MAX(zero,s_new))
+            
+            if (s_new .lt. sTOL) then
+               call get_cpl(pcap_new,s_new*rhoval(1),rhoval(1),tphi,
      &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type)
-
-               rs_new = rhoval(1) * s_new
-
-               call get_cpl(pcap_new,rs_new,rhoval(1),tphi,
-     &              kappa(i,j),l_sigma,ncomps,l_sat_res,l_cpl_type)
-
-               if (abs(dp(i,j,1)-pcap_new+pcap_old).gt.1.d-2) then
-c                  print *,i,j,dp(i,j,1)-pcap_new+pcap_old
-               endif
-
-               dp(i,j,1) = pcap_new - pcap_old
-
+               p_new = -pcap_new
+               dp(i,j,1) = (p(i,j,1) - p_new)/ls_factor
             endif
          end do 
       end do
