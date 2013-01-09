@@ -22,26 +22,51 @@
 import sys
 import re, optparse
 
-def PackUnstructuredLists(KeyList, SubLists):
+
+def PackUnstructuredLists(ncp_lines,KeyList, SubLists):
+
+    preconditioner = 'Trilinos ML'
 
     for key in KeyList:
         for line in ncp_lines:
             if ( key.lower() in line.lower() ):
                 if ( key == "linear" and "nonlinear" in line ):
                     break
+                elif ( key == "linear" and "pseudo" in line ):
+                    break
+                elif ( key == "transport" and "chemistry" in line ):
+                    break
+                elif ( "use Hypre AMG" in line and 'value="true"' in line ):
+                    preconditioner='Hypre AMG'
+                elif ( "use Block ILU" in line and 'value="true"' in line ):
+                    preconditioner='Block ILU'
                 else:
-                    SubLists[key].append(line.rstrip().replace("\t","        "))
+                    SubLists[key].append(line.rstrip().lstrip())
+
+    if ( len(SubLists["steady"]) > 1 and preconditioner != 'Trilinos ML' ):
+        SubLists["steady"].append('<Parameter name="steady preconditioner" type="string" value="'+preconditioner+'"/>')
+
+    if ( len(SubLists["transient"]) > 1 and preconditioner != 'Trilinos ML' ):
+        SubLists["transient"].append('<Parameter name="transient preconditioner" type="string" value="'+preconditioner+'"/>')
+
+    if ( len(SubLists["pseudo"]) > 1 and preconditioner != 'Trilinos ML' ):
+        SubLists["pseudo"].append('<Parameter name="pseudo time integrator preconditioner" type="string" value="'+preconditioner+'"/>')
 
     return KeyList, SubLists
 
 
-def WriteUnstructuredLists(xml_output,KeyList,SubLists):
+def WriteUnstructuredLists(xml_output,KeyList,SubLists,lev_spc):
 
     PreconHeader=False
     PreconFooter=False
-    TwoSpaces=''
+    extra_level=0
 
-    xml_output.write ("        %s\n" % ( '<ParameterList name="Unstructured Algorithm">' ))
+    # need to use >>> text = "abcdef"
+    #             >>> print "<%*s>" % (len(text)+2,text)
+    # <  abcdef>
+
+    text='<ParameterList name="Unstructured Algorithm">'
+    xml_output.write ("%*s\n" % ( len(text)+lev_spc[3],text ) )
 
     for key in KeyList:
 
@@ -50,27 +75,61 @@ def WriteUnstructuredLists(xml_output,KeyList,SubLists):
             if ( key in ['ML','Hypre','Block'] and not PreconHeader ):
                 xml_output.write ("          %s\n" % ( '<ParameterList name="Preconditioners">' ))
                 PreconHeader=True
-                TwoSpaces='  '
-            xml_output.write ("%s          %s%s%s\n" % ( TwoSpaces, '<ParameterList name="', SubLists[key][0], '">' ))
+                extra_level=1
+
+            line='<ParameterList name="'+SubLists[key][0]+'">'
+            xml_output.write ("%*s\n" % ( len(line)+lev_spc[4+extra_level], line ) )
 
             for line in SubLists[key][1:]:
-                xml_output.write("%s  %s \n" % (TwoSpaces, line) )
+                xml_output.write("%*s\n" % (len(line)+lev_spc[5+extra_level], line) )
                 
-            xml_output.write ("%s          %s\n" % (TwoSpaces, '</ParameterList>' ) )
+            line='</ParameterList>'
+            xml_output.write ("%*s\n" % ( len(line)+lev_spc[4+extra_level], line ) )
                     
         if ( key is 'Block' and PreconHeader ):
-            TwoSpaces=''
-            xml_output.write ("%s          %s\n" % (TwoSpaces, '</ParameterList>' ) )
-            
-    xml_output.write ("        %s\n" % ( '</ParameterList>' ) )
+            extra_level=0
+            line='</ParameterList>'
+            xml_output.write ("%*s\n" % ( len(line)+lev_spc[4], line ) )
+
+    line='</ParameterList>'
+    xml_output.write ("%*s\n" % ( len(line)+lev_spc[3], line ) )
 
     return 0
 
 
-def WritePreNCP(xml_output,ncp_pre_lines):
+def CheckVersion(ncp_pre_lines):
+
+    version_string=''
 
     for line in ncp_pre_lines:
-        xml_output.write("%s\n" % ( line ) )
+
+        if ( "Amanzi input format version".lower() in line.lower() ):
+            version_string=line.split('"')[-2]
+            version_major, version_minor, version_patch = version_string.split('.')
+            if ( int(version_major) < 1 ):
+                break
+            elif ( int(version_major) == 1 and int(version_minor) == 0 ):
+                break
+            else:
+                print 'Error: This scripts translates versions <= 1.0.0!'
+                print '       But this input file is version', version_string
+                sys.exit()
+
+    if ( version_string == '' ):
+        print 'Error: The version string is empty!'
+        sys.exit()
+
+    return version_string
+
+def WritePreNCP(xml_output,ncp_pre_lines,version_string):
+
+    for line in ncp_pre_lines:
+
+        if ( "Amanzi input format version".lower() in line.lower() ):
+            xml_output.write("%s\n" % ( line.replace(version_string,'1.1.0' ) ) )
+        else:
+            xml_output.write("%s\n" % ( line ) )
+
 
 def WritePostNCP(xml_output,ncp_pre_lines):
 
@@ -82,25 +141,35 @@ def WritePostNCP(xml_output,ncp_pre_lines):
 
 p = optparse.OptionParser()
 p.add_option("--xml_file",action="store", type='string', dest="xml_input")
-p.add_option("--stdout",action="store_false", dest="xml_stdout", default=False)
+p.add_option("--stdout",action="store_true", dest="xml_stdout", default=False)
+p.add_option("--overwrite",action="store_true", dest="xml_overwrite", default=False)
 
 (opt, args) = p.parse_args()
 p.set_defaults(xml_input="amanzi.xml")
 
-# strip xml suffix and add a sublist indicator
-
-if ( opt.xml_stdout ):
-    xml_output = sys.stdout
-else:
-    xml_output_base=opt.xml_input.rstrip(".xml")
-    xml_output = open(xml_output_base+"_UAsublists.xml",'w')
-    
 #
 # Read the input file
 #
 xml_input = open(opt.xml_input)
 xml_lines = xml_input.readlines()
 xml_input.close()
+
+
+#
+# Determine level spacing:
+#
+lev_spc=[]
+cl=0
+for line in xml_lines:
+    if ( "<ParameterList" in line ):
+        cl=cl+1
+        spaces=len(line.expandtabs()) - len(line.expandtabs().lstrip())
+        if ( len(lev_spc) < cl ):
+            lev_spc.append(spaces)
+    elif ( "</ParameterList" in line ):
+        cl=cl-1
+
+print 'Debugging: Level indentation = ', lev_spc
 
 #
 # Define booleans and lists for each of the three sections:
@@ -124,7 +193,7 @@ for line in xml_lines:
             ncp=True
             ncp_lines.append(line.rstrip())
         else:
-            ncp_pre_lines.append(line.rstrip())
+            ncp_pre_lines.append(line.rstrip("\n"))
         #endif
     elif ( ncp ):
         ncp_lines.append(line.rstrip())
@@ -133,20 +202,20 @@ for line in xml_lines:
             ncp_post=True
         #endif
     elif ( ncp_post ):
-        ncp_post_lines.append(line.rstrip())
+        ncp_post_lines.append(line.rstrip("\n"))
     #endif
 
 # List of possible sublists for the "Unstructured Algorithm" sublist
 
 KeyList  = [ "transport", "chemistry", "steady", "transient",
-             "psuedo", "linear", "ML", "Hypre", "Block", 
+             "pseudo", "linear", "ML", "Hypre", "Block", 
              ]
 
 SubLists = {"transport": ["Transport Process Kernel",] ,
             "chemistry": ["Chemistry Process Kernel",] ,
             "steady":    [ "Steady-State Implicit Time Integration", ] ,
             "transient": ["Transient Implicit Time Integration", ] , 
-            "psuedo":    ["Steady-State Psuedo-Time Implicit Solver", ] ,
+            "pseudo":    ["Steady-State Pseudo-Time Implicit Solver", ] ,
             "linear":    ["Linear Solver", ] , 
             "ML":        ["Trilinos ML", ] ,
             "Hypre":     ["Hypre AMG", ] , 
@@ -154,9 +223,22 @@ SubLists = {"transport": ["Transport Process Kernel",] ,
             }
 
 
-WritePreNCP(xml_output,ncp_pre_lines)
+version_string=CheckVersion(ncp_pre_lines)
 
-PackUnstructuredLists(KeyList, SubLists)
-WriteUnstructuredLists(xml_output,KeyList,SubLists)
+# Overwrite or strip xml suffix and add a sublist indicator
+
+if ( opt.xml_stdout ):
+    xml_output = sys.stdout
+elif ( opt.xml_overwrite ):
+    xml_output = open(opt.xml_input,'w')
+else:
+    xml_output_base=opt.xml_input.rstrip(".xml")
+    xml_output = open(xml_output_base+"_UAsublists.xml",'w')
+    
+
+WritePreNCP(xml_output,ncp_pre_lines,version_string)
+
+PackUnstructuredLists(ncp_lines,KeyList, SubLists)
+WriteUnstructuredLists(xml_output,KeyList,SubLists,lev_spc)
 
 WritePostNCP(xml_output,ncp_post_lines)
