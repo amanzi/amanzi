@@ -9,6 +9,12 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 ------------------------------------------------------------------------- */
 
 #include "wrm_richards_evaluator.hh"
+#include "wrm_ice_water_evaluator.hh"
+#include "permafrost_model.hh"
+#include "eos_evaluator.hh"
+#include "iem_evaluator.hh"
+#include "iem_water_vapor_evaluator.hh"
+#include "molar_fraction_gas_evaluator.hh"
 #include "mpc_frozen_prec_coupled_flow_energy.hh"
 
 namespace Amanzi {
@@ -25,13 +31,62 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
     if (S_->time() == 0.) { // this needs to be fixed!
       return false;
     } else {
-      modified = modify_predictor_ewc(h,u);
+      if (!new_ewc_) {
+        modified = modify_predictor_ewc(h,u);
+      } else {
+        // Teuchos::RCP<TreeVector> u0 = Teuchos::rcp(new TreeVector(*u));
+        // Teuchos::RCP<TreeVector> u2 = Teuchos::rcp(new TreeVector(*u));
+        // (*u2) = (*u);
+        // (*u0) = (*u);
+        modified = modify_predictor_new_ewc(h,u);
+        // modify_predictor_ewc(h,u2);
+
+        // Teuchos::RCP<CompositeVector> t0 = u0->SubVector("energy")->data();
+        // Teuchos::RCP<CompositeVector> p0 = u0->SubVector("flow")->data();
+        // Teuchos::RCP<CompositeVector> t1 = u->SubVector("energy")->data();
+        // Teuchos::RCP<CompositeVector> p1 = u->SubVector("flow")->data();
+        // Teuchos::RCP<CompositeVector> t2 = u2->SubVector("energy")->data();
+        // Teuchos::RCP<CompositeVector> p2 = u2->SubVector("flow")->data();
+
+        // int ncells = t1->size("cell",false);
+        // for (int c=0; c!=ncells; ++c) {
+        //   double d1 = std::abs( (*t1)("cell",c) - (*t0)("cell",c) );
+        //   double d2 = std::abs( (*t2)("cell",c) - (*t0)("cell",c) );
+        //   double diff = std::abs( (*t2)("cell",c) - (*t1)("cell",c) );
+
+        //   if ((d1 + d2) > 0.1) {
+        //     if (diff / (d1+d2) > 1.e-1) {
+        //       std::cout << "WTF in T (" << c << "): " << (*t1)("cell",c)
+        //                 << " is not " << (*t2)("cell",c)
+        //                 << " when the guess was " << (*t0)("cell",c)
+        //                 << std::endl;
+        //     }
+        //   }
+
+        //   d1 = std::abs( (*p1)("cell",c) - (*p0)("cell",c) );
+        //   d2 = std::abs( (*p2)("cell",c) - (*p0)("cell",c) );
+        //   diff = std::abs( (*p2)("cell",c) - (*p1)("cell",c) );
+
+        //   if ((d1 + d2) > 10.) {
+        //     if (diff / (d1+d2) > 1.e-1) {
+        //       std::cout << "WTF in p (" << c << "): " << (*p1)("cell",c)
+        //                 << " is not " << (*p2)("cell",c)
+        //                 << " when the guess was " << (*p0)("cell",c)
+        //                 << std::endl;
+        //     }
+        //   }
+        // }
+      }
     }
   } else if (predictor_type_ == PREDICTOR_EWC_HEURISTIC) {
     if (S_->time() == 0.) { // this needs to be fixed!
       return false;
     } else {
-      modified = modify_predictor_ewc_heuristic(h,u);
+      //      if (!new_ewc_) {
+        modified = modify_predictor_ewc_heuristic(h,u);
+        //      } else {
+        //        modified = modify_predictor_new_ewc_heuristic(h,u);
+        //      }
     }
   }
 
@@ -636,14 +691,14 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
     *out_ << "Init Norm = " << norm_prev << std::endl;
 
     // DEBUG find cell that is most of norm
-    int badc = 0;
-    for (int c=0; c!=ncells; ++c) {
-      if (std::abs(std::abs(wc2[0][c]) - norm_prev) < 1.e-10 ||
-          std::abs(std::abs(e2[0][c]) - norm_prev) < 1.e-10) {
-        badc = c;
-        *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
-      }
-    }
+    int badc = 96;
+    // for (int c=0; c!=ncells; ++c) {
+    //   if (std::abs(std::abs(wc2[0][c]) - norm_prev) < 1.e-10 ||
+    //       std::abs(std::abs(e2[0][c]) - norm_prev) < 1.e-10) {
+    //     badc = c;
+    //     *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
+    //   }
+    // }
 
     // scale back to res, not relative res
     for (int c=0; c!=ncells; ++c) {
@@ -692,6 +747,11 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
 
         cor_wc[0][c] = (dedT*res_wc - dwcdT*res_e) / detJ;
         cor_e[0][c] = (-dedp*res_wc + dwcdp*res_e) / detJ;
+
+        if (c == badc) {
+          *out_ << "  Jac:  [" << dwcdp << "," << dwcdT << "],[" << dedp << "," << dedT << "]" << std::endl;
+          *out_ << "  InvJ: [" << dedT/detJ << "," << -dwcdT/detJ << "],[" << -dedp/detJ << "," << dwcdp/detJ << "]" << std::endl;
+        }
       }
       *out_ << "Cor p,T: " << cor_wc[0][badc] << ", " << cor_e[0][badc] << std::endl;
 
@@ -730,14 +790,14 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
       *out_ << "New Norm = " << norm_t << std::endl;
 
       // DEBUG find cell that is most of norm
-      badc = 0;
-      for (int c=0; c!=ncells; ++c) {
-        if (std::abs(std::abs(wc2[0][c]) - norm_t) < 1.e-10 ||
-            std::abs(std::abs(e2[0][c]) - norm_t) < 1.e-10) {
-          badc = c;
-          *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
-        }
-      }
+      // badc = 0;
+      // for (int c=0; c!=ncells; ++c) {
+      //   if (std::abs(std::abs(wc2[0][c]) - norm_t) < 1.e-10 ||
+      //       std::abs(std::abs(e2[0][c]) - norm_t) < 1.e-10) {
+      //     badc = c;
+      //     *out_ << "Found bad cell: " << badc << " with gas sat = " << sat_g[0][badc] << std::endl;
+      //   }
+      // }
 
       // scale back to res, not relative res
       for (int c=0; c!=ncells; ++c) {
@@ -819,7 +879,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
 
     for (int c=0; c!=ncells; ++c) {
       if (sat_g[0][c] > 1.e-2) {
-        // IF SATURATED: copy solution into the result
+        // IF NOT SATURATED: copy solution into the result
         temp_guess_c[0][c] = T2[0][c];
         pres_guess_c[0][c] = p2[0][c];
       }
@@ -851,6 +911,193 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc(double h, Teuchos::RCP<Tre
   } else {
     return false;
   }
+}
+
+
+bool MPCFrozenCoupledFlowEnergy::modify_predictor_new_ewc(double h, Teuchos::RCP<TreeVector> u) {
+
+  Teuchos::OSTab tab = getOSTab();
+
+  Teuchos::RCP<CompositeVector> temp_guess = u->SubVector("energy")->data();
+  Teuchos::RCP<CompositeVector> pres_guess = u->SubVector("flow")->data();
+  Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
+  Epetra_MultiVector& pres_guess_c = *pres_guess->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& T1 = *S_inter_->GetFieldData("temperature")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& p1 = *S_inter_->GetFieldData("pressure")
+      ->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& sat_g = *S_next_->GetFieldData("saturation_gas")
+      ->ViewComponent("cell",false);
+
+  // DEBUG CRUFT
+  const Epetra_MultiVector& poro1 = *S_inter_->GetFieldData("porosity")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& cv = *S_inter_->GetFieldData("cell_volume")
+      ->ViewComponent("cell",false);
+  std::cout << "Testing new Permafrost evaluation: " << std::endl;
+  std::cout << "    p = " << p1[0][96] << ", T = " << T1[0][96] << std::endl;
+  std::cout << "  From Vectorized approach:" << std::endl;
+  std::cout << "    e  = " << (*S_inter_->GetFieldData("energy"))("cell",96) / cv[0][96] << std::endl;
+  std::cout << "    wc = " << (*S_inter_->GetFieldData("water_content"))("cell",96) / cv[0][96] << std::endl;
+
+  AmanziGeometry::Point result(2);
+  WhetStone::Tensor jac(2,2);
+  model_->EvaluateEnergyAndWaterContentAndJacobian(T1[0][96], p1[0][96], poro1[0][96], result, jac);
+  std::cout << "  From Model approach:" << std::endl;
+  std::cout << "    e  = " << result[0] << std::endl;
+  std::cout << "    wc = " << result[1] << std::endl;
+  std::cout << "  Jac: (vectorized, model)" << std::endl;
+  std::cout << "      [ \t"
+            << (*S_inter_->GetFieldData("denergy_dtemperature"))("cell",96)
+            << ",  " << (*S_inter_->GetFieldData("denergy_dpressure"))("cell",96)
+            << "\t ] \t\t[  "
+            << jac(0,0) << ",  " << jac(0,1) << "\t ]" << std::endl;
+  std::cout << "      [ \t"
+            << (*S_inter_->GetFieldData("dwater_content_dtemperature"))("cell",96)
+            << ",  " << (*S_inter_->GetFieldData("dwater_content_dpressure"))("cell",96)
+            << "\t ] \t\t[  "
+            << jac(1,0) << ",  " << jac(1,1) << "\t ]" << std::endl;
+  // project energy and water content
+  double dt_next = S_next_->time() - S_inter_->time();
+  double dt_prev = S_inter_->time() - S_work_->time();
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    *out_ << "Projecting Energy and WC, dt_prev = " << dt_prev
+          << ", dt_next = " << dt_next << std::endl;
+  }
+
+  // -- get wc and energy data
+  const Epetra_MultiVector& wc0 = *S_work_->GetFieldData("prev_water_content")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& wc1 = *S_inter_->GetFieldData("water_content")
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& wc2 = *S_work_->GetFieldData("water_content", "water_content")
+      ->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& e0 = *S_work_->GetFieldData("prev_energy")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& e1 = *S_inter_->GetFieldData("energy")
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& e2 = *S_work_->GetFieldData("energy", "energy")
+      ->ViewComponent("cell",false);
+
+  // -- project
+  wc2 = wc0;
+  e2 = e0;
+  double dt_ratio = (dt_next + dt_prev) / dt_prev;
+  wc2.Update(dt_ratio, wc1, 1. - dt_ratio);
+  e2.Update(dt_ratio, e1, 1. - dt_ratio);
+  std::cout << "S0 wc,e: " << wc0[0][96] << ", " << e0[0][96] << std::endl;
+  std::cout << "S1 wc,e: " << wc1[0][96] << ", " << e1[0][96] << std::endl;
+  std::cout << "Desired wc,e: " << wc2[0][96] << ", " << e2[0][96] << std::endl;
+
+  // Check and update
+  const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
+      ->ViewComponent("cell",false);
+
+  double wc_scale = 10.;
+  double e_scale = 10000.;
+
+  int ncells = wc0.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    // determine how to project based upon min change in e,wc
+    bool new_predictor = true;
+    AmanziGeometry::Point result(2);
+    int ierr = 0;
+
+    /*
+    // APPROACH VIA SATURATION
+    // don't bother if saturated, which breaks things?
+    if (sat_g[0][c] > 1.e-2) {
+      // ierr = model_->EvaluateEnergyAndWaterContent(temp_guess_c[0][c],
+      //         pres_guess_c[0][c], poro[0][c], result);
+
+      // if (ierr) {
+      //   new_predictor = true;
+      // } else {
+      //   // change in energy/wc if we predict in energy/wc
+      //   double de_new = std::abs(e2[0][c] - e1[0][c]) / e_scale;
+      //   double dwc_new = std::abs(wc2[0][c] - wc1[0][c]) / wc_scale;
+      //   double norm_new = std::sqrt( dwc_new*dwc_new + de_new*de_new);
+
+      //   // change in energy/wc if we predict in temp/pres
+      //   double de_old = std::abs(result[0] - e1[0][c]) / e_scale;
+      //   double dwc_old = std::abs(result[1] - wc1[0][c]) / wc_scale;
+      //   double norm_old = std::sqrt( dwc_old*dwc_old + de_old*de_old);
+
+      //   new_predictor = (norm_new < norm_old);
+      //   if (!new_predictor) {
+      //     std::cout << "Not Inverting: c = " << c << "." << std::endl;
+      //     std::cout << "  de  (new,old) = " << de_new << ", " << de_old << std::endl;
+      //     std::cout << "  dwc (new,old) = " << dwc_new << ", " << dwc_old << std::endl;
+      //   }
+      // }
+      new_predictor = true;
+    } else {
+      new_predictor = false;
+      std::cout << "Not Inverting: c = " << c << " due to saturated." << std::endl;
+    }
+    */
+
+    // APPROACH VIA TEMP CURVES
+    double T_prev = T1[0][c];
+    double T_guess = temp_guess_c[0][c];
+    // invert the T-projection to get what it was projected from
+    double T_prev2 = (T_guess - dt_ratio*T_prev) / (1. - dt_ratio);
+
+    //                     __
+    // Curve looks like __|    with discontinuity at 0.
+    if (T_guess < T_prev) { // getting colder, so the upper cusp is the problem
+      if (T_guess > 273.15) {
+        std::cout << "No new approach for chilling " << c << ", above freezing." << std::endl;
+        new_predictor = false;  // both above freezing, in the upper branch
+      } else if (T_prev2 < 273.15 - cusp_size_T_freezing_) {
+        std::cout << "No new approach for chilling " << c << ", below freezing." << std::endl;
+        new_predictor = false;  // both well below freezing, in lower branch
+      } else if (T_prev2 - T_guess < cusp_size_T_freezing_) {
+        std::cout << "No new approach for chilling " << c << ", on freezing." << std::endl;
+        new_predictor = false;  // likely past the upper cusp
+      } else {
+        new_predictor = true;
+      }
+    } else if (T_prev < T_guess) { // getting warmer, so the lower cusp is the problem
+      if (T_guess < 273.15 - cusp_size_T_thawing_) {
+        std::cout << "No new approach for warming " << c << ", below freezing." << std::endl;
+        new_predictor = false;  // both below freezing, in the lower branch
+      } else if (T_prev2 > 273.15) {
+        std::cout << "No new approach for warming " << c << ", above freezing." << std::endl;
+        new_predictor = false;  // both well above freezing, in upper branch
+      } else if (T_guess - T_prev2 < cusp_size_T_thawing_) {
+        std::cout << "No new approach for warming " << c << ", on thawing." << std::endl;
+        new_predictor = false;  // likely past the lowercusp
+      } else {
+        new_predictor = true;
+      }
+    } else {
+      std::cout << "No new approach for " << c << ", constant T." << std::endl;
+      new_predictor = false;
+    }
+
+    if (new_predictor) {
+      double p = p1[0][c];
+      double T = T1[0][c];
+
+      // uses intensive forms, so must divide by cell volume.
+      std::cout << "Inverting: c = " << c << std::endl;
+      std::cout << "   p,T  = " << p << ", " << T << std::endl;
+      std::cout << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
+      std::cout << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
+      ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
+      ASSERT(!ierr);
+      //      if (!ierr) { // valid solution, no zero determinates, etc
+      temp_guess_c[0][c] = T;
+      pres_guess_c[0][c] = p;
+      //      }
+    }
+  }
+  return true;
 }
 
 
@@ -1133,13 +1380,21 @@ void MPCFrozenCoupledFlowEnergy::commit_state(double dt, const Teuchos::RCP<Stat
   MPCCoupledFlowEnergy::commit_state(dt,S);
 
   if ((predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_EWC_HEURISTIC)
-       && S_inter_ != Teuchos::null) {
+      && S_inter_ != Teuchos::null) {
     // stash water content and energy in S_work.
     *S_work_->GetFieldData("prev_water_content",name_) =
       *S_inter_->GetFieldData("water_content");
     *S_work_->GetFieldData("prev_energy",name_) =
       *S_inter_->GetFieldData("energy");
     S_work_->set_time(S_inter_->time());
+  }
+
+  if ((predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_EWC_HEURISTIC)
+             && new_ewc_) {
+    // set model's value scalars and check it is setup
+    model_->set_p_atm(*S->GetScalarData("atmospheric_pressure"));
+    model_->set_rock_density(*S->GetScalarData("density_rock"));
+    ASSERT(model_->IsSetUp());
   }
 }
 
@@ -1171,12 +1426,121 @@ void MPCFrozenCoupledFlowEnergy::setup(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
+  new_ewc_ = plist_.get<bool>("use new EWC approach", true);
+  if (plist_.isParameter("cusp distance in T")) {
+    cusp_size_T_freezing_ = plist_.get<double>("cusp distance in T");
+    cusp_size_T_thawing_ = cusp_size_T_freezing_;
+  } else {
+    cusp_size_T_freezing_ = plist_.get<double>("cusp distance in T, freezing", 0.005);
+    cusp_size_T_thawing_ = plist_.get<double>("cusp distance in T, thawing", 0.005);
+  }
+
+
   // this is only for testing, do not use!
   consistent_by_average_ = plist_.get<bool>("evaluate face consistency via averages", false);
 }
 
+
+void MPCFrozenCoupledFlowEnergy::SetUpModels_(const Teuchos::Ptr<State>& S) {
+  // get the WRM models and their regions
+  Teuchos::RCP<FieldEvaluator> me =
+      S->GetFieldEvaluator("wrm_permafrost_one_on_B");
+  Teuchos::RCP<Flow::FlowRelations::WRMRichardsEvaluator> one_on_B_me =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMRichardsEvaluator>(me);
+  ASSERT(one_on_B_me != Teuchos::null);
+  Teuchos::RCP<Flow::FlowRelations::WRMRegionPairList> wrms = one_on_B_me->get_WRMs();
+
+  // this needs fixed eventually, but for now assuming one WRM, and therefore
+  // one model --etc
+  ASSERT(wrms->size() == 1);
+
+  // -- WRMs
+  model_ = Teuchos::rcp(new PermafrostModel());
+  model_->set_WRM((*wrms)[0].second);
+
+  // -- liquid EOS
+  me = S->GetFieldEvaluator("molar_density_liquid");
+  Teuchos::RCP<Relations::EOSEvaluator> eos_liquid_me =
+      Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
+  ASSERT(eos_liquid_me != Teuchos::null);
+  Teuchos::RCP<Relations::EOS> eos = eos_liquid_me->get_EOS();
+  model_->set_liquid_EOS(eos);
+
+  // -- ice EOS
+  me = S->GetFieldEvaluator("molar_density_ice");
+  Teuchos::RCP<Relations::EOSEvaluator> eos_ice_me =
+      Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
+  ASSERT(eos_ice_me != Teuchos::null);
+  eos = eos_ice_me->get_EOS();
+  model_->set_ice_EOS(eos);
+
+  // -- gas EOS
+  me = S->GetFieldEvaluator("molar_density_gas");
+  Teuchos::RCP<Relations::EOSEvaluator> eos_gas_me =
+      Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
+  ASSERT(eos_gas_me != Teuchos::null);
+  eos = eos_gas_me->get_EOS();
+  model_->set_gas_EOS(eos);
+
+  // -- gas vapor pressure
+  me = S->GetFieldEvaluator("mol_frac_gas");
+  Teuchos::RCP<Relations::MolarFractionGasEvaluator> mol_frac_me =
+      Teuchos::rcp_dynamic_cast<Relations::MolarFractionGasEvaluator>(me);
+  ASSERT(mol_frac_me != Teuchos::null);
+  Teuchos::RCP<Relations::VaporPressureRelation> vpr = mol_frac_me->get_VaporPressureRelation();
+  model_->set_vapor_pressure_relation(vpr);
+
+  // -- pc for ice/water
+  me = S->GetFieldEvaluator("wrm_permafrost_one_on_A");
+  Teuchos::RCP<Flow::FlowRelations::WRMIceWaterEvaluator> one_on_A_me =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMIceWaterEvaluator>(me);
+  ASSERT(one_on_A_me != Teuchos::null);
+  Teuchos::RCP<Flow::FlowRelations::PCIceWater> pc_iw = one_on_A_me->get_PCIceWater();
+  model_->set_pc_ice_water(pc_iw);
+
+  // -- iem for liquid
+  me = S->GetFieldEvaluator("internal_energy_liquid");
+  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_liquid_me =
+      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  ASSERT(iem_liquid_me != Teuchos::null);
+  Teuchos::RCP<Energy::EnergyRelations::IEM> iem = iem_liquid_me->get_IEM();
+  model_->set_liquid_IEM(iem);
+
+  // -- iem for ice
+  me = S->GetFieldEvaluator("internal_energy_ice");
+  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_ice_me =
+      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  ASSERT(iem_ice_me != Teuchos::null);
+  iem = iem_ice_me->get_IEM();
+  model_->set_ice_IEM(iem);
+
+  // -- iem for gas
+  me = S->GetFieldEvaluator("internal_energy_gas");
+  Teuchos::RCP<Energy::EnergyRelations::IEMWaterVaporEvaluator> iem_gas_me =
+      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMWaterVaporEvaluator>(me);
+  ASSERT(iem_gas_me != Teuchos::null);
+  Teuchos::RCP<Energy::EnergyRelations::IEMWaterVapor> iem_gas = iem_gas_me->get_IEM();
+  model_->set_gas_IEM(iem_gas);
+
+  // -- iem for rock
+  me = S->GetFieldEvaluator("internal_energy_rock");
+  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_rock_me =
+      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  ASSERT(iem_rock_me != Teuchos::null);
+  iem = iem_rock_me->get_IEM();
+  model_->set_rock_IEM(iem);
+
+}
+
+
 // -- Initialize owned (dependent) variables.
 void MPCFrozenCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
+  if ((predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_EWC_HEURISTIC)
+             && new_ewc_) {
+    SetUpModels_(S);
+  }
+
+
   Teuchos::RCP<CompositeVector> pres = S->GetFieldData("pressure", flow_pk->name());
   Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", energy_pk->name());
 

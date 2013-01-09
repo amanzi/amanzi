@@ -24,7 +24,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "coordinator.hh"
 
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 namespace Amanzi {
 
@@ -357,17 +357,14 @@ void Coordinator::cycle_driver() {
   }
 #endif
 
-  // force visualization and checkpoint at the end of simulation
-  // this needs to be fixed -- should not force, but ask if we want to checkpoint/vis at end
-  pk_->calculate_diagnostics(S_next_);
-
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    WriteVis((*vis).ptr(), S_next_.ptr());
+  // Force checkpoint at the end of simulation.
+  // Only do if the checkpoint was not already written, or we would be writing
+  // the same file twice.
+  // This really should be removed, but for now is left to help stupid developers.
+  if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
+    pk_->calculate_diagnostics(S_next_);
+    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
   }
-
-  checkpoint_->set_filebasename("final_checkpoint");
-  WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
 
   // dump observations
   //  output_observations_.print(std::cout);
