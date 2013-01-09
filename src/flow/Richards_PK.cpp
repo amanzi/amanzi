@@ -323,6 +323,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
 
+
   // DEBUG
   // AdvanceToSteadyState();
   // CommitState(FS); WriteGMVfile(FS); exit(0);
@@ -505,6 +506,9 @@ int Richards_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
+
+
+
   // predict water mass change during time step
   time = T_physics;
   if (ti_specs->num_itrs == 0) {  // initialization
@@ -528,6 +532,31 @@ int Richards_PK::Advance(double dT_MPC)
     update_precon(time, *solution, dT, ierr);
     ti_specs->num_itrs++;
   }
+
+  /// Modify initial state*********************
+  //  Epetra_Vector& u = FS->ref_pressure();
+  //  cout<<u_ref<<endl;
+  //  exit(0);
+  
+  (*solution)[0] = 57464.634441452858;      
+  (*solution)[1] = -30253.457478506229 ;     
+  (*solution)[2] = -117968.04459715552 ;     
+  (*solution)[3] = -205679.12640888427 ;     
+  (*solution)[4] = -293386.70240768651 ;     
+  (*solution)[5] = -381090.77208716050 ;     
+  (*solution)[6] = -468791.33494050801 ;     
+  (*solution)[7] = -556488.39046053367 ;     
+  (*solution)[8] = -644181.93813964457 ;     
+  (*solution)[9] = -731871.97746984917 ;     
+  (*solution)[10] = -819558.50794275722 ;     
+  (*solution)[11] = -907241.52904957917 ;    
+
+  //  exit(0);
+
+  //***********************************************
+
+
+
 
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);

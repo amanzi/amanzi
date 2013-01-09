@@ -481,6 +481,8 @@ void MPC::cycle_driver() {
       }
       Amanzi::timer_manager.stop("Flow PK");
 
+      cout<<"MPCCCCCCCCCC "<<*(S->get_pressure())<<endl;
+
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch)) {
         if (transport_enabled) {
           Amanzi::timer_manager.start("Transport PK");
@@ -518,6 +520,8 @@ void MPC::cycle_driver() {
         tslimiter = MPC_LIMITS;
       }
 
+      cout<<"MPCCCCCCCCCC "<<*(S->get_pressure())<<endl;
+
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
         if (!reset_times_.empty()) {
@@ -543,6 +547,9 @@ void MPC::cycle_driver() {
         *out << std::endl;
       }
       
+
+      cout<<"MPCCCCCCCCCC "<<*(S->get_pressure())<<endl;
+
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow
       // first advance flow

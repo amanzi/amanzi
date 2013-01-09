@@ -592,6 +592,12 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 
   int ierr = (*Spp_).Multiply(false, Xc, Yc);
 
+  cout<<"Xc"<<Xc<<endl;
+  
+  cout<<"Apply TPFA"<<(*Spp_)<<endl;
+
+  cout<<"Yc "<<Yc<<endl;
+
   if (ierr) {
     Errors::Message msg("Matrix_MFD_TPFA::Apply has failed to calculate y = A*x.");
     Exceptions::amanzi_throw(msg);
