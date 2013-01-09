@@ -15,6 +15,9 @@ block-diagonal coupler.
 #include "mpc_prec_coupled_flow_energy.hh"
 
 namespace Amanzi {
+
+class PermafrostModel;
+
 class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
 
 public:
@@ -22,7 +25,8 @@ public:
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
       MPCCoupledFlowEnergy(plist, soln),
-      consistent_by_average_(false) {}
+      consistent_by_average_(false),
+      new_ewc_(true) {}
 
   // Virtual destructor
   virtual ~MPCFrozenCoupledFlowEnergy() {}
@@ -51,18 +55,25 @@ protected:
     PREDICTOR_HEURISTIC = 1,
     PREDICTOR_EWC = 2,
     PREDICTOR_EWC_HEURISTIC = 3,
-    PREDICTOR_TEMP = 4
+    PREDICTOR_TEMP = 4,
   };
 
+  void SetUpModels_(const Teuchos::Ptr<State>& S);
   virtual bool modify_predictor_heuristic(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_ewc_heuristic(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_temp(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_ewc(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool modify_predictor_new_ewc(double h, Teuchos::RCP<TreeVector> up);
 
   double the_res_norm_;
   bool modify_thaw_to_prev_;
   PredictorType predictor_type_;
   bool consistent_by_average_;
+  Teuchos::RCP<PermafrostModel> model_;
+  bool new_ewc_;
+
+  double cusp_size_T_freezing_;
+  double cusp_size_T_thawing_;
 
   Teuchos::RCP<State> S_work_;
 

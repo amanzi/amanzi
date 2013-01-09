@@ -33,6 +33,8 @@ class WRMIceWaterEvaluator : public WRMEvaluator {
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
+  Teuchos::RCP<PCIceWater> get_PCIceWater() { return pc_; }
+
  protected:
   void InitializeFromPlist_();
 
