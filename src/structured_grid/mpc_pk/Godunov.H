@@ -134,9 +134,9 @@ public:
 			   FArrayBox&  wedge, FArrayBox&  stz,
 			   FArrayBox&  zlo, FArrayBox&  zhi,
 #endif
-			   FArrayBox&  S, FArrayBox&  S_new,
-			   FArrayBox&  St, FArrayBox&  St_new,
-			   FArrayBox&  rock_phi, const int*  bc, int nscal);
+			   FArrayBox&  C_old, FArrayBox&  C_new, int sCompC,
+			   FArrayBox&  Sat_old, FArrayBox&  Sat_new, int sCompS,
+			   FArrayBox&  rock_phi, const int*  bc, int nCompC);
 
   void edge_sync_rmn(const Box &grd, const Real *dx, Real dt, 
 		     FArrayBox &uedge, FArrayBox &stx, FArrayBox &kappax,
@@ -251,14 +251,13 @@ public:
 #if (BL_SPACEDIM == 3)                               
 			     FArrayBox& areaz, FArrayBox& wedge, FArrayBox&  zflux,
 #endif
-			     FArrayBox& S, FArrayBox& S_new,
-			     FArrayBox& St, FArrayBox& St_new,
-			     FArrayBox&  tforces, 
+			     FArrayBox& C_old, FArrayBox& C_new, int sCompC,
+			     FArrayBox& Sat_old, FArrayBox& Sat_new, int sCompS,
+			     FArrayBox&  tforces, int sCompF,
 			     FArrayBox&  divu, int fab_ind, 
 			     FArrayBox&  aofs, int aofs_ind,
 			     FArrayBox&  rock_phi, int iconserv,
-			     int         state_ind, const int*  bc,
-			     FArrayBox&  vol, int nscal);
+			     const int*  bc, FArrayBox& vol, int nscal);
 
   virtual void AdvectSyncRmn(const Box &grd, const Real *dx, Real dt, 
 			     FArrayBox &areax, FArrayBox &uedge, FArrayBox &ucorr, 
@@ -425,26 +424,26 @@ public:
 
   // compute the update rule
   // psi^n+1 = psi^n - dt*aofs + dt*tforces
-  void Add_aofs_tf( FArrayBox &Sold,
-		    FArrayBox &Snew,    int start_ind, int num_comp,
-		    FArrayBox &Aofs,    int aofs_ind,
-		    FArrayBox &tforces, int tf_ind,
-		    FArrayBox &Rockphi,
-		    const Box &grd,     Real dt );
+  void Add_aofs_tf( const FArrayBox &Sold,
+		    FArrayBox &Snew, int start_ind, int num_comp,
+		    const FArrayBox &Aofs,    int aofs_ind,
+		    const FArrayBox &tforces, int tf_ind,
+		    const FArrayBox &Rockphi,
+		    const Box &grd, Real dt );
 
-  void Add_aofs_tracer( FArrayBox &Sold,
-			FArrayBox &Snew,    int start_ind, int num_comp,
-			FArrayBox &Aofs,    int aofs_ind,
-			FArrayBox &tforces, int tf_ind,
-			FArrayBox &Rockphi,
+  void Add_aofs_tracer( const FArrayBox &C_old, FArrayBox& C_new, int sCompC, int nCompC,
+			const FArrayBox &Sat_old, const FArrayBox& Sat_new, int sCompS, int nCompS,
+			const FArrayBox &Aofs,    int aofs_ind,
+			const FArrayBox &tforces, int tf_ind,
+			const FArrayBox &Rockphi,
 			const Box &grd, const Array<int>& idx_total, Real dt );
 
   // iconserv==1   => tforces = tforces + visc - divU*S
   // iconserv==0   => tforces = (tforces+visc)/rho
-  void Sum_tf_divu_visc( FArrayBox &S, FArrayBox &tforces,
-			 int s_ind, int num_comp,
-			 FArrayBox &visc,    int v_ind,
-			 FArrayBox &divu, int iconserv );
+  void Sum_tf_divu_visc( const FArrayBox &S, int s_ind, 
+                         FArrayBox &tforces, int f_ind, int num_comp,
+			 const FArrayBox &visc,    int v_ind,
+			 const FArrayBox &divu, int iconserv );
     
   //================ for debugging purposes this is made public
   // internal FABS

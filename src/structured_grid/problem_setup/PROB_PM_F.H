@@ -7,10 +7,13 @@
 #    define FORT_RECINITDATA recinitdata
 #    define FORT_INITPARAMS  initparams
 #    define FORT_TCRPARAMS   tcrparams
+#    define FORT_AUXPARAMS   auxparams
 #    define FORT_KR_INIT     krinit
 #    define FORT_ONE_N_FILL  onenfill
+#    define FORT_ONE_A_FILL  oneafill
 #    define FORT_ALL_N_FILL  allnfill
 #    define FORT_ALL_T_FILL  alltfill
+#    define FORT_ALL_A_FILL  allafill
 #    define FORT_REC_N_FILL  recnfill
 #    define FORT_ADVFILL     advfill
 #    define FORT_XVELFILL    xvelfill
@@ -38,12 +41,15 @@
 #    define FORT_RECINITDATA RECINITDATA
 #    define FORT_INITPARAMS  INITPARAMS
 #    define FORT_TCRPARAMS   TCRPARAMS
+#    define FORT_AUXPARAMS   AUXPARAMS
 #    define FORT_KR_INIT     KRINIT
 #    define FORT_MK_MACCOEF  MKMACCOEF
 #    define FORT_MK_MACDIVU  MKMACDIVU
 #    define FORT_ONE_N_FILL  ONENFILL
+#    define FORT_ONE_A_FILL  ONEAFILL
 #    define FORT_ALL_N_FILL  ALLNFILL
 #    define FORT_ALL_T_FILL  ALLTFILL
+#    define FORT_ALL_A_FILL  ALLAFILL
 #    define FORT_REC_N_FILL  RECNFILL
 #    define FORT_ADVFILL     ADVFILL
 #    define FORT_XVELFILL    XVELFILL
@@ -71,12 +77,15 @@
 #    define FORT_RECINITDATA recinitdata
 #    define FORT_INITPARAMS  initparams
 #    define FORT_TCRPARAMS   tcrparams
+#    define FORT_AUXPARAMS   auxparams
 #    define FORT_KR_INIT     krinit
 #    define FORT_MK_MACCOEF  mkmaccoef
 #    define FORT_MK_MACDIVU  mkmacdivu
 #    define FORT_ONE_N_FILL  onenfill
+#    define FORT_ONE_A_FILL  oneafill
 #    define FORT_ALL_N_FILL  allnfill
 #    define FORT_ALL_T_FILL  alltfill
+#    define FORT_ALL_A_FILL  allafill
 #    define FORT_REC_N_FILL  recnfill
 #    define FORT_ADVFILL     advfill
 #    define FORT_XVELFILL    xvelfill
@@ -104,12 +113,15 @@
 #    define FORT_RECINITDATA recinitdata_
 #    define FORT_INITPARAMS  initparams_
 #    define FORT_TCRPARAMS   tcrparams_
+#    define FORT_AUXPARAMS   auxparams_
 #    define FORT_KR_INIT     krinit_
 #    define FORT_MK_MACCOEF  mkmaccoef_
 #    define FORT_MK_MACDIVU  mkmacdivu_
 #    define FORT_ONE_N_FILL  onenfill_
+#    define FORT_ONE_A_FILL  oneafill_
 #    define FORT_ALL_N_FILL  allnfill_
 #    define FORT_ALL_T_FILL  alltfill_
+#    define FORT_ALL_A_FILL  allafill_
 #    define FORT_REC_N_FILL  recnfill_
 #    define FORT_ADVFILL     advfill_
 #    define FORT_XVELFILL    xvelfill_
@@ -154,7 +166,9 @@
      void FORT_INITPARAMS (int* ncomps, int* nphases, int* model_in, Real* rhoval, 
 			   Real* muval, int* phaseidx,Real* gravity);
     
-     void FORT_TCRPARAMS (int* ntracers);
+     void FORT_TCRPARAMS (int* ntracers); 
+
+     void FORT_AUXPARAMS (int* naux);
 
      void FORT_KR_INIT (Real* sThresh,
                         int* use_shifted_kr_eval);
@@ -162,6 +176,11 @@
      void FORT_COREREACT_PARAMS(int*nreact, Real* rhosec); 
     
      void FORT_ONE_N_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
+			   const int* dom_lo, const int* dom_hi,
+			   const Real* dx, const Real* grd_lo,
+			   const Real* time, const int* bc);     
+
+     void FORT_ONE_A_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
 			   const Real* dx, const Real* grd_lo,
 			   const Real* time, const int* bc);
@@ -172,6 +191,11 @@
 			   const Real* time, const int* bc);
 
      void FORT_ALL_T_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
+			   const int* dom_lo, const int* dom_hi,
+			   const Real* dx, const Real* grd_lo,
+			   const Real* time, const int* bc);     
+
+     void FORT_ALL_A_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
 			   const Real* dx, const Real* grd_lo,
 			   const Real* time, const int* bc);

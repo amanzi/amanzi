@@ -3,12 +3,12 @@
       REAL_T  muval(1:100)
       REAL_T  gravity
       integer phaseidx(1:100)
-      integer ncomps, nphases, nreact, ntracers
+      integer ncomps, nphases, nreact, ntracers, naux
       integer probtype, model
 
       common /probdt1/ probtype, model
       common /probdt2/ denerr, adverr
-      common /probdt3/ ncomps, nphases, nreact, ntracers
+      common /probdt3/ ncomps, nphases, nreact, ntracers, naux
       common /probdt4/ rhoval, muval, phaseidx
       common /probdt5/ gravity
 

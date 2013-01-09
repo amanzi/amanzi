@@ -957,66 +957,68 @@ Godunov::edge_states_tracer (const Box&  grd,
 			     FArrayBox&  zlo,
 			     FArrayBox&  zhi,
 #endif
-			     FArrayBox&  S,
-			     FArrayBox&  S_new,
-			     FArrayBox&  St,
-			     FArrayBox&  St_new,
+			     FArrayBox&  C_old,
+			     FArrayBox&  C_new,
+                             int         sCompC,
+			     FArrayBox&  Sat_old,
+			     FArrayBox&  Sat_new,
+                             int         sCompS,
 			     FArrayBox&  rock_phi,
 			     const int*  bc,
-			     int         nscal)
+			     int         nCompC)
 {
     
-  BL_ASSERT(S.box().contains(work_bx));
+  BL_ASSERT(C_old.box().contains(work_bx));
 
-  BL_ASSERT(S.nComp()       >= nscal      );
-  BL_ASSERT(S_new.nComp()   >= nscal      );
+  BL_ASSERT(C_old.nComp()   >= sCompC + nCompC);
+  BL_ASSERT(C_new.nComp()   >= sCompC + nCompC);
 
-  BL_ASSERT(uedge.nComp()   >= 1          );
-  BL_ASSERT(stx.nComp()     >= nscal      );
+  BL_ASSERT(uedge.nComp()   >= 1     );
+  BL_ASSERT(stx.nComp()     >= nCompC);
 
-  BL_ASSERT(vedge.nComp()   >= 1          );
-  BL_ASSERT(sty.nComp()     >= nscal      );
+  BL_ASSERT(vedge.nComp()   >= 1     );
+  BL_ASSERT(sty.nComp()     >= nCompC);
 
 #if (BL_SPACEDIM == 3)
-  BL_ASSERT(wedge.nComp()   >= 1          );
-  BL_ASSERT(stz.nComp()     >= nscal     );
+  BL_ASSERT(wedge.nComp()   >= 1     );
+  BL_ASSERT(stz.nComp()     >= nCompC);
 #endif    
 
   //
   // Create the bounds and pointers.
   //
-  const int *lo           = grd.loVect();
-  const int *hi           = grd.hiVect();
-  const int *s_lo         = S.loVect();
-  const int *s_hi         = S.hiVect();
-  const int *sn_lo        = S_new.loVect();
-  const int *sn_hi        = S_new.hiVect();
-  const int *st_lo        = St.loVect();
-  const int *st_hi        = St.hiVect();
-  const int *stn_lo       = St_new.loVect();
-  const int *stn_hi       = St_new.hiVect();
-  const int *ww_lo        = work.loVect();
-  const int *ww_hi        = work.hiVect();
-  const Real *s_dat       = S.dataPtr();
-  const Real *sn_dat      = S_new.dataPtr();
-  const Real *st_dat      = St.dataPtr();
-  const Real *stn_dat     = St_new.dataPtr();
+  const int *lo      = grd.loVect();
+  const int *hi      = grd.hiVect();
+  const int *co_lo   = C_old.loVect();
+  const int *co_hi   = C_old.hiVect();
+  const int *cn_lo   = C_new.loVect();
+  const int *cn_hi   = C_new.hiVect();
+  const int *so_lo   = Sat_old.loVect();
+  const int *so_hi   = Sat_old.hiVect();
+  const int *sn_lo   = Sat_new.loVect();
+  const int *sn_hi   = Sat_new.hiVect();
+  const int *ww_lo   = work.loVect();
+  const int *ww_hi   = work.hiVect();
+  const Real *co_dat = C_old.dataPtr(sCompC);
+  const Real *cn_dat = C_new.dataPtr(sCompC);
+  const Real *so_dat = Sat_old.dataPtr(sCompS);
+  const Real *sn_dat = Sat_new.dataPtr(sCompS);
 
 #if (BL_SPACEDIM == 3)
-  const Real *slx_dat   = work.dataPtr(0*nscal);
-  const Real *sly_dat   = work.dataPtr(1*nscal);
-  const Real *slz_dat   = work.dataPtr(2*nscal);
+  const Real *slx_dat   = work.dataPtr(0*nCompC);
+  const Real *sly_dat   = work.dataPtr(1*nCompC);
+  const Real *slz_dat   = work.dataPtr(2*nCompC);
 #else
-  const Real *slx_dat   = work.dataPtr(0*nscal);
-  const Real *sly_dat   = work.dataPtr(1*nscal);
+  const Real *slx_dat   = work.dataPtr(0*nCompC);
+  const Real *sly_dat   = work.dataPtr(1*nCompC);
 #endif
   //
   // C component indices starts from 0, Fortran from 1
   //
-  FORT_ESTATE_TRACER(s_dat, ARLIM(s_lo), ARLIM(s_hi),
+  FORT_ESTATE_TRACER(co_dat, ARLIM(co_lo), ARLIM(co_hi),
+		     cn_dat, ARLIM(cn_lo), ARLIM(cn_hi), 
+		     so_dat, ARLIM(so_lo), ARLIM(so_hi),
 		     sn_dat, ARLIM(sn_lo), ARLIM(sn_hi), 
-		     st_dat, ARLIM(st_lo), ARLIM(st_hi),
-		     stn_dat, ARLIM(stn_lo), ARLIM(stn_hi), 
 		     slx_dat, slxscr,xlo.dataPtr(),xhi.dataPtr(),
 		     uedge.dataPtr(),ARLIM(uedge.loVect()),ARLIM(uedge.hiVect()),
 		     stx.dataPtr(),ARLIM(stx.loVect()),ARLIM(stx.hiVect()),
@@ -1030,7 +1032,7 @@ Godunov::edge_states_tracer (const Box&  grd,
 #endif
 		     rock_phi.dataPtr(),ARLIM(rock_phi.loVect()),ARLIM(rock_phi.hiVect()),
 		     ARLIM(ww_lo), ARLIM(ww_hi),
-		     bc, lo, hi, &dt, dx, &nscal);
+		     bc, lo, hi, &dt, dx, &nCompC);
 
 }
 
@@ -1483,18 +1485,20 @@ Godunov::AdvectTracer (const Box&  grd,
 		       FArrayBox&  wedge,
 		       FArrayBox&  zflux,
 #endif
-		       FArrayBox&  S,
-		       FArrayBox&  S_new,
-		       FArrayBox&  St,
-		       FArrayBox&  St_new,
+		       FArrayBox&  C_old,
+		       FArrayBox&  C_new,
+                       int         sCompC,
+		       FArrayBox&  Sat_old,
+		       FArrayBox&  Sat_new,
+                       int         sCompS,
 		       FArrayBox&  tforces,
+                       int         sCompF,
 		       FArrayBox&  divu,
 		       int         fab_ind,
 		       FArrayBox&  aofs,
 		       int         aofs_ind,
 		       FArrayBox&  rock_phi,
 		       int         iconserv,
-		       int         state_ind,
 		       const int*  bc,
 		       FArrayBox&  vol,
 		       int         nscal)
@@ -1508,8 +1512,9 @@ Godunov::AdvectTracer (const Box&  grd,
 #if (BL_SPACEDIM == 3)             
 		     wedge, zflux, zlo, zhi,
 #endif
-		     S, S_new, St, St_new, rock_phi, 
+		     C_old, C_new, sCompC, Sat_old, Sat_new, sCompS, rock_phi, 
 		     bc, nscal);
+
   //
   // Compute the advective tendency.
   //
@@ -1641,7 +1646,6 @@ Godunov::ComputeAofsRmn (const Box& grd,
 #endif
 		       vol.dataPtr(), ARLIM(vol.loVect()), ARLIM(vol.hiVect()),
 		       lo, hi, &nscal);
-			   
 }
 
 //
@@ -1887,12 +1891,12 @@ Godunov::ConservativeScalMinMax (FArrayBox& Sold,
                                  const int* bc,
                                  const Box& grd)
 {
-  const int *slo        = Sold.loVect();
-  const int *shi        = Sold.hiVect();
-  const int *lo         = grd.loVect();
-  const int *hi         = grd.hiVect();
-  const Real *Sold_dat  = Sold.dataPtr(ind_old_s);
-  const Real *Snew_dat  = Snew.dataPtr(ind_new_s);
+  const int *slo  = Sold.loVect();
+  const int *shi  = Sold.hiVect();
+  const int *lo   = grd.loVect();
+  const int *hi   = grd.hiVect();
+  Real *Sold_dat  = Sold.dataPtr(ind_old_s);
+  Real *Snew_dat  = Snew.dataPtr(ind_new_s);
 
 #if (BL_SPACEDIM == 3)
   Box flatbox(grd);
@@ -1924,14 +1928,14 @@ Godunov::ConvectiveScalMinMax (FArrayBox& Sold,
                                const int* bc,
                                const Box& grd)
 {
-  const int *slo        = Sold.loVect();
-  const int *shi        = Sold.hiVect();
-  const int *snlo       = Snew.loVect();
-  const int *snhi       = Snew.hiVect();
-  const int *lo         = grd.loVect();
-  const int *hi         = grd.hiVect();
-  const Real *Sold_dat  = Sold.dataPtr(ind_old);
-  const Real *Snew_dat  = Snew.dataPtr(ind_new);
+  const int *slo  = Sold.loVect();
+  const int *shi  = Sold.hiVect();
+  const int *snlo = Snew.loVect();
+  const int *snhi = Snew.hiVect();
+  const int *lo   = grd.loVect();
+  const int *hi   = grd.hiVect();
+  Real *Sold_dat  = Sold.dataPtr(ind_old);
+  Real *Snew_dat  = Snew.dataPtr(ind_new);
 
 #if (BL_SPACEDIM == 3)
   Box flatbox(grd);
@@ -2158,17 +2162,17 @@ Godunov::esteig_cpl (const Box&  grd,
 //
 
 void
-Godunov::Add_aofs_tf (FArrayBox& Sold,
-                      FArrayBox& Snew,
-                      int        start_ind,
-                      int        num_comp,
-                      FArrayBox& Aofs,
-                      int        aofs_ind,
-		      FArrayBox& tforces,
-                      int        tf_ind,
-		      FArrayBox& Rockphi,
-                      const Box& grd,
-                      Real       dt)
+Godunov::Add_aofs_tf (const FArrayBox& Sold,
+                      FArrayBox&       Snew,
+                      int              start_ind,
+                      int              num_comp,
+                      const FArrayBox& Aofs,
+                      int              aofs_ind,
+		      const FArrayBox& tforces,
+                      int              tf_ind,
+		      const FArrayBox& Rockphi,
+                      const Box&       grd,
+                      Real             dt)
 {
   BL_ASSERT(Snew.nComp()    >= start_ind + num_comp);
   BL_ASSERT(Sold.nComp()    >= start_ind + num_comp);
@@ -2185,7 +2189,7 @@ Godunov::Add_aofs_tf (FArrayBox& Sold,
   const int *lo     = grd.loVect();
   const int *hi     = grd.hiVect();
   const Real *SOdat = Sold.dataPtr(start_ind);
-  const Real *SNdat = Snew.dataPtr(start_ind);
+  Real *SNdat       = Snew.dataPtr(start_ind);
   const Real *AOdat = Aofs.dataPtr(aofs_ind);
   const Real *TFdat = tforces.dataPtr(tf_ind);
   const Real *pdat  = Rockphi.dataPtr();
@@ -2199,25 +2203,37 @@ Godunov::Add_aofs_tf (FArrayBox& Sold,
 }
 
 void
-Godunov::Add_aofs_tracer (FArrayBox& Sold,
-			  FArrayBox& Snew,
-			  int        start_ind,
-			  int        num_comp,
-			  FArrayBox& Aofs,
-			  int        aofs_ind,
-			  FArrayBox& tforces,
-			  int        tf_ind,
-			  FArrayBox& Rockphi,
-			  const Box& grd,
+Godunov::Add_aofs_tracer (const FArrayBox&  C_old,
+			  FArrayBox&        C_new,
+                          int               sCompC,
+                          int               nCompC,
+			  const FArrayBox&  Sat_old,
+			  const FArrayBox&  Sat_new,
+                          int               sCompS,
+                          int               nCompS,
+			  const FArrayBox&  Aofs,
+			  int               sCompA,
+			  const FArrayBox&  tforces,
+			  int               sCompF,
+			  const FArrayBox&  Rockphi,
+			  const Box&        grd,
 			  const Array<int>& idx_total,
-			  Real       dt)
+			  Real              dt)
 {
-  BL_ASSERT(Snew.nComp()    >= start_ind + num_comp);
-  BL_ASSERT(Sold.nComp()    >= start_ind + num_comp);
-  BL_ASSERT(Aofs.nComp()    >= aofs_ind  + num_comp);
+  BL_ASSERT(C_new.nComp()   >= sCompC + nCompC);
+  BL_ASSERT(C_old.nComp()   >= sCompC + nCompC);
+  BL_ASSERT(Sat_new.nComp() >= sCompS + nCompS);
+  BL_ASSERT(Sat_old.nComp() >= sCompS + nCompS);
+  BL_ASSERT(Aofs.nComp()    >= sCompA + nCompC);
 
-  const int *slo    = Sold.loVect();
-  const int *shi    = Sold.hiVect();
+  const int *colo   = C_old.loVect();
+  const int *cohi   = C_old.hiVect();
+  const int *cnlo   = C_new.loVect();
+  const int *cnhi   = C_new.hiVect();
+  const int *solo   = Sat_old.loVect();
+  const int *sohi   = Sat_old.hiVect();
+  const int *snlo   = Sat_new.loVect();
+  const int *snhi   = Sat_new.hiVect();
   const int *alo    = Aofs.loVect();
   const int *ahi    = Aofs.hiVect();    
   const int *tlo    = tforces.loVect();
@@ -2227,19 +2243,31 @@ Godunov::Add_aofs_tracer (FArrayBox& Sold,
   const int *lo     = grd.loVect();
   const int *hi     = grd.hiVect();
   const int idx_n   = idx_total.size();
-  const Real *SOdat = Sold.dataPtr(start_ind);
-  const Real *SNdat = Snew.dataPtr(start_ind);
-  const Real *AOdat = Aofs.dataPtr(aofs_ind);
-  const Real *TFdat = tforces.dataPtr(tf_ind);
+  const Real *COdat = C_old.dataPtr(sCompC);
+  Real *CNdat       = C_new.dataPtr(sCompC);
+  const Real *SOdat = Sat_old.dataPtr();
+  const Real *SNdat = Sat_new.dataPtr();
+  const Real *AOdat = Aofs.dataPtr(sCompA);
+  const Real *TFdat = tforces.dataPtr(sCompF);
   const Real *pdat  = Rockphi.dataPtr();
+
+  Array<int> idx_C;
+  if (idx_n>0) {
+    idx_C.resize(idx_n);
+    for (int i=0; i<idx_n; ++i) {
+      idx_C[i] = idx_total[i] - nCompS;
+    }
+  }
     
-  FORT_UPDATE_AOFS_TRACER(SOdat, ARLIM(slo), ARLIM(shi), 
-			  SNdat, ARLIM(slo), ARLIM(shi),
+  FORT_UPDATE_AOFS_TRACER(COdat, ARLIM(colo), ARLIM(cohi), 
+			  CNdat, ARLIM(cnlo), ARLIM(cnhi),
+			  SOdat, ARLIM(solo), ARLIM(sohi), 
+			  SNdat, ARLIM(snlo), ARLIM(snhi),
 			  AOdat, ARLIM(alo), ARLIM(ahi),
 			  TFdat, ARLIM(tlo), ARLIM(thi),
 			  pdat, ARLIM(plo), ARLIM(phi),
-			  lo, hi, idx_total.dataPtr(), &idx_n,
-			  &dt, &num_comp);
+			  lo, hi, idx_C.dataPtr(), &idx_n,
+			  &dt, &nCompC, &nCompS);
 }
 
 //
@@ -2252,14 +2280,15 @@ Godunov::Add_aofs_tracer (FArrayBox& Sold,
 //
 
 void
-Godunov::Sum_tf_divu_visc (FArrayBox& S,
-                           FArrayBox& tforces,
-                           int        s_ind,
-                           int        num_comp,
-                           FArrayBox& visc,
-                           int        v_ind,
-                           FArrayBox& divu,
-                           int        iconserv)
+Godunov::Sum_tf_divu_visc (const FArrayBox& S,
+                           int              s_ind,
+                           FArrayBox&       tforces,
+                           int              f_ind,
+                           int              num_comp,
+                           const FArrayBox& visc,
+                           int              v_ind,
+                           const FArrayBox& divu,
+                           int              iconserv)
 {
   BL_ASSERT(S.nComp()       >= s_ind+num_comp);
   BL_ASSERT(divu.nComp()    == 1             );
@@ -2274,7 +2303,7 @@ Godunov::Sum_tf_divu_visc (FArrayBox& S,
   const int *vlo    = visc.loVect();
   const int *vhi    = visc.hiVect();
   const Real *Sdat  = S.dataPtr(s_ind);
-  const Real *TFdat = tforces.dataPtr(s_ind);
+  Real *TFdat       = tforces.dataPtr(f_ind);
   const Real *DUdat = divu.dataPtr();
   const Real *VIdat = visc.dataPtr(v_ind);
      

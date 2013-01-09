@@ -225,22 +225,22 @@ Usage:
 
   * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
-   * [U] `"Start`" [double]: Initial value for time to generate a steady solution
+   * [SU] `"Start`" [double]: Initial value for time to generate a steady solution
 
-   * [U] `"Switch`" [double]: Time when Chemistry Model and Transport Model are set to user specified input and Amanzi switches to time-accurate solution approach.
+   * [SU] `"Switch`" [double]: Time when Chemistry Model and Transport Model are set to user specified input and Amanzi switches to time-accurate solution approach.
 
-   * [U] `"End`" [double]: The end of the time-integration period
+   * [SU] `"End`" [double]: The end of the time-integration period
     
-   * [U] `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
+   * [SU] `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
 
-   * [U] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+   * [SU] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
    * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
 
- * [U] `"Time Period Control`" (Optional)
+ * [SU] `"Time Period Control`" (Optional)
 
-  * [U] `"Start Times`" [Array double]: List of times at which the current time-integrator will be reinitialized.
-  * [U] `"Initial Time Step`"[Array double]: The initial time step for each time period. If unspecified, Amanzi 
+  * [SU] `"Start Times`" [Array double]: List of times at which the current time-integrator will be reinitialized.
+  * [SU] `"Initial Time Step`"[Array double]: The initial time step for each time period. If unspecified, Amanzi 
     will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
   * [S] `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
     scaled by this factor (default value: 1)
@@ -391,13 +391,91 @@ Usage:
 
   If the structured option is active, the following list of parameters is valid (Note: all lists here accept an optional sublist `"Expert Settings`".  Parameters listed in the expert area are not checked for validity/relevance during input reading stage, but are simply passed to the underlying implementation.)
 
-  * [S] `"Basic Algorithm Settings`" [list] Additional controls for details of the structured-grid algorithm. Optional.
+  * [S] `"Basic Algorithm Control`" [list] Additional controls for details of the structured-grid algorithm. Optional.
+
+   * [S] `"Expert Settings`" [int] Options passed to Amanzi that are not specifically checked for validity/relevance
+
+     * [S] `"do_richard_init_to_steady`" [int]  If 1, triggers a psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"0`", suggested range: 0 ... 1)
+
+     * [S] `"richard_init_to_steady_verbose`" [int]  Verbosity level of psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"0`", suggested range: 0 ... 4)
+
+     * [S] `"steady_max_pseudo_time`" [double]  Stopping time for the psuedo-transient time-evolution of the initial data, prior to entering the `"Execution Mode`" phases descussed above.  (default: `"1.e10`", suggested range: 0 ... 1.e12)
+
+     * [S] `"steady_limit_iterations`" [int]  Maximum number of Newton iterations to attempt when solving for a single time step evolution of Richards equation.  (default: `"20`", suggested range: 5 ... 200)
+
+     * [S] `"steady_time_step_reduction_factor`" [double]  Scale factor to reduce time step size for retry if Newton iterations fail.  (default: `"0.8`", suggested range: 0.1 ... 0.99)
+
+     * [S] `"steady_min_iterations`" [int]  Maximum iteration count of successful Newton solve leading to time step increase of `"steady_time_increase_factor`".  (default: `"10`", suggested range: 5 ... 100)
+
+     * [S] `"steady_time_step_increase_factor`" [double]  Scale factor to increase next step after successful solve with less than `"steady_min_iterations`" newton iterations.  (default: `"1.25`", suggested range: 1.1 ... 10)
+
+     * [S] `"steady_min_iterations_2`" [int]  Iteration count of successful Newton solve leading to time step increase of `"steady_time_increase_factor_2`".  (default: `"0`", suggested range: 5 ... 100)
+
+     * [S] `"steady_time_step_increase_factor_2`" [double]  Scale factor to increase next step after successful solve if iteration count of successful Newton solve is less than `"steady_min_iterations_2`".  (default: `"10`", suggested range: 1.1 ... 10)
+
+     * [S] `"steady_max_consecutive_failures_1`" [int]  Number of failed time step attempts before reducing time step size by factor of `"steady_time_step_retry_factor_1`" (default: `"3`", suggested range: 5 ... 10)
+
+     * [S] `"steady_time_step_retry_factor_1`" [double]  Scale factor to decrease time step after `"steady_max_consecutive_failures_1`" failed time steps.  (default: `"0.5`", suggested range: 0.1 ... 0.5)
+
+     * [S] `"steady_max_consecutive_failures_2`" [int]  Number of failed time step attempts before reducing time step size by factor of `"steady_time_step_retry_factor_2`" (default: `"4`", suggested range: 5 ... 10)
+
+     * [S] `"steady_time_step_retry_factor_2`" [double]  Scale factor to decrease time step after `"steady_max_consecutive_failures_2`" failed time steps.  (default: `"0.01`", suggested range: 0.01 ... 0.1)
+
+     * [S] `"steady_time_step_retry_factor_f`" [double]  Scale factor to decrease time step after `"steady_max_consecutive_failures_2`" + 1 failed time steps.  (default: `"0.001`", suggested range: 0.001 ... 0.01)
+
+     * [S] `"steady_max_num_consecutive_success`" [int]  Number of consecutive successful time step attempts, after which the time step will be increased by factor of `"steady_extra_time_step_increase_factor`" (default: `"15`", suggested range: 5 ... 100)
+
+     * [S] `"steady_extra_time_step_increase_factor`" [double]  Scale factor to increase time step after `"steady_max_num_consecutive_success`" successful time steps.  (default: `"10`", suggested range: 5 ... 100)
+
+     * [S] `"steady_abort_on_psuedo_timestep_failure`" [int]  If > 0, abort the run when the solver fails to successfully complete a time step.  (default: `"0`", suggested values: 0, 1)
+
+     * [S] `"steady_use_PETSc_snes`" [bool]  If true, use a backward Euler discretization of Richards equation, and use the PETSC SNES software to drive the solution of the system.  (default: `"True`")
+
+     * [S] `"steady_limit_function_evals`" [int]  If > 0, the maximum number of function evaluations during a single PETSC SNES time step solve.  Aborts if more are attempted.  (default: `"-1`", suggested values: -1, 1 ... 1.e10)
+
+     * [S] `"richard_solver_verbose`" [int]  Verbosity of Richard solve. (default: `"1`", suggested values: 0 ... 3)
+
+     * [S] `"richard_max_ls_iterations`" [int]  Maximum number of line search attempts before declaring Newton solver failure. (default: `"10`", suggested values: 5 ... 15)
+
+     * [S] `"richard_ls_reduction_factor`" [double]  Factor to scale line search parameter for subsequent line search attempt. (default: `"0.1`", suggested values: .01 ... 0.9)
+
+     * [S] `"richard_min_ls_factor`" [double]  Smallest allowable line search factor before declaring Newton solver failure. (default: `"1.e-8`", suggested values: .001 ... 1.e-10)
+
+     * [S] `"richard_ls_acceptance_factor`" [double]  Maximum factor by which residual from previous Newton iterate is reduced by scaled Newton update (default: `"1.4`", suggested values: .9 ... 200)
+
+     * [S] `"richard_monitor_line_search`" [int]  If > 0, print progress of line search. (default: `"0`", suggested values: 0, 1)
+
+     * [S] `"richard_monitor_linear_solve`" [int]  If > 0, print progress of linear solve for Newton systems. (default: `"0`", suggested values: 0, 1)
+
+     * [S] `"richard_use_fd_jac`" [bool]  If True, use finite-difference approximation for Jacobian in Newton system. (default: `"True`") - ANALYTIC JACOBIAN NOT CURRENTLY SUPPORTED
+
+     * [S] `"richard_perturbation_scale_for_J`" [double]  Perturbation on scaled pressure values used to compute finite-difference Jacobian. (default: `"1.e-8`", suggested values: 1.e-12 ... 1.e-6)
+
+     * [S] `"richard_use_dense_Jacobian`" [bool]  If True, use dense storage methods for Newton system. (default: `"False`")
+
+     * [S] `"richard_upwind_krel`" [bool]  If True, use upwind saturation values to evaluate the relative permeability at a cell face.  (default: `"True`")
+
+     * [S] `"richard_pressure_maxorder`" [int]  Polynomial order used to construct pressure gradients at coarse-fine interfaces. (default: `"3`", suggested values: 1 ... 4)
+
+     * [S] `"richard_scale_solution_before_solve`" [bool] If True, scale pressure variable in SNES prior to solve. (default: `"True`")
+
+     * [S] `"richard_semi_analytic_J`" [bool] If True, form numerical Jacobian by finite-differencing divergence of Darcy flux but using analytic form of time derivative.  (default: `"True`")
+
+     * [S] `"steady_do_grid_sequence`" [bool] If True and richard_init_to_steady, psuedo-evolve coarsest only level solution, then interpolate solution to next finer level and repeat.  (default: `"True`")
+
+     * [S] `"steady_grid_sequence_new_level_dt_factor`" [Array double] Factor by which to scale final psuedo time step from previous (coarser) steady solve in order to compute initial psuedo time step for next steady solve.  If more than one value given, each will be used in successive solves.
+
+     * [S] `"max_n_subcycle_transport`" [int] Maximum number of level-0 subcycled transport time steps for each flow step.  Transport will be limited by an advective CFL stability constriant, so this will contribute to limiting the over step size taken. (default: `"10`", suggested values: 1 ... 20)
+
+     * [S] `"cfl`" [double] Fraction of stability-limited maximum time step allowed by the advective transport scheme.  (default: `"1`", suggested values: .01 ... 1)
 
   * [S] `"Adaptive Mesh Refinement`" [list] Additional details related to the adaptive mesh refinement algorithm. Optional.
 
    * [S] `"Number Of AMR Levels`" [int] Maximum number of adaptive levels, including the base grid (default=1)
 
    * [S] `"Refinement Ratio`" [Array int] Grid spacing ratio between adjacent refinement levels.  One value required for each coarse level. Only values of 2 or 4 are supported.
+
+   * [S] `"Do AMR Subcycling`" [bool] For integration of transport and chemistry, AMR subcycling time-steps each level with the same ratio of dx/dt, the levels are integrated and synchronized recursively.  If "`False"`, the time step is identical across levels.
 
    * [S] `"Regrid Interval`" [Array int] Number of base (coarse) grid time steps between regrid operations (one value > 0 required for each coarse level) 
 
@@ -436,6 +514,8 @@ Usage:
    * [S] `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
 
    * [S] `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
+
+
 
 Example:
 
@@ -764,6 +844,18 @@ the following set of physical properties using the supported models described be
 
 * [SU] "Material Properties" [list] can accept multiple lists for named material types (MATERIAL)
 
+ * [S] "Permeability Output File" [string] Name of file used to cache intrinsic permeabilities precomputed on a uniform grid at the finest resolution covering the entire domain
+
+ * [S] "Permeability Output PlotFile" [string] Name of file used to cache intrinsic permeabilities precomputed over the entire domain for all levels of refinement
+
+ * [S] "Porosity Output File" [string] Name of file used to cache porosity precomputed on a uniform grid at the finest resolution covering the entire domain
+
+ * [S] "Porosity Output PlotFile" [string] Name of file used to cache porosity precomputed over the entire domain for all levels of refinement
+
+ * [S] "Porosity Input PlotFile" [string] Name of file that contains cached porosity precomputed over the entire domain for all levels of refinement
+
+ * [S] "Saturation Threshold For Kr" [double] Global threshold in saturation above which the analytic forms for van Genuchten are replaced with a Hermite polynomial fit 
+
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
   * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`", `"Porosity: Random`", `"Porosity: GSLib`", `"Porosity: File`" (see below)
@@ -847,7 +939,7 @@ The following models are currently supported for capillary pressure (Section 3.3
  * [SU] `"Relative Permeability`" [string] (either (0) [U] `"Burdine`", or (2) [SU] `"Mualem`") determines n
    in Equation 3.10, and the form of relative permeability (either Equation 3.12, or Equation 3.11, respectively).
 
- * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing. 
+ * [U] `"krel smoothing interval`" [double] If this parameter is positive, a cubic hermite interpolant in used in place of the van Genuchten relative permeability function when the capillary pressure is in the interval [0.0, krel smoothing interval]. The default for this parameter is 0.0, such that there is no relative premeability smoothing.  Note that running Amanzi under the Structured Grid option, an alternative comparable feature is available as a global option (see `"Saturation Threshold For Kr`" discussed above).
 
 * [U] `"Capillary Pressure: Brooks Corey`" [list] requires
 

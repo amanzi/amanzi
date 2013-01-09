@@ -5832,12 +5832,14 @@ c
       end
 
       subroutine FORT_UPDATE_AOFS_TRACER(
-     &     s,       DIMS(s),
+     &     co,      DIMS(co),
+     &     cn,      DIMS(cn),
+     &     so,      DIMS(so),
      &     sn,      DIMS(sn),
      &     aofs,    DIMS(aofs),
      &     tforces, DIMS(tf),
      &     rockphi, DIMS(rockphi),
-     &     lo,hi, idx_total, idx_total_n, dt, nvar)
+     &     lo,hi, idx_total, idx_total_n, dt, nc, nt)
 c
 c     update tracer with an advective tendency
 c     and a forcing term
@@ -5846,8 +5848,10 @@ c
       
 #include "probdata.H"
 
-      integer nvar
-      integer DIMDEC(s)
+      integer nc, nt
+      integer DIMDEC(co)
+      integer DIMDEC(cn)
+      integer DIMDEC(so)
       integer DIMDEC(sn)
       integer DIMDEC(aofs)
       integer DIMDEC(tf)
@@ -5856,31 +5860,30 @@ c
       integer idx_total_n
       integer idx_total(idx_total_n)
       REAL_T dt
-      REAL_T s(DIMV(s),nvar)
-      REAL_T sn(DIMV(sn),nvar)
-      REAL_T aofs(DIMV(aofs),nvar)
-      REAL_T tforces(DIMV(tf),nvar-ncomps)
+      REAL_T co(DIMV(co),nt)
+      REAL_T cn(DIMV(cn),nt)
+      REAL_T so(DIMV(so),nc)
+      REAL_T sn(DIMV(sn),nc)
+      REAL_T aofs(DIMV(aofs),nt)
+      REAL_T tforces(DIMV(tf),nt)
       REAL_T rockphi(DIMV(rockphi))
 
       integer i, j, k, n, idx
-      REAL_T  sat, satn
 
-!$omp parallel do private(i,j,k,n,idx,sat,satn)
+!$omp parallel do private(i,j,k,n,idx)
+
+c     First update all tracers with no change
+      cn(:,:,:,1:nt) = co(:,:,:,1:nt)
+
       do k = lo(3), hi(3)
          do j = lo(2), hi(2) 
             do i = lo(1), hi(1) 
-               do n = ncomps+1,nvar
-                  sn(i,j,k,n) = s(i,j,k,n)
-               end do
-
-               sat = s(i,j,k,1)/rhoval(1)
-               satn = sn(i,j,k,1)/rhoval(1)
                do n = 1,idx_total_n
                   idx = idx_total(n)
-                  if (satn .gt. zero) then
-                     sn(i,j,k,idx) = (sat*s(i,j,k,idx)
-     &                    - dt*aofs(i,j,k,idx)/rockphi(i,j,k))/satn
-     &                    + dt*tforces(i,j,k,idx-ncomps)
+                  if (sn(i,j,k,1) .gt. zero) then
+                     cn(i,j,k,idx) = (so(i,j,k,1)*co(i,j,k,idx)
+     &                    - dt*aofs(i,j,k,idx)/rockphi(i,j,k))/sn(i,j,k,1)
+     &                    + dt*tforces(i,j,k,idx)
                   end if
                end do
             end do
