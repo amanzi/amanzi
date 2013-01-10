@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi input format version" type="string" value="0.9.2"/>
+  <Parameter name="Amanzi input format version" type="string" value="1.1.0"/>
 
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="Transient Richards"/>

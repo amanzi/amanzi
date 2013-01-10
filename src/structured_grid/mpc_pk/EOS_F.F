@@ -56,6 +56,21 @@ c ::: -----------------------------------------------------------
       end
 
 c ::: -----------------------------------------------------------
+c ::: Initiate tracers data in probdata.H 
+c ::: -----------------------------------------------------------
+      subroutine FORT_AUXPARAMS(naux_in)
+
+      implicit none
+
+#include "probdata.H"      
+
+      integer naux_in
+  
+      naux = naux_in
+
+      end
+
+c ::: -----------------------------------------------------------
 c ::: Initiate data in probdata.H for COREREACT
 c ::: -----------------------------------------------------------
       subroutine FORT_COREREACT_PARAMS(nreact_in,rhosec_in)

@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi input format version" type="string" value="0.9.2"/>
+  <Parameter name="Amanzi input format version" type="string" value="1.1.0"/>
 
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="Transient Richards"/>
@@ -35,33 +35,48 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
-	<Parameter name="transport subcycling" type="bool" value="true"/>
-	<Parameter name="max chemistry to transport timestep ratio" type="double" value="1.0"/>
-        <Parameter name="pseudo time integrator initialize with darcy" type="bool" value="true"/> 
-        <Parameter name="pseudo time integrator clipping saturation value" type="double" value="0.9"/>
-        <Parameter name="pseudo time integrator time integration method" type="string" value="Picard"/> 
-        <Parameter name="pseudo time integrator preconditioner" type="string" value="Trilinos ML"/> 
-        <Parameter name="pseudo time integrator linear solver" type="string" value="AztecOO"/> 
-        <Parameter name="pseudo time integrator error control options" type="Array(string)" value="{pressure}"/>
-        <Parameter name="pseudo time integrator picard convergence tolerance" type="double" value="1e-10"/>
-        <Parameter name="pseudo time integrator picard maximum number of iterations" type="int" value="1200"/> 
-        <Parameter name="steady max time step" type="double" value="6.0e+10"/>
-        <Parameter name="steady max iterations" type="int" value="50"/>
-        <Parameter name="steady min iterations" type="int" value="8"/>
-        <Parameter name="steady limit iterations" type="int" value="100"/>
-        <Parameter name="steady nonlinear tolerance" type="double" value="1.0e-5"/>
-        <Parameter name="steady time step reduction factor" type="double" value="0.5"/>
-        <Parameter name="steady time step increase factor" type="double" value="2.0"/>
-        <Parameter name="transient max iterations" type="int" value="15"/>
-        <Parameter name="transient min iterations" type="int" value="10"/>
-        <Parameter name="transient limit iterations" type="int" value="20"/>
-        <Parameter name="transient nonlinear tolerance" type="double" value="1.0e-5"/>
-        <Parameter name="transient max time step" type="double" value="6.0e+10"/>
-        <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
-        <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
-        <Parameter name="transient time step increase factor" type="double" value="1.25"/>
-        <Parameter name="ML cycle applications" type="int" value="6"/>
+          <ParameterList name="Transport Process Kernel">
+            <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+            <Parameter name="transport subcycling" type="bool" value="true"/>
+          </ParameterList>
+          <ParameterList name="Chemistry Process Kernel">
+            <Parameter name="max chemistry to transport timestep ratio" type="double" value="1.0"/>
+          </ParameterList>
+          <ParameterList name="Steady-State Implicit Time Integration">
+            <Parameter name="steady max time step" type="double" value="6.0e+10"/>
+            <Parameter name="steady max iterations" type="int" value="50"/>
+            <Parameter name="steady min iterations" type="int" value="8"/>
+            <Parameter name="steady limit iterations" type="int" value="100"/>
+            <Parameter name="steady nonlinear tolerance" type="double" value="1.0e-5"/>
+            <Parameter name="steady time step reduction factor" type="double" value="0.5"/>
+            <Parameter name="steady time step increase factor" type="double" value="2.0"/>
+          </ParameterList>
+          <ParameterList name="Transient Implicit Time Integration">
+            <Parameter name="transient max iterations" type="int" value="15"/>
+            <Parameter name="transient min iterations" type="int" value="10"/>
+            <Parameter name="transient limit iterations" type="int" value="20"/>
+            <Parameter name="transient nonlinear tolerance" type="double" value="1.0e-5"/>
+            <Parameter name="transient max time step" type="double" value="6.0e+10"/>
+            <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
+            <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
+          <ParameterList name="Steady-State Pseudo-Time Implicit Solver">
+            <Parameter name="pseudo time integrator initialize with darcy" type="bool" value="true"/>
+            <Parameter name="pseudo time integrator clipping saturation value" type="double" value="0.9"/>
+            <Parameter name="pseudo time integrator time integration method" type="string" value="Picard"/>
+            <Parameter name="pseudo time integrator preconditioner" type="string" value="Trilinos ML"/>
+            <Parameter name="pseudo time integrator linear solver" type="string" value="AztecOO"/>
+            <Parameter name="pseudo time integrator error control options" type="Array(string)" value="{pressure}"/>
+            <Parameter name="pseudo time integrator picard convergence tolerance" type="double" value="1e-10"/>
+            <Parameter name="pseudo time integrator picard maximum number of iterations" type="int" value="1200"/>
+          </ParameterList>
+          <ParameterList name="Preconditioners">
+            <ParameterList name="Trilinos ML">
+              <Parameter name="pseudo time integrator preconditioner" type="string" value="Trilinos ML"/>
+              <Parameter name="ML cycle applications" type="int" value="6"/>
+            </ParameterList>
+          </ParameterList>
       </ParameterList>
     </ParameterList> <!-- Numerical Control Parameters -->
   </ParameterList> <!-- Execution Control -->

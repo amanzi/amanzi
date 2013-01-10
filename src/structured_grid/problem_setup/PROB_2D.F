@@ -28,7 +28,7 @@ c ::: init      => TRUE if called at start of problem run
 c :::              FALSE if called from restart
 c ::: name      => name of "probin" file
 c ::: namlen    => length of name
-c ::: strttime <=  start problem with this time variable
+c ::: strttime <=  start problem with this time variable 
 c ::: 
 c ::: -----------------------------------------------------------
       subroutine FORT_PROBINIT (init,name,namlen,problo,probhi)
@@ -512,6 +512,101 @@ c ::: -----------------------------------------------------------
       end do
       
       do n = 1,ntracers
+        call filcc(rho(ARG_L1(rho),ARG_L2(rho),n),
+     &             DIMS(rho),domlo,domhi,dx,xlo,bctmp)
+      end do
+
+      end
+
+c ::: -----------------------------------------------------------
+c ::: This routine is called during a filpatch operation of Auxilliary 
+c ::: when the patch to be filled falls outside the interior
+c ::: of the problem domain.  You are requested to supply the
+c ::: data outside the problem interior in such a way that the
+c ::: data is consistant with the types of the boundary conditions
+c ::: you specified in the C++ code.  
+c ::: 
+c ::: NOTE:  you can assume all interior cells have been filled
+c :::        with valid data and that all non-interior cells have
+c ::         have been filled with a large real number.
+c ::: 
+c ::: INPUTS/OUTPUTS:
+c ::: 
+c ::: rho      <=  density array
+c ::: DIMS(rho) => index extent of rho array
+c ::: domlo,hi  => index extent of problem domain
+c ::: dx        => cell spacing
+c ::: xlo       => physical location of lower left hand
+c :::	           corner of rho array
+c ::: time      => problem evolution time
+c ::: bc	=> array of boundary flags bc(BL_SPACEDIM,lo:hi)
+c ::: -----------------------------------------------------------
+
+      subroutine FORT_ONE_A_FILL (rho,DIMS(rho),domlo,domhi,dx,xlo,time,bc)
+
+      integer  DIMDEC(rho)
+      integer  domlo(SDIM), domhi(SDIM)
+      integer  bc(SDIM,2)
+      REAL_T   dx(SDIM), xlo(SDIM), time
+      REAL_T   rho(DIMV(rho))
+      
+      integer  i,j
+      integer  bctmp(SDIM,2)
+
+      do j=1,2
+         do i=1,SDIM
+            bctmp(i,j) = FOEXTRAP
+         end do
+      end do
+
+      call filcc(rho,DIMS(rho),domlo,domhi,dx,xlo,bctmp)
+
+     
+      end
+
+c ::: -----------------------------------------------------------
+c ::: This routine is called during a filpatch operation of Auxilliary 
+c ::: when the patch to be filled falls outside the interior
+c ::: of the problem domain.  You are requested to supply the
+c ::: data outside the problem interior in such a way that the
+c ::: data is consistant with the types of the boundary conditions
+c ::: you specified in the C++ code.  
+c ::: 
+c ::: NOTE:  you can assume all interior cells have been filled
+c :::        with valid data and that all non-interior cells have
+c ::         have been filled with a large real number.
+c ::: 
+c ::: INPUTS/OUTPUTS:
+c ::: 
+c ::: rho      <=  density array
+c ::: DIMS(rho) => index extent of rho array
+c ::: domlo,hi  => index extent of problem domain
+c ::: dx        => cell spacing
+c ::: xlo       => physical location of lower left hand
+c :::	           corner of rho array
+c ::: time      => problem evolution time
+c ::: bc	=> array of boundary flags bc(BL_SPACEDIM,lo:hi)
+c ::: -----------------------------------------------------------
+
+      subroutine FORT_ALL_A_FILL (rho,DIMS(rho),domlo,domhi,dx,xlo,time,bc)
+
+#include "probdata.H"
+
+      integer  DIMDEC(rho)
+      integer  domlo(SDIM), domhi(SDIM)
+      integer  bc(SDIM,2)
+      REAL_T   dx(SDIM), xlo(SDIM), time
+      REAL_T   rho(DIMV(rho),naux)
+      
+      integer  i,j,n
+      integer  bctmp(SDIM,2)
+
+      do j=1,2
+         do i=1,SDIM
+            bctmp(i,j) = FOEXTRAP
+         end do
+      end do
+      do n = 1,naux 
         call filcc(rho(ARG_L1(rho),ARG_L2(rho),n),
      &             DIMS(rho),domlo,domhi,dx,xlo,bctmp)
       end do

@@ -150,20 +150,83 @@ EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
 }
 
 bool
+EventCoord::CycleEvent::ThisEventInit(int cycle) const
+{
+  if (type == SPS_CYCLES) {
+    if ( (stop > 0  &&  cycle > stop)  ||  (cycle < start) ) {
+      return false;
+    }
+    
+    if ( ( ( stop < 0 ) || ( cycle <= stop ) ) && ( cycle >= start) ) {
+      return true;
+    }
+  }
+  else {
+    for (int i=0; i<cycles.size(); ++i) {
+      if (cycle == cycles[i]) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool
+EventCoord::TimeEvent::ThisEventInit(Real t) const
+{
+    if (type == SPS_TIMES)
+    {
+        Real teps = period * 1.e-8;
+
+        if ( (stop > 0  &&  t > stop)  ||  (t < start - teps) )
+        {
+            return false;
+        }
+        
+        if ( ( ( stop < 0 ) || ( t - teps <= stop ) )
+             &&  t + teps >= start )
+        {
+          return true;
+        }
+    }
+    else {
+      for (int i=0; i<times.size(); ++i) {
+        Real teps;
+        if (times.size()==1) {
+          teps = times[0];
+        } else if (i>0) {
+          teps = times[i] - times[i-1];
+        } else if (i<times.size()-1) {
+          teps = times[i+1] - times[i];
+        } else {
+          BoxLib::Abort("bad logic in time event processing");
+        }
+        teps *= 1.e-8;
+
+        if ( (t - teps <= times[i]) && (t + teps >= times[i]) ) {
+          return true;
+        }
+      }
+    }
+    return false;
+}
+
+
+bool
 EventCoord::TimeEvent::ThisEventDue(Real t, Real dt, Real& dt_red) const
 {
     dt_red = dt;
     if (type == SPS_TIMES)
     {
-        if ( (stop > 0  &&  t > stop)  ||  (t + dt < start) )
+      Real teps = period * 1.e-8;
+
+        if ( (stop > 0  &&  t > stop)  ||  (t + dt < start - teps) )
         {
             return false;
         }
         
-        Real teps = period * 1.e-8;
-
         if ( ( ( stop < 0 ) || ( t + teps <= stop ) )
-             && ( t + dt >= start - teps) )
+             &&  t + dt>= start - teps )
         {
             // Is on interval boundary
             int told_interval = (t - start)/period;
@@ -276,6 +339,31 @@ EventCoord::NextEvent(Real t, Real dt, int cycle, int dcycle) const
     }
 
     return std::pair<Real,Array<std::string> > (delta_t,events);
+}
+
+Array<std::string>
+EventCoord::InitEvent(Real t, int cycle) const
+{
+  Array<std::string> events;
+  for (std::map<std::string,Event*>::const_iterator it=cycleEvents.begin(); it!=cycleEvents.end(); ++it) {
+    const std::string& name = it->first;
+    const CycleEvent* event = dynamic_cast<const CycleEvent*>(it->second);
+    const CycleEvent::CType& type = event->Type();
+    if (event->ThisEventInit(cycle)) {
+      events.push_back(name);
+    }
+  }
+  
+  for (std::map<std::string,Event*>::const_iterator it=timeEvents.begin(); it!=timeEvents.end(); ++it) {
+    const std::string& name = it->first;
+    const TimeEvent* event = dynamic_cast<const TimeEvent*>(it->second);
+    TimeEvent::TType type = event->Type();
+    if (event->ThisEventInit(t)) {
+      events.push_back(name);
+    }
+  }
+  
+  return events;
 }
 
 std::ostream& operator<< (std::ostream& os, const CycleEvent& rhs)

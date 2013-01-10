@@ -219,7 +219,9 @@ public:
   friend class Diffusion;
   friend class Observation;
 
-    RichardNLSdata BuildInitNLS();
+  enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
+
+  RichardNLSdata BuildInitNLS();
 
   PorousMedia ();
 
@@ -401,12 +403,19 @@ public:
                       Real& dt_taken,
                       Real& dt_suggest);
 
+  void advance_richards_transport_dt(Real t);
+
+  void advance_saturated_transport_dt();
+
   bool advance_richards_transport_chemistry(Real  t,
 					    Real  dt,
 					    int   iteration,
 					    Real& dt_new, 
 					    bool  do_subcycle,
-					    bool  do_recursive);
+					    bool  do_recursive,
+                                            bool  use_cached_sat);
+
+  void set_saturated_velocity(Real t_this, Real t_crse);
 
   void advance_tracer  (Real time,
 			Real dt);
@@ -572,10 +581,11 @@ public:
 
 
   void tracer_advection (MultiFab* u_mac,
-			 Real dt,
-			 int  first_scalar,
-			 int  last_scalar,
-			 bool reflux_on_this_call);
+			 bool reflux_on_this_call,
+                         bool use_cached_sat);
+
+  void cache_component_saturations(int nGrow);
+  void reinstate_component_saturations();
 
   // Update scalars, (viscous solve in scalar_update).
   //
@@ -589,11 +599,6 @@ public:
 				int  first_scalar,
 				int  last_scalar,
 				int  corrector);
-  void tracer_advection_update (Real dt,
-				int  first_scalar,
-				int  last_scalar,
-				int  corrector);
-
 
   void scalar_diffusion_update (Real dt,
 				int  first_scalar,
@@ -763,7 +768,7 @@ public:
   // Reflux function.
   //
   virtual void reflux ();
-  void reflux(int sComp, int nComp);
+  void reflux(FluxRegister& fr, int sComp, int nComp);
 
   virtual void avgDown (); // Average down for all the state types.
   void avgDown (int comp); // Average down for a single StateType scalar
@@ -932,6 +937,7 @@ public:
   void dirichletStateBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
   void dirichletTracerBC(FArrayBox& fab, Real time, int sComp, int dComp, int nComp);
   void dirichletPressBC (FArrayBox& fab, Real time);
+  void dirichletDefaultBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            Real               t);
@@ -1018,6 +1024,7 @@ public:
     1: single-phase flow with precipitate
     2: 2-phase 2-component flow
     3: polymer flow (2-phase 3-component)
+    4: saturated (perhaps same as 0??)
   */
   static std::string model_name;
   static int model;
@@ -1048,6 +1055,7 @@ protected:
 
   void SetRichardSolverParameters(RSParams&          rsparams,
                                   const std::string& IDstring) const;
+  static RichardSolver* richard_solver;
 
   // Deals with the ghost cells 
   AuxBoundaryData aux_boundary_data_old;
@@ -1309,7 +1317,7 @@ protected:
   static int  max_step;
   static Real stop_time;
   static bool do_richard_sat_solve;
-  static std::string execution_mode;
+  static ExecutionMode execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;
   static Array<Real> tpc_start_times;
@@ -1394,6 +1402,11 @@ protected:
 			   std::ostream&  os,
 			   VisMF::How     how,
 			   bool           dump_old);
+
+  bool component_saturations_cached;
+  MultiFab *sat_old_cached, *sat_new_cached;
+  Real t_sat_old_cached, t_sat_new_cached;
+
 };
 
 #endif /*_PorousMedia_H_*/

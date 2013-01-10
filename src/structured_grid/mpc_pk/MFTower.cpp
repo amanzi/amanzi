@@ -405,7 +405,9 @@ MFTFillPatch::BuildCFParallelInterpStencil()
                             int r = refRatio[itan];
 
                             x[itan] = (iv[itan]%r - 0.5*(r-1))/r;
-                            
+
+                            BL_ASSERT(crseNodes[lev][mfi].box().contains(nC.iv+ivp[itan]));
+                            BL_ASSERT(crseNodes[lev][mfi].box().contains(nC.iv+ivm[itan]));
                             const Node& nR = crseNodes[lev][mfi](nC.iv+ivp[itan],0);
                             const Node& nL = crseNodes[lev][mfi](nC.iv+ivm[itan],0);
                             
@@ -417,7 +419,7 @@ MFTFillPatch::BuildCFParallelInterpStencil()
                                 der[nL]  = -0.5;  der[nR] = +0.5;
                                 der2[nL] = +1.0; der2[nC] = -2.0; der2[nR] = +1.0;
                             }
-                            else if (Rvalid) {
+                            else if (Rvalid && crseNodes[lev][mfi].box().contains(nC.iv+ivpp[itan])) {
                                 const Node& nRR = crseNodes[lev][mfi](nC.iv+ivpp[itan],0);
                                 bool RRvalid = nRR.type==Node::VALID;
                                 if (RRvalid) {
@@ -428,7 +430,7 @@ MFTFillPatch::BuildCFParallelInterpStencil()
                                     // R-shifted linear
                                     der[nC] = -1.0; der[nR] = +1.0;
                                 }
-                            } else if (Lvalid) {
+                            } else if (Lvalid && crseNodes[lev][mfi].box().contains(nC.iv+ivmm[itan])) {
                                 const Node& nLL = crseNodes[lev][mfi](nC.iv+ivmm[itan],0);
                                 bool LLvalid = nLL.type==Node::VALID;
                                 if (LLvalid) {
@@ -775,30 +777,6 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
                         IVScit it=perpInterpLevDir.find(iv);
                         if (it!=perpInterpLevDir.end()) {
 			    const Stencil& s = it->second;
-#if 0
-                            // Sort the stencil values to ensure repeatable arithmetic
-                            std::multimap<Real,Node> sinv;
-                            for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
-                              sinv.insert(std::pair<Real,Node>(it->second,it->first));
-                            }
-			  
-                            for (int n=0; n<nComp; ++n) {
-                              Real res = 0;
-                              for (std::multimap<Real,Node>::const_iterator it=sinv.begin(), End=sinv.end(); it!=End; ++it) {
-                                const IntVect& ivs=(it->second).iv;
-                                int slev = (it->second).level;
-                                if (slev==lev) {
-                                  BL_ASSERT(fineFab.box().contains(ivs));
-                                  res += fineFab(ivs,sComp+n) * it->first;
-                                }
-                                else if (slev==lev-1) {
-                                  BL_ASSERT(crseFab->box().contains(ivs));
-                                  res += (*crseFab)(ivs,sComp+n) * it->first;
-                                }
-                              }
-                              fineFab(iv,sComp+n) = res;
-                            }
-#else
                             for (int n=0; n<nComp; ++n) {
                                 Real res = 0;
                                 for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
@@ -815,7 +793,6 @@ MFTFillPatch::FillGrowCells(MFTower& mft,
                                 }
                                 fineFab(iv,sComp+n) = res;
                             }
-#endif
                         }
                     }
                 }

@@ -624,7 +624,7 @@ MacProj::mac_sync_compute (int                   level,
 	
       // Compute total forcing terms.
       // iconserve set to 1.  
-      godunov->Sum_tf_divu_visc(S_fpi(), tforces, state_ind, nscal,
+      godunov->Sum_tf_divu_visc(S_fpi(), state_ind, tforces, state_ind, nscal,
 				scal_visc_terms[i], state_ind, 
 				(*divu_fp)[i], use_conserv_diff);
 

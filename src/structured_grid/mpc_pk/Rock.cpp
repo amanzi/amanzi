@@ -228,7 +228,7 @@ void Rock::set_constant_kval(MultiFab&     mfdata,
 			     const Region& region_local,
                              int           nGrow) const
 {
-    set_constant_val(mfdata,region_local,permeability,nGrow);
+  set_constant_val(mfdata,region_local,permeability,nGrow);
 }
 
 void Rock::set_constant_pval(MultiFab&     mfdata, 

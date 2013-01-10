@@ -53,7 +53,7 @@ public:
   Vec& GetAlphaV() {return AlphaV;}
   MFTower& GetLambda() {return *Lambda;}
   MFTower& GetKappaCC() {return *KappaCC;}
-  PArray<MFTower>& GetKappa() {return Kappa;}
+  PArray<MFTower>& GetKappaEC() {return KappaEC;}
   MFTower& GetPorosity() {return *Porosity;}
   MFTower& GetPressure() {return *Pnew;}
   Vec& GetPressureV() {return SolnV;}
@@ -173,9 +173,9 @@ protected:
   MatFDColoring  matfdcoloring;
 
   int nLevs;
-  Array<PArray<MultiFab> > ktmp, ctmp; // Currently maintains its own copy of these, should be fixed
+  Array<PArray<MultiFab> > ctmp; // Currently maintains its own copy of these, should be fixed
   MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCC, *PCapParams, *Alpha;
-  PArray<MFTower> Kappa, DarcyVelocity, RichardCoefs;
+  PArray<MFTower> KappaEC, DarcyVelocity, RichardCoefs;
 
   Vec RhsV, SolnV, SolnTypV, SolnTypInvV, GV, AlphaV;
   Mat Jac;

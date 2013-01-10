@@ -346,7 +346,9 @@ bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
 Real PorousMedia::richard_variable_switch_saturation_threshold;
 
-std::string PorousMedia::execution_mode;
+RichardSolver* PorousMedia::richard_solver;
+
+PorousMedia::ExecutionMode PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
 Array<Real> PorousMedia::tpc_start_times;
 Array<Real> PorousMedia::tpc_initial_time_steps;
@@ -379,6 +381,11 @@ static int scalar_bc[] =
     INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_ODD, SEEPAGE
   };
 
+static int tracer_bc[] =
+  {
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, SEEPAGE
+  };
+
 static int press_bc[] =
   {
     INT_DIR, FOEXTRAP, EXT_DIR, REFLECT_EVEN, FOEXTRAP, FOEXTRAP
@@ -405,6 +412,20 @@ set_scalar_bc (BCRec&       bc,
     {
       bc.setLo(i,scalar_bc[lo_bc[i]]);
       bc.setHi(i,scalar_bc[hi_bc[i]]);
+    }
+}
+
+static
+void
+set_tracer_bc (BCRec&       bc,
+               const BCRec& phys_bc)
+{
+  const int* lo_bc = phys_bc.lo();
+  const int* hi_bc = phys_bc.hi();
+  for (int i = 0; i < BL_SPACEDIM; i++)
+    {
+      bc.setLo(i,tracer_bc[lo_bc[i]]);
+      bc.setHi(i,tracer_bc[hi_bc[i]]);
     }
 }
 
@@ -596,7 +617,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::use_funccount      = false;
 
   PorousMedia::do_simple           = 0;
-  PorousMedia::do_multilevel_full  = 0;
+  PorousMedia::do_multilevel_full  = 1;
   PorousMedia::do_reflux           = 1;
   PorousMedia::do_correct          = 0;
   PorousMedia::no_corrector        = 0;
@@ -606,7 +627,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
   PorousMedia::do_richard_sat_solve = false;
-  PorousMedia::execution_mode      = "transient";
+  PorousMedia::execution_mode      = PorousMedia::INVALID;
   PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
   PorousMedia::tpc_start_times.resize(0);
@@ -629,24 +650,26 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::richard_init_to_steady_verbose = 1;
   PorousMedia::steady_min_iterations = 10;
+  PorousMedia::steady_min_iterations_2 = 0;
   PorousMedia::steady_max_iterations = 15;
   PorousMedia::steady_limit_iterations = 20;
   PorousMedia::steady_time_step_reduction_factor = 0.8;
   PorousMedia::steady_time_step_increase_factor = 1.25;
+  PorousMedia::steady_time_step_increase_factor_2 = 10;
   PorousMedia::steady_time_step_retry_factor_1 = 0.5;
-  PorousMedia::steady_time_step_retry_factor_2 = 0.1;
-  PorousMedia::steady_time_step_retry_factor_f = 0.01;
+  PorousMedia::steady_time_step_retry_factor_2 = 0.01;
+  PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
   PorousMedia::steady_max_consecutive_failures_2 = 4;
   PorousMedia::steady_init_time_step = 1.e2;
   PorousMedia::steady_max_time_steps = 8000;
   PorousMedia::steady_max_time_step_size = 1.e12;
   PorousMedia::steady_max_psuedo_time = 1.e10;
-  PorousMedia::steady_max_num_consecutive_success = 3;
+  PorousMedia::steady_max_num_consecutive_success = 15;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
-  PorousMedia::steady_consecutive_increase_reduction_factor = 0.15;
-  PorousMedia::steady_use_PETSc_snes = false;
+  PorousMedia::steady_consecutive_increase_reduction_factor = 0.4;
+  PorousMedia::steady_use_PETSc_snes = true;
   PorousMedia::steady_abort_on_psuedo_timestep_failure = false;
   PorousMedia::steady_limit_function_evals = 1e8;
   PorousMedia::steady_abs_tolerance = 1.e-10;
@@ -671,7 +694,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_semi_analytic_J = false;
   PorousMedia::richard_variable_switch_saturation_threshold = -1;
 
-  PorousMedia::echo_inputs         = 0;
+  PorousMedia::echo_inputs    = 0;
+  PorousMedia::richard_solver = 0;
 }
 
 std::pair<std::string,std::string>
@@ -765,7 +789,8 @@ PorousMedia::variableSetUp ()
   // Set state variables Ids.
   //
   int num_gradn = ncomps;
-  NUM_SCALARS   = ncomps + 2;
+  // NUM_SCALARS   = ncomps + 2; // Currently unused last 2 components
+  NUM_SCALARS   = ncomps;
 
   if (ntracers > 0)
     NUM_SCALARS = NUM_SCALARS + ntracers;
@@ -812,6 +837,7 @@ PorousMedia::variableSetUp ()
     Array<BCRec>       tbcs(ntracers);
     Array<std::string> tnames(ntracers);
 
+    set_tracer_bc(bc,phys_bc);
     for (int i = 0; i < ntracers; i++) 
     {
       tbcs[i]   = bc;
@@ -825,10 +851,13 @@ PorousMedia::variableSetUp ()
 			  BndryFunc(FORT_ONE_N_FILL,FORT_ALL_T_FILL));
   }
 
+#if 0
+  // Currently unused
   desc_lst.setComponent(State_Type,ncomps+ntracers,"Aux1",
 			bc,BndryFunc(FORT_ENTHFILL));
   desc_lst.setComponent(State_Type,ncomps+ntracers+1,"Aux2",
 			bc,BndryFunc(FORT_ADVFILL));
+#endif
 
   if (model == model_list["polymer"]) {
     desc_lst.setComponent(State_Type,ncomps+2,"s",
@@ -871,11 +900,13 @@ PorousMedia::variableSetUp ()
           cbcs[i] = bc;
       }
 
+      FORT_AUXPARAMS(&num_aux_chem_variables);
+
       desc_lst.addDescriptor(Aux_Chem_Type,IndexType::TheCellType(),
                              StateDescriptor::Point,0,num_aux_chem_variables,
                              &cell_cons_interp);
       desc_lst.setComponent(Aux_Chem_Type,0,aux_chem_variables,cbcs,
-                            BndryFunc(FORT_ONE_N_FILL,FORT_ALL_T_FILL));
+                            BndryFunc(FORT_ONE_A_FILL,FORT_ALL_A_FILL));
 
   }
 
@@ -936,10 +967,12 @@ PorousMedia::variableSetUp ()
   if (do_chem>0)
     {
       // add function count
+      int nfunccountghost = 0;
+      if (do_full_strang) nfunccountghost=1;
       desc_lst.addDescriptor(FuncCount_Type, IndexType::TheCellType(),
-			     StateDescriptor::Point,1,1, &cell_cons_interp);
+			     StateDescriptor::Point,nfunccountghost,1, &cell_cons_interp);
       desc_lst.setComponent(FuncCount_Type, 0, "FuncCount", 
-			    bc, BndryFunc(FORT_ONE_N_FILL));
+			    bc, BndryFunc(FORT_ONE_A_FILL));
     }
 #endif
 
@@ -1376,9 +1409,11 @@ PorousMedia::read_rock(int do_chem)
           BoxLib::Abort(std::string("No porosity function specified for rock: \""+rname).c_str());
         }
 
-        Array<Real> rpermeability; ppr.getarr("permeability",rpermeability,0,ppr.countval("permeability"));
-        BL_ASSERT(rpermeability.size() == 2); // Horizontal, Vertical
-
+        Array<Real> rpermeabilityin; ppr.getarr("permeability",rpermeabilityin,0,ppr.countval("permeability"));
+        BL_ASSERT(rpermeabilityin.size() == 2); // Horizontal, Vertical  
+	// rpermeability will always be of size BL_SPACEDIM
+	Array<Real> rpermeability(BL_SPACEDIM,rpermeabilityin[1]);
+	for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rpermeabilityin[0];
         // The permeability is specified in mDa.  
         // This needs to be multiplied with 1e-10 to be consistent 
         // with the other units in the code.  What this means is that
@@ -1763,12 +1798,18 @@ PorousMedia::read_rock(int do_chem)
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
             std::cout << "Building kmap on finest level..." << std::endl;
 
-        int maxBaseGrid = 32; // FIXME: Should not be hardwired here
-        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
+        int twoexp = 1;
+        for (int ii = 0; ii<max_level; ii++) 
+        {
+          twoexp *= fratio[ii];
+        }	
         
+        int maxBaseGrid = twoexp; // FIXME: MUST be a multiple of twoexp for init_rock_properties to work!
+        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
+
         if (kappadata == 0) {
 
-            kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate);
+            kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate); // FIXME: Mod to support vector
         
             for (int i=0; i<rocks.size(); ++i) 
             {
@@ -1781,8 +1822,7 @@ PorousMedia::read_rock(int do_chem)
                 r.problo = problo;
                 r.probhi = probhi;
                 r.build_kmap(*kappadata, gsfile);
-            }
-
+            } 
 	    std::string permeability_plotfile_out;
 	    pp.query("permeability_plotfile_out", permeability_plotfile_out);
 	    if (!permeability_plotfile_out.empty()) {
@@ -1898,13 +1938,26 @@ void PorousMedia::read_prob()
   max_step  = -1;    
   stop_time = -1.0;  
 
-  pp.query("execution_mode",execution_mode);
-  BL_ASSERT(execution_mode=="transient" || execution_mode=="steady" || execution_mode=="init_to_steady");
+  std::string exec_mode_in_str; 
+  pp.get("execution_mode",exec_mode_in_str);
+  if (exec_mode_in_str == "transient") {
+    execution_mode = TRANSIENT;
+  } else if (exec_mode_in_str == "init_to_steady") {
+    execution_mode = INIT_TO_STEADY;
+  } else if (exec_mode_in_str == "steady") {
+    execution_mode = STEADY;
+  } else {
+    ParallelDescriptor::Barrier();
+    if (ParallelDescriptor::IOProcessor()) {
+      std::string str = "Unrecognized execution_mode: \"" + exec_mode_in_str + "\"";
+      BoxLib::Abort(str.c_str());
+    }
+  }
 
   pp.query("max_step",max_step);
   pp.query("stop_time",stop_time);
 
-  if (execution_mode=="init_to_steady") {
+  if (execution_mode==INIT_TO_STEADY) {
     pp.get("switch_time",switch_time);
     std::string event_name = "Switch_Time";
     BL_ASSERT(stop_time >= switch_time);
@@ -1973,8 +2026,8 @@ void PorousMedia::read_prob()
 
   if (setup_tracer_transport && 
       ( model==model_list["steady-saturated"]
-        || (execution_mode=="init_to_steady" && switch_time<=0)
-        || (execution_mode!="init_to_steady" && do_tracer_transport) ) ) {
+        || (execution_mode==INIT_TO_STEADY && switch_time<=0)
+        || (execution_mode!=INIT_TO_STEADY && do_tracer_transport) ) ) {
       transport_tracers = true;
   }
     
@@ -2708,7 +2761,7 @@ void  PorousMedia::read_tracer(int do_chem)
                   BoxLib::Abort("each tracer requires boundary conditions");
               }
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
-#if 0
+#if 1
               tbc_array[i].resize(n_tbc,PArrayManage);
               
               for (int n = 0; n<n_tbc; n++)
