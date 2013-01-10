@@ -235,11 +235,9 @@ void Richards_PK::InitPK()
   // injected water mass
   mass_bc = 0.0;
 
-  // miscalleneous maps to easy output
-  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
-    map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-    PopulateMapC2MB();
-  }
+  // miscalleneous maps 
+  map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  PopulateMapC2MB();
 
   flow_status_ = FLOW_STATUS_INIT;
 }
@@ -450,7 +448,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   // initialize pressure and lambda
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
-
   *solution_cells = pressure;
   *solution_faces = lambda;
 
@@ -546,7 +543,7 @@ int Richards_PK::Advance(double dT_MPC)
   } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     if (block_picard == 0) {
       PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
-      //AndersonAccelerationTimeStep(time, dT, dTnext);
+      //AndersonMixingTimeStep(time, dT, dTnext);
     } else {
       dTnext = dT;
     }

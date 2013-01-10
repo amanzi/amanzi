@@ -37,6 +37,7 @@
 #define ST_NONLIN_INIT_TS_FACTOR_DAMP   1.0
 #define ST_PRECOND                      "Hypre AMG"
 #define ST_SOLVER                       "AztecOO"
+#define ST_INIT_DARCY                   true
 
 
 #define TR_MAX_ITER                     15

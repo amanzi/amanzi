@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi input format version" type="string" value="1.1.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
 
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="Transient Richards"/>
@@ -21,9 +21,9 @@
         <Parameter name="Start" type="double" value="0.0"/>
 	<Parameter name="Switch" type="double" value="6.16635504e+10"/> <!-- Jan 1955 -->
 	<Parameter name="End" type="double" value="6.6271e+10"/> <!-- 2100 year-->
-   	<Parameter name="Steady Initial Time Step" type="double" value="1.0e6"/>
-	<Parameter name="Transient Initial Time Step" type="double" value="100.0"/>
-        <Parameter name="Use Picard" type="bool" value="true"/>
+   	<Parameter name="Steady Initial Time Step" type="double" value="1.0"/>
+	<Parameter name="Transient Initial Time Step" type="double" value="1.0"/>
+        <Parameter name="Use Picard" type="bool" value="false"/>
       </ParameterList>
     </ParameterList>
 
@@ -48,6 +48,8 @@
             <Parameter name="steady nonlinear tolerance" type="double" value="1.0e-5"/>
             <Parameter name="steady time step reduction factor" type="double" value="0.5"/>
             <Parameter name="steady time step increase factor" type="double" value="2.0"/>
+            <Parameter name="steady restart tolerance relaxation factor" type="double" value="100.0"/>
+            <Parameter name="steady restart tolerance relaxation factor damping" type="double" value="0.9"/>
           </ParameterList>
           <ParameterList name="Transient Implicit Time Integration">
             <Parameter name="transient max iterations" type="int" value="15"/>
