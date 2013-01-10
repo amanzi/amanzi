@@ -1,4 +1,4 @@
-  /*
+/*
 This is the flow component of the Amanzi code. 
 
 Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -82,11 +82,10 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
 
-      if (bc_model[f] != FLOW_BC_FACE_NULL){  // The boundary face.
+      if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           double pc = atm_pressure - bc_values[f][0];
-          int mb = (*map_c2mb)[c];
-          (*Krel_faces)[f] = WRM[mb]->k_relative(pc);
+          (*Krel_faces)[f] = WRM[(*map_c2mb)[c]]->k_relative(pc);
         } else {
           (*Krel_faces)[f] = (*Krel_cells)[c];
         }
@@ -128,8 +127,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[f] * dirs[n] < -tol) {
           double pc = atm_pressure - bc_values[f][0];
-          int mb = (*map_c2mb)[c];
-          (*Krel_faces)[f] = WRM[mb]->k_relative(pc);
+          (*Krel_faces)[f] = WRM[(*map_c2mb)[c]]->k_relative(pc);
         } else {
           (*Krel_faces)[f] = (*Krel_cells)[c];
         }
@@ -222,8 +220,7 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) && 
             (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE)) {
           double pc = atm_pressure - bc_values[f][0];
-          int mb = (*map_c2mb)[c];
-          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
+          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
@@ -265,8 +262,7 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
 	    (flux[f] * dirs[n] < -tol)) {
           double pc = atm_pressure - bc_values[f][0];
-          int mb = (*map_c2mb)[c];
-          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
+          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
@@ -444,10 +440,12 @@ void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g,
 
 
 /* ******************************************************************
-* Debug: Auxiliary map.                                               
+* Auxiliary map from cells to WRM models.                                               
 ****************************************************************** */
 void Richards_PK::PopulateMapC2MB()
 {
+  map_c2mb->PutScalar(-1);
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -457,6 +455,14 @@ void Richards_PK::PopulateMapC2MB()
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) (*map_c2mb)[*i] = mb;
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {
+    if ((*map_c2mb)[c] < 0) {
+      Errors::Message msg;
+      msg << "Flow PK: water retention models do not cover the whole domain.";
+      Exceptions::amanzi_throw(msg);  
+    }
   }
 }
 

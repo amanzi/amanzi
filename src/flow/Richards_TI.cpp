@@ -166,7 +166,7 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
  
       c = cell_p;
       const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
-      printf("       pressure error = %9.3g at point", error_p);
+      printf("   pressure error = %9.3g at point", error_p);
       for (int i = 0; i < dim; i++) printf(" %8.3g", yp[i]);
 
       int mb = (*map_c2mb)[c];

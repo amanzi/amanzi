@@ -235,11 +235,9 @@ void Richards_PK::InitPK()
   // injected water mass
   mass_bc = 0.0;
 
-  // miscalleneous maps to easy output
-  //  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
-    map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-    PopulateMapC2MB();
-    //}
+  // miscalleneous maps 
+  map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  PopulateMapC2MB();
 
   flow_status_ = FLOW_STATUS_INIT;
 }
@@ -521,9 +519,6 @@ int Richards_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-
-
-
   // predict water mass change during time step
   time = T_physics;
   if (ti_specs->num_itrs == 0) {  // initialization
@@ -548,20 +543,6 @@ int Richards_PK::Advance(double dT_MPC)
     ti_specs->num_itrs++;
   }
 
-  /// Modify initial state*********************
-  //  Epetra_Vector& u = FS->ref_pressure();
-  //  cout<<u_ref<<endl;
-  //  exit(0);
-  
-
-
-  //  exit(0);
-
-  //***********************************************
-
-
-
-
   if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
     bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
     bdf2_dae->commit_solution(dT, *solution);
@@ -579,7 +560,7 @@ int Richards_PK::Advance(double dT_MPC)
   } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     if (block_picard == 0) {
       PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
-      //AndersonAccelerationTimeStep(time, dT, dTnext);
+      //AndersonMixingTimeStep(time, dT, dTnext);
     } else {
       dTnext = dT;
     }
