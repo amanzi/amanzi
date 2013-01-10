@@ -1,4 +1,4 @@
-/*
+  /*
 This is the flow component of the Amanzi code. 
 
 Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -85,7 +85,8 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
       if (bc_model[f] != FLOW_BC_FACE_NULL){  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           double pc = atm_pressure - bc_values[f][0];
-          (*Krel_faces)[f] = WRM[0]->k_relative(pc);
+          int mb = (*map_c2mb)[c];
+          (*Krel_faces)[f] = WRM[mb]->k_relative(pc);
         } else {
           (*Krel_faces)[f] = (*Krel_cells)[c];
         }
@@ -127,7 +128,8 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[f] * dirs[n] < -tol) {
           double pc = atm_pressure - bc_values[f][0];
-          (*Krel_faces)[f] = WRM[0]->k_relative(pc);
+          int mb = (*map_c2mb)[c];
+          (*Krel_faces)[f] = WRM[mb]->k_relative(pc);
         } else {
           (*Krel_faces)[f] = (*Krel_cells)[c];
         }
@@ -220,7 +222,8 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) && 
             (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE)) {
           double pc = atm_pressure - bc_values[f][0];
-          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
+          int mb = (*map_c2mb)[c];
+          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
@@ -262,7 +265,8 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
 	    (flux[f] * dirs[n] < -tol)) {
           double pc = atm_pressure - bc_values[f][0];
-          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
+          int mb = (*map_c2mb)[c];
+          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }

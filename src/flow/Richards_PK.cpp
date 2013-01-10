@@ -236,10 +236,10 @@ void Richards_PK::InitPK()
   mass_bc = 0.0;
 
   // miscalleneous maps to easy output
-  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
+  //  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
     map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
     PopulateMapC2MB();
-  }
+    //}
 
   flow_status_ = FLOW_STATUS_INIT;
 }
@@ -266,6 +266,21 @@ void Richards_PK::InitializeAuxiliaryData()
 
   DeriveSaturationFromPressure(pressure, ws);
   ws_prev = ws;
+
+  (pressure)[0] = 57464.634441452858;      
+  (pressure)[1] = -30253.457478506229 ;     
+  (pressure)[2] = -117968.04459715552 ;     
+  (pressure)[3] = -205679.12640888427 ;     
+  (pressure)[4] = -293386.70240768651 ;     
+  (pressure)[5] = -381090.77208716050 ;     
+  (pressure)[6] = -468791.33494050801 ;     
+  (pressure)[7] = -556488.39046053367 ;     
+  (pressure)[8] = -644181.93813964457 ;     
+  (pressure)[9] = -731871.97746984917 ;     
+  (pressure)[10] = -819558.50794275722 ;     
+  (pressure)[11] = -907241.52904957917 ;   
+  
+
 }
 
 
@@ -538,18 +553,7 @@ int Richards_PK::Advance(double dT_MPC)
   //  cout<<u_ref<<endl;
   //  exit(0);
   
-  (*solution)[0] = 57464.634441452858;      
-  (*solution)[1] = -30253.457478506229 ;     
-  (*solution)[2] = -117968.04459715552 ;     
-  (*solution)[3] = -205679.12640888427 ;     
-  (*solution)[4] = -293386.70240768651 ;     
-  (*solution)[5] = -381090.77208716050 ;     
-  (*solution)[6] = -468791.33494050801 ;     
-  (*solution)[7] = -556488.39046053367 ;     
-  (*solution)[8] = -644181.93813964457 ;     
-  (*solution)[9] = -731871.97746984917 ;     
-  (*solution)[10] = -819558.50794275722 ;     
-  (*solution)[11] = -907241.52904957917 ;    
+
 
   //  exit(0);
 

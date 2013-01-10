@@ -75,6 +75,7 @@ class Richards_PK : public Flow_PK {
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_norm(double rtol, double atol) {};
   void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
+  bool modify_update_step(double h, Epetra_Vector&u, Epetra_Vector& du );
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);

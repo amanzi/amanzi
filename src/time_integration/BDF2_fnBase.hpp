@@ -50,6 +50,11 @@ class fnBase {
   // modified, false if not
   virtual bool modify_predictor(double h, Epetra_Vector& up) { return false;}
 
+  // possibility to modify the update for solution on each nonlinear iteration
+  // based on a particular criteria. this function returns true if the predictor was
+  // modified, false if not 
+  virtual bool modify_update_step(double h, Epetra_Vector&u, Epetra_Vector& du ) {return false;}
+
   bool IsPureNewton;
 };
 

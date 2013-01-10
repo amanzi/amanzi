@@ -69,9 +69,11 @@ void Richards_PK::fun(
 
   cout<<" Total Residual\n";
   for ( int i=0;i<12;i++) cout<<f[i]<<endl;
+  cout<<" Solution \n";
+  for ( int i=0;i<12;i++) cout<<u[i]<<endl;
 
   cout<<endl;
-  exit(0);
+//  exit(0);
 }
 
 
@@ -199,6 +201,48 @@ double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du
 #endif
   return  error_norm;
 }
+
+  /*****************************************************************
+   * Modifies nonlinear update based on maximal saturation change
+   ****************************************************************/
+
+bool Richards_PK::modify_update_step(double h, Epetra_Vector&u, Epetra_Vector& du ){
+
+  double max_sat_pert = 0.125;
+  bool ret_val = false;
+  //  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  //  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+
+  for (int c = 0; c < ncells_owned; c++) {
+    int mb = (*map_c2mb)[c];
+       //    int mb = 0;
+    double pc =  atm_pressure - u[c];
+    double sat = WRM[mb]->saturation(pc);
+    double sat_pert;
+    if (sat>=0.5) sat_pert = sat - max_sat_pert;
+    else sat_pert = sat + max_sat_pert;
+    
+    double press_pert = atm_pressure - WRM[mb]->capillaryPressure(sat_pert);
+
+    double du_pert_max = fabs(u[c] - press_pert); 
+
+    //    cout<<u[c]<<" "<<du[c]<<" "<<du_pert_max<<endl;
+
+    if (fabs(du[c]) > du_pert_max) {
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH){
+        cout<<"Richards_PK:: saturaration clip: cell"<<c<<" "<<du[c]<<" "<<du_pert_max<<endl;
+      }
+      //      exit(0);
+       
+      if (du[c] >=0) du[c] = fabs(du_pert_max);
+      else du[c] = -fabs(du_pert_max);
+      ret_val = true;
+    }    
+  }
+
+  return ret_val;
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

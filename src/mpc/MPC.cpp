@@ -520,7 +520,6 @@ void MPC::cycle_driver() {
         tslimiter = MPC_LIMITS;
       }
 
-      cout<<"MPCCCCCCCCCC "<<*(S->get_pressure())<<endl;
 
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
@@ -547,8 +546,6 @@ void MPC::cycle_driver() {
         *out << std::endl;
       }
       
-
-      cout<<"MPCCCCCCCCCC "<<*(S->get_pressure())<<endl;
 
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow

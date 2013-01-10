@@ -421,6 +421,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // apply damping
     du.Scale(state.damp);
 
+    bool clip;
+
+    clip = fn.modify_update_step(h, u, du );
+
     // Check the solution iterate for admissibility.
     if ( ! fn.is_admissible(u) ) { // iterate is bad; bail.
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
@@ -457,6 +461,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       divergence_count = 0;
     }
 
+
+
     // next solution iterate and error estimate.
     //   u  = u - du
     u.Update(-1.0,du,1.0);
@@ -467,7 +473,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // norm provided in the model evaluator
     error = fn.enorm(u, du);
 
-    for (int i=0;i<12;i++) cout<<u[i]<<"\n";
+    for (int i=0;i<12;i++) cout<<"test_sol"<<u[i]<<"\n";
     cout<<endl;
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
@@ -476,11 +482,12 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // Check for convergence
     if (error < state.ntol*state.ntol_multiplier_current)   {
-      cout<<"Exit before convergence\n";
-      exit(0);
+            cout<<" test_sol Exit before convergence\n";
+      //      exit(0);
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
       }
+
 
       if (itr < state.minitr) {
 	state.currentpclag = std::min(state.currentpclag+1, state.maxpclag);

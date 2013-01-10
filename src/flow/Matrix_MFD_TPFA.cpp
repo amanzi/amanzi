@@ -301,9 +301,9 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
                 (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
      }
      Spp_->GlobalAssemble();
- //     cout << "AnalyticJacobian Spp\n";
- //             std::cout<<(*Spp_)<<endl;
- //               cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
+      cout << "AnalyticJacobian Spp\n";
+              std::cout<<(*Spp_)<<endl;
+              cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
  //     exit(0);
 }
 
@@ -592,11 +592,11 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 
   int ierr = (*Spp_).Multiply(false, Xc, Yc);
 
-  cout<<"Xc"<<Xc<<endl;
+  // cout<<"Xc"<<Xc<<endl;
   
-  cout<<"Apply TPFA"<<(*Spp_)<<endl;
+  // cout<<"Apply TPFA"<<(*Spp_)<<endl;
 
-  cout<<"Yc "<<Yc<<endl;
+  // cout<<"Yc "<<Yc<<endl;
 
   if (ierr) {
     Errors::Message msg("Matrix_MFD_TPFA::Apply has failed to calculate y = A*x.");

@@ -295,11 +295,10 @@ void Flow_PK::AddGravityFluxes_MFD(
         outward_flux *= Krel_cells[c];
       } else {
         outward_flux *= Krel_faces[f];
-		if (fabs(outward_flux)>1e-16){ 
+	if (fabs(outward_flux)>1e-16){ 
            cout<<"AddGravity "<<c<<": kr "<<Krel_faces[f]<<" flux "<< -outward_flux<<" Fc "<<Fc<<endl;
            cout<<"normal "<<normal<<endl;
-		}
-        }
+	}
       }
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.

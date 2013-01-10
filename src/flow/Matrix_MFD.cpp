@@ -421,8 +421,6 @@ double Matrix_MFD::ComputeNegativeResidual(const Epetra_Vector& solution, Epetra
 {
   Apply(solution, residual);
 
-  cout<<"rhs\n" <<*rhs_<<endl;
-
   residual.Update(-1.0, *rhs_, 1.0);
 
   double norm_residual;
