@@ -82,7 +82,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
       Exceptions::amanzi_throw(msg);
     }
 
-    matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model,
+    matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model, bc_values,
                                   *Krel_cells, *dKdP_cells,
                                   *Krel_faces, *dKdP_faces);
   } else if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {

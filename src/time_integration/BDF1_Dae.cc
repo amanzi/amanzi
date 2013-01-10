@@ -302,8 +302,8 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   } else {
     u = up;  // Initial solution guess is the predictor.
   }
+
   
-    
   try {
       if (state.nonlinear_solver == BDFNKA) {
             solve_bce(tnew, h, u0, u);            
@@ -327,7 +327,42 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
       hnext = std::min(h, state.hlimit);
       throw itr;
     } 
-  }
+ //    if (fabs(tnew - 1.5e+05) < 1e+1) 
+// hnext = 1.57479e+5;
+//     else if (fabs(tnew - 3.07479e+05) < 1e+1) 
+// hnext = 2.64828e+5;  
+//     else if (fabs(tnew - 5.72307E+05) < 1e+1) 
+// hnext = 5.02330E+5;  
+//     else if (fabs(tnew - 1.07464E+06) < 1e+1) 
+// hnext = 1.00466E+06;  
+//     else if (fabs(tnew - 2.07930E+06) < 1e+1) 
+// hnext = 2.00932E+06;  
+//     else if (fabs(tnew - 4.08862E+06) < 1e+1) 
+// hnext = 4.01864E+06;  
+//     else if (fabs(tnew - 8.10726E+06) < 1e+1) 
+// hnext = 3.51380E+06;
+//     else if (fabs(tnew - 1.16211E+07) < 1e+1) 
+// hnext = 7.02761E+06;
+//     else if (fabs(tnew - 1.86487E+07) < 1e+3) 
+// hnext = 6.08737E+06;
+//     else if (fabs(tnew - 2.47360E+07) < 1e+3) 
+// hnext = 1.21747E+07;
+//     else if (fabs(tnew - 3.69108E+07) < 1e+3) 
+// hnext = 1.07462E+07;
+//     else if (fabs(tnew - 4.76570E+07) < 1e+3) 
+// hnext = 1.32304E+07;
+//     else if (fabs(tnew - 6.08874E+07) < 1e+3) 
+// hnext = 1.59111E+07;
+//     else if (fabs(tnew - 7.67985E+07) < 1e+5) 
+// hnext = 1.96692E+07;
+//     else if (fabs(tnew - 9.64676E+07) < 1e+5) 
+// hnext = 3.50362E+07;
+//     else if (fabs(tnew - 1.31504E+08) < 1e+5) 
+// hnext = 7.00725E+07;
+//     else if (fabs(tnew - 2.01576E+08) < 1e+5) 
+// hnext = 1.14000E+08;  
+    
+   }
   
 }
 
@@ -338,13 +373,31 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-  
-  cout.precision(16);
-  cout<<"Initial Guess\n";
-  for (int i=0;i<12;i++) cout<<u[i]<<" ";
-  cout<<endl;
 
+  //*****************************
+  // h = 3.50362e+07;
 
+  // u[0] = 59947.896613379933 ;
+  // u[1] = 43592.738470104247 ;
+  // u[2] = 73275.463792323280 ;
+  // u[3] = 85091.476905447722 ;
+  // u[4] = 89438.073602763077 ;
+  // u[5] = 90983.084774170551 ;
+  // u[6] = 100230.48129315022 ;
+  // u[7] = 100286.11888622568 ;
+  // u[8] = 100288.49133992816 ;
+  // u[9] = 100288.81544240398 ;
+  // u[10] = 100288.85844005689 ;
+  // u[11] = 100288.86263140998 ;
+
+  // u0 = u;
+
+  // cout.precision(16);
+  // cout<<"Initial Guess\n";
+  // for (int i=0;i<12;i++) cout<<u[i]<<" ";
+  // cout<<endl;
+
+  //*************************************************
 
   fpa->nka_restart();
 
@@ -422,8 +475,11 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     du.Scale(state.damp);
 
     bool clip;
-
-    clip = fn.modify_update_step(h, u, du );
+    if (fn.IsPureNewton){
+      clip = fn.modify_update_step(h, u, du );
+      // for (int i=0;i<12;i++) cout<<"update "<<du[i]<<"\n";
+      // cout<<endl;
+    }
 
     // Check the solution iterate for admissibility.
     if ( ! fn.is_admissible(u) ) { // iterate is bad; bail.
@@ -473,8 +529,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // norm provided in the model evaluator
     error = fn.enorm(u, du);
 
-    for (int i=0;i<12;i++) cout<<"test_sol"<<u[i]<<"\n";
-    cout<<endl;
+    // for (int i=0;i<12;i++) cout<<"test_sol"<<u[i]<<"\n";
+    // cout<<endl;
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;
@@ -482,8 +538,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // Check for convergence
     if (error < state.ntol*state.ntol_multiplier_current)   {
-            cout<<" test_sol Exit before convergence\n";
-      //      exit(0);
+      cout<<" test_sol Exit before convergence\n";
+      //    exit(0);
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
       }
