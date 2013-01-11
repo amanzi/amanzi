@@ -16,8 +16,6 @@ The routine implements interface to BDFx time integrators.
 #include <string>
 #include <vector>
 
-#include "exceptions.hh"
-
 #include "Matrix_MFD_TPFA.hpp"
 #include "Richards_PK.hpp"
 

@@ -330,9 +330,7 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
