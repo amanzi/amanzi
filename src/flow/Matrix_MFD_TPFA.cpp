@@ -242,8 +242,8 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
      AmanziGeometry::Point cntr_cell[2];
      double dist;
 
-     //     cout<<"Before Analytic\n";
-     //     std::cout<<(*Spp_)<<endl;
+     // cout<<"Before Analytic\n";
+     // std::cout<<(*Spp_)<<endl;
 
      Epetra_Vector pres_gh(cmap_wghost);
 
@@ -298,13 +298,12 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
                 ComputeJacobianLocal(mcells, f, dim, Krel_method, bc_models, bc_values, dist,  pres,
                                      perm_abs_vert, perm_abs_horz, k_rel, dk_dp, normal, Jpp);
 
-
                 (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
      }
      Spp_->GlobalAssemble();
-      cout << "AnalyticJacobian Spp\n";
-              std::cout<<(*Spp_)<<endl;
-              cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
+      // cout << "AnalyticJacobian Spp\n";
+      //         std::cout<<(*Spp_)<<endl;
+      //         cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
  //     exit(0);
 }
 
@@ -365,7 +364,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 
         if (mcells == 2){
                 dphi = pres[0] - pres[1] + grn;
-          //                cout<<"pres[0] "<<pres[0]<<" pres[1] "<<pres[1]<<" grv "<<grn<<endl;
+		//      cout<<"pres[0] "<<pres[0]<<" pres[1] "<<pres[1]<<" grv "<<grn<<endl;
                 if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
                         if (grn*Kabs_dist > FLOW_RELATIVE_PERM_TOLERANCE){    // Upwind
                                 dKrel_dp[0] = dk_dp_cell[0];
@@ -396,21 +395,19 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
                         dKrel_dp[0] = 0.5*dk_dp_cell[0];
                         dKrel_dp[1] = 0.5*dk_dp_cell[1];
                 }
-                // cout<<Kabs_dist*dKrel_dp[0]<<" "<<dphi<<" "<<rho_w*mesh_->face_area(face_id)<<endl;
-                // cout<<"dKrel_dp[0] "<<dKrel_dp[0] <<" dKrel_dp[1] "<<dKrel_dp[1]<<endl;
 
                 Jpp(0, 0) = Kabs_dist*dphi*dKrel_dp[0]*rho_w*mesh_->face_area(face_id);
                 Jpp(0, 1) = Kabs_dist*dphi*dKrel_dp[1]*rho_w*mesh_->face_area(face_id);
                 Jpp(1, 0) = -Jpp(0, 0);
                 Jpp(1, 1) = -Jpp(0, 1);
 
-                //                 cout<<"Jpp_local"<<endl;
-                 // for (int i=0;i<2;i++){
-                 //   for (int j=0;j<2;j++) cout<<Jpp(i,j)<<" ";
-                 //   cout<<endl;
-                 // }
-                 // cout<<endl;
-//                 exit(0);
+                  // cout<<"Jpp_local"<<endl;
+                  // for (int i=0;i<2;i++){
+                  //   for (int j=0;j<2;j++) cout<<Jpp(i,j)<<" ";
+                  //   cout<<endl;
+                  // }
+
+
         }
         else if (mcells == 1){
                  if ((bc_models[face_id] == FLOW_BC_FACE_PRESSURE) ||
@@ -420,11 +417,8 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 
                    dphi = pres[0] - pres[1] + grn;
  
-		    // cout<<"dk_dp_cell "<<dk_dp_cell[0]<<endl;
-                    // cout<<"Kabs_dist "<<Kabs_dist<<" "<<Kabs_dist*1.002e-3<<endl;
-                    // cout<<"dphi "<< dphi<<endl;
-                   Jpp(0,0) = -Kabs_dist*dphi*dk_dp_cell[0]*rho_w*mesh_->face_area(face_id);
-		   		   // cout<<"Local Jacob BC "<<Jpp(0,0)<<endl;
+                   Jpp(0,0) = Kabs_dist*dphi*dk_dp_cell[0]*rho_w*mesh_->face_area(face_id);
+
                  }
                  else
                         Jpp(0,0) = 0.;
@@ -606,7 +600,7 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 
   // cout<<"Xc"<<Xc<<endl;
   
-  cout<<"Apply TPFA"<<(*Spp_)<<endl;
+  //cout<<"Apply TPFA"<<(*Spp_)<<endl;
 
   // cout<<"Yc "<<Yc<<endl;
 

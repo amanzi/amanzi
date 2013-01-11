@@ -33,9 +33,6 @@ void Richards_PK::fun(
   AssembleMatrixMFD(u, Tp);
   matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 
-  cout<<" Without timedirv  Residual\n";
-  for ( int i=0;i<12;i++) cout<<f[i]<<endl;
-
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
@@ -67,12 +64,12 @@ void Richards_PK::fun(
     }
   }
 
-  cout<<" Total Residual\n";
-  for ( int i=0;i<12;i++) cout<<f[i]<<endl;
-  cout<<" Solution \n";
-  for ( int i=0;i<12;i++) cout<<u[i]<<endl;
+  // cout<<" Total Residual\n";
+  // for ( int i=0;i<12;i++) cout<<f[i]<<endl;
+  // cout<<" Solution \n";
+  // for ( int i=0;i<12;i++) cout<<u[i]<<endl;
 
-  cout<<endl;
+  // cout<<endl;
 //  exit(0);
 }
 
@@ -230,7 +227,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector&u, Epetra_Vector& d
 
     if (fabs(du[c]) > du_pert_max) {
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH){
-        cout<<"Richards_PK:: saturaration clip: cell"<<c<<" "<<du[c]<<" "<<du_pert_max<<endl;
+        cout<<"Richards_PK:: saturaration clip: PID "<<MyPID<<" cell "<<c<<" "<<du[c]<<" "<<du_pert_max<<endl;
       }
       //      exit(0);
        

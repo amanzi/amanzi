@@ -265,20 +265,6 @@ void Richards_PK::InitializeAuxiliaryData()
   DeriveSaturationFromPressure(pressure, ws);
   ws_prev = ws;
 
-  (pressure)[0] = 57464.634441452858;      
-  (pressure)[1] = -30253.457478506229 ;     
-  (pressure)[2] = -117968.04459715552 ;     
-  (pressure)[3] = -205679.12640888427 ;     
-  (pressure)[4] = -293386.70240768651 ;     
-  (pressure)[5] = -381090.77208716050 ;     
-  (pressure)[6] = -468791.33494050801 ;     
-  (pressure)[7] = -556488.39046053367 ;     
-  (pressure)[8] = -644181.93813964457 ;     
-  (pressure)[9] = -731871.97746984917 ;     
-  (pressure)[10] = -819558.50794275722 ;     
-  (pressure)[11] = -907241.52904957917 ;   
-  
-
 }
 
 

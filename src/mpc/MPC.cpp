@@ -481,8 +481,6 @@ void MPC::cycle_driver() {
       }
       Amanzi::timer_manager.stop("Flow PK");
 
-      cout<<"MPCCCCCCCCCC "<<*(S->get_pressure())<<endl;
-
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch)) {
         if (transport_enabled) {
           Amanzi::timer_manager.start("Transport PK");

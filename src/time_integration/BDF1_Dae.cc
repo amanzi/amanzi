@@ -327,7 +327,8 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
       hnext = std::min(h, state.hlimit);
       throw itr;
     } 
- //    if (fabs(tnew - 1.5e+05) < 1e+1) 
+
+//     if (fabs(tnew - 1.5e+05) < 1e+1) 
 // hnext = 1.57479e+5;
 //     else if (fabs(tnew - 3.07479e+05) < 1e+1) 
 // hnext = 2.64828e+5;  
@@ -529,17 +530,18 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // norm provided in the model evaluator
     error = fn.enorm(u, du);
 
-    // for (int i=0;i<12;i++) cout<<"test_sol"<<u[i]<<"\n";
+    // for (int i=0;i<12;i++) cout<<"test_sol   "<<u[i]<<"\n";
     // cout<<endl;
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;
     }
+  
 
     // Check for convergence
     if (error < state.ntol*state.ntol_multiplier_current)   {
-      cout<<" test_sol Exit before convergence\n";
-      //    exit(0);
+      //      cout<<" test_sol Exit before convergence\n";
+      //      exit(0);
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
       }
