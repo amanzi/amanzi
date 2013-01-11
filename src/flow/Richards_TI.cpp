@@ -33,7 +33,6 @@ void Richards_PK::fun(
   AssembleMatrixMFD(u, Tp);
   matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
   functional_max_norm = 0.0;
@@ -171,7 +170,6 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
   }
 
   // if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-  //  if (saturation_max_change > 0.125) throw 100;
   // }
   
   return error;
@@ -199,14 +197,15 @@ double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du
 
 
 /********************************************************************
-* Modifies nonlinear update based on maximum saturation change.
+* Modifies nonlinear update du based on the maximum allowed change
+* of saturation.
 ****************************************************************** */
 bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& du)
 {
   double max_sat_pert = 0.125;
   bool ret_val = false;
 
-  int ncells_clipped = 0;
+  int ncells_clipped(0);
   for (int c = 0; c < ncells_owned; c++) {
     int mb = (*map_c2mb)[c];
     double pc =  atm_pressure - u[c];
@@ -220,7 +219,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
 
     if (fabs(du[c]) > du_pert_max) {
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-        cout << "Richards_PK: saturation clipping in cell " << c << 
+        cout << "Flow PK: saturation clipping in cell " << c << 
                 " pressure change: " << du[c] << " -> " << du_pert_max << endl;
       }
        
@@ -232,11 +231,11 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
     }    
   }
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (verbosity >= FLOW_VERBOSITY_HIGH) {
     int ncells_tmp = ncells_clipped;
-    du.Comm().MaxAll(&ncells_tmp, &ncells_clipped, 1);
-    if (ncells_clipped > 0)
-        printf("Richards_PK: saturation was clipped in %d cells.\n", ncells_clipped); 
+    du.Comm().SumAll(&ncells_tmp, &ncells_clipped, 1);
+    if (MyPID == 0 && ncells_clipped > 0)
+        printf("Flow PK: saturation was clipped in %d cells\n", ncells_clipped); 
   }
 
   return ret_val;
