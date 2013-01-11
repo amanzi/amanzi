@@ -917,7 +917,7 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 				    MFTower&               rhoSat,
 				    MFTower&               lambda,
 				    const PArray<MFTower>& kappa,
-				    const Array<Real>&     density,
+				    const Array<Real>&     rho,
 				    const Array<Real>&     gravity,
 				    Real                   t)
 {
@@ -944,7 +944,7 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
     for (int d=0; d<BL_SPACEDIM; ++d) {
         Real* ap = a.dataPtr(d);
         for (int n=0; n<nComp; ++n) {
-            ap[n] = density[n] * gravity[d];
+            ap[n] = rho[n] * gravity[d];
         }
     }
 
@@ -997,15 +997,7 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
   int sComp=0;
   int dComp=0;
   int nComp=1;
-  Real mult=1;
-  MFTower::ECtoCCdiv(DivRhoU,GetDarcyVelocity(),mult,sComp,dComp,nComp,nLevs);
-
-  const Array<Real>& rho = GetDensity();
-  for (int n=0; n<nComp; ++n) {
-      for (int lev=0; lev<nLevs; ++lev) {
-          DivRhoU[lev].mult(rho[n],dComp,1);
-      }
-  }
+  MFTower::ECtoCCdiv(DivRhoU,GetDarcyVelocity(),GetDensity(),sComp,dComp,nComp,nLevs);
 }
 
 void
@@ -1029,14 +1021,15 @@ RichardSolver::DpDtResidual(MFTower& residual,
       for (MFIter mfi(Rlev); mfi.isValid(); ++mfi) {
 	const Box& vbox = mfi.validbox();
 	FArrayBox& Res = Rlev[mfi];
-	const FArrayBox& RSn = GetRhoSatN()[lev][mfi];
-	const FArrayBox& RSnp1 = GetRhoSatNp1()[lev][mfi];
-	const FArrayBox& Poros = GetPorosity()[lev][mfi];
-	FORT_RS_PDOTRES(Res.dataPtr(),ARLIM(Res.loVect()), ARLIM(Res.hiVect()),
-			RSn.dataPtr(),ARLIM(RSn.loVect()), ARLIM(RSn.hiVect()),
-			RSnp1.dataPtr(),ARLIM(RSnp1.loVect()), ARLIM(RSnp1.hiVect()),
-			Poros.dataPtr(),ARLIM(Poros.loVect()), ARLIM(Poros.hiVect()),
-			Poros.dataPtr(),ARLIM(Poros.loVect()), ARLIM(Poros.hiVect()),
+	const FArrayBox& rs_n = GetRhoSatN()[lev][mfi];
+	const FArrayBox& rs_np1 = GetRhoSatNp1()[lev][mfi];
+	const FArrayBox& phi_n = GetPorosity()[lev][mfi];
+	const FArrayBox& phi_np1 = GetPorosity()[lev][mfi];
+	FORT_RS_PDOTRES(Res.dataPtr(),    ARLIM(Res.loVect()),     ARLIM(Res.hiVect()),
+			rs_n.dataPtr(),   ARLIM(rs_n.loVect()),    ARLIM(rs_n.hiVect()),
+			rs_np1.dataPtr(), ARLIM(rs_np1.loVect()),  ARLIM(rs_np1.hiVect()),
+			phi_n.dataPtr(),  ARLIM(phi_n.loVect()),   ARLIM(phi_n.hiVect()),
+			phi_np1.dataPtr(),ARLIM(phi_np1.loVect()), ARLIM(phi_np1.hiVect()),
 		        &dt, vbox.loVect(), vbox.hiVect(), &nComp);
         }
     }
@@ -1154,7 +1147,7 @@ void RichardSolver::CreateJac(Mat& J,
       Array<int> rows(1);
       Array<Real> vals(cols.size(),0);
 
-      const Array<double>& density = GetDensity();
+      const Array<double>& rho = GetDensity();
       int nc = 0;
 
       for (IntVect iv(vbox.smallEnd()), iEnd=vbox.bigEnd(); iv<=iEnd; vbox.next(iv))
@@ -1163,7 +1156,7 @@ void RichardSolver::CreateJac(Mat& J,
           if (cols[0]>=0) {
               rows[0] = cols[0];
               vals[0] = dalpha(iv,0);
-              Real rdt = (dt>0  ?  density[nc]*dt : 1); // The "b" factor
+              Real rdt = (dt>0  ?  rho[nc]*dt : 1); // The "b" factor
               int cnt = 1;
               for (int d=0; d<BL_SPACEDIM; ++d) {
                   vals[0] -= rdt * jacflux[d][mfi](iv,2);

@@ -2727,12 +2727,17 @@ PorousMedia::multilevel_advance (Real  time,
     Real dt_suggest_tc = dt_new;
     if (transport_tracers > 0) {
 
-      // Cache saturations at time and time+dt
-      state[State_Type].setNewTimeLevel(time);
-      state[State_Type].allocOldData();
-      state[State_Type].setNewTimeLevel(time+dt);
       bool use_cached_sat = true;
-      cache_component_saturations(nGrowHYP);
+
+      if (use_cached_sat) {
+        for (int lev=level; lev<=parent->finestLevel(); ++lev) {
+          PorousMedia& pml = dynamic_cast<PorousMedia&>(getLevel(lev));
+          pml.state[State_Type].setOldTimeLevel(time);
+          pml.state[State_Type].allocOldData();
+          pml.state[State_Type].setNewTimeLevel(time+dt);
+          pml.cache_component_saturations(nGrowHYP);
+        }
+      }
 
       bool do_subcycle_tc = true;
       bool do_recursive = true;
@@ -2953,13 +2958,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 
   if (transport_tracers > 0) {
 
-    // Set up "old" state with tracers from previous "new" state
-    int first_tracer = ncomps;
-    state[State_Type].setNewTimeLevel(t+dt);
-    state[State_Type].allocOldData();
-    state[State_Type].setOldTimeLevel(t);
-    MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
-
     Real dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
     Real t_eps = 1.e-6*dt_cfl;
     if (!do_subcycle && dt-dt_cfl > t_eps) {
@@ -2983,9 +2981,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
           dt_subtr = (tmax_subtr - t_subtr)/(n_est+1);
         }
       }
-
-      setTimeLevel(t_subtr+dt_subtr,
-		   dt_subtr,dt_subtr);
 
       if (do_chem>0  &&  do_full_strang) {
 	const Real strt_time_chem = ParallelDescriptor::second();
@@ -3021,6 +3016,16 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         std::cout << std::endl;
       }
       n_subtr++;
+
+      // Set time interval for this advection step
+      state[State_Type].setNewTimeLevel(t_subtr+dt_subtr);
+      state[State_Type].allocOldData();
+      state[State_Type].setOldTimeLevel(t_subtr);
+
+      // Set up "old" tracers from previous "new" tracers
+      int first_tracer = ncomps;
+      MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
+
 
       //
       // Initialize flux registers
@@ -3083,17 +3088,10 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       if (do_recursive  && level < parent->finestLevel()) {
 	// Advance grids at higher level.
         const int lev_fine = level+1;
+        PorousMedia& pm_fine = dynamic_cast<PorousMedia&>(getLevel(lev_fine));
 	const int ncycle = parent->nCycle(lev_fine);
 	Real dt_fine = dt_subtr / ncycle;
 	bool do_subcycle_fine = false;
-
-        PorousMedia& pm_fine = dynamic_cast<PorousMedia&>(getLevel(lev_fine));
-        if (use_cached_sat) {
-          pm_fine.state[State_Type].setOldTimeLevel(t_subtr);
-          pm_fine.state[State_Type].allocOldData();
-          pm_fine.state[State_Type].setNewTimeLevel(t_subtr+dt_subtr);
-          pm_fine.cache_component_saturations(nGrowHYP);
-        }
 
 	for (int i = 1; i <= ncycle && fine_step_ok; i++) {
 	  Real dt_new_fine = dt_fine;

@@ -64,6 +64,7 @@
       subroutine FORT_EC_TO_CC_DIV(div,DIMS(div),
      &     e,DIMS(e),a,DIMS(a),v,DIMS(v),lo,hi,dx,mult,dir,nc)
       implicit none      
+      integer dir, nc
       integer DIMDEC(div)
       integer DIMDEC(e)
       integer DIMDEC(a)
@@ -73,8 +74,7 @@
       REAL_T  e(DIMV(e),0:nc-1)
       REAL_T  a(DIMV(a))
       REAL_T  v(DIMV(v))
-      REAL_T  mult
-      integer dir, nc
+      REAL_T  mult(0:nc-1)
       
       integer i, j, k, n
       if (dir.eq.0) then
@@ -82,7 +82,7 @@
             do k = lo(3),hi(3)
                do j = lo(2),hi(2)
                   do i = lo(1),hi(1)
-                     div(i,j,k,n) = div(i,j,kn) + mult*(e(i+1,j,k,n)*a(i+1,j,k) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
+                     div(i,j,k,n) = div(i,j,kn) + mult(n)*(e(i+1,j,k,n)*a(i+1,j,k) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
                   enddo
                enddo
             enddo
@@ -92,7 +92,7 @@
             do k = lo(3),hi(3)
                do j = lo(2),hi(2)
                   do i = lo(1),hi(1)
-                     div(i,j,k,n) = div(i,j,k,n) + mult*(e(i,j+1,k,n)*a(i,j+1,k) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
+                     div(i,j,k,n) = div(i,j,k,n) + mult(n)*(e(i,j+1,k,n)*a(i,j+1,k) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
                   enddo
                enddo
             enddo
@@ -102,7 +102,7 @@
             do k = lo(3),hi(3)
                do j = lo(2),hi(2)
                   do i = lo(1),hi(1)
-                     div(i,j,k,n) = div(i,j,k,n) + mult*(e(i,j,k+1,n)*a(i,j,k+1) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
+                     div(i,j,k,n) = div(i,j,k,n) + mult(n)*(e(i,j,k+1,n)*a(i,j,k+1) - e(i,j,k,n)*a(i,j,k))/v(i,j,k)
                   enddo
                enddo
             enddo
