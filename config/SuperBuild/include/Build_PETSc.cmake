@@ -69,7 +69,7 @@ endif()
 # BLAS options
 if (BLAS_LIBRARIES) 
   build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-  set(petsc_blas_option --with-blas-lib='${petsc_blas_libs}')
+  set(petsc_blas_option --with-blas-libs='${petsc_blas_libs}')
 else()
   set(petsc_blas_option)
 endif()
@@ -77,10 +77,13 @@ endif()
 # LAPACK options
 if ( LAPACK_LIBRARIES ) 
   build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
-  set(petsc_lapack_option --with-lapack-lib='${petsc_lapack_libs}')
+  set(petsc_lapack_option --with-lapack-libs='${petsc_lapack_libs}')
 else()
   set(petsc_lapack_option)
 endif()
+
+# Point PETSc to the metis build
+set(petsc_metis_flags --with-metis=1 --with-metis-dir=${TPL_INSTALL_PREFIX}/metis-${METIS_VERSION})
 
 # PETSc SuperLU flags
 # For now we allow PETSc to download and build this package
