@@ -262,7 +262,7 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
-	    (flux[f] * dirs[n] < -tol)) {
+            (flux[f] * dirs[n] < -tol)) {
           int mb = (*map_c2mb)[c];
           double pc = atm_pressure - bc_values[f][0];
           (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
@@ -270,11 +270,11 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
       } else {
-	if (flux[f] * dirs[n] > tol) {
+        if (flux[f] * dirs[n] > tol) {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];  // The upwind face.
-	} else if (fabs(flux[f]) <= tol) { 
+        } else if (fabs(flux[f]) <= tol) { 
           (*dKdP_faces)[f] += (*dKdP_cells)[c] / 2; // Zero flux face.
-	}
+        }
       }
     }
   }
