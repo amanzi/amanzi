@@ -219,8 +219,9 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
       if (bc_model[f] != FLOW_BC_FACE_NULL){
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) && 
             (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE)) {
+          int mb = (*map_c2mb)[c];
           double pc = atm_pressure - bc_values[f][0];
-          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
+          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
@@ -236,16 +237,17 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
 }
 
 /* ******************************************************************
-* Defines upwinded derivative of relative permeabilities for faces using a given flux.
-* WARNING: This is the experimental code. 
+* Defines upwind derivative of relative permeability on mesh faces 
+* using a given flux.
+* WARNING: This is a part of the experimental solver. 
 ****************************************************************** */
-void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra_Vector& p,
-                                                          const Epetra_Vector& flux)
+void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(
+    const Epetra_Vector& p, const Epetra_Vector& flux)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Krel_faces->PutScalar(0.0);
+  dKdP_faces->PutScalar(0.0);
 
   double max_flux;
   flux.MaxValue(&max_flux);
@@ -258,11 +260,12 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
 
-      if (bc_model[f] != FLOW_BC_FACE_NULL){  // The boundary face.
+      if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
 	    (flux[f] * dirs[n] < -tol)) {
+          int mb = (*map_c2mb)[c];
           double pc = atm_pressure - bc_values[f][0];
-          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
+          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
@@ -270,7 +273,7 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra
 	if (flux[f] * dirs[n] > tol) {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];  // The upwind face.
 	} else if (fabs(flux[f]) <= tol) { 
-          (*dKdP_faces)[f] += (*dKdP_cells)[c]/2; // Zero flux face.
+          (*dKdP_faces)[f] += (*dKdP_cells)[c] / 2; // Zero flux face.
 	}
       }
     }
