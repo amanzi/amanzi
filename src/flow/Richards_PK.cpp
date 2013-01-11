@@ -322,7 +322,6 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
 
-
   // DEBUG
   // AdvanceToSteadyState();
   // CommitState(FS); WriteGMVfile(FS); exit(0);
