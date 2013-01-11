@@ -38,9 +38,7 @@ void Richards_PK::fun(
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     double v, s1, s2, volume;

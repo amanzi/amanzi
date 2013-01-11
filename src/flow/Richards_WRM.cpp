@@ -288,9 +288,7 @@ void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -309,9 +307,7 @@ void Richards_PK::DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk)
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -349,9 +345,7 @@ void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -370,9 +364,7 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     // double pc = atm_pressure - pmin;
@@ -393,9 +385,7 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Ep
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -449,9 +439,7 @@ void Richards_PK::PopulateMapC2MB()
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
