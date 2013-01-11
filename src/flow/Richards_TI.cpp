@@ -64,11 +64,9 @@ void Richards_PK::fun(
     }
   }
 
-  // cout<<" Total Residual\n";
-  // for ( int i=0;i<12;i++) cout<<f[i]<<endl;
-  // cout<<" Solution \n";
-  // for ( int i=0;i<12;i++) cout<<u[i]<<endl;
-  // cout<<endl; exit(0);
+
+  // cout<<endl;
+//  exit(0);
 }
 
 
@@ -221,7 +219,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
     if (fabs(du[c]) > du_pert_max) {
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
         cout << "Richards_PK: saturation clipping in cell " << c << 
-                " pressure change: " << du[c] << " -> " << du_pert_max << endl;
+                " pressure change:" << du[c] << " -> " << du_pert_max << endl;
       }
        
       if (du[c] >= 0.0) du[c] = fabs(du_pert_max);
@@ -230,14 +228,15 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
       ncells_clipped++;
       ret_val = true;
     }    
-  }
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    int ncells_tmp = ncells_clipped;
-    du.Comm().MaxAll(&ncells_tmp, &ncells_clipped, 1);
-    if (ncells_clipped > 0)
-        printf("Richards_PK: saturation was clipped in %d cells.\n", ncells_clipped); 
-  }
+  } 
+  
+  // if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  //   int ncells_tmp = ncells_clipped;
+  //   du.Comm().MaxAll(&ncells_tmp, &ncells_clipped, 1);
+  //   if (ncells_clipped > 0) {
+  //       printf("Richards_PK: saturation was clipped in %d cells.\n", ncells_clipped); 
+  //   }    
+  // }
 
   return ret_val;
 }

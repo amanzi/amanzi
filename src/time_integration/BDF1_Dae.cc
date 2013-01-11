@@ -540,8 +540,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // Check for convergence
     if (error < state.ntol*state.ntol_multiplier_current)   {
-      //      cout<<" test_sol Exit before convergence\n";
-      //      exit(0);
+                 // cout<<" test_sol Exit before convergence\n";
+                 // exit(0);
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
       }
