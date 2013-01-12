@@ -123,6 +123,7 @@ class Flow_PK : public BDF2::fnBase {
 
   int MyPID;  // parallel information: will be moved to private
   int verbosity, verbosity_AztecOO, internal_tests;  // output information
+  int missed_bc_faces_;
  
   Teuchos::RCP<Flow_State> FS;
   

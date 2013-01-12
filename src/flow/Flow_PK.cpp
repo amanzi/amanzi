@@ -174,7 +174,7 @@ void Flow_PK::ProcessBoundaryConditions(
 
   // mark missing boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;
-  int missed = 0;
+  missed_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == FLOW_BC_FACE_NULL) {
       cells.clear();
@@ -184,7 +184,7 @@ void Flow_PK::ProcessBoundaryConditions(
       if (ncells == 1) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = 0.0;
-        missed++;
+        missed_bc_faces_++;
       }
     }
   }
@@ -201,18 +201,14 @@ void Flow_PK::ProcessBoundaryConditions(
   // verbose output
   if (verbosity >= FLOW_VERBOSITY_HIGH) {
 #ifdef HAVE_MPI
-    int missed_tmp = missed, nseepage_tmp = nseepage;
+    int nseepage_tmp = nseepage;
     double area_tmp = area_seepage;
-    mesh_->get_comm()->SumAll(&missed_tmp, &missed, 1);
     mesh_->get_comm()->SumAll(&area_tmp, &area_seepage, 1);
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
       std::printf("Flow PK: seepage face has changed: %9.4e [m^2]\n", area_seepage);
     }
-  }
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME && missed > 0) {
-    std::printf("Flow PK: assign zero flux BC to%7d faces\n", missed);
   }
   nseepage_prev = nseepage;
 }

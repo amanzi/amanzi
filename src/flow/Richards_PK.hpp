@@ -231,7 +231,7 @@ class Richards_PK : public Flow_PK {
 
   double mass_bc, mass_amanzi;
 
-  // Debug
+  // Miscallenous maps
   Teuchos::RCP<Epetra_Vector> map_c2mb;
 
  private:
