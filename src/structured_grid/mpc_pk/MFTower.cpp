@@ -210,7 +210,7 @@ MFTower::CCtoECgrad(PArray<MFTower>& mfte,
 void
 MFTower::ECtoCCdiv(MFTower&               mftc,
                    const PArray<MFTower>& mfte,
-                   Real                   mult,
+                   const Array<Real>&     mult,
                    int                    sComp,
                    int                    dComp,
                    int                    nComp,
@@ -249,7 +249,7 @@ MFTower::ECtoCCdiv(MFTower&               mftc,
                                   efab.dataPtr(sComp),ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
                                   area.dataPtr(),     ARLIM(area.loVect()), ARLIM(area.hiVect()),
                                   vol.dataPtr(),      ARLIM(vol.loVect()),  ARLIM(vol.hiVect()),
-                                  vcbox.loVect(), vcbox.hiVect(),&mult,&d,&nComp);
+                                  vcbox.loVect(), vcbox.hiVect(), mult.dataPtr(), &d, &nComp);
             }
         }
     }

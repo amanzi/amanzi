@@ -39,23 +39,23 @@ struct MFTower
  
     static void CCtoECgrad(PArray<MFTower>& mft_ec,
                            const MFTower&   mft_cc,
-                           Real             mult=1,
-                           int              sComp=0,
-                           int              dComp=0,
-                           int              nComp=1,
+                           Real             mult,
+                           int              sComp,
+                           int              dComp,
+                           int              nComp,
 			   int              numLevs=-1);
     
     static void ECtoCCdiv(MFTower&               mft_cc,
                           const PArray<MFTower>& mft_ec,
-                          Real                   mult=1,
-                          int                    sComp=0,
-                          int                    dComp=0,
-                          int                    nComp=1,
+                          const Array<Real>&     mult,
+                          int                    sComp,
+                          int                    dComp,
+                          int                    nComp,
 			  int                    numLevs=-1);
     
     static void AverageDown(MFTower& mft,
-                            int      sComp=0,
-                            int      nComp=1,
+                            int      sComp,
+                            int      nComp,
 			    int      numLevs=-1);
     
     void SetVal(Real     val,
