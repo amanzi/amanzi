@@ -48,7 +48,6 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
                         Epetra_Vector& Krel_faces, 
                         Epetra_Vector& dK_dP_faces);
 
-
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
@@ -59,9 +58,9 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   void CompareJacobians();
 
   const char* Label() const { return strdup("Matrix MFD_TPFA"); }
+  bool IsPureNewton() const { return true; } 
 
  private:
-         
   void ComputeJacobianLocal(int mcells,
                             int face_id,
                             int dim,
@@ -76,9 +75,6 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
                             double *dk_dp_cell,
                             AmanziGeometry::Point& normal,
                             Teuchos::SerialDenseMatrix<int, double>& Jpp);
-  
-  
-         
          
   Teuchos::RCP<Epetra_Vector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement

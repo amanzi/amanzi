@@ -63,6 +63,16 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
+  // use the exisiting mass matrices to recover the Darcy flux
+  // may exist problems with the first call (lipnikov@lanl.gov)
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+    Epetra_Vector& flux = FS->ref_darcy_flux();
+    preconditioner_->DeriveDarcyMassFlux(u, *face_importer_, flux);
+    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
+    for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho;
+  }
+
+  // update all coefficients, boundary data, and source/sink terms
   CalculateRelativePermeability(u);
   UpdateSourceBoundaryData(Tp, *u_faces);
 
@@ -118,7 +128,7 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
     Krel_cells->PutScalar(1.0);
     if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
         experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-      CalculateDerivativePermeabilityFace(*solution_cells);
+      CalculateDerivativePermeabilityFace(*u_cells);
     }
   } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
     CalculateRelativePermeabilityFace(*u_cells);

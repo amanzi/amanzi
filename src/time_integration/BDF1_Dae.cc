@@ -271,8 +271,8 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     Exceptions::amanzi_throw(m);    
   }
   
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-    *out << "BDF1 step " << state.seq+1 << " T = "<< tlast << " H = " << h << std::endl;
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_EXTREME,true)) {
+    *out << "BDF1 step " << state.seq << " T = "<< tlast << " H = " << h << std::endl;
   }
   
   // Predicted solution (initial value for the nonlinear solver)
@@ -296,21 +296,20 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     state.pclagcount = 0;
   }
 
-  //  Solve the nonlinear BCE system.
-  if (fn.IsPureNewton){
-	u = u0;  // Initial solution guess is the previous time step
+  // Solve the nonlinear BCE system.
+  if (fn.IsPureNewton()) {
+    u = u0;  // Initial solution guess is the previous time step
   } else {
     u = up;  // Initial solution guess is the predictor.
   }
 
   
   try {
-      if (state.nonlinear_solver == BDFNKA) {
-            solve_bce(tnew, h, u0, u);            
-      }
-      else if (state.nonlinear_solver == BDFJFNK) {
-             solve_bce_jfnk(tnew, h, u0, u);
-      }     
+    if (state.nonlinear_solver == BDFNKA) {
+      solve_bce(tnew, h, u0, u);            
+    } else if (state.nonlinear_solver == BDFJFNK) {
+      solve_bce_jfnk(tnew, h, u0, u);
+    }     
   }
   catch (int itr) { 
     // we end up in here either if the solver took too many iterations, 
@@ -362,9 +361,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
 // hnext = 7.00725E+07;
 //     else if (fabs(tnew - 2.01576E+08) < 1e+5) 
 // hnext = 1.14000E+08;  
-    
-   }
-  
+  }
 }
 
 
@@ -377,7 +374,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
   //*****************************
   // h = 3.50362e+07;
-
   // u[0] = 59947.896613379933 ;
   // u[1] = 43592.738470104247 ;
   // u[2] = 73275.463792323280 ;
@@ -397,7 +393,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   // cout<<"Initial Guess\n";
   // for (int i=0;i<12;i++) cout<<u[i]<<" ";
   // cout<<endl;
-
   //*************************************************
 
   fpa->nka_restart();
@@ -410,7 +405,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
   Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
       Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
-
 
 
   double error(0.0);
@@ -432,13 +426,11 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
 
     // update the preconditioner if necessary
-    // DEBUG: Nathan
     int errc(0);
-    if (itr%(state.currentpclag+1)==0) {
-      fn.update_precon (t, u, h, errc);
+    if (itr%(state.currentpclag+1) == 0) {
+      fn.update_precon(t, u, h, errc);
     }
  
-
     // iteration counter
     itr++;
 
@@ -459,14 +451,14 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
 
-    if (fn.IsPureNewton){
+    if (fn.IsPureNewton()) {
       nev_du = *preconditioned_f;
     } else {
       // compute the accellerated correction
-      if (itr>1) {
-	fpa->nka_correction(nev_du, preconditioned_f, state.damp);
+      if (itr > 1) {
+        fpa->nka_correction(nev_du, preconditioned_f, state.damp);
       } else {
-	fpa->nka_correction(nev_du, preconditioned_f);
+        fpa->nka_correction(nev_du, preconditioned_f);
       }
     }
     // copy result into an Epetra_Vector.
@@ -476,10 +468,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     du.Scale(state.damp);
 
     bool clip;
-    if (fn.IsPureNewton){
-      clip = fn.modify_update_step(h, u, du );
-      // for (int i=0;i<12;i++) cout<<"update "<<du[i]<<"\n";
-      // cout<<endl;
+    if (fn.IsPureNewton()) {
+      clip = fn.modify_update_step(h, u, du);
     }
 
     // Check the solution iterate for admissibility.
@@ -797,7 +787,7 @@ void BDF1Dae::write_bdf1_stepping_statistics() {
   oss << "STEP=";
   oss.fill('0');
   oss.width(5);
-  oss << right << state.seq;
+  oss << right << state.seq - 1;
   oss << " T=";
   oss.precision(5);
   oss.width(11);

@@ -342,177 +342,156 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
                                            double *k_rel,
                                            double *dk_dp_cell,
                                            AmanziGeometry::Point& normal,
-                                           Teuchos::SerialDenseMatrix<int, double>& Jpp
-                                          ){
+                                           Teuchos::SerialDenseMatrix<int, double>& Jpp)
+{
+  double K[2];
+  double dKrel_dp[2];
 
-        double K[2];
-        double dKrel_dp[2];
+  double rho_w = FS->ref_fluid_density();
 
-        double rho_w = FS->ref_fluid_density();
+  for (int c = 0; c < mcells; c++) {
+    K[c] = 0.0;
+    for (int i = 0; i < dim-1; i++) K[c] += normal[i]*normal[i]*perm_abs_horz[c];
+    K[c] += normal[dim-1]*normal[dim-1]*perm_abs_vert[c];
+    K[c] /= FS->ref_fluid_viscosity();
+  }
 
+  double Kabs_dist;
 
-        for (int c = 0; c < mcells; c++) {
-                K[c] = 0.;
-                for (int i = 0;i < dim-1; i++)  K[c] += normal[i]*normal[i]*perm_abs_horz[c];
-                K[c] += normal[dim-1]*normal[dim-1]*perm_abs_vert[c];
-                K[c] /= FS->ref_fluid_viscosity();
-        }
+  if (mcells == 1) {
+    Kabs_dist = K[0]/dist;
+  } else {
+    Kabs_dist = 2*K[0]*K[1]/(dist*(K[0] + K[1]));
+  }
 
-        double Kabs_dist;
+  double rho = FS->ref_fluid_density();
+  AmanziGeometry::Point gravity(dim);
+  for (int i = 0; i < dim; i++) gravity[i] = (*(FS->gravity()))[i] * rho;
 
-        if (mcells == 1) {
-                Kabs_dist = K[0]/dist;
-        }
-        else
-        {
-                Kabs_dist = 2*K[0]*K[1]/(dist*(K[0] + K[1]));
-        }
+  double grn = dist*gravity*normal;
+  // cout<<"grn "<<grn<<endl;
+  // for (int i = 0; i < dim; i++) cout<<"dist "<<(*(FS->gravity()))[i]<<endl;
 
-        double rho = FS->ref_fluid_density();
-        AmanziGeometry::Point gravity(dim);
-        for (int i = 0; i < dim; i++) gravity[i] = (*(FS->gravity()))[i] * rho;
+  double dphi;
+  if (mcells == 2) {
+    dphi = pres[0] - pres[1] + grn;
+		// cout<<"pres[0] "<<pres[0]<<" pres[1] "<<pres[1]<<" grv "<<grn<<endl;
+    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
+      if (grn*Kabs_dist > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = dk_dp_cell[0];
+        dKrel_dp[1] = 0.0;
+      } else if (grn*Kabs_dist < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = 0.0;
+        dKrel_dp[1] = dk_dp_cell[1];
+      } else if (fabs(grn*Kabs_dist) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = 0.5*dk_dp_cell[0];
+        dKrel_dp[1] = 0.5*dk_dp_cell[1];
+      }
+    } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+      if (dphi > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = dk_dp_cell[0];
+        dKrel_dp[1] = 0.0;
+    } else if (dphi < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = 0.0;
+        dKrel_dp[1] = dk_dp_cell[1];
+    } else if (fabs(dphi) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+        dKrel_dp[0] = 0.5*dk_dp_cell[0];
+        dKrel_dp[1] = 0.5*dk_dp_cell[1];
+    }
+  } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
+    dKrel_dp[0] = 0.5*dk_dp_cell[0];
+    dKrel_dp[1] = 0.5*dk_dp_cell[1];
+  }
 
-        double grn = dist*gravity*normal;
+  Jpp(0, 0) = Kabs_dist*dphi*dKrel_dp[0]*rho_w*mesh_->face_area(face_id);
+  Jpp(0, 1) = Kabs_dist*dphi*dKrel_dp[1]*rho_w*mesh_->face_area(face_id);
+  Jpp(1, 0) = -Jpp(0, 0);
+  Jpp(1, 1) = -Jpp(0, 1);
 
-//         cout<<"grn "<<grn<<endl;
-//         for (int i = 0; i < dim; i++) cout<<"dist "<<(*(FS->gravity()))[i]<<endl;
+  // cout<<"Jpp_local"<<endl;
+  // for (int i=0;i<2;i++){
+  //   for (int j=0;j<2;j++) cout<<Jpp(i,j)<<" ";
+  //   cout<<endl;
+  // }
+  } else if (mcells == 1) {
+    if ((bc_models[face_id] == FLOW_BC_FACE_PRESSURE) ||
+        (bc_models[face_id] == FLOW_BC_FACE_PRESSURE_SEEPAGE)) {                   
+		  pres[1] = bc_values[face_id][0];
 
-        double dphi;
-
-        if (mcells == 2){
-                dphi = pres[0] - pres[1] + grn;
-		//      cout<<"pres[0] "<<pres[0]<<" pres[1] "<<pres[1]<<" grv "<<grn<<endl;
-                if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
-                        if (grn*Kabs_dist > FLOW_RELATIVE_PERM_TOLERANCE){    // Upwind
-                                dKrel_dp[0] = dk_dp_cell[0];
-                                dKrel_dp[1] = 0.;
-                        }
-                        else if (grn*Kabs_dist < -FLOW_RELATIVE_PERM_TOLERANCE){    // Upwind
-                                dKrel_dp[0] = 0.;
-                                dKrel_dp[1] = dk_dp_cell[1];
-                        }
-                        else if (fabs(grn*Kabs_dist) < FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
-                                dKrel_dp[0] = 0.5*dk_dp_cell[0];
-                                dKrel_dp[1] = 0.5*dk_dp_cell[1];
-                        }
-                } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-                        if (dphi > FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
-                                dKrel_dp[0] = dk_dp_cell[0];
-                                dKrel_dp[1] = 0.;
-                        }
-                        else if (dphi < -FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
-                                dKrel_dp[0] = 0.;
-                                dKrel_dp[1] = dk_dp_cell[1];
-                        }
-                        else if (fabs(dphi) < FLOW_RELATIVE_PERM_TOLERANCE){   // Upwind
-                                dKrel_dp[0] = 0.5*dk_dp_cell[0];
-                                dKrel_dp[1] = 0.5*dk_dp_cell[1];
-                        }
-                } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-                        dKrel_dp[0] = 0.5*dk_dp_cell[0];
-                        dKrel_dp[1] = 0.5*dk_dp_cell[1];
-                }
-
-                Jpp(0, 0) = Kabs_dist*dphi*dKrel_dp[0]*rho_w*mesh_->face_area(face_id);
-                Jpp(0, 1) = Kabs_dist*dphi*dKrel_dp[1]*rho_w*mesh_->face_area(face_id);
-                Jpp(1, 0) = -Jpp(0, 0);
-                Jpp(1, 1) = -Jpp(0, 1);
-
-                  // cout<<"Jpp_local"<<endl;
-                  // for (int i=0;i<2;i++){
-                  //   for (int j=0;j<2;j++) cout<<Jpp(i,j)<<" ";
-                  //   cout<<endl;
-                  // }
-
-
-        }
-        else if (mcells == 1){
-                 if ((bc_models[face_id] == FLOW_BC_FACE_PRESSURE) ||
-                         (bc_models[face_id] == FLOW_BC_FACE_PRESSURE_SEEPAGE)) {
-                          
-		   pres[1] = bc_values[face_id][0];
-
-                   dphi = pres[0] - pres[1] + grn;
+      dphi = pres[0] - pres[1] + grn;
  
-                   Jpp(0,0) = Kabs_dist*dphi*dk_dp_cell[0]*rho_w*mesh_->face_area(face_id);
-
-                 }
-                 else
-                        Jpp(0,0) = 0.;
-        }
-
+      Jpp(0,0) = Kabs_dist*dphi*dk_dp_cell[0]*rho_w*mesh_->face_area(face_id);
+    } else {
+      Jpp(0,0) = 0.0;
+    }
+  }
 }
 
 
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r){
+void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r)
+{
+  WhetStone::MFD3D mfd3d(mesh_);
 
-        WhetStone::MFD3D mfd3d(mesh_);
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
 
-        AmanziMesh::Entity_ID_List faces;
-        std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  int mfaces = faces.size();
+  int indices;
+  double values;
 
-        mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
-        int mfaces = faces.size();
-        int indices;
-        double values;
+  indices = cell;
+  values = r[cell];
 
-        indices = cell;
-        values = r[cell];
+  NumJac_->ReplaceGlobalValues(cell, 1, &values, &indices);
 
-        NumJac_->ReplaceGlobalValues(cell, 1, &values, &indices);
+  for (int i = 0; i < mfaces; i++) {
+    int c_adj = mfd3d.cell_get_face_adj_cell(cell, faces[i]);
+    // cout<<cell<<" - c_adj "<<c_adj<<endl;
+    if (c_adj >= 0) {
+      values = r[c_adj];
+      NumJac_->ReplaceGlobalValues(c_adj, 1, &values, &indices);
+    }
+  }
+  // cout<<"NonZeros "<<NumJac_->NumGlobalEntries(cell)<<endl;;
 
-        for (int i=0; i<mfaces; i++){
-                int c_adj = mfd3d.cell_get_face_adj_cell(cell, faces[i]);
-        //        cout<<cell<<" - c_adj "<<c_adj<<endl;
-                if (c_adj >= 0) {
-                    values = r[c_adj];
-                    NumJac_->ReplaceGlobalValues(c_adj, 1, &values, &indices);
-                }
+  NumJac_->GlobalAssemble();
 
-        }
-//         cout<<"NonZeros "<<NumJac_->NumGlobalEntries(cell)<<endl;;
-
-        NumJac_->GlobalAssemble();
-
- //       std::cout<<"NumJac_ "<<r[cell]<<"\n";
- //       std::cout<<(*NumJac_)<<endl;
-
+  // std::cout<<"NumJac_ "<<r[cell]<<"\n";
+  // std::cout<<(*NumJac_)<<endl;
 }
 
 
 /* ******************************************************************
 * TBW
 ****************************************************************** */
-void Matrix_MFD_TPFA::CompareJacobians(){
+void Matrix_MFD_TPFA::CompareJacobians()
+{
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-        int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  double ErrMax = 0;
+  double ErrL2 = 0;
+  double NormL2 = 0;
+  double NormMax = 0;
 
-        double ErrMax = 0;
-        double ErrL2 = 0;
-        double NormL2 = 0;
-        double NormMax = 0;
+  for (int cell = 0; cell < ncells_owned; cell++) {
+    int nonzeros = NumJac_->NumGlobalEntries(cell);
 
+    for (int i = 0; i < nonzeros; i++) {
+      ErrL2 += ((*NumJac_)[cell][i] - (*Spp_)[cell][i])*((*NumJac_)[cell][i] - (*Spp_)[cell][i]);
+      ErrMax = max(fabs((*NumJac_)[cell][i] - (*Spp_)[cell][i]), ErrMax);
+      NormL2 += (*NumJac_)[cell][i] * (*NumJac_)[cell][i];
+      NormMax = max((*NumJac_)[cell][i], NormMax);
+    }
+  }
 
-        for (int cell=0; cell<ncells_owned; cell++){
-                int nonzeros = NumJac_->NumGlobalEntries(cell);
+  ErrL2 = sqrt(ErrL2/NormL2);
 
-
-                for (int i=0;i<nonzeros;i++){
-                        ErrL2 += ((*NumJac_)[cell][i] - (*Spp_)[cell][i])*((*NumJac_)[cell][i] - (*Spp_)[cell][i]);
-                        ErrMax = max(fabs((*NumJac_)[cell][i] - (*Spp_)[cell][i]), ErrMax);
-                        NormL2 += (*NumJac_)[cell][i] * (*NumJac_)[cell][i];
-                        NormMax = max((*NumJac_)[cell][i], NormMax);
-                }
-        }
-
-        ErrL2 = sqrt(ErrL2/NormL2);
-
-        cout<<"Error L2  "<<ErrL2<<endl;
-        cout<<"Error Max "<<ErrMax/NormMax<<endl;
-
+  cout<<"Error L2  "<<ErrL2<<endl;
+  cout<<"Error Max "<<ErrMax/NormMax<<endl;
 }
 
 

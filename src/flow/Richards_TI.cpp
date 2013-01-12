@@ -58,10 +58,6 @@ void Richards_PK::fun(
       }
     }
   }
-
-
-  // cout<<endl;
-//  exit(0);
 }
 
 

@@ -40,6 +40,7 @@ class Matrix_MFD_PLambda : public Matrix_MFD {
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   const char* Label() const { return strdup("Matrix MFD_PLambda"); }
+  bool IsPureNewton() const { return true; } 
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces() { return Acc_faces_; }
