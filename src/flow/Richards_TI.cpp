@@ -231,6 +231,16 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
   return ret_val;
 }
 
+
+/********************************************************************
+* Converts the BDF1 time intgerator to the Newton solver
+****************************************************************** */
+bool Richards_PK::IsPureNewton() const
+{
+  if (experimental_solver_ == FLOW_SOLVER_NKA) return false;
+  return true; 
+}
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

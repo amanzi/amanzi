@@ -81,7 +81,6 @@ class Matrix_MFD : public Epetra_Operator {
   const char* Label() const { return strdup("Matrix MFD"); }
   double NormInf() const { return 0.0; }
   bool HasNormInf() const { return false; }
-  bool IsPureNewton() const { return false; }
 
   // development methods
   int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);

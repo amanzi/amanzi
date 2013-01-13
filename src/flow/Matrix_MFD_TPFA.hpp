@@ -58,7 +58,6 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   void CompareJacobians();
 
   const char* Label() const { return strdup("Matrix MFD_TPFA"); }
-  bool IsPureNewton() const { return true; } 
 
  private:
   void ComputeJacobianLocal(int mcells,

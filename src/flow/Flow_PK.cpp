@@ -307,6 +307,7 @@ void Flow_PK::AddNewtonFluxes_MFD(
     const Epetra_Vector& pressure_cells, const Epetra_Vector& flux,
     Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix_operator)
 {
+  double rho = FS->ref_fluid_density();
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Acc_faces = matrix_operator->Acc_faces();
   Acc_faces.clear();
 
@@ -322,7 +323,7 @@ void Flow_PK::AddNewtonFluxes_MFD(
     int ncells = cells.size();
 
     Teuchos::SerialDenseMatrix<int, double> Bcc(ncells, ncells);
-    double factor = flux[f] * dKdP_faces[f] / Krel_faces[f];
+    double factor = rho * flux[f] * dKdP_faces[f] / Krel_faces[f];
 
     int c1 = cells[0];
     mesh_->cell_get_faces_and_dirs(c1, &faces, &dirs);
