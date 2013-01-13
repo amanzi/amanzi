@@ -238,6 +238,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
 bool Richards_PK::IsPureNewton() const
 {
   if (experimental_solver_ == FLOW_SOLVER_NKA) return false;
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) return false;
   return true; 
 }
 

@@ -39,18 +39,6 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
  
   rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
-
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(matrix_);
-    if (matrix_plambda == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_PLAMBDA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-
-    Epetra_Vector& flux = FS->ref_darcy_flux();
-    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
-  }
 }
 
 
@@ -63,15 +51,6 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
-  // use the exisiting mass matrices to recover the Darcy flux
-  // may exist problems with the first call (lipnikov@lanl.gov)
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    Epetra_Vector& flux = FS->ref_darcy_flux();
-    preconditioner_->DeriveDarcyMassFlux(u, *face_importer_, flux);
-    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
-    for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho;
-  }
-
   // update all coefficients, boundary data, and source/sink terms
   CalculateRelativePermeability(u);
   UpdateSourceBoundaryData(Tp, *u_faces);
@@ -81,6 +60,12 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   preconditioner_->CreateMFDrhsVectors();
   AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
   AddTimeDerivative_MFD(*u_cells, dTp, preconditioner_);
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+    Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
+    Epetra_Vector& flux = FS->ref_darcy_flux();
+    rhs = preconditioner_->rhs();
+    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
+  }
   preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
   preconditioner_->AssembleGlobalMatrices();
  
@@ -95,17 +80,6 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model, bc_values,
                                   *Krel_cells, *dKdP_cells,
                                   *Krel_faces, *dKdP_faces);
-  } else if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
-    if (matrix_plambda == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_PLAMBDA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-
-    Epetra_Vector& flux = FS->ref_darcy_flux();
-    rhs = preconditioner_->rhs();
-    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
   }
 
   preconditioner_->ComputeSchurComplement(bc_model, bc_values);
