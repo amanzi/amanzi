@@ -203,13 +203,19 @@ namespace Amanzi {
               return !(sorption_sites.find(name)==sorption_sites.end());
           }
 
-          static SolidChem::SorptionIsothermData& SorptionIsotherm(const std::string& solute_name) {return sorption_isotherms[solute_name];}
-          static std::map<std::string,SolidChem::SorptionIsothermData>& SorptionIsotherm() {return sorption_isotherms;}          
-          static bool HasSorptionIsotherm(const std::string& solute)
-              {
-                  return sorption_isotherms.find(solute) != sorption_isotherms.end();
+	  void InitializeSorptionIsotherm(const Array<std::string>& names) {
+              sorption_isotherms.clear();
+              for (int i=0; i<names.size(); ++i) {
+                  sorption_isotherms[names[i]] = SorptionIsothermData();
               }
-          static bool InsertSorptionIsotherm(const std::string& soluteName, const SolidChem::SorptionIsothermData& iso) {
+          }
+          SolidChem::SorptionIsothermData& SorptionIsotherm(const std::string& solute_name) {return sorption_isotherms[solute_name];}
+          const std::map<std::string,SorptionIsothermData>& SorptionIsotherm() const {return sorption_isotherms;}          
+          bool HasSorptionIsotherm(const std::string& solute)  const
+	      {
+		return sorption_isotherms.find(solute) != sorption_isotherms.end();
+              }
+	bool InsertSorptionIsotherm(const std::string& soluteName, const SorptionIsothermData& iso) {
               if (HasSorptionIsotherm(soluteName)) {
                   return false;
               }
@@ -218,11 +224,11 @@ namespace Amanzi {
               }
               return true;
           }
-
+	
       protected:
           std::map<std::string,MineralData> minerals;
           std::map<std::string,SorptionSiteData> sorption_sites;
-          static std::map<std::string,SolidChem::SorptionIsothermData> sorption_isotherms; // One for all materials, indexed on solute name
+          std::map<std::string,SorptionIsothermData> sorption_isotherms; 
       };
 
 

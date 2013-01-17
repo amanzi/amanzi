@@ -19,8 +19,7 @@ namespace Amanzi {
 
         std::map<std::string,std::string> GlobalData::AMR_to_Amanzi_label_map;
         std::map<std::string,std::string>& AMR_to_Amanzi_label_map = AMRToAmanziLabelMap();
-
-        std::map<std::string,SolidChem::SorptionIsothermData> SolidChem::sorption_isotherms; // One for all materials, indexed on solute name
+      //std::map<std::string,SolidChem::SorptionIsothermData> SolidChem::sorption_isotherms; // One for each material, indexed on solute name
 
         void MyAbort(const std::string& m) {
             if (Teuchos::MPISession::getRank() == 0) {
@@ -1447,7 +1446,7 @@ namespace Amanzi {
                                             }
                                             
 
-                                            SolidChem::SorptionIsothermData iso;
+                                            //SolidChem::SorptionIsothermData& iso = solid_chem[label].sorption_isotherms(sipcsLabel);
 
                                             reqP.clear();
                                             std::string Kd_str("Kd");
@@ -1459,16 +1458,16 @@ namespace Amanzi {
 					    bool b_found = false;
                                             for (int N=0; N<siLabels.size(); ++N) {
                                                 if (siLabels[N] == Kd_str) {
-                                                    iso.Kd = sipcsSL.get<double>(siLabels[N]);
+                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Kd = sipcsSL.get<double>(siLabels[N]);
                                                 }
                                                 else if (siLabels[N] == Lb_str) {
-                                                    iso.Langmuir_b = sipcsSL.get<double>(siLabels[N]);
-                                                    iso.Freundlich_n = -1.0;
+                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Langmuir_b = sipcsSL.get<double>(siLabels[N]);
+						    solid_chem[label].SorptionIsotherm(sipcsLabel).Freundlich_n = -1.0;
 						    n_found = true;
                                                 }
                                                 else if (siLabels[N] == Fn_str) {
-                                                    iso.Freundlich_n = sipcsSL.get<double>(siLabels[N]);
-                                                    iso.Langmuir_b = -1.0;
+                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Freundlich_n = sipcsSL.get<double>(siLabels[N]);
+                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Langmuir_b = -1.0;
 						    b_found = true;
                                                 }
                                                 else {
@@ -1485,17 +1484,18 @@ namespace Amanzi {
 							<< sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
 					      throw std::exception();
                                             }
-
-                                            bool successfully_inserted = SolidChem::InsertSorptionIsotherm(sipcsLabel,iso);
-                                            if (!successfully_inserted) {
-                                                bool compatible = iso.IsFreundlich() ^ SolidChem::SorptionIsotherm(sipcsLabel).IsFreundlich();
-                                                if (!compatible) {
-                                                    std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
-                                                              << "\" may be specified for each solute.  Both given for \"" 
-                                                              << sipcsLabel << "\" in different materials." << std::endl;
-                                                    throw std::exception();
-                                                }
-                                            }
+					    //else
+					    //solid_chem[label].sorption_isotherms(sipcsLabel) = iso;
+                                            //bool successfully_inserted = SolidChem::InsertSorptionIsotherm(sipcsLabel,iso);
+                                            //if (!successfully_inserted) {
+                                            //    bool compatible = iso.IsFreundlich() ^ SolidChem::SorptionIsotherm(sipcsLabel).IsFreundlich();
+                                            //    if (!compatible) {
+                                            //        std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
+                                            //                  << "\" may be specified for each solute.  Both given for \"" 
+                                            //                  << sipcsLabel << "\" in different materials." << std::endl;
+                                            //        throw std::exception();
+                                            //    }
+                                            //}
                                         }
                                     }
                                 }
@@ -1636,16 +1636,16 @@ namespace Amanzi {
                         StateDef::CompMap& comps = state[p];
                         for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
                             const std::string& c=cit->first;
-                            const Array<std::string>& solutes = cit->second.getTracerArray();
-                            for (int i=0; i<solutes.size(); ++i) {
-                                const std::string& s=solutes[i];
-                                if (SolidChem::HasSorptionIsotherm(s)) {
-                                    SolidChem::SorptionIsothermData sid = SolidChem::SorptionIsotherm(s);
-                                    ParameterList sitPL = sid.BuildPL();
-                                    siPL.set(underscore(s),sitPL);
-                                    solutes_with_isotherms.insert(s);
-                                }
-                            }
+                            const Array<std::string>& solutes = cit->second.getTracerArray();   
+			    for (int i=0; i<solutes.size(); ++i) {
+			      const std::string& s=solutes[i];                            
+			      if (solid_chem[label].HasSorptionIsotherm(s)) {
+				SolidChem::SorptionIsothermData sid = solid_chem[label].SorptionIsotherm(s);
+				ParameterList sitPL = sid.BuildPL();
+				siPL.set(underscore(s),sitPL);
+				solutes_with_isotherms.insert(s);
+			      }
+			    }
                         }
                     }
                     if (solutes_with_isotherms.size()>0) {
@@ -2798,6 +2798,8 @@ namespace Amanzi {
                         if (state.getSolid().UsingSorption()) {
                             user_derive_list.push_back(underscore("Total Sorbed "+name));
                         }
+			// Not going to put optional Freundlich and Langmuir output in the derived-list for now.  
+			/*
                         if (SolidChem::HasSorptionIsotherm(name)) {
                             user_derive_list.push_back(underscore("Kd "+name));
                             if (SolidChem::SorptionIsotherm(name).IsFreundlich()) {
@@ -2808,6 +2810,8 @@ namespace Amanzi {
                                 user_derive_list.push_back(underscore("Langmuir b "+name));
                             }
                         }
+			*/
+			user_derive_list.push_back(underscore("Kd "+name));
                         user_derive_list.push_back(underscore("Free Ion Guess "+name));
                         user_derive_list.push_back(underscore("Activity Coefficient "+name));
                     }
