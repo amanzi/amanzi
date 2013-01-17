@@ -405,6 +405,8 @@ public:
 
   void advance_richards_transport_dt(Real t);
 
+  void advance_flow_nochange(Real time, Real dt);
+
   void advance_saturated_transport_dt();
 
   bool advance_richards_transport_chemistry(Real  t,
@@ -1110,7 +1112,8 @@ protected:
   static Array<std::string> sorption_sites;
   static int ncation_exchange; 
   static int nsorption_isotherms;
-  static Array<std::string> aux_chem_variables;
+  //static Array<std::string> aux_chem_variables;
+  static std::map<std::string,int> aux_chem_variables;
   static bool using_sorption;
 
   typedef std::map<std::string,Real> ICParmPair; // ic parameter and value

@@ -158,7 +158,7 @@ int                PorousMedia::nsorption_sites;
 Array<std::string> PorousMedia::sorption_sites;
 int                PorousMedia::ncation_exchange;
 int                PorousMedia::nsorption_isotherms;
-Array<std::string> PorousMedia::aux_chem_variables;
+std::map<std::string, int> PorousMedia::aux_chem_variables;
 bool               PorousMedia::using_sorption;
 PorousMedia::ChemICMap PorousMedia::sorption_isotherm_ics;
 PorousMedia::ChemICMap PorousMedia::mineralogy_ics;
@@ -895,9 +895,14 @@ PorousMedia::variableSetUp ()
 
       int num_aux_chem_variables = aux_chem_variables.size();
       Array<BCRec> cbcs(num_aux_chem_variables);
-      for (int i = 0; i < num_aux_chem_variables; i++) 
+      Array<std::string> tmp_aux(num_aux_chem_variables);
+      for (std::map<std::string,int>::iterator it=aux_chem_variables.begin(); 
+	   it!=aux_chem_variables.end(); ++it)
       {
-          cbcs[i] = bc;
+	int i = it->second;
+	tmp_aux[i] = it->first;
+	cbcs[i] = bc;
+	  
       }
 
       FORT_AUXPARAMS(&num_aux_chem_variables);
@@ -905,7 +910,7 @@ PorousMedia::variableSetUp ()
       desc_lst.addDescriptor(Aux_Chem_Type,IndexType::TheCellType(),
                              StateDescriptor::Point,0,num_aux_chem_variables,
                              &cell_cons_interp);
-      desc_lst.setComponent(Aux_Chem_Type,0,aux_chem_variables,cbcs,
+      desc_lst.setComponent(Aux_Chem_Type,0,tmp_aux,cbcs,
                             BndryFunc(FORT_ONE_A_FILL,FORT_ALL_A_FILL));
 
   }
@@ -1505,7 +1510,8 @@ PorousMedia::read_rock(int do_chem)
 	sorption_isotherm_options["Freundlich_n"] = 1;
 	
 	for (int k=0; k<tNames.size(); ++k) {
-	  for (ICParmPair::const_iterator it=sorption_isotherm_options.begin(); it!=sorption_isotherm_options.end(); ++it) {
+	  for (ICParmPair::const_iterator it=sorption_isotherm_options.begin();
+	       it!=sorption_isotherm_options.end(); ++it) {
 	    const std::string& str = it->first;
 	    bool found = false;
 	    for (int i=0; i<nrock; ++i) {
@@ -1524,10 +1530,11 @@ PorousMedia::read_rock(int do_chem)
 		if (sorption_isotherm_ics[r_names[i]][tNames[k]].count(str) == 0) {
 		  sorption_isotherm_ics[r_names[i]][tNames[k]][str] = it->second; // set to default value
 		}
-
-                const std::string label = str+"_"+tNames[k];
-                sorption_isotherm_label_map[tNames[k]][str] = aux_chem_variables.size();
-                aux_chem_variables.push_back(label);
+	      }
+	      const std::string label = str+"_"+tNames[k];
+	      if (aux_chem_variables.find(label) == aux_chem_variables.end()) {
+		sorption_isotherm_label_map[tNames[k]][str] = aux_chem_variables.size();
+		aux_chem_variables[label]=aux_chem_variables.size()-1;
 	      }
 	    }
 	  }
@@ -1555,13 +1562,15 @@ PorousMedia::read_rock(int do_chem)
 		if (cation_exchange_ics.count(r_names[i]) == 0) {
 		  cation_exchange_ics[r_names[i]] = it->second; // set to default value
 		}
-
-                const std::string label = str;
-                cation_exchange_label_map[str] = aux_chem_variables.size();
-                aux_chem_variables.push_back(label);
-		//std::cout << "****************** cation_exchange_ics[" << r_names[i] << "] = " 
-		//	  << cation_exchange_ics[r_names[i]] << std::endl;
 	      }
+
+	      const std::string label = str;
+	      if (aux_chem_variables.find(label) == aux_chem_variables.end())  {
+		cation_exchange_label_map[str] = aux_chem_variables.size();
+		aux_chem_variables[label]=aux_chem_variables.size()-1;
+	      }
+	      //std::cout << "****************** cation_exchange_ics[" << r_names[i] << "] = " 
+	      //	  << cation_exchange_ics[r_names[i]] << std::endl;
 	    }
 	  }
 	}
@@ -1588,13 +1597,15 @@ PorousMedia::read_rock(int do_chem)
 		if (mineralogy_ics[r_names[i]][minerals[k]].count(str) == 0) {
 		  mineralogy_ics[r_names[i]][minerals[k]][str] = it->second; // set to default value
 		}
+	      }
 		//std::cout << "****************** mineralogy_ics[" << r_names[i] << "][" << minerals[k] 
 		//	  << "][" << str << "] = " << mineralogy_ics[r_names[i]][minerals[k]][str] 
 		//	  << std::endl;
 
-                const std::string label = str+"_"+minerals[k];
-                mineralogy_label_map[minerals[k]][str] = aux_chem_variables.size();
-                aux_chem_variables.push_back(label);
+	      const std::string label = str+"_"+minerals[k];
+	      if (aux_chem_variables.find(label) == aux_chem_variables.end()) {
+		mineralogy_label_map[minerals[k]][str] = aux_chem_variables.size();
+		aux_chem_variables[label]=aux_chem_variables.size()-1;
 	      }
 	    }
 	  }
@@ -1621,13 +1632,15 @@ PorousMedia::read_rock(int do_chem)
 		if (surface_complexation_ics[r_names[i]][sorption_sites[k]].count(str) == 0) {
 		  surface_complexation_ics[r_names[i]][sorption_sites[k]][str] = it->second; // set to default value
 		}
-		//std::cout << "****************** surface_complexation_ics[" << r_names[i] << "][" << sorption_sites[k] 
-		//	  << "][" << str << "] = " << sorption_isotherm_ics[r_names[i]][sorption_sites[k]][str] 
-		//	  << std::endl;
-
-                const std::string label = str+"_"+sorption_sites[k];
-                surface_complexation_label_map[sorption_sites[k]][str] = aux_chem_variables.size();
-                aux_chem_variables.push_back(label);
+	      }
+	      //std::cout << "****************** surface_complexation_ics[" << r_names[i] << "][" << sorption_sites[k] 
+	      //	  << "][" << str << "] = " << sorption_isotherm_ics[r_names[i]][sorption_sites[k]][str] 
+	      //	  << std::endl;
+	      
+	      const std::string label = str+"_"+sorption_sites[k];
+	      if (aux_chem_variables.find(label) == aux_chem_variables.end()) {
+		surface_complexation_label_map[sorption_sites[k]][str] = aux_chem_variables.size();
+		aux_chem_variables[label]=aux_chem_variables.size()-1;
 	      }
 	    }
 	  }
@@ -1647,8 +1660,10 @@ PorousMedia::read_rock(int do_chem)
                     //std::cout << "****************** sorption_chem_ics[" << tNames[k] 
                     //              << "][" << str << "] = " << sorption_chem_ics[tNames[k]][str] << std::endl;
                     const std::string label = str+"_"+tNames[k];
-                    sorption_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
-                    aux_chem_variables.push_back(label);
+		    if (aux_chem_variables.find(label) == aux_chem_variables.end()){
+		      sorption_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
+		      aux_chem_variables[label]=aux_chem_variables.size()-1;
+		    }
                 }
             }
         }
@@ -3199,8 +3214,11 @@ void  PorousMedia::read_chem()
       bool use_stdout = true; pp.query("Use_Standard_Out",use_stdout);
       int num_aux = pp.countval("Auxiliary_Data");
       if (num_aux>0) {
-	aux_chem_variables.resize(num_aux);
-	pp.getarr("Auxiliary_Data",aux_chem_variables,0,num_aux);
+	Array<std::string> tmpaux(num_aux);
+	aux_chem_variables.clear();
+	pp.getarr("Auxiliary_Data",tmpaux,0,num_aux);
+	for (int i=0;i<num_aux;i++)
+	  aux_chem_variables[tmpaux[i]] = i;
       }
 
       if (do_chem)
@@ -3221,8 +3239,12 @@ void  PorousMedia::read_chem()
                       //std::cout << "****************** solute_chem_ics[" << rname << "][" << tNames[k] 
                       //          << "][" << str << "] = " << solute_chem_ics[rname][tNames[k]][str] << std::endl;
                       const std::string label = str+"_"+tNames[k];
-                      solute_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
-                      aux_chem_variables.push_back(label);
+		      
+		      if (aux_chem_variables.find(label) == aux_chem_variables.end())
+		      {
+			solute_chem_label_map[tNames[k]][str] = aux_chem_variables.size();
+			aux_chem_variables[label]=aux_chem_variables.size()-1;
+		      }
                   }
               }
 	  }

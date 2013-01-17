@@ -1145,6 +1145,7 @@ PorousMedia::initData ()
         {
             const Real* dx = geom.CellSize();
             MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
+	    AuxChem_new.setVal(0.);
             for (MFIter mfi(AuxChem_new); mfi.isValid(); ++mfi)
             {
                 FArrayBox& fab = AuxChem_new[mfi];
@@ -2584,7 +2585,6 @@ PorousMedia::advance (Real time,
     {
       MultiFab& A_new = get_new_data(Aux_Chem_Type);
       MultiFab& A_old = get_old_data(Aux_Chem_Type);
-      A_new.setVal(0.);
       MultiFab::Copy(A_new,A_old,0,0,A_new.nComp(),A_new.nGrow());
     }
 
@@ -2768,18 +2768,8 @@ PorousMedia::multilevel_advance (Real  time,
     // Timestep control:
     //   Time-explicit CFL, chemistry difficulty
 
-    // Initialize velocity field, set "new time" for state the same across levels, copy over saturation
-    int finest_level = parent->finestLevel();
-    for (int lev=level; lev<=finest_level; ++lev) {
-      PorousMedia& pml = getLevel(lev);
-      StateData& sd = pml.get_state_data(State_Type);
-      sd.setNewTimeLevel(time+dt);
-      pml.set_saturated_velocity(time+dt,time+dt);
-
-      sd.allocOldData();
-      sd.setOldTimeLevel(time);
-      MultiFab::Copy(sd.oldData(),sd.newData(),0,0,ncomps,0);
-    }
+    // Initialize velocity field, set "new time" for state the same across levels, copy over saturation/pressure
+    advance_flow_nochange(time,dt);
     advance_saturated_transport_dt(); // FIXME: If u is really time-dependent, this must be done through the subcycle
 
     bool use_cached_sat = false;
@@ -2918,6 +2908,28 @@ PorousMedia::set_saturated_velocity(Real t_this, Real t_crse)
 
   for (int d=0; d<BL_SPACEDIM; ++d) {
     MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0);
+  }
+}
+
+void 
+PorousMedia::advance_flow_nochange(Real time, Real dt)
+{
+  int finest_level = parent->finestLevel();
+  for (int lev=level; lev<=finest_level; ++lev) {
+    PorousMedia& pml = getLevel(lev);
+    StateData& sd = pml.get_state_data(State_Type);
+    sd.setNewTimeLevel(time+dt);
+    pml.set_saturated_velocity(time+dt,time+dt);
+    
+    sd.allocOldData();
+    sd.setOldTimeLevel(time);
+    MultiFab::Copy(sd.oldData(),sd.newData(),0,0,ncomps,0);
+
+    StateData& pd = pml.get_state_data(Press_Type);
+    pd.setNewTimeLevel(time+dt);
+    pd.allocOldData();
+    pd.setOldTimeLevel(time);
+    MultiFab::Copy(pd.oldData(),pd.newData(),0,0,1,0);
   }
 }
 
@@ -5314,7 +5326,6 @@ PorousMedia::advance_chemistry (Real time,
 
   stateTemp.copy(S_old,0,0,ncomps+ntracers);  // Parallel copy.
   auxTemp.copy(Aux_old,0,0,Aux_old.nComp());  // Parallel copy.
-
   Real tagVal = -1;
   if (ngrow_tmp>0) {
     for (int n=0; n<ncomps+ntracers; ++n) 
@@ -5479,7 +5490,7 @@ PorousMedia::advance_chemistry (Real time,
 	    if (sorption_isotherm_label_map[tNames[i]].count("Freundlich_n")) {
 	      TheComponent.isotherm_freundlich_n[i] = aux_fab(iv,freundlich_n_comp[i]);
 	    }
-	    else {
+	    else if (sorption_isotherm_label_map[tNames[i]].count("Langumuir_b")){
 	      TheComponent.isotherm_langmuir_b[i] = aux_fab(iv,langmuir_b_comp[i]);
 	    }
 	  }
@@ -5537,29 +5548,32 @@ PorousMedia::advance_chemistry (Real time,
 	    if (using_sorption) {
 	      aux_fab(iv,sorbed_comp[i]) = TheComponent.total_sorbed[i];
 	    }
-	    if (nsorption_isotherms) {
-	      aux_fab(iv,kd_comp[i]) = TheComponent.isotherm_kd[i];
-	      aux_fab(iv,freundlich_n_comp[i]) = TheComponent.isotherm_freundlich_n[i];
-	      aux_fab(iv,langmuir_b_comp[i]) = TheComponent.isotherm_langmuir_b[i];
+	    if (nsorption_isotherms > 0) {
+	      aux_fab(iv,kd_comp[i]) =  TheComponent.isotherm_kd[i];
+	      if (sorption_isotherm_label_map[tNames[i]].count("Freundlich_n")) {
+		aux_fab(iv,freundlich_n_comp[i]) = TheComponent.isotherm_freundlich_n[i];
+	      }
+	      else if (sorption_isotherm_label_map[tNames[i]].count("Langumuir_b")){
+		aux_fab(iv,langmuir_b_comp[i]) = TheComponent.isotherm_langmuir_b[i];
+	      }
 	    }
+	    // FIXME:
+	    //if (ncation_exchange > 0) {
+	    //  aux_fab(iv,cation_exchange_capacity_comp) = TheComponent.cation_exchange_capacity;
+	    //}
+	    
+	    // TODO: loop over minerals, porosity, etc
 	  }
-	  // FIXME:
-	  //if (ncation_exchange > 0) {
-	  //  aux_fab(iv,cation_exchange_capacity_comp) = TheComponent.cation_exchange_capacity;
-	  //}
-	  
-	  // TODO: loop over minerals, porosity, etc
 	}
       }
     }
   }
-  
+    
   phiTemp.clear();
   volTemp.clear();
     
   S_new.copy(stateTemp,ncomps,ncomps,ntracers); // Parallel copy, tracers only
   stateTemp.clear();
-
   Aux_new.copy(auxTemp,0,0,Aux_new.nComp()); // Parallel copy, everything.
   auxTemp.clear();
     
@@ -7178,7 +7192,9 @@ PorousMedia::writePlotFile (const std::string& dir,
     for (int comp = 0; comp < desc_lst[typ].nComp();comp++)
       if (parent->isStatePlotVar(desc_lst[typ].name(comp)) &&
 	  desc_lst[typ].getType() == IndexType::TheCellType())
-	plot_var_map.push_back(std::pair<int,int>(typ,comp));
+	{
+	  plot_var_map.push_back(std::pair<int,int>(typ,comp));
+	}
 
   int num_derive = 0;
   std::list<std::string> derive_names;
@@ -7546,7 +7562,6 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 	  eigmax[dir] = std::max(eigmax[dir],eigmax_m[dir]);
 	  if (eigmax_m[dir] > 1.e-15) 
 	    dt_eig = std::min(dt_eig,dx[dir]/eigmax_m[dir]);
-
 	}
     }
   
@@ -7634,14 +7649,13 @@ PorousMedia::computeNewDt (int                   finest_level,
 
   Real cum_time = parent->cumTime(); // Time evolved to so far
   Real start_time = parent->startTime(); // Time simulation started from
-
+ 
   if (fixed_dt > 0) {
       dt_0 = fixed_dt;
   }
   else
   {
       Real dt_0 = dt_level[0];
-      
       if (post_regrid_flag != 1)
       {
           if (start_with_previously_suggested_dt) {
@@ -7693,11 +7707,11 @@ PorousMedia::computeNewDt (int                   finest_level,
           dt_0 = dt_prev_suggest;
       }
       else {
-          dt_0 = dt_level[0];
+	dt_0 = dt_level[0];
       }
       
       if (check_for_dt_cut_by_event && dt_event>0) {
-          dt_0 = dt_event;
+	dt_0 = dt_event;
       }
 
       if (in_transient_period) 
@@ -7729,7 +7743,6 @@ PorousMedia::computeNewDt (int                   finest_level,
           }
       }
       if (tpc_interval >= 0) {
-
           if (tpc_initial_time_steps.size()>tpc_interval 
               && tpc_initial_time_steps[tpc_interval]>0 
               && (std::abs(state[State_Type].curTime() - tpc_start_times[tpc_interval]) < tpc_initial_time_steps[tpc_interval])) {
@@ -12057,6 +12070,8 @@ PorousMedia::derive (const std::string& name,
     }
     else if (name=="Aqueous_Pressure") {
 
+      Real t_new = state[Press_Type].curTime(); 
+      std::cout << "PRESS TIME " << t_new << std::endl;
         // The pressure field is the Aqueous pressure in atm
         // (assumes nphase==1,2) 
         int ncomp = 1;
@@ -12506,7 +12521,6 @@ PorousMedia::checkPoint (const std::string& dir,
                          bool           dump_old)
 {
   AmrLevel::checkPoint(dir,os,how,dump_old);
-
   std::string Level = BoxLib::Concatenate("Level_", level, 1);
   std::string uxfile = "/umac_x";
   std::string uyfile = "/umac_y";

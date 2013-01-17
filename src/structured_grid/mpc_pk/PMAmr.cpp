@@ -377,7 +377,6 @@ PMAmr::pm_timeStep (int  level,
     }
 
     dt_min[level] = iteration == 1 ? dt_suggest : std::min(dt_min[level],dt_suggest);
-
     level_steps[level]++;
     level_count[level]++;
 
@@ -455,7 +454,8 @@ PMAmr::coarseTimeStep (Real stop_time)
         }
         setDtLevel(dt_new);
     }
-
+    else
+       dt0_before_event_cut = -1;
     // Do time step
     pm_timeStep(0,cumtime,1,1,stop_time);
 
