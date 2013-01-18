@@ -85,6 +85,9 @@ public:
 
   virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
 
+  // evaluating consistent faces for given BCs and cell values
+  virtual void CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector>& u);
+
 protected:
   // for now, several points of entry into the science, as I'm not sure where
   // things will settle for a Phalanx-like system
@@ -100,7 +103,8 @@ protected:
   virtual void ApplyDiffusion_(const Teuchos::RCP<State> S,
           const Teuchos::RCP<CompositeVector> f);
 
-protected:
+
+ protected:
   int niter_;
 
   // boundary conditions
