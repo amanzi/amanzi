@@ -636,43 +636,49 @@ void Richards::changed_solution() {
 
 bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
   if (modify_predictor_with_consistent_faces_) {
-    // derive consistent constraints
-
-    Teuchos::RCP<CompositeVector> uw_rel_perm = S_next_->GetFieldData("numerical_rel_perm", name_);
-
-    // VerboseObject stuff.
-    Teuchos::OSTab tab = getOSTab();
-
-    // update the rel perm according to the scheme of choice
-    UpdatePermeabilityData_(S_next_.ptr());
-
-    // update boundary conditions
-    bc_pressure_->Compute(S_next_->time());
-    bc_flux_->Compute(S_next_->time());
-    UpdateBoundaryConditions_();
-
-    Teuchos::RCP<const CompositeVector> rho =
-      S_next_->GetFieldData("mass_density_liquid");
-    Teuchos::RCP<const Epetra_Vector> gvec =
-      S_next_->GetConstantVectorData("gravity");
-
-    // Update the preconditioner with darcy and gravity fluxes
-    preconditioner_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
-    preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_(gvec, uw_rel_perm, rho, preconditioner_);
-
-    // skip accumulation terms, they're not needed
-
-    // Assemble and precompute the Schur complement for inversion.
-    preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-    preconditioner_->AssembleGlobalMatrices();
-
-    // derive the consistent faces, involves a solve
-    preconditioner_->UpdateConsistentFaceConstraints(u->data());
+    CalculateConsistentFaces_(h,u.ptr());
     return true;
   }
 
   return PKPhysicalBDFBase::modify_predictor(h, u);
+}
+
+
+void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector>& u) {
+  // VerboseObject stuff.
+  Teuchos::OSTab tab = getOSTab();
+
+  // update the rel perm according to the scheme of choice
+  changed_solution();
+  UpdatePermeabilityData_(S_next_.ptr());
+
+  // update boundary conditions
+  bc_pressure_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_();
+
+  Teuchos::RCP<CompositeVector> rel_perm =
+      S_next_->GetFieldData("numerical_rel_perm", name_);
+
+  Teuchos::RCP<const CompositeVector> rho =
+      S_next_->GetFieldData("mass_density_liquid");
+  Teuchos::RCP<const Epetra_Vector> gvec =
+      S_next_->GetConstantVectorData("gravity");
+
+
+  // Update the preconditioner with darcy and gravity fluxes
+  preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  preconditioner_->CreateMFDrhsVectors();
+  AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
+
+  // skip accumulation terms, they're not needed
+
+  // Assemble and precompute the Schur complement for inversion.
+  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  preconditioner_->AssembleGlobalMatrices();
+
+  // derive the consistent faces, involves a solve
+  preconditioner_->UpdateConsistentFaceConstraints(u->data());
 }
 
 } // namespace

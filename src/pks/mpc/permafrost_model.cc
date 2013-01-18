@@ -155,6 +155,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
   jac(0,1) = (test[0] - result[0]) / (eps_p);
   jac(1,1) = (test[1] - result[1]) / (eps_p);
 
+  /*
   // The Jacobian typically goes singular as de/dp and dwc/dp get small,
   // which occurs at ~ 5 > T > 0 and 101 kPa < p < p_atm.
   // If singular, try increasing size and going to a centered diff.
@@ -182,6 +183,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
     std::cout << "  at T,p = " << T << ", " << p << std::endl;
     std::cout << "  from eps_p = " << eps_p << std::endl;
   }
+  */
 
   return 0;
 }
