@@ -928,9 +928,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
 	    if (ncp_list.isSublist("Unstructured Algorithm")) {
 	      Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
-	      if (ncpu_list.isSublist("Steady-State Psuedo-Time Implicit Solver")) {
+	      if (ncpu_list.isSublist("Steady-State Pseudo-Time Implicit Solver")) {
 		have_picard_params_list = true;
-		picard_params_list = ncpu_list.sublist("Steady-State Psuedo-Time Implicit Solver");
+		picard_params_list = ncpu_list.sublist("Steady-State Pseudo-Time Implicit Solver");
 	      }
             }
 	  }
@@ -1024,6 +1024,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 					 num_list.get<double>("steady restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP));
 	      steady_time_integrator.set<std::string>("preconditioner",
 						      num_list.get<std::string>("steady preconditioner",ST_PRECOND));
+	      steady_time_integrator.set<bool>("initialize with darcy",
+					       num_list.get<bool>("steady initialize with darcy",ST_INIT_DARCY));
 	    }
 	  }
         }

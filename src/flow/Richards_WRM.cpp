@@ -82,10 +82,10 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
 
-      if (bc_model[f] != FLOW_BC_FACE_NULL){  // The boundary face.
+      if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           double pc = atm_pressure - bc_values[f][0];
-          (*Krel_faces)[f] = WRM[0]->k_relative(pc);
+          (*Krel_faces)[f] = WRM[(*map_c2mb)[c]]->k_relative(pc);
         } else {
           (*Krel_faces)[f] = (*Krel_cells)[c];
         }
@@ -127,7 +127,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[f] * dirs[n] < -tol) {
           double pc = atm_pressure - bc_values[f][0];
-          (*Krel_faces)[f] = WRM[0]->k_relative(pc);
+          (*Krel_faces)[f] = WRM[(*map_c2mb)[c]]->k_relative(pc);
         } else {
           (*Krel_faces)[f] = (*Krel_cells)[c];
         }
@@ -219,8 +219,9 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
       if (bc_model[f] != FLOW_BC_FACE_NULL){
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) && 
             (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE)) {
+          int mb = (*map_c2mb)[c];
           double pc = atm_pressure - bc_values[f][0];
-          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
+          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
@@ -236,16 +237,17 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
 }
 
 /* ******************************************************************
-* Defines upwinded derivative of relative permeabilities for faces using a given flux.
-* WARNING: This is the experimental code. 
+* Defines upwind derivative of relative permeability on mesh faces 
+* using a given flux.
+* WARNING: This is a part of the experimental solver. 
 ****************************************************************** */
-void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra_Vector& p,
-                                                          const Epetra_Vector& flux)
+void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(
+    const Epetra_Vector& p, const Epetra_Vector& flux)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Krel_faces->PutScalar(0.0);
+  dKdP_faces->PutScalar(0.0);
 
   double max_flux;
   flux.MaxValue(&max_flux);
@@ -258,20 +260,21 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
 
-      if (bc_model[f] != FLOW_BC_FACE_NULL){  // The boundary face.
+      if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
-	    (flux[f] * dirs[n] < -tol)) {
+            (flux[f] * dirs[n] < -tol)) {
+          int mb = (*map_c2mb)[c];
           double pc = atm_pressure - bc_values[f][0];
-          (*dKdP_faces)[f] = WRM[0]->dKdPc(pc);
+          (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);
         } else {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];
         }
       } else {
-	if (flux[f] * dirs[n] > tol) {
+        if (flux[f] * dirs[n] > tol) {
           (*dKdP_faces)[f] = (*dKdP_cells)[c];  // The upwind face.
-	} else if (fabs(flux[f]) <= tol) { 
-          (*dKdP_faces)[f] += (*dKdP_cells)[c]/2; // Zero flux face.
-	}
+        } else if (fabs(flux[f]) <= tol) { 
+          (*dKdP_faces)[f] += (*dKdP_cells)[c] / 2; // Zero flux face.
+        }
       }
     }
   }
@@ -285,9 +288,7 @@ void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -306,9 +307,7 @@ void Richards_PK::DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk)
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -327,9 +326,7 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -348,9 +345,7 @@ void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -369,9 +364,7 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     // double pc = atm_pressure - pmin;
@@ -392,9 +385,7 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Ep
 {
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
@@ -440,19 +431,27 @@ void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g,
 
 
 /* ******************************************************************
-* Debug: Auxiliary map.                                               
+* Auxiliary map from cells to WRM models.                                               
 ****************************************************************** */
 void Richards_PK::PopulateMapC2MB()
 {
+  map_c2mb->PutScalar(-1);
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) (*map_c2mb)[*i] = mb;
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {
+    if ((*map_c2mb)[c] < 0) {
+      Errors::Message msg;
+      msg << "Flow PK: water retention models do not cover the whole domain.";
+      Exceptions::amanzi_throw(msg);  
+    }
   }
 }
 

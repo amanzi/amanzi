@@ -16,8 +16,6 @@ The routine implements interface to BDFx time integrators.
 #include <string>
 #include <vector>
 
-#include "exceptions.hh"
-
 #include "Matrix_MFD_TPFA.hpp"
 #include "Richards_PK.hpp"
 
@@ -33,7 +31,6 @@ void Richards_PK::fun(
   AssembleMatrixMFD(u, Tp);
   matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   const Epetra_Vector& phi = FS->ref_porosity();
 
   functional_max_norm = 0.0;
@@ -41,9 +38,7 @@ void Richards_PK::fun(
 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    AmanziMesh::Entity_ID_List block(ncells);
+    AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     double v, s1, s2, volume;
@@ -155,7 +150,7 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
  
       c = cell_p;
       const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
-      printf("       pressure error = %9.3g at point", error_p);
+      printf("   pressure error = %9.3g at point", error_p);
       for (int i = 0; i < dim; i++) printf(" %8.3g", yp[i]);
 
       int mb = (*map_c2mb)[c];
@@ -165,7 +160,6 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
   }
 
   // if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-  //  if (saturation_max_change > 0.125) throw 100;
   // }
   
   return error;
@@ -189,6 +183,63 @@ double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du
   du.Comm().MaxAll(&buf, &error_norm, 1);  // find the global maximum
 #endif
   return  error_norm;
+}
+
+
+/********************************************************************
+* Modifies nonlinear update du based on the maximum allowed change
+* of saturation.
+****************************************************************** */
+bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& du)
+{
+  double max_sat_pert = 0.125;
+  bool ret_val = false;
+
+  int ncells_clipped(0);
+  for (int c = 0; c < ncells_owned; c++) {
+    int mb = (*map_c2mb)[c];
+    double pc =  atm_pressure - u[c];
+    double sat = WRM[mb]->saturation(pc);
+    double sat_pert;
+    if (sat >= 0.5) sat_pert = sat - max_sat_pert;
+    else sat_pert = sat + max_sat_pert;
+    
+    double press_pert = atm_pressure - WRM[mb]->capillaryPressure(sat_pert);
+    double du_pert_max = fabs(u[c] - press_pert); 
+
+    if (fabs(du[c]) > du_pert_max) {
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
+        cout << "Flow PK: saturation clipping in cell " << c << 
+                " pressure change: " << du[c] << " -> " << du_pert_max << endl;
+      }
+       
+      if (du[c] >= 0.0) du[c] = fabs(du_pert_max);
+      else du[c] = -fabs(du_pert_max);
+
+      ncells_clipped++;
+      ret_val = true;
+    }    
+  }
+
+  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+    int ncells_tmp = ncells_clipped;
+    du.Comm().SumAll(&ncells_tmp, &ncells_clipped, 1);
+    if (MyPID == 0 && ncells_clipped > 0)
+        printf("Flow PK: saturation was clipped in %d cells\n", ncells_clipped); 
+  }
+
+  return ret_val;
+}
+
+
+/********************************************************************
+* Converts the BDF1 time intgerator to the Newton solver
+****************************************************************** */
+bool Richards_PK::IsPureNewton() const
+{
+  if (experimental_solver_ == FLOW_SOLVER_NKA) return false;
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) return false;
+  return true; 
 }
 
 }  // namespace AmanziFlow

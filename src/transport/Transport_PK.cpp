@@ -335,7 +335,7 @@ void Transport_PK::Advance(double dT_MPC)
   dT = dT_original;  // restore the original dT (just in case)
 
   if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
-    printf("Transport PK: number of sub-cycles = %3d  dT(sec): stable=%10.5g  mpc=%8.3g\n", 
+    printf("Transport PK: number of sub-cycles = %3d  dT(sec): stable=%10.5g  mpc=%10.5g\n", 
         ncycles, dT_original, dT_MPC);
   }
 

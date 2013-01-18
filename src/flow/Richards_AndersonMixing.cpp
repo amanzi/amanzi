@@ -21,7 +21,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Local routine
 ****************************************************************** */
-void AndersonAccelerationMatrix(
+void AndersonMixingMatrix(
     Teuchos::SerialDenseMatrix<int, double>& A, Epetra_MultiVector& krylov, 
     Epetra_MultiVector& d_krylov, int index, int m) 
 {
@@ -78,7 +78,7 @@ void AndersonAccelerationMatrix(
 * Makes one AA step during transient time integration.
 * This is the experimental method.     
 ****************************************************************** */
-int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTnext)
+int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
 {
   int mmax = 3;  // maximum number of Krylov vectors
   // allocate memory
@@ -104,7 +104,7 @@ int Richards_PK::AndersonAccelerationTimeStep(double Tp, double dTp, double& dTn
   int itrs, m = 0, index = mmax - 1;
   for (itrs = 0; itrs < 20; itrs++) {
     // update the last Krylov vector
-    AndersonAccelerationMatrix(A, krylov, d_krylov, index, m);
+    AndersonMixingMatrix(A, krylov, d_krylov, index, m);
 
     // update pointers
     solution_old = solution_new;

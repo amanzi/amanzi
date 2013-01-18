@@ -68,6 +68,11 @@ define_compiler_version()
 
 include(CheckMPISourceCompiles)
 check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
+if (NOT MPI_WRAPPERS_IN_USE)
+  # MPI_WRAPPERS_IN_USE is FALSE if any of the compilers fail to compile an MPI app
+  message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.
+  See previous error messages to determine missing compiler.")
+endif()
 
 # ############################################################################ #
 # Build options
@@ -82,7 +87,7 @@ message(STATUS "Setting build type -- ${CMAKE_BUILD_TYPE}")
 
 # Download directory TPL_DOWNLOAD_DIR
 set(TPL_DOWNLOAD_DIR_DFLT ${SuperBuild_BINARY_DIR}/Downloads)
-if(NOT TPL_DOWNLOAD_DIR)
+if (NOT TPL_DOWNLOAD_DIR)
   set(TPL_DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR_DFLT})
 endif()
 message(STATUS "Download TPL files in ${TPL_DOWNLOAD_DIR}") 

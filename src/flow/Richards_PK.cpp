@@ -134,7 +134,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
   internal_tests = 0;
   experimental_solver_ = FLOW_SOLVER_NKA;
-  IsPureNewton = false;
 }
 
 
@@ -181,7 +180,6 @@ void Richards_PK::InitPK()
   } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
     preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
-    IsPureNewton = true;
   } else {
     matrix_ = new Matrix_MFD(FS, *super_map_);
     preconditioner_ = new Matrix_MFD(FS, *super_map_);
@@ -235,11 +233,9 @@ void Richards_PK::InitPK()
   // injected water mass
   mass_bc = 0.0;
 
-  // miscalleneous maps to easy output
-  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
-    map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-    PopulateMapC2MB();
-  }
+  // miscalleneous maps 
+  map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  PopulateMapC2MB();
 
   flow_status_ = FLOW_STATUS_INIT;
 }
@@ -266,6 +262,7 @@ void Richards_PK::InitializeAuxiliaryData()
 
   DeriveSaturationFromPressure(pressure, ws);
   ws_prev = ws;
+
 }
 
 
@@ -430,12 +427,19 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
   preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    int nokay = matrix_->nokay();
-    int npassed = matrix_->npassed();
-    std::printf("%5s discretization method: \"%s\"\n", "", mfd3d_method_name.c_str());
-    std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
-    std::printf("***********************************************************\n");
+  if (verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    int missed_tmp = missed_bc_faces_;
+    mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
+
+    if (MyPID == 0) {
+      int nokay = matrix_->nokay();
+      int npassed = matrix_->npassed();
+
+      std::printf("%5s discretization method: \"%s\"\n", "", mfd3d_method_name.c_str());
+      std::printf("%7s assign default zero flux BC to %d faces\n", "", missed_bc_faces_);
+      std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
+      std::printf("***********************************************************\n");
+    }
   }
 
   // Well modeling
@@ -546,7 +550,7 @@ int Richards_PK::Advance(double dT_MPC)
   } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
     if (block_picard == 0) {
       PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
-      //AndersonAccelerationTimeStep(time, dT, dTnext);
+      //AndersonMixingTimeStep(time, dT, dTnext);
     } else {
       dTnext = dT;
     }
@@ -590,7 +594,6 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   Epetra_Vector& lambda = FS_MPC->ref_lambda();
   lambda = *solution_faces;
 
-  // update saturations
   Epetra_Vector& ws = FS_MPC->ref_water_saturation();
   Epetra_Vector& ws_prev = FS_MPC->ref_prev_water_saturation();
 
@@ -602,7 +605,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);  // We remove dT from mass matrices.
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
   AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
-  for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho;
+  for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
