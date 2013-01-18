@@ -16,9 +16,10 @@ TEST(ADVANCE_WITH_SIMPLE) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Deform;
 
   // first message
-  std::cout << "Test: DeformMesh using a simple quadrilateral mesh" << endl;
+  std::cout << "Test: DeformMesh using a mesh from Exodus file" << endl;
 
   // sequential/parallel communicator object
 #ifdef HAVE_MPI
@@ -26,28 +27,29 @@ TEST(ADVANCE_WITH_SIMPLE) {
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
-
+  
   // read parameter list from input XML file
-  Teuchos::ParameterList plist;
-  string xml_fname = "test/simple_mesh_deform_test_2D.xml";
-  Teuchos::Ptr<Teuchos::ParameterList> plist_p(&plist);
-  updateParametersFromXmlFile(xml_fname, plist_p);
+  Teuchos::Ptr<Teuchos::ParameterList> plist;
+  string xml_fname = "test/simple_mesh_deform_test_3D.xml";
+  updateParametersFromXmlFile(xml_fname, plist);
 
   // intantiate the mesh: get the region list
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList& region_list = 
+    plist->get<Teuchos::ParameterList>("Regions");
   
   // intantiate the mesh: build the geometric model
-  const int dim2D = 2 ;
-  GeometricModelPtr gm = new GeometricModel(dim2D, region_list, (Epetra_MpiComm *)comm);
+  const int dim3D = 3 ;
+  GeometricModelPtr gm = 
+    new GeometricModel(dim3D, region_list, (Epetra_MpiComm *)comm);
   
   // intantiate the mesh: build the geometric model
-  int nx(100), ny(100) ;
+  string fname = string("./test/tmp_proto_fs.exo") ;
   Teuchos::RCP<Mesh> mesh = 
-    Teuchos::rcp(new Mesh_MSTK( 0., 0., 1., 1., nx, ny, comm, gm));
+    Teuchos::rcp(new Mesh_MSTK(fname.c_str(), comm, gm));
 
   // create and initialize the deform mesh class
-  DeformMesh deform_test(plist,mesh);
-  deform_test.bell_shaped_profile();
+  DeformMesh deform_test(*plist,mesh);
+  deform_test.layer_profile();
 
   // say goodbye and exit
   deform_test.print_goodbye();

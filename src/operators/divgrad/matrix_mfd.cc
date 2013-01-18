@@ -106,7 +106,7 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
     } else {
       ok = mfd.darcy_mass_inverse(c, Kc, Mff);
     }
-
+    
     Mff_cells_.push_back(Mff);
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
