@@ -19,7 +19,6 @@ using namespace std;
 
 #include "PK.hh"
 #include "pk_factory.hh"
-//#include "bdf_time_integrator.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -30,6 +29,9 @@ using namespace Amanzi::AmanziGeometry;
     for ( int i=0; i<20; ++i ) { std::cout<<(#A); } \
     std::cout<<std::endl ;                          \
   } while(0)
+
+namespace Amanzi {
+namespace Deform {
 
 
 //temporary class, useful to store info about the vertical columns of
@@ -55,6 +57,7 @@ public:
   int    get_iV( int i ) { return vlist[i]; }
   double get_zV( int i ) { return zlist[i]; }
 };
+
 
 class DeformMesh {
 private:
@@ -119,5 +122,8 @@ public:
   // final print
   void print_goodbye();
 };
+
+}
+}
 
 #endif // end of DEFORM_HH_

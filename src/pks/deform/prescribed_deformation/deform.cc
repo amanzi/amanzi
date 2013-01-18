@@ -1,5 +1,9 @@
 #include "deform.hh"
 
+namespace Amanzi {
+namespace Deform {
+
+
 // -------------------------------------------------------------
 // CONSTRUCTORS
 // -------------------------------------------------------------
@@ -412,7 +416,7 @@ void DeformMesh::bell_shaped_profile( double ss ) {
   // print the nodes that will be changed
   if ( verbose ) {
     for ( int i=0; i<nodeids.size(); ++i ) {
-      printf("found: nodeids[%2i]=%3i  coords=%14.7e --> new_coords=%14.7e\n",
+      printf("found: nodeids[%2i]=%3lli  coords=%14.7e --> new_coords=%14.7e\n",
 	     i,nodeids[i],coords[dim-1],new_coords[dim-1]);
     }
     LINE(--);
@@ -479,7 +483,7 @@ void DeformMesh::layer_profile( double ss ) {
   // print the nodes that will be changed
   if ( verbose ) {
     for ( int i=0; i<nodeids.size(); ++i ) {
-      printf("found: nodeids[%2i]=%3i  coords=%14.7e --> new_coords=%14.7e\n",
+      printf("found: nodeids[%2i]=%3lli  coords=%14.7e --> new_coords=%14.7e\n",
 	     i,nodeids[i],coords[dim-1],new_coords[dim-1]);
     }
     LINE(--);
@@ -562,8 +566,8 @@ void DeformMesh::bell_shaped_profile( double ss,
   // print the nodes that will be changed
   if ( verbose ) {
     for ( int i=0; i<nodeids.size(); ++i ) {
-      printf("found: nodeids[%2i]=%3i  coords=%14.7e --> new_coords=%14.7e\n",
-	     i,nodeids[i],coords[dim-1],new_coords[dim-1]);
+      printf("found: nodeids[%2i]=%3lli  coords=%14.7e --> new_coords=%14.7e\n",
+      	     i,nodeids[i],coords[dim-1],new_coords[dim-1]);
     }
     LINE(--);
     LINE(--);
@@ -1069,3 +1073,5 @@ void DeformMesh::analyze_final_mesh() {
   }
 }
 
+}
+}

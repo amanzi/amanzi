@@ -221,7 +221,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       S_next_->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
-
+  
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->CreateMFDstiffnessMatrices(hacked_rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
