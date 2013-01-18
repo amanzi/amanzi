@@ -24,7 +24,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
                              const Teuchos::RCP<WRM>& wrm) :
       plist_(plist),
       wrm_(wrm),
-      eps_(1.e-10),
+      eps_(1.e-12),
       max_it_(100) {}
 
   // required methods from the base class
@@ -40,13 +40,6 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
           double (&dsats)[3]);
   void  dsaturations_dpc_ice(double s_i, double pc_liq, double pc_ice,
           double (&dsats)[3]);
-
-  // overload version with provided function evaluation
-  void dsaturations_dpc_liq(double s_i, double pc_liq, double pc_ice,
-          double guess, double (&dsats)[3]);
-  void dsaturations_dpc_ice(double s_i, double pc_liq, double pc_ice,
-          double guess, double (&dsats)[3]);
-
 
  private:
 
@@ -137,7 +130,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   struct Tol_ {
     Tol_(double eps) : eps_(eps) {}
     bool operator()(const double& a, const double& b) const {
-      return abs(a - b) <= eps_;
+      return std::abs(a - b) <= eps_;
     }
     double eps_;
   };
