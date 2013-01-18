@@ -1232,9 +1232,10 @@ namespace Amanzi {
             std::map<std::string,SolidChem> solid_chem;
             std::map<std::string,double> cation_exchange_capacity;
             std::map<std::string,ParameterList> rsublist_mat;
-            std::string kp_file="kp";
-            std::string pp_file="pp";
+            std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
 	    std::string porosity_plotfile_in, porosity_plotfile_out;
+            bool kp_file_in_set, kp_file_out_set, pp_file_in_set, pp_file_out_set;
+            kp_file_in_set = kp_file_out_set = pp_file_in_set = pp_file_out_set = false;
 
             Array<std::string> reqL, reqP, nullList;
             for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i)
@@ -1570,14 +1571,29 @@ namespace Amanzi {
 		    std::string porosity_input_plotfile_str = "Porosity Input PlotFile";
 		    std::string porosity_output_plotfile_str = "Porosity Output PlotFile";
 		    std::string porosity_output_multifab_file_str = "Porosity Output File";
+		    std::string porosity_input_multifab_file_str = "Porosity Input File";
 		    std::string permeability_output_multifab_file_str = "Permeability Output File";
+		    std::string permeability_input_multifab_file_str = "Permeability Input File";
 
-                    if (rlist.isParameter(permeability_output_multifab_file_str))
-                        kp_file = rlist.get<std::string>(permeability_output_multifab_file_str);
-                    if (rlist.isParameter(porosity_output_multifab_file_str))
-                        pp_file = rlist.get<std::string>(porosity_output_multifab_file_str);
+                    if (rlist.isParameter(permeability_output_multifab_file_str)) {
+                        kp_file_out_set = true;
+                        kp_file_out = rlist.get<std::string>(permeability_output_multifab_file_str);
+                    }
+                    if (rlist.isParameter(permeability_input_multifab_file_str)) {
+                        kp_file_in_set = true;
+                        kp_file_in  = rlist.get<std::string>(permeability_input_multifab_file_str);
+                    }
+                    if (rlist.isParameter(porosity_output_multifab_file_str)) {
+                        pp_file_out_set = true;
+                        pp_file_out = rlist.get<std::string>(porosity_output_multifab_file_str);
+                    }
+                    if (rlist.isParameter(porosity_input_multifab_file_str)) {
+                        pp_file_in_set = true;
+                        pp_file_in  = rlist.get<std::string>(porosity_input_multifab_file_str);
+                    }
                     if (rlist.isParameter(porosity_output_plotfile_str))
                         porosity_plotfile_out = rlist.get<std::string>(porosity_output_plotfile_str);
+
                     if (rlist.isParameter(porosity_input_plotfile_str))
                         porosity_plotfile_in = rlist.get<std::string>(porosity_input_plotfile_str);
 
@@ -1667,8 +1683,19 @@ namespace Amanzi {
             }
             
             rock_list.set("rock",arrayrock);
-            rock_list.set("permeability_file",kp_file);
-            rock_list.set("porosity_file",pp_file);
+            if (kp_file_out_set) {
+              rock_list.set("permeability_output_file",kp_file_out);
+            }
+            if (kp_file_in_set) {
+              rock_list.set("permeability_input_file",kp_file_in);
+            }
+            if (pp_file_out_set) {
+              rock_list.set("porosity_output_file",pp_file_out);
+            }
+            if (pp_file_in_set) {
+              rock_list.set("porosity_input_file",pp_file_in);
+            }
+
             rock_list.set("porosity_plotfile_in",porosity_plotfile_in);
             rock_list.set("porosity_plotfile_out",porosity_plotfile_out);
         } 
