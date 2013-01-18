@@ -32,6 +32,9 @@ class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+  Teuchos::RCP<VaporPressureRelation> get_VaporPressureRelation() {
+    return sat_vapor_model_; }
+
  protected:
   Key temp_key_;
 
