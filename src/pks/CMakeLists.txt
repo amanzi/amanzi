@@ -14,6 +14,7 @@ add_library(pk_bases
   pk_factory.cc)
 
 add_subdirectory(mpc)
+add_subdirectory(test_pks)
 add_subdirectory(flow)
 add_subdirectory(energy)
 #add_subdirectory(transport)

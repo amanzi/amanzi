@@ -61,9 +61,18 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm");
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+  
+  const Teuchos::Ptr<const CompositeVector>& rp = Teuchos::ptr(&*rel_perm);
+  matrix_->CreateMFDstiffnessMatrices(rp);
+  matrix_->CreateMFDmassMatrices(K_.ptr());
+
   AddGravityFluxes_(gvec, rel_perm, rho, matrix_);
 
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+
+
+
+
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual

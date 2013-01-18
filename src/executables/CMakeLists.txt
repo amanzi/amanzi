@@ -21,6 +21,7 @@ add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
 # wrap stuff in whole-archive for static stuff
 WHOLE_ARCHIVE(pk_bases)
+WHOLE_ARCHIVE(pk_test_divgrad)
 WHOLE_ARCHIVE(pk_energy_advection_diffusion)
 WHOLE_ARCHIVE(pk_energy_constant_temperature)
 WHOLE_ARCHIVE(pk_energy_three_phase)
@@ -43,6 +44,7 @@ WHOLE_ARCHIVE(amanzi_state)
 target_link_libraries(ats
                       coordinator
                       ${mpc}
+                      ${pk_test_divgrad}
 #                      ${pk_transport_passive_tracer}
                       ${pk_energy_constant_temperature}
                       ${pk_energy_advection_diffusion}

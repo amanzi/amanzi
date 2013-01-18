@@ -47,8 +47,8 @@ bool PrescribedDeformation::advance(double dt) {
   double ss = S_next_->time();
   double ss0 = S_->time();
 
-  double thickness = 0.95 + 0.05*cos( ss / (24*60*60) * 2.0*M_PI );   
-  double thickness0 = 0.95 + 0.05*cos( ss0 / (24*60*60) * 2.0*M_PI );
+  double thickness = 0.8 + 0.2*cos( ss / (365.25*24*60*60) * 2.0*M_PI );   
+  double thickness0 = 0.8 + 0.2*cos( ss0 / (365.25*24*60*60) * 2.0*M_PI );
 
   double factor = thickness/thickness0;
 
@@ -94,6 +94,9 @@ bool PrescribedDeformation::advance(double dt) {
   std::cout << "now modifying the mesh..." << std::endl;
   // compute the deformed mesh
   write_access_mesh_->deform( nodeids, newpos, true, &finpos);
+
+  std::cout << "cell volume = " << write_access_mesh_->cell_volume(0) << std::endl;
+
 
   // now update cell volumes
   cell_volume->Scale(factor);
