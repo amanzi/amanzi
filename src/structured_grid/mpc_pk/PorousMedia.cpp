@@ -12071,7 +12071,6 @@ PorousMedia::derive (const std::string& name,
     else if (name=="Aqueous_Pressure") {
 
       Real t_new = state[Press_Type].curTime(); 
-      std::cout << "PRESS TIME " << t_new << std::endl;
         // The pressure field is the Aqueous pressure in atm
         // (assumes nphase==1,2) 
         int ncomp = 1;
