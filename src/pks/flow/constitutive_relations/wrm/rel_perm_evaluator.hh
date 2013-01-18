@@ -39,9 +39,10 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
   void InitializeFromPlist_();
 
-  Teuchos::ParameterList plist_;
   Teuchos::RCP<WRMRegionPairList> wrms_;
   Key sat_key_;
+
+  double min_val_;
 };
 
 } //namespace

@@ -27,14 +27,16 @@ namespace FlowRelations {
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
         const Teuchos::RCP<WRMRegionPairList>& wrms) :
     SecondaryVariableFieldEvaluator(plist),
-    wrms_(wrms) {
+    wrms_(wrms),
+    min_val_(0.) {
   InitializeFromPlist_();
 }
 
 RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     wrms_(other.wrms_),
-    sat_key_(other.sat_key_) {}
+    sat_key_(other.sat_key_),
+    min_val_(other.min_val_) {}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -51,6 +53,9 @@ void RelPermEvaluator::InitializeFromPlist_() {
   // my dependencies are just saturation.
   sat_key_ = plist_.get<string>("saturation key", "saturation_liquid");
   dependencies_.insert(sat_key_);
+
+  // cutoff above 0?
+  min_val_ = plist_.get<double>("minimum rel perm cutoff", 1.e-30);
 }
 
 
@@ -58,6 +63,8 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
   Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
+
+  const Epetra_MultiVector& res_v = *result->ViewComponent("cell",false);
 
   // Evaluate the evaluator to calculate sat.
   for (WRMRegionPairList::iterator region=wrms_->begin();
@@ -72,7 +79,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     // use the wrm to evaluate saturation on each cell in the region
     for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
       double pc = region->second->capillaryPressure((*sat)("cell", *c));
-      (*result)("cell", *c) = region->second->k_relative(pc);
+      res_v[0][*c] = std::max(region->second->k_relative(pc), min_val_);
     }
   }
 }
