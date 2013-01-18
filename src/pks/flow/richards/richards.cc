@@ -657,19 +657,8 @@ void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  // Attempt of a hack to deal with zero rel perm
   Teuchos::RCP<CompositeVector> rel_perm =
       S_next_->GetFieldData("numerical_rel_perm", name_);
-  // Teuchos::RCP<CompositeVector> hacked_rel_perm =
-  //     Teuchos::rcp(new CompositeVector(*rel_perm));
-  // *hacked_rel_perm = *rel_perm;
-
-  // double eps = 1.e-26;
-  // for (int f=0; f!=hacked_rel_perm->size("face"); ++f) {
-  //   if ((*hacked_rel_perm)("face",f) < eps) {
-  //     (*hacked_rel_perm)("face",f) = eps;
-  //   }
-  // }
 
   Teuchos::RCP<const CompositeVector> rho =
       S_next_->GetFieldData("mass_density_liquid");
@@ -679,10 +668,8 @@ void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector
 
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-  //  preconditioner_->CreateMFDstiffnessMatrices(hacked_rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
   AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
-  //  AddGravityFluxes_(gvec, hacked_rel_perm, rho, preconditioner_);
 
   // skip accumulation terms, they're not needed
 
