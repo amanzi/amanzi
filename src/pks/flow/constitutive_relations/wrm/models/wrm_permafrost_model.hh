@@ -17,9 +17,11 @@ class WRMPermafrostModel {
 
 public:
   // required methods from the base class
-  virtual void saturations(double pc_liq, double pc_ice, double[3]& sats) = 0;
-  virtual double dsaturations_dpc_liq(double pc_liq, double pc_ice, double[3]& sats) = 0;
-  virtual double dsaturations_dpc_ice(double pc_liq, double pc_ice, double[3]& sats) = 0;
+  virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]) = 0;
+  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice,
+          double (&dsats)[3]) = 0;
+  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice,
+          double (&dsats)[3]) = 0;
 };
 
 typedef
