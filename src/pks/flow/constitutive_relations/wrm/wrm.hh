@@ -24,6 +24,7 @@ public:
   virtual double saturation(double pc) = 0;
   virtual double d_saturation(double pc) = 0;
   virtual double capillaryPressure(double saturation) = 0;
+  virtual double d_capillaryPressure(double saturation) = 0;
   virtual double residualSaturation() = 0;
 
 };

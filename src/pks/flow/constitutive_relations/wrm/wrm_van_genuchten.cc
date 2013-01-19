@@ -42,7 +42,7 @@ double WRMVanGenuchten::k_relative(double pc) {
     double f_pct1  (sqrt(se_pct1) * pow( 1.0 - pow( 1.0 - pow(se_pct1,1.0/m_),m_), 2));
 
 
-    return 1.0 + pc*pc*fab/pc_transition_ 
+    return 1.0 + pc*pc*fab/pc_transition_
       + pc*pc*(pc-pc_transition_)*(f_pct1-f_pct-2.0*fab)/(pc_transition_*pc_transition_);
   }
 }
@@ -54,9 +54,9 @@ double WRMVanGenuchten::k_relative(double pc) {
 double WRMVanGenuchten::saturation(double pc) {
   if (pc > 0.0) {
     return pow(1.0 + pow(alpha_*pc, n_), -m_) * (1.0 - sr_) + sr_;
-  } else { 
+  } else {
     return 1.0;
-  } 
+  }
 }
 
 
@@ -83,6 +83,23 @@ double WRMVanGenuchten::capillaryPressure(double s) {
     return (pow(pow(se, -1.0/m_) - 1.0, 1/n_)) / alpha_;
   }
 }
+
+
+/* ******************************************************************
+ * Derivative of pressure formulat w.r.t. saturation.
+ ****************************************************************** */
+double WRMVanGenuchten::d_capillaryPressure(double s) {
+  double se = (s - sr_) / (1.0 - sr_);
+  se = std::min<double>(se, 1.0);
+  if (se < 1.e-8) {
+    return -1.0/(m_*n_*alpha_) * pow(se, -1.0/(m_*n_) - 1.)  / (1.0 - sr_);
+  } else {
+    return -1.0/(m_*n_*alpha_) * pow( pow(se, -1.0/m_) - 1.0, 1/n_-1.0)
+        * pow(se, -1.0/m_ - 1.0) / (1.0 - sr_);
+  }
+}
+
+
 
 
 // set the width of the smoothing interval for the relative permeability 

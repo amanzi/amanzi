@@ -28,6 +28,7 @@ public:
   double saturation(double pc);
   double d_saturation(double pc);
   double capillaryPressure(double saturation);
+  double d_capillaryPressure(double saturation);
   double residualSaturation() { return sr_; }
 
   void set_smoothing_interval_width(double width);

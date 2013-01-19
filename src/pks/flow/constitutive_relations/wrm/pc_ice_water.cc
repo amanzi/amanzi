@@ -22,15 +22,15 @@ PCIceWater::PCIceWater(Teuchos::ParameterList& pc_plist) :
 };
 
 double PCIceWater::CapillaryPressure(double T, double dens) {
-  return gamma_ * dens * (T0_ - T)/T0_;
+  return T < T0_ ? gamma_ * dens * (T0_ - T)/T0_ : 0.;
 };
 
 double PCIceWater::DCapillaryPressureDT(double T, double dens) {
-  return -gamma_ * dens / T0_;
+  return T < T0_ ? -gamma_ * dens / T0_ : 0.;
 };
 
 double PCIceWater::DCapillaryPressureDRho(double T, double dens) {
-  return gamma_ * (T0_ - T)/T0_;
+  return T < T0_ ? gamma_ * (T0_ - T)/T0_ : 0.;
 };
 
 

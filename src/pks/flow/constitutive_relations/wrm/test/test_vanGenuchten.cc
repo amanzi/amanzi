@@ -47,4 +47,22 @@ TEST(vanGenuchten) {
   CHECK_CLOSE(vG.d_saturation(pc),
               (1.0-sr)*(-m)*pow(1.0+pow(alpha*pc,1.0/(1.0-m)),-m-1.0)
               *alpha*pow(alpha*pc,m/(1.0-m))/(1.0-m),1e-15);
+
+  // check capillary pressure at p = 2*p_atm
+  pc = -p_atm;
+  CHECK_CLOSE(vG.capillaryPressure( vG.saturation(pc) ), pc, 1e-15);
+
+  // check capillary pressure at p = 0.
+  pc = p_atm;
+  CHECK_CLOSE(vG.capillaryPressure( vG.saturation(pc) ), pc, 1e-15);
+
+  // check d_capillaryPressure at p = 2*p_atm
+  pc = -p_atm;
+  CHECK_CLOSE(vG.d_capillaryPressure( vG.saturation(pc) ),
+              1.0 / vG.d_saturation(pc), 1e-15);
+
+  // check d_capillaryPressure at p = 0
+  pc = p_atm;
+  CHECK_CLOSE(vG.d_capillaryPressure( vG.saturation(pc) ),
+              1.0 / vG.d_saturation(pc), 1e-15);
 }
