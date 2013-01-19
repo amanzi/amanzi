@@ -27,6 +27,7 @@ class WRMZeroRelPerm : public WRM {
   double saturation(double pc) { return wrm_->saturation(pc); }
   double d_saturation(double pc) { return wrm_->d_saturation(pc); }
   double capillaryPressure(double sat) { return wrm_->capillaryPressure(sat); }
+  double d_capillaryPressure(double sat) { return wrm_->d_capillaryPressure(sat); }
   double residualSaturation() { return wrm_->residualSaturation(); }
 
  private:
