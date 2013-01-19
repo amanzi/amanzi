@@ -29,36 +29,37 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
 
   // required methods from the base class
   // sats[0] = s_g, sats[1] = s_l, sats[2] = s_i
-  virtual void saturations(double pc_liq, double pc_ice, double[3]& sats);
-  void saturations(double pc_liq, double pc_ice, double guess, double[3]& sats);
+  virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]);
+  void saturations(double pc_liq, double pc_ice, double guess, double (&sats)[3]);
 
-  virtual double dsaturations_dpc_liq(double pc_liq, double pc_ice, double[3]& dsats);
-  virtual double dsaturations_dpc_ice(double pc_liq, double pc_ice, double[3]& dsats);
-
-  // overload version with provided function evaluation
-  double dsaturations_dpc_liq(double s_i, double pc_liq, double pc_ice,
-          double[3]& dsats);
-  double dsaturations_dpc_ice(double s_i, double pc_liq, double pc_ice,
-          double[3]& dsats);
+  virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]);
+  virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]);
 
   // overload version with provided function evaluation
-  double dsaturations_dpc_liq(double s_i, double pc_liq, double pc_ice,
-          double guess, double[3]& dsats);
-  double dsaturations_dpc_ice(double s_i, double pc_liq, double pc_ice,
-          double guess, double[3]& dsats);
+  void dsaturations_dpc_liq(double s_i, double pc_liq, double pc_ice,
+          double (&dsats)[3]);
+  void  dsaturations_dpc_ice(double s_i, double pc_liq, double pc_ice,
+          double (&dsats)[3]);
+
+  // overload version with provided function evaluation
+  void dsaturations_dpc_liq(double s_i, double pc_liq, double pc_ice,
+          double guess, double (&dsats)[3]);
+  void dsaturations_dpc_ice(double s_i, double pc_liq, double pc_ice,
+          double guess, double (&dsats)[3]);
 
 
  private:
 
-  bool saturations_if_above_freezing_(double pc_liq, double pc_ice, double[3]& sats);
-  bool dsaturations_dpc_il_if_above_freezing_(double pc_liq, double pc_ice,
-          double[3]& dsats);
-  bool dsaturations_dpc_lg_if_above_freezing_(double pc_liq, double pc_ice,
-          double[3]& dsats);
+  bool saturations_if_above_freezing_(double pc_liq, double pc_ice, double (&sats)[3]);
+  bool dsaturations_dpc_ice_if_above_freezing_(double pc_liq, double pc_ice,
+          double (&dsats)[3]);
+  bool dsaturations_dpc_liq_if_above_freezing_(double pc_liq, double pc_ice,
+          double (&dsats)[3]);
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<WRM> wrm_;
   double eps_;
+  int max_it_;
 
  private:
   // Functor for saturations()
@@ -80,6 +81,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
     double pc_liq_;
     double pc_ice_;
     Teuchos::RCP<WRM> wrm_;
+
   };
 
 
@@ -110,7 +112,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   // this Functor gets used within a root-finding algorithm
   class DSatIce_DPClg_Functor_ {
    public:
-    DSatIce_DPCil_Functor_(double s_i, double pc_liq, double pc_ice,
+    DSatIce_DPClg_Functor_(double s_i, double pc_liq, double pc_ice,
                    const Teuchos::RCP<WRM>& wrm) :
         s_i_(s_i), pc_liq_(pc_liq), pc_ice_(pc_ice), wrm_(wrm) {}
 
@@ -121,7 +123,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
       return -ds_i * sstar + (1.0 - s_i_) * sstarprime
           - wrm_->d_saturation( pc_ice_ + wrm_->capillaryPressure( tmp + s_i_))
           * wrm_->d_capillaryPressure( tmp + s_i_ )
-          * (ds_i * (1.0 - sstar) + (1.0 - s_i)*sstarprime);
+          * (ds_i * (1.0 - sstar) + (1.0 - s_i_)*sstarprime);
     }
 
    private:
@@ -132,16 +134,14 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   };
 
 
-  class Tol_ {
-   public:
-    Tol_(double eps_) : eps_(eps) {}
-
-    bool operator()(double min, double max) {
-      return abs(min - max) <= eps_;
+  struct Tol_ {
+    Tol_(double eps) : eps_(eps) {}
+    bool operator()(const double& a, const double& b) const {
+      return abs(a - b) <= eps_;
     }
-   private:
     double eps_;
-  }
+  };
+
 };
 
 
