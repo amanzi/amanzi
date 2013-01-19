@@ -2105,7 +2105,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   int myproc = ParallelDescriptor::MyProc();
   MPI_Comm comm = ParallelDescriptor::Communicator();
   
-  Layout& layout = PMAmr::GetLayout();
+  Layout& layout = pm_parent->GetLayout();
   MFTower RhsMFT(layout,Rhs);
   MFTower SolnMFT(layout,Soln);
   

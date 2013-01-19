@@ -148,7 +148,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     }
 
     // Process the observations
-    const PArray<Observation>& observation_array = PorousMedia::TheObservationArray();
+    const PArray<Observation>& observation_array = amrptr->TheObservations();
 
     Structured_observations(observation_array,output_observations);
 

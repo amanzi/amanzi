@@ -12,6 +12,7 @@
 #include <TagBox.H>
 #include <AmrData.H>
 #include <time.h> 
+#include <MatIDFiller.H>
 #include <PMAmr.H>
 #include "PMAMR_Labels.H"
 
@@ -171,7 +172,6 @@ PorousMedia::CleanupStatics ()
 {
     regions.clear();
     rocks.clear();
-    observations.clear();
     ic_array.clear();
     bc_array.clear();
     tic_array.clear();
@@ -218,12 +218,51 @@ PorousMedia::variableCleanUp ()
 #endif
 }
 
+void
+PorousMedia::SetUpMaterialServer()
+{
+  typedef MatIDFiller::Material Material;
+  PArray<Material> materials(rocks.size(),PArrayManage);
+  for (int i=0; i<rocks.size(); ++i) {
+    materials.set(i,new Material(rocks[i].name,rocks[i].regions));
+  }
+  
+  int Nlevs = parent->finestLevel() + 1;
+  Array<Geometry> geomArray(Nlevs);
+  for (int lev=0; lev<Nlevs; ++lev) {
+    geomArray[lev] = Geometry(getLevel(lev).Geom());
+  }
+
+  matIDfiller.define(geomArray,parent->refRatio(),materials); // FIXME: All these copies of Geometry objects is silly
+}
+
+void
+PorousMedia::RegisterPhysicsBasedEvents()
+{
+  if (execution_mode==INIT_TO_STEADY) {
+    std::string event_name = "Switch_Time";
+    PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(Array<Real>(1,switch_time)));
+  }
+
+  for (int i=0; i<bc_array.size(); ++i) {
+    const std::string& event_name = bc_array[i].Label();
+    PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(bc_array[i].time()));
+  }
+
+  for (int n=0; n<tbc_array.size(); ++n) {
+    for (int i=0; i<tbc_array.size(); ++i) {
+      const std::string& event_name = tbc_array[n][i].Label() + "_" + soluteNames()[n];
+      PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].time()));
+    }
+  }
+}
+
 PorousMedia::PorousMedia ()
 {
-    if (!initialized) {
-        BoxLib::ExecOnFinalize(PorousMedia::CleanupStatics);
-        initialized = true;
-    }
+  if (!initialized) {
+    BoxLib::ExecOnFinalize(PorousMedia::CleanupStatics);
+    initialized = true;
+  }
 
   Ssync        = 0;
   advflux_reg  = 0;
@@ -251,8 +290,15 @@ PorousMedia::PorousMedia ()
   sat_old_cached = 0;
   sat_new_cached = 0;
   t_sat_old_cached = -1;
-  t_sat_new_cached = -1;	
+  t_sat_new_cached = -1;
+
+  if (parent && !(matIDfiller.Initialized()) ) {
+    SetUpMaterialServer();
+    RegisterPhysicsBasedEvents();
+  }
 }
+
+
 
 void
 PorousMedia::setup_bound_desc()
@@ -417,10 +463,14 @@ PorousMedia::PorousMedia (Amr&            papa,
   aux_boundary_data_old(bl,nGrowHYP,ncomps+ntracers,level_geom),
   FillPatchedOldState_ok(true)
 {
-    if (!initialized) {
-        BoxLib::ExecOnFinalize(CleanupStatics);
-        initialized = true;
-    }
+  if (!initialized) {
+    BoxLib::ExecOnFinalize(CleanupStatics);
+    initialized = true;
+  }
+
+  if (parent && !(matIDfiller.Initialized()) ) {
+    SetUpMaterialServer();
+  }
 
   //
   // Build metric coefficients for RZ calculations.
@@ -7484,6 +7534,7 @@ PorousMedia::initialTimeStep (MultiFab* u_mac)
     }
 
     const Real cur_time = state[State_Type].curTime();
+    Real stop_time = PMParent()->StopTime();
     if (stop_time > cur_time) {
         dt_0 = std::min(dt_0, stop_time - cur_time);
     }
@@ -7623,15 +7674,11 @@ PorousMedia::computeNewDt (int                   finest_level,
   //          is set by the dynamics of the solver.  Thus, we record the dt last time we left 
   //          the solver.  If nothing else is at play, we use this
   // 
-  // 3) Events mananged by PMAmr - These events are processed after this routine is called,
-  //          potentially chopping the timestep down to hit an event.  Ignore all but time
-  //          period control intervals
+  // 3) User input dt_fixed
   //
-  // 4) User input dt_fixed
+  // 4) If regrided, assume that we computed a dt_min prior (in dt_min) and enforce
   //
-  // 5) If regrided, assume that we computed a dt_min prior (in dt_min) and enforce
-  //
-  // 6) Bounded growth/decrease via user input
+  // 5) Bounded growth/decrease via user input
   //
 
   bool start_with_previously_suggested_dt = true;
@@ -7734,28 +7781,6 @@ PorousMedia::computeNewDt (int                   finest_level,
 
       if (solute_transport_limits_dt && dt_eig_local>0) {
           dt_0 = std::min(dt_0, dt_eig_local);
-      }
-
-      int tpc_interval = -1;
-      for (int i=0; i<tpc_labels.size(); ++i) {
-          if (state[State_Type].curTime() >= tpc_start_times[i]) {
-              tpc_interval = i;
-          }
-      }
-      if (tpc_interval >= 0) {
-          if (tpc_initial_time_steps.size()>tpc_interval 
-              && tpc_initial_time_steps[tpc_interval]>0 
-              && (std::abs(state[State_Type].curTime() - tpc_start_times[tpc_interval]) < tpc_initial_time_steps[tpc_interval])) {
-              dt_0 = tpc_initial_time_steps[tpc_interval];
-          }
-          if (tpc_initial_time_step_multipliers.size()>tpc_interval 
-              && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
-              dt_0 *= tpc_initial_time_step_multipliers[tpc_interval];
-          }
-          if (tpc_maximum_time_steps.size()>tpc_interval
-              && tpc_maximum_time_steps[tpc_interval] > 0) {
-              dt_0 = std::min(dt_0,tpc_maximum_time_steps[tpc_interval]);
-          }          
       }
   }
 
@@ -7904,11 +7929,13 @@ PorousMedia::okToContinue ()
             ret = false; reason_for_stopping = "Dt at level 0 too small";
         }
 
+        int max_step = PMParent()->MaxStep();
         if (parent->levelSteps(0) >= max_step) {
             ret = false; reason_for_stopping = "Hit maximum allowed time steps";
             successfully_completed = true;
         }
 
+        Real stop_time = PMParent()->StopTime();
         if (parent->cumTime() >= stop_time) {
             ret = false; reason_for_stopping = "Hit maximum allowed time";
             successfully_completed = true;
@@ -7938,7 +7965,8 @@ PorousMedia::okToContinue ()
             //
             // Compute observations
             //
-            Observation::setAmrPtr(parent);
+            Observation::setPMAmrPtr(PMParent());
+            PArray<Observation>& observations = PMParent()->TheObservations();
             if (successfully_completed  &&  ParallelDescriptor::IOProcessor()) 
             {
                 if (verbose>1)
@@ -8018,9 +8046,10 @@ PorousMedia::post_timestep (int crse_iteration)
   is_first_step_after_regrid = false;
 
   if (level == 0) {
-    Observation::setAmrPtr(parent);
+    Observation::setPMAmrPtr(PMParent());
     Real prev_time = state[State_Type].prevTime();
     Real curr_time = state[State_Type].curTime();
+    PArray<Observation>& observations = PMParent()->TheObservations();
     for (int i=0; i<observations.size(); ++i)
       observations[i].process(prev_time, curr_time, parent->levelSteps(0));
   }
@@ -8043,14 +8072,15 @@ void PorousMedia::post_restart()
 {
   if (level==0)
   {
-      PMAmr::GetLayout().Rebuild();
+      PMParent()->GetLayout().Rebuild();
   }
 
   if (level == 0)
     {
-      Observation::setAmrPtr(parent);
+      Observation::setPMAmrPtr(PMParent());
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
+      PArray<Observation>& observations = PMParent()->TheObservations();
       for (int i=0; i<observations.size(); ++i)
           observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
@@ -8067,7 +8097,7 @@ PorousMedia::post_regrid (int lbase,
 
 #if 1
   if (level == lbase) {
-    PMAmr::GetLayout().Rebuild();
+    PMParent()->GetLayout().Rebuild();
   }
 #else
   if (level == lbase  && steady_use_PETSc_snes) {
@@ -8588,9 +8618,10 @@ PorousMedia::post_init (Real stop_time)
 
   if (level == 0)
     {
-      Observation::setAmrPtr(parent);
+      Observation::setPMAmrPtr(PMParent());
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
+      PArray<Observation>& observations = PMParent()->TheObservations();
       for (int i=0; i<observations.size(); ++i)
           observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
@@ -8640,7 +8671,7 @@ PorousMedia::post_init_state ()
         // Compute initial velocity field
         RSParams rsparams;
         SetRichardSolverParameters(rsparams,"Initial-Velocity-Eval");
-        RichardSolver rs(*pmamr,rsparams,PMAmr::GetLayout());
+        RichardSolver rs(*pmamr,rsparams,pmamr->GetLayout());
         rs.ResetRhoSat();
         rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->startTime());
       }
@@ -10757,12 +10788,11 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 
 #ifdef BL_USE_PETSC
   PetscErrorCode ierr;
-  Mat& J = PMAmr::GetLayout().Jacobian();
-  Vec& JRowScale = PMAmr::GetLayout().JRowScale();
+  Layout& layout = PMParent()->GetLayout();
+  Mat& J = layout.Jacobian();
+  Vec& JRowScale = layout.JRowScale();
   BaseFab<int> nodeNums;
   const BCRec& theBC = AmrLevel::desc_lst[Press_Type].getBC(0);
-  const Layout& layout = PMAmr::GetLayout();
-
 #endif
 
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
@@ -11657,6 +11687,7 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
     Real t_eval = time;
     Real prev_time = state[state_idx].prevTime();
 
+    const Array<Real>& tpc_start_times = PMParent()->TPCStartTimes();
     for (int i=0; i<tpc_start_times.size(); ++i) {
         Real curr_time = state[state_idx].curTime();
         Real teps = (curr_time - prev_time)*1.e-6;
@@ -11954,7 +11985,7 @@ PorousMedia::derive (const std::string& name,
         BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
 
         mf.setVal(-1,dcomp,1,ngrow);
-        Layout& layout = PMAmr::GetLayout();
+        Layout& layout = PMParent()->GetLayout();
 
         Layout::IntFab ifab;
         for (MFIter mfi(mf); mfi.isValid(); ++mfi)

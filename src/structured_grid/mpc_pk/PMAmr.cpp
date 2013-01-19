@@ -2,21 +2,18 @@
 #include <PorousMedia.H>
 #include <Observation.H>
 
-EventCoord PMAmr::event_coord;
-Layout PMAmr::layout;
-int PMAmr::plot_file_digits;
-int PMAmr::chk_file_digits;
-
 namespace
 {
-    //
-    // These are all ParmParse'd in.  Set defaults in Initialize block below!!!
-    //
-    bool pmamr_initialized = false;
-    int  regrid_on_restart;
-    int  use_efficient_regrid;
-    int  compute_new_dt_on_regrid;
-    int  plotfile_on_restart;
+  //
+  // These are all ParmParse'd in, as variables with the same name are
+  // not accessible to this derived class...should fix
+  // NOTE: Defaults set in Initialize block below
+  //
+  bool pmamr_initialized = false;
+  int  regrid_on_restart;
+  int  use_efficient_regrid;
+  int  compute_new_dt_on_regrid;
+  int  plotfile_on_restart;
 }
 
 
@@ -24,9 +21,7 @@ void
 PMAmr::CleanupStatics ()
 {
     pmamr_initialized = false;
-    layout.Clear();
 }
-
 
 static bool initialized = false;
 PMAmr::PMAmr()
@@ -40,13 +35,26 @@ PMAmr::PMAmr()
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
 
-        ParmParse pp("amr");
-        pp.query("plot_file_digits",plot_file_digits);
-        pp.query("chk_file_digits",chk_file_digits);
-
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         pmamr_initialized = true;
     }
+
+    ParmParse ppa("amr");
+    ppa.query("plot_file_digits",plot_file_digits);
+    ppa.query("chk_file_digits",chk_file_digits);
+    ppa.query("regrid_on_restart",regrid_on_restart);
+    ppa.query("use_efficient_regrid",use_efficient_regrid);
+    ppa.query("plotfile_on_restart",plotfile_on_restart);
+    ppa.query("compute_new_dt_on_regrid",compute_new_dt_on_regrid);
+
+    ParmParse pp;
+    pp.query("max_step",max_step);
+    pp.query("stop_time",stop_time);
+
+    std::string event_name = "Stop_Time";
+    defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
+    PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
+
     layout.SetParent(this);
 
     dt0_before_event_cut = -1;
@@ -54,7 +62,13 @@ PMAmr::PMAmr()
 }
 
 PMAmr::~PMAmr()
-{}
+{
+  layout.Clear();
+
+  for (std::map<std::string,EventCoord::Event*>::iterator it=defined_events.begin(); it!=defined_events.end(); ++it) {
+    delete it->second;
+  }
+}
 
 void 
 PMAmr::writePlotFile ()
@@ -74,89 +88,92 @@ PMAmr::checkPoint ()
   file_name_digits = file_name_digits_tmp;
 }
 
-static Real
-process_events(bool& write_plotfile_after_step,
-               bool& write_checkpoint_after_step,
-               Array<int>& observations_after_step,
-               bool& begin_tpc,
-               EventCoord& event_coord,
-               Real time, Real dt, int iter, int diter)
+void
+PMAmr::RegisterEvent(const std::string& event_label,
+                     EventCoord::Event* event)
 {
-    write_plotfile_after_step = false;
-    write_checkpoint_after_step = false;
-    begin_tpc = false;
-    Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
-    Array<std::string>& vis_time_macros = PorousMedia::vis_time_macros;
-    Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
-    Array<std::string>& tpc_labels = PorousMedia::tpc_labels;
-
-    Real dt_new = dt;
-    std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
-    PArray<Observation>& observations = PorousMedia::TheObservationArray();
-
-    if (nextEvent.second.size()) 
-    {
-        // Process event
-        dt_new = nextEvent.first;
-        const Array<std::string>& eventList = nextEvent.second;
-
-        for (int j=0; j<eventList.size(); ++j) {
-
-            for (int i=0; i<observations.size(); ++i) {
-                Observation& observation = observations[i];
-                const std::string& event_label = observation.event_label;
-                
-                if (eventList[j] == event_label) {
-                    observations_after_step.push_back(i);
-                }
-            }
-
-            for (int k=0; k<vis_cycle_macros.size(); ++k) {
-                if (eventList[j] == vis_cycle_macros[k]) {
-                    write_plotfile_after_step = true;
-                }
-            }
-
-            for (int k=0; k<vis_time_macros.size(); ++k) {
-                if (eventList[j] == vis_time_macros[k]) {
-                    write_plotfile_after_step = true;
-                }
-            }
-
-            for (int k=0; k<chk_cycle_macros.size(); ++k) {
-                if (eventList[j] == chk_cycle_macros[k]) {
-                    write_checkpoint_after_step = true;
-                }
-            }
-
-            for (int k=0; k<tpc_labels.size(); ++k) {
-                if (eventList[j] == tpc_labels[k]) {
-                    begin_tpc = true;
-                }
-            }
-        }
-    }
-    return dt_new;
+  std::map<std::string,EventCoord::Event*>::iterator it=defined_events.find(event_label);
+  if (it!=defined_events.end()) {
+    defined_events[event_label] = event;
+    eventCoord().Register(event_label,defined_events[event_label]);
+  }
+  else {
+    delete event;
+  }
 }
 
-static void
-initial_events(bool& write_plotfile_now,
-               bool& write_checkpoint_now,
-               Array<int>& observations_now,
-               bool& begin_tpc_now,
-               EventCoord& event_coord,
-               Real time, int iter)
+Real
+PMAmr::process_events(bool& write_plotfile_after_step,
+                      bool& write_checkpoint_after_step,
+                      Array<int>& observations_after_step,
+                      bool& begin_tpc,
+                      EventCoord& event_coord,
+                      Real time, Real dt, int iter, int diter)
+{
+  write_plotfile_after_step = false;
+  write_checkpoint_after_step = false;
+  begin_tpc = false;
+
+  Real dt_new = dt;
+  std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
+
+  if (nextEvent.second.size()) {
+    // Process event
+    dt_new = nextEvent.first;
+    const Array<std::string>& eventList = nextEvent.second;
+
+    for (int j=0; j<eventList.size(); ++j) {
+
+      for (int i=0; i<observations.size(); ++i) {
+        Observation& observation = observations[i];
+        const std::string& event_label = observation.event_label;
+
+        if (eventList[j] == event_label) {
+          observations_after_step.push_back(i);
+        }
+      }
+
+      for (int k=0; k<vis_cycle_macros.size(); ++k) {
+        if (eventList[j] == vis_cycle_macros[k]) {
+          write_plotfile_after_step = true;
+        }
+      }
+
+      for (int k=0; k<vis_time_macros.size(); ++k) {
+        if (eventList[j] == vis_time_macros[k]) {
+          write_plotfile_after_step = true;
+        }
+      }
+
+      for (int k=0; k<chk_cycle_macros.size(); ++k) {
+        if (eventList[j] == chk_cycle_macros[k]) {
+          write_checkpoint_after_step = true;
+        }
+      }
+
+      for (int k=0; k<tpc_labels.size(); ++k) {
+        if (eventList[j] == tpc_labels[k]) {
+          begin_tpc = true;
+        }
+      }
+    }
+  }
+  return dt_new;
+}
+
+void
+PMAmr::initial_events(bool& write_plotfile_now,
+                      bool& write_checkpoint_now,
+                      Array<int>& observations_now,
+                      bool& begin_tpc_now,
+                      EventCoord& event_coord,
+                      Real time, int iter)
 {
     write_plotfile_now = false;
     write_checkpoint_now = false;
     begin_tpc_now = false;
-    Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
-    Array<std::string>& vis_time_macros = PorousMedia::vis_time_macros;
-    Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
-    Array<std::string>& tpc_labels = PorousMedia::tpc_labels;
 
     Array<std::string> eventList = event_coord.InitEvent(time,iter);
-    PArray<Observation>& observations = PorousMedia::TheObservationArray();
 
     for (int j=0; j<eventList.size(); ++j) {
       
@@ -235,8 +252,7 @@ void
 PMAmr::pm_timeStep (int  level,
                     Real time,
                     int  iteration,
-                    int  niter,
-                    Real stop_time)
+                    int  niter)
 {
     //
     // Allow regridding of level 0 calculation on restart.
@@ -346,6 +362,45 @@ PMAmr::pm_timeStep (int  level,
                 lev_top = std::min(finest_level, max_level-1);
         }
     }
+
+    //
+    // Are we in a time period control section?  If so, fix time step
+    //
+    if (level == 0) {
+      int tpc_interval = -1;
+      for (int i=0; i<tpc_labels.size(); ++i) {
+        if (time >= tpc_start_times[i]) {
+          tpc_interval = i;
+        }
+      }
+      Real dt_tpc;
+      bool tpc_active = false;
+      if (tpc_interval >= 0) {
+        if (tpc_initial_time_steps.size()>tpc_interval
+            && tpc_initial_time_steps[tpc_interval]>0
+            && (std::abs(time - tpc_start_times[tpc_interval]) < tpc_initial_time_steps[tpc_interval])) {
+          tpc_active = true;
+          dt_tpc = tpc_initial_time_steps[tpc_interval];
+        }
+        if (tpc_initial_time_step_multipliers.size()>tpc_interval
+            && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
+          tpc_active = true;
+          dt_tpc *= tpc_initial_time_step_multipliers[tpc_interval];
+        }
+        if (tpc_maximum_time_steps.size()>tpc_interval
+            && tpc_maximum_time_steps[tpc_interval] > 0) {
+          tpc_active = true;
+          dt_tpc = std::min(dt_tpc,tpc_maximum_time_steps[tpc_interval]);
+        }
+      }
+      if (tpc_active && dt_level[level] > dt_tpc) {
+        dt_level[level] = dt_tpc;
+        for (int lev = level+1; lev<=finest_level; ++lev) {
+          dt_level[lev] = dt_level[lev-1] / n_cycle[lev];
+        }
+      }
+    }
+
     //
     // Check to see if should write plotfile.
     // This routine is here so it is done after the restart regrid.
@@ -365,7 +420,6 @@ PMAmr::pm_timeStep (int  level,
     if (step_ok) {
       if (level==0) {
         dt_level[level] = dt_taken;
-        int fac = 1;
         for (int lev = level+1; lev<=finest_level; ++lev) {
           dt_level[lev] = dt_level[lev-1] / n_cycle[lev];
         }
@@ -390,9 +444,20 @@ PMAmr::pm_timeStep (int  level,
 }
 
 void
-PMAmr::coarseTimeStep (Real stop_time)
+PMAmr::coarseTimeStep (Real _stop_time)
 {
-    const Real run_strt = ParallelDescriptor::second() ;    
+    const Real run_strt = ParallelDescriptor::second();
+
+    // Reset stop time per arg
+    if (stop_time != _stop_time) {
+      stop_time = _stop_time;
+      std::string event_name = "Stop_Time";
+      std::map<std::string,EventCoord::Event*>::iterator it=defined_events.find(event_name);
+      if (it != defined_events.end()) {
+        delete it->second;
+      }
+      defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
+    }
     
     int post_regrid_flag = 0;
     amr_level[0].computeNewDt(finest_level,
@@ -457,7 +522,7 @@ PMAmr::coarseTimeStep (Real stop_time)
     else
        dt0_before_event_cut = -1;
     // Do time step
-    pm_timeStep(0,cumtime,1,1,stop_time);
+    pm_timeStep(0,cumtime,1,1);
 
     cumtime += dt_level[0];
 
@@ -690,3 +755,218 @@ PMAmr::initialInit (Real t_start,
 #endif
 }
 
+void PMAmr::InitializeControlEvents()
+{
+  Real time_eps = 1.e-6; // FIXME: needs to be computed
+
+  // Build time macros
+  ParmParse ppa("amr");
+
+  EventCoord& event_coord = PMAmr::eventCoord();
+
+  int n_cmac = ppa.countval("cycle_macros");
+  Array<std::string> cmacroNames;
+  ppa.getarr("cycle_macros",cmacroNames,0,n_cmac);
+  std::map<std::string,int> cmacro_map;
+  for (int i=0; i<n_cmac; ++i) {
+      std::string prefix = "amr.cycle_macro." + cmacroNames[i];
+      ParmParse ppc(prefix);
+      std::string type; ppc.get("type",type);
+      if (type == "period") {
+          int start, period, stop;
+          ppc.get("start",start);
+          ppc.get("period",period);
+          ppc.get("stop",stop);
+          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(start,period,stop);
+      }
+      else if (type == "cycles" ){
+          Array<int> cycles; ppc.getarr("cycles",cycles,0,ppc.countval("cycles"));
+          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(cycles);
+      }
+      else {
+          BoxLib::Abort("Unrecognized cycle macros type");
+      }
+      cmacro_map[cmacroNames[i]] = i;
+  }
+
+  int n_tmac = ppa.countval("time_macros");
+  Array<std::string> tmacroNames;
+  ppa.getarr("time_macros",tmacroNames,0,n_tmac);
+  std::map<std::string,int> tmacro_map;
+  for (int i=0; i<n_tmac; ++i) {
+      std::string prefix = "amr.time_macro." + tmacroNames[i];
+      ParmParse ppt(prefix);
+      std::string type; ppt.get("type",type);
+      if (type == "period") {
+          Real start, period, stop;
+          ppt.get("start",start);
+          ppt.get("period",period);
+          ppt.get("stop",stop);
+          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(start,period,stop);
+      }
+      else if (type == "times" ){
+          Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
+          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(times);
+      }
+      else {
+          BoxLib::Abort("Unrecognized time macros type");
+      }
+      tmacro_map[tmacroNames[i]] = i;
+  }
+
+  ParmParse pp("observation");
+
+  // determine number of observation
+  int n_obs = pp.countval("observation");
+  std::map<std::string,EventCoord::Event*>::const_iterator eit;
+
+  if (n_obs > 0) {
+    observations.resize(n_obs,PArrayManage);
+    Array<std::string> obs_names;
+    pp.getarr("observation",obs_names,0,n_obs);
+
+    // Get time and cycle macros
+
+    // Get parameters for each observation
+    // observation type:0=production,1=mass_fraction,2=mole_fraction,3=saturation
+    for (int i=0; i<n_obs; i++) {
+      const std::string prefix("observation." + obs_names[i]);
+      ParmParse ppr(prefix.c_str());
+
+      std::string obs_type; ppr.get("obs_type",obs_type);
+      std::string obs_field; ppr.get("field",obs_field);
+      Array<std::string> region_names(1); ppr.get("region",region_names[0]);
+      const PArray<Region> obs_regions = PorousMedia::build_region_PArray(region_names);//Should not be a static function
+
+      std::string obs_time_macro, obs_cycle_macro;
+      ppr.query("cycle_macro",obs_cycle_macro);
+      ppr.query("time_macro",obs_time_macro);
+
+      std::string event_label;
+      if (ppr.countval("cycle_macro")>0) {
+        eit = defined_events.find(obs_cycle_macro);
+        if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          event_label = eit->first;
+          event_coord.Register(event_label,eit->second);
+        }
+        else {
+          std::string m = "obs_cycle_macro unrecognized \"" + obs_cycle_macro + "\"";
+          BoxLib::Abort(m.c_str());
+        }
+      }
+      else if (ppr.countval("time_macro")>0) {
+        eit = defined_events.find(obs_time_macro);
+        if (eit != defined_events.end()  && eit->second->IsTime() ) {
+          event_label = eit->first;
+          event_coord.Register(event_label,eit->second);
+        }
+        else {
+          std::string m = "obs_time_macro unrecognized \"" + obs_time_macro + "\"";
+          BoxLib::Abort(m.c_str());
+        }
+      }
+      else {
+        std::string m = "Must define either time or cycle macro for observation \"" + obs_names[i] + "\"";
+        BoxLib::Abort(m.c_str());
+      }
+
+      observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,event_label));
+    }
+
+    // filename for output
+    pp.query("output_file",observation_output_file);
+  }
+
+  ppa.queryarr("vis_cycle_macros",vis_cycle_macros,0,ppa.countval("vis_cycle_macros"));
+  ppa.queryarr("vis_time_macros",vis_time_macros,0,ppa.countval("vis_time_macros"));
+  ppa.queryarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
+  ppa.queryarr("chk_time_macros",chk_time_macros,0,ppa.countval("chk_time_macros"));
+
+  for (int i=0; i<vis_cycle_macros.size(); ++i)
+  {
+      eit = defined_events.find(vis_cycle_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          event_coord.Register(eit->first,eit->second);
+      }
+      else {
+          std::string m = "vis_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }
+  }
+
+  for (int i=0; i<vis_time_macros.size(); ++i)
+  {
+      eit = defined_events.find(vis_time_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsTime() ) {
+          event_coord.Register(eit->first,eit->second);
+      }
+      else {
+          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }
+  }
+  for (int i=0; i<chk_cycle_macros.size(); ++i)
+  {
+      eit = defined_events.find(chk_cycle_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          event_coord.Register(eit->first,eit->second);
+      }
+      else {
+          std::string m = "chk_cycle_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }
+  }
+  for (int i=0; i<chk_time_macros.size(); ++i)
+  {
+      eit = defined_events.find(chk_time_macros[i]);
+      if (eit != defined_events.end()  && eit->second->IsTime() ) {
+          event_coord.Register(eit->first,eit->second);
+      }
+      else {
+          std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_time_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }
+  }
+
+  //
+  // Get run options.
+  //
+  ParmParse pb("prob");
+
+  int ntps = pb.countval("TPC_Start_Times");
+  if (ntps) {
+      tpc_start_times.resize(ntps);
+      pb.getarr("TPC_Start_Times",tpc_start_times,0,ntps);
+
+      int ndt = pb.countval("TPC_Initial_Time_Step");
+      BL_ASSERT(ndt==0 || ndt==ntps);
+      tpc_initial_time_steps.resize(ndt,-1);
+      if (ndt>0) {
+          pb.getarr("TPC_Initial_Time_Step",tpc_initial_time_steps,0,ndt);
+      }
+
+      int ndtm = pb.countval("TPC_Initial_Time_Step_Multiplier");
+      BL_ASSERT(ndtm==0 || ndtm==ntps);
+      tpc_initial_time_step_multipliers.resize(ndt,-1);
+      if (ndtm>0) {
+          pb.getarr("TPC_Initial_Time_Step_Multiplier",tpc_initial_time_step_multipliers,0,ndtm);
+      }
+
+      int ndtmax = pb.countval("TPC_Maximum_Time_Step");
+      BL_ASSERT(ndtmax==0 || ndtmax==ntps);
+      tpc_initial_time_steps.resize(ndtmax,-1);
+      if (ndtmax>0) {
+          pb.getarr("TPC_Maximum_Time_Step",tpc_maximum_time_steps,0,ndtmax);
+      }
+  }
+
+  tpc_labels.resize(ntps);
+  for (int i=0; i<ntps; ++i) {
+      int ndigits = (int) (std::log10(ntps) + .0001) + 1;
+      tpc_labels[i] = BoxLib::Concatenate("Time_Period_Begin_",i,ndigits);
+      defined_events[tpc_labels[i]] = new EventCoord::TimeEvent(Array<Real>(1,tpc_start_times[i]));
+      PMAmr::eventCoord().Register(tpc_labels[i],defined_events[tpc_labels[i]]);
+  }
+
+
+}

@@ -6,7 +6,7 @@
 
 
 
-Amr* Observation::amrp;
+PMAmr* Observation::amrp;
 std::map<std::string, int> Observation::obs_type_list;
 
 static bool initialized = false;
@@ -54,7 +54,10 @@ Observation::Observation(const std::string& name,
 std::pair<bool,Real>
 process_events(Real time, Real dt, int iter, int diter, const std::string& event_label)
 {
-    EventCoord& event_coord = PMAmr::eventCoord();
+    if (Observation::PMAmrPtr() == 0) {
+        BoxLib::Abort("Observations not yet associated with a PMAmr");
+    }
+    EventCoord& event_coord = Observation::PMAmrPtr()->eventCoord();
     std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
     if (nextEvent.second.size()) 
     {

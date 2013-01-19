@@ -1994,12 +1994,13 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   BL_ASSERT(rs);
   Vec& AlphaV = rs->GetAlphaV();
   
-  Vec press;
-  ierr = VecDuplicate(x1_tmp,&press); CHKPETSC(ierr);
+  Vec& press = rs->GetTrialResV(); // A handy Vec to use
+  ierr = VecCopy(x1_tmp,press); CHKPETSC(ierr);
   if (rs->Parameters().scale_soln_before_solve) {
       ierr = VecPointwiseMult(press,x1_tmp,rs->GetSolnTypV()); // Mult(w,x,y): w=x.y, p=pbar.ptyp
   }
   rs->ComputeRichardAlpha(AlphaV,press);
+
   if (rs->Parameters().scale_soln_before_solve) {
       ierr = VecPointwiseMult(AlphaV,AlphaV,rs->GetSolnTypV()); // Mult(w,x,y): w=x.y, alphabar=alpha.ptyp
   }

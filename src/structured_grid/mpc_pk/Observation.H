@@ -10,11 +10,12 @@
 #include <BoxArray.H>
 #include <Geometry.H>
 #include <LevelBld.H>
-#include <AmrLevel.H>
+#include <Amr.H>
 #include <Region.H>
 
 #include <cmath>
 
+class PMAmr;
 
 /*
   @ManDoc: Class defining all possible types of observations
@@ -51,13 +52,14 @@ public:
               const std::string& eventLabel);
 
   void process(Real t_old, Real t_new, int iter);
-  static void setAmrPtr(Amr* amr) {amrp = amr;}
+  static void setPMAmrPtr(PMAmr* amr) {amrp = amr;}
+  static PMAmr* PMAmrPtr() {return amrp;} 
   static void Cleanup ();
   static void Initialize ();
 
 protected:
   std::pair<Real,Real> integral_and_volume (Real time);
-  static Amr* amrp; // Should be const, but cannot be
+  static PMAmr* amrp; // Should be const, but cannot be
   Real average(Real time);
   Real volume_integral(Real time);  
   Real volume_time_integral(Real t_old, Real t_new);

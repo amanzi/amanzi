@@ -238,6 +238,7 @@ public:
 			bool          bReadSpecial = false);
 
   static void CleanupStatics ();
+  void RegisterPhysicsBasedEvents();
   //
   // Read problem input file. 
   //
@@ -451,8 +452,6 @@ public:
 			   const std::string& pltfile,
 			   const std::string& varname);
 
-  static PArray<Observation>& TheObservationArray() {return observations;}
-
   static void getDirichletFaces (Array<Orientation>& Faces,
 				 const int           comp_Type,
 				 const BCRec&        _bc);
@@ -474,15 +473,15 @@ public:
   static PArray<RegionData>& BCs() {return bc_array;}
   static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
 
-  static Array<std::string> vis_cycle_macros, vis_time_macros;
-  static Array<std::string> chk_cycle_macros, chk_time_macros;
-  static Array<std::string> tpc_labels;
   static int echo_inputs;
 
   void BuildRichardNLSdata(RichardNLSdata& nld, int slev, int nlevs);
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
-    
+
+  void SetUpMaterialServer();
+  MatIDFiller matIDfiller;
+
   void init_rock_properties (); // Initialize the rock properties
   void buildMetrics ();         // 1-D metric arrays for RZ
   static void setup_list ();
@@ -1162,10 +1161,6 @@ protected:
   static bool do_source_term;
   static Array<Source> source_array;
 
-  // observations
-  static std::string obs_outputfile;
-  static PArray<Observation> observations;
-
 #ifdef AMANZI
   static PArray<amanzi::chemistry::SimpleThermoDatabase> chemSolve;
   static std::string amanzi_database_file;
@@ -1317,16 +1312,10 @@ protected:
   static int  it_pressure;
   static bool do_any_diffuse;
   static int  do_cpl_advect;
-  static int  max_step;
-  static Real stop_time;
   static bool do_richard_sat_solve;
   static ExecutionMode execution_mode;
   static Real switch_time;
   static Real ic_chem_relax_dt;
-  static Array<Real> tpc_start_times;
-  static Array<Real> tpc_initial_time_steps;
-  static Array<Real> tpc_initial_time_step_multipliers;
-  static Array<Real> tpc_maximum_time_steps;
   static bool solute_transport_limits_dt;
   static int nGrowHYP;
   static int nGrowMG;

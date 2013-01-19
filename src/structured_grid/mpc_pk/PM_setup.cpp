@@ -81,6 +81,7 @@ namespace
 //**********************************************************************
 //
 
+int PorousMedia::echo_inputs;
 //
 // The num_state_type actually varies with model.
 //
@@ -110,16 +111,6 @@ DataServices* PorousMedia::kappa_dataServices;
 //
 bool          PorousMedia::do_source_term;
 Array<Source> PorousMedia::source_array;
-//
-// Observation.
-//
-std::string        PorousMedia::obs_outputfile;
-PArray<Observation> PorousMedia::observations;
-Array<std::string>  PorousMedia::vis_cycle_macros;
-Array<std::string>  PorousMedia::vis_time_macros;
-Array<std::string>  PorousMedia::chk_cycle_macros;
-Array<std::string>  PorousMedia::chk_time_macros;
-int                 PorousMedia::echo_inputs;
 //
 // Phases and components.
 //
@@ -209,8 +200,6 @@ int  PorousMedia::sum_interval;
 int  PorousMedia::NUM_SCALARS;
 int  PorousMedia::NUM_STATE;
 int  PorousMedia::full_cycle;
-int  PorousMedia::max_step;
-Real PorousMedia::stop_time;
 Real PorousMedia::dt_init;
 int  PorousMedia::max_n_subcycle_transport;
 int  PorousMedia::max_dt_iters_flow;
@@ -350,21 +339,11 @@ RichardSolver* PorousMedia::richard_solver;
 
 PorousMedia::ExecutionMode PorousMedia::execution_mode;
 Real PorousMedia::switch_time;
-Array<Real> PorousMedia::tpc_start_times;
-Array<Real> PorousMedia::tpc_initial_time_steps;
-Array<Real> PorousMedia::tpc_initial_time_step_multipliers;
-Array<Real> PorousMedia::tpc_maximum_time_steps;
-Array<std::string> PorousMedia::tpc_labels;
 
-static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
 namespace
 {
     static void PM_Setup_CleanUpStatics() 
     {
-        for (std::map<std::string,EventCoord::Event*>::iterator it=defined_events.begin(); it!=defined_events.end(); ++it) {
-            delete it->second;
-        }
-
 	DataServices* phids = PorousMedia::PhiData(); delete phids; phids=0;
     }
 }
@@ -589,8 +568,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::NUM_SCALARS  = 0;
   PorousMedia::NUM_STATE    = 0;
   PorousMedia::full_cycle   = 0;
-  PorousMedia::max_step     = 0;
-  PorousMedia::stop_time    = 0;
 
   PorousMedia::be_cn_theta           = 0.5;
   PorousMedia::visc_tol              = 1.0e-10;  
@@ -630,11 +607,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::execution_mode      = PorousMedia::INVALID;
   PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
-  PorousMedia::tpc_start_times.resize(0);
-  PorousMedia::tpc_initial_time_steps.resize(0);
-  PorousMedia::tpc_initial_time_step_multipliers.resize(0);
-  PorousMedia::tpc_maximum_time_steps.resize(0);
-  PorousMedia::tpc_labels.resize(0);
   PorousMedia::solute_transport_limits_dt = false;
   PorousMedia::nGrowHYP = 3;
   PorousMedia::nGrowMG = 1;
@@ -1980,9 +1952,6 @@ void PorousMedia::read_prob()
 {
   ParmParse pp;
 
-  max_step  = -1;    
-  stop_time = -1.0;  
-
   std::string exec_mode_in_str; 
   pp.get("execution_mode",exec_mode_in_str);
   if (exec_mode_in_str == "transient") {
@@ -1998,63 +1967,12 @@ void PorousMedia::read_prob()
       BoxLib::Abort(str.c_str());
     }
   }
-
-  pp.query("max_step",max_step);
-  pp.query("stop_time",stop_time);
-
   if (execution_mode==INIT_TO_STEADY) {
     pp.get("switch_time",switch_time);
-    std::string event_name = "Switch_Time";
-    BL_ASSERT(stop_time >= switch_time);
-    defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,switch_time));
-    PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
-  }
-
-  std::string event_name = "Stop_Time";
-  defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
-  PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
-
-  //
-  // Get run options.
-  //  
-  ParmParse pb("prob");
-
-  int ntps = pb.countval("TPC_Start_Times");
-  if (ntps) {
-      tpc_start_times.resize(ntps);
-      pb.getarr("TPC_Start_Times",tpc_start_times,0,ntps);
-
-      int ndt = pb.countval("TPC_Initial_Time_Step");
-      BL_ASSERT(ndt==0 || ndt==ntps);
-      tpc_initial_time_steps.resize(ndt,-1);
-      if (ndt>0) {
-          pb.getarr("TPC_Initial_Time_Step",tpc_initial_time_steps,0,ndt);
-      }
-
-      int ndtm = pb.countval("TPC_Initial_Time_Step_Multiplier");
-      BL_ASSERT(ndtm==0 || ndtm==ntps);
-      tpc_initial_time_step_multipliers.resize(ndt,-1);
-      if (ndtm>0) {
-          pb.getarr("TPC_Initial_Time_Step_Multiplier",tpc_initial_time_step_multipliers,0,ndtm);
-      }
-
-      int ndtmax = pb.countval("TPC_Maximum_Time_Step");
-      BL_ASSERT(ndtmax==0 || ndtmax==ntps);
-      tpc_initial_time_steps.resize(ndtmax,-1);
-      if (ndtmax>0) {
-          pb.getarr("TPC_Maximum_Time_Step",tpc_maximum_time_steps,0,ndtmax);
-      }
-  }
-
-  tpc_labels.resize(ntps);
-  for (int i=0; i<ntps; ++i) {
-      int ndigits = (int) (std::log10(ntps) + .0001) + 1;
-      tpc_labels[i] = BoxLib::Concatenate("Time_Period_Begin_",i,ndigits);
-      defined_events[tpc_labels[i]] = new EventCoord::TimeEvent(Array<Real>(1,tpc_start_times[i]));
-      PMAmr::eventCoord().Register(tpc_labels[i],defined_events[tpc_labels[i]]);
   }
 
   // determine the model based on model_name
+  ParmParse pb("prob");
   pb.query("model_name",model_name);
   model = model_list[model_name];
   if (model_name=="steady-saturated") {
@@ -2561,7 +2479,6 @@ void  PorousMedia::read_comp()
 	pres_bc.setHi(j,4);
       }	  
 
-      EventCoord& event_coord = PMAmr::eventCoord();
       for (int i = 0; i<n_bcs; i++)
       {
           const std::string& bcname = bc_names[i];
@@ -2608,8 +2525,6 @@ void  PorousMedia::read_comp()
               PressToRhoSat p_to_sat;
               bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
                                                         bc_type,ncomps,p_to_sat));
-              defined_events[bcname] = new EventCoord::TimeEvent(times);
-              event_coord.Register(bcname,defined_events[bcname]);
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -2661,8 +2576,6 @@ void  PorousMedia::read_comp()
               component_bc = 1;
               pressure_bc = 1;
 	      bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
-              defined_events[bcname] = new EventCoord::TimeEvent(times);
-              event_coord.Register(bcname,defined_events[bcname]);
           }
           else if (bc_type == "noflow")
           {
@@ -2806,7 +2719,6 @@ void  PorousMedia::read_tracer(int do_chem)
                   BoxLib::Abort("each tracer requires boundary conditions");
               }
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
-#if 1
               tbc_array[i].resize(n_tbc,PArrayManage);
               
               for (int n = 0; n<n_tbc; n++)
@@ -2854,67 +2766,6 @@ void  PorousMedia::read_tracer(int do_chem)
                       BoxLib::Abort(m.c_str());
                   }
               }
-
-#else
-              // set first tracer bc to no flow everywhere, to be overwritten by all user-defined bcs
-              tbc_array[i].resize(n_tbc+1,PArrayManage);
-              Array<Real> dtbc_val(1,0);
-              std::string dtbc_name="tbc_default_noflow";
-              Array<std::string> dtbc_region_names;
-              for (int ii=0; ii<BL_SPACEDIM; ++ii) {                
-                dtbc_region_names.push_back(PMAMR::RlabelDEF[ii]);
-                dtbc_region_names.push_back(PMAMR::RlabelDEF[3+ii]);
-              }
-              PArray<Region> dtbc_regions = build_region_PArray(dtbc_region_names);    
-              std::string dtbc_type = "noflow";
-              tbc_array[i].set(0, new RegionData(dtbc_name,dtbc_regions,dtbc_type,dtbc_val));
-              
-              for (int n = 0; n<n_tbc; n++)
-              {
-                  const std::string prefixTBC(prefix + "." + tbc_names[n]);
-                  ParmParse ppri(prefixTBC.c_str());
-                  
-                  int n_tbc_region = ppri.countval("regions");
-                  Array<std::string> tbc_region_names;
-                  ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
-                  const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
-                  std::string tbc_type; ppri.get("type",tbc_type);
-                  
-                  if (tbc_type == "concentration")
-                  {
-                      Array<Real> times, vals;
-                      Array<std::string> forms;
-                      int nv = ppri.countval("vals");
-                      if (nv) {
-                          ppri.getarr("vals",vals,0,nv);
-                          if (nv>1) {
-                              ppri.getarr("times",times,0,nv);
-                              ppri.getarr("forms",forms,0,nv-1);
-                          }
-                          else {
-                              times.resize(1,0);
-                          }
-                      }
-                      else {
-                          vals.resize(1,0); // Default tracers to zero for all time
-                          times.resize(1,0);
-                          forms.resize(0);
-                      }
-                      int nComp = 1;
-                      tbc_array[i].set(n+1, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
-                  }
-                  else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
-                  {
-                      Array<Real> val(1,0);
-                      tbc_array[i].set(n+1, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                  }
-                  else {
-                      std::string m = "Tracer BC: \"" + tbc_names[n] 
-                          + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
-                      BoxLib::Abort(m.c_str());
-                  }
-              }
-#endif
           }
       }
   }
@@ -3021,183 +2872,6 @@ void  PorousMedia::read_source()
 	}
     }
 #endif
-}
-
-void PorousMedia::read_observation()
-{
-  Real time_eps = 1.e-6; // FIXME: needs to be computed
-
-  // Build time macros
-  ParmParse ppa("amr");
-
-  EventCoord& event_coord = PMAmr::eventCoord();
-
-  int n_cmac = ppa.countval("cycle_macros");
-  Array<std::string> cmacroNames;
-  ppa.getarr("cycle_macros",cmacroNames,0,n_cmac);
-  std::map<std::string,int> cmacro_map;
-  for (int i=0; i<n_cmac; ++i) {
-      std::string prefix = "amr.cycle_macro." + cmacroNames[i];
-      ParmParse ppc(prefix);
-      std::string type; ppc.get("type",type);
-      if (type == "period") {
-          int start, period, stop;
-          ppc.get("start",start);
-          ppc.get("period",period);
-          ppc.get("stop",stop);
-          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(start,period,stop);
-      }
-      else if (type == "cycles" ){
-          Array<int> cycles; ppc.getarr("cycles",cycles,0,ppc.countval("cycles"));
-          defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(cycles);
-      }
-      else {
-          BoxLib::Abort("Unrecognized cycle macros type");
-      }
-      cmacro_map[cmacroNames[i]] = i;
-  }
-
-  int n_tmac = ppa.countval("time_macros");
-  Array<std::string> tmacroNames;
-  ppa.getarr("time_macros",tmacroNames,0,n_tmac);
-  std::map<std::string,int> tmacro_map;
-  for (int i=0; i<n_tmac; ++i) {
-      std::string prefix = "amr.time_macro." + tmacroNames[i];
-      ParmParse ppt(prefix);
-      std::string type; ppt.get("type",type);
-      if (type == "period") {
-          Real start, period, stop;
-          ppt.get("start",start);
-          ppt.get("period",period);
-          ppt.get("stop",stop);
-          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(start,period,stop);
-      }
-      else if (type == "times" ){
-          Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
-          defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(times);
-      }
-      else {
-          BoxLib::Abort("Unrecognized time macros type");
-      }
-      tmacro_map[tmacroNames[i]] = i;
-  }
-
-  ParmParse pp("observation");
-  
-  // determine number of observation
-  int n_obs = pp.countval("observation");
-  std::map<std::string,EventCoord::Event*>::const_iterator eit;
-
-  if (n_obs > 0)
-  {
-      observations.resize(n_obs,PArrayManage);
-      Array<std::string> obs_names;
-      pp.getarr("observation",obs_names,0,n_obs);
-
-      // Get time and cycle macros
-
-      // Get parameters for each observation
-      // observation type:0=production,1=mass_fraction,2=mole_fraction,3=saturation
-      for (int i=0; i<n_obs; i++)
-      {
-          const std::string prefix("observation." + obs_names[i]);
-	  ParmParse ppr(prefix.c_str());
-
-          std::string obs_type; ppr.get("obs_type",obs_type);
-          std::string obs_field; ppr.get("field",obs_field);
-          Array<std::string> region_names(1); ppr.get("region",region_names[0]);
-          const PArray<Region> obs_regions = build_region_PArray(region_names);
-          
-          std::string obs_time_macro, obs_cycle_macro;
-          ppr.query("cycle_macro",obs_cycle_macro);
-          ppr.query("time_macro",obs_time_macro);
-
-          std::string event_label;
-          if (ppr.countval("cycle_macro")>0) {
-              eit = defined_events.find(obs_cycle_macro);
-              if (eit != defined_events.end()  && eit->second->IsCycle() ) {
-                  event_label = eit->first;
-                  event_coord.Register(event_label,eit->second);
-              }
-              else {
-                  std::string m = "obs_cycle_macro unrecognized \"" + obs_cycle_macro + "\"";
-                  BoxLib::Abort(m.c_str());
-              } 
-          }
-          else if (ppr.countval("time_macro")>0) {
-              eit = defined_events.find(obs_time_macro);
-              if (eit != defined_events.end()  && eit->second->IsTime() ) {
-                  event_label = eit->first;
-                  event_coord.Register(event_label,eit->second);
-              }
-              else {
-                  std::string m = "obs_time_macro unrecognized \"" + obs_time_macro + "\"";
-                  BoxLib::Abort(m.c_str());
-              } 
-          }
-          else {
-              std::string m = "Must define either time or cycle macro for observation \"" + obs_names[i] + "\"";
-              BoxLib::Abort(m.c_str());
-          }
-
-          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,event_label));
-	}
-      
-      // filename for output
-      pp.query("output_file",obs_outputfile);
-      
-    }
-
-  ppa.queryarr("vis_cycle_macros",vis_cycle_macros,0,ppa.countval("vis_cycle_macros"));
-  ppa.queryarr("vis_time_macros",vis_time_macros,0,ppa.countval("vis_time_macros"));
-  ppa.queryarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
-  ppa.queryarr("chk_time_macros",chk_time_macros,0,ppa.countval("chk_time_macros"));
-
-  for (int i=0; i<vis_cycle_macros.size(); ++i)
-  {
-      eit = defined_events.find(vis_cycle_macros[i]);
-      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
-          event_coord.Register(eit->first,eit->second);
-      }
-      else {
-          std::string m = "vis_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
-          BoxLib::Abort(m.c_str());
-      }      
-  }
-
-  for (int i=0; i<vis_time_macros.size(); ++i)
-  {
-      eit = defined_events.find(vis_time_macros[i]);
-      if (eit != defined_events.end()  && eit->second->IsTime() ) {
-          event_coord.Register(eit->first,eit->second);
-      }
-      else {
-          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
-          BoxLib::Abort(m.c_str());
-      }      
-  }
-  for (int i=0; i<chk_cycle_macros.size(); ++i)
-  {
-      eit = defined_events.find(chk_cycle_macros[i]);
-      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
-          event_coord.Register(eit->first,eit->second);
-      }
-      else {
-          std::string m = "chk_cycle_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
-          BoxLib::Abort(m.c_str());
-      }      
-  }
-  for (int i=0; i<chk_time_macros.size(); ++i)
-  {
-      eit = defined_events.find(chk_time_macros[i]);
-      if (eit != defined_events.end()  && eit->second->IsTime() ) {
-          event_coord.Register(eit->first,eit->second);
-      }
-      else {
-          std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_time_macros[i] + "\"";
-          BoxLib::Abort(m.c_str());
-      }      
-  }
 }
 
 void  PorousMedia::read_chem()
@@ -3421,11 +3095,6 @@ void PorousMedia::read_params()
   //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
   //  std::cout << "Read sources."<< std::endl;
   //read_source();
-
-  // observation
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read observation."<< std::endl;
-  read_observation();
 
   FORT_INITPARAMS(&ncomps,&nphases,&model,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
