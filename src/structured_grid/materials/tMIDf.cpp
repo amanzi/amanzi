@@ -320,9 +320,9 @@ main (int   argc,
   fail &= bins[1] == 610;
   fail &= bins[2] == 10;
   fail &= bins[3] == 2146;
-  fail &= bins[0] == 0;
+  fail &= bins[4] == 0;
 
   DestroyRegions();
   BoxLib::Finalize();
-  return !fail;
+  return fail;
 }

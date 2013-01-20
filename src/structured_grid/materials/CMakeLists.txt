@@ -82,8 +82,4 @@ if (BUILD_TESTS)
                   SOURCE tMIDf.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-    execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${STRUCTMAT_SOURCE_DIR}/tMIDf.in ${STRUCTMAT_BINARY_DIR})
-  endif()
 endif()
