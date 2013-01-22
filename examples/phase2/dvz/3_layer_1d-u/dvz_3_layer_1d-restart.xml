@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Chandrika"/>
@@ -32,23 +32,29 @@
       <Parameter name="Verbosity" type="string" value="Low"/>
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
-          <Parameter name="steady max iterations" type="int" value="15"/>
-          <Parameter name="steady min iterations" type="int" value="10"/>
-          <Parameter name="steady limit iterations" type="int" value="20"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1.0"/>
-          <Parameter name="steady max time step" type="double" value="6.0e+10"/>
-          <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
-          <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-          <Parameter name="transient max iterations" type="int" value="15"/>
-          <Parameter name="transient min iterations" type="int" value="10"/>
-          <Parameter name="transient limit iterations" type="int" value="20"/>
-          <Parameter name="transient nonlinear tolerance" type="double" value="1.0"/>
-          <Parameter name="transient max time step" type="double" value="6.0e+10"/>
-          <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
-          <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          <ParameterList name="Transport Process Kernel">
+            <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+          </ParameterList>
+          <ParameterList name="Steady-State Implicit Time Integration">
+            <Parameter name="steady max iterations" type="int" value="15"/>
+            <Parameter name="steady min iterations" type="int" value="10"/>
+            <Parameter name="steady limit iterations" type="int" value="20"/>
+            <Parameter name="steady nonlinear tolerance" type="double" value="1e-5"/>
+            <Parameter name="steady max time step" type="double" value="6.0e+10"/>
+            <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
+            <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
+          <ParameterList name="Transient Implicit Time Integration">
+            <Parameter name="transient max iterations" type="int" value="15"/>
+            <Parameter name="transient min iterations" type="int" value="10"/>
+            <Parameter name="transient limit iterations" type="int" value="20"/>
+            <Parameter name="transient nonlinear tolerance" type="double" value="1e-5"/>
+            <Parameter name="transient max time step" type="double" value="6.0e+10"/>
+            <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
+            <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
