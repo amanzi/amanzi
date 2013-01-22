@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="ellen"/>
@@ -65,36 +65,45 @@
       </ParameterList>
       <Parameter name="Verbosity" type="string" value="High"/>
       <ParameterList name="Numerical Control Parameters">
-	<ParameterList name="Unstructured Algorithm">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
-	  <Parameter name="transport subcycling" type="bool" value="true"/>
-	  <Parameter name="steady max iterations" type="int" value="20"/>
-	  <Parameter name="steady min iterations" type="int" value="10"/>
-	  <Parameter name="steady limit iterations" type="int" value="30"/>
-	  <Parameter name="steady nonlinear tolerance" type="double" value="1e-5"/>
-	  <Parameter name="steady max time step" type="double" value="6.0e+10"/>
-	  <Parameter name="steady max preconditioner lag iterations" type="int" value="10"/>
-	  <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-	  <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-	  <Parameter name="steady error rel tol" type="double" value="0.0"/>
-	  <Parameter name="steady error abs tol" type="double" value="1.0"/>
-	  <Parameter name="transient max iterations" type="int" value="20"/>
-	  <Parameter name="transient min iterations" type="int" value="12"/>
-	  <Parameter name="transient limit iterations" type="int" value="30"/>
-	  <Parameter name="transient nonlinear tolerance" type="double" value="1e-5"/>
-	  <Parameter name="transient max time step" type="double" value="6.0e+10"/>
-	  <Parameter name="transient max preconditioner lag iterations" type="int" value="5"/>
-	  <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
-	  <Parameter name="transient time step increase factor" type="double" value="1.25"/>
-	  <Parameter name="transient error rel tol" type="double" value="0.0"/>
-	  <Parameter name="transient error abs tol" type="double" value="1.0"/>
-	  <Parameter name="ML cycle applications" type="int" value="3"/>
-          <Parameter name="use Hypre AMG" type="bool" value="true"/>
-          <Parameter name="Hypre AMG cycle applications" type="int" value="10"/>
-          <Parameter name="Hypre AMG smoother sweeps" type="int" value="3"/>
-          <Parameter name="Hypre AMG tolerance" type="double" value="0.1"/>
-          <Parameter name="Hypre AMG strong threshold" type="double" value="0.8"/>
-	</ParameterList>
+        <ParameterList name="Unstructured Algorithm">
+          <ParameterList name="Transport Process Kernel">
+            <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+            <Parameter name="transport subcycling" type="bool" value="true"/>
+          </ParameterList>
+          <ParameterList name="Steady-State Implicit Time Integration">
+            <Parameter name="steady max iterations" type="int" value="20"/>
+            <Parameter name="steady min iterations" type="int" value="10"/>
+            <Parameter name="steady limit iterations" type="int" value="30"/>
+            <Parameter name="steady nonlinear tolerance" type="double" value="1e-5"/>
+            <Parameter name="steady max time step" type="double" value="6.0e+10"/>
+            <Parameter name="steady max preconditioner lag iterations" type="int" value="10"/>
+            <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+            <Parameter name="steady preconditioner" type="string" value="Hypre AMG"/>
+          </ParameterList>
+          <ParameterList name="Transient Implicit Time Integration">
+            <Parameter name="transient max iterations" type="int" value="20"/>
+            <Parameter name="transient min iterations" type="int" value="12"/>
+            <Parameter name="transient limit iterations" type="int" value="30"/>
+            <Parameter name="transient nonlinear tolerance" type="double" value="1e-5"/>
+            <Parameter name="transient max time step" type="double" value="6.0e+10"/>
+            <Parameter name="transient max preconditioner lag iterations" type="int" value="5"/>
+            <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+            <Parameter name="transient preconditioner" type="string" value="Hypre AMG"/>
+          </ParameterList>
+          <ParameterList name="Preconditioners">
+            <ParameterList name="Trilinos ML">
+              <Parameter name="ML cycle applications" type="int" value="3"/>
+            </ParameterList>
+            <ParameterList name="Hypre AMG">
+              <Parameter name="Hypre AMG cycle applications" type="int" value="10"/>
+              <Parameter name="Hypre AMG smoother sweeps" type="int" value="3"/>
+              <Parameter name="Hypre AMG tolerance" type="double" value="0.1"/>
+              <Parameter name="Hypre AMG strong threshold" type="double" value="0.8"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Domain">
