@@ -33,10 +33,6 @@
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
           <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Numerical Control Parameters">
-        <ParameterList name="Unstructured Algorithm">
           <Parameter name="steady max iterations" type="int" value="15"/>
           <Parameter name="steady min iterations" type="int" value="10"/>
           <Parameter name="steady limit iterations" type="int" value="20"/>
@@ -62,22 +58,22 @@
     <ParameterList name="Mesh">
       <ParameterList name="Unstructured">
         <ParameterList name="Expert">
-           <Parameter name="Framework" type="string" value="MSTK"/>
+	  <Parameter name="Framework" type="string" value="MSTK"/>
         </ParameterList>
         <ParameterList name="Generate Mesh">
-           <ParameterList name="Uniform Structured">
-             <Parameter name="Number of Cells" type="Array(int)" value="{4, 1, 256}"/>
-             <Parameter name="Domain Low Corner" type="Array(double)" value="{143.5, 0.0,  0.0}" />
-             <Parameter name="Domain High Corner" type="Array(double)" value="{147.5, 1.0, 107.52}" />
-           </ParameterList>
+	  <ParameterList name="Uniform Structured">
+	    <Parameter name="Number of Cells" type="Array(int)" value="{4, 1, 256}"/>
+	    <Parameter name="Domain Low Corner" type="Array(double)" value="{143.5, 0.0,  0.0}" />
+	    <Parameter name="Domain High Corner" type="Array(double)" value="{147.5, 1.0, 107.52}" />
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Regions">
       <ParameterList name="Bottom Surface Outside All">
         <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{143.5.0,0.0,0.0}"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{147.5.0,1.0,0.0}"/>
+          <Parameter name="Low Coordinate" type="Array(double)" value="{143.5,0.0,0.0}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{147.5,1.0,0.0}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 0 and Plane Surface 1">
@@ -89,13 +85,13 @@
       <ParameterList name="Region between Plane Surface 1 and Plane Surface 2">
         <ParameterList name="Region: Box">
           <Parameter name="Low Coordinate" type="Array(double)" value="{143.5,0.0,39.9}"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{147.5.0,1.0,80.22}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{147.5,1.0,80.22}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Region between Plane Surface 2 and Plane Surface 3">
         <ParameterList name="Region: Box">
           <Parameter name="Low Coordinate" type="Array(double)" value="{143.5,0.0,80.22}"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{147.5.0,1.0,107.52}"/>
+          <Parameter name="High Coordinate" type="Array(double)" value="{147.5,1.0,107.52}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="Crib_216-B-18">
