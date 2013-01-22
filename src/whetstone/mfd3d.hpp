@@ -45,9 +45,14 @@ const int WHETSTONE_ELEMENTAL_MATRIX_WRONG = 1;
 const int WHETSTONE_ELEMENTAL_MATRIX_PASSED = 2;
 const int WHETSTONE_ELEMENTAL_MATRIX_FAILED = 4;  // only for unexpected situations
 
+const int WHETSTONE_STABILITY_GENERIC = 1;
+const int WHETSTONE_STABILITY_GENERIC_SCALED = 2;
+const int WHETSTONE_STABILITY_OPTIMIZED_DMP = 3;
+const int WHETSTONE_STABILITY_OPTIMIZED_GEOMETRY = 4;
+
 class MFD3D { 
  public:
-  explicit MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh) { mesh_ = mesh; };
+  explicit MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   ~MFD3D() {};
 
   // primary methods
@@ -83,6 +88,9 @@ class MFD3D {
 
   void GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N);
 
+  double CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc);
+  void ModifyStabilityScalingFactor(double factor);
+
   void StabilityScalar(int cell,
                        Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, and W for the inverse matrix
                        Teuchos::SerialDenseMatrix<int, double>& Mc,
@@ -109,9 +117,18 @@ class MFD3D {
   // extension of mesh API
   int cell_get_face_adj_cell(const int cell, const int face);
 
+  // access members
+  double get_scaling_factor() { return scaling_factor_; }
+  double get_scalar_stability() { return scalar_stability_; }
+  Teuchos::SerialDenseMatrix<int, double>& get_matrix_stability() { return matrix_stability_; }
+
  private:
   int FindPosition(int v, AmanziMesh::Entity_ID_List nodes);
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+
+  int stability_method_;  
+  double scalar_stability_, scaling_factor_;
+  Teuchos::SerialDenseMatrix<int, double> matrix_stability_;
 };
 
 }  // namespace WhetStone

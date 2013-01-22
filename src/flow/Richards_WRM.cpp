@@ -217,8 +217,8 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
       double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
       
       if (bc_model[f] != FLOW_BC_FACE_NULL){
-        if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) && 
-            (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE)) {
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && 
+            cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           int mb = (*map_c2mb)[c];
           double pc = atm_pressure - bc_values[f][0];
           (*dKdP_faces)[f] = WRM[mb]->dKdPc(pc);

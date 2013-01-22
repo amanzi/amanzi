@@ -130,15 +130,13 @@ double WRM_vanGenuchten::dKdPc(double pc)
 
     double x = pow(se, 1.0 / m_);
     double y = pow(1.0 - x, m_);
-    double dkds;
+    double dkdse;
     if (function_ == FLOW_WRM_MUALEM)
-      dkds = (1.0 - y) * (l_ * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, l_ - 1.0);
+      dkdse = (1.0 - y) * (l_ * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, l_ - 1.0);
     else
-      dkds = (2 * (1.0 - y) + x / (1.0 - x)) * se; 
+      dkdse = (2 * (1.0 - y) + x / (1.0 - x)) * se; 
 
-    dkds /= (1 - sr_);  // This factor is due to dSdSe.
-
-    return dkds * dsdp;
+    return dkdse * dsdp / (1 - sr_);
 
   } else {
     return 0.0;
