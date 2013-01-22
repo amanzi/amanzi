@@ -9,7 +9,10 @@
 #ifndef AMANZI_FLOW_RELATIONS_WRM_PERMAFROST_EVALUATOR_
 #define AMANZI_FLOW_RELATIONS_WRM_PERMAFROST_EVALUATOR_
 
+#include "wrm.hh"
+#include "wrm_permafrost_model.hh"
 #include "secondary_variables_field_evaluator.hh"
+#include "factory.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -20,22 +23,32 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
 
   explicit
   WRMPermafrostEvaluator(Teuchos::ParameterList& plist);
-
+  WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
+                         const Teuchos::RCP<WRMRegionPairList>& wrms);
+  WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
+                         const Teuchos::RCP<WRMPermafrostModelRegionPairList>& models);
   WRMPermafrostEvaluator(const WRMPermafrostEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
- private:
+ protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const std::vector<Teuchos::Ptr<CompositeVector> >& results);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results);
 
- private:
-  Key one_on_A_key_;
-  Key one_on_B_key_;
+  void InitializeFromPlist_();
+
+ protected:
+  Key pc_liq_key_;
+  Key pc_ice_key_;
   Key s_l_key_;
+
+  Teuchos::RCP<WRMPermafrostModelRegionPairList> permafrost_models_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,WRMPermafrostEvaluator> factory_;
 
 };
 

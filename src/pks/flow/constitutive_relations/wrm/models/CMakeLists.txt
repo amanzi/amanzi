@@ -13,6 +13,7 @@ add_library(flow_relations_wrm_models
   wrm_van_genuchten.cc
   wrm_zero_relperm.cc
   pc_ice_water.cc
+  wrm_permafrost_factory.cc
   wrm_old_permafrost_model.cc
   wrm_implicit_permafrost_model.cc
   )

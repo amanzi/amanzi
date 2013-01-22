@@ -9,7 +9,7 @@ Painter's permafrost model.
 #define AMANZI_FLOWRELATIONS_WRM_IMPLICIT_PERMAFROST_MODEL_
 
 #include "wrm_permafrost_model.hh"
-
+#include "wrm_permafrost_factory.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -20,10 +20,8 @@ class WRM;
 class WRMImplicitPermafrostModel : public WRMPermafrostModel {
 
  public:
-  WRMImplicitPermafrostModel(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<WRM>& wrm) :
-      plist_(plist),
-      wrm_(wrm),
+  WRMImplicitPermafrostModel(Teuchos::ParameterList& plist) :
+      WRMPermafrostModel(plist),
       eps_(1.e-12),
       max_it_(100) {}
 
@@ -49,8 +47,6 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   bool dsaturations_dpc_liq_if_above_freezing_(double pc_liq, double pc_ice,
           double (&dsats)[3]);
 
-  Teuchos::ParameterList plist_;
-  Teuchos::RCP<WRM> wrm_;
   double eps_;
   int max_it_;
 
@@ -134,6 +130,9 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
     }
     double eps_;
   };
+
+ private:
+  static Utils::RegisteredFactory<WRMPermafrostModel,WRMImplicitPermafrostModel> factory_;
 
 };
 
