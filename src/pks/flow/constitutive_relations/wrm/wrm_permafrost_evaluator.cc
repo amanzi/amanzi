@@ -1,73 +1,173 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  This WRM evaluator evaluates saturation of gas, liquid, and ice from the
-  constituents, A and B in the permafrost notes.
+  This WRM evaluator evaluates saturation of gas, liquid, and ice from
+  capillary pressures for the ice-liquid and liquid-gas pairs.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
 #include "wrm_permafrost_evaluator.hh"
-
+#include "wrm_factory.hh"
+#include "wrm_permafrost_factory.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-#define DEBUG_FLAG 0
+// registry of method
+Utils::RegisteredFactory<FieldEvaluator,WRMPermafrostEvaluator> WRMPermafrostEvaluator::factory_("permafrost WRM");
 
+
+/* --------------------------------------------------------------------------------
+  Constructor from just a ParameterList, reads WRMs and permafrost models from list.
+ -------------------------------------------------------------------------------- */
 WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist) {
 
-  // my keys are for saturation
-  s_l_key_ = plist_.get<string>("liquid saturation key", "saturation_liquid");
-  my_keys_.push_back(s_l_key_);
-  my_keys_.push_back(plist_.get<string>("ice saturation key", "saturation_ice"));
-  my_keys_.push_back(plist_.get<string>("gas saturation key", "saturation_gas"));
-  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
+  // get the WRMs
+  ASSERT(plist_.isSublist("WRM parameters"));
+  WRMFactory wrm_fac;
+  Teuchos::ParameterList region_list = plist_.sublist("WRM parameters");
+  Teuchos::RCP<WRMRegionPairList> wrms = Teuchos::rcp(new WRMRegionPairList());
 
-  // 1/A is the ice-liquid
-  one_on_A_key_ = plist_.get<string>("1/A key", "wrm_permafrost_one_on_A");
-  dependencies_.insert(one_on_A_key_);
+  for (Teuchos::ParameterList::ConstIterator lcv=region_list.begin();
+       lcv!=region_list.end(); ++lcv) {
+    std::string name = lcv->first;
+    if (region_list.isSublist(name)) {
+      Teuchos::ParameterList sublist = region_list.sublist(name);
+      std::string region = sublist.get<std::string>("region");
+      wrms->push_back(std::make_pair(region, wrm_fac.createWRM(sublist)));
+    } else {
+      ASSERT(0);
+    }
+  }
 
-  // 1/B is the gas-liquid
-  one_on_B_key_ = plist_.get<string>("1/B key", "wrm_permafrost_one_on_B");
-  dependencies_.insert(one_on_B_key_);
+  // for each WRM create a permfrost_model
+  WRMPermafrostFactory fac;
+  permafrost_models_ = Teuchos::rcp(new WRMPermafrostModelRegionPairList());
+  Teuchos::ParameterList pmodel_list = plist_.sublist("permafrost model parameters");
+
+  for (WRMRegionPairList::const_iterator regionwrm=wrms->begin();
+       regionwrm!=wrms->end(); ++regionwrm) {
+    permafrost_models_->push_back(std::make_pair(regionwrm->first,
+            fac.createWRMPermafrostModel(pmodel_list, regionwrm->second)));
+  }
+
+  InitializeFromPlist_();
 }
 
+
+/* --------------------------------------------------------------------------------
+  Constructor with WRMs.
+ -------------------------------------------------------------------------------- */
+WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
+        const Teuchos::RCP<WRMRegionPairList>& wrms) :
+    SecondaryVariablesFieldEvaluator(plist) {
+
+  // for each WRM create a permfrost_model
+  WRMPermafrostFactory fac;
+  permafrost_models_ = Teuchos::rcp(new WRMPermafrostModelRegionPairList());
+  Teuchos::ParameterList pmodel_list = plist_.sublist("permafrost model parameters");
+
+  for (WRMRegionPairList::const_iterator regionwrm=wrms->begin();
+       regionwrm!=wrms->end(); ++regionwrm) {
+    permafrost_models_->push_back(std::make_pair(regionwrm->first,
+            fac.createWRMPermafrostModel(pmodel_list, regionwrm->second)));
+  }
+
+  InitializeFromPlist_();
+}
+
+
+/* --------------------------------------------------------------------------------
+  Constructor with Permafrost models.
+ -------------------------------------------------------------------------------- */
+WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
+        const Teuchos::RCP<WRMPermafrostModelRegionPairList>& models) :
+    SecondaryVariablesFieldEvaluator(plist),
+    permafrost_models_(models) {
+
+  InitializeFromPlist_();
+}
+
+
+/* --------------------------------------------------------------------------------
+  Copy constructor
+ -------------------------------------------------------------------------------- */
 WRMPermafrostEvaluator::WRMPermafrostEvaluator(const WRMPermafrostEvaluator& other) :
     SecondaryVariablesFieldEvaluator(other),
-    one_on_A_key_(other.one_on_A_key_),
-    one_on_B_key_(other.one_on_B_key_),
-    s_l_key_(other.s_l_key_) {}
+    pc_liq_key_(other.pc_liq_key_),
+    pc_ice_key_(other.pc_ice_key_),
+    s_l_key_(other.s_l_key_),
+    permafrost_models_(other.permafrost_models_) {}
 
+
+/* --------------------------------------------------------------------------------
+  Virtual opy constructor as a FieldEvaluator.
+ -------------------------------------------------------------------------------- */
 Teuchos::RCP<FieldEvaluator>
 WRMPermafrostEvaluator::Clone() const {
   return Teuchos::rcp(new WRMPermafrostEvaluator(*this));
 }
 
 
+/* --------------------------------------------------------------------------------
+  Initialization of keys.
+ -------------------------------------------------------------------------------- */
+void WRMPermafrostEvaluator::InitializeFromPlist_() {
+  // my keys are for saturation -- order matters... gas -> liq -> ice
+  my_keys_.push_back(plist_.get<string>("gas saturation key", "saturation_gas"));
+  s_l_key_ = plist_.get<string>("liquid saturation key", "saturation_liquid");
+  my_keys_.push_back(s_l_key_);
+  my_keys_.push_back(plist_.get<string>("ice saturation key", "saturation_ice"));
+  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
+
+  // liquid-gas capillary pressure
+  pc_liq_key_ = plist_.get<string>("liquid-gas capillary pressure key",
+          "capillary_pressure_liq_gas");
+  dependencies_.insert(pc_liq_key_);
+
+  // liquid-gas capillary pressure
+  pc_ice_key_ = plist_.get<string>("ice-liquid capillary pressure key",
+          "capillary_pressure_ice_liq");
+  dependencies_.insert(pc_ice_key_);
+
+  // set up the verbose object
+  setLinePrefix(std::string("saturation evaluator"));
+}
+
+
+
 void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
+  Epetra_MultiVector& satg = *results[0]->ViewComponent("cell",false);
+  Epetra_MultiVector& satl = *results[1]->ViewComponent("cell",false);
+  Epetra_MultiVector& sati = *results[2]->ViewComponent("cell",false);
+
+  const Epetra_MultiVector& pc_liq = *S->GetFieldData(pc_liq_key_)
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& pc_ice = *S->GetFieldData(pc_ice_key_)
+      ->ViewComponent("cell",false);
+
   // Loop over names in the target and then owned entities in that name,
-  // evaluating the evaluator to calculate saturations.
-  for (CompositeVector::name_iterator comp=results[0]->begin();
-       comp!=results[0]->end(); ++comp) {
-    Epetra_MultiVector& sat = *results[0]->ViewComponent(*comp,false);
-    Epetra_MultiVector& sat_i = *results[1]->ViewComponent(*comp,false);
-    Epetra_MultiVector& sat_g = *results[2]->ViewComponent(*comp,false);
+  // evaluating the evaluator to calculate sat.
+  double sats[3];
+  for (WRMPermafrostModelRegionPairList::iterator regionmodel=permafrost_models_->begin();
+       regionmodel!=permafrost_models_->end(); ++regionmodel) {
+    std::string region = regionmodel->first;
+    int ncells = results[0]->mesh()->get_set_size(region,
+            AmanziMesh::CELL, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List cells(ncells);
+    results[0]->mesh()->get_set_entities(region,
+            AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
-    const Epetra_MultiVector& one_on_A =
-        *S->GetFieldData(one_on_A_key_)->ViewComponent(*comp,false);
-    const Epetra_MultiVector& one_on_B =
-        *S->GetFieldData(one_on_B_key_)->ViewComponent(*comp,false);
-
-    int count = results[0]->size(*comp, false);
-    for (int id=0; id!=count; ++id) {
-      double s_l = 1.0 / (1.0/one_on_A[0][id] + 1.0/one_on_B[0][id] - 1.0);
-      sat[0][id] = s_l;
-      sat_i[0][id] = s_l * (1.0/one_on_A[0][id] - 1.0);
-      sat_g[0][id] = s_l * (1.0/one_on_B[0][id] - 1.0);
+    // use the model to evaluate saturations on each cell in the region
+    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
+      regionmodel->second->saturations(pc_liq[0][*c], pc_ice[0][*c], sats);
+      satg[0][*c] = sats[0];
+      satl[0][*c] = sats[1];
+      sati[0][*c] = sats[2];
     }
   }
 }
@@ -75,64 +175,58 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
-  if (wrt_key == one_on_A_key_) {
-    for (CompositeVector::name_iterator comp=results[0]->begin();
-         comp!=results[0]->end(); ++comp) {
-      Epetra_MultiVector& dsat = *results[0]->ViewComponent(*comp,false);
-      Epetra_MultiVector& dsat_i = *results[1]->ViewComponent(*comp,false);
-      Epetra_MultiVector& dsat_g = *results[2]->ViewComponent(*comp,false);
 
-      const Epetra_MultiVector& sat =
-          *S->GetFieldData(s_l_key_)->ViewComponent(*comp,false);
-      const Epetra_MultiVector& one_on_A =
-          *S->GetFieldData(one_on_A_key_)->ViewComponent(*comp,false);
-      const Epetra_MultiVector& one_on_B =
-          *S->GetFieldData(one_on_B_key_)->ViewComponent(*comp,false);
+  Epetra_MultiVector& dsatg = *results[0]->ViewComponent("cell",false);
+  Epetra_MultiVector& dsatl = *results[1]->ViewComponent("cell",false);
+  Epetra_MultiVector& dsati = *results[2]->ViewComponent("cell",false);
 
-      int count = results[0]->size(*comp, false);
-      for (int id=0; id!=count; ++id) {
-        double Ainv = one_on_A[0][id];
-        double A = 1.0 / Ainv;
-        double dA = - A * A;
-        double B = 1.0 / one_on_B[0][id];
-        double sl = sat[0][id];
+  const Epetra_MultiVector& pc_liq = *S->GetFieldData(pc_liq_key_)
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& pc_ice = *S->GetFieldData(pc_ice_key_)
+      ->ViewComponent("cell",false);
 
-        dsat[0][id] = (- sl * sl) * dA;
-        dsat_i[0][id] = sl*dA + (A - 1.0)*dsat[0][id];
-        dsat_g[0][id] = (B - 1.0)*dsat[0][id];
+  // Loop over names in the target and then owned entities in that name,
+  // evaluating the evaluator to calculate sat and rel perm.
+  double dsats[3];
+  if (wrt_key == pc_liq_key_) {
+    for (WRMPermafrostModelRegionPairList::iterator regionmodel=permafrost_models_->begin();
+         regionmodel!=permafrost_models_->end(); ++regionmodel) {
+      std::string region = regionmodel->first;
+      int ncells = results[0]->mesh()->get_set_size(region,
+              AmanziMesh::CELL, AmanziMesh::OWNED);
+      AmanziMesh::Entity_ID_List cells(ncells);
+      results[0]->mesh()->get_set_entities(region,
+              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+      // use the model to evaluate saturation derivs on each cell in the region
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
+        regionmodel->second->dsaturations_dpc_liq(pc_liq[0][*c], pc_ice[0][*c], dsats);
+        dsatg[0][*c] = dsats[0];
+        dsatl[0][*c] = dsats[1];
+        dsati[0][*c] = dsats[2];
       }
     }
-  } else if (wrt_key == one_on_B_key_) {
-    for (CompositeVector::name_iterator comp=results[0]->begin();
-         comp!=results[0]->end(); ++comp) {
-      Epetra_MultiVector& dsat = *results[0]->ViewComponent(*comp,false);
-      Epetra_MultiVector& dsat_i = *results[1]->ViewComponent(*comp,false);
-      Epetra_MultiVector& dsat_g = *results[2]->ViewComponent(*comp,false);
+  } else if (wrt_key == pc_ice_key_) {
+    for (WRMPermafrostModelRegionPairList::iterator regionmodel=permafrost_models_->begin();
+         regionmodel!=permafrost_models_->end(); ++regionmodel) {
+      std::string region = regionmodel->first;
+      int ncells = results[0]->mesh()->get_set_size(region,
+              AmanziMesh::CELL, AmanziMesh::OWNED);
+      AmanziMesh::Entity_ID_List cells(ncells);
+      results[0]->mesh()->get_set_entities(region,
+              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
-      const Epetra_MultiVector& sat =
-          *S->GetFieldData(s_l_key_)->ViewComponent(*comp,false);
-      const Epetra_MultiVector& one_on_A =
-          *S->GetFieldData(one_on_A_key_)->ViewComponent(*comp,false);
-      const Epetra_MultiVector& one_on_B =
-          *S->GetFieldData(one_on_B_key_)->ViewComponent(*comp,false);
-
-      int count = results[0]->size(*comp, false);
-      for (int id=0; id!=count; ++id) {
-        double Binv = one_on_B[0][id];
-        double B = 1.0 / Binv;
-        double dB = - B * B;
-        double A = 1.0 / one_on_A[0][id];
-        double sl = sat[0][id];
-
-        dsat[0][id] = (- sl * sl) * dB;
-        dsat_i[0][id] = (A - 1.0)*dsat[0][id];
-        dsat_g[0][id] = sl*dB + (B - 1.0)*dsat[0][id];
+      // use the model to evaluate saturation derivs on each cell in the region
+      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
+        regionmodel->second->dsaturations_dpc_ice(pc_liq[0][*c], pc_ice[0][*c], dsats);
+        dsatg[0][*c] = dsats[0];
+        dsatl[0][*c] = dsats[1];
+        dsati[0][*c] = dsats[2];
       }
     }
-  } else {
-    ASSERT(0);
   }
 }
+
 
 
 } // namespace

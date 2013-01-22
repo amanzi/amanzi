@@ -12,6 +12,8 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+Utils::RegisteredFactory<WRMPermafrostModel,WRMOldPermafrostModel> WRMOldPermafrostModel::factory_("old permafrost model");
+
 // sats[0] = s_g, sats[1] = s_l, sats[2] = s_i
 void WRMOldPermafrostModel::saturations(double pc_liq, double pc_ice, double (&sats)[3]) {
   if (pc_ice == 0.) {

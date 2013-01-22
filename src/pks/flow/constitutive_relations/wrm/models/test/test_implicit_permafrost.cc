@@ -26,7 +26,8 @@ TEST(implicitPermafrost) {
   double rho = 1000.;
 
   Teuchos::ParameterList plist2;
-  WRMImplicitPermafrostModel p1(plist2, wrm);
+  WRMImplicitPermafrostModel p1(plist2);
+  p1.set_WRM(wrm);
 
   double sats[3];
   double sats2[3];

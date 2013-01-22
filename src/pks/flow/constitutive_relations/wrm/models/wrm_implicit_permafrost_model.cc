@@ -9,6 +9,9 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+// registry of method
+Utils::RegisteredFactory<WRMPermafrostModel,WRMImplicitPermafrostModel> WRMImplicitPermafrostModel::factory_("new permafrost model");
+
 
 bool WRMImplicitPermafrostModel::saturations_if_above_freezing_(double pc_liq,
         double pc_ice, double (&sats)[3]) {
