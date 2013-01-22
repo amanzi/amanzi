@@ -97,6 +97,12 @@ if (BUILD_TESTS)
         add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
         add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
         add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
+
+        # Test: steady-state Darcy full flow test
+        add_amanzi_test(flow_darcy_source flow_darcy_source
+	                KIND int
+                        SOURCE test/Main.cc test/flow_darcy_source.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_2D flow_darcy_2D

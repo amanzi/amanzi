@@ -72,7 +72,8 @@ class Darcy_PK : public Flow_PK {
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
-  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1;}
+  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
+  void AssembleMatrixMFD();
 
   // io members
   void ProcessParameterList();
@@ -91,6 +92,11 @@ class Darcy_PK : public Flow_PK {
   double rho() { return rho_; }
   double mu() { return mu_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
+
+  // access methods only for unit tests (prefix get_ indicates that)
+  std::vector<WhetStone::Tensor>& get_K() { return K; }
+  Matrix_MFD* get_matrix() { return matrix_; }
+  std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
   // extension of STL
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 

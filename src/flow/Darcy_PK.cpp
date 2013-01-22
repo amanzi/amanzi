@@ -416,6 +416,19 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 }
 
 
+/* ******************************************************************
+* Gathers together routines to compute steady-state MFD matrices.                            
+****************************************************************** */
+void Darcy_PK::AssembleMatrixMFD()
+{
+  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
+  matrix_->CreateMFDrhsVectors();
+  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, matrix_);
+  matrix_->ApplyBoundaryConditions(bc_model, bc_values);
+  matrix_->AssembleGlobalMatrices();
+}
+
+
 /* ******************************************************************* 
 * Performs one time step of size dT. The boundary conditions are 
 * calculated only once, during the initialization step.  

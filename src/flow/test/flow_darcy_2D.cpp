@@ -71,7 +71,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   FS->set_fluid_density(1.0);
   FS->set_gravity(-1.0);
 
-  // create Richards process kernel
+  // create Darcy process kernel
   Darcy_PK* DPK = new Darcy_PK(parameter_list, FS);
   DPK->InitPK();
   DPK->InitSteadyState(0.0, 1e-8);
