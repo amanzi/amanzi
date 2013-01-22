@@ -987,7 +987,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	sti_bdf1_param.set<double>("nonlinear iteration damping factor",ST_NONLIN_DAMP);
 	sti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD);
 	sti_bdf1_param.set<double>("restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR);
-	sti_bdf1_param.set<double>("restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP);	    	
+	sti_bdf1_param.set<double>("restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP);
+	sti_bdf1_param.set<double>("nonlinear iteration divergence factor",ST_DIVERG_FACT);
 
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
 	  Teuchos::ParameterList& ncp_list =  plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -1022,6 +1023,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 					 num_list.get<double>("steady restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR));
 	      sti_bdf1_param.set<double>("restart tolerance relaxation factor damping", 
 					 num_list.get<double>("steady restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP));
+	      sti_bdf1_param.set<double>("nonlinear iteration divergence factor",
+					 num_list.get<double>("steady nonlinear iteration divergence factor",ST_DIVERG_FACT));
+
 	      steady_time_integrator.set<std::string>("preconditioner",
 						      num_list.get<std::string>("steady preconditioner",ST_PRECOND));
 	      steady_time_integrator.set<bool>("initialize with darcy",
@@ -1056,6 +1060,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	tti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",TR_NONLIN_INIT_GUESS_EXTR_ORD);
 	tti_bdf1_param.set<double>("restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR);
 	tti_bdf1_param.set<double>("restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP);
+	tti_bdf1_param.set<double>("nonlinear iteration divergence factor",TR_DIVERG_FACT);
 
         if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
 	  Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -1088,6 +1093,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 					 num_list.get<double>("transient restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR));
 	      tti_bdf1_param.set<double>("restart tolerance relaxation factor damping", 
 					 num_list.get<double>("transient restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP));
+	      tti_bdf1_param.set<double>("nonlinear iteration divergence factor",
+					 num_list.get<double>("transient nonlinear iteration divergence factor",TR_DIVERG_FACT));
+
 	      transient_time_integrator.set<std::string>("preconditioner",
 							 num_list.get<std::string>("transient preconditioner",TR_PRECOND));
 	    }
