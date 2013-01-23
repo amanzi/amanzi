@@ -221,10 +221,10 @@ PorousMedia::variableCleanUp ()
 void
 PorousMedia::SetUpMaterialServer()
 {
-  typedef MatIDFiller::Material Material;
   PArray<Material> materials(rocks.size(),PArrayManage);
+  std::map<std::string,Property*> property_map;
   for (int i=0; i<rocks.size(); ++i) {
-    materials.set(i,new Material(rocks[i].name,rocks[i].regions));
+    materials.set(i,new Material(rocks[i].name,rocks[i].regions,property_map));
   }
   
   int Nlevs = parent->finestLevel() + 1;

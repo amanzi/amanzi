@@ -8,8 +8,8 @@
 # through these variables.
 project(STRUCTMAT)
 
-set(CXX_header_files MatIDFiller.H)
-set(CXX_source_files MatIDFiller.cpp)
+set(CXX_header_files Material.H MatIDFiller.H MatFillerPCarithAvg.H)
+set(CXX_source_files Material.cpp MatIDFiller.cpp MatFillerPCarithAvg.cpp)
 
 add_amanzi_library(structmat SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
 
@@ -77,9 +77,14 @@ list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
 
 if (BUILD_TESTS) 
 
-  add_amanzi_test(tMIDf tMIDf
+  add_amanzi_test(MaterialIDFiller tMIDf
                   KIND unit
                   SOURCE tMIDf.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+  add_amanzi_test(tMatFiller tMatFiller
+                  KIND unit
+                  SOURCE tMatFiller.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
 endif()

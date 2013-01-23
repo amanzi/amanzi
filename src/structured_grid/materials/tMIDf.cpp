@@ -5,6 +5,7 @@ using std::cout;
 using std::endl;
 #include <ParmParse.H>
 
+#include <Material.H>
 #include <MatIDFiller.H>
 #include <Region.H>
 
@@ -162,40 +163,40 @@ void SetRegions()
   regions["TankWaste"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
 }
 
-PArray<MatIDFiller::Material>
+PArray<Material>
 SetMaterials()
 {
-  PArray<MatIDFiller::Material> materials(5, PArrayManage);
+  PArray<Material> materials(5, PArrayManage);
   Array<std::string> region_names;
   PArray<Region> regionset;
   region_names.push_back("SoilLower");
   region_names.push_back("SoilRight");
   region_names.push_back("SoilUpper");
   regionset = build_region_PArray(region_names);
-  materials.set(0,new MatIDFiller::Material("Soil",regionset));
+  materials.set(0,new Material("Soil",regionset));
   region_names.clear();
   region_names.push_back("TankConcFloor");
   region_names.push_back("TankConcRoof1");
   region_names.push_back("TankConcRoof2");
   region_names.push_back("TankConcWall");
   regionset = build_region_PArray(region_names);
-  materials.set(1,new MatIDFiller::Material("TankConc",regionset));
+  materials.set(1,new Material("TankConc",regionset));
   region_names.clear();
   region_names.push_back("TankFFfloor");
   region_names.push_back("TankFFwall");
   region_names.push_back("TankWaste");
   regionset = build_region_PArray(region_names);
-  materials.set(2,new MatIDFiller::Material("TankFF",regionset));
+  materials.set(2,new Material("TankFF",regionset));
   region_names.clear();
   region_names.push_back("TankGrout");
   regionset = build_region_PArray(region_names);
-  materials.set(3,new MatIDFiller::Material("TankGrout",regionset));
+  materials.set(3,new Material("TankGrout",regionset));
   region_names.clear();
   region_names.push_back("TankLinerFloor");
   region_names.push_back("TankLinerRoof");
   region_names.push_back("TankLinerWall");
   regionset = build_region_PArray(region_names);
-  materials.set(4,new MatIDFiller::Material("TankLiner",regionset));
+  materials.set(4,new Material("TankLiner",regionset));
   region_names.clear();
   return materials;
 }
@@ -272,7 +273,7 @@ main (int   argc,
   }
 
   SetRegions();
-  PArray<MatIDFiller::Material> materials = SetMaterials();
+  PArray<Material> materials = SetMaterials();
 
   MatIDFiller matFiller(geomArray,refRatio,materials);
 
@@ -321,6 +322,10 @@ main (int   argc,
   fail &= bins[2] == 10;
   fail &= bins[3] == 2146;
   fail &= bins[4] == 0;
+
+  if (fail && ParallelDescriptor::IOProcessor()) {
+    std::cout << "MatIDFiller failed" << std::endl;
+  }
 
   DestroyRegions();
   BoxLib::Finalize();

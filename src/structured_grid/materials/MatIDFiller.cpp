@@ -4,41 +4,7 @@
 
 static Real grid_eff = 1;
 static int tags_buffer = 1;
-
-
-MatIDFiller::Material::Material(const std::string&    _name, 
-                                const PArray<Region>& _regions)
-  : name(_name)
-{
-  regions.resize(_regions.size(),PArrayNoManage);
-  for (int i=0; i<regions.size(); ++i) {
-    regions.set(i,(Region*)&(_regions[i]));
-  }
-}
-
-MatIDFiller::Material::Material(const MatIDFiller::Material& rhs) 
-{
-  name = rhs.name;
-  if (rhs.regions.size()>0) {
-    regions.resize(rhs.regions.size(),PArrayNoManage);
-    for (int i=0; i<regions.size(); ++i) {
-      regions.set(i,(Region*)&(rhs.regions[i]));
-    }
-  }
-}
-
-
-MatIDFiller::Material::~Material()
-{}
-
-void 
-MatIDFiller::Material::setVal(FArrayBox& fab,Real val,int comp, const Real* dx) const
-{
-  int ng = 0;
-  for (int k=0; k<regions.size(); ++k) {
-    regions[k].setVal(fab,val,comp,dx,ng);
-  }
-}
+static int max_grid_size = 16;
 
 MatIDFiller::MatIDFiller()
 {
@@ -47,7 +13,7 @@ MatIDFiller::MatIDFiller()
 
 MatIDFiller::MatIDFiller(const Array<Geometry>& _geomArray,
                          const Array<IntVect>&  _refRatio,
-                         const PArray<MatIDFiller::Material>& _materials)
+                         const PArray<Material>& _materials)
 {
   initialized = false;
   define(_geomArray,_refRatio,_materials);
@@ -56,7 +22,7 @@ MatIDFiller::MatIDFiller(const Array<Geometry>& _geomArray,
 void
 MatIDFiller::define(const Array<Geometry>& _geomArray,
                     const Array<IntVect>&  _refRatio,
-                    const PArray<MatIDFiller::Material>& _materials)
+                    const PArray<Material>& _materials)
 {
   if (initialized) {
     geomArray.clear();
@@ -77,7 +43,7 @@ MatIDFiller::define(const Array<Geometry>& _geomArray,
   materials.resize(_materials.size(),PArrayManage);
   matNames.resize(materials.size());
   for (int i=0; i<materials.size(); ++i) {
-    materials.set(i,new MatIDFiller::Material(_materials[i]));
+    materials.set(i,new Material(_materials[i]));
     matNames[cnt] = materials[i].Name();
     matIdx[materials[i].Name()] = cnt++;
   }
@@ -85,32 +51,44 @@ MatIDFiller::define(const Array<Geometry>& _geomArray,
 }
 
 
-void
-MatIDFiller::SetMaterialID(int level, const Box& box, FArrayBox& fab)
+void 
+MatIDFiller::SetMaterialID(int level, MultiFab& mf, int nGrow)
 {
-  BoxArray unfilled(box);
-
+  BoxArray unfilled(mf.boxArray()); unfilled.grow(nGrow);
+  
   if (level<ba_mixed.size() && ba_mixed[level].size()>0) {
-    std::vector< std::pair<int,Box> > isects = ba_mixed[level].intersections(box);
-    for (int i=0; i<isects.size(); ++i) {
-      fab.setVal(-1,isects[i].second,0,1); // Something invalid
+    BoxArray fillable = BoxLib::intersect(ba_mixed[level], unfilled);
+    if (fillable.size()>0) {
+      MultiFab tmf(fillable,1,0);
+      for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
+	tmf[mfi].setVal(-1,fillable[mfi.index()],0,1); // Something invalid
+      }
+      mf.copy(tmf);
+      BoxList remaining;
+      BoxList bl_fillable(fillable);
+      for (int i=0; i<unfilled.size(); ++i) {
+	remaining.join(BoxLib::complementIn(unfilled[i],bl_fillable));
+      }
+      remaining.simplify();
+      unfilled = (BoxArray)remaining;
     }
-    unfilled = BoxLib::complementIn(box,ba_mixed[level]);
   }
 
-  if (unfilled.ok()) {
-    FArrayBox tfab;
+  if (unfilled.size()>0) {
+    MultiFab tmf(unfilled,1,0);
     const Geometry& geom = Geom(level);
     const Real* dx = geom.CellSize();
-    for (int i=0; i<unfilled.size(); ++i) {
-      const Box& bx = unfilled[i];
+    FArrayBox tfab;
+    for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
+      const Box& bx = unfilled[mfi.index()];
       tfab.resize(bx,1); tfab.setVal(-1);
       for (int j=0; j<materials.size(); ++j) {
         int matID = matIdx[materials[j].Name()];
 	materials[j].setVal(tfab,matID,0,dx);
       }
-      fab.copy(tfab,bx,0,bx,0,1);
+      tmf[mfi].copy(tfab,bx,0,bx,0,1);
     }
+    mf.copy(tmf);
   }
 }
 
@@ -128,18 +106,17 @@ MatIDFiller::Initialize()
 
   int finestLevel = ba_mixed.size();
   materialID.resize(finestLevel+1,PArrayManage);
-  materialID.set(0,new MultiFab(BoxArray(Geom(0).Domain()), 1, 0));  
+  int nGrow = 0;
+  materialID.set(0,new MultiFab(BoxArray(Geom(0).Domain()), 1, nGrow));  
   for (int lev=0; lev<ba_mixed.size(); ++lev) {
-    BoxArray fba = BoxArray(ba_mixed[lev]).refine(RefRatio(lev));
-    fba.removeOverlap();
-    materialID.set(lev+1,new MultiFab(fba, 1, 0));
+    BoxList fbl(ba_mixed[lev]); fbl.refine(RefRatio(lev));
+    fbl.simplify(); fbl.maxSize(max_grid_size);
+    BoxArray fba(fbl);
+    BL_ASSERT(fba.isDisjoint());
+    materialID.set(lev+1,new MultiFab(fba, 1, nGrow));
   }
   for (int lev=0; lev<materialID.size(); ++lev) {
-    for (MFIter mfi(materialID[lev]); mfi.isValid(); ++mfi) {
-      const Box& box = mfi.validbox();
-      FArrayBox& fab = materialID[lev][mfi];
-      SetMaterialID(lev,box,fab);
-    }
+    SetMaterialID(lev,materialID[lev],0);
   }
   initialized = true;
 }
@@ -206,6 +183,7 @@ MatIDFiller::FindMixedCells()
     clist.chop(grid_eff);
     BoxList bl = clist.boxList(); bl.simplify();
     ba_array[lev] = BoxLib::intersect(BoxArray(bl),Geom(lev).Domain());
+    ba_array[lev].maxSize(max_grid_size);
   }
 
   return ba_array;

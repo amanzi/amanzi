@@ -8,28 +8,11 @@
 #include <Utility.H>
 
 #include <Region.H>
+#include <Material.H>
 
 class MatIDFiller
 {
 public:
-
-  class Material
-  {
-  public:
-    Material(const std::string&    name, 
-             const PArray<Region>& regions);
-    Material(const Material& rhs);
-    ~Material();
-    
-    void setVal(FArrayBox& fab,Real val,int comp, const Real* dx) const;
-    
-    const PArray<Region>& Regions() const {return regions;}
-    const std::string& Name() const {return name;}
-  protected:
-    std::string name;
-    PArray<Region> regions;
-  };
-
   MatIDFiller();
 
   MatIDFiller(const Array<Geometry>& _geomArray,
@@ -44,7 +27,7 @@ public:
 
   const Geometry& Geom(int level) const {return geomArray[level];}
   const IntVect& RefRatio(int crse_level) {return refRatio[crse_level];}
-  void SetMaterialID(int level, const Box& box, FArrayBox& fab);
+  void SetMaterialID(int level, MultiFab& mf, int nGrow);
 
   const BoxArray& Mixed(int level) const;
   MultiFab& MaterialID(int level) {return materialID[level];}
