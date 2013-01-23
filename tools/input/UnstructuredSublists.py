@@ -60,7 +60,6 @@ def PackUnstructuredLists(ncp_lines,KeyList, SubLists):
                     preconditioner='Block ILU'
                 else:
                     SubLists[key].append(line.rstrip().lstrip())
-                    
 
     if ( len(SubLists["steady"]) > 1 and preconditioner != 'Trilinos ML' ):
         SubLists["steady"].append('<Parameter name="steady preconditioner" type="string" value="'+preconditioner+'"/>')
@@ -247,6 +246,11 @@ for line in xml_lines:
             lev_spc.append(spaces)
     elif ( "</ParameterList" in line ):
         cl=cl-1
+
+#
+# We maybe adding one new level of indentation
+#
+lev_spc.append(lev_spc[len(lev_spc)-1]+2)
 
 print 'Debugging: Level indentation = ', lev_spc
 

@@ -1,6 +1,6 @@
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
 
   <!--
      Getting started on a simple 2D steady-state saturated test
@@ -19,19 +19,21 @@
     <Parameter name="Chemistry Model" type="string" value="Off"/>
 
     <ParameterList name="Time Integration Mode">
-        <ParameterList name="Steady">
-          <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="End" type="double" value="0.0"/>
-          <Parameter name="Initial Time Step" type="double" value="1000"/>
-        </ParameterList>
+      <ParameterList name="Steady">
+	<Parameter name="Start" type="double" value="0.0"/>
+	<Parameter name="End" type="double" value="0.0"/>
+	<Parameter name="Initial Time Step" type="double" value="1000"/>
+      </ParameterList>
     </ParameterList>
-
+    
     <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
-        <Parameter name="linear solver maximum iterations" type="int" value="10"/>
+        <ParameterList name="Linear Solver">
+          <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
+          <Parameter name="linear solver maximum iterations" type="int" value="10"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   

@@ -1,6 +1,6 @@
 <ParameterList name="Main">
 
-  <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
 
   <!--
      Getting started on a simple 2D steady-state saturated test
@@ -19,19 +19,21 @@
     <Parameter name="Chemistry Model" type="string" value="Off"/>
 
     <ParameterList name="Time Integration Mode">
-        <ParameterList name="Steady">
-          <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="End" type="double" value="0.0"/>
-          <Parameter name="Initial Time Step" type="double" value="1000"/>
-        </ParameterList>
+      <ParameterList name="Steady">
+	<Parameter name="Start" type="double" value="0.0"/>
+	<Parameter name="End" type="double" value="0.0"/>
+	<Parameter name="Initial Time Step" type="double" value="1000"/>
+      </ParameterList>
     </ParameterList>
 
     <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
-        <Parameter name="linear solver maximum iterations" type="int" value="10"/>
+        <ParameterList name="Linear Solver">
+          <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
+          <Parameter name="linear solver maximum iterations" type="int" value="10"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   
@@ -49,7 +51,7 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Expert">
-         <Parameter name="Framework" type="string" value="MSTK"/>
+	<Parameter name="Framework" type="string" value="MSTK"/>
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
@@ -99,7 +101,7 @@
 	<Parameter name="Coordinate" type="Array(double)" value="{20.5, 24.5, 24.5}"/>
       </ParameterList>
     </ParameterList>
-
+    
   </ParameterList>
 
 
@@ -119,7 +121,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-
+  
 
   <!--
 
@@ -141,7 +143,7 @@
           <Parameter name="Component Solutes" type="Array(string)" value="{Foo}"/>
         </ParameterList>
       </ParameterList>
-
+      
     </ParameterList>
   </ParameterList>
 
@@ -153,7 +155,7 @@
   <ParameterList name="Initial Conditions">
 
     <ParameterList name="Initial Condition">
-
+      
       <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
       
       <ParameterList name="IC: Uniform Pressure">
@@ -162,7 +164,7 @@
       </ParameterList>
 
     </ParameterList>
-
+    
   </ParameterList>
 
   <!--
@@ -171,7 +173,7 @@
 
   -->
   <ParameterList name="Boundary Conditions">
-
+    
     <ParameterList name="Upstream BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Upstream}"/>
       <ParameterList name="BC: Uniform Pressure">
@@ -180,7 +182,7 @@
         <Parameter name="Values" type="Array(double)" value="{4e5, 4e5}"/>
       </ParameterList>
     </ParameterList>
-
+    
     <ParameterList name="Downstream BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Downstream}"/>
       <ParameterList name="BC: Uniform Pressure">
@@ -189,11 +191,11 @@
 	<Parameter name="Values" type="Array(double)" value="{2e5, 2e5}"/>	 		
       </ParameterList>
     </ParameterList>
-
+    
   </ParameterList>
 
   <ParameterList name="Output">
-
+    
     <ParameterList name="Time Macros">
       <ParameterList name="Steady State">
 	<Parameter name="Values" type="Array(double)" value="{0.}"/>
@@ -201,7 +203,7 @@
     </ParameterList>
 
     <ParameterList name="Observation Data">
-
+      
       <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
       <ParameterList name="Pressure 1">
         <Parameter name="Region" type="string" value="Well 1"/>
