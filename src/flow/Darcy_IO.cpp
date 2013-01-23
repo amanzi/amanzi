@@ -69,9 +69,7 @@ void Darcy_PK::ProcessParameterList()
   string mfd3d_method_name = dp_list_.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method); 
 
-  // Time integrator for period I, temporary called steady-state time integrator
-  bool ti_flag = true;
-
+  // Time integrator for period I, called steady-state time integrator
   if (dp_list_.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = dp_list_.sublist("steady state time integrator");
 
@@ -91,8 +89,10 @@ void Darcy_PK::ProcessParameterList()
     std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
     LinearSolver_Specs& ls_specs = ti_specs_sss.ls_specs;
     ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
-
-    ti_flag = true;
+  } else {  // fills-in the important defaults (See InputParserIS_defaults.hh)
+    std::string linear_solver_name("AztecOO");  // Must equal to ST_SOLVER
+    LinearSolver_Specs& ls_specs = ti_specs_sss.ls_specs;
+    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);   
   }
 
   if (dp_list_.isSublist("transient time integrator")) {
@@ -114,12 +114,6 @@ void Darcy_PK::ProcessParameterList()
     std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
     LinearSolver_Specs& ls_specs = ti_specs_trs.ls_specs;
     ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
-
-    ti_flag = true;
-  }
-
-  if (!ti_flag && verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("Flow PK: missing sublist \"steady state time integrator\" or \"transient time integrator\".\n");
   }
 }
 

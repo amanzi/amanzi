@@ -272,6 +272,9 @@ void Richards_PK::InitializeAuxiliaryData()
 ****************************************************************** */
 void Richards_PK::InitializeSteadySaturated()
 { 
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    std::printf("Flow PK: initializing with a saturated steady state...\n");
+  }
   double T = FS->get_time();
   SolveFullySaturatedProblem(T, *solution);
 }

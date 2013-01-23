@@ -426,7 +426,7 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
 
 
 /* ****************************************************************
-* Analyzin time integration specs for logical consistency
+* Analyzes time integration specs for logical consistency.
 **************************************************************** */
 void Richards_PK::AnalysisTI_Specs()
 {
