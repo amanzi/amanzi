@@ -1749,7 +1749,21 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
           Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
         }
       }
+      
+      double specific_yield;
+      bool use_specific_yield(false);
+      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Yield: Uniform")) {
+	specific_yield = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Yield: Uniform").get<double>("Value");
+	use_specific_yield = true;
+      }
 
+      double specific_storage;
+      bool use_specific_storage(false);
+      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Storage: Uniform")) {
+	specific_storage = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Storage: Uniform").get<double>("Value");
+	use_specific_storage = true;
+      }
+	
       double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
       double perm_vert, perm_horiz;
 
@@ -1802,6 +1816,10 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
         stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
         stt_mat.set<double>("Constant particle density", particle_density);
         stt_mat.set<std::string>("Region", *i);
+
+	if (use_specific_storage) stt_mat.set<double>("Constant specific storage",specific_storage);
+	if (use_specific_yield)   stt_mat.set<double>("Constant specific yield",specific_yield);
+
 
         if (  mineralogy.begin() != mineralogy.end() ) { // this is to avoid creating an empty Mineralogy list
           Teuchos::ParameterList& region_mineralogy = stt_mat.sublist("Mineralogy");
