@@ -102,4 +102,6 @@
 #define ILU_ABSTHR                      0.0
 #define ILU_LVLFILL                     0
 
+#define BCHYDRST_COORD                  "Absolute"
+
 #endif
