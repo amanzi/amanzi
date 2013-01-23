@@ -972,12 +972,14 @@ The following models can be specified for particle density (only `"Particle Dens
 
 
 The following models are currently supported for Specific Yield.
+
 * [U] `"Specific Yield: Uniform`" [list] requires
 
  * [U] `"Value`" [double] to specify specific yield.
 
 
 The following models are currently supported for Specific Storage.
+
 * [U] `"Specific Storage: Uniform`" [list] requires
 
  * [U] `"Value`" [double] to specify specific storage.
