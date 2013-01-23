@@ -117,7 +117,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;
   verbosity = FLOW_VERBOSITY_HIGH;
   src_sink = NULL;
-  src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
+  src_sink_distribution = 0;
 }
 
 
@@ -225,7 +225,7 @@ void Darcy_PK::InitPK()
   preconditioner_->InitPreconditioner(method, ML_list);
 
   // Allocate memory for wells
-  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
@@ -342,19 +342,16 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   }
 
   // Well modeling (one-time call)
-  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
   }
 
   // Initialize source
   if (src_sink != NULL) {
-    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
-      src_sink->Compute(T0);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
-      src_sink->ComputeDistribute(T0);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, Kxy->Values());
-    } 
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        src_sink->ComputeDistribute(T0, Kxy->Values()); 
+    else
+        src_sink->ComputeDistribute(T0, NULL);
   }
 
   // make initial guess consistent with boundary conditions
@@ -454,13 +451,10 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   if (src_sink != NULL) {
-    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
-      src_sink->Compute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
-      src_sink->ComputeDistribute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Kxy->Values());
-    } 
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        src_sink->ComputeDistribute(time, Kxy->Values()); 
+    else
+        src_sink->ComputeDistribute(time, NULL);
   }
 
   ProcessBoundaryConditions(

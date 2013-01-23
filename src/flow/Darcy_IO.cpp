@@ -57,11 +57,12 @@ void Darcy_PK::ProcessParameterList()
   // Create the source object if any
   if (dp_list_.isSublist("source terms")) {
     string distribution_method_name = dp_list_.get<string>("source and sink distribution method", "none");
-    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
+    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution);
 
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
+    src_sink_distribution = src_sink->ActionsList();
   }
 
   // discretization method

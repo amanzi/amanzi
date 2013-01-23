@@ -29,7 +29,7 @@ DomainFunction* FlowSourceFactory::createSource() const
     if (params_->isSublist(name)) {
       Teuchos::ParameterList& spec = params_->sublist(name);
       try {
-        processSourceSpec(spec, src);
+        ProcessSourceSpec(spec, src);
       } catch (Errors::Message& msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
@@ -48,7 +48,7 @@ DomainFunction* FlowSourceFactory::createSource() const
 /* ******************************************************************
 * Process source, step 2.
 ****************************************************************** */
-void FlowSourceFactory::processSourceSpec(Teuchos::ParameterList& list, DomainFunction* src) const
+void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, DomainFunction* src) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -84,7 +84,30 @@ void FlowSourceFactory::processSourceSpec(Teuchos::ParameterList& list, DomainFu
   }
 
   // Add this source specification to the domain function.
-  src->Define(regions, f);
+  int method;
+  std::string action_name = list.get<std::string>("spatial distribution method", "none");
+  ProcessStringActions(action_name, &method);
+  
+  src->Define(regions, f, method);
+}
+
+
+/* ****************************************************************
+* Process string for a source specipic action.
+**************************************************************** */
+void FlowSourceFactory::ProcessStringActions(const std::string& name, int* method) const
+{
+  Errors::Message msg;
+  if (name == "none") {
+    *method = Amanzi::MESH_FUNCTION_ACTION_NONE;
+  } else if (name == "volume") {
+    *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+  } else if (name == "permeability") {
+    *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+  } else {
+    msg << "Flow PK: unknown source distribution method has been specified.";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 }  // namespace AmanziFlow

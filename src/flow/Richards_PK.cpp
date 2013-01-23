@@ -131,7 +131,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
 
   verbosity = FLOW_VERBOSITY_HIGH;
-  src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
+  src_sink = NULL;
+  src_sink_distribution = 0;
   internal_tests = 0;
   experimental_solver_ = FLOW_SOLVER_NKA;
 }
@@ -226,7 +227,7 @@ void Richards_PK::InitPK()
   }
 
   // Allocate memory for wells
-  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
@@ -443,7 +444,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   }
 
   // Well modeling
-  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
   }
 

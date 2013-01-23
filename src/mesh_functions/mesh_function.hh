@@ -1,3 +1,15 @@
+/*
+This is the flow component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided Reconstruction.cppin the top-level COPYRIGHT file.
+
+Authors: Neil Carlson
+         Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #ifndef AMANZI_MESH_FUNCTION_HH_
 #define AMANZI_MESH_FUNCTION_HH_
 
@@ -14,6 +26,8 @@
 
 namespace Amanzi {
 
+const int MESH_FUNCTION_ACTION_NONE = 0;
+
 typedef std::set<AmanziMesh::Entity_ID> Domain;
 typedef std::pair<Domain,Teuchos::RCP<const Function> > Spec;
 typedef std::vector<Spec> SpecList;
@@ -24,7 +38,8 @@ class MeshFunction {
   MeshFunction() {};
   virtual ~MeshFunction() {};
 
-  virtual void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const Function>& f) = 0;
+  virtual void Define(const std::vector<std::string>& regions,
+                      const Teuchos::RCP<const Function>& f, int action) = 0;
   void DefineFromString(const std::string region, const Teuchos::RCP<const Function>& f);
   virtual void Compute(double T) = 0;
   
