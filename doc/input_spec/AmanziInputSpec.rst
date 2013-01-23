@@ -870,6 +870,10 @@ the following set of physical properties using the supported models described be
 
   * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
 
+  * [U] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
+
+  * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
+
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
@@ -965,6 +969,19 @@ The following models can be specified for particle density (only `"Particle Dens
 * [U] `"Particle Density: Uniform`" [list] requires 
  
  * [U] `"Value`" [double] to specify the constant value of rock density.
+
+
+The following models are currently supported for Specific Yield.
+* [U] `"Specific Yield: Uniform`" [list] requires
+
+ * [U] `"Value`" [double] to specify specific yield.
+
+
+The following models are currently supported for Specific Storage.
+* [U] `"Specific Storage: Uniform`" [list] requires
+
+ * [U] `"Value`" [double] to specify specific storage.
+
 
 Example:
 
@@ -1117,7 +1134,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
 
-Finally, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
+Next, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
 
 * [SU] `"Boundary Conditions`" [list] accepts labels, BC, of named boundary condition specifications 
 
@@ -1136,6 +1153,16 @@ Finally, we specify boundary conditions.  Again, support is provided for specify
      * [SU, only Uniform Concentration] BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+
+Finally, we specify sources. Note that currently sources for components cannot be specified.
+
+* [U] `"Sources"` [list] accepts labels, SOURCE, of named boundary condition specifications
+
+ * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
+
+  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
+  
+  * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
 
 The following initial condition parameterizations are supported:
@@ -1170,13 +1197,22 @@ The following boundary condition parameterizations are supported:
 
 * [U] `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
-* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [Array double] (see below)
+* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this paramter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
 
 * `"BC: Impermeable`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * [SU] `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * [S] `"BC: Zero Gradient`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+The following source parameterizations are supported.
+
+* [U] `"Source: Volume Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* [U] `"Source: Permeability Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+
+
 
 
 Time Functions

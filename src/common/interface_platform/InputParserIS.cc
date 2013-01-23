@@ -1150,8 +1150,7 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
         src_sub_out.set<std::string>("spatial distribution method","permeability"); 
         src_fn = src.sublist("Source: Permeability Weighted");
       } else {
-        src_sub_out.set<std::string>("spatial distribution method","none");          
-        // where does the function come from???
+	Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted' or 'Source: Permeability Weighted'."));	
       }
       // create time function 
       Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
