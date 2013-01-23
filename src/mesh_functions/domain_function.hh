@@ -23,14 +23,24 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 namespace Amanzi {
 
+const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 2;
+const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 4;
+
 class DomainFunction : public MeshFunction {
  public:
   DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
 
-  void Define(const std::vector<std::string>& regions, const Teuchos::RCP<const Function>& f);
+  void Define(const std::vector<std::string>& regions, 
+              const Teuchos::RCP<const Function>& f, int action);
   void Compute(double T);
   void ComputeDistribute(double T);
   void ComputeDistribute(double T, double* weight);
+
+  // extract internal information
+  int ActionsList();
+
+ private:
+  std::vector<int> actions_;
 };
 
 }  // namespace Amanzi

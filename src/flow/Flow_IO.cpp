@@ -111,15 +111,10 @@ void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
 **************************************************************** */
 void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* method)
 {
-  Errors::Message msg;
-  if (name == "none") {
-    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_NONE;
-  } else if (name == "volume") {
-    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_VOLUME;
-  } else if (name == "permeability") {
-    *method = AmanziFlow::FLOW_SOURCE_DISTRIBUTION_PERMEABILITY;
-  } else {
-    msg << "Flow PK: unknown source normalization method has been specified.";
+  if (name != "none") {
+    Errors::Message msg;
+    msg << "\nFlow_PK: \"source and sink distribution method\" is obsolete.\n"
+        << "         see desription of sublist \"source terms\" in the native spec.\n";
     Exceptions::amanzi_throw(msg);
   }
 }

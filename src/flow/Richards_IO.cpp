@@ -82,9 +82,8 @@ void Richards_PK::ProcessParameterList()
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(rp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
-  } else {
-    src_sink = NULL;
-  }
+    src_sink_distribution = src_sink->ActionsList();
+  }  
 
   // Create water retention models
   if (! rp_list_.isSublist("Water retention models")) {

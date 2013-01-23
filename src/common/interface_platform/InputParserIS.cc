@@ -1144,14 +1144,13 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       // get source function
       Teuchos::ParameterList src_fn; 
       if (src.isSublist("Source: Volume Weighted")) {
-        src_sub_out.set<std::string>("source and sink distribution method","volume");
+        src_sub_out.set<std::string>("spatial distribution method","volume");
         src_fn = src.sublist("Source: Volume Weighted");
       } else if (src.isSublist("Source: Permeability Weighted")) {
-        src_sub_out.set<std::string>("source and sink distribution method","permeability"); 
+        src_sub_out.set<std::string>("spatial distribution method","permeability"); 
         src_fn = src.sublist("Source: Permeability Weighted");
       } else {
-        src_sub_out.set<std::string>("source and sink distribution method","none");          
-        // where does the function come from???
+	Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted' or 'Source: Permeability Weighted'."));	
       }
       // create time function 
       Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
@@ -1597,12 +1596,23 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
         Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
         Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
         Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
+	std::string                 coordsys = bc_dir.get<std::string>("Coordinate System",BCHYDRST_COORD);
 
         std::stringstream ss;
         ss << "BC " << bc_counter++;
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("static head").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
+
+	if (coordsys == "Absolute") {
+	  tbc.set<bool>("relative to top",false);
+	} else if (coordsys == "Relative") {
+	  tbc.set<bool>("relative to top",true);
+	} else {
+	  // we have a default for this value... "Absolute", if for some reason this does not 
+	  // get read, then we must bail
+	  Exceptions::amanzi_throw(Errors::Message("In 'BC: Hydrostatic': must specify a value for parameter 'Coordinate System', valid values are 'Absolute' and 'Relative'"));
+	} 
 
 
         if ( times.size() == 1 ) {

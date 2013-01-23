@@ -28,29 +28,87 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
 
+double Kxx(const Amanzi::AmanziGeometry::Point& p, double t) {
+  double x = p[0];
+  double y = p[1]; 
+  return (x + 1) * (x + 1) + y * y;
+}
+double Kyy(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double x = p[0];
+  double y = p[1];
+  return (x + 1) * (x + 1);
+}
+double Kxy(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double x = p[0];
+  double y = p[1];
+  return -x * y;
+}
+double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double x = p[0];
+  double y = p[1];
+  double xy = x * y;
+  return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y);
+}
+Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double x = p[0];
+  double y = p[1];
 
-double K11(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  return (x[0] + 1) * (x[0] + 1) + x[1] * x[1];
-}
-double K22(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  return (x[0] + 1) * (x[0] + 1);
-}
-double K12(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  return -x[0] * x[1];
-}
-double pressure_exact(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  double xx = x[0];
-  double yy = x[1];
-  return xx * xx * xx * yy * yy + xx * sin(2 * xx * yy) * sin(2 * yy);
-}
-double source_exact(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  double xx = x[0];
-  double yy = x[1];
-  return xx * yy;
-}
-Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  Amanzi::AmanziGeometry::Point v(x[0], x[1]);
+  double t01, t02, t03, t12, t13, t04, t05, t06; 
+  double px, py;
+
+  t01 = x*x*y;
+  t02 = sin(2*M_PI*x*y);
+  t03 = sin(2*M_PI*y);
+
+  t12 = cos(2*M_PI*x*y);
+  t13 = cos(2*M_PI*y);
+
+  px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
+  py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
+
+  t04 = (x+1)*(x+1) + y*y;
+  t05 = -x*y;
+  t06 = (x+1)*(x+1);
+
+  Amanzi::AmanziGeometry::Point v(2);
+  v[0] = t04 * px + t05 * py;
+  v[1] = t05 * px + t06 * py;
   return v;
+}
+double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double x = p[0];
+  double y = p[1];
+
+  double t01, t02, t03, t12, t13;
+  double px, py, pxx, pxy, pyy;
+  double t04, t05, t06, tx4, ty4, tx5, ty5, tx6;
+
+  t01 = x*x*y;
+  t02 = sin(2*M_PI*x*y);
+  t03 = sin(2*M_PI*y);
+
+  t12 = cos(2*M_PI*x*y);
+  t13 = cos(2*M_PI*y);
+
+  px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
+  py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
+
+  pxx = 6*x*y*y + t03*(4*y*M_PI*t12 - 4*M_PI*M_PI*y*y*x*t02); 
+  pxy = 6*x*x*y + 2*M_PI*(t13*t02 + x*t03*t12 + x*t03*t12 + x*y*2*M_PI*(t13*t12-x*t03*t02));
+  pyy = 2*x*x*x + x*4*M_PI*M_PI*(-x*x*t02*t03 + 2*x*t12*t13 - t02*t03);
+
+  t04 = (x+1)*(x+1) + y*y;
+  t05 = -x*y;
+  t06 = (x+1)*(x+1);
+
+  tx4 = 2*(x+1);
+  ty4 = 2*y;
+
+  tx5 = -y;
+  ty5 = -x;
+  
+  tx6 = 2*(x+1);
+  return -(tx4 + ty5)*px - tx5*py - t04*pxx - 2*t05*pxy - t06*pyy;
 }
 
 /* *****************************************************************
@@ -88,8 +146,8 @@ TEST(FLOW_DARCY_SOURCE) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 18, 18, gm);
-  // RCP<Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 18, 18, gm);
+  RCP<Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create and populate fake flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
@@ -110,9 +168,10 @@ TEST(FLOW_DARCY_SOURCE) {
 
   for (int c = 0; c < K.size(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    K[c](0, 0) = K11(xc, 0.0);
-    K[c](1, 1) = K22(xc, 0.0);
-    K[c](0, 1) = K12(xc, 0.0);
+    K[c](0, 0) = Kxx(xc, 0.0);
+    K[c](1, 1) = Kyy(xc, 0.0);
+    K[c](0, 1) = Kxy(xc, 0.0);
+    K[c](1, 0) = Kxy(xc, 0.0);
   }
 
   // update Dirichlet boundary data 
@@ -138,28 +197,35 @@ TEST(FLOW_DARCY_SOURCE) {
   }
 
   // steady-state solution
-  DPK->AdvanceToSteadyState();
+  Epetra_Vector& solution = DPK->ref_solution();
+  DPK->SolveFullySaturatedProblem(0.0, *rhs, solution);
   DPK->CommitState(FS);
 
   // calculate errors
   Epetra_Vector& p = FS->ref_pressure();
   Epetra_Vector& flux = FS->ref_darcy_flux();
 
-  double p_error = 0.0;
+  double p_norm(0.0), p_error(0.0);
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
+    double tmp = pressure_exact(xc, 0.0);
     double volume = mesh->cell_volume(c);
-    p_error += std::pow(pressure_exact(xc, 0.0) - p[c], 2.0) * volume;
+
+    p_error += std::pow(tmp - p[c], 2.0) * volume;
+    p_norm += std::pow(tmp, 2.0) * volume;
   }
 
-  double flux_error = 0.0;
+  double flux_norm(0.0), flux_error(0.0);
   for (int f = 0; f < nfaces; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     const Point& xf = mesh->face_centroid(f);
     const AmanziGeometry::Point& velocity = velocity_exact(xf, 0.0);
-    flux_error += std::pow(flux[f] - velocity * normal, 2.0);
+    double tmp = velocity * normal;
+
+    flux_error += std::pow(tmp - flux[f], 2.0);
+    flux_norm += std::pow(tmp, 2.0);
   }
-  cout << p_error << " " << flux_error << endl; 
+  cout << pow(p_error / p_norm, 0.5) << " " << pow(flux_error / flux_norm, 0.5) << endl; 
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();

@@ -169,13 +169,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
   // update steady state source conditons
   if (src_sink != NULL) {
-    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
-      src_sink->Compute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
-      src_sink->ComputeDistribute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Kxy->Values());
-    } 
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        src_sink->ComputeDistribute(time, Kxy->Values()); 
+    else
+        src_sink->ComputeDistribute(time, NULL);
   }
 
   int max_itrs_nonlinear = ti_specs.max_itrs;
