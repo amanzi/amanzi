@@ -9,6 +9,7 @@ using std::endl;
 #include <Region.H>
 
 static std::map<std::string, Region*> regions;
+static PArray<Material> materials;
 
 std::ostream& operator<<(std::ostream& os, const Material& mat) {
   std::cout << "Material: " << mat.Name() << std::endl;
@@ -41,10 +42,7 @@ build_region_PArray(const Array<std::string>& region_names)
   return ret;
 }
 
-#define TANK
-#undef TANK
-#if defined(TANK)
-void SetRegions()
+void SetRegionsTANK()
 {
   Array<Real> lo(2), hi(2);
   std::string r_name, r_purpose, r_type;
@@ -174,12 +172,13 @@ void SetRegions()
   hi[1] = 10.33;
   regions["TankWaste"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
 }
-PArray<Material>
-SetMaterials()
+
+void
+SetMaterialsTANK()
 {
   std::string phi_str = "porosity";
   std::map<std::string,Property*> property_map; property_map[phi_str] = 0;
-  PArray<Material> materials(5, PArrayManage);
+  materials.resize(5, PArrayManage);
   Array<std::string> region_names;
   PArray<Region> regionset;
   region_names.push_back("SoilLower");
@@ -228,11 +227,9 @@ SetMaterials()
   materials.set(4,new Material("TankLiner",regionset,property_map));
 
   region_names.clear();
-  return materials;
 }
 
-#else
-void SetRegions()
+void SetRegionsSMALL()
 {
   Array<Real> lo(2), hi(2);
   std::string r_name, r_purpose, r_type;
@@ -282,12 +279,12 @@ void SetRegions()
   regions[r_name] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
 }
 
-PArray<Material>
-SetMaterials()
+void
+SetMaterialsSMALL()
 {
   std::string phi_str = "porosity";
   std::map<std::string,Property*> property_map; property_map[phi_str] = 0;
-  PArray<Material> materials(2, PArrayManage);
+  materials.resize(2, PArrayManage);
   Array<std::string> region_names;
   PArray<Region> regionset;
   region_names.push_back("Blue");
@@ -305,10 +302,8 @@ SetMaterials()
   materials.set(1,new Material("Red",regionset,property_map));
 
   region_names.clear();
-  return materials;
 }
 
-#endif
 
 
 void
@@ -317,6 +312,12 @@ DestroyRegions()
   for (std::map<std::string, Region*>::iterator it=regions.begin(), End=regions.end(); it!=End; ++it) {
     delete it->second;
   }
+}
+
+void
+DestroyMaterials()
+{
+  materials.clear();
 }
 
 void WritePlotfile(const std::string         &pfversion,
@@ -339,29 +340,36 @@ int
 main (int   argc,
       char* argv[])
 {
-  BoxLib::Initialize(argc,argv,false);
+  BoxLib::Initialize(argc,argv);
 
-  bool pause_for_debug = false;
-  if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
-    std::string junk;
-    std::cout << "Waiting to attach debugger.  Enter any string to continue ";
-    std::cin >> junk;
-  }
-  ParallelDescriptor::Barrier();
-  
-  if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
-    std::cout << "   continuing run..." << std::endl;
-  }
-
+  ParmParse pp;
+  std::string case_size="small"; pp.query("case_size",case_size);
 
   Array<int> n_cells(BL_SPACEDIM); 
-#ifdef TANK
-  int nLevs = 2;
-  n_cells[0] = 40; n_cells[1] = 24;
-#else
-  int nLevs = 2;
-  n_cells[0] = 2; n_cells[1] = 2;
-#endif
+  int nLevs;
+  int coord = 0;
+  Array<int> is_per(BL_SPACEDIM,0);
+  Array<Real> prob_lo(BL_SPACEDIM,0);
+  Array<Real> prob_hi(BL_SPACEDIM);
+  if (case_size=="small") {
+    nLevs = 2;
+    D_EXPR(n_cells[0] = 2, n_cells[1] = 2, n_cells[2] = 1);
+    D_EXPR(prob_hi[0] = 8, prob_hi[1] = 8, prob_hi[2] = 8);
+  }
+  else {
+    if (case_size=="medium") {
+      nLevs = 2;
+    } else if (case_size=="large"){
+      nLevs = 3;
+    } else if (case_size=="xlarge"){
+      nLevs = 4;
+    }
+    else {
+      BoxLib::Abort("No plan for this case_size");
+    }
+    D_EXPR(n_cells[0] = 40, n_cells[1] = 24, n_cells[2] = 1);
+    D_EXPR(prob_hi[0] = 40, prob_hi[1] = 24, prob_hi[2] = 1);
+  }
 
   Array<int> rRatio(nLevs-1,4);
   Array<IntVect> refRatio(nLevs-1);
@@ -369,15 +377,6 @@ main (int   argc,
     refRatio[lev] = rRatio[lev] * IntVect::TheUnitVector();
   }
 
-  int coord = 0;
-  Array<int> is_per(BL_SPACEDIM,0);
-  Array<Real> prob_lo(BL_SPACEDIM,0);
-  Array<Real> prob_hi(BL_SPACEDIM);
-#ifdef TANK
-  D_EXPR(prob_hi[0]=40, prob_hi[1]=24, prob_hi[2]=10);
-#else
-  D_EXPR(prob_hi[0]=8, prob_hi[1]=8, prob_hi[2]=8);
-#endif
   const RealBox rb(prob_lo.dataPtr(),prob_hi.dataPtr());
 
   Array<Geometry> geomArray(nLevs);
@@ -404,21 +403,28 @@ main (int   argc,
     Region::domhi[d] = Geometry::ProbHi()[d];
   }
 
-  SetRegions();
-  PArray<Material> materials = SetMaterials();
+  if (case_size=="small") {
+    SetRegionsSMALL();
+    SetMaterialsSMALL();
+  }
+  else {
+    SetRegionsTANK();
+    SetMaterialsTANK();
+  }
 
-#if 0
-  // Echo regions and materials
-  if (ParallelDescriptor::IOProcessor()) {
-    for (std::map<std::string,Region*>::const_iterator it=regions.begin(); it!=regions.end(); ++it) {
-      std::cout << *(it->second) << std::endl;
-    }
-    
-    for (int i=0; i<materials.size(); ++i) {
-      std::cout << materials[i] << std::endl;
+  bool verbose = false; pp.query("verbose",verbose);
+  if (verbose) {
+    // Echo regions and materials
+    if (ParallelDescriptor::IOProcessor()) {
+      for (std::map<std::string,Region*>::const_iterator it=regions.begin(); it!=regions.end(); ++it) {
+        std::cout << *(it->second) << std::endl;
+      }
+      
+      for (int i=0; i<materials.size(); ++i) {
+        std::cout << materials[i] << std::endl;
+      }
     }
   }
-#endif
 
   PArray<Property> properties(materials.size());
   for (int i=0, N=materials.size(); i<N; ++i) {
@@ -462,12 +468,18 @@ main (int   argc,
   }
 
   ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
-  fail &= bins[0] == 1464;
-  fail &= bins[1] == 15726;
-  fail &= bins[2] == 3837;
-  fail &= bins[3] == 29028;
-  fail &= bins[4] == 9685;
 
+  if (case_size=="small") {
+    fail &= bins[0] == 8;
+    fail &= bins[1] == 30;
+  }
+  else {
+    fail &= bins[0] == 1464;
+    fail &= bins[1] == 15726;
+    fail &= bins[2] == 3837;
+    fail &= bins[3] == 29028;
+    fail &= bins[4] == 9685;
+  }
 
   t = 2.5;
   for (int lev=nLevs-1; lev>=0; --lev) {
@@ -492,38 +504,48 @@ main (int   argc,
   }
 
   ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
-  fail &= bins[0] == 1464;
-  fail &= bins[1] == 15726;
-  fail &= bins[2] == 3837;
-  fail &= bins[3] == 29028;
-  fail &= bins[4] == 11622;
-
-#if 1
-  // Write out result to pltfile
-  std::string pfversion = "MaterialData-0.2";
-  Array<Box> pDomain(nLevs);
-  Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
-  for (int i=0; i<nLevs; ++i) {
-    pDomain[i] = geomArray[i].Domain();
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      dxLevel[i][d] = geomArray[i].CellSize()[d];
-    }
+  if (case_size=="small") {
+    fail &= bins[0] == 8;
+    fail &= bins[1] == 60;
   }
-  int coordSys = (int)CoordSys::Coord();
-  std::string outFileName = "pltfile";
-  bool verbose = false;
-  bool isCartGrid = false;
-  Array<Real> vfeps(nLevs,1.e-10);
-  Array<int> levelSteps(nLevs,0);
-  
-  WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
-		rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
-		verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
-#endif
+  else {
+    fail &= bins[0] == 1464;
+    fail &= bins[1] == 15726;
+    fail &= bins[2] == 3837;
+    fail &= bins[3] == 29028;
+    fail &= bins[4] == 11622;
+  }
 
+  if (verbose) {
+    // Write out result to pltfile
+    std::string pfversion = "MaterialData-0.2";
+    Array<Box> pDomain(nLevs);
+    Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
+    for (int i=0; i<nLevs; ++i) {
+      pDomain[i] = geomArray[i].Domain();
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        dxLevel[i][d] = geomArray[i].CellSize()[d];
+      }
+    }
+    int coordSys = (int)CoordSys::Coord();
+    std::string outFileName = "pltfile";
+    bool verbose = false;
+    bool isCartGrid = false;
+    Array<Real> vfeps(nLevs,1.e-10);
+    Array<int> levelSteps(nLevs,0);
+    
+    WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
+                  rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
+                  verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
+  }
+
+  DestroyMaterials();
   DestroyRegions();
   FabArrayBase::verbose = false;
   BoxLib::Finalize();
+  if (fail) {
+    BoxLib::Abort();
+  }
   return 0;
 }
 

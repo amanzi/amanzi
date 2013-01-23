@@ -48,7 +48,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 
-set(structured_grid_libs pmamr gsint boxprob boxdriv structutils structmat ${CCSE_LIBRARIES})
+set(structured_grid_libs pmamr gsint boxprob boxdriv structmat structutils ${CCSE_LIBRARIES})
 link_directories(${CCSE_EXT_LIBRARY_DIRS})
 if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
   #message(">>>>>> using darwin ld flags")
@@ -82,9 +82,14 @@ if (BUILD_TESTS)
                   SOURCE tMIDf.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
-  add_amanzi_test(tMatFiller tMatFiller
+  add_amanzi_test(MaterialPropertyFiller tMatFiller
                   KIND unit
                   SOURCE tMatFiller.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
+  add_amanzi_test(MaterialPropertyFiller4 "./tMatFiller_parallel" "case_size=xlarge"
+                  KIND unit
+	          NPROCS 4
+                  SOURCE tMatFiller.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 endif()

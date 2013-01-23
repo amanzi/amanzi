@@ -66,7 +66,7 @@ Material::~Material()
   for (std::map<std::string,Property*>::iterator it=property_map.begin(), End=property_map.end(); it!=End; ++it) {
     delete it->second;
   }
-  property_map.end();
+  property_map.clear();
 }
 
 void 

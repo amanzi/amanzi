@@ -36,22 +36,6 @@ protected:
   TabularFunction func;
 };
 
-// Extend the map class to include helpers to deal with keys
-template<class map_type>
-class key_iterator : public map_type::iterator
-{
-public:
-    typedef typename map_type::iterator map_iterator;
-    typedef typename map_iterator::value_type::first_type key_type;
-
-    key_iterator(const map_iterator& other) : map_type::iterator(other) {} ;
-
-    key_type& operator *()
-    {
-        return map_type::iterator::operator*().first;
-    }
-};
-
 class Material
 {
 public:

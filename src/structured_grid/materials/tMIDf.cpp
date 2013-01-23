@@ -323,11 +323,10 @@ main (int   argc,
   fail &= bins[3] == 2146;
   fail &= bins[4] == 0;
 
-  if (fail && ParallelDescriptor::IOProcessor()) {
-    std::cout << "MatIDFiller failed" << std::endl;
-  }
-
   DestroyRegions();
   BoxLib::Finalize();
-  return fail;
+  if (fail) {
+    BoxLib::Abort();
+  }
+  return 0;
 }
