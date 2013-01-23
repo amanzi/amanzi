@@ -147,7 +147,7 @@ TEST(FLOW_DARCY_SOURCE) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 18, 18, gm);
-  RCP<Mesh> mesh = meshfactory("test/median63x64.exo", gm);
+  RCP<Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create and populate fake flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));

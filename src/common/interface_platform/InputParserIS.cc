@@ -1144,13 +1144,13 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       // get source function
       Teuchos::ParameterList src_fn; 
       if (src.isSublist("Source: Volume Weighted")) {
-        src_sub_out.set<std::string>("source and sink distribution method","volume");
+        src_sub_out.set<std::string>("spatial distribution method","volume");
         src_fn = src.sublist("Source: Volume Weighted");
       } else if (src.isSublist("Source: Permeability Weighted")) {
-        src_sub_out.set<std::string>("source and sink distribution method","permeability"); 
+        src_sub_out.set<std::string>("spatial distribution method","permeability"); 
         src_fn = src.sublist("Source: Permeability Weighted");
       } else {
-        src_sub_out.set<std::string>("source and sink distribution method","none");          
+        src_sub_out.set<std::string>("spatial distribution method","none");          
         // where does the function come from???
       }
       // create time function 
