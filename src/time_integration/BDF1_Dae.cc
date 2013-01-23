@@ -73,6 +73,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.uhist_size++;
   state.ntol_multiplier = paramList_->get<double>("restart tolerance relaxation factor",1.0);
   state.ntol_multiplier_damp = paramList_->get<double>("restart tolerance relaxation factor damping",1.0);
+  state.divergence_factor = paramList_->get<double>("nonlinear iteration divergence factor",1000.0);
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;
@@ -486,7 +487,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     du.NormInf(&du_norm);
 
     // protect against floating point overflow
-    if (itr > 1 && du_norm > 1000.0 * previous_du_norm) {
+    if (itr > 1 && du_norm > state.divergence_factor * previous_du_norm) {
       *out << itr << ": error (infinity norm) " << du_norm << std::endl;
       *out << "Nonlinear solver is threatening to overflow, cutting current time step." << std::endl;
       state.currentpclag = 0;

@@ -38,6 +38,7 @@
 #define ST_PRECOND                      "Hypre AMG"
 #define ST_SOLVER                       "AztecOO"
 #define ST_INIT_DARCY                   true
+#define ST_DIVERG_FACT                  1000.0
 
 
 #define TR_MAX_ITER                     15
@@ -57,6 +58,7 @@
 #define TR_NONLIN_INIT_TS_FACTOR_DAMP   1.0
 #define TR_PRECOND                      "Hypre AMG"
 #define TR_SOLVER                       "AztecOO"
+#define TR_DIVERG_FACT                  1000.0
 
 #define PIC_INIT_DARCY                  true
 #define PIC_CLIP_SAT                    0.9

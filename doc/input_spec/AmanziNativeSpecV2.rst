@@ -470,6 +470,10 @@ The parameters used here are
   called `"absolute error tolerance`" and `"relative error tolerance`". The default values
   for these parameters are 0.001. 
 
+* `"nonlinear iteration divergence factor`" [double] If in one nonlinear iteration the inf norm
+  of the update is larger by this factor than the previous update, abort the iteration, and 
+  repeat the current time step. Default is 1000.0.
+
 
 Transient Time Integratior
 -----------------------------
