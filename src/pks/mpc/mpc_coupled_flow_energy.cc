@@ -9,7 +9,7 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 ------------------------------------------------------------------------- */
 
 #include "field_evaluator.hh"
-#include "mpc_prec_coupled_flow_energy.hh"
+#include "mpc_coupled_flow_energy.hh"
 #include "strong_mpc.hh"
 #include "Epetra_FECrsGraph.h"
 
@@ -19,8 +19,6 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
-#include "wrm_richards_evaluator.hh"
-
 
 namespace Amanzi {
 

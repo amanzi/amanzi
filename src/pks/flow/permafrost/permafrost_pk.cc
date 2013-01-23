@@ -20,8 +20,6 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 #include "primary_variable_field_evaluator.hh"
 #include "wrm_permafrost_evaluator.hh"
-#include "wrm_richards_evaluator.hh"
-#include "wrm_ice_water_evaluator.hh"
 #include "rel_perm_evaluator.hh"
 #include "permafrost_water_content.hh"
 
@@ -57,17 +55,6 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
-
-  //    This follows the permafrost notes... the first evaluator,
-  //    WRMRichardsEvaluator, is the usual S(p_atm - p_liquid), which in the
-  //    permafrost evaluator is given by 1/B.  The second evaluator, WRMIceWaterEvaluator,
-  //    is given by S( gamma * T' ), or 1/A.  The third evaluator depends upon
-  //    these two evaluators, and evaluates s_g, s_l, and s_i from 1/A and 1/B.
-  //
-  //    The fourth evaluator provides Krel(s_liquid), which is NOT the same as
-  //    Krel(p_atm - p_liquid).
-
-  // Evaluator 3.
   Teuchos::ParameterList wrm_plist = plist_.sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMPermafrostEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMPermafrostEvaluator(wrm_plist));
@@ -75,31 +62,10 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("saturation_gas", wrm);
   S->SetFieldEvaluator("saturation_ice", wrm);
 
-  // Evaluator 1.
-  Teuchos::ParameterList Bplist;
-  std::string Bkey = wrm_plist.get<string>("1/B key", "wrm_permafrost_one_on_B");
-  Bplist.set("saturation key", Bkey);
-  Bplist.set("calculate minor saturation", false);
-  ASSERT(wrm_plist.isSublist("WRM parameters"));
-  Bplist.set("WRM parameters", wrm_plist.sublist("WRM parameters"));
-  Teuchos::RCP<FlowRelations::WRMRichardsEvaluator> wrm_B =
-      Teuchos::rcp(new FlowRelations::WRMRichardsEvaluator(Bplist));
-  S->SetFieldEvaluator(Bkey, wrm_B);
-
-  // Evaluator 2.  Constructed using the same underlying vanGenuchten evaluator as evaluator 1.
-  Teuchos::ParameterList Aplist = plist_.sublist("ice-water retention evaluator");
-  std::string Akey = wrm_plist.get<string>("1/A key", "wrm_permafrost_one_on_A");
-  Aplist.set("saturation key", Akey);
-  Aplist.set("calculate minor saturation", false);
-  Teuchos::RCP<FlowRelations::WRMIceWaterEvaluator> wrm_A =
-      Teuchos::rcp(new FlowRelations::WRMIceWaterEvaluator(Aplist, wrm_B->get_WRMs()));
-  S->SetFieldEvaluator(Akey, wrm_A);
-
-  // Evaluator 4, the rel perm evaluator, also with the same underlying evaluator.
+  // -- the rel perm evaluator, also with the same underlying WRM.
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm_B->get_WRMs()));
+      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
-
 
   // -- Liquid density and viscosity for the transmissivity.
   S->RequireField("molar_density_liquid")->SetMesh(S->GetMesh())->SetGhosted()

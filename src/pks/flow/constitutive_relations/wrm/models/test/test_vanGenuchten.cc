@@ -2,7 +2,6 @@
 #include "UnitTest++.h"
 
 #include "wrm_van_genuchten.hh"
-#include "math.h"
 
 TEST(vanGenuchten) {
   using namespace Amanzi::Flow::FlowRelations;
@@ -25,9 +24,9 @@ TEST(vanGenuchten) {
 
   // check k_relative for p = 0
   pc = p_atm;
-  double se = pow(1.0 + pow(alpha * pc, 1.0 / (1.0-m)),-m);
+  double se = std::pow(1.0 + std::pow(alpha * pc, 1.0 / (1.0-m)),-m);
   CHECK_CLOSE(vG.k_relative(pc),
-              sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m), m), 2.0), 1e-15);
+              sqrt(se) * std::pow(1.0 - std::pow(1.0 - std::pow(se, 1.0/m), m), 2.0), 1e-15);
 
   // check saturation for p = 2*p_atm
   pc = -p_atm;
@@ -36,7 +35,7 @@ TEST(vanGenuchten) {
   // check saturation for p = 0
   pc = p_atm;
   CHECK_CLOSE(vG.saturation(pc),
-              pow(1.0 + pow(alpha * pc, 1.0/ (1.0-m)), -m) * (1.0-sr) + sr, 1e-15);
+              std::pow(1.0 + std::pow(alpha * pc, 1.0/ (1.0-m)), -m) * (1.0-sr) + sr, 1e-15);
 
   // check derivative of saturation(p) at p=2*p_atm
   pc = -p_atm;
@@ -45,8 +44,8 @@ TEST(vanGenuchten) {
   // check derivative of saturation(p) at p=0
   pc = p_atm;
   CHECK_CLOSE(vG.d_saturation(pc),
-              (1.0-sr)*(-m)*pow(1.0+pow(alpha*pc,1.0/(1.0-m)),-m-1.0)
-              *alpha*pow(alpha*pc,m/(1.0-m))/(1.0-m),1e-15);
+              (1.0-sr)*(-m)*std::pow(1.0+std::pow(alpha*pc,1.0/(1.0-m)),-m-1.0)
+              *alpha*std::pow(alpha*pc,m/(1.0-m))/(1.0-m),1e-15);
 
   // check capillary pressure at p = 2*p_atm
   pc = -p_atm;

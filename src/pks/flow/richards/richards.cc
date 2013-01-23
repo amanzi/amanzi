@@ -25,7 +25,7 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
-#include "wrm_richards_evaluator.hh"
+#include "wrm_evaluator.hh"
 #include "rel_perm_evaluator.hh"
 #include "richards_water_content.hh"
 
@@ -194,8 +194,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("relative_permeability")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wrm_plist = plist_.sublist("water retention evaluator");
-  Teuchos::RCP<FlowRelations::WRMRichardsEvaluator> wrm =
-      Teuchos::rcp(new FlowRelations::WRMRichardsEvaluator(wrm_plist));
+  Teuchos::RCP<FlowRelations::WRMEvaluator> wrm =
+      Teuchos::rcp(new FlowRelations::WRMEvaluator(wrm_plist));
   S->SetFieldEvaluator("saturation_liquid", wrm);
   S->SetFieldEvaluator("saturation_gas", wrm);
 

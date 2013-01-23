@@ -27,7 +27,7 @@ VaporPressureWater::VaporPressureWater(Teuchos::ParameterList& plist) :
   kd_(2.433502) {}
 
 double VaporPressureWater::SaturatedVaporPressure(double T) {
-  if (T < 0. || T > 5000.0) {
+  if (T < 100. || T > 373.0) {
     std::cout << "Invalid temperature, T = " << T << std::endl;
     Errors::Message m("Cut time step");
     Exceptions::amanzi_throw(m);
@@ -36,7 +36,7 @@ double VaporPressureWater::SaturatedVaporPressure(double T) {
 };
 
 double VaporPressureWater::DSaturatedVaporPressureDT(double T) {
-  if (T < 0. || T > 5000.0) {
+  if (T < 100. || T > 373.0) {
     std::cout << "Invalid temperature, T = " << T << std::endl;
     Errors::Message m("Cut time step");
     Exceptions::amanzi_throw(m);

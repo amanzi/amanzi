@@ -8,14 +8,15 @@ Author: Ethan Coon
 Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 ------------------------------------------------------------------------- */
 
-#include "wrm_richards_evaluator.hh"
-#include "wrm_ice_water_evaluator.hh"
 #include "permafrost_model.hh"
+#include "wrm_permafrost_evaluator.hh"
+#include "pc_ice_evaluator.hh"
+#include "pc_liquid_evaluator.hh"
 #include "eos_evaluator.hh"
 #include "iem_evaluator.hh"
 #include "iem_water_vapor_evaluator.hh"
 #include "molar_fraction_gas_evaluator.hh"
-#include "mpc_frozen_prec_coupled_flow_energy.hh"
+#include "mpc_frozen_coupled_flow_energy.hh"
 
 namespace Amanzi {
 
@@ -299,32 +300,25 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
     // Curve looks like __|    with discontinuity at 0.
     if (T_guess < T_prev) { // getting colder, so the upper cusp is the problem
       if (T_guess > 273.15) {
-        std::cout << "No new approach for chilling " << c << ", above freezing." << std::endl;
         ewc_predictor = false;  // both above freezing, in the upper branch
       } else if (T_prev2 < 273.15 - cusp_size_T_freezing_) {
-        std::cout << "No new approach for chilling " << c << ", below freezing." << std::endl;
         ewc_predictor = false;  // both well below freezing, in lower branch
       } else if (T_prev2 - T_guess < cusp_size_T_freezing_) {
-        std::cout << "No new approach for chilling " << c << ", on freezing." << std::endl;
         ewc_predictor = false;  // likely past the upper cusp
       } else {
         ewc_predictor = true;
       }
     } else if (T_prev < T_guess) { // getting warmer, so the lower cusp is the problem
       if (T_guess < 273.15 - cusp_size_T_thawing_) {
-        std::cout << "No new approach for warming " << c << ", below freezing." << std::endl;
         ewc_predictor = false;  // both below freezing, in the lower branch
       } else if (T_prev2 > 273.15) {
-        std::cout << "No new approach for warming " << c << ", above freezing." << std::endl;
         ewc_predictor = false;  // both well above freezing, in upper branch
       } else if (T_guess - T_prev2 < cusp_size_T_thawing_) {
-        std::cout << "No new approach for warming " << c << ", on thawing." << std::endl;
         ewc_predictor = false;  // likely past the lowercusp
       } else {
         ewc_predictor = true;
       }
     } else {
-      std::cout << "No new approach for " << c << ", constant T." << std::endl;
       ewc_predictor = false;
     }
 
@@ -444,95 +438,6 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_heuristic_(double h, Teuchos::
       }
     }
   }
-
-
-  // update pressure to be consistent with the new temperature and fixed mass
-  // Stuff temperature into state
-  //  Teuchos::RCP<CompositeVector> temp_from_state = S_next_->GetFieldData("temperature", energy_pk->name());
-  //  S_next_->SetData("temperature",energy_pk->name(),temp_guess);
-  energy_pk->changed_solution();
-
-  // update water content, which will get all the needed vals updated at the new temp.
-  S_next_->GetFieldEvaluator("water_content")
-      ->HasFieldChanged(S_next_.ptr(), "richards_pk");
-
-  // get the needed vals
-  Teuchos::RCP<const CompositeVector> wc0 = S_inter_->GetFieldData("water_content");
-  Teuchos::RCP<const CompositeVector> cv = S_inter_->GetFieldData("cell_volume");
-  Teuchos::RCP<const CompositeVector> phi = S_next_->GetFieldData("porosity");
-  Teuchos::RCP<const CompositeVector> n_g = S_next_->GetFieldData("molar_density_gas");
-  Teuchos::RCP<const CompositeVector> omega_g = S_next_->GetFieldData("mol_frac_gas");
-  Teuchos::RCP<const CompositeVector> n_l = S_next_->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const CompositeVector> n_i = S_next_->GetFieldData("molar_density_ice");
-  Teuchos::RCP<const CompositeVector> one_on_A = S_next_->GetFieldData("wrm_permafrost_one_on_A");
-  Teuchos::RCP<const double> p_atm = S_next_->GetScalarData("atmospheric_pressure");
-
-  // get the WRMs
-  Teuchos::RCP<FieldEvaluator> wrm_B_eval_base = S_next_->GetFieldEvaluator("wrm_permafrost_one_on_B");
-  Teuchos::RCP<Flow::FlowRelations::WRMRichardsEvaluator> wrm_B_eval =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMRichardsEvaluator>(wrm_B_eval_base);
-  Teuchos::RCP<Flow::FlowRelations::WRMRegionPairList> wrms = wrm_B_eval->get_WRMs();
-
-  // get the result pressure
-  Teuchos::RCP<CompositeVector> pres_guess = u->SubVector("flow")->data();
-  for (Flow::FlowRelations::WRMRegionPairList::iterator region=wrms->begin();
-       region!=wrms->end(); ++region) {
-    std::string name = region->first;
-    int ncells = pres_guess->mesh()->get_set_size(name, AmanziMesh::CELL, AmanziMesh::OWNED);
-    AmanziMesh::Entity_ID_List cells(ncells);
-    pres_guess->mesh()->get_set_entities(name, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
-
-    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      if (changed[*c]) {
-        double A_minus_one = (1.0/(*one_on_A)("cell",*c) - 1.0);
-
-        double wc = (*wc0)("cell",*c) / (*cv)("cell",*c);
-        double sstar = (wc - (*n_g)("cell",*c)*(*omega_g)("cell",*c)*(*phi)("cell",*c)) /
-            ((*phi)("cell",*c) * ((*n_l)("cell",*c) - (*n_g)("cell",*c)*(*omega_g)("cell",*c)
-                    + (*n_i)("cell",*c)*A_minus_one) - A_minus_one*wc);
-
-        if (sstar > 0.) {
-          double pc = region->second->capillaryPressure(sstar);
-
-          //          if (includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            std::cout << "   p_prev = " << (*pres)("cell",*c)
-                  << "   p_guess = " << (*pres_guess)("cell",*c)
-                  << "   p_corrected = " << *p_atm - pc << std::endl;
-            std::cout << "  (based upon T = " << (*temp)("cell",*c) << ")" << std::endl;
-            //          }
-
-          (*pres_guess)("cell",*c) = *p_atm - pc;
-
-        }
-      }
-    }
-  }
-
-
-  // unclear... could do an AllReduce() on update_faces and not communicate if
-  // not necessary, but AllReduces() suck... maybe more than extra Scatters?
-  temp_guess->ScatterMasterToGhosted("cell");
-  pres_guess->ScatterMasterToGhosted("cell");
-  AmanziMesh::Entity_ID_List cells;
-
-  int f_owned = temp_guess->size("face");
-  for (int f=0; f!=f_owned; ++f) {
-    cells.clear();
-    temp_guess->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-    if (cells.size() == 2) {
-      (*temp_guess)("face",f) = ((*temp_guess)("cell",cells[0]) +
-              (*temp_guess)("cell",cells[1])) / 2.0;
-      (*pres_guess)("face",f) = ((*pres_guess)("cell",cells[0]) +
-              (*pres_guess)("cell",cells[1])) / 2.0;
-    } else {
-      (*temp_guess)("face",f) = (*temp_guess)("cell",cells[0]);
-      (*pres_guess)("face",f) = (*pres_guess)("cell",cells[0]);
-    }
-  }
-
-  // clean up -- undo the change of vectors in state
-  //  S_next_->SetData("temperature",energy_pk->name(),temp_from_state);
-
   return true;
 }
 
@@ -630,12 +535,12 @@ void MPCFrozenCoupledFlowEnergy::setup(const Teuchos::Ptr<State>& S) {
 
 void MPCFrozenCoupledFlowEnergy::SetUpModels_(const Teuchos::Ptr<State>& S) {
   // get the WRM models and their regions
-  Teuchos::RCP<FieldEvaluator> me =
-      S->GetFieldEvaluator("wrm_permafrost_one_on_B");
-  Teuchos::RCP<Flow::FlowRelations::WRMRichardsEvaluator> one_on_B_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMRichardsEvaluator>(me);
-  ASSERT(one_on_B_me != Teuchos::null);
-  Teuchos::RCP<Flow::FlowRelations::WRMRegionPairList> wrms = one_on_B_me->get_WRMs();
+  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator("saturation_gas");
+  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostEvaluator> wrm_me =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMPermafrostEvaluator>(me);
+  ASSERT(wrm_me != Teuchos::null);
+  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModelRegionPairList> wrms =
+      wrm_me->get_WRMPermafrostModels();
 
   // this needs fixed eventually, but for now assuming one WRM, and therefore
   // one model --etc
@@ -677,13 +582,21 @@ void MPCFrozenCoupledFlowEnergy::SetUpModels_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Relations::VaporPressureRelation> vpr = mol_frac_me->get_VaporPressureRelation();
   model_->set_vapor_pressure_relation(vpr);
 
-  // -- pc for ice/water
-  me = S->GetFieldEvaluator("wrm_permafrost_one_on_A");
-  Teuchos::RCP<Flow::FlowRelations::WRMIceWaterEvaluator> one_on_A_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMIceWaterEvaluator>(me);
-  ASSERT(one_on_A_me != Teuchos::null);
-  Teuchos::RCP<Flow::FlowRelations::PCIceWater> pc_iw = one_on_A_me->get_PCIceWater();
-  model_->set_pc_ice_water(pc_iw);
+  // -- capillary pressure for ice/water
+  me = S->GetFieldEvaluator("capillary_pressure_liq_ice");
+  Teuchos::RCP<Flow::FlowRelations::PCIceEvaluator> pc_ice_me =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCIceEvaluator>(me);
+  ASSERT(pc_ice_me != Teuchos::null);
+  Teuchos::RCP<Flow::FlowRelations::PCIceWater> pc_ice = pc_ice_me->get_PCIceWater();
+  model_->set_pc_ice_water(pc_ice);
+
+  // -- capillary pressure for liq/gas
+  me = S->GetFieldEvaluator("capillary_pressure_gas_liq");
+  Teuchos::RCP<Flow::FlowRelations::PCLiquidEvaluator> pc_liq_me =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCLiquidEvaluator>(me);
+  ASSERT(pc_liq_me != Teuchos::null);
+  Teuchos::RCP<Flow::FlowRelations::PCLiqAtm> pc_liq = pc_liq_me->get_PCLiqAtm();
+  model_->set_pc_liq_gas(pc_liq);
 
   // -- iem for liquid
   me = S->GetFieldEvaluator("internal_energy_liquid");
@@ -1051,32 +964,25 @@ void MPCFrozenCoupledFlowEnergy::precon_smart_ewc_(Teuchos::RCP<const TreeVector
     // Curve looks like __|    with discontinuity at 0.
     if (T_picard < T_prev) { // getting colder, so the upper cusp is the problem
       if (T_picard > 273.15) {
-        std::cout << "No new approach for chilling " << c << ", above freezing." << std::endl;
         ewc_precon = false;  // both above freezing, in the upper branch
       } else if (T_prev < 273.15 - cusp_size_T_freezing_) {
-        std::cout << "No new approach for chilling " << c << ", below freezing." << std::endl;
         ewc_precon = false;  // both well below freezing, in lower branch
       } else if (T_prev - T_picard < cusp_size_T_freezing_) {
-        std::cout << "No new approach for chilling " << c << ", on freezing." << std::endl;
         ewc_precon = false;  // likely past the upper cusp
       } else {
         ewc_precon = true;
       }
     } else if (T_prev < T_picard) { // getting warmer, so the lower cusp is the problem
       if (T_picard < 273.15 - cusp_size_T_thawing_) {
-        std::cout << "No new approach for warming " << c << ", below freezing." << std::endl;
         ewc_precon = false;  // both below freezing, in the lower branch
       } else if (T_prev > 273.15) {
-        std::cout << "No new approach for warming " << c << ", above freezing." << std::endl;
         ewc_precon = false;  // both well above freezing, in upper branch
       } else if (T_picard - T_prev < cusp_size_T_thawing_) {
-        std::cout << "No new approach for warming " << c << ", on thawing." << std::endl;
         ewc_precon = false;  // likely past the lowercusp
       } else {
         ewc_precon = true;
       }
     } else {
-      std::cout << "No new approach for " << c << ", constant T." << std::endl;
       ewc_precon = false;
     }
 

@@ -28,18 +28,18 @@ WRMVanGenuchten::WRMVanGenuchten(Teuchos::ParameterList& plist) :
  ****************************************************************** */
 double WRMVanGenuchten::k_relative(double pc) {
   if (pc > pc_transition_) {
-    double se(pow(1.0 + pow(alpha_*pc,n_),-m_));
-    return sqrt(se) * pow( 1.0 - pow( 1.0 - pow(se,1.0/m_),m_), 2);
+    double se(std::pow(1.0 + std::pow(alpha_*pc,n_),-m_));
+    return sqrt(se) * std::pow( 1.0 - std::pow( 1.0 - std::pow(se,1.0/m_),m_), 2);
   } else if (pc <= 0.0) {
     return 1.0;
   } else {
-    double se_pct  (pow(1.0 + pow(alpha_*pc_transition_,n_),-m_));
-    double f_pct   (sqrt(se_pct) * pow( 1.0 - pow( 1.0 - pow(se_pct,1.0/m_),m_), 2));
+    double se_pct  (std::pow(1.0 + std::pow(alpha_*pc_transition_,n_),-m_));
+    double f_pct   (sqrt(se_pct) * std::pow( 1.0 - std::pow( 1.0 - std::pow(se_pct,1.0/m_),m_), 2));
 
     double fab     ((f_pct - 1.0)/pc_transition_);
 
-    double se_pct1 (pow(1.0 + pow(alpha_*(pc_transition_+1.0),n_),-m_));
-    double f_pct1  (sqrt(se_pct1) * pow( 1.0 - pow( 1.0 - pow(se_pct1,1.0/m_),m_), 2));
+    double se_pct1 (std::pow(1.0 + std::pow(alpha_*(pc_transition_+1.0),n_),-m_));
+    double f_pct1  (sqrt(se_pct1) * std::pow( 1.0 - std::pow( 1.0 - std::pow(se_pct1,1.0/m_),m_), 2));
 
 
     return 1.0 + pc*pc*fab/pc_transition_
@@ -53,7 +53,7 @@ double WRMVanGenuchten::k_relative(double pc) {
  ****************************************************************** */
 double WRMVanGenuchten::saturation(double pc) {
   if (pc > 0.0) {
-    return pow(1.0 + pow(alpha_*pc, n_), -m_) * (1.0 - sr_) + sr_;
+    return std::pow(1.0 + std::pow(alpha_*pc, n_), -m_) * (1.0 - sr_) + sr_;
   } else {
     return 1.0;
   }
@@ -65,7 +65,7 @@ double WRMVanGenuchten::saturation(double pc) {
  ****************************************************************** */
 double WRMVanGenuchten::d_saturation(double pc) {
   if (pc > 0.0) {
-    return -m_*n_ * pow(1.0 + pow(alpha_*pc, n_), -m_-1.0) * pow(alpha_*pc, n_-1) * alpha_ * (1.0 - sr_);
+    return -m_*n_ * std::pow(1.0 + std::pow(alpha_*pc, n_), -m_-1.0) * std::pow(alpha_*pc, n_-1) * alpha_ * (1.0 - sr_);
   } else {
     return 0.0;
   }
@@ -78,9 +78,9 @@ double WRMVanGenuchten::capillaryPressure(double s) {
   double se = (s - sr_) / (1.0 - sr_);
   se = std::min<double>(se, 1.0);
   if (se < 1.e-8) {
-    return pow(se, -1.0/(m_*n_)) / alpha_;
+    return std::pow(se, -1.0/(m_*n_)) / alpha_;
   } else {
-    return (pow(pow(se, -1.0/m_) - 1.0, 1/n_)) / alpha_;
+    return (std::pow(std::pow(se, -1.0/m_) - 1.0, 1/n_)) / alpha_;
   }
 }
 
@@ -92,10 +92,10 @@ double WRMVanGenuchten::d_capillaryPressure(double s) {
   double se = (s - sr_) / (1.0 - sr_);
   se = std::min<double>(se, 1.0);
   if (se < 1.e-8) {
-    return -1.0/(m_*n_*alpha_) * pow(se, -1.0/(m_*n_) - 1.)  / (1.0 - sr_);
+    return -1.0/(m_*n_*alpha_) * std::pow(se, -1.0/(m_*n_) - 1.)  / (1.0 - sr_);
   } else {
-    return -1.0/(m_*n_*alpha_) * pow( pow(se, -1.0/m_) - 1.0, 1/n_-1.0)
-        * pow(se, -1.0/m_ - 1.0) / (1.0 - sr_);
+    return -1.0/(m_*n_*alpha_) * std::pow( std::pow(se, -1.0/m_) - 1.0, 1/n_-1.0)
+        * std::pow(se, -1.0/m_ - 1.0) / (1.0 - sr_);
   }
 }
 

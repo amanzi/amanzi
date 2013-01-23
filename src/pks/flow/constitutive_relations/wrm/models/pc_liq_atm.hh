@@ -18,7 +18,7 @@ namespace FlowRelations {
 class PCLiqAtm {
 
 public:
-  explicit PCLiqAtm(Teuchos::ParameterList& plist);
+  explicit PCLiqAtm(Teuchos::ParameterList& plist) {}
 
   // required methods from the base class
   virtual double CapillaryPressure(double p, double p_atm) { return p_atm - p; }
