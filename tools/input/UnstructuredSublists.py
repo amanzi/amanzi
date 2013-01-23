@@ -142,8 +142,6 @@ def CheckVersion(ncp_pre_lines):
 
 def WritePreNCP(xml_output,ncp_pre_lines,version_string):
 
-    #FixVersion=re.compile('amanzi input format version',re.IGNORECASE)
-
     for line in ncp_pre_lines:
         
         AmanziVersionName="Amanzi Input Format Version"
@@ -151,8 +149,11 @@ def WritePreNCP(xml_output,ncp_pre_lines,version_string):
             # case insensitive replacement
             line=re.sub("(?i)"+"amanzi input format version",AmanziVersionName,line,re.IGNORECASE)
             xml_output.write("%s\n" % ( line.replace(version_string,'1.1.0' ) ) )
+        elif ( "Flow Model" in line and "Steady State Saturated" in line ):
+            xml_output.write("%s\n" %( line.replace("Steady State Saturated","Single Phase") ) )
         else:
             xml_output.write("%s\n" % ( line ) )
+
 
 
 def WritePostNCP(xml_output,ncp_pre_lines):
