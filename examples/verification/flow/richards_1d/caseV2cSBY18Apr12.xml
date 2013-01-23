@@ -11,7 +11,6 @@
       <ParameterList name="Time Integration Mode">
         <ParameterList name="Steady">
           <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="Switch" type="double" value="3.16E11"/>
           <Parameter name="End" type="double" value="3.16E11"/>
 	  <!-- want steady state so run to 10,000 years = 3.16E11 seconds -->
           <Parameter name="Initial Time Step" type="double" value="2.0"/>
