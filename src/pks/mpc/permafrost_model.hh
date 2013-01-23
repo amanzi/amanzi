@@ -18,8 +18,8 @@
 
 namespace Amanzi {
 
-namespace Flow { namespace FlowRelations { class WRM; } }
-namespace Flow { namespace FlowRelations { class PCIceWater; } }
+namespace Flow { namespace FlowRelations { class WRMPermafrostModel; } }
+namespace Flow { namespace FlowRelations { class PCIceWater; class PCLiqAtm; } }
 namespace Energy { namespace EnergyRelations { class IEM; class IEMWaterVapor;} }
 namespace Relations { class EOS; class VaporPressureRelation; }
 
@@ -31,12 +31,13 @@ class PermafrostModel {
       p_atm_(-1.e99),
       rho_rock_(-1.e99) {}
 
-  void set_WRM(const Teuchos::RCP<Flow::FlowRelations::WRM>& wrm) { wrm_ = wrm; }
+  void set_WRM(const Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModel>& wrm) { wrm_ = wrm; }
   void set_liquid_EOS(const Teuchos::RCP<Relations::EOS>& eos) { liquid_eos_ = eos; }
   void set_gas_EOS(const Teuchos::RCP<Relations::EOS>& eos) { gas_eos_ = eos; }
   void set_ice_EOS(const Teuchos::RCP<Relations::EOS>& eos) { ice_eos_ = eos; }
   void set_vapor_pressure_relation(const Teuchos::RCP<Relations::VaporPressureRelation>& vpr) { vpr_ = vpr; }
   void set_pc_ice_water(const Teuchos::RCP<Flow::FlowRelations::PCIceWater>& pc_i) { pc_i_ = pc_i; }
+  void set_pc_liq_gas(const Teuchos::RCP<Flow::FlowRelations::PCLiqAtm>& pc_l) { pc_l_ = pc_l; }
   void set_p_atm(double p_atm) { p_atm_ = p_atm; }
   void set_liquid_IEM(const Teuchos::RCP<Energy::EnergyRelations::IEM>& iem) { liquid_iem_ = iem; }
   void set_gas_IEM(const Teuchos::RCP<Energy::EnergyRelations::IEMWaterVapor>& iem) { gas_iem_ = iem; }
@@ -60,11 +61,12 @@ class PermafrostModel {
   virtual int EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p, double poro,
           AmanziGeometry::Point& result, WhetStone::Tensor& jac);
 
-  Teuchos::RCP<Flow::FlowRelations::WRM> wrm_;
+  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModel> wrm_;
   Teuchos::RCP<Relations::EOS> liquid_eos_;
   Teuchos::RCP<Relations::EOS> gas_eos_;
   Teuchos::RCP<Relations::EOS> ice_eos_;
   Teuchos::RCP<Flow::FlowRelations::PCIceWater> pc_i_;
+  Teuchos::RCP<Flow::FlowRelations::PCLiqAtm> pc_l_;
   Teuchos::RCP<Relations::VaporPressureRelation> vpr_;
   Teuchos::RCP<Energy::EnergyRelations::IEM> liquid_iem_;
   Teuchos::RCP<Energy::EnergyRelations::IEMWaterVapor> gas_iem_;

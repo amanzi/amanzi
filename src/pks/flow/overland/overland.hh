@@ -16,7 +16,6 @@ Authors: Gianmarco Manzini
 #include "boundary_function.hh"
 #include "composite_vector_function.hh"
 #include "bdf_time_integrator.hh"
-#include "wrm.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"

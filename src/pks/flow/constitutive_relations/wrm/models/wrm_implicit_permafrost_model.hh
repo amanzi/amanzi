@@ -41,6 +41,11 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
 
  private:
 
+  bool saturations_if_saturated_(double pc_liq, double pc_ice, double (&sats)[3]);
+  bool dsaturations_dpc_ice_if_saturated_(double pc_liq, double pc_ice,
+          double (&dsats)[3]);
+  bool dsaturations_dpc_liq_if_saturated_(double pc_liq, double pc_ice,
+          double (&dsats)[3]);
   bool saturations_if_above_freezing_(double pc_liq, double pc_ice, double (&sats)[3]);
   bool dsaturations_dpc_ice_if_above_freezing_(double pc_liq, double pc_ice,
           double (&dsats)[3]);

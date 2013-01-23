@@ -35,6 +35,8 @@ class PCIceEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+  Teuchos::RCP<PCIceWater> get_PCIceWater() { return model_; }
+
  protected:
   // the actual model
   Teuchos::RCP<PCIceWater> model_;

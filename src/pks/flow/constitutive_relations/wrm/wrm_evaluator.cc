@@ -69,7 +69,7 @@ void WRMEvaluator::InitializeFromPlist_() {
   }
 
   // my dependencies are capillary pressure.
-  cap_pres_key_ = plist_.get<string>("capillary pressure key", "capillary_pressure");
+  cap_pres_key_ = plist_.get<string>("capillary pressure key", "capillary_pressure_gas_liq");
   dependencies_.insert(cap_pres_key_);
 
   // set up the verbose object

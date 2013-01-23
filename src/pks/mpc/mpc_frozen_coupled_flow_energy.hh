@@ -12,7 +12,7 @@ block-diagonal coupler.
 #ifndef MPC_FROZEN_PREC_COUPLED_FLOW_ENERGY_HH_
 #define MPC_FROZEN_PREC_COUPLED_FLOW_ENERGY_HH_
 
-#include "mpc_prec_coupled_flow_energy.hh"
+#include "mpc_coupled_flow_energy.hh"
 
 namespace Amanzi {
 

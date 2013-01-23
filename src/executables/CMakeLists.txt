@@ -36,6 +36,7 @@ WHOLE_ARCHIVE(mpc)
 
 WHOLE_ARCHIVE(relations_eos)
 WHOLE_ARCHIVE(flow_relations_wrm)
+WHOLE_ARCHIVE(flow_relations_wrm_models)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(amanzi_mesh_functions)
@@ -60,6 +61,7 @@ target_link_libraries(ats
                       ${energy_relations_internal_energy}
                       flow_bc_factory
                       ${flow_relations_wrm}
+                      ${flow_relations_wrm_models}
                       ${relations_eos}
                       advection
                       divgrad

@@ -11,9 +11,10 @@
 */
 
 #include "eos.hh"
-#include "wrm.hh"
+#include "wrm_permafrost_model.hh"
 #include "vapor_pressure_relation.hh"
 #include "pc_ice_water.hh"
+#include "pc_liq_atm.hh"
 #include "iem.hh"
 #include "iem_water_vapor.hh"
 
@@ -27,6 +28,7 @@ bool PermafrostModel::IsSetUp() {
   if (gas_eos_ == Teuchos::null) return false;
   if (ice_eos_ == Teuchos::null) return false;
   if (pc_i_ == Teuchos::null) return false;
+  if (pc_l_ == Teuchos::null) return false;
   if (vpr_ == Teuchos::null) return false;
   if (liquid_iem_ == Teuchos::null) return false;
   if (gas_iem_ == Teuchos::null) return false;
@@ -56,12 +58,13 @@ int PermafrostModel::EvaluateEnergyAndWaterContent(double T, double p, double po
     pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
   }
 
-  double one_on_A = wrm_->saturation(pc_i);
-  double one_on_B = wrm_->saturation(p_atm_ - p);
+  double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
 
-  double s_l = 1.0 / (1.0/one_on_A + 1.0/one_on_B - 1.0);
-  double s_i = s_l * (1.0/one_on_A - 1.0);
-  double s_g = s_l * (1.0/one_on_B - 1.0);
+  double sats[3];
+  wrm_->saturations(pc_l, pc_i, sats);
+  double s_g = sats[0];
+  double s_l = sats[1];
+  double s_i = sats[2];
 
   double u_l = liquid_iem_->InternalEnergy(T);
   double u_g = gas_iem_->InternalEnergy(T, omega);
@@ -80,62 +83,11 @@ int PermafrostModel::EvaluateEnergyAndWaterContent(double T, double p, double po
 }
 
 
-// int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian(double T, double p, double poro,
-//         AmanziGeometry::Point& result, WhetStone::Tensor& jac) {
-//   double eff_p = std::max(p_atm_, p);
-//   double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-//   double rho_i = ice_eos_->MolarDensity(T,eff_p);
-//   double rho_g = gas_eos_->MolarDensity(T,eff_p);
-
-//   double drho_l_dp, drho_i_dp, drho_g_dp;
-//   if (p > p_atm_) {
-//     drho_l_dp = liquid_eos_->DMolarDensityDp(T,eff_p);
-//     drho_i_dp = ice_eos_->DMolarDensityDp(T,eff_p);
-//     drho_g_dp = gas_eos_->DMolarDensityDp(T,eff_p);
-//   } else {
-//     drho_l_dp = 0.;
-//     drho_i_dp = 0.;
-//     drho_g_dp = 0.;
-//   }
-//   double drho_l_dT = liquid_eos_->DMolarDensityDT(T,eff_p);
-//   double drho_i_dT = ice_eos_->DMolarDensityDT(T,eff_p);
-//   double drho_g_dT = gas_eos_->DMolarDensityDT(T,eff_p);
-
-//   double omega = vpr_->SaturatedVaporPressure(T)/p_atm_;
-//   double domega_dT = vpr_->DSaturatedVaporPressureDT(T)/p_atm_;
-
-//   double pc_i = pc_i_->CapillaryPressure(T, rho_l);
-//   double dpc_i_dT = pc_i_->DCapillaryPressureDT(T, rho_l) +
-//       pc_i_->DCapillaryPressureDrho(T, rho_l)* drho_l_dT;
-
-//   double one_on_A = wrm_->saturation(pc_i);
-//   double one_on_B = wrm_->saturation(p_atm_ - p);
-
-//   double s_l = 1.0 / (1.0/one_on_A + 1.0/one_on_B - 1.0);
-//   double s_i = s_l * (1.0/one_on_A - 1.0);
-//   double s_g = s_l * (1.0/one_on_B - 1.0);
-
-//   double u_l = liquid_iem_->InternalEnergy(T);
-//   double u_g = gas_iem_->InternalEnergy(T, omega);
-//   double u_i = ice_iem_->InternalEnergy(T);
-
-//   double u_rock = rock_iem_->InternalEnergy(T);
-
-//   // water content
-//   result[1] = poro * (rho_l * s_l + rho_i * s_i + rho_g * s_g * omega);
-
-//   // energy
-//   result[0] = poro * (u_l * rho_l * s_l + u_i * rho_i * s_i + u_g * rho_g * s_g)
-//       + (1.0 - poro) * (rho_rock_ * u_rock);
-
-//   return 0;
-// }
-
-
 int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian(double T, double p,
         double poro, AmanziGeometry::Point& result, WhetStone::Tensor& jac) {
   return EvaluateEnergyAndWaterContentAndJacobian_FD_(T, p, poro, result, jac);
 }
+
 
 int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p,
         double poro, AmanziGeometry::Point& result, WhetStone::Tensor& jac) {

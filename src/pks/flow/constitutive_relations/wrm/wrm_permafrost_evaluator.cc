@@ -29,7 +29,7 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
   ASSERT(plist_.isSublist("WRM parameters"));
   WRMFactory wrm_fac;
   Teuchos::ParameterList region_list = plist_.sublist("WRM parameters");
-  Teuchos::RCP<WRMRegionPairList> wrms = Teuchos::rcp(new WRMRegionPairList());
+  wrms_ = Teuchos::rcp(new WRMRegionPairList());
 
   for (Teuchos::ParameterList::ConstIterator lcv=region_list.begin();
        lcv!=region_list.end(); ++lcv) {
@@ -37,7 +37,7 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
     if (region_list.isSublist(name)) {
       Teuchos::ParameterList sublist = region_list.sublist(name);
       std::string region = sublist.get<std::string>("region");
-      wrms->push_back(std::make_pair(region, wrm_fac.createWRM(sublist)));
+      wrms_->push_back(std::make_pair(region, wrm_fac.createWRM(sublist)));
     } else {
       ASSERT(0);
     }
@@ -48,8 +48,8 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
   permafrost_models_ = Teuchos::rcp(new WRMPermafrostModelRegionPairList());
   Teuchos::ParameterList pmodel_list = plist_.sublist("permafrost model parameters");
 
-  for (WRMRegionPairList::const_iterator regionwrm=wrms->begin();
-       regionwrm!=wrms->end(); ++regionwrm) {
+  for (WRMRegionPairList::const_iterator regionwrm=wrms_->begin();
+       regionwrm!=wrms_->end(); ++regionwrm) {
     permafrost_models_->push_back(std::make_pair(regionwrm->first,
             fac.createWRMPermafrostModel(pmodel_list, regionwrm->second)));
   }
@@ -63,15 +63,16 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
  -------------------------------------------------------------------------------- */
 WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
         const Teuchos::RCP<WRMRegionPairList>& wrms) :
-    SecondaryVariablesFieldEvaluator(plist) {
+    SecondaryVariablesFieldEvaluator(plist),
+    wrms_(wrms) {
 
   // for each WRM create a permfrost_model
   WRMPermafrostFactory fac;
   permafrost_models_ = Teuchos::rcp(new WRMPermafrostModelRegionPairList());
   Teuchos::ParameterList pmodel_list = plist_.sublist("permafrost model parameters");
 
-  for (WRMRegionPairList::const_iterator regionwrm=wrms->begin();
-       regionwrm!=wrms->end(); ++regionwrm) {
+  for (WRMRegionPairList::const_iterator regionwrm=wrms_->begin();
+       regionwrm!=wrms_->end(); ++regionwrm) {
     permafrost_models_->push_back(std::make_pair(regionwrm->first,
             fac.createWRMPermafrostModel(pmodel_list, regionwrm->second)));
   }
@@ -124,13 +125,13 @@ void WRMPermafrostEvaluator::InitializeFromPlist_() {
   setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // liquid-gas capillary pressure
-  pc_liq_key_ = plist_.get<string>("liquid-gas capillary pressure key",
-          "capillary_pressure_liq_gas");
+  pc_liq_key_ = plist_.get<string>("gas-liquid capillary pressure key",
+          "capillary_pressure_gas_liq");
   dependencies_.insert(pc_liq_key_);
 
   // liquid-gas capillary pressure
-  pc_ice_key_ = plist_.get<string>("ice-liquid capillary pressure key",
-          "capillary_pressure_ice_liq");
+  pc_ice_key_ = plist_.get<string>("liquid-ice capillary pressure key",
+          "capillary_pressure_liq_ice");
   dependencies_.insert(pc_ice_key_);
 
   // set up the verbose object

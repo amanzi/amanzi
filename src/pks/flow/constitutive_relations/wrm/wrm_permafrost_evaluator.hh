@@ -31,6 +31,9 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
+  Teuchos::RCP<WRMRegionPairList> get_WRMs() { return wrms_; }
+  Teuchos::RCP<WRMPermafrostModelRegionPairList> get_WRMPermafrostModels() { return permafrost_models_; }
+
  protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -46,6 +49,7 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
   Key s_l_key_;
 
   Teuchos::RCP<WRMPermafrostModelRegionPairList> permafrost_models_;
+  Teuchos::RCP<WRMRegionPairList> wrms_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,WRMPermafrostEvaluator> factory_;

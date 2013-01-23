@@ -4,7 +4,7 @@
 #include "wrm_van_genuchten.hh"
 #include "wrm_old_permafrost_model.hh"
 #include "pc_ice_water.hh"
-#include "math.h"
+
 
 TEST(permafrost) {
   using namespace Amanzi::Flow::FlowRelations;

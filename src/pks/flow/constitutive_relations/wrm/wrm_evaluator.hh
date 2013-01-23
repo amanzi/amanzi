@@ -29,10 +29,10 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
+  Teuchos::RCP<WRMRegionPairList> get_WRMs() { return wrms_; }
 
  protected:
   void InitializeFromPlist_();
-  Teuchos::RCP<WRMRegionPairList> get_WRMs() { return wrms_; }
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
