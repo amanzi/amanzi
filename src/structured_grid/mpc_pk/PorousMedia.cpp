@@ -293,7 +293,7 @@ PorousMedia::PorousMedia ()
   t_sat_new_cached = -1;
 
   if (parent && !(matIDfiller.Initialized()) ) {
-    SetUpMaterialServer();
+    //SetUpMaterialServer();
     RegisterPhysicsBasedEvents();
   }
 }
@@ -469,7 +469,7 @@ PorousMedia::PorousMedia (Amr&            papa,
   }
 
   if (parent && !(matIDfiller.Initialized()) ) {
-    SetUpMaterialServer();
+    //SetUpMaterialServer();
   }
 
   //

@@ -1807,8 +1807,6 @@ PorousMedia::read_rock(int do_chem)
         
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
           std::cout << "   Finished building kmap on finest level." << std::endl;
-
-        VisMF::Write(*kappadata,kfileout+"/kp");
       }
     }
 
