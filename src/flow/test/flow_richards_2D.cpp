@@ -87,7 +87,7 @@ TEST(FLOW_2D_RICHARDS) {
   RPK->ResetErrorControl(AmanziFlow::FLOW_TI_ERROR_CONTROL_PRESSURE);
 
   // solve the problem
-  RPK->AdvanceToSteadyState();
+  RPK->AdvanceToSteadyState(0.0, 0.1);
   RPK->CommitState(FS);
 
   if (MyPID == 0) {

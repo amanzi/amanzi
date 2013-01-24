@@ -48,7 +48,7 @@ class Flow_PK : public BDF2::fnBase {
 
   virtual double CalculateFlowDt() = 0;
   virtual int Advance(double dT) = 0; 
-  virtual int AdvanceToSteadyState() = 0;
+  virtual int AdvanceToSteadyState(double T0, double dT0) = 0;
   virtual void InitializeAuxiliaryData() = 0;
   virtual void InitializeSteadySaturated() = 0;
 

@@ -73,8 +73,8 @@
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
         <ParameterList name="Picard">
-          <Parameter name="convergence tolerance" type="double" value="1e-7"/>
-          <Parameter name="maximum number of iterations" type="int" value="4000"/>
+          <Parameter name="convergence tolerance" type="double" value="1e-8"/>
+          <Parameter name="maximum number of iterations" type="int" value="50"/>
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1.0e+10"/>
           <Parameter name="initial time step" type="double" value="0.1"/>

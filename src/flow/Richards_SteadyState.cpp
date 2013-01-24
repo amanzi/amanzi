@@ -21,10 +21,11 @@ namespace AmanziFlow {
 /* ******************************************************************
 *  Wrapper for advance to steady-state routines.                                                    
 ****************************************************************** */
-int Richards_PK::AdvanceToSteadyState()
+int Richards_PK::AdvanceToSteadyState(double T0, double dT0)
 {
-  T_physics = ti_specs_sss_.T0;
-  dT = ti_specs_sss_.dT0;
+  // override internal parameters
+  T_physics = ti_specs_sss_.T0 = T0;
+  dT = ti_specs_sss_.dT0 = dT0;
 
   int ierr = 0;
   int ti_method = ti_specs_sss_.ti_method;

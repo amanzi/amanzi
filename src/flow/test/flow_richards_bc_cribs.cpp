@@ -67,12 +67,12 @@ TEST(FLOW_3D_RICHARDS) {
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
-  RPK->InitSteadyState(0.0, 1e-8);
+  RPK->InitSteadyState(0.0, 1e-7);  // dT0 is not used
   RPK->PrintStatistics();
 
   // solve the problem
   S.set_time(0.0);
-  RPK->AdvanceToSteadyState();
+  RPK->AdvanceToSteadyState(0.0, 1e-7);
   RPK->CommitState(FS);
 
   // derive dependent variable

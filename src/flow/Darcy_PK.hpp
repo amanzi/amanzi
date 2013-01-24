@@ -46,7 +46,7 @@ class Darcy_PK : public Flow_PK {
 
   double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
-  int AdvanceToSteadyState();
+  int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
 

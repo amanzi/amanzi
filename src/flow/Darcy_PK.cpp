@@ -370,10 +370,9 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 /* ******************************************************************
 * Wrapper for a steady-state solver
 ****************************************************************** */
-int Darcy_PK::AdvanceToSteadyState()
+int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 {  
-  double T = FS->get_time();
-  SolveFullySaturatedProblem(T, *solution);
+  SolveFullySaturatedProblem(T0, *solution);
   return 0;
 }
 

@@ -141,11 +141,11 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     Richards_PK* RPK = new Richards_PK(parameter_list, FS);
 
     RPK->InitPK();  // setup the problem
-    RPK->InitSteadyState(0.0, 1e-8);
+    RPK->InitSteadyState(0.0, 0.01);
     if (n == 40) RPK->PrintStatistics();
     RPK->set_verbosity(FLOW_VERBOSITY_NONE);
 
-    RPK->AdvanceToSteadyState();
+    RPK->AdvanceToSteadyState(0.0, 0.01);
     RPK->CommitState(FS);
 
     double pressure_err, flux_err, div_err;  // error checks

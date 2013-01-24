@@ -527,7 +527,7 @@ int Richards_PK::Advance(double dT_MPC)
 
     } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
       if (flow_status_ == FLOW_STATUS_STEADY_STATE) {
-        AdvanceToSteadyState();
+        AdvanceToSteadyState(time, dT_MPC);
         block_picard = 1;  // We will wait for transient initialization.
       }
     }
