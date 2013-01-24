@@ -226,8 +226,7 @@ extern "C" {
 			   const Real* S, ARLIM_P(slo), ARLIM_P(shi),
 			   const Real* B, ARLIM_P(blo), ARLIM_P(bhi),
 			   const Real* P, ARLIM_P(plo), ARLIM_P(phi),
-			   const Real* visc_coef, const int* ncomp, 
-			   const int* diffuse);
+			   const Real* visc_coef, const int* ncomp);
 
     //
     // subroutines related to parabolic pressure solve

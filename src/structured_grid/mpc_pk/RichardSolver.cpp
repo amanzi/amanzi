@@ -993,7 +993,8 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
   // Get the Darcy flux
   UpdateDarcyVelocity(pressure,t);
 
-  // Get the divergence of the Darcy velocity
+  // Get the divergence of the Darcy velocity flux = darcy vel . rho 
+  //   leave velocity unscaled
   int sComp=0;
   int dComp=0;
   int nComp=1;

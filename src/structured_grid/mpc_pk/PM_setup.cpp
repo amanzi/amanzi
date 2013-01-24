@@ -227,6 +227,7 @@ int  PorousMedia::variable_scal_diff;
 
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
+Array<Real> PorousMedia::diff_coef;
 //
 // Transport flags
 //
@@ -572,7 +573,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::be_cn_theta           = 0.5;
   PorousMedia::visc_tol              = 1.0e-10;  
   PorousMedia::visc_abs_tol          = 1.0e-10;  
-  PorousMedia::def_harm_avg_cen2edge = false;
+  PorousMedia::def_harm_avg_cen2edge = true;
 
   PorousMedia::have_capillary = 0;
 
@@ -852,7 +853,17 @@ PorousMedia::variableSetUp ()
 	is_diffusive[i] = true;
     }
 
-  for (int i = ncomps; i < NUM_SCALARS; i++)
+  // For tracers
+  for (int i=0; i<ntracers; i++) 
+    {
+      advectionType[ncomps+i] = NonConservative;
+      diffusionType[ncomps+i] = Laplacian_S;
+      is_diffusive[ncomps+i] = false;
+      if (diff_coef[i] > 0.0)
+	is_diffusive[ncomps+i] = true;
+    }
+
+  for (int i = ncomps+ntracers; i < NUM_SCALARS; i++)
     {
       advectionType[i] = NonConservative;
       diffusionType[i] = Laplacian_S;
@@ -1807,8 +1818,6 @@ PorousMedia::read_rock(int do_chem)
         
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
           std::cout << "   Finished building kmap on finest level." << std::endl;
-
-        VisMF::Write(*kappadata,kfileout+"/kp");
       }
     }
 
@@ -2279,7 +2288,7 @@ void  PorousMedia::read_comp()
       Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
       Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
 
-      // Only components have diffusion at the moment.  
+      // Tracer diffusion handled during tracer read
       if (visc_coef.back() > 0)
       {
 	  do_any_diffuse = true;
@@ -2664,6 +2673,12 @@ void  PorousMedia::read_tracer(int do_chem)
       tic_array.resize(ntracers);
       tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
+      diff_coef.resize(ntracers,-1); // FIXME: read these 
+      variable_scal_diff = true;
+      for (int i=0; i<ntracers; ++i) {
+	diff_coef[i] = 1.e-10;
+      }
+      ndiff += ntracers;
 
       for (int i = 0; i<ntracers; i++)
       {
@@ -2712,6 +2727,15 @@ void  PorousMedia::read_tracer(int do_chem)
 
           if (setup_tracer_transport)
           {
+	      int nd = pp.countval("tracer_diffusion_coef");
+	      BL_ASSERT(nd==0 || nd==1 || nd>=ntracers);
+	      if (nd==1) {
+	        Real one_diff_coef;
+	        pp.get("tracer_diffusion_coef",one_diff_coef);
+	        diff_coef.resize(ntracers,one_diff_coef);
+	      } else if (nd>0) {
+	        pp.getarr("tracer_diffusion_coef",diff_coef,0,nd);
+	      }
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
               if (n_tbc <= 0)

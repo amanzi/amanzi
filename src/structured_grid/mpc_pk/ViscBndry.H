@@ -26,10 +26,6 @@ public:
                                 const IntVect& ratio,
 				int            comp=0);
 
-    virtual void setScalarBndryConds (const BCRec&   phys_bc,
-				      IntVect& ratio,
-				      int comp=0);
-
     void setHomogValues (const BCRec& bc,
                          IntVect& ratio);
 

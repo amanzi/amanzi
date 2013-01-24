@@ -614,6 +614,14 @@ public:
 				int  corrector,
 				MultiFab* u_mac = 0);
 
+  void SetTracerDiffusionBndryData(ViscBndry& bndry,
+				   Real       time);
+
+  void getTracerViscTerms(MultiFab&  D,
+			  Real       time,
+			  int        nGrow,
+			  PArray<MultiFab>& Dflux);
+
   void richard_init_to_steady();
 
 #ifdef MG_USE_FBOXLIB
@@ -1282,6 +1290,7 @@ protected:
   //
   static Array<int>  is_diffusive;    // does variable diffuse?
   static Array<Real> visc_coef;       // const coef viscosity terms
+  static Array<Real> diff_coef;       // const coef molecular diffusion coefficients (for tracers)
   static Real        visc_tol;
   static Real        visc_abs_tol;
   static Real        be_cn_theta;

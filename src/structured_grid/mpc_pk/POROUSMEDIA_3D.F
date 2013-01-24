@@ -582,48 +582,30 @@ c ::: ----------------------------------------------------------
      &     B, DIMS(B),
      &     phi, DIMS(phi),
      &     visc_coef,
-     &     ncomp, diffuse)
+     &     ncomp)
       implicit none
 
       integer lo(SDIM),hi(SDIM)
       integer DIMDEC(S)
       integer DIMDEC(B)
       integer DIMDEC(phi)
-      integer ncomp, diffuse
-      REAL_T S(DIMV(S),ncomp)
+      integer ncomp
+      REAL_T S(DIMV(S))
       REAL_T B(DIMV(B),ncomp)
       REAL_T phi(DIMV(phi))
       REAL_T visc_coef(ncomp)
       
       integer i, j, k, n
-      REAL_T rho
 
-      if (diffuse .ne. -1) then
-         do k = lo(3),hi(3)
-            do j=lo(2), hi(2)
-               do i=lo(1), hi(1)
-                  do n=1,ncomp
-                     B(i,j,k,n) = visc_coef(n)
-                  end do
-               end do
-            end do
-         end do         
-
-      else
+      do n = 1,ncomp
          do k = lo(3), hi(3)
             do j = lo(2), hi(2)
                do i = lo(1), hi(1)
-                  rho = zero
-                  do n=1,ncomp
-                     rho = rho + S(i,j,k,n) 
-                  end do
-                  do n=1,ncomp
-                     B(i,j,k,n) = rho*phi(i,j,k)*visc_coef(n)
-                  end do
+                  B(i,j,k,n) = S(i,j,k)*phi(i,j,k)*visc_coef(n)
                end do
             end do
          end do
-      end if
+      end do
 
       end
       

@@ -14,108 +14,56 @@ ViscBndry::setBndryConds (const BCRec&   bc,
     //
     const Real* dx    = geom.CellSize();
     const Box& domain = geom.Domain();
-
-    for (OrientationIter fi; fi; ++fi)
+    //
+    // We note that all orientations of the FabSets have the same distribution.
+    // We'll use the low 0 side as the model.
+    //
+    for (FabSetIter fsi(bndry[Orientation(0,Orientation::low)]); fsi.isValid(); ++fsi)
     {
-        BndryData::RealTuple& bloc = bcloc[fi()];
-        Array< Array<BoundCond> >& bctag = bcond[fi()];
+        const int                  i     = fsi.index();
+        RealTuple&                 bloc  = bcloc[i];
+        Array< Array<BoundCond> >& bctag = bcond[i];
 
-        int dir          = fi().coordDir();
-        const Real delta = dx[dir]*ratio[dir];
-        int p_bc         = (fi().isLow() ? bc.lo(dir) : bc.hi(dir));
-	
-        for (int i = 0; i < boxes().size(); i++)
+        for (OrientationIter fi; fi; ++fi)
         {
-            if (domain[fi()] == boxes()[i][fi()] && !geom.isPeriodic(dir))
+            const Orientation face  = fi();
+            const int         dir   = face.coordDir();
+
+            if (domain[face] == boxes()[i][face] && !geom.isPeriodic(dir))
             {
                 //
                 // All physical bc values are located on face.
                 //
+                const int p_bc  = (face.isLow() ? bc.lo(dir) : bc.hi(dir));
+
                 if (p_bc == EXT_DIR)
                 {
-                    bctag[i][comp] = LO_DIRICHLET;
-                    bloc[i] = 0.;
+                    bctag[face][comp] = LO_DIRICHLET;
+                    bloc[face]        = 0;
                 }
                 else if (p_bc == FOEXTRAP      ||
                          p_bc == HOEXTRAP      || 
                          p_bc == REFLECT_EVEN  ||
 			 p_bc == SEEPAGE)
                 {
-                    bctag[i][comp] = LO_NEUMANN;
-                    bloc[i] = 0.;
+                    bctag[face][comp] = LO_NEUMANN;
+                    bloc[face]        = 0;
                 }
                 else if (p_bc == REFLECT_ODD)
                 {
-		    bctag[i][comp] = LO_NEUMANN;//LO_REFLECT_ODD;
-                    bloc[i] = 0.;
-                 }
+                    bctag[face][comp] = LO_REFLECT_ODD;
+                    bloc[face]        = 0;
+                }
             }
             else
             {
                 //
                 // Internal bndry.
                 //
-                bctag[i][comp] = LO_DIRICHLET;
-                bloc[i] = 0.5*delta;
-            }
-        }
-    }
-}
+                const Real delta = dx[dir]*ratio[dir];
 
-void
-ViscBndry::setScalarBndryConds (const BCRec&   bc,
-				IntVect& ratio,
-				int comp)
-{
-    //
-    //  NOTE: ALL BCLOC VALUES ARE DEFINED AS A LENGTH IN PHYSICAL
-    //        DIMENSIONS *RELATIVE* TO THE FACE, NOT IN ABSOLUTE PHYSICAL SPACE
-    //
-    const Real* dx    = geom.CellSize();
-    const Box& domain = geom.Domain();
-
-    for (OrientationIter fi; fi; ++fi)
-    {
-        BndryData::RealTuple& bloc = bcloc[fi()];
-        Array< Array<BoundCond> >& bctag = bcond[fi()];
-
-        int dir          = fi().coordDir();
-        const Real delta = dx[dir]*ratio[dir];
-        int p_bc         = (fi().isLow() ? bc.lo(dir) : bc.hi(dir));
-	
-        for (int i = 0; i < boxes().size(); i++)
-        {
-            if (domain[fi()] == boxes()[i][fi()] && !geom.isPeriodic(dir))
-            {
-	      //
-	      // All physical bc values are located on face.
-	      //
-	      if (p_bc == EXT_DIR)
-                {
-                    bctag[i][comp] = LO_DIRICHLET;
-                    bloc[i] = 0.;
-                }
-                else if (p_bc == SEEPAGE       ||
-			 p_bc == FOEXTRAP      ||
-                         p_bc == HOEXTRAP      || 
-                         p_bc == REFLECT_EVEN)
-                {
-                    bctag[i][comp] = LO_NEUMANN;
-                    bloc[i] = 0.;
-                }
-                else if (p_bc == REFLECT_ODD)
-                {
-		    bctag[i][comp] = LO_NEUMANN; //LO_REFLECT_ODD;
-                    bloc[i] = 0.;
-                 }
-            }
-            else
-            {
-                //
-                // Internal bndry.
-                //
-                bctag[i][comp] = LO_DIRICHLET;
-                bloc[i] = 0.5*delta;
+                bctag[face][comp] = LO_DIRICHLET;
+                bloc[face]        = 0.5*delta;
             }
         }
     }
@@ -129,9 +77,10 @@ ViscBndry::setHomogValues (const BCRec& bc,
 
     for (OrientationIter fi; fi; ++fi)
     {
-        for (FabSetIter fsi(bndry[fi()]); fsi.isValid(); ++fsi)
+      const Orientation& face = fi();
+      for (FabSetIter fsi(bndry[face]); fsi.isValid(); ++fsi)
         {
-            bndry[fi()][fsi].setVal(0);
+	  bndry[face][fsi].setVal(0);
         }
     }
 }
@@ -141,15 +90,18 @@ ViscBndry::setScalarValues (const BCRec&    bc,
 			    IntVect&        ratio,
 			    const MultiFab* mf)
 {
-    setScalarBndryConds(bc, ratio);
+  for (int n=0; n<nComp(); ++n) {
+    setBndryConds (bc, ratio, n);
+  }
 
     for (OrientationIter fi; fi; ++fi) 
     {      
-      for (FabSetIter fsi(bndry[fi()]); fsi.isValid(); ++fsi)
+      int face = fi();
+      for (FabSetIter fsi(bndry[face]); fsi.isValid(); ++fsi)
       {	      
 	const Box& bx = fsi.validbox();
 	int idx = fsi.index();
-	bndry[fi()][fsi].copy((*mf)[idx],bx,0,bx,0,1);	    
+	bndry[face][fsi].copy((*mf)[idx],bx,0,bx,0,1);	    
       }
     }
 }
@@ -158,13 +110,16 @@ void
 ViscBndry::setdeltaSValues (const BCRec& bc,
 			    IntVect& ratio)
 {
-    setScalarBndryConds(bc, ratio);
+  for (int n=0; n<nComp(); ++n) {
+    setBndryConds (bc, ratio, n);
+  }
 
     for (OrientationIter fi; fi; ++fi) 
     {
-      for (FabSetIter fsi(bndry[fi()]); fsi.isValid(); ++fsi)
+      int face = fi();
+      for (FabSetIter fsi(bndry[face]); fsi.isValid(); ++fsi)
       {	      
-	bndry[fi()][fsi].setVal(0.);
+	bndry[face][fsi].setVal(0.);
       }      
     }
 }

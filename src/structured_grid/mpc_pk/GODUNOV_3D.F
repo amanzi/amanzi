@@ -5881,9 +5881,8 @@ c     First update all tracers with no change
                do n = 1,idx_total_n
                   idx = idx_total(n)
                   if (sn(i,j,k,1) .gt. zero) then
-                     cn(i,j,k,idx) = (so(i,j,k,1)*co(i,j,k,idx)
-     &                    - dt*aofs(i,j,k,idx)/rockphi(i,j,k))/sn(i,j,k,1)
-     &                    + dt*tforces(i,j,k,idx)
+                     cn(i,j,,kidx) = (so(i,j,k,cWater)*co(i,j,k,idx)
+     &                    - dt*(aofs(i,j,k,idx)+tforces(i,j,k,idx))/rockphi(i,j,k))/sn(i,j,k,cWater)
                   end if
                end do
             end do
