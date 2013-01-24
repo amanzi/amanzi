@@ -66,13 +66,13 @@ Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point
   px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
   py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
 
-  t04 = (x+1)*(x+1) + y*y;
-  t05 = -x*y;
-  t06 = (x+1)*(x+1);
+  t04 = Kxx(p, t);
+  t05 = Kxy(p, t);
+  t06 = Kyy(p, t);
 
   Amanzi::AmanziGeometry::Point v(2);
-  v[0] = t04 * px + t05 * py;
-  v[1] = t05 * px + t06 * py;
+  v[0] = -(t04 * px + t05 * py);
+  v[1] = -(t05 * px + t06 * py);
   return v;
 }
 double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -93,21 +93,21 @@ double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
   px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
   py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
 
-  pxx = 6*x*y*y + t03*(4*y*M_PI*t12 - 4*M_PI*M_PI*y*y*x*t02); 
-  pxy = 6*x*x*y + 2*M_PI*(t13*t02 + x*t03*t12 + x*t03*t12 + x*y*2*M_PI*(t13*t12-x*t03*t02));
+  pxx = 6*x*y*y + 4*M_PI*t03*(y*t12 - M_PI*y*y*x*t02); 
+  pxy = 6*x*x*y + 2*M_PI*(t13*t02 + 2*x*t03*t12 + x*y*2*M_PI*(t13*t12-x*t03*t02));
   pyy = 2*x*x*x + x*4*M_PI*M_PI*(-x*x*t02*t03 + 2*x*t12*t13 - t02*t03);
 
-  t04 = (x+1)*(x+1) + y*y;
-  t05 = -x*y;
-  t06 = (x+1)*(x+1);
+  t04 = Kxx(p, t);
+  t05 = Kxy(p, t);
+  t06 = Kyy(p, t);
 
-  tx4 = 2*(x+1);
-  ty4 = 2*y;
+  tx4 = 2*(x+1);  // d/dx (Kxx)
+  ty4 = 2*y;      // d/dy (Kxx)
 
-  tx5 = -y;
-  ty5 = -x;
+  tx5 = -y;  // d/dx (Kxy)  
+  ty5 = -x;  // d/dy (Kxy)
   
-  tx6 = 2*(x+1);
+  tx6 = 2*(x+1);  // d/dy (Kxy)
   return -(tx4 + ty5)*px - tx5*py - t04*pxx - 2*t05*pxy - t06*pyy;
 }
 
@@ -146,12 +146,12 @@ TEST(FLOW_DARCY_SOURCE) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 18, 18, gm);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 200, 200, gm);
   RCP<Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create and populate fake flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->set_permeability(1.0, 1.0, "Material 1");
+  FS->set_permeability(2.0, 1.0, "Material 1");
   FS->set_porosity(1.0);
   FS->set_fluid_viscosity(1.0);
   FS->set_fluid_density(1.0);
@@ -185,48 +185,61 @@ TEST(FLOW_DARCY_SOURCE) {
     }
   }
 
-  // create a problem
-  DPK->AssembleMatrixMFD();
+  for (int n = 0; n < 300; n+=100) {
+    // recalculate mass matrices
+    double factor = pow(10.0, (double)(n - 50) / 100.0);
+     DPK->get_matrix()->CreateMFDmassMatrices_ScaledStability(
+      AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor, K);
 
-  // update right-hand side
-  Teuchos::RCP<Epetra_Vector> rhs = DPK->get_matrix()->rhs();
-  for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
-    (*rhs)[c] += source_exact(xc, 0.0) * volume;
+    // create a problem
+    DPK->AssembleMatrixMFD();
+
+    // update right-hand side
+    Teuchos::RCP<Epetra_Vector> rhs = DPK->get_matrix()->rhs();
+    for (int c = 0; c < ncells; c++) {
+      const Point& xc = mesh->cell_centroid(c);
+      double volume = mesh->cell_volume(c);
+      (*rhs)[c] += source_exact(xc, 0.0) * volume;
+    }
+
+    // steady-state solution
+    Epetra_Vector& solution = DPK->ref_solution();
+    DPK->SolveFullySaturatedProblem(0.0, *rhs, solution);
+    DPK->CommitState(FS);
+
+    // calculate errors
+    Epetra_Vector& p = FS->ref_pressure();
+    Epetra_Vector& flux = FS->ref_darcy_flux();
+
+    double p_norm(0.0), p_error(0.0);
+    for (int c = 0; c < ncells; c++) {
+      const Point& xc = mesh->cell_centroid(c);
+      double tmp = pressure_exact(xc, 0.0);
+      double volume = mesh->cell_volume(c);
+
+      p_error += std::pow(tmp - p[c], 2.0) * volume;
+      p_norm += std::pow(tmp, 2.0) * volume;
+    }
+
+    double flux_norm(0.0), flux_error(0.0);
+    for (int f = 0; f < nfaces; f++) {
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      const Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& velocity = velocity_exact(xf, 0.0);
+      double tmp = velocity * normal;
+ 
+      flux_error += std::pow(tmp - flux[f], 2.0);
+      flux_norm += std::pow(tmp, 2.0);
+    }  
+
+    p_error = pow(p_error / p_norm, 0.5);
+    flux_error = pow(flux_error / flux_norm, 0.5);
+    printf("scale = %12.6g  Err(p) = %12.6f  Err(flux) = %12.6g\n", factor, p_error, flux_error); 
+    
+    CHECK(p_error< 0.15 && flux_error < 0.15);
   }
 
-  // steady-state solution
-  Epetra_Vector& solution = DPK->ref_solution();
-  DPK->SolveFullySaturatedProblem(0.0, *rhs, solution);
-  DPK->CommitState(FS);
-
-  // calculate errors
   Epetra_Vector& p = FS->ref_pressure();
-  Epetra_Vector& flux = FS->ref_darcy_flux();
-
-  double p_norm(0.0), p_error(0.0);
-  for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    double tmp = pressure_exact(xc, 0.0);
-    double volume = mesh->cell_volume(c);
-
-    p_error += std::pow(tmp - p[c], 2.0) * volume;
-    p_norm += std::pow(tmp, 2.0) * volume;
-  }
-
-  double flux_norm(0.0), flux_error(0.0);
-  for (int f = 0; f < nfaces; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    const Point& xf = mesh->face_centroid(f);
-    const AmanziGeometry::Point& velocity = velocity_exact(xf, 0.0);
-    double tmp = velocity * normal;
-
-    flux_error += std::pow(tmp - flux[f], 2.0);
-    flux_norm += std::pow(tmp, 2.0);
-  }
-  cout << pow(p_error / p_norm, 0.5) << " " << pow(flux_error / flux_norm, 0.5) << endl; 
-
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
   GMV::write_cell_data(p, 0, "pressure");
