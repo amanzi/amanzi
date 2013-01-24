@@ -1119,8 +1119,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
     }
   }
 
-  flw_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-
   return flw_list;
 }
 

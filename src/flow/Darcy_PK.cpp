@@ -337,7 +337,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
     std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
