@@ -296,6 +296,8 @@ Usage:
 
      * [U] `"steady max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"steady max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. (default: `"3`", suggested range: 3 ... 8)
 
+     * [U] `"steady nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
+
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
    * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
@@ -319,6 +321,8 @@ Usage:
      * [U] `"transient max preconditioner lag iterations"` [int] During the transient solve, the preconditioner is lagged this amount of iterations during the nonlinear solve. For example, if a value of 4 is specified here, the preconditioner is updated at the beginning of each nonlinear solve and then in each fourth iteration during each nonlinear solve. To force a preconditioner in each iteration of each nonlinear solve, set this parameter to one (very expensive, but also very robust), and to disable updates of the preconditioner, except at the beginning of each nonlinear solve, set this parameter to a value larger than `"transient limit iterations"`. (default: `"5`", suggested range: 0 ... 10)
 
      * [U] `"transient max divergent iterations`" [int] the BDF1 time integrator will tolerate one less than that many subsequent divergent nonlinear iterations. if there are `"transient max divergent iterations`" then the time iterator will give up on this time step and will cause the current time step to be cut by 50% and the current time step to be repeated. (default: `"3`", suggested range: 3 ... 8)
+
+     * [U] `"transient nonlinear iteration divergence factor`" [double] If during the nonlinear solve, the inf norm of the nonlinear update is larger by this factor than the inf norm of the update in the prior iteration, we abort the nonlinear solve to protect against a runaway divergent iteration that causes numerical overflow. As a result the current time step will repeated with a smaller delta T. (default: `"1000.0`", suggested range: 100.0 ... 10000.0)
 
      * [U] `"transient restart tolerance relaxation factor`" [double] when the time integrator is restarted, at a time when a boundary condition drastically changes, it may be beneficial to set this parameter to something > 1.0 to loosen the nonlinear tolerance on the first several time steps after the time integrator restart. The parameter `"transient restart tolerance relaxation factor damping`" controls how fast the this loosened nonlinear tolerance will revert back to the one specified in  `"transient nonlinear tolerance"`: If the nonlinear tolerance is ntol, the initial timestep factor is ntol_factor, and the damping is ntol_damping, then the actual nonlinear tolerance is ntol*ntol_factor, and after every time step, ntol_factor = max(1.0,ntol_factor*ntol_damping), such that a few iterations after a time integrator restart, the actual tolerance equals ntol, again. The default for this paramameter is 1.0, while reasonable values are > 1.0, maybe as large as 1000.0. The default for the damping factor is 1.0, while reasonable values are between 0 and 1. (default: `"1.0`", suggested range: 1.0 ... 1000.0)
 
@@ -866,6 +870,10 @@ the following set of physical properties using the supported models described be
 
   * [U] Particle Density [list] Choose exatly one of the following: `"Particle Density: Uniform`". 
 
+  * [U] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
+
+  * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
+
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
@@ -961,6 +969,21 @@ The following models can be specified for particle density (only `"Particle Dens
 * [U] `"Particle Density: Uniform`" [list] requires 
  
  * [U] `"Value`" [double] to specify the constant value of rock density.
+
+
+The following models are currently supported for Specific Yield.
+
+* [U] `"Specific Yield: Uniform`" [list] requires
+
+ * [U] `"Value`" [double] to specify specific yield.
+
+
+The following models are currently supported for Specific Storage.
+
+* [U] `"Specific Storage: Uniform`" [list] requires
+
+ * [U] `"Value`" [double] to specify specific storage.
+
 
 Example:
 
@@ -1113,7 +1136,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
 
-Finally, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
+Next, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
 
 * [SU] `"Boundary Conditions`" [list] accepts labels, BC, of named boundary condition specifications 
 
@@ -1132,6 +1155,16 @@ Finally, we specify boundary conditions.  Again, support is provided for specify
      * [SU, only Uniform Concentration] BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+
+Finally, we specify sources. Note that currently sources for components cannot be specified.
+
+* [U] `"Sources"` [list] accepts labels, SOURCE, of named boundary condition specifications
+
+ * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
+
+  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
+  
+  * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
 
 The following initial condition parameterizations are supported:
@@ -1166,13 +1199,22 @@ The following boundary condition parameterizations are supported:
 
 * [U] `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
-* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [Array double] (see below)
+* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this paramter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
 
 * `"BC: Impermeable`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * [SU] `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * [S] `"BC: Zero Gradient`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+The following source parameterizations are supported.
+
+* [U] `"Source: Volume Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* [U] `"Source: Permeability Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+
+
 
 
 Time Functions

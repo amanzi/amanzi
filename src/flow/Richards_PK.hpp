@@ -50,7 +50,7 @@ class Richards_PK : public Flow_PK {
 
   double CalculateFlowDt();
   int Advance(double dT_MPC); 
-  int AdvanceToSteadyState();
+  int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
 

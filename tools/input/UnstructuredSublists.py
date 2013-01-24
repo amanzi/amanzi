@@ -25,11 +25,29 @@ import re, optparse
 
 def PackUnstructuredLists(ncp_lines,KeyList, SubLists):
 
+
+    # List of deprecated control parameters 
+
+    deprecated=["steady error rel tol",
+                "steady error abs tol",
+                "transient error rel tol",
+                "transient error abs tol",
+                ]
+
+    # Default preconditioner
+
     preconditioner = 'Trilinos ML'
 
     for key in KeyList:
+
         for line in ncp_lines:
-            if ( key.lower() in line.lower() ):
+            
+            drop=False
+            for d in deprecated:
+                if (d in line.lower() ):
+                    drop=True
+                    
+            if ( key.lower() in line.lower() and not drop ):
                 if ( key == "linear" and "nonlinear" in line ):
                     break
                 elif ( key == "linear" and "pseudo" in line ):
@@ -124,17 +142,77 @@ def CheckVersion(ncp_pre_lines):
 def WritePreNCP(xml_output,ncp_pre_lines,version_string):
 
     for line in ncp_pre_lines:
-
-        if ( "Amanzi input format version".lower() in line.lower() ):
+        
+        AmanziVersionName="Amanzi Input Format Version"
+        if ( AmanziVersionName.lower() in line.lower() ):
+            # case insensitive replacement
+            line=re.sub("(?i)"+"amanzi input format version",AmanziVersionName,line,re.IGNORECASE)
             xml_output.write("%s\n" % ( line.replace(version_string,'1.1.0' ) ) )
+        elif ( "Flow Model" in line and "Steady State Saturated" in line ):
+            xml_output.write("%s\n" %( line.replace("Steady State Saturated","Single Phase") ) )
         else:
             xml_output.write("%s\n" % ( line ) )
+
 
 
 def WritePostNCP(xml_output,ncp_pre_lines):
 
     for line in ncp_pre_lines:
         xml_output.write("%s\n" % ( line ) )
+
+
+def CheckValidValues(xml_input):
+
+    i=1
+
+    MultiLine=False
+    TestValue=False
+
+    for line in xml_input:
+       
+        i=i+1
+        # print i, line
+
+        if ( "type=" in line and "value=" not in line ):
+            MultiLine=True
+            data_type=line.split('type="')[1].rstrip('" \n')
+            # print "In MultiLine type = ", data_type
+        elif ( "value" in line ):
+            TestValue=True
+            if ( MultiLine ):
+                data_value=line.split('value="')[1].strip('\n"/>{}').split(',')
+                # print "In Multiline value = ", data_value
+            else:
+                data_type=line.split('"')[3]
+                data_value=line.split('"')[5].strip('{}').split(",")
+                # print "In SingleLine type = ", data_type
+                # print "In SingleLine value = ", data_value
+
+        if ( TestValue ):
+
+            # print  "data_type= ", data_type
+            # print "data_value=", data_value
+
+            TestValue=False
+            MultiLine=False
+
+            if ( "double" in data_type ):
+                for v in data_value:
+                    try:
+                        d=float(v)
+                    except:
+                        print "Invalid double in line", i
+                        print line
+
+            elif ("int" in data_type ):
+
+                for v in data_value:
+                    try:
+                        d=int(v)
+                    except:
+                        print "Invalid integer in line", i
+                        print line
+
 
 
 # Create Parser, add file options 
@@ -168,6 +246,11 @@ for line in xml_lines:
             lev_spc.append(spaces)
     elif ( "</ParameterList" in line ):
         cl=cl-1
+
+#
+# We maybe adding one new level of indentation
+#
+lev_spc.append(lev_spc[len(lev_spc)-1]+2)
 
 print 'Debugging: Level indentation = ', lev_spc
 
@@ -224,6 +307,7 @@ SubLists = {"transport": ["Transport Process Kernel",] ,
 
 
 version_string=CheckVersion(ncp_pre_lines)
+valid_numbers=CheckValidValues(xml_lines)
 
 # Overwrite or strip xml suffix and add a sublist indicator
 

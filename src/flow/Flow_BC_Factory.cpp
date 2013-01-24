@@ -174,7 +174,7 @@ void FlowBCFactory::ProcessPressureSpec(
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, f, Amanzi::MESH_FUNCTION_ACTION_NONE);
 }
 
 
@@ -247,7 +247,7 @@ void FlowBCFactory::ProcessMassFluxSpec(
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, f, Amanzi::MESH_FUNCTION_ACTION_NONE);
 
   // Populate submodel flags.
   if (list.get<bool>("rainfall", false))
@@ -337,7 +337,7 @@ void FlowBCFactory::ProcessStaticHeadSpec(
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, f, Amanzi::MESH_FUNCTION_ACTION_NONE);
 
   // Populate submodel flags.
   if (list.get<bool>("relative to the top", false))
@@ -413,7 +413,7 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f);
+  bc->Define(regions, f, Amanzi::MESH_FUNCTION_ACTION_NONE);
 
   // Populate submodel flags.
   if (list.get<bool>("rainfall", false))

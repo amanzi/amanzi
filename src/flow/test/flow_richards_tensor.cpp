@@ -72,7 +72,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   // create Richards problem
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
-  RPK->InitSteadyState(0.0, 1e-8);
+  RPK->InitSteadyState(0.0, 1.0);
 
   // calculate the constant Darcy mass velocity
   double rho = FS->ref_fluid_density();
@@ -93,7 +93,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   cout << "K=" << K << "  gravity=" << g << endl;
   cout << "grad(p)=" << v0 << endl;
 
-  RPK->AdvanceToSteadyState();
+  RPK->AdvanceToSteadyState(0.0, 1.0);
   RPK->CommitState(FS);
 
   // check accuracy

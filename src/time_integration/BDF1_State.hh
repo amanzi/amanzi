@@ -10,12 +10,12 @@
 
 namespace Amanzi {
 
-enum bdf_nonlinear_solver_t { BDFNKA, BDFJFNK }; 
+enum bdf_nonlinear_solver_t { BDFNKA, BDFJFNK };
 
 struct BDF1State {
-  
+
  public:
-  
+
   BDF1State() {
     seq = -1;
     usable_pc = false;
@@ -30,7 +30,7 @@ struct BDF1State {
     rejected_steps = 0;
     eps = std::numeric_limits<double>::epsilon();
     hmax = std::numeric_limits<double>::max();
-    
+
     damp = 1.0;
     uhist_size = 2;
 
@@ -45,6 +45,8 @@ struct BDF1State {
     ntol_multiplier = 1.0;
     ntol_multiplier_damp = 1.0;
     ntol_multiplier_current = 1.0;
+    
+    divergence_factor = 1000.0;
   }
 
   ~BDF1State() {
@@ -61,7 +63,7 @@ struct BDF1State {
   double    hlast;        // last step size
   double    hpc;          // step size built into the current preconditioner
   bool      usable_pc;    // whether the current preconditioner is usable
-  int       mitr;         // maximum number of nonlinear iterations, more and we fail 
+  int       mitr;         // maximum number of nonlinear iterations, more and we fail
   int       minitr;       // minimum number of nonlinear iterations (we will increase time step here)
   int       maxitr;       // maximum number of nonlinear iterations (we cut time step here)
   int       maxpclag;     // maximum iterations that the preconditioner can be lagged
@@ -87,6 +89,8 @@ struct BDF1State {
   double damp;           // nka damping factor
   int uhist_size;        // extrapolation order for initial guess
   double ntol_multiplier, ntol_multiplier_damp, ntol_multiplier_current;
+  double divergence_factor; // if the nonlinear update grows by more than this in one iteration, abort
+
 
   bdf_nonlinear_solver_t nonlinear_solver;
 

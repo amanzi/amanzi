@@ -6,7 +6,7 @@ Amanzi is released under the three-clause BSD License.
 The terms of use and "as is" disclaimer for this license are 
 provided Reconstruction.cppin the top-level COPYRIGHT file.
 
-Release name: aka-to.
+Release name: ara-to.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
 */
@@ -28,6 +28,16 @@ Usage:
 
 namespace Amanzi {
 namespace WhetStone {
+
+/* ******************************************************************
+* Constructors
+****************************************************************** */
+MFD3D::MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh) 
+{ 
+  mesh_ = mesh; 
+  stability_method_ = WHETSTONE_STABILITY_GENERIC;
+}
+
 
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
@@ -435,6 +445,38 @@ int MFD3D::H1consistencyElasticity(int cell, const Tensor& T,
 
 
 /* ******************************************************************
+* Calculate stability factor using matrix and optional scaling.
+****************************************************************** */
+double MFD3D::CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc)
+{
+  int nrows = Mc.numRows();
+
+  scalar_stability_ = 0.0;
+  for (int i = 0; i < nrows; i++) scalar_stability_ += Mc(i, i);
+  scalar_stability_ /= nrows;
+
+  if (stability_method_ == WHETSTONE_STABILITY_GENERIC_SCALED) {
+    scalar_stability_ *= scaling_factor_;
+  }
+
+  return scalar_stability_;
+}
+
+
+/* ******************************************************************
+* Set up positive scaling factor for a scalar stability term.
+* Warning: Ignores silently negative factors.
+****************************************************************** */
+void MFD3D::ModifyStabilityScalingFactor(double factor)
+{
+  if (factor > 0.0) {
+    stability_method_ = WHETSTONE_STABILITY_GENERIC_SCALED;
+    scaling_factor_ = factor;
+  }
+}
+
+
+/* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
 void MFD3D::StabilityScalar(int cell,
@@ -443,25 +485,22 @@ void MFD3D::StabilityScalar(int cell,
                             Teuchos::SerialDenseMatrix<int, double>& M)
 {
   GrammSchmidt(N);
+  CalculateStabilityScalar(Mc);
 
   int nrows = Mc.numRows();
   int ncols = N.numCols();
-
-  double scale = 0.0;
-  for (int i = 0; i < nrows; i++) scale += Mc(i, i);
-  scale /= nrows;
 
   for (int i = 0; i < nrows; i++) {
     for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
   }
 
-  for (int i = 0; i < nrows; i++) {  // add projector scale * (I - N^T N) to matrix M
-    M(i, i) += scale;
+  for (int i = 0; i < nrows; i++) {  // add projector ss * (I - N^T N) to matrix M
+    M(i, i) += scalar_stability_;
 
     for (int j = i; j < nrows; j++) {
       double s = 0.0;
       for (int k = 0; k < ncols; k++)  s += N(i, k) * N(j, k);
-      M(i, j) -= s * scale;
+      M(i, j) -= s * scalar_stability_;
     }
   }
 

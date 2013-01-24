@@ -225,103 +225,100 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
                                        Epetra_Vector& Krel_faces,
                                        Epetra_Vector& dK_dP_faces)
 {
-     AmanziMesh::Entity_ID_List faces;
-     std::vector<int> dirs;
-     int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-     int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-     const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-     AmanziMesh::Entity_ID_List cells;
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  AmanziMesh::Entity_ID_List cells;
 
-     int cells_LID[2], cells_GID[2];
-     double perm_abs_vert[2];
-     double perm_abs_horz[2];
-     double k_rel[2];
-     double dk_dp[2];
-     double pres[2];
-     AmanziGeometry::Point cntr_cell[2];
-     double dist;
+  int cells_LID[2], cells_GID[2];
+  double perm_abs_vert[2];
+  double perm_abs_horz[2];
+  double k_rel[2];
+  double dk_dp[2];
+  double pres[2];
+  AmanziGeometry::Point cntr_cell[2];
+  double dist;
 
-     //     cout<<"Before Analytic\n";
-     //     std::cout<<(*Spp_)<<endl;
+  // cout<<"Before Analytic\n";
+  // std::cout<<(*Spp_)<<endl;
 
-     Epetra_Vector pres_gh(cmap_wghost);
+  Epetra_Vector pres_gh(cmap_wghost);
 
-//      Epetra_Vector pressure_vec(solution);
-     FS->CopyMasterCell2GhostCell(solution, pres_gh);
+  // Epetra_Vector pressure_vec(solution);
+  FS->CopyMasterCell2GhostCell(solution, pres_gh);
 
-     Epetra_Vector perm_vert_gh(cmap_wghost);
-     Epetra_Vector& perm_vert_vec = FS->ref_vertical_permeability();
-     FS->CopyMasterCell2GhostCell(perm_vert_vec, perm_vert_gh);
+  Epetra_Vector perm_vert_gh(cmap_wghost);
+  Epetra_Vector& perm_vert_vec = FS->ref_vertical_permeability();
+  FS->CopyMasterCell2GhostCell(perm_vert_vec, perm_vert_gh);
 
-     Epetra_Vector perm_horz_gh(cmap_wghost);
-     Epetra_Vector& perm_horz_vec = FS->ref_horizontal_permeability();
-     FS->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
+  Epetra_Vector perm_horz_gh(cmap_wghost);
+  Epetra_Vector& perm_horz_vec = FS->ref_horizontal_permeability();
+  FS->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
 
-     // Epetra_Vector Krel_gh(cmap_wghost);
-     // FS->CopyMasterCell2GhostCell(Krel_cells, Krel_gh);
+  // Epetra_Vector Krel_gh(cmap_wghost);
+  // FS->CopyMasterCell2GhostCell(Krel_cells, Krel_gh);
 
-     // Epetra_Vector dK_dP_gh(cmap_wghost);
-     // FS->CopyMasterCell2GhostCell(dK_dP_cells, dK_dP_gh);
+  // Epetra_Vector dK_dP_gh(cmap_wghost);
+  // FS->CopyMasterCell2GhostCell(dK_dP_cells, dK_dP_gh);
 
-     //     cout<<"Krel_cells\n"<<Krel_cells<<endl;
-     //     cout<<"Krel_gh\n"<<Krel_gh<<endl;
+  // cout<<"Krel_cells\n"<<Krel_cells<<endl;
+  // cout<<"Krel_gh\n"<<Krel_gh<<endl;
 
+  for (int f = 0; f < nfaces_owned; f++){
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int mcells = cells.size();
+    Teuchos::SerialDenseMatrix<int, double> Jpp(mcells, mcells);
+    AmanziGeometry::Point face_cntr = mesh_->face_centroid(f);
 
-     for (int f = 0; f < nfaces_owned; f++){
-                mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-                int mcells = cells.size();
-                Teuchos::SerialDenseMatrix<int, double> Jpp(mcells, mcells);
-                AmanziGeometry::Point face_cntr = mesh_->face_centroid(f);
+    for (int n = 0; n < mcells; n++) {
+      cells_LID[n] = cells[n];
+      cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
+      perm_abs_vert[n] = perm_vert_gh[cells_LID[n]];
+      perm_abs_horz[n] = perm_horz_gh[cells_LID[n]];
+      pres[n] = pres_gh[cells_LID[n]];
+      // k_rel[n] = Krel_gh[cells_LID[n]];
+      k_rel[n] = Krel_cells[cells_LID[n]];
+      // dk_dp[n] = dK_dP_gh[cells_LID[n]];
+      dk_dp[n] = dK_dP_cells[cells_LID[n]];
+      cntr_cell[n] = mesh_->cell_centroid(cells_LID[n]);
+    }
+    if (mcells == 2) {
+      dist = norm(cntr_cell[0] - cntr_cell[1]);
+    } else if (mcells == 1) {
+      dist = norm(cntr_cell[0] - face_cntr);
+      k_rel[0] = Krel_faces[f];
+      dk_dp[0] = dK_dP_faces[f];
+    }
 
-                for (int n = 0; n < mcells; n++) {
-                        cells_LID[n] = cells[n];
-                        cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
-                        perm_abs_vert[n] = perm_vert_gh[cells_LID[n]];
-                        perm_abs_horz[n] = perm_horz_gh[cells_LID[n]];
-                        pres[n] = pres_gh[cells_LID[n]];
-                        // k_rel[n] = Krel_gh[cells_LID[n]];
-                        k_rel[n] = Krel_cells[cells_LID[n]];
-			// dk_dp[n] = dK_dP_gh[cells_LID[n]];
-                        dk_dp[n] = dK_dP_cells[cells_LID[n]];
-                        cntr_cell[n] = mesh_->cell_centroid(cells_LID[n]);
-                }
-                if (mcells == 2){
-                  dist = norm(cntr_cell[0] - cntr_cell[1]);
-                }
-                else if (mcells == 1)
-                {
-                  dist = norm(cntr_cell[0] - face_cntr);
-                  k_rel[0] = Krel_faces[f];
-                  dk_dp[0] = dK_dP_faces[f];
-                }
+    AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
+    normal *= 1./ mesh_->face_area(f);
 
-                AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
-                normal *= 1./ mesh_->face_area(f);
+    ComputeJacobianLocal(mcells, f, dim, Krel_method, bc_models, bc_values, dist, pres,
+                         perm_abs_vert, perm_abs_horz, k_rel, dk_dp, normal, Jpp);
 
-                ComputeJacobianLocal(mcells, f, dim, Krel_method, bc_models, bc_values, dist,  pres,
-                                     perm_abs_vert, perm_abs_horz, k_rel, dk_dp, normal, Jpp);
-
-                // if (((cells_GID[0]>5)||(cells_GID[1]>5))&& (mcells > 1)){
-		//   cout<<"GID "<<cells_GID[0]<<" "<<cells_GID[1]<<endl;
-                //   cout<<"dist "<<dist<<endl;
+    // if (((cells_GID[0]>5)||(cells_GID[1]>5))&& (mcells > 1)){
+	  //   cout<<"GID "<<cells_GID[0]<<" "<<cells_GID[1]<<endl;
+    //   cout<<"dist "<<dist<<endl;
 		//   cout<<"pres "<<pres[0]<<" "<<pres[1]<<endl;
 		//   cout<<"perm v "<< perm_abs_vert[0]<<" "<< perm_abs_vert[1]<<endl;
 		//   cout<<"perm h "<< perm_abs_horz[0]<<" "<< perm_abs_horz[1]<<endl;
 		//   cout<<"k_rel "<<k_rel[0]<<" "<<k_rel[1]<<endl;
 		//   cout<<"dk_dp "<<dk_dp[0]<<" "<<dk_dp[1]<<endl;
 		//   cout<<"normal "<<normal<<endl;
-                //   cout<<Jpp<<endl;
+    //   cout<<Jpp<<endl;
 		// }
-                 
 
-                (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
-     }
-    Spp_->GlobalAssemble();
-     //  cout << "AnalyticJacobian Spp\n";
-     //          std::cout<<(*Spp_)<<endl;
-     //          cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
-	      //    exit(0);
+    (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
+  }
+
+  Spp_->GlobalAssemble();
+  // cout << "AnalyticJacobian Spp\n";
+  // std::cout<<(*Spp_)<<endl;
+  // cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
+	// exit(0);
 }
 
 

@@ -84,6 +84,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   // development methods
   int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
+  void CreateMFDmassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }

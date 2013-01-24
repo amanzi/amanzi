@@ -21,7 +21,8 @@ class FlowSourceFactory {
   DomainFunction* createSource() const;
 
  private:
-  void processSourceSpec(Teuchos::ParameterList& list, DomainFunction* src) const;
+  void ProcessSourceSpec(Teuchos::ParameterList& list, DomainFunction* src) const;
+  void ProcessStringActions(const std::string& name, int* method) const;
      
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

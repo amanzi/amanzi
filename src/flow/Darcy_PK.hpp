@@ -46,7 +46,7 @@ class Darcy_PK : public Flow_PK {
 
   double CalculateFlowDt() { return dT_desirable_; }
   int Advance(double dT); 
-  int AdvanceToSteadyState();
+  int AdvanceToSteadyState(double T0, double dT0);
   void InitializeAuxiliaryData();
   void InitializeSteadySaturated();
 
@@ -72,7 +72,9 @@ class Darcy_PK : public Flow_PK {
 
   // linear solvers
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
-  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1;}
+  void SolveFullySaturatedProblem(double T, const Epetra_Vector& rhs, Epetra_Vector& u);
+  int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) { Y = X; return 1; }
+  void AssembleMatrixMFD();
 
   // io members
   void ProcessParameterList();
@@ -84,13 +86,19 @@ class Darcy_PK : public Flow_PK {
 
   // access methods
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
+  Epetra_Vector& ref_solution() { return *solution; }
   Epetra_Vector& ref_solution_faces() { return *solution_faces; }
-  Epetra_Import& ref_face_importer() { return *face_importer_; }
+  Epetra_Import& face_importer() { return *face_importer_; }
   const Epetra_Map& super_map() { return *super_map_; }
 
   double rho() { return rho_; }
   double mu() { return mu_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
+
+  // access methods only for unit tests (prefix get_ indicates that)
+  std::vector<WhetStone::Tensor>& get_K() { return K; }
+  Matrix_MFD* get_matrix() { return matrix_; }
+  std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
   // extension of STL
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 

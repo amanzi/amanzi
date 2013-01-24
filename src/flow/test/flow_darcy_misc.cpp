@@ -152,7 +152,7 @@ class DarcyProblem {
     Epetra_Vector& darcy_flux = DPK->flow_state()->ref_darcy_flux();
 #ifdef HAVE_MPI
     Epetra_Vector darcy_flux_wghost(mesh->face_map(true));
-    darcy_flux_wghost.Import(darcy_flux, DPK->ref_face_importer(), Insert);
+    darcy_flux_wghost.Import(darcy_flux, DPK->face_importer(), Insert);
 #else
     Epetra_Vector& darcy_flux_wghost = darcy_flux;
 #endif
@@ -203,7 +203,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState();
+    DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(DPK->flow_state());
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
@@ -238,7 +238,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState();
+    DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);
@@ -268,7 +268,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState();
+    DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(DPK->flow_state());
 
     double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
@@ -301,7 +301,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState();
+    DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(DPK->flow_state());
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks
@@ -338,7 +338,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState();
+    DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(DPK->flow_state());
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);
@@ -373,7 +373,7 @@ SUITE(Darcy_PK) {
 
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
-    DPK->AdvanceToSteadyState();
+    DPK->AdvanceToSteadyState(0.0, 1.0);
     DPK->CommitState(DPK->flow_state());
 
     double errorP = calculatePressureCellError(p0, pressure_gradient);  // error checks

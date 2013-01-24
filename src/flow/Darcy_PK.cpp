@@ -117,7 +117,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;
   verbosity = FLOW_VERBOSITY_HIGH;
   src_sink = NULL;
-  src_sink_distribution = FLOW_SOURCE_DISTRIBUTION_NONE;
+  src_sink_distribution = 0;
 }
 
 
@@ -225,7 +225,7 @@ void Darcy_PK::InitPK()
   preconditioner_->InitPreconditioner(method, ML_list);
 
   // Allocate memory for wells
-  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
@@ -262,6 +262,9 @@ void Darcy_PK::InitializeAuxiliaryData()
 ****************************************************************** */
 void Darcy_PK::InitializeSteadySaturated()
 { 
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+    std::printf("Flow PK: initializing with a saturated steady state...\n");
+  }
   double T = FS->get_time();
   SolveFullySaturatedProblem(T, *solution);
 }
@@ -334,7 +337,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method, K);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
     std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
@@ -342,19 +345,16 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   }
 
   // Well modeling (one-time call)
-  if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
   }
 
   // Initialize source
   if (src_sink != NULL) {
-    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
-      src_sink->Compute(T0);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
-      src_sink->ComputeDistribute(T0);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(T0, Kxy->Values());
-    } 
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        src_sink->ComputeDistribute(T0, Kxy->Values()); 
+    else
+        src_sink->ComputeDistribute(T0, NULL);
   }
 
   // make initial guess consistent with boundary conditions
@@ -370,49 +370,10 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 /* ******************************************************************
 * Wrapper for a steady-state solver
 ****************************************************************** */
-int Darcy_PK::AdvanceToSteadyState()
+int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
 {  
-  double T = FS->get_time();
-  SolveFullySaturatedProblem(T, *solution);
+  SolveFullySaturatedProblem(T0, *solution);
   return 0;
-}
-
-
-/* ******************************************************************
-* Calculates steady-state solution assuming that absolute permeability 
-* does not depend on time. The boundary conditions are calculated
-* only once, during the initialization step.                                                
-****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
-{
-  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver->SetAztecOption(AZ_conv, AZ_rhs);
-
-  // calculate and assemble elemental stifness matrices
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
-  matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, matrix_);
-  matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-  matrix_->AssembleGlobalMatrices();
-  matrix_->ComputeSchurComplement(bc_model, bc_values);
-  matrix_->UpdatePreconditioner();
-
-  rhs = matrix_->rhs();
-  Epetra_Vector b(*rhs);
-  solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
-  solver->SetLHS(&u);  // initial solution guess
-
-  int max_itrs = ti_specs_sss.ls_specs.max_itrs;
-  double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
-
-  solver->Iterate(max_itrs, convergence_tol);
-
-  int num_itrs = solver->NumIters();
-  double linear_residual = solver->ScaledResidual();
-
-  if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
-  }
 }
 
 
@@ -441,13 +402,10 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   if (src_sink != NULL) {
-    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
-      src_sink->Compute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
-      src_sink->ComputeDistribute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Kxy->Values());
-    } 
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        src_sink->ComputeDistribute(time, Kxy->Values()); 
+    else
+        src_sink->ComputeDistribute(time, NULL);
   }
 
   ProcessBoundaryConditions(

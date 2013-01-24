@@ -89,6 +89,63 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
 
 /* ******************************************************************
+* Calculate elemental inverse mass matrices.                                           
+****************************************************************** */
+void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
+    int mfd3d_method, double factor, std::vector<WhetStone::Tensor>& K)
+{
+  int dim = mesh_->space_dimension();
+  WhetStone::MFD3D mfd(mesh_);
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mfd.ModifyStabilityScalingFactor(factor);
+
+  Mff_cells_.clear();
+
+  int ok;
+  nokay_ = npassed_ = 0;
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
+
+    if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+      if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
+        ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
+      else
+        ok = mfd.DarcyMassInverse(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
+      ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
+      ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
+      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
+    } else {
+      ok = mfd.DarcyMassInverse(c, K[c], Mff);
+    }
+
+    Mff_cells_.push_back(Mff);
+
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
+      Errors::Message msg("Matrix_MFD: unexpected failure of LAPACK in WhetStone.");
+      Exceptions::amanzi_throw(msg);
+    }
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) nokay_++;
+    if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_PASSED) npassed_++;
+  }
+
+  // sum up the numbers across processors
+  int nokay_tmp = nokay_, npassed_tmp = npassed_;
+  mesh_->get_comm()->SumAll(&nokay_tmp, &nokay_, 1);
+  mesh_->get_comm()->SumAll(&npassed_tmp, &npassed_, 1);
+}
+
+
+/* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
 void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,

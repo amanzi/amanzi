@@ -21,10 +21,11 @@ namespace AmanziFlow {
 /* ******************************************************************
 *  Wrapper for advance to steady-state routines.                                                    
 ****************************************************************** */
-int Richards_PK::AdvanceToSteadyState()
+int Richards_PK::AdvanceToSteadyState(double T0, double dT0)
 {
-  T_physics = ti_specs_sss_.T0;
-  dT = ti_specs_sss_.dT0;
+  // override internal parameters
+  T_physics = ti_specs_sss_.T0 = T0;
+  dT = ti_specs_sss_.dT0 = dT0;
 
   int ierr = 0;
   int ti_method = ti_specs_sss_.ti_method;
@@ -169,13 +170,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
   // update steady state source conditons
   if (src_sink != NULL) {
-    if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_NONE) { 
-      src_sink->Compute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_VOLUME) {
-      src_sink->ComputeDistribute(time);
-    } else if (src_sink_distribution == FLOW_SOURCE_DISTRIBUTION_PERMEABILITY) {
-      src_sink->ComputeDistribute(time, Kxy->Values());
-    } 
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+        src_sink->ComputeDistribute(time, Kxy->Values()); 
+    else
+        src_sink->ComputeDistribute(time, NULL);
   }
 
   int max_itrs_nonlinear = ti_specs.max_itrs;

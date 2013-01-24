@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Castleton"/>
@@ -9,32 +9,26 @@
       <Parameter name="Transport Model" type="string" value="Off"/>
       <Parameter name="Chemistry Model" type="string" value="Off"/>
       <ParameterList name="Time Integration Mode">
-        <ParameterList name="Initialize To Steady">
-          <Parameter name="Start" type="double" value="0.0" units="s"/>
-          <Parameter name="Switch" type="double" value="3.16E11" units="s"/>
-          <Parameter name="End" type="double" value="3.16E11" units="s"/>
-			<!-- want steady state so run to 10,000 years = 3.16E11 seconds -->
-          <Parameter name="Steady Initial Time Step" type="double" value="200"  units="s"/>
-          <Parameter name="Transient Initial Time Step" type="double" value="6."  units="s"/>
+        <ParameterList name="Steady">
+          <Parameter name="Start" type="double" value="0.0"/>
+          <Parameter name="End" type="double" value="3.16E11"/>
+	  <!-- want steady state so run to 10,000 years = 3.16E11 seconds -->
+          <Parameter name="Initial Time Step" type="double" value="2.0"/>
         </ParameterList>
       </ParameterList>
       <Parameter name="Verbosity" type="string" value="High"/>
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Numerical Control Parameters">
-        <ParameterList name="Unstructured Algorithm">
-          <Parameter name="steady max iterations" type="int" value="15"/>
-          <Parameter name="steady min iterations" type="int" value="10"/>
-          <Parameter name="steady limit iterations" type="int" value="20"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1e-6"/>
-          <Parameter name="steady max time step" type="double" value="3.16E11"  units="s"/>
-          <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
-          <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-	  <Parameter name="transient max preconditioner lag iterations" type="int" value="5"/>
+          <ParameterList name="Steady-State Implicit Time Integration">
+            <Parameter name="steady max iterations" type="int" value="15"/>
+            <Parameter name="steady min iterations" type="int" value="10"/>
+            <Parameter name="steady limit iterations" type="int" value="20"/>
+            <Parameter name="steady nonlinear tolerance" type="double" value="1e-6"/>
+            <Parameter name="steady max time step" type="double" value="3.16E11"/>
+            <Parameter name="steady max preconditioner lag iterations" type="int" value="1"/>
+            <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -44,14 +38,14 @@
     <ParameterList name="Mesh">
       <ParameterList name="Unstructured">
         <ParameterList name="Expert">
-           <Parameter name="Framework" type="string" value="MSTK"/>
+	  <Parameter name="Framework" type="string" value="MSTK"/>
         </ParameterList>
         <ParameterList name="Generate Mesh">
-           <ParameterList name="Uniform Structured">
-             <Parameter name="Number of Cells" type="Array(int)" value="{1, 1, 200}"/>
-             <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0,  0.0}"  units="m" />
-             <Parameter name="Domain High Corner" type="Array(double)" value="{1.0, 1.0, 2.00}"  units="m"/>
-           </ParameterList>
+	  <ParameterList name="Uniform Structured">
+	    <Parameter name="Number of Cells" type="Array(int)" value="{1, 1, 200}"/>
+	    <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0,  0.0}"  units="m" />
+	    <Parameter name="Domain High Corner" type="Array(double)" value="{1.0, 1.0, 2.00}"  units="m"/>
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>

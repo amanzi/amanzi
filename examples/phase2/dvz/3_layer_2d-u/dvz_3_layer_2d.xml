@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-    <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Chandrika"/>
@@ -10,11 +10,11 @@
       <Parameter name="Chemistry Model" type="string" value="Off"/>
       <ParameterList name="Time Integration Mode">
         <ParameterList name="Initialize To Steady">
- <!--
+	  <!--
 
-             Start initalization:  t =    0.0 [y] = 0.0           [s]
+             Start initalization:  t =    0.0 [y] = 0.0            [s]
              Start transient:      t = 1956.0 [y] = 6.17266656e+10 [s]  
-             End transient:        t = 3000 [y] = 9.46728e+10 [s]
+             End transient:        t = 3000   [y] = 9.46728e+10    [s]
 
              Note that at 1956, the land use model changes, causing a change in the background infiltration rate.
              At the same time the first crib starts.
@@ -28,7 +28,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="Time Period Control">
-<!--
+	<!--
 
             The time integrator is reset at Start time, and at the Switch time.  In addition,
             it is usually reset at abrupt changes in source term activity.  In this simulation
@@ -39,32 +39,42 @@
             t = 1956.2 [y] = 6.173178481E10 [s]   Crib 216-B-18 starts
             t = 1956.3 [y] = 6.173705521E10 [s]   Crib 216-B-18 stops
             
-            -->                   
+	-->                   
         <Parameter name="Start Times" type="Array(double)" value="{6.1729344E10, 6.173178481E10, 6.173705521E10}"/>
         <Parameter name="Initial Time Step" type="Array(double)" value="{10, 10, 10}"/>
       </ParameterList>
       <Parameter name="Verbosity" type="string" value="High"/>
       <ParameterList name="Numerical Control Parameters">
         <ParameterList name="Unstructured Algorithm">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
-	  <Parameter name="transport subcycling" type="bool" value="true"/>
-          <Parameter name="steady max iterations" type="int" value="15"/>
-          <Parameter name="steady min iterations" type="int" value="10"/>
-          <Parameter name="steady limit iterations" type="int" value="20"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1.0e-5"/>
-          <Parameter name="steady max time step" type="double" value="6.0e+10"/>
-          <Parameter name="steady max preconditioner lag iterations" type="int" value="20"/>
-          <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-          <Parameter name="transient max iterations" type="int" value="15"/>
-          <Parameter name="transient min iterations" type="int" value="10"/>
-          <Parameter name="transient limit iterations" type="int" value="20"/>
-          <Parameter name="transient nonlinear tolerance" type="double" value="1.0e-5"/>
-          <Parameter name="transient max time step" type="double" value="6.0e+10"/>
-          <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
-          <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="transient time step increase factor" type="double" value="1.25"/>
-          <Parameter name="ML cycle applications" type="int" value="2"/>
+          <ParameterList name="Transport Process Kernel">
+            <Parameter name="Transport Integration Algorithm" type="string" value="Explicit First-Order"/>
+            <Parameter name="transport subcycling" type="bool" value="true"/>
+          </ParameterList>
+          <ParameterList name="Steady-State Implicit Time Integration">
+            <Parameter name="steady max iterations" type="int" value="15"/>
+            <Parameter name="steady min iterations" type="int" value="10"/>
+            <Parameter name="steady limit iterations" type="int" value="20"/>
+            <Parameter name="steady nonlinear tolerance" type="double" value="1.0e-5"/>
+            <Parameter name="steady max time step" type="double" value="6.0e+10"/>
+            <Parameter name="steady max preconditioner lag iterations" type="int" value="20"/>
+            <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="steady time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
+          <ParameterList name="Transient Implicit Time Integration">
+            <Parameter name="transient max iterations" type="int" value="15"/>
+            <Parameter name="transient min iterations" type="int" value="10"/>
+            <Parameter name="transient limit iterations" type="int" value="20"/>
+            <Parameter name="transient nonlinear tolerance" type="double" value="1.0e-5"/>
+            <Parameter name="transient max time step" type="double" value="6.0e+10"/>
+            <Parameter name="transient max preconditioner lag iterations" type="int" value="20"/>
+            <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
+            <Parameter name="transient time step increase factor" type="double" value="1.25"/>
+          </ParameterList>
+          <ParameterList name="Preconditioners">
+            <ParameterList name="Trilinos ML">
+              <Parameter name="ML cycle applications" type="int" value="2"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -74,14 +84,14 @@
     <ParameterList name="Mesh">
       <ParameterList name="Unstructured">
         <ParameterList name="Expert">
-           <Parameter name="Framework" type="string" value="MSTK"/>
+	  <Parameter name="Framework" type="string" value="MSTK"/>
         </ParameterList>
         <ParameterList name="Generate Mesh">
-           <ParameterList name="Uniform Structured">
-             <Parameter name="Number of Cells" type="Array(int)" value="{432, 1, 256}"/>
-             <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0,  0.0}" />
-             <Parameter name="Domain High Corner" type="Array(double)" value="{216.0, 1.0, 107.52}" />
-           </ParameterList>
+	  <ParameterList name="Uniform Structured">
+	    <Parameter name="Number of Cells" type="Array(int)" value="{432, 1, 256}"/>
+	    <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0,  0.0}" />
+	    <Parameter name="Domain High Corner" type="Array(double)" value="{216.0, 1.0, 107.52}" />
+	  </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>

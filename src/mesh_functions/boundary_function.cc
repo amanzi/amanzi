@@ -6,7 +6,7 @@ Amanzi is released under the three-clause BSD License.
 The terms of use and "as is" disclaimer for this license are 
 provided Reconstruction.cppin the top-level COPYRIGHT file.
 
-Author: Neil Carlson (version 1)  (nnc@lanl.gov)
+Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
@@ -18,10 +18,11 @@ Author: Neil Carlson (version 1)  (nnc@lanl.gov)
 namespace Amanzi {
 
 /* ****************************************************************
-* Populates internal array with function values. 
+* Populates internal array with function values.
+* Dummy argument 'action' is not used yet.
 **************************************************************** */
 void BoundaryFunction::Define(const std::vector<std::string> &regions,
-                              const Teuchos::RCP<const Function> &f)
+                              const Teuchos::RCP<const Function> &f, int action)
 {
   // Form the set of face indices that belong to any of the given regions.
   // We use a std::set here to filter out any duplicate indices.

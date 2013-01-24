@@ -329,6 +329,7 @@ Again, constant functions can be replaced by any of the available time-functions
      <ParameterList name="source terms">
        <ParameterList name="SRC 0">
          <Parameter name="regions" type="Array(string)" value="{Well east}"/>
+         <Parameter name="spatial distribution method" type="string" value="volume"/>
          <ParameterList name="sink">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.1"/>
@@ -338,6 +339,7 @@ Again, constant functions can be replaced by any of the available time-functions
 
        <ParameterList name="SRC 1">
          <Parameter name="regions" type="Array(string)" value="{Well west}"/>
+         <Parameter name="spatial distribution method" type="string" value="permeability"/>
          <ParameterList name="sink">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.2"/>
@@ -362,11 +364,12 @@ The remaining `"Flow`" parameters are
   The second option is still experimental (no papers were published) and produces 
   an optimal discretization.
 
-* `"source and sink distribution method`" [string] identifies a method for distributing
+* `"spatial distribution method`" [string] identifies a method for distributing
   source Q over the specified regions. The available options are `"volume`",
   `"none`", and `"permeability`". For option `"none`" the source term Q is measured
   in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
   is defined over a few regions, Q will be distributed independently over each region.
+  Default is `"none`".
 
 * `"relative position of water table`" [Array(string)] collects regions where
   the static head is set up with respect to the top side. For example, zero head
@@ -469,6 +472,10 @@ The parameters used here are
   The error estimator can be controled via two parameters in the list `"time integration method`" 
   called `"absolute error tolerance`" and `"relative error tolerance`". The default values
   for these parameters are 0.001. 
+
+* `"nonlinear iteration divergence factor`" [double] If in one nonlinear iteration the inf norm
+  of the update is larger by this factor than the previous update, abort the iteration, and 
+  repeat the current time step. Default is 1000.0.
 
 
 Transient Time Integratior
