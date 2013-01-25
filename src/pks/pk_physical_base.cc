@@ -24,6 +24,8 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   domain_ = plist_.get<std::string>("domain name", std::string("domain"));
   if (domain_ != std::string("domain")) {
     domain_prefix_ = domain_ + std::string("_");
+  } else {
+    domain_prefix_ = std::string("");
   }
 
   // get the mesh

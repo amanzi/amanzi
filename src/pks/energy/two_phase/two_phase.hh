@@ -20,10 +20,6 @@ us to the air-water system.
 
 #include "pk_physical_bdf_base.hh"
 
-// class IEM;
-// class EOS;
-// class Amanzi::Operators::Advection;
-
 namespace Amanzi {
 
 // forward declarations
@@ -41,7 +37,7 @@ class TwoPhase : public PKPhysicalBDFBase {
 
 public:
   TwoPhase(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
+      PKDefaultBase(plist, solution),
       PKPhysicalBDFBase(plist, solution),
       modify_predictor_with_consistent_faces_(false),
       niter_(0) {

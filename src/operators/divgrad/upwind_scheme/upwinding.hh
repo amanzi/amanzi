@@ -13,6 +13,8 @@
 #ifndef AMANZI_UPWINDING_SCHEME_
 #define AMANZI_UPWINDING_SCHEME_
 
+#include "Teuchos_RCP.hpp"
+
 namespace Amanzi {
 
 // forward declaration

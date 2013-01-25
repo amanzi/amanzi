@@ -25,7 +25,7 @@ Authors: Gianmarco Manzini
 #include "elevation_evaluator.hh"
 #include "meshed_elevation_evaluator.hh"
 #include "standalone_elevation_evaluator.hh"
-#include "manning_conductivity_evaluator.hh"
+#include "overland_conductivity_evaluator.hh"
 
 #include "overland.hh"
 
@@ -159,7 +159,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   ASSERT(plist_.isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_.sublist("overland conductivity evaluator");
   Teuchos::RCP<FieldEvaluator> cond_evaluator =
-      Teuchos::rcp(new FlowRelations::ManningConductivityEvaluator(cond_plist));
+      Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
   // -- -- hack to deal with BCs of the rel perm upwinding... this will need
   // -- -- some future thought --etc

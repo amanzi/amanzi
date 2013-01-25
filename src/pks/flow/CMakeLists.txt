@@ -11,4 +11,5 @@ add_subdirectory(bc_factory)
 add_subdirectory(richards)
 add_subdirectory(permafrost)
 add_subdirectory(overland)
+add_subdirectory(icy_overland)
 

@@ -77,7 +77,7 @@ public:
   // setting the solution as changed should also communicate faces
   virtual void changed_solution();
 
-private:
+protected:
   // setup methods
   virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
@@ -105,7 +105,7 @@ private:
 
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
- private:
+ protected:
   enum FluxUpdateMode {
     UPDATE_FLUX_ITERATION = 0,
     UPDATE_FLUX_TIMESTEP = 1,
