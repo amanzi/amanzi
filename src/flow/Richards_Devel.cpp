@@ -52,8 +52,12 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     double time = T_physics + dT;
     bc_pressure->Compute(time);
     bc_flux->Compute(time);
-    bc_head->Compute(time);
     bc_seepage->Compute(time);
+    if (shift_water_table_.getRawPtr() == NULL)
+      bc_head->Compute(time);
+    else
+      bc_head->ComputeShift(time, shift_water_table_->Values());
+
     ProcessBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
         *solution_faces, atm_pressure, rainfall_factor,

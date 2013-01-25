@@ -20,7 +20,7 @@ namespace Amanzi {
 * Calculate pairs <list of cells, function>
 ****************************************************************** */
 void DomainFunction::Define(const std::vector<std::string>& regions,
-                            const Teuchos::RCP<const Function>& f, int action)
+                            const Teuchos::RCP<const Function>& f, int method)
 {
   // Form the set of cell indices that belong to any of the given regions.
   // We use a std::set here to filter out any duplicate indices.
@@ -54,7 +54,7 @@ void DomainFunction::Define(const std::vector<std::string>& regions,
   
   // Add this specification to the list.
   spec_list_.push_back(std::make_pair(this_domain, f));
-  actions_.push_back(action);
+  actions_.push_back(method);
   
   // Go ahead and register the cells in the value_ map; this enables one to
   // get at the cells in the domain function without computing its value.
@@ -174,14 +174,11 @@ void DomainFunction::ComputeDistribute(double t, double* weight)
 /* ******************************************************************
 * Return all specified actions. 
 ****************************************************************** */
-int DomainFunction::ActionsList()
+int DomainFunction::CollectActionsList()
 {
-  int list = 0;
+  int list(0);
   int nspec = spec_list_.size();
-  for (int s = 0; s < nspec; s++) {
-    int action = actions_[s];
-    list |= action;
-  }
+  for (int s = 0; s < nspec; s++) list |= actions_[s];
   return list;
 }
 

@@ -130,10 +130,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 
   Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
 
-  verbosity = FLOW_VERBOSITY_HIGH;
+  verbosity = FLOW_VERBOSITY_NONE;
   src_sink = NULL;
   src_sink_distribution = 0;
-  internal_tests = 0;
   experimental_solver_ = FLOW_SOLVER_NKA;
 }
 
@@ -200,6 +199,9 @@ void Richards_PK::InitPK()
   // Initialize times.
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
+
+  // Initialize actions on boundary condtions. 
+  ProcessShiftWaterTableList(rp_list_, bc_head, shift_water_table_);
 
   // Process other fundamental structures.
   K.resize(ncells_wghost);
@@ -355,7 +357,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 ****************************************************************** */
 void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 {
-  set_time(T0, dT0);
+  ResetPKtimes(T0, dT0);
   bool ini_with_darcy = ti_specs.initialize_with_darcy;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {

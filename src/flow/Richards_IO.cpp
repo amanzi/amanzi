@@ -66,14 +66,6 @@ void Richards_PK::ProcessParameterList()
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
   ProcessStaticBCsubmodels(bc_submodel, rainfall_factor);
 
-  /*
-  double time = T_physics;
-  bc_pressure->Compute(time);
-  bc_head->Compute(time);
-  bc_flux->Compute(time);
-  bc_seepage->Compute(time);
-  */
-
   // Create the source object if any
   if (rp_list_.isSublist("source terms")) {
     string distribution_method_name = rp_list_.get<string>("source and sink distribution method", "none");
@@ -82,7 +74,7 @@ void Richards_PK::ProcessParameterList()
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(rp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
-    src_sink_distribution = src_sink->ActionsList();
+    src_sink_distribution = src_sink->CollectActionsList();
   }  
 
   // Create water retention models
@@ -447,14 +439,13 @@ void Richards_PK::AnalysisTI_Specs()
 
 
 /* ****************************************************************
-* Printing information about Flow status 
+* Prints information about status of this PK. 
 **************************************************************** */
 void Richards_PK::PrintStatistics() const
 {
-  if (! MyPID && verbosity > 0) {
+  if (MyPID == 0) {
     cout << "Flow PK:" << endl;
     cout << "  Verbosity level = " << verbosity << endl;
-    cout << "  Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
     cout << "  Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
   }
 }

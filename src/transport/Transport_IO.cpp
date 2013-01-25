@@ -126,7 +126,7 @@ void Transport_PK::ProcessParameterList()
           f = Teuchos::rcp(new TabularFunction(times, values, forms));
 	  
           BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
-          bnd_fun->Define(regions, f, Amanzi::MESH_FUNCTION_ACTION_NONE);
+          bnd_fun->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
           bcs.push_back(bnd_fun);
           bcs_tcc_index.push_back(i);
           break;

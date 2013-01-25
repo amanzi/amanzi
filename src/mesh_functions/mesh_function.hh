@@ -26,8 +26,6 @@ Authors: Neil Carlson
 
 namespace Amanzi {
 
-const int MESH_FUNCTION_ACTION_NONE = 0;
-
 typedef std::set<AmanziMesh::Entity_ID> Domain;
 typedef std::pair<Domain,Teuchos::RCP<const Function> > Spec;
 typedef std::vector<Spec> SpecList;

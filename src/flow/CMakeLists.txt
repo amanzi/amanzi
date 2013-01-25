@@ -43,8 +43,8 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Library: flow
 #
 set(flow_src_files Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
-                   Flow_BC_Factory.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
-                   Darcy_PK.cpp Darcy_TI.cpp Darcy_BC_Head.cpp Darcy_IO.cpp Darcy_AztecOO.cpp
+                   Flow_BC_Factory.cpp Flow_BC_Actions.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
+                   Darcy_PK.cpp Darcy_TI.cpp Darcy_IO.cpp Darcy_AztecOO.cpp
                    Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp
                    Richards_SteadyState.cpp Richards_Picard.cpp Richards_AztecOO.cpp
                    Richards_Bundles.cpp Richards_Devel.cpp Richards_AndersonMixing.cpp

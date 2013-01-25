@@ -22,7 +22,7 @@ namespace Amanzi {
 * Dummy argument 'action' is not used yet.
 **************************************************************** */
 void BoundaryFunction::Define(const std::vector<std::string> &regions,
-                              const Teuchos::RCP<const Function> &f, int action)
+                              const Teuchos::RCP<const Function> &f, int method)
 {
   // Form the set of face indices that belong to any of the given regions.
   // We use a std::set here to filter out any duplicate indices.
@@ -37,9 +37,12 @@ void BoundaryFunction::Define(const std::vector<std::string> &regions,
       m << "\n   unknown region name or wrong topological dimension for \"" << r->c_str() << "\"";
       Exceptions::amanzi_throw(m);
     }
+
+    if (method != BOUNDARY_FUNCTION_ACTION_NONE) {
+      Action action(*r, method);
+      actions_.push_back(action); 
+    }
   }
-  
-  //TODO: Verify that the faces in this_domain are all boundary faces.
   
   // Verify that the faces in this_domain are disjoint from the previous domains.
   for (SpecList::const_iterator s = spec_list_.begin(); s != spec_list_.end(); ++s) {

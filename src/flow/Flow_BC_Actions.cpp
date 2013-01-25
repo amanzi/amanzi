@@ -17,7 +17,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "Flow_constants.hpp"
-#include "Darcy_PK.hpp"
+#include "Flow_PK.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -26,23 +26,30 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Process parameter for special treatment of static head b.c.                                           
 ****************************************************************** */
-void Darcy_PK::ProcessShiftWaterTableList()
+void Flow_PK::ProcessShiftWaterTableList(
+    const Teuchos::ParameterList& list, BoundaryFunction* bc_head,
+    Teuchos::RCP<Epetra_Vector> shift_water_table_)
 {
   std::string name("relative position of water table");
+  if (list.isParameter(name)) {
+    Errors::Message msg;
+    msg << "\nFlow_PK: \"relative position of water table\" is obsolete.\n"
+        << "         see section \"Boundary Conditions\" in the Native Spec.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
-  if (dp_list_.isParameter(name)) {
-    std::vector<std::string> regions;
-    if (dp_list_.isType<Teuchos::Array<std::string> >(name)) {
-      regions = dp_list_.get<Teuchos::Array<std::string> >(name).toVector();
+  const std::vector<Amanzi::Action>& actions = bc_head->actions();
+  int nactions = actions.size();
+  if (nactions > 0) { 
+    const Epetra_BlockMap& fmap = mesh_->face_map(false);
+    shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  }
 
-      const Epetra_BlockMap& fmap = mesh_->face_map(false);
-      shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  for (int i = 0; i < nactions; i++) {
+    int method = actions[i].second;
 
-      int nregions = regions.size();
-      for (int i = 0; i < nregions; i++) {
-        CalculateShiftWaterTable(regions[i]);
-      }
-    }
+    if (method == Amanzi::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
+        CalculateShiftWaterTable(actions[i].first, shift_water_table_);
   }
 }
 
@@ -52,7 +59,8 @@ void Darcy_PK::ProcessShiftWaterTableList()
 * table is set up. 
 * WARNING: works only in 3D.                                            
 ****************************************************************** */
-void Darcy_PK::CalculateShiftWaterTable(const std::string region)
+void Flow_PK::CalculateShiftWaterTable(
+    const std::string region, Teuchos::RCP<Epetra_Vector> shift_water_table_)
 {
   double tol = 1e-6;
   Errors::Message msg;
@@ -157,8 +165,10 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 #endif
 
   // calculate head shift
+  double rho = FS->ref_fluid_density();
+  const AmanziGeometry::Point& gravity = FS->ref_gravity();
   double edge_length, tol_edge, a, b;
-  double rho_g = -rho_ * gravity_[dim - 1];
+  double rho_g = -rho * gravity[dim - 1];
 
   for (int i = 0; i < n; i++) {
     int f = ss_faces[i];
@@ -209,7 +219,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
   if (sendbuf != NULL) delete [] sendbuf;
 #endif
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     printf("Flow PK: found %5d boundary edges for side set \"%s\"\n", nedges/2, region.c_str());
   }
 }
@@ -218,8 +228,8 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 /* ******************************************************************
 * New implementation of the STL function.                                              
 ****************************************************************** */
-  void Darcy_PK::set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,
-                                  const std::vector<AmanziMesh::Entity_ID>& v2, std::vector<AmanziMesh::Entity_ID>* vv)
+void Flow_PK::set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,
+                               const std::vector<AmanziMesh::Entity_ID>& v2, std::vector<AmanziMesh::Entity_ID>* vv)
 {
   int i(0), j(0), n1, n2;
 

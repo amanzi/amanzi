@@ -109,13 +109,13 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 #endif
 
   // time control
-  set_time(0.0, 1e-8);  // default parameters
+  ResetPKtimes(0.0, FLOW_INITIAL_DT);
   dT_desirable_ = dT;
 
   // miscalleneous
   ti_specs = NULL;
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;
-  verbosity = FLOW_VERBOSITY_HIGH;
+  verbosity = FLOW_VERBOSITY_NONE;
   src_sink = NULL;
   src_sink_distribution = 0;
 }
@@ -182,18 +182,18 @@ void Darcy_PK::InitPK()
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-  // Initialize boundary condtions. 
-  ProcessShiftWaterTableList();
+  // Initialize actions on boundary condtions. 
+  ProcessShiftWaterTableList(dp_list_, bc_head, shift_water_table_);
 
   time = T_physics;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL) {
+  if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  } else {
+  else
     bc_head->ComputeShift(time, shift_water_table_->Values());
-  }
+
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure, rainfall_factor,
@@ -328,7 +328,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   Epetra_Vector& pressure = FS->ref_pressure();
   *solution_cells = pressure;
 
-  set_time(T0, dT0);
+  ResetPKtimes(T0, dT0);
   dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   ti_specs.num_itrs = 0;
 
@@ -395,11 +395,10 @@ int Darcy_PK::Advance(double dT_MPC)
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL) {
+  if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  } else {
+  else
     bc_head->ComputeShift(time, shift_water_table_->Values());
-  }
 
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)

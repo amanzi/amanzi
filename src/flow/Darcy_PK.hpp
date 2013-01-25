@@ -65,9 +65,6 @@ class Darcy_PK : public Flow_PK {
   void AddTimeDerivativeSpecificYield(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void UpdateSpecificYield();
 
-  void ProcessShiftWaterTableList();
-  void CalculateShiftWaterTable(const std::string region);
-
   double ErrorEstimate(double* dTfactor);
 
   // linear solvers
@@ -99,11 +96,6 @@ class Darcy_PK : public Flow_PK {
   std::vector<WhetStone::Tensor>& get_K() { return K; }
   Matrix_MFD* get_matrix() { return matrix_; }
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
-
-  // extension of STL
-  void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 
-                        const std::vector<AmanziMesh::Entity_ID>& v2, 
-                        std::vector<AmanziMesh::Entity_ID>* vv);
 
  private:
   Teuchos::ParameterList dp_list_;

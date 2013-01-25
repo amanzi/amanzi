@@ -107,12 +107,12 @@ TEST_FIXTURE(reference_mesh, basic)
   std::vector<std::string> reg(2);
   reg[0] = FRONT; 
   reg[1] = BACK;
-  bf.Define(reg, f1, Amanzi::MESH_FUNCTION_ACTION_NONE);
+  bf.Define(reg, f1, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
   CHECK_EQUAL(12,bf.size());
 
   // Add a definition for yet more sides, but with duplicates.
   reg[0] = BOTTOM; reg[1] = BOTTOM;
-  bf.Define(reg, f1, Amanzi::MESH_FUNCTION_ACTION_NONE);
+  bf.Define(reg, f1, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
   CHECK_EQUAL(16,bf.size());
 }
 
@@ -156,7 +156,7 @@ TEST_FIXTURE(reference_mesh, values2)
   // Create the boundary function
   BoundaryFunction bf(mesh);
   std::vector<std::string> regions(2); regions[0] = RIGHT; regions[1] = BACK;
-  bf.Define(regions, f3, Amanzi::MESH_FUNCTION_ACTION_NONE);
+  bf.Define(regions, f3, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
 
   // Check values at t=1
   bf.Compute(1.0);

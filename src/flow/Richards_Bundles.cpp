@@ -138,8 +138,12 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces)
 
   bc_pressure->Compute(Tp);
   bc_flux->Compute(Tp);
-  bc_head->Compute(Tp);
   bc_seepage->Compute(Tp);
+  if (shift_water_table_.getRawPtr() == NULL)
+    bc_head->Compute(Tp);
+  else
+    bc_head->ComputeShift(Tp, shift_water_table_->Values());
+
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       p_faces, atm_pressure, rainfall_factor,
@@ -159,8 +163,12 @@ void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
 {
   bc_pressure->Compute(Tp);
   bc_flux->Compute(Tp);
-  bc_head->Compute(Tp);
   bc_seepage->Compute(Tp);
+  if (shift_water_table_.getRawPtr() == NULL)
+    bc_head->Compute(Tp);
+  else
+    bc_head->ComputeShift(Tp, shift_water_table_->Values());
+
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       p_faces, atm_pressure, rainfall_factor,

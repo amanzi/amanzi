@@ -99,7 +99,7 @@ void FlowSourceFactory::ProcessStringActions(const std::string& name, int* metho
 {
   Errors::Message msg;
   if (name == "none") {
-    *method = Amanzi::MESH_FUNCTION_ACTION_NONE;
+    *method = Amanzi::DOMAIN_FUNCTION_ACTION_NONE;
   } else if (name == "volume") {
     *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
   } else if (name == "permeability") {

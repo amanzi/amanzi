@@ -210,6 +210,7 @@ class Richards_PK : public Flow_PK {
   BoundaryFunction* bc_seepage;  // Seepage face BC.
   std::vector<int> bc_model, bc_submodel; 
   std::vector<bc_tuple> bc_values;
+  Teuchos::RCP<Epetra_Vector> shift_water_table_;
   std::vector<double> rainfall_factor;
 
   DomainFunction* src_sink;  // Source and sink terms
