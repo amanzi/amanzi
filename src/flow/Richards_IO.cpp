@@ -66,14 +66,6 @@ void Richards_PK::ProcessParameterList()
   ValidateBoundaryConditions(bc_pressure, bc_head, bc_flux);
   ProcessStaticBCsubmodels(bc_submodel, rainfall_factor);
 
-  /*
-  double time = T_physics;
-  bc_pressure->Compute(time);
-  bc_head->Compute(time);
-  bc_flux->Compute(time);
-  bc_seepage->Compute(time);
-  */
-
   // Create the source object if any
   if (rp_list_.isSublist("source terms")) {
     string distribution_method_name = rp_list_.get<string>("source and sink distribution method", "none");

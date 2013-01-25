@@ -156,9 +156,9 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   if (is_matrix_symmetric)
-      solver->SetAztecOption(AZ_solver, AZ_cg);
+    solver->SetAztecOption(AZ_solver, AZ_cg);
   else
-      solver->SetAztecOption(AZ_solver, AZ_gmres);
+    solver->SetAztecOption(AZ_solver, AZ_gmres);
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -166,14 +166,17 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   double time = T_physics;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
-  bc_head->Compute(time);
+  if (shift_water_table_.getRawPtr() == NULL)
+    bc_head->Compute(time);
+  else
+    bc_head->ComputeShift(time, shift_water_table_->Values());
 
   // update steady state source conditons
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-        src_sink->ComputeDistribute(time, Kxy->Values()); 
+      src_sink->ComputeDistribute(time, Kxy->Values()); 
     else
-        src_sink->ComputeDistribute(time, NULL);
+      src_sink->ComputeDistribute(time, NULL);
   }
 
   int max_itrs_nonlinear = ti_specs.max_itrs;
@@ -284,7 +287,10 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
   double time = T_physics;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
-  bc_head->Compute(time);
+  if (shift_water_table_.getRawPtr() == NULL)
+    bc_head->Compute(time);
+  else
+    bc_head->ComputeShift(time, shift_water_table_->Values());
 
   int max_itrs_nonlinear = ti_specs.max_itrs;
   double residual_tol_nonlinear = ti_specs.residual_tol;

@@ -200,6 +200,9 @@ void Richards_PK::InitPK()
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
+  // Initialize actions on boundary condtions. 
+  ProcessShiftWaterTableList(rp_list_, bc_head, shift_water_table_);
+
   // Process other fundamental structures.
   K.resize(ncells_wghost);
   is_matrix_symmetric = SetSymmetryProperty();

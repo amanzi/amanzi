@@ -72,6 +72,12 @@ class Flow_PK : public BDF2::fnBase {
   void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
   void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
+  void ProcessShiftWaterTableList(
+      const Teuchos::ParameterList& list, BoundaryFunction* bc_head,
+      Teuchos::RCP<Epetra_Vector> shift_water_table_);
+  void CalculateShiftWaterTable(
+      const std::string region, Teuchos::RCP<Epetra_Vector> shift_water_table_);
+
   double WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Vector& darcy_flux);
 
   // gravity members
@@ -116,6 +122,10 @@ class Flow_PK : public BDF2::fnBase {
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list, const Teuchos::ParameterList& solver_list);
   void OutputTimeHistory(std::vector<dt_tuple>& dT_history);
 
+  // extension of STL
+  void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 
+                        const std::vector<AmanziMesh::Entity_ID>& v2, 
+                        std::vector<AmanziMesh::Entity_ID>* vv);
  public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;

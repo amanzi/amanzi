@@ -182,18 +182,18 @@ void Darcy_PK::InitPK()
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-  // Initialize boundary condtions. 
-  ProcessShiftWaterTableList();
+  // Initialize actions on boundary condtions. 
+  ProcessShiftWaterTableList(dp_list_, bc_head, shift_water_table_);
 
   time = T_physics;
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL) {
+  if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  } else {
+  else
     bc_head->ComputeShift(time, shift_water_table_->Values());
-  }
+
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
       *solution_faces, atm_pressure, rainfall_factor,
@@ -395,11 +395,10 @@ int Darcy_PK::Advance(double dT_MPC)
   bc_pressure->Compute(time);
   bc_flux->Compute(time);
   bc_seepage->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL) {
+  if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  } else {
+  else
     bc_head->ComputeShift(time, shift_water_table_->Values());
-  }
 
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
