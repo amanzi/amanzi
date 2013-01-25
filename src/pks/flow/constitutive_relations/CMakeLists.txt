@@ -6,4 +6,5 @@
 #
 
 add_subdirectory(wrm)
+add_subdirectory(overland_conductivity)
 

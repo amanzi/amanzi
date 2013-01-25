@@ -13,6 +13,7 @@ include_directories(${ATS_SOURCE_DIR}/src/factory)
 
 add_library(relations_eos
   eos_evaluator.cc
+  isobaric_eos_evaluator.cc
   eos_factory.cc
   eos_constant.cc eos_ideal_gas.cc eos_water.cc eos_ice.cc eos_vapor_in_gas.cc
   viscosity_evaluator.cc

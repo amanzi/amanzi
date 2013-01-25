@@ -14,10 +14,9 @@ namespace Flow {
 namespace FlowRelations {
 
 // RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
-//     SecondaryVariableFieldEvaluator(),
-//     plist_(plist) {
-//   ASSERT(plist.isSublist("WRM parameters"));
-//   Teuchos::ParameterList sublist = plist.sublist("WRM parameters");
+//     SecondaryVariableFieldEvaluator(plist) {
+//   ASSERT(plist_.isSublist("WRM parameters"));
+//   Teuchos::ParameterList sublist = plist_.sublist("WRM parameters");
 //   WRMFactory fac;
 //   wrm_ = fac.createWRM(sublist);
 
