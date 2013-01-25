@@ -40,34 +40,33 @@ TabularFunction::TabularFunction(const Array<double>&      x,
 Real
 TabularFunction::operator() (Real x) const
 {
-    Real y;
-    int n = x_.size();
-    if (x <= x_[0]) {
-    y = y_[0];
-  } else if (x >= x_[n-1]) {
-    y = y_[n-1];
-  } else {
-    // binary search to find interval containing x
-    int j1 = 0, j2 = n-1;
-    while (j2 - j1 > 1) {
-      int j = (j1 + j2) / 2;
-      if (x >= x_[j]) {
-        j1 = j;
-      } else {
-        j2 = j;
+  int n = x_.size();
+  Real y = y_[0]; // if n==0, or if x <= x[0]
+  if (n>0) {
+    if (x >= x_[n-1]) {
+      y = y_[n-1];
+    } else if (x > x_[0]) {
+      // binary search to find interval containing x
+      int j1 = 0, j2 = n-1;
+      while (j2 - j1 > 1) {
+        int j = (j1 + j2) / 2;
+        if (x >= x_[j]) {
+          j1 = j;
+        } else {
+          j2 = j;
+        }
       }
-    }
-    // Now have x_[j1] <= *x < x_[j2]
-    switch (form_[j1]) {
-    case LINEAR:
-      // Linear interpolation between x[j1] and x[j2]
-      y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (x - x_[j1]);
-      break;
-    case CONSTANT:
-      y = y_[j1];
-      break;
+      // Now have x_[j1] <= *x < x_[j2]
+      switch (form_[j1]) {
+      case LINEAR:
+        // Linear interpolation between x[j1] and x[j2]
+        y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (x - x_[j1]);
+        break;
+      case CONSTANT:
+        y = y_[j1];
+        break;
+      }
     }
   }
   return y;
 }
-

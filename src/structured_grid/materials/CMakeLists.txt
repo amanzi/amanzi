@@ -8,8 +8,8 @@
 # through these variables.
 project(STRUCTMAT)
 
-set(CXX_header_files Material.H MatIDFiller.H MatFillerPCarithAvg.H)
-set(CXX_source_files Material.cpp MatIDFiller.cpp MatFillerPCarithAvg.cpp)
+set(CXX_header_files Material.H MatIDFiller.H MatFillerPC.H)
+set(CXX_source_files Material.cpp MatIDFiller.cpp MatFillerPC.cpp)
 
 add_amanzi_library(structmat SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
 

@@ -5,7 +5,7 @@ using std::cout;
 using std::endl;
 #include <ParmParse.H>
 
-#include <MatFillerPCarithAvg.H>
+#include <MatFillerPC.H>
 #include <Region.H>
 
 static std::map<std::string, Region*> regions;
@@ -358,15 +358,16 @@ main (int   argc,
   }
   else {
     if (case_size=="medium") {
-      nLevs = 2;
-    } else if (case_size=="large"){
       nLevs = 3;
-    } else if (case_size=="xlarge"){
+    } else if (case_size=="large"){
       nLevs = 4;
+    } else if (case_size=="xlarge"){
+      nLevs = 5;
     }
     else {
-      BoxLib::Abort("No plan for this case_size");
+      nLevs = 2;
     }
+    pp.query("nLevs",nLevs);
     D_EXPR(n_cells[0] = 40, n_cells[1] = 24, n_cells[2] = 1);
     D_EXPR(prob_hi[0] = 40, prob_hi[1] = 24, prob_hi[2] = 1);
   }
@@ -412,8 +413,8 @@ main (int   argc,
     SetMaterialsTANK();
   }
 
-  bool verbose = false; pp.query("verbose",verbose);
-  if (verbose) {
+  int verbose = 0; pp.query("verbose",verbose);
+  if (verbose>1) {
     // Echo regions and materials
     if (ParallelDescriptor::IOProcessor()) {
       for (std::map<std::string,Region*>::const_iterator it=regions.begin(); it!=regions.end(); ++it) {
@@ -426,14 +427,7 @@ main (int   argc,
     }
   }
 
-  PArray<Property> properties(materials.size());
-  for (int i=0, N=materials.size(); i<N; ++i) {
-    Real m_porosity = (Real)(i+1)/N;
-    properties.set(i, new ConstantProperty(m_porosity));
-  }
-
   MatFillerPCarithAvg matFiller(geomArray,refRatio,materials);
-  const std::map<std::string,int>& mat_map = matFiller.MatIdx();
 
   bool fail = false;
 
@@ -444,7 +438,14 @@ main (int   argc,
   Real t = 1.5;
   PArray<MultiFab> data(nLevs,PArrayManage);
   for (int lev=nLevs-1; lev>=0; --lev) {
-    BoxArray ba(matFiller.MaterialID(lev).boxArray());
+    BoxArray ba;
+    if (case_size=="large" || case_size=="xlarge") {
+      ba = BoxArray(geomArray[lev].Domain());
+    }
+    else {
+      ba = matFiller.MaterialID(lev).boxArray();
+    }
+    ba.maxSize(64);
     data.set(lev, new MultiFab(ba,nout,0));
     for (int n=0; n<nout; ++n) {
       matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
@@ -453,10 +454,12 @@ main (int   argc,
 
   Array<Real> bins(materials.size(),0);
   for (int lev=0; lev<nLevs; ++lev) {
+    MultiFab mat(data[lev].boxArray(),1,0);
+    matFiller.SetMaterialID(lev,mat,0);
     for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
       const Box& vbox = mfi.validbox();
       const FArrayBox& fab = data[lev][mfi];
-      const FArrayBox& id = matFiller.MaterialID(lev)[mfi];
+      const FArrayBox& id = mat[mfi];
       for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
 	int bin = (int) id(iv,0);
 	int val = fab(iv,0);
@@ -470,18 +473,33 @@ main (int   argc,
   ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
 
   if (case_size=="small") {
-    fail &= bins[0] == 8;
-    fail &= bins[1] == 30;
+    Real trueRes[2] = {4, 30};
+      bool success1 = true;
+      for (int i=0; i<bins.size(); ++i) {
+        success1 &= (bins[i] == trueRes[i]);
+      }
+      fail = !success1;
   }
   else {
-    fail &= bins[0] == 1464;
-    fail &= bins[1] == 15726;
-    fail &= bins[2] == 3837;
-    fail &= bins[3] == 29028;
-    fail &= bins[4] == 9685;
+    if (case_size=="large") {
+      Real trueRes[5] = {3774776, 79086, 5757, 1499236, 9685};
+      bool success1 = true;
+      for (int i=0; i<bins.size(); ++i) {
+        success1 &= (bins[i] == trueRes[i]);
+      }
+      fail = !success1;
+    }
+    else {
+      fail = true;
+    }
+  }
+
+  for (int i=0; i<bins.size(); ++i) {
+    bins[i]  = 0;
   }
 
   t = 2.5;
+
   for (int lev=nLevs-1; lev>=0; --lev) {
     for (int n=0; n<nout; ++n) {
       matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
@@ -489,31 +507,45 @@ main (int   argc,
   }
 
   for (int lev=0; lev<nLevs; ++lev) {
+    MultiFab mat(data[lev].boxArray(),1,0);
+    matFiller.SetMaterialID(lev,mat,0);
+
     for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
       const Box& vbox = mfi.validbox();
       const FArrayBox& fab = data[lev][mfi];
-      const FArrayBox& id = matFiller.MaterialID(lev)[mfi];
+      const FArrayBox& id = mat[mfi];
       for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
 	int bin = (int) id(iv,0);
 	int val = fab(iv,0);
 	if (bin>=0) {
 	  bins[bin] += val;
-	}
+        }
       }
     }
   }
 
   ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
+
   if (case_size=="small") {
-    fail &= bins[0] == 8;
-    fail &= bins[1] == 60;
+    Real trueRes[2] = {4, 30};
+      bool success1 = true;
+      for (int i=0; i<bins.size(); ++i) {
+        success1 &= (bins[i] == trueRes[i]);
+      }
+      fail = !success1;
   }
   else {
-    fail &= bins[0] == 1464;
-    fail &= bins[1] == 15726;
-    fail &= bins[2] == 3837;
-    fail &= bins[3] == 29028;
-    fail &= bins[4] == 11622;
+    if (case_size=="large") {
+      Real trueRes[5] = {3774776, 79086, 5757, 1499236, 11622};
+      bool success1 = true;
+      for (int i=0; i<bins.size(); ++i) {
+        success1 &= (bins[i] == trueRes[i]);
+      }
+      fail = !success1;
+    }
+    else {
+      fail = true;
+    }
   }
 
   if (verbose) {
@@ -529,23 +561,24 @@ main (int   argc,
     }
     int coordSys = (int)CoordSys::Coord();
     std::string outFileName = "pltfile";
-    bool verbose = false;
+    bool pl_verbose = false;
     bool isCartGrid = false;
     Array<Real> vfeps(nLevs,1.e-10);
     Array<int> levelSteps(nLevs,0);
     
     WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
                   rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
-                  verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
+                  pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
   }
+  ParallelDescriptor::Barrier();
 
   DestroyMaterials();
   DestroyRegions();
   FabArrayBase::verbose = false;
-  BoxLib::Finalize();
   if (fail) {
     BoxLib::Abort();
   }
+  BoxLib::Finalize();
   return 0;
 }
 

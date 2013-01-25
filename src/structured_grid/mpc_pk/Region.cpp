@@ -7,9 +7,9 @@ Real Region::geometry_eps = -1;
 Array<Real> Region::domlo;
 Array<Real> Region::domhi;
 
-Region::Region (const std::string& r_name, 
-		const std::string& r_purpose, 
-		const std::string& r_type)
+Region::Region (std::string r_name, 
+		std::string r_purpose, 
+		std::string r_type)
   : name(r_name),
     purpose(r_purpose),
     type(r_type)
@@ -84,10 +84,10 @@ boxRegion::inregion(const Array<Real>& x) const
     return inflag;
 }
 
-colorFunctionRegion::colorFunctionRegion (const std::string& r_name,
-                                          const std::string& r_purpose,
-                                          const std::string& r_type,
-					  const std::string& file_name,
+colorFunctionRegion::colorFunctionRegion (std::string r_name,
+                                          std::string r_purpose,
+                                          std::string r_type,
+					  std::string file_name,
                                           int         color_val)
     : boxRegion(r_name,r_purpose,r_type,
                 Array<Real>(BL_SPACEDIM),Array<Real>(BL_SPACEDIM)), 
@@ -238,21 +238,17 @@ colorFunctionRegion::inregion (const Array<Real>& x) const
 std::ostream& operator<< (std::ostream& os, const Region& rhs)
 {
     rhs.operator<<(os);
+    return os;
 }
 
 std::ostream&
 Region::operator<< (std::ostream& os) const
 {
-#if 0
     os << "Region:\n";
     os << "  name:    " << name << '\n';
     os << "  purpose: " << purpose << '\n';
     os << "  type:    " << type << '\n';
-#else
-    os << "  r_name = \"" << name << "\";" << std::endl;
-    os << "  r_purpose = \"" << purpose << "\";" << std::endl;
-    os << "  r_type = \"" << type << "\";" << std::endl;
-#endif
+    return os;
 }
 
 std::ostream&
@@ -264,13 +260,13 @@ pointRegion::operator<< (std::ostream& os) const
         os << coor[i] << " ";
     }
     os << '\n';
+    return os;
 }
 
 std::ostream&
 boxRegion::operator<< (std::ostream& os) const
 {
     Region::operator<<(os);
-#if 0
     os << "    lo: ";
     for (int i=0; i<lo.size(); ++i) {
         os << lo[i] << " ";
@@ -281,12 +277,7 @@ boxRegion::operator<< (std::ostream& os) const
         os << hi[i] << " ";
     }
     os << '\n';
-#else
-    os << "  lo[0] = " << lo[0] << ";" << std::endl;
-    os << "  lo[1] = " << lo[1] << ";" << std::endl;
-    os << "  hi[0] = " << hi[0] << ";" << std::endl;
-    os << "  hi[1] = " << hi[1] << ";" << std::endl;
-#endif
+    return os;
 }
 
 std::ostream&
@@ -300,6 +291,7 @@ colorFunctionRegion::operator<< (std::ostream& os) const
         os << dx[i] << " ";
     }
     os << " color val = " << m_color_val << '\n';
+    return os;
 }
 
 #if 1
