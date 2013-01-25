@@ -177,13 +177,16 @@ MatIDFiller::FindMixedCells()
       delete fromFine;
     }
 
-    Array<IntVect> tags(tbar[lev].numTags()); 
-    long len = tbar[lev].collate(tags.dataPtr(), 0);
-    ClusterList clist(tags.dataPtr(), len);
-    clist.chop(grid_eff);
-    BoxList bl = clist.boxList(); bl.simplify();
-    ba_array[lev] = BoxLib::intersect(BoxArray(bl),Geom(lev).Domain());
-    ba_array[lev].maxSize(max_grid_size);
+    int num_tags = tbar[lev].numTags();
+    if (num_tags>0) {
+      Array<IntVect> tags(num_tags);
+      long len = tbar[lev].collate(tags.dataPtr(), 0);
+      ClusterList clist(tags.dataPtr(), len);
+      clist.chop(grid_eff);
+      BoxList bl = clist.boxList(); bl.simplify();
+      ba_array[lev] = BoxLib::intersect(BoxArray(bl),Geom(lev).Domain());
+      ba_array[lev].maxSize(max_grid_size);
+    }
   }
 
   return ba_array;

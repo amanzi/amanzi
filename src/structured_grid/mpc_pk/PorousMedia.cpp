@@ -167,6 +167,8 @@ namespace
 }
 
 static bool initialized = false;
+static bool physics_events_registered = false;
+
 void
 PorousMedia::CleanupStatics ()
 {
@@ -181,6 +183,7 @@ PorousMedia::CleanupStatics ()
     delete amanzi::chemistry::chem_out;
 #endif
     delete richard_solver;
+    physics_events_registered = false;
 }
 
 void
@@ -216,24 +219,6 @@ PorousMedia::variableCleanUp ()
       parameters.clear();
     }
 #endif
-}
-
-void
-PorousMedia::SetUpMaterialServer()
-{
-  PArray<Material> materials(rocks.size(),PArrayManage);
-  std::map<std::string,Property*> property_map;
-  for (int i=0; i<rocks.size(); ++i) {
-    materials.set(i,new Material(rocks[i].name,rocks[i].regions,property_map));
-  }
-  
-  int Nlevs = parent->finestLevel() + 1;
-  Array<Geometry> geomArray(Nlevs);
-  for (int lev=0; lev<Nlevs; ++lev) {
-    geomArray[lev] = Geometry(getLevel(lev).Geom());
-  }
-
-  matIDfiller.define(geomArray,parent->refRatio(),materials); // FIXME: All these copies of Geometry objects is silly
 }
 
 void
@@ -292,9 +277,9 @@ PorousMedia::PorousMedia ()
   t_sat_old_cached = -1;
   t_sat_new_cached = -1;
 
-  if (parent && !(matIDfiller.Initialized()) ) {
-    //SetUpMaterialServer();
+  if (parent && !physics_events_registered) {
     RegisterPhysicsBasedEvents();
+    physics_events_registered = true;
   }
 }
 
@@ -466,10 +451,6 @@ PorousMedia::PorousMedia (Amr&            papa,
   if (!initialized) {
     BoxLib::ExecOnFinalize(CleanupStatics);
     initialized = true;
-  }
-
-  if (parent && !(matIDfiller.Initialized()) ) {
-    //SetUpMaterialServer();
   }
 
   //

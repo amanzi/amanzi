@@ -479,9 +479,6 @@ public:
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
 
-  void SetUpMaterialServer();
-  MatIDFiller matIDfiller;
-
   void init_rock_properties (); // Initialize the rock properties
   void buildMetrics ();         // 1-D metric arrays for RZ
   static void setup_list ();

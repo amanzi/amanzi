@@ -25,7 +25,7 @@ PMAmr::CleanupStatics ()
 
 static bool initialized = false;
 PMAmr::PMAmr()
-    : Amr()
+  : Amr(), materialFiller(0)
 {
     if (!pmamr_initialized) {
         regrid_on_restart        = 0;
@@ -68,6 +68,8 @@ PMAmr::~PMAmr()
   for (std::map<std::string,EventCoord::Event*>::iterator it=defined_events.begin(); it!=defined_events.end(); ++it) {
     delete it->second;
   }
+
+  delete materialFiller;
 }
 
 void 
@@ -217,6 +219,8 @@ void
 PMAmr::init (Real t_start,
              Real t_stop)
 {
+    SetUpMaterialServer();
+
     if (!restart_file.empty() && restart_file != "init")
     {
         restart(restart_file);
@@ -635,6 +639,32 @@ PMAmr::coarseTimeStep (Real _stop_time)
 }
 
 void
+PMAmr::SetUpMaterialServer()
+{
+  if (materialFiller == 0 || !materialFiller->Initialized()) {
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Building MaterialFiller object..." << std::endl;
+    }
+
+    PArray<Rock>& rocks = PorousMedia::Rocks();
+    PArray<Material> materials(rocks.size(),PArrayManage);
+    std::map<std::string,Property*> property_map;
+    std::string phi_str = "porosity";
+    for (int i=0; i<rocks.size(); ++i) {
+      property_map[phi_str] = new ConstantProperty(rocks[i].porosity);
+      materials.set(i,new Material(rocks[i].name,rocks[i].regions,property_map));
+    }
+
+    int Nlevs = maxLevel() + 1;
+    materialFiller = new MatFillerPCarithAvg(geom,refRatio(),materials);
+    if (ParallelDescriptor::IOProcessor() && verbose>0) {
+      std::cout << "....MaterialFiller object built" << std::endl;
+    }
+  }
+}
+
+
+void
 PMAmr::initialInit (Real t_start,
                     Real t_stop)
 {
@@ -647,8 +677,6 @@ PMAmr::initialInit (Real t_start,
     // Init problem dependent data.
     //
     int init = true;
-
-    readProbinFile(init);
 
 #ifdef BL_SYNC_RANTABLES
     int iGet(0), iSet(1);
