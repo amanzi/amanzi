@@ -215,14 +215,22 @@ double Transport_PK::CalculateTransportDt()
   dT = std::min(dT, dT_debug);
   dT *= cfl_;
 
-  // print optional diagnostics
-  if (fabs(dT_tmp * cfl_ - dT) < 1e-6 * dT && verbosity >= TRANSPORT_VERBOSITY_HIGH) {
-    const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dT);
-    printf("Transport PK: cell with the smallest dT: %6d  at (%9.6f, %9.6f", cmin_dT, p[0], p[1]);
-    if (p.dim() == 3) 
-      printf(", %9.6f)\n", p[3]);
-    else
-      printf(")\n"); 
+  // print optional diagnostics using maximum cell id as the filter
+  if (verbosity >= TRANSPORT_VERBOSITY_HIGH) {
+    int cmin_dT_unique = (fabs(dT_tmp * cfl_ - dT) < 1e-6 * dT) ? cmin_dT : -1;
+ 
+#ifdef HAVE_MPI
+    int cmin_dT_tmp = cmin_dT_unique;
+    comm.MaxAll(&cmin_dT_tmp, &cmin_dT_unique, 1);
+#endif
+    if (cmin_dT == cmin_dT_unique) {
+      const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dT);
+      printf("Transport PK: cell %d has smallest dT, (%9.6f, %9.6f", cmin_dT, p[0], p[1]);
+      if (p.dim() == 3) 
+        printf(", %9.6f)\n", p[3]);
+      else
+        printf(")\n"); 
+    }
   }
   return dT;
 }
@@ -335,7 +343,7 @@ void Transport_PK::Advance(double dT_MPC)
   dT = dT_original;  // restore the original dT (just in case)
 
   if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
-    printf("Transport PK: number of sub-cycles = %3d  dT(sec): stable=%10.5g  mpc=%10.5g\n", 
+    printf("Transport PK: %d sub-cycles, dT_stable: %10.5g [sec]  dT_MPC: %10.5g [sec]\n", 
         ncycles, dT_original, dT_MPC);
   }
 
@@ -351,7 +359,7 @@ void Transport_PK::Advance(double dT_MPC)
     tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
 
     if (MyPID == 0) 
-        printf("Transport PK: min/max of a tracer: %9.6g %9.6g  at T(sec) %12.7g\n", tccmin, tccmax, T_physics);
+        printf("Transport PK: tracer: %9.6g to %9.6g  at %12.7g [sec]\n", tccmin, tccmax, T_physics);
   }
 
   // DEBUG

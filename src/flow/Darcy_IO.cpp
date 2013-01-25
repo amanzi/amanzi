@@ -62,7 +62,7 @@ void Darcy_PK::ProcessParameterList()
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
-    src_sink_distribution = src_sink->ActionsList();
+    src_sink_distribution = src_sink->CollectActionsList();
   }
 
   // discretization method
@@ -138,14 +138,13 @@ void Darcy_PK::ProcessStringLinearSolver(
 
 
 /* ******************************************************************
-* Printing information about Flow status.                                                     
+* Prints information about status of this PK.                                                     
 ****************************************************************** */
 void Darcy_PK::PrintStatistics() const
 {
-  if (!MyPID && verbosity > 0) {
+  if (MyPID == 0) {
     cout << "Flow PK:" << endl;
     cout << "    Verbosity level = " << verbosity << endl;
-    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
 

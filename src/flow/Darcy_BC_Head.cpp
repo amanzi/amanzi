@@ -29,20 +29,25 @@ namespace AmanziFlow {
 void Darcy_PK::ProcessShiftWaterTableList()
 {
   std::string name("relative position of water table");
-
   if (dp_list_.isParameter(name)) {
-    std::vector<std::string> regions;
-    if (dp_list_.isType<Teuchos::Array<std::string> >(name)) {
-      regions = dp_list_.get<Teuchos::Array<std::string> >(name).toVector();
+    Errors::Message msg;
+    msg << "\nFlow_PK: \"relative position of water table\" is obsolete.\n"
+        << "         see section \"Boundary Conditions\" in the Native Spec.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
-      const Epetra_BlockMap& fmap = mesh_->face_map(false);
-      shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  const std::vector<Amanzi::Action>& actions = bc_head->actions();
+  int nactions = actions.size();
+  if (nactions > 0) { 
+    const Epetra_BlockMap& fmap = mesh_->face_map(false);
+    shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  }
 
-      int nregions = regions.size();
-      for (int i = 0; i < nregions; i++) {
-        CalculateShiftWaterTable(regions[i]);
-      }
-    }
+  for (int i = 0; i < nactions; i++) {
+    int method = actions[i].second;
+
+    if (method == Amanzi::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
+        CalculateShiftWaterTable(actions[i].first);
   }
 }
 
@@ -209,7 +214,7 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
   if (sendbuf != NULL) delete [] sendbuf;
 #endif
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     printf("Flow PK: found %5d boundary edges for side set \"%s\"\n", nedges/2, region.c_str());
   }
 }
@@ -218,8 +223,8 @@ void Darcy_PK::CalculateShiftWaterTable(const std::string region)
 /* ******************************************************************
 * New implementation of the STL function.                                              
 ****************************************************************** */
-  void Darcy_PK::set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,
-                                  const std::vector<AmanziMesh::Entity_ID>& v2, std::vector<AmanziMesh::Entity_ID>* vv)
+void Darcy_PK::set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,
+                                const std::vector<AmanziMesh::Entity_ID>& v2, std::vector<AmanziMesh::Entity_ID>* vv)
 {
   int i(0), j(0), n1, n2;
 

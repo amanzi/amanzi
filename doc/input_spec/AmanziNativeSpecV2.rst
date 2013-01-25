@@ -263,6 +263,7 @@ of the other available functions:
        <ParameterList name="static head">
          <ParameterList name="BC 2">
            <Parameter name="regions" type="Array(string)" value="{West side Bottom}"/>
+           <Parameter name="relative to top" type="bool" value="true"/>
            <ParameterList name="water table elevation">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="10.0"/>
@@ -290,7 +291,7 @@ parameters described below. Mix and match of parameters is allowed.
 * `"rainfall`" [bool] indicates that the mass flux is defined with respect to the gravity 
   vector and the actual influx depends on boundary slope. Default value is `"false`".
 
-* `"relative to the top`" [bool] indicates that the static head is defined with respect
+* `"relative to top`" [bool] indicates that the static head is defined with respect
   to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
   Default falue is `"false`". 
 
@@ -305,7 +306,7 @@ Here is an examle:
 
        <ParameterList name="seepage face">
          <ParameterList name="BC 3">
-           <Parameter name="regions" type="Array(string)" value="{Foo}"/>
+           <Parameter name="regions" type="Array(string)" value="{California}"/>
            <Parameter name="rainfall" type="bool" value="true"/>
            <Parameter name="submodel" type="string" value="pflotran"/>
            <ParameterList name="outward mass flux">
@@ -348,42 +349,12 @@ Again, constant functions can be replaced by any of the available time-functions
        </ParameterList>
      </ParameterList>
 
-The remaining `"Flow`" parameters are
-
-* `"atmospheric pressure`" [double] defines the atmosperic pressure, [Pa].
-
-* `"relative permeability`" [string] defines a method for calculating relative
-  permeability. The available self-explanatory options `"upwind with gravity`",
-  are `"upwind with Darcy flux`", `"arithmetic mean`" and `"cell centered`". 
-  The first three calculate the relative permeability on mesh interfaces.
-
-* `"discretization method`" [string] helps to test new discretization methods. 
-  The available options are `"generic mfd`", `"optimized mfd`", `"monotone mfd`", and
-  `"support operator`". The last option reproduces discretization method implemented in RC1. 
-  The third option is recommended for orthogonal meshes and diagonal absolute permeability.
-  The second option is still experimental (no papers were published) and produces 
-  an optimal discretization.
-
 * `"spatial distribution method`" [string] identifies a method for distributing
   source Q over the specified regions. The available options are `"volume`",
   `"none`", and `"permeability`". For option `"none`" the source term Q is measured
   in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
   is defined over a few regions, Q will be distributed independently over each region.
   Default is `"none`".
-
-* `"relative position of water table`" [Array(string)] collects regions where
-  the static head is set up with respect to the top side. For example, zero head
-  can be specified on the top of a boundary side using this array.
-
-* `"VerboseObject`" [list] defines default verbosity level for the process kernel.
-  If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
-  Here is an example:
-
-.. code-block:: xml
-
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="medium"/>
-    </ParameterList>
 
 
 Initial Guess Pseudo Time Integratior
@@ -408,6 +379,8 @@ nonlinear solvers during calculation of the initial guess time integration. Here
        <Parameter name="maximum number of iterations" type="int" value="400"/>
      </ParameterList>
    </ParameterList>
+
+Detailed description of parameters is in the next two subsection.
 
 
 Steady State Time Integratior
@@ -452,6 +425,7 @@ The parameters used here are
 
 * `"enforce pressure-lambda constraints`" [bool] each time the time integrator is 
   restarted, we may re-enforce the pressure-lambda relationship for new boundary conditions. 
+  Default is true.
 
 * `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".
 
@@ -473,10 +447,6 @@ The parameters used here are
   called `"absolute error tolerance`" and `"relative error tolerance`". The default values
   for these parameters are 0.001. 
 
-* `"nonlinear iteration divergence factor`" [double] If in one nonlinear iteration the inf norm
-  of the update is larger by this factor than the previous update, abort the iteration, and 
-  repeat the current time step. Default is 1000.0.
-
 
 Transient Time Integratior
 -----------------------------
@@ -485,6 +455,37 @@ The sublist `"transient time integrator`" defines parameters controling linear a
 nonlinear solvers during transient time integration. Its parameters are similar to 
 that in the sublist `"steady state time integrator`" except for parameters controling
 pressure re-initialization.
+
+
+Other Parameters
+-----------------------------
+
+The remaining `"Flow`" parameters are
+
+* `"atmospheric pressure`" [double] defines the atmosperic pressure, [Pa].
+
+* `"relative permeability`" [string] defines a method for calculating relative
+  permeability. The available self-explanatory options `"upwind with gravity`",
+  are `"upwind with Darcy flux`", `"arithmetic mean`" and `"cell centered`". 
+  The first three calculate the relative permeability on mesh interfaces.
+
+* `"discretization method`" [string] helps to test new discretization methods. 
+  The available options are `"mfd`", `"optimized mfd`", `"two-point flux approximation`", and
+  `"support operator`". The last option reproduces discretization method implemented in RC1. 
+  The third option is recommended for orthogonal meshes and diagonal absolute permeability.
+  The second option is still experimental (no papers were published) and produces 
+  an optimal discretization.
+
+* `"VerboseObject`" [list] defines default verbosity level for the process kernel.
+  If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
+  Here is an example:
+
+.. code-block:: xml
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
+
 
 
 Transport
@@ -498,26 +499,28 @@ is used. Note that the boundary condition is set up separately for each componen
 
 .. code-block:: xml
 
-    <ParameterList name="Transport BCs">
-      <Parameter name="CFL" type="double" value="1.0"/>
-      <Parameter name="advective limiter" type="string" value="Tensorial"/>
+   <ParameterList name="Transport BCs">
+     <ParameterList name="West Boundary for H+">
+       <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
+       <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
+     </ParameterList>  
 
-      <ParameterList name="West Boundary for H+">
-        <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-      </ParameterList>  
+     <ParameterList name="East Boundary for TC-99">
+       <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
+       <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
+       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
+     </ParameterList>  
+   </ParameterList>  
 
-      <ParameterList name="East Boundary for TC-99">
-        <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
-        <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-      </ParameterList>  
-    </ParameterList>  
 
-The remaining `"Transport`" parameters are:
+Other parameters
+-----------------
+
+The remaining `"Transport`" parameters control temporal stability, spatial 
+and temporal accuracy, and verbosity:
 
 * `"CFL`" [double] time step limiter, a number less than 1 with default of 1.
    
@@ -530,6 +533,20 @@ The remaining `"Transport`" parameters are:
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".
   See an example under `"Flow`".
+
+Here is an example:
+
+.. code-block:: xml
+
+   <ParameterList name="Transport">
+     <Parameter name="CFL" type="double" value="1.0"/>
+     <Parameter name="spatial discretization order" type="int" value="1"/>
+     <Parameter name="advection limiter" type="string" value="Tensorial"/>
+
+     <ParameterList name="VerboseObject">
+       <Parameter name="Verbosity Level" type="string" value="high"/>
+     </ParameterList>
+   </ParameterList>  
 
 
 The `"Transport`" parameters useful for developers are:

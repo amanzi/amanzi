@@ -71,7 +71,7 @@
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
 
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="low"/>
+        <Parameter name="Verbosity Level" type="string" value="none"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">

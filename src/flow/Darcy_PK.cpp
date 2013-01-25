@@ -109,13 +109,13 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 #endif
 
   // time control
-  set_time(0.0, 1e-8);  // default parameters
+  ResetPKtimes(0.0, FLOW_INITIAL_DT);
   dT_desirable_ = dT;
 
   // miscalleneous
   ti_specs = NULL;
   mfd3d_method = FLOW_MFD3D_OPTIMIZED;
-  verbosity = FLOW_VERBOSITY_HIGH;
+  verbosity = FLOW_VERBOSITY_NONE;
   src_sink = NULL;
   src_sink_distribution = 0;
 }
@@ -328,7 +328,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   Epetra_Vector& pressure = FS->ref_pressure();
   *solution_cells = pressure;
 
-  set_time(T0, dT0);
+  ResetPKtimes(T0, dT0);
   dT_desirable_ = dT0;  // The minimum desirable time step from now on.
   ti_specs.num_itrs = 0;
 

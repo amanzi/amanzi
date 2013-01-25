@@ -98,8 +98,7 @@ class Flow_PK : public BDF2::fnBase {
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
   void WriteGMVfile(Teuchos::RCP<Flow_State> FS) const;
  
-  void set_time(double T0, double dT0) { T_physics = T0; dT = dT0; }
-  void set_verbosity(int level) { verbosity = level; }
+  void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }
   
   // miscallenous members
   Epetra_Map* CreateSuperMap();
@@ -122,7 +121,7 @@ class Flow_PK : public BDF2::fnBase {
   int nfaces_owned, nfaces_wghost;
 
   int MyPID;  // parallel information: will be moved to private
-  int verbosity, verbosity_AztecOO, internal_tests;  // output information
+  int verbosity, verbosity_AztecOO;  // output information
   int missed_bc_faces_;
  
   Teuchos::RCP<Flow_State> FS;

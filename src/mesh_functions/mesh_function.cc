@@ -11,7 +11,7 @@ namespace Amanzi {
 void MeshFunction::DefineFromString(const std::string region, const Teuchos::RCP<const Function>& f)
 {
   std::vector<std::string> regions(1, region);
-  Define(regions, f, Amanzi::MESH_FUNCTION_ACTION_NONE);
+  Define(regions, f, 0);
 }
 
 } // namespace Amanzi

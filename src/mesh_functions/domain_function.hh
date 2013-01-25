@@ -23,8 +23,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 namespace Amanzi {
 
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 2;
-const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 4;
+const int DOMAIN_FUNCTION_ACTION_NONE = 0;
+const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
+const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
 
 class DomainFunction : public MeshFunction {
  public:
@@ -37,7 +38,7 @@ class DomainFunction : public MeshFunction {
   void ComputeDistribute(double T, double* weight);
 
   // extract internal information
-  int ActionsList();
+  int CollectActionsList();
 
  private:
   std::vector<int> actions_;
