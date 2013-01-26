@@ -504,7 +504,7 @@ PorousMedia::PorousMedia (Amr&            papa,
   //
   diffusion = new Diffusion(parent,this,
 			    (level > 0) ? getLevel(level-1).diffusion : 0,
-			    ndiff,viscflux_reg,volume,area,
+			    ndiff-ntracers,viscflux_reg,volume,area,
 			    is_diffusive,visc_coef);
   
   // Allocate space for variable diffusion coefficients

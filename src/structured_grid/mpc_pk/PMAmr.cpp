@@ -220,6 +220,7 @@ PMAmr::init (Real t_start,
              Real t_stop)
 {
     SetUpMaterialServer();
+    InitializeControlEvents();
 
     if (!restart_file.empty() && restart_file != "init")
     {
