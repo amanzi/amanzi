@@ -506,8 +506,9 @@ PorousMedia::PorousMedia (Amr&            papa,
 			    (level > 0) ? getLevel(level-1).diffusion : 0,
 			    ndiff-ntracers,viscflux_reg,volume,area,
 			    is_diffusive,visc_coef);
-  
+  //
   // Allocate space for variable diffusion coefficients
+  //
   diffn_cc   = 0;
   diffnp1_cc = 0;
   if (variable_scal_diff || ntracers>0) 
@@ -4979,23 +4980,24 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       }
     }
 
-    bool diffuse_tracer = true;
+    bool diffuse_tracer = true; 
+    //diffuse_tracer = false;
     Real be_cn_theta_trac = 0;
 
     int nGrowD = 1; // FIXME: Should have 1 grow cell if to be used in adv forcing
     MultiFab DTerms_old(grids,ntracers,nGrowD);
     if (diffuse_tracer) {
-      calcDiffusivity(prev_time,first_tracer,ntracers);
+      calcDiffusivity(prev_time,first_tracer,ncomps+ntracers);
       getTracerViscTerms(DTerms_old,prev_time,nGrowD,fluxes);
     } else {
       DTerms_old.setVal(0,0,ntracers);
     }
-
+   
     int Aidx = first_tracer;
     int Cidx, Sidx, SRCidx, Didx, DUidx;
     Cidx = Sidx = SRCidx = Didx = DUidx = 0;
     int use_conserv_diff = (advectionType[first_tracer] == Conservative);
-
+   
     FArrayBox SRCext, divu;
     for (FillPatchIterator C_old_fpi(*this,get_old_data(State_Type),nGrowHYP,
                                      prev_time,State_Type,first_tracer,ntracers),
@@ -5012,10 +5014,9 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       godunov->Setup_tracer(grids[i], D_DECL(flux[0],flux[1],flux[2]), ntracers);
 
       SRCext.resize(gbox,ntracers);
-      getForce_Tracer(SRCext,i,1,first_tracer,ntracers,cur_time);
+      getForce_Tracer(SRCext,i,1,first_tracer,ntracers,cur_time); // do nothing, set SRCext to zero.
       SRCext.minus(DTerms_old[C_old_fpi],gbox,gbox,Didx,0,ntracers);  // SRCext = SRCext + ( 1 / Vol ) . Div( A . D . Grad(C_old))
       state_bc = getBCArray(State_Type,i,ncomps,1);
-
       BL_ASSERT(aofs->size()>i);
       BL_ASSERT(rock_phi->size()>i);
       BL_ASSERT(area[0].size()>i);
@@ -5112,7 +5113,6 @@ PorousMedia::SetTracerDiffusionBndryData(ViscBndry& bndry,
   }
 
   const BCRec& tracer_bc = get_desc_lst()[State_Type].getBC(first_tracer);
-
   if (level == 0) {
     bndry.setBndryValues(S,0,0,ntracers,tracer_bc);
   } else {
@@ -5167,6 +5167,7 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
   bool do_flux = Dflux.size()>0;
   for (int n=0; n<ntracers; ++n) {
     getDiffusivity(beta, time, first_tracer+n, 0, 1);
+    std::cout << (*beta[0])[0];
     for (int d = 0; d < BL_SPACEDIM; d++) {
       MultiFab::Multiply(*beta[d],area[d],0,0,1,0);
       beta[d]->mult(dx[d],0,1);
@@ -5184,8 +5185,7 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
 	Dflux[d].mult(b/(dx[d]),n,1);
       }
     }
-  }
-
+  }  
   //
   // Ensure consistent grow cells
   //    
@@ -10526,13 +10526,12 @@ PorousMedia::calcDiffusivity (const Real time,
   MultiFab* diff_cc = (whichTime == AmrOldTime) ? diffn_cc : diffnp1_cc;
   const int nGrow   = 1;
 
-  Array<Real> const_diff_coef(ncomp);
-  int cnt=0;
+  Array<Real> const_diff_coef(ndiff,0);
   for (int i=src_comp; i<ncomps; ++i) {
-    const_diff_coef[cnt++] = visc_coef[i];
+    const_diff_coef[i] = visc_coef[i];
   }
-  for (int i=ncomps; cnt<ncomps; ++i) {
-    const_diff_coef[cnt++] = diff_coef[i-ncomps];
+  for (int i=ncomps; i<ncomp; ++i) {
+    const_diff_coef[i] = diff_coef[i-ncomps];
   }
   //
   // Calculate diffusivity
@@ -10600,7 +10599,6 @@ PorousMedia::getDiffusivity (MultiFab*  diffusivity[BL_SPACEDIM],
   BL_ASSERT(whichTime == AmrOldTime || whichTime == AmrNewTime);
 
   MultiFab* diff_cc  = (whichTime == AmrOldTime) ? diffn_cc : diffnp1_cc;
-
   //
   // Fill edge-centered diffusivities based on diffn_cc or diffnp1_cc
   //
