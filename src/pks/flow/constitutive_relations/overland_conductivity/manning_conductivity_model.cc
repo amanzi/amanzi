@@ -20,7 +20,7 @@ ManningConductivityModel::ManningConductivityModel(Teuchos::ParameterList& plist
   manning_exp_ = plist_.get<double>("Manning exponent");
 }
 
-double ManningConductivityModel::conductivity(double depth, double slope, double coef) {
+double ManningConductivityModel::Conductivity(double depth, double slope, double coef) {
   if (depth <= 0.) return 0.;
 
   double exponent = manning_exp_ + 1.0;

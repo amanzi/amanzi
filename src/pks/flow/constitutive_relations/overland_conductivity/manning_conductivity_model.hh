@@ -22,7 +22,7 @@ public:
   explicit
   ManningConductivityModel(Teuchos::ParameterList& plist);
 
-  virtual double conductivity(double depth, double slope, double coef);
+  virtual double Conductivity(double depth, double slope, double coef);
 
 protected:
   Teuchos::ParameterList plist_;

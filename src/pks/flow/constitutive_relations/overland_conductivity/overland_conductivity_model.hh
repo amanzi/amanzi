@@ -17,7 +17,7 @@ namespace FlowRelations {
 class OverlandConductivityModel {
  public:
 
-  virtual double conductivity(double depth, double slope, double coef) = 0;
+  virtual double Conductivity(double depth, double slope, double coef) = 0;
 
 };
 
