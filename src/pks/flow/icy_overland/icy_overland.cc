@@ -13,6 +13,9 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "meshed_elevation_evaluator.hh"
 #include "standalone_elevation_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
+#include "overland_conductivity_model.hh"
+#include "unfrozen_fraction_evaluator.hh"
+#include "unfrozen_fraction_model.hh"
 
 #include "icy_overland.hh"
 
@@ -51,6 +54,16 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
   S->SetFieldEvaluator("pres_elev", elev_evaluator);
 
+  // -- unfrozen fraction model, eta
+  S->RequireField("unfrozen_fraction")->SetMesh(S->GetMesh("surface"))
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  ASSERT(plist_.isSublist("unfrozen fraction evaluator"));
+  Teuchos::ParameterList uf_plist = plist_.sublist("unfrozen fraction evaluator");
+  Teuchos::RCP<FlowRelations::UnfrozenFractionEvaluator> uf_evaluator =
+      Teuchos::rcp(new FlowRelations::UnfrozenFractionEvaluator(uf_plist));
+  S->SetFieldEvaluator("unfrozen_fraction", uf_evaluator);
+  uf_model_ = uf_evaluator->get_Model();
+
   // -- "rel perm" evaluator
   S->RequireField("overland_conductivity")->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -60,13 +73,10 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   //    NOTE that this will automatically require an unfrozen_fraction
   //    field/model
   cond_plist.set("height key", "unfrozen_effective_depth");
-  Teuchos::RCP<FieldEvaluator> cond_evaluator =
+  Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
-  // -- -- hack to deal with BCs of the rel perm upwinding... this will need
-  // -- -- some future thought --etc
-  manning_exp_ = cond_plist.get<double>("Manning exponent", 0.6666666666666667);
-  slope_regularization_ = cond_plist.get<double>("slope regularization epsilon", 1.e-8);
+  cond_model_ = cond_evaluator->get_Model();
 
   // -- source term evaluator
   if (plist_.isSublist("source evaluator")) {
@@ -130,12 +140,14 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // vals from cells and faces.
     // Then it needs to be fixed to work on a CompositeVector whose
     // components are cells and boundary faces. --etc
-    Teuchos::RCP<const CompositeVector> unfrozen_depth =
-        S->GetFieldData("unfrozen_effective_depth");
-    Teuchos::RCP<const CompositeVector> slope =
-        S->GetFieldData("slope_magnitude");
-    Teuchos::RCP<const CompositeVector> manning =
-        S->GetFieldData("manning_coefficient");
+    const Epetra_MultiVector& depth = *S->GetFieldData(key_)
+      ->ViewComponent("face", false);
+    const Epetra_MultiVector& slope = *S->GetFieldData("slope_magnitude")
+      ->ViewComponent("cell", false);
+    const Epetra_MultiVector& coef = *S->GetFieldData("manning_coefficient")
+      ->ViewComponent("cell", false);
+    const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
+      ->ViewComponent("face", false);
     Teuchos::RCP<CompositeVector> upwind_conductivity =
         S->GetFieldData("upwind_overland_conductivity", name_);
 
@@ -147,15 +159,15 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // First do the boundary
     AmanziMesh::Entity_ID_List cells;
-
     int nfaces = upwind_conductivity->size("face", true);
     for (int f=0; f!=nfaces; ++f) {
       if (bc_markers_[f] != Operators::MFD_BC_NULL) {
         upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+        ASSERT(cells.size() == 1);
         int c = cells[0];
-        double scaling = (*manning)("cell",c) *
-            std::sqrt(std::max((*slope)("cell",c), slope_regularization_));
-        (*upwind_conductivity)("face",f) = std::pow(std::abs((*unfrozen_depth)("face",f)), manning_exp_ + 1.0) / scaling ;
+        double eff_depth = depth[0][f] * uf_model_->UnfrozenFraction(temp[0][f]);
+        (*upwind_conductivity)("face",f) =
+          cond_model_->Conductivity(eff_depth, slope[0][c], coef[0][c]);
       }
     }
 

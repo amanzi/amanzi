@@ -10,39 +10,46 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
 
-#include "field_evaluator.hh"
-
 #include "richards.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
+#define DEBUG_RES_FLAG 0
 
 // Richards is a BDFFnBase
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                       Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-  ++niter_;
+void Richards::fun(double t_old,
+                   double t_new,
+                   Teuchos::RCP<TreeVector> u_old,
+                   Teuchos::RCP<TreeVector> u_new,
+                   Teuchos::RCP<TreeVector> g) {
+  niter_++;
 
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
-  S_inter_->set_time(t_old);
-  S_next_->set_time(t_new);
+  ASSERT(S_inter_->time() == t_old);
+  ASSERT(S_next_->time() == t_new);
   double h = t_new - t_old;
+
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
+#if DEBUG_FLAG
   int nc = u->size("cell") - 1;
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "----------------------------------------------------------------" << std::endl;
-    *out_ << "Richards Residual calculation: T0 = " << t_old << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
-    *out_ << "  p1: " << (*u)("cell",0,nc) << " " << (*u)("face",0,500) << std::endl;
+    *out_ << "Richards Residual calculation: T0 = " << t_old
+          << " T1 = " << t_new << " H = " << h << std::endl;
+    *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3)
+          << std::endl;
+    *out_ << "  p1: " << (*u)("cell",0,nc) << " " << (*u)("face",0,500)
+          << std::endl;
   }
-
+#endif
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -57,11 +64,12 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   res->PutScalar(0.0);
 
   // diffusion term, treated implicitly
-  ApplyDiffusion_(S_next_, res);
+  ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
   // accumulation term
-  AddAccumulation_(res);
+  AddAccumulation_(res.ptr());
 
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     Teuchos::RCP<const CompositeVector> satl1 = S_next_->GetFieldData("saturation_liquid");
     Teuchos::RCP<const CompositeVector> satl0 = S_inter_->GetFieldData("saturation_liquid");
@@ -77,8 +85,9 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
           << " " << (*res)("face",0,500) << std::endl;
   }
+#endif
 
-#if DEBUG_FLAG
+#if DEBUG_RES_FLAG
   if (niter_ < 23) {
     std::stringstream namestream;
     namestream << "flow_residual_" << niter_;
@@ -98,6 +107,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
+#if DEBUG_FLAG
   // Dump residual
   int nc = u->data()->size("cell") - 1;
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
@@ -107,27 +117,12 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
     *out_ << "  p1: " << (*u->data())("cell",0,nc) << " "
           << (*u->data())("face",0,500) << std::endl;
   }
-
-  // NaN checking
-  Teuchos::RCP<const CompositeVector> pres = u->data();
-  for (int c=0; c!=pres->size("cell",false); ++c) {
-    if (boost::math::isnan<double>((*pres)("cell",c))) {
-      *out_ << "Cutting time step due to NaN in cell residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-  for (int f=0; f!=pres->size("face",false); ++f) {
-    if (boost::math::isnan<double>((*pres)("face",f))) {
-      *out_ << "Cutting time step due to NaN in face residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
+#endif
 
   // Apply the preconditioner
   preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
 
+#if DEBUG_FLAG
   // Dump correction
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
 
@@ -136,44 +131,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   *out_ << "  PC*p1: " << (*Pu->data())("cell",0,nc) << " "
         << (*Pu->data())("face",0,500) << std::endl;
   }
-
-  // NaN checking of correction
-  Teuchos::RCP<const CompositeVector> ppres = Pu->data();
-  for (int c=0; c!=ppres->size("cell",false); ++c) {
-    if (boost::math::isnan<double>((*ppres)("cell",c))) {
-      // dump the schur complement
-      Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
-      std::stringstream filename_s;
-      filename_s << "schur_" << S_next_->cycle() << ".txt";
-      EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-      *out_ << "updated precon " << S_next_->cycle() << std::endl;
-
-      // print the rel perm
-      Teuchos::RCP<const CompositeVector> num_rel_perm =
-          S_next_->GetFieldData("numerical_rel_perm");
-      Teuchos::RCP<const CompositeVector> rel_perm =
-          S_next_->GetFieldData("relative_permeability");
-      *out_ << "REL PERM: " << std::endl;
-      rel_perm->Print(*out_);
-      *out_ << std::endl;
-      *out_ << "UPWINDED REL PERM: " << std::endl;
-      num_rel_perm->Print(*out_);
-
-      // throw
-      *out_ << "Cutting time step due to NaN in PC'd cell residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
-  for (int f=0; f!=ppres->size("face",false); ++f) {
-    if (boost::math::isnan<double>((*ppres)("face",f))) {
-      *out_ << "Cutting time step due to NaN in PC'd face residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
+#endif
 };
 
 
@@ -181,16 +139,17 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  Teuchos::RCP<CompositeVector> uw_rel_perm = S_next_->GetFieldData("numerical_rel_perm", name_);
-
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
+
+#if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
   }
+#endif
 
   // update state with the solution up.
-  S_next_->set_time(t);
+  ASSERT(S_next_->time() == t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // update the rel perm according to the scheme of choice
@@ -211,7 +170,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), preconditioner_.ptr());
 
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
@@ -293,7 +252,7 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_face = std::max<double>(enorm_face, tmp);
   }
   */
-  
+
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     double infnorm_c(0.), infnorm_f(0.);
     res.ViewComponent("cell",false)->NormInf(&infnorm_c);

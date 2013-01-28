@@ -15,68 +15,38 @@
 namespace Amanzi {
 namespace Flow {
 
-void Richards::UpdateFlux_(const Teuchos::RCP<State>& S) {
-  // update the rel perm if needed
-  UpdatePermeabilityData_(S.ptr());
+// -------------------------------------------------------------
+// Diffusion term, div K grad (p + rho*g*z)
+// -------------------------------------------------------------
+void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
+        const Teuchos::Ptr<CompositeVector>& g) {
+  // update the rel perm according to the scheme of choice
+  bool update = UpdatePermeabilityData_(S.ptr());
 
-  // update if pressure or rho has changed too, since this means new fluxes
-  //S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
-  S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
-
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm");
   // update the stiffness matrix
+  Teuchos::RCP<const CompositeVector> rel_perm =
+    S->GetFieldData("numerical_rel_perm", name_);
   matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
 
-  // derive the Darcy fluxes
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-  pres->ScatterMasterToGhosted();
-
-  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
-  Teuchos::RCP<CompositeVector> total_flux = S->GetFieldData("total_flux", name_);
-  matrix_->DeriveFlux(*pres, darcy_flux.ptr());
-  *total_flux = *darcy_flux;
-
-
-  // add in gravitational fluxes
+  // derive fluxes
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
-  AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
+  if (update_flux_ == UPDATE_FLUX_ITERATION) {
+    Teuchos::RCP<CompositeVector> flux =
+        S->GetFieldData("darcy_flux", name_);
+    matrix_->DeriveFlux(*pres, flux.ptr());
+    AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
+    flux->ScatterMasterToGhosted();
+  }
 
-  // communicate
-  darcy_flux->ScatterMasterToGhosted("face");
-  total_flux->ScatterMasterToGhosted("face");
-}
-
-// -------------------------------------------------------------
-// Diffusion term, div K grad p
-// -------------------------------------------------------------
-void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& g) {
-  // NOTE we always do this, even if the FieldEvaluators say we don't
-  // need to update.  This is because previous calculations were done
-  // in a preconditioner, and therefore not put into matrix_.
-  UpdateFlux_(S);
+  // assemble the stiffness matrix
   matrix_->CreateMFDrhsVectors();
-
-  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("numerical_rel_perm");
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-  Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
-  
-  const Teuchos::Ptr<const CompositeVector>& rp = Teuchos::ptr(&*rel_perm);
-  matrix_->CreateMFDstiffnessMatrices(rp);
-  matrix_->CreateMFDmassMatrices(K_.ptr());
-
-  AddGravityFluxes_(gvec, rel_perm, rho, matrix_);
-
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-
-
-
-
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
   matrix_->ComputeNegativeResidual(*pres, g.ptr());
 };
 
@@ -84,7 +54,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 // -------------------------------------------------------------
 // Accumulation of water term du/dt
 // -------------------------------------------------------------
-void Richards::AddAccumulation_(const Teuchos::RCP<CompositeVector>& g) {
+void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
   // update the water content at both the old and new times.
@@ -141,10 +111,10 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
 //
 // Must be called before applying boundary conditions and global assembling.
 // -----------------------------------------------------------------------------
-void Richards::AddGravityFluxes_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
-        const Teuchos::RCP<const CompositeVector>& rel_perm,
-        const Teuchos::RCP<const CompositeVector>& rho,
-        const Teuchos::RCP<Operators::MatrixMFD>& matrix) {
+void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+        const Teuchos::Ptr<const CompositeVector>& rel_perm,
+        const Teuchos::Ptr<const CompositeVector>& rho,
+        const Teuchos::Ptr<Operators::MatrixMFD>& matrix) {
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];
@@ -242,10 +212,10 @@ void Richards::AddGravityFluxes_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
 // -----------------------------------------------------------------------------
 // Updates global Darcy vector calculated by a discretization method.
 // -----------------------------------------------------------------------------
-void Richards::AddGravityFluxesToVector_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
-        const Teuchos::RCP<const CompositeVector>& rel_perm,
-        const Teuchos::RCP<const CompositeVector>& rho,
-        const Teuchos::RCP<CompositeVector>& darcy_flux) {
+void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+        const Teuchos::Ptr<const CompositeVector>& rel_perm,
+        const Teuchos::Ptr<const CompositeVector>& rho,
+        const Teuchos::Ptr<CompositeVector>& darcy_flux) {
 
   AmanziGeometry::Point gravity(g_vec->MyLength());
   for (int i=0; i!=g_vec->MyLength(); ++i) gravity[i] = (*g_vec)[i];

@@ -21,6 +21,8 @@ namespace Operators { class Upwinding; }
 
 namespace Flow {
 
+namespace FlowRelations { class UnfrozenFractionModel; }
+
 class IcyOverlandFlow : public OverlandFlow {
 
 public:
@@ -37,6 +39,9 @@ protected:
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
   bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
+
+protected:
+  Teuchos::RCP<FlowRelations::UnfrozenFractionModel> uf_model_;
 
 private:
   // factory registration

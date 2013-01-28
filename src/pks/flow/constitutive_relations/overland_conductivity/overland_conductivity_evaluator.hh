@@ -30,6 +30,8 @@ class OverlandConductivityEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+  Teuchos::RCP<OverlandConductivityModel> get_Model() { return model_; }
+
 private:
   Teuchos::RCP<OverlandConductivityModel> model_;
 

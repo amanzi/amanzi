@@ -10,12 +10,8 @@ Authors: Gianmarco Manzini
 #ifndef PK_FLOW_OVERLAND_HH_
 #define PK_FLOW_OVERLAND_HH_
 
-#include "Teuchos_TimeMonitor.hpp"
-
-#include "matrix_mfd.hh"
 #include "boundary_function.hh"
-#include "composite_vector_function.hh"
-#include "bdf_time_integrator.hh"
+#include "matrix_mfd.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -26,10 +22,13 @@ namespace Operators { class Upwinding; }
 
 namespace Flow {
 
+namespace FlowRelations { class OverlandConductivityModel; }
+
 class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandFlow(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
+  OverlandFlow(Teuchos::ParameterList& plist,
+               const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, solution),
       PKPhysicalBDFBase(plist, solution),
       standalone_mode_(false),
@@ -71,11 +70,13 @@ public:
   // admissible update -- ensure non-negativity of ponded depth
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
+  virtual void changed_solution();
+
   // modify the predictor to ensure non-negativity of ponded depth
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
-  // setting the solution as changed should also communicate faces
-  virtual void changed_solution();
+  // evaluating consistent faces for given BCs and cell values
+  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
 
 protected:
   // setup methods
@@ -94,11 +95,11 @@ protected:
 
   // physical methods
   // -- diffusion term
-  void ApplyDiffusion_(const Teuchos::RCP<State>& S,const Teuchos::RCP<CompositeVector>& g);
+  void ApplyDiffusion_(const Teuchos::Ptr<State>& S,const Teuchos::Ptr<CompositeVector>& g);
   // -- accumulation term
-  void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
+  void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
   // -- source terms
-  void AddLoadValue_(const Teuchos::RCP<CompositeVector>& g);
+  void AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g);
 
   // mesh creation
   void CreateMesh_(const Teuchos::Ptr<State>& S);
@@ -116,18 +117,15 @@ protected:
   // control switches
   bool standalone_mode_; // domain mesh == surface mesh
   FluxUpdateMode update_flux_;
-
-  // work data space
-  Teuchos::RCP<Operators::Upwinding> upwinding_;
-  Teuchos::RCP<Teuchos::Time> steptime_; //timer
-
-  // Conductivity evaluator, needed for hacking BCs for upwinding.
-  double manning_exp_;
-  double slope_regularization_;
   bool is_source_term_;
   bool is_coupling_term_;
   bool coupled_to_surface_via_residual_;
   double surface_head_eps_;
+  bool assemble_preconditioner_;
+  bool modify_predictor_with_consistent_faces_;
+
+  // work data space
+  Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
@@ -140,6 +138,9 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;
+
+  // overland conductivity model
+  Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
 
   // factory registration
   static RegisteredPKFactory<OverlandFlow> reg_;

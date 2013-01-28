@@ -67,7 +67,7 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = model_->conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
     }
   }
 }
