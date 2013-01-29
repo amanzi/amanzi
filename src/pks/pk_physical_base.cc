@@ -20,19 +20,26 @@ namespace Amanzi {
 void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   PKDefaultBase::setup(S);
 
-  // domain (defaults to nothing)
-  domain_ = plist_.get<std::string>("domain name", std::string("domain"));
-  if (domain_ != std::string("domain")) {
-    domain_prefix_ = domain_ + std::string("_");
-  } else {
+  // If they have not been set, pull the domain name and primary variable key
+  // from the parameter list.
+
+  // domain
+  if (domain_ == std::string("")) {
+    domain_ = plist_.get<std::string>("domain name", std::string("domain"));
+  }
+  if (key_ == std::string("")) {
+    key_ = plist_.get<std::string>("primary variable key", std::string("temperature"));
+  }
+
+  // derive the prefix
+  if (domain_ == std::string("domain")) {
     domain_prefix_ = std::string("");
+  } else {
+    domain_prefix_ = domain_ + std::string("_");
   }
 
   // get the mesh
   mesh_ = S->GetMesh(domain_);
-
-  // solution key
-  key_ = plist_.get<std::string>("solution key");
 
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList pv_sublist = plist_.sublist("primary variable evaluator");

@@ -342,11 +342,11 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   Teuchos::RCP<CompositeVector> darcy_velocity = S->GetFieldData("darcy_velocity", name_);
   Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
-  matrix_->DeriveCellVelocity(*darcy_flux, darcy_velocity);
+  matrix_->DeriveCellVelocity(*darcy_flux, darcy_velocity.ptr());
 
   Teuchos::RCP<CompositeVector> total_velocity = S->GetFieldData("total_velocity", name_);
   Teuchos::RCP<const CompositeVector> total_flux = S->GetFieldData("total_flux");
-  matrix_->DeriveCellVelocity(*total_flux, total_velocity);
+  matrix_->DeriveCellVelocity(*total_flux, total_velocity.ptr());
 };
 
 
@@ -380,7 +380,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       // Derive the pressure fluxes
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-      matrix_->DeriveFlux(*pres, flux_dir);
+      matrix_->DeriveFlux(*pres, flux_dir.ptr());
 
       // Add in the gravity fluxes
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
@@ -534,7 +534,7 @@ void Richards::UpdateBoundaryConditions_() {
 
     // -- derive the Darcy fluxes
     Teuchos::RCP<CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux", name_);
-    matrix_->DeriveFlux(pres, darcy_flux);
+    matrix_->DeriveFlux(pres, darcy_flux.ptr());
 
     // -- add in gravitational fluxes
     AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
@@ -636,7 +636,7 @@ void Richards::changed_solution() {
 
 bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
   if (modify_predictor_with_consistent_faces_) {
-    CalculateConsistentFaces_(h,u.ptr());
+    CalculateConsistentFaces(h,u.ptr());
     return true;
   }
 
@@ -644,7 +644,7 @@ bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
 }
 
 
-void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector>& u) {
+void Richards::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
@@ -678,7 +678,7 @@ void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector
   preconditioner_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  preconditioner_->UpdateConsistentFaceConstraints(u->data());
+  preconditioner_->UpdateConsistentFaceConstraints(u->data().ptr());
 }
 
 } // namespace

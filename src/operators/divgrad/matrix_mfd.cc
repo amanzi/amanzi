@@ -478,7 +478,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
  * Parallel matvec product A * X.
  ****************************************************************** */
 void MatrixMFD::Apply(const CompositeVector& X,
-                     const Teuchos::RCP<CompositeVector>& Y) const {
+                     const Teuchos::Ptr<CompositeVector>& Y) const {
   int ierr;
 
   // Face unknowns:  Yf = Aff_ * Xf + Afc_ * Xc
@@ -514,7 +514,7 @@ void MatrixMFD::Apply(const CompositeVector& X,
  *
  ****************************************************************** */
 void MatrixMFD::ApplyInverse(const CompositeVector& X,
-                     const Teuchos::RCP<CompositeVector>& Y) const {
+                     const Teuchos::Ptr<CompositeVector>& Y) const {
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));
   Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
@@ -555,7 +555,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
  * Linear algebra operations with matrices: r = f - A * x
  ****************************************************************** */
 void MatrixMFD::ComputeResidual(const CompositeVector& solution,
-          const Teuchos::RCP<CompositeVector>& residual) const {
+          const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(1.0, *rhs_, -1.0);
 }
@@ -565,7 +565,7 @@ void MatrixMFD::ComputeResidual(const CompositeVector& solution,
  * Linear algebra operations with matrices: r = A * x - f
  ****************************************************************** */
 void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
-        const Teuchos::RCP<CompositeVector>& residual) const {
+        const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(-1.0, *rhs_, 1.0);
 }
@@ -686,7 +686,7 @@ void MatrixMFD::UpdatePreconditioner() {
  * ghost faces.
  ****************************************************************** */
 void MatrixMFD::DeriveFlux(const CompositeVector& solution,
-                           const Teuchos::RCP<CompositeVector>& flux) const {
+                           const Teuchos::Ptr<CompositeVector>& flux) const {
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
@@ -740,7 +740,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
  * WARNING: It cannot be consistent with the Darcy flux.
  ****************************************************************** */
 void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
-        const Teuchos::RCP<CompositeVector>& velocity) const {
+        const Teuchos::Ptr<CompositeVector>& velocity) const {
 
   Teuchos::LAPACK<int, double> lapack;
 
@@ -787,7 +787,7 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
 * of the known pressure. Structure of the global system is preserved
 * but off-diagola blocks are zeroed-out.
 ****************************************************************** */
-void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::RCP<CompositeVector>& u) {
+void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u) {
   Teuchos::RCP<Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> rhs_f = rhs_->ViewComponent("face", false);
 

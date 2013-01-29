@@ -37,7 +37,7 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("overland_flux", name_);
-    matrix_->DeriveFlux(*pres_elev, flux);
+    matrix_->DeriveFlux(*pres_elev, flux.ptr());
   }
 
   // assemble the stiffness matrix
@@ -46,7 +46,7 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::RCP<State>& S,
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
-  matrix_->ComputeNegativeResidual(*pres_elev, g);
+  matrix_->ComputeNegativeResidual(*pres_elev, g.ptr());
 };
 
 

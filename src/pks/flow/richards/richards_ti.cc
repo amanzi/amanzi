@@ -126,7 +126,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   }
 
   // Apply the preconditioner
-  preconditioner_->ApplyInverse(*u->data(), Pu->data());
+  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
 
   // Dump correction
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {

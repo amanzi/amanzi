@@ -9,8 +9,8 @@ Author: Ethan Coon
 Process kernel for energy equation for Richard's flow.
 ------------------------------------------------------------------------- */
 
-#ifndef PKS_ENERGY_TWO_PHASE_HH_
-#define PKS_ENERGY_TWO_PHASE_HH_
+#ifndef PKS_ENERGY_SURFACE_ICE_HH_
+#define PKS_ENERGY_SURFACE_ICE_HH_
 
 #include "pk_factory.hh"
 #include "energy_base.hh"
@@ -18,20 +18,18 @@ Process kernel for energy equation for Richard's flow.
 namespace Amanzi {
 
 // forward declarations
-class MPCDiagonalFlowEnergy;
-class MPCCoupledFlowEnergy;
 namespace Relations { class EOS; }
 namespace Energy { namespace EnergyRelations { class IEM; } }
 
 namespace Energy {
 
-class TwoPhase : public EnergyBase {
+class SurfaceIce : public EnergyBase {
 
 public:
-  TwoPhase(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution);
+  SurfaceIce(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
-  virtual ~TwoPhase() {}
+  virtual ~SurfaceIce() {}
 
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::Ptr<State>& S);
@@ -46,9 +44,9 @@ protected:
   virtual void ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& enth);
 
-  // -- No source terms needed.
+  // -- Source terms
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
-                           const Teuchos::Ptr<CompositeVector>& f) {}
+                           const Teuchos::Ptr<CompositeVector>& f);
 
 
  protected:
@@ -56,13 +54,14 @@ protected:
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
 
+  Key energy_source_from_subsurface_key_;
+  Key mass_external_source_key_;
+
+
 private:
   // factory registration
-  static RegisteredPKFactory<TwoPhase> reg_;
+  static RegisteredPKFactory<SurfaceIce> reg_;
 
-  // Energy has a friend in couplers...
-  friend class Amanzi::MPCCoupledFlowEnergy;
-  friend class Amanzi::MPCDiagonalFlowEnergy;
 };
 
 } // namespace Energy

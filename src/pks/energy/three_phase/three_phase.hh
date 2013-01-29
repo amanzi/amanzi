@@ -6,14 +6,14 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Fully three-phase (air, water, ice) permafrost energy equation.
+Fully three-phase (air, water, ice) permafrost energy equation, with only
+mobile water.
+
+Inherits TwoPhase instead of EnergyBase to pick up the enthalpy from TwoPhase.
 ------------------------------------------------------------------------- */
 
 #ifndef PKS_ENERGY_THREE_PHASE_HH_
 #define PKS_ENERGY_THREE_PHASE_HH_
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
 
 #include "pk_factory.hh"
 #include "two_phase.hh"
@@ -36,7 +36,7 @@ protected:
 
 private:
   static RegisteredPKFactory<ThreePhase> reg_;
-  
+
   friend  class MPCCoupledFlowEnergy;
 };
 

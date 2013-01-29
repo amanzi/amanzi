@@ -9,11 +9,12 @@ include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/thermal_conductivity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 add_library(pk_energy_three_phase three_phase_energy_evaluator.cc
-  three_phase_pk.cc)
+  three_phase.cc)
 
 # WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 
