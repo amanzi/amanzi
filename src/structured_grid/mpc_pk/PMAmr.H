@@ -11,7 +11,7 @@ class MFTGrowFill;
 #include <MatIDFiller.H>
 #include <Observation.H>
 #include <EventCoord.H>
-#include <MatFillerPC.H>
+#include <MatFiller.H>
 
 class PMAmr
     : public Amr
@@ -50,7 +50,7 @@ public:
                         Real time, int iter);
 
     Layout& GetLayout() {return layout;}
-    MatFillerPC* GetMatFiller() {return materialFiller;}
+    MatFiller* GetMatFiller() {return materialFiller;}
     const Array<Real>& TPCStartTimes() const {return tpc_start_times;}
 
     Real Dt0FromPreviousAdvance() const {return dt0_from_previous_advance;}
@@ -89,7 +89,7 @@ protected:
 
 
     void SetUpMaterialServer();
-    MatFillerPC* materialFiller;
+    MatFiller* materialFiller;
 
 private:
     //

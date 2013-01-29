@@ -8468,7 +8468,7 @@ PorousMedia::init_rock_properties ()
 
 #if 0
   // FIXME: Leave commented out until final testing complete
-  MatFillerPC* matFiller = PMParent()->GetMatFiller();
+  MatFiller* matFiller = PMParent()->GetMatFiller();
   MultiFab tphi(grids,2,nGrowHYP);
   Real t_time = 0;
   void* myCtx = 0;

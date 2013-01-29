@@ -1,41 +1,23 @@
-#include <MatFillerPC.H>
+#include <MatFiller.H>
 #include <BC_TYPES.H>
-#include <MatFillerPC_F.H>
-
-MatFillerPC::MatFillerPC()
-  : MatIDFiller()
-{
-}
-
-MatFillerPC::MatFillerPC(const Array<Geometry>&  geomArray,
-                         const Array<IntVect>&   refRatio,
-                         const PArray<Material>& materials)
-  : MatIDFiller(geomArray,refRatio,materials)
-{
-}
+#include <MatFiller_F.H>
 
 void 
-MatFillerPC::define(const Array<Geometry>& _geomArray,
-                    const Array<IntVect>&  _refRatio,
-                    const PArray<Material>& _materials)
+MatFiller::define(const Array<Geometry>& _geomArray,
+                  const Array<IntVect>&  _refRatio,
+                  const PArray<Material>& _materials)
 {
   MatIDFiller::define(_geomArray,_refRatio,materials);
 }
 
-using std::cout;
-using std::endl;
-void writeMF(std::ostream& os, const MultiFab& mf) {
-  const DistributionMapping& dm = mf.DistributionMap();
-  for (int i=0; i<mf.size(); ++i) {
-    if (ParallelDescriptor::MyProc()==dm[i]) {
-      cout << mf[i] << endl;
-    }
-    ParallelDescriptor::Barrier();
-  }
-}
-
 void 
-MatFillerPC::SetProperty(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nGrow, void* ctx)
+MatFiller::SetProperty(Real               t,
+                       int                level,
+                       MultiFab&          mf,
+                       const std::string& pname,
+                       int                dComp,
+                       int                nGrow,
+                       void*              ctx)
 {
   if (geomArray[level].isAnyPeriodic()) {
     BoxLib::Abort("Periodic not yet supported");
@@ -184,7 +166,13 @@ MatFillerPC::SetProperty(Real t, int level, MultiFab& mf, const std::string& pna
 }
 
 void
-MatFillerPC::FillCellsOutsideDomain(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nComp, int nGrow)
+MatFiller::FillCellsOutsideDomain(Real               t,
+                                  int                level,
+                                  MultiFab&          mf,
+                                  const std::string& pname,
+                                  int                dComp,
+                                  int                nComp,
+                                  int                nGrow)
 {
   const Array<int> bc(2*BL_SPACEDIM,FOEXTRAP);
   const Geometry& geom = geomArray[level];
@@ -200,7 +188,13 @@ MatFillerPC::FillCellsOutsideDomain(Real t, int level, MultiFab& mf, const std::
 }
 
 void
-MatFillerPC::FillCoarseCells(Real t, int level, MultiFab& mfc, const std::string& pname, int dComp, int nComp, void* ctx)
+MatFiller::FillCoarseCells(Real               t,
+                           int                level,
+                           MultiFab&          mfc,
+                           const std::string& pname,
+                           int                dComp,
+                           int                nComp,
+                           void*              ctx)
 {
   int finestLevel = nLevs-1;
   if (level<finestLevel) {

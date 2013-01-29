@@ -1,25 +1,25 @@
-#ifndef _MatFillerPC_H_
-#define _MatFillerPC_H_
+#ifndef _MatFiller_H_
+#define _MatFiller_H_
 
 #include <MatIDFiller.H>
 
-class MatFillerPC
+class MatFiller
   : public MatIDFiller
 {
 public:
 
-  MatFillerPC();
-  MatFillerPC(const Array<Geometry>&  geomArray,
-              const Array<IntVect>&   refRatio,
-              const PArray<Material>& materials);
+  MatFiller()
+    : MatIDFiller() {}
+  
+  MatFiller(const Array<Geometry>&  geomArray,
+            const Array<IntVect>&   refRatio,
+            const PArray<Material>& materials)
+    : MatIDFiller(geomArray,refRatio,materials) {}
   
   void define(const Array<Geometry>&  geomArray,
               const Array<IntVect>&   refRatio,
               const PArray<Material>& materials);
 
-  virtual void SetProperty(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nGrow, void* ctx = 0);
-  void FillCoarseCells(Real t, int level, MultiFab& mfc, const std::string& pname, int dComp, int nComp, void* ctx = 0);
-  virtual void FillCellsOutsideDomain(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nComp, int nGrow);
 
   virtual void CoarsenData(const FArrayBox& fineFab,
                            int              sComp,
@@ -36,17 +36,44 @@ public:
                           int              dComp,
                           int              nComp,
                           const IntVect&   ref) const = 0;
+
+  void SetProperty(Real               t,
+                   int                level,
+                   MultiFab&          mf,
+                   const std::string& pname,
+                   int                dComp,
+                   int                nGrow,
+                   void*              ctx = 0);
+  
+  void FillCoarseCells(Real               t,
+                       int                level,
+                       MultiFab&          mfc,
+                       const std::string& pname,
+                       int                dComp,
+                       int                nComp,
+                       void*              ctx = 0);
+
+  void FillCellsOutsideDomain(Real               t,
+                              int                level,
+                              MultiFab&          mf,
+                              const std::string& pname,
+                              int                dComp,
+                              int                nComp,
+                              int                nGrow);
 };
 
 class MatFillerPCarithAvg
-  : public MatFillerPC
+  : public MatFiller
 {
 public:
-  MatFillerPCarithAvg();
+
+  MatFillerPCarithAvg()
+    : MatFiller() {}
+
   MatFillerPCarithAvg(const Array<Geometry>&  geomArray,
                       const Array<IntVect>&   refRatio,
                       const PArray<Material>& materials)
-    : MatFillerPC(geomArray,refRatio,materials) {}
+    : MatFiller(geomArray,refRatio,materials) {}
 
   virtual void CoarsenData(const FArrayBox& fineFab,
                            int              sComp,
