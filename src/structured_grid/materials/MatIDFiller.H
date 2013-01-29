@@ -32,6 +32,7 @@ public:
   const BoxArray& Mixed(int level) const;
   MultiFab& MaterialID(int level) {return materialID[level];}
   const std::map<std::string,int>& MatIdx() const {return matIdx;}
+  const int NumLevels() const {return nLevs;}
 
   void Initialize();
 
