@@ -8,9 +8,14 @@
 class Property
 {
 public:
+  Property(const std::string& _name) {name=_name;}
   virtual ~Property() {}
   virtual Property* clone() const = 0;
-  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp) const = 0;
+  virtual int nComp() const = 0;
+  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const = 0;
+  const std::string& Name() const {return name;}
+protected:
+  std::string name;
 };
 
 
@@ -18,22 +23,35 @@ class ConstantProperty
   : public Property
 {
 public:
-  ConstantProperty(Real _value) {value = _value;}
+  ConstantProperty(const std::string& _name, Real value)
+    : Property(_name) {values = Array<Real>(1,value);}
+  ConstantProperty(const std::string& _name, const Array<Real>& _values)
+    : Property(_name) {values = _values;}
   virtual Property* clone() const;
-  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp) const;
+  virtual int nComp() const {return values.size();}
+  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const;
+  const Array<Real> Values() const {return values;}
 protected:
-  Real value;
+  Array<Real> values;
 };
+
+
 
 class TabularInTimeProperty
   : public Property
 {
 public:
-  TabularInTimeProperty(const TabularFunction& _func) {func=_func;}
+  TabularInTimeProperty(const std::string& _name, const TabularFunction& _func)
+    : Property(_name), funcs(Array<TabularFunction>(1,_func)) {}
+  TabularInTimeProperty(const std::string& _name, const Array<TabularFunction>& _funcs)
+    : Property(_name), funcs(_funcs) {}
   virtual Property* clone() const;
-  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp) const;
+  virtual int nComp() const {return funcs.size();}
+  virtual void eval (Real t, int level, const Box& box, FArrayBox& fab, int dComp, void* ctx = 0) const;
+  const Array<TabularFunction>& Functions() const {return funcs;}
+  
 protected:
-  TabularFunction func;
+  Array<TabularFunction> funcs;
 };
 
 class Material
@@ -41,7 +59,7 @@ class Material
 public:
   Material(const std::string&    name, 
 	   const PArray<Region>& regions,
-	   const std::map<std::string,Property*>& property_map = std::map<std::string,Property*>());
+	   const std::vector<Property*>& properties);
   
   Material(const Material& rhs);
   ~Material();
@@ -50,19 +68,15 @@ public:
   
   const PArray<Region>& Regions() const {return regions;}
   const std::string& Name() const {return name;}
-  const Property* Prop(const std::string& pname) const {
-    std::map<std::string,Property*>::const_iterator it = property_map.find(pname);
-    if (it==property_map.end()) {
-      std::string str = "No property registered with name: " + pname;
-      BoxLib::Abort(str.c_str());
-    }
-    return it->second;
-  }
+  const Property* Prop(const std::string& pname) const;
+  Array<std::string> PropertyNames() const;
 
 protected:
+  void ClearProperties();
+
   std::string name;
   PArray<Region> regions;
-  std::map<std::string,Property*> property_map;
+  std::vector<Property*> properties;
 };
 #endif
 

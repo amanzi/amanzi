@@ -1192,7 +1192,7 @@ namespace Amanzi {
             const std::string val_name="Value"; reqP.push_back(val_name);
             PLoptions opt(fPLin,nullList,reqP,true,true); 
             double val = fPLin.get<double>(val_name);
-            fPLout.set<double>("val",val);
+            fPLout.set<double>("vals",val);
           }
           else {
             std::string str = "Unrecognized porosity function parameters";
@@ -1201,504 +1201,557 @@ namespace Amanzi {
           }
       }
 
-        //
-        // convert material to structured format
-        //
-        void
-        convert_to_structured_material(const ParameterList& parameter_list, 
-                                       ParameterList&       struc_list,
-                                       StateDef&            state)
+      //
+      // convert material to structured format
+      //
+      void
+      convert_to_structured_material(const ParameterList& parameter_list,
+                                     ParameterList&       struc_list,
+                                     StateDef&            state)
+      {
+        ParameterList& rock_list = struc_list.sublist("rock");
+
+        const ParameterList& rlist = parameter_list.sublist("Material Properties");
+
+        const std::string mineralogy_str = "Mineralogy";
+        const std::string complexation_str = "Surface Complexation Sites";
+        const std::string isotherm_str = "Sorption Isotherms";
+        const std::string cation_exchange_str = "Cation Exchange Capacity";
+        state.getSolid().has_cation_exchange = false; // until we encounter the keyword for a material
+
+        const std::string porosity_str = "Porosity";
+        const std::string porosity_file_str = "Porosity: Input File";
+        const std::string porosity_uniform_str = "Porosity: Uniform";
+
+        const std::string intrinsic_permeability_str = "Intrinsic Permeability";
+        const std::string intrinsic_permeability_file_str = "Intrinsic Permeability: Input File";
+        const std::string intrinsic_permeability_uniform_str = "Intrinsic Permeability: Uniform";
+        const std::string intrinsic_permeability_anisotropic_str = "Intrinsic Permeability: Anisotropic Uniform";
+
+        const std::string material_density_str = "Density";
+
+        const std::string capillary_pressure_str = "Capillary Pressure";
+        const std::string capillary_pressure_vg_str = "Capillary Pressure: van Genuchten";
+
+        const std::string relative_permeability_str = "Relative Permeability";
+        const std::string relative_permeability_Mualem_str = "Mualem";
+
+        const std::string regions_assigned_str = "Assigned Regions";
+
+        Array<std::string> arrayrock;
+
+        bool add_chemistry_properties = false;
+
+        std::map<std::string,SolidChem> solid_chem;
+        std::map<std::string,double> cation_exchange_capacity;
+        std::map<std::string,ParameterList> rsublist_mat;
+        std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
+        std::string porosity_plotfile_in, porosity_plotfile_out;
+        std::string permeability_plotfile_in, permeability_plotfile_out;
+        bool kp_file_in_set, kp_file_out_set, pp_file_in_set, pp_file_out_set;
+        bool kp_plotfile_in_set, kp_plotfile_out_set, pp_plotfile_in_set, pp_plotfile_out_set;
+        kp_file_in_set = kp_file_out_set = pp_file_in_set = pp_file_out_set = false;
+
+        Array<std::string> reqL, reqP, nullList;
+        for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i)
         {
-            ParameterList& rock_list = struc_list.sublist("rock");
+          // Attempt to be sure the material is defined completely by
+          // creating a set of property labels that need to be defined
+          MTEST mtest;
+          mtest.insert(MTEST::value_type(porosity_str,false));
+          //mtest.insert(MTEST::value_type("Density",false)); // This is not used anywhere
+          mtest.insert(MTEST::value_type(intrinsic_permeability_str,false));
+          mtest.insert(MTEST::value_type(capillary_pressure_str,false));
+          mtest.insert(MTEST::value_type(relative_permeability_str,false));
+          mtest.insert(MTEST::value_type(regions_assigned_str,false));
         
-            const ParameterList& rlist = parameter_list.sublist("Material Properties");
+          std::string label = rlist.name(i);
+          const ParameterEntry& entry = rlist.getEntry(label);
 
-            const std::string mineralogy_str = "Mineralogy";
-            const std::string complexation_str = "Surface Complexation Sites";
-            const std::string isotherm_str = "Sorption Isotherms";
-            const std::string cation_exchange_str = "Cation Exchange Capacity";
-            state.getSolid().has_cation_exchange = false; // until we encounter the keyword for a material
+          std::string _label = underscore(label);
+          if (entry.isList())
+          {
+            // Add this rock label to list of rocks
+            arrayrock.push_back(_label);
 
-            const std::string porosity_file_str = "Porosity: Input File";
-            const std::string porosity_uniform_str = "Porosity: Uniform";
-            const std::string perm_file_str = "Intrinsic Permeability: Input File";
-            const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
+            ParameterList& rsublist = rsublist_mat[label];
 
-            Array<std::string> arrayrock;
-
-            bool add_chemistry_properties = false;
-
-            std::map<std::string,SolidChem> solid_chem;
-            std::map<std::string,double> cation_exchange_capacity;
-            std::map<std::string,ParameterList> rsublist_mat;
-            std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
-	    std::string porosity_plotfile_in, porosity_plotfile_out;
-            bool kp_file_in_set, kp_file_out_set, pp_file_in_set, pp_file_out_set;
-            kp_file_in_set = kp_file_out_set = pp_file_in_set = pp_file_out_set = false;
-
-            Array<std::string> reqL, reqP, nullList;
-            for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i)
+            const ParameterList& rslist = rlist.sublist(label);
+            for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) 
             {
-                MTEST mtest;
-                mtest.insert(MTEST::value_type("Porosity",false));
-                //mtest.insert(MTEST::value_type("Density",false)); // This is not used anywhere
-                mtest.insert(MTEST::value_type("Intrinsic_Permeability",false));
-                mtest.insert(MTEST::value_type("Capillary_Pressure",false));
-                mtest.insert(MTEST::value_type("Relative_Permeability",false));
-                mtest.insert(MTEST::value_type("Regions_Assigned",false));
-        
-                std::string label = rlist.name(i);
-                const ParameterEntry& entry = rlist.getEntry(label);
-            
-                std::string _label = underscore(label);
-                if (entry.isList())
-                {
-                    // Add this rock label to list of rocks
-                    arrayrock.push_back(_label);
-
-                    ParameterList& rsublist = rsublist_mat[label];
-
-                    const ParameterList& rslist = rlist.sublist(label);
-                    for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) 
-                    {
-                        const std::string& rlabel = rslist.name(j);
-                        const ParameterEntry& rentry = rslist.getEntry(rlabel);
+              const std::string& rlabel = rslist.name(j);
+              const ParameterEntry& rentry = rslist.getEntry(rlabel);
                     
-                        if (rentry.isList())
-                        {
-                            const ParameterList& rsslist = rslist.sublist(rlabel);
-#if 0
-                            if (rlabel==porosity_file_str || rlabel==porosity_uniform_str){
-                              if (mtest["Porosity"]) {
-                                std::string str = "More than one of: (\""+porosity_file_str+"\", \""+porosity_uniform_str+
-                                  "\") specified for material \""+label+"\"";
-                                BoxLib::Abort(str.c_str());
-                              }
-                              ParameterList psublist;
-                              convert_PorosityUniform(rsslist,psublist);
-                              rsublist.set("porosity",psublist);
-                              mtest["Porosity"] = true;
-#else
-                            if (rlabel=="Porosity: Uniform"){
-                                rsublist.setEntry("porosity",rsslist.getEntry("Value"));
-                                rsublist.set("porosity_dist","uniform");
-                                mtest["Porosity"] = true;
 
-#endif
-                            }
-                            else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
-				     rlabel=="Intrinsic Permeability: Uniform") {
-                                Array<double> array_p(2);
-                                //Array<double> array_p(1);
-				if (rlabel=="Intrinsic Permeability: Anisotropic Uniform") {
-				  //array_p[0] = rsslist.get<double>("Vertical");
-				  array_p[1] = rsslist.get<double>("Vertical");
-				  array_p[0] = rsslist.get<double>("Horizontal");
-				  //array_p[0] = array_p[1];
-				}
-				else {
-				  array_p[0] = rsslist.get<double>("Value");
-				  array_p[1] = array_p[0];
-				}
-                                // convert from m^2 to mDa
-                                for (int k=0; k<array_p.size(); k++) {
-                                    array_p[k] *= 1.01325e15;
-                                }
-                                rsublist.set("permeability",array_p);
-                                rsublist.set("permeability_dist","uniform");
-                                mtest["Intrinsic_Permeability"] = true;
-                            }
-                            else if (rlabel=="Capillary Pressure: van Genuchten") {
-                                int cpl_type = 3;
-                                rsublist.set("cpl_type",cpl_type);
+              //
+              // Process material property sub-parameter lists (do parameters afterward)
+              //
+              if (rentry.isList())
+              {
+                const ParameterList& rsslist = rslist.sublist(rlabel);
+
+                //
+                // Porosity
+                //
+                if (rlabel==porosity_uniform_str){
+                  ParameterList psublist;
+                  convert_PorosityUniform(rsslist,psublist);
+                  rsublist.set("porosity",psublist);
+                  mtest[porosity_str] = true;
+                }
+                //
+                // Intrinsic permeability
+                //
+                else if (rlabel==intrinsic_permeability_anisotropic_str  ||
+                         rlabel==intrinsic_permeability_uniform_str) {
+
+                  const std::string intrinsic_permeability_vertical_str = "Vertical";
+                  const std::string intrinsic_permeability_horizontal_str = "Horizontal";
+                  const std::string intrinsic_permeability_isotropic_str = "Value";
+
+                  Array<double> array_p(2);
+                  if (rlabel==intrinsic_permeability_anisotropic_str) {
+                    array_p[1] = rsslist.get<double>(intrinsic_permeability_vertical_str);
+                    array_p[0] = rsslist.get<double>(intrinsic_permeability_horizontal_str);
+                  }
+                  else {
+                    array_p[0] = rsslist.get<double>(intrinsic_permeability_isotropic_str);
+                    array_p[1] = array_p[0];
+                  }
+                  // convert from m^2 to mDa
+                  for (int k=0; k<array_p.size(); k++) {
+                    array_p[k] *= 1.01325e15;
+                  }
+                  rsublist.set("permeability",array_p);
+                  rsublist.set("permeability_dist","uniform");
+                  mtest[intrinsic_permeability_str] = true;
+                }
+                //
+                // Capillary pressure
+                //
+                else if (rlabel==capillary_pressure_vg_str) {
+
+                  const std::string capillary_pressure_vg_alpha_str = "alpha";
+                  const std::string capillary_pressure_vg_m_str = "m";
+                  const std::string capillary_pressure_vg_Sr_str = "Sr";
+
+                  int cpl_type = 3; // FIXME: Difficult to keep in sync with implementation!
+                  rsublist.set("cpl_type",cpl_type);
                             
-                                double alpha = rsslist.get<double>("alpha");
+                  double alpha = rsslist.get<double>(capillary_pressure_vg_alpha_str);
                             
-                                Array<double> array_c(4);
-                                array_c[1] = alpha*1.01325e5; // convert Pa^-1 to atm^-1 
-                                array_c[0] = rsslist.get<double>("m");
-                                array_c[2] = rsslist.get<double>("Sr");
-                                array_c[3] = 0.0;                  
-                                rsublist.set("cpl_param",array_c);
-                                mtest["Capillary_Pressure"] = true;
+                  Array<double> array_c(4);
+                  array_c[1] = alpha*1.01325e5; // convert Pa^-1 to atm^-1
+                  array_c[0] = rsslist.get<double>(capillary_pressure_vg_m_str);
+                  array_c[2] = rsslist.get<double>(capillary_pressure_vg_Sr_str);
+                  array_c[3] = 0.0;
+                  rsublist.set("cpl_param",array_c);
+                  mtest[capillary_pressure_str] = true;
 
-                                std::string krType = rsslist.get<std::string>("Relative Permeability");
-                                if (krType=="Mualem") {
-                                    Array<double> array_k(3);
-                                    array_k[0] = array_c[0];
-                                    array_k[1] = array_c[2];
-                                    array_k[2] = array_c[3];
-                                    rsublist.set("kr_type",cpl_type);
-                                    rsublist.set("kr_param",array_k);
-                                    mtest["Relative_Permeability"] = true;
-                                }
-                                else {
-                                    std::cerr << "Unsupported Relative Permeability model: " << krType << std::endl;
-                                    throw std::exception();
-                                }
-                            }
-                            else if (rlabel==mineralogy_str) {
+                  std::string krType = rsslist.get<std::string>(relative_permeability_str);
+                  if (krType==relative_permeability_Mualem_str) {
+                    Array<double> array_k(3);
+                    array_k[0] = array_c[0];
+                    array_k[1] = array_c[2];
+                    array_k[2] = array_c[3];
+                    rsublist.set("kr_type",cpl_type);
+                    rsublist.set("kr_param",array_k);
+                    mtest[relative_permeability_str] = true;
+                  }
+                  else {
+                    std::cerr << "Unsupported Relative Permeability model: " << krType << std::endl;
+                    throw std::exception();
+                  }
+                }
+                //
+                // Mineralogy
+                //
+                else if (rlabel==mineralogy_str) {
 
-                                add_chemistry_properties = true;
+                  add_chemistry_properties = true;
 
-                                PLoptions minP(rsslist,nullList,nullList,false,false); // each optional list is a mineral
-                                const Array<std::string>& minLabels = minP.OptLists();
-                                for (int k=0; k<minLabels.size(); ++k) {
-                                    const std::string& minLabel = minLabels[k];
-                                    if (state.getSolid().IsAMineral(minLabel)) {
-                                        const ParameterList& minSL = rsslist.sublist(minLabel);
-                                        PLoptions minP1(minSL,nullList,nullList,true,false);
-                                        const Array<std::string>& minLabels1 = minP1.OptParms();
-                                        for (int L=0; L<minLabels1.size(); ++L) {
-                                            const std::string& minLabel1 = minLabels1[L];
-                                            if (minLabel1 == "Volume Fraction" ) {
-                                                solid_chem[label].Mineral(minLabel).volume_frac = minSL.get<double>(minLabel1);
-                                            }
-                                            else if (minLabel1 == "Specific Surface Area" ) {
-                                                solid_chem[label].Mineral(minLabel).specific_surface_area = minSL.get<double>(minLabel1);
-                                            }
-                                            else {
-                                                std::cerr << "Unsupported Mineralogy condition for "
-                                                          << minLabel << ": " << minLabel1 << std::endl;
-                                                throw std::exception();
-                                            }
-                                        }
-                                    }
-                                    else {
-                                        std::cerr << "Unknown mineral in " << rlabel << ": " << minLabel << std::endl;
-                                        throw std::exception();                                                
-                                    }
-                                }
-                            }
-                            else if (rlabel==complexation_str) {
-
-                                add_chemistry_properties = true;
-
-                                PLoptions scsP(rsslist,nullList,nullList,false,true); // each optional list is a mineral
-                                const Array<std::string>& scsLabels = scsP.OptLists();
-                                for (int k=0; k<scsLabels.size(); ++k) {
-                                    const std::string& scsLabel = scsLabels[k];
-                                    if (state.getSolid().IsASorptionSite(scsLabel)) {
-                                        const ParameterList& scsSL = rsslist.sublist(scsLabel);
-                                        PLoptions scsP1(scsSL,nullList,nullList,true,false);
-                                        const Array<std::string>& scsLabels1 = scsP1.OptParms();
-                                        for (int L=0; L<scsLabels1.size(); ++L) {
-                                            const std::string& scsLabel1 = scsLabels1[L];
-                                            if (scsLabel1 == "Site Density" ) {
-                                                solid_chem[label].SorptionSite(scsLabel).site_density = scsSL.get<double>(scsLabel1);
-                                            }
-                                            else {
-                                                std::cerr << "Unsupported Surface Complexation condition for "
-                                                          << scsLabel << ": " << scsLabel1 << std::endl;
-                                                throw std::exception();
-                                            }
-                                        }
-                                    }
-                                    else {
-                                        std::cerr << "Unknown Sorption Site in " << rlabel << ": " << scsLabel << std::endl;
-                                        throw std::exception();                                                
-                                    }
-                                }
-                            }
-                            else if (rlabel==isotherm_str) {
-
-                                add_chemistry_properties = true;
-
-                                PLoptions sipP(rsslist,nullList,nullList,false,true); // each optional list is a phase
-                                const Array<std::string>& sipLabels = sipP.OptLists();
-                                for (int k=0; k<sipLabels.size(); ++k) {
-                                    const std::string& sipLabel = sipLabels[k];
-                                    std::string _sipLabel = underscore(sipLabel);
-
-                                    StateDef::PhaseCompMap& pc_map = state.getPhaseCompMap();
-                                    if (pc_map.find(sipLabel)==pc_map.end()) {
-                                        std::cerr << "Unknown phase " << sipLabel << " in " << rlabel << " for " << label << std::endl;
-                                        throw std::exception();                                                
-                                    }
-
-                                    const ParameterList& sipSL = rsslist.sublist(sipLabel);
-                                    PLoptions sipcP(sipSL,nullList,nullList,false,true); // each optional list is a component
-                                    const Array<std::string>& sipcLabels = sipcP.OptLists();
-                                    for (int L=0; L<sipcLabels.size(); ++L) {
-                                        const std::string& sipcLabel = sipcLabels[L];
-                                        std::string _sipcLabel = underscore(sipcLabel);
-                                        
-                                        PHASE::CompMap& c_map = pc_map[sipLabel];
-                                        if (c_map.find(sipcLabel)==c_map.end()) {
-                                            std::cerr << "Unknown component " << sipcLabel
-                                                      << " in phase " << sipLabel << " for " <<
-                                                rlabel << " in " << label << std::endl;
-                                            throw std::exception();                                                
-                                        }
-                                        
-                                        const ParameterList& sipcSL = sipSL.sublist(sipcLabel);
-                                        PLoptions sipcsP(sipcSL,nullList,nullList,false,true); // each optional list is a solute
-                                        const Array<std::string>& sipcsLabels = sipcsP.OptLists();
-                                        for (int M=0; M<sipcsLabels.size(); ++M) {
-                                            const std::string& sipcsLabel = sipcsLabels[M];
-                                            std::string _sipcsLabel = underscore(sipcsLabel);
-                                            const ParameterList& sipcsSL = sipcSL.sublist(sipcsLabel);
-                                            
-                                            if ( !(c_map[sipcLabel].HasTracer(sipcsLabel)) ) {
-                                                std::cerr << "Unknown solute " << sipcsLabel << " in component "
-                                                          << sipcLabel << " in phase " << sipLabel << " for " <<
-                                                    rlabel << " in " << label << std::endl;
-                                                throw std::exception();
-                                            }
-                                            
-
-                                            //SolidChem::SorptionIsothermData& iso = solid_chem[label].sorption_isotherms(sipcsLabel);
-
-                                            reqP.clear();
-                                            std::string Kd_str("Kd");
-                                            std::string Lb_str("Langmuir b");
-                                            std::string Fn_str("Freundlich n");
-                                            PLoptions siP(sipcsSL,nullList,reqP,true,false);
-                                            const Array<std::string>& siLabels = siP.OptParms();
-					    bool n_found = false;
-					    bool b_found = false;
-                                            for (int N=0; N<siLabels.size(); ++N) {
-                                                if (siLabels[N] == Kd_str) {
-                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Kd = sipcsSL.get<double>(siLabels[N]);
-                                                }
-                                                else if (siLabels[N] == Lb_str) {
-                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Langmuir_b = sipcsSL.get<double>(siLabels[N]);
-						    solid_chem[label].SorptionIsotherm(sipcsLabel).Freundlich_n = -1.0;
-						    n_found = true;
-                                                }
-                                                else if (siLabels[N] == Fn_str) {
-                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Freundlich_n = sipcsSL.get<double>(siLabels[N]);
-                                                    solid_chem[label].SorptionIsotherm(sipcsLabel).Langmuir_b = -1.0;
-						    b_found = true;
-                                                }
-                                                else {
-                                                    std::cerr << "Unknown parameter for \"" << rlabel << "\": \"" << siLabels[N] 
-                                                              << "\" in solute \"" << sipcsLabel << "\" of component \""
-                                                              << sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
-                                                    throw std::exception();
-                                                }
-					    }
-					    if (b_found && n_found) {
-					      std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
-							<< "\" may be specified for each solute.  Both given for \"" 
-							<< sipcsLabel << "\" of component \""
-							<< sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
-					      throw std::exception();
-                                            }
-					    //else
-					    //solid_chem[label].sorption_isotherms(sipcsLabel) = iso;
-                                            //bool successfully_inserted = SolidChem::InsertSorptionIsotherm(sipcsLabel,iso);
-                                            //if (!successfully_inserted) {
-                                            //    bool compatible = iso.IsFreundlich() ^ SolidChem::SorptionIsotherm(sipcsLabel).IsFreundlich();
-                                            //    if (!compatible) {
-                                            //        std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str 
-                                            //                  << "\" may be specified for each solute.  Both given for \"" 
-                                            //                  << sipcsLabel << "\" in different materials." << std::endl;
-                                            //        throw std::exception();
-                                            //    }
-                                            //}
-                                        }
-                                    }
-                                }
-                            }
-                            else {
-                                std::cerr << "Unrecognized Material Property: " << rlabel << std::endl;
-                                throw std::exception();
-                            }
+                  PLoptions minP(rsslist,nullList,nullList,false,false); // each optional list is a mineral
+                  const Array<std::string>& minLabels = minP.OptLists();
+                  for (int k=0; k<minLabels.size(); ++k) {
+                    const std::string& minLabel = minLabels[k];
+                    if (state.getSolid().IsAMineral(minLabel)) {
+                      const ParameterList& minSL = rsslist.sublist(minLabel);
+                      PLoptions minP1(minSL,nullList,nullList,true,false);
+                      const Array<std::string>& minLabels1 = minP1.OptParms();
+                      for (int L=0; L<minLabels1.size(); ++L) {
+                        const std::string& minLabel1 = minLabels1[L];
+                        if (minLabel1 == "Volume Fraction" ) {
+                          solid_chem[label].Mineral(minLabel).volume_frac = minSL.get<double>(minLabel1);
                         }
-                        else if (rlabel=="Assigned Regions") {
-                            Array<std::string> tmp_regions = rslist.get<Array<std::string> >(rlabel);
-                            for (int j=0; j<tmp_regions.size(); ++j) {
-                                tmp_regions[j] = underscore(tmp_regions[j]);
-                            }
-                            rsublist.set("regions",tmp_regions);
-                            mtest["Regions_Assigned"] = true;
-                        }
-                        else if (rlabel=="Density") {
-                            rsublist.set<double>("density",rslist.get<double>("Density"));
-                            mtest["Density"] = true;
-                        }
-                        else if (rlabel==cation_exchange_str) {
-                            add_chemistry_properties = true;                                
-                            cation_exchange_capacity[label] = rslist.get<double>(rlabel);
-                            state.getSolid().has_cation_exchange = true;
+                        else if (minLabel1 == "Specific Surface Area" ) {
+                          solid_chem[label].Mineral(minLabel).specific_surface_area = minSL.get<double>(minLabel1);
                         }
                         else {
-
-                            std::cerr << "Unrecognized Material Property: " << rlabel << std::endl;
-                            throw std::exception();
+                          std::cerr << "Unsupported Mineralogy condition for "
+                                    << minLabel << ": " << minLabel1 << std::endl;
+                          throw std::exception();
                         }
+                      }
+                    }
+                    else {
+                      std::cerr << "Unknown mineral in " << rlabel << ": " << minLabel << std::endl;
+                      throw std::exception();
+                    }
+                  }
+                }
+                else if (rlabel==complexation_str) {
+
+                  add_chemistry_properties = true;
+
+                  PLoptions scsP(rsslist,nullList,nullList,false,true); // each optional list is a mineral
+                  const Array<std::string>& scsLabels = scsP.OptLists();
+                  for (int k=0; k<scsLabels.size(); ++k) {
+                    const std::string& scsLabel = scsLabels[k];
+                    if (state.getSolid().IsASorptionSite(scsLabel)) {
+                      const ParameterList& scsSL = rsslist.sublist(scsLabel);
+                      PLoptions scsP1(scsSL,nullList,nullList,true,false);
+                      const Array<std::string>& scsLabels1 = scsP1.OptParms();
+                      for (int L=0; L<scsLabels1.size(); ++L) {
+                        const std::string& scsLabel1 = scsLabels1[L];
+                        if (scsLabel1 == "Site Density" ) {
+                          solid_chem[label].SorptionSite(scsLabel).site_density = scsSL.get<double>(scsLabel1);
+                        }
+                        else {
+                          std::cerr << "Unsupported Surface Complexation condition for "
+                                    << scsLabel << ": " << scsLabel1 << std::endl;
+                          throw std::exception();
+                        }
+                      }
+                    }
+                    else {
+                      std::cerr << "Unknown Sorption Site in " << rlabel << ": " << scsLabel << std::endl;
+                      throw std::exception();
+                    }
+                  }
+                }
+                else if (rlabel==isotherm_str) {
+
+                  add_chemistry_properties = true;
+
+                  PLoptions sipP(rsslist,nullList,nullList,false,true); // each optional list is a phase
+                  const Array<std::string>& sipLabels = sipP.OptLists();
+                  for (int k=0; k<sipLabels.size(); ++k) {
+                    const std::string& sipLabel = sipLabels[k];
+                    std::string _sipLabel = underscore(sipLabel);
+
+                    StateDef::PhaseCompMap& pc_map = state.getPhaseCompMap();
+                    if (pc_map.find(sipLabel)==pc_map.end()) {
+                      std::cerr << "Unknown phase " << sipLabel << " in " << rlabel << " for " << label << std::endl;
+                      throw std::exception();
                     }
 
-                    // check for complete
-                    std::vector<std::string> region_check = remaining_false(mtest); 
-                    if (region_check.size()) {
-		      for (int i=0; i<region_check.size(); ++i) {
-			if (region_check[i]=="Capillary_Pressure") {
-			  mtest[region_check[i]] = true;
-			  rsublist.set("cpl_type",0);
-			}
-			else if (region_check[i]=="Relative_Permeability") {
-			  mtest[region_check[i]] = true;
-			  rsublist.set("kr_type",0);
-			}
-		      }
-		      region_check = remaining_false(mtest); 
-		      if (region_check.size()) {
-                        std::cerr << "Material not completely defined: " << label << std::endl;
-                        std::cerr << "   unfilled: ";
-                        for (int i=0; i<region_check.size(); ++i)
-			  std::cerr << region_check[i] << " ";
-                        std::cerr << '\n';
+                    const ParameterList& sipSL = rsslist.sublist(sipLabel);
+                    PLoptions sipcP(sipSL,nullList,nullList,false,true); // each optional list is a component
+                    const Array<std::string>& sipcLabels = sipcP.OptLists();
+                    for (int L=0; L<sipcLabels.size(); ++L) {
+                      const std::string& sipcLabel = sipcLabels[L];
+                      std::string _sipcLabel = underscore(sipcLabel);
+
+                      PHASE::CompMap& c_map = pc_map[sipLabel];
+                      if (c_map.find(sipcLabel)==c_map.end()) {
+                        std::cerr << "Unknown component " << sipcLabel
+                                  << " in phase " << sipLabel << " for " <<
+                          rlabel << " in " << label << std::endl;
                         throw std::exception();
-		      }
-		    }
-		}
+                      }
+
+                      const ParameterList& sipcSL = sipSL.sublist(sipcLabel);
+                      PLoptions sipcsP(sipcSL,nullList,nullList,false,true); // each optional list is a solute
+                      const Array<std::string>& sipcsLabels = sipcsP.OptLists();
+                      for (int M=0; M<sipcsLabels.size(); ++M) {
+                        const std::string& sipcsLabel = sipcsLabels[M];
+                        std::string _sipcsLabel = underscore(sipcsLabel);
+                        const ParameterList& sipcsSL = sipcSL.sublist(sipcsLabel);
+
+                        if ( !(c_map[sipcLabel].HasTracer(sipcsLabel)) ) {
+                          std::cerr << "Unknown solute " << sipcsLabel << " in component "
+                                    << sipcLabel << " in phase " << sipLabel << " for " <<
+                            rlabel << " in " << label << std::endl;
+                          throw std::exception();
+                        }
+
+
+                        //SolidChem::SorptionIsothermData& iso = solid_chem[label].sorption_isotherms(sipcsLabel);
+
+                        reqP.clear();
+                        std::string Kd_str("Kd");
+                        std::string Lb_str("Langmuir b");
+                        std::string Fn_str("Freundlich n");
+                        PLoptions siP(sipcsSL,nullList,reqP,true,false);
+                        const Array<std::string>& siLabels = siP.OptParms();
+                        bool n_found = false;
+                        bool b_found = false;
+                        for (int N=0; N<siLabels.size(); ++N) {
+                          if (siLabels[N] == Kd_str) {
+                            solid_chem[label].SorptionIsotherm(sipcsLabel).Kd = sipcsSL.get<double>(siLabels[N]);
+                          }
+                          else if (siLabels[N] == Lb_str) {
+                            solid_chem[label].SorptionIsotherm(sipcsLabel).Langmuir_b = sipcsSL.get<double>(siLabels[N]);
+                            solid_chem[label].SorptionIsotherm(sipcsLabel).Freundlich_n = -1.0;
+                            n_found = true;
+                          }
+                          else if (siLabels[N] == Fn_str) {
+                            solid_chem[label].SorptionIsotherm(sipcsLabel).Freundlich_n = sipcsSL.get<double>(siLabels[N]);
+                            solid_chem[label].SorptionIsotherm(sipcsLabel).Langmuir_b = -1.0;
+                            b_found = true;
+                          }
+                          else {
+                            std::cerr << "Unknown parameter for \"" << rlabel << "\": \"" << siLabels[N]
+                                      << "\" in solute \"" << sipcsLabel << "\" of component \""
+                                      << sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
+                            throw std::exception();
+                          }
+                        }
+                        if (b_found && n_found) {
+                          std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str
+                                    << "\" may be specified for each solute.  Both given for \""
+                                    << sipcsLabel << "\" of component \""
+                                    << sipcLabel << "\" in phase \"" << sipLabel << "\"." << std::endl;
+                          throw std::exception();
+                        }
+                        //else
+                        //solid_chem[label].sorption_isotherms(sipcsLabel) = iso;
+                        //bool successfully_inserted = SolidChem::InsertSorptionIsotherm(sipcsLabel,iso);
+                        //if (!successfully_inserted) {
+                        //    bool compatible = iso.IsFreundlich() ^ SolidChem::SorptionIsotherm(sipcsLabel).IsFreundlich();
+                        //    if (!compatible) {
+                        //        std::cerr << "Only one \"" << Lb_str << "\" and \"" << Fn_str
+                        //                  << "\" may be specified for each solute.  Both given for \""
+                        //                  << sipcsLabel << "\" in different materials." << std::endl;
+                        //        throw std::exception();
+                        //    }
+                        //}
+                      }
+                    }
+                  }
+                }
                 else {
-		    std::string sat_str = "Saturation Threshold For Kr";
-                    if (rlist.isParameter(sat_str)) {
-                        double saturation_threshold_for_vg_Kr;
-                        saturation_threshold_for_vg_Kr = rlist.get<double>(sat_str);
-                        rock_list.set(underscore(sat_str),saturation_threshold_for_vg_Kr);
-                    }
-                    
-		    std::string shift_str = "Use Shifted Kr Eval";
-                    if (rlist.isParameter(shift_str)) {
-                        bool use_shifted_kr_eval = rlist.get<bool>(shift_str);
-                        rock_list.set(underscore(shift_str),(int)use_shifted_kr_eval);
-                    }
-                    
-		    std::string porosity_input_plotfile_str = "Porosity Input PlotFile";
-		    std::string porosity_output_plotfile_str = "Porosity Output PlotFile";
-		    std::string porosity_output_multifab_file_str = "Porosity Output File";
-		    std::string porosity_input_multifab_file_str = "Porosity Input File";
-		    std::string permeability_output_multifab_file_str = "Permeability Output File";
-		    std::string permeability_input_multifab_file_str = "Permeability Input File";
-
-                    if (rlist.isParameter(permeability_output_multifab_file_str)) {
-                        kp_file_out_set = true;
-                        kp_file_out = rlist.get<std::string>(permeability_output_multifab_file_str);
-                    }
-                    if (rlist.isParameter(permeability_input_multifab_file_str)) {
-                        kp_file_in_set = true;
-                        kp_file_in  = rlist.get<std::string>(permeability_input_multifab_file_str);
-                    }
-                    if (rlist.isParameter(porosity_output_multifab_file_str)) {
-                        pp_file_out_set = true;
-                        pp_file_out = rlist.get<std::string>(porosity_output_multifab_file_str);
-                    }
-                    if (rlist.isParameter(porosity_input_multifab_file_str)) {
-                        pp_file_in_set = true;
-                        pp_file_in  = rlist.get<std::string>(porosity_input_multifab_file_str);
-                    }
-                    if (rlist.isParameter(porosity_output_plotfile_str))
-                        porosity_plotfile_out = rlist.get<std::string>(porosity_output_plotfile_str);
-
-                    if (rlist.isParameter(porosity_input_plotfile_str))
-                        porosity_plotfile_in = rlist.get<std::string>(porosity_input_plotfile_str);
-
+                  std::cerr << "Unrecognized sublist for \"" << mineralogy_str << "\": \"" << rlabel << "\""<< std::endl;
+                  throw std::exception();
                 }
-            }
-
-            if (add_chemistry_properties)
-            {
-                
-                const Array<std::string>& minerals = state.getSolid().mineral_names;
-                const Array<std::string>& sorption_sites = state.getSolid().sorption_site_names;
-
-                for (int k=0; k<arrayrock.size(); ++k)
-                {
-                    const std::string& _label = arrayrock[k];
-                    const std::string& label = AMR_to_Amanzi_label_map[_label];
-
-                    ParameterList& rsublist = rsublist_mat[label];
-
-                    // Add chemistry data, if necessary
-                    if (minerals.size()>0) {
-                        ParameterList mPL;
-                        for (int i=0; i<minerals.size(); ++i) {
-                            const std::string& name = minerals[i];
-                            SolidChem::MineralData md = solid_chem[label].Mineral(name); // Will call defctr if not set by inputs
-                            ParameterList minPL = md.BuildPL();
-                            mPL.set(underscore(name),minPL);
-                        }
-                        rsublist.set(underscore(mineralogy_str),mPL);
-                    }
-
-                    if (sorption_sites.size()>0) {
-                        ParameterList sPL;
-                        for (int i=0; i<sorption_sites.size(); ++i) {
-                            const std::string& name = sorption_sites[i];
-                            SolidChem::SorptionSiteData ssd = solid_chem[label].SorptionSite(name); 
-                            ParameterList ssdPL = ssd.BuildPL();
-                            sPL.set(underscore(name),ssdPL);
-                        }
-                        rsublist.set(underscore(complexation_str),sPL);
-                    }
-                        
-		    if (cation_exchange_capacity.count(label)) {
-		      rsublist.set(underscore(cation_exchange_str),cation_exchange_capacity[label]);
-		    }
-
-                    // if ntracers>0...
-                    //
-                    // Must "flatten" hierarchy of phases/comps to be compatible with current Amanzi-S 
-                    // in fact, tracers are listed flat requiring that there be no name clashes across phase/comp
-                    ParameterList siPL;
-                    StateDef::Phases& phases = state.getPhases();
-                    std::set<std::string> solutes_with_isotherms;
-                    for (StateDef::Phases::iterator pit=phases.begin(); pit!=phases.end(); ++pit) {
-                        const std::string& p=pit->first;
-                        StateDef::CompMap& comps = state[p];
-                        for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
-                            const std::string& c=cit->first;
-                            const Array<std::string>& solutes = cit->second.getTracerArray();   
-			    for (int i=0; i<solutes.size(); ++i) {
-			      const std::string& s=solutes[i];                            
-			      if (solid_chem[label].HasSorptionIsotherm(s)) {
-				SolidChem::SorptionIsothermData sid = solid_chem[label].SorptionIsotherm(s);
-				ParameterList sitPL = sid.BuildPL();
-				siPL.set(underscore(s),sitPL);
-				solutes_with_isotherms.insert(s);
-			      }
-			    }
-                        }
-                    }
-                    if (solutes_with_isotherms.size()>0) {
-                        rsublist.set(underscore(isotherm_str),siPL);
-                        state.getSolid().sorption_isotherm_names.resize(solutes_with_isotherms.size());
-                        for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(), End=solutes_with_isotherms.end(); it!=End; ++it) {
-                            state.getSolid().sorption_isotherm_names.push_back(*it);
-                        }
-                    }
+              }
+              //
+              // Process material property parameters
+              //
+              else if (rlabel==regions_assigned_str) {
+                Array<std::string> tmp_regions = rslist.get<Array<std::string> >(rlabel);
+                for (int j=0; j<tmp_regions.size(); ++j) {
+                  tmp_regions[j] = underscore(tmp_regions[j]);
                 }
+                rsublist.set("regions",tmp_regions);
+                mtest[regions_assigned_str] = true;
+              }
+              else if (rlabel==material_density_str) {
+                rsublist.set<double>("density",rslist.get<double>(material_density_str));
+                mtest[material_density_str] = true;
+              }
+              else if (rlabel==cation_exchange_str) {
+                add_chemistry_properties = true;
+                cation_exchange_capacity[label] = rslist.get<double>(rlabel);
+                state.getSolid().has_cation_exchange = true;
+              }
+              else {
+
+                std::cerr << "Unrecognized material property parameter for \"" << label << "\": \"" << rlabel << "\""<< std::endl;
+                throw std::exception();
+              }
             }
 
-            // Now we can add the sublist the result
-            for (int k=0; k<arrayrock.size(); ++k)
-            {
-                const std::string& _label = arrayrock[k];
-                const std::string& label = AMR_to_Amanzi_label_map[_label];
-                rock_list.set(_label,rsublist_mat[label]);
+            // check for complete
+            std::vector<std::string> region_check = remaining_false(mtest);
+            if (region_check.size()) {
+              for (int i=0; i<region_check.size(); ++i) {
+                if (region_check[i]==capillary_pressure_str) {
+                  mtest[region_check[i]] = true;
+                  rsublist.set("cpl_type",0);
+                }
+                else if (region_check[i]==relative_permeability_str) {
+                  mtest[region_check[i]] = true;
+                  rsublist.set("kr_type",0);
+                }
+              }
+              region_check = remaining_false(mtest);
+              if (region_check.size()) {
+                std::cerr << "Material not completely defined: " << label << std::endl;
+                std::cerr << "   unfilled: ";
+                for (int i=0; i<region_check.size(); ++i)
+                  std::cerr << "\"" << region_check[i] << "\" ";
+                std::cerr << '\n';
+                throw std::exception();
+              }
             }
+          }
+          else {
+            std::string sat_str = "Saturation Threshold For Kr";
+            if (rlist.isParameter(sat_str)) {
+              double saturation_threshold_for_vg_Kr;
+              saturation_threshold_for_vg_Kr = rlist.get<double>(sat_str);
+              rock_list.set(underscore(sat_str),saturation_threshold_for_vg_Kr);
+            }
+                    
+            std::string shift_str = "Use Shifted Kr Eval";
+            if (rlist.isParameter(shift_str)) {
+              bool use_shifted_kr_eval = rlist.get<bool>(shift_str);
+              rock_list.set(underscore(shift_str),(int)use_shifted_kr_eval);
+            }
+                    
+            std::string porosity_input_plotfile_str = "Porosity Input PlotFile";
+            std::string porosity_output_plotfile_str = "Porosity Output PlotFile";
+            std::string porosity_output_multifab_file_str = "Porosity Output File";
+            std::string porosity_input_multifab_file_str = "Porosity Input File";
+            std::string permeability_output_multifab_file_str = "Permeability Output File";
+            std::string permeability_input_multifab_file_str = "Permeability Input File";
+            std::string permeability_output_plotfile_str = "Permeability Output PlotFile";
+            std::string permeability_input_plotfile_str = "Permeability Input PlotFile";
+
+            if (rlist.isParameter(permeability_output_multifab_file_str)) {
+              kp_file_out_set = true;
+              kp_file_out = rlist.get<std::string>(permeability_output_multifab_file_str);
+            }
+            if (rlist.isParameter(permeability_input_multifab_file_str)) {
+              kp_file_in_set = true;
+              kp_file_in  = rlist.get<std::string>(permeability_input_multifab_file_str);
+            }
+            if (rlist.isParameter(porosity_output_multifab_file_str)) {
+              pp_file_out_set = true;
+              pp_file_out = rlist.get<std::string>(porosity_output_multifab_file_str);
+            }
+            if (rlist.isParameter(porosity_input_multifab_file_str)) {
+              pp_file_in_set = true;
+              pp_file_in  = rlist.get<std::string>(porosity_input_multifab_file_str);
+            }
+            if (rlist.isParameter(porosity_output_plotfile_str)) {
+              pp_plotfile_out_set = true;
+              porosity_plotfile_out = rlist.get<std::string>(porosity_output_plotfile_str);
+            }
+            if (rlist.isParameter(porosity_input_plotfile_str)) {
+              pp_plotfile_in_set = true;
+              porosity_plotfile_in = rlist.get<std::string>(porosity_input_plotfile_str);
+            }
+            if (rlist.isParameter(permeability_output_plotfile_str)) {
+              kp_plotfile_out_set = true;
+              permeability_plotfile_out = rlist.get<std::string>(permeability_output_plotfile_str);
+            }
+            if (rlist.isParameter(permeability_input_plotfile_str)) {
+              kp_plotfile_in_set = true;
+              permeability_plotfile_in = rlist.get<std::string>(permeability_input_plotfile_str);
+            }
+          }
+        }
+
+        if (add_chemistry_properties)
+        {
+
+          const Array<std::string>& minerals = state.getSolid().mineral_names;
+          const Array<std::string>& sorption_sites = state.getSolid().sorption_site_names;
+
+          for (int k=0; k<arrayrock.size(); ++k)
+          {
+            const std::string& _label = arrayrock[k];
+            const std::string& label = AMR_to_Amanzi_label_map[_label];
+
+            ParameterList& rsublist = rsublist_mat[label];
+
+            // Add chemistry data, if necessary
+            if (minerals.size()>0) {
+              ParameterList mPL;
+              for (int i=0; i<minerals.size(); ++i) {
+                const std::string& name = minerals[i];
+                SolidChem::MineralData md = solid_chem[label].Mineral(name); // Will call defctr if not set by inputs
+                ParameterList minPL = md.BuildPL();
+                mPL.set(underscore(name),minPL);
+              }
+              rsublist.set(underscore(mineralogy_str),mPL);
+            }
+
+            if (sorption_sites.size()>0) {
+              ParameterList sPL;
+              for (int i=0; i<sorption_sites.size(); ++i) {
+                const std::string& name = sorption_sites[i];
+                SolidChem::SorptionSiteData ssd = solid_chem[label].SorptionSite(name);
+                ParameterList ssdPL = ssd.BuildPL();
+                sPL.set(underscore(name),ssdPL);
+              }
+              rsublist.set(underscore(complexation_str),sPL);
+            }
+
+            if (cation_exchange_capacity.count(label)) {
+              rsublist.set(underscore(cation_exchange_str),cation_exchange_capacity[label]);
+            }
+
+            // if ntracers>0...
+            //
+            // Must "flatten" hierarchy of phases/comps to be compatible with current Amanzi-S
+            // in fact, tracers are listed flat requiring that there be no name clashes across phase/comp
+            ParameterList siPL;
+            StateDef::Phases& phases = state.getPhases();
+            std::set<std::string> solutes_with_isotherms;
+            for (StateDef::Phases::iterator pit=phases.begin(); pit!=phases.end(); ++pit) {
+              const std::string& p=pit->first;
+              StateDef::CompMap& comps = state[p];
+              for (StateDef::CompMap::iterator cit=comps.begin(); cit!=comps.end(); ++cit) {
+                const std::string& c=cit->first;
+                const Array<std::string>& solutes = cit->second.getTracerArray();
+                for (int i=0; i<solutes.size(); ++i) {
+                  const std::string& s=solutes[i];
+                  if (solid_chem[label].HasSorptionIsotherm(s)) {
+                    SolidChem::SorptionIsothermData sid = solid_chem[label].SorptionIsotherm(s);
+                    ParameterList sitPL = sid.BuildPL();
+                    siPL.set(underscore(s),sitPL);
+                    solutes_with_isotherms.insert(s);
+                  }
+                }
+              }
+            }
+            if (solutes_with_isotherms.size()>0) {
+              rsublist.set(underscore(isotherm_str),siPL);
+              state.getSolid().sorption_isotherm_names.resize(solutes_with_isotherms.size());
+              for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(), End=solutes_with_isotherms.end(); it!=End; ++it) {
+                state.getSolid().sorption_isotherm_names.push_back(*it);
+              }
+            }
+          }
+        }
+
+        // Now we can add the sublist the result
+        for (int k=0; k<arrayrock.size(); ++k)
+        {
+          const std::string& _label = arrayrock[k];
+          const std::string& label = AMR_to_Amanzi_label_map[_label];
+          rock_list.set(_label,rsublist_mat[label]);
+        }
             
-            rock_list.set("rock",arrayrock);
-            if (kp_file_out_set) {
-              rock_list.set("permeability_output_file",kp_file_out);
-            }
-            if (kp_file_in_set) {
-              rock_list.set("permeability_input_file",kp_file_in);
-            }
-            if (pp_file_out_set) {
-              rock_list.set("porosity_output_file",pp_file_out);
-            }
-            if (pp_file_in_set) {
-              rock_list.set("porosity_input_file",pp_file_in);
-            }
-
-            rock_list.set("porosity_plotfile_in",porosity_plotfile_in);
-            rock_list.set("porosity_plotfile_out",porosity_plotfile_out);
-        } 
+        rock_list.set("rock",arrayrock);
+        if (kp_file_out_set) {
+          rock_list.set("permeability_output_file",kp_file_out);
+        }
+        if (kp_file_in_set) {
+          rock_list.set("permeability_input_file",kp_file_in);
+        }
+        if (pp_file_out_set) {
+          rock_list.set("porosity_output_file",pp_file_out);
+        }
+        if (pp_file_in_set) {
+          rock_list.set("porosity_input_file",pp_file_in);
+        }
+        if (pp_plotfile_in_set) {
+          rock_list.set("porosity_plotfile_in",porosity_plotfile_in);
+        }
+        if (pp_plotfile_out_set) {
+          rock_list.set("porosity_plotfile_out",porosity_plotfile_out);
+        }
+        if (kp_plotfile_in_set) {
+          rock_list.set("permeability_plotfile_in",permeability_plotfile_in);
+        }
+        if (kp_plotfile_out_set) {
+          rock_list.set("permeability_plotfile_out",permeability_plotfile_out);
+        }
+      }
       
         StateDef::StateDef(const ParameterList& parameter_list)
             : parameter_list(parameter_list)

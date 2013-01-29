@@ -54,41 +54,37 @@ MatIDFiller::define(const Array<Geometry>& _geomArray,
 void 
 MatIDFiller::SetMaterialID(int level, MultiFab& mf, int nGrow)
 {
-  BoxArray unfilled(mf.boxArray()); unfilled.grow(nGrow);
+  BoxArray unfilled(mf.boxArray());
+  if (unfilled.size()==0) {
+    return;
+  }
+
+  unfilled.grow(nGrow);
+  MultiFab tmf(unfilled,1,0);
+
+  BL_ASSERT(level<NumLevels());
+  const Geometry& geom = Geom(level);
+  const Real* dx = geom.CellSize();
+  FArrayBox tfab;
+  for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
+    FArrayBox& tfab = tmf[mfi];
+    for (int j=0; j<materials.size(); ++j) {
+      int matID = matIdx[materials[j].Name()];
+      materials[j].setVal(tfab,matID,0,dx);
+    }
+  }
   
   if (level<ba_mixed.size() && ba_mixed[level].size()>0) {
-    BoxArray fillable = BoxLib::intersect(ba_mixed[level], unfilled);
-    if (fillable.size()>0) {
-      MultiFab tmf(fillable,1,0);
-      for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
-	tmf[mfi].setVal(-1,fillable[mfi.index()],0,1); // Something invalid
-      }
-      mf.copy(tmf);
-      BoxList remaining;
-      BoxList bl_fillable(fillable);
-      for (int i=0; i<unfilled.size(); ++i) {
-	remaining.join(BoxLib::complementIn(unfilled[i],bl_fillable));
-      }
-      remaining.simplify();
-      unfilled = (BoxArray)remaining;
+    BoxArray mixed = BoxLib::intersect(ba_mixed[level], unfilled);
+    if (mixed.size()>0) {
+      MultiFab mmf(mixed,1,0);
+      mmf.setVal(-1); // Something invalid
+      tmf.copy(mmf);
     }
   }
 
-  if (unfilled.size()>0) {
-    MultiFab tmf(unfilled,1,0);
-    const Geometry& geom = Geom(level);
-    const Real* dx = geom.CellSize();
-    FArrayBox tfab;
-    for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
-      const Box& bx = unfilled[mfi.index()];
-      tfab.resize(bx,1); tfab.setVal(-1);
-      for (int j=0; j<materials.size(); ++j) {
-        int matID = matIdx[materials[j].Name()];
-	materials[j].setVal(tfab,matID,0,dx);
-      }
-      tmf[mfi].copy(tfab,bx,0,bx,0,1);
-    }
-    mf.copy(tmf);
+  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+    mf[mfi].copy(tmf[mfi],0,0,1);
   }
 }
 

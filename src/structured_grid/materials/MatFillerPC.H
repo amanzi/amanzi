@@ -14,11 +14,12 @@ public:
               const PArray<Material>& materials);
   
   void define(const Array<Geometry>&  geomArray,
-                      const Array<IntVect>&   refRatio,
-                      const PArray<Material>& materials);
-  
-  virtual void SetProperty(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nGrow);
-  void FillCoarseCells(Real t, int level, MultiFab& mfc, const std::string& pname, int dComp);
+              const Array<IntVect>&   refRatio,
+              const PArray<Material>& materials);
+
+  virtual void SetProperty(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nGrow, void* ctx = 0);
+  void FillCoarseCells(Real t, int level, MultiFab& mfc, const std::string& pname, int dComp, int nComp, void* ctx = 0);
+  virtual void FillCellsOutsideDomain(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nComp, int nGrow);
 
   virtual void Average(const FArrayBox& fineFab,
                        int              sComp,
@@ -38,7 +39,7 @@ public:
                       const Array<IntVect>&   refRatio,
                       const PArray<Material>& materials)
     : MatFillerPC(geomArray,refRatio,materials) {}
-  
+
   virtual void Average(const FArrayBox& fineFab,
                        int              sComp,
                        FArrayBox&       crseFab,

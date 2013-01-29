@@ -1079,6 +1079,8 @@ protected:
   static MultiFab*   phidata;
   static DataServices* phi_dataServices;
   static DataServices* kappa_dataServices;
+  static std::string phi_plotfile_varname;
+  static Array<std::string> kappa_plotfile_varnames;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
   static Real        saturation_threshold_for_vg_Kr;
