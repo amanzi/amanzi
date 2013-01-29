@@ -53,6 +53,9 @@
   </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
+      <ParameterList name="Expert">
+        <Parameter name="Framework" type="string" value="MSTK"/>
+      </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
           <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 1}"/>
