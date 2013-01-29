@@ -245,8 +245,13 @@ void init_global_info(Teuchos::ParameterList* plist) {
         if (phase_components.isSublist("Water")) {
           Teuchos::ParameterList water_components =
               phase_components.sublist(phase_comp_name);
-          comp_names =
+	  if ( water_components.isParameter("Component Solutes")) {
+	    comp_names =
               water_components.get<Teuchos::Array<std::string> >("Component Solutes");
+	  } else {  // create one fake componenet solute to make the native input happy
+	    comp_names.push_back("Foo");
+	    comp_names_map[comp_names[0]] = 0;
+	  }
         }  // end water
       }  // end phase components
     }  // end Aqueous phase
