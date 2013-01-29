@@ -76,7 +76,7 @@ public:
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
   // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
+  //  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
 
 protected:
   // setup methods
