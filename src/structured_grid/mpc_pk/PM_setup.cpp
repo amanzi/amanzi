@@ -1413,7 +1413,7 @@ PorousMedia::read_rock(int do_chem)
         
         Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
-        Array<Real> rpvals;
+        Array<Real> rpvals(1);
         if (ppr.countval("porosity.vals")) {
           ppr.getarr("porosity.vals",rpvals,0,ppr.countval("porosity.vals"));
         } else if (ppr.countval("porosity")) {
