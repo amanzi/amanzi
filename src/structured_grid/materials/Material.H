@@ -59,7 +59,7 @@ class Material
 public:
   Material(const std::string&    name, 
 	   const PArray<Region>& regions,
-	   const std::vector<Property*>& properties);
+	   const std::vector<Property*>& properties = std::vector<Property*>());
   
   Material(const Material& rhs);
   ~Material();

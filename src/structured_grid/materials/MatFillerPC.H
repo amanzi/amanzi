@@ -21,13 +21,21 @@ public:
   void FillCoarseCells(Real t, int level, MultiFab& mfc, const std::string& pname, int dComp, int nComp, void* ctx = 0);
   virtual void FillCellsOutsideDomain(Real t, int level, MultiFab& mf, const std::string& pname, int dComp, int nComp, int nGrow);
 
-  virtual void Average(const FArrayBox& fineFab,
-                       int              sComp,
-                       FArrayBox&       crseFab,
-                       const Box&       crseBox,
-                       int              dComp,
-                       int              nComp,
-                       const IntVect&   ref) const = 0;
+  virtual void CoarsenData(const FArrayBox& fineFab,
+                           int              sComp,
+                           FArrayBox&       crseFab,
+                           const Box&       crseBox,
+                           int              dComp,
+                           int              nComp,
+                           const IntVect&   ref) const = 0;
+
+  virtual void RefineData(const FArrayBox& crseFab,
+                          int              sComp,
+                          FArrayBox&       fineFab,
+                          const Box&       crseBox,
+                          int              dComp,
+                          int              nComp,
+                          const IntVect&   ref) const = 0;
 };
 
 class MatFillerPCarithAvg
@@ -40,13 +48,22 @@ public:
                       const PArray<Material>& materials)
     : MatFillerPC(geomArray,refRatio,materials) {}
 
-  virtual void Average(const FArrayBox& fineFab,
-                       int              sComp,
-                       FArrayBox&       crseFab,
-                       const Box&       crseBox,
-                       int              dComp,
-                       int              nComp,
-                       const IntVect&   ref) const;
+  virtual void CoarsenData(const FArrayBox& fineFab,
+                           int              sComp,
+                           FArrayBox&       crseFab,
+                           const Box&       crseBox,
+                           int              dComp,
+                           int              nComp,
+                           const IntVect&   ref) const;
+
+  virtual void RefineData(const FArrayBox& crseFab,
+                          int              sComp,
+                          FArrayBox&       fineFab,
+                          const Box&       crseBox,
+                          int              dComp,
+                          int              nComp,
+                          const IntVect&   ref) const;
 };
 
 #endif
+
