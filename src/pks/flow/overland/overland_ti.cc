@@ -120,7 +120,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
     }
   }
 
-  preconditioner_->ApplyInverse(*u->data(), Pu->data());
+  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
 
   // Dump correction
 #if DEBUG_FLAG
@@ -263,7 +263,7 @@ void OverlandFlow::test_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     unew->Update(1.0, *dp, 1.0);
     fun(t-h, t, uold, unew, f2);
 
-    preconditioner_->Apply(*dp->data(), df->data());
+    preconditioner_->Apply(*dp->data(), df->data().ptr());
     double df_loc = (*df->data())("cell",c);
     df->Update(-1.0, *f2, 1.0, *f1, 1.0);
     double error = enorm(f1, df);

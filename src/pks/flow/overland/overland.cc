@@ -323,7 +323,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux", name_);
-    matrix_->DeriveFlux(*potential, flux);
+    matrix_->DeriveFlux(*potential, flux.ptr());
   }
 };
 
@@ -342,13 +342,13 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-    matrix_->DeriveFlux(*potential, flux);
+    matrix_->DeriveFlux(*potential, flux.ptr());
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
     Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
     Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", name_);
-    matrix_->DeriveCellVelocity(*flux, velocity);
+    matrix_->DeriveCellVelocity(*flux, velocity.ptr());
 
     Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);
     const Epetra_MultiVector& pres_cells = *pressure->ViewComponent("cell",false);

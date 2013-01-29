@@ -122,13 +122,13 @@ public:
 
   // operator methods for CompositeVectors
   void Apply(const CompositeVector& X,
-             const Teuchos::RCP<CompositeVector>& Y) const;
+             const Teuchos::Ptr<CompositeVector>& Y) const;
   void ApplyInverse(const CompositeVector& X,
-                    const Teuchos::RCP<CompositeVector>& Y) const;
+                    const Teuchos::Ptr<CompositeVector>& Y) const;
   void ComputeResidual(const CompositeVector& X,
-                       const Teuchos::RCP<CompositeVector>& F) const;
+                       const Teuchos::Ptr<CompositeVector>& F) const;
   void ComputeNegativeResidual(const CompositeVector& X,
-                               const Teuchos::RCP<CompositeVector>& F) const;
+                               const Teuchos::Ptr<CompositeVector>& F) const;
 
   // extra methods for preconditioning
   void InitPreconditioner(Teuchos::ParameterList& ml_plist_);
@@ -136,12 +136,12 @@ public:
 
   // extra methods for convenience
   void DeriveFlux(const CompositeVector& solution,
-                  const Teuchos::RCP<CompositeVector>& flux) const;
+                  const Teuchos::Ptr<CompositeVector>& flux) const;
   void DeriveCellVelocity(const CompositeVector& flux,
-                          const Teuchos::RCP<CompositeVector>& velocity) const;
+                          const Teuchos::Ptr<CompositeVector>& velocity) const;
 
   // development methods
-  void UpdateConsistentFaceConstraints(const Teuchos::RCP<CompositeVector>& u);
+  void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
 
 private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

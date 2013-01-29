@@ -33,7 +33,7 @@ void Richards::UpdateFlux_(const Teuchos::RCP<State>& S) {
 
   Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
   Teuchos::RCP<CompositeVector> total_flux = S->GetFieldData("total_flux", name_);
-  matrix_->DeriveFlux(*pres, darcy_flux);
+  matrix_->DeriveFlux(*pres, darcy_flux.ptr());
   *total_flux = *darcy_flux;
 
 
@@ -77,7 +77,7 @@ void Richards::ApplyDiffusion_(const Teuchos::RCP<State>& S,
 
   // calculate the residual
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-  matrix_->ComputeNegativeResidual(*pres, g);
+  matrix_->ComputeNegativeResidual(*pres, g.ptr());
 };
 
 

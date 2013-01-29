@@ -15,6 +15,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/mo
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 
