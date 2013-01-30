@@ -324,6 +324,8 @@ public:
 
   void predictDT(MultiFab* u_mac, Real t_eval);
 
+  void predictDT_diffusion_explicit (Real t_eval);
+
   Real initialTimeStep (MultiFab* u_mac);
 
   virtual void computeInitialDt (int                   finest_level,

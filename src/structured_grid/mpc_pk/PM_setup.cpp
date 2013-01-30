@@ -2676,7 +2676,7 @@ void  PorousMedia::read_tracer(int do_chem)
       diff_coef.resize(ntracers,-1); // FIXME: read these 
       variable_scal_diff = true;
       for (int i=0; i<ntracers; ++i) {
-	diff_coef[i] = -1.e-10;
+	diff_coef[i] = 1.e-10;
       }
       ndiff += ntracers;
 

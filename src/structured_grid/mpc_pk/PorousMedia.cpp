@@ -2803,7 +2803,6 @@ PorousMedia::multilevel_advance (Real  time,
     // Initialize velocity field, set "new time" for state the same across levels, copy over saturation/pressure
     advance_flow_nochange(time,dt);
     advance_saturated_transport_dt(); // FIXME: If u is really time-dependent, this must be done through the subcycle
-
     bool use_cached_sat = false;
     bool do_subcycle_tc = false;
     bool do_recursive = true;
@@ -2911,6 +2910,9 @@ PorousMedia::advance_richards_transport_dt(Real t)
       MultiFab::Copy(pml.u_macG_curr[d],pml.u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
     }
     pml.predictDT(pml.u_macG_trac,t);
+    bool diffuse_tracer = true;
+    if (diffuse_tracer)
+      pml.predictDT_diffusion_explicit(t);
     dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
   }
   for (int lev=finest_level; lev>=0; --lev) {
@@ -2974,12 +2976,14 @@ PorousMedia::advance_saturated_transport_dt()
   int finest_level = parent->finestLevel();
   Real dt_min = 1e20;
   for (int lev=level; lev<=finest_level; ++lev) {
-    PorousMedia& pml = getLevel(lev);
+    PorousMedia& pml = getLevel(lev); 
     Real curr_time = pml.get_state_data(State_Type).curTime();
     pml.predictDT(pml.u_macG_trac,curr_time);
+    bool diffuse_tracer = true;
+    if (diffuse_tracer)
+      pml.predictDT_diffusion_explicit(curr_time);
     dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
   }
-
   for (int lev=finest_level; lev>=0; --lev) {
     PorousMedia& pml = getLevel(lev);
     pml.dt_eig = dt_min;
@@ -3008,7 +3012,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       dt_new = dt_cfl;
       return false;
     }
-
     Real t_subtr = t;
     Real tmax_subtr = t+dt;
     Real dt_subtr = std::min(dt_cfl,dt);
@@ -5144,7 +5147,7 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
   int nGrowGeom = 0;
   tracOp.maxOrder(3);
   
-  Real b = 1;
+  Real b = -1;
   Real a = 0;
   tracOp.setScalars(a,b);
 
@@ -5167,7 +5170,6 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
   bool do_flux = Dflux.size()>0;
   for (int n=0; n<ntracers; ++n) {
     getDiffusivity(beta, time, first_tracer+n, 0, 1);
-    std::cout << (*beta[0])[0];
     for (int d = 0; d < BL_SPACEDIM; d++) {
       MultiFab::Multiply(*beta[d],area[d],0,0,1,0);
       beta[d]->mult(dx[d],0,1);
@@ -7608,6 +7610,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
           
           
           predictDT(u_mac,cur_time);
+	  predictDT_diffusion_explicit(cur_time);
           
 	  estdt = (cfl > 0  ?  cfl  :  1) *dt_eig;
 
@@ -7738,6 +7741,69 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 	  for (int dir = 0; dir < BL_SPACEDIM; dir++)
 	    std::cout << "Max Eig in dir " << dir << " = " << eigmax[dir] << '\n';
 	  std::cout << "Max timestep = " << dt_eig << '\n';
+	}
+    }
+}
+void
+PorousMedia::predictDT_diffusion_explicit (Real t_eval)
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::predictDT_diffusion_explicit()");
+
+  const Real* dx = geom.CellSize();
+  Real dt_diff = 1.e20; // FIXME: Need more robust
+  int first_tracer = ncomps;
+  calcDiffusivity(t_eval,first_tracer,ncomps+ntracers);
+  
+  MultiFab** diff_edge  = 0;
+  diffusion->allocFluxBoxesLevel(diff_edge,0,1);
+  
+  for (int n=0; n<ntracers; ++n) {
+    getDiffusivity(diff_edge, t_eval, first_tracer+n, 0, 1);
+    for (int d = 0; d < BL_SPACEDIM; d++) {
+      diff_edge[d]->mult(1.0/dx[d]);
+    }
+  }
+  
+  Real eigmax[BL_SPACEDIM] = { D_DECL(0,0,0) };
+  for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowEIGEST,
+			       t_eval,State_Type,0,ncomps);
+       S_fpi.isValid();
+       ++S_fpi)
+    {
+      const int i = S_fpi.index();
+
+      Array<int> state_bc;
+      state_bc = getBCArray(State_Type,i,0,1);
+
+      Real eigmax_m[BL_SPACEDIM] = {D_DECL(0,0,0)};
+      
+      if (transport_tracers > 0)
+	{
+	  godunov->esteig_trc (grids[i], D_DECL((*diff_edge[0])[i],
+                                                (*diff_edge[1])[i],
+                                                (*diff_edge[2])[i]),
+			       S_fpi(),1,(*rock_phi)[i] ,eigmax_m);
+	}
+
+      for (int dir = 0; dir < BL_SPACEDIM; dir++)
+	{
+	  eigmax[dir] = std::max(eigmax[dir],eigmax_m[dir]);
+	  if (eigmax_m[dir] > 1.e-15) 
+	    dt_diff = std::min(dt_diff,dx[dir]/eigmax_m[dir]);
+	}
+    }
+
+  diffusion->removeFluxBoxesLevel(diff_edge);
+
+  ParallelDescriptor::ReduceRealMin(dt_diff);
+  
+  dt_eig = std::min(dt_diff,dt_eig);
+
+  if (verbose > 3)
+    {
+      if (ParallelDescriptor::IOProcessor())
+	{
+	  std::cout << "After Diffusion: Max timestep = " << dt_eig << '\n';
 	}
     }
 }
