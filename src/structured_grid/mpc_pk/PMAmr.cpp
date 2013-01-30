@@ -642,6 +642,10 @@ PMAmr::coarseTimeStep (Real _stop_time)
 void
 PMAmr::SetUpMaterialServer()
 {
+#if 1
+  materialFiller = 0;
+  return;
+#else
   if (materialFiller == 0 || !materialFiller->Initialized()) {
     if (ParallelDescriptor::IOProcessor()) {
       std::cout << "Building MaterialFiller object..." << std::endl;
@@ -649,11 +653,11 @@ PMAmr::SetUpMaterialServer()
 
     PArray<Rock>& rocks = PorousMedia::Rocks();
     PArray<Material> materials(rocks.size(),PArrayManage);
-    std::map<std::string,Property*> property_map;
     std::string phi_str = "porosity";
     for (int i=0; i<rocks.size(); ++i) {
-      property_map[phi_str] = new ConstantProperty(rocks[i].porosity);
-      materials.set(i,new Material(rocks[i].name,rocks[i].regions,property_map));
+      std::vector<Property*> properties;
+      properties.push_back(new ConstantProperty(phi_str,rocks[i].porosity));
+      materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
     }
 
     int Nlevs = maxLevel() + 1;
@@ -662,6 +666,7 @@ PMAmr::SetUpMaterialServer()
       std::cout << "....MaterialFiller object built" << std::endl;
     }
   }
+#endif
 }
 
 
@@ -670,13 +675,9 @@ PMAmr::initialInit (Real t_start,
                     Real t_stop)
 {
     checkInput();
-    //
-    // Generate internal values from user-supplied values.
-    //
+
     finest_level = 0;
-    //
-    // Init problem dependent data.
-    //
+
     int init = true;
 
 #ifdef BL_SYNC_RANTABLES

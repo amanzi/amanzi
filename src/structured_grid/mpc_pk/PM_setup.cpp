@@ -106,6 +106,8 @@ Real        PorousMedia::saturation_threshold_for_vg_Kr;
 int         PorousMedia::use_shifted_Kr_eval;
 DataServices* PorousMedia::phi_dataServices;
 DataServices* PorousMedia::kappa_dataServices;
+std::string PorousMedia::phi_plotfile_varname;
+Array<std::string> PorousMedia::kappa_plotfile_varnames;
 //
 // Source.
 //
@@ -1351,12 +1353,40 @@ WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
   WritePlotfile(pfversion,mlData,t,gplo,gphi,fRatio,gpd,dxLevel,coordSys,
 		filename,names,plt_verbose,isCartGrid,&vfeps,&levelSteps);
 
-  if (ParallelDescriptor::IOProcessor()) {
-    std::cout << "Porosity plotfile written: " << filename <<std::endl;
-  }
-
   for (int lev=0; lev<max_level-1; ++lev) {
     delete &(mlData[lev]);
+  }
+}
+
+static DataServices*
+OpenMaterialDataPltFile(const std::string& filename,
+                        int                max_level,
+                        const Array<int>&  ratio,
+                        const Array<int>&  n_cell,
+                        int                nGrowMAX)
+{
+  DataServices::SetBatchMode();
+  Amrvis::FileType fileType(Amrvis::NEWPLT);
+  DataServices* ret = new DataServices(filename, fileType);
+  if (!ret->AmrDataOk())
+    DataServices::Dispatch(DataServices::ExitRequest, NULL);
+  AmrData& amrData = ret->AmrDataRef();
+
+  // Verify kappa data is compatible with current run
+  bool is_compatible = amrData.FinestLevel()>=max_level;
+  BL_ASSERT(ratio.size()<max_level);
+  for (int lev=0; lev<max_level && is_compatible; ++lev) {
+    is_compatible &= amrData.RefRatio()[lev] == ratio[lev];
+  }
+  if (is_compatible) {
+    Box probDomain=Box(IntVect::TheZeroVector(),
+                       IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
+    probDomain.grow(nGrowMAX);
+    is_compatible &= amrData.ProbDomain()[0].contains(probDomain);
+  }
+  if (!is_compatible) {
+    delete ret;
+    ret = 0;
   }
 }
 
@@ -1383,16 +1413,11 @@ PorousMedia::read_rock(int do_chem)
         
         Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
-        Real rporosity = -1;
-        if (ppr.countval("porosity")) {
-          ppr.get("porosity",rporosity);
-        } else if (ppr.countval("porosity.vals")) {
-          Array<Real> pvals;
-          ppr.getarr("porosity.vals",pvals,0,ppr.countval("porosity.vals"));
-          if (pvals.size()>1) {
-            BoxLib::Abort("Multiple porosity values not yet supported");
-          }
-          rporosity = pvals[0];
+        Array<Real> rpvals(1);
+        if (ppr.countval("porosity.vals")) {
+          ppr.getarr("porosity.vals",rpvals,0,ppr.countval("porosity.vals"));
+        } else if (ppr.countval("porosity")) {
+          ppr.get("porosity",rpvals[0]); // FIXME: For backward compatibility
         } else {
           BoxLib::Abort(std::string("No porosity function specified for rock: \""+rname).c_str());
         }
@@ -1449,7 +1474,7 @@ PorousMedia::read_rock(int do_chem)
         int rporosity_dist_type = Rock::rock_dist_map[porosity_dist];
         Array<Real> rporosity_dist_param;
         if (porosity_dist!="uniform") {
-          BoxLib::Abort("porosity_dist != uniform not current supported");
+          BoxLib::Abort("porosity_dist != uniform not currently supported");
           ppr.getarr("porosity_dist_param",rporosity_dist_param,
                      0,ppr.countval("porosity_dist_param"));
         }
@@ -1462,7 +1487,7 @@ PorousMedia::read_rock(int do_chem)
           ppr.getarr("permeability_dist_param",rpermeability_dist_param,
                      0,ppr.countval("permeability_dist_param"));
         }
-        rocks.set(i, new Rock(rname,rdensity,rporosity,rporosity_dist_type,rporosity_dist_param,
+        rocks.set(i, new Rock(rname,rdensity,rpvals[0],rporosity_dist_type,rporosity_dist_param,
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
                               rkrType,rkrParam,rcplType,rcplParam,rregions));
     }
@@ -1700,6 +1725,13 @@ PorousMedia::read_rock(int do_chem)
       build_full_pmap = false;
     }
 
+    // The variables names expected for the properties in the permeability and porosity plotfiles
+    kappa_plotfile_varnames.resize(BL_SPACEDIM,"Permeability_");
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      BoxLib::Concatenate(kappa_plotfile_varnames[d],d,1);
+    }
+    phi_plotfile_varname = "Porosity";
+
     if (read_full_kmap) {
       build_full_kmap = false;
 
@@ -1743,36 +1775,18 @@ PorousMedia::read_rock(int do_chem)
         gm.getarr("prob_hi",probhi,0,BL_SPACEDIM);
       }
     
-#if 0
-    // NOTE: Implementation pending resolution of multi-component kappadata usage
     std::string permeability_plotfile_in;
     pp.query("permeability_plotfile_in", permeability_plotfile_in);
     if (!permeability_plotfile_in.empty()) {
-      DataServices::SetBatchMode();
-      Amrvis::FileType fileType(Amrvis::NEWPLT);
-      kappa_dataServices = new DataServices(permeability_plotfile_in, fileType);
-      if (!kappa_dataServices->AmrDataOk())
-        DataServices::Dispatch(DataServices::ExitRequest, NULL);
-      AmrData& kappa_amrData = kappa_dataServices->AmrDataRef();
+      kappa_dataServices = OpenMaterialDataPltFile(permeability_plotfile_in,
+                                                   max_level,fratio,n_cell,nGrowHYP);
 
-      // Verify kappa data is compatible with current run
-      bool kappa_is_compatible = kappa_amrData.FinestLevel()>=max_level;
-      for (int lev=0; lev<max_level && kappa_is_compatible; ++lev) {
-	kappa_is_compatible &= kappa_amrData.RefRatio()[lev] == fratio[lev];
-      }
-      if (kappa_is_compatible) {
-	Box probDomain=Box(IntVect::TheZeroVector(),
-			   IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
-	probDomain.grow(nGrowHYP);
-	kappa_is_compatible &= kappa_amrData.ProbDomain()[0].contains(probDomain);
-      }
-      if (!kappa_is_compatible) {
+      if (kappa_dataServices==0 || !kappa_dataServices->AmrDataRef().CanDerive(kappa_plotfile_varnames)) {
 	std::string str=permeability_plotfile_in
-	  + " is not compatible with this run.  Must generate new file (use permeability_plotfile_out=<name>)";
+	  + " either does not exist or is not compatible with this run.";
 	BoxLib::Error(str.c_str());
       }
     }
-#endif
 
     // construct permeability field based on the specified parameters
     if (build_full_kmap) {
@@ -1812,8 +1826,11 @@ PorousMedia::read_rock(int do_chem)
             int num_digits = 1;
             BoxLib::Concatenate(names[d],d,num_digits);
           }
-          WriteMaterialPltFile(max_level,n_cell,fratio,problo,probhi,phidata,
+          WriteMaterialPltFile(max_level,n_cell,fratio,problo,probhi,kappadata,
                                permeability_plotfile_out,nGrowHYP,harmDir,names);
+          if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "Permeability plotfile written: " << permeability_plotfile_out <<std::endl;
+          }
         }
         
         if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -1842,27 +1859,12 @@ PorousMedia::read_rock(int do_chem)
     std::string porosity_plotfile_in;
     pp.query("porosity_plotfile_in", porosity_plotfile_in);
     if (!porosity_plotfile_in.empty()) {
-      DataServices::SetBatchMode();
-      Amrvis::FileType fileType(Amrvis::NEWPLT);
-      phi_dataServices = new DataServices(porosity_plotfile_in, fileType);
-      if (!phi_dataServices->AmrDataOk())
-        DataServices::Dispatch(DataServices::ExitRequest, NULL);
-      AmrData& phi_amrData = phi_dataServices->AmrDataRef();
+      phi_dataServices = OpenMaterialDataPltFile(porosity_plotfile_in,
+                                                 max_level,fratio,n_cell,nGrowHYP);
 
-      // Verify phi data is compatible with current run
-      bool phi_is_compatible = phi_amrData.FinestLevel()>=max_level;
-      for (int lev=0; lev<max_level && phi_is_compatible; ++lev) {
-	phi_is_compatible &= phi_amrData.RefRatio()[lev] == fratio[lev];
-      }
-      if (phi_is_compatible) {
-	Box probDomain=Box(IntVect::TheZeroVector(),
-			   IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
-	probDomain.grow(nGrowHYP);
-	phi_is_compatible &= phi_amrData.ProbDomain()[0].contains(probDomain);
-      }
-      if (!phi_is_compatible) {
-	std::string str=porosity_plotfile_in 
-	  + " is not compatible with this run.  Must generate new file (use porosity_plotfile_out=<name>)";
+      if (phi_dataServices==0 || !phi_dataServices->AmrDataRef().CanDerive(phi_plotfile_varname)) {
+	std::string str=porosity_plotfile_in
+	  + " either does not exist or is not compatible with this run.";
 	BoxLib::Error(str.c_str());
       }
     }
@@ -1893,10 +1895,13 @@ PorousMedia::read_rock(int do_chem)
         std::string porosity_plotfile_out;
         pp.query("porosity_plotfile_out", porosity_plotfile_out);
         if (!porosity_plotfile_out.empty()) {
-          Array<int> harmDir(1,0);
+          Array<int> harmDir(1,-1);
           Array<std::string> names(1,"Porosity");
           WriteMaterialPltFile(max_level,n_cell,fratio,problo,probhi,phidata,
                                porosity_plotfile_out,nGrowHYP,harmDir,names);
+          if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "Porosity plotfile written: " << porosity_plotfile_out <<std::endl;
+          }
         }
 
         if (verbose > 1 && ParallelDescriptor::IOProcessor())
