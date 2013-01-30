@@ -27,6 +27,7 @@ Usage:
 
 #include "State.hpp"
 #include "Transport_State.hpp"
+#include "Transport_Source_Factory.hpp"
 #include "Transport_constants.hpp"
 #include "Reconstruction.hpp"
 
@@ -167,6 +168,10 @@ class Transport_PK : public Explicit_TI::fnBase {
   Reconstruction lifting;
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
+
+  DomainFunction* src_sink;  // Source and sink terms
+  std::vector<std::pair<std::string, int> > src_namemap;
+  int src_sink_distribution; 
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;

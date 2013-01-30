@@ -44,7 +44,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 file(GLOB transport_inc_files "*.hpp")
 set(transport_src_files Transport_PK.cpp Transport_State.cpp Transport_TI.cpp 
                         Transport_Limiters.cpp Transport_Dispersion.cpp 
-                        Transport_VandV.cpp Transport_IO.cpp
+                        Transport_VandV.cpp Transport_IO.cpp Transport_Source_Factory.cpp
                         Reconstruction.cpp)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}

@@ -1,0 +1,79 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="MSTK"/>
+  </ParameterList>    
+   
+  <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Labeled Set">
+        <Parameter name="Label" type="string" value="1"/>
+        <Parameter name="File" type="string" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="Entity" type="string" value="Cell"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Labeled Set">
+        <Parameter name="Label" type="string" value="3"/>
+        <Parameter name="File" type="string" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="Entity" type="string" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="Region: Labeled Set">
+        <Parameter name="Label" type="string" value="2"/>
+        <Parameter name="File" type="string" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="Entity" type="string" value="Face"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Well">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.1,-0.1}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.1,0.1}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="spatial discretization order" type="int" value="2"/>   
+    <Parameter name="temporal discretization order" type="int" value="2"/>   
+    <Parameter name="advection limiter" type="string" value="Tensorial"/>
+    <!-- developers parameters --> 
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+    <!-- end of developers parameters -->
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      <ParameterList name="BC 0">
+        <Parameter name="Component 0" type="Array(double)" value="{1.0, 0.0}"/>
+        <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
+      </ParameterList>  
+    </ParameterList>  
+
+    <ParameterList name="source terms">
+      <ParameterList name="H+">
+        <Parameter name="regions" type="Array(string)" value="{Well}"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
+        <ParameterList name="sink">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="-0.01"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

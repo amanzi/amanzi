@@ -139,6 +139,14 @@ void Transport_PK::ProcessParameterList()
       }
     }
   }
+
+  // Create the source object if any
+  if (transport_list.isSublist("source terms")) {
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(transport_list.sublist("source terms", true));
+    TransportSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.CreateSource(src_namemap);
+    src_sink_distribution = src_sink->CollectActionsList();
+  }  
 }
 
 
