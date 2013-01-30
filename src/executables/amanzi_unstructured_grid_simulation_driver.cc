@@ -33,6 +33,9 @@ Effectively stolen from Amanzi, with few modifications.
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
+#include "state.hh"
+
+#include "Mesh_MSTK.hh"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -203,15 +206,15 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   ASSERT(!mesh.is_null());
 
   // Create the surface mesh if needed
-  Teuchos::RCP<AmanziMesh::Mesh> surface_mesh = Teuchos::null;
-  Teuchos::RCP<AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
-  if (mesh_plist.isSublist("Subsurface Mesh")) {
-    Teuchos::ParameterList surface_plist.sublist("Subsurface Mesh");
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
+  if (mesh_plist.isSublist("Surface Mesh")) {
+    Teuchos::ParameterList surface_plist = mesh_plist.sublist("Surface Mesh");
 
     std::vector<std::string> setnames;
     if (surface_plist.isParameter("surface sideset name")) {
-      setnames.push_back(plist_.get<std::string>("surface sideset name"));
-    } if (surface_plist.isParameter("surface sideset names")) {
+      setnames.push_back(surface_plist.get<std::string>("surface sideset name"));
+    } else if (surface_plist.isParameter("surface sideset names")) {
       setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
     } else {
       Errors::Message message("Surface mesh ParameterList needs sideset names.");
@@ -219,11 +222,18 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
     }
 
     if (mesh->cell_dimension() == 3) {
-      surface3D_mesh = factory.create(&*mesh,setnames,AmanziMesh::FACE,false,false);
-      surface_mesh = factory.create(&*mesh,setnames,AmanziMesh::FACE,true,false);
+           surface3D_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
+           surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
+      // Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> mesh_mstk = Teuchos::rcp_dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK>(mesh);
+
+      // surface3D_mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(*mesh_mstk,setnames,Amanzi::AmanziMesh::FACE,false,false));
+      // surface_mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(*mesh_mstk,setnames,Amanzi::AmanziMesh::FACE,true,false));
     } else {
+      // Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> mesh_mstk = Teuchos::rcp_dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK>(mesh);
+
       surface3D_mesh = mesh;
-      surface_mesh = factory.create(&*mesh,setnames,AmanziMesh::CELL,true,false);
+           surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
+      // surface_mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(*mesh_mstk,setnames,Amanzi::AmanziMesh::CELL,true,false));
     }
   }
 
@@ -231,8 +241,8 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   Teuchos::TimeMonitor::zeroOutTimers();
 
   // Create the state.
-  Teuchos::ParameterList state_plist = params_copy.sublist("State");
-  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_plist));
+  Teuchos::ParameterList state_plist = params_copy.sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterDomainMesh(mesh);
   if (surface3D_mesh != Teuchos::null) S->RegisterMesh("surface_3d", surface3D_mesh);
   if (surface_mesh != Teuchos::null) S->RegisterMesh("surface", surface_mesh);
