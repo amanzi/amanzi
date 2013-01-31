@@ -427,9 +427,10 @@ void MPC::cycle_driver() {
 
     // we need to create an EpetraMulitVector that will store the
     // intermediate value for the total component concentration
-    total_component_concentration_star =
+    if (S->get_number_of_components() > 0) {
+      total_component_concentration_star =
         Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
-
+    }
     // then start time stepping
     while ((S->get_time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
 
@@ -659,8 +660,10 @@ void MPC::cycle_driver() {
         }
         // store the total component concentration, so that we
         // can restore it in the case of a chemistry failure
-        Epetra_MultiVector tcc_stor(*total_component_concentration_star);
-
+	Teuchos::RCP<Epetra_MultiVector> tcc_stor;
+	if (S->get_number_of_components() > 0) {
+	  tcc_stor = Teuchos::rcp(new Epetra_MultiVector(*total_component_concentration_star));
+	}
         bool success(true);
         int tries(0);
 
@@ -686,7 +689,9 @@ void MPC::cycle_driver() {
                 }
                 Amanzi::timer_manager.stop("Transport PK");
               } else { // if we're not advancing transport we still need to prepare for chemistry
-                *total_component_concentration_star = *S->get_total_component_concentration();
+		if (S->get_number_of_components() > 0) {
+		  *total_component_concentration_star = *S->get_total_component_concentration();
+		}
               }
 
               // second we do a chemistry step, or if chemistry is off, we simply update 
@@ -702,8 +707,10 @@ void MPC::cycle_driver() {
                 Amanzi::timer_manager.stop("Chemistry PK");
                 S->update_total_component_concentration(CPK->get_total_component_concentration());
               } else {
-                S->update_total_component_concentration(*total_component_concentration_star);
-              }
+		if (S->get_number_of_components() > 0) {
+		  S->update_total_component_concentration(*total_component_concentration_star);
+		}
+	      }
 
               // all went well, so we can advance intermediate time, and call commit state
               // for each pk
@@ -759,7 +766,7 @@ void MPC::cycle_driver() {
                                  S->isotherm_langmuir_b());
 
             // restore the total component concentration to the beginning of chemistry subcycling
-            S->update_total_component_concentration(tcc_stor);
+            S->update_total_component_concentration(*tcc_stor);
             
             // reset the intermediate time to the beginning
             S->set_intermediate_time(S->initial_time());
