@@ -13,8 +13,8 @@
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
 #include "Richards_PK.hpp"
-#include "Transport_State.hpp"
-#include "Transport_PK.hpp"
+#include "Transport_State.hh"
+#include "Transport_PK.hh"
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"

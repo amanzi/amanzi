@@ -17,11 +17,11 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#include "Mesh.hh"
 #include "Point.hh"
 
-#include "Transport_PK.hpp"
-#include "Reconstruction.hpp"
+#include "Mesh.hh"
+#include "Transport_PK.hh"
+#include "Reconstruction.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

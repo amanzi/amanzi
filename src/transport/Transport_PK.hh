@@ -26,10 +26,10 @@ Usage:
 #include "boundary_function.hh"
 
 #include "State.hpp"
-#include "Transport_State.hpp"
-#include "Transport_Source_Factory.hpp"
-#include "Transport_constants.hpp"
-#include "Reconstruction.hpp"
+#include "Transport_State.hh"
+#include "Transport_SourceFactory.hh"
+#include "Transport_constants.hh"
+#include "Reconstruction.hh"
 
 /*
 This is Amanzi Transport Process Kernel (PK).

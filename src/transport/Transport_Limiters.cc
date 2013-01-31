@@ -12,7 +12,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <algorithm>
 #include <vector>
 
-#include "Transport_PK.hpp"
+#include "Transport_PK.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

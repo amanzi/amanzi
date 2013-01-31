@@ -25,8 +25,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Explicit_TI_RK.hpp"
 
-#include "Transport_PK.hpp"
-#include "Reconstruction.hpp"
+#include "Transport_PK.hh"
+#include "Reconstruction.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

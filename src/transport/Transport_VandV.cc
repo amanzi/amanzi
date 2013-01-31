@@ -18,7 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "errors.hh"
 
-#include "Transport_PK.hpp"
+#include "Transport_PK.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

@@ -11,7 +11,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include <algorithm>
 
-#include "Transport_PK.hpp"
+#include "Transport_PK.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

@@ -41,11 +41,11 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: transport
 #
-file(GLOB transport_inc_files "*.hpp")
-set(transport_src_files Transport_PK.cpp Transport_State.cpp Transport_TI.cpp 
-                        Transport_Limiters.cpp Transport_Dispersion.cpp 
-                        Transport_VandV.cpp Transport_IO.cpp Transport_Source_Factory.cpp
-                        Reconstruction.cpp)
+file(GLOB transport_inc_files "*.hh")
+set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc 
+                        Transport_Limiters.cc Transport_Dispersion.cc 
+                        Transport_VandV.cc Transport_IO.cc Transport_SourceFactory.cc
+                        Reconstruction.cc)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state time_integration ${Epetra_LIBRARIES})
@@ -67,27 +67,27 @@ if ( BUILD_TESTS )
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics
                     KIND unit
-                    SOURCE test/Main.cc test/transport_mics.cpp
+                    SOURCE test/Main.cc test/transport_mics.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_advance_simple transport_advance_simple
                     KIND unit
-                    SOURCE test/Main.cc test/transport_advance_simple.cpp
+                    SOURCE test/Main.cc test/transport_advance_simple.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_limiters transport_limiters
                     KIND unit
-                    SOURCE test/Main.cc test/transport_limiters.cpp
+                    SOURCE test/Main.cc test/transport_limiters.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_convergence transport_convergence
                     KIND unit
-                    SOURCE test/Main.cc test/transport_convergence.cpp
+                    SOURCE test/Main.cc test/transport_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(transport_dispersion transport_dispersion
                     KIND unit
-                    SOURCE test/Main.cc test/transport_dispersion.cpp
+                    SOURCE test/Main.cc test/transport_dispersion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
@@ -95,44 +95,44 @@ if ( BUILD_TESTS )
 
         add_amanzi_test(transport_advance_mstk transport_advance_mstk
 	                KIND unit
-                        SOURCE test/Main.cc test/transport_advance_mstk.cpp
+                        SOURCE test/Main.cc test/transport_advance_mstk.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
 		       KIND int
 	               NPROCS 4 
-                       SOURCE test/Main.cc test/transport_parallel_mstk.cpp
+                       SOURCE test/Main.cc test/transport_parallel_mstk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_parallel_read_mstk transport_parallel_read_mstk
 		       KIND int
 	               NPROCS 4 
-                       SOURCE test/Main.cc test/transport_parallel_read_mstk.cpp
+                       SOURCE test/Main.cc test/transport_parallel_read_mstk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_2D transport_2D
 	                KIND unit
-                        SOURCE test/Main.cc test/transport_2D.cpp
+                        SOURCE test/Main.cc test/transport_2D.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_2D_long transport_2D_long 
 	                KIND unit
-                        SOURCE test/Main.cc test/transport_2D_long.cpp
+                        SOURCE test/Main.cc test/transport_2D_long.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_2D_source transport_2D_source
                         KIND unit
-                        SOURCE test/Main.cc test/transport_2D_source.cpp
+                        SOURCE test/Main.cc test/transport_2D_source.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_3D_long transport_3D_long
 	                KIND unit
-                        SOURCE test/Main.cc test/transport_3D_long.cpp
+                        SOURCE test/Main.cc test/transport_3D_long.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_subcycling transport_subcycling
 	                KIND unit
-                        SOURCE test/Main.cc test/transport_subcycling.cpp
+                        SOURCE test/Main.cc test/transport_subcycling.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
 
@@ -141,13 +141,13 @@ if ( BUILD_TESTS )
 
         add_amanzi_test(transport_advance_stk transport_advance_stk
 	                KIND unit
-                        SOURCE test/Main.cc test/transport_advance_stk.cpp
+                        SOURCE test/Main.cc test/transport_advance_stk.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
         
         add_amanzi_test(transport_parallel_stk transport_parallel_stk
 			KIND unit
 	                NPROCS 4
-                        SOURCE test/Main.cc test/transport_parallel_stk.cpp
+                        SOURCE test/Main.cc test/transport_parallel_stk.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
           
     endif()    

@@ -1,17 +1,18 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-#include "UnitTest++.h"
 #include <vector>
 
-#include "MeshFactory.hh"
-#include "State.hpp"
-#include "Transport_PK.hpp"
+#include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
+
+#include "MeshFactory.hh"
+#include "MeshAudit.hh"
+#include "State.hpp"
+#include "Transport_PK.hh"
 
 
 double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) { 
@@ -20,14 +21,14 @@ double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) {
 }
 
 
-TEST(ADVANCE_WITH_MSTK_PARALLEL) {
+TEST(ADVANCE_WITH_STK_PARALLEL) {
   using namespace std;
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  cout << "Test: advance with MSTK in parallel" << endl;
+  std::cout << "Test: advance using parallel STK mesh" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -36,7 +37,8 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   // read parameter list
   ParameterList parameter_list;
-  string xmlFileName = "test/transport_parallel_mstk.xml";
+  string xmlFileName = "test/transport_parallel_stk.xml";
+  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
@@ -47,12 +49,15 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   FrameworkPreference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(STKMESH);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
-  
+  RCP<Mesh> mesh = meshfactory("test/cube_4x4x4.par", gm);
+
+  //Amanzi::MeshAudit audit(mesh);
+  //audit.Verify();
+   
   // create a transport state with two component 
   int num_components = 2;
   State mpc_state(num_components, 0, mesh);
@@ -64,18 +69,17 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   TS->AnalyticDarcyFlux(u);
   TS->AnalyticWaterSaturation();
 
-  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
-  TPK.PrintStatistics();
 
   // advance the state
-  double dT = TPK.CalculateTransportDt();
+  double dT = TPK.CalculateTransportDt();  
   TPK.Advance(dT);
 
   // printing cell concentration
   int  iter, k;
-  double  T = 0.0;
+  double T = 0.0;
   RCP<Transport_State> TS_next = TPK.transport_state_next();
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
@@ -87,15 +91,15 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
     T += dT;
     iter++;
 
-    if (iter < 10 && TPK.MyPID == 3) {
+    if (iter < 10 && TPK.MyPID == 2) {
       printf("T=%7.2f  C_0(x):", T);
-      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+      for (int k=0; k<2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
     }
     *tcc = *tcc_next;
   }
 
-  //for (int k=0; k<12; k++) 
-  //  CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
+  for (int k=0; k<12; k++) 
+    CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
 }
  
  

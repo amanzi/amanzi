@@ -20,23 +20,23 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
-#include "Transport_PK.hpp"
+#include "Transport_PK.hh"
 
 
 Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t ) { 
-  return Amanzi::AmanziGeometry::Point(1.0, 0.0, 0.0);
+  return Amanzi::AmanziGeometry::Point(1.0, 0.5);
 }
 
 
 /* **************************************************************** */
-TEST(ADVANCE_WITH_3D_MESH) {
+TEST(TRANSPORT_SOURCE_2D_MESH) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
+cout << "Test: 2D transport on a square mesh for long time" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -45,8 +45,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/transport_3D_long.xml";
-  // DEPRECATED updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  string xmlFileName = "test/transport_2D_source.xml";
 
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
@@ -60,10 +59,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory("test/rect3D_50x50x1.exo", gm);
-
-  //Amanzi::MeshAudit audit(mesh);
-  //audit.Verify();   
+  RCP<Mesh> mesh = meshfactory("test/rect2D_50x50_ss.exo", gm);
   
   /* create a MPC state with one component */
   int num_components = 1;
@@ -105,6 +101,8 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
         GMV::open_data_file(*mesh, (std::string)"transport.gmv");
         GMV::start_data();
         GMV::write_cell_data(*tcc_next, 0, "component0");
+        //GMV::write_cell_data(*tcc_next, 1, "component1");
+        //GMV::write_cell_data(*tcc_next, 2, "component2");
         GMV::close_data_file();
       }
       break;
@@ -112,6 +110,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
 
     *tcc = *tcc_next;
   }
+  TPK.CheckTracerBounds(*tcc_next, 0, 0.0, 1.0, AmanziTransport::TRANSPORT_LIMITER_TOLERANCE);
  
   delete comm;
 }

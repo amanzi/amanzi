@@ -7,13 +7,11 @@
 #include "MeshFactory.hh"
 
 #include "State.hpp"
-#include "Transport_PK.hpp"
+#include "Transport_PK.hh"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
-
 
 
 TEST(ADVANCE_WITH_STK) {

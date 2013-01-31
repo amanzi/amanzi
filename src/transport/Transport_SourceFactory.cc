@@ -15,7 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "function-factory.hh"
 #include "errors.hh"
 
-#include "Transport_Source_Factory.hpp"
+#include "Transport_SourceFactory.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

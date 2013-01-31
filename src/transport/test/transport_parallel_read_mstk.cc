@@ -1,17 +1,17 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-#include "UnitTest++.h"
 #include <vector>
 
-#include "MeshFactory.hh"
-#include "State.hpp"
-#include "Transport_PK.hpp"
+#include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-// DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
+
+#include "MeshFactory.hh"
+#include "State.hpp"
+#include "Transport_PK.hh"
 
 
 double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) { 

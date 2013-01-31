@@ -15,7 +15,7 @@
 #include "Point.hh"
 
 #include "State.hpp"
-#include "Transport_PK.hpp"
+#include "Transport_PK.hh"
 
 
 double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 

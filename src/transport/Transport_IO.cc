@@ -15,12 +15,12 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
 #include "errors.hh"
 #include "tabular-function.hh"
 #include "gmv_mesh.hh"
 
-#include "Transport_PK.hpp"
+#include "Mesh.hh"
+#include "Transport_PK.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

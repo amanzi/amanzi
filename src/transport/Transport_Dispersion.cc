@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "mfd3d.hpp"
 #include "tensor.hpp"
 
-#include "Transport_PK.hpp"
+#include "Transport_PK.hh"
 
 
 namespace Amanzi {
