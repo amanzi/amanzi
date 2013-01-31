@@ -215,6 +215,12 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   const Epetra_Map& node_epetra_map (const bool include_ghost) const
   { return *bogus_map_; }
 
+  const Epetra_Map& exterior_face_epetra_map (void) const
+  { return *bogus_map_; }
+
+  const Epetra_Import& exterior_face_importer (void) const
+  { return *bogus_importer_; }
+    
 
   unsigned int get_set_size (const std::string setname, 
                              const Amanzi::AmanziMesh::Entity_kind kind,
@@ -251,6 +257,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
  private:
 
   Epetra_Map *bogus_map_;
+  Epetra_Import *bogus_importer_;
 
 };
 
