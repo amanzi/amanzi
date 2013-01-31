@@ -61,8 +61,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(temp_key_);
 
   // -- pressure
-  pres_key_ = plist_.get<std::string>("pressure key",
-          domain_name+std::string("atmospheric_pressure"));
+  pres_key_ = plist_.get<std::string>("pressure key", "atmospheric_pressure");
 
   // Construct my EOS model
   ASSERT(plist_.isSublist("EOS parameters"));
@@ -110,7 +109,7 @@ void IsobaricEOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass()) {
     // calculate MassDensity from MolarDensity and molar mass.
     double M = eos_->MolarMass();
-    results[1]->Update(M, *results[0], 0.0);
+    results[1]->Update(M, *(results[0]), 0.0);
   } else if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
     // evaluate MassDensity()
     Teuchos::Ptr<CompositeVector> result = results[index];

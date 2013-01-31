@@ -31,6 +31,7 @@ WHOLE_ARCHIVE(pk_transport_passive_tracer)
 WHOLE_ARCHIVE(pk_flow_richards)
 WHOLE_ARCHIVE(pk_flow_permafrost)
 WHOLE_ARCHIVE(pk_flow_overland)
+WHOLE_ARCHIVE(pk_flow_overland_head)
 WHOLE_ARCHIVE(pk_prescribed_deformation)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(mpc)
@@ -39,6 +40,7 @@ WHOLE_ARCHIVE(relations_eos)
 WHOLE_ARCHIVE(flow_relations_wrm)
 WHOLE_ARCHIVE(flow_relations_wrm_models)
 WHOLE_ARCHIVE(flow_relations_overland_conductivity)
+WHOLE_ARCHIVE(flow_relations_elevation)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(amanzi_mesh_functions)
@@ -57,6 +59,7 @@ target_link_libraries(ats
                       ${pk_flow_permafrost}
                       ${pk_flow_richards}
                       ${pk_flow_overland}
+                      ${pk_flow_overland_head}
 		              ${pk_prescribed_deformation}
                       ${pk_bases}
                       energy_bc_factory
@@ -66,6 +69,7 @@ target_link_libraries(ats
                       ${flow_relations_wrm}
                       ${flow_relations_wrm_models}
                       ${flow_relations_overland_conductivity}
+                      ${flow_relations_elevation}
                       ${relations_eos}
                       advection
                       divgrad

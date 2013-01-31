@@ -34,7 +34,10 @@ public:
       PKDefaultBase(plist, solution),
       PKPhysicalBDFBase(plist, solution),
       modify_predictor_with_consistent_faces_(false),
-      niter_(0) {}
+      niter_(0) {
+    if (!plist_.isParameter("primary variable key"))
+      plist_.set("primary variable key", "temperature");
+  }
 
   // Virtual destructor
   virtual ~EnergyBase() {}

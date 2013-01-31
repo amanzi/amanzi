@@ -7,7 +7,8 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include "boost/math/special_functions/fpclassify.hpp"
+#include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 #include "boundary_function.hh"
 #include "field_evaluator.hh"
@@ -29,9 +30,9 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
-
-  ASSERT(S_inter_->time() == t_old);
-  ASSERT(S_next_->time() == t_new);
+  double h = t_new - t_old;
+  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
@@ -144,7 +145,8 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   }
 
   // update state with the solution up.
-  ASSERT(S_next_->time() == t);
+  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // update boundary conditions
@@ -195,22 +197,22 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
 
 double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
-  S_next_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& energy = *S_next_->GetFieldData(energy_key_)
-      ->ViewComponent("cell",false);
 
   Teuchos::RCP<const CompositeVector> res = du->data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
   const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
 
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
+      ->ViewComponent("cell",false);
   const CompositeVector& temp = *u->data();
   double h = S_next_->time() - S_inter_->time();
 
-  // Cell error is based upon energy.
+  // Cell error is based upon error in energy conservation relative to
+  // a characteristic energy
   double enorm_cell(0.);
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_*std::abs(energy[0][c]));
+    double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_* (cv[0][c]*2.e6));
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
@@ -218,16 +220,23 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   double enorm_face(0.);
   int nfaces = res_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = std::abs(h*res_f[0][f]) / (atol_+rtol_*273.15);
+    double tmp = std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 
   // Write out Inf norms too.
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    double infnorm_c, infnorm_f;
+    double infnorm_c(0.), infnorm_f(0.);
     res_c.NormInf(&infnorm_c);
     res_f.NormInf(&infnorm_f);
+
+#ifdef HAVE_MPI
+    double buf_c(enorm_cell), buf_f(enorm_face);
+    MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+
     *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
     *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
   }

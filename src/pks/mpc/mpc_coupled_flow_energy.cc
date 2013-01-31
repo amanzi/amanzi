@@ -12,6 +12,7 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 #include "mpc_coupled_flow_energy.hh"
 #include "strong_mpc.hh"
 #include "Epetra_FECrsGraph.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -243,6 +244,14 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
     IfpHypre_Sff_->Compute();    
 #endif
   }
+
+  /*
+  // dump the schur complement
+  std::stringstream filename_s;
+  filename_s << "schur_" << S_next_->cycle() << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+  *out_ << "updated precon " << S_next_->cycle() << std::endl;
+  */
 };
 
 void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){

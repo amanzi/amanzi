@@ -28,7 +28,6 @@ TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist, solution),
     EnergyBase(plist, solution) {
-  if (!plist_.isParameter("solution key")) plist_.set("solution key", "temperature");
   if (!plist_.isParameter("flux key")) plist_.set("flux key", "darcy_flux");
 }
 
@@ -64,6 +63,9 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhaseEvaluator> tcm =
     Teuchos::rcp(new EnergyRelations::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
+
+  // require a density for rock to get total internal energy
+  S->RequireScalar("density_rock");
 }
 
 
