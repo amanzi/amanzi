@@ -42,6 +42,7 @@ class DomainFunction : public MeshFunction {
                         const Teuchos::RCP<const Function>& f, int action, 
                         const std::string& name);
 
+  void ComputeMultiValue(double T, const std::string& name);
   void ComputeDistributeMultiValue(double T, const std::string& name);
   void ComputeDistributeMultiValue(double T, const std::string& name, double* weight);
 

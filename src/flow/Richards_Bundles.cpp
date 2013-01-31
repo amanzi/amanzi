@@ -131,9 +131,9 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces)
 {
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-        src_sink->ComputeDistribute(Tp, Kxy->Values()); 
+      src_sink->ComputeDistribute(Tp, Kxy->Values()); 
     else
-        src_sink->ComputeDistribute(Tp, NULL);
+      src_sink->ComputeDistribute(Tp, NULL);
   }
 
   bc_pressure->Compute(Tp);

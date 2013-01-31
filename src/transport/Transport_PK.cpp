@@ -624,7 +624,11 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
   int num_components = tcc.NumVectors();
   for (int i = 0; i < num_components; i++) {
     std::string name(TS->get_component_name(i));
-    src_sink->ComputeDistributeMultiValue(Tp, name);
+
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+      src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
+    else
+      src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
 
     Amanzi::Iterator src;
     for (src = src_sink->begin(); src != src_sink->end(); ++src) {
