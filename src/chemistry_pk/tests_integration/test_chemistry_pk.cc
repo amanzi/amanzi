@@ -15,7 +15,7 @@
 #include "InputParserIS.hh"
 #include "MeshFactory.hh"
 #include "GenerationSpec.hh"
-#include "State.hpp"
+#include "State.hh"
 
 #include "chemistry_pk.hh"
 #include "chemistry_state.hh"

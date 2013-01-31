@@ -4,9 +4,9 @@
 #include "Teuchos_Array.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
-#include "State.hpp"
+#include "State.hh"
 #include "MeshFactory.hh"
-#include "Restart.hpp"
+#include "Restart.hh"
 
 
 SUITE(RESTART) {

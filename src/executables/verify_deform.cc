@@ -25,7 +25,7 @@
 #include "FrameworkTraits.hh"
 #include "Geometry.hh"
 #include "gmv_mesh.hh"
-#include "Vis.hpp"
+#include "Vis.hh"
 
 int main(int argc, char *argv[]) {
   int ierr(0), aerr(0);

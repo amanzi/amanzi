@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "UnitTest++.h"
 
 #include "MeshFactory.hh"
-#include "State.hpp"
+#include "State.hh"
 #include "Transport_PK.hh"
 
 

@@ -3,9 +3,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
-#include "State.hpp"
+#include "State.hh"
 #include "MeshFactory.hh"
-#include "Vis.hpp"
+#include "Vis.hh"
 
 
 SUITE(VISUALIZATION) {

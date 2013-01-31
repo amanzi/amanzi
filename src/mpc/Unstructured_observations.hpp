@@ -5,7 +5,7 @@
 #include "Teuchos_Array.hpp"
 
 #include "ObservationData.H"
-#include "State.hpp"
+#include "State.hh"
 #include "time_step_manager.hh"
 
 namespace Amanzi {

@@ -2,7 +2,7 @@
 #ifndef AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_
 #define AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_
 
-#include "State.hpp"
+#include "State.hh"
 #include "Mesh.hh"
 
 #include "Teuchos_RCP.hpp"

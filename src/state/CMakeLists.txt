@@ -44,10 +44,10 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: state
 #
-file(GLOB state_inc_files "*.hpp" "*.hh")
+file(GLOB state_inc_files "*.hh")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
-                   SOURCE State.cpp Restart.cpp Vis.cpp chemistry_data.cc HEADERS ${state_inc_files}
+                   SOURCE State.cc Restart.cc Vis.cc chemistry_data.cc HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
@@ -82,8 +82,8 @@ if (BUILD_TESTS)
                       KIND int
                       SOURCE
 	  	          test/Main.cc
-	 		  test/test_restart.cpp
-	 		  test/test_vis.cpp
+	 		  test/test_restart.cc
+	 		  test/test_vis.cc
                       LINK_LIBS state mesh_factory mesh ${UnitTest_LIBRARIES})
     endif()
 

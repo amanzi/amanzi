@@ -20,7 +20,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "errors.hh"
 #include "Mesh.hh"
 
-#include "State.hpp"
+#include "State.hh"
 #include "Flow_State.hpp"
 
 namespace Amanzi {

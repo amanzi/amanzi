@@ -6,7 +6,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
-#include "State.hpp"
+#include "State.hh"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"
 #include "Transport_State.hh"
@@ -15,8 +15,8 @@
 #include "Flow_PK.hpp"
 #include "ObservationData.H"
 #include "Unstructured_observations.hpp"
-#include "Vis.hpp"
-#include "Restart.hpp"
+#include "Vis.hh"
+#include "Restart.hh"
 #include "chemistry_data.hh"
 
 namespace Amanzi {

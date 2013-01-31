@@ -19,7 +19,7 @@
 #include "chemistry_exception.hh"
 
 #include "Mesh.hh"
-#include "State.hpp"
+#include "State.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 

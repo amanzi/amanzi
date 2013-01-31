@@ -25,7 +25,7 @@ Usage:
 #include "Explicit_TI_fnBase.hpp"
 #include "boundary_function.hh"
 
-#include "State.hpp"
+#include "State.hh"
 #include "Transport_State.hh"
 #include "Transport_SourceFactory.hh"
 #include "Transport_constants.hh"

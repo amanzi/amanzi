@@ -18,7 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Point.hh"
 #include "errors.hh"
 
-#include "State.hpp"
+#include "State.hh"
 #include "Transport_State.hh"
 
 namespace Amanzi {

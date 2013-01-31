@@ -1,4 +1,4 @@
-#include "Vis.hpp"
+#include "Vis.hh"
 #include "Epetra_MpiComm.h"
 
 #include "dbc.hh"

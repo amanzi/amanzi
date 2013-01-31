@@ -24,7 +24,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "State.hpp"
+#include "State.hh"
 #include "Flow_State.hpp"
 #include "Richards_PK.hpp"
 #include "BDF2_Dae.hpp"

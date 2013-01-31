@@ -14,7 +14,7 @@
 #include "Point.hh"
 #include "linear-function.hh"
 
-#include "State.hpp"
+#include "State.hh"
 
 
 /* *******************************************************************/

@@ -18,7 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
-#include "State.hpp"
+#include "State.hh"
 #include "Transport_PK.hh"
 
 
