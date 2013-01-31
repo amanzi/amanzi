@@ -18,6 +18,8 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 
 namespace Operators { class Upwinding; }
+class MPCSurfaceSubsurfaceCoupler;
+
 
 namespace Flow {
 
@@ -98,6 +100,8 @@ protected:
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
+  friend class Amanzi::MPCSurfaceSubsurfaceCoupler;
+
   enum FluxUpdateMode {
     UPDATE_FLUX_ITERATION = 0,
     UPDATE_FLUX_TIMESTEP = 1,

@@ -80,17 +80,18 @@ void OverlandHeadFlow::fun( double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
-#if 0 //DEBUG_FLAG
+#if DEBUG_FLAG
   Teuchos::RCP<const CompositeVector> cond =
       S_next_->GetFieldData("upwind_overland_conductivity", name_);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  conductivty0 (diff): " << (*cond)("cell",0,0) << " "
-          << (*cond)("face",0,faces[0]) << " " << (*cond)("face",0,faces[1]) << " "
-          << (*cond)("face",0,faces[2]) << " " << (*cond)("face",0,faces[3]) << std::endl;
+          << (*cond)("face",0,0) << " " << (*cond)("face",0,1) << " "
+          << (*cond)("face",0,2) << " " << (*cond)("face",0,3) << std::endl;
     *out_ << "  res0 (diff): " << (*res)("cell",0,0) << " "
-          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
-          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
+          << std::endl;
+    //          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
+    //          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
   }
 #endif
 
@@ -189,13 +190,14 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
+  // update the rel perm according to the scheme of choice
+  UpdatePermeabilityData_(S_next_.ptr());
+
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditionsNoElev_(S_next_.ptr());
-
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S_next_.ptr());
+  //  UpdateBoundaryConditions_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
@@ -204,6 +206,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  conductivity0: " << (*cond)("cell",0,0) << " "
           << (*cond)("face",0,0) << std::endl;
+    *out_ << "  bcs: " << std::endl;
+    *out_ << "    0: " << bc_markers_[0] << ", " << bc_values_[0] <<std::endl;
   }
 #endif
 
@@ -241,7 +245,10 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       // - add accumulation terms, treating h as h_bar, which is allowed to go
       // - negative.  This results in a non-zero preconditioner when p < p_atm,
       // - resulting in a correction that should take p >= p_atm.
+      *out_ << "Acc diff terms, " << Acc_cells[c] <<std::endl;
       Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
+      *out_ << "Acc accum terms, +" << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h <<std::endl;
+      *out_ << "dh_dp = " << dh_dp[0][c] << std::endl;
     }
   } else {
     // - add source terms, which come from the flux from surface to
@@ -271,8 +278,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   if (assemble_preconditioner_) {
     preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    preconditioner_->UpdatePreconditioner();
+    //    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    //    preconditioner_->UpdatePreconditioner();
   }
 
   /*

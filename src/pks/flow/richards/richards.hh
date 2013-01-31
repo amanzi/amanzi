@@ -21,6 +21,7 @@ namespace Amanzi {
 // forward declarations
 class MPCCoupledFlowEnergy;
 class MPCDiagonalFlowEnergy;
+class MPCSurfaceSubsurfaceCoupler;
 namespace WhetStone { class Tensor; }
 namespace Operators { class Upwinding; }
 
@@ -172,6 +173,7 @@ protected:
   // Richards has a friend in couplers...
   friend class Amanzi::MPCCoupledFlowEnergy;
   friend class Amanzi::MPCDiagonalFlowEnergy;
+  friend class Amanzi::MPCSurfaceSubsurfaceCoupler;
 };
 
 }  // namespace AmanziFlow

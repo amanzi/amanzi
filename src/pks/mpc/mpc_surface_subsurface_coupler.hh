@@ -32,6 +32,10 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
+  // updates the preconditioner
+  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
+
  protected:
   Key surface_mesh_key_;
   Key domain_field_;
