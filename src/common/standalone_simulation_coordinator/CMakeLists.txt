@@ -125,7 +125,7 @@ endif()
 #print_variable(ssc_tpl_libs)
 #message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
 add_amanzi_executable(amanzi
-                      SOURCE main.cpp
+                      SOURCE Main.cc
                       LINK_LIBS ${ssc_tpl_libs_incl} ${ssc_tpl_libs}
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
