@@ -300,7 +300,7 @@ void init_global_info(Teuchos::ParameterList* plist) {
     } else if ( verbosity == "High" ) {
       verbosity_level = "high";
     } else if ( verbosity == "Extreme" ) {
-      verbosity_level = "high";
+      verbosity_level = "extreme";
     } else {
       Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
     }
@@ -1983,6 +1983,8 @@ Teuchos::ParameterList create_Verbosity_List(const std::string& vlevel) {
     vlist.set<std::string>("Verbosity Level","medium");
   } else if (vlevel == "high") {
     vlist.set<std::string>("Verbosity Level","high");
+  } else if (vlevel == "extreme") {
+    vlist.set<std::string>("Verbosity Level","extreme");
   } else if (vlevel == "none") {
     vlist.set<std::string>("Verbosity Level","none");
   }

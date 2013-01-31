@@ -246,7 +246,7 @@ Usage:
     scaled by this factor (default value: 1)
   * [S] `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
 
- * [SU] `"Verbosity`" [string]: (default: `"Medium`")
+ * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
 
   * [SU] `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
 
