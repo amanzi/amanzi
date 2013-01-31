@@ -18,7 +18,7 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 #include "Teuchos_ParameterList.hpp"
 
 #include "boundary_function.hh"
-#include "function-factory.hh"
+#include "FunctionFactory.hh"
 #include "errors.hh"
 
 #include "MeshFactory.hh"

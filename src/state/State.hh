@@ -12,7 +12,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 #include "Vis.hh"
-#include "function.hh"
+#include "Function.hh"
 
 typedef enum { COMPLETE, UPDATING } status_type;
 

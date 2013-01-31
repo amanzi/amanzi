@@ -7,7 +7,7 @@ Authors: Konstantin Lipnikov (version 2)  (lipnikov@lanl.gov)
 #include <string>
 #include <vector>
 
-#include "function-factory.hh"
+#include "FunctionFactory.hh"
 #include "errors.hh"
 
 #include "Flow_SourceFactory.hh"
