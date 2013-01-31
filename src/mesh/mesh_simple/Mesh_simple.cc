@@ -770,7 +770,21 @@ const Epetra_Map& Mesh_simple::node_epetra_map (bool include_ghost) const
   return *node_map_;
 }
 
+const Epetra_Map& Mesh_simple::exterior_face_epetra_map (void) const
+{
+  Errors::Message mesg("not implemented");
+  amanzi_throw(mesg);
+}
 
+// Epetra importer that will allow apps to import values from a Epetra
+// vector defined on all owned faces into an Epetra vector defined
+// only on exterior faces
+  
+const Epetra_Import& Mesh_simple::exterior_face_importer (void) const
+{
+  Errors::Message mesg("not implemented");
+  amanzi_throw(mesg);
+}
 
 unsigned int Mesh_simple::get_set_size (const AmanziMesh::Set_ID set_id, 
 					const AmanziMesh::Entity_kind kind,

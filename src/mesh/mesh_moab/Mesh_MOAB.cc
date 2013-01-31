@@ -2009,8 +2009,22 @@ inline const Epetra_Map& Mesh_MOAB::node_epetra_map (bool include_ghost) const {
     return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
 }
 
+inline const Epetra_Map& Mesh_MOAB::exterior_face_epetra_map (void) const {
+  throw std::exception(); // Not implemented
+}
 
-  // Get parallel type of eneity
+// Epetra importer that will allow apps to import values from a Epetra
+// vector defined on all owned faces into an Epetra vector defined
+// only on exterior faces
+  
+const Epetra_Import& 
+Mesh_MOAB::exterior_face_importer (void) const
+{
+  Errors::Message mesg("not implemented");
+  amanzi_throw(mesg);
+}
+
+// Get parallel type of eneity
   
 Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind, 
 				 const Entity_ID entid) const

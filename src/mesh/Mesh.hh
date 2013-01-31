@@ -3,6 +3,7 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_MpiComm.h>
+#include <Epetra_Import.h>
 
 #include <memory>
 
@@ -389,7 +390,15 @@ class Mesh
   virtual
   const Epetra_Map& node_epetra_map (const bool include_ghost) const = 0;
 
+  virtual
+  const Epetra_Map& exterior_face_epetra_map (void) const = 0;
 
+  // Epetra importer that will allow apps to import values from a
+  // Epetra vector defined on all owned faces into an Epetra vector
+  // defined only on exterior faces
+  
+  virtual
+  const Epetra_Import& exterior_face_importer (void) const = 0;
 
 
   //

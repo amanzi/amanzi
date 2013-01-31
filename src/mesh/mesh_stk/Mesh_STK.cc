@@ -640,6 +640,28 @@ Mesh_STK::node_epetra_map (bool include_ghost) const
   return get_map_(NODE, include_ghost);
 }
 
+// -------------------------------------------------------------
+// Mesh_STK::exterior_face_epetra_map
+// -------------------------------------------------------------
+const Epetra_Map& 
+Mesh_STK::exterior_face_epetra_map(void) const
+{
+  Errors::Message mesg("not implemented");
+  amanzi_throw(mesg);
+}
+
+// Epetra importer that will allow apps to import values from a Epetra
+// vector defined on all owned faces into an Epetra vector defined
+// only on exterior faces
+  
+const Epetra_Import& 
+Mesh_STK::exterior_face_importer (void) const
+{
+  Errors::Message mesg("not implemented");
+  amanzi_throw(mesg);
+}
+
+
 
 // -------------------------------------------------------------
 // Mesh_STK::get_set_size (by int setid)
