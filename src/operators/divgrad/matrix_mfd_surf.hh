@@ -32,11 +32,8 @@ class MatrixMFD_Surf : public MatrixMFD {
 
   virtual void AssembleGlobalMatrices();
 
-  virtual void ApplyAllBoundaryConditions(const std::vector<Matrix_bc>& subsurface_markers,
-          const std::vector<double>& subsurface_values,
-          const std::vector<Matrix_bc>& surface_markers,
-          const std::vector<double>& surface_values);
-
+  virtual void ApplyBoundaryConditions(const std::vector<Matrix_bc>& subsurface_markers,
+          const std::vector<double>& subsurface_values);
 
   virtual void ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
           const std::vector<double>& bc_values);

@@ -20,8 +20,8 @@ MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList&
     PKDefaultBase(plist, soln),
     StrongMPC(plist,soln) {
 
-  domain_mesh_key_ = plist.get<std::string>("subsurface mesh key");
-  surf_mesh_key_ = plist.get<std::string>("surface mesh key");
+  domain_mesh_key_ = plist.get<std::string>("subsurface mesh key","domain");
+  surf_mesh_key_ = plist.get<std::string>("surface mesh key","surface");
 
   surf_pk_name_ = plist.get<std::string>("surface PK name");
   domain_pk_name_ = plist.get<std::string>("subsurface PK name");

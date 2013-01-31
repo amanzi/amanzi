@@ -94,11 +94,13 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
         ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_head_) {
     // -- coupling term in PC, filled in by subsurface PK.
     S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
 
+  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_full_) {
     // -- source term from subsurface, filled in by evaluator,
     //    which picks the fluxes from "darcy_flux" field.
     S->RequireField("overland_source_from_subsurface")
@@ -534,7 +536,7 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
     if ((*relperm)("face",f) < eps && bc_markers_[f] == Operators::MATRIX_BC_NULL) {
       bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = 0.0;
-      //      (*relperm)("face",f) = 1.0;
+      (*relperm)("face",f) = 1.0;
     }
   }
 };

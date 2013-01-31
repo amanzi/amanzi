@@ -33,7 +33,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
   if (update_flux_ == UPDATE_FLUX_ITERATION ||
-      coupled_to_surface_via_head_) {
+      coupled_to_surface_via_head_ || coupled_to_surface_via_full_) {
     // update the flux
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("darcy_flux", name_);
