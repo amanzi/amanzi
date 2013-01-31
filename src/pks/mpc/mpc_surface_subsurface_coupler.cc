@@ -8,6 +8,8 @@ Author: Ethan Coon
 Interface for the derived MPC for water coupling between surface and subsurface.
 ------------------------------------------------------------------------- */
 
+#include "overland_head.hh"
+#include "richards.hh"
 #include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {
@@ -90,5 +92,80 @@ void MPCSurfaceSubsurfaceCoupler::precon(Teuchos::RCP<const TreeVector> u,
   }
 }
 
+
+
+// -----------------------------------------------------------------------------
+// Update the preconditioner at time t and u = up
+// -----------------------------------------------------------------------------
+void MPCSurfaceSubsurfaceCoupler::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+  StrongMPC::update_precon(t,up,h);
+
+  // test the preconditioner
+  double eps = 1.e-3;
+  Teuchos::RCP<TreeVector> u = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> fu = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> Pu = Teuchos::rcp(new TreeVector(*up));
+
+  *u = *up;
+  S_next_->SetData("pressure","flow",u->SubVector("flow")->data());
+  S_next_->SetData("surface_pressure","overland flow",u->SubVector("overland flow")->data());
+  changed_solution();
+
+  fun(S_->time(), S_next_->time(), Teuchos::null, u, fu);
+
+  double u_surf0 = (*u->SubVector("overland flow")->data())("cell",0);
+  double fu_surf0 = (*fu->SubVector("overland flow")->data())("cell",0);
+
+  double u_sub0 = (*u->SubVector("flow")->data())("cell",99);
+  double fu_sub0 = (*fu->SubVector("flow")->data())("cell",99);
+
+  double u_surf1 = u_surf0 + eps;
+  (*u->SubVector("overland flow")->data())("cell",0) = u_surf1;
+  changed_solution();
+  fun(S_->time(), S_next_->time(),
+          Teuchos::null, u, fu);
+  double fu_surf1 = (*fu->SubVector("overland flow")->data())("cell",0);
+
+  // apply the precon
+  Teuchos::RCP<Flow::OverlandHeadFlow> pk_ol = Teuchos::rcp_dynamic_cast<Flow::OverlandHeadFlow>(sub_pks_[1]);
+  ASSERT(pk_ol != Teuchos::null);
+  fu->PutScalar(0.);
+  Teuchos::RCP<CompositeVector> fu_surf = fu->SubVector("overland flow")->data();
+  Teuchos::RCP<CompositeVector> u_surf = u->SubVector("overland flow")->data();
+  (*fu_surf)("cell",0) = 1.;
+  const Epetra_MultiVector& dh_dp =
+    *S_next_->GetFieldData("dponded_depth_dsurface_pressure")->ViewComponent("cell",false);
+  (*fu_surf)("cell",0) = dh_dp[0][0];
+  u_surf->PutScalar(0.);
+  pk_ol->preconditioner_->Apply(*fu_surf, u_surf.ptr());
+
+  std::cout << "PRECON CHECK:" << std::endl;
+  std::cout << "  fu_surf 0,1 = " << fu_surf0 << ", " << fu_surf1 << std::endl;
+  std::cout << "  u_surf = " << u_surf0 << " deriv = " << (fu_surf1 - fu_surf0)/eps << ", " << (*u_surf)("cell",0) << std::endl;
+
+  // now the subsurf
+  double u_sub1 = u_sub0 + eps;
+  (*u->SubVector("overland flow")->data())("cell",0) = u_surf0;
+  (*u->SubVector("flow")->data())("cell",99) = u_sub1;
+  changed_solution();
+  fun(S_->time(), S_next_->time(),
+          Teuchos::null, u, fu);
+  double fu_sub1 = (*fu->SubVector("flow")->data())("cell",99);
+
+  // apply the precon
+  Teuchos::RCP<Flow::Richards> pk_ri = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
+  ASSERT(pk_ri != Teuchos::null);
+  fu->PutScalar(0.);
+  Teuchos::RCP<CompositeVector> fu_sub = fu->SubVector("flow")->data();
+  Teuchos::RCP<CompositeVector> u_sub = u->SubVector("flow")->data();
+  (*fu_sub)("cell",99) = 1.;
+  pk_ri->preconditioner_->Apply(*fu_sub, u_sub.ptr());
+  std::cout << "  u_sub = " << u_sub0 << " deriv = " << (fu_sub1 - fu_sub0)/eps << ", " << (*u_sub)("cell",99) << std::endl;
+
+
+
+
+  ASSERT(0);
+}
 
 } // namespace
