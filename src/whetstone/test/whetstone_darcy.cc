@@ -22,8 +22,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "mfd3d.hpp"
-#include "tensor.hpp"
+#include "mfd3d.hh"
+#include "tensor.hh"
 
 
 /* **************************************************************** */

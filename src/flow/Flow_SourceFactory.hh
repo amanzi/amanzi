@@ -1,5 +1,5 @@
-#ifndef __FLOW_SOURCE_FACTORY_HPP__
-#define __FLOW_SOURCE_FACTORY_HPP__
+#ifndef __FLOW_SOURCE_FACTORY_HH__
+#define __FLOW_SOURCE_FACTORY_HH__
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

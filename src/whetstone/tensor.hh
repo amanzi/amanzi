@@ -1,5 +1,5 @@
-#ifndef   __TENSOR_HXX
-#define   __TENSOR_HXX
+#ifndef   __TENSOR_HH__
+#define   __TENSOR_HH__
 
 /*
 Tensors of rank 1 are numbers in all dimensions.
@@ -7,10 +7,11 @@ Tensors of rank 2 are square matrices in all dimensions.
 Only symmetric tensors of rank 4 are considered here.
 */
 
-#include  <iostream>
-#include  <math.h>
+#include <iostream>
+#include <cmath>
 
 #include "Point.hh"
+
 
 namespace Amanzi {
 namespace WhetStone {

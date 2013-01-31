@@ -13,8 +13,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "mfd3d.hpp"
-#include "tensor.hpp"
+#include "mfd3d.hh"
+#include "tensor.hh"
 
 #include "Transport_PK.hh"
 

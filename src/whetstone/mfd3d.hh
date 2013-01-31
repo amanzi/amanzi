@@ -11,8 +11,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
 */
 
-#ifndef __MFD3D_HPP__
-#define __MFD3D_HPP__
+#ifndef __MFD3D_HH__
+#define __MFD3D_HH__
 
 /*
 This is the discretization package, release alpha.
@@ -34,7 +34,7 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "tensor.hpp"
+#include "tensor.hh"
 
 
 namespace Amanzi {

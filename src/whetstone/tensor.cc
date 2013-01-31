@@ -13,13 +13,14 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include  <iostream>
-#include  <math.h>
+#include <iostream>
+#include <cmath>
 
 #include "Teuchos_LAPACK.hpp"
 
 #include "Point.hh"
-#include "tensor.hpp"
+#include "tensor.hh"
+
 
 namespace Amanzi {
 namespace WhetStone {

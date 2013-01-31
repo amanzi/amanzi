@@ -19,7 +19,7 @@ Usage:
 
 #include "boundary_function.hh"
 #include "domain_function.hh"
-#include "mfd3d.hpp"
+#include "mfd3d.hh"
 #include "BDF2_fnBase.hpp"
 
 #include "Flow_State.hh"

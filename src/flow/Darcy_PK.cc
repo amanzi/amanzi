@@ -18,8 +18,8 @@ Authors: Neil Carlson (version 1)
 #include "errors.hh"
 #include "exceptions.hh"
 
-#include "mfd3d.hpp"
-#include "tensor.hpp"
+#include "mfd3d.hh"
+#include "tensor.hh"
 
 #include "Darcy_PK.hh"
 #include "Flow_constants.hh"

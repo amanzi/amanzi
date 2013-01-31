@@ -35,9 +35,9 @@ include_directories(${Epetra_INCLUDE_DIRS})
 #
 # Library: whetstone
 #
-file(GLOB whetstone_inc_files "*.hpp")
+file(GLOB whetstone_inc_files "*.hh")
 add_amanzi_library(whetstone
-                   SOURCE mfd3d.cpp mfd3d_vag.cpp tensor.cpp HEADERS ${whetstone_inc_files}
+                   SOURCE mfd3d.cc mfd3d_vag.cc tensor.cc HEADERS ${whetstone_inc_files}
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
@@ -51,13 +51,13 @@ if ( BUILD_TESTS )
     # Test 1: inverse mass matrix in darcy flow
     add_amanzi_test(whetstone_darcy whetstone_darcy
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_darcy.cpp
+                    SOURCE test/Main.cc test/whetstone_darcy.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test 2: various operations with tensors 
     add_amanzi_test(whetstone_tensors whetstone_tensors
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_tensors.cpp
+                    SOURCE test/Main.cc test/whetstone_tensors.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

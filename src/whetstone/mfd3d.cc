@@ -23,8 +23,9 @@ Usage:
 #include "Point.hh"
 #include "errors.hh"
 
-#include "mfd3d.hpp"
-#include "tensor.hpp"
+#include "mfd3d.hh"
+#include "tensor.hh"
+
 
 namespace Amanzi {
 namespace WhetStone {

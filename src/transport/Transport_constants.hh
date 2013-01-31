@@ -9,8 +9,8 @@ provided in the top-level COPYRIGHT file.
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __TRANSPORT_CONSTANTS_HPP__
-#define __TRANSPORT_CONSTANTS_HPP__
+#ifndef __TRANSPORT_CONSTANTS_HH__
+#define __TRANSPORT_CONSTANTS_HH__
 
 
 namespace Amanzi {

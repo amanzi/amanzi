@@ -21,7 +21,7 @@ Usage:
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-#include "tensor.hpp"
+#include "tensor.hh"
 #include "Explicit_TI_fnBase.hpp"
 #include "boundary_function.hh"
 

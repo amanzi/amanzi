@@ -10,7 +10,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "UnitTest++.h"
 
-#include "tensor.hpp"
+#include "tensor.hh"
 
 
 /* ****************************************************************

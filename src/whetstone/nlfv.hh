@@ -11,8 +11,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
 */
 
-#ifndef __NLFV_HPP__
-#define __NLFV_HPP__
+#ifndef __NLFV_HH__
+#define __NLFV_HH__
 
 /*
 This is the discretization package, release alpha.

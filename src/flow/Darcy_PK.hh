@@ -22,7 +22,7 @@ Authors: Neil Carlson (version 1)
 #include "Point.hh"
 #include "boundary_function.hh"
 #include "domain_function.hh"
-#include "tensor.hpp"
+#include "tensor.hh"
 
 #include "Flow_PK.hh"
 #include "Flow_State.hh"
