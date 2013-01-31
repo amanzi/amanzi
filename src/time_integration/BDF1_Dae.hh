@@ -11,7 +11,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_BlockMap.h"
 
-#include "NKA.H"
+#include "NKA.hh"
 #include "BDF1_State.hh"
 #include "BDF2_fnBase.hpp"
 

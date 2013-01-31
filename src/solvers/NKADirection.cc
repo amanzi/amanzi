@@ -1,4 +1,4 @@
-#include "NKADirection.H"
+#include "NKADirection.hh"
 #include "Teuchos_ENull.hpp"
 
 NKADirection::NKADirection(const Teuchos::RCP<NOX::GlobalData>& gd, 

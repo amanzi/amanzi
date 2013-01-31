@@ -1,5 +1,5 @@
 
-#include "NKADirFactory.H"
+#include "NKADirFactory.hh"
 
 
 NKADirFactory::NKADirFactory(const Teuchos::RCP<NOX::GlobalData> &gd, 

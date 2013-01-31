@@ -12,7 +12,7 @@
 #include "NOX_GlobalData.H"
 #include "NOX_Utils.H"
 
-#include "NKA.H"
+#include "NKA.hh"
 
 
 class NKADirection : public NOX::Direction::Generic {

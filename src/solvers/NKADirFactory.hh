@@ -1,7 +1,7 @@
 #ifndef __NKADIRFACTORY_H__
 #define __NKADIRFACTORY_H__
 
-#include "NKADirection.H"
+#include "NKADirection.hh"
 
 class NKADirFactory : public NOX::Direction::UserDefinedFactory {
 public: 
