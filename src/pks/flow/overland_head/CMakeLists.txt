@@ -10,6 +10,10 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/overla
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/elevation)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland)
-add_library(pk_flow_icy_overland icy_overland.cc)
+include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
+add_definitions("-DMSTK_HAVE_MPI")
+
+add_library(pk_flow_overland_head
+        overland_head_pk.cc overland_head_ti.cc overland_head_physics.cc
+        height_evaluator.cc overland_head_water_content_evaluator.cc)
 

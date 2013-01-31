@@ -609,26 +609,22 @@ void Richards::UpdateBoundaryConditions_() {
       }
 
 
-      //      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-
-      if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
-          //          AmanziGeometry::Point c_surf_point = surface->cell_centroid(c);
-          //          AmanziGeometry::Point f_point = mesh_->face_centroid(f);
-          //          AmanziGeometry::Point c_sub_point = mesh_->cell_centroid(cells[0]);
-
-          Teuchos::OSTab tab = getOSTab();
-          std::cout<< "SURFACE BC: c_surf: " << c << " f: " << f << " c_sub: " << cells[0] << std::endl;
-          std::cout<< "   sizes:  cell_area: " << surface_cell_volume("cell",c) << "  face area: " << mesh_->face_area(f) << std::endl;
-          //          std::cout<< "    c_surf: " << c_surf_point << "    f: " << f_point << "    c_sub: " << c_sub_point << std::endl;
-          std::cout<< "            p = " << pres("cell",cells[0]) << " p_eff = " << pres("face",f) << std::endl;
-          std::cout<< "            h = " << ponded_depth("cell",c) << ", q_out = " << q_out << ", Q_ss = " << Q_ss << std::endl;
-          if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
-            std::cout<< "  RESULT:  flux, " << bc_values_[f] << std::endl;
-          } else {
-            std::cout<< "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
-          }
+      Teuchos::OSTab tab = getOSTab();
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+        *out_ << "SURFACE BC: c_surf: " << c << " f: " << f << " c_sub: "
+                 << cells[0] << std::endl;
+        *out_ << "   sizes:  cell_area: " << surface_cell_volume("cell",c)
+                 << "  face area: " << mesh_->face_area(f) << std::endl;
+        *out_ << "            p = " << pres("cell",cells[0])
+                 << " p_eff = " << pres("face",f) << std::endl;
+        *out_ << "            h = " << ponded_depth("cell",c)
+                 << ", q_out = " << q_out << ", Q_ss = " << Q_ss << std::endl;
+        if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
+          *out_ << "  RESULT:  flux, " << bc_values_[f] << std::endl;
+        } else {
+          *out_ << "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
         }
-        // }
+      }
     }
   }
 

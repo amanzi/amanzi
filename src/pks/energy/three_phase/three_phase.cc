@@ -49,6 +49,9 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<EnergyRelations::ThermalConductivityThreePhaseEvaluator> tcm =
     Teuchos::rcp(new EnergyRelations::ThermalConductivityThreePhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
+
+  // require a density for rock to get total internal energy
+  S->RequireScalar("density_rock");
 }
 
 } // namespace Energy

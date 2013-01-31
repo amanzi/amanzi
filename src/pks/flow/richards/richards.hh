@@ -46,7 +46,7 @@ public:
       modify_predictor_with_consistent_faces_(false),
       niter_(0) {
     // set a few parameters before setup
-    plist_.set("solution key", "pressure");
+    plist_.set("primary variable key", "pressure");
   }
 
   // Virtual destructor

@@ -28,7 +28,7 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
     domain_ = plist_.get<std::string>("domain name", std::string("domain"));
   }
   if (key_ == std::string("")) {
-    key_ = plist_.get<std::string>("primary variable key", std::string("temperature"));
+    key_ = plist_.get<std::string>("primary variable key");
   }
 
   // derive the prefix

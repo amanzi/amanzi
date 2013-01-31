@@ -7,8 +7,8 @@ Authors: Gianmarco Manzini
          Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
-#ifndef PK_FLOW_OVERLAND_HH_
-#define PK_FLOW_OVERLAND_HH_
+#ifndef PK_FLOW_OVERLAND_HEAD_HH_
+#define PK_FLOW_OVERLAND_HEAD_HH_
 
 #include "boundary_function.hh"
 #include "matrix_mfd.hh"
@@ -24,10 +24,10 @@ namespace Flow {
 
 namespace FlowRelations { class OverlandConductivityModel; }
 
-class OverlandFlow : public PKPhysicalBDFBase {
+class OverlandHeadFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandFlow(Teuchos::ParameterList& plist,
+  OverlandHeadFlow(Teuchos::ParameterList& plist,
                const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, solution),
       PKPhysicalBDFBase(plist, solution),
@@ -37,11 +37,11 @@ public:
       coupled_to_surface_via_residual_(false),
       surface_head_eps_(0.),
       update_flux_(UPDATE_FLUX_ITERATION) {
-    plist_.set("primary variable key", "ponded_depth");
+    plist_.set("primary variable key", "surface_pressure");
   }
 
   // Virtual destructor
-  virtual ~OverlandFlow() {}
+  virtual ~OverlandHeadFlow() {}
 
   // main methods
   // -- Initialize owned (dependent) variables.
@@ -67,13 +67,7 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  // admissible update -- ensure non-negativity of ponded depth
-  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
-
   virtual void changed_solution();
-
-  // modify the predictor to ensure non-negativity of ponded depth
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
   // evaluating consistent faces for given BCs and cell values
   //  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
@@ -143,7 +137,7 @@ protected:
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
 
   // factory registration
-  static RegisteredPKFactory<OverlandFlow> reg_;
+  static RegisteredPKFactory<OverlandHeadFlow> reg_;
 };
 
 }  // namespace AmanziFlow

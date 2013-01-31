@@ -11,7 +11,7 @@ Authors: Gianmarco Manzini
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
 
-#include "overland.hh"
+#include "overland_head.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -24,7 +24,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void OverlandFlow::fun( double t_old,
+void OverlandHeadFlow::fun( double t_old,
                         double t_new,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
@@ -40,9 +40,26 @@ void OverlandFlow::fun( double t_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
 #if DEBUG_FLAG
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(0, &faces, &dirs);
+
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "OverlandFlow Residual calculation:" << std::endl;
-    *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,0) << std::endl;
+    S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
+    Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
+    Teuchos::RCP<const CompositeVector> preselev= S_next_->GetFieldData("pres_elev");
+
+    *out_ << "OverlandHeadFlow Residual calculation:" << std::endl;
+    *out_ << std::setprecision(15);
+    *out_ << "  p0: " << (*u)("cell",0,0) << " "
+          << (*u)("face",0,faces[0]) << " " << (*u)("face",0,faces[1]) << " "
+          << (*u)("face",0,faces[2]) << " " << (*u)("face",0,faces[3]) << std::endl;
+    *out_ << "  h0: " << (*depth)("cell",0,0) << " "
+          << (*depth)("face",0,faces[0]) << " " << (*depth)("face",0,faces[1]) << " "
+          << (*depth)("face",0,faces[2]) << " " << (*depth)("face",0,faces[3]) << std::endl;
+    *out_ << "  hz0: " << (*preselev)("cell",0,0) << " "
+          << (*preselev)("face",0,faces[0]) << " " << (*preselev)("face",0,faces[1]) << " "
+          << (*preselev)("face",0,faces[2]) << " " << (*preselev)("face",0,faces[3]) << std::endl;
   }
 #endif
 
@@ -62,9 +79,16 @@ void OverlandFlow::fun( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
+  Teuchos::RCP<const CompositeVector> cond =
+      S_next_->GetFieldData("upwind_overland_conductivity", name_);
+
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after diffusion): " << (*res)("cell",0,0) << " "
-              << (*res)("face",0,0) << std::endl;
+    *out_ << "  conductivty0 (diff): " << (*cond)("cell",0,0) << " "
+          << (*cond)("face",0,faces[0]) << " " << (*cond)("face",0,faces[1]) << " "
+          << (*cond)("face",0,faces[2]) << " " << (*cond)("face",0,faces[3]) << std::endl;
+    *out_ << "  res0 (diff): " << (*res)("cell",0,0) << " "
+          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
+          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
   }
 #endif
 
@@ -72,8 +96,9 @@ void OverlandFlow::fun( double t_old,
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0) << " "
-              << (*res)("face",0,0) << std::endl;
+    *out_ << "  res0 (acc): " << (*res)("cell",0,0) << " "
+          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
+          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
   }
 #endif
 
@@ -81,8 +106,9 @@ void OverlandFlow::fun( double t_old,
   AddSourceTerms_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after source): " << (*res)("cell",0,0) << " "
-              << (*res)("face",0,0) << std::endl;
+    *out_ << "  res0 (source): " << (*res)("cell",0,0) << " "
+          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
+          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
   }
 #endif
 };
@@ -91,26 +117,38 @@ void OverlandFlow::fun( double t_old,
 // -----------------------------------------------------------------------------
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
-void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
 #if DEBUG_FLAG
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(11, AmanziMesh::USED, &cells);
+
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
     *out_ << "  p0: " << (*u->data())("cell",0,0) << " "
-              << (*u->data())("face",0,0) << std::endl;
+          << (*u->data())("face",0,0) << " " << (*u->data())("cell",0,cells[1]) << std::endl;
   }
 #endif
 
   // apply the preconditioner
   preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
 
+  // tack on the variable change
+  const Epetra_MultiVector& dh_dp =
+      *S_next_->GetFieldData("dponded_depth_d"+key_)->ViewComponent("cell",false);
+  Epetra_MultiVector& Pu_c = *Pu->data()->ViewComponent("cell",false);
+  int ncells = Pu_c.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    Pu_c[0][c] /= dh_dp[0][c];
+  }
+
   // Dump correction
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
-              << (*Pu->data())("face",0,0) << std::endl;
+          << (*Pu->data())("face",0,0) << " " << (*Pu->data())("cell",0,cells[1]) << std::endl;
   }
 #endif
 };
@@ -119,7 +157,7 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
-void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
@@ -135,13 +173,13 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
-  // update the rel perm according to the scheme of choice
-  UpdatePermeabilityData_(S_next_.ptr());
-
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditionsNoElev_(S_next_.ptr());
+
+  // update the rel perm according to the scheme of choice
+  UpdatePermeabilityData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
@@ -158,20 +196,52 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
   preconditioner_->CreateMFDrhsVectors();
 
-  // 2. Update local matrices diagonal with the accumulation terms.
-  Teuchos::RCP<const CompositeVector> cell_volume =
-      S_next_->GetFieldData("surface_cell_volume");
-  Teuchos::RCP<const CompositeVector> pres =
-      S_next_->GetFieldData(key_);
+  // 2.a: scale the cell by dh_dp
+  S_next_->GetFieldEvaluator("ponded_depth")
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+  const Epetra_MultiVector& dh_dp =
+      *S_next_->GetFieldData("dponded_depth_d"+key_)->ViewComponent("cell",false);
+
+  // 2.b Update local matrices diagonal with the accumulation terms.
+  // -- update the accumulation derivatives
+  S_next_->GetFieldEvaluator("surface_water_content")
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+  const Epetra_MultiVector& dwc_dp =
+      *S_next_->GetFieldData("dsurface_water_content_d"+key_)
+      ->ViewComponent("cell",false);
+
+  // -- get other pieces
+  const Epetra_MultiVector& head =
+      *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& cv =
+      *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  int ncells = cell_volume->size("cell");
+  int ncells = cv.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    // accumulation term
-    Acc_cells[c] += (*cell_volume)("cell",c) / h;
-    Fc_cells[c] += (*pres)("cell",c) * (*cell_volume)("cell",c) / h;
+    // - scale cells by dh/dp
+    //    Acc_cells[c] *=  dh_dp[0][c];
+    //    Fc_cells[c] *=  dh_dp[0][c];
+
+    // - add accumulation terms
+    Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
+    Fc_cells[c] += head[0][c] * dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
   }
+
+  // 3. Add in contributions from the source term from coupling
+  if (is_coupling_term_) {
+    // this would have been filled by the subsurface preconditioner update
+    const Epetra_MultiVector& dsource_dp =
+        *S_next_->GetFieldData("doverland_source_from_subsurface_dsurface_pressure")
+        ->ViewComponent("cell",false);
+
+    for (int c=0; c!=ncells; ++c) {
+      Acc_cells[c] += dsource_dp[0][c] / h;
+      Fc_cells[c] += head[0][c] * dsource_dp[0][c] / h;
+    }
+  }
+
 
   // Assemble and precompute the Schur complement for inversion.
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
@@ -205,58 +275,6 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 };
 
 
-// Runs a very expensive FD test of the Jacobian and prints out an enorm
-//  measure of the error.
-void OverlandFlow::test_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  Teuchos::RCP<TreeVector> dp = Teuchos::rcp(new TreeVector(*up));
-  Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
-  Teuchos::RCP<TreeVector> f2 = Teuchos::rcp(new TreeVector(*up));
-  Teuchos::RCP<TreeVector> df = Teuchos::rcp(new TreeVector(*up));
-  Teuchos::RCP<TreeVector> uold = Teuchos::rcp(new TreeVector(*up));
-  Teuchos::RCP<TreeVector> unew = Teuchos::rcp(new TreeVector(*up));
-
-  double maxval = 0.0;
-
-  std::cout.precision(15);
-
-  int ncells = up->data()->size("cell");
-  for (int c=0; c!=ncells; ++c) {
-    *unew = (*up);
-    fun(t-h, t, uold, unew, f1);
-
-    dp->PutScalar(0.0);
-    (*dp->data())("cell",c) = 0.00001;
-    unew->Update(1.0, *dp, 1.0);
-    fun(t-h, t, uold, unew, f2);
-
-    preconditioner_->Apply(*dp->data(), df->data().ptr());
-    double df_loc = (*df->data())("cell",c);
-    df->Update(-1.0, *f2, 1.0, *f1, 1.0);
-    double error = enorm(f1, df);
-    //
-      AmanziGeometry::Point point = S_next_->GetMesh("surface")->cell_centroid(c);
-      if (error > 1e-5) {
-        std::cout << "Bad error at cell: " << c << std::endl;
-        AmanziMesh::Entity_ID_List faces;
-        std::vector<int> fdirs;
-        S_next_->GetMesh("surface")->cell_get_faces_and_dirs(c, &faces, &fdirs);
-        std::cout << "faces: " << faces[0] << ", "
-            << faces[1] << ", "
-            << faces[2] << ", "
-            << faces[3] << std::endl;
-
-      }
-
-      std::cout << "error: " << std::scientific << (*df->data())("cell",c) << std::endl;
-      std::cout << "  cell center: " << point << std::endl;
-      std::cout << "  f_1: " << std::scientific << (*f1->data())("cell",c) << std::endl;
-      std::cout << "  f_2: " << std::scientific << (*f2->data())("cell",c) << std::endl;
-      std::cout << "  df:  " << std::scientific << df_loc << std::endl;
-      //    }
-    maxval = std::max(maxval, error);
-  }
-  std::cout << "Testing PC with FD.  Error: " << maxval << std::endl;
-};
 
 }  // namespace Flow
 }  // namespace Amanzi
