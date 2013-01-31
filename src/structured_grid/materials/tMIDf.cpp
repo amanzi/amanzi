@@ -6,7 +6,7 @@ using std::endl;
 #include <ParmParse.H>
 
 #include <Material.H>
-#include <MatIDFiller.H>
+#include <MatFiller.H>
 #include <Region.H>
 
 static std::map<std::string, Region*> regions;
@@ -275,7 +275,7 @@ main (int   argc,
   SetRegions();
   PArray<Material> materials = SetMaterials();
 
-  MatIDFiller matFiller(geomArray,refRatio,materials);
+  MatFiller matFiller(geomArray,refRatio,materials);
 
   bool fail = false;
 

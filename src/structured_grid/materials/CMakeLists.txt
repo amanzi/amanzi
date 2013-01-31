@@ -8,8 +8,8 @@
 # through these variables.
 project(STRUCTMAT)
 
-set(CXX_header_files Material.H MatIDFiller.H MatFiller.H MatFiller_F.H)
-set(CXX_source_files Material.cpp MatIDFiller.cpp MatFiller.cpp)
+set(CXX_header_files Material.H MatFiller.H MatFiller_F.H)
+set(CXX_source_files Material.cpp MatFiller.cpp)
 set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F)
 
 
