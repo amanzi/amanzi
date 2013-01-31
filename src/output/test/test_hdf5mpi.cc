@@ -1,5 +1,5 @@
 #include "UnitTest++.h"
-#include "../hdf5mpi_mesh.hh"
+#include "../HDF5MPIMesh.hh"
 #include "MeshFactory.hh"
 
 TEST(HDF5_MPI) {

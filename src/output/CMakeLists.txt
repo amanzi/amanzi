@@ -42,15 +42,15 @@ endif()
 #
 
 # GMV is always built
-file(GLOB output_source_files "gmv*.c" "gmv*.cc")
+file(GLOB output_source_files "gmv*.c" "GMV*.cc")
 set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 # HDF5 serial test, HDF5 now required so always enables
-file(GLOB hdf5_source "hdf5_mesh*.cc")
+file(GLOB hdf5_source "HDF5Mesh*.cc")
 list(APPEND output_source_files "${hdf5_source}")
 list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 
-file(GLOB hdf5mpi_source "hdf5mpi_mesh*.cc")
+file(GLOB hdf5mpi_source "HDF5MPIMesh*.cc")
 list(APPEND output_source_files "${hdf5mpi_source}")
 list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
 
@@ -69,13 +69,13 @@ endforeach()
 # Binaries
 #
 add_amanzi_executable(unscramble_viz
-                      SOURCE unscramble_viz.cpp
+                      SOURCE UnscrambleViz.cc
                       LINK_LIBS ${HDF5_LIBRARIES}
                       OUTPUT_NAME unscramble_viz
                       OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})
 
 add_amanzi_executable(unscramble_restart
-                      SOURCE unscramble_restart.cpp
+                      SOURCE UnscrambleRestart.cc
                       LINK_LIBS ${HDF5_LIBRARIES}
                       OUTPUT_NAME unscramble_restart
                       OUTPUT_DIRECTORY ${OUTPUT_BINARY_DIR})

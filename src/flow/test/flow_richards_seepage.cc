@@ -23,7 +23,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "BDF2_Dae.hpp"
 #include "MeshFactory.hh"
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 
 #include "State.hh"
 #include "Flow_State.hh"

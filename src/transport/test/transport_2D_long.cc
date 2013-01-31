@@ -15,7 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 

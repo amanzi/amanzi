@@ -36,7 +36,7 @@ namespace po = boost::program_options;
 #include "MeshAudit.hh"
 #include "MeshException.hh"
 
-#include "hdf5mpi_mesh.hh"
+#include "HDF5MPIMesh.hh"
 
 // -------------------------------------------------------------
 // grab_filename
