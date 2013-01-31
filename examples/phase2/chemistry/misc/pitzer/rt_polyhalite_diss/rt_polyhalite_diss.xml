@@ -94,8 +94,10 @@ This input file is running on amazi-alt-driver.
 
 
   <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="rt_polyhalite_db.bgd" />
+    <ParameterList name="Thermodynamic Database">
+      <Parameter name="Format" type="string" value="simple" />
+      <Parameter name="File" type="string" value="rt_polyhalite_db.bgd" />
+    </ParameterList>
     <Parameter name="Verbosity" type="int" value="1" />
     <!-- 
         HWM model is specified 

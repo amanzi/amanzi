@@ -196,8 +196,10 @@
   </ParameterList>
 
   <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="tritium.bgd" />
+    <ParameterList name="Thermodynamic Database">
+     <Parameter name="Format" type="string" value="simple" />
+     <Parameter name="File" type="string" value="tritium.bgd" />
+    </ParameterList>
     <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
 <!--    <Parameter name="Verbosity" type="Array(string)" value="{verbose, warning, error, debug beaker}" /> -->
     <Parameter name="Activity Model" type="string" value="unit" />
