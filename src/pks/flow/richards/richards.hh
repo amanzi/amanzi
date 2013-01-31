@@ -41,6 +41,7 @@ public:
       PKPhysicalBDFBase(plist, solution),
       coupled_to_surface_via_head_(false),
       coupled_to_surface_via_flux_(false),
+      coupled_to_surface_via_full_(false),
       coupled_to_surface_via_residual_(false),
       infiltrate_only_if_unfrozen_(false),
       modify_predictor_with_consistent_faces_(false),
@@ -142,6 +143,7 @@ protected:
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
   bool coupled_to_surface_via_flux_; // surface-subsurface Neumann coupler
+  bool coupled_to_surface_via_full_; // surface-subsurface coupler with full PC
   bool coupled_to_surface_via_residual_; // surface-subsurface water coupler,
                                          // old overland PK
 

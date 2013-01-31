@@ -7,6 +7,7 @@
 
 */
 #include "Epetra_FECrsGraph.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
 #include "matrix_mfd_surf.hh"
@@ -32,6 +33,7 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  int ierr(0);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? MFD_QUAD_FACES : MFD_HEX_FACES;
   Epetra_CrsGraph cf_graph(Copy, cmap, fmap_wghost, avg_entries_row, false);  // FIX (lipnikov@lanl.gov)
@@ -52,8 +54,10 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
       faces_LID[n] = faces[n];
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
-    cf_graph.InsertMyIndices(c, nfaces, faces_LID);
-    ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    ierr = cf_graph.InsertMyIndices(c, nfaces, faces_LID);
+    ASSERT(!ierr);
+    ierr = ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    ASSERT(!ierr);
   }
 
   // additional face-to-face connections for the TPF on surface.
@@ -72,12 +76,16 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
     }
 
     // insert the connection
-    ff_graph.InsertGlobalIndices(ncells_surf, equiv_face_GID,
+    ierr = ff_graph.InsertGlobalIndices(ncells_surf, equiv_face_GID,
             ncells_surf, equiv_face_GID);
+    ASSERT(!ierr);
   }
 
-  cf_graph.FillComplete(fmap, cmap);
-  ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  ierr = cf_graph.FillComplete(fmap, cmap);
+  ASSERT(!ierr);
+
+  ierr = ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  ASSERT(!ierr);
 
   // create global matrices
   Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -109,34 +117,47 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
 
 // Assumes the Surface A was already assembled.
 void MatrixMFD_Surf::AssembleGlobalMatrices() {
+  int ierr(0);
+
   // Get the standard MFD pieces.
   MatrixMFD::AssembleGlobalMatrices();
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   const Epetra_FECrsMatrix& Spp = *surface_A_->TPFA();
+  EpetraExt::RowMatrixToMatlabFile("TPFA.txt", Spp);
 
   int entries = 0;
   double *values;
+  values = new double[9];
   int *indices;
+  indices = new int[9];
 
   // Loop over surface cells (subsurface faces)
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
-    int ierr = Spp.ExtractMyRowView(sc, entries, values, indices);
+    ierr = Spp.ExtractMyRowCopy(sc, 9, entries, values, indices);
+    ASSERT(!ierr);
 
     // Convert Spp local cell numbers to Aff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     for (int m=0; m!=entries; ++m) {
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
-
     }
 
     // Add into Aff
-    Aff_->SumIntoMyValues(frow, entries, values, indices);
+    std::cout << "  Adding to Aff " << values[0] << std::endl;
+
+    ierr = Aff_->SumIntoMyValues(frow, entries, values, indices);
+    ASSERT(!ierr);
   }
-  Aff_->GlobalAssemble();
+
+  delete[] indices;
+  delete[] values;
+
+  ierr = Aff_->GlobalAssemble();
+  ASSERT(!ierr);
 
   // Deal with RHS
   const Epetra_MultiVector& rhs_surf_cells =
@@ -150,41 +171,35 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
 }
 
 
-void MatrixMFD_Surf::ApplyAllBoundaryConditions(
-    const std::vector<Matrix_bc>& subsurface_markers,
-    const std::vector<double>& subsurface_values,
-    const std::vector<Matrix_bc>& surface_markers,
-    const std::vector<double>& surface_values) {
+void MatrixMFD_Surf::ApplyBoundaryConditions(
+    const std::vector<Matrix_bc>& bc_markers,
+    const std::vector<double>& bc_values) {
   // Ensure that none of the surface faces have a BC in them.
+  std::vector<Matrix_bc> new_markers(bc_markers);
+
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    if (subsurface_markers[f] != MATRIX_BC_NULL) {
-      Errors::Message msg("MatrixMFD_Surf::Subsurface's cell on the surface has a non-Null BC.");
-      Exceptions::amanzi_throw(msg);
-    }
+    new_markers[f] = MATRIX_BC_NULL;
   }
 
-  MatrixMFD::ApplyBoundaryConditions(subsurface_markers, subsurface_values);
-  surface_A_->ApplyBoundaryConditions(surface_markers, surface_values);
+  MatrixMFD::ApplyBoundaryConditions(new_markers, bc_values);
 }
 
 
 
 void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
         const std::vector<double>& bc_values) {
-  // Ensure that none of the surface faces have a BC in them.
+  std::vector<Matrix_bc> new_markers(bc_markers);
+
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    if (bc_markers[f] != MATRIX_BC_NULL) {
-      Errors::Message msg("MatrixMFD_Surf::Subsurface's cell on the surface has a non-Null BC.");
-      Exceptions::amanzi_throw(msg);
-    }
+    new_markers[f] = MATRIX_BC_NULL;
   }
 
   // Call base Schur
-  MatrixMFD::ComputeSchurComplement(bc_markers, bc_values);
+  MatrixMFD::ComputeSchurComplement(new_markers, bc_values);
 }
 
 

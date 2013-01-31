@@ -147,6 +147,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     update_flux_ = UPDATE_FLUX_ITERATION;
   }
 
+  // -- coupling done by a full preconditioner
+  coupled_to_surface_via_full_ = plist_.get<bool>("coupled to surface via full coupler", false);
+  if (coupled_to_surface_via_full_) {
+    S->RequireField("surface_pressure");
+    // override the flux update -- must happen every iteration
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  }
+
   // -- coupling done by flux terms
   coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
@@ -157,10 +165,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
         ->SetMesh(S->GetMesh("surface"))->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // -- Make sure coupling isn't flagged multiple ways.
+  // -- Make sure coupling isn't flagged multiple ways. -- needs to
+  // -- become and ENUM please... --etc
   ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_head_));
   ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_residual_));
   ASSERT(!(coupled_to_surface_via_head_ && coupled_to_surface_via_residual_));
+  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_full_));
+  ASSERT(!(coupled_to_surface_via_head_ && coupled_to_surface_via_full_));
+  ASSERT(!(coupled_to_surface_via_full_ && coupled_to_surface_via_residual_));
 
 
   // Create the upwinding method
@@ -466,6 +478,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     }
 
     if (coupled_to_surface_via_residual_ ||
+        coupled_to_surface_via_full_ ||
         coupled_to_surface_via_head_ ||
         coupled_to_surface_via_flux_) {
       // patch up the rel perm on surface as 1 -- FIX ME --etc
@@ -550,7 +563,7 @@ void Richards::UpdateBoundaryConditions_() {
   }
 
   // surface coupling
-  if (coupled_to_surface_via_head_) {
+  if (coupled_to_surface_via_head_ || coupled_to_surface_via_full_) {
     // Face is Dirichlet with value of surface head
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
     const Epetra_MultiVector& head = *S_next_->GetFieldData("surface_pressure")

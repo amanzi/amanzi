@@ -9,6 +9,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
+#include "matrix_mfd_tpfa.hh"
 
 #include "overland_head.hh"
 
@@ -269,6 +270,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       // - negative.  This results in a non-zero preconditioner when p < p_atm,
       // - resulting in a correction that should take p >= p_atm.
       Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
+      *out_ << " adding acc term = " << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h << std::endl;
     }
   }
 
@@ -281,15 +283,20 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
     // TPFA
     Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_tpfa =
-        Teuchos::rcp_static_cast<Operators::MatrixMFD_TPFA>(mfd_preconditioner_);
+        Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(mfd_preconditioner_);
+    ASSERT(precon_tpfa != Teuchos::null);
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
 
     // Scale Spp by dh/dp
-    Epetra_Vector dh_dp0(dh_dp[0]);
+    EpetraExt::RowMatrixToMatlabFile("TPFAbefore.txt", *Spp);
+    Epetra_Vector dh_dp0(*dh_dp(0));
     for (int c=0; c!=ncells; ++c) {
       dh_dp0[c] = head[0][c] >= p_atm ? dh_dp[0][c] : 0.;
+      *out_ << " scaling by = " << dh_dp0[c] << std::endl;
     }
-    Spp->RightScale(dh_dp0);
+    int ierr = Spp->RightScale(dh_dp0);
+    ASSERT(!ierr);
+    EpetraExt::RowMatrixToMatlabFile("TPFAafter.txt", *Spp);
 
   } else if (assemble_preconditioner_) {
     mfd_preconditioner_->AssembleGlobalMatrices();
