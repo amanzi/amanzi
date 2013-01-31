@@ -65,17 +65,8 @@ void Transport_PK::ProcessParameterList()
   string advection_limiter_name = transport_list.get<string>("advection limiter");
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
-  flow_mode = TRANSPORT_FLOW_TRANSIENT;
-  string flow_mode_name = transport_list.get<string>("flow mode", "transient");
-  if (flow_mode_name == "steady-state") {
-    flow_mode = TRANSPORT_FLOW_STEADYSTATE;
-  } else if (flow_mode_name == "transient") {
-    flow_mode = TRANSPORT_FLOW_TRANSIENT;
-  } else {
-    Errors::Message msg;
-    msg << "Flow mode is wrong (steady-state, transient)." << "\n";
-    Exceptions::amanzi_throw(msg);
-  }
+  std::string flow_mode_name = transport_list.get<string>("flow mode", "transient");
+  ProcessStringFlowMode(flow_mode_name, &flow_mode);
 
   // control parameter
   internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";
@@ -134,7 +125,7 @@ void Transport_PK::ProcessParameterList()
       }
       if (! flag_BCX) {
         Errors::Message msg;
-        msg << "Sublist BC X was not found.\n";
+        msg << "Transport PK: sublist BC X was not found.\n";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -144,9 +135,36 @@ void Transport_PK::ProcessParameterList()
   if (transport_list.isSublist("source terms")) {
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(transport_list.sublist("source terms", true));
     TransportSourceFactory src_factory(mesh_, src_list);
-    src_sink = src_factory.CreateSource(src_namemap);
+    src_sink = src_factory.CreateSource();
+
     src_sink_distribution = src_sink->CollectActionsList();
-  }  
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      Errors::Message msg;
+      msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
+      Exceptions::amanzi_throw(msg);  
+    }
+  } else {
+    src_sink = NULL;
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the discretization method.
+**************************************************************** */
+void Transport_PK::ProcessStringFlowMode(const std::string name, int* method)
+{
+  Errors::Message msg;
+  *method = TRANSPORT_FLOW_TRANSIENT;
+  if (name == "steady-state") {
+    *method = TRANSPORT_FLOW_STEADYSTATE;
+  } else if (name == "transient") {
+    *method = TRANSPORT_FLOW_TRANSIENT;
+  } else {
+    msg << "Trasnport PK: flow mode is wrong (steady-state, transient)." << "\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
 }
 
 

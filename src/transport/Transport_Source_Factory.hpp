@@ -29,10 +29,10 @@ class TransportSourceFactory {
      : mesh_(mesh), params_(params) {};
   ~TransportSourceFactory() {};
   
-  DomainFunction* CreateSource(std::vector<std::pair<std::string, int> >& namemap);
+  DomainFunction* CreateSource();
 
  private:
-  void ProcessSourceSpec(Teuchos::ParameterList& list, DomainFunction* src) const;
+  void ProcessSourceSpec(Teuchos::ParameterList& list, const std::string& name, DomainFunction* src) const;
   void ProcessStringActions(const std::string& name, int* method) const;
      
  private:

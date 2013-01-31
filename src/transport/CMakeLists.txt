@@ -120,6 +120,11 @@ if ( BUILD_TESTS )
                         SOURCE test/Main.cc test/transport_2D_long.cpp
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+        add_amanzi_test(transport_2D_source transport_2D_source
+                        KIND unit
+                        SOURCE test/Main.cc test/transport_2D_source.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
         add_amanzi_test(transport_3D_long transport_3D_long
 	                KIND unit
                         SOURCE test/Main.cc test/transport_3D_long.cpp

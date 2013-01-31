@@ -41,8 +41,8 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
-    <Parameter name="spatial discretization order" type="int" value="2"/>   
-    <Parameter name="temporal discretization order" type="int" value="2"/>   
+    <Parameter name="spatial discretization order" type="int" value="1"/>   
+    <Parameter name="temporal discretization order" type="int" value="1"/>   
     <Parameter name="advection limiter" type="string" value="Tensorial"/>
     <!-- developers parameters --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
@@ -64,12 +64,12 @@
     </ParameterList>  
 
     <ParameterList name="source terms">
-      <ParameterList name="H+">
+      <ParameterList name="Component 0">
         <Parameter name="regions" type="Array(string)" value="{Well}"/>
         <Parameter name="spatial distribution method" type="string" value="volume"/>
         <ParameterList name="sink">
           <ParameterList name="function-constant">
-            <Parameter name="value" type="double" value="-0.01"/>
+            <Parameter name="value" type="double" value="0.1"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

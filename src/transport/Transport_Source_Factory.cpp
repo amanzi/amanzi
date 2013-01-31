@@ -23,10 +23,8 @@ namespace AmanziTransport {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-DomainFunction* TransportSourceFactory::CreateSource(
-    std::vector<std::pair<std::string, int> >& namemap)
+DomainFunction* TransportSourceFactory::CreateSource()
 {
-  namemap.clear();
   DomainFunction* src = new DomainFunction(mesh_);
 
   // Iterate through the source specification sublists in the params_.
@@ -36,9 +34,7 @@ DomainFunction* TransportSourceFactory::CreateSource(
     if (params_->isSublist(name)) {
       Teuchos::ParameterList& spec = params_->sublist(name);
       try {
-        ProcessSourceSpec(spec, src);
-        std::pair<std::string, int> map(name, 0);
-        namemap.push_back(map);
+        ProcessSourceSpec(spec, name, src);
       } catch (Errors::Message& msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
@@ -57,8 +53,8 @@ DomainFunction* TransportSourceFactory::CreateSource(
 /* ******************************************************************
 * Process source, step 2.
 ****************************************************************** */
-void TransportSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, 
-                                               DomainFunction* src) const
+void TransportSourceFactory::ProcessSourceSpec(
+    Teuchos::ParameterList& list, const std::string& name, DomainFunction* src) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -98,7 +94,7 @@ void TransportSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list,
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
   
-  src->Define(regions, f, method);
+  src->DefineMultiValue(regions, f, method, name);
 }
 
 
