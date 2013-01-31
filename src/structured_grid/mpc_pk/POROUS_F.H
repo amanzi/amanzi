@@ -5,6 +5,7 @@
 #    define FORT_INITKAPPA   initkappa
 #    define FORT_INITKAPPA2  initkappa2
 #    define FORT_INITKAPPA3  initkappa3
+#    define FORT_INITKAPPA3A  initkappa3a
 #    define FORT_INITKEDGE   initkedge
 #    define FORT_INITPHI     initphi
 #    define FORT_INITPHI2    initphi2
@@ -19,6 +20,7 @@
 #    define FORT_INITKAPPA   INITKAPPA
 #    define FORT_INITKAPPA2  INITKAPPA2
 #    define FORT_INITKAPPA3  INITKAPPA3
+#    define FORT_INITKAPPA3A  INITKAPPA3A
 #    define FORT_INITKEDGE   INITKEDGE
 #    define FORT_INITPHI     INITPHI
 #    define FORT_INITPHI2    INITPHI2
@@ -32,6 +34,7 @@
 #    define FORT_INITKAPPA   initkappa
 #    define FORT_INITKAPPA2  initkappa2
 #    define FORT_INITKAPPA3  initkappa3
+#    define FORT_INITKAPPA3A  initkappa3a
 #    define FORT_INITKEDGE   initkedge
 #    define FORT_INITPHI     initphi
 #    define FORT_INITPHI2    initphi2
@@ -45,6 +48,7 @@
 #    define FORT_INITKAPPA   initkappa_
 #    define FORT_INITKAPPA2  initkappa2_
 #    define FORT_INITKAPPA3  initkappa3_
+#    define FORT_INITKAPPA3A  initkappa3a_
 #    define FORT_INITKEDGE   initkedge_
 #    define FORT_INITPHI     initphi_
 #    define FORT_INITPHI2    initphi2_
@@ -85,6 +89,10 @@ extern "C" {
 			const int* lo, const int* hi, const int* fratio, const int* ng);
 
   void FORT_INITKAPPA3 (const Real* kappadat,ARLIM_P(kd_lo), ARLIM_P(kd_hi),
+			Real* kappa,ARLIM_P(k_lo), ARLIM_P(k_hi),
+			const int* lo, const int* hi, const int* fratio);
+
+  void FORT_INITKAPPA3A (const Real* kappadat,ARLIM_P(kd_lo), ARLIM_P(kd_hi),
 			Real* kappa,ARLIM_P(k_lo), ARLIM_P(k_hi),
 			const int* lo, const int* hi, const int* fratio);
 

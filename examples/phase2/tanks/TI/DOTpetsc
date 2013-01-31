@@ -66,8 +66,8 @@
 #-snes_view
 -snes_monitor
 #-snes_type tr
-#-snes_ls basic
--snes_ls cubic
+-snes_ls basic
+#-snes_ls cubic
 #-snes_ls_monitor
 #-snes_max_it 30
 -snes_atol 1.e-10

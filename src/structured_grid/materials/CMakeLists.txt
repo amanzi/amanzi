@@ -10,15 +10,11 @@ project(STRUCTMAT)
 
 set(CXX_header_files Material.H MatIDFiller.H MatFiller.H MatFiller_F.H)
 set(CXX_source_files Material.cpp MatIDFiller.cpp MatFiller.cpp)
+set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F)
 
-add_amanzi_library(structmat SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
 
 include_directories(${STRUCTMAT_SOURCE_DIR})
-
-
-
 include_directories(${ATK_SOURCE_DIR})
-
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 # The interfaces
@@ -47,6 +43,14 @@ include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+
+
+preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
+
+add_amanzi_library(structmat
+                   SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
+                   HEADERS ${CXX_headers_files})
+
 
 set(structured_grid_libs pmamr gsint boxprob boxdriv structmat structutils ${CCSE_LIBRARIES})
 link_directories(${CCSE_EXT_LIBRARY_DIRS})

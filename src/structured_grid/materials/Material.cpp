@@ -5,7 +5,7 @@ ConstantProperty::clone() const
 {
   const ConstantProperty* t = dynamic_cast<const ConstantProperty*>(this);
   BL_ASSERT(t!=0);
-  ConstantProperty* ret = new ConstantProperty(t->Name(), t->values);
+  ConstantProperty* ret = new ConstantProperty(t->Name(), t->values, t->coarsen_rule, t->refine_rule);
   return ret;
 }
 
@@ -23,7 +23,7 @@ TabularInTimeProperty::clone() const
 {
   const TabularInTimeProperty* t = dynamic_cast<const TabularInTimeProperty*>(this);
   BL_ASSERT(t!=0);
-  TabularInTimeProperty* ret = new TabularInTimeProperty(t->Name(), t->Functions());
+  TabularInTimeProperty* ret = new TabularInTimeProperty(t->Name(), t->Functions(), t->coarsen_rule, t->refine_rule);
   return ret;
 }
 
