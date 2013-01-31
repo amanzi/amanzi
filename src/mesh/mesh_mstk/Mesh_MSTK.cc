@@ -2672,8 +2672,8 @@ void Mesh_MSTK::init_cell_map ()
 
 void Mesh_MSTK::init_face_map ()
 {
-  int *face_gids;
-  int nface, idx, i;
+  int *face_gids, *extface_gids;
+  int nface, n_extface, idx, i, j;
   MEntity_ptr ment;
   const Epetra_Comm *epcomm = get_comm();
 
@@ -2681,20 +2681,41 @@ void Mesh_MSTK::init_face_map ()
 
     // For parallel runs create map without and with ghost cells included
     // Also, put in owned cells before the ghost cells
+    // Additionally, create a map of exterior faces only
 
     int nowned = MSet_Num_Entries(OwnedFaces);
     int nnotowned = MSet_Num_Entries(NotOwnedFaces);
 
     face_gids = new int[nowned+nnotowned];
+    extface_gids = new int[nowned]; // Exterior faces
     
-    idx = 0; i = 0;
-    while ((ment = MSet_Next_Entry(OwnedFaces,&idx)))
-      face_gids[i++] = MEnt_GlobalID(ment)-1;
+    idx = 0; i = 0; j = 0;
+    while ((ment = MSet_Next_Entry(OwnedFaces,&idx))) {
+      int gid = MEnt_GlobalID(ment);
 
+      face_gids[i++] = gid-1;
+     
+      if (cell_dimension() == 3) {
+        List_ptr fregs = MF_Regions((MFace_ptr) ment);
+        if (List_Num_Entries(fregs) == 1)
+          extface_gids[j++] = gid-1;
+        if (fregs)
+          List_Delete(fregs);
+      }
+      else if (cell_dimension() == 2) {
+        List_ptr efaces = ME_Faces((MEdge_ptr) ment);
+        if (List_Num_Entries(efaces) == 1)
+          extface_gids[j++] = gid-1;
+        if (efaces)
+          List_Delete(efaces);
+      }
+    }
+    n_extface = j;
     nface = nowned;
     
     face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
 
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm);
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) 
@@ -2708,15 +2729,39 @@ void Mesh_MSTK::init_face_map ()
   else {
     nface = MSet_Num_Entries(AllFaces);
     face_gids = new int[nface];
+    extface_gids = new int[nface];
 
-    idx = 0; i = 0;
-    while ((ment = MSet_Next_Entry(AllFaces,&idx)))
-      face_gids[i++] = MEnt_ID(ment)-1;
+    idx = 0; i = 0; j = 0;
+    while ((ment = MSet_Next_Entry(AllFaces,&idx))) {
+      int gid = MEnt_ID(ment);
+      face_gids[i++] = gid-1;
+
+      if (cell_dimension() == 3) {
+        List_ptr fregs = MF_Regions((MFace_ptr) ment);
+        if (List_Num_Entries(fregs) == 1)
+          extface_gids[j++] = gid-1;
+        if (fregs)
+          List_Delete(fregs);
+      }
+      else if (cell_dimension() == 2) {
+        List_ptr efaces = ME_Faces((MEdge_ptr) ment);
+        if (List_Num_Entries(efaces) == 1)
+          extface_gids[j++] = gid-1;
+        if (efaces)
+          List_Delete(efaces);
+      }
+    }
+    n_extface = j;
 
     face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm);
   }
 
+  owned_to_extface_importer_ = new Epetra_Import(*extface_map_wo_ghosts_,*face_map_wo_ghosts_);
+
   delete [] face_gids;
+  delete [] extface_gids;
 
 } // Mesh_MSTK::init_face_map
 
@@ -3516,6 +3561,17 @@ const Epetra_Map& Mesh_MSTK::node_epetra_map (const bool include_ghost) const
 }
 
 
+inline
+const Epetra_Map& Mesh_MSTK::exterior_face_epetra_map(void) const
+{
+  return *extface_map_wo_ghosts_;
+}
+
+inline
+const Epetra_Import& Mesh_MSTK::exterior_face_importer(void) const
+{
+  return *owned_to_extface_importer_;
+}
 
 int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, 
 				     double z0, double x1, double y1, 

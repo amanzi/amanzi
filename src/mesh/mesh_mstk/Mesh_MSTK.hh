@@ -74,7 +74,13 @@ private:
 
   Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
   Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
-  
+  Epetra_Map *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
+
+// Epetra importer that will allow apps to import values from a Epetra
+// vector defined on all owned faces into an Epetra vector defined
+// only on exterior faces
+                                           
+  Epetra_Import *owned_to_extface_importer_; 
   
   // flag whether to flip a face dir or not when returning nodes of a face
   
@@ -384,7 +390,9 @@ public:
 
   const Epetra_Map& node_epetra_map (bool include_ghost) const;
     
+  const Epetra_Map& exterior_face_epetra_map (void) const; 
     
+  const Epetra_Import& exterior_face_importer(void) const;
     
     
   //
