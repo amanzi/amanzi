@@ -1,4 +1,4 @@
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 
 namespace Amanzi {
 namespace GMV {

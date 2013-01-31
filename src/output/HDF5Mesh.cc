@@ -1,4 +1,4 @@
-#include "hdf5_mesh.hh"
+#include "HDF5Mesh.hh"
 
 namespace Amanzi
 {

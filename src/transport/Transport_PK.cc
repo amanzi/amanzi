@@ -21,7 +21,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "errors.hh"
 #include "TabularFunction.hh"
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 
 #include "Explicit_TI_RK.hpp"
 

@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "MeshFactory.hh"
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 
 #include "State.hh"
 #include "Transport_PK.hh"

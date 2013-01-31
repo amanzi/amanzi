@@ -1,4 +1,4 @@
-#include "hdf5mpi_mesh.hh"
+#include "HDF5MPIMesh.hh"
 #include <iostream>
 #include "mpi.h"
 
