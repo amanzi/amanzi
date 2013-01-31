@@ -199,7 +199,7 @@ Usage:
 
   * [SU] `"Steady`" [list] - Amanzi is run in steady mode.
 
-   * [SU] `"Start`" [double] (Optional): Initial value for psuedo time (used as a continuation parameter) to generate a steady solution
+   * [SU] `"Start`" [double] Initial value for psuedo time (used as a continuation parameter) to generate a steady solution (S: Optional).
 
    * [SU] `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
 
@@ -209,11 +209,11 @@ Usage:
 
   * [SU] `"Transient`" [list] - A time-accurate evolution is desired
 
-   * [SU] `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
+   * [SU] `"Start`" [double] Start time for integration (if a steady mode exists then this time must equal the steady end time) (S: Optional)
 
    * [SU] `"End`" [double]: End of integration period
    
-   * [SU] `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+   * [SU] `"Initial Time Step`" [double] The intitial time step for the transient calculation. (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
 
    * [S] `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
@@ -233,7 +233,7 @@ Usage:
     
    * [SU] `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
 
-   * [SU] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+   * [SU] `"Transient Initial Time Step`" [double]: (S: Optional) The intitial time step for the transient calculation after "Switch" time.  (S: If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`")
 
    * [U] `"Use Picard`" [bool]: Use the Picard solver to find a good initial guess for the steady state solver. (default: `"false`")
 
