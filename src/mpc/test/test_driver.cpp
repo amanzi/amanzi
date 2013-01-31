@@ -11,7 +11,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "State.hh"
-#include "MPC.hpp"
+#include "MPC.hh"
 
 #include "MeshFactory.hh"
 #include "Mesh.hh"

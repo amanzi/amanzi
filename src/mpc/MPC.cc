@@ -6,7 +6,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
-#include "MPC.hpp"
+#include "MPC.hh"
 #include "State.hh"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"

@@ -13,7 +13,7 @@
 
 #include "MeshFactory.hh"
 #include "State.hh"
-#include "MPC.hpp"
+#include "MPC.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "MeshAudit.hh"

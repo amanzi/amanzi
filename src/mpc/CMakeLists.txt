@@ -58,9 +58,9 @@ set(mpc_tpl_libs ${boost_libs_used} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} )
 list(REVERSE mpc_tpl_libs)
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 list(REVERSE mpc_tpl_libs)
-file(GLOB mpc_inc_files "*.hpp")
+file(GLOB mpc_inc_files "*.h")
 add_amanzi_library(mpc 
-                   SOURCE MPC.cpp Unstructured_observations.cpp HEADERS ${mpc_inc_files}
+                   SOURCE MPC.cc Unstructured_observations.cc HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
 
 if (BUILD_TESTS)

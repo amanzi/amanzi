@@ -14,7 +14,7 @@
 #include "Flow_State.hpp"
 #include "Flow_PK.hpp"
 #include "ObservationData.H"
-#include "Unstructured_observations.hpp"
+#include "Unstructured_observations.hh"
 #include "Vis.hh"
 #include "Restart.hh"
 #include "chemistry_data.hh"
