@@ -91,7 +91,7 @@ add_amanzi_library(udriv
 #
 # Binary: verify_mesh
 add_amanzi_executable(verify_mesh
-                      SOURCE verify_mesh.cc
+                      SOURCE VerifyMesh.cc
                       LINK_LIBS mesh_factory mesh mesh_audit ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
 		    		    
 
@@ -101,7 +101,7 @@ add_amanzi_executable(verify_mesh
 # methods needs to pass version information to the
 # prepoccessor
 add_amanzi_executable(verify_hex
-                      SOURCE verify_hex.cc
+                      SOURCE VerifyHex.cc
                       LINK_LIBS mesh_factory
                                 mesh mesh_audit
                                 output ${Boost_LIBRARIES} )
@@ -113,7 +113,7 @@ set_target_properties(verify_hex PROPERTIES
 #
 if ( ENABLE_STK_Mesh )
   add_amanzi_executable(verify_deform
-                        SOURCE verify_deform.cc
+                        SOURCE VerifyDeform.cc
                         LINK_LIBS mesh_factory
                                   mesh
                                   ${amanzi_mesh_libs}
