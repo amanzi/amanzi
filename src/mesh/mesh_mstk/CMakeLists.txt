@@ -81,6 +81,7 @@ if (BUILD_TESTS)
                          test/test_quad_gen_3x3_4P.cc
                          test/test_hex_gen_3x3x3_4P.cc
 			 test/test_extract_surface_4P.cc
+			 test/test_extface_map_4P.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES})
 
 endif()
