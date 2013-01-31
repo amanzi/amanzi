@@ -9,7 +9,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 // #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "XMLParameterListWriter.hpp"
+#include "XMLParameterListWriter.hh"
 
 #include "MeshFactory.hh"
 #include "State.hh"

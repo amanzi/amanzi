@@ -1,7 +1,7 @@
 #include <iostream>
 #include "UnitTest++.h"
 
-#include "time_step_manager.hh"
+#include "TimeStepManager.hh"
 
 TEST(TIME_STEP_MANAGER) {
 

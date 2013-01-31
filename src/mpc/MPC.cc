@@ -19,7 +19,7 @@
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-#include "time_step_manager.hh"
+#include "TimeStepManager.hh"
 
 // make sure that we use default parameters
 // that are consistent with the input translator

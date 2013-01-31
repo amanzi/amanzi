@@ -27,8 +27,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 
 add_amanzi_library(atk
-                   SOURCE Timer.cc TimerManager.cc time_step_manager.cc XMLParameterListWriter.cpp
-                   HEADERS Utils.hh Timer.hh TimerManager.hh time_step_manager.hh XMLParameterListWriter.hpp
+                   SOURCE Timer.cc TimerManager.cc TimeStepManager.cc XMLParameterListWriter.cc
+                   HEADERS Utils.hh Timer.hh TimerManager.hh TimeStepManager.hh XMLParameterListWriter.hh
                    )
 if (BUILD_TESTS)
   

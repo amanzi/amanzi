@@ -6,7 +6,7 @@
 
 #include "ObservationData.H"
 #include "State.hh"
-#include "time_step_manager.hh"
+#include "TimeStepManager.hh"
 
 namespace Amanzi {
 

@@ -1,4 +1,4 @@
-#include "XMLParameterListWriter.hpp"
+#include "XMLParameterListWriter.hh"
 
 using namespace Teuchos;
 
