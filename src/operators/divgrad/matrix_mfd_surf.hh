@@ -24,6 +24,10 @@ class MatrixMFD_Surf : public MatrixMFD {
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                  const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
 
+  // NOTE this is not a copy constructor!
+  MatrixMFD_Surf(const MatrixMFD& other,
+                 const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
+
   virtual void SymbolicAssembleGlobalMatrices();
 
   virtual void AssembleGlobalMatrices();

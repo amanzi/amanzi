@@ -161,7 +161,7 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     AmanziMesh::Entity_ID_List cells;
     int nfaces = upwind_conductivity->size("face", true);
     for (int f=0; f!=nfaces; ++f) {
-      if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+      if (bc_markers_[f] != Operators::MATRIX_BC_NULL) {
         upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
         ASSERT(cells.size() == 1);
         int c = cells[0];

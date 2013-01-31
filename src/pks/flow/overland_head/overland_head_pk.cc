@@ -92,16 +92,16 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_plist, mesh_));
-  bool symmetric = false;
-  matrix_->SetSymmetryProperty(symmetric);
+  symmetric_ = false;
+  matrix_->SetSymmetryProperty(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
+  matrix_->CreateMFDmassMatrices(Teuchos::null);
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
-  preconditioner_->SetSymmetryProperty(symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices();
-  preconditioner_->InitPreconditioner(mfd_pc_plist);
+  Teuchos::RCP<Operators::Matrix> precon =
+    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  set_preconditioner(precon);
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 
   // how often to update the fluxes?
@@ -275,7 +275,7 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   bc_pressure_->Compute(S->time());
@@ -296,10 +296,6 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
     S->GetField("overland_source_from_subsurface", name_)
         ->set_initialized();
   }
-
-  // Initialize operators.
-  matrix_->CreateMFDmassMatrices(Teuchos::null);
-  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
 };
 
 
@@ -409,7 +405,7 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     AmanziMesh::Entity_ID_List cells;
     int nfaces = upwind_conductivity_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
-      if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+      if (bc_markers_[f] != Operators::MATRIX_BC_NULL) {
         upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
         ASSERT(cells.size() == 1);
         int c = cells[0];
@@ -450,7 +446,7 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
       ->ViewComponent("cell",false);
 
   for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MFD_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -458,7 +454,7 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   int count = 0;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second + elevation[0][f];
     count ++;
   }
@@ -472,13 +468,13 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = height[0][cells[0]] + elevation[0][f];
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
 };
@@ -489,7 +485,7 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
       ->ViewComponent("cell",false);
 
   for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MFD_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -497,7 +493,7 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
   int count = 0;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
     count ++;
   }
@@ -511,13 +507,13 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = height[0][cells[0]];
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
 
@@ -527,8 +523,8 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
   Teuchos::RCP<CompositeVector> relperm =
       S->GetFieldData("upwind_overland_conductivity", name_);
   for (int f=0; f!=relperm->size("face"); ++f) {
-    if ((*relperm)("face",f) < eps && bc_markers_[f] == Operators::MFD_BC_NULL) {
-      bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    if ((*relperm)("face",f) < eps && bc_markers_[f] == Operators::MATRIX_BC_NULL) {
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = 0.0;
       //      (*relperm)("face",f) = 1.0;
     }
@@ -543,7 +539,7 @@ void OverlandHeadFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
   int nfaces = pres->size("face",true);
   for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
       (*pres)("face",f) = bc_values_[f];
     }
   }

@@ -16,6 +16,8 @@ multiple coupler types.
 
 namespace Amanzi {
 
+class PKPhysicalBDFBase;
+
 class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
 
  public:
@@ -28,13 +30,13 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
  protected:
   Key domain_mesh_key_;
   Key surf_mesh_key_;
-  Teuchos::RCP<AmanziMesh::Mesh> surf_mesh_;
-  Teuchos::RCP<AmanziMesh::Mesh> domain_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
 
   Key domain_pk_name_;
   Key surf_pk_name_;
-  Teuchos::RCP<PKBDFBase> surf_pk_;
-  Teuchos::RCP<PKBDFBase> domain_pk_;
+  Teuchos::RCP<PKPhysicalBDFBase> surf_pk_;
+  Teuchos::RCP<PKPhysicalBDFBase> domain_pk_;
 
 };
 

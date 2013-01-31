@@ -33,6 +33,9 @@
 #include "composite_vector.hh"
 #include "mfd3d.hpp"
 
+#include "matrix.hh"
+
+
 namespace Amanzi {
 namespace Operators {
 
@@ -58,21 +61,19 @@ const int MFD_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int MFD_MAX_NODES = 47;  // These polyhedron parameters must
 const int MFD_MAX_EDGES = 60;  // be calculated in Init().
 
-enum Matrix_bc {
-  MFD_BC_NULL = 0,
-  MFD_BC_DIRICHLET,
-  MFD_BC_FLUX
-};
 
 
-
-class MatrixMFD { // : public Epetra_Operator {
+class MatrixMFD : public Matrix {
 
  public:
   MatrixMFD(Teuchos::ParameterList& plist,
             const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
+  MatrixMFD(const MatrixMFD& other);
+
   virtual ~MatrixMFD() {};
+
+  void InitializeFromPList_();
 
   // access to data for updating manually
   std::vector<double>& Acc_cells() {
@@ -178,7 +179,7 @@ class MatrixMFD { // : public Epetra_Operator {
           const Teuchos::Ptr<CompositeVector>& F) const;
 
   // extra methods for preconditioning
-  virtual void InitPreconditioner(Teuchos::ParameterList& prec_plist);
+  virtual void InitPreconditioner();
   virtual void UpdatePreconditioner();
 
   // extra methods for convenience

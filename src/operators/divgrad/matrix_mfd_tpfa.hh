@@ -38,6 +38,9 @@ class MatrixMFD_TPFA : public MatrixMFD {
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       MatrixMFD(plist,mesh) {}
 
+  MatrixMFD_TPFA(const MatrixMFD& other) :
+    MatrixMFD(other) {}
+
   virtual ~MatrixMFD_TPFA() {};
 
   // override main methods of the base class

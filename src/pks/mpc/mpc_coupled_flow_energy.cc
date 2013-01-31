@@ -271,16 +271,16 @@ void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
   int faces_GID[MFD_MAX_FACES];
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& flow_Aff =
-      flow_pk->preconditioner_->Aff_cells();
-  std::vector<double>& flow_Acc = flow_pk->preconditioner_->Acc_cells();
-  std::vector<Epetra_SerialDenseVector>& flow_Afc = flow_pk->preconditioner_->Afc_cells();
-  std::vector<Epetra_SerialDenseVector>& flow_Acf = flow_pk->preconditioner_->Acf_cells();
+      flow_pk->mfd_preconditioner_->Aff_cells();
+  std::vector<double>& flow_Acc = flow_pk->mfd_preconditioner_->Acc_cells();
+  std::vector<Epetra_SerialDenseVector>& flow_Afc = flow_pk->mfd_preconditioner_->Afc_cells();
+  std::vector<Epetra_SerialDenseVector>& flow_Acf = flow_pk->mfd_preconditioner_->Acf_cells();
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& energy_Aff =
-      energy_pk->preconditioner_->Aff_cells();
-  std::vector<double>& energy_Acc = energy_pk->preconditioner_->Acc_cells();
-  std::vector<Epetra_SerialDenseVector>& energy_Afc = energy_pk->preconditioner_->Afc_cells();
-  std::vector<Epetra_SerialDenseVector>& energy_Acf = energy_pk->preconditioner_->Acf_cells();
+      energy_pk->mfd_preconditioner_->Aff_cells();
+  std::vector<double>& energy_Acc = energy_pk->mfd_preconditioner_->Acc_cells();
+  std::vector<Epetra_SerialDenseVector>& energy_Afc = energy_pk->mfd_preconditioner_->Afc_cells();
+  std::vector<Epetra_SerialDenseVector>& energy_Acf = energy_pk->mfd_preconditioner_->Acf_cells();
 
   Teuchos::SerialDenseMatrix<int, double> Couple_Inv(2, 2);
   Epetra_SerialDenseMatrix Values(2, 2);

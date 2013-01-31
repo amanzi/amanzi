@@ -195,9 +195,9 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
-  preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-  preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), preconditioner_.ptr());
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), mfd_preconditioner_.ptr());
 
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
@@ -211,8 +211,8 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
   // -- update the cell-cell block
-  std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-  std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
+  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+  std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
   int ncells = dwc_dp.MyLength();
   for (int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / h;
@@ -232,7 +232,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
       Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S_next_->GetMesh("surface"));
 
-    std::vector<Epetra_SerialDenseVector>& Acf_cells = preconditioner_->Acf_cells();
+    std::vector<Epetra_SerialDenseVector>& Acf_cells = mfd_preconditioner_->Acf_cells();
 
     int ncells_surface = dsource.MyLength();
     for (int c=0; c!=ncells_surface; ++c) {
@@ -257,17 +257,17 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   }
 
   // Assemble and precompute the Schur complement for inversion.
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   if (assemble_preconditioner_) {
-    preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    preconditioner_->UpdatePreconditioner();
+    mfd_preconditioner_->AssembleGlobalMatrices();
+    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*
   // dump the schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
   std::stringstream filename_s;
   filename_s << "schur_" << S_next_->cycle() << ".txt";
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
@@ -284,6 +284,17 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   */
 
 };
+
+
+void Richards::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
+  preconditioner_ = precon;
+  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
+  ASSERT(mfd_preconditioner_ != Teuchos::null);
+  mfd_preconditioner_->SetSymmetryProperty(symmetric_);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->InitPreconditioner();
+
+}
 
 
 double Richards::enorm(Teuchos::RCP<const TreeVector> u,
