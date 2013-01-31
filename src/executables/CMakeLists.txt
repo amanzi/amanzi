@@ -81,52 +81,12 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
     endif()
 
 add_amanzi_library(udriv
-                   SOURCE amanzi_unstructured_grid_simulation_driver.cpp
+                   SOURCE AmanziUnstructuredGridSimulationDriver.cc
                    LINK_LIBS 
                             ${Epetra_LIBRARIES} 
                             ${Teuchos_LIBRARIES}
                             mesh mesh_audit state mpc error_handling
 			                ${Boost_LIBRARIES})
-
-#
-# Binary: amanzi-demo-driver
-#
-#add_executable(amanzi-demo-driver amanzi-demo-driver.cpp)
-#set(demo_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-#set(demo_driver_amanzi_libs time_integration mpc state simple_mesh error_handling exodus_reader ${amanzi_mesh_libs})
-#set(demo_driver_pk_libs chemistry transport flow)
-#target_link_libraries(amanzi-demo-driver 
-#                      ${demo_driver_amanzi_libs}
-#                      ${demo_driver_pk_libs}
-#                      ${Trilinos_LIBRARIES}
-#                      ${Boost_LIBRARIES})
-#add_install_binary(amanzi-demo-driver)		  
-
-#
-# Binary: amanzi-alt-driver
-#
-#add_executable(amanzi-alt-driver amanzi-alt-driver.cpp)
-#set(amanzi-alt-driver ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-#set(alt_driver_amanzi_libs mpc state error_handling mesh_factory)
-#set(alt_driver_pk_libs chemistry transport flow)
-#target_link_libraries(amanzi-alt-driver
-#                      ${alt_driver_amanzi_libs}
-#                      ${alt_driver_pk_libs}
-#                      ${Trilinos_LIBRARIES}
-#                      ${Boost_LIBRARIES})
-#add_install_binary(amanzi-alt-driver)
-
-#
-# Binary: amanzi-new-driver
-#
-#add_executable(amanzi-new-driver amanzi-new-driver.cpp)
-#set(new_driver_amanzi_libs mpc state error_handling mesh_factory interface)
-#set(new_driver_pk_libs chemistry transport flow)
-#target_link_libraries(amanzi-new-driver
-#                      ${new_driver_amanzi_libs}
-#                      ${new_driver_pk_libs}
-#                      ${Trilinos_LIBRARIES}
-#                      ${Boost_LIBRARIES})
 
 #
 # Binary: verify_mesh

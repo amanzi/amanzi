@@ -5,7 +5,7 @@
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
-#include "amanzi_unstructured_grid_simulation_driver.hpp"
+#include "AmanziUnstructuredGridSimulationDriver.hh"
 
 #include "Teuchos_ParameterList.hpp"
 // #include "Teuchos_XMLParameterListHelpers.hpp"
