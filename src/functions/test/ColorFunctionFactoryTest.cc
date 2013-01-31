@@ -22,7 +22,7 @@ TEST(Grid1D_cell)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   ColorFunctionFactory factory;
-  std::string infile("test/color-func-1-cell.txt");
+  std::string infile("test/ColorFunc1CellTest.txt");
   ColorFunction *f = factory.Create(infile, comm);
   double x;
   x = 0.0;
@@ -35,7 +35,7 @@ TEST(Grid1D_node)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   ColorFunctionFactory factory;
-  std::string infile("test/color-func-1-node.txt");
+  std::string infile("test/ColorFunc1NodeTest.txt");
   ColorFunction *f = factory.Create(infile, comm);
   double x;
   x = 0.0;
@@ -48,7 +48,7 @@ TEST(Grid2D_cell)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   ColorFunctionFactory factory;
-  std::string infile("test/color-func-2-cell.txt");
+  std::string infile("test/ColorFunc2CellTest.txt");
   ColorFunction *f = factory.Create(infile, comm);
   double x1[2] = {2.0, 1.0};
   CHECK_EQUAL(30, (*f)(x1));
@@ -64,7 +64,7 @@ TEST(Grid2D_node)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   ColorFunctionFactory factory;
-  std::string infile("test/color-func-2-node.txt");
+  std::string infile("test/ColorFunc2NodeTest.txt");
   ColorFunction *f = factory.Create(infile, comm);
   double x1[2] = {2.0, 1.0};
   CHECK_EQUAL(30, (*f)(x1));
@@ -80,7 +80,7 @@ TEST(Grid3D_cell)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   ColorFunctionFactory factory;
-  std::string infile("test/color-func-3-cell.txt");
+  std::string infile("test/ColorFunc3CellTest.txt");
   ColorFunction *f = factory.Create(infile, comm);
   // check some random locations
   double x1[3] = {2.0, 1.0, 3.0};
@@ -97,7 +97,7 @@ TEST(Grid3D_node)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   ColorFunctionFactory factory;
-  std::string infile("test/color-func-3-node.txt");
+  std::string infile("test/ColorFunc3NodeTest.txt");
   ColorFunction *f = factory.Create(infile, comm);
   // check some random locations
   double x1[3] = {2.0, 1.0, 3.0};
