@@ -11,16 +11,19 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 */
 
 #include "UnitTest++.h"
+
 #include "TestReporterStdout.h"
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "MeshFactory.hh"
-#include "Flow_BC_Factory.hpp"
 #include "boundary_function.hh"
 #include "function-factory.hh"
 #include "errors.hh"
+
+#include "MeshFactory.hh"
+#include "Flow_BC_Factory.hh"
+
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;

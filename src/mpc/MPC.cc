@@ -10,9 +10,9 @@
 #include "State.hh"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"
-#include "Flow_State.hpp"
-#include "Darcy_PK.hpp"
-#include "Richards_PK.hpp"
+#include "Flow_State.hh"
+#include "Darcy_PK.hh"
+#include "Richards_PK.hh"
 #include "Transport_State.hh"
 #include "Transport_PK.hh"
 

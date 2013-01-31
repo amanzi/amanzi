@@ -42,14 +42,14 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: flow
 #
-set(flow_src_files Flow_PK.cpp Flow_State.cpp Flow_IO.cpp
-                   Flow_BC_Factory.cpp Flow_BC_Actions.cpp Flow_Source_Factory.cpp Flow_VandV.cpp 
-                   Darcy_PK.cpp Darcy_TI.cpp Darcy_IO.cpp Darcy_AztecOO.cpp
-                   Richards_PK.cpp Richards_IO.cpp Richards_TI.cpp Richards_WRM.cpp
-                   Richards_SteadyState.cpp Richards_Picard.cpp Richards_AztecOO.cpp
-                   Richards_Bundles.cpp Richards_Devel.cpp Richards_AndersonMixing.cpp
-                   Matrix_MFD.cpp Matrix_MFD_TPFA.cpp Matrix_MFD_PLambda.cpp Matrix_VAG.cpp 
-                   WRM_vanGenuchten.cpp WRM_BrooksCorey.cpp WRM_fake.cpp)
+set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
+                   Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SourceFactory.cc Flow_VandV.cc 
+                   Darcy_PK.cc Darcy_TI.cc Darcy_IO.cc Darcy_AztecOO.cc
+                   Richards_PK.cc Richards_IO.cc Richards_TI.cc Richards_WRM.cc
+                   Richards_SteadyState.cc Richards_Picard.cc Richards_AztecOO.cc
+                   Richards_Bundles.cc Richards_Devel.cc Richards_AndersonMixing.cc
+                   Matrix_MFD.cc Matrix_MFD_TPFA.cc Matrix_MFD_PLambda.cc Matrix_VAG.cc 
+                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
@@ -63,12 +63,12 @@ add_amanzi_library(flow SOURCE ${flow_src_files}
 #
 # Library: matrix audit
 #
-add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cpp LINK_LIBS ${flow_tpl_libs})
+add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cc LINK_LIBS ${flow_tpl_libs})
 
 #
 # Install Targets
 #
-file(GLOB flow_inc_files "*.hpp")
+file(GLOB flow_inc_files "*.hh")
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
@@ -92,7 +92,7 @@ if (BUILD_TESTS)
         set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone)
  
         # Test: miscaleneous Darcy flow routines
-        add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp)
+        add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cc)
         target_link_libraries(flow_darcy_misc ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
         add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
@@ -101,48 +101,48 @@ if (BUILD_TESTS)
         # Test: steady-state Darcy full flow test
         add_amanzi_test(flow_darcy_source flow_darcy_source
 	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_source.cpp
+                        SOURCE test/Main.cc test/flow_darcy_source.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_2D flow_darcy_2D
 	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_2D.cpp
+                        SOURCE test/Main.cc test/flow_darcy_2D.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
 	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_dual2D.cpp
+                        SOURCE test/Main.cc test/flow_darcy_dual2D.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow with a source
         add_amanzi_test(flow_darcy_well flow_darcy_well
 	                KIND int
-                        SOURCE test/Main.cc test/flow_darcy_well.cpp
+                        SOURCE test/Main.cc test/flow_darcy_well.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: miscaleneous Richards flow routines
         add_amanzi_test(flow_richards_convergence flow_richards_convergence
 	                KIND int
-                        SOURCE test/Main.cc test/flow_richards_convergence.cpp
+                        SOURCE test/Main.cc test/flow_richards_convergence.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: 2D Richards
         add_amanzi_test(flow_richards_2D flow_richards_2D
 	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_2D.cpp
+                        SOURCE test/Main.cc test/flow_richards_2D.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(flow_richards_seepage flow_richards_seepage
 	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_seepage.cpp
+                        SOURCE test/Main.cc test/flow_richards_seepage.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: pseudo-1D Richards
         add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
 	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_bc_cribs.cpp
+                        SOURCE test/Main.cc test/flow_richards_bc_cribs.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
@@ -151,7 +151,7 @@ if (BUILD_TESTS)
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
                     KIND int
-                    SOURCE test/Main.cc test/flow_vanGenuchten.cpp
+                    SOURCE test/Main.cc test/flow_vanGenuchten.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: flow-bc-factory
@@ -165,13 +165,13 @@ if (BUILD_TESTS)
     
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit
-                    SOURCE test/Main.cc test/flow_richards_tensor.cpp
+                    SOURCE test/Main.cc test/flow_richards_tensor.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_STK_Mesh )
         add_amanzi_test(flow_richards_3D flow_richards_3D
 	                KIND unit
-                        SOURCE test/Main.cc test/flow_richards_3D.cpp
+                        SOURCE test/Main.cc test/flow_richards_3D.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     endif()
