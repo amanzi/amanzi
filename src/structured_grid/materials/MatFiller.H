@@ -8,35 +8,10 @@ class MatFiller
 {
 public:
 
-  MatFiller()
-    : MatIDFiller() {}
-  
   MatFiller(const Array<Geometry>&  geomArray,
             const Array<IntVect>&   refRatio,
-            const PArray<Material>& materials)
-    : MatIDFiller(geomArray,refRatio,materials) {}
+            const PArray<Material>& materials);
   
-  void define(const Array<Geometry>&  geomArray,
-              const Array<IntVect>&   refRatio,
-              const PArray<Material>& materials);
-
-
-  virtual void CoarsenData(const FArrayBox& fineFab,
-                           int              sComp,
-                           FArrayBox&       crseFab,
-                           const Box&       crseBox,
-                           int              dComp,
-                           int              nComp,
-                           const IntVect&   ref) const = 0;
-
-  virtual void RefineData(const FArrayBox& crseFab,
-                          int              sComp,
-                          FArrayBox&       fineFab,
-                          const Box&       crseBox,
-                          int              dComp,
-                          int              nComp,
-                          const IntVect&   ref) const = 0;
-
   void SetProperty(Real               t,
                    int                level,
                    MultiFab&          mf,
@@ -44,7 +19,31 @@ public:
                    int                dComp,
                    int                nGrow,
                    void*              ctx = 0);
-  
+
+  Property::CoarsenRule coarsenRule (const std::string& pname) const;
+  Property::RefineRule refineRule (const std::string& pname) const;
+  int nComp(const std::string& property_name) const;
+
+protected:
+
+  virtual void CoarsenData(const FArrayBox&   fineFab,
+                           int                sComp,
+                           FArrayBox&         crseFab,
+                           const Box&         crseBox,
+                           int                dComp,
+                           int                nComp,
+                           const IntVect&     ref,
+                           const std::string& pname) const;
+
+  virtual void RefineData(const FArrayBox&   crseFab,
+                          int                sComp,
+                          FArrayBox&         fineFab,
+                          const Box&         crseBox,
+                          int                dComp,
+                          int                nComp,
+                          const IntVect&     ref,
+                          const std::string& pname) const;
+
   void FillCoarseCells(Real               t,
                        int                level,
                        MultiFab&          mfc,
@@ -60,36 +59,11 @@ public:
                               int                dComp,
                               int                nComp,
                               int                nGrow);
-};
 
-class MatFillerPCarithAvg
-  : public MatFiller
-{
-public:
-
-  MatFillerPCarithAvg()
-    : MatFiller() {}
-
-  MatFillerPCarithAvg(const Array<Geometry>&  geomArray,
-                      const Array<IntVect>&   refRatio,
-                      const PArray<Material>& materials)
-    : MatFiller(geomArray,refRatio,materials) {}
-
-  virtual void CoarsenData(const FArrayBox& fineFab,
-                           int              sComp,
-                           FArrayBox&       crseFab,
-                           const Box&       crseBox,
-                           int              dComp,
-                           int              nComp,
-                           const IntVect&   ref) const;
-
-  virtual void RefineData(const FArrayBox& crseFab,
-                          int              sComp,
-                          FArrayBox&       fineFab,
-                          const Box&       crseBox,
-                          int              dComp,
-                          int              nComp,
-                          const IntVect&   ref) const;
+  void VerifyProperties();
+  std::map<std::string,int> property_nComps;
+  std::map<std::string,Property::CoarsenRule> property_cRules;
+  std::map<std::string,Property::RefineRule> property_rRules;
 };
 
 #endif

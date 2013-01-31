@@ -1192,13 +1192,78 @@ namespace Amanzi {
             const std::string val_name="Value"; reqP.push_back(val_name);
             PLoptions opt(fPLin,nullList,reqP,true,true); 
             double val = fPLin.get<double>(val_name);
-            fPLout.set<double>("val",val);
+            fPLout.set<double>("vals",val);
           }
           else {
             std::string str = "Unrecognized porosity function parameters";
             std::cout << fPLin << std::endl;
             BoxLib::Abort(str.c_str());
           }
+      }
+
+      void convert_PermeabilityAnisotropic(const ParameterList& fPLin,
+                                           ParameterList&       fPLout)
+      {
+        Array<std::string> nullList, reqP;
+        const std::string vertical_str = "Vertical";
+        const std::string horizontal_str = "Horizontal";
+
+        Array<double> local_vvals(1); // local copy because we need to convert from m^2 to mD here
+        ParameterList vlist;
+        if (fPLin.isSublist(vertical_str)) {
+          const ParameterList& vPLin = fPLin.sublist(vertical_str);
+          const std::string values_str = "Values";        reqP.push_back(values_str);
+          const std::string times_str = "Times";          reqP.push_back(times_str);
+          const std::string forms_str = "Time Functions"; reqP.push_back(forms_str);
+          PLoptions opt(vPLin,nullList,reqP,true,true);
+          local_vvals = vPLin.get<Array<double> >(values_str);
+          if (local_vvals.size()>1) {
+            vlist.set<Array<double> >("times",vPLin.get<Array<double> >(times_str));
+            vlist.set<Array<std::string> >("forms",vPLin.get<Array<std::string> >(forms_str));
+          }
+        }
+        else if (fPLin.isParameter(vertical_str)) {
+          local_vvals[0] = fPLin.get<double>(vertical_str);
+        } else {
+            std::string str = "Unrecognized vertical permeability function parameters";
+            std::cout << fPLin << std::endl;
+            BoxLib::Abort(str.c_str());
+        }
+
+        for (int k=0; k<local_vvals.size(); k++) {
+          local_vvals[k] *= 1.01325e15; // convert from m^2 to mDa
+        }
+        vlist.set<Array<double> >("vals",local_vvals);
+        fPLout.set("vertical",vlist);
+
+        Array<double> local_hvals(1); // local copy because we need to convert from m^2 to mD here
+        ParameterList hlist;
+        if (fPLin.isSublist(horizontal_str)) {
+          const ParameterList& hPLin = fPLin.sublist(horizontal_str);
+          const std::string values_str = "Values";        reqP.push_back(values_str);
+          const std::string times_str = "Times";          reqP.push_back(times_str);
+          const std::string forms_str = "Time Functions"; reqP.push_back(forms_str);
+          PLoptions opt(hPLin,nullList,reqP,true,true);
+          local_hvals = hPLin.get<Array<double> >(values_str);
+          if (local_hvals.size()>1) {
+            hlist.set<Array<double> >("times",hPLin.get<Array<double> >(times_str));
+            hlist.set<Array<std::string> >("forms",hPLin.get<Array<std::string> >(forms_str));
+          }
+        }
+        else if (fPLin.isParameter(horizontal_str)) {
+          local_hvals[0] = fPLin.get<double>(horizontal_str);
+        }
+        else {
+          std::string str = "Unrecognized horizontal permeability function parameters";
+          std::cout << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+        }
+
+        for (int k=0; k<local_hvals.size(); k++) {
+          local_hvals[k] *= 1.01325e15; // convert from m^2 to mDa
+        }
+        hlist.set<Array<double> >("vals",local_hvals);
+        fPLout.set("horizontal",hlist);
       }
 
         //
@@ -1219,11 +1284,6 @@ namespace Amanzi {
             const std::string cation_exchange_str = "Cation Exchange Capacity";
             state.getSolid().has_cation_exchange = false; // until we encounter the keyword for a material
 
-            const std::string porosity_file_str = "Porosity: Input File";
-            const std::string porosity_uniform_str = "Porosity: Uniform";
-            const std::string perm_file_str = "Intrinsic Permeability: Input File";
-            const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
-
             Array<std::string> arrayrock;
 
             bool add_chemistry_properties = false;
@@ -1231,11 +1291,19 @@ namespace Amanzi {
             std::map<std::string,SolidChem> solid_chem;
             std::map<std::string,double> cation_exchange_capacity;
             std::map<std::string,ParameterList> rsublist_mat;
+
+            const std::string porosity_file_str = "Porosity: Input File";
+            const std::string porosity_uniform_str = "Porosity: Uniform";
+            const std::string perm_file_str = "Intrinsic Permeability: Input File";
+            const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
+
             std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
 	    std::string porosity_plotfile_in, porosity_plotfile_out;
 	    std::string permeability_plotfile_in, permeability_plotfile_out;
             bool kp_file_in_set, kp_file_out_set, pp_file_in_set, pp_file_out_set;
+            bool kp_plotfile_in_set, kp_plotfile_out_set, pp_plotfile_in_set, pp_plotfile_out_set;
             kp_file_in_set = kp_file_out_set = pp_file_in_set = pp_file_out_set = false;
+            kp_plotfile_in_set = kp_plotfile_out_set = pp_plotfile_in_set = pp_plotfile_out_set = false;
 
             Array<std::string> reqL, reqP, nullList;
             for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i)
@@ -1268,7 +1336,6 @@ namespace Amanzi {
                         if (rentry.isList())
                         {
                             const ParameterList& rsslist = rslist.sublist(rlabel);
-#if 0
                             if (rlabel==porosity_file_str || rlabel==porosity_uniform_str){
                               if (mtest["Porosity"]) {
                                 std::string str = "More than one of: (\""+porosity_file_str+"\", \""+porosity_uniform_str+
@@ -1279,35 +1346,14 @@ namespace Amanzi {
                               convert_PorosityUniform(rsslist,psublist);
                               rsublist.set("porosity",psublist);
                               mtest["Porosity"] = true;
-#else
-                            if (rlabel=="Porosity: Uniform"){
-                                rsublist.setEntry("porosity",rsslist.getEntry("Value"));
-                                rsublist.set("porosity_dist","uniform");
-                                mtest["Porosity"] = true;
-
-#endif
                             }
                             else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
 				     rlabel=="Intrinsic Permeability: Uniform") {
-                                Array<double> array_p(2);
-                                //Array<double> array_p(1);
-				if (rlabel=="Intrinsic Permeability: Anisotropic Uniform") {
-				  //array_p[0] = rsslist.get<double>("Vertical");
-				  array_p[1] = rsslist.get<double>("Vertical");
-				  array_p[0] = rsslist.get<double>("Horizontal");
-				  //array_p[0] = array_p[1];
-				}
-				else {
-				  array_p[0] = rsslist.get<double>("Value");
-				  array_p[1] = array_p[0];
-				}
-                                // convert from m^2 to mDa
-                                for (int k=0; k<array_p.size(); k++) {
-                                    array_p[k] *= 1.01325e15;
-                                }
-                                rsublist.set("permeability",array_p);
-                                rsublist.set("permeability_dist","uniform");
-                                mtest["Intrinsic_Permeability"] = true;
+                              ParameterList psublist;
+                              convert_PermeabilityAnisotropic(rsslist,psublist);
+                              rsublist.set("permeability",psublist);
+                              rsublist.set("permeability_dist","uniform");
+                              mtest["Intrinsic_Permeability"] = true;
                             }
                             else if (rlabel=="Capillary Pressure: van Genuchten") {
                                 int cpl_type = 3;
@@ -1593,18 +1639,22 @@ namespace Amanzi {
                         pp_file_in_set = true;
                         pp_file_in  = rlist.get<std::string>(porosity_input_multifab_file_str);
                     }
-                    if (rlist.isParameter(porosity_output_plotfile_str))
+                    if (rlist.isParameter(porosity_output_plotfile_str)) {
+                        pp_plotfile_out_set = true;
                         porosity_plotfile_out = rlist.get<std::string>(porosity_output_plotfile_str);
-
-                    if (rlist.isParameter(porosity_input_plotfile_str))
+                    }
+                    if (rlist.isParameter(porosity_input_plotfile_str)) {
+                        pp_plotfile_in_set = true;
                         porosity_plotfile_in = rlist.get<std::string>(porosity_input_plotfile_str);
-
-                    if (rlist.isParameter(permeability_output_plotfile_str))
+                    }
+                    if (rlist.isParameter(permeability_output_plotfile_str)) {
+                        kp_plotfile_out_set = true;
                         permeability_plotfile_out = rlist.get<std::string>(permeability_output_plotfile_str);
-
-                    if (rlist.isParameter(permeability_input_plotfile_str))
+                    }
+                    if (rlist.isParameter(permeability_input_plotfile_str)) {
+                        kp_plotfile_in_set = true;
                         permeability_plotfile_in = rlist.get<std::string>(permeability_input_plotfile_str);
-
+                    }
                 }
             }
 
@@ -1703,11 +1753,18 @@ namespace Amanzi {
             if (pp_file_in_set) {
               rock_list.set("porosity_input_file",pp_file_in);
             }
-
-            rock_list.set("porosity_plotfile_in",porosity_plotfile_in);
-            rock_list.set("porosity_plotfile_out",porosity_plotfile_out);
-            rock_list.set("permeability_plotfile_in",permeability_plotfile_in);
-            rock_list.set("permeability_plotfile_out",permeability_plotfile_out);
+            if (pp_plotfile_in_set) {
+              rock_list.set("porosity_plotfile_in",porosity_plotfile_in);
+            }
+            if (pp_plotfile_out_set) {
+              rock_list.set("porosity_plotfile_out",porosity_plotfile_out);
+            }
+            if (kp_plotfile_in_set) {
+              rock_list.set("permeability_plotfile_in",permeability_plotfile_in);
+            }
+            if (kp_plotfile_out_set) {
+              rock_list.set("permeability_plotfile_out",permeability_plotfile_out);
+            }
         } 
       
         StateDef::StateDef(const ParameterList& parameter_list)

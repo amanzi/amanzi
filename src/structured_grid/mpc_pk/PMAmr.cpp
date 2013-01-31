@@ -651,17 +651,9 @@ PMAmr::SetUpMaterialServer()
       std::cout << "Building MaterialFiller object..." << std::endl;
     }
 
-    PArray<Rock>& rocks = PorousMedia::Rocks();
-    PArray<Material> materials(rocks.size(),PArrayManage);
-    std::string phi_str = "porosity";
-    for (int i=0; i<rocks.size(); ++i) {
-      std::vector<Property*> properties;
-      properties.push_back(new ConstantProperty(phi_str,rocks[i].porosity));
-      materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
-    }
-
     int Nlevs = maxLevel() + 1;
-    materialFiller = new MatFillerPCarithAvg(geom,refRatio(),materials);
+    const PArray<Material>& materials = PorousMedia::Materials();
+    materialFiller = new MatFiller(geom,refRatio(),materials);
     if (ParallelDescriptor::IOProcessor() && verbose>0) {
       std::cout << "....MaterialFiller object built" << std::endl;
     }

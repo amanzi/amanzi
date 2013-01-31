@@ -93,6 +93,7 @@ int PorousMedia::num_state_type;
 //
 std::string    PorousMedia::surf_file;
 PArray<Region> PorousMedia::regions;
+PArray<Material> PorousMedia::materials;
 //
 // Rock
 //
@@ -1404,6 +1405,9 @@ PorousMedia::read_rock(int do_chem)
     Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
     rocks.clear();
     rocks.resize(nrock,PArrayManage);
+
+    materials.clear();
+    materials.resize(nrock,PArrayManage);
     Array<std::string> material_regions;
     for (int i = 0; i<nrock; i++)
     {
@@ -1413,20 +1417,67 @@ PorousMedia::read_rock(int do_chem)
         
         Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
-        Array<Real> rpvals(1);
+        static Property::CoarsenRule arith_crsn = Property::Arithmetic;
+        static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
+        static Property::RefineRule pc_refine = Property::PiecewiseConstant;
+
+        Property* phi_func;
+        std::string phi_str = "porosity";
+        Array<Real> rpvals(1), rptimes;
+        Array<std::string> rpforms;
         if (ppr.countval("porosity.vals")) {
           ppr.getarr("porosity.vals",rpvals,0,ppr.countval("porosity.vals"));
+          int nrpvals = rpvals.size();
+          if (nrpvals>1) {
+            ppr.getarr("porosity.times",rptimes,0,nrpvals);
+            ppr.getarr("porosity.forms",rpforms,0,nrpvals-1);
+            TabularFunction pft(rptimes,rpvals,rpforms);
+            phi_func = new TabularInTimeProperty(phi_str,pft,arith_crsn,pc_refine);
+          }
+          else {
+            phi_func = new ConstantProperty(phi_str,rpvals[0],arith_crsn,pc_refine);
+          }
         } else if (ppr.countval("porosity")) {
           ppr.get("porosity",rpvals[0]); // FIXME: For backward compatibility
+          phi_func = new ConstantProperty(phi_str,rpvals[0],arith_crsn,pc_refine);
         } else {
           BoxLib::Abort(std::string("No porosity function specified for rock: \""+rname).c_str());
         }
 
-        Array<Real> rpermeabilityin; ppr.getarr("permeability",rpermeabilityin,0,ppr.countval("permeability"));
-        BL_ASSERT(rpermeabilityin.size() == 2); // Horizontal, Vertical  
-	// rpermeability will always be of size BL_SPACEDIM
-	Array<Real> rpermeability(BL_SPACEDIM,rpermeabilityin[1]);
-	for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rpermeabilityin[0];
+
+        Property* kappa_func;
+        std::string kappa_str = "permeability";
+        Array<Real> rvpvals(1), rhpvals(1), rvptimes(1), rhptimes(1);
+        Array<std::string> rvpforms, rhpforms;
+
+        Array<Real> rperm_in(2);
+        if (ppr.countval("permeability")) {
+          ppr.getarr("permeability",rperm_in,0,2);
+          rhpvals[0] = rperm_in[0];
+          rvpvals[0] = rperm_in[1];
+        }
+        else {
+
+          int nrvpvals = ppr.countval("permeability.vertical.vals");
+          int nrhpvals = ppr.countval("permeability.horizontal.vals");
+          if (nrvpvals>0 && nrhpvals>0) {
+            ppr.getarr("permeability.vertical.vals",rvpvals,0,nrvpvals);
+            if (nrvpvals>1) {
+              ppr.getarr("permeability.vertical.times",rvptimes,0,nrvpvals);
+              ppr.getarr("permeability.vertical.forms",rvpforms,0,nrvpvals-1);
+            }
+
+            ppr.getarr("permeability.horizontal.vals",rhpvals,0,nrhpvals);
+            if (nrhpvals>1) {
+              ppr.getarr("permeability.horizontal.times",rhptimes,0,nrhpvals);
+              ppr.getarr("permeability.horizontal.forms",rhpforms,0,nrhpvals-1);
+            }
+
+          } else {
+            BoxLib::Abort(std::string("No permeability function specified for rock: \""+rname).c_str());
+          }
+        }
+
         // The permeability is specified in mDa.  
         // This needs to be multiplied with 1e-10 to be consistent 
         // with the other units in the code.  What this means is that
@@ -1440,9 +1491,30 @@ PorousMedia::read_rock(int do_chem)
         // value of kappa  (NOTE: We will have to know that this is done however
         // if kappa is used as a diagnostic or in some way for a derived quantity).
         //
-        for (int j=0; j<rpermeability.size(); ++j) {
-            rpermeability[j] *= 1.e-10;
+        for (int j=0; j<rhpvals.size(); ++j) {
+          rhpvals[j] *= 1.e-10;
         }
+        for (int j=0; j<rvpvals.size(); ++j) {
+          rvpvals[j] *= 1.e-10;
+        }
+
+        // Define Property functions for Material Property server.  Eventually, these
+        // will replace "Rock", but not yet
+        if (rvpvals.size()>1 || rhpvals.size()>1) {
+          Array<TabularFunction> pft(2);
+          pft[0] = TabularFunction(rhptimes,rhpvals,rhpforms);
+          pft[1] = TabularFunction(rvptimes,rvpvals,rvpforms);
+          kappa_func = new TabularInTimeProperty(kappa_str,pft,harm_crsn,pc_refine);
+        }
+        else {
+          Array<Real> vals(2); vals[0] = rhpvals[0]; vals[1] = rvpvals[0];
+          kappa_func = new ConstantProperty(kappa_str,vals,harm_crsn,pc_refine);
+        }
+
+        // Set old-style values
+	Array<Real> rpermeability(BL_SPACEDIM,rvpvals[0]);
+	for (int j=0;j<BL_SPACEDIM-1;j++) rpermeability[j] = rhpvals[0];
+	// rpermeability will always be of size BL_SPACEDIM
 
         // relative permeability: include kr_coef, sat_residual
         int rkrType = 0;  ppr.query("kr_type",rkrType);
@@ -1490,6 +1562,12 @@ PorousMedia::read_rock(int do_chem)
         rocks.set(i, new Rock(rname,rdensity,rpvals[0],rporosity_dist_type,rporosity_dist_param,
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
                               rkrType,rkrParam,rcplType,rcplParam,rregions));
+
+
+        std::vector<Property*> properties;
+        properties.push_back(phi_func);
+        properties.push_back(kappa_func);
+        materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
     }
 
     // Read rock parameters associated with chemistry

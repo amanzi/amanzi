@@ -8340,7 +8340,8 @@ PorousMedia::init_rock_properties ()
         crse.shift(cshift);
         const Box& cbox = crse.box();
         BL_ASSERT(fine.box().contains(Box(cbox).refine(rr))); 
-        FORT_INITKAPPA3(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
+        //FORT_INITKAPPA3(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
+        FORT_INITKAPPA3A(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
                         crse.dataPtr(),ARLIM(crse.loVect()),ARLIM(crse.hiVect()),
                         cbox.loVect(),cbox.hiVect(),rrvect);
         crse.shift(-cshift);
@@ -8469,13 +8470,16 @@ PorousMedia::init_rock_properties ()
 #if 0
   // FIXME: Leave commented out until final testing complete
   MatFiller* matFiller = PMParent()->GetMatFiller();
-  MultiFab tphi(grids,2,nGrowHYP);
-  Real t_time = 0;
+  std::string prop_str1 = "permeability";
+  std::string prop_str2 = "porosity";
+  int nComp1 = matFiller->nComp(prop_str1);
+  int nComp2 = matFiller->nComp(prop_str2);
+  MultiFab tkappa(grids,nComp1+nComp2,nGrowHYP);
+  Real t_time = 1.e9;
   void* myCtx = 0;
-  matFiller->SetProperty(t_time,level,tphi,"porosity",0,nGrowHYP,myCtx);
-  if (level==2) {
-    VisMF::Write(tphi,"JUNK");
-  }
+  matFiller->SetProperty(t_time,level,tkappa,prop_str1,0,nGrowHYP,myCtx);
+  matFiller->SetProperty(t_time,level,tkappa,prop_str2,nComp1,nGrowHYP,myCtx);
+  VisMF::Write(tkappa,BoxLib::Concatenate("JUNK",level,1));
 
 #endif
 

@@ -22,6 +22,7 @@
 #include <ParmParse.H>
 #include <Region.H>
 #include <Rock.H>
+#include <Material.H>
 #include <Source.H>
 #include <Observation.H>
 #include <RegionData.H>
@@ -462,6 +463,7 @@ public:
 
   static const Array<std::string>& UserDerives() {return user_derive_list;}
   static PArray<Region>& Regions() {return regions;}
+  static PArray<Material>& Materials() {return materials;}
   static PArray<Rock>& Rocks() {return rocks;}
   static const Array<Real>& Density() {return density;}
   static const Array<Real>& Viscosity() {return muval;}
@@ -1070,6 +1072,8 @@ protected:
   static Real geometry_eps;
   static PArray<Region> regions;
   static std::string surf_file;
+
+  static PArray<Material> materials;
 
   // Rock
   static PArray<Rock> rocks;

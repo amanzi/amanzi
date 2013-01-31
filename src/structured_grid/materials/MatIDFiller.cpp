@@ -63,7 +63,7 @@ MatIDFiller::SetMaterialID(int level, MultiFab& mf, int nGrow)
   MultiFab tmf(unfilled,1,0);
 
   BL_ASSERT(level<NumLevels());
-  const Geometry& geom = Geom(level);
+  const Geometry& geom = geomArray[level];
   const Real* dx = geom.CellSize();
   FArrayBox tfab;
   for (MFIter mfi(tmf); mfi.isValid(); ++mfi) {
@@ -103,7 +103,7 @@ MatIDFiller::Initialize()
   int finestLevel = ba_mixed.size();
   materialID.resize(finestLevel+1,PArrayManage);
   int nGrow = 0;
-  materialID.set(0,new MultiFab(BoxArray(Geom(0).Domain()), 1, nGrow));  
+  materialID.set(0,new MultiFab(BoxArray(geomArray[0].Domain()), 1, nGrow));  
   for (int lev=0; lev<ba_mixed.size(); ++lev) {
     BoxList fbl(ba_mixed[lev]); fbl.refine(RefRatio(lev));
     fbl.simplify(); fbl.maxSize(max_grid_size);
@@ -125,7 +125,7 @@ MatIDFiller::FindMixedCells()
   if (nLevs>1) {
     tbar.resize(nLevs-1, PArrayManage);
     for (int lev=nLevs-2; lev>=0; --lev) {
-      Box gbox = BoxLib::grow(Geom(lev).Domain(),tags_buffer);
+      Box gbox = BoxLib::grow(geomArray[lev].Domain(),tags_buffer);
       tbar.set(lev, new TagBox(gbox)); // Workaround for bug in buffer code
     }
   }
@@ -138,8 +138,8 @@ MatIDFiller::FindMixedCells()
 
   Box cbox;
   FArrayBox finestFab, coarseFab;
-  const Real* dxFinest = Geom(nLevs-1).CellSize();
-  const Box& box = Geom(0).Domain();
+  const Real* dxFinest = geomArray[nLevs-1].CellSize();
+  const Box& box = geomArray[0].Domain();
   for (IntVect civ=box.smallEnd(), CEnd=box.bigEnd(); civ<=CEnd; box.next(civ)) {
     Box coarsestBox(civ,civ);
     Box finestBox = Box(coarsestBox).refine(cr[0]);
@@ -180,7 +180,7 @@ MatIDFiller::FindMixedCells()
       ClusterList clist(tags.dataPtr(), len);
       clist.chop(grid_eff);
       BoxList bl = clist.boxList(); bl.simplify();
-      ba_array[lev] = BoxLib::intersect(BoxArray(bl),Geom(lev).Domain());
+      ba_array[lev] = BoxLib::intersect(BoxArray(bl),geomArray[lev].Domain());
       ba_array[lev].maxSize(max_grid_size);
     }
   }

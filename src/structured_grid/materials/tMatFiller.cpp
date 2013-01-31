@@ -427,7 +427,7 @@ main (int   argc,
     }
   }
 
-  MatFillerPCarithAvg matFiller(geomArray,refRatio,materials);
+  MatFiller matFiller(geomArray,refRatio,materials);
 
   bool fail = false;
 

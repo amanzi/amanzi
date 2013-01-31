@@ -54,11 +54,11 @@
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
           <Parameter name="do_richard_sat_solve" type="int" value="0"/>
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
-          <Parameter name="steady_limit_iterations" type="int" value="20"/>
-          <Parameter name="steady_max_iterations" type="int" value="15"/>
+          <Parameter name="steady_limit_iterations" type="int" value="30"/>
+          <Parameter name="steady_max_iterations" type="int" value="20"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.7"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="1.8"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="2.2"/>
           <Parameter name="steady_min_iterations_2" type="int" value="2"/>
           <Parameter name="steady_time_step_increase_factor_2" type="double" value="3"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
@@ -71,7 +71,7 @@
           <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
           <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
           <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
-          <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
+          <Parameter name="steady_abort_on_psuedo_timestep_failure" type="bool" value="False"/>
           <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
           <Parameter name="steady_limit_function_evals" type="int" value="100000000"/>
 
@@ -84,14 +84,16 @@
           <Parameter name="richard_monitor_line_search" type="int" value="1"/>
 
           <Parameter name="richard_use_fd_jac" type="int" value="1"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-10"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="5.e-12"/>
           <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
           <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
           <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
-          <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
+          <Parameter name="richard_scale_solution_before_solve" type="bool" value="false"/>
+          <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
 	  <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
 	  <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-3, 1.e-4, 1.e-5}"/>
+	  <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-3, 1.e-4, 1.e-6}"/>
           <Parameter name="verbose" type="double" value="2"/>
         </ParameterList>
       </ParameterList>
@@ -106,7 +108,7 @@
       <ParameterList name="Adaptive Mesh Refinement Control">
         <Parameter name="Number Of AMR Levels" type="int" value="4"/>
         <Parameter name="Refinement Ratio" type="Array(int)" value="{4, 4, 4}"/>
-        <Parameter name="Regrid Interval" type="Array(int)" value="{200000, 200000, 200000, 200000}"/>
+        <Parameter name="Regrid Interval" type="Array(int)" value="{200000}"/>
         <Parameter name="Blocking Factor" type="Array(int)" value="{2, 2, 2, 2}"/>
         <Parameter name="Maximum Grid Size" type="Array(int)" value="{64, 64, 64, 64}"/>
         <Parameter name="Number Error Buffer Cells" type="Array(int)" value="{1, 1, 1, 1}"/>
@@ -325,8 +327,18 @@
         <Parameter name="Value" type="double" value="0.266"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="3.70e-17"/>
-        <Parameter name="Vertical" type="double" value="3.70e-17"/>
+        <ParameterList name="Horizontal">
+          <Parameter name="Times" type="Array(double)" value="{0, 1.e9}"/>
+          <Parameter name="Values" type="Array(double)" value="{3.70e-17, 3.70e-15}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{Linear}"/>
+        </ParameterList>
+        <ParameterList name="Vertical">
+          <Parameter name="Times" type="Array(double)" value="{0}"/>
+          <Parameter name="Values" type="Array(double)" value="{3.70e-17}"/>
+          <Parameter name="Time Functions" type="Array(string)" value="{}"/>
+        </ParameterList>
+        <!-- <Parameter name="Horizontal" type="double" value="3.70e-17"/> -->
+        <!-- <Parameter name="Vertical" type="double" value="3.70e-17"/> -->
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.130e-8"/>
