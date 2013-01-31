@@ -1,4 +1,4 @@
-#include "grid-color-function.hh"
+#include "GridColorFunction.hh"
 
 #include <algorithm>
 

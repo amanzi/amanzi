@@ -19,7 +19,7 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 #include "MeshFactory.hh"
 #include "Flow_BC_Factory.hpp"
 #include "boundary_function.hh"
-#include "function-factory.hh"
+#include "FunctionFactory.hh"
 #include "errors.hh"
 
 using namespace Amanzi;

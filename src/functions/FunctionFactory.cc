@@ -1,13 +1,13 @@
 #include "Teuchos_ParameterList.hpp"
 
-#include "function-factory.hh"
-#include "constant-function.hh"
-#include "tabular-function.hh"
-#include "smooth-step-function.hh"
-#include "polynomial-function.hh"
-#include "linear-function.hh"
-#include "separable-function.hh"
-#include "static-head-function.hh"
+#include "FunctionFactory.hh"
+#include "ConstantFunction.hh"
+#include "TabularFunction.hh"
+#include "SmoothStepFunction.hh"
+#include "PolynomialFunction.hh"
+#include "LinearFunction.hh"
+#include "SeparableFunction.hh"
+#include "StaticHeadFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {

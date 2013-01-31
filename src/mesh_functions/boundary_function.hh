@@ -8,7 +8,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "function.hh"
+#include "Function.hh"
 #include "mesh_function.hh"
 
 namespace Amanzi {

@@ -12,7 +12,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <string>
 #include <vector>
 
-#include "function-factory.hh"
+#include "FunctionFactory.hh"
 #include "errors.hh"
 
 #include "Transport_SourceFactory.hh"

@@ -15,7 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "errors.hh"
-#include "tabular-function.hh"
+#include "TabularFunction.hh"
 
 #include "Flow_PK.hpp"
 
