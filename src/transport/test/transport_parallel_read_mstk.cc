@@ -10,7 +10,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "MeshFactory.hh"
-#include "State.hpp"
+#include "State.hh"
 #include "Transport_PK.hh"
 
 

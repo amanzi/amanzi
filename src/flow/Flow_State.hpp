@@ -19,7 +19,7 @@ Usage:
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "State.hpp"
+#include "State.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {

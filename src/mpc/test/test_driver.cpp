@@ -10,7 +10,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "State.hpp"
+#include "State.hh"
 #include "MPC.hpp"
 
 #include "MeshFactory.hh"

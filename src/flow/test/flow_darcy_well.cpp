@@ -25,7 +25,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
-#include "State.hpp"
+#include "State.hh"
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
 

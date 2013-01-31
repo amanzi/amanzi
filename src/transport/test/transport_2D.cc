@@ -19,7 +19,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
 
-#include "State.hpp"
+#include "State.hh"
 #include "Transport_PK.hh"
 
 

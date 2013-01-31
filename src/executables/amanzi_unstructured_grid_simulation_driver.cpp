@@ -12,7 +12,7 @@
 #include "XMLParameterListWriter.hpp"
 
 #include "MeshFactory.hh"
-#include "State.hpp"
+#include "State.hh"
 #include "MPC.hpp"
 #include "Domain.hh"
 #include "GeometricModel.hh"

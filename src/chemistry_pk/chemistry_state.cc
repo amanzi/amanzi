@@ -6,7 +6,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCPDecl.hpp"
 
-#include "State.hpp"
+#include "State.hh"
 
 //#include "cell_geometry.hh"
 

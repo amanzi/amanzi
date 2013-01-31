@@ -7,7 +7,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 #include "MPC.hpp"
-#include "State.hpp"
+#include "State.hh"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"
 #include "Flow_State.hpp"

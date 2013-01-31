@@ -29,7 +29,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 
 
-#include "State.hpp"
+#include "State.hh"
 #include "MPC.hpp"
 
 #include "errors.hh"

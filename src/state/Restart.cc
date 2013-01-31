@@ -1,4 +1,4 @@
-#include "Restart.hpp"
+#include "Restart.hh"
 #include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include <iostream>
