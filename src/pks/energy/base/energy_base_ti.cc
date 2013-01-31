@@ -160,8 +160,8 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   Teuchos::RCP<const CompositeVector> conductivity =
     S_next_->GetFieldData(conductivity_key_);
 
-  preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
-  preconditioner_->CreateMFDrhsVectors();
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
@@ -173,7 +173,7 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
       ->ViewComponent("cell",false);
 
   // -- get the matrices/rhs that need updating
-  std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
+  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
 
   // -- update the diagonal
   int ncells = de_dT.MyLength();
@@ -182,17 +182,28 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   }
 
   // Apply boundary conditions.
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   // Assemble
   if (assemble_preconditioner_) {
     // -- assemble
-    preconditioner_->AssembleGlobalMatrices();
+    mfd_preconditioner_->AssembleGlobalMatrices();
     // -- form and prep the Schur complement for inversion
-    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    preconditioner_->UpdatePreconditioner();
+    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    mfd_preconditioner_->UpdatePreconditioner();
   }
 };
+
+
+void EnergyBase::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
+  preconditioner_ = precon;
+  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
+  ASSERT(mfd_preconditioner_ != Teuchos::null);
+  mfd_preconditioner_->SetSymmetryProperty(true);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+  mfd_preconditioner_->InitPreconditioner();
+}
 
 
 double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,

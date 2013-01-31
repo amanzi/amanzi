@@ -15,8 +15,18 @@ namespace Operators {
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     plist_(plist), mesh_(mesh) {
+  InitializeFromPList_();
+}
 
-  std::string methodstring = plist.get<string>("MFD method");
+
+MatrixMFD::MatrixMFD(const MatrixMFD& other) :
+    plist_(other.plist_), mesh_(other.mesh_) {
+  InitializeFromPList_();
+}
+
+
+void MatrixMFD::InitializeFromPList_() {
+  std::string methodstring = plist_.get<string>("MFD method");
   method_ = MFD_NULL;
 
   // standard MFD
@@ -34,28 +44,30 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
     method_ = MFD_OPTIMIZED;
   }
 
-  std::string precmethodstring = plist.get<string>("preconditioner", "ML");
-  if (precmethodstring == "ML") {
-    prec_method_ = TRILINOS_ML;
-  } else if (precmethodstring == "ILU" ) {
-    prec_method_ = TRILINOS_ILU;
-  } else if (precmethodstring == "Block ILU" ) {
-    prec_method_ = TRILINOS_BLOCK_ILU;
+  if (plist_.isParameter("preconditioner")) {
+    std::string precmethodstring = plist_.get<string>("preconditioner");
+    if (precmethodstring == "ML") {
+      prec_method_ = TRILINOS_ML;
+    } else if (precmethodstring == "ILU" ) {
+      prec_method_ = TRILINOS_ILU;
+    } else if (precmethodstring == "Block ILU" ) {
+      prec_method_ = TRILINOS_BLOCK_ILU;
 #ifdef HAVE_HYPRE
-  } else if (precmethodstring == "HYPRE AMG") {
-    prec_method_ = HYPRE_AMG;
-  } else if (precmethodstring == "HYPRE Euclid") {
-    prec_method_ = HYPRE_EUCLID;
-  } else if (precmethodstring == "HYPRE ParaSails") {
-    prec_method_ = HYPRE_EUCLID;
+    } else if (precmethodstring == "HYPRE AMG") {
+      prec_method_ = HYPRE_AMG;
+    } else if (precmethodstring == "HYPRE Euclid") {
+      prec_method_ = HYPRE_EUCLID;
+    } else if (precmethodstring == "HYPRE ParaSails") {
+      prec_method_ = HYPRE_EUCLID;
 #endif
-  } else {
+    } else {
 #ifdef HAVE_HYPRE
-    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
+      Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
 #else
-    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, and ILU");
+      Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, and ILU");
 #endif
-    Exceptions::amanzi_throw(msg);
+      Exceptions::amanzi_throw(msg);
+    }
   }
 }
 
@@ -291,7 +303,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
 
     for (int n=0; n!=nfaces; ++n) {
       int f=faces[n];
-      if (bc_markers[f] == MFD_BC_DIRICHLET) {
+      if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
         for (int m=0; m!=nfaces; ++m) {
           Ff[m] -= Bff(m, n) * bc_values[f];
           Bff(n, m) = Bff(m, n) = 0.0;
@@ -301,7 +313,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
 
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
-      } else if (bc_markers[f] == MFD_BC_FLUX) {
+      } else if (bc_markers[f] == MATRIX_BC_FLUX) {
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
     }
@@ -452,7 +464,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
 
     for (int n=0; n!=nfaces; ++n) {  // Symbolic boundary conditions
       int f=faces_LID[n];
-      if (bc_markers[f] == MFD_BC_DIRICHLET) {
+      if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
         for (int m=0; m!=nfaces; ++m) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }
@@ -581,26 +593,26 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
+void MatrixMFD::InitPreconditioner() {
   if (prec_method_ == TRILINOS_ML) {
-    ml_plist_ =  prec_plist.sublist("ML Parameters");
+    ml_plist_ =  plist_.sublist("ML Parameters");
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
   } else if (prec_method_ == TRILINOS_ILU) {
-    ilu_plist_ = prec_plist.sublist("ILU Parameters");
+    ilu_plist_ = plist_.sublist("ILU Parameters");
   } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    ifp_plist_ = prec_plist.sublist("Block ILU Parameters");
+    ifp_plist_ = plist_.sublist("Block ILU Parameters");
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
     // read some boomer amg parameters
-    hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
+    hypre_plist_ = plist_.sublist("HYPRE AMG Parameters");
     hypre_ncycles_ = hypre_plist_.get<int>("number of cycles",5);
     hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
     hypre_tol_ = hypre_plist_.get<double>("tolerance",0.0);
     hypre_strong_threshold_ = hypre_plist_.get<double>("strong threshold",0.25);
   } else if (prec_method_ == HYPRE_EUCLID) {
-    hypre_plist_ = prec_plist.sublist("HYPRE Euclid Parameters");
+    hypre_plist_ = plist_.sublist("HYPRE Euclid Parameters");
   } else if (prec_method_ == HYPRE_PARASAILS) {
-    hypre_plist_ = prec_plist.sublist("HYPRE ParaSails Parameters");
+    hypre_plist_ = plist_.sublist("HYPRE ParaSails Parameters");
 #endif
   }
 }

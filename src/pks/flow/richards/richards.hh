@@ -87,6 +87,7 @@ public:
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
 
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
 protected:
   // Create of physical evaluators.
@@ -136,6 +137,7 @@ protected:
   int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
+  bool symmetric_;
 
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
@@ -154,7 +156,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // custom enorm tolerances
   double mass_atol_;
@@ -166,8 +168,6 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
-  std::vector<double> bc_values_;
 
  private:
   // factory registration

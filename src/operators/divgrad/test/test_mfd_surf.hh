@@ -41,11 +41,11 @@ struct test_mfd {
     // -- Boundary conditions
     int nfaces_surf = surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     std::vector<Operators::Matrix_bc> bc_surf_markers(nfaces_surf,
-            Operators::MFD_BC_NULL);
+            Operators::MATRIX_BC_NULL);
     std::vector<double> bc_surf_values(nfaces_surf, 0.);
 
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-    std::vector<Operators::Matrix_bc> bc_markers(nfaces, Operators::MFD_BC_NULL);
+    std::vector<Operators::Matrix_bc> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
     std::vector<double> bc_values(nfaces, 0.);
 
     // create the matrices
@@ -71,11 +71,11 @@ struct test_mfd {
 
     // set a subsurface face to Dirichlet -- this is the bottom and should be
     // trivially handled.
-    bc_markers[0] = Operators::MFD_BC_DIRICHLET;
+    bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
     bc_values[0] = 1.;
 
     // set a surface BC edge to Dirichlet
-    bc_surf_markers[0] = Operators::MFD_BC_DIRICHLET;
+    bc_surf_markers[0] = Operators::MATRIX_BC_DIRICHLET;
     bc_surf_values[0] = 100.;
 
     As->ApplyBoundaryConditions(bc_markers, bc_values, bc_surf_markers, bc_surf_values);

@@ -77,8 +77,8 @@ void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> 
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_();
 
-  preconditioner_->CreateMFDstiffnessMatrices(thermal_conductivity.ptr());
-  preconditioner_->CreateMFDrhsVectors();
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(thermal_conductivity.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
 
   // update with accumulation terms
   Teuchos::RCP<const CompositeVector> temp1 =
@@ -88,8 +88,8 @@ void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> 
   Teuchos::RCP<const CompositeVector> cell_volume =
     S_next_->GetFieldData("cell_volume");
 
-  std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-  std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
+  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+  std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
   int ncells = cell_volume->size("cell",false);
   for (int c=0; c!=ncells; ++c) {
     double factor = (*cell_volume)("cell",c);
@@ -97,12 +97,23 @@ void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> 
     Fc_cells[c] += factor/h * (*temp0)("cell",c);
   }
 
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  preconditioner_->AssembleGlobalMatrices();
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->AssembleGlobalMatrices();
 
-  preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-  preconditioner_->UpdatePreconditioner();
+  mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+  mfd_preconditioner_->UpdatePreconditioner();
 };
+
+
+void AdvectionDiffusion::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
+  preconditioner_ = precon;
+  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
+  ASSERT(mfd_preconditioner_ != Teuchos::null);
+  mfd_preconditioner_->SetSymmetryProperty(true);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+  mfd_preconditioner_->InitPreconditioner();
+}
 
 } // namespace Energy
 } // namespace Amanzi

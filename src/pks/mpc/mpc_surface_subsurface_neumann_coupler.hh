@@ -32,23 +32,17 @@ surface.
 
 #include "richards.hh"
 #include "overland.hh"
-#include "strong_mpc.hh"
+#include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {
 
-class MPCSurfaceSubsurfaceNeumannCoupler : public StrongMPC {
+class MPCSurfaceSubsurfaceNeumannCoupler : public MPCSurfaceSubsurfaceCoupler {
 
  public:
   MPCSurfaceSubsurfaceNeumannCoupler(Teuchos::ParameterList& plist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      StrongMPC(plist, soln) {}
-
-  // Virtual destructor
-  virtual ~MPCSurfaceSubsurfaceNeumannCoupler() {}
-
-  // initialization
-  virtual void setup(const Teuchos::Ptr<State>& S);
+      MPCSurfaceSubsurfaceCoupler(plist, soln) {}
 
   // evaluate the residual
   virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
@@ -56,10 +50,6 @@ class MPCSurfaceSubsurfaceNeumannCoupler : public StrongMPC {
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-
- protected:
-  Teuchos::RCP<PKBDFBase> pk_flow_;
-  Teuchos::RCP<PKBDFBase> pk_ol_;
 
  private:
   // factory registration

@@ -62,6 +62,8 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
+
 private:
   // helper methods for calling the above methods
   void AddAccumulation_(const Teuchos::RCP<CompositeVector> f);
@@ -80,13 +82,11 @@ private:
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
-  std::vector<double> bc_values_;
 
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // time integration
   Teuchos::RCP<BDFTimeIntegrator> time_stepper_;

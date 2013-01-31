@@ -214,8 +214,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
-  preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
-  preconditioner_->CreateMFDrhsVectors();
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
 
   // 2.a: scale the cell by dh_dp
   S_next_->GetFieldEvaluator("ponded_depth")
@@ -238,7 +238,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   const Epetra_MultiVector& cv =
       *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
 
-  std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
+  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   int ncells = cv.MyLength();
 
   if (coupled_to_subsurface_via_flux_ || coupled_to_subsurface_via_head_) {
@@ -275,17 +275,17 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   // Assemble and precompute the Schur complement for inversion.
   // Note boundary conditions are in height variables.
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   if (assemble_preconditioner_) {
-    preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    preconditioner_->UpdatePreconditioner();
+    mfd_preconditioner_->AssembleGlobalMatrices();
+    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*
   // dump the schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
   std::stringstream filename_s;
   filename_s << "schur_" << S_next_->cycle() << ".txt";
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
@@ -306,6 +306,15 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 };
 
 
+void OverlandHeadFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
+  preconditioner_ = precon;
+  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
+  ASSERT(mfd_preconditioner_ != Teuchos::null);
+  mfd_preconditioner_->SetSymmetryProperty(symmetric_);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+  mfd_preconditioner_->InitPreconditioner();
+}
 
 }  // namespace Flow
 }  // namespace Amanzi

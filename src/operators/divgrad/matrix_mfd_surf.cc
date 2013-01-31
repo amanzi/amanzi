@@ -22,6 +22,12 @@ MatrixMFD_Surf::MatrixMFD_Surf(Teuchos::ParameterList& plist,
     MatrixMFD(plist,mesh),
     surface_mesh_(surface_mesh) {}
 
+
+MatrixMFD_Surf::MatrixMFD_Surf(const MatrixMFD& other,
+        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
+    MatrixMFD(other),
+    surface_mesh_(surface_mesh) {}
+
 void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
@@ -154,7 +160,7 @@ void MatrixMFD_Surf::ApplyBoundaryConditions(
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    if (subsurface_markers[f] != MFD_BC_NULL) {
+    if (subsurface_markers[f] != MATRIX_BC_NULL) {
       Errors::Message msg("MatrixMFD_Surf::Subsurface's cell on the surface has a non-Null BC.");
       Exceptions::amanzi_throw(msg);
     }
@@ -172,7 +178,7 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    if (bc_markers[f] != MFD_BC_NULL) {
+    if (bc_markers[f] != MATRIX_BC_NULL) {
       Errors::Message msg("MatrixMFD_Surf::Subsurface's cell on the surface has a non-Null BC.");
       Exceptions::amanzi_throw(msg);
     }

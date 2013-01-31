@@ -68,6 +68,8 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
+
   virtual void changed_solution();
 
   // evaluating consistent faces for given BCs and cell values
@@ -114,6 +116,7 @@ protected:
   bool is_source_term_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
+  bool symmetric_;
 
   // coupling term
   bool coupled_to_subsurface_via_flux_;
@@ -124,15 +127,13 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
-  std::vector<double> bc_values_;
 
   // overland conductivity model
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;

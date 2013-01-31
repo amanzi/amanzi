@@ -9,6 +9,8 @@ This class should never be instantiated -- it just provides a base class for
 multiple coupler types.
 ------------------------------------------------------------------------- */
 
+#include "pk_physical_bdf_base.hh"
+
 #include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {
@@ -32,13 +34,17 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
   StrongMPC::setup(S);
 
   if (sub_pks_[0]->name() == domain_pk_name_) {
-    domain_pk_ = sub_pks_[0];
+    domain_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
+    ASSERT(domain_pk_ != Teuchos::null);
     ASSERT(sub_pks_[1]->name() == surf_pk_name_);
-    surf_pk_ = sub_pks_[1];
+    surf_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[1]);
+    ASSERT(surf_pk_ != Teuchos::null);
   } else if (sub_pks_[1]->name() == domain_pk_name_) {
-    domain_pk_ = sub_pks_[1];
+    domain_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[1]);
+    ASSERT(domain_pk_ != Teuchos::null);
     ASSERT(sub_pks_[0]->name() == surf_pk_name_);
-    surf_pk_ = sub_pks_[0];
+    surf_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
+    ASSERT(surf_pk_ != Teuchos::null);
   } else {
     ASSERT(0);
   }
