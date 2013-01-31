@@ -309,8 +309,10 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple"/>
-    <Parameter name="Thermodynamic Database File" type="string" value="ion-exchange-valocchi.bgd"/>
+    <ParameterList name="Thermodynamic Database">
+      <Parameter name="Format" type="string" value="simple"/>
+      <Parameter name="File" type="string" value="ion-exchange-valocchi.bgd"/>
+    </ParameterList>
     <Parameter name="Activity Model" type="string" value="unit"/>
     <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="50"/>

@@ -130,22 +130,25 @@ void State::SetupSoluteNames(void) {
     // already set to a valid (non-zero?) value....
   }
 
-  // read the component names if they are spelled out
-  Teuchos::Array<std::string> comp_names;
-  if (parameter_list.isParameter("Component Solutes"))
-  {
-    comp_names = 
-        parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
-  }
-
-  if (comp_names.size()) {
-    set_compnames(comp_names);
-  } else {
-    create_default_compnames(number_of_components);
-  }
-  // now create the map
-  for (int i = 0; i < comp_names.size(); ++i) {
-    comp_no[comp_names[i]] = i;
+  if (number_of_components > 0) {
+    
+    // read the component names if they are spelled out
+    Teuchos::Array<std::string> comp_names;
+    if (parameter_list.isParameter("Component Solutes"))
+      {
+	comp_names = 
+	  parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
+      }
+    
+    if (comp_names.size()) {
+      set_compnames(comp_names);
+    } else {
+      create_default_compnames(number_of_components);
+    }
+    // now create the map
+    for (int i = 0; i < comp_names.size(); ++i) {
+      comp_no[comp_names[i]] = i;
+    }
   }
 }  // end SetupSoluteNames()
 
@@ -301,8 +304,10 @@ void State::create_storage()
   prev_water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   vertical_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   horizontal_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  total_component_concentration
+  if (number_of_components > 0) {
+    total_component_concentration
       = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
+  }
   darcy_velocity = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
   material_ids = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   particle_density = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
@@ -317,12 +322,14 @@ void State::create_storage()
 
   volume_ = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
 
-  CreateStoragePrimarySpecies();
-  CreateStorageMinerals();
-  CreateStorageTotalSorbed();
-  CreateStorageIonExchange();
-  CreateStorageSurfaceComplexation();
-  CreateStorageSorptionIsotherms();
+  if (number_of_components > 0 ) {
+    CreateStoragePrimarySpecies();
+    CreateStorageMinerals();
+    CreateStorageTotalSorbed();
+    CreateStorageIonExchange();
+    CreateStorageSurfaceComplexation();
+    CreateStorageSorptionIsotherms();
+  }
 
 }  // end create_storage()
 
@@ -709,7 +716,8 @@ void State::set_specific_yield(const double sy, const std::string region)
 /* *******************************************************************/
 void State::set_zero_total_component_concentration()
 {
-  total_component_concentration->PutScalar(0.0);
+  if (number_of_components > 0) 
+    total_component_concentration->PutScalar(0.0);
 }
 
 
@@ -867,14 +875,16 @@ double State::point_value(const std::string& point_region, const std::string& na
   }
   
   // extract the value if it is a component
-  if (comp_no.find(var) != comp_no.end())  {
-    value = 0.0;
-    volume = 0.0;
-    for (int i=0; i<mesh_block_size; i++) {
-      int ic = cell_ids[i];
-      value += (*(*total_component_concentration)(comp_no[var]))[ic] * mesh_maps->cell_volume(ic);
-      
-      volume += mesh_maps->cell_volume(ic);
+  if (comp_no.size() > 0) { 
+    if (comp_no.find(var) != comp_no.end())  {
+      value = 0.0;
+      volume = 0.0;
+      for (int i=0; i<mesh_block_size; i++) {
+	int ic = cell_ids[i];
+	value += (*(*total_component_concentration)(comp_no[var]))[ic] * mesh_maps->cell_volume(ic);
+	
+	volume += mesh_maps->cell_volume(ic);
+      }
     }
   } else if (var == "Volumetric water content") {
     value = 0.0;
@@ -1184,9 +1194,11 @@ void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
   DeriveDarcyVelocity();
   vis.write_vector(*get_darcy_velocity(), names);
   
-  // write component data
-  vis.write_vector( *get_total_component_concentration(), compnames);
-  
+  if (number_of_components > 0) {
+    // write component data
+    vis.write_vector( *get_total_component_concentration(), compnames);
+  }
+
   // write the geochemistry data
   if (chemistry_enabled) WriteChemistryToVis(&vis);
 }

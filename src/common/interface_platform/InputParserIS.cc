@@ -249,8 +249,8 @@ void init_global_info(Teuchos::ParameterList* plist) {
 	    comp_names =
               water_components.get<Teuchos::Array<std::string> >("Component Solutes");
 	  } else {  // create one fake componenet solute to make the native input happy
-	    comp_names.push_back("Foo");
-	    comp_names_map[comp_names[0]] = 0;
+	    //comp_names.push_back("Foo");
+	    //comp_names_map[comp_names[0]] = 0;
 	  }
         }  // end water
       }  // end phase components
@@ -280,12 +280,7 @@ void init_global_info(Teuchos::ParameterList* plist) {
     for (int i=0; i<comp_names.size(); i++) {
       comp_names_map[comp_names[i]] = i;
     }
-  } else {
-    std::stringstream message;
-    message << "Error: InputParserIS::init_global_info(): "
-            << "component names must be defined in the phase definitions block!\n";
-    Exceptions::amanzi_throw(Errors::Message(message.str()));
-  }
+  } 
 
   if ( plist->isSublist("Execution Control") ) {
 
@@ -1723,7 +1718,9 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
   // with the addition of the solid phase
   if (true) {
     // write the array of component solutes
-    stt_list.set<Teuchos::Array<std::string> >("Component Solutes", comp_names);
+    if (comp_names.size() > 0) {
+      stt_list.set<Teuchos::Array<std::string> >("Component Solutes", comp_names);
+    }
     stt_list.set<int>("Number of component concentrations", comp_names.size());
 
     // write the array of mineral names. hopefully order is preserved...
