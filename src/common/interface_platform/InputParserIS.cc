@@ -245,8 +245,13 @@ void init_global_info(Teuchos::ParameterList* plist) {
         if (phase_components.isSublist("Water")) {
           Teuchos::ParameterList water_components =
               phase_components.sublist(phase_comp_name);
-          comp_names =
+	  if ( water_components.isParameter("Component Solutes")) {
+	    comp_names =
               water_components.get<Teuchos::Array<std::string> >("Component Solutes");
+	  } else {  // create one fake componenet solute to make the native input happy
+	    comp_names.push_back("Foo");
+	    comp_names_map[comp_names[0]] = 0;
+	  }
         }  // end water
       }  // end phase components
     }  // end Aqueous phase
@@ -295,7 +300,7 @@ void init_global_info(Teuchos::ParameterList* plist) {
     } else if ( verbosity == "High" ) {
       verbosity_level = "high";
     } else if ( verbosity == "Extreme" ) {
-      verbosity_level = "high";
+      verbosity_level = "extreme";
     } else {
       Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
     }
@@ -1978,6 +1983,8 @@ Teuchos::ParameterList create_Verbosity_List(const std::string& vlevel) {
     vlist.set<std::string>("Verbosity Level","medium");
   } else if (vlevel == "high") {
     vlist.set<std::string>("Verbosity Level","high");
+  } else if (vlevel == "extreme") {
+    vlist.set<std::string>("Verbosity Level","extreme");
   } else if (vlevel == "none") {
     vlist.set<std::string>("Verbosity Level","none");
   }

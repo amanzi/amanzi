@@ -66,7 +66,7 @@ void Flow_PK::CalculateShiftWaterTable(
   Errors::Message msg;
 
   if (dim == 2) {
-    msg << "Flow PK: This boundary condition is not supported in 2D.";
+    msg << "Flow PK: \"relative/absolute\" action on static head BC is not supported in 2D.\n";
     Exceptions::amanzi_throw(msg);
   }
 

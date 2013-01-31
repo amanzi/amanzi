@@ -520,8 +520,10 @@
   </ParameterList> <!-- Boundary Conditions -->
 
   <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="test_chemistry_pk.bgd" />
+    <ParameterList name="Thermodynamic Database">
+      <Parameter name="Format" type="string" value="simple" />
+      <Parameter name="File" type="string" value="test_chemistry_pk.bgd" />
+    </ParameterList> <!-- Thermodynamic Database -->
     <Parameter name="Verbosity" type="Array(string)" value="{verbose, warning, error}" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>

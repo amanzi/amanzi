@@ -352,9 +352,9 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   // Initialize source
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-        src_sink->ComputeDistribute(T0, Kxy->Values()); 
+      src_sink->ComputeDistribute(T0, Kxy->Values()); 
     else
-        src_sink->ComputeDistribute(T0, NULL);
+      src_sink->ComputeDistribute(T0, NULL);
   }
 
   // make initial guess consistent with boundary conditions

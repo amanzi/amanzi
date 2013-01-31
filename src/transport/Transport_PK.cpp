@@ -132,12 +132,17 @@ int Transport_PK::InitPK()
     for (int c = 0; c < ncells_wghost; c++) dispersion_tensor[c].init(dim, 2);
   }
 
-  // boundary conditions installation at initial time
+  // boundary conditions initialization
   double time = T_physics;
   for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
 
   CheckInfluxBC();
 
+  // source term memory allocation
+  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  }
+ 
   return 0;
 }
 
@@ -292,6 +297,7 @@ void Transport_PK::Advance(double dT_MPC)
 
   int ncycles = 0, swap = 1;
   while (dT_sum < dT_MPC) {
+    // update boundary conditions
     time = T_physics;
     for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
 
@@ -436,6 +442,12 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
         (*tcc_next)[i][c2] += tcc_flux;
       }
     }
+  }
+
+  // process external sources
+  if (src_sink != NULL) {
+    double time = T_physics;
+    ComputeAddSourceTerms(time, dT, src_sink, *tcc_next);
   }
 
   // recover concentration from new conservative state
@@ -600,6 +612,30 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
   }
 
   status = TRANSPORT_STATE_COMPLETE;
+}
+
+
+/* ******************************************************************
+* Computes source and sink terms and adds them to vector tcc.                                   
+****************************************************************** */
+void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
+                                         DomainFunction* src_sink, Epetra_MultiVector& tcc)
+{
+  int num_components = tcc.NumVectors();
+  for (int i = 0; i < num_components; i++) {
+    std::string name(TS->get_component_name(i));
+
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+      src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
+    else
+      src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
+
+    Amanzi::Iterator src;
+    for (src = src_sink->begin(); src != src_sink->end(); ++src) {
+      int c = src->first;
+      tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
+    }
+  }
 }
 
 

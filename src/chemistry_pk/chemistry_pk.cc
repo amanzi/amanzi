@@ -229,52 +229,53 @@ void Chemistry_PK::XMLParameters(void) {
       chem_out->AddLevel(*name);
     }
   }
-
   //--------------------------------------------------------------------------
   //
-  // determine the format of the database file then create the database!
+  // thermo file name and format, then create the database!
   //
   //--------------------------------------------------------------------------
-  if (parameter_list_.isParameter("Thermodynamic Database Format")) {
-    std::string database_format =
-        parameter_list_.get<std::string>("Thermodynamic Database Format");
-    // create the appropriate chemistry object
-    if (database_format == "simple") {
-      chem_ = new SimpleThermoDatabase();
+  if (parameter_list_.isSublist("Thermodynamic Database")) {
+    Teuchos::ParameterList& tdb_list_ = parameter_list_.sublist("Thermodynamic Database");
+    // get format
+    // currently we only support the simple format..
+    if (tdb_list_.isParameter("Format")) {
+      std::string database_format = tdb_list_.get<std::string>("Format");
+      if (database_format == "simple") {
+        chem_ = new SimpleThermoDatabase();
+      } else {
+        // invalid database format...
+        std::ostringstream error_stream;
+        error_stream << ChemistryException::kChemistryError;
+        error_stream << "Chemistry_PK::XMLParameters(): \n";
+        error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be 'simple'.\n";
+        Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));  
+      }
     } else {
       // invalid database format...
       std::ostringstream error_stream;
       error_stream << ChemistryException::kChemistryError;
       error_stream << "Chemistry_PK::XMLParameters(): \n";
-      error_stream << "  Input parameter 'Thermodynamic Database Format' must be 'simple'.\n";
+      error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    }
+    beaker_parameters_ = chem_->GetDefaultParameters();
+    // get file name
+    if (tdb_list_.isParameter("File")) {
+      beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("File");
+    } else {
+      std::ostringstream error_stream;
+      error_stream << ChemistryException::kChemistryError;
+      error_stream << "Chemistry_PK::XMLParameters(): \n";
+      error_stream << "  Input parameter 'File' in 'Thermodynamic Database' sublist must be specified.\n";
+      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));         
     }
   } else {
     std::ostringstream error_stream;
     error_stream << ChemistryException::kChemistryError;
     error_stream << "Chemistry_PK::XMLParameters(): \n";
-    error_stream << "  Input parameter 'Thermodynamic Database Format' must be specified.\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    error_stream << "  'Thermodynamic Database' sublist must be specified.\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));    
   }
-
-  beaker_parameters_ = chem_->GetDefaultParameters();
-
-  //--------------------------------------------------------------------------
-  //
-  // thermo file name
-  //
-  //--------------------------------------------------------------------------
-  if (parameter_list_.isParameter("Thermodynamic Database File")) {
-    beaker_parameters_.thermo_database_file =
-        parameter_list_.get<std::string>("Thermodynamic Database File");
-  } else {
-    std::ostringstream error_stream;
-    error_stream << ChemistryException::kChemistryError;
-    error_stream << "Chemistry_PK::XMLParameters(): \n";
-    error_stream << "  Input parameter 'Thermodynamic Database File' must be specified.\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-  }
-
   //---------------------------------------------------------------------------
   //
   // activity model

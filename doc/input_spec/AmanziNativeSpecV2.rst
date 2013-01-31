@@ -321,7 +321,7 @@ Here is an examle:
 Sources and Sinks
 -----------------
 
-The external sources (e.g. wells) are supported only in sublist `"Darcy Problems`". The structure
+The external sources are typically pumping wells. The structure
 of sublist `"source terms`" follows the specification of boundary conditions. 
 Again, constant functions can be replaced by any of the available time-functions:
 
@@ -491,35 +491,7 @@ The remaining `"Flow`" parameters are
 Transport
 =========
 
-The boundary conditions sublist mimics specification of the boundary conditions in `"Flow`".
-Its structure is slightly simple, which is unnecessary and be replaced in the future. 
-For the advective transport, the boundary conditions must be specified on inflow parts of the
-boundary. If no value is prescribed through the XML input, the zero inlux boundary condition
-is used. Note that the boundary condition is set up separately for each component:
-
-.. code-block:: xml
-
-   <ParameterList name="Transport BCs">
-     <ParameterList name="West Boundary for H+">
-       <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
-       <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
-       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-     </ParameterList>  
-
-     <ParameterList name="East Boundary for TC-99">
-       <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
-       <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
-       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-     </ParameterList>  
-   </ParameterList>  
-
-
-Other parameters
------------------
-
-The remaining `"Transport`" parameters control temporal stability, spatial 
+The main parameters control temporal stability, spatial 
 and temporal accuracy, and verbosity:
 
 * `"CFL`" [double] time step limiter, a number less than 1 with default of 1.
@@ -547,6 +519,78 @@ Here is an example:
        <Parameter name="Verbosity Level" type="string" value="high"/>
      </ParameterList>
    </ParameterList>  
+
+
+Boundary Conditions
+-------------------
+
+The boundary conditions sublist differs from a similar specification of the boundary conditions 
+in `"Flow`". Its structure will be changed in the nearest future. 
+For the advective transport, the boundary conditions must be specified on inflow parts of the
+boundary. If no value is prescribed through the XML input, the zero inlux boundary condition
+is used. Note that the boundary condition is set up separately for each component:
+
+.. code-block:: xml
+
+   <ParameterList name="Transport BCs">
+     <ParameterList name="West Boundary for H+">
+       <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
+       <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
+     </ParameterList>  
+
+     <ParameterList name="East Boundary for TC-99">
+       <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
+       <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
+       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
+     </ParameterList>  
+   </ParameterList>  
+
+
+Sources and Sinks
+-----------------
+
+The external sources are typicaly located at pumping wells. The structure
+of sublist `"source terms`" includes only sublists named after components. 
+Again, constant functions can be replaced by any available time-function:
+Note that the source values ire set up separately for each component:
+
+.. code-block:: xml
+
+     <ParameterList name="source terms">
+       <ParameterList name="H+">
+         <Parameter name="regions" type="Array(string)" value="{Well east}"/>
+         <Parameter name="spatial distribution method" type="string" value="volume"/>
+         <ParameterList name="sink">
+           <ParameterList name="function-constant">
+             <Parameter name="value" type="double" value="-0.01"/>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="TC-99">
+         <Parameter name="regions" type="Array(string)" value="{Well west}"/>
+         <Parameter name="spatial distribution method" type="string" value="permeability"/>
+         <ParameterList name="sink">
+           <ParameterList name="function-constant">
+             <Parameter name="value" type="double" value="-0.02"/>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+
+* `"spatial distribution method`" [string] identifies a method for distributing
+  source Q over the specified regions. The available options are `"volume`",
+  `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+  in [mol/m^3/s]. For the other options, it is measured in [mol/s]. When the source function
+  is defined over a few regions, Q will be distributed independently over each region.
+  Default is `"none`".
+
+
+Other parameters
+-----------------
 
 
 The `"Transport`" parameters useful for developers are:

@@ -27,6 +27,7 @@ Usage:
 
 #include "State.hpp"
 #include "Transport_State.hpp"
+#include "Transport_Source_Factory.hpp"
 #include "Transport_constants.hpp"
 #include "Reconstruction.hpp"
 
@@ -83,7 +84,11 @@ class Transport_PK : public Explicit_TI::fnBase {
                              Teuchos::RCP<Epetra_Vector> scalar_field, 
                              Teuchos::RCP<Epetra_MultiVector> gradient, 
                              Teuchos::RCP<Epetra_Vector> limiter);
- 
+
+  // sources and sinks
+  void ComputeAddSourceTerms(double Tp, double dTp, 
+                             DomainFunction* src_sink, Epetra_MultiVector& tcc);
+
  private:
   // advection members
   void AdvanceDonorUpwind(double dT);
@@ -132,8 +137,9 @@ class Transport_PK : public Explicit_TI::fnBase {
                            std::vector<double>& bc_face_values,
                            Teuchos::RCP<Epetra_MultiVector> tcc_next);
 
-  // io methods
+  // I/O methods
   void ProcessParameterList();
+  void ProcessStringFlowMode(const std::string name, int* method);
   void ProcessStringDispersionModel(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
@@ -167,6 +173,10 @@ class Transport_PK : public Explicit_TI::fnBase {
   Reconstruction lifting;
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
+
+  DomainFunction* src_sink;  // Source and sink terms
+  int src_sink_distribution; 
+  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;

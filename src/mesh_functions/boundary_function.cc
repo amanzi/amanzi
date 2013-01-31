@@ -19,7 +19,7 @@ namespace Amanzi {
 
 /* ****************************************************************
 * Populates internal array with function values.
-* Dummy argument 'action' is not used yet.
+* Dummy argument 'method' is not used yet.
 **************************************************************** */
 void BoundaryFunction::Define(const std::vector<std::string> &regions,
                               const Teuchos::RCP<const Function> &f, int method)

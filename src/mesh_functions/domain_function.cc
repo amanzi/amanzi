@@ -62,6 +62,19 @@ void DomainFunction::Define(const std::vector<std::string>& regions,
 }
 
 
+/* ****************************************************************
+* Calculate pairs <list of cells, function> for multi-values mesh 
+* functions.
+**************************************************************** */
+void DomainFunction::DefineMultiValue(
+    const std::vector<std::string> &regions,
+    const Teuchos::RCP<const Function> &f, int method, const std::string& name)
+{
+  Define(regions, f, method);
+  names_.push_back(name);
+}
+
+
 /* ******************************************************************
 * Compute and normalize the result, so far by volume
 ****************************************************************** */
@@ -164,6 +177,127 @@ void DomainFunction::ComputeDistribute(double t, double* weight)
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
         for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
         value_[*d] = (*(s.second))(args);
+      }
+    }
+  }
+  delete [] args;
+}
+
+
+/* ******************************************************************
+* Compute and normalize the result, so far by volume
+****************************************************************** */
+void DomainFunction::ComputeMultiValue(double t, const std::string& name)
+{
+  int dim = (*mesh_).space_dimension();
+  double* args = new double[1+dim];
+  args[0] = t;
+
+  value_.clear();
+  int nspec = spec_list_.size();
+  for (int n = 0; n < nspec; n++) {
+    if (names_[n] == name) {
+      const Domain& domain = spec_list_[n].first;
+
+      for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+        const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+        for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
+        value_[*d] = (*(spec_list_[n].second))(args);
+      }
+    }
+  }
+  delete [] args;
+}
+
+
+/* ******************************************************************
+* Compute and distribute the result by volume.
+****************************************************************** */
+void DomainFunction::ComputeDistributeMultiValue(double t, const std::string& name)
+{
+  int dim = (*mesh_).space_dimension();
+  double* args = new double[1+dim];
+  args[0] = t;
+
+  value_.clear();
+  int nspec = spec_list_.size();
+  for (int n = 0; n < nspec; n++) {
+    if (names_[n] == name) {
+      const Domain& domain = spec_list_[n].first;
+
+      double domain_volume = 0.0;
+      for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+        domain_volume += mesh_->cell_volume(*d);
+      }
+
+      double volume_tmp = domain_volume;
+      mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
+
+      for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+        const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+        for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
+        value_[*d] = (*(spec_list_[n].second))(args) / domain_volume;
+      }
+    }
+  }
+  delete [] args;
+}
+
+
+/* ******************************************************************
+* Compute and distribute the result by specified weight if an action
+* is set on. Otherwise, weight could be a null pointer.
+****************************************************************** */
+void DomainFunction::ComputeDistributeMultiValue(
+    double t, const std::string& name, double* weight)
+{
+  int dim = (*mesh_).space_dimension();
+  double* args = new double[1+dim];
+  args[0] = t;
+
+  value_.clear();
+  int nspec = spec_list_.size();
+  for (int n = 0; n < nspec; n++) {
+    if (names_[n] == name) {
+      Spec& s = spec_list_[n];
+      const Domain& domain = s.first;
+
+      int action = actions_[n];
+      double domain_volume = 0.0;
+      if (action == Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME) {
+        for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+          domain_volume += mesh_->cell_volume(*d);
+        }
+
+        double volume_tmp = domain_volume;
+        mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
+
+        for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+          const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+          for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
+          value_[*d] = (*(s.second))(args) / domain_volume;
+        }
+
+      } else if (action == Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+        for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+          domain_volume += weight[*d] * mesh_->cell_volume(*d);
+        }
+
+        double volume_tmp = domain_volume;
+        mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
+
+        for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+          const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+          for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
+          value_[*d] = (*(s.second))(args) * weight[*d] / domain_volume;
+        }
+
+      } else {
+        for (Domain::const_iterator d = domain.begin(); d != domain.end(); ++d) {
+          const AmanziGeometry::Point& xc = mesh_->cell_centroid(*d);
+          for (int i = 0; i < dim; ++i) args[i+1] = xc[i];
+          value_[*d] = (*(s.second))(args);
+        }
       }
     }
   }

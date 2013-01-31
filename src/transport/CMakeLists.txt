@@ -44,7 +44,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 file(GLOB transport_inc_files "*.hpp")
 set(transport_src_files Transport_PK.cpp Transport_State.cpp Transport_TI.cpp 
                         Transport_Limiters.cpp Transport_Dispersion.cpp 
-                        Transport_VandV.cpp Transport_IO.cpp
+                        Transport_VandV.cpp Transport_IO.cpp Transport_Source_Factory.cpp
                         Reconstruction.cpp)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
@@ -118,6 +118,11 @@ if ( BUILD_TESTS )
         add_amanzi_test(transport_2D_long transport_2D_long 
 	                KIND unit
                         SOURCE test/Main.cc test/transport_2D_long.cpp
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+        add_amanzi_test(transport_2D_source transport_2D_source
+                        KIND unit
+                        SOURCE test/Main.cc test/transport_2D_source.cpp
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_3D_long transport_3D_long
