@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "function.hh"
+#include "Function.hh"
 
 namespace Amanzi {
 

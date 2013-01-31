@@ -11,11 +11,11 @@
 #include "MeshFactory.hh"
 
 #include "boundary_function.hh"
-#include "constant-function.hh"
-#include "polynomial-function.hh"
-#include "linear-function.hh"
-#include "separable-function.hh"
-#include "function-factory.hh"
+#include "ConstantFunction.hh"
+#include "PolynomialFunction.hh"
+#include "LinearFunction.hh"
+#include "SeparableFunction.hh"
+#include "FunctionFactory.hh"
 
 #include "errors.hh"
 

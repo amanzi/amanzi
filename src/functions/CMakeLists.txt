@@ -57,22 +57,22 @@ if (BUILD_TESTS)
 
   add_amanzi_test(concrete-functions all-function-test
                   KIND unit
-  SOURCE test/all-function-test.cc
+  SOURCE test/AllFunctionTest.cc
   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(function-factory function-factory-test
                   KIND unit
-                  SOURCE test/function-factory-test.cc
+                  SOURCE test/FunctionFactoryTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
  
   add_amanzi_test(concrete-color-function all-color-function-test
                   KIND unit
-                  SOURCE test/all-color-function-test.cc
+                  SOURCE test/AllColorFunctionTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(color-function-factory color-function-factory-test
                   KIND unit
-                  SOURCE test/color-function-factory-test.cc
+                  SOURCE test/ColorFunctionFactoryTest.cc
                   LINK_LIBS 
                          functions
                          ${UnitTest_LIBRARIES}

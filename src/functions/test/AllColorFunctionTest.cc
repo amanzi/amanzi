@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "grid-color-function.hh"
+#include "GridColorFunction.hh"
 
 using namespace Amanzi;
 

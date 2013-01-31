@@ -5,7 +5,7 @@
 #include <fstream>
 #include "Epetra_Comm.h"
 
-#include "color-function.hh"
+#include "ColorFunction.hh"
 
 namespace Amanzi {
 

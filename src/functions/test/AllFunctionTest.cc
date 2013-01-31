@@ -1,14 +1,14 @@
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
-#include "constant-function.hh"
-#include "smooth-step-function.hh"
-#include "tabular-function.hh"
-#include "polynomial-function.hh"
-#include "linear-function.hh"
-#include "separable-function.hh"
-#include "pointer-function.hh"
-#include "static-head-function.hh"
+#include "ConstantFunction.hh"
+#include "SmoothStepFunction.hh"
+#include "TabularFunction.hh"
+#include "PolynomialFunction.hh"
+#include "LinearFunction.hh"
+#include "SeparableFunction.hh"
+#include "PointerFunction.hh"
+#include "StaticHeadFunction.hh"
 #include "errors.hh"
 
 #include <iostream>

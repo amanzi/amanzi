@@ -15,7 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "errors.hh"
-#include "tabular-function.hh"
+#include "TabularFunction.hh"
 
 #include "Mesh.hh"
 #include "Flow_PK.hh"

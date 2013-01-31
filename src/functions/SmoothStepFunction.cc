@@ -1,4 +1,4 @@
-#include "smooth-step-function.hh"
+#include "SmoothStepFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {

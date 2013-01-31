@@ -8,7 +8,7 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
 #include <vector>
 #include <string>
 
-#include "function-factory.hh"
+#include "FunctionFactory.hh"
 #include "errors.hh"
 
 #include "Flow_BC_Factory.hh"

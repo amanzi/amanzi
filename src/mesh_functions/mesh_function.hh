@@ -22,7 +22,7 @@ Authors: Neil Carlson
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "function.hh"
+#include "Function.hh"
 
 namespace Amanzi {
 

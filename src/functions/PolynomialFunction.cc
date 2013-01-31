@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "polynomial-function.hh"
+#include "PolynomialFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {

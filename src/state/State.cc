@@ -12,7 +12,7 @@
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "linear-function.hh"
+#include "LinearFunction.hh"
 
 #include "State.hh"
 

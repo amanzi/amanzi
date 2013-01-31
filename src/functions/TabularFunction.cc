@@ -1,4 +1,4 @@
-#include "tabular-function.hh"
+#include "TabularFunction.hh"
 #include "errors.hh"
 
 namespace Amanzi {
