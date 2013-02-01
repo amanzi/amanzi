@@ -15,7 +15,6 @@ add_subdirectory(chemistry)
 add_subdirectory(common/interface_platform)
 
 if (ENABLE_Unstructured)
-  add_subdirectory(input)
 
   # Mesh
   add_subdirectory(mesh)
