@@ -159,7 +159,9 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
 
     // Add into Aff
     for (int m=0; m!=entries; ++m) {
-      std::cout << "  Adding to Aff entry (" << frow << "," << indices[m] << "): " << values[m] << std::endl;
+      if (std::abs(values[m]) > 1.e-10) {
+        std::cout << "  Adding to Aff entry (scell = " << sc << "): (" << frow << "," << indices[m] << "): " << values[m] << std::endl;
+      }
     }
 
     ierr = Aff_->SumIntoMyValues(frow, entries, values, indices);
@@ -226,6 +228,8 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+
+  // ASSUMES surface_A_'s AssembleGlobalMatrices() has been called
   const Epetra_FECrsMatrix& Spp = *surface_A_->TPFA();
   EpetraExt::RowMatrixToMatlabFile("TPFA.txt", Spp);
 
@@ -259,7 +263,9 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
 
     // Add into Sff
     for (int m=0; m!=entries; ++m) {
-      std::cout << "  Adding to Sff entry (" << frow << "," << indices[m] << "): " << values[m] << std::endl;
+      if (std::abs(values[m]) > 1.e-10) {
+        std::cout << "  Adding to Sff entry (scell = " << sc << "): (" << frow << "," << indices[m] << "): " << values[m] << std::endl;
+      }
     }
 
     ierr = Sff_->SumIntoMyValues(frow, entries, values, indices);

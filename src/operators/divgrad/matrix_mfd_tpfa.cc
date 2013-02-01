@@ -179,8 +179,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   for (int f=0; f!=nfaces_owned; ++f) (*rhs_faces)[0][f] /= Dff_f[0][f];
   (*Acf_).Multiply(false, *rhs_faces, Tc);
   for (int c=0; c!=ncells_owned; ++c) (*rhs_cells)[0][c] -= Tc[c];
-
-  rhs_faces->PutScalar(0.0);
+  for (int f=0; f!=nfaces_owned; ++f) (*rhs_faces)[0][f] *= Dff_f[0][f];
 
   // create a with-ghost copy of Acc
   CompositeVector Dcc(mesh_,names_c,locations_c,ndofs,true);
@@ -403,7 +402,6 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
 }
 
 
-
 void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
     const Teuchos::Ptr<CompositeVector>& u) {
 
@@ -414,13 +412,47 @@ void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
   Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", false);
   Epetra_MultiVector update_f(rhs_f);
 
-  Afc_->Multiply(true, *uc, update_f);  // Afc is kept in the transpose form.
+
+  Afc_->Multiply(true,*uc, update_f);  // Afc is kept in the transpose form.
   rhs_f.Update(-1.0, update_f, 1.0);
+
+  std::cout << "In MatrixMFDTPFA:" << std::endl;
+  std::cout << "  uc = " << (*uc)[0][0] << std::endl;
+  std::cout << "    update_f = " << update_f[0][2] << ", rhs = " << rhs_f[0][2] << std::endl;
 
   int nfaces = rhs_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
     uf[0][f] = rhs_f[0][f] / Dff_f[0][f];
   }
+
+  std::cout << "    dff = " << Dff_f[0][2] << std::endl;
+  std::cout << "  uf = " << uf[0][2] << std::endl;
+}
+
+void MatrixMFD_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
+    const Teuchos::Ptr<CompositeVector>& Pu) {
+
+  Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
+  Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
+  const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
+
+  Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
+
+  Afc_->Multiply(true, *Pu_c, Pu_f);  // Afc is kept in the transpose form.
+  Pu_f.Update(1., u_f, -1.);
+
+  std::cout << "In MatrixMFDTPFA:" << std::endl;
+  std::cout << "  Ph_c = " << (*Pu_c)[0][0] << std::endl;
+  std::cout << "  u_f = " << (u_f)[0][0] << std::endl;
+  std::cout << "    update_f = " << Pu_f[0][0] << ", Dff = " << Dff_f[0][0] << std::endl;
+
+  int nfaces = Pu_f.MyLength();
+  for (int f=0; f!=nfaces; ++f) {
+    Pu_f[0][f] /= Dff_f[0][f];
+  }
+
+  std::cout << "  Ph_f = " << Pu_f[0][0] << std::endl;
+
 }
 
 }  // namespace AmanziFlow

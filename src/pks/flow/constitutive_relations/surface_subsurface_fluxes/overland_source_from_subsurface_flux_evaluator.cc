@@ -120,11 +120,11 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateField_(const Teuchos::Pt
 
       res_v[0][c] = flux[0][(*face_and_dirs_)[c].first] * (*face_and_dirs_)[c].second
           / dens[0][cells[0]];
-
-      Teuchos::OSTab tab = getOSTab();
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-        *out_ << "Source, sub -> surface = " << res_v[0][c] << std::endl;
-      }
+    }
+    Teuchos::OSTab tab = getOSTab();
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "Source, sub -> surface c3 = " << res_v[0][3] << std::endl;
+      *out_ << "Source, sub -> surface c4 = " << res_v[0][4] << std::endl;
     }
   } else {
     int ncells = result->size("cell",false);
@@ -134,11 +134,11 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateField_(const Teuchos::Pt
       ASSERT(cells.size() == 1);
 
       res_v[0][c] = flux[0][(*face_and_dirs_)[c].first] * (*face_and_dirs_)[c].second;
-
-      Teuchos::OSTab tab = getOSTab();
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-        *out_ << "Source, sub -> surface = " << res_v[0][c] << std::endl;
-      }
+    }
+    Teuchos::OSTab tab = getOSTab();
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "Source, sub -> surface c3 = " << res_v[0][3] << std::endl;
+      *out_ << "Source, sub -> surface c4 = " << res_v[0][4] << std::endl;
     }
   }
 }

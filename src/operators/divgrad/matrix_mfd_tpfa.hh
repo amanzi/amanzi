@@ -69,6 +69,8 @@ class MatrixMFD_TPFA : public MatrixMFD {
 
   // development methods
   virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
+  virtual void UpdateConsistentFaceCorrection(const CompositeVector& u,
+          const Teuchos::Ptr<CompositeVector>& Pu);
 
  protected:
 

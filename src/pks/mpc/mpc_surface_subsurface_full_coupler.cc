@@ -87,15 +87,17 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
 #if DEBUG_FLAG
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    int cnum0 = 39; int fnum0 = 171;
+    int cnum = 49; int fnum = 212;
     *out_ << "Preconditioner application" << std::endl;
     *out_ << " SubSurface precon:" << std::endl;
-    *out_ << "  p0: " << (*domain_u_new)("cell",0) << " " << (*domain_u_new)("face",3)
+    *out_ << "  p0: " << (*domain_u_new)("cell",cnum0) << " " << (*domain_u_new)("face",fnum0)
           << std::endl;
-    *out_ << "  p1: " << (*domain_u_new)("cell",99) << " " << (*domain_u_new)("face",500)
+    *out_ << "  p1: " << (*domain_u_new)("cell",cnum) << " " << (*domain_u_new)("face",fnum)
           << std::endl;
-    *out_ << "  PC*p0: " << (*domain_Pu)("cell",0) << " " << (*domain_Pu)("face",3)
+    *out_ << "  PC*p0: " << (*domain_Pu)("cell",cnum0) << " " << (*domain_Pu)("face",fnum0)
           << std::endl;
-    *out_ << "  PC*p1: " << (*domain_Pu)("cell",99) << " " << (*domain_Pu)("face",500)
+    *out_ << "  PC*p1: " << (*domain_Pu)("cell",cnum) << " " << (*domain_Pu)("face",fnum)
           << std::endl;
 
     if (S_next_->cycle() > 300) {
@@ -147,7 +149,8 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
     domain_Pu_f[0][f] += lambda[0][f] - p_surf[0][cs];
   }
 
-  // // Update surface with consistent faces
+  /*
+  // Update surface with correction of faces
   Teuchos::RCP<CompositeVector> soln =
     S_next_->GetFieldData("surface_pressure",surf_pk_name_);
   Epetra_MultiVector& soln_c = *soln->ViewComponent("cell",false);
@@ -167,12 +170,42 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
 
   // -- get old solution back in soln
   *soln = soln_copy;
+  */
+
+  Teuchos::RCP<CompositeVector> surf_Ph = Teuchos::rcp(new CompositeVector(*surf_Pu));
+  surf_Ph->CreateData();
+  surf_Ph->PutScalar(0.);
+
+  // store the old ponded depth
+  *surf_Ph->ViewComponent("cell",false) = *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false);
+
+  // update the new ponded depth
+  S_next_->GetFieldData("surface_pressure",surf_pk_name_)->ViewComponent("cell",false)->Update(-1., surf_Pu_c, 1.);
+  surf_pk_->changed_solution();
+  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
+
+  // revert solution so we don't break things
+  S_next_->GetFieldData("surface_pressure",surf_pk_name_)->ViewComponent("cell",false)->Update(1., surf_Pu_c, 1.);
+  surf_pk_->changed_solution();
+
+  // put delta ponded depth into surf_Ph_cell
+  surf_Ph->ViewComponent("cell",false)->Update(-1., *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false), 1.);
+
+  // update delta faces
+  surf_preconditioner_->UpdateConsistentFaceCorrection(*surf_u, surf_Ph.ptr());
+  *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    int cnum0 = 3;
+    int cnum = 4; int fnum = 11;
     *out_ << " Surface precon:" << std::endl;
-    *out_ << "  p0: " << (*surf_u)("cell",0) << std::endl;
-    *out_ << "  PC*p0: " << (*surf_Pu)("cell",0) << std::endl;
+    *out_ << "  u0: " << (*surf_u)("cell",cnum0) << ", "
+          << (*surf_u)("face",fnum) << ", "
+          << (*surf_u)("cell",cnum) << std::endl;
+    *out_ << "  u0: " << (*surf_Pu)("cell",cnum0) << ", "
+          << (*surf_Pu)("face",fnum) << ", "
+          << (*surf_Pu)("cell",cnum) << std::endl;
   }
 #endif
 }
@@ -185,6 +218,29 @@ void MPCSurfaceSubsurfaceFullCoupler::update_precon(double t,
   preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
           domain_pk_->bc_values());
   preconditioner_->UpdatePreconditioner();
+}
+
+// Modify predictor to ensure lambda and surface cell remain consistent
+bool MPCSurfaceSubsurfaceFullCoupler::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+  Teuchos::RCP<TreeVector> surf_u = u->SubVector(surf_pk_name_);
+  bool changed = surf_pk_->modify_predictor(h, surf_u);
+
+  Teuchos::RCP<TreeVector> domain_u = u->SubVector(domain_pk_name_);
+  changed |= domain_pk_->modify_predictor(h, domain_u);
+
+  if (changed) {
+    Epetra_MultiVector& domain_u_f =
+      *domain_u->data()->ViewComponent("face",false);
+    const Epetra_MultiVector& surf_u_c =
+      *surf_u->data()->ViewComponent("cell",false);
+
+    int ncells_surf = surf_u_c.MyLength();
+    for (int c=0; c!=ncells_surf; ++c) {
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      domain_u_f[0][f] = surf_u_c[0][c];
+    }
+  }
+  return changed;
 }
 
 

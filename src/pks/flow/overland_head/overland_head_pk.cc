@@ -35,6 +35,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
+#define DEBUG_FLAG 1
+
 RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, head basis");
 
 // -------------------------------------------------------------
@@ -146,7 +148,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
 
-  // preconditioner for the NKA system
+
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
   Teuchos::RCP<Operators::Matrix> precon;
   if (coupled_to_subsurface_via_full_) {
@@ -156,6 +158,8 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   }
   set_preconditioner(precon);
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
+  modify_predictor_with_consistent_faces_ =
+    plist_.get<bool>("modify predictor with consistent faces", false);
 
   // how often to update the fluxes?
   std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
@@ -317,6 +321,11 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  // update boundary conditions
+  bc_pressure_->Compute(S->time());
+  bc_flux_->Compute(S->time());
+  UpdateBoundaryConditions_(S.ptr());
+
   // Update flux if rel perm or h + Z has changed.
   bool update = UpdatePermeabilityData_(S.ptr());
   update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
@@ -385,8 +394,10 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   update_perm |= S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S, name_);
 
+  update_perm |= perm_update_required_;
   if (update_perm) {
     // Update the perm only if needed.
+    perm_update_required_ = false;
 
     // This needs fixed to use the model, not assume a model.
     // Then it needs to be fixed to use a smart evaluator which picks
@@ -461,12 +472,10 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   }
 
   Functions::BoundaryFunction::Iterator bc;
-  int count = 0;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
     bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second + elevation[0][f];
-    count ++;
   }
 
   AmanziMesh::Entity_ID_List cells;
@@ -487,8 +496,11 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
-};
+}
 
+// -----------------------------------------------------------------------------
+// Evaluate boundary conditions at the current time without elevation.
+// -----------------------------------------------------------------------------
 void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S) {
   S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
   const Epetra_MultiVector& height = *S->GetFieldData("ponded_depth")
@@ -500,12 +512,10 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
   }
 
   Functions::BoundaryFunction::Iterator bc;
-  int count = 0;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
     bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
-    count ++;
   }
 
   AmanziMesh::Entity_ID_List cells;
@@ -526,20 +536,65 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
     bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
+}
 
+
+void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   // Attempt of a hack to deal with zero rel perm
   double eps = 1.e-12;
-  UpdatePermeabilityData_(S);
+  const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
+      ->ViewComponent("face",false);
   Teuchos::RCP<CompositeVector> relperm =
       S->GetFieldData("upwind_overland_conductivity", name_);
   for (int f=0; f!=relperm->size("face"); ++f) {
     if ((*relperm)("face",f) < eps) {
       if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
         bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-        bc_values_[f] = 0.;
+        bc_values_[f] =  elevation[0][f];
+      } else if (bc_markers_[f] == Operators::MATRIX_BC_NULL) {
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values_[f] =  elevation[0][f];
+      }
+    }
+  }
+};
+
+
+void OverlandHeadFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
+  // Attempt of a hack to deal with zero rel perm
+  double eps = 1.e-12;
+  Teuchos::RCP<CompositeVector> relperm =
+      S->GetFieldData("upwind_overland_conductivity", name_);
+  for (int f=0; f!=relperm->size("face"); ++f) {
+    if ((*relperm)("face",f) < eps) {
+      if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
+        //        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        //        bc_values_[f] = 0.;
+        (*relperm)("face",f) = 1.;
+        perm_update_required_ = true;
       } else if (bc_markers_[f] == Operators::MATRIX_BC_NULL) {
         bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
         bc_values_[f] = 0.;
+      }
+    }
+  }
+};
+
+void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
+  // Attempt of a hack to deal with zero rel perm
+  double eps = 1.e-12;
+  const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
+      ->ViewComponent("face",false);
+  Teuchos::RCP<CompositeVector> relperm =
+      S->GetFieldData("upwind_overland_conductivity", name_);
+  for (int f=0; f!=relperm->size("face"); ++f) {
+    if ((*relperm)("face",f) < eps) {
+      if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values_[f] =  elevation[0][f];
+      } else if (bc_markers_[f] == Operators::MATRIX_BC_NULL) {
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values_[f] =  elevation[0][f];
       }
     }
   }
@@ -573,38 +628,93 @@ void OverlandHeadFlow::changed_solution() {
 };
 
 
+bool OverlandHeadFlow::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+  const Epetra_MultiVector& u_prev_c =
+    *S_->GetFieldData(key_)->ViewComponent("cell",false);
+  Epetra_MultiVector& u_c = *u->data()->ViewComponent("cell",false);
+
+  // Damp the spurt of water
+  int ncells = u_c.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    if ((u_prev_c[0][c] < patm) &&
+        (u_c[0][c] > patm)) {
+      u_c[0][c] = patm + 0.01;
+    }
+  }
+
+
+  if (modify_predictor_with_consistent_faces_) {
+    CalculateConsistentFaces(u->data().ptr());
+    return true;
+  }
+
+  return PKPhysicalBDFBase::modify_predictor(h, u);
+};
+
+
 void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
-  // update the rel perm according to the scheme of choice
+  // Force changes... this needs serious cleanup
   changed_solution();
-  UpdatePermeabilityData_(S_next_.ptr());
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
+  // update the rel perm according to the scheme of choice
+  UpdatePermeabilityData_(S_next_.ptr());
+
+  // Patch up BCs in the case of zero conductivity
+  FixBCsForConsistentFaces_(S_next_.ptr());
+
+  // Grab needed data.
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity", name_);
-
-  // update the potential
   S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
+  Teuchos::RCP<CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev","pres_elev");
+
+#if DEBUG_FLAG
+  *out_ << "Consistent faces:" << std::endl;
+  *out_ << "  u_c = " << (*u)("cell",3) << ",  pres_e_c = " << (*pres_elev)("cell",3) << std::endl;
+  *out_ << "  u_c = " << (*u)("cell",4) << ",  pres_e_c = " << (*pres_elev)("cell",4) << std::endl;
+
+  AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, 3);
+  AmanziMesh::Entity_ID_List cells;
+  S_next_->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+  ASSERT(cells.size() == 1);
+  std::cout << "Surface cell 3 is subsurface face " << f
+            << " with internal cell " << cells[0] << std::endl;
+
+
+
+#endif
 
   // Update the preconditioner with darcy and gravity fluxes
+  // skip accumulation terms, they're not needed
   mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
   mfd_preconditioner_->CreateMFDrhsVectors();
-
-  // skip accumulation terms, they're not needed
 
   // Assemble
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   mfd_preconditioner_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
+  mfd_preconditioner_->UpdateConsistentFaceConstraints(pres_elev.ptr());
+
+  // back out heights from pres_elev
+  const Epetra_MultiVector& elevation = *S_next_->GetFieldData("elevation")
+      ->ViewComponent("face",false);
+  u->ViewComponent("face",false)->Update(1., *pres_elev->ViewComponent("face",false),
+          -1., elevation, 0.);
+
+#if DEBUG_FLAG
+  *out_ << "  pres_e_f = " << (*pres_elev)("face",11) << std::endl;
+  *out_ << "  u_f = " << (*u)("face",11) << std::endl;
+#endif
 }
 
 } // namespace

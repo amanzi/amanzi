@@ -287,7 +287,9 @@ void MatrixMFD::CreateMFDrhsVectors() {
 void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
         const std::vector<double>& bc_values) {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
 
   for (int c=0; c!=ncells; ++c) {
@@ -315,6 +317,11 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
+      }
+
+      if (f == 11) {
+        std::cout << "Face 11 (BC,val) = " << bc_markers[f] << ", "
+                  << bc_values[f] << std::endl;
       }
     }
   }
@@ -587,6 +594,10 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(-1.0, *rhs_, 1.0);
+
+  std::cout << "  soln = " << (solution)("cell",0) << ", " << (solution)("face",0) << std::endl;
+  std::cout << "  rhs = " << (*rhs_)("cell",0) << ", " << (*rhs_)("face",0) << std::endl;
+  std::cout << "  res = " << (*residual)("cell",0) << ", " << (*residual)("face",0) << std::endl;
 }
 
 
@@ -831,6 +842,37 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
     ierr = IfpHypre_Sff_->ApplyInverse(*rhs_f, *u->ViewComponent("face",false));
+#endif
+  }
+}
+
+
+void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
+        const Teuchos::Ptr<CompositeVector>& Pu) {
+  Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
+  Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
+  const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
+  Epetra_MultiVector update_f(u_f);
+  Afc_->Multiply(true, *Pu_c, update_f);  // Afc is kept in the transpose form.
+  update_f.Update(1., u_f, -1.);
+
+  // Replace the schur complement so it can be used as a face-only system
+  *Sff_ = *Aff_;
+
+  // Update the preconditioner with a solver
+  UpdatePreconditioner();
+
+  // Use this entry to get appropriate faces.
+  int ierr;
+  if (prec_method_ == TRILINOS_ML) {
+    ierr = ml_prec_->ApplyInverse(update_f, Pu_f);
+  } else if (prec_method_ == TRILINOS_ILU) {
+    ierr = ilu_prec_->ApplyInverse(update_f, Pu_f);
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    ierr = ifp_prec_->ApplyInverse(update_f, Pu_f);
+#ifdef HAVE_HYPRE
+  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
+    ierr = IfpHypre_Sff_->ApplyInverse(update_f, Pu_f);
 #endif
   }
 }

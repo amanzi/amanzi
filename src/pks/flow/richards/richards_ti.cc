@@ -40,14 +40,17 @@ void Richards::fun(double t_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
 #if DEBUG_FLAG
-  int nc = u->size("cell") - 1;
+  //  int cnum0 = 0; int fnum0 = 3;
+  //  int cnum = u->size("cell") - 1; int fnum = 500;
+  int cnum0 = 39; int fnum0 = 171;
+  int cnum = 49; int fnum = 212;
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "----------------------------------------------------------------" << std::endl;
     *out_ << "Richards Residual calculation: T0 = " << t_old
           << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3)
+    *out_ << "  p0: " << (*u)("cell",cnum0) << " " << (*u)("face",fnum0)
           << std::endl;
-    *out_ << "  p1: " << (*u)("cell",0,nc) << " " << (*u)("face",0,500)
+    *out_ << "  p1: " << (*u)("cell",cnum) << " " << (*u)("face",fnum)
           << std::endl;
   }
 #endif
@@ -79,26 +82,26 @@ void Richards::fun(double t_old,
           S_next_->GetFieldData("saturation_ice");
       Teuchos::RCP<const CompositeVector> sati0 =
           S_inter_->GetFieldData("saturation_ice");
-      *out_ << "    sat_old_0: " << (*satl0)("cell",0) << ", "
-            << (*sati0)("cell",0) << std::endl;
-      *out_ << "    sat_new_0: " << (*satl1)("cell",0) << ", "
-            << (*sati1)("cell",0) << std::endl;
-      *out_ << "    sat_old_1: " << (*satl0)("cell",nc) << ", "
-            << (*sati0)("cell",nc) << std::endl;
-      *out_ << "    sat_new_1: " << (*satl1)("cell",nc) << ", "
-            << (*sati1)("cell",nc) << std::endl;
+      *out_ << "    sat_old_0: " << (*satl0)("cell",cnum0) << ", "
+            << (*sati0)("cell",cnum0) << std::endl;
+      *out_ << "    sat_new_0: " << (*satl1)("cell",cnum0) << ", "
+            << (*sati1)("cell",cnum0) << std::endl;
+      *out_ << "    sat_old_1: " << (*satl0)("cell",cnum) << ", "
+            << (*sati0)("cell",cnum) << std::endl;
+      *out_ << "    sat_new_1: " << (*satl1)("cell",cnum) << ", "
+            << (*sati1)("cell",cnum) << std::endl;
     } else {
-      *out_ << "    sat_old_0: " << (*satl0)("cell",0) << std::endl;
-      *out_ << "    sat_new_0: " << (*satl1)("cell",0) << std::endl;
-      *out_ << "    sat_old_1: " << (*satl0)("cell",nc) << std::endl;
-      *out_ << "    sat_new_1: " << (*satl1)("cell",nc) << std::endl;
+      *out_ << "    sat_old_0: " << (*satl0)("cell",cnum0) << std::endl;
+      *out_ << "    sat_new_0: " << (*satl1)("cell",cnum0) << std::endl;
+      *out_ << "    sat_old_1: " << (*satl0)("cell",cnum) << std::endl;
+      *out_ << "    sat_new_1: " << (*satl1)("cell",cnum) << std::endl;
     }
 
 
-    *out_ << "  res0 (after diffusion): " << (*res)("cell",0,0)
-          << " " << (*res)("face",0,3) << std::endl;
-    *out_ << "  res1 (after diffusion): " << (*res)("cell",0,nc)
-          << " " << (*res)("face",0,500) << std::endl;
+    *out_ << "  res0 (after diffusion): " << (*res)("cell",cnum0)
+          << " " << (*res)("face",fnum0) << std::endl;
+    *out_ << "  res1 (after diffusion): " << (*res)("cell",cnum)
+          << " " << (*res)("face",fnum) << std::endl;
   }
 #endif
 
@@ -107,10 +110,10 @@ void Richards::fun(double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0)
-          << " " << (*res)("face",0,3) << std::endl;
-    *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
-          << " " << (*res)("face",0,500) << std::endl;
+    *out_ << "  res0 (after accumulation): " << (*res)("cell",cnum0)
+          << " " << (*res)("face",fnum0) << std::endl;
+    *out_ << "  res1 (after accumulation): " << (*res)("cell",cnum)
+          << " " << (*res)("face",fnum) << std::endl;
   }
 #endif
 
@@ -136,13 +139,16 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 
 #if DEBUG_FLAG
   // Dump residual
-  int nc = u->data()->size("cell") - 1;
+  //  int cnum0 = 0; int fnum0 = 3;
+  //  int cnum = u->size("cell") - 1; int fnum = 500;
+  int cnum0 = 39; int fnum0 = 171;
+  int cnum = 49; int fnum = 212;
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    *out_ << "  p0: " << (*u->data())("cell",0,0) << " "
-          << (*u->data())("face",0,3) << std::endl;
-    *out_ << "  p1: " << (*u->data())("cell",0,nc) << " "
-          << (*u->data())("face",0,500) << std::endl;
+    *out_ << "  p0: " << (*u->data())("cell",cnum0) << " "
+          << (*u->data())("face",fnum0) << std::endl;
+    *out_ << "  p1: " << (*u->data())("cell",cnum) << " "
+          << (*u->data())("face",fnum) << std::endl;
   }
 #endif
 
@@ -152,11 +158,10 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 #if DEBUG_FLAG
   // Dump correction
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-
-  *out_ << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
-        << (*Pu->data())("face",0,3) << std::endl;
-  *out_ << "  PC*p1: " << (*Pu->data())("cell",0,nc) << " "
-        << (*Pu->data())("face",0,500) << std::endl;
+    *out_ << "  PC*p0: " << (*Pu->data())("cell",cnum0) << " "
+          << (*Pu->data())("face",fnum0) << std::endl;
+    *out_ << "  PC*p1: " << (*Pu->data())("cell",cnum) << " "
+          << (*Pu->data())("face",fnum) << std::endl;
   }
 #endif
 };
