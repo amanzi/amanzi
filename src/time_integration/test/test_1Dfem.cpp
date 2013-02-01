@@ -14,8 +14,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
-#include "BDF2_fnBase.hpp"
-#include "BDF2_Dae.hpp"
+#include "BDF_FnBase.hh"
+#include "BDF2_TI.hh"
 
 /*!
 

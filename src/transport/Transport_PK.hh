@@ -22,7 +22,7 @@ Usage:
 #include "Teuchos_RCP.hpp"
 
 #include "tensor.hh"
-#include "Explicit_TI_fnBase.hpp"
+#include "Explicit_TI_FnBase.hh"
 #include "boundary_function.hh"
 
 #include "State.hh"

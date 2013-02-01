@@ -1,4 +1,4 @@
-#include "BDF2_SolutionHistory.hpp"
+#include "SolutionHistory.hh"
 #include "dbc.hh"
 #include "errors.hh"
 

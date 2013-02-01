@@ -10,7 +10,7 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 
-#include "BDF2_SolutionHistory.hpp"
+#include "SolutionHistory.hh"
 
 
 TEST(SolutionHistory_1) {

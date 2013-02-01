@@ -23,7 +23,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "TabularFunction.hh"
 #include "GMVMesh.hh"
 
-#include "Explicit_TI_RK.hpp"
+#include "Explicit_TI_RK.hh"
 
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
