@@ -11,11 +11,11 @@
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_Vector.H"
 
-#include "Interface_NOX.hpp"
+#include "Interface_NOX.hh"
 
-#include "BDF1_Dae.hh"
-#include "BDF2_SolutionHistory.hpp"
-#include "BDF2_fnBase.hpp"
+#include "BDF1_TI.hh"
+#include "SolutionHistory.hh"
+#include "BDF_FnBase.hh"
 
 #include "dbc.hh"
 #include "errors.hh"

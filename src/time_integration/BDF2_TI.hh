@@ -13,8 +13,8 @@
 
 #include "NKA.hh"
 
-#include "BDF2_State.hpp"
-#include "BDF2_fnBase.hpp"
+#include "BDF2_State.hh"
+#include "BDF_FnBase.hh"
 
 
 namespace BDF2 {

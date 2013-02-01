@@ -1,7 +1,7 @@
 #include "UnitTest++.h"
 
-#include "Explicit_TI_fnBase.hpp"
-#include "Explicit_TI_RK.hpp"
+#include "Explicit_TI_FnBase.hh"
+#include "Explicit_TI_RK.hh"
 
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"

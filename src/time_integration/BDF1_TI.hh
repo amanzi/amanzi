@@ -13,7 +13,7 @@
 
 #include "NKA.hh"
 #include "BDF1_State.hh"
-#include "BDF2_fnBase.hpp"
+#include "BDF_FnBase.hh"
 
 
 namespace Amanzi {

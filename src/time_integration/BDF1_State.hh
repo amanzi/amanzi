@@ -5,7 +5,7 @@
 // that is part of LANL's Truchas code.
 
 #include "dbc.hh"
-#include "BDF2_SolutionHistory.hpp"
+#include "SolutionHistory.hh"
 #include <limits>
 
 namespace Amanzi {

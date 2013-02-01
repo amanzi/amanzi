@@ -7,9 +7,9 @@
 
 #include "NOX_Epetra_Vector.H"
 
-#include "BDF2_Dae.hpp"
-#include "BDF2_SolutionHistory.hpp"
-#include "BDF2_fnBase.hpp"
+#include "BDF2_TI.hh"
+#include "SolutionHistory.hh"
+#include "BDF_FnBase.hh"
 
 #include "dbc.hh"
 #include "errors.hh"

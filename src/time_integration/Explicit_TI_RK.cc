@@ -1,4 +1,4 @@
-#include "Explicit_TI_RK.hpp"
+#include "Explicit_TI_RK.hh"
 
 namespace Amanzi {
 namespace Explicit_TI {

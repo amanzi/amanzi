@@ -3,7 +3,7 @@
 
 #include "Epetra_Vector.h"
 
-#include "Explicit_TI_fnBase.hpp"
+#include "Explicit_TI_FnBase.hh"
 #include "boost/numeric/ublas/matrix.hpp"
 
 namespace Amanzi {

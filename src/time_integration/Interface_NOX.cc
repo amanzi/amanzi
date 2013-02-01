@@ -14,7 +14,7 @@ Authors: Neil Carlson (version 1)
 #include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_Vector.H"
-#include "Interface_NOX.hpp"
+#include "Interface_NOX.hh"
 #include "Timer.hh"
 
 

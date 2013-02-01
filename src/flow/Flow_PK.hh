@@ -20,7 +20,7 @@ Usage:
 #include "BoundaryFunction.hh"
 #include "DomainFunction.hh"
 #include "mfd3d.hh"
-#include "BDF2_fnBase.hpp"
+#include "BDF_FnBase.hh"
 
 #include "Flow_State.hh"
 #include "Flow_constants.hh"
