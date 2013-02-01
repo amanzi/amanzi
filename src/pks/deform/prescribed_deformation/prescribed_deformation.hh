@@ -29,10 +29,8 @@ class PrescribedDeformation : public PKPhysicalBase {
  public:
   
   PrescribedDeformation(Teuchos::ParameterList& plist,
-                        const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      PKPhysicalBase(plist,solution) {}
-  
+                        const Teuchos::RCP<TreeVector>& solution);
+
   // Virtual destructor
   virtual ~PrescribedDeformation() {}
   
