@@ -1,7 +1,7 @@
 #include <winstd.H>
 
 #include <PMAmr.H>
-#include <Observation.hh>
+#include <Observation.H>
 #include <EventCoord.H>
 
 

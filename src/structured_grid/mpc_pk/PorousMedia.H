@@ -24,7 +24,7 @@
 #include <Rock.H>
 #include <Material.H>
 #include <Source.H>
-#include <Observation.hh>
+#include <Observation.H>
 #include <RegionData.H>
 #include <DataServices.H>
 
