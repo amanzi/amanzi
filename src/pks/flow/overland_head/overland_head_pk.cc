@@ -3,8 +3,7 @@
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
 License: BSD
-Authors: Gianmarco Manzini
-         Ethan Coon (ecoon@lanl.gov)
+Author: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
 #include "EpetraExt_MultiVectorOut.h"
@@ -180,7 +179,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source", source_evaluator);
   }
 
-  // -- coupling term, filled in by subsurface PK
+  // -- coupling term, filled in by subsurface PK.  No model for these.
   if (is_coupling_term_) {
     S->RequireField("overland_source_from_subsurface")
         ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -268,67 +267,19 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
 
 
 void OverlandHeadFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
-  bool running_timers(false);
-
   // Create mesh
-  if (S->GetMesh()->space_dimension() == 3) {
-    // The domain mesh is a 3D volume mesh or a 3D surface mesh -- construct
-    // the surface mesh.
-    // -- Ensure the domain mesh is MSTK.
-    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mesh =
-      Teuchos::rcp_dynamic_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
-
-    if (mesh == Teuchos::null) {
-      Errors::Message message("Overland Flow PK requires surface mesh, which is currently only supported by MSTK.  Make the domain mesh an MSTK mesh.");
-      Exceptions::amanzi_throw(message);
+  if (!S->HasMesh("surface")) {
+    if (S->GetMesh()->space_dimension() == 2) {
+      // The domain mesh is already a 2D mesh, so simply register it as the surface
+      // mesh as well.
+      S->RegisterMesh("surface", S->GetMesh());
+      mesh_ = S->GetMesh();
+      standalone_mode_ = true;
     }
-
-    // -- Start the clock
-    running_timers = true;
-    //    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
-    //    Teuchos::TimeMonitor timer(*meshtime);
-
-    // -- Check that the surface mesh has a subset
-    std::vector<std::string> setnames;
-    if (plist_.isParameter("surface sideset name")) {
-      setnames.push_back(plist_.get<std::string>("surface sideset name"));
-    } else {
-      setnames = plist_.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
-    }
-
-    // -- Call the MSTK constructor to rip off the surface of the MSTK domain
-    // -- mesh.
-    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh;
-
-    if (mesh->cell_dimension() == 3) {
-      Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
-      S->RegisterMesh("surface_3d", surface_mesh_3d);
-
-      surface_mesh = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
-    } else {
-      S->RegisterMesh("surface_3d", mesh);
-
-      surface_mesh = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::CELL,true,false));
-    }
-
-    // -- push the mesh into state
-    S->RegisterMesh("surface", surface_mesh);
-    mesh_ = surface_mesh;
-    standalone_mode_ = false;
-
-  } else if (S->GetMesh()->space_dimension() == 2) {
-    // The domain mesh is already a 2D mesh, so simply register it as the surface
-    // mesh as well.
-    S->RegisterMesh("surface", S->GetMesh());
-    mesh_ = S->GetMesh();
-    standalone_mode_ = true;
-  } else {
-    Errors::Message message("Invalid mesh dimension for overland flow.");
-    Exceptions::amanzi_throw(message);
   }
+
+  // force an error if we don't have one yet
+  S->GetMesh("surface");
 };
 
 

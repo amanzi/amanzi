@@ -9,6 +9,7 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
+#include "Mesh_MSTK.hh"
 
 #include "richards.hh"
 
@@ -218,7 +219,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     preconditioner_->UpdatePreconditioner();
   }
 
-  std::cout << "BC in PC = " << bc_markers_[500] << ", " << bc_values_[500] << std::endl;
+  /*
   // dump the schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
   std::stringstream filename_s;
@@ -226,7 +227,6 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
   *out_ << "updated precon " << S_next_->cycle() << std::endl;
 
-  /*
   // print the rel perm
   Teuchos::RCP<const CompositeVector> cell_rel_perm =
       S_next_->GetFieldData("relative_permeability");
@@ -236,6 +236,42 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   *out_ << "UPWINDED REL PERM: " << std::endl;
   rel_perm->Print(*out_);
   */
+
+  // If coupled, update the vector used by surface preconditioner to get the
+  // contribution of d overland_source_from_subsurface / d surface_pressure,
+  // which is currently in our face unknown.
+  if (coupled_to_surface_via_head_) {
+    Epetra_MultiVector& dsource = *S_next_->GetFieldData(
+        "doverland_source_from_subsurface_dsurface_pressure", name_)
+        ->ViewComponent("cell",false);
+
+    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
+      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S_next_->GetMesh("surface"));
+
+    std::vector<Epetra_SerialDenseVector>& Acf_cells = preconditioner_->Acf_cells();
+
+    int ncells_surface = dsource.MyLength();
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+
+      // -- and the cell inside that face
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      ASSERT(cells.size() == 1);
+
+      // -- find my face index in the local numbering
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+      int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+
+      // -- set the value
+      std::cout << "Setting precon value = " << Acf_cells[cells[0]](my_n) << std::endl;
+      dsource[0][c] = Acf_cells[cells[0]](my_n);
+    }
+  }
 };
 
 
