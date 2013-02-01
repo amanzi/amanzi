@@ -3,8 +3,7 @@
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
 License: BSD
-Authors: Gianmarco Manzini
-         Ethan Coon (ecoon@lanl.gov)
+Authors: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
 #include "Mesh.hh"
@@ -131,7 +130,12 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
         S_next_->GetFieldData("overland_source_from_subsurface");
 
     //  --   g <-- g - (cv*h)_t1
-    g_c.Multiply(-1., cv1, *source1->ViewComponent("cell",false), 1.);
+    // source term is in units of mol / m^2 / s, where the factor of face_area
+    // / cell_volume has already been dealt with.
+    //    g_c.Multiply(-1., cv1, *source1->ViewComponent("cell",false), 1.);
+
+    // source term is in units of mol / s
+    g_c.Update(-1., *source1->ViewComponent("cell",false), 1.);
   }
 };
 

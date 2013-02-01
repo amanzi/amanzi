@@ -10,6 +10,8 @@
 ------------------------------------------------------------------------- */
 
 #include "field_evaluator.hh"
+#include "Mesh_MSTK.hh"
+
 #include "richards.hh"
 
 namespace Amanzi {
@@ -32,12 +34,49 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
-  if (update_flux_ == UPDATE_FLUX_ITERATION) {
+  if (update_flux_ == UPDATE_FLUX_ITERATION ||
+      coupled_to_surface_via_head_) {
+    // update the flux
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("darcy_flux", name_);
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
     flux->ScatterMasterToGhosted();
+
+    // Push the flux from surface-to-subsurface into a source vec for surface
+    // to use.
+    Epetra_MultiVector& source =
+        *S->GetFieldData("overland_source_from_subsurface", name_)
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& flux_f = *flux->ViewComponent("face",false);
+
+    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
+      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh("surface"));
+
+    int ncells_surface = source.MyLength();
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+
+      // -- get the flux direction -- this is a little convoluted
+      // -- -- get the cell inside
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      ASSERT(cells.size() == 1);
+
+      // -- -- get the faces and directions
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+
+      // -- -- find my face
+      int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+
+      // -- set the flux, in the subsurface-outward-normal (source to surface)
+      // -- in units of mol / s
+      source[0][c] = flux_f[0][f] * dirs[my_n];
+    }
   }
 
   // assemble the stiffness matrix

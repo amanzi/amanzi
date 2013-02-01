@@ -3,8 +3,7 @@
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
 License: BSD
-Authors: Gianmarco Manzini
-         Ethan Coon (ecoon@lanl.gov)
+Authors: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
 #include "Epetra_FECrsMatrix.h"
@@ -201,6 +200,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dh_dp =
       *S_next_->GetFieldData("dponded_depth_d"+key_)->ViewComponent("cell",false);
+  const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
 
   // 2.b Update local matrices diagonal with the accumulation terms.
   // -- update the accumulation derivatives
@@ -217,33 +217,35 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
 
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-  std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
   int ncells = cv.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    // - scale cells by dh/dp
-    //    Acc_cells[c] *=  dh_dp[0][c];
-    //    Fc_cells[c] *=  dh_dp[0][c];
 
-    // - add accumulation terms
-    Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
-    Fc_cells[c] += head[0][c] * dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
-  }
-
-  // 3. Add in contributions from the source term from coupling
-  if (is_coupling_term_) {
-    // this would have been filled by the subsurface preconditioner update
-    const Epetra_MultiVector& dsource_dp =
+  if (!is_coupling_term_) {
+    for (int c=0; c!=ncells; ++c) {
+      // - add accumulation terms, treating h as h_bar, which is allowed to go
+      // - negative.  This results in a non-zero preconditioner when p < p_atm,
+      // - resulting in a correction that should take p >= p_atm.
+      Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
+    }
+  } else {
+    // - add source terms, which come from the flux from surface to
+    // - subsurface.  This vector was filled in by the Richards PK.
+    const Epetra_MultiVector& dQ_dp =
         *S_next_->GetFieldData("doverland_source_from_subsurface_dsurface_pressure")
         ->ViewComponent("cell",false);
 
     for (int c=0; c!=ncells; ++c) {
-      Acc_cells[c] += dsource_dp[0][c] / h;
-      Fc_cells[c] += head[0][c] * dsource_dp[0][c] / h;
+      if (head[0][c] >= p_atm) {
+        // - add accumulation terms, treating h as h, which goes zero.
+        Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
+      }
+
+      // add source term
+      Acc_cells[c] -= dQ_dp[0][c] / dh_dp[0][c];
     }
   }
 
-
   // Assemble and precompute the Schur complement for inversion.
+  // Note boundary conditions are in height variables.
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   if (assemble_preconditioner_) {
