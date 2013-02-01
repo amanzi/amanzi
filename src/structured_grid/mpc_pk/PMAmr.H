@@ -9,7 +9,7 @@ class MFTGrowFill;
 
 #include <Layout.H>
 #include <MatFiller.H>
-#include <Observation.hh>
+#include <Observation.H>
 #include <EventCoord.H>
 #include <MatFiller.H>
 
