@@ -1,8 +1,8 @@
 #include "mpi.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "ObservationData.H"
-#include "Simulator.H"
+#include "ObservationData.hh"
+#include "Simulator.hh"
 
 
 

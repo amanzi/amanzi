@@ -1,6 +1,6 @@
 #include <PMAmr.H>
 #include <PorousMedia.H>
-#include <Observation.H>
+#include <Observation.hh>
 
 namespace
 {

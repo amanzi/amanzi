@@ -33,14 +33,11 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # interface library
 #
-file(GLOB _H_inc_files "*.H")
 file(GLOB _hh_inc_files "*.hh")
-file(GLOB _h_inc_files "*.h")
-set(interface_inc_files ${_H_inc} ${_hh_inc_files} ${_h_inc_files})
+set(interface_inc_files  ${_hh_inc_files} )
 add_amanzi_library(interface
                       SOURCE 
-                           InputParser.H InputParser.cpp
                            InputParserIS.hh InputParserIS.cc
-                           ObservationData.H Simulator.H
+                           ObservationData.hh Simulator.hh
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})

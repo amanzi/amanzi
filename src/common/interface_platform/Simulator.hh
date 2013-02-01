@@ -4,7 +4,7 @@
 #include "map"
 #include "vector"
 
-#include "ObservationData.H"
+#include "ObservationData.hh"
 #include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi
