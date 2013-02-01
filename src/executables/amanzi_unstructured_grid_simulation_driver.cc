@@ -201,11 +201,44 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   }
 
   ASSERT(!mesh.is_null());
+
+  // Create the surface mesh if needed
+  Teuchos::RCP<AmanziMesh::Mesh> surface_mesh = Teuchos::null;
+  Teuchos::RCP<AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
+  if (mesh_plist.isSublist("Subsurface Mesh")) {
+    Teuchos::ParameterList surface_plist.sublist("Subsurface Mesh");
+
+    std::vector<std::string> setnames;
+    if (surface_plist.isParameter("surface sideset name")) {
+      setnames.push_back(plist_.get<std::string>("surface sideset name"));
+    } if (surface_plist.isParameter("surface sideset names")) {
+      setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
+    } else {
+      Errors::Message message("Surface mesh ParameterList needs sideset names.");
+      Exceptions::amanzi_throw(message);
+    }
+
+    if (mesh->cell_dimension() == 3) {
+      surface3D_mesh = factory.create(&*mesh,setnames,AmanziMesh::FACE,false,false);
+      surface_mesh = factory.create(&*mesh,setnames,AmanziMesh::FACE,true,false);
+    } else {
+      surface3D_mesh = mesh;
+      surface_mesh = factory.create(&*mesh,setnames,AmanziMesh::CELL,true,false);
+    }
+  }
+
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
 
+  // Create the state.
+  Teuchos::ParameterList state_plist = params_copy.sublist("State");
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_plist));
+  S->RegisterDomainMesh(mesh);
+  if (surface3D_mesh != Teuchos::null) S->RegisterMesh("surface_3d", surface3D_mesh);
+  if (surface_mesh != Teuchos::null) S->RegisterMesh("surface", surface_mesh);
+
   // create the top level Coordinator
-  Amanzi::Coordinator coordinator(params_copy, mesh, comm);
+  Amanzi::Coordinator coordinator(params_copy, S, comm);
 
   // run the simulation
   coordinator.cycle_driver();

@@ -20,23 +20,20 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
 
-#include "tree_vector.hh"
-#include "state.hh"
-#include "PK.hh"
-#include "pk_factory.hh"
-
 namespace Amanzi {
 
 class TimeStepManager;
 class Visualization;
 class Checkpoint;
-
+class State;
+class TreeVector;
+class PK;
 
 class Coordinator : public Teuchos::VerboseObject<Coordinator> {
 
 public:
   Coordinator(Teuchos::ParameterList parameter_list,
-              Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh,
+              Teuchos::RCP<State>& S,
               Epetra_MpiComm* comm );
               //              Amanzi::ObservationData& output_observations);
 
@@ -63,7 +60,6 @@ private:
 
   // misc setup information
   Teuchos::ParameterList parameter_list_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList coordinator_plist_;
 
   double t0_, t1_;
