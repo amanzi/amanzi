@@ -1,25 +1,28 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  Evaluates the conductivity of surface flow according to a Manning approach.
+  Evaluates the unfrozen fraction model.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_MANNING_CONDUCTIVITY_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_MANNING_CONDUCTIVITY_EVALUATOR_
+#ifndef AMANZI_FLOWRELATIONS_UNFROZEN_FRACTION_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_UNFROZEN_FRACTION_EVALUATOR_
 
+#include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class ManningConductivityEvaluator : public SecondaryVariableFieldEvaluator {
+class UnfrozenFractionModel;
+
+class UnfrozenFractionEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
-  ManningConductivityEvaluator(Teuchos::ParameterList& cond_plist);
-  ManningConductivityEvaluator(const ManningConductivityEvaluator& other);
+  UnfrozenFractionEvaluator(Teuchos::ParameterList& plist);
+  UnfrozenFractionEvaluator(const UnfrozenFractionEvaluator& other);
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -28,14 +31,16 @@ class ManningConductivityEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+  Teuchos::RCP<UnfrozenFractionModel> get_Model() { return model_; }
+
+protected:
+  Teuchos::RCP<UnfrozenFractionModel> model_;
+  Key temp_key_;
 
 private:
-  Key pres_key_;
-  Key slope_key_;
-  Key manning_key_;
-  double slope_regularization_;
-  double manning_exp_;
+  static Utils::RegisteredFactory<FieldEvaluator,UnfrozenFractionEvaluator> fac_;
+
+
 };
 
 } //namespace

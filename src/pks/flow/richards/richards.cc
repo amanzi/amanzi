@@ -31,7 +31,7 @@ Authors: Neil Carlson (version 1)
 
 #include "richards.hh"
 
-#define DEBUG_FLAG 0
+#define DEBUG_RES_FLAG 0
 
 
 namespace Amanzi {
@@ -69,7 +69,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
 
-#if DEBUG_FLAG
+#if DEBUG_RES_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
     namestream << "flow_residual_" << i;
@@ -85,12 +85,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- secondary variables, no evaluator used
   S->RequireField("darcy_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("total_flux", name_)->SetMesh(mesh_)->SetGhosted()
-                                ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted()
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("total_velocity", name_)->SetMesh(mesh_)->SetGhosted()
-                                ->SetComponent("cell", AmanziMesh::CELL, 3);
   S->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
@@ -129,6 +125,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireField("numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
+
   string method_name = plist_.get<string>("relative permeability method", "upwind with gravity");
   bool symmetric = false;
   if (method_name == "upwind with gravity") {
@@ -170,7 +167,24 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
   modify_predictor_with_consistent_faces_ =
     plist_.get<bool>("modify predictor with consistent faces", false);
+
+  // how often to update the fluxes?
+  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
+  if (updatestring == "iteration") {
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  } else if (updatestring == "timestep") {
+    update_flux_ = UPDATE_FLUX_TIMESTEP;
+  } else if (updatestring == "vis") {
+    update_flux_ = UPDATE_FLUX_VIS;
+  } else if (updatestring == "never") {
+    update_flux_ = UPDATE_FLUX_NEVER;
+  } else {
+    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
+    Exceptions::amanzi_throw(message);
+  }
+
 }
+
 
 // -------------------------------------------------------------
 // Create the physical evaluators for water content, water
@@ -219,31 +233,15 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 }
 
 
-
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
-  // Check for PK-specific initialization
-  if (!plist_.isSublist("initial condition")) {
-    std::stringstream messagestream;
-    messagestream << name_ << " has no initial condition parameter list.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-  Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
-  if (ic_plist.isParameter("initial water table z-coordinate")) {
-    S->GetFieldData(key_,name_)->PutScalar(101325.);
-    S->GetField(key_, name_)->set_initialized();
-  }
-
-  // initialize BDF time integrator (BDFBase) and primary variable (PhysicalBase)
+  // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
 
-  S->GetFieldData(key_)->ScatterMasterToGhosted("face");
-
   // debugggin cruft
-#if DEBUG_FLAG
+#if DEBUG_RES_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
     namestream << "flow_residual_" << i;
@@ -255,10 +253,9 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
     S->GetFieldData(solnstream.str(),name_)->PutScalar(0.);
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
-
 #endif
 
-  // initialize boundary conditions
+  // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
@@ -270,15 +267,10 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
   S->GetField("darcy_flux", name_)->set_initialized();
-  S->GetFieldData("total_flux", name_)->PutScalar(0.0);
-  S->GetField("total_flux", name_)->set_initialized();
   S->GetFieldData("darcy_flux_direction", name_)->PutScalar(0.0);
   S->GetField("darcy_flux_direction", name_)->set_initialized();
-
   S->GetFieldData("darcy_velocity", name_)->PutScalar(0.0);
   S->GetField("darcy_velocity", name_)->set_initialized();
-  S->GetFieldData("total_velocity", name_)->PutScalar(0.0);
-  S->GetField("total_velocity", name_)->set_initialized();
 
   if (coupled_to_surface_via_residual_) {
     S->GetFieldData("overland_source_from_subsurface", name_)->PutScalar(0.);
@@ -304,10 +296,29 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
   niter_ = 0;
 
-  // Update flux if rel perm, density, or pressure have changed.
-  UpdateFlux_(S);
+  bool update = UpdatePermeabilityData_(S.ptr());
+  update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
+  update |= S->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
+
+  if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
+      (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
+
+    Teuchos::RCP<const CompositeVector> rel_perm =
+      S->GetFieldData("numerical_rel_perm");
+    // update the stiffness matrix
+    matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+
+    // derive fluxes
+    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+    Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", name_);
+    matrix_->DeriveFlux(*pres, flux.ptr());
+    AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
+  }
 
   // As a diagnostic, calculate the mass balance error
+#if DEBUG_FLAG
   if (S_next_ != Teuchos::null) {
     Teuchos::RCP<const CompositeVector> wc1 = S_next_->GetFieldData("water_content");
     Teuchos::RCP<const CompositeVector> wc0 = S_->GetFieldData("water_content");
@@ -332,6 +343,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::OSTab tab = getOSTab();
     *out_ << "Final Mass Balance Error: " << einf << std::endl;
   }
+#endif
 };
 
 
@@ -340,13 +352,27 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
-  Teuchos::RCP<CompositeVector> darcy_velocity = S->GetFieldData("darcy_velocity", name_);
-  Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
-  matrix_->DeriveCellVelocity(*darcy_flux, darcy_velocity);
+  if (update_flux_ == UPDATE_FLUX_VIS) {
+    Teuchos::RCP<const CompositeVector> rel_perm =
+      S->GetFieldData("numerical_rel_perm");
+    // update the stiffness matrix
+    matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
 
-  Teuchos::RCP<CompositeVector> total_velocity = S->GetFieldData("total_velocity", name_);
-  Teuchos::RCP<const CompositeVector> total_flux = S->GetFieldData("total_flux");
-  matrix_->DeriveCellVelocity(*total_flux, total_velocity);
+    // derive fluxes
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", name_);
+    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
+    Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+    Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+    matrix_->DeriveFlux(*pres, flux.ptr());
+    AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
+    flux->ScatterMasterToGhosted();
+  }
+
+  if (update_flux_ != UPDATE_FLUX_NEVER) {
+    Teuchos::RCP<CompositeVector> darcy_velocity = S->GetFieldData("darcy_velocity", name_);
+    Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("darcy_flux");
+    matrix_->DeriveCellVelocity(*flux, darcy_velocity.ptr());
+  }
 };
 
 
@@ -380,14 +406,14 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       // Derive the pressure fluxes
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-      matrix_->DeriveFlux(*pres, flux_dir);
+      matrix_->DeriveFlux(*pres, flux_dir.ptr());
 
       // Add in the gravity fluxes
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-      AddGravityFluxesToVector_(gvec, Teuchos::null, rho, flux_dir);
+      AddGravityFluxesToVector_(gvec.ptr(), Teuchos::null, rho.ptr(), flux_dir.ptr());
+      flux_dir->ScatterMasterToGhosted();
     }
-
 
     update_perm |= update_dir;
   }
@@ -534,10 +560,10 @@ void Richards::UpdateBoundaryConditions_() {
 
     // -- derive the Darcy fluxes
     Teuchos::RCP<CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux", name_);
-    matrix_->DeriveFlux(pres, darcy_flux);
+    matrix_->DeriveFlux(pres, darcy_flux.ptr());
 
     // -- add in gravitational fluxes
-    AddGravityFluxesToVector_(gvec, rel_perm, rho, darcy_flux);
+    AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), darcy_flux.ptr());
 
     // Determine the BC
     for (int c=0; c!=ncells_surface; ++c) {
@@ -583,26 +609,22 @@ void Richards::UpdateBoundaryConditions_() {
       }
 
 
-      //      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-
-      if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
-          //          AmanziGeometry::Point c_surf_point = surface->cell_centroid(c);
-          //          AmanziGeometry::Point f_point = mesh_->face_centroid(f);
-          //          AmanziGeometry::Point c_sub_point = mesh_->cell_centroid(cells[0]);
-
-          Teuchos::OSTab tab = getOSTab();
-          std::cout<< "SURFACE BC: c_surf: " << c << " f: " << f << " c_sub: " << cells[0] << std::endl;
-          std::cout<< "   sizes:  cell_area: " << surface_cell_volume("cell",c) << "  face area: " << mesh_->face_area(f) << std::endl;
-          //          std::cout<< "    c_surf: " << c_surf_point << "    f: " << f_point << "    c_sub: " << c_sub_point << std::endl;
-          std::cout<< "            p = " << pres("cell",cells[0]) << " p_eff = " << pres("face",f) << std::endl;
-          std::cout<< "            h = " << ponded_depth("cell",c) << ", q_out = " << q_out << ", Q_ss = " << Q_ss << std::endl;
-          if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
-            std::cout<< "  RESULT:  flux, " << bc_values_[f] << std::endl;
-          } else {
-            std::cout<< "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
-          }
+      Teuchos::OSTab tab = getOSTab();
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+        *out_ << "SURFACE BC: c_surf: " << c << " f: " << f << " c_sub: "
+                 << cells[0] << std::endl;
+        *out_ << "   sizes:  cell_area: " << surface_cell_volume("cell",c)
+                 << "  face area: " << mesh_->face_area(f) << std::endl;
+        *out_ << "            p = " << pres("cell",cells[0])
+                 << " p_eff = " << pres("face",f) << std::endl;
+        *out_ << "            h = " << ponded_depth("cell",c)
+                 << ", q_out = " << q_out << ", Q_ss = " << Q_ss << std::endl;
+        if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
+          *out_ << "  RESULT:  flux, " << bc_values_[f] << std::endl;
+        } else {
+          *out_ << "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
         }
-        // }
+      }
     }
   }
 
@@ -636,7 +658,7 @@ void Richards::changed_solution() {
 
 bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
   if (modify_predictor_with_consistent_faces_) {
-    CalculateConsistentFaces_(h,u.ptr());
+    CalculateConsistentFaces(h,u.ptr());
     return true;
   }
 
@@ -644,7 +666,7 @@ bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
 }
 
 
-void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector>& u) {
+void Richards::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
@@ -669,7 +691,7 @@ void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), preconditioner_.ptr());
 
   // skip accumulation terms, they're not needed
 
@@ -678,7 +700,7 @@ void Richards::CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector
   preconditioner_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  preconditioner_->UpdateConsistentFaceConstraints(u->data());
+  preconditioner_->UpdateConsistentFaceConstraints(u->data().ptr());
 }
 
 } // namespace

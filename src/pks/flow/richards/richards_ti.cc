@@ -10,39 +10,46 @@ Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
 
-#include "field_evaluator.hh"
-
 #include "richards.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
+#define DEBUG_RES_FLAG 0
 
 // Richards is a BDFFnBase
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                       Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-  ++niter_;
+void Richards::fun(double t_old,
+                   double t_new,
+                   Teuchos::RCP<TreeVector> u_old,
+                   Teuchos::RCP<TreeVector> u_new,
+                   Teuchos::RCP<TreeVector> g) {
+  niter_++;
 
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
-  S_inter_->set_time(t_old);
-  S_next_->set_time(t_new);
   double h = t_new - t_old;
+  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
+#if DEBUG_FLAG
   int nc = u->size("cell") - 1;
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "----------------------------------------------------------------" << std::endl;
-    *out_ << "Richards Residual calculation: T0 = " << t_old << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3) << std::endl;
-    *out_ << "  p1: " << (*u)("cell",0,nc) << " " << (*u)("face",0,500) << std::endl;
+    *out_ << "Richards Residual calculation: T0 = " << t_old
+          << " T1 = " << t_new << " H = " << h << std::endl;
+    *out_ << "  p0: " << (*u)("cell",0,0) << " " << (*u)("face",0,3)
+          << std::endl;
+    *out_ << "  p1: " << (*u)("cell",0,nc) << " " << (*u)("face",0,500)
+          << std::endl;
   }
-
+#endif
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
@@ -57,28 +64,47 @@ void Richards::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   res->PutScalar(0.0);
 
   // diffusion term, treated implicitly
-  ApplyDiffusion_(S_next_, res);
+  ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
   // accumulation term
-  AddAccumulation_(res);
+  AddAccumulation_(res.ptr());
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    Teuchos::RCP<const CompositeVector> satl1 = S_next_->GetFieldData("saturation_liquid");
-    Teuchos::RCP<const CompositeVector> satl0 = S_inter_->GetFieldData("saturation_liquid");
-    Teuchos::RCP<const CompositeVector> sati1 = S_next_->GetFieldData("saturation_ice");
-    Teuchos::RCP<const CompositeVector> sati0 = S_inter_->GetFieldData("saturation_ice");
-    *out_ << "  sat_old_0: " << (*satl0)("cell",0) << ", " << (*sati0)("cell",0) << std::endl;
-    *out_ << "  sat_new_0: " << (*satl1)("cell",0) << ", " << (*sati1)("cell",0) << std::endl;
-    *out_ << "  sat_old_1: " << (*satl0)("cell",nc) << ", " << (*sati0)("cell",nc) << std::endl;
-    *out_ << "  sat_new_1: " << (*satl1)("cell",nc) << ", " << (*sati1)("cell",nc) << std::endl;
+#if DEBUG_FLAG
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    Teuchos::RCP<const CompositeVector> satl1 =
+        S_next_->GetFieldData("saturation_liquid");
+    Teuchos::RCP<const CompositeVector> satl0 =
+        S_inter_->GetFieldData("saturation_liquid");
+
+    if (S_next_->HasField("saturation_ice")) {
+      Teuchos::RCP<const CompositeVector> sati1 =
+          S_next_->GetFieldData("saturation_ice");
+      Teuchos::RCP<const CompositeVector> sati0 =
+          S_inter_->GetFieldData("saturation_ice");
+      *out_ << "  sat_old_0: " << (*satl0)("cell",0) << ", "
+            << (*sati0)("cell",0) << std::endl;
+      *out_ << "  sat_new_0: " << (*satl1)("cell",0) << ", "
+            << (*sati1)("cell",0) << std::endl;
+      *out_ << "  sat_old_1: " << (*satl0)("cell",nc) << ", "
+            << (*sati0)("cell",nc) << std::endl;
+      *out_ << "  sat_new_1: " << (*satl1)("cell",nc) << ", "
+            << (*sati1)("cell",nc) << std::endl;
+    } else {
+      *out_ << "  sat_old_0: " << (*satl0)("cell",0) << std::endl;
+      *out_ << "  sat_new_0: " << (*satl1)("cell",0) << std::endl;
+      *out_ << "  sat_old_1: " << (*satl0)("cell",nc) << std::endl;
+      *out_ << "  sat_new_1: " << (*satl1)("cell",nc) << std::endl;
+    }
+
 
     *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0)
           << " " << (*res)("face",0,3) << std::endl;
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
           << " " << (*res)("face",0,500) << std::endl;
   }
+#endif
 
-#if DEBUG_FLAG
+#if DEBUG_RES_FLAG
   if (niter_ < 23) {
     std::stringstream namestream;
     namestream << "flow_residual_" << niter_;
@@ -98,82 +124,31 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
+#if DEBUG_FLAG
   // Dump residual
   int nc = u->data()->size("cell") - 1;
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
     *out_ << "  p0: " << (*u->data())("cell",0,0) << " "
           << (*u->data())("face",0,3) << std::endl;
     *out_ << "  p1: " << (*u->data())("cell",0,nc) << " "
           << (*u->data())("face",0,500) << std::endl;
   }
-
-  // NaN checking
-  Teuchos::RCP<const CompositeVector> pres = u->data();
-  for (int c=0; c!=pres->size("cell",false); ++c) {
-    if (boost::math::isnan<double>((*pres)("cell",c))) {
-      *out_ << "Cutting time step due to NaN in cell residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-  for (int f=0; f!=pres->size("face",false); ++f) {
-    if (boost::math::isnan<double>((*pres)("face",f))) {
-      *out_ << "Cutting time step due to NaN in face residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
+#endif
 
   // Apply the preconditioner
-  preconditioner_->ApplyInverse(*u->data(), Pu->data());
+  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
 
+#if DEBUG_FLAG
   // Dump correction
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
 
   *out_ << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
         << (*Pu->data())("face",0,3) << std::endl;
   *out_ << "  PC*p1: " << (*Pu->data())("cell",0,nc) << " "
         << (*Pu->data())("face",0,500) << std::endl;
   }
-
-  // NaN checking of correction
-  Teuchos::RCP<const CompositeVector> ppres = Pu->data();
-  for (int c=0; c!=ppres->size("cell",false); ++c) {
-    if (boost::math::isnan<double>((*ppres)("cell",c))) {
-      // dump the schur complement
-      Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
-      std::stringstream filename_s;
-      filename_s << "schur_" << S_next_->cycle() << ".txt";
-      EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-      *out_ << "updated precon " << S_next_->cycle() << std::endl;
-
-      // print the rel perm
-      Teuchos::RCP<const CompositeVector> num_rel_perm =
-          S_next_->GetFieldData("numerical_rel_perm");
-      Teuchos::RCP<const CompositeVector> rel_perm =
-          S_next_->GetFieldData("relative_permeability");
-      *out_ << "REL PERM: " << std::endl;
-      rel_perm->Print(*out_);
-      *out_ << std::endl;
-      *out_ << "UPWINDED REL PERM: " << std::endl;
-      num_rel_perm->Print(*out_);
-
-      // throw
-      *out_ << "Cutting time step due to NaN in PC'd cell residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
-  for (int f=0; f!=ppres->size("face",false); ++f) {
-    if (boost::math::isnan<double>((*ppres)("face",f))) {
-      *out_ << "Cutting time step due to NaN in PC'd face residual." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
+#endif
 };
 
 
@@ -181,16 +156,17 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  Teuchos::RCP<CompositeVector> uw_rel_perm = S_next_->GetFieldData("numerical_rel_perm", name_);
-
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+
+#if DEBUG_FLAG
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
   }
+#endif
 
   // update state with the solution up.
-  S_next_->set_time(t);
+  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // update the rel perm according to the scheme of choice
@@ -211,7 +187,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   // Update the preconditioner with darcy and gravity fluxes
   preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
   preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec, rel_perm, rho, preconditioner_);
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), preconditioner_.ptr());
 
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
@@ -219,18 +195,18 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
 
   // -- get the accumulation deriv
-  Teuchos::RCP<const CompositeVector> dwc_dp =
-      S_next_->GetFieldData("dwater_content_d"+key_);
-  Teuchos::RCP<const CompositeVector> pres =
-      S_next_->GetFieldData(key_);
+  const Epetra_MultiVector& dwc_dp =
+      *S_next_->GetFieldData("dwater_content_d"+key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& pres =
+      *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
   // -- update the cell-cell block
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
-  for (int c=0; c!=dwc_dp->size("cell"); ++c) {
-    Acc_cells[c] += (*dwc_dp)("cell",c) / h;
-    Fc_cells[c] += (*pres)("cell",c) * (*dwc_dp)("cell",c) / h;
-
+  int ncells = dwc_dp.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    Acc_cells[c] += dwc_dp[0][c] / h;
+    Fc_cells[c] += pres[0][c] * dwc_dp[0][c] / h;
   }
 
   // Assemble and precompute the Schur complement for inversion.
@@ -242,7 +218,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     preconditioner_->UpdatePreconditioner();
   }
 
-  /*
+  std::cout << "BC in PC = " << bc_markers_[500] << ", " << bc_values_[500] << std::endl;
   // dump the schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
   std::stringstream filename_s;
@@ -250,6 +226,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
   *out_ << "updated precon " << S_next_->cycle() << std::endl;
 
+  /*
   // print the rel perm
   Teuchos::RCP<const CompositeVector> cell_rel_perm =
       S_next_->GetFieldData("relative_permeability");
@@ -264,50 +241,51 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
 double Richards::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
-  // update the tolerances if we are continuing from an crappy IC
-  if (continuation_to_ss_) {
-    atol_ = atol0_ + 1.e5*atol0_/(1.0 + S_next_->time());
-    rtol_ = rtol0_ + 1.e5*rtol0_/(1.0 + S_next_->time());
-  }
-
-  // cell error given by tolerances on water content
+  // Calculate water content at the solution.
   S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
-  const CompositeVector& wc = *S_next_->GetFieldData("water_content");
+  const Epetra_MultiVector& wc = *S_next_->GetFieldData("water_content")
+      ->ViewComponent("cell",false);
 
-  const CompositeVector& res = *du->data();
+  Teuchos::RCP<const CompositeVector> res = du->data();
+  const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
+  const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+  const Epetra_MultiVector& pres_f = *u->data()->ViewComponent("face",false);
   double h = S_next_->time() - S_inter_->time();
 
+  // Cell error is based upon error in mass conservation relative to
+  // the current water content
   double enorm_cell(0.);
-  int ncells = res.size("cell");
+  int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    double tmp = abs(h*res("cell",c)) / (atol_+rtol_*abs(wc("cell",c)));
+    double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_*std::abs(wc[0][c]));
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
-  // cell error given by tolerances on pressure
+  // Face error given by tolerances on pressure?  Not sure what should be here!
   double enorm_face(0.);
-  /*
-  int nfaces = res.size("face");
+  int nfaces = res_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = abs(res("face",f)) / (atol_+rtol_*101325.0);
+    double tmp = std::abs(res_f[0][f]) /
+        (atol_ + rtol_*( std::abs(pres_f[0][f] - 101325.0) + 101325.));
     enorm_face = std::max<double>(enorm_face, tmp);
   }
-  */
-  
+
+
+  // Write out Inf norms too.
+  Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     double infnorm_c(0.), infnorm_f(0.);
-    res.ViewComponent("cell",false)->NormInf(&infnorm_c);
-    res.ViewComponent("face",false)->NormInf(&infnorm_f);
+    res_c.NormInf(&infnorm_c);
+    res_f.NormInf(&infnorm_f);
 
-    double buf_c(0.), buf_f(0.);
-    MPI_Allreduce(&enorm_cell, &buf_c, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    //MPI_Allreduce(&enorm_face, &buf_f, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#ifdef HAVE_MPI
+    double buf_c(enorm_cell), buf_f(enorm_face);
+    MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
 
-    Teuchos::OSTab tab = getOSTab();
-    *out_ << "ENorm (Infnorm) of: " << name_ << ": "
-          << "cell = " << buf_c << " (" << infnorm_c << ")  "
-          << "face = " << buf_f << " (" << infnorm_f << ")  " << std::endl;
-
+    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
+    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
   }
 
   double enorm_val(std::max<double>(enorm_face, enorm_cell));

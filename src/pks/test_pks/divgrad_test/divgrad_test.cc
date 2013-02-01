@@ -112,7 +112,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   }
   ASSERT(fail);
 
-  matrix_->UpdateConsistentFaceConstraints(soln);
+  matrix_->UpdateConsistentFaceConstraints(soln.ptr());
 
   // test for correctness -- this should only work for regular meshes
   fail = TestRegularFaceValues_(soln);

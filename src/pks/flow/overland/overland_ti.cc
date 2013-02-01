@@ -10,12 +10,15 @@ Authors: Gianmarco Manzini
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
+
 #include "overland.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
+#define DEBUG_RES_FLAG 0
+
 
 // Overland is a BDFFnBase
 // -----------------------------------------------------------------------------
@@ -30,9 +33,10 @@ void OverlandFlow::fun( double t_old,
   Teuchos::OSTab tab = getOSTab();
 
   // bookkeeping
-  S_inter_->set_time(t_old);
-  S_next_ ->set_time(t_new);
   double h = t_new - t_old;
+  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
 #if DEBUG_FLAG
@@ -55,7 +59,7 @@ void OverlandFlow::fun( double t_old,
   res->PutScalar(0.0);
 
   // diffusion term, treated implicitly
-  ApplyDiffusion_(S_next_, res);
+  ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
@@ -65,7 +69,7 @@ void OverlandFlow::fun( double t_old,
 #endif
 
   // accumulation term
-  AddAccumulation_(res);
+  AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0) << " "
@@ -74,7 +78,7 @@ void OverlandFlow::fun( double t_old,
 #endif
 
   // add rhs load value
-  AddLoadValue_(res);
+  AddSourceTerms_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  res0 (after source): " << (*res)("cell",0,0) << " "
@@ -99,28 +103,8 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
   }
 #endif
 
-  // check for nans in residual
-  Teuchos::RCP<const CompositeVector> res = u->data();
-  for (int c=0; c!=res->size("cell"); ++c) {
-    if (boost::math::isnan<double>((*res)("cell",c))) {
-      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      *out_ << "Cutting time step due to NaN in cell residual on proc "
-                << mypid << "." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-  for (int f=0; f!=res->size("face"); ++f) {
-    if (boost::math::isnan<double>((*res)("face",f))) {
-      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      *out_ << "Cutting time step due to NaN in face residual on proc "
-                << mypid << "." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
-  preconditioner_->ApplyInverse(*u->data(), Pu->data());
+  // apply the preconditioner
+  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
 
   // Dump correction
 #if DEBUG_FLAG
@@ -129,27 +113,6 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
               << (*Pu->data())("face",0,0) << std::endl;
   }
 #endif
-
-  // check for nans in preconditioned residual
-  Teuchos::RCP<const CompositeVector> Pres = Pu->data();
-  for (int c=0; c!=Pres->size("cell"); ++c) {
-    if (boost::math::isnan<double>((*Pres)("cell",c))) {
-      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      *out_ << "Cutting time step due to NaN in PC'd cell residual on proc "
-                << mypid << "." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
-  for (int f=0; f!=Pres->size("face"); ++f) {
-    if (boost::math::isnan<double>((*Pres)("face",f))) {
-      int mypid = S_next_->GetMesh("surface")->get_comm()->MyPID();
-      *out_ << "Cutting time step due to NaN in PC'd face residual on proc "
-                << mypid << "." << std::endl;
-      Errors::Message m("Cut time step");
-      Exceptions::amanzi_throw(m);
-    }
-  }
 };
 
 
@@ -169,7 +132,7 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 #endif
 
   // update state with the solution up.
-  S_next_->set_time(t);
+  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // update the rel perm according to the scheme of choice
@@ -177,7 +140,7 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
-  bc_flux_    ->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditionsNoElev_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
@@ -212,20 +175,22 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 
   // Assemble and precompute the Schur complement for inversion.
   preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  preconditioner_->AssembleGlobalMatrices();
-  preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
 
-  // dump the schur complement
-  //  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
-  //  std::stringstream filename_s;
-  //  filename_s << "schur_" << S_next_->cycle() << ".txt";
-  //  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-  //  *out_ << "updated precon " << S_next_->cycle() << std::endl;
-
-
-  preconditioner_->UpdatePreconditioner();
+  if (assemble_preconditioner_) {
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    preconditioner_->UpdatePreconditioner();
+  }
 
   /*
+  // dump the schur complement
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  std::stringstream filename_s;
+  filename_s << "schur_" << S_next_->cycle() << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  *out_ << "updated precon " << S_next_->cycle() << std::endl;
+
+
   // print the rel perm
   Teuchos::RCP<const CompositeVector> num_rel_perm =
       S_next_->GetFieldData("upwind_overland_conductivity");
@@ -238,6 +203,7 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   num_rel_perm->Print(*out_);
   */
 };
+
 
 // Runs a very expensive FD test of the Jacobian and prints out an enorm
 //  measure of the error.
@@ -263,7 +229,7 @@ void OverlandFlow::test_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     unew->Update(1.0, *dp, 1.0);
     fun(t-h, t, uold, unew, f2);
 
-    preconditioner_->Apply(*dp->data(), df->data());
+    preconditioner_->Apply(*dp->data(), df->data().ptr());
     double df_loc = (*df->data())("cell",c);
     df->Update(-1.0, *f2, 1.0, *f1, 1.0);
     double error = enorm(f1, df);

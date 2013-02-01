@@ -77,8 +77,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor(double h, Teuchos::RCP<TreeVec
 
     } else {
       // update faces from consistent constraints
-      flow_pk->CalculateConsistentFaces_(h, pres_guess.ptr());
-      energy_pk->CalculateConsistentFaces_(h, temp_guess.ptr());
+      flow_pk->CalculateConsistentFaces(h, pres_guess.ptr());
+      energy_pk->CalculateConsistentFaces(h, temp_guess.ptr());
     }
   }
 
@@ -888,8 +888,8 @@ void MPCFrozenCoupledFlowEnergy::precon_ewc_(Teuchos::RCP<const TreeVector> u,
     }
   } else {
     double h = S_next_->time() - S_inter_->time();
-    energy_pk->CalculateConsistentFaces_(h, temp_new.ptr());
-    flow_pk->CalculateConsistentFaces_(h, pres_new.ptr());
+    energy_pk->CalculateConsistentFaces(h, temp_new.ptr());
+    flow_pk->CalculateConsistentFaces(h, pres_new.ptr());
   }
 
   // calculate the correction
@@ -1075,8 +1075,8 @@ void MPCFrozenCoupledFlowEnergy::precon_smart_ewc_(Teuchos::RCP<const TreeVector
 
     } else {
       double h = S_next_->time() - S_inter_->time();
-      energy_pk->CalculateConsistentFaces_(h, temp_new.ptr());
-      flow_pk->CalculateConsistentFaces_(h, pres_new.ptr());
+      energy_pk->CalculateConsistentFaces(h, temp_new.ptr());
+      flow_pk->CalculateConsistentFaces(h, pres_new.ptr());
     }
 
     // calculate the correction

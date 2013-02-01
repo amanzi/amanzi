@@ -11,7 +11,6 @@
 #define PK_FLOW_RICHARDS_HH_
 
 #include "boundary_function.hh"
-#include "bdf_time_integrator.hh"
 #include "matrix_mfd.hh"
 
 #include "pk_factory.hh"
@@ -24,7 +23,6 @@ class MPCCoupledFlowEnergy;
 class MPCDiagonalFlowEnergy;
 namespace WhetStone { class Tensor; }
 namespace Operators { class Upwinding; }
-
 
 namespace Flow {
 
@@ -48,7 +46,7 @@ public:
       modify_predictor_with_consistent_faces_(false),
       niter_(0) {
     // set a few parameters before setup
-    plist_.set("solution key", "pressure");
+    plist_.set("primary variable key", "pressure");
   }
 
   // Virtual destructor
@@ -82,13 +80,12 @@ public:
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
-  // setting the solution as changed should also communicate faces
   virtual void changed_solution();
 
   virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
 
   // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces_(double h, const Teuchos::Ptr<TreeVector>& u);
+  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
 
 
 protected:
@@ -105,30 +102,35 @@ protected:
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
-  // -- flux calculation
-  virtual void UpdateFlux_(const Teuchos::RCP<State>& S);
-
   // -- diffusion term
-  virtual void ApplyDiffusion_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& g);
+  virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
+          const Teuchos::Ptr<CompositeVector>& g);
 
   // -- accumulation term
-  virtual void AddAccumulation_(const Teuchos::RCP<CompositeVector>& g);
+  virtual void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
 
   // -- gravity contributions to matrix or vector
-  virtual void AddGravityFluxes_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
-          const Teuchos::RCP<const CompositeVector>& rel_perm,
-          const Teuchos::RCP<const CompositeVector>& rho,
-          const Teuchos::RCP<Operators::MatrixMFD>& matrix);
+  virtual void AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+          const Teuchos::Ptr<const CompositeVector>& rel_perm,
+          const Teuchos::Ptr<const CompositeVector>& rho,
+          const Teuchos::Ptr<Operators::MatrixMFD>& matrix);
 
-  virtual void AddGravityFluxesToVector_(const Teuchos::RCP<const Epetra_Vector>& g_vec,
-          const Teuchos::RCP<const CompositeVector>& rel_perm,
-          const Teuchos::RCP<const CompositeVector>& rho,
-          const Teuchos::RCP<CompositeVector>& darcy_flux);
+  virtual void AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
+          const Teuchos::Ptr<const CompositeVector>& rel_perm,
+          const Teuchos::Ptr<const CompositeVector>& rho,
+          const Teuchos::Ptr<CompositeVector>& darcy_flux);
 
 
 protected:
+  enum FluxUpdateMode {
+    UPDATE_FLUX_ITERATION = 0,
+    UPDATE_FLUX_TIMESTEP = 1,
+    UPDATE_FLUX_VIS = 2,
+    UPDATE_FLUX_NEVER = 3
+  };
+
   // control switches
+  FluxUpdateMode update_flux_;
   int Krel_method_;
   bool assemble_preconditioner_;
   bool coupled_to_surface_via_source_;
@@ -142,14 +144,15 @@ protected:
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
 
-
   // permeability
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // tensor of absolute permeability
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+
+  // custom enorm tolerances
   double mass_atol_;
   double mass_rtol_;
 

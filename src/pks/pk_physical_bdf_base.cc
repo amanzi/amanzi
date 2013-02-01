@@ -68,34 +68,14 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
     *out_ << "ENorm (Infnorm) of: " << name_ << ": ";
   }
 
-  // adapt tolerances if needed
-  if (adapt_tols_to_h_) {
-    double h = S_next_->time() - S_inter_->time();
-    atol_ = atol0_ / h;
-    rtol_ = rtol0_ / h;
-  }
-
-  // continue tolerances if needed
-  if (continuation_to_ss_) {
-    atol_ = atol0_ + 1.e5*atol0_/(1.0 + S_next_->time());
-    rtol_ = rtol0_ + 1.e5*rtol0_/(1.0 + S_next_->time());
-  }
-
   Teuchos::RCP<const CompositeVector> vec = u->data();
   Teuchos::RCP<const CompositeVector> dvec = du->data();
-
 
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=vec->begin();
        comp!=vec->end(); ++comp) {
     double enorm_comp = 0.0;
     for (int id=0; id!=vec->size(*comp,false); ++id) {
-      if (boost::math::isnan<double>((*dvec)(*comp,id))) {
-        std::cout << "Cutting time step due to NaN in correction." << std::endl;
-        Errors::Message m("Cut time step");
-        Exceptions::amanzi_throw(m);
-      }
-
       double tmp = abs((*dvec)(*comp,id)) / (atol_+rtol_*abs((*vec)(*comp,id)));
       enorm_comp = std::max<double>(enorm_comp, tmp);
     }

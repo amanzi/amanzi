@@ -25,7 +25,8 @@ Authors: Gianmarco Manzini
 #include "elevation_evaluator.hh"
 #include "meshed_elevation_evaluator.hh"
 #include "standalone_elevation_evaluator.hh"
-#include "manning_conductivity_evaluator.hh"
+#include "overland_conductivity_evaluator.hh"
+#include "overland_conductivity_model.hh"
 
 #include "overland.hh"
 
@@ -56,8 +57,8 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField(key_, name_)->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(names2, locations2, num_dofs2);
 
   // -- owned secondary variables, no evaluator used
   S->RequireField("overland_flux", name_)->SetMesh(S->GetMesh("surface"))
@@ -65,9 +66,12 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireField("overland_velocity", name_)->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
 
-  // boundary conditions
+  // -- cell volume and evaluator
+  S->RequireFieldEvaluator("surface_cell_volume");
+
+  // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
-  FlowBCFactory bc_factory(S->GetMesh("surface"), bc_plist);
+  FlowBCFactory bc_factory(mesh_, bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
@@ -79,10 +83,9 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // non-monotonic methods.
   surface_head_eps_ = plist_.get<double>("surface head epsilon", 0.);
 
-  // rel perm upwinding
-  S->RequireField("upwind_overland_conductivity", name_)
-                ->SetMesh(S->GetMesh("surface"))->SetGhosted()
-                ->SetComponents(names2, locations2, num_dofs2);
+  // Create the upwinding method.
+  S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
+    ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
   upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
@@ -91,17 +94,20 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->GetMesh("surface")));
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
   bool symmetric = false;
   matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->GetMesh("surface")));
+  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
+  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
+  modify_predictor_with_consistent_faces_ =
+    plist_.get<bool>("modify predictor with consistent faces", false);
 
   // how often to update the fluxes?
   std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
@@ -123,6 +129,10 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 };
 
 
+// -------------------------------------------------------------
+// Create the physical evaluators for water content, water
+// retention, rel perm, etc, that are specific to Richards.
+// -------------------------------------------------------------
 void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
@@ -153,18 +163,15 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
   S->SetFieldEvaluator("pres_elev", elev_evaluator);
 
-  // -- "rel perm" evaluator
-  S->RequireField("overland_conductivity")->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  // -- conductivity evaluator
+  S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_.isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_.sublist("overland conductivity evaluator");
-  Teuchos::RCP<FieldEvaluator> cond_evaluator =
-      Teuchos::rcp(new FlowRelations::ManningConductivityEvaluator(cond_plist));
+  Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
-  // -- -- hack to deal with BCs of the rel perm upwinding... this will need
-  // -- -- some future thought --etc
-  manning_exp_ = cond_plist.get<double>("Manning exponent", 0.6666666666666667);
-  slope_regularization_ = cond_plist.get<double>("slope regularization epsilon", 1.e-8);
+  cond_model_ = cond_evaluator->get_Model();
 
   // -- source term evaluator
   if (plist_.isSublist("source evaluator")) {
@@ -194,23 +201,18 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<FieldEvaluator> source_evaluator =
         S->RequireFieldEvaluator("overland_source_from_subsurface", source_plist);
   }
-
-
-  // -- cell volume and evaluator
-  S->RequireField("surface_cell_volume")->SetMesh(mesh_)->SetGhosted()
-                                ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_cell_volume");
 }
+
 
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
 void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
-  // initialize BDF stuff and physical domain stuff
+  // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
 
-  // initialize boundary conditions
-  int nfaces = S->GetMesh("surface")->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  // Initialize boundary conditions.
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -293,11 +295,6 @@ void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
     Errors::Message message("Invalid mesh dimension for overland flow.");
     Exceptions::amanzi_throw(message);
   }
-
-  //  if (running_timers) {
-  //    Teuchos::TimeMonitor::summarize();
-  //    Teuchos::TimeMonitor::zeroOutTimers();
-  //  }
 };
 
 
@@ -323,7 +320,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux", name_);
-    matrix_->DeriveFlux(*potential, flux);
+    matrix_->DeriveFlux(*potential, flux.ptr());
   }
 };
 
@@ -333,7 +330,6 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
-
   if (update_flux_ == UPDATE_FLUX_VIS) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux",name_);
     Teuchos::RCP<const CompositeVector> conductivity =
@@ -342,13 +338,13 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-    matrix_->DeriveFlux(*potential, flux);
+    matrix_->DeriveFlux(*potential, flux.ptr());
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
     Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
     Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", name_);
-    matrix_->DeriveCellVelocity(*flux, velocity);
+    matrix_->DeriveCellVelocity(*flux, velocity.ptr());
 
     Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);
     const Epetra_MultiVector& pres_cells = *pressure->ViewComponent("cell",false);
@@ -382,12 +378,13 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // vals from cells and faces.
     // Then it needs to be fixed to work on a CompositeVector whose
     // components are cells and boundary faces. --etc
-    Teuchos::RCP<const CompositeVector> pressure =
-        S->GetFieldData(key_);
-    Teuchos::RCP<const CompositeVector> slope =
-        S->GetFieldData("slope_magnitude");
-    Teuchos::RCP<const CompositeVector> manning =
-        S->GetFieldData("manning_coefficient");
+    const Epetra_MultiVector& depth = *S->GetFieldData(key_)
+      ->ViewComponent("face", false);
+    const Epetra_MultiVector& slope = *S->GetFieldData("slope_magnitude")
+      ->ViewComponent("cell", false);
+    const Epetra_MultiVector& coef = *S->GetFieldData("manning_coefficient")
+      ->ViewComponent("cell", false);
+
     Teuchos::RCP<CompositeVector> upwind_conductivity =
         S->GetFieldData("upwind_overland_conductivity", name_);
 
@@ -399,15 +396,14 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // First do the boundary
     AmanziMesh::Entity_ID_List cells;
-
     int nfaces = upwind_conductivity->size("face", true);
     for (int f=0; f!=nfaces; ++f) {
       if (bc_markers_[f] != Operators::MFD_BC_NULL) {
         upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+        ASSERT(cells.size() == 1);
         int c = cells[0];
-        double scaling = (*manning)("cell",c) *
-            std::sqrt(std::max((*slope)("cell",c), slope_regularization_));
-        (*upwind_conductivity)("face",f) = std::pow(std::abs((*pressure)("face",f)), manning_exp_ + 1.0) / scaling ;
+        (*upwind_conductivity)("face",f) =
+          cond_model_->Conductivity(depth[0][f], slope[0][c], coef[0][c]);
       }
     }
 

@@ -6,6 +6,8 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/bc_factory)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/overland_conductivity)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/elevation)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
@@ -13,8 +15,6 @@ add_definitions("-DMSTK_HAVE_MPI")
 
 add_library(pk_flow_overland
         overland.cc overland_ti.cc overland_physics.cc
-        elevation_evaluator.cc standalone_elevation_evaluator.cc meshed_elevation_evaluator.cc
-        manning_conductivity_evaluator.cc
         surface_coupler_via_head_evaluator.cc
         surface_coupler_via_source_evaluator.cc)
 
