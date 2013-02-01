@@ -37,6 +37,7 @@ public:
       coupled_to_subsurface_via_flux_(false),
       coupled_to_subsurface_via_head_(false),
       coupled_to_subsurface_via_full_(false),
+      perm_update_required_(true),
       update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("primary variable key", "surface_pressure");
     plist_.set("domain name", "surface");
@@ -73,6 +74,9 @@ public:
 
   virtual void changed_solution();
 
+  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
+
+
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
@@ -84,6 +88,11 @@ protected:
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
   virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S);
+
+  virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
+  virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
+  virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
+
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres );
 
@@ -118,6 +127,7 @@ protected:
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
+  bool perm_update_required_;
 
   // coupling term
   bool coupled_to_subsurface_via_flux_;

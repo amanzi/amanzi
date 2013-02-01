@@ -51,7 +51,7 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
 
   // -- Possibly modify the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator.
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& up);
 
  protected: // data
   // timestep control

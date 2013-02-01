@@ -16,16 +16,13 @@ namespace Flow {
 // -------------------------------------------------------------
 void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
-  // update the rel perm according to the scheme of choice
-  bool update = UpdatePermeabilityData_(S.ptr());
-
   // update the stiffness matrix
   Teuchos::RCP<const CompositeVector> cond =
     S->GetFieldData("upwind_overland_conductivity", name_);
   matrix_->CreateMFDstiffnessMatrices(cond.ptr());
 
   // update the potential
-  update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
+  S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
 
   // derive fluxes -- this gets done independently fo update as precon does
   // not calculate fluxes.
