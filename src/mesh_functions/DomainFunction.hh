@@ -9,8 +9,8 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_DOMAIN_FUNCTION_HH_
-#define AMANZI_DOMAIN_FUNCTION_HH_
+#ifndef __AMANZI_DOMAIN_FUNCTION_HH__
+#define __AMANZI_DOMAIN_FUNCTION_HH__
 
 #include <vector>
 #include <string>
@@ -19,7 +19,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Function.hh"
-#include "mesh_function.hh"
+#include "MeshFunction.hh"
 
 namespace Amanzi {
 

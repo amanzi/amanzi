@@ -4,7 +4,7 @@ This is the transport component of the Amanzi code.
 Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
 Amanzi is released under the three-clause BSD License. 
 The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+provided in the top-level COPYRIGHT file.
 
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
@@ -23,7 +23,7 @@ Usage:
 
 #include "tensor.hh"
 #include "Explicit_TI_fnBase.hpp"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 #include "State.hh"
 #include "Transport_State.hh"
@@ -99,6 +99,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   // time integration members
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
+  // limiters 
   void LimiterTensorial(const int component,
                         Teuchos::RCP<Epetra_Vector> scalar_field, 
                         Teuchos::RCP<Epetra_MultiVector> gradient);

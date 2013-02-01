@@ -32,7 +32,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "mfd3d.hh"
 
 #include "Flow_State.hh"

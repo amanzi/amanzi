@@ -10,10 +10,11 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#include "boundary_function.hh"
-
 #include <algorithm>
 #include "errors.hh"
+
+#include "BoundaryFunction.hh"
+
 
 namespace Amanzi {
 

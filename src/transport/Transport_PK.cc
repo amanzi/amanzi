@@ -4,7 +4,7 @@ This is the transport component of the Amanzi code.
 Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
 Amanzi is released under the three-clause BSD License. 
 The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+provided in the top-level COPYRIGHT file.
 
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
@@ -36,7 +36,7 @@ namespace AmanziTransport {
 * complete initialization.
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
-			   Teuchos::RCP<Transport_State> TS_MPC)
+                           Teuchos::RCP<Transport_State> TS_MPC)
 {
   status = TRANSPORT_NULL;
 
@@ -177,6 +177,7 @@ double Transport_PK::CalculateTransportDt()
 
     status = TRANSPORT_FLOW_AVAILABLE;
   }
+
   // loop over faces and accumulate upwinding fluxes
   int  i, f, c, c1;
 

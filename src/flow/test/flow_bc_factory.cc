@@ -17,7 +17,7 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "FunctionFactory.hh"
 #include "errors.hh"
 

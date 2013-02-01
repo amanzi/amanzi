@@ -9,10 +9,10 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "domain_function.hh"
-
 #include <algorithm>
 #include "errors.hh"
+
+#include "DomainFunction.hh"
 
 namespace Amanzi {
 

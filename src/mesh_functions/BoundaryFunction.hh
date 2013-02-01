@@ -1,5 +1,15 @@
-#ifndef AMANZI_BOUNDARY_FUNCTION_HH_
-#define AMANZI_BOUNDARY_FUNCTION_HH_
+/*
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
+Authors: Neil Carlson (nnc@lanl.gov)
+         Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+#ifndef __AMANZI_BOUNDARY_FUNCTION_HH__
+#define __AMANZI_BOUNDARY_FUNCTION_HH__
 
 #include <vector>
 #include <string>
@@ -9,7 +19,8 @@
 
 #include "Mesh.hh"
 #include "Function.hh"
-#include "mesh_function.hh"
+#include "MeshFunction.hh"
+
 
 namespace Amanzi {
 

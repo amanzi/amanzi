@@ -10,8 +10,8 @@ Authors: Neil Carlson
          Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_MESH_FUNCTION_HH_
-#define AMANZI_MESH_FUNCTION_HH_
+#ifndef __AMANZI_MESH_FUNCTION_HH__
+#define __AMANZI_MESH_FUNCTION_HH__
 
 #include <vector>
 #include <set>
@@ -23,6 +23,7 @@ Authors: Neil Carlson
 
 #include "Mesh.hh"
 #include "Function.hh"
+
 
 namespace Amanzi {
 
@@ -55,4 +56,4 @@ class MeshFunction {
 
 }  // namespace Amanzi
 
-#endif  // AMANZI_MESH_FUNCTION_HH_
+#endif

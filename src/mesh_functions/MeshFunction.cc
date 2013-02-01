@@ -1,7 +1,8 @@
-#include "mesh_function.hh"
-
 #include <algorithm>
 #include "errors.hh"
+
+#include "MeshFunction.hh"
+
 
 namespace Amanzi {
 
@@ -15,3 +16,4 @@ void MeshFunction::DefineFromString(const std::string region, const Teuchos::RCP
 }
 
 } // namespace Amanzi
+
