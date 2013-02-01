@@ -27,14 +27,15 @@ class Tensor {
     data_ = NULL;
   }
   Tensor(const Tensor& T);
-  Tensor(const int d, const int rank) {
+  Tensor(int d, int rank) {
     data_ = NULL;
     init(d, rank);
   }
+  Tensor(int d, int rank, const double* data);
   ~Tensor() { if (data_) delete[] data_; }
 
   // primary members
-  int init(const int d, const int rank);
+  int init(int d, int rank);
   double trace() const;
   double det();
   void inverse();

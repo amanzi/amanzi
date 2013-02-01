@@ -14,7 +14,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 /* ****************************************************************
-* TBW
+* Test of full tensor inversion
 **************************************************************** */
 TEST(TENSOR_INVERSE) {
   using namespace Amanzi::WhetStone;
@@ -35,4 +35,22 @@ TEST(TENSOR_INVERSE) {
   CHECK_CLOSE(T(1, 1), 0.255813953488372, 1e-12);
 }
 
+
+/* ****************************************************************
+* Test of tensor initialization
+**************************************************************** */
+TEST(TENSOR_CONSTRUCTOR) {
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: Construction of Tensors rank 2" << std::endl;
+ 
+  double data[4];
+
+  Tensor T1;
+  Tensor T2a(2, 1), T2b(2, 2), T2c(3, 1), T2d(3, 2), T2e(2, 4);
+ 
+  Tensor T3(2, 2, data);
+
+  Tensor T4(T2d);
+}
 
