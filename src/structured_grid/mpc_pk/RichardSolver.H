@@ -40,6 +40,10 @@ public:
 		const RSParams& params,
 		Layout&         layout);
   ~RichardSolver();
+
+  void SetRecordFile(const std::string& file_name) {record_file = file_name;}
+  const std::string& GetRecordFile() const {return record_file;}
+
   Layout& GetLayout() {return layout;}
   void ResetRhoSat();
   void SetTime(Real time);
@@ -75,6 +79,7 @@ public:
   const Array<Geometry>& GeomArray() const {return layout.GeomArray();}
   const Array<IntVect>& RefRatio() const {return layout.RefRatio();}
   const RSParams& Parameters() {return params;}
+  PArray<PorousMedia>& PMArray() {return pm;}
 
   void UpdateDarcyVelocity(MFTower& pressure,
 			   Real     t); // Set internal data
@@ -186,6 +191,8 @@ protected:
 
   int num_remaining_Jacobian_reuses;
   int current_timestep;
+
+  std::string record_file;
 };
 
 #endif

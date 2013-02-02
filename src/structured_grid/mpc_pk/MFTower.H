@@ -35,7 +35,17 @@ struct MFTower
     const Layout& GetLayout() const;
     const IndexType& ixType() const;
 
-    void Write(const std::string& fileName) const;
+    void SetValCovered(Real value);
+
+
+    void Write(const std::string& fileName,
+	       const std::string& names,
+	       Real               time) const;
+
+    static void WriteSet(const std::string&          fileName,
+			 const Array<MFTower*> mfta,
+			 const Array<std::string>&   names,
+			 Real                        time);
  
     static void CCtoECgrad(PArray<MFTower>& mft_ec,
                            const MFTower&   mft_cc,

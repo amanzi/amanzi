@@ -29,8 +29,6 @@ static bool centered_diff_J_DEF = true;
 static Real variable_switch_saturation_threshold_DEF = -0.9999;
 
 static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
-static bool record_entire_solve = false;
-static std::string record_file = "SNES";
 static bool dump_Jacobian_and_exit = false;
 
 RSParams::RSParams()
@@ -1293,46 +1291,87 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
   PetscFunctionReturn(0);
 } 
 
-void RecordSolve(std::string& record_file,Vec& p,Vec& dp,Vec& pnew,Vec& F,Vec& G,CheckCtx* check_ctx)
+void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* check_ctx)
 {
-    if (ParallelDescriptor::IOProcessor())
-        if (!BoxLib::UtilCreateDirectory(record_file, 0755))
-            BoxLib::CreateDirectoryFailed(record_file);
+  RichardSolver* rs = check_ctx->rs;
+  const std::string& record_file = rs->GetRecordFile();
+  BL_ASSERT(!record_file.empty());
+  Layout& layout = check_ctx->rs->GetLayout();
+  int nLevs = rs->GetNumLevels();
 
-    RichardSolver* rs = check_ctx->rs;
-    Layout& layout = check_ctx->rs->GetLayout();
-    int nLevs = rs->GetNumLevels();
-    MFTower res(layout,MFTower::CC,1,1,nLevs);
+  int num_out = 9;
+  Array<MFTower*> dMFT(num_out);
+  Array<std::string> names(num_out);
 
-    PetscErrorCode ierr;
-    int timestep = rs->GetCurrentTimestep();
-    std::string step_file=BoxLib::Concatenate(record_file + "/Step_",timestep,2);
-    std::string resfile=BoxLib::Concatenate(step_file + "/Res_undamped_",dump_cnt,2);
-    std::string updfile=BoxLib::Concatenate(step_file + "/Update_undamped_",dump_cnt,2);
-    std::string poldfile=BoxLib::Concatenate(step_file + "/Pold_",dump_cnt,2);
-    std::string pnewfile=BoxLib::Concatenate(step_file + "/Pnew_undamped_",dump_cnt,2);
+  PetscErrorCode ierr;
+  for (int i=0; i<num_out; ++i) {
+    dMFT[i] = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
+  }
 
-    ierr = layout.VecToMFTower(res,G,0);
-    res.Write(resfile);
-    ierr = layout.VecToMFTower(res,dp,0);
-    res.Write(updfile);
-    ierr = layout.VecToMFTower(res,p,0);
-    res.Write(poldfile);
-    ierr = layout.VecToMFTower(res,pnew,0);
-    res.Write(pnewfile);
+  MFTower& ResMFT     = *(dMFT[0]);
+  MFTower& DpMFT      = *(dMFT[1]);
+  MFTower& Dp_origMFT = *(dMFT[2]);
+  MFTower& PoldMFT    = *(dMFT[3]);
+  MFTower& PnewMFT    = *(dMFT[4]);
+  MFTower& SnewMFT    = *(dMFT[5]);
+  MFTower& SoldMFT    = *(dMFT[6]);
+  MFTower& DsMFT      = *(dMFT[7]);
+  MFTower& fMFT       = *(dMFT[8]);
 
-    MFTower& rhos = rs->GetAlpha(); //Handy data container
-    for (int lev=0; lev<nLevs; ++lev) {
-        rs->GetPMlevel(lev).calcInvPressure(rhos[lev],res[lev]);  
+  ierr = layout.VecToMFTower(    ResMFT,      G,0);
+  ierr = layout.VecToMFTower(     DpMFT,     dp,0);
+  ierr = layout.VecToMFTower(Dp_origMFT,dp_orig,0);
+  ierr = layout.VecToMFTower(   PoldMFT,      p,0);
+  ierr = layout.VecToMFTower(   PnewMFT,   pnew,0);
+
+  Real cur_time = rs->GetTime();
+  Real rho = rs->GetDensity()[0];
+  PArray<PorousMedia>& pm = rs->PMArray();
+  for (int lev=0; lev<nLevs; ++lev) {
+    pm[lev].FillStateBndry(cur_time,Press_Type,0,1);
+    pm[lev].calcInvPressure(SnewMFT[lev],PnewMFT[lev]);
+    SnewMFT[lev].mult(1/rho,0,1);
+
+    pm[lev].calcInvPressure(SoldMFT[lev],PoldMFT[lev]);
+    SoldMFT[lev].mult(1/rho,0,1);
+
+    MultiFab::Copy(DsMFT[lev],SnewMFT[lev],0,0,1,0);
+    MultiFab::Subtract(DsMFT[lev],SoldMFT[lev],0,0,1,0);
+
+    for (MFIter mfi(fMFT[lev]); mfi.isValid(); ++mfi) {
+      const Box& box = mfi.validbox();
+      for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
+	const Real& num = DpMFT[lev][mfi](iv,0);
+	const Real& den = Dp_origMFT[lev][mfi](iv,0);
+	fMFT[lev][mfi](iv,0) = den==0 ? 1 : std::abs(num/den);
+      }
     }
+  }
 
-    std::string rsnewfile=BoxLib::Concatenate(step_file + "/RSnew_undamped_",dump_cnt,2);
-    rhos.Write(rsnewfile);
+  for (int i=0; i<num_out; ++i) {
+    dMFT[i]->SetValCovered(0);
+  }
 
-    if (ParallelDescriptor::IOProcessor()) {
-        std::cout << ".......Residual, dp, p_old, p_new, rs_new written to " << step_file << std::endl;
-    }
-    dump_cnt++;
+  names[0] = "Res_undamped";
+  names[1] = "Dp_damped";
+  names[2] = "Dp_undamped";
+  names[3] = "Pold";
+  names[4] = "Pnew_damped";
+  names[5] = "Snew_damped";
+  names[6] = "Sold";
+  names[7] = "dS";
+  names[8] = "DampingFactor";
+
+  int timestep = rs->GetCurrentTimestep();
+  std::string step_file = BoxLib::Concatenate(record_file + "/Step_",timestep,3);
+  step_file = BoxLib::Concatenate(step_file + "/iteration_",dump_cnt,3);
+
+  if (ParallelDescriptor::IOProcessor()) {
+    std::cout << "****************** Writing file: " << step_file << std::endl;
+  }
+  Real time = 0;
+  MFTower::WriteSet(step_file,dMFT,names,time);
+  dump_cnt++;
 }
 
 /*
@@ -1383,10 +1422,12 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     (*func)(snes,w,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);    
 
-    if (record_entire_solve) {
-        RecordSolve(record_file,x,y,w,F,G,check_ctx);
+    Vec y_orig;
+    if (!(rs->GetRecordFile().empty())) {
+      ierr = VecDuplicate(y,&y_orig);
+      ierr = VecCopy(y,y_orig);
     }
-    
+
     bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
     int ls_iterations = 0;
     Real ls_factor = 1;
@@ -1460,11 +1501,16 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         int iters = nld->NLIterationsTaken() + 1;
     }
 
+    if (!(rs->GetRecordFile().empty())) {
+      RecordSolve(x,y,y_orig,w,F,G,check_ctx);
+      ierr = VecDestroy(&y_orig);
+    }
+    
     return ierr;
 }
 
 PetscErrorCode
-AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *changed_dp,PetscBool  *changed_pkp1)
+AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *changed_dp,PetscBool *changed_pkp1)
 {
     PetscErrorCode ierr;
     CheckCtx* check_ctx = (CheckCtx*)ctx;
@@ -1576,8 +1622,10 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
     (*func)(snes,pnew,G,fctx);
     ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
 
-    if (record_entire_solve) {
-        RecordSolve(record_file,p,dp,pnew,F,G,check_ctx);
+    Vec dp_orig;
+    if (!(rs->GetRecordFile().empty())) {
+      ierr = VecDuplicate(dp,&dp_orig);
+      ierr = VecCopy(dp,dp_orig);
     }
     
     bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
@@ -1644,6 +1692,11 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
         }
 
         int iters = nld->NLIterationsTaken() + 1;
+    }
+
+    if (!(rs->GetRecordFile().empty())) {
+      RecordSolve(p,dp,dp_orig,pnew,F,G,check_ctx);
+      ierr = VecDestroy(&dp_orig);
     }
 
     PetscFunctionReturn(ierr);

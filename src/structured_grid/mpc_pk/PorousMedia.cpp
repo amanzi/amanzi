@@ -1902,6 +1902,15 @@ PorousMedia::richard_init_to_steady()
           std::cout << "Number of active levels: " << num_active_levels << std::endl;
         }
 
+	std::string tmp_record_file;
+	if (!steady_record_file.empty()) {
+	  tmp_record_file = BoxLib::Concatenate(steady_record_file+"_",num_active_levels,2);
+	}
+
+        if (ParallelDescriptor::IOProcessor() && richard_init_to_steady_verbose && !(tmp_record_file.empty())) {
+          std::cout << "Recording solve details into: \"" << tmp_record_file << "\"" << std::endl;
+        }
+
         if (num_active_levels > 1) {
           dt *= steady_grid_sequence_new_level_dt_factor[num_active_levels-2];
         }
@@ -1991,6 +2000,9 @@ PorousMedia::richard_init_to_steady()
 	      
             if (steady_use_PETSc_snes) 
             {
+	      if (!tmp_record_file.empty()) {
+		rs->SetRecordFile(tmp_record_file);
+	      }
               int retCode = rs->Solve(t+dt, dt, k, nld);
               if (retCode >= 0) {
                 ret = RichardNLSdata::RICHARD_SUCCESS;
@@ -3581,6 +3593,9 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   {
     rs->ResetRhoSat();
     rs->SetCurrentTimestep(parent->levelSteps(0));
+    if (!steady_record_file.empty()) {
+      rs->SetRecordFile(steady_record_file);
+    }
     int retCode = rs->Solve(t_flow+dt_flow, dt_flow, 1, nld);
     if (retCode > 0) {
       ret = RichardNLSdata::RICHARD_SUCCESS;
@@ -8544,7 +8559,7 @@ PorousMedia::init_rock_properties ()
   void* myCtx = 0;
   matFiller->SetProperty(t_time,level,tkappa,prop_str1,0,nGrowHYP,myCtx);
   matFiller->SetProperty(t_time,level,tkappa,prop_str2,nComp1,nGrowHYP,myCtx);
-  VisMF::Write(tkappa,BoxLib::Concatenate("JUNK",level,1));
+
 
 #endif
 

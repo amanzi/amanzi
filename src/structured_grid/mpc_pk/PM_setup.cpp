@@ -17,6 +17,8 @@
 #include <DERIVE_F.H>
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
+#include <POROUS_F.H>
+#include <WritePlotfile.H>
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -323,6 +325,7 @@ Real PorousMedia::steady_abs_update_tolerance;
 Real PorousMedia::steady_rel_update_tolerance;
 int  PorousMedia::steady_do_grid_sequence;
 Array<Real> PorousMedia::steady_grid_sequence_new_level_dt_factor;
+std::string PorousMedia::steady_record_file;
 
 int  PorousMedia::richard_max_ls_iterations;
 Real PorousMedia::richard_min_ls_factor;
@@ -654,6 +657,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_rel_update_tolerance = -1;
   PorousMedia::steady_do_grid_sequence = 1;
   PorousMedia::steady_grid_sequence_new_level_dt_factor.resize(1,1.e-5);
+  PorousMedia::steady_record_file.clear();
 
   PorousMedia::richard_max_ls_iterations = 10;
   PorousMedia::richard_min_ls_factor = 1.e-8;
@@ -1126,169 +1130,16 @@ void PorousMedia::read_geometry()
     }
 }
 
-#include <POROUS_F.H>
-void WritePlotfile(const std::string         &pfversion,
-                   const PArray<MultiFab>    &data,
-                   const Real                 time,
-                   const Array<Real>         &probLo,
-                   const Array<Real>         &probHi,
-                   const Array<int>          &refRatio,
-                   const Array<Box>          &probDomain,
-                   const Array<Array<Real> > &dxLevel,
-                   const int                  coordSys,
-                   const std::string         &oFile,
-                   const Array<std::string>  &names,
-                   const bool                 verbose,
-		   const bool                 isCartGrid,
-		   const Real                *vfeps,
-		   const int                 *levelSteps)
-{
-    if(ParallelDescriptor::IOProcessor()) {
-      if( ! BoxLib::UtilCreateDirectory(oFile,0755)) {
-         BoxLib::CreateDirectoryFailed(oFile);
-      }
-    }
-    //
-    // Force other processors to wait till directory is built.
-    //
-    ParallelDescriptor::Barrier();
-    
-    std::string oFileHeader(oFile);
-    oFileHeader += "/Header";
-    
-    VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
-    
-    std::ofstream os;
-    
-    //os.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
-    
-    if(verbose && ParallelDescriptor::IOProcessor()) {
-      std::cout << "Opening file = " << oFileHeader << '\n';
-    }
-    
-    os.open(oFileHeader.c_str(), std::ios::out|std::ios::binary);
-    
-    if(os.fail()) {
-      BoxLib::FileOpenFailed(oFileHeader);
-    }
-    //
-    // Start writing plotfile.
-    //
-    os << pfversion << '\n';
-    int n_var = data[0].nComp();
-    os << n_var << '\n';
-    for (int n = 0; n < n_var; n++) os << names[n] << '\n';
-    os << BL_SPACEDIM << '\n';
-    os << std::setprecision(30) << time << '\n';
-    const int finestLevel = data.size() - 1;
-    os << finestLevel << '\n';
-    for (int i = 0; i < BL_SPACEDIM; i++) os << probLo[i] << ' ';
-    os << '\n';
-    for (int i = 0; i < BL_SPACEDIM; i++) os << probHi[i] << ' ';
-    os << '\n';
-    for (int i = 0; i < finestLevel; i++) os << refRatio[i] << ' ';
-    os << '\n';
-    for (int i = 0; i <= finestLevel; i++) os << probDomain[i] << ' ';
-    os << '\n';
-    if(levelSteps != 0) {
-      for (int i = 0; i <= finestLevel; i++) os << levelSteps[i] << ' ';
-    } else {
-      for (int i = 0; i <= finestLevel; i++) os << 0 << ' ';
-    }
-    os << '\n';
-    for(int i = 0; i <= finestLevel; i++) {
-      for(int k = 0; k < BL_SPACEDIM; k++) {
-            os << dxLevel[i][k] << ' ';
-      }
-      os << '\n';
-    }
-    if(isCartGrid) {
-      for(int i(0); i <= finestLevel; i++) {
-        os << vfeps[i] << ' ';
-      }
-      os << '\n';
-    }
-    os << coordSys << '\n';
-    os << 0 << '\n';                  // --------------- The bndry data width.
-    //
-    // Write out level by level.
-    //
-    for(int iLevel(0); iLevel <= finestLevel; ++iLevel) {
-        //
-        // Write state data.
-        //
-        const BoxArray& ba = data[iLevel].boxArray();
-        int nGrids = ba.size();
-        char buf[64];
-        sprintf(buf, "Level_%d", iLevel);
-        
-        if(ParallelDescriptor::IOProcessor()) {
-            os << iLevel << ' ' << nGrids << ' ' << time << '\n';
-            if(levelSteps != 0) {
-              os << levelSteps[iLevel] << '\n';
-	    } else {
-              os << 0 << '\n';
-	    }
-            
-            for(int i(0); i < nGrids; ++i) {
-              const Box &b = ba[i];
-              for(int n(0); n < BL_SPACEDIM; ++n) {
-                Real glo = b.smallEnd()[n] * dxLevel[iLevel][n];
-                Real ghi = (b.bigEnd()[n]+1) * dxLevel[iLevel][n];
-                os << glo << ' ' << ghi << '\n';
-              }
-            }
-            //
-            // Build the directory to hold the MultiFabs at this level.
-            //
-            std::string Level(oFile);
-            Level += '/';
-            Level += buf;
-            
-            if( ! BoxLib::UtilCreateDirectory(Level, 0755)) {
-              BoxLib::CreateDirectoryFailed(Level);
-	    }
-        }
-        //
-        // Force other processors to wait till directory is built.
-        //
-        ParallelDescriptor::Barrier();
-        //
-        // Now build the full relative pathname of the MultiFab.
-        //
-        static const std::string MultiFabBaseName("MultiFab");
-        
-        std::string PathName(oFile);
-        PathName += '/';
-        PathName += buf;
-        PathName += '/';
-        PathName += MultiFabBaseName;
-        
-        if(ParallelDescriptor::IOProcessor()) {
-            //
-            // The full name relative to the Header file.
-            //
-            std::string RelativePathName(buf);
-            RelativePathName += '/';
-            RelativePathName += MultiFabBaseName;
-            os << RelativePathName << '\n';
-        }
-        VisMF::Write(data[iLevel], PathName);
-    }
-    
-    os.close();
-}
-
-
+//using AmanziS::WritePlotfile;
 void
 WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fRatio,
-		     const Array<Real>& problo, const Array<Real>& probhi, MultiFab* data,
+		     const Real* problo, const Real* probhi, MultiFab* data,
 		     const std::string& filename, int nGrow, const Array<int>& harmDir,
                      const Array<std::string>& names)
 {
   int nLevs = max_level + 1;
-  PArray<MultiFab> mlData(nLevs, PArrayNoManage);
-  mlData.set(max_level, data);
+  Array<MultiFab*> mlData(nLevs);
+  mlData[max_level] = (MultiFab*) data; // will not change this one
 
   Array<Box> pd(nLevs), gpd(nLevs);
   Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
@@ -1309,7 +1160,7 @@ WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
   }
   int nGrowFINE = fineRatio * nGrow;
 
-  Array<Real> gplo(BL_SPACEDIM), gphi(BL_SPACEDIM);
+  Real gplo[BL_SPACEDIM], gphi[BL_SPACEDIM];
   for (int d=0; d<BL_SPACEDIM; ++d) {
     gplo[d] = problo[d] - dxLevel[0][d]*nGrow;
     gphi[d] = probhi[d] + dxLevel[0][d]*nGrow;
@@ -1327,14 +1178,14 @@ WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
     BoxArray baf = BoxArray(bac).refine(ratioToFinest);
     BoxArray bafg = BoxArray(baf).grow(nGrowFINE);
     MultiFab mffine_ng(bafg,nComp,0);      
-    mffine_ng.copy(mlData[max_level],0,0,nComp); // parallel copy
+    mffine_ng.copy(*mlData[max_level],0,0,nComp); // parallel copy
     
-    mlData.set(lev, new MultiFab(bac,nComp,nGrow));    
-    for (MFIter mfi(mlData[lev]); mfi.isValid(); ++mfi) {
+    mlData[lev] = new MultiFab(bac,nComp,nGrow);    
+    for (MFIter mfi(*mlData[lev]); mfi.isValid(); ++mfi) {
       const int* lo    = mfi.validbox().loVect();
       const int* hi    = mfi.validbox().hiVect();
       const FArrayBox& fine = mffine_ng[mfi];
-      FArrayBox& crse       = mlData[lev][mfi];
+      FArrayBox& crse       = (*mlData[lev])[mfi];
       
       for (int d=0; d<nComp; ++d) {
         FORT_CRSENMAT (fine.dataPtr(d), ARLIM(fine.loVect()), ARLIM(fine.hiVect()),
@@ -1355,7 +1206,7 @@ WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fR
 		filename,names,plt_verbose,isCartGrid,&vfeps,&levelSteps);
 
   for (int lev=0; lev<max_level-1; ++lev) {
-    delete &(mlData[lev]);
+    delete mlData[lev];
   }
 }
 
@@ -1902,9 +1753,9 @@ PorousMedia::read_rock(int do_chem)
           for (int d=0; d<BL_SPACEDIM; ++d) {
             harmDir[d] = d;
             int num_digits = 1;
-            BoxLib::Concatenate(names[d],d,num_digits);
+            names[d] = BoxLib::Concatenate(names[d],d,num_digits);
           }
-          WriteMaterialPltFile(max_level,n_cell,fratio,problo,probhi,kappadata,
+          WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),kappadata,
                                permeability_plotfile_out,nGrowHYP,harmDir,names);
           if (ParallelDescriptor::IOProcessor()) {
             std::cout << "Permeability plotfile written: " << permeability_plotfile_out <<std::endl;
@@ -1975,8 +1826,8 @@ PorousMedia::read_rock(int do_chem)
         if (!porosity_plotfile_out.empty()) {
           Array<int> harmDir(1,-1);
           Array<std::string> names(1,"Porosity");
-          WriteMaterialPltFile(max_level,n_cell,fratio,problo,probhi,phidata,
-                               porosity_plotfile_out,nGrowHYP,harmDir,names);
+          WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),
+			       phidata,porosity_plotfile_out,nGrowHYP,harmDir,names);
           if (ParallelDescriptor::IOProcessor()) {
             std::cout << "Porosity plotfile written: " << porosity_plotfile_out <<std::endl;
           }
@@ -2093,6 +1944,7 @@ void PorousMedia::read_prob()
 
   pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
+  pb.query("steady_record_file",steady_record_file);
   pb.query("steady_min_iterations",steady_min_iterations);
   pb.query("steady_min_iterations_2",steady_min_iterations_2);
   pb.query("steady_max_iterations",steady_max_iterations);

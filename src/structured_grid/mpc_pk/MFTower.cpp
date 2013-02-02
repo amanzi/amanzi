@@ -3,6 +3,7 @@
 #include <Utility.H>
 #include <VisMF.H>
 #include <MFTOWER_F.H>
+#include <WritePlotfile.H>
 
 MFTower::MFTower(const Layout&    _layout,
                  const IndexType& t,
@@ -141,6 +142,26 @@ MFTower::norm(int numLevs) const // currently only max norm supported
     }
     ParallelDescriptor::ReduceRealMax(norm);
     return norm;
+}
+
+void
+MFTower::SetValCovered(Real value)
+{
+  const Array<IntVect>& refRatio = layout.RefRatio();
+  const Array<BoxArray>& gridArray = layout.GridArray();
+  for (int lev=0; lev<nLevs-1; ++lev) {
+    for (MFIter mfi(mft[lev]); mfi.isValid(); ++mfi) {
+      Box vbox = mfi.validbox();
+      BoxArray cfba = BoxArray(gridArray[lev+1]).coarsen(refRatio[lev]);
+      std::vector< std::pair<int,Box> > isects = cfba.intersections(vbox);
+      for (int i = 0; i < isects.size(); i++) {
+	Box ovlp = isects[i].second & vbox;
+	if (ovlp.ok()) {
+	  mft[lev].setVal(value,ovlp,0,nComp);
+	}
+      }
+    }
+  }
 }
 
 bool
@@ -890,55 +911,67 @@ MFTower::SetVal(Real     val,
     }
 }
 
+void
+MFTower::Write(const std::string& fileName,
+	       const std::string& varname,
+	       Real               time) const
+{
+  Array<MFTower*> mfta(1,(MFTower*)this);
+  Array<std::string> varnames(1,varname);
+  MFTower::WriteSet(fileName,mfta,varnames,time);
+}
 
 void
-MFTower::Write(const std::string& fileName) const
+MFTower::WriteSet(const std::string&          fileName,
+		  const Array<MFTower*> mfta,
+		  const Array<std::string>&   varnames,
+		  Real                        time)
 {
-    std::string FullPath = fileName;
-    if (!FullPath.empty() && FullPath[FullPath.length()-1] != '/')
-        FullPath += '/';
-    
-    if (ParallelDescriptor::IOProcessor())
-        if (!BoxLib::UtilCreateDirectory(FullPath, 0755))
-            BoxLib::CreateDirectoryFailed(FullPath);
-    //
-    // Force other processors to wait till directory is built.
-    //
-    ParallelDescriptor::Barrier();
-    for (int lev=0; lev<nLevs; ++lev) {
-        std::string FullPath = fileName;
-        if (!FullPath.empty() && FullPath[FullPath.length()-1] != '/')
-        {
-            FullPath += '/';
-        }
-        std::string LevelPath = FullPath + "MFTower_Level_";
-        LevelPath = BoxLib::Concatenate(LevelPath,lev,1);
-        
-        if (ParallelDescriptor::IOProcessor()) {
-            if (!BoxLib::UtilCreateDirectory(LevelPath, 0755)) {
-                BoxLib::CreateDirectoryFailed(LevelPath);
-            }
-        }
-        ParallelDescriptor::Barrier();
+  std::string pfversion = "MFTowerData-0.1";
+  BL_ASSERT(mfta.size()>0 && mfta.size()==varnames.size());
+  const MFTower& mft = *(mfta[0]);
+  for (int i=1; i<mfta.size(); ++i) {
+    BL_ASSERT(mfta[i]->IsCompatible(mft));
+  }
+  
+  const Layout& layout = mft.GetLayout();
+  const Array<Geometry>& geomArray = layout.GeomArray();
+  const Array<IntVect>& refRatio = layout.RefRatio();
+  int num_levels = mft.NumLevels();
 
-        LevelPath += '/';
-	std::string LevelPathData = LevelPath + "data";
-	VisMF::Write((*this)[lev],LevelPathData);
+  // Currently, amrvis only supports integer refinement ratios
+  BL_ASSERT(refRatio.size()==num_levels-1);
+  Array<int> irat(num_levels-1);
+  for (int i=0; i<num_levels-1; ++i) {
+    irat[i] = refRatio[i][0];
+    for (int j=1; j<BL_SPACEDIM; ++j) {
+      BL_ASSERT(refRatio[i][j] == irat[i]);
     }
+  }
 
-    if (ParallelDescriptor::IOProcessor()) {
-        std::string MiscPath = FullPath + "miscData.dat";
-        std::ofstream os; os.open(MiscPath.c_str());
-        os << "Number of Levels: " << nLevs << '\n';
-        os << "Refinement Ratios: ";
-        for (int lev=1; lev<nLevs; ++lev) {
-            os << layout.RefRatio()[lev-1] << " ";
-        }
-        os << '\n';
-        os << "Grid Arrays: " << '\n';
-        for (int lev=0; lev<nLevs; ++lev) {
-            os << layout.GridArray()[lev] << '\n';
-        }
-        os.close();
+  Array<Array<Real> > dxLevel(num_levels,Array<Real>(BL_SPACEDIM));
+  Array<Box> probDomain(num_levels);
+  for (int i=0; i<num_levels; ++i) {
+    for (int j=0; j<BL_SPACEDIM; ++j) {
+      dxLevel[i][j] = geomArray[i].CellSize()[j];
     }
+    probDomain[i] = geomArray[i].Domain();
+  }
+  
+  int coordSys = geomArray[0].IsCartesian();
+  bool plt_verbose = false;
+  bool isCartGrid = false;
+  Real vfeps = 1.e-12;
+  Array<int> levelSteps(num_levels,0);
+  
+  Array<Array<MultiFab*> > data(mfta.size(),Array<MultiFab*>(num_levels));
+  for (int i=0; i<mfta.size(); ++i) {
+    for (int lev=0; lev<num_levels; ++lev) {
+      data[i][lev] = &( (*mfta[i])[lev] );
+    }
+  }
+  WritePlotfile(pfversion,data,time,geomArray[0].ProbLo(),geomArray[0].ProbHi(),irat,probDomain,
+		dxLevel,coordSys,fileName,varnames,plt_verbose,isCartGrid,&vfeps,levelSteps.dataPtr());
+
 }
+

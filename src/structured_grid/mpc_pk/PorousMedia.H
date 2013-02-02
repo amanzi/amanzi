@@ -1371,6 +1371,7 @@ protected:
   static Real steady_rel_update_tolerance;
   static int  steady_do_grid_sequence;
   static Array<Real> steady_grid_sequence_new_level_dt_factor;
+  static std::string steady_record_file;
 
   //
   // Newton step defaults
