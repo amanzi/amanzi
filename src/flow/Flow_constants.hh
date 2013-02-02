@@ -22,6 +22,9 @@ const int FLOW_STATUS_INITIAL_GUESS = 4;
 const int FLOW_STATUS_STEADY_STATE = 4;
 const int FLOW_STATUS_TRANSIENT_STATE = 8;
 
+const int FLOW_STATE_VIEW = 1;  // copy Teuchos::RCP pointers
+const int FLOW_STATE_COPY = 2;  // add ghost data to some arrays
+
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
 const int FLOW_BC_FACE_PRESSURE_SEEPAGE = 2; 

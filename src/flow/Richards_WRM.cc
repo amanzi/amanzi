@@ -51,11 +51,11 @@ void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
     CalculateRelativePermeabilityUpwindGravity(p);
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    Epetra_Vector& flux = FS->ref_darcy_flux();
-    const Epetra_Map& fmap = mesh_->face_map(true);
-    Epetra_Vector flux_wghost(fmap);
-    FS->CopyMasterFace2GhostFace(flux, flux_wghost);
-    CalculateRelativePermeabilityUpwindFlux(p, flux_wghost);
+    Epetra_Vector& flux = FS_aux->ref_darcy_flux();
+    // const Epetra_Map& fmap = mesh_->face_map(true);
+    // Epetra_Vector flux_wghost(fmap);
+    // FS->CopyMasterFace2GhostFace(flux, flux_wghost);
+    CalculateRelativePermeabilityUpwindFlux(p, flux);
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     CalculateRelativePermeabilityArithmeticMean(p);
@@ -196,7 +196,7 @@ void Richards_PK::CalculateDerivativePermeabilityFace(const Epetra_Vector& p)
   if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     CalculateDerivativePermeabilityUpwindGravity(p);
   } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-    Epetra_Vector& flux = FS->ref_darcy_flux();
+    Epetra_Vector& flux = FS_aux->ref_darcy_flux();
     CalculateDerivativeRelativePermeabilityUpwindFlux(p, flux);
   }
 }

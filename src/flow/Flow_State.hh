@@ -20,24 +20,18 @@ Usage:
 
 #include "Mesh.hh"
 #include "State.hh"
+#include "Flow_constants.hh"
 
 
 namespace Amanzi {
 namespace AmanziFlow {
-
-enum FlowCreateMode {
-CopyPointers,  // copy Teuchos::RCP pointers 
-ViewMemory,    // convert to overlap to non-overlap vectors  
-CopyMemory     // copy non-overlap vector to overlap vectors 
-};
-
 
 class Flow_State {
  public:
   explicit Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   explicit Flow_State(Teuchos::RCP<State> S);
   explicit Flow_State(State& S);
-  Flow_State(Flow_State& S, FlowCreateMode mode = CopyPointers);
+  Flow_State(Flow_State& S, int mode = AmanziFlow::FLOW_STATE_VIEW);
   ~Flow_State() {};
 
   // data management

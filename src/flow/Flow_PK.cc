@@ -34,6 +34,8 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   flow_status_ = FLOW_STATUS_NULL;
 
   FS = Teuchos::rcp(new Flow_State(*FS_MPC));
+  FS_aux = Teuchos::rcp(new Flow_State(*FS_MPC), AmanziFlow::FLOW_STATE_COPY);
+
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
   MyPID = 0;

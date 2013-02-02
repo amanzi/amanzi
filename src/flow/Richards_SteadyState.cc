@@ -24,6 +24,9 @@ namespace AmanziFlow {
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState(double T0, double dT0)
 {
+  // update the axiliary flow state
+  FS->CopyMasterFace2GhostFace(FS->ref_darcy_flux(), FS_aux->ref_darcy_flux());
+
   // override internal parameters
   T_physics = ti_specs_sss_.T0 = T0;
   dT = ti_specs_sss_.dT0 = dT0;

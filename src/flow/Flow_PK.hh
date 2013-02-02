@@ -136,6 +136,7 @@ class Flow_PK : public BDF2::fnBase {
   int missed_bc_faces_;
  
   Teuchos::RCP<Flow_State> FS;
+  Teuchos::RCP<Flow_State> FS_aux;  // adds ghosts to selected state variables 
   
   int ti_phase_counter;  
   double T_physics, dT, dTnext;

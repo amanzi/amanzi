@@ -119,50 +119,34 @@ Flow_State::Flow_State(State& S) : S_(NULL)
 
 
 /* *******************************************************************
-* mode = CopyPointers (default) a trivial copy of the given state           
-* mode = ViewMemory   creates the flow state from internal one   
-*                     as the MPC expected                     
+* mode = FLOW_STATE_VIEW (default) a view of the given state           
+* mode = FLOW_STATE_COPY allocates new memory for selected variable                    
 ******************************************************************* */
-Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode) : S_(NULL)
+Flow_State::Flow_State(Flow_State& FS, int mode) : S_(NULL)
 {
-  if (mode == CopyPointers) {
-    vertical_permeability_ = FS.vertical_permeability();
-    horizontal_permeability_ = FS.horizontal_permeability();
-    porosity_ = FS.porosity();
-    water_saturation_ = FS.water_saturation();
-    prev_water_saturation_ = FS.prev_water_saturation();
+  vertical_permeability_ = FS.vertical_permeability();
+  horizontal_permeability_ = FS.horizontal_permeability();
+  porosity_ = FS.porosity();
+  water_saturation_ = FS.water_saturation();
+  prev_water_saturation_ = FS.prev_water_saturation();
 
-    fluid_density_ = FS.fluid_density();
-    fluid_viscosity_ = FS.fluid_viscosity();
-    pressure_ = FS.pressure();
-    lambda_ = FS.lambda();
+  fluid_density_ = FS.fluid_density();
+  fluid_viscosity_ = FS.fluid_viscosity();
+  pressure_ = FS.pressure();
+  lambda_ = FS.lambda();
+
+  gravity_ = FS.gravity();
+  specific_storage_ = FS.specific_storage();
+  specific_yield_ = FS.specific_yield();
+
+  mesh_ = FS.mesh();
+
+  if (mode == AmanziFlow::FLOW_STATE_VIEW) {
     darcy_flux_ = FS.darcy_flux();
-
-    gravity_ = FS.gravity();
-    specific_storage_ = FS.specific_storage();
-    specific_yield_ = FS.specific_yield();
-
-    mesh_ = FS.mesh();
-
-  } else if (mode == CopyMemory) {
-    vertical_permeability_ = FS.vertical_permeability();
-    horizontal_permeability_ = FS.horizontal_permeability();
-    porosity_ = FS.porosity();
-
-    fluid_density_ = FS.fluid_density();
-    fluid_viscosity_ = FS.fluid_viscosity();
-
-    gravity_ = FS.gravity();
-    specific_storage_ = FS.specific_storage();
-    specific_yield_ = FS.specific_yield();
-    mesh_ = FS.mesh();
-
-    // allocate memory for the next state
-    pressure_ = Teuchos::rcp(new Epetra_Vector(FS.ref_pressure()));
-    lambda_ = Teuchos::rcp(new Epetra_Vector(FS.ref_lambda()));
-    darcy_flux_ = Teuchos::rcp(new Epetra_Vector(FS.ref_darcy_flux()));
-    water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_water_saturation()));
-    prev_water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_prev_water_saturation()));
+  } else if (mode == AmanziFlow::FLOW_STATE_COPY) {
+    const Epetra_Map& fmap = mesh_->face_map(true);
+    darcy_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
+    CopyMasterFace2GhostFace(FS.ref_darcy_flux(), *darcy_flux_);
   }
 
   S_ = FS.S_;

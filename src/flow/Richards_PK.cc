@@ -510,6 +510,9 @@ double Richards_PK::CalculateFlowDt()
 ******************************************************************* */
 int Richards_PK::Advance(double dT_MPC)
 {
+  // update the axiliary flow state
+  FS->CopyMasterFace2GhostFace(FS->ref_darcy_flux(), FS_aux->ref_darcy_flux());
+
   dT = dT_MPC;
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
