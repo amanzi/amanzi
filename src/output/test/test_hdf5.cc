@@ -1,5 +1,5 @@
 #include "UnitTest++.h"
-#include "../hdf5_mesh.hh"
+#include "../HDF5Mesh.hh"
 #include "MeshFactory.hh"
 
 

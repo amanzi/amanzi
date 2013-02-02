@@ -17,7 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "errors.hh"
 #include "TabularFunction.hh"
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 
 #include "Mesh.hh"
 #include "Transport_PK.hh"

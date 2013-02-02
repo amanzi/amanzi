@@ -31,8 +31,8 @@ include_directories(${NOX_INCLUDE_DIRS})
 #
 # Library: solvers
 #
-file(GLOB solvers_source_files "*.cpp")
-file(GLOB solver_inc_files "*.H")
+file(GLOB solvers_source_files "*.cc")
+file(GLOB solver_inc_files "*.hh")
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)

@@ -4,7 +4,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
-#include "ObservationData.H"
+#include "ObservationData.hh"
 #include "State.hh"
 #include "TimeStepManager.hh"
 

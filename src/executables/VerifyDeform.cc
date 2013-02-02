@@ -24,7 +24,7 @@
 #include "MeshFactory.hh"
 #include "FrameworkTraits.hh"
 #include "Geometry.hh"
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 #include "Vis.hh"
 
 int main(int argc, char *argv[]) {

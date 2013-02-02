@@ -52,7 +52,10 @@ void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     Epetra_Vector& flux = FS->ref_darcy_flux();
-    CalculateRelativePermeabilityUpwindFlux(p, flux);
+    const Epetra_Map& fmap = mesh_->face_map(true);
+    Epetra_Vector flux_wghost(fmap);
+    FS->CopyMasterFace2GhostFace(flux, flux_wghost);
+    CalculateRelativePermeabilityUpwindFlux(p, flux_wghost);
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     CalculateRelativePermeabilityArithmeticMean(p);
@@ -114,9 +117,10 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
 
   Krel_faces->PutScalar(0.0);
 
-  double max_flux;
+  double max_flux, min_flux;
   flux.MaxValue(&max_flux);
-  double tol = FLOW_RELATIVE_PERM_TOLERANCE * max_flux;
+  flux.MinValue(&min_flux);
+  double tol = FLOW_RELATIVE_PERM_TOLERANCE * std::max<double>(fabs(max_flux), fabs(min_flux));
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);

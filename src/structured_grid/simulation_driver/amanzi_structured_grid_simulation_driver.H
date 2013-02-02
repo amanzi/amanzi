@@ -4,8 +4,8 @@
 #include "BoxLib.H"
 #include "ParallelDescriptor.H"
 #include "Teuchos_ParameterList.hpp"
-#include "ObservationData.H"
-#include "Simulator.H"
+#include "ObservationData.hh"
+#include "Simulator.hh"
 #include "InputParser_Structured.H"
 
 struct AmanziStructuredGridSimulationDriver

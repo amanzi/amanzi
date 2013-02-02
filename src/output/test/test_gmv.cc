@@ -1,5 +1,5 @@
 #include "UnitTest++.h"
-#include "../gmv_mesh.hh"
+#include "../GMVMesh.hh"
 #include "MeshFactory.hh"
 
 

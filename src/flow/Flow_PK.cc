@@ -15,7 +15,7 @@ Authors: Neil Carlson (version 1)
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "gmv_mesh.hh"
+#include "GMVMesh.hh"
 #include "mfd3d.hh"
 
 #include "Mesh.hh"

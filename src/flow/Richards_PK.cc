@@ -24,7 +24,7 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 
 #include "dbc.hh"
 #include "exceptions.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 #include "Mesh.hh"
 #include "Point.hh"

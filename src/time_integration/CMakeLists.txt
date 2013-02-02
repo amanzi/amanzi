@@ -43,8 +43,8 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: time_integration
 #
-file(GLOB time_integration_source_files "*.cpp" "*.cc")
-file(GLOB time_int_inc_files "*.hpp" "*.hh")
+file(GLOB time_integration_source_files "*.cc")
+file(GLOB time_int_inc_files "*.hh")
 set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE time_integration_tpl_libs)
 list(REMOVE_DUPLICATES time_integration_tpl_libs)

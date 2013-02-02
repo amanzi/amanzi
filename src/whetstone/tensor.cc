@@ -27,7 +27,7 @@ namespace WhetStone {
 
 
 /* ******************************************************************
-* Constructors
+* Constructor
 ****************************************************************** */
 Tensor::Tensor(const Tensor& T)
 {
@@ -47,11 +47,28 @@ Tensor::Tensor(const Tensor& T)
 
 
 /* ******************************************************************
+* Constructor.
+* Warining: no check of data validity is performed. 
+****************************************************************** */
+Tensor::Tensor(int d, int rank, const double* data)
+{
+  size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
+  int mem = size_ * size_;
+
+  data_ = new double[mem];
+
+  d_ = d;
+  rank_ = rank;
+  for (int i = 0; i < mem; i++) data_[i] = data[i];
+}
+
+
+/* ******************************************************************
 * Initialization of a tensor of rank 1, 2 or 4. 
 ****************************************************************** */
-int Tensor::init(const int d, const int rank)
+int Tensor::init(int d, int rank)
 {
-  size_ = WHETSTONE_TENSOR_SIZE[d-1][rank-1];
+  size_ = WHETSTONE_TENSOR_SIZE[d - 1][rank - 1];
   int mem = size_ * size_;
 
   if (data_) delete[] data_;

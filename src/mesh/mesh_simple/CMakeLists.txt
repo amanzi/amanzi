@@ -51,7 +51,7 @@ if (BUILD_TESTS)
                     KIND unit
 		    SOURCE
                           test/Main.cc 
-                          test/test_maps.cpp 
+                          test/test_maps.cc 
                           test/test_cell_numbering.cc 
                           test/test_face_adj_cells.cc 
                           test/test_node_cell_faces.cc

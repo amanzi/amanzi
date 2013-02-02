@@ -20,8 +20,8 @@ Authors: Neil Carlson (version 1)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "boundary_function.hh"
-#include "domain_function.hh"
+#include "BoundaryFunction.hh"
+#include "DomainFunction.hh"
 #include "tensor.hh"
 
 #include "Flow_PK.hh"

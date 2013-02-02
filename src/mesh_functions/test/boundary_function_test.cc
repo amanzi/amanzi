@@ -7,17 +7,17 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "errors.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "ConstantFunction.hh"
 #include "PolynomialFunction.hh"
 #include "LinearFunction.hh"
 #include "SeparableFunction.hh"
 #include "FunctionFactory.hh"
 
-#include "errors.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;

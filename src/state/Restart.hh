@@ -5,7 +5,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_Comm.h"
 #include "State.hh"
-#include "hdf5mpi_mesh.hh"
+#include "HDF5MPIMesh.hh"
 
 namespace Amanzi {
 

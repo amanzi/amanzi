@@ -99,7 +99,7 @@ The gravitational acceleration is assumed to be directed in the negative z-direc
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 
 namespace Amanzi {
