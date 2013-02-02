@@ -52,7 +52,10 @@ void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     Epetra_Vector& flux = FS->ref_darcy_flux();
-    CalculateRelativePermeabilityUpwindFlux(p, flux);
+    const Epetra_Map& fmap = mesh_->face_map(true);
+    Epetra_Vector flux_wghost(fmap);
+    FS->CopyMasterFace2GhostFace(flux, flux_wghost);
+    CalculateRelativePermeabilityUpwindFlux(p, flux_wghost);
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     CalculateRelativePermeabilityArithmeticMean(p);
