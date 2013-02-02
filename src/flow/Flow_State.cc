@@ -59,7 +59,7 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
 
 
 /* *******************************************************************
-* Flow state is build from state S.        
+* Flow state is build from the pointer to state S.        
 ******************************************************************* */
 Flow_State::Flow_State(Teuchos::RCP<State> S) : S_(NULL)
 {
@@ -88,6 +88,9 @@ Flow_State::Flow_State(Teuchos::RCP<State> S) : S_(NULL)
 }
 
 
+/* *******************************************************************
+* Flow state is build from state S.        
+******************************************************************* */
 Flow_State::Flow_State(State& S) : S_(NULL)
 {
   vertical_permeability_ = S.get_vertical_permeability();
