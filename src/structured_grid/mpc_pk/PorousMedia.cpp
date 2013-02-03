@@ -8455,7 +8455,7 @@ PorousMedia::init_rock_properties ()
           BL_ASSERT(edat.box().contains(ebox));
           FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
                          edat.dataPtr(), ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
-                         cbox.loVect(),cbox.hiVect(),&d); // FIXME: Modify to support vector kappa_cc
+                         cbox.loVect(),cbox.hiVect(),&d);
         }
       }
     }
@@ -8550,17 +8550,36 @@ PorousMedia::init_rock_properties ()
 #if 0
   // FIXME: Leave commented out until final testing complete
   MatFiller* matFiller = PMParent()->GetMatFiller();
-  std::string prop_str1 = "permeability";
-  std::string prop_str2 = "porosity";
-  int nComp1 = matFiller->nComp(prop_str1);
-  int nComp2 = matFiller->nComp(prop_str2);
-  MultiFab tkappa(grids,nComp1+nComp2,nGrowHYP);
-  Real t_time = 1.e9;
+
+  std::string perm_str = "permeability";
+  int nComp_perm = matFiller->nComp(perm_str);
+  BL_ASSERT(nComp_perm == BL_SPACEDIM);
+  Real t_time = parent->cumTime();
   void* myCtx = 0;
-  matFiller->SetProperty(t_time,level,tkappa,prop_str1,0,nGrowHYP,myCtx);
-  matFiller->SetProperty(t_time,level,tkappa,prop_str2,nComp1,nGrowHYP,myCtx);
+  MultiFab tkappa(grids,nComp_perm,nGrowHYP);
+  matFiller->SetProperty(t_time,level,tkappa,perm_str,0,nGrowHYP,myCtx);
 
+  // Generate kpedge with no grow cells
+  for (MFIter mfi(tkappa); mfi.isValid(); ++mfi) {
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      const Box& cbox = mfi.validbox();
+      Box ebox = Box(cbox).surroundingNodes(d);
+      const FArrayBox& cdat = tkappa[mfi];
+      FArrayBox& edat = kpedge[d][mfi];
+      BL_ASSERT(edat.box().contains(ebox));
+      FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
+		     edat.dataPtr(), ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
+		     cbox.loVect(),cbox.hiVect(),&d);
+    }
+  }
 
+  // Generate cc kappa avg
+  int nGrowCC = std::min(tkappa.nGrow(),kappa->nGrow());
+  MultiFab::Copy(*kappa,tkappa,0,0,1,nGrowCC);
+  for (int d=1; d<BL_SPACEDIM; d++) {
+    MultiFab::Add(*kappa,tkappa,d,0,1,nGrowCC);
+  }
+  kappa->mult(1.0/BL_SPACEDIM);
 #endif
 
   if (model != model_list["single-phase"] && 
@@ -11965,9 +11984,9 @@ PorousMedia::derive (const std::string& name,
 {
     BL_ASSERT(ngrow >= 0);
     
-    if (const DeriveRec* rec = derive_lst.get(name))
+    const DeriveRec* rec = derive_lst.get(name);
+    if (rec)
     {
-        const DeriveRec* rec = derive_lst.get(name);
         BoxArray dstBA(grids);
         MultiFab* mf = new MultiFab(dstBA, rec->numDerive(), ngrow);
         int dcomp = 0;
