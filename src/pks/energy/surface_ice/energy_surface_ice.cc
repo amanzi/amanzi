@@ -218,7 +218,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& pres = *S->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
-      ->ViewComponent("cell",false);
+      ->ViewComponent("face",false);
 
   AmanziMesh::Entity_ID_List cells;
   int nfaces = enth_f.MyLength();
@@ -286,7 +286,8 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     double T_air1 = air_temp_->operator()(&time);
     double n1 = eos_liquid_->MolarDensity(T_air1, patm);
     double u1 = iem_liquid_->InternalEnergy(T_air1);
-    double enth1 = u1 + patm / n1;
+    //    double enth1 = u1 + patm / n1;
+    double enth1 = u1;
 
     // get enthalpy of outgoing water
     const Epetra_MultiVector& enth_surf = *S->GetFieldData(enthalpy_key_)

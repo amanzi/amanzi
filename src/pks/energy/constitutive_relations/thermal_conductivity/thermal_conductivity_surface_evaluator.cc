@@ -41,7 +41,8 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
     uf_key_(other.uf_key_),
     height_key_(other.height_key_),
     K_liq_(other.K_liq_),
-    K_ice_(other.K_ice_) {}
+    K_ice_(other.K_ice_),
+    min_K_(other.min_K_) {}
 
 
 Teuchos::RCP<FieldEvaluator>
