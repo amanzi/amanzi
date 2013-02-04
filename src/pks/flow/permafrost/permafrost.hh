@@ -51,12 +51,12 @@ public:
 protected:
   // Create of physical evaluators.
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
+  virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
 private:
   // factory registration
   static RegisteredPKFactory<Permafrost> reg_;
-  
-  
+
 };
 
 }  // namespace AmanziFlow

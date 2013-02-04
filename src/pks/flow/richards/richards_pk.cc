@@ -507,14 +507,15 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   if (update_perm) {
     // patch up the BCs
+    const double& p_atm = *S->GetScalarData("atmospheric_pressure");
     const Epetra_MultiVector& pres_f = *S->GetFieldData(key_)
         ->ViewComponent("face",false);
     for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
       AmanziMesh::Entity_ID_List cells;
       uw_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
       if (cells.size() == 1) {
-        // just grab the cell inside's perm... this will need to be fixed eventually.
-        (*uw_rel_perm)("face",f) = (*rel_perm)("cell",cells[0]);
+        (*uw_rel_perm)("face",f) = wrms_->second[ (*wrms_->first)[cells[0]] ]
+          ->k_relative(p_atm - pres_f[0][f]);
       }
     }
 
@@ -534,7 +535,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         (*uw_rel_perm)("face",f) = 1.0;
       }
     }
-    
+
     // upwind
     upwinding_->Update(S);
   }
