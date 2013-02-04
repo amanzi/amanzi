@@ -108,6 +108,9 @@ class Mesh
                                  const Entity_ID entid) const = 0;
 
 
+  // Parent entity in the source mesh if mesh was derived from another mesh
+  virtual
+  Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
 
 
   // Get cell type
