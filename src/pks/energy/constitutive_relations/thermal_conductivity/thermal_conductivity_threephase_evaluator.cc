@@ -18,7 +18,9 @@ namespace EnergyRelations {
 ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
       Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   poro_key_ = plist_.get<std::string>("porosity key", "porosity");
