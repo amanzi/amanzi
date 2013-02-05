@@ -12,7 +12,6 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 #include "Point.hh"
 
 #include "composite_vector_function.hh"
@@ -28,6 +27,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_model.hh"
 #include "overland_head_water_content_evaluator.hh"
 #include "height_evaluator.hh"
+#include "overland_source_from_subsurface_flux_evaluator.hh"
 
 #include "overland_head.hh"
 
@@ -41,7 +41,6 @@ RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, hea
 // -------------------------------------------------------------
 void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
-  CreateMesh_(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -138,11 +137,11 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- evaluator for surface geometry.
   S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-                ->SetComponents(names2, locations2, num_dofs2);
+                ->AddComponents(names2, locations2, num_dofs2);
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+                ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-                ->SetComponents(names2, locations2, num_dofs2);
+                ->AddComponents(names2, locations2, num_dofs2);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
@@ -159,7 +158,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_.isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_.sublist("overland conductivity evaluator");
   Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
@@ -173,23 +172,40 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     source_plist.set("evaluator name", "overland_source");
     is_source_term_ = true;
     S->RequireField("overland_source")->SetMesh(mesh_)
-        ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::RCP<FieldEvaluator> source_evaluator =
         Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
     S->SetFieldEvaluator("overland_source", source_evaluator);
   }
 
-  // -- coupling term, filled in by subsurface PK.  No model for these.
   if (is_coupling_term_) {
-    S->RequireField("overland_source_from_subsurface")
-        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // -- coupling term in PC, filled in by subsurface PK.
     S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
-        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    // -- source term from subsurface
+    S->RequireField("overland_source_from_subsurface")
+        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList source_plist =
+        plist_.sublist("source from subsurface evaluator");
+    if (!source_plist.isParameter("surface mesh key"))
+      source_plist.set("surface mesh key", "surface");
+    if (!source_plist.isParameter("subsurface mesh key"))
+      source_plist.set("subsurface mesh key", "domain");
+    if (!source_plist.isParameter("source key"))
+      source_plist.set("source key", "overland_source_from_subsurface");
+    source_plist.set("volume basis", false);
+
+    Teuchos::RCP<FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator> source_evaluator =
+        Teuchos::rcp(new FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
+    S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
+
 
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList wc_plist = plist_.sublist("overland water content");
   Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wc_plist));
@@ -197,7 +213,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
-                ->SetComponents(names2, locations2, num_dofs2);
+                ->AddComponents(names2, locations2, num_dofs2);
   Teuchos::ParameterList height_plist = plist_.sublist("ponded depth");
   Teuchos::RCP<FlowRelations::HeightEvaluator> height_evaluator =
       Teuchos::rcp(new FlowRelations::HeightEvaluator(height_plist));
@@ -225,16 +241,11 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
     const Epetra_MultiVector& pres = *S->GetFieldData("pressure")
         ->ViewComponent("face",false);
 
-    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh =
-        Teuchos::rcp_dynamic_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
-    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface_mesh =
-        Teuchos::rcp_dynamic_cast<const AmanziMesh::Mesh_MSTK>(mesh_);
-
-    int ncells_surface = surface_mesh->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+    int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
     for (int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face and neighboring cell
       AmanziMesh::Entity_ID f =
-          surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
+          mesh_->entity_get_parent(AmanziMesh::CELL, c);
       head[0][c] = pres[0][f];
     }
     S->GetField(key_,name_)->set_initialized();
@@ -263,23 +274,6 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   // Initialize operators.
   matrix_->CreateMFDmassMatrices(Teuchos::null);
   preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-};
-
-
-void OverlandHeadFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
-  // Create mesh
-  if (!S->HasMesh("surface")) {
-    if (S->GetMesh()->space_dimension() == 2) {
-      // The domain mesh is already a 2D mesh, so simply register it as the surface
-      // mesh as well.
-      S->RegisterMesh("surface", S->GetMesh());
-      mesh_ = S->GetMesh();
-      standalone_mode_ = true;
-    }
-  }
-
-  // force an error if we don't have one yet
-  S->GetMesh("surface");
 };
 
 

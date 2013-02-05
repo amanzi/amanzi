@@ -67,9 +67,6 @@ void Richards::fun(double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
-  // accumulation term
-  AddAccumulation_(res.ptr());
-
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     Teuchos::RCP<const CompositeVector> satl1 =
@@ -82,22 +79,34 @@ void Richards::fun(double t_old,
           S_next_->GetFieldData("saturation_ice");
       Teuchos::RCP<const CompositeVector> sati0 =
           S_inter_->GetFieldData("saturation_ice");
-      *out_ << "  sat_old_0: " << (*satl0)("cell",0) << ", "
+      *out_ << "    sat_old_0: " << (*satl0)("cell",0) << ", "
             << (*sati0)("cell",0) << std::endl;
-      *out_ << "  sat_new_0: " << (*satl1)("cell",0) << ", "
+      *out_ << "    sat_new_0: " << (*satl1)("cell",0) << ", "
             << (*sati1)("cell",0) << std::endl;
-      *out_ << "  sat_old_1: " << (*satl0)("cell",nc) << ", "
+      *out_ << "    sat_old_1: " << (*satl0)("cell",nc) << ", "
             << (*sati0)("cell",nc) << std::endl;
-      *out_ << "  sat_new_1: " << (*satl1)("cell",nc) << ", "
+      *out_ << "    sat_new_1: " << (*satl1)("cell",nc) << ", "
             << (*sati1)("cell",nc) << std::endl;
     } else {
-      *out_ << "  sat_old_0: " << (*satl0)("cell",0) << std::endl;
-      *out_ << "  sat_new_0: " << (*satl1)("cell",0) << std::endl;
-      *out_ << "  sat_old_1: " << (*satl0)("cell",nc) << std::endl;
-      *out_ << "  sat_new_1: " << (*satl1)("cell",nc) << std::endl;
+      *out_ << "    sat_old_0: " << (*satl0)("cell",0) << std::endl;
+      *out_ << "    sat_new_0: " << (*satl1)("cell",0) << std::endl;
+      *out_ << "    sat_old_1: " << (*satl0)("cell",nc) << std::endl;
+      *out_ << "    sat_new_1: " << (*satl1)("cell",nc) << std::endl;
     }
 
 
+    *out_ << "  res0 (after diffusion): " << (*res)("cell",0,0)
+          << " " << (*res)("face",0,3) << std::endl;
+    *out_ << "  res1 (after diffusion): " << (*res)("cell",0,nc)
+          << " " << (*res)("face",0,500) << std::endl;
+  }
+#endif
+
+  // accumulation term
+  AddAccumulation_(res.ptr());
+
+#if DEBUG_FLAG
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  res0 (after accumulation): " << (*res)("cell",0,0)
           << " " << (*res)("face",0,3) << std::endl;
     *out_ << "  res1 (after accumulation): " << (*res)("cell",0,nc)
@@ -210,36 +219,11 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     Fc_cells[c] += pres[0][c] * dwc_dp[0][c] / h;
   }
 
-  // Assemble and precompute the Schur complement for inversion.
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-
-  if (assemble_preconditioner_) {
-    preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    preconditioner_->UpdatePreconditioner();
-  }
-
-  /*
-  // dump the schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
-  std::stringstream filename_s;
-  filename_s << "schur_" << S_next_->cycle() << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-  *out_ << "updated precon " << S_next_->cycle() << std::endl;
-
-  // print the rel perm
-  Teuchos::RCP<const CompositeVector> cell_rel_perm =
-      S_next_->GetFieldData("relative_permeability");
-  *out_ << "REL PERM: " << std::endl;
-  cell_rel_perm->Print(*out_);
-  *out_ << std::endl;
-  *out_ << "UPWINDED REL PERM: " << std::endl;
-  rel_perm->Print(*out_);
-  */
-
   // If coupled, update the vector used by surface preconditioner to get the
   // contribution of d overland_source_from_subsurface / d surface_pressure,
   // which is currently in our face unknown.
+  //
+  // Note this must be done prior to boundary conditions being applied.
   if (coupled_to_surface_via_head_) {
     Epetra_MultiVector& dsource = *S_next_->GetFieldData(
         "doverland_source_from_subsurface_dsurface_pressure", name_)
@@ -272,6 +256,34 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       dsource[0][c] = Acf_cells[cells[0]](my_n);
     }
   }
+
+  // Assemble and precompute the Schur complement for inversion.
+  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+
+  if (assemble_preconditioner_) {
+    preconditioner_->AssembleGlobalMatrices();
+    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    preconditioner_->UpdatePreconditioner();
+  }
+
+  /*
+  // dump the schur complement
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  std::stringstream filename_s;
+  filename_s << "schur_" << S_next_->cycle() << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  *out_ << "updated precon " << S_next_->cycle() << std::endl;
+
+  // print the rel perm
+  Teuchos::RCP<const CompositeVector> cell_rel_perm =
+      S_next_->GetFieldData("relative_permeability");
+  *out_ << "REL PERM: " << std::endl;
+  cell_rel_perm->Print(*out_);
+  *out_ << std::endl;
+  *out_ << "UPWINDED REL PERM: " << std::endl;
+  rel_perm->Print(*out_);
+  */
+
 };
 
 

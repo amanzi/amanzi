@@ -101,9 +101,6 @@ protected:
   // -- source terms
   void AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g);
 
-  // mesh creation
-  void CreateMesh_(const Teuchos::Ptr<State>& S);
-
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:

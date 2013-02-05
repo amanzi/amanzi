@@ -9,7 +9,6 @@ MACRO(WHOLE_ARCHIVE inlib)
   SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
 ENDMACRO(WHOLE_ARCHIVE inlib)
 
-
 include_directories(${ATS_SOURCE_DIR}/src/data_structures)
 include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
@@ -40,6 +39,7 @@ WHOLE_ARCHIVE(relations_eos)
 WHOLE_ARCHIVE(flow_relations_wrm)
 WHOLE_ARCHIVE(flow_relations_wrm_models)
 WHOLE_ARCHIVE(flow_relations_overland_conductivity)
+WHOLE_ARCHIVE(flow_relations_surface_subsurface_fluxes)
 WHOLE_ARCHIVE(flow_relations_elevation)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
@@ -70,6 +70,7 @@ target_link_libraries(ats
                       ${flow_relations_wrm_models}
                       ${flow_relations_overland_conductivity}
                       ${flow_relations_elevation}
+                      ${flow_relations_surface_subsurface_fluxes}
                       ${relations_eos}
                       advection
                       divgrad
