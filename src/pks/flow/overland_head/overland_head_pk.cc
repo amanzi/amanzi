@@ -79,8 +79,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_flux_ = bc_factory.CreateMassFlux();
 
   // coupling to subsurface
-  //  is_coupling_term_ = plist_.get<bool>("coupled to subsurface", false);
-  is_coupling_term_ = false;
+  is_coupling_term_ = plist_.get<bool>("coupled to subsurface", false);
 
   // Create the upwinding method.
   S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)

@@ -74,22 +74,36 @@ void MPCSurfaceSubsurfaceCoupler::changed_solution() {
 // applies preconditioner to u and returns the result in Pu
 void MPCSurfaceSubsurfaceCoupler::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
-  StrongMPC::precon(u,Pu);
+  // Evaluate the overland preconditioner (reverse order), pk 1
+  Teuchos::RCP<PKBDFBase> ol_pk = sub_pks_[1];
+  Teuchos::RCP<const TreeVector> ol_u = u->SubVector(ol_pk->name());
+  Teuchos::RCP<TreeVector> ol_Pu = Pu->SubVector(ol_pk->name());
+  ol_pk->precon(ol_u, ol_Pu);
 
-  // overwrite the subsurface's surface face updates with that from the surface.
-  const Epetra_MultiVector& Pu_surf_c = *Pu->SubVector("overland flow")
-      ->data()->ViewComponent("cell",false);
-  Epetra_MultiVector& Pu_sub_f = *Pu->SubVector("flow")
-      ->data()->ViewComponent("face",false);
+  // The surface lambda values are Dirichlet, indicating that the residual u
+  // is the mismatch to Dirichlet data.  This Dirichlet data is given by the
+  // surface mesh's cell value, so the mismatch is the surface mesh's
+  // correction Pu.
+  // Add u_lambda to Pu_surface.
+  Teuchos::RCP<PKBDFBase> rich_pk = sub_pks_[0];
+  Teuchos::RCP<const TreeVector> rich_u = u->SubVector(rich_pk->name());
+  Teuchos::RCP<TreeVector> new_rich_u = Teuchos::rcp(new TreeVector(*rich_u));
+  *new_rich_u = *rich_u;
+
+  Epetra_MultiVector& new_rich_u_f = *new_rich_u->data()->ViewComponent("face",false);
+  const Epetra_MultiVector& ol_Pu_c = *ol_Pu->data()->ViewComponent("cell",false);
 
   Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
-  int ncells = Pu_surf_c.MyLength();
+  int ncells = ol_Pu_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    // -- get the surface cell's equivalent subsurface face and neighboring cell
-    AmanziMesh::Entity_ID f =
-        surface->entity_get_parent(AmanziMesh::CELL, c);
-    Pu_sub_f[0][f] = Pu_surf_c[0][c];
+    AmanziMesh::Entity_ID f = surface->entity_get_parent(AmanziMesh::CELL, c);
+    new_rich_u_f[0][f] += ol_Pu_c[0][c];
   }
+
+  // Call the Richards precon with the updated residual.
+  Teuchos::RCP<TreeVector> rich_Pu = Pu->SubVector(rich_pk->name());
+  rich_pk->precon(new_rich_u, rich_Pu);
+
 }
 
 
@@ -100,6 +114,7 @@ void MPCSurfaceSubsurfaceCoupler::precon(Teuchos::RCP<const TreeVector> u,
 void MPCSurfaceSubsurfaceCoupler::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   StrongMPC::update_precon(t,up,h);
 
+  /*
   // test the preconditioner
   double eps = 1.e-3;
   Teuchos::RCP<TreeVector> u = Teuchos::rcp(new TreeVector(*up));
@@ -162,10 +177,9 @@ void MPCSurfaceSubsurfaceCoupler::update_precon(double t, Teuchos::RCP<const Tre
   pk_ri->preconditioner_->Apply(*fu_sub, u_sub.ptr());
   std::cout << "  u_sub = " << u_sub0 << " deriv = " << (fu_sub1 - fu_sub0)/eps << ", " << (*u_sub)("cell",99) << std::endl;
 
-
-
-
   ASSERT(0);
+  */
+
 }
 
 } // namespace

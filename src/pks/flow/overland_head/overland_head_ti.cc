@@ -197,7 +197,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditionsNoElev_(S_next_.ptr());
-  //  UpdateBoundaryConditions_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
@@ -278,8 +277,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   if (assemble_preconditioner_) {
     preconditioner_->AssembleGlobalMatrices();
-    //    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    //    preconditioner_->UpdatePreconditioner();
+    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    preconditioner_->UpdatePreconditioner();
   }
 
   /*
