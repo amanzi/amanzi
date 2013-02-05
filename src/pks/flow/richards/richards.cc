@@ -147,6 +147,21 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     update_flux_ = UPDATE_FLUX_ITERATION;
   }
 
+  // -- coupling done by flux terms
+  coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
+  if (coupled_to_surface_via_flux_) {
+    S->RequireField("surface_pressure");
+    S->RequireField("doverland_source_from_subsurface_dsurface_pressure", name_)
+        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField("overland_source_from_subsurface")
+        ->SetMesh(S->GetMesh("surface"))->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // -- Make sure coupling isn't flagged multiple ways.
+  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_head_));
+  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_residual_));
+  ASSERT(!(coupled_to_surface_via_head_ && coupled_to_surface_via_residual_));
+
 
   // Create the upwinding method
   S->RequireField("numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
@@ -289,7 +304,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
     S->GetFieldData("overland_source_from_subsurface", name_)->PutScalar(0.);
     S->GetField("overland_source_from_subsurface", name_)->set_initialized();
   }
-  if (coupled_to_surface_via_head_) {
+  if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
     S->GetFieldData("doverland_source_from_subsurface_dsurface_pressure", name_)
         ->PutScalar(0.);
     S->GetField("doverland_source_from_subsurface_dsurface_pressure", name_)
@@ -452,13 +467,11 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     }
 
     if (coupled_to_surface_via_residual_ ||
-        coupled_to_surface_via_head_) {
+        coupled_to_surface_via_head_ ||
+        coupled_to_surface_via_flux_) {
       // patch up the rel perm on surface as 1 -- FIX ME --etc
       Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
       int ncells_surface = surface->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-
-      const Epetra_MultiVector& head = *S->GetFieldData("surface_pressure")
-          ->ViewComponent("cell",false);
 
       for (int c=0; c!=ncells_surface; ++c) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
@@ -553,6 +566,27 @@ void Richards::UpdateBoundaryConditions_() {
       // -- set that value to dirichlet
       bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
       bc_values_[f] = head[0][c];
+    }
+  }
+
+  // surface coupling
+  if (coupled_to_surface_via_flux_) {
+    // Face is Neumann with value of surface residual
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
+    const Epetra_MultiVector& flux =
+        *S_next_->GetFieldData("overland_source_from_subsurface")
+        ->ViewComponent("cell",false);
+
+    int ncells_surface = flux.MyLength();
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+
+      // -- set that value to Neumann
+      bc_markers_[f] = Operators::MFD_BC_FLUX;
+      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+      *out_ << "  BC (Neumann) = " << flux[0][c] / mesh_->face_area(f) << std::endl;
     }
   }
 

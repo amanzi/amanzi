@@ -48,7 +48,9 @@ void OverlandHeadFlow::fun( double t_old,
     Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> preselev= S_next_->GetFieldData("pres_elev");
 
-    *out_ << "OverlandHeadFlow Residual calculation:" << std::endl;
+    *out_ << "----------------------------------------------------------------" << std::endl;
+    *out_ << "OverlandHead Residual calculation: T0 = " << t_old
+          << " T1 = " << t_new << " H = " << h << std::endl;
     *out_ << std::setprecision(15);
     *out_ << "  p0: " << (*u)("cell",0,0) << " "
           << std::endl;
@@ -239,19 +241,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
   int ncells = cv.MyLength();
 
-  if (!is_coupling_term_) {
-    for (int c=0; c!=ncells; ++c) {
-      // - add accumulation terms, treating h as h_bar, which is allowed to go
-      // - negative.  This results in a non-zero preconditioner when p < p_atm,
-      // - resulting in a correction that should take p >= p_atm.
-      *out_ << "Acc diff terms, " << Acc_cells[c] <<std::endl;
-      Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
-      *out_ << "Acc accum terms, +" << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h <<std::endl;
-      *out_ << "dh_dp = " << dh_dp[0][c] << std::endl;
-    }
-  } else {
-    // - add source terms, which come from the flux from surface to
-    // - subsurface.  This vector was filled in by the Richards PK.
+  if (coupled_to_subsurface_via_flux_ || coupled_to_subsurface_via_head_) {
+    // Coupled to subsurface, needs derivatives of coupling terms.
     const Epetra_MultiVector& dQ_dp =
         *S_next_->GetFieldData("doverland_source_from_subsurface_dsurface_pressure")
         ->ViewComponent("cell",false);
@@ -262,12 +253,23 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
         // - add accumulation terms, treating h as h, which goes zero.
         Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
         *out_ << "Acc accum terms, +" << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h <<std::endl;
+      } else {
+        *out_ << "Acc accum terms, +" << 0. <<std::endl;
       }
 
       // add source term
       Acc_cells[c] -= dQ_dp[0][c] / dh_dp[0][c];
       *out_ << "Acc dQ terms, -" << dQ_dp[0][c] / dh_dp[0][c] << std::endl;
       *out_ << "dh_dp = " << dh_dp[0][c] << std::endl;
+    }
+
+  } else {
+    // no Coupling term
+    for (int c=0; c!=ncells; ++c) {
+      // - add accumulation terms, treating h as h_bar, which is allowed to go
+      // - negative.  This results in a non-zero preconditioner when p < p_atm,
+      // - resulting in a correction that should take p >= p_atm.
+      Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
     }
   }
 

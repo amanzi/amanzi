@@ -94,6 +94,7 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
       *S_inter_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
 
   if (is_source_term_) {
+    // Add in external source term.
     S_next_->GetFieldEvaluator("overland_source")
         ->HasFieldChanged(S_next_.ptr(), name_);
     S_inter_->GetFieldEvaluator("overland_source")
@@ -104,7 +105,9 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData("overland_source")->ViewComponent("cell",false);
 
-    // source term is in m water / s, not in mols / s.
+    // External source term is in [m water / s], not in [mols / s].  We assume
+    // it comes in at the surface density, i.e. the surface temperature.  This
+    // may need to be changed.
     S_next_->GetFieldEvaluator("surface_molar_density_liquid")
         ->HasFieldChanged(S_next_.ptr(), name_);
     S_inter_->GetFieldEvaluator("surface_molar_density_liquid")
@@ -124,13 +127,14 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     }
   }
 
-  if (is_coupling_term_) {
+  if (coupled_to_subsurface_via_head_) {
+    // Add in source term from coupling.
     S_next_->GetFieldEvaluator("overland_source_from_subsurface")
         ->HasFieldChanged(S_next_.ptr(), name_);
     Teuchos::RCP<const CompositeVector> source1 =
         S_next_->GetFieldData("overland_source_from_subsurface");
 
-    // source term is in units of mol / s
+    // source term is in units of [mol / s]
     g_c.Update(-1., *source1->ViewComponent("cell",false), 1.);
   }
 };
