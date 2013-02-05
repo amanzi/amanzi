@@ -13,7 +13,6 @@ Authors: Gianmarco Manzini
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 #include "Point.hh"
 
 #include "composite_vector_function.hh"
@@ -40,7 +39,6 @@ RegisteredPKFactory<OverlandFlow> OverlandFlow::reg_("overland flow");
 // -------------------------------------------------------------
 void OverlandFlow::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
-  CreateMesh_(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -185,18 +183,20 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source", source_evaluator);
   }
 
-  // -- coupling term evaluator
-  if (plist_.isSublist("subsurface coupling evaluator")) {
+  // -- source from subsurface evaluator
+  if (plist_.isSublist("source from subsurface evaluator")) {
     is_coupling_term_ = true;
     S->RequireField("overland_source_from_subsurface")
         ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList source_plist = plist_.sublist("subsurface coupling evaluator");
-    source_plist.set("surface mesh key", "surface");
-    source_plist.set("subsurface mesh key", "domain");
-    // NOTE: this should change to "overland_molar_density_liquid" or
-    // whatever when such a thing exists.
-    source_plist.set("source key", "overland_source_from_subsurface");
+    Teuchos::ParameterList source_plist = plist_.sublist("source from subsurface evaluator");
+    if (!source_plist.isParameter("surface mesh key"))
+      source_plist.set("surface mesh key", "surface");
+    if (!source_plist.isParameter("subsurface mesh key"))
+      source_plist.set("subsurface mesh key", "domain");
+    if (!source_plist.isParameter("source key"))
+      source_plist.set("source key", "overland_source_from_subsurface");
+    source_plist.set("volume basis", true);
 
     Teuchos::RCP<FieldEvaluator> source_evaluator =
         S->RequireFieldEvaluator("overland_source_from_subsurface", source_plist);
@@ -230,71 +230,6 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   // Initialize operators.
   matrix_->CreateMFDmassMatrices(Teuchos::null);
   preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-};
-
-
-void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
-  bool running_timers(false);
-
-  // Create mesh
-  if (S->GetMesh()->space_dimension() == 3) {
-    // The domain mesh is a 3D volume mesh or a 3D surface mesh -- construct
-    // the surface mesh.
-    // -- Ensure the domain mesh is MSTK.
-    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mesh =
-      Teuchos::rcp_dynamic_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
-
-    if (mesh == Teuchos::null) {
-      Errors::Message message("Overland Flow PK requires surface mesh, which is currently only supported by MSTK.  Make the domain mesh an MSTK mesh.");
-      Exceptions::amanzi_throw(message);
-    }
-
-    // -- Start the clock
-    running_timers = true;
-    //    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
-    //    Teuchos::TimeMonitor timer(*meshtime);
-
-    // -- Check that the surface mesh has a subset
-    std::vector<std::string> setnames;
-    if (plist_.isParameter("surface sideset name")) {
-      setnames.push_back(plist_.get<std::string>("surface sideset name"));
-    } else {
-      setnames = plist_.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
-    }
-
-    // -- Call the MSTK constructor to rip off the surface of the MSTK domain
-    // -- mesh.
-    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh;
-
-    if (mesh->cell_dimension() == 3) {
-      Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
-      S->RegisterMesh("surface_3d", surface_mesh_3d);
-
-      surface_mesh = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
-    } else {
-      S->RegisterMesh("surface_3d", mesh);
-
-      surface_mesh = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::CELL,true,false));
-    }
-
-    // -- push the mesh into state
-    S->RegisterMesh("surface", surface_mesh);
-    mesh_ = surface_mesh;
-    standalone_mode_ = false;
-
-  } else if (S->GetMesh()->space_dimension() == 2) {
-    // The domain mesh is already a 2D mesh, so simply register it as the surface
-    // mesh as well.
-    S->RegisterMesh("surface", S->GetMesh());
-    mesh_ = S->GetMesh();
-    standalone_mode_ = true;
-  } else {
-    Errors::Message message("Invalid mesh dimension for overland flow.");
-    Exceptions::amanzi_throw(message);
-  }
 };
 
 

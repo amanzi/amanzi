@@ -7,7 +7,6 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "Mesh_MSTK.hh"
 #include "surface_coupler_via_source_evaluator.hh"
 
 namespace Amanzi {
@@ -66,8 +65,7 @@ void SurfaceCouplerViaSourceEvaluator::IdentifyFaceAndDirection_(
         const Teuchos::Ptr<State>& S) {
   // grab the meshes
   Teuchos::RCP<const AmanziMesh::Mesh> subsurface = S->GetMesh(subsurface_mesh_key_);
-  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh("surface"));
+  Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(surface_mesh_key_);
 
   // allocate space for face IDs and directions
   int ncells = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

@@ -37,6 +37,7 @@ public:
       surface_head_eps_(0.),
       update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("primary variable key", "surface_pressure");
+    plist_.set("domain name", "surface");
   }
 
   // Virtual destructor
@@ -93,9 +94,6 @@ protected:
   void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
   // -- source terms
   void AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g);
-
-  // mesh creation
-  void CreateMesh_(const Teuchos::Ptr<State>& S);
 
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 

@@ -7,8 +7,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_SURFACE_COUPLER_VIA_HEAD_HH_
-#define AMANZI_FLOWRELATIONS_SURFACE_COUPLER_VIA_HEAD_HH_
+#ifndef AMANZI_FLOWRELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
+#define AMANZI_FLOWRELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
 
 #include "field_evaluator_factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -17,14 +17,14 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class SurfaceCouplerViaHeadEvaluator :
+class OverlandSourceFromSubsurfaceFluxEvaluator :
     public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  SurfaceCouplerViaHeadEvaluator(Teuchos::ParameterList& plist);
+  OverlandSourceFromSubsurfaceFluxEvaluator(Teuchos::ParameterList& plist);
 
-  SurfaceCouplerViaHeadEvaluator(const SurfaceCouplerViaHeadEvaluator& other);
+  OverlandSourceFromSubsurfaceFluxEvaluator(const OverlandSourceFromSubsurfaceFluxEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -40,17 +40,18 @@ protected:
 
   void IdentifyFaceAndDirection_(const Teuchos::Ptr<State>& S);
 
-  typedef std::pair<int, int> FaceDir;
+  typedef std::pair<int, double> FaceDir;
   Teuchos::RCP<std::vector<FaceDir> > face_and_dirs_;
 
   Key flux_key_;
   Key dens_key_;
+  bool volume_basis_;
 
   Key surface_mesh_key_;
   Key subsurface_mesh_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,SurfaceCouplerViaHeadEvaluator> fac_;
+  static Utils::RegisteredFactory<FieldEvaluator,OverlandSourceFromSubsurfaceFluxEvaluator> fac_;
 
 };
 

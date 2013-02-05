@@ -8,7 +8,6 @@ Authors: Gianmarco Manzini
 ----------------------------------------------------------------------------- */
 
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 
 #include "overland.hh"
 

@@ -35,8 +35,6 @@ Effectively stolen from Amanzi, with few modifications.
 #include "coordinator.hh"
 #include "state.hh"
 
-#include "Mesh_MSTK.hh"
-
 #include "errors.hh"
 #include "exceptions.hh"
 
@@ -222,18 +220,11 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
     }
 
     if (mesh->cell_dimension() == 3) {
-           surface3D_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
-           surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
-      // Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> mesh_mstk = Teuchos::rcp_dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK>(mesh);
-
-      // surface3D_mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(*mesh_mstk,setnames,Amanzi::AmanziMesh::FACE,false,false));
-      // surface_mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(*mesh_mstk,setnames,Amanzi::AmanziMesh::FACE,true,false));
+      surface3D_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
+      surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
     } else {
-      // Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> mesh_mstk = Teuchos::rcp_dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK>(mesh);
-
       surface3D_mesh = mesh;
-           surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
-      // surface_mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(*mesh_mstk,setnames,Amanzi::AmanziMesh::CELL,true,false));
+      surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
     }
   }
 

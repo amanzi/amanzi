@@ -51,14 +51,17 @@ void OverlandHeadFlow::fun( double t_old,
     *out_ << "OverlandHeadFlow Residual calculation:" << std::endl;
     *out_ << std::setprecision(15);
     *out_ << "  p0: " << (*u)("cell",0,0) << " "
-          << (*u)("face",0,faces[0]) << " " << (*u)("face",0,faces[1]) << " "
-          << (*u)("face",0,faces[2]) << " " << (*u)("face",0,faces[3]) << std::endl;
+          << std::endl;
+        //          << (*u)("face",0,faces[0]) << " " << (*u)("face",0,faces[1]) << " "
+        //          << (*u)("face",0,faces[2]) << " " << (*u)("face",0,faces[3]) << std::endl;
     *out_ << "  h0: " << (*depth)("cell",0,0) << " "
-          << (*depth)("face",0,faces[0]) << " " << (*depth)("face",0,faces[1]) << " "
-          << (*depth)("face",0,faces[2]) << " " << (*depth)("face",0,faces[3]) << std::endl;
+          << std::endl;
+    //          << (*depth)("face",0,faces[0]) << " " << (*depth)("face",0,faces[1]) << " "
+    //          << (*depth)("face",0,faces[2]) << " " << (*depth)("face",0,faces[3]) << std::endl;
     *out_ << "  hz0: " << (*preselev)("cell",0,0) << " "
-          << (*preselev)("face",0,faces[0]) << " " << (*preselev)("face",0,faces[1]) << " "
-          << (*preselev)("face",0,faces[2]) << " " << (*preselev)("face",0,faces[3]) << std::endl;
+          << std::endl;
+    //          << (*preselev)("face",0,faces[0]) << " " << (*preselev)("face",0,faces[1]) << " "
+    //          << (*preselev)("face",0,faces[2]) << " " << (*preselev)("face",0,faces[3]) << std::endl;
   }
 #endif
 
@@ -77,7 +80,7 @@ void OverlandHeadFlow::fun( double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
-#if DEBUG_FLAG
+#if 0 //DEBUG_FLAG
   Teuchos::RCP<const CompositeVector> cond =
       S_next_->GetFieldData("upwind_overland_conductivity", name_);
 
@@ -96,8 +99,9 @@ void OverlandHeadFlow::fun( double t_old,
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  res0 (acc): " << (*res)("cell",0,0) << " "
-          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
-          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
+          << std::endl;
+    //          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
+    //          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
   }
 #endif
 
@@ -106,8 +110,9 @@ void OverlandHeadFlow::fun( double t_old,
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  res0 (source): " << (*res)("cell",0,0) << " "
-          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
-          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
+          << std::endl;
+    //          << (*res)("face",0,faces[0]) << " " << (*res)("face",0,faces[1]) << " "
+    //          << (*res)("face",0,faces[2]) << " " << (*res)("face",0,faces[3]) << std::endl;
   }
 #endif
 };
@@ -121,18 +126,28 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
   Teuchos::OSTab tab = getOSTab();
 
 #if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(11, AmanziMesh::USED, &cells);
+  //  AmanziMesh::Entity_ID_List cells;
+  //  mesh_->face_get_cells(0, AmanziMesh::USED, &cells);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
     *out_ << "  p0: " << (*u->data())("cell",0,0) << " "
-          << (*u->data())("face",0,0) << " " << (*u->data())("cell",0,cells[1]) << std::endl;
+          << std::endl;
+    //          << (*u->data())("face",0,0) << " " << (*u->data())("cell",0,cells[1]) << std::endl;
   }
 #endif
 
   // apply the preconditioner
   preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+
+  // Dump correction
+#if DEBUG_FLAG
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "  PC*p0, pre-var change: " << (*Pu->data())("cell",0,0) << " "
+          << std::endl;
+        //          << (*Pu->data())("face",0,0) << " " << (*Pu->data())("cell",0,cells[1]) << std::endl;
+  }
+#endif
 
   // tack on the variable change
   const Epetra_MultiVector& dh_dp =
@@ -147,7 +162,8 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  PC*p0: " << (*Pu->data())("cell",0,0) << " "
-          << (*Pu->data())("face",0,0) << " " << (*Pu->data())("cell",0,cells[1]) << std::endl;
+          << std::endl;
+        //          << (*Pu->data())("face",0,0) << " " << (*Pu->data())("cell",0,cells[1]) << std::endl;
   }
 #endif
 };
@@ -164,7 +180,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
     *out_ << "  p0: " << (*up->data())("cell",0,0) << " "
-              << (*up->data())("face",0,0) << std::endl;
+          << std::endl;
+    //              << (*up->data())("face",0,0) << std::endl;
   }
 #endif
 
@@ -186,7 +203,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  conductivity0: " << (*cond)("cell",0,0) << " "
-              << (*cond)("face",0,0) << std::endl;
+          << (*cond)("face",0,0) << std::endl;
   }
 #endif
 
@@ -234,13 +251,17 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
         ->ViewComponent("cell",false);
 
     for (int c=0; c!=ncells; ++c) {
+      *out_ << "Acc diff terms, + " << Acc_cells[c] << std::endl;
       if (head[0][c] >= p_atm) {
         // - add accumulation terms, treating h as h, which goes zero.
         Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
+        *out_ << "Acc accum terms, +" << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h <<std::endl;
       }
 
       // add source term
       Acc_cells[c] -= dQ_dp[0][c] / dh_dp[0][c];
+      *out_ << "Acc dQ terms, -" << dQ_dp[0][c] / dh_dp[0][c] << std::endl;
+      *out_ << "dh_dp = " << dh_dp[0][c] << std::endl;
     }
   }
 
