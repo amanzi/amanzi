@@ -41,6 +41,7 @@ RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, hea
 // -------------------------------------------------------------
 void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
+  setLinePrefix("overland");  // make the prefix fit in the available space.
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -77,9 +78,6 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_pressure_ = bc_factory.CreatePressure();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
-
-  // coupling to subsurface
-  is_coupling_term_ = plist_.get<bool>("coupled to subsurface", false);
 
   // Create the upwinding method.
   S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
@@ -178,12 +176,30 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source", source_evaluator);
   }
 
-  if (is_coupling_term_) {
+  // coupling to subsurface
+  coupled_to_subsurface_via_flux_ =
+      plist_.get<bool>("coupled to subsurface via flux", false);
+  coupled_to_subsurface_via_head_ =
+      plist_.get<bool>("coupled to subsurface via head", false);
+  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_head_));
+
+  if (coupled_to_subsurface_via_flux_) {
     // -- coupling term in PC, filled in by subsurface PK.
     S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    // -- source term from subsurface
+    // -- source term from subsurface, owned by me but filled in by the coupler
+    S->RequireField("overland_source_from_subsurface", name_)
+        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (coupled_to_subsurface_via_head_) {
+    // -- coupling term in PC, filled in by subsurface PK.
+    S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
+        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    // -- source term from subsurface, filled in by evaluator,
+    //    which picks the fluxes from "darcy_flux" field.
     S->RequireField("overland_source_from_subsurface")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -197,8 +213,9 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       source_plist.set("source key", "overland_source_from_subsurface");
     source_plist.set("volume basis", false);
 
-    Teuchos::RCP<FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator> source_evaluator =
-        Teuchos::rcp(new FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
+    Teuchos::RCP<FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator>
+        source_evaluator = Teuchos::rcp(
+            new FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
     S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
@@ -270,6 +287,14 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
   S->GetField("overland_flux", name_)->set_initialized();
   S->GetField("overland_velocity", name_)->set_initialized();
+
+  // initialize coupling terms
+  if (coupled_to_subsurface_via_flux_) {
+    S->GetFieldData("overland_source_from_subsurface", name_)
+        ->PutScalar(0.);
+    S->GetField("overland_source_from_subsurface", name_)
+        ->set_initialized();
+  }
 
   // Initialize operators.
   matrix_->CreateMFDmassMatrices(Teuchos::null);

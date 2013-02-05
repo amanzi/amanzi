@@ -21,7 +21,7 @@ namespace Amanzi {
 // forward declarations
 class MPCCoupledFlowEnergy;
 class MPCDiagonalFlowEnergy;
-class MPCSurfaceSubsurfaceCoupler;
+class MPCSurfaceSubsurfaceDirichletCoupler;
 namespace WhetStone { class Tensor; }
 namespace Operators { class Upwinding; }
 
@@ -39,7 +39,6 @@ public:
            const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
       PKPhysicalBDFBase(plist, solution),
-      coupled_to_surface_via_source_(false),
       coupled_to_surface_via_head_(false),
       coupled_to_surface_via_flux_(false),
       coupled_to_surface_via_residual_(false),
@@ -134,16 +133,20 @@ protected:
   FluxUpdateMode update_flux_;
   int Krel_method_;
   bool assemble_preconditioner_;
-  bool coupled_to_surface_via_source_;
-  bool coupled_to_surface_via_head_;
-  bool coupled_to_surface_via_flux_;
-  bool coupled_to_surface_via_residual_;
-  double surface_head_cutoff_;
-  double surface_head_cutoff_alpha_;
-  double surface_head_eps_;
   int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
+
+  // coupling terms
+  bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
+  bool coupled_to_surface_via_flux_; // surface-subsurface Neumann coupler
+  bool coupled_to_surface_via_residual_; // surface-subsurface water coupler,
+                                         // old overland PK
+
+  // -- water coupler coupling parameters
+  double surface_head_cutoff_;
+  double surface_head_cutoff_alpha_;
+  double surface_head_eps_;
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
@@ -173,7 +176,7 @@ protected:
   // Richards has a friend in couplers...
   friend class Amanzi::MPCCoupledFlowEnergy;
   friend class Amanzi::MPCDiagonalFlowEnergy;
-  friend class Amanzi::MPCSurfaceSubsurfaceCoupler;
+  friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;
 };
 
 }  // namespace AmanziFlow

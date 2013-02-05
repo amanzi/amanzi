@@ -10,15 +10,15 @@ Interface for the derived MPC for water coupling between surface and subsurface.
 
 #include "overland_head.hh"
 #include "richards.hh"
-#include "mpc_surface_subsurface_coupler.hh"
+#include "mpc_surface_subsurface_dirichlet_coupler.hh"
 
 namespace Amanzi {
 
-RegisteredPKFactory<MPCSurfaceSubsurfaceCoupler>
-MPCSurfaceSubsurfaceCoupler::reg_("surface-subsurface coupler");
+RegisteredPKFactory<MPCSurfaceSubsurfaceDirichletCoupler>
+MPCSurfaceSubsurfaceDirichletCoupler::reg_("surface-subsurface Dirichlet coupler");
 
 
-MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(
+MPCSurfaceSubsurfaceDirichletCoupler::MPCSurfaceSubsurfaceDirichletCoupler(
         Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist, soln),
     StrongMPC(plist, soln) {
@@ -30,7 +30,7 @@ MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(
 }
 
 
-void MPCSurfaceSubsurfaceCoupler::fun(double t_old, double t_new,
+void MPCSurfaceSubsurfaceDirichletCoupler::fun(double t_old, double t_new,
         Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
         Teuchos::RCP<TreeVector> g) {
   StrongMPC::fun(t_old, t_new, u_old, u_new, g);
@@ -52,7 +52,7 @@ void MPCSurfaceSubsurfaceCoupler::fun(double t_old, double t_new,
 }
 
 
-void MPCSurfaceSubsurfaceCoupler::changed_solution() {
+void MPCSurfaceSubsurfaceDirichletCoupler::changed_solution() {
   // Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_next_->GetMesh(surface_mesh_key_);
 
   // const Epetra_MultiVector& surf = *S_next_->GetFieldData(surface_field_)
@@ -72,7 +72,7 @@ void MPCSurfaceSubsurfaceCoupler::changed_solution() {
 
 
 // applies preconditioner to u and returns the result in Pu
-void MPCSurfaceSubsurfaceCoupler::precon(Teuchos::RCP<const TreeVector> u,
+void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   // Evaluate the overland preconditioner (reverse order), pk 1
   Teuchos::RCP<PKBDFBase> ol_pk = sub_pks_[1];
@@ -111,7 +111,7 @@ void MPCSurfaceSubsurfaceCoupler::precon(Teuchos::RCP<const TreeVector> u,
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
-void MPCSurfaceSubsurfaceCoupler::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
+void MPCSurfaceSubsurfaceDirichletCoupler::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   StrongMPC::update_precon(t,up,h);
 
   /*

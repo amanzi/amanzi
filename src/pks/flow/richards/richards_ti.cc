@@ -224,7 +224,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   // which is currently in our face unknown.
   //
   // Note this must be done prior to boundary conditions being applied.
-  if (coupled_to_surface_via_head_) {
+  if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
     Epetra_MultiVector& dsource = *S_next_->GetFieldData(
         "doverland_source_from_subsurface_dsurface_pressure", name_)
         ->ViewComponent("cell",false);
@@ -252,7 +252,6 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
 
       // -- set the value
-      std::cout << "Setting precon value = " << Acf_cells[cells[0]](my_n) << std::endl;
       dsource[0][c] = Acf_cells[cells[0]](my_n);
     }
   }

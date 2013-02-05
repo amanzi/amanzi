@@ -18,7 +18,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 
 namespace Operators { class Upwinding; }
-class MPCSurfaceSubsurfaceCoupler;
+class MPCSurfaceSubsurfaceDirichletCoupler;
 
 
 namespace Flow {
@@ -34,9 +34,8 @@ public:
       PKPhysicalBDFBase(plist, solution),
       standalone_mode_(false),
       is_source_term_(false),
-      is_coupling_term_(false),
-      coupled_to_surface_via_residual_(false),
-      surface_head_eps_(0.),
+      coupled_to_subsurface_via_flux_(false),
+      coupled_to_subsurface_via_head_(false),
       update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("primary variable key", "surface_pressure");
     plist_.set("domain name", "surface");
@@ -100,7 +99,7 @@ protected:
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
-  friend class Amanzi::MPCSurfaceSubsurfaceCoupler;
+  friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;
 
   enum FluxUpdateMode {
     UPDATE_FLUX_ITERATION = 0,
@@ -113,11 +112,12 @@ protected:
   bool standalone_mode_; // domain mesh == surface mesh
   FluxUpdateMode update_flux_;
   bool is_source_term_;
-  bool is_coupling_term_;
-  bool coupled_to_surface_via_residual_;
-  double surface_head_eps_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
+
+  // coupling term
+  bool coupled_to_subsurface_via_flux_;
+  bool coupled_to_subsurface_via_head_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
