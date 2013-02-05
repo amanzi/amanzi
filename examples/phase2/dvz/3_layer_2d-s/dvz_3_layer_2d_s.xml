@@ -29,8 +29,6 @@
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <Parameter name="Verbosity" type="string" value="Low"/>
 
-    <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00158"/>
-
     <ParameterList name="Time Integration Mode">
       
       <ParameterList name="Initialize To Steady">
