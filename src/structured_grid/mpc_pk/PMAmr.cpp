@@ -387,14 +387,8 @@ PMAmr::pm_timeStep (int  level,
           tpc_active = true;
           dt_tpc = tpc_initial_time_steps[tpc_interval];
         }
-        if (tpc_initial_time_step_multipliers.size()>tpc_interval
-            && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
-          tpc_active = true;
-          dt_tpc *= tpc_initial_time_step_multipliers[tpc_interval];
-        }
-        if (tpc_maximum_time_steps.size()>tpc_interval
+        if (tpc_active && tpc_maximum_time_steps.size()>tpc_interval
             && tpc_maximum_time_steps[tpc_interval] > 0) {
-          tpc_active = true;
           dt_tpc = std::min(dt_tpc,tpc_maximum_time_steps[tpc_interval]);
         }
       }
@@ -965,13 +959,6 @@ void PMAmr::InitializeControlEvents()
       tpc_initial_time_steps.resize(ndt,-1);
       if (ndt>0) {
           pb.getarr("TPC_Initial_Time_Step",tpc_initial_time_steps,0,ndt);
-      }
-
-      int ndtm = pb.countval("TPC_Initial_Time_Step_Multiplier");
-      BL_ASSERT(ndtm==0 || ndtm==ntps);
-      tpc_initial_time_step_multipliers.resize(ndt,-1);
-      if (ndtm>0) {
-          pb.getarr("TPC_Initial_Time_Step_Multiplier",tpc_initial_time_step_multipliers,0,ndtm);
       }
 
       int ndtmax = pb.countval("TPC_Maximum_Time_Step");

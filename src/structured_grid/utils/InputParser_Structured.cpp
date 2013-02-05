@@ -595,14 +595,13 @@ namespace Amanzi {
                 {
                     const std::string tpc_start_times_str = "Start Times";
                     const std::string tpc_initial_time_steps_str = "Initial Time Step";
-                    const std::string tpc_initial_time_step_multipliers_str = "Initial Time Step Multiplier";
                     const std::string tpc_maximum_time_steps_str = "Maximum Time Step";
                     const ParameterList& tpc_list = ec_list.sublist(tpc_str);
                     Array<std::string> nL, nP;
                     PLoptions TPCopt(tpc_list,nL,nP,true,false); 
                     const Array<std::string> TPCoptP = TPCopt.OptParms();
 
-                    Array<double> tpc_start_times, tpc_initial_time_steps, tpc_initial_time_step_multipliers, tpc_maximum_time_steps;
+                    Array<double> tpc_start_times, tpc_initial_time_steps, tpc_maximum_time_steps;
                     for (int j=0; j<TPCoptP.size(); ++j)
                     {
                         const std::string& name = TPCoptP[j];
@@ -611,9 +610,6 @@ namespace Amanzi {
                         }
                         else if (name == tpc_initial_time_steps_str) {
                             tpc_initial_time_steps = tpc_list.get<Array<double> >(tpc_initial_time_steps_str);
-                        }
-                        else if (name == tpc_initial_time_step_multipliers_str) {
-                            tpc_initial_time_step_multipliers = tpc_list.get<Array<double> >(tpc_initial_time_step_multipliers_str);
                         }
                         else if (name == tpc_maximum_time_steps_str) {
                             tpc_maximum_time_steps = tpc_list.get<Array<double> >(tpc_maximum_time_steps_str);
@@ -629,14 +625,6 @@ namespace Amanzi {
                             tpc_initial_time_steps.resize(num_periods,-1);
                         }
                     }
-                    if (tpc_initial_time_step_multipliers.size() != num_periods) {
-                        if (tpc_initial_time_step_multipliers.size() != 0) {
-                            MyAbort("If specified, number of \""+tpc_initial_time_step_multipliers_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
-                        }
-                        else {
-                            tpc_initial_time_step_multipliers.resize(num_periods,1);
-                        }
-                    }
                     if (tpc_maximum_time_steps.size() != num_periods) {
                         if (tpc_maximum_time_steps.size() != 0) {
                             MyAbort("If specified, number of \""+tpc_maximum_time_steps_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
@@ -649,7 +637,6 @@ namespace Amanzi {
                     if (num_periods>0) {
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_start_times_str), tpc_start_times);
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_steps_str), tpc_initial_time_steps);
-                        prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_step_multipliers_str), tpc_initial_time_step_multipliers);
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_maximum_time_steps_str), tpc_maximum_time_steps);
                     }
                 }

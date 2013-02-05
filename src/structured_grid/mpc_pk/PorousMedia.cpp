@@ -2921,9 +2921,9 @@ PorousMedia::advance_richards_transport_dt(Real t)
       MultiFab::Copy(pml.u_macG_curr[d],pml.u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
     }
     pml.predictDT(pml.u_macG_trac,t);
-    bool diffuse_tracer = true;
-    if (diffuse_tracer)
+    if (diffuse_tracers) {
       pml.predictDT_diffusion_explicit(t);
+    }
     dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
   }
   for (int lev=finest_level; lev>=0; --lev) {
@@ -2990,9 +2990,9 @@ PorousMedia::advance_saturated_transport_dt()
     PorousMedia& pml = getLevel(lev); 
     Real curr_time = pml.get_state_data(State_Type).curTime();
     pml.predictDT(pml.u_macG_trac,curr_time);
-    bool diffuse_tracer = true;
-    if (diffuse_tracer)
+    if (diffuse_tracers) {
       pml.predictDT_diffusion_explicit(curr_time);
+    }
     dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
   }
   for (int lev=finest_level; lev>=0; --lev) {
@@ -4997,13 +4997,10 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       }
     }
 
-    bool diffuse_tracer = true; 
-    //diffuse_tracer = false;
     Real be_cn_theta_trac = 0;
-
     int nGrowD = 1; // FIXME: Should have 1 grow cell if to be used in adv forcing
     MultiFab DTerms_old(grids,ntracers,nGrowD);
-    if (diffuse_tracer) {
+    if (diffuse_tracers) {
       calcDiffusivity(prev_time,first_tracer,ncomps+ntracers);
       getTracerViscTerms(DTerms_old,prev_time,nGrowD,fluxes);
     } else {
@@ -5066,7 +5063,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       get_new_data(State_Type)[i].copy(C_new_fpi(),Cidx,first_tracer,ntracers);
 
       if (fluxes.size()>0) {
-	if (diffuse_tracer) {
+	if (diffuse_tracers) {
 	  if (be_cn_theta_trac < 1) {
 	    if (be_cn_theta_trac != 0) {
 	      for (int d = 0; d < BL_SPACEDIM; d++) {
@@ -7626,8 +7623,10 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
           
           
           predictDT(u_mac,cur_time);
-	  predictDT_diffusion_explicit(cur_time);
-          
+          if (diffuse_tracers) {
+            predictDT_diffusion_explicit(cur_time);
+          }
+ 
 	  estdt = (cfl > 0  ?  cfl  :  1) *dt_eig;
 
           if (making_new_umac)
@@ -7764,6 +7763,7 @@ void
 PorousMedia::predictDT_diffusion_explicit (Real t_eval)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::predictDT_diffusion_explicit()");
+  BL_ASSERT(diffuse_tracers);
 
   const Real* dx = geom.CellSize();
   Real dt_diff = 1.e20; // FIXME: Need more robust

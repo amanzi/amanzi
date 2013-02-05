@@ -78,7 +78,6 @@ protected:
     Array<std::string> tpc_labels;
     Array<Real> tpc_start_times;
     Array<Real> tpc_initial_time_steps;
-    Array<Real> tpc_initial_time_step_multipliers;
     Array<Real> tpc_maximum_time_steps;
 
     static void CleanupStatics ();

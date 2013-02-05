@@ -1296,6 +1296,7 @@ protected:
   static Array<int>  is_diffusive;    // does variable diffuse?
   static Array<Real> visc_coef;       // const coef viscosity terms
   static Array<Real> diff_coef;       // const coef molecular diffusion coefficients (for tracers)
+  static bool        diffuse_tracers;
   static Real        visc_tol;
   static Real        visc_abs_tol;
   static Real        be_cn_theta;
