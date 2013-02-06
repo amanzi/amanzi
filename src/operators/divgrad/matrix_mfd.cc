@@ -7,28 +7,15 @@
 #include "errors.hh"
 #include "Epetra_FECrsGraph.h"
 #include "matrix_mfd.hh"
+#include "matrix_mfd_tpfa.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
+                     MFD_method method,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    plist_(plist), mesh_(mesh) {
-
-  std::string methodstring = plist.get<string>("MFD method");
-  if (methodstring == "polyhedra") {
-    method_ = MFD_POLYHEDRA;
-  } else if (methodstring == "polyhedra monotone") {
-    method_ = MFD_POLYHEDRA_MONOTONE;
-  } else if (methodstring == "hexahedra monotone") {
-    method_ = MFD_HEXAHEDRA_MONOTONE;
-  } else if (methodstring == "two point flux") {
-    method_ = MFD_TWO_POINT_FLUX;
-  } else if (methodstring == "support operator") {
-    method_ = MFD_SUPPORT_OPERATOR;
-  } else if (methodstring == "optimized") {
-    method_ = MFD_OPTIMIZED;
-  }
+    plist_(plist), method_(method), mesh_(mesh) {
 
   std::string precmethodstring = plist.get<string>("preconditioner", "ML");
   if (precmethodstring == "ML") {
@@ -106,7 +93,7 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
     } else {
       ok = mfd.darcy_mass_inverse(c, Kc, Mff);
     }
-    
+
     Mff_cells_.push_back(Mff);
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
@@ -128,7 +115,7 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
 /* ******************************************************************
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
-void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel){
+void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel) {
   int dim = mesh_->space_dimension();
 
   WhetStone::MFD3D mfd(mesh_);
@@ -346,8 +333,8 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
   Aff_->GlobalAssemble();
   Sff_->GlobalAssemble();
-  
-  
+
+
 
   if (flag_symmetry_) {
     Afc_ = Acf_;
@@ -356,10 +343,12 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   }
 
   std::vector<std::string> names(2);
-  names[0] = "cell"; names[1] = "face";
+  names[0] = "cell";
+  names[1] = "face";
 
   std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL; locations[1] = AmanziMesh::FACE;
+  locations[0] = AmanziMesh::CELL;
+  locations[1] = AmanziMesh::FACE;
 
   std::vector<int> num_dofs(2,1);
   rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
@@ -393,7 +382,7 @@ void MatrixMFD::AssembleGlobalMatrices() {
     (*Acc_)[c] = Acc_cells_[c];
     (*Acf_).ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
     (*Aff_).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
-    
+
     if (!flag_symmetry_)
       (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
   }
@@ -413,9 +402,9 @@ void MatrixMFD::AssembleGlobalMatrices() {
     }
   }
   rhs_->GatherGhostedToMaster("face");
-  
-//   exit(0);
-  
+
+  //   exit(0);
+
 }
 
 
@@ -451,7 +440,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
         Schur(n, n) = 1.0;
       }
     }
-   
+
     Epetra_IntSerialDenseVector faces_GID(nfaces);
     for (int n=0; n!=nfaces; ++n) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
     (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
@@ -478,7 +467,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
  * Parallel matvec product A * X.
  ****************************************************************** */
 void MatrixMFD::Apply(const CompositeVector& X,
-                     const Teuchos::Ptr<CompositeVector>& Y) const {
+                      const Teuchos::Ptr<CompositeVector>& Y) const {
   int ierr;
 
   // Face unknowns:  Yf = Aff_ * Xf + Afc_ * Xc
@@ -514,7 +503,7 @@ void MatrixMFD::Apply(const CompositeVector& X,
  *
  ****************************************************************** */
 void MatrixMFD::ApplyInverse(const CompositeVector& X,
-                     const Teuchos::Ptr<CompositeVector>& Y) const {
+                             const Teuchos::Ptr<CompositeVector>& Y) const {
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));
   Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
@@ -555,7 +544,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
  * Linear algebra operations with matrices: r = f - A * x
  ****************************************************************** */
 void MatrixMFD::ComputeResidual(const CompositeVector& solution,
-          const Teuchos::Ptr<CompositeVector>& residual) const {
+        const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(1.0, *rhs_, -1.0);
 }
@@ -584,7 +573,7 @@ void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
     ifp_plist_ = prec_plist.sublist("Block ILU Parameters");
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
-    // read some boomer amg parameters 
+    // read some boomer amg parameters
     hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
     hypre_ncycles_ = hypre_plist_.get<int>("number of cycles",5);
     hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
@@ -626,21 +615,21 @@ void MatrixMFD::UpdatePreconditioner() {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
     functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_)); 
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_)); 
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
-    
+    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_));
+    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
+
     Teuchos::ParameterList hypre_list;
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
     hypre_list.set("NumFunctions", 8);
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs); 
-    
+    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
+
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
     IfpHypre_Sff_->Compute();
@@ -652,10 +641,10 @@ void MatrixMFD::UpdatePreconditioner() {
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
     hypre_list.set("NumFunctions", 0);
-    
+
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
-    IfpHypre_Sff_->Compute();    
+    IfpHypre_Sff_->Compute();
   } else if (prec_method_ == HYPRE_PARASAILS) {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
 
@@ -664,10 +653,10 @@ void MatrixMFD::UpdatePreconditioner() {
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
     hypre_list.set("NumFunctions", 0);
-    
+
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
-    IfpHypre_Sff_->Compute();    
+    IfpHypre_Sff_->Compute();
 #endif
   }
 }
@@ -783,10 +772,10 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
 
 // development methods
 /* ******************************************************************
-* Reduce the pressure-lambda-system to lambda-system via ellimination
-* of the known pressure. Structure of the global system is preserved
-* but off-diagola blocks are zeroed-out.
-****************************************************************** */
+ * Reduce the pressure-lambda-system to lambda-system via ellimination
+ * of the known pressure. Structure of the global system is preserved
+ * but off-diagola blocks are zeroed-out.
+ ****************************************************************** */
 void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u) {
   Teuchos::RCP<Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> rhs_f = rhs_->ViewComponent("face", false);
@@ -815,6 +804,46 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
 #endif
   }
 }
+
+
+
+// Construction Factory
+Teuchos::RCP<MatrixMFD> CreateMatrix(Teuchos::ParameterList& plist,
+        MFD_method method,
+        const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
+
+  std::string methodstring = plist.get<string>("MFD method");
+  MFD_method method(MFD_NULL);
+
+  // TPFA
+  if (methodstring == "two-point flux") {
+    return Teuchos::rcp(new MatrixMFD_TPFA(plist,mesh));
+  }
+
+  // standard MFD
+  if (methodstring == "polyhedra") {
+    method = MFD_POLYHEDRA;
+  } else if (methodstring == "polyhedra monotone") {
+    method = MFD_POLYHEDRA_MONOTONE;
+  } else if (methodstring == "hexahedra monotone") {
+    method = MFD_HEXAHEDRA_MONOTONE;
+  } else if (methodstring == "two point flux") {
+    method = MFD_TWO_POINT_FLUX;
+  } else if (methodstring == "support operator") {
+    method = MFD_SUPPORT_OPERATOR;
+  } else if (methodstring == "optimized") {
+    method = MFD_OPTIMIZED;
+  }
+
+  if (method != MFD_NULL) {
+    return Teuchos::rcp(new MatrixMFD(plist, method, mesh));
+  }
+
+  // Bad string
+  Errors::Message msg(std::string("MatrixMFD: unknown method ")+methodstring);
+  Exceptions::amanzi_throw(msg);
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
