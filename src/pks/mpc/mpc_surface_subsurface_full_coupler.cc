@@ -125,11 +125,24 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   }
 #endif
 
-  // Alterations to PC'd value from capping and damping
+  // Alterations to PC'd value from limiting and damping
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
   Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
   const Epetra_MultiVector& surf_p_c = *S_next_->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
+
+  // global face limiter
+  if (face_limiter_ > 0.) {
+    int nfaces = domain_Pu_f.MyLength();
+    for (int f=0; f!=nfaces; ++f) {
+      if (std::abs(domain_Pu_f[0][f]) > face_limiter_) {
+        std::cout << "  LIMITING: dp_old = " << domain_Pu_f[0][f];
+        domain_Pu_f[0][f] = domain_Pu_f[0][f] > 0. ? face_limiter_ : -face_limiter_;
+        std::cout << ", dp_new = " << domain_Pu_f[0][f] << std::endl;
+
+      }
+    }
+  }
 
   // Cap surface corrections
   //   In the case that we are starting to infiltrate on dry ground, the low
