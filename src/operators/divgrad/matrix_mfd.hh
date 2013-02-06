@@ -70,7 +70,6 @@ class MatrixMFD { // : public Epetra_Operator {
 
  public:
   MatrixMFD(Teuchos::ParameterList& plist,
-            MFD_method method,
             const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   virtual ~MatrixMFD() {};
@@ -101,6 +100,9 @@ class MatrixMFD { // : public Epetra_Operator {
   }
   Teuchos::RCP<const Epetra_Vector> Acc() {
     return Acc_;
+  }
+  Teuchos::RCP<const Epetra_FECrsMatrix> Aff() {
+    return Aff_;
   }
 
   // performance of algorithms generating mass matrices
@@ -242,12 +244,6 @@ class MatrixMFD { // : public Epetra_Operator {
 
   friend class MPCCoupledFlowEnergy;
 };
-
-
-
-Teuchos::RCP<MatrixMFD> CreateMatrix(Teuchos::ParameterList& plist,
-        MFD_method method,
-        const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
 
 }  // namespace AmanziFlow

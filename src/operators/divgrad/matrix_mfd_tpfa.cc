@@ -15,6 +15,7 @@
 
 #include "Epetra_FECrsGraph.h"
 
+#include "errors.hh"
 #include "matrix_mfd_tpfa.hh"
 
 
@@ -27,6 +28,7 @@ int FindPosition(const std::vector<T>& v, const T& value) {
     if (v[i] == value) return i;
   return -1;
 }
+
 
 
 /* ******************************************************************
@@ -45,14 +47,14 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   Acf_cells_.clear();
   Acc_cells_.clear();
 
-  Teuchos::RCP<const Epetra_MultiVector> Krel_cell;
-  Teuchos::RCP<const Epetra_MultiVector> Krel_face;
+  Teuchos::RCP<const Epetra_MultiVector> Krel_cells;
+  Teuchos::RCP<const Epetra_MultiVector> Krel_faces;
   if (Krel != Teuchos::null) {
     if (Krel->has_component("cell")) {
-      Krel_cell = Krel->ViewComponent("cell",false);
+      Krel_cells = Krel->ViewComponent("cell",false);
     }
     if (Krel->has_component("face")) {
-      Krel_face = Krel->ViewComponent("face",true);
+      Krel_faces = Krel->ViewComponent("face",true);
     }
   }
 
@@ -67,13 +69,13 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
 
     if (Krel == Teuchos::null) {
       for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n);
-    } else if (Krel_face == Teuchos::null) {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * Krel_cells[c];
-    } else if (Krel_cell == Teuchos::null) {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * Krel_faces[faces[n]];
+    } else if (Krel_faces == Teuchos::null) {
+      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * (*Krel_cells)[0][c];
+    } else if (Krel_cells == Teuchos::null) {
+      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * (*Krel_faces)[0][faces[n]];
     } else {
       for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n)
-                                           * Krel_faces[faces[n]] * Krel_cells[c];
+                                           * (*Krel_faces)[0][faces[n]] * (*Krel_cells)[0][c];
     }
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -104,7 +106,7 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
-  int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_FACES : FLOW_HEX_FACES;
+  int avg_entries_row = (mesh_->space_dimension() == 2) ? MFD_QUAD_FACES : MFD_HEX_FACES;
   Epetra_FECrsGraph pp_graph(Copy, cmap, avg_entries_row + 1);
 
   AmanziMesh::Entity_ID_List cells;
@@ -123,8 +125,8 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
   pp_graph.GlobalAssemble();  // Symbolic graph is complete.
 
   // create global matrices
-  std::vector<std::string> names("face",1);
-  std::vector<AmanziMesh::Entity_kind> locations(AmanziMesh::FACE,1);
+  std::vector<std::string> names(1,"face");
+  std::vector<AmanziMesh::Entity_kind> locations(1,AmanziMesh::FACE);
   std::vector<int> ndofs(1,1);
   Dff_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, ndofs, true));
   Dff_->CreateData();
@@ -140,12 +142,11 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
  * We need an auxiliary GHOST-based vector to assemble the RHS.
  ****************************************************************** */
 void MatrixMFD_TPFA::AssembleGlobalMatrices() {
-  std::vector<std::string> names_c("cell",1);
-  std::vector<AmanziMesh::Entity_kind> locations_c(AmanziMesh::CELL,1);
-  std::vector<std::string> names_f("face",1);
-  std::vector<AmanziMesh::Entity_kind> locations_f(AmanziMesh::FACE,1);
+  std::vector<std::string> names_c(1,"cell");
+  std::vector<AmanziMesh::Entity_kind> locations_c(1,AmanziMesh::CELL);
+  std::vector<std::string> names_f(1,"face");
+  std::vector<AmanziMesh::Entity_kind> locations_f(1,AmanziMesh::FACE);
   std::vector<int> ndofs(1,1);
-
 
   MatrixMFD::AssembleGlobalMatrices();
 
@@ -153,9 +154,9 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   std::vector<int> dirs;
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
+  // Dff
   Dff_->PutScalar(0.0);
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",true);
-
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int mfaces = faces.size();
@@ -169,17 +170,21 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
   // convert right-hand side to a cell-based vector
   const Epetra_Map& cmap = mesh_->cell_map(false);
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   Epetra_Vector Tc(cmap);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int f = 0; f < nfaces_owned; f++) (*rhs_faces_)[f] /= (*Dff_)[f];
-  (*Acf_).Multiply(false, *rhs_faces_, Tc);
-  for (int c = 0; c < ncells_owned; c++) (*rhs_cells_)[c] -= Tc[c];
+  Teuchos::RCP<Epetra_MultiVector> rhs_faces = rhs_->ViewComponent("face",false);
+  Teuchos::RCP<Epetra_MultiVector> rhs_cells = rhs_->ViewComponent("cell",false);
+  for (int f=0; f!=nfaces_owned; ++f) (*rhs_faces)[0][f] /= Dff_f[0][f];
+  (*Acf_).Multiply(false, *rhs_faces, Tc);
+  for (int c=0; c!=ncells_owned; ++c) (*rhs_cells)[0][c] -= Tc[c];
 
-  rhs_faces_->PutScalar(0.0);
+  rhs_faces->PutScalar(0.0);
 
   // create a with-ghost copy of Acc
   CompositeVector Dcc(mesh_,names_c,locations_c,ndofs,true);
+  Dcc.CreateData();
   Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
 
   for (int c=0; c!=ncells_owned; ++c) Dcc_c[0][c] = (*Acc_)[c];
@@ -191,6 +196,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
   // create auxiliaty with-ghost copy of Acf_cells
   CompositeVector Acf_parallel(mesh_,names_f,locations_f,ndofs,true);
+  Acf_parallel.CreateData();
   Epetra_MultiVector& Acf_parallel_f = *Acf_parallel.ViewComponent("face",true);
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -218,7 +224,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
-      Bpp(n, n) = Dcc[0][c] / faces.size();
+      Bpp(n, n) = Dcc_c[0][c] / faces.size();
       if (c < ncells_owned) {
         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
         Acf_copy[n] = Acf_cells_[c][i];
@@ -244,7 +250,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-void MatrixMFD_TPFA::InitPreconditioner(Teuchos::ParameterList& prec_list)
+void MatrixMFD_TPFA::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
   if (prec_method_ == TRILINOS_ML) {
     ml_plist_ =  prec_plist.sublist("ML Parameters");
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Spp_, ml_plist_, false));
@@ -351,7 +357,7 @@ void MatrixMFD_TPFA::Apply(const CompositeVector& X,
                       const Teuchos::Ptr<CompositeVector>& Y) const {
 
   int ierr = (*Spp_).Multiply(false, *X.ViewComponent("cell",false),
-          *Yc->ViewComponent("cell",false));
+          *Y->ViewComponent("cell",false));
 
   if (ierr) {
     Errors::Message msg("MatrixMFD_TPFA::Apply has failed to calculate y = A*x.");
@@ -360,7 +366,6 @@ void MatrixMFD_TPFA::Apply(const CompositeVector& X,
 
   // Yf = Xf;
   Y->ViewComponent("face",false)->PutScalar(0.);
-  return 0;
 }
 
 
@@ -370,16 +375,20 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
   // use the same memory for X and Y, we introduce auxiliaty vector Tc.
   int ierr = 0;
-  Epetra_MultiVector& Xc = *X.ViewComponent("cell",false);
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell",false);
   Epetra_MultiVector Tc(Xc);
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    MLprec->ApplyInverse(Xc, Tc);
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
+
+  // Solve the pp system
+  if (prec_method_ == TRILINOS_ML) {
+    ierr |= ml_prec_->ApplyInverse(Xc, Tc);
+  } else if (prec_method_ == TRILINOS_ILU) {
+    ierr |= ilu_prec_->ApplyInverse(Xc, Tc);
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    ierr |= ifp_prec_->ApplyInverse(Xc, Tc);
 #ifdef HAVE_HYPRE
-    ierr = IfpHypre_Spp_->ApplyInverse(Xc, Tc);
+  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
+    ierr != IfpHypre_Sff_->ApplyInverse(Xc, Tc);
 #endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ifp_prec_->ApplyInverse(Xc, Tc);
   }
   *Y->ViewComponent("cell",false) = Tc;
 
