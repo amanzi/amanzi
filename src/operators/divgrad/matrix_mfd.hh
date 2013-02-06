@@ -1,7 +1,7 @@
 /*
   License: BSD
   Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+  Ethan Coon (ecoon@lanl.gov)
   MatrixMFD provides a mimetic discretization for the elliptic operator div K grad u.
 
 */
@@ -64,75 +64,120 @@ enum Matrix_bc {
   MFD_BC_FLUX
 };
 
+
+
 class MatrixMFD { // : public Epetra_Operator {
 
-public:
+ public:
   MatrixMFD(Teuchos::ParameterList& plist,
+            MFD_method method,
             const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
+  virtual ~MatrixMFD() {};
+
   // access to data for updating manually
-  std::vector<double>& Acc_cells() { return Acc_cells_; }
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
-  std::vector<Epetra_SerialDenseVector>& Acf_cells() { return Acf_cells_; }
-  std::vector<Epetra_SerialDenseVector>& Afc_cells() { return Afc_cells_; }
-  Teuchos::RCP<Epetra_FECrsMatrix> Schur() { return Sff_; }
+  std::vector<double>& Acc_cells() {
+    return Acc_cells_;
+  }
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() {
+    return Aff_cells_;
+  }
+  std::vector<Epetra_SerialDenseVector>& Acf_cells() {
+    return Acf_cells_;
+  }
+  std::vector<Epetra_SerialDenseVector>& Afc_cells() {
+    return Afc_cells_;
+  }
+  Teuchos::RCP<Epetra_FECrsMatrix> Schur() {
+    return Sff_;
+  }
 
 
-  std::vector<double>& Fc_cells() { return Fc_cells_; }
-  std::vector<Epetra_SerialDenseVector>& Ff_cells() { return Ff_cells_; }
-  Teuchos::RCP<const Epetra_Vector> Acc() { return Acc_; }
+  std::vector<double>& Fc_cells() {
+    return Fc_cells_;
+  }
+  std::vector<Epetra_SerialDenseVector>& Ff_cells() {
+    return Ff_cells_;
+  }
+  Teuchos::RCP<const Epetra_Vector> Acc() {
+    return Acc_;
+  }
 
   // performance of algorithms generating mass matrices
-  int nokay() { return nokay_; }
-  int npassed() { return npassed_; }
+  int nokay() {
+    return nokay_;
+  }
+  int npassed() {
+    return npassed_;
+  }
 
   // main computational methods
-  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
+  void SetSymmetryProperty(bool flag_symmetry) {
+    flag_symmetry_ = flag_symmetry;
+  }
 
   void CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K);
-  void CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel);
+  virtual void CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
           const Epetra_Vector& new_scale);
   void CreateMFDrhsVectors();
 
-  Teuchos::RCP<CompositeVector>& rhs() { return rhs_; }
+  Teuchos::RCP<CompositeVector>& rhs() {
+    return rhs_;
+  }
   void InitializeSuperVecs(const CompositeVector& sample);
 
   void ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
           const std::vector<double>& bc_values);
 
-  void SymbolicAssembleGlobalMatrices();
-  void AssembleGlobalMatrices();
-  void ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
+  virtual void SymbolicAssembleGlobalMatrices();
+  virtual void AssembleGlobalMatrices();
+  virtual void ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
           const std::vector<double>& bc_values);
 
   // operator methods: MatrixMFD is an Epetra_Operator
   // int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   // int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  bool UseTranspose() const { return false; }
-  int SetUseTranspose(bool) { return 1; }
+  bool UseTranspose() const {
+    return false;
+  }
+  int SetUseTranspose(bool) {
+    return 1;
+  }
 
-  const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-  const Epetra_Map& OperatorDomainMap() const { return *supermap_; }
-  const Epetra_Map& OperatorRangeMap() const { return *supermap_; }
+  const Epetra_Comm& Comm() const {
+    return *(mesh_->get_comm());
+  }
+  const Epetra_Map& OperatorDomainMap() const {
+    return *supermap_;
+  }
+  const Epetra_Map& OperatorRangeMap() const {
+    return *supermap_;
+  }
 
-  const char* Label() const { return strdup("Matrix MFD"); }
-  double NormInf() const { return 0.0; }
-  bool HasNormInf() const { return false; }
+  const char* Label() const {
+    return strdup("Matrix MFD");
+  }
+  double NormInf() const {
+    return 0.0;
+  }
+  bool HasNormInf() const {
+    return false;
+  }
 
   // operator methods for CompositeVectors
-  void Apply(const CompositeVector& X,
-             const Teuchos::Ptr<CompositeVector>& Y) const;
-  void ApplyInverse(const CompositeVector& X,
-                    const Teuchos::Ptr<CompositeVector>& Y) const;
+  virtual void Apply(const CompositeVector& X,
+                     const Teuchos::Ptr<CompositeVector>& Y) const;
+  virtual void ApplyInverse(const CompositeVector& X,
+                            const Teuchos::Ptr<CompositeVector>& Y) const;
   void ComputeResidual(const CompositeVector& X,
                        const Teuchos::Ptr<CompositeVector>& F) const;
   void ComputeNegativeResidual(const CompositeVector& X,
-                               const Teuchos::Ptr<CompositeVector>& F) const;
+          const Teuchos::Ptr<CompositeVector>& F) const;
 
   // extra methods for preconditioning
-  void InitPreconditioner(Teuchos::ParameterList& ml_plist_);
-  void UpdatePreconditioner();
+  virtual void InitPreconditioner(Teuchos::ParameterList& prec_plist);
+  virtual void UpdatePreconditioner();
 
   // extra methods for convenience
   void DeriveFlux(const CompositeVector& solution,
@@ -143,7 +188,7 @@ public:
   // development methods
   void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
 
-private:
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
   bool flag_symmetry_;
@@ -168,8 +213,13 @@ private:
   int nokay_;
   int npassed_; // performance of algorithms generating mass matrices
 
-  enum { TRILINOS_ML, TRILINOS_ILU, TRILINOS_BLOCK_ILU, HYPRE_AMG, HYPRE_EUCLID, HYPRE_PARASAILS } prec_method_; 
-  
+  enum { TRILINOS_ML,
+         TRILINOS_ILU,
+         TRILINOS_BLOCK_ILU,
+         HYPRE_AMG,
+         HYPRE_EUCLID,
+         HYPRE_PARASAILS } prec_method_;
+
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
 
@@ -189,9 +239,16 @@ private:
   Teuchos::RCP<const Epetra_Map> supermap_;
   Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO
   Teuchos::RCP<CompositeVector> vector_y_;
-  
+
   friend class MPCCoupledFlowEnergy;
 };
+
+
+
+Teuchos::RCP<MatrixMFD> CreateMatrix(Teuchos::ParameterList& plist,
+        MFD_method method,
+        const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
