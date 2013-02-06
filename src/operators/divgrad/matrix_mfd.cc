@@ -13,9 +13,26 @@ namespace Amanzi {
 namespace Operators {
 
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
-                     MFD_method method,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    plist_(plist), method_(method), mesh_(mesh) {
+    plist_(plist), mesh_(mesh) {
+
+  std::string methodstring = plist.get<string>("MFD method");
+  method_ = MFD_NULL;
+
+  // standard MFD
+  if (methodstring == "polyhedra") {
+    method_ = MFD_POLYHEDRA;
+  } else if (methodstring == "polyhedra monotone") {
+    method_ = MFD_POLYHEDRA_MONOTONE;
+  } else if (methodstring == "hexahedra monotone") {
+    method_ = MFD_HEXAHEDRA_MONOTONE;
+  } else if (methodstring == "two point flux") {
+    method_ = MFD_TWO_POINT_FLUX;
+  } else if (methodstring == "support operator") {
+    method_ = MFD_SUPPORT_OPERATOR;
+  } else if (methodstring == "optimized") {
+    method_ = MFD_OPTIMIZED;
+  }
 
   std::string precmethodstring = plist.get<string>("preconditioner", "ML");
   if (precmethodstring == "ML") {
@@ -526,6 +543,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #endif
   }
+
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
 
@@ -803,45 +821,6 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
     ierr = IfpHypre_Sff_->ApplyInverse(*rhs_f, *u->ViewComponent("face",false));
 #endif
   }
-}
-
-
-
-// Construction Factory
-Teuchos::RCP<MatrixMFD> CreateMatrix(Teuchos::ParameterList& plist,
-        MFD_method method,
-        const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
-
-  std::string methodstring = plist.get<string>("MFD method");
-  MFD_method method(MFD_NULL);
-
-  // TPFA
-  if (methodstring == "two-point flux") {
-    return Teuchos::rcp(new MatrixMFD_TPFA(plist,mesh));
-  }
-
-  // standard MFD
-  if (methodstring == "polyhedra") {
-    method = MFD_POLYHEDRA;
-  } else if (methodstring == "polyhedra monotone") {
-    method = MFD_POLYHEDRA_MONOTONE;
-  } else if (methodstring == "hexahedra monotone") {
-    method = MFD_HEXAHEDRA_MONOTONE;
-  } else if (methodstring == "two point flux") {
-    method = MFD_TWO_POINT_FLUX;
-  } else if (methodstring == "support operator") {
-    method = MFD_SUPPORT_OPERATOR;
-  } else if (methodstring == "optimized") {
-    method = MFD_OPTIMIZED;
-  }
-
-  if (method != MFD_NULL) {
-    return Teuchos::rcp(new MatrixMFD(plist, method, mesh));
-  }
-
-  // Bad string
-  Errors::Message msg(std::string("MatrixMFD: unknown method ")+methodstring);
-  Exceptions::amanzi_throw(msg);
 }
 
 

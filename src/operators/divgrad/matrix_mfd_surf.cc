@@ -6,7 +6,9 @@
   the lambdas are more densely coupled for overland flow.
 
 */
+#include "Epetra_FECrsGraph.h"
 
+#include "errors.hh"
 #include "matrix_mfd_surf.hh"
 
 
@@ -15,10 +17,9 @@ namespace Operators {
 
 
 MatrixMFD_Surf::MatrixMFD_Surf(Teuchos::ParameterList& plist,
-        MFD_method method,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
         const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
-    MatrixMFD(plist,method,mesh),
+    MatrixMFD(plist,mesh),
     surface_mesh_(surface_mesh) {}
 
 void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
@@ -51,11 +52,11 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
 
   // additional face-to-face connections for the TPF on surface.
   AmanziMesh::Entity_ID_List surf_cells;
-  AmanziMesh::Entity_ID equiv_face_GID[2];
+  int equiv_face_GID[2];
 
   int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int fs=0; fs!=nfaces_surf; ++fs) {
-    surface_mesh_->face_get_cells(f, AmanziMesh::USED, &surf_cells);
+    surface_mesh_->face_get_cells(fs, AmanziMesh::USED, &surf_cells);
 
     // get the equivalent faces on the subsurface mesh
     int ncells_surf = surf_cells.size(); ASSERT(ncells_surf <= 2);
@@ -101,53 +102,86 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
 }
 
 
-void MatrixMFD_Surf::AssembleGlobalMatricesWithSurface(const MatrixMFD_TPFA& surface_A) {
+void MatrixMFD_Surf::AssembleGlobalMatrices() {
   // Get the standard MFD pieces.
   MatrixMFD::AssembleGlobalMatrices();
+  surface_A_->AssembleGlobalMatrices();
 
   // Add the TPFA on the surface parts from surface_A.
-  Teuchos::RCP<Epetra_FECrsMatrix> Spp = surface_A.TPFA();
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  const Epetra_FECrsMatrix& Spp = *surface_A_->TPFA();
 
-  AmanziMesh::Entity_ID_List surf_cells;
-  AmanziMesh::Entity_ID equiv_face_GID[2];
+  int entries = 0;
+  double *values;
+  int *indices;
 
-  // Do the off-diagonal entries only, avoiding double counting.
-  int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (AmanziMesh::Entity_ID f=0; f!=nfaces_surf; ++f) {
-    surface_mesh_->face_get_cells(f, AmanziMesh::USED, &surf_cells);
-    int mcells = surf_cells.size();
+  // Loop over surface cells (subsurface faces)
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+    // Access the row in Spp
+    int ierr = Spp.ExtractMyRowView(sc, entries, values, indices);
 
-    if (mcells == 2) {
-      // get the equivalent faces on the subsurface mesh
-      for (int n=0; n!=mcells; ++n) {
-        AmanziMesh::Entity_ID f =
-            surface_mesh_->entity_get_parent(AmanziMesh::CELL, surf_cells[n]);
-        equiv_face_GID[n] = fmap_wghost.GID(f);
-      }
+    // Convert Spp local cell numbers to Aff local face numbers
+    AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    for (int m=0; m!=entries; ++m) {
+      indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
 
-      (*Aff_).SumIntoGlobalValues(equiv_face_GID[0], 1,
-              &Spp(surf_cells[0],surf_cells[1]), &equiv_face_GID[1]);
-      (*Aff_).SumIntoGlobalValues(equiv_face_GID[1], 1,
-              &Spp(surf_cells[1],surf_cells[0]), &equiv_face_GID[0]);
+    }
+
+    // Add into Aff
+    Aff_->SumIntoMyValues(frow, entries, values, indices);
+  }
+  Aff_->GlobalAssemble();
+
+  // Deal with RHS
+  const Epetra_MultiVector& rhs_surf_cells =
+      *surface_A_->rhs()->ViewComponent("cell",false);
+  const Epetra_MultiVector& rhs_faces =
+      *rhs_->ViewComponent("face",false);
+  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    rhs_faces[0][f] += rhs_surf_cells[0][sc];
+  }
+}
+
+
+void MatrixMFD_Surf::ApplyBoundaryConditions(
+    const std::vector<Matrix_bc>& subsurface_markers,
+    const std::vector<double>& subsurface_values,
+    const std::vector<Matrix_bc>& surface_markers,
+    const std::vector<double>& surface_values) {
+  // Ensure that none of the surface faces have a BC in them.
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    if (subsurface_markers[f] != MFD_BC_NULL) {
+      Errors::Message msg("MatrixMFD_Surf::Subsurface's cell on the surface has a non-Null BC.");
+      Exceptions::amanzi_throw(msg);
     }
   }
 
-  // Do the diagonal entries by surface cell.
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (AmanziMesh::Entity_ID c=0; c!=ncells_surf; ++c) {
-    // get the equivalent face on the subsurface mesh
-    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    equiv_face_GID[0] = fmap_wghost.GID(f);
-
-    (*Aff_).SumIntoGlobalValues(equiv_face_GID[0], 1,
-            &Spp(c,c), &equiv_face_GID[0]);
-  }
-  (*Aff_).GlobalAssemble();
-
+  MatrixMFD::ApplyBoundaryConditions(subsurface_markers, subsurface_values);
+  surface_A_->ApplyBoundaryConditions(surface_markers, surface_values);
 }
+
 
 
 void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
         const std::vector<double>& bc_values) {
+  // Ensure that none of the surface faces have a BC in them.
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+    AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    if (subsurface_markers[f] != MFD_BC_NULL) {
+      Errors::Message msg("MatrixMFD_Surf::Subsurface's cell on the surface has a non-Null BC.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 
+  // Call base Schur
+  MatrixMFD::ComputeSchurComplement(bc_markers, bc_values);
 }
+
+
+} // namespace
+} // namespace

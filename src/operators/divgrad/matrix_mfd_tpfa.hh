@@ -29,10 +29,14 @@
 namespace Amanzi {
 namespace Operators {
 
+class MatrixMFD_Surf;
+
+
 class MatrixMFD_TPFA : public MatrixMFD {
  public:
   MatrixMFD_TPFA(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+                 const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      MatrixMFD(plist,mesh) {}
 
   virtual ~MatrixMFD_TPFA() {};
 
@@ -56,7 +60,7 @@ class MatrixMFD_TPFA : public MatrixMFD {
     return strdup("Matrix MFD_TPFA");
   }
 
-  Teuchos::RCP<Epetra_FECrsMatrix> TPFA() {
+  Teuchos::RCP<const Epetra_FECrsMatrix> TPFA() {
     return Spp_;
   }
 
@@ -72,6 +76,8 @@ class MatrixMFD_TPFA : public MatrixMFD {
 
  private:
   void operator=(const MatrixMFD_TPFA& matrix);
+
+  friend class MatrixMFD_Surf;
 };
 
 }  // namespace AmanziFlow

@@ -21,20 +21,33 @@ class MatrixMFD_Surf : public MatrixMFD {
 
  public:
   MatrixMFD_Surf(Teuchos::ParameterList& plist,
-                 MFD_method method,
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                  const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
 
   virtual void SymbolicAssembleGlobalMatrices();
 
-  void AssembleGlobalMatricesWithSurface(const MatrixMFD_TPFA& surface_A);
+  virtual void AssembleGlobalMatrices();
+
+  void ApplyBoundaryConditions(const std::vector<Matrix_bc>& subsurface_markers,
+          const std::vector<double>& subsurface_values,
+          const std::vector<Matrix_bc>& surface_markers,
+          const std::vector<double>& surface_values);
+
+
   virtual void ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
           const std::vector<double>& bc_values);
 
+  void set_surface_A(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
+    surface_A_ = surface_A; }
+
  protected:
-  Teuchos::RCP<const AmaniMesh::Mesh> surface_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
+  Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
 };
 
 
 } //namespace
 } //namespace
+
+
+#endif
