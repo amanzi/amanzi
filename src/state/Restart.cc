@@ -19,13 +19,14 @@ Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_)
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&plist,this);
   restart_output = new Amanzi::HDF5_MPI(*comm);
-  restart_output->setTrackXdmf(false);
-  
+  restart_output->setTrackXdmf(false); 
 }
 
 // this constructor makes an object that will not create any output
-Amanzi::Restart::Restart (): disabled(true), restart_output(NULL)
+// but it will allow for reading a restart file
+Amanzi::Restart::Restart (Epetra_MpiComm* comm_): disabled(true), restart_output(NULL), comm(comm_)
 {
+  
 }
 
 Amanzi::Restart::~Restart() 
@@ -249,6 +250,7 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   
   Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm, filename); 
 
+
   int idummy;
   double dummy;
 
@@ -335,40 +337,39 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
   S.set_material_ids(*cell_vector);
   delete cell_vector;
 
-  Epetra_MultiVector* cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), S.get_number_of_components());
-  for (int i=0; i< S.get_number_of_components(); i++)
-    {
-      std::stringstream tcc_name;
-      tcc_name << "component " << i;
-
-      restart_input->readData(*(*cell_multivector)(i),tcc_name.str()); 
+  Epetra_MultiVector* cell_multivector;
+  if (S.get_number_of_components() > 0) {
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), S.get_number_of_components());
+    for (int i=0; i< S.get_number_of_components(); i++)
+      {
+	std::stringstream tcc_name;
+	tcc_name << "component " << i;
+	
+	restart_input->readData(*(*cell_multivector)(i),tcc_name.str()); 
+      }
+    S.set_total_component_concentration(*cell_multivector);
+    delete cell_multivector; 
+    
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.get_number_of_components());
+    for (int i=0; i< S.get_number_of_components(); i++) {
+      std::stringstream name;
+      name << "free ion concentrations " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
     }
-  S.set_total_component_concentration(*cell_multivector);
-  delete cell_multivector; 
+    S.set_free_ion_concentrations(*cell_multivector);
+    delete cell_multivector;   
 
-  
-
-
-  cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
-					     S.get_number_of_components());
-  for (int i=0; i< S.get_number_of_components(); i++) {
-    std::stringstream name;
-    name << "free ion concentrations " << i;
-    restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
+					       S.get_number_of_components());
+    for (int i=0; i< S.get_number_of_components(); i++) {
+      std::stringstream name;
+      name << "primary activity coeff " << i;
+      restart_input->readData(*(*cell_multivector)(i),name.str()); 
+    }
+    S.set_primary_activity_coeff(*cell_multivector);
+    delete cell_multivector;
   }
-  S.set_free_ion_concentrations(*cell_multivector);
-  delete cell_multivector;   
-
-  cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
-					     S.get_number_of_components());
-  for (int i=0; i< S.get_number_of_components(); i++) {
-    std::stringstream name;
-    name << "primary activity coeff " << i;
-    restart_input->readData(*(*cell_multivector)(i),name.str()); 
-  }
-  S.set_primary_activity_coeff(*cell_multivector);
-  delete cell_multivector;
-
   if ( ! S.secondary_activity_coeff().is_null() ) {
     cell_multivector  = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 
 					       S.secondary_activity_coeff()->NumVectors());

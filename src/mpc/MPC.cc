@@ -188,7 +188,7 @@ void MPC::mpc_init() {
     Teuchos::ParameterList checkpoint_parameter_list = parameter_list.sublist("Checkpoint Data");
     restart = new Amanzi::Restart(checkpoint_parameter_list, comm);
   } else {
-    restart = new Amanzi::Restart();
+    restart = new Amanzi::Restart(comm);
   }
 
   // are we restarting from a file?
@@ -400,15 +400,27 @@ void MPC::cycle_driver() {
   Amanzi::timer_manager.start("Flow PK");
   if (flow_enabled) {
     if (ti_mode == STEADY  && flow_model != std::string("Steady State Saturated")) {
+      // this is the case Richards time stepped to steady state
+      // we simply initialize the Flow PK accordingly and the 
+      // time stepping loop below takes care of the rest
       FPK->InitSteadyState(S->get_time(), dTsteady);
     } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
       FPK->InitTransient(S->get_time(), dTtransient);
     } else if ( (ti_mode == INIT_TO_STEADY || ti_mode == STEADY) && flow_model == std::string("Steady State Saturated")) {
+      // this is the case where we need to solve the Darcy problem first
+      // and then either stop (in the STEADY case), or move to the switch time
+      // to get the transient part going (INIT_TO_STEADY).
+      // note that if a restart was requested, we get the flow field from
+      // the checkpoint file we skip the linear Darcy solve and proceed with 
+      // the initialization of the transient problem
       if (!restart_requested) {
         FPK->InitSteadyState(S->get_time(), dTsteady);
         FPK->InitializeSteadySaturated();
         FPK->CommitState(FS);
-        S->advance_time(Tswitch-T0);
+	if (ti_mode == INIT_TO_STEADY) S->advance_time(Tswitch-T0);
+	if (ti_mode == STEADY)         S->advance_time(T1-T0);
+      } else {
+	FPK->InitTransient(S->get_time(), dTtransient);
       }
     } else if ( ti_mode == INIT_TO_STEADY ) {
       if (S->get_time() < Tswitch) {
@@ -462,9 +474,9 @@ void MPC::cycle_driver() {
             *out << "Steady state computation complete... now running in transient mode." << std::endl;
           }
           // only init the transient problem if we need to
-          if (flow_model != "Steady State Richards"  && flow_model != "Steady State Saturated" )  {
+          if (flow_model != "Steady State Richards") { //  && flow_model != "Steady State Saturated" )  {
             FPK->InitTransient(S->get_time(), dTtransient);
-          }
+	  }
         }
       }
 
@@ -852,14 +864,21 @@ void MPC::cycle_driver() {
     }
   }
 
-  // write final visualization dump if no time stepping was done
+  // write final visualization dump and checkpoint 
+  // if no time stepping was done
   if (iter == 0) {
     ++iter;
     S->set_cycle(iter);
     Amanzi::timer_manager.start("I/O");
     S->write_vis(*visualization, false, true);
+    
+    restart->dump_state(*S, true);    
     Amanzi::timer_manager.stop("I/O");
   }
+
+
+
+
 
 
   // some final output
