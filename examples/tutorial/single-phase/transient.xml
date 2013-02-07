@@ -16,7 +16,7 @@
   <ParameterList name="Execution Control">
 
     <ParameterList name="Restart from Checkpoint Data File">
-        <Parameter name="Checkpoint Data File Name" type="string" value="chk00001.h5"/>
+        <Parameter name="Checkpoint Data File Name" type="string" value="steady-checkpoint.h5"/>
     </ParameterList>
 
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
@@ -25,8 +25,8 @@
 
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
-	<Parameter name="Start" type="double" value="0.5"/>
-	<Parameter name="End" type="double" value="1.0"/>
+	<Parameter name="Start" type="double" value="1.0"/>
+	<Parameter name="End" type="double" value="5.0"/>
 	<Parameter name="Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
     </ParameterList>

@@ -984,150 +984,156 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    picard_list.sublist("Picard").set<int>("maximum number of iterations",PIC_MAX_ITER);
 	  }
 	}
+	
+	// only include a steady state time integrator list if not transient
+	if (! ti_mode_list.isSublist("Transient")) {
       
-      
-	// create sublists for the steady state time integrator
-	Teuchos::ParameterList& steady_time_integrator = flow_list->sublist("steady state time integrator");
-	steady_time_integrator.set<std::string>("time integration method","BDF1");
-	Teuchos::ParameterList& sti_bdf1 = steady_time_integrator.sublist("BDF1");
-	Teuchos::ParameterList& sti_bdf1_param = sti_bdf1.sublist("BDF1 parameters");
-      
-	steady_time_integrator.set<std::string>("preconditioner", ST_PRECOND);
-	steady_time_integrator.set<std::string>("linear solver", ST_SOLVER);
-      
-	// set defaults
-	sti_bdf1_param.set<int>("max iterations",ST_MAX_ITER);
-	sti_bdf1_param.set<int>("min iterations",ST_MIN_ITER);
-	sti_bdf1_param.set<int>("limit iterations",ST_LIMIT_ITER);
-	sti_bdf1_param.set<double>("nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE);
-	sti_bdf1_param.set<double>("time step reduction factor",ST_TS_RED_FACTOR);
-	sti_bdf1_param.set<double>("time step increase factor",ST_TS_INC_FACTOR);
-	sti_bdf1_param.set<double>("max time step", ST_MAX_TS);
-	sti_bdf1_param.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
-	sti_bdf1_param.set<double>("error abs tol", ST_ERROR_ABS_TOL);
-	sti_bdf1_param.set<double>("error rel tol", ST_ERROR_REL_TOL);
-	sti_bdf1_param.set<int>("max divergent iterations",ST_MAX_DIVERGENT_ITERATIONS);
-	sti_bdf1_param.set<double>("nonlinear iteration damping factor",ST_NONLIN_DAMP);
-	sti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD);
-	sti_bdf1_param.set<double>("restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR);
-	sti_bdf1_param.set<double>("restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP);
-	sti_bdf1_param.set<double>("nonlinear iteration divergence factor",ST_DIVERG_FACT);
-      
-	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-	  Teuchos::ParameterList& ncp_list =  plist->sublist("Execution Control").sublist("Numerical Control Parameters");
-	  if (ncp_list.isSublist("Unstructured Algorithm")) {
-	    Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
-	    if (ncpu_list.isSublist("Steady-State Implicit Time Integration")) {
-	      Teuchos::ParameterList& num_list = ncpu_list.sublist("Steady-State Implicit Time Integration");
-	      sti_bdf1_param.set<int>("max iterations",
-				      num_list.get<int>("steady max iterations",ST_MAX_ITER));
-	      sti_bdf1_param.set<int>("min iterations",
-				      num_list.get<int>("steady min iterations",ST_MIN_ITER));
-	      sti_bdf1_param.set<int>("limit iterations",
-				      num_list.get<int>("steady limit iterations",ST_LIMIT_ITER));
-	      sti_bdf1_param.set<double>("nonlinear tolerance",
-					 num_list.get<double>("steady nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE));
-	      sti_bdf1_param.set<double>("time step reduction factor",
-					 num_list.get<double>("steady time step reduction factor",ST_TS_RED_FACTOR));
-	      sti_bdf1_param.set<double>("time step increase factor",
-					 num_list.get<double>("steady time step increase factor",ST_TS_INC_FACTOR));
-	      sti_bdf1_param.set<double>("max time step", num_list.get<double>("steady max time step",ST_MAX_TS));
-	      sti_bdf1_param.set<int>("max preconditioner lag iterations",
-				      num_list.get<int>("steady max preconditioner lag iterations",ST_MAX_PREC_LAG));
-	      sti_bdf1_param.set<double>("error abs tol", num_list.get<double>("steady error abs tol",ST_ERROR_ABS_TOL));
-	      sti_bdf1_param.set<double>("error rel tol", num_list.get<double>("steady error rel tol",ST_ERROR_REL_TOL));
-	      sti_bdf1_param.set<int>("max divergent iterations",
-				      num_list.get<int>("steady max divergent iterations",ST_MAX_DIVERGENT_ITERATIONS));
-	      sti_bdf1_param.set<double>("nonlinear iteration damping factor",
-					 num_list.get<double>("steady nonlinear iteration damping factor",ST_NONLIN_DAMP));
-	      sti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",
-				      num_list.get<int>("steady nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD));
-	      sti_bdf1_param.set<double>("restart tolerance relaxation factor",
-					 num_list.get<double>("steady restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR));
-	      sti_bdf1_param.set<double>("restart tolerance relaxation factor damping",
-					 num_list.get<double>("steady restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP));
-	      sti_bdf1_param.set<double>("nonlinear iteration divergence factor",
-					 num_list.get<double>("steady nonlinear iteration divergence factor",ST_DIVERG_FACT));
-	    
-	      steady_time_integrator.set<std::string>("preconditioner",
-						      num_list.get<std::string>("steady preconditioner",ST_PRECOND));
-	      steady_time_integrator.set<bool>("initialize with darcy",
-					       num_list.get<bool>("steady initialize with darcy",ST_INIT_DARCY));
+	  // create sublists for the steady state time integrator
+	  Teuchos::ParameterList& steady_time_integrator = flow_list->sublist("steady state time integrator");
+	  steady_time_integrator.set<std::string>("time integration method","BDF1");
+	  Teuchos::ParameterList& sti_bdf1 = steady_time_integrator.sublist("BDF1");
+	  Teuchos::ParameterList& sti_bdf1_param = sti_bdf1.sublist("BDF1 parameters");
+	  
+	  steady_time_integrator.set<std::string>("preconditioner", ST_PRECOND);
+	  steady_time_integrator.set<std::string>("linear solver", ST_SOLVER);
+	  
+	  // set defaults
+	  sti_bdf1_param.set<int>("max iterations",ST_MAX_ITER);
+	  sti_bdf1_param.set<int>("min iterations",ST_MIN_ITER);
+	  sti_bdf1_param.set<int>("limit iterations",ST_LIMIT_ITER);
+	  sti_bdf1_param.set<double>("nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE);
+	  sti_bdf1_param.set<double>("time step reduction factor",ST_TS_RED_FACTOR);
+	  sti_bdf1_param.set<double>("time step increase factor",ST_TS_INC_FACTOR);
+	  sti_bdf1_param.set<double>("max time step", ST_MAX_TS);
+	  sti_bdf1_param.set<int>("max preconditioner lag iterations", ST_MAX_PREC_LAG);
+	  sti_bdf1_param.set<double>("error abs tol", ST_ERROR_ABS_TOL);
+	  sti_bdf1_param.set<double>("error rel tol", ST_ERROR_REL_TOL);
+	  sti_bdf1_param.set<int>("max divergent iterations",ST_MAX_DIVERGENT_ITERATIONS);
+	  sti_bdf1_param.set<double>("nonlinear iteration damping factor",ST_NONLIN_DAMP);
+	  sti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD);
+	  sti_bdf1_param.set<double>("restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR);
+	  sti_bdf1_param.set<double>("restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP);
+	  sti_bdf1_param.set<double>("nonlinear iteration divergence factor",ST_DIVERG_FACT);
+	  
+	  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	    Teuchos::ParameterList& ncp_list =  plist->sublist("Execution Control").sublist("Numerical Control Parameters");
+	    if (ncp_list.isSublist("Unstructured Algorithm")) {
+	      Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
+	      if (ncpu_list.isSublist("Steady-State Implicit Time Integration")) {
+		Teuchos::ParameterList& num_list = ncpu_list.sublist("Steady-State Implicit Time Integration");
+		sti_bdf1_param.set<int>("max iterations",
+					num_list.get<int>("steady max iterations",ST_MAX_ITER));
+		sti_bdf1_param.set<int>("min iterations",
+					num_list.get<int>("steady min iterations",ST_MIN_ITER));
+		sti_bdf1_param.set<int>("limit iterations",
+					num_list.get<int>("steady limit iterations",ST_LIMIT_ITER));
+		sti_bdf1_param.set<double>("nonlinear tolerance",
+					   num_list.get<double>("steady nonlinear tolerance",STEADY_NONLINEAR_TOLERANCE));
+		sti_bdf1_param.set<double>("time step reduction factor",
+					   num_list.get<double>("steady time step reduction factor",ST_TS_RED_FACTOR));
+		sti_bdf1_param.set<double>("time step increase factor",
+					   num_list.get<double>("steady time step increase factor",ST_TS_INC_FACTOR));
+		sti_bdf1_param.set<double>("max time step", num_list.get<double>("steady max time step",ST_MAX_TS));
+		sti_bdf1_param.set<int>("max preconditioner lag iterations",
+					num_list.get<int>("steady max preconditioner lag iterations",ST_MAX_PREC_LAG));
+		sti_bdf1_param.set<double>("error abs tol", num_list.get<double>("steady error abs tol",ST_ERROR_ABS_TOL));
+		sti_bdf1_param.set<double>("error rel tol", num_list.get<double>("steady error rel tol",ST_ERROR_REL_TOL));
+		sti_bdf1_param.set<int>("max divergent iterations",
+					num_list.get<int>("steady max divergent iterations",ST_MAX_DIVERGENT_ITERATIONS));
+		sti_bdf1_param.set<double>("nonlinear iteration damping factor",
+					   num_list.get<double>("steady nonlinear iteration damping factor",ST_NONLIN_DAMP));
+		sti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",
+					num_list.get<int>("steady nonlinear iteration initial guess extrapolation order",ST_NONLIN_INIT_GUESS_EXTR_ORD));
+		sti_bdf1_param.set<double>("restart tolerance relaxation factor",
+					   num_list.get<double>("steady restart tolerance relaxation factor",ST_NONLIN_INIT_TS_FACTOR));
+		sti_bdf1_param.set<double>("restart tolerance relaxation factor damping",
+					   num_list.get<double>("steady restart tolerance relaxation factor damping",ST_NONLIN_INIT_TS_FACTOR_DAMP));
+		sti_bdf1_param.set<double>("nonlinear iteration divergence factor",
+					   num_list.get<double>("steady nonlinear iteration divergence factor",ST_DIVERG_FACT));
+		
+		steady_time_integrator.set<std::string>("preconditioner",
+							num_list.get<std::string>("steady preconditioner",ST_PRECOND));
+		steady_time_integrator.set<bool>("initialize with darcy",
+						 num_list.get<bool>("steady initialize with darcy",ST_INIT_DARCY));
+	      }
 	    }
 	  }
 	}
-      
-      
-	// crerate sublists for the transient time integrator
-	Teuchos::ParameterList& transient_time_integrator = flow_list->sublist("transient time integrator");
-	transient_time_integrator.set<std::string>("time integration method", "BDF1");
-	Teuchos::ParameterList& tti_bdf1 = transient_time_integrator.sublist("BDF1");
-	Teuchos::ParameterList& tti_bdf1_param = tti_bdf1.sublist("BDF1 parameters");
-      
-	transient_time_integrator.set<std::string>("preconditioner", TR_PRECOND);
-	transient_time_integrator.set<std::string>("linear solver", TR_SOLVER);
-      
-	// set some probably not so good defaults for the steady computation
-	tti_bdf1_param.set<int>("max iterations",TR_MAX_ITER);
-	tti_bdf1_param.set<int>("min iterations",TR_MIN_ITER);
-	tti_bdf1_param.set<int>("limit iterations",TR_LIMIT_ITER);
-	tti_bdf1_param.set<double>("nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE);
-	tti_bdf1_param.set<double>("time step reduction factor",TR_TS_RED_FACTOR);
-	tti_bdf1_param.set<double>("time step increase factor",TR_TS_INC_FACTOR);
-	tti_bdf1_param.set<double>("max time step", TR_MAX_TS);
-	tti_bdf1_param.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
-	tti_bdf1_param.set<double>("error abs tol", TR_ERROR_ABS_TOL);
-	tti_bdf1_param.set<double>("error rel tol", TR_ERROR_REL_TOL);
-	tti_bdf1_param.set<int>("max divergent iterations",TR_MAX_DIVERGENT_ITERATIONS);
-	tti_bdf1_param.set<double>("nonlinear iteration damping factor",TR_NONLIN_DAMP);
-	tti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",TR_NONLIN_INIT_GUESS_EXTR_ORD);
-	tti_bdf1_param.set<double>("restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR);
-	tti_bdf1_param.set<double>("restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP);
-	tti_bdf1_param.set<double>("nonlinear iteration divergence factor",TR_DIVERG_FACT);
-      
-	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-	  Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
-	  if (ncp_list.isSublist("Unstructured Algorithm")) {
-	    Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
-	    if (ncpu_list.isSublist("Transient Implicit Time Integration")) {
-	    
-	      Teuchos::ParameterList& num_list = ncpu_list.sublist("Transient Implicit Time Integration");
-	      tti_bdf1_param.set<int>("max iterations", num_list.get<int>("transient max iterations",TR_MAX_ITER));
-	      tti_bdf1_param.set<int>("min iterations", num_list.get<int>("transient min iterations",TR_MIN_ITER));
-	      tti_bdf1_param.set<int>("limit iterations", num_list.get<int>("transient limit iterations",TR_LIMIT_ITER));
-	      tti_bdf1_param.set<double>("nonlinear tolerance",
-					 num_list.get<double>("transient nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE));
-	      tti_bdf1_param.set<double>("time step reduction factor",
-					 num_list.get<double>("transient time step reduction factor",TR_TS_RED_FACTOR));
-	      tti_bdf1_param.set<double>("time step increase factor",
-					 num_list.get<double>("transient time step increase factor",TR_TS_INC_FACTOR));
-	      tti_bdf1_param.set<double>("max time step", num_list.get<double>("transient max time step",TR_MAX_TS));
-	      tti_bdf1_param.set<int>("max preconditioner lag iterations",
-				      num_list.get<int>("transient max preconditioner lag iterations",TR_MAX_PREC_LAG));
-	      tti_bdf1_param.set<double>("error abs tol", num_list.get<double>("transient error abs tol",TR_ERROR_ABS_TOL));
-	      tti_bdf1_param.set<double>("error rel tol", num_list.get<double>("transient error rel tol",TR_ERROR_REL_TOL));
-	      tti_bdf1_param.set<int>("max divergent iterations",
-				      num_list.get<int>("transient max divergent iterations",TR_MAX_DIVERGENT_ITERATIONS));
-	      tti_bdf1_param.set<double>("nonlinear iteration damping factor",
-					 num_list.get<double>("transient nonlinear iteration damping factor",TR_NONLIN_DAMP));
-	      tti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",
-				      num_list.get<int>("transient nonlinear iteration initial guess extrapolation order",TR_NONLIN_INIT_GUESS_EXTR_ORD));
-	      tti_bdf1_param.set<double>("restart tolerance relaxation factor",
-					 num_list.get<double>("transient restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR));
-	      tti_bdf1_param.set<double>("restart tolerance relaxation factor damping",
-					 num_list.get<double>("transient restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP));
-	      tti_bdf1_param.set<double>("nonlinear iteration divergence factor",
-					 num_list.get<double>("transient nonlinear iteration divergence factor",TR_DIVERG_FACT));
-	    
-	      transient_time_integrator.set<std::string>("preconditioner",
-							 num_list.get<std::string>("transient preconditioner",TR_PRECOND));
-	    }
-	  }
-	}
-      
-	transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-      }
 
+	// only include the transient list if not in steady mode
+	if ( ! ti_mode_list.isSublist("Steady")) {
+	  
+	  // crerate sublists for the transient time integrator
+	  Teuchos::ParameterList& transient_time_integrator = flow_list->sublist("transient time integrator");
+	  transient_time_integrator.set<std::string>("time integration method", "BDF1");
+	  Teuchos::ParameterList& tti_bdf1 = transient_time_integrator.sublist("BDF1");
+	  Teuchos::ParameterList& tti_bdf1_param = tti_bdf1.sublist("BDF1 parameters");
+	  
+	  transient_time_integrator.set<std::string>("preconditioner", TR_PRECOND);
+	  transient_time_integrator.set<std::string>("linear solver", TR_SOLVER);
+	  
+	  // set some probably not so good defaults for the steady computation
+	  tti_bdf1_param.set<int>("max iterations",TR_MAX_ITER);
+	  tti_bdf1_param.set<int>("min iterations",TR_MIN_ITER);
+	  tti_bdf1_param.set<int>("limit iterations",TR_LIMIT_ITER);
+	  tti_bdf1_param.set<double>("nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE);
+	  tti_bdf1_param.set<double>("time step reduction factor",TR_TS_RED_FACTOR);
+	  tti_bdf1_param.set<double>("time step increase factor",TR_TS_INC_FACTOR);
+	  tti_bdf1_param.set<double>("max time step", TR_MAX_TS);
+	  tti_bdf1_param.set<int>("max preconditioner lag iterations", TR_MAX_PREC_LAG);
+	  tti_bdf1_param.set<double>("error abs tol", TR_ERROR_ABS_TOL);
+	  tti_bdf1_param.set<double>("error rel tol", TR_ERROR_REL_TOL);
+	  tti_bdf1_param.set<int>("max divergent iterations",TR_MAX_DIVERGENT_ITERATIONS);
+	  tti_bdf1_param.set<double>("nonlinear iteration damping factor",TR_NONLIN_DAMP);
+	  tti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",TR_NONLIN_INIT_GUESS_EXTR_ORD);
+	  tti_bdf1_param.set<double>("restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR);
+	  tti_bdf1_param.set<double>("restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP);
+	  tti_bdf1_param.set<double>("nonlinear iteration divergence factor",TR_DIVERG_FACT);
+	  
+	  if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	    Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
+	    if (ncp_list.isSublist("Unstructured Algorithm")) {
+	      Teuchos::ParameterList& ncpu_list = ncp_list.sublist("Unstructured Algorithm");
+	      if (ncpu_list.isSublist("Transient Implicit Time Integration")) {
+		
+		Teuchos::ParameterList& num_list = ncpu_list.sublist("Transient Implicit Time Integration");
+		tti_bdf1_param.set<int>("max iterations", num_list.get<int>("transient max iterations",TR_MAX_ITER));
+		tti_bdf1_param.set<int>("min iterations", num_list.get<int>("transient min iterations",TR_MIN_ITER));
+		tti_bdf1_param.set<int>("limit iterations", num_list.get<int>("transient limit iterations",TR_LIMIT_ITER));
+		tti_bdf1_param.set<double>("nonlinear tolerance",
+					   num_list.get<double>("transient nonlinear tolerance",TRANSIENT_NONLINEAR_TOLERANCE));
+		tti_bdf1_param.set<double>("time step reduction factor",
+					   num_list.get<double>("transient time step reduction factor",TR_TS_RED_FACTOR));
+		tti_bdf1_param.set<double>("time step increase factor",
+					   num_list.get<double>("transient time step increase factor",TR_TS_INC_FACTOR));
+		tti_bdf1_param.set<double>("max time step", num_list.get<double>("transient max time step",TR_MAX_TS));
+		tti_bdf1_param.set<int>("max preconditioner lag iterations",
+					num_list.get<int>("transient max preconditioner lag iterations",TR_MAX_PREC_LAG));
+		tti_bdf1_param.set<double>("error abs tol", num_list.get<double>("transient error abs tol",TR_ERROR_ABS_TOL));
+		tti_bdf1_param.set<double>("error rel tol", num_list.get<double>("transient error rel tol",TR_ERROR_REL_TOL));
+		tti_bdf1_param.set<int>("max divergent iterations",
+					num_list.get<int>("transient max divergent iterations",TR_MAX_DIVERGENT_ITERATIONS));
+		tti_bdf1_param.set<double>("nonlinear iteration damping factor",
+					   num_list.get<double>("transient nonlinear iteration damping factor",TR_NONLIN_DAMP));
+		tti_bdf1_param.set<int>("nonlinear iteration initial guess extrapolation order",
+					num_list.get<int>("transient nonlinear iteration initial guess extrapolation order",TR_NONLIN_INIT_GUESS_EXTR_ORD));
+		tti_bdf1_param.set<double>("restart tolerance relaxation factor",
+					   num_list.get<double>("transient restart tolerance relaxation factor",TR_NONLIN_INIT_TS_FACTOR));
+		tti_bdf1_param.set<double>("restart tolerance relaxation factor damping",
+					   num_list.get<double>("transient restart tolerance relaxation factor damping",TR_NONLIN_INIT_TS_FACTOR_DAMP));
+		tti_bdf1_param.set<double>("nonlinear iteration divergence factor",
+					   num_list.get<double>("transient nonlinear iteration divergence factor",TR_DIVERG_FACT));
+		
+		transient_time_integrator.set<std::string>("preconditioner",
+							   num_list.get<std::string>("transient preconditioner",TR_PRECOND));
+	      }
+	    }
+	  }
+	  
+	  transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+	}
+
+      }
     }
       
   }
