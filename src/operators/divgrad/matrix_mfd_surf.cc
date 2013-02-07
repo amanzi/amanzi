@@ -172,7 +172,7 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    if (subsurface_markers[f] != MFD_BC_NULL) {
+    if (bc_markers[f] != MFD_BC_NULL) {
       Errors::Message msg("MatrixMFD_Surf::Subsurface's cell on the surface has a non-Null BC.");
       Exceptions::amanzi_throw(msg);
     }
