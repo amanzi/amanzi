@@ -57,12 +57,12 @@ const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 5;
 const int FLOW_RELATIVE_PERM_EXPERIMENTAL = 6;
 const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-10;  // [-]
 
-const int FLOW_MFD3D_POLYHEDRA = 1;
-const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
-const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
+const int FLOW_MFD3D_POLYHEDRA = 1;  // default
+const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;  // highly experimental
 const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
 const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;
 const int FLOW_MFD3D_OPTIMIZED = 6;
+const int FLOW_MFD3D_OPTIMIZED_EXPERIMENTAL = 7;  // experimental
 
 const int FLOW_PRECONDITIONER_TRILINOS_ML = 1;  // preconditioners
 const int FLOW_PRECONDITIONER_HYPRE_AMG = 2;

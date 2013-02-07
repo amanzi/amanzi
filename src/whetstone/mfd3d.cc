@@ -47,11 +47,7 @@ int MFD3D::DarcyMass(int cell, const Tensor& permeability,
                      Teuchos::SerialDenseMatrix<int, double>& M)
 {
   int d = mesh_->space_dimension();
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
-  int nfaces = faces.size();
+  int nfaces = M.numRows();
 
   Teuchos::SerialDenseMatrix<int, double> N(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Mc(nfaces, nfaces);
@@ -74,11 +70,7 @@ int MFD3D::DarcyMassInverse(int cell, const Tensor& permeability,
                             Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
-  int nfaces = faces.size();
+  int nfaces = W.numRows();
 
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
@@ -98,11 +90,7 @@ int MFD3D::DarcyMassInverseHex(int cell, const Tensor& permeability,
                                Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
-  int nfaces = faces.size();
+  int nfaces = W.numRows();
 
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
@@ -240,10 +228,30 @@ int MFD3D::DarcyMassInverseSO(int cell, const Tensor& permeability,
 
 
 /* ******************************************************************
-* Darcy mass matrix for a hexahedral element, a brick for now.
+* Darcy inverse mass matrix via optimziation.
 ****************************************************************** */
 int MFD3D::DarcyMassInverseOptimized(int cell, const Tensor& permeability,
                                      Teuchos::SerialDenseMatrix<int, double>& W)
+{
+  int d = mesh_->space_dimension();
+  int nfaces = W.numRows();
+
+  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
+  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+
+  int ok = L2consistencyInverse(cell, permeability, R, Wc);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  ok = StabilityOptimized(permeability, R, Wc, W);
+  return ok;
+}
+
+
+/* ******************************************************************
+* Darcy inverse mass matrix via optimization, experimetnal.
+****************************************************************** */
+int MFD3D::DarcyMassInverseOptimizedTest(int cell, const Tensor& permeability,
+                                         Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
 
@@ -258,7 +266,26 @@ int MFD3D::DarcyMassInverseOptimized(int cell, const Tensor& permeability,
   int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
+  // rescale matrices Wc and R
+  for (int i = 0; i < nfaces; i++) {
+    double ai = mesh_->face_area(faces[i]);
+    for (int j = 0; j < nfaces; j++) {
+      double aj = mesh_->face_area(faces[j]);
+      Wc(i, j) /= ai * aj;
+    }
+    for (int j = 0; j < d; j++) R(i, j) /= ai; 
+  }
+ 
   ok = StabilityOptimized(permeability, R, Wc, W);
+
+  // rescale matrix W
+  for (int i = 0; i < nfaces; i++) {
+    double ai = mesh_->face_area(faces[i]);
+    for (int j = 0; j < nfaces; j++) {
+      double aj = mesh_->face_area(faces[j]);
+      W(i, j) *= ai * aj;
+    }
+  }
   return ok;
 }
 

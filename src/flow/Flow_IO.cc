@@ -133,6 +133,8 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
     *method = FLOW_MFD3D_TWO_POINT_FLUX;
   } else if (name == "optimized mfd") {
     *method = FLOW_MFD3D_OPTIMIZED;
+  } else if (name == "optimized mfd experimental") {
+    *method = FLOW_MFD3D_OPTIMIZED_EXPERIMENTAL;
   } else if (name == "mfd") {
     *method = FLOW_MFD3D_POLYHEDRA;
   } else {

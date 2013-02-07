@@ -68,6 +68,8 @@ class MFD3D {
                                Teuchos::SerialDenseMatrix<int, double>& W);
   int DarcyMassInverseOptimized(int cell, const Tensor& permeability,
                                 Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseOptimizedTest(int cell, const Tensor& permeability,
+                                    Teuchos::SerialDenseMatrix<int, double>& W);
 
   int ElasticityStiffness(int cell, const Tensor& deformation,
                           Teuchos::SerialDenseMatrix<int, double>& A); 
