@@ -18,6 +18,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "composite_vector_function_factory.hh"
 #include "independent_variable_field_evaluator.hh"
 
+#include "matrix_mfd_tpfa.hh"
 #include "upwinding.hh"
 #include "upwind_potential_difference.hh"
 #include "elevation_evaluator.hh"
@@ -90,14 +91,14 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_plist, mesh_));
   bool symmetric = false;
   matrix_->SetSymmetryProperty(symmetric);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
   preconditioner_->SetSymmetryProperty(symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices();
   preconditioner_->InitPreconditioner(mfd_pc_plist);
