@@ -42,6 +42,7 @@ class MPCSurfaceSubsurfaceFullCoupler : public MPCSurfaceSubsurfaceCoupler {
 
 protected:
   Teuchos::RCP<Operators::MatrixMFD_Surf> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
 
 };
 

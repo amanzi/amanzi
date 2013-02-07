@@ -107,11 +107,10 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
   rhs_->CreateData();
 }
 
-
+// Assumes the Surface A was already assembled.
 void MatrixMFD_Surf::AssembleGlobalMatrices() {
   // Get the standard MFD pieces.
   MatrixMFD::AssembleGlobalMatrices();
-  surface_A_->AssembleGlobalMatrices();
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -151,7 +150,7 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
 }
 
 
-void MatrixMFD_Surf::ApplyBoundaryConditions(
+void MatrixMFD_Surf::ApplyAllBoundaryConditions(
     const std::vector<Matrix_bc>& subsurface_markers,
     const std::vector<double>& subsurface_values,
     const std::vector<Matrix_bc>& surface_markers,

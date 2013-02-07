@@ -36,6 +36,7 @@ public:
       is_source_term_(false),
       coupled_to_subsurface_via_flux_(false),
       coupled_to_subsurface_via_head_(false),
+      coupled_to_subsurface_via_full_(false),
       update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("primary variable key", "surface_pressure");
     plist_.set("domain name", "surface");
@@ -121,6 +122,7 @@ protected:
   // coupling term
   bool coupled_to_subsurface_via_flux_;
   bool coupled_to_subsurface_via_head_;
+  bool coupled_to_subsurface_via_full_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;

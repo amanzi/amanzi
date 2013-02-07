@@ -262,7 +262,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       *out_ << "Acc dQ terms, -" << dQ_dp[0][c] / dh_dp[0][c] << std::endl;
       *out_ << "dh_dp = " << dh_dp[0][c] << std::endl;
     }
-
   } else {
     // no Coupling term
     for (int c=0; c!=ncells; ++c) {
@@ -277,7 +276,22 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   // Note boundary conditions are in height variables.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  if (assemble_preconditioner_) {
+  if (coupled_to_subsurface_via_full_) {
+    mfd_preconditioner_->AssembleGlobalMatrices();
+
+    // TPFA
+    Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_tpfa =
+        Teuchos::rcp_static_cast<Operators::MatrixMFD_TPFA>(mfd_preconditioner_);
+    Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
+
+    // Scale Spp by dh/dp
+    Epetra_Vector dh_dp0(dh_dp[0]);
+    for (int c=0; c!=ncells; ++c) {
+      dh_dp0[c] = head[0][c] >= p_atm ? dh_dp[0][c] : 0.;
+    }
+    Spp->RightScale(dh_dp0);
+
+  } else if (assemble_preconditioner_) {
     mfd_preconditioner_->AssembleGlobalMatrices();
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
     mfd_preconditioner_->UpdatePreconditioner();

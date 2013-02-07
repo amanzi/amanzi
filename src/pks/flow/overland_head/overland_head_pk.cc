@@ -73,6 +73,53 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure");
 
+  // -- coupling to subsurface
+  coupled_to_subsurface_via_flux_ =
+      plist_.get<bool>("coupled to subsurface via flux", false);
+  coupled_to_subsurface_via_head_ =
+      plist_.get<bool>("coupled to subsurface via head", false);
+  coupled_to_subsurface_via_full_ =
+      plist_.get<bool>("coupled to subsurface via full coupler", false);
+  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_head_));
+  ASSERT(!(coupled_to_subsurface_via_full_ && coupled_to_subsurface_via_head_));
+  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_full_));
+
+  if (coupled_to_subsurface_via_flux_) {
+    // -- coupling term in PC, filled in by subsurface PK.
+    S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
+        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    // -- source term from subsurface, owned by me but filled in by the coupler
+    S->RequireField("overland_source_from_subsurface", name_)
+        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_full_) {
+    // -- coupling term in PC, filled in by subsurface PK.
+    S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
+        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    // -- source term from subsurface, filled in by evaluator,
+    //    which picks the fluxes from "darcy_flux" field.
+    S->RequireField("overland_source_from_subsurface")
+        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList source_plist =
+        plist_.sublist("source from subsurface evaluator");
+    if (!source_plist.isParameter("surface mesh key"))
+      source_plist.set("surface mesh key", "surface");
+    if (!source_plist.isParameter("subsurface mesh key"))
+      source_plist.set("subsurface mesh key", "domain");
+    if (!source_plist.isParameter("source key"))
+      source_plist.set("source key", "overland_source_from_subsurface");
+    source_plist.set("volume basis", false);
+
+    Teuchos::RCP<FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator>
+        source_evaluator = Teuchos::rcp(
+            new FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
+    S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
+  }
+
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
@@ -99,8 +146,12 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  Teuchos::RCP<Operators::Matrix> precon =
-    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  Teuchos::RCP<Operators::Matrix> precon;
+  if (coupled_to_subsurface_via_full_) {
+    precon = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
+  } else {
+    precon = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  }
   set_preconditioner(precon);
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 
@@ -175,49 +226,6 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<FieldEvaluator> source_evaluator =
         Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
     S->SetFieldEvaluator("overland_source", source_evaluator);
-  }
-
-  // coupling to subsurface
-  coupled_to_subsurface_via_flux_ =
-      plist_.get<bool>("coupled to subsurface via flux", false);
-  coupled_to_subsurface_via_head_ =
-      plist_.get<bool>("coupled to subsurface via head", false);
-  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_head_));
-
-  if (coupled_to_subsurface_via_flux_) {
-    // -- coupling term in PC, filled in by subsurface PK.
-    S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
-        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    // -- source term from subsurface, owned by me but filled in by the coupler
-    S->RequireField("overland_source_from_subsurface", name_)
-        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  if (coupled_to_subsurface_via_head_) {
-    // -- coupling term in PC, filled in by subsurface PK.
-    S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
-        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    // -- source term from subsurface, filled in by evaluator,
-    //    which picks the fluxes from "darcy_flux" field.
-    S->RequireField("overland_source_from_subsurface")
-        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::ParameterList source_plist =
-        plist_.sublist("source from subsurface evaluator");
-    if (!source_plist.isParameter("surface mesh key"))
-      source_plist.set("surface mesh key", "surface");
-    if (!source_plist.isParameter("subsurface mesh key"))
-      source_plist.set("subsurface mesh key", "domain");
-    if (!source_plist.isParameter("source key"))
-      source_plist.set("source key", "overland_source_from_subsurface");
-    source_plist.set("volume basis", false);
-
-    Teuchos::RCP<FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator>
-        source_evaluator = Teuchos::rcp(
-            new FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
-    S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
 
