@@ -52,23 +52,6 @@ struct test_mfd {
     Teuchos::ParameterList mfd_plist;
     mfd_plist.set("MFD method", "optimized");
 
-    // -- TPF on surface
-    Atpf = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_plist, surf_mesh));
-    Atpf->SetSymmetryProperty(false);
-    Atpf->SymbolicAssembleGlobalMatrices();
-    Atpf->CreateMFDmassMatrices(Teuchos::null);
-    Atpf->CreateMFDstiffnessMatrices(Teuchos::null);
-    Atpf->CreateMFDrhsVectors();
-
-    // -- combined on domain
-    As = Teuchos::rcp(new Operators::MatrixMFD_Surf(mfd_plist, mesh, surf_mesh));
-    As->set_surface_A(Atpf);
-    As->SetSymmetryProperty(false);
-    As->SymbolicAssembleGlobalMatrices();
-    As->CreateMFDmassMatrices(Teuchos::null);
-    As->CreateMFDstiffnessMatrices(Teuchos::null);
-    As->CreateMFDrhsVectors();
-
     // set a subsurface face to Dirichlet -- this is the bottom and should be
     // trivially handled.
     bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
@@ -78,8 +61,27 @@ struct test_mfd {
     bc_surf_markers[0] = Operators::MATRIX_BC_DIRICHLET;
     bc_surf_values[0] = 100.;
 
-    As->ApplyBoundaryConditions(bc_markers, bc_values, bc_surf_markers, bc_surf_values);
+    // -- TPF on surface
+    Atpf = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_plist, surf_mesh));
+    Atpf->SetSymmetryProperty(false);
+    Atpf->SymbolicAssembleGlobalMatrices();
+    Atpf->CreateMFDmassMatrices(Teuchos::null);
+    Atpf->CreateMFDstiffnessMatrices(Teuchos::null);
+    Atpf->CreateMFDrhsVectors();
+    Atpf->ApplyBoundaryConditions(bc_surf_markers, bc_surf_values);
+    Atpf->AssembleGlobalMatrices();
+
+    // -- combined on domain
+    As = Teuchos::rcp(new Operators::MatrixMFD_Surf(mfd_plist, mesh, surf_mesh));
+    As->set_surface_A(Atpf);
+    As->SetSymmetryProperty(false);
+    As->SymbolicAssembleGlobalMatrices();
+    As->CreateMFDmassMatrices(Teuchos::null);
+    As->CreateMFDstiffnessMatrices(Teuchos::null);
+    As->CreateMFDrhsVectors();
+    As->ApplyBoundaryConditions(bc_surf_markers, bc_surf_values);
     As->AssembleGlobalMatrices();
+
 
     // dump the schur complement
     Teuchos::RCP<const Epetra_FECrsMatrix> Spp = Atpf->TPFA();

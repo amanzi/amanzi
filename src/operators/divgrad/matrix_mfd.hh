@@ -130,7 +130,7 @@ class MatrixMFD : public Matrix {
   }
   void InitializeSuperVecs(const CompositeVector& sample);
 
-  void ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
+  virtual void ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
           const std::vector<double>& bc_values);
 
   virtual void SymbolicAssembleGlobalMatrices();

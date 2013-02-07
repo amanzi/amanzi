@@ -63,7 +63,7 @@ class MatrixMFD_TPFA : public MatrixMFD {
     return strdup("Matrix MFD_TPFA");
   }
 
-  Teuchos::RCP<const Epetra_FECrsMatrix> TPFA() {
+  Teuchos::RCP<Epetra_FECrsMatrix> TPFA() {
     return Spp_;
   }
 
