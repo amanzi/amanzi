@@ -181,12 +181,12 @@
       <ParameterList name="Variable Macros"/>
       <ParameterList name="Observation Data"/>
       <ParameterList name="Visualization Data">
-        <Parameter name="File Name Base" type="string" value="plot"/>
+        <Parameter name="File Name Base" type="string" value="case_2b_plot"/>
         <Parameter name="File Name Digits" type="string" value="5"/>
         <Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
       </ParameterList>
       <ParameterList name="Checkpoint Data">
-        <Parameter name="File Name Base" type="string" value="checkpoint"/>
+        <Parameter name="File Name Base" type="string" value="case_2b_checkpoint"/>
         <Parameter name="File Name Digit" type="int" value="5"/>
         <Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
       </ParameterList>
