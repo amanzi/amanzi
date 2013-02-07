@@ -227,6 +227,10 @@ void init_global_info(Teuchos::ParameterList* plist) {
     spatial_dimension_ = 0;
   }
 
+  // check if Transport is Off
+  std::string transport_model = plist->sublist("Execution Control").get<std::string>("Transport Model");
+  std::string chemistry_model = plist->sublist("Execution Control").get<std::string>("Chemistry Model");
+
   phase_name = "Aqueous";
   phase_comp_name = "Water";
   // don't know the history of these variables, clear them just to be safe.
@@ -237,39 +241,40 @@ void init_global_info(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
   Teuchos::ParameterList::ConstIterator item;
   for (item = phase_list.begin(); item != phase_list.end(); ++item) {
-    if (phase_list.name(item) == phase_name) {
-      Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
-      if (aqueous_list.isSublist("Phase Components")) {
-        Teuchos::ParameterList phase_components =
+    if (transport_model != "Off"  || chemistry_model != "Off" ) {
+      if (phase_list.name(item) == "Aqueous" ) {
+	Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
+	if (aqueous_list.isSublist("Phase Components")) {
+	  Teuchos::ParameterList phase_components =
             aqueous_list.sublist("Phase Components");
-        if (phase_components.isSublist("Water")) {
-          Teuchos::ParameterList water_components =
-              phase_components.sublist(phase_comp_name);
-	  if ( water_components.isParameter("Component Solutes")) {
-	    comp_names =
-              water_components.get<Teuchos::Array<std::string> >("Component Solutes");
-	  } else {  // create one fake componenet solute to make the native input happy
-	    //comp_names.push_back("Foo");
-	    //comp_names_map[comp_names[0]] = 0;
-	  }
-        }  // end water
-      }  // end phase components
-    }  // end Aqueous phase
-    else if (phase_list.name(item) == "Solid") {
-      Teuchos::ParameterList solid_list = phase_list.sublist("Solid");
-      // this is the order that the chemistry expects
-      if (solid_list.isParameter("Minerals")) {
-        mineral_names_ = solid_list.get<Teuchos::Array<std::string> >("Minerals");
-      }
-      if (solid_list.isParameter("Sorption Sites")) {
-        sorption_site_names_ = solid_list.get<Teuchos::Array<std::string> >("Sorption Sites");
-      }
-    }  // end Solid phase
-    else {
+	  if (phase_components.isSublist("Water")) {
+	    Teuchos::ParameterList water_components =
+              phase_components.sublist("Water");
+	    if ( water_components.isParameter("Component Solutes")) {
+	      comp_names =
+		water_components.get<Teuchos::Array<std::string> >("Component Solutes");
+	    }
+	  }  // end water
+	}  // end phase components
+      }  // end Aqueous phase
+    }
+    if (chemistry_model != "Off") {
+      if (phase_list.name(item) == "Solid") {
+	Teuchos::ParameterList solid_list = phase_list.sublist("Solid");
+	// this is the order that the chemistry expects
+	if (solid_list.isParameter("Minerals")) {
+	  mineral_names_ = solid_list.get<Teuchos::Array<std::string> >("Minerals");
+	}
+	if (solid_list.isParameter("Sorption Sites")) {
+	  sorption_site_names_ = solid_list.get<Teuchos::Array<std::string> >("Sorption Sites");
+	}
+      }  // end Solid phase
+    }
+    if ( (phase_list.name(item) != "Aqueous" ) && (phase_list.name(item) != "Solid") ) {
       std::stringstream message;
       message << "Error: InputParserIS::init_global_info(): "
-              << "The only phases supported on unstructured meshes at this time are '"
-              << phase_name << "' and 'Solid'!\n"
+	      << "The only phases supported on unstructured meshes at this time are '"
+	      << phase_name << "' and 'Solid'!\n"
               << phase_list << std::endl;
       Exceptions::amanzi_throw(Errors::Message(message.str()));
     }
