@@ -114,7 +114,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 
   // miscalleneous
   ti_specs = NULL;
-  mfd3d_method = FLOW_MFD3D_OPTIMIZED;
+  mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
   verbosity = FLOW_VERBOSITY_NONE;
   src_sink = NULL;
   src_sink_distribution = 0;
@@ -211,19 +211,6 @@ void Darcy_PK::InitPK()
   Krel_cells->PutScalar(1.0);
   Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
 
-  // Preconditioner = matrix for saturated flow
-  int method = ti_specs_sss.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs_sss.preconditioner_name);
-  Teuchos::ParameterList ML_list;
-  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    ML_list = tmp_list.sublist("ML Parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ML_list = tmp_list.sublist("Block ILU Parameters");
-  }
-  preconditioner_->InitPreconditioner(method, ML_list);
-
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
@@ -277,9 +264,9 @@ void Darcy_PK::InitializeSteadySaturated()
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
   if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
-  ti_specs = &ti_specs_sss;
+  ti_specs = &ti_specs_sss_;
 
-  InitNextTI(T0, dT0, ti_specs_sss);
+  InitNextTI(T0, dT0, ti_specs_sss_);
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
 
@@ -293,9 +280,9 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
   if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
-  ti_specs = &ti_specs_sss;
+  ti_specs = &ti_specs_trs_;
 
-  InitNextTI(T0, dT0, ti_specs_sss);
+  InitNextTI(T0, dT0, ti_specs_trs_);
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4
 
@@ -325,6 +312,22 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
         std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
   }
 
+  // set up new preconditioner (preconditioner_ = matrix_)
+  int method = ti_specs.preconditioner_method;
+  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
+  Teuchos::ParameterList ML_list;
+  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
+    ML_list = tmp_list.sublist("ML Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
+    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
+    ML_list = tmp_list.sublist("Block ILU Parameters");
+  }
+
+  preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
+  preconditioner_->InitPreconditioner(method, ML_list);
+
+  // set up initial guess for solution
   Epetra_Vector& pressure = FS->ref_pressure();
   *solution_cells = pressure;
 
@@ -335,7 +338,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
-  matrix_->CreateMFDmassMatrices(mfd3d_method, K);
+  matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     int nokay = matrix_->nokay();
@@ -371,7 +374,8 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 * Wrapper for a steady-state solver
 ****************************************************************** */
 int Darcy_PK::AdvanceToSteadyState(double T0, double dT0)
-{  
+{ 
+  ti_specs = &ti_specs_sss_;
   SolveFullySaturatedProblem(T0, *solution);
   return 0;
 }
@@ -430,8 +434,8 @@ int Darcy_PK::Advance(double dT_MPC)
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
 
-  int max_itrs = ti_specs_sss.ls_specs.max_itrs;
-  double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
+  int max_itrs = ti_specs->ls_specs.max_itrs;
+  double convergence_tol = ti_specs->ls_specs.convergence_tol;
 
   solver->Iterate(max_itrs, convergence_tol);
   ti_specs->num_itrs++;
@@ -443,7 +447,7 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   // calculate time derivative and 2nd-order solution approximation
-  if (ti_specs_sss.dT_method == FLOW_DT_ADAPTIVE) {
+  if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
     Epetra_Vector& pressure = FS->ref_pressure();  // pressure at t^n
 
     for (int c = 0; c < ncells_owned; c++) {
@@ -453,13 +457,13 @@ int Darcy_PK::Advance(double dT_MPC)
   }
 
   // estimate time multiplier
-  if (ti_specs_sss.dT_method == FLOW_DT_ADAPTIVE) {
+  if (ti_specs->dT_method == FLOW_DT_ADAPTIVE) {
     double err, dTfactor;
     err = ErrorEstimate(&dTfactor);
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dT_desirable_ = std::min<double>(dT_MPC * dTfactor, ti_specs_sss.dTmax);
+    dT_desirable_ = std::min<double>(dT_MPC * dTfactor, ti_specs->dTmax);
   } else {
-    dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs_sss.dTfactor, ti_specs_sss.dTmax);
+    dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs->dTfactor, ti_specs->dTmax);
   }
 
   dt_tuple times(time, dT_MPC);

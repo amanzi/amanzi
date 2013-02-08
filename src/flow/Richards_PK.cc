@@ -577,7 +577,7 @@ int Richards_PK::Advance(double dT_MPC)
     double err, dTfactor;
     err = AdaptiveTimeStepEstimate(&dTfactor);
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dTnext = std::min<double>(dT_MPC * dTfactor, ti_specs_trs_.dTmax);
+    dTnext = std::min<double>(dT_MPC * dTfactor, ti_specs->dTmax);
   }
 
   dt_tuple times(time, dT_MPC);

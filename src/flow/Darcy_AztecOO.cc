@@ -55,8 +55,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&u);  // initial solution guess
 
-  int max_itrs = ti_specs_sss.ls_specs.max_itrs;
-  double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
+  int max_itrs = ti_specs->ls_specs.max_itrs;
+  double convergence_tol = ti_specs->ls_specs.convergence_tol;
 
   solver->Iterate(max_itrs, convergence_tol);
 
@@ -82,8 +82,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, E
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&u);  // initial solution guess
 
-  int max_itrs = ti_specs_sss.ls_specs.max_itrs;
-  double convergence_tol = ti_specs_sss.ls_specs.convergence_tol;
+  int max_itrs = ti_specs->ls_specs.max_itrs;
+  double convergence_tol = ti_specs->ls_specs.convergence_tol;
 
   solver->Iterate(max_itrs, convergence_tol);
 

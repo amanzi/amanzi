@@ -294,7 +294,6 @@ void MPC::cycle_driver() {
   TSM.RegisterTimeEvent(T1);
 
 
-
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
 
@@ -422,7 +421,7 @@ void MPC::cycle_driver() {
       } else {
 	FPK->InitTransient(S->get_time(), dTtransient);
       }
-    } else if ( ti_mode == INIT_TO_STEADY ) {
+    } else if (ti_mode == INIT_TO_STEADY) {
       if (S->get_time() < Tswitch) {
         FPK->InitSteadyState(S->get_time(), dTsteady);
       } else {
@@ -860,7 +859,6 @@ void MPC::cycle_driver() {
       // write restart dump if requested
       restart->dump_state(*S, force || force_checkpoint);
       Amanzi::timer_manager.stop("I/O");
-
     }
   }
 

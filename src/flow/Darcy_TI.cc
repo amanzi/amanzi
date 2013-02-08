@@ -28,7 +28,7 @@ double Darcy_PK::ErrorEstimate(double* dTfactor)
   *dTfactor = 100.0;
   for (int c = 0; c < ncells_owned; c++) {
     error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
-    tol = ti_specs_sss.rtol * fabs((*solution)[c]) + ti_specs_sss.atol;
+    tol = ti_specs->rtol * fabs((*solution)[c]) + ti_specs->atol;
 
     dTfactor_cell = sqrt(tol / std::max<double>(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
     *dTfactor = std::min<double>(*dTfactor, dTfactor_cell);

@@ -120,8 +120,8 @@ class Darcy_PK : public Flow_PK {
 
   int error_control_;
 
-  TI_Specs ti_specs_sss;  // Two time integration phases
-  TI_Specs ti_specs_trs;
+  TI_Specs ti_specs_sss_;  // Two time integration phases
+  TI_Specs ti_specs_trs_;
   TI_Specs* ti_specs;
 
   double dT_desirable_; // Parameters for transient solver
@@ -153,7 +153,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  int mfd3d_method;
+  int mfd3d_method_;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 
