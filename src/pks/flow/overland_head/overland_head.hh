@@ -74,7 +74,7 @@ public:
   virtual void changed_solution();
 
   // evaluating consistent faces for given BCs and cell values
-  //  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
 protected:
   // setup methods

@@ -535,7 +535,8 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
   for (int f=0; f!=relperm->size("face"); ++f) {
     if ((*relperm)("face",f) < eps) {
       if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
-        (*relperm)("face",f) = 1.0;
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values_[f] = 0.;
       } else if (bc_markers_[f] == Operators::MATRIX_BC_NULL) {
         bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
         bc_values_[f] = 0.;
@@ -570,6 +571,41 @@ void OverlandHeadFlow::changed_solution() {
   // upwinding overlap
   S_next_->GetFieldData(key_)->ScatterMasterToGhosted();
 };
+
+
+void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
+  // VerboseObject stuff.
+  Teuchos::OSTab tab = getOSTab();
+
+  // update the rel perm according to the scheme of choice
+  changed_solution();
+  UpdatePermeabilityData_(S_next_.ptr());
+
+  // update boundary conditions
+  bc_pressure_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_(S_next_.ptr());
+
+  Teuchos::RCP<const CompositeVector> cond =
+    S_next_->GetFieldData("upwind_overland_conductivity", name_);
+
+  // update the potential
+  S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
+
+  // Update the preconditioner with darcy and gravity fluxes
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
+
+  // skip accumulation terms, they're not needed
+
+  // Assemble
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->AssembleGlobalMatrices();
+
+  // derive the consistent faces, involves a solve
+  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
+}
 
 } // namespace
 } // namespace

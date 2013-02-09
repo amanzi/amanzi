@@ -78,9 +78,6 @@ public:
   // modify the predictor to ensure non-negativity of ponded depth
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
-  // evaluating consistent faces for given BCs and cell values
-  //  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
-
 protected:
   // setup methods
   virtual void SetupOverlandFlow_(const Teuchos::Ptr<State>& S);

@@ -237,7 +237,7 @@ bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
 // -----------------------------------------------------------------------------
 bool EnergyBase::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
   if (modify_predictor_with_consistent_faces_) {
-    CalculateConsistentFaces(h,u.ptr());
+    CalculateConsistentFaces(u->data().ptr());
     return true;
   }
 
@@ -250,7 +250,7 @@ bool EnergyBase::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
 //
 //  This is useful for prediction steps, hacky preconditioners, etc.
 // -----------------------------------------------------------------------------
-void EnergyBase::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u) {
+void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
@@ -271,7 +271,7 @@ void EnergyBase::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVecto
   mfd_preconditioner_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  mfd_preconditioner_->UpdateConsistentFaceConstraints(u->data().ptr());
+  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
 }
 
 } // namespace Energy

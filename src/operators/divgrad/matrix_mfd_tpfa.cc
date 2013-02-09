@@ -402,5 +402,26 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
 
 }
 
+
+
+void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
+    const Teuchos::Ptr<CompositeVector>& u) {
+
+  Teuchos::RCP<const Epetra_MultiVector> uc = u->ViewComponent("cell", false);
+  Epetra_MultiVector& uf = *u->ViewComponent("face", false);
+
+  Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
+  Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", false);
+  Epetra_MultiVector update_f(rhs_f);
+
+  Afc_->Multiply(true, *uc, update_f);  // Afc is kept in the transpose form.
+  rhs_f.Update(-1.0, update_f, 1.0);
+
+  int nfaces = rhs_f.MyLength();
+  for (int f=0; f!=nfaces; ++f) {
+    uf[0][f] = rhs_f[0][f] / Dff_f[0][f];
+  }
+}
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
