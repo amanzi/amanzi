@@ -34,10 +34,11 @@ public:
       standalone_mode_(false),
       is_source_term_(false),
       is_coupling_term_(false),
-      coupled_to_surface_via_residual_(false),
+      coupled_to_subsurface_via_residual_(false),
       surface_head_eps_(0.),
       update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("primary variable key", "ponded_depth");
+    plist_.set("domain name", "surface");
   }
 
   // Virtual destructor
@@ -118,7 +119,7 @@ protected:
   FluxUpdateMode update_flux_;
   bool is_source_term_;
   bool is_coupling_term_;
-  bool coupled_to_surface_via_residual_;
+  bool coupled_to_subsurface_via_residual_;
   double surface_head_eps_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;

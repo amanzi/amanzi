@@ -8,6 +8,7 @@ Author: Ethan Coon
 Interface for the derived MPC for neumann coupling between surface and subsurface.
 ------------------------------------------------------------------------- */
 
+#include "pk_physical_bdf_base.hh"
 #include "mpc_surface_subsurface_neumann_coupler.hh"
 
 namespace Amanzi {

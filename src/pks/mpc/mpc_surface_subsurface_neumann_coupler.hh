@@ -30,8 +30,6 @@ surface.
 #ifndef PKS_MPC_SURFACE_SUBSURFACE_NEUMANN_COUPLER_HH_
 #define PKS_MPC_SURFACE_SUBSURFACE_NEUMANN_COUPLER_HH_
 
-#include "richards.hh"
-#include "overland.hh"
 #include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {

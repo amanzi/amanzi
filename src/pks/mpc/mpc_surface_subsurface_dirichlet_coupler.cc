@@ -8,8 +8,7 @@ Author: Ethan Coon
 Interface for the derived MPC for water coupling between surface and subsurface.
 ------------------------------------------------------------------------- */
 
-#include "overland_head.hh"
-#include "richards.hh"
+#include "pk_physical_bdf_base.hh"
 #include "mpc_surface_subsurface_dirichlet_coupler.hh"
 
 namespace Amanzi {

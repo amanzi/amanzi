@@ -59,9 +59,9 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     ->SetComponents(names2, locations2, num_dofs2);
 
   // -- owned secondary variables, no evaluator used
-  S->RequireField("overland_flux", name_)->SetMesh(S->GetMesh("surface"))
+  S->RequireField("overland_flux", name_)->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("overland_velocity", name_)->SetMesh(S->GetMesh("surface"))
+  S->RequireField("overland_velocity", name_)->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // -- cell volume and evaluator
@@ -75,7 +75,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_flux_ = bc_factory.CreateMassFlux();
 
   // coupling to subsurface
-  coupled_to_surface_via_residual_ = plist_.get<bool>("coupled to surface via residual", false);
+  coupled_to_subsurface_via_residual_ = plist_.get<bool>("coupled to subsurface via residual", false);
 
   // Admissibility allows negative heights of magnitude < surface_head_eps for
   // non-monotonic methods.
@@ -139,11 +139,11 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "face";
 
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField("elevation")->SetMesh(mesh_)->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
+  S->RequireField("slope_magnitude")->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField("pres_elev")->SetMesh(mesh_)->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
@@ -375,7 +375,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     int f = bc->first;
 
     cells.clear();
-    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 
@@ -414,7 +414,7 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S)
     int f = bc->first;
 
     cells.clear();
-    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 

@@ -12,6 +12,7 @@
 #include "errors.hh"
 #include "matrix_mfd_surf.hh"
 
+#define DEBUG_FLAG 0
 
 namespace Amanzi {
 namespace Operators {
@@ -133,6 +134,16 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
   int *indices;
   indices = new int[9];
 
+#if DEBUG_FLAG
+  ierr = Aff_->ExtractMyRowCopy(500, 9, entries, values, indices);
+  ASSERT(!ierr);
+  for (int n=0; n!=entries; ++n) {
+    std::cout << "Aff entry before (500," << indices[n] << ") = " << values[n] << std::endl;
+  }
+#endif
+
+
+
   // Loop over surface cells (subsurface faces)
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
@@ -147,17 +158,28 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
     }
 
     // Add into Aff
-    std::cout << "  Adding to Aff " << values[0] << std::endl;
+    for (int m=0; m!=entries; ++m) {
+      std::cout << "  Adding to Aff entry (" << frow << "," << indices[m] << "): " << values[m] << std::endl;
+    }
 
     ierr = Aff_->SumIntoMyValues(frow, entries, values, indices);
     ASSERT(!ierr);
   }
 
+  ierr = Aff_->GlobalAssemble();
+  ASSERT(!ierr);
+
+#if DEBUG_FLAG
+  ierr = Aff_->ExtractMyRowCopy(500, 9, entries, values, indices);
+  ASSERT(!ierr);
+  for (int n=0; n!=entries; ++n) {
+    std::cout << "Aff entry after (500," << indices[n] << ") = " << values[n] << std::endl;
+  }
+#endif
+
   delete[] indices;
   delete[] values;
 
-  ierr = Aff_->GlobalAssemble();
-  ASSERT(!ierr);
 
   // Deal with RHS
   const Epetra_MultiVector& rhs_surf_cells =
@@ -192,6 +214,7 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
         const std::vector<double>& bc_values) {
   std::vector<Matrix_bc> new_markers(bc_markers);
 
+  int ierr(0);
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
@@ -200,6 +223,64 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
 
   // Call base Schur
   MatrixMFD::ComputeSchurComplement(new_markers, bc_values);
+
+  // Add the TPFA on the surface parts from surface_A.
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  const Epetra_FECrsMatrix& Spp = *surface_A_->TPFA();
+  EpetraExt::RowMatrixToMatlabFile("TPFA.txt", Spp);
+
+  int entries = 0;
+  double *values;
+  values = new double[9];
+  int *indices;
+  indices = new int[9];
+
+#if DEBUG_FLAG
+  ierr = Sff_->ExtractMyRowCopy(500, 9, entries, values, indices);
+  ASSERT(!ierr);
+  for (int n=0; n!=entries; ++n) {
+    std::cout << "Sff entry before (500," << indices[n] << ") = " << values[n] << std::endl;
+  }
+#endif
+
+
+
+  // Loop over surface cells (subsurface faces)
+  for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
+    // Access the row in Spp
+    ierr = Spp.ExtractMyRowCopy(sc, 9, entries, values, indices);
+    ASSERT(!ierr);
+
+    // Convert Spp local cell numbers to Sff local face numbers
+    AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    for (int m=0; m!=entries; ++m) {
+      indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
+    }
+
+    // Add into Sff
+    for (int m=0; m!=entries; ++m) {
+      std::cout << "  Adding to Sff entry (" << frow << "," << indices[m] << "): " << values[m] << std::endl;
+    }
+
+    ierr = Sff_->SumIntoMyValues(frow, entries, values, indices);
+    ASSERT(!ierr);
+  }
+
+  ierr = Sff_->GlobalAssemble();
+  ASSERT(!ierr);
+
+#if DEBUG_FLAG
+  ierr = Sff_->ExtractMyRowCopy(500, 9, entries, values, indices);
+  ASSERT(!ierr);
+  for (int n=0; n!=entries; ++n) {
+    std::cout << "Sff entry after (500," << indices[n] << ") = " << values[n] << std::endl;
+  }
+#endif
+
+  delete[] indices;
+  delete[] values;
+
+
 }
 
 

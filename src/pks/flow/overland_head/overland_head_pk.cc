@@ -140,7 +140,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_plist, mesh_));
+  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
   symmetric_ = false;
   matrix_->SetSymmetryProperty(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
@@ -533,10 +533,13 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
   Teuchos::RCP<CompositeVector> relperm =
       S->GetFieldData("upwind_overland_conductivity", name_);
   for (int f=0; f!=relperm->size("face"); ++f) {
-    if ((*relperm)("face",f) < eps && bc_markers_[f] == Operators::MATRIX_BC_NULL) {
-      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-      bc_values_[f] = 0.0;
-      (*relperm)("face",f) = 1.0;
+    if ((*relperm)("face",f) < eps) {
+      if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
+        (*relperm)("face",f) = 1.0;
+      } else if (bc_markers_[f] == Operators::MATRIX_BC_NULL) {
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+        bc_values_[f] = 0.;
+      }
     }
   }
 };
