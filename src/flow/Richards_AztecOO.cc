@@ -25,28 +25,15 @@ namespace AmanziFlow {
 void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 {
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
-
-  // update boundary conditions
-  bc_pressure->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_seepage->Compute(Tp);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(Tp);
-  else
-    bc_head->ComputeShift(Tp, shift_water_table_->Values());
-
-  ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *u_faces, atm_pressure, rainfall_factor,
-      bc_submodel, bc_model, bc_values);
+  UpdateSourceBoundaryData(Tp, *u_faces);
 
   // set fully saturated media
   Krel_cells->PutScalar(1.0);
   Krel_faces->PutScalar(1.0);
 
   // calculate and assemble elemental stiffness matrices
-  AssembleSteadyStateProblem_MFD(matrix_, false);
-  AssembleSteadyStateProblem_MFD(preconditioner_, true);
+  AssembleSteadyStateMatrix_MFD(matrix_);
+  AssembleSteadyStatePreconditioner_MFD(preconditioner_);
   preconditioner_->UpdatePreconditioner();
 
   // solve symmetric problem
@@ -75,60 +62,6 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 
 
 /* ******************************************************************
-* Calculate transient pressure solution using boundary conditions 
-* at time Tp.
-* WARNING: solution u is the input/output parameter.
-****************************************************************** */
-void Richards_PK::SolveTransientProblem(double Tp, double dTp, Epetra_Vector& u)
-{
-  Epetra_Vector* u_faces = FS->CreateFaceView(u);
-
-  // update boundary conditions
-  bc_pressure->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_seepage->Compute(Tp);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(Tp);
-  else
-    bc_head->ComputeShift(Tp, shift_water_table_->Values());
-
-  ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      *u_faces, atm_pressure, rainfall_factor,
-      bc_submodel, bc_model, bc_values);
-
-  // calculate and assemble elemental stiffness matrices
-  CalculateRelativePermeability(u);
-  AssembleTransientProblem_MFD(matrix_, dTp, u, false);
-  AssembleTransientProblem_MFD(preconditioner_, dTp, u, true);
-  preconditioner_->UpdatePreconditioner();
-
-  // solve non-symmetric problem
-  AztecOO* solver_tmp = new AztecOO;
-
-  solver_tmp->SetUserOperator(matrix_);
-  solver_tmp->SetPrecOperator(preconditioner_);
-  solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
-  solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
-
-  Epetra_Vector b(*(matrix_->rhs()));
-  solver_tmp->SetRHS(&b);
-
-  solver_tmp->SetLHS(&u);
-  solver_tmp->Iterate((long long)max_itrs_linear, convergence_tol_linear);
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    int num_itrs = solver_tmp->NumIters();
-    double linear_residual = solver_tmp->ScaledResidual();
-    std::printf("Flow PK: transient solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
-  }
-
-  delete solver_tmp;
-}
-
-
-/* ******************************************************************
 * Enforce constraints at time Tp by solving diagonalized MFD problem.
 * Algorithm is based on de-coupling pressure-lambda system.
 ****************************************************************** */
@@ -142,20 +75,20 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
 
   // calculate and assemble elemental stiffness matrices
   CalculateRelativePermeability(u);
-  AssembleSteadyStateProblem_MFD(preconditioner_, true);
-  preconditioner_->ReduceGlobalSystem2LambdaSystem(u);
-  preconditioner_->UpdatePreconditioner();
+  AssembleSteadyStateMatrix_MFD(matrix_);
+  matrix_->ReduceGlobalSystem2LambdaSystem(u);
+  matrix_->UpdatePreconditioner();
 
   // solve non-symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
-  solver_tmp->SetUserOperator(preconditioner_);
-  solver_tmp->SetPrecOperator(preconditioner_);
+  solver_tmp->SetUserOperator(matrix_);
+  solver_tmp->SetPrecOperator(matrix_);
   solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
   solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
-  Epetra_Vector b(*(preconditioner_->rhs()));
+  Epetra_Vector b(*(matrix_->rhs()));
   solver_tmp->SetRHS(&b);
 
   solver_tmp->SetLHS(&utmp);

@@ -80,15 +80,14 @@ const int FLOW_TI_MAX_ITERATIONS = 400;
 const int FLOW_MATRIX_MFD = 1;  // matrix to use in linear and nonlinear solvers 
 const int FLOW_MATRIX_MFD_TPFA = 2;
 
+const int FLOW_MATRIX_ACTION_MATRIX = 1;
+const int FLOW_MATRIX_ACTION_PRECONDITIONER = 2;
+
 const int FLOW_DT_ADAPTIVE = 1;
 const double FLOW_DT_ADAPTIVE_INCREASE = 4.0;
 const double FLOW_DT_ADAPTIVE_REDUCTION = 0.1;
 const double FLOW_DT_ADAPTIVE_SAFETY_FACTOR = 0.9;
 const double FLOW_DT_ADAPTIVE_ERROR_TOLERANCE = 1e-10;
-
-// const int FLOW_SOURCE_DISTRIBUTION_NONE = 0;
-// const int FLOW_SOURCE_DISTRIBUTION_VOLUME = 1;
-// const int FLOW_SOURCE_DISTRIBUTION_PERMEABILITY = 2;
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;

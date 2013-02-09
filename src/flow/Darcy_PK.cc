@@ -163,6 +163,9 @@ void Darcy_PK::InitPK()
   matrix_ = new Matrix_MFD(FS, *super_map_);
   preconditioner_ = matrix_;
 
+  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
+  preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
+
   // Create the solution vectors.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));

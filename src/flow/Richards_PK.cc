@@ -179,10 +179,14 @@ void Richards_PK::InitPK()
   } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     matrix_ = new Matrix_MFD_TPFA(FS, *super_map_);
     preconditioner_ = new Matrix_MFD_TPFA(FS, *super_map_);
+    matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
+    preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   } else {
     matrix_ = new Matrix_MFD(FS, *super_map_);
     preconditioner_ = new Matrix_MFD(FS, *super_map_);
   }
+  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
+  preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
 
   // Create the solution (pressure) vector.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));

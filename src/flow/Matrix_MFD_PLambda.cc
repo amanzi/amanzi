@@ -73,8 +73,8 @@ void Matrix_MFD_PLambda::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_
   APLambda_->GlobalAssemble();
 
   rhs_ = Teuchos::rcp(new Epetra_Vector(super_map));
-  rhs_cells_ = Teuchos::rcp(FS->CreateCellView(*rhs_));
-  rhs_faces_ = Teuchos::rcp(FS->CreateFaceView(*rhs_));
+  rhs_cells_ = Teuchos::rcp(FS_->CreateCellView(*rhs_));
+  rhs_faces_ = Teuchos::rcp(FS_->CreateFaceView(*rhs_));
 
   // set a preconditioner
   Sff_ = APLambda_;
@@ -155,12 +155,22 @@ void Matrix_MFD_PLambda::AssembleGlobalMatrices()
       rhs_faces_wghost[f] += Ff_cells_[c][n];
     }
   }
-  FS->CombineGhostFace2MasterFace(rhs_faces_wghost, Add);
+  FS_->CombineGhostFace2MasterFace(rhs_faces_wghost, Add);
 
   for (int f = 0; f < nfaces_owned; f++) (*rhs_faces_)[f] = rhs_faces_wghost[f];
 }
 
 
+/* ******************************************************************
+* Assembles preconditioner. It has same set of parameters as matrix.
+****************************************************************** */
+void Matrix_MFD_PLambda::AssembleSchurComplement(
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
+{
+  AssembleGlobalMatrices();
+}
+
+ 
 /* ******************************************************************
 * Parallel matvec product A * X.                                              
 ****************************************************************** */

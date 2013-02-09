@@ -44,11 +44,13 @@ namespace AmanziFlow {
 
 class Matrix_MFD : public Epetra_Operator {
  public:
-   Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->mesh(); }
+   Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_);
   ~Matrix_MFD();
 
   // main methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
+  void AddActionProperty(int action) { actions_ |= action; } 
+
   void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDrhsVectors();
   virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
@@ -76,8 +78,8 @@ class Matrix_MFD : public Epetra_Operator {
   int SetUseTranspose(bool) { return 1; }
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-  const Epetra_Map& OperatorDomainMap() const { return map; }
-  const Epetra_Map& OperatorRangeMap() const { return map; }
+  const Epetra_Map& OperatorDomainMap() const { return map_; }
+  const Epetra_Map& OperatorRangeMap() const { return map_; }
 
   const char* Label() const { return strdup("Matrix MFD"); }
   double NormInf() const { return 0.0; }
@@ -111,11 +113,12 @@ class Matrix_MFD : public Epetra_Operator {
   int npassed() { return npassed_; }
 
  protected:
-  Teuchos::RCP<Flow_State> FS;
+  Teuchos::RCP<Flow_State> FS_;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
-  Epetra_Map map;
+  Epetra_Map map_;
 
   bool flag_symmetry_;
+  int actions_;  // applly, apply inverse, or both
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
