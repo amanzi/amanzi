@@ -94,7 +94,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
                                   *Krel_faces, *dKdP_faces);
   }
 
-  preconditioner_->ComputeSchurComplement(bc_model, bc_values);
+  preconditioner_->AssembleSchurComplement(bc_model, bc_values);
   preconditioner_->UpdatePreconditioner();
 }
 
@@ -191,7 +191,7 @@ void Richards_PK::AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bo
   matrix_operator->AssembleGlobalMatrices();
 
   if (add_preconditioner) {
-    matrix_operator->ComputeSchurComplement(bc_model, bc_values);
+    matrix_operator->AssembleSchurComplement(bc_model, bc_values);
   }
 
   // DEBUG
@@ -217,7 +217,7 @@ void Richards_PK::AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, doub
   matrix_operator->AssembleGlobalMatrices();
 
   if (add_preconditioner) {
-    matrix_operator->ComputeSchurComplement(bc_model, bc_values);
+    matrix_operator->AssembleSchurComplement(bc_model, bc_values);
   }
 }
 

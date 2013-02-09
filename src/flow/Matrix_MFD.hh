@@ -57,7 +57,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   virtual void AssembleGlobalMatrices();
-  virtual void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+  virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
   double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);

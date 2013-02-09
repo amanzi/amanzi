@@ -419,7 +419,7 @@ void Matrix_MFD::AssembleGlobalMatrices()
 /* ******************************************************************
 * Compute the face Schur complement of 2x2 block matrix.
 ****************************************************************** */
-void Matrix_MFD::ComputeSchurComplement(
+void Matrix_MFD::AssembleSchurComplement(
     std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   Sff_->PutScalar(0.0);

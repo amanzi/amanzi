@@ -60,7 +60,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
+    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // call AztecOO solver

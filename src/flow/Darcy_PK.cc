@@ -424,7 +424,7 @@ int Darcy_PK::Advance(double dT_MPC)
   AddTimeDerivativeSpecificYield(*solution_cells, dT, matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
-  matrix_->ComputeSchurComplement(bc_model, bc_values);
+  matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
