@@ -77,7 +77,7 @@ public:
   virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
 
   // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
   virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 

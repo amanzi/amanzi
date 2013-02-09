@@ -153,30 +153,20 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   Epetra_MultiVector& soln_c = *soln->ViewComponent("cell",false);
   Epetra_MultiVector& soln_f = *soln->ViewComponent("face",false);
 
-  // -- calculate the new soln on cells
+  CompositeVector soln_copy(*soln);
+  soln_copy.CreateData();
+  soln_copy = *soln;
+
+  // -- calculate the new soln on faces
   soln_c.Update(-1., surf_Pu_c, 1.);
-  surf_pk_->changed_solution();
+  surf_pk_->CalculateConsistentFaces(soln.ptr());
 
-  // === BEGIN CRAP CODE ===
-  // -- enforce BCs
-  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), surf_pk_name_);
-  Teuchos::RCP<const CompositeVector> pd = S_next_->GetFieldData("ponded_depth");
-  pd->ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& pd_c = *pd->ViewComponent("cell",true);
+  // -- update preconditioned val on faces
+  surf_Pu_f = *soln_copy.ViewComponent("face",false);
+  surf_Pu_f.Update(-1., soln_f, 1.);
 
-  AmanziMesh::Entity_ID_List cells;
-  int nfaces_surf = surf_Pu_f.MyLength();
-  for (int fs=0; fs!=nfaces_surf; ++fs) {
-    surf_mesh_->face_get_cells(fs, AmanziMesh::USED, &cells);
-    if (cells.size() == 1) {
-      surf_Pu_f[0][fs] = soln_f[0][fs] - pd_c[0][cells[0]];
-      std::cout << "Old, new, diff = " << soln_f[0][fs] << ", " << pd_c[0][cells[0]] << ", " << surf_Pu_f[0][fs] << std::endl;
-    }
-  }
-
-  soln_c.Update(1., surf_Pu_c, 1.);
-  // === END CRAP CODE ===
-
+  // -- get old solution back in soln
+  *soln = soln_copy;
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {

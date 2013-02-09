@@ -189,7 +189,7 @@ class MatrixMFD : public Matrix {
                           const Teuchos::Ptr<CompositeVector>& velocity) const;
 
   // development methods
-  void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
+  virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

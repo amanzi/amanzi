@@ -67,6 +67,9 @@ class MatrixMFD_TPFA : public MatrixMFD {
     return Spp_;
   }
 
+  // development methods
+  virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
+
  protected:
 
   Teuchos::RCP<CompositeVector> Dff_;

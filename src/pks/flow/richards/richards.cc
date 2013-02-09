@@ -749,7 +749,7 @@ void Richards::changed_solution() {
 
 bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
   if (modify_predictor_with_consistent_faces_) {
-    CalculateConsistentFaces(h,u.ptr());
+    CalculateConsistentFaces(u->data().ptr());
     return true;
   }
 
@@ -757,7 +757,7 @@ bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
 }
 
 
-void Richards::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u) {
+void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
@@ -786,12 +786,12 @@ void Richards::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>
 
   // skip accumulation terms, they're not needed
 
-  // Assemble and precompute the Schur complement for inversion.
+  // Assemble
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   mfd_preconditioner_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  mfd_preconditioner_->UpdateConsistentFaceConstraints(u->data().ptr());
+  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
 }
 
 } // namespace
