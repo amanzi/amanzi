@@ -11,25 +11,18 @@ Interface for the derived MPC for water coupling between surface and subsurface.
 #ifndef PKS_MPC_SURFACE_SUBSURFACE_WATER_COUPLER_HH_
 #define PKS_MPC_SURFACE_SUBSURFACE_WATER_COUPLER_HH_
 
-#include "richards.hh"
-#include "overland.hh"
-#include "strong_mpc.hh"
+#include "mpc_surface_subsurface_coupler.hh"
+
 
 namespace Amanzi {
 
-class MPCSurfaceSubsurfaceWaterCoupler : public StrongMPC {
+class MPCSurfaceSubsurfaceWaterCoupler : public MPCSurfaceSubsurfaceCoupler {
 
  public:
   MPCSurfaceSubsurfaceWaterCoupler(Teuchos::ParameterList& plist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      StrongMPC(plist, soln) {}
-
-  // Virtual destructor
-  virtual ~MPCSurfaceSubsurfaceWaterCoupler() {}
-
-  // initialization
-  virtual void setup(const Teuchos::Ptr<State>& S);
+      MPCSurfaceSubsurfaceCoupler(plist, soln) {}
 
   // evaluate the residual
   virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,

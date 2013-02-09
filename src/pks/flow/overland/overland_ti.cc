@@ -245,12 +245,12 @@ void OverlandFlow::test_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     df->Update(-1.0, *f2, 1.0, *f1, 1.0);
     double error = enorm(f1, df);
     //
-      AmanziGeometry::Point point = S_next_->GetMesh("surface")->cell_centroid(c);
+      AmanziGeometry::Point point = mesh_->cell_centroid(c);
       if (error > 1e-5) {
         std::cout << "Bad error at cell: " << c << std::endl;
         AmanziMesh::Entity_ID_List faces;
         std::vector<int> fdirs;
-        S_next_->GetMesh("surface")->cell_get_faces_and_dirs(c, &faces, &fdirs);
+        mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
         std::cout << "faces: " << faces[0] << ", "
             << faces[1] << ", "
             << faces[2] << ", "

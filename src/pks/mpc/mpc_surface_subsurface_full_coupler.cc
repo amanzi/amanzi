@@ -13,6 +13,7 @@ extra unknowns.  On the surface, the TPFA is used, resulting in a
 subsurface-face-only Schur complement that captures all terms.
 
 ------------------------------------------------------------------------- */
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "matrix_mfd_surf.hh"
 #include "matrix_mfd_tpfa.hh"
@@ -96,6 +97,38 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
           << std::endl;
     *out_ << "  PC*p1: " << (*domain_Pu)("cell",99) << " " << (*domain_Pu)("face",500)
           << std::endl;
+
+    if (S_next_->cycle() > 300) {
+      if (std::abs((*domain_Pu)("face",500)) > 1.e12) {
+        *out_ << "BLOWING UP, dumping precon" << std::endl;
+
+        std::stringstream filename_s;
+        filename_s << "schur_" << S_next_->cycle() << "blowup.txt";
+        EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *preconditioner_->Schur());
+
+        std::stringstream filename_a;
+        filename_a << "aff_" << S_next_->cycle() << "blowup.txt";
+        EpetraExt::RowMatrixToMatlabFile(filename_a.str().c_str(), *preconditioner_->Aff());
+
+        std::stringstream filename_t;
+        filename_t << "tpfa_" << S_next_->cycle() << "blowup.txt";
+        EpetraExt::RowMatrixToMatlabFile(filename_t.str().c_str(), *surf_preconditioner_->TPFA());
+      } else {
+        std::stringstream filename_s;
+        filename_s << "schur_" << S_next_->cycle() << ".txt";
+        EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *preconditioner_->Schur());
+
+        std::stringstream filename_a;
+        filename_a << "aff_" << S_next_->cycle() << ".txt";
+        EpetraExt::RowMatrixToMatlabFile(filename_a.str().c_str(), *preconditioner_->Aff());
+
+        std::stringstream filename_t;
+        filename_t << "tpfa_" << S_next_->cycle() << ".txt";
+        EpetraExt::RowMatrixToMatlabFile(filename_t.str().c_str(), *surf_preconditioner_->TPFA());
+
+      }
+    }
+
   }
 #endif
 

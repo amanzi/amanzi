@@ -270,7 +270,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       // - negative.  This results in a non-zero preconditioner when p < p_atm,
       // - resulting in a correction that should take p >= p_atm.
       Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
-      *out_ << " adding acc term = " << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h << std::endl;
+      //      *out_ << " adding acc term = " << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h << std::endl;
     }
   }
 
@@ -287,16 +287,21 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     ASSERT(precon_tpfa != Teuchos::null);
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
 
-    // Scale Spp by dh/dp
-    EpetraExt::RowMatrixToMatlabFile("TPFAbefore.txt", *Spp);
+    // Scale Spp by -dh/dp
+
+    // NOTE: dh/dp to take it to p variable, the negative sign is due to the
+    //       equation being K/dz ( p - lambda ) = q = dwc/dt - div q_surf - Q,
+    //     ---> K/dz * (p - lambda) - (dwc/dt - div q_surf - Q) = 0,
+    //                              ^^ this sign is critical!
+    //    EpetraExt::RowMatrixToMatlabFile("TPFAbefore.txt", *Spp);
     Epetra_Vector dh_dp0(*dh_dp(0));
     for (int c=0; c!=ncells; ++c) {
       dh_dp0[c] = head[0][c] >= p_atm ? dh_dp[0][c] : 0.;
-      *out_ << " scaling by = " << dh_dp0[c] << std::endl;
+      //      *out_ << " scaling by = " << dh_dp0[c] << std::endl;
     }
     int ierr = Spp->RightScale(dh_dp0);
     ASSERT(!ierr);
-    EpetraExt::RowMatrixToMatlabFile("TPFAafter.txt", *Spp);
+    //    EpetraExt::RowMatrixToMatlabFile("TPFAafter.txt", *Spp);
 
   } else if (assemble_preconditioner_) {
     mfd_preconditioner_->AssembleGlobalMatrices();
