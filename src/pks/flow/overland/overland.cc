@@ -484,7 +484,7 @@ bool OverlandFlow::is_admissible(Teuchos::RCP<const TreeVector> up) {
 
 
 // modify the predictor to ensure non-negativity of ponded depth
-bool OverlandFlow::modify_predictor(double h, const Teuchos::RCP<TreeVector> up) {
+bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   if (!is_admissible(up)) {
     *up->data() = *S_next_->GetFieldData(key_);
     return true;

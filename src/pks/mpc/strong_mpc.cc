@@ -234,7 +234,7 @@ bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
 // -----------------------------------------------------------------------------
 // Modify predictor from each sub pk.
 // -----------------------------------------------------------------------------
-bool StrongMPC::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+bool StrongMPC::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   // First call the PKBDFBase's modify_predictor, as that deals with potential
   // backtracking.
   PKBDFBase::modify_predictor(h,u);

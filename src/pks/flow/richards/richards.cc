@@ -747,7 +747,7 @@ void Richards::changed_solution() {
 };
 
 
-bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   if (modify_predictor_with_consistent_faces_) {
     CalculateConsistentFaces(u->data().ptr());
     return true;

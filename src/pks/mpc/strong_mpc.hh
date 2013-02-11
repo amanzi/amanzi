@@ -71,7 +71,7 @@ public:
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> u);
 
   // -- Modify the predictor.
-  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
 private:
   // factory registration
