@@ -40,9 +40,9 @@ class MPCSurfaceSubsurfaceFullCoupler : public MPCSurfaceSubsurfaceCoupler {
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
-protected:
+ protected:
   Teuchos::RCP<Operators::MatrixMFD_Surf> preconditioner_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
 

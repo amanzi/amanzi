@@ -74,7 +74,7 @@ public:
 
   virtual void changed_solution();
 
-  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
 
   // evaluating consistent faces for given BCs and cell values

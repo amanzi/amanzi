@@ -628,26 +628,28 @@ void OverlandHeadFlow::changed_solution() {
 };
 
 
-bool OverlandHeadFlow::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
-  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
-  const Epetra_MultiVector& u_prev_c =
-    *S_->GetFieldData(key_)->ViewComponent("cell",false);
-  Epetra_MultiVector& u_c = *u->data()->ViewComponent("cell",false);
+bool OverlandHeadFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  bool changed = false;
+  // const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+  // const Epetra_MultiVector& u_prev_c =
+  //   *S_->GetFieldData(key_)->ViewComponent("cell",false);
+  // Epetra_MultiVector& u_c = *u->data()->ViewComponent("cell",false);
 
-  // Damp the spurt of water
-  int ncells = u_c.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    if ((u_prev_c[0][c] < patm) &&
-        (u_c[0][c] > patm)) {
-      u_c[0][c] = patm + 0.01;
-    }
-  }
-
+  // // Damp the spurt of water
+  // int ncells = u_c.MyLength();
+  // for (int c=0; c!=ncells; ++c) {
+  //   if ((u_prev_c[0][c] < patm) &&
+  //       (u_c[0][c] > patm)) {
+  //     u_c[0][c] = patm - 1.;
+  //     changed = true;
+  //   }
+  // }
 
   if (modify_predictor_with_consistent_faces_) {
     CalculateConsistentFaces(u->data().ptr());
     return true;
   }
+  if (changed) return true;
 
   return PKPhysicalBDFBase::modify_predictor(h, u);
 };

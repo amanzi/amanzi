@@ -221,11 +221,11 @@ void MPCSurfaceSubsurfaceFullCoupler::update_precon(double t,
 }
 
 // Modify predictor to ensure lambda and surface cell remain consistent
-bool MPCSurfaceSubsurfaceFullCoupler::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+bool MPCSurfaceSubsurfaceFullCoupler::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   Teuchos::RCP<TreeVector> surf_u = u->SubVector(surf_pk_name_);
-  bool changed = surf_pk_->modify_predictor(h, surf_u);
-
   Teuchos::RCP<TreeVector> domain_u = u->SubVector(domain_pk_name_);
+
+  bool changed = surf_pk_->modify_predictor(h, surf_u);
   changed |= domain_pk_->modify_predictor(h, domain_u);
 
   if (changed) {
@@ -242,7 +242,6 @@ bool MPCSurfaceSubsurfaceFullCoupler::modify_predictor(double h, const Teuchos::
   }
   return changed;
 }
-
 
 } // namespace
 
