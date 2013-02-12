@@ -72,8 +72,8 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE 
    		          test/Main.cc
-   			  test/test_solhist.cpp
-   			  test/test_Explicit_RK.cpp 
+   			  test/test_solhist.cc
+   			  test/test_Explicit_RK.cc 
                     LINK_LIBS
    		          time_integration
    			  solvers
