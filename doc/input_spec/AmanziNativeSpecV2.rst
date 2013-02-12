@@ -393,7 +393,7 @@ nonlinear solvers during steady state time integration. Here is an example:
 
    <ParameterList name="steady state time integrator">
      <Parameter name="time integration method" type="string" value="BDF1"/>
-     <Parameter name="initialize with darcy" type="string" value="yes"/>
+     <Parameter name="initialize with darcy" type="bool" value="true"/>
      <Parameter name="clipping saturation value" type="double" value="0.98"/>
      <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
      <Parameter name="preconditoner" type="string" value="Trilinos ML"/>

@@ -996,7 +996,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  
 	  steady_time_integrator.set<std::string>("preconditioner", ST_PRECOND);
 	  steady_time_integrator.set<std::string>("linear solver", ST_SOLVER);
-	  
+	  steady_time_integrator.set<bool>("initialize with darcy", ST_INIT_DARCY_BOOL);
+
 	  // set defaults
 	  sti_bdf1_param.set<int>("max iterations",ST_MAX_ITER);
 	  sti_bdf1_param.set<int>("min iterations",ST_MIN_ITER);
@@ -1053,8 +1054,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 		
 		steady_time_integrator.set<std::string>("preconditioner",
 							num_list.get<std::string>("steady preconditioner",ST_PRECOND));
-		steady_time_integrator.set<bool>("initialize with darcy",
-						 num_list.get<bool>("steady initialize with darcy",ST_INIT_DARCY));
+		steady_time_integrator.set<bool>("initialize with darcy",num_list.get<bool>("steady initialize with darcy",ST_INIT_DARCY_BOOL));
+
 	      }
 	    }
 	  }
