@@ -300,6 +300,8 @@ Usage:
 
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
+     * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`")  
+
    * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
 
      * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
