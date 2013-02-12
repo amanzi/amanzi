@@ -48,9 +48,6 @@ class Matrix_MFD : public Epetra_Operator {
   ~Matrix_MFD();
 
   // main methods
-  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
-  void AddActionProperty(int action) { actions_ |= action; } 
-
   void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDrhsVectors();
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
@@ -86,8 +83,14 @@ class Matrix_MFD : public Epetra_Operator {
   double NormInf() const { return 0.0; }
   bool HasNormInf() const { return false; }
 
+  // control methods
+  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
+  void AddActionProperty(int action) { actions_ |= action; }
+  bool CheckActionProperty(int action) { return actions_ & action; }
+
   // development methods
   void CreateMFDmassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);
+  int PopulatePreconditioner(Matrix_MFD& matrix);
   void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
 
   // access methods

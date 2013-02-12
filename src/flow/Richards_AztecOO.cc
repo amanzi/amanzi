@@ -79,10 +79,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   matrix_->ReduceGlobalSystem2LambdaSystem(u);
 
   // copy stiffness matrix to preconditioner (raw-data)
-  *(preconditioner_->Sff()) = *(matrix_->Aff());
-  *(preconditioner_->Acf()) = *(matrix_->Acf());
-  *(preconditioner_->Afc()) = *(matrix_->Afc());
-  *(preconditioner_->Acc()) = *(matrix_->Acc());
+  preconditioner_->PopulatePreconditioner(*matrix_);
   preconditioner_->UpdatePreconditioner();
 
   // solve non-symmetric problem

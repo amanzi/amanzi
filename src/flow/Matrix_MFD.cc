@@ -734,6 +734,24 @@ int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u)
 
 
 /* ******************************************************************
+* Replaces block of preconditioner by blocks of matrix.                                               
+****************************************************************** */
+int Matrix_MFD::PopulatePreconditioner(Matrix_MFD& matrix)
+{
+  if (actions_ & AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER && 
+      matrix.CheckActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX)) {
+    *Sff_ = *(matrix.Aff());
+    *Acf_ = *(matrix.Acf());
+    *Afc_ = *(matrix.Afc());
+    *Acc_ = *(matrix.Acc());
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+
+/* ******************************************************************
 * WARNING: Routines requires original mass matrices (Aff_cells), i.e.
 * before boundary conditions were imposed.
 *
