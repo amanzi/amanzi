@@ -340,7 +340,7 @@ Usage:
 
      * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currrently only Picard is supported). (default: `"Picard`")
 
-     * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method. (default: `"Hypre AMG`")
+     * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
      * [U] `"pseudo time integrator linear solver`" [string] select the linear solver to be used in the pseudo time integration method. (default: `"AztecOO`")
 
