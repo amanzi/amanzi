@@ -379,7 +379,7 @@ void Matrix_MFD::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 
 
 /* ******************************************************************
-* Assebmle elemental mass matrices into four global matrices. 
+* Assemble elemental mass matrices into four global matrices. 
 * We need an auxiliary GHOST-based vector to assemble the RHS.
 ****************************************************************** */
 void Matrix_MFD::AssembleGlobalMatrices()
@@ -705,7 +705,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 /* ******************************************************************
 * Reduce the pressure-lambda-system to lambda-system via ellimination
 * of the known pressure. Structure of the global system is preserved
-* but off-diagola blocks are zeroed-out.                                               
+* but off-diagoal blocks are zeroed-out.                                               
 ****************************************************************** */
 int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u)
 {
@@ -726,7 +726,6 @@ int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u)
   gf.Update(-1.0, tf, 1.0);
 
   // Decouple pressure-lambda system
-  Sff_ = Aff_;
   Afc_->PutScalar(0.0);
   Acf_->PutScalar(0.0);
 

@@ -73,17 +73,23 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
 
   UpdateSourceBoundaryData(Tp, *u_faces);
 
-  // calculate and assemble elemental stiffness matrices
+  // calculate and assemble elemental stiffness matrix
   CalculateRelativePermeability(u);
   AssembleSteadyStateMatrix_MFD(matrix_);
   matrix_->ReduceGlobalSystem2LambdaSystem(u);
-  matrix_->UpdatePreconditioner();
+
+  // copy stiffness matrix to preconditioner (raw-data)
+  *(preconditioner_->Sff()) = *(matrix_->Aff());
+  *(preconditioner_->Acf()) = *(matrix_->Acf());
+  *(preconditioner_->Afc()) = *(matrix_->Afc());
+  *(preconditioner_->Acc()) = *(matrix_->Acc());
+  preconditioner_->UpdatePreconditioner();
 
   // solve non-symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
   solver_tmp->SetUserOperator(matrix_);
-  solver_tmp->SetPrecOperator(matrix_);
+  solver_tmp->SetPrecOperator(preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
   solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);

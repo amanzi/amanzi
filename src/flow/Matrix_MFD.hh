@@ -53,16 +53,17 @@ class Matrix_MFD : public Epetra_Operator {
 
   void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDrhsVectors();
-  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
-  void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
+  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
   virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   virtual void AssembleGlobalMatrices();
   virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
   double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+
+  int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
 
   void DeriveDarcyMassFlux(const Epetra_Vector& solution, 
                            const Epetra_Import& face_importer, 
@@ -86,8 +87,8 @@ class Matrix_MFD : public Epetra_Operator {
   bool HasNormInf() const { return false; }
 
   // development methods
-  int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
   void CreateMFDmassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);
+  void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
