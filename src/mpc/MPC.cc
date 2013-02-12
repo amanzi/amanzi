@@ -487,7 +487,7 @@ void MPC::cycle_driver() {
             (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
             (ti_mode == INIT_TO_STEADY &&
              ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
-               (flow_model != std::string("Steady State Saturated"))))) {
+               (flow_model == std::string("Steady State Saturated") && S->get_time() >= Tswitch) ) ) ) {
           flow_dT = FPK->CalculateFlowDt();
         }
       }
@@ -526,7 +526,7 @@ void MPC::cycle_driver() {
 
       // make sure we reset the timestep at switchover time
       if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
-        // mpc_dT = std::min( mpc_dT, dTtransient );
+        mpc_dT = std::min( mpc_dT, dTtransient );
         tslimiter = MPC_LIMITS;
       }
 
@@ -566,7 +566,7 @@ void MPC::cycle_driver() {
             (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
             (ti_mode == INIT_TO_STEADY &&
              ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
-               (flow_model != std::string("Steady State Saturated"))))) {
+               (flow_model == std::string("Steady State Saturated") && S->get_time() >= Tswitch) ) ) ) {
           bool redo(false);
           do {
             redo = false;

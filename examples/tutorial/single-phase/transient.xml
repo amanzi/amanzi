@@ -31,7 +31,7 @@
       </ParameterList>
     </ParameterList>
 
-    <Parameter name="Verbosity" type="string" value="Extreme"/>
+    <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
