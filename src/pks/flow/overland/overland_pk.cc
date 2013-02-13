@@ -59,9 +59,9 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     ->SetComponents(names2, locations2, num_dofs2);
 
   // -- owned secondary variables, no evaluator used
-  S->RequireField("overland_flux", name_)->SetMesh(mesh_)
+  S->RequireField("surface_flux", name_)->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("overland_velocity", name_)->SetMesh(mesh_)
+  S->RequireField("surface_velocity", name_)->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // -- cell volume and evaluator
@@ -222,8 +222,8 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
-  S->GetField("overland_flux", name_)->set_initialized();
-  S->GetField("overland_velocity", name_)->set_initialized();
+  S->GetField("surface_flux", name_)->set_initialized();
+  S->GetField("surface_velocity", name_)->set_initialized();
 };
 
 
@@ -248,7 +248,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux", name_);
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
     matrix_->DeriveFlux(*potential, flux.ptr());
   }
 };
@@ -260,7 +260,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   if (update_flux_ == UPDATE_FLUX_VIS) {
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux",name_);
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux",name_);
     Teuchos::RCP<const CompositeVector> conductivity =
         S->GetFieldData("upwind_overland_conductivity");
     matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
@@ -271,8 +271,8 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
-    Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
-    Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", name_);
+    Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("surface_flux");
+    Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("surface_velocity", name_);
     matrix_->DeriveCellVelocity(*flux, velocity.ptr());
 
     Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);

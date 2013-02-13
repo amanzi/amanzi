@@ -16,7 +16,7 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 add_definitions("-DMSTK_HAVE_MPI")
 
-add_library(pk_flow_richards richards_water_content.cc richards.cc richards_ti.cc richards_physics.cc richards_steadystate.cc)
+add_library(pk_flow_richards richards_water_content.cc richards_pk.cc richards_ti.cc richards_physics.cc richards_steadystate.cc)
 
 # shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
 WHOLE_ARCHIVE(flow_relations_eos)

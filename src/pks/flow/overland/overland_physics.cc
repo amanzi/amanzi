@@ -35,7 +35,7 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
-        S->GetFieldData("overland_flux", name_);
+        S->GetFieldData("surface_flux", name_);
     pres_elev->ScatterMasterToGhosted();
     matrix_->DeriveFlux(*pres_elev, flux.ptr());
   }

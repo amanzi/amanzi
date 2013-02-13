@@ -12,7 +12,7 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(pk_flow_overland
-        overland.cc overland_ti.cc overland_physics.cc
+        overland_pk.cc overland_ti.cc overland_physics.cc
         surface_coupler_via_source_evaluator.cc)
 
 
