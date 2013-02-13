@@ -514,8 +514,11 @@ nonlinear solvers during steady state time integration. Here is an example:
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
      <Parameter name="time stepping strategy" type="string" value="adaptive"/>
 
-     <ParameterList name="nonlinear solver BDF1">
-      ...
+     <ParameterList name="BDF1">
+       <Parameter name="time step increase factor" type="double" value="1.1"/>
+       <ParameterList name ="BDF1 parameters">
+       ...
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 
@@ -559,6 +562,16 @@ The parameters used here are
   The error estimator can be controled via two parameters in the list `"time integration method`" 
   called `"absolute error tolerance`" and `"relative error tolerance`". The default values
   for these parameters are 0.001. 
+
+* `"BDF1`" [list] list specified in `"time integration method`".
+  It includes the following parameters.
+
+  * `"time step increase factor`" [double] defines geometric grow rate for the
+    initial time step. If adaptive time stepping strategy is specified, this
+    parameter is ignored. Default is 1.0.
+
+  * `"BDF1 parameters`" [list] used for initialization of the BDF1 time
+    integrator. 
 
 
 Transient Time Integratior
