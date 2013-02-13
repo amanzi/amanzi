@@ -91,35 +91,148 @@ Conventions:
 
 
 
-MPC (tbw)
-=========
+MPC
+===
+
+In the MPC sublist the user specifies which process kernels are on or off, which 
+flow model is active, and the time integration mode that the MPC should run in.
+
+To turn a particular process kernel on or off use these options:
+
+ * `"disable Transport_PK`" [string], valid options are `"yes`" or `"no`".
+
+ * `"disable Flow_PK`" [string], valid options are `"yes`" or `"no`".
+
+ * `"Chemistry Model`" [string], valid options are `"On`" or `"Off`".
+
+To select a particular flow model, use this option:
+
+ * `"Flow model`" [string], valid options are `"Darcy`", `"Steady State Saturated`" 
+   (both will cause the instatiation of a Darcy_PK process kernel), `"Richards`", 
+   `"Steady State Richards`" (both will cause the instantiation of a Richards_PK 
+   process kernel.
+
+The following parameters control MPC options related to particular process kernels:
+
+ * `"transport subcycling`" [bool], default is `"false`".
+
+ * `"max chemistry to transport timestep ratio`" [double], default is 1.0.
+
+Time Integration Mode
+---------------------
+
+The MPC list must have a sublist named `"Time Integration Mode`" if flow is enabled.
+This list must have exactly one of the following three sublists
+
+.. code-block:: xml
+
+      <ParameterList name="Steady">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+
+or
+
+.. code-block:: xml
+
+      <ParameterList name="Initialize To Steady">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="Switch" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+
+or
+
+.. code-block:: xml
+
+      <ParameterList name="Transient">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+
+
+
 
 Restart from Checkpoint Data File
 ---------------------------------
 
-A user may request a restart from a Checkpoint Data file by including the sublist 
-`"Restart from Checkpoint Data File`" in the Execution Control list. This mode of restarting
+A user may request a restart from a Checkpoint Data file by including the MPC sublist 
+`"Restart from Checkpoint Data File`". This mode of restarting
 will overwrite all other initializations of data that are called out in the input file.
 The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
 terminated because its allocation of time ran out.
 
 
-* [S] `"Restart from Checkpoint Data File`" [list]
+* `"Restart from Checkpoint Data File`" [list]
 
-  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
-Example:
+Example
 
 .. code-block:: xml
+  
+  <ParameterList name="MPC">
+ 
+  ...
 
-  <ParameterList name="Restart from Checkpoint Data File">
-     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+    <ParameterList name="Restart from Checkpoint Data File">
+      <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+    </ParameterList>
+   
+  ...
+  
   </ParameterList>
+
 
 In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
 Data file named chk00123.h5. All other initialization of field variables that might be called 
-out in the input file is ignored.  Recall that the value of "time" is taken from the checkpoint, 
-but may be overridden by the execution control parameters.
+out in the input file is ignored.  Recall that the value for the current time and current cycle
+is read from the checkpoint. 
+
+Verbosity
+---------
+
+The MPC's verbosity is controlled by a standard verbose object sublist, for example
+
+.. code-block:: xml
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+
+
+Example for a complete MPC list
+-------------------------------
+
+The following is an example of a complete MPC list:
+
+.. code-block:: xml
+
+  <ParameterList name="MPC">
+    <ParameterList name="Time Integration Mode">
+      <ParameterList name="Initialize To Steady">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="Switch" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+    </ParameterList>
+    <Parameter name="disable Transport_PK" type="string" value="yes"/>
+    <Parameter name="Chemistry Model" type="string" value="Off"/>
+    <Parameter name="disable Flow_PK" type="string" value="no"/>
+    <Parameter name="Flow model" type="string" value="Steady State Saturated"/>
+    <ParameterList name="Restart from Checkpoint Data File">
+      <Parameter name="Checkpoint Data File Name" type="string" value="steady-checkpoint.h5"/>
+    </ParameterList>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
 
 
 
