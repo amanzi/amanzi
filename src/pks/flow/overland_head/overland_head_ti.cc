@@ -258,11 +258,9 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   // -- get other pieces
   const Epetra_MultiVector& head =
       *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv =
-      *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
 
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
-  int ncells = cv.MyLength();
+  int ncells = head.MyLength();
 
   if (coupled_to_subsurface_via_flux_ || coupled_to_subsurface_via_head_) {
     // Coupled to subsurface, needs derivatives of coupling terms.
@@ -274,8 +272,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       *out_ << "Acc diff terms, + " << Acc_cells[c] << std::endl;
       if (head[0][c] >= p_atm) {
         // - add accumulation terms, treating h as h, which goes zero.
-        Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
-        *out_ << "Acc accum terms, +" << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h <<std::endl;
+        Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
+        *out_ << "Acc accum terms, +" << dwc_dp[0][c] / dh_dp[0][c] / h <<std::endl;
       } else {
         *out_ << "Acc accum terms, +" << 0. <<std::endl;
       }
@@ -291,8 +289,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       // - add accumulation terms, treating h as h_bar, which is allowed to go
       // - negative.  This results in a non-zero preconditioner when p < p_atm,
       // - resulting in a correction that should take p >= p_atm.
-      Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h;
-      //      *out_ << " adding acc term = " << dwc_dp[0][c] / dh_dp[0][c] * cv[0][c] / h << std::endl;
+      Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
+      //      *out_ << " adding acc term = " << dwc_dp[0][c] / dh_dp[0][c] / h << std::endl;
     }
   }
 

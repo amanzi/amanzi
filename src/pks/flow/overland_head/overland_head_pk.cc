@@ -43,6 +43,8 @@ RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, hea
 // Constructor
 // -------------------------------------------------------------
 void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
+  standalone_mode_ = S->GetMesh() == S->GetMesh("surface");
+
   PKPhysicalBDFBase::setup(S);
   setLinePrefix("overland");  // make the prefix fit in the available space.
   SetupOverlandFlow_(S);
@@ -234,7 +236,6 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source", source_evaluator);
   }
 
-
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -393,8 +394,8 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   update_perm |= S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S, name_);
-
   update_perm |= perm_update_required_;
+
   if (update_perm) {
     // Update the perm only if needed.
     perm_update_required_ = false;
@@ -427,7 +428,7 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     int nfaces = upwind_conductivity_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
       if (bc_markers_[f] != Operators::MATRIX_BC_NULL) {
-        upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         ASSERT(cells.size() == 1);
         int c = cells[0];
         upwind_conductivity_f[0][f] =

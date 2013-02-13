@@ -143,8 +143,9 @@ void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
   } else if (wrt_key == dens_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = pres_c[0][c] < p_atm ? 0. : -(pres_c[0][c] - p_atm)
-          / (rho[0][c] * rho[0][c] * gz);
+      //      res_c[0][c] = pres_c[0][c] < p_atm ? 0. : -(pres_c[0][c] - p_atm)
+      //          / (rho[0][c] * rho[0][c] * gz);
+      res_c[0][c] = -(pres_c[0][c] - p_atm) / (rho[0][c] * rho[0][c] * gz);
     }
   } else {
     ASSERT(0);

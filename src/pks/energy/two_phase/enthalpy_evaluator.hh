@@ -21,7 +21,7 @@ namespace Energy {
 
 class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 
-public:
+ public:
   explicit
   EnthalpyEvaluator(Teuchos::ParameterList& plist);
   EnthalpyEvaluator(const EnthalpyEvaluator& other);
@@ -34,6 +34,11 @@ public:
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+ protected:
+
+  Key pres_key_;
+  Key dens_key_;
+  Key ie_key_;
 };
 
 } // namespace
