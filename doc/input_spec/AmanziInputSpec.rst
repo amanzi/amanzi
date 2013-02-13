@@ -316,7 +316,7 @@ Usage:
 
      * [U] `"transient time step reduction factor"` [double] When time step reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [U] `"transient time step increase factor"` [double] When time step increase is possible during the transient calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
+     * [U] `"transient time step increase factor"` [double] When time step increase is possible during the transient calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0) Note that this paramter also works in the case where the flow mode `"Single Phase`" was selected. In that case, the default is `"1.0`".
 
      * [U] `"transient max time step"` [double] During the transient solve, the time step is limited to the value specified here. (default: `"1.0e+8`", suggested range: 1.0e+8 ... 10e+10)
 

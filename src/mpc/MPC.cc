@@ -488,7 +488,7 @@ void MPC::cycle_driver() {
             (ti_mode == INIT_TO_STEADY &&
              ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->get_time() >= Tswitch) ||
-	       (flow_model == std::string("Richards") && S->get_time() >= Tswitch) ) ) ) {
+	       (flow_model == std::string("Richards") && S->get_time()) ) ) ) {
           flow_dT = FPK->CalculateFlowDt();
         }
       }
@@ -568,7 +568,7 @@ void MPC::cycle_driver() {
             (ti_mode == INIT_TO_STEADY &&
 	     ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->get_time() >= Tswitch) || 
-	       (flow_model == std::string("Richards") && S->get_time() >= Tswitch) ) ) ) {
+	       (flow_model == std::string("Richards")) ) ) ) {
           bool redo(false);
           do {
             redo = false;

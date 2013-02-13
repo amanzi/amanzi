@@ -59,7 +59,8 @@
 #define TR_PRECOND                      "Hypre AMG"
 #define TR_SOLVER                       "AztecOO"
 #define TR_DIVERG_FACT                  1000.0
-
+#define TR_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
+ 
 #define PIC_INIT_DARCY                  true
 #define PIC_CLIP_SAT                    0.9
 #define PICARD_TOLERANCE                1.0e-8

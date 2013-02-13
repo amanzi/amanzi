@@ -1072,6 +1072,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  
 	  transient_time_integrator.set<std::string>("preconditioner", TR_PRECOND);
 	  transient_time_integrator.set<std::string>("linear solver", TR_SOLVER);
+	  tti_bdf1.set<double>("time step increase factor",TR_SP_DT_INCR_FACTOR);
+	  
 	  
 	  // set some probably not so good defaults for the steady computation
 	  tti_bdf1_param.set<int>("max iterations",TR_MAX_ITER);
@@ -1098,7 +1100,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	      if (ncpu_list.isSublist("Transient Implicit Time Integration")) {
 		
 		Teuchos::ParameterList& num_list = ncpu_list.sublist("Transient Implicit Time Integration");
-		tti_bdf1_param.set<int>("max iterations", num_list.get<int>("transient max iterations",TR_MAX_ITER));
+		
+		tti_bdf1_param.set<int>("max iterations", num_list.get<int>("transient max iterations",TR_MAX_ITER));	
 		tti_bdf1_param.set<int>("min iterations", num_list.get<int>("transient min iterations",TR_MIN_ITER));
 		tti_bdf1_param.set<int>("limit iterations", num_list.get<int>("transient limit iterations",TR_LIMIT_ITER));
 		tti_bdf1_param.set<double>("nonlinear tolerance",
@@ -1127,6 +1130,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 		
 		transient_time_integrator.set<std::string>("preconditioner",
 							   num_list.get<std::string>("transient preconditioner",TR_PRECOND));
+		
+		if (flow_model == "Single Phase") {
+		  tti_bdf1.set<double>("time step increase factor",num_list.get<double>("transient time step increase factor",TR_SP_DT_INCR_FACTOR));
+		}
+	
 	      }
 	    }
 	  }

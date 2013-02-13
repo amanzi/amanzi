@@ -39,6 +39,9 @@
           <Parameter name="linear solver tolerance" type="double" value="1e-18"/>
           <Parameter name="linear solver maximum iterations" type="int" value="10"/>
         </ParameterList>
+        <ParameterList name="Transient Implicit Time Integration">
+          <Parameter name="transient time step increase factor" type="double" value="2"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   
