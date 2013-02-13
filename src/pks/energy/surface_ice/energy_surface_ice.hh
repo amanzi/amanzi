@@ -23,13 +23,11 @@ namespace Energy { namespace EnergyRelations { class IEM; } }
 
 namespace Energy {
 
-class SurfaceIce : public EnergyBase {
+class EnergySurfaceIce : public EnergyBase {
 
 public:
-  SurfaceIce(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution);
-
-  // Virtual destructor
-  virtual ~SurfaceIce() {}
+  EnergySurfaceIce(Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<TreeVector>& solution);
 
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::Ptr<State>& S);
@@ -50,17 +48,14 @@ protected:
 
 
  protected:
-  // models for evaluating enthalpy
+  // models for evaluating enthalpy manually... remove me once boundary faces get in
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
-
-  Key energy_source_from_subsurface_key_;
-  Key mass_external_source_key_;
 
 
 private:
   // factory registration
-  static RegisteredPKFactory<SurfaceIce> reg_;
+  static RegisteredPKFactory<EnergySurfaceIce> reg_;
 
 };
 

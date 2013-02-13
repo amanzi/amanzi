@@ -45,7 +45,6 @@ class EOSEvaluator : public SecondaryVariablesFieldEvaluator {
   // dependencies
   Key temp_key_;
   Key pres_key_;
-  Key a_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,EOSEvaluator> factory_;

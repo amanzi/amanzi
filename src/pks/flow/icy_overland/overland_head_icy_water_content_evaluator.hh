@@ -6,8 +6,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOW_RELATIONS_HEIGHT_EVALUATOR_
-#define AMANZI_FLOW_RELATIONS_HEIGHT_EVALUATOR_
+#ifndef AMANZI_FLOW_RELATIONS_OVERLAND_HEAD_ICY_WATER_CONTENT_EVALUATOR_
+#define AMANZI_FLOW_RELATIONS_OVERLAND_HEAD_ICY_WATER_CONTENT_EVALUATOR_
 
 #include "secondary_variable_field_evaluator.hh"
 #include "factory.hh"
@@ -16,20 +16,18 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class HeightEvaluator : public SecondaryVariableFieldEvaluator {
+class OverlandHeadIcyWaterContentEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
   explicit
-  HeightEvaluator(Teuchos::ParameterList& plist);
-  HeightEvaluator(const HeightEvaluator& other);
+  OverlandHeadIcyWaterContentEvaluator(Teuchos::ParameterList& plist);
+  OverlandHeadIcyWaterContentEvaluator(const OverlandHeadIcyWaterContentEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  // Needs a special ensure to get around trying to find face values.
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-
  protected:
+  void InitializeFromPlist_();
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -39,9 +37,12 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   Key dens_key_;
-  Key pres_key_;
-  Key gravity_key_;
-  Key patm_key_;
+  Key dens_ice_key_;
+  Key unfrozen_frac_key_;
+  Key height_key_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,OverlandHeadIcyWaterContentEvaluator> factory_;
 
 };
 
