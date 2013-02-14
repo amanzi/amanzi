@@ -488,7 +488,7 @@ void MPC::cycle_driver() {
             (ti_mode == INIT_TO_STEADY &&
              ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
                (flow_model == std::string("Steady State Saturated") && S->get_time() >= Tswitch) ||
-	       (flow_model == std::string("Richards") && S->get_time()) ) ) ) {
+	       (flow_model == std::string("Richards") ) ) ) ) {
           flow_dT = FPK->CalculateFlowDt();
         }
       }
@@ -530,7 +530,6 @@ void MPC::cycle_driver() {
         mpc_dT = std::min( mpc_dT, dTtransient );
         tslimiter = MPC_LIMITS;
       }
-
 
       // make sure that if we are currently on a reset time, to reset the time step
       if (! ti_mode == STEADY) {
