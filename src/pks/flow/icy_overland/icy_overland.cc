@@ -14,6 +14,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "standalone_elevation_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
+#include "unfrozen_effective_depth_evaluator.hh"
 #include "unfrozen_fraction_evaluator.hh"
 #include "unfrozen_fraction_model.hh"
 #include "icy_height_evaluator.hh"
@@ -66,6 +67,14 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::UnfrozenFractionEvaluator(uf_plist));
   S->SetFieldEvaluator("unfrozen_fraction", uf_evaluator);
   uf_model_ = uf_evaluator->get_Model();
+
+  // -- unfrozen effective depth, h * eta
+  S->RequireField("unfrozen_effective_depth")->SetMesh(mesh_)
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList h_eff_plist = plist_.sublist("unfrozen effective depth");
+  Teuchos::RCP<FlowRelations::UnfrozenEffectiveDepthEvaluator> h_eff_evaluator =
+      Teuchos::rcp(new FlowRelations::UnfrozenEffectiveDepthEvaluator(h_eff_plist));
+  S->SetFieldEvaluator("unfrozen_effective_depth", h_eff_evaluator);
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)

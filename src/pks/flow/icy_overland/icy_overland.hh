@@ -38,7 +38,7 @@ protected:
   // setup methods
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
-  bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
+  virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
 protected:
   Teuchos::RCP<FlowRelations::UnfrozenFractionModel> uf_model_;

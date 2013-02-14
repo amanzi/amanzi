@@ -42,7 +42,7 @@ void OverlandHeadFlow::fun( double t_old,
 #if DEBUG_FLAG
   AmanziMesh::Entity_ID_List faces, faces0;
   std::vector<int> dirs;
-  int cnum = 4; int cnum0 = 3;
+  int cnum = 4; int cnum0 = 0;
   mesh_->cell_get_faces_and_dirs(cnum0, &faces0, &dirs);
   mesh_->cell_get_faces_and_dirs(cnum, &faces, &dirs);
 
@@ -148,7 +148,7 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  int cnum = 4;
+  int cnum = 0;
   mesh_->cell_get_faces_and_dirs(cnum, &faces, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {

@@ -43,7 +43,10 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
 };
 
 EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other) {};
+    SecondaryVariableFieldEvaluator(other),
+    pres_key_(other.pres_key_),
+    dens_key_(other.dens_key_),
+    ie_key_(other.ie_key_) {};
 
 Teuchos::RCP<FieldEvaluator>
 EnthalpyEvaluator::Clone() const {

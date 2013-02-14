@@ -75,7 +75,7 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 #endif
 
   // advection term, implicit
-  AddAdvection_(S_next_.ptr(), res.ptr(), false);
+  AddAdvection_(S_next_.ptr(), res.ptr(), true);
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  res0 (after advection): " << (*res)("cell",0) << " " << (*res)("face",3) << std::endl;
@@ -180,6 +180,9 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     Acc_cells[c] += de_dT[0][c] / h;
   }
 
+  // -- update preconditioner with source term derivatives if needed
+  AddSourcesToPrecon_(S_next_.ptr(), h);
+  
   // Apply boundary conditions.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 

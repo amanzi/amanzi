@@ -23,7 +23,7 @@ class UnfrozenFractionModel {
   double DUnfrozenFractionDT(double temp);
 
  protected:
-  double width_;
+  double halfwidth_;
   double T0_;
   double pi_;
 
