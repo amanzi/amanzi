@@ -26,9 +26,11 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  // Needs a special ensure to get around trying to find face values.
+  // Needs a special ensure and derivative to get around trying to find face
+  // values and derivatives of face values.
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-
+  virtual void UpdateFieldDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key);
+  
  protected:
 
   // Required methods from SecondaryVariableFieldEvaluator

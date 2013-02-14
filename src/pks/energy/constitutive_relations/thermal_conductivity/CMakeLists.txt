@@ -16,4 +16,5 @@ add_library(energy_relations_thermal_conductivity
             thermal_conductivity_threephase_factory.cc
             thermal_conductivity_threephase_peterslidard.cc
             thermal_conductivity_threephase_wetdry.cc
+            thermal_conductivity_surface_evaluator.cc
             )

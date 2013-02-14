@@ -16,7 +16,7 @@ This is simply the conserved quantity in Richards equation.
 ----------------------------------------------------------------------------- */
 
 
-#include "two_phase_energy_evaluator.hh"
+#include "surface_ice_energy_evaluator.hh"
 
 namespace Amanzi {
 namespace Energy {

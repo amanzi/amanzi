@@ -26,11 +26,13 @@ WHOLE_ARCHIVE(pk_energy_constant_temperature)
 WHOLE_ARCHIVE(pk_energy_base)
 WHOLE_ARCHIVE(pk_energy_three_phase)
 WHOLE_ARCHIVE(pk_energy_two_phase)
+WHOLE_ARCHIVE(pk_energy_surface_ice)
 WHOLE_ARCHIVE(pk_transport_passive_tracer)
 WHOLE_ARCHIVE(pk_flow_richards)
 WHOLE_ARCHIVE(pk_flow_permafrost)
 WHOLE_ARCHIVE(pk_flow_overland)
 WHOLE_ARCHIVE(pk_flow_overland_head)
+WHOLE_ARCHIVE(pk_flow_icy_overland)
 WHOLE_ARCHIVE(pk_prescribed_deformation)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(mpc)
@@ -41,6 +43,7 @@ WHOLE_ARCHIVE(flow_relations_wrm_models)
 WHOLE_ARCHIVE(flow_relations_overland_conductivity)
 WHOLE_ARCHIVE(flow_relations_surface_subsurface_fluxes)
 WHOLE_ARCHIVE(flow_relations_elevation)
+WHOLE_ARCHIVE(energy_relations_enthalpy)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(amanzi_mesh_functions)
@@ -56,15 +59,18 @@ target_link_libraries(ats
                       ${pk_energy_base}
                       ${pk_energy_two_phase}
                       ${pk_energy_three_phase}
+                      ${pk_energy_surface_ice}
                       ${pk_flow_permafrost}
                       ${pk_flow_richards}
                       ${pk_flow_overland}
                       ${pk_flow_overland_head}
+                      ${pk_flow_icy_overland}
 		              ${pk_prescribed_deformation}
                       ${pk_bases}
                       energy_bc_factory
                       ${energy_relations_thermal_conductivity}
                       ${energy_relations_internal_energy}
+                      ${energy_relations_enthalpy}
                       flow_bc_factory
                       ${flow_relations_wrm}
                       ${flow_relations_wrm_models}

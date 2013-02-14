@@ -34,6 +34,9 @@ void EnergyBase::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
+  std::cout << "  energy (t-dt) = " << (*e0)("cell",0) << std::endl;
+  std::cout << "  energy (t)    = " << (*e1)("cell",0) << std::endl;
+
   g->ViewComponent("cell", false)
     ->Update(1.0/dt, *e1->ViewComponent("cell", false),
           -1.0/dt, *e0->ViewComponent("cell", false), 1.0);
@@ -51,7 +54,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
 
   // set the flux field
   // NOTE: fluxes are a MOLAR flux by choice of the flow pk, i.e.
-  // [flux] =  mol/(m^2*s)
+  // [flux] =  mol/s
 
   // NOTE: this will be the eventual way to ensure it is up to date,
   // but there is no FieldEvaluator for darcy flux yet.  When there

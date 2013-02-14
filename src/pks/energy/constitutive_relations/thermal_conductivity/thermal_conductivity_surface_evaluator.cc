@@ -7,8 +7,6 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "dbc.hh"
-#include "thermal_conductivity_surface_factory.hh"
 #include "thermal_conductivity_surface_evaluator.hh"
 
 namespace Amanzi {
@@ -54,19 +52,20 @@ void ThermalConductivitySurfaceEvaluator::EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result) {
   // pull out the dependencies
-  Teuchos::RCP<const CompositeVector> uf = S->GetFieldData(uf_key_);
+  Teuchos::RCP<const CompositeVector> eta = S->GetFieldData(uf_key_);
   Teuchos::RCP<const CompositeVector> height = S->GetFieldData(height_key_);
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
     // much more efficient to pull out vectors first
-    const Epetra_MultiVector& uf_v = *uf->ViewComponent(*comp,false);
+    const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
     const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = height[0][i] * (K_liq_ * eta[0][i] + K_ice_ * (1. - eta[0][i]));
+      result_v[0][i] = height_v[0][i] * (K_liq_ * eta_v[0][i]
+              + K_ice_ * (1. - eta_v[0][i]));
     }
   }
 }

@@ -73,8 +73,8 @@ void IcyHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Stat
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   // this is rather hacky.  surface_pressure is a mixed field vector -- it has
   // pressure on cells and ponded depth on faces.
-  // -- faces are 1
-  result->ViewComponent("face",false)->PutScalar(1.0);
+  // -- NO FACE DERIVATIVES
+  //  result->ViewComponent("face",false)->PutScalar(1.0);
 
   // -- cells need the function eval
   const Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);

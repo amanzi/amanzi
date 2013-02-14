@@ -17,5 +17,5 @@ add_subdirectory(advection_diffusion)
 add_subdirectory(base)
 add_subdirectory(two_phase)
 add_subdirectory(three_phase)
-
+add_subdirectory(surface_ice)
 

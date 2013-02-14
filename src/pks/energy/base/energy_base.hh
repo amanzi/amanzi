@@ -95,6 +95,7 @@ protected:
   // -- Add any source terms into the residual.
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
                            const Teuchos::Ptr<CompositeVector>& f) = 0;
+  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) = 0;
 
   // Standard methods
   virtual void SetupEnergy_(const Teuchos::Ptr<State>& S);
