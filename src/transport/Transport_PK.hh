@@ -1,7 +1,7 @@
 /*
 This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
 Amanzi is released under the three-clause BSD License. 
 The terms of use and "as is" disclaimer for this license are 
 provided in the top-level COPYRIGHT file.
@@ -144,6 +144,9 @@ class Transport_PK : public Explicit_TI::fnBase {
   void ProcessStringDispersionModel(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
+
+  // obsolete methods
+  void CreateConcentration(Teuchos::ParameterList& bcs_list);
 
  public:
   int MyPID;  // parallel information: will be moved to private

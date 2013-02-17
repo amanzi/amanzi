@@ -736,6 +736,33 @@ is used. Note that the boundary condition is set up separately for each componen
    </ParameterList>  
 
 
+The new structure of boundary conditions is aligned with that used for Flow.
+It allows the use to define spatially variable boundary conditions. 
+Temporary, both approaches to specifying boundary condtions are supported.
+
+.. code-block:: xml
+
+   <ParameterList name="boundary conditions">
+     <ParameterList name="concentration">
+       <ParameterList name="H+"> 
+         <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
+           <ParameterList name="boundary concentration">
+             <ParameterList name="function-constant">  <!-- any time function -->
+               <Parameter name="value" type="double" value="0.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="Tc-99"> <!-- Next component --> 
+       ...
+       </ParameteList>
+     </ParameteList>
+
+     <ParameterList name="outward flux">  <!-- Future boundary conditions -->
+     </ParameteList>
+   </ParameterList>
+
 Sources and Sinks
 -----------------
 
