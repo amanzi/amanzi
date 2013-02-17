@@ -1268,11 +1268,11 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 
         Teuchos::ParameterList& wrm_sublist = wrm_list.sublist(ss.str());
 
-        wrm_sublist.set<std::string>("Water retention model", "van Genuchten");
-        wrm_sublist.set<std::string>("Region",*i);
+        wrm_sublist.set<std::string>("water retention model", "van Genuchten");
+        wrm_sublist.set<std::string>("region", *i);
         wrm_sublist.set<double>("van Genuchten m", m);
         wrm_sublist.set<double>("van Genuchten l", ell);
-        wrm_sublist.set<double>("van Genuchten alpha",alpha);
+        wrm_sublist.set<double>("van Genuchten alpha", alpha);
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);
@@ -1287,8 +1287,8 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
         Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
       }
 
-      double lambda      = BC_list.get<double>("lambda");
-      double alpha       = BC_list.get<double>("alpha");
+      double lambda = BC_list.get<double>("lambda");
+      double alpha  = BC_list.get<double>("alpha");
       double ell;
       if (rel_perm == "Mualem") {
         ell = BC_list.get<double>("ell",ELL_MUALEM);
@@ -1312,11 +1312,11 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 
         Teuchos::ParameterList& wrm_sublist = wrm_list.sublist(ss.str());
 
-        wrm_sublist.set<std::string>("Water retention model", "Brooks Corey");
-        wrm_sublist.set<std::string>("Region",*i);
+        wrm_sublist.set<std::string>("water retention model", "Brooks Corey");
+        wrm_sublist.set<std::string>("region", *i);
         wrm_sublist.set<double>("Brooks Corey lambda", lambda);
-        wrm_sublist.set<double>("Brooks Corey alpha",alpha);
-        wrm_sublist.set<double>("Brooks Corey l",ell);
+        wrm_sublist.set<double>("Brooks Corey alpha", alpha);
+        wrm_sublist.set<double>("Brooks Corey l", ell);
         wrm_sublist.set<double>("residual saturation", Sr);
         wrm_sublist.set<double>("regularization interval", krel_smooth);
         wrm_sublist.set<std::string>("relative permeability model", rel_perm);

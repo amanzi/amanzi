@@ -49,6 +49,8 @@ const double FLOW_INITIAL_DT = 1e-8;  // [sec]
 const double FLOW_MAXIMUM_DT = 3.15e+10;  // [sec] 1000 years
 const double FLOW_YEAR = 3.15576e+7;
 
+const double FLOW_WRM_VANGENUCHTEN_L = 0.5;
+
 const int FLOW_RELATIVE_PERM_NONE = 1; 
 const int FLOW_RELATIVE_PERM_CENTERED = 2; 
 const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 3; 

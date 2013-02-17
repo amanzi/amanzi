@@ -277,7 +277,7 @@ Water retention models
 -----------------------
 
 User defines water retention models in sublist `"Water retention models`". It contains as many sublists, 
-e.g. `"Model 1`", `"Model 2`", etc, as there are different soils. 
+e.g. `"Soil 1`", `"Soil 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
 inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
 The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
@@ -287,9 +287,9 @@ An example of the van Genuchten model specification is:
 
 .. code-block:: xml
 
-    <ParameterList name="Model 1">
-       <Parameter name="Region" type="string" value="Top Half"/>
-       <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+    <ParameterList name="Soil 1">
+       <Parameter name="region" type="string" value="Top Half"/>
+       <Parameter name="water retention model" type="string" value="van Genuchten"/>
        <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
        <Parameter name="van Genuchten m" type="double" value="0.28571"/>
        <Parameter name="van Genuchten l" type="double" value="0.5"/>
@@ -297,9 +297,9 @@ An example of the van Genuchten model specification is:
        <Parameter name="relative permeability model" type="string" value="Mualem"/>
     </ParameterList>
 
-    <ParameterList name="Model 2">
-       <Parameter name="Region" type="string" value="Bottom Half"/>
-       <Parameter name="Water retention model" type="string" value="Brooks Corey"/>
+    <ParameterList name="Soil 2">
+       <Parameter name="region" type="string" value="Bottom Half"/>
+       <Parameter name="water retention model" type="string" value="Brooks Corey"/>
        <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
        <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
        <Parameter name="Brooks Corey l" type="double" value="0.51"/>
@@ -480,16 +480,25 @@ nonlinear solvers during calculation of the initial guess time integration. Here
 
    <ParameterList name="initial guess pseudo time integrator">
      <Parameter name="time integration method" type="string" value="Picard"/>
-     <Parameter name="initialize with darcy" type="bool" value="true"/>
-     <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
-     <Parameter name="clipping saturation value" type="double" value="0.9"/>
-     <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
-     <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
      <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+     <Parameter name="linear solver" type="string" value="GMRES with TrilinosML"/>
+
+     <ParameterList name="initialization">
+       <Parameter name="method" type="string" value="saturated solver"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="clipping saturation value" type="double" value="0.9"/>
+     </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
 
      <ParameterList name="Picard">
-       <Parameter name="convergence tolerance" type="double" value="1e-08"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <ParameterList name="Picard parameters">
+         <Parameter name="convergence tolerance" type="double" value="1e-08"/>
+         <Parameter name="maximum number of iterations" type="int" value="400"/>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 
@@ -506,18 +515,26 @@ nonlinear solvers during steady state time integration. Here is an example:
 
    <ParameterList name="steady state time integrator">
      <Parameter name="time integration method" type="string" value="BDF1"/>
-     <Parameter name="initialize with darcy" type="bool" value="true"/>
-     <Parameter name="clipping saturation value" type="double" value="0.98"/>
-     <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
-     <Parameter name="preconditoner" type="string" value="Trilinos ML"/>
-     <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
-     <Parameter name="time stepping strategy" type="string" value="adaptive"/>
+     <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
+
+     <ParameterList name="initialization">
+       <Parameter name="method" type="string" value="saturated solver"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="clipping pressure value" type="double" value="50000.0"/>
+     </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
 
      <ParameterList name="BDF1">
-       <Parameter name="time step increase factor" type="double" value="1.1"/>
-       <ParameterList name ="BDF1 parameters">
-       ...
+       <Parameter name="initial time step" type="double" value="1e-07"/>
+       <Parameter name="maximum time step" type="double" value="1e+10"/>
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <ParameterList name="BDF1 parameters">
+         ...
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -526,26 +543,6 @@ The parameters used here are
 
 * `"time integration method`" [string] defines a time integration method.
   The available options are `"BDF1`", `"BDF2`", `"Picard`", and `"backward Euler`".
-
-* `"initialize with darcy`" [bool] solves the fully saturated problem to get an
-  initial pressure field consistent with the boundary conditions.
-
-* `"clipping saturation value`" [double] is an experimental option. It is used 
-  after pressure initialization to cut-off small values of pressure. By default, the 
-  pressure threshold is equal to the atmospheric pressure.
-  The new pressure is calculated based of the provided saturation value. Default is 0.6.
-
-* `"clipping pressure value`" [double] is an experimental option. It is used 
-  after pressure initialization to cut-off small values of pressure below the provided
-  value.
-
-* `"enforce pressure-lambda constraints`" [bool] each time the time integrator is 
-  restarted, we may re-enforce the pressure-lambda relationship for new boundary conditions. 
-  Default is true.
-
-* `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".
-
-* `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
 
 * `"error control options`" [Array(string)] lists various error control options. 
   A nonlinear solver is terminated when all listed options are passed. 
@@ -573,6 +570,38 @@ The parameters used here are
   * `"BDF1 parameters`" [list] used for initialization of the BDF1 time
     integrator. 
 
+* `"initialization`" [list] defines parameters for calculating initial pressure guess.
+  It can be used to obtain pressure field which is consistent with the boundary conditions.
+  Default is empty list.
+
+  * `"method`" [string] refferes to a constraint enforcement method. The only 
+    available option is `"projection`" which is default.
+
+  * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
+
+  * `"clipping saturation value`" [double] is an experimental option. It is used 
+    after pressure initialization to cut-off small values of pressure. By default, the 
+    pressure threshold is equal to the atmospheric pressure.
+    The new pressure is calculated based of the provided saturation value. Default is 0.6.
+
+  * `"clipping pressure value`" [double] is an experimental option. It is used 
+    after pressure initialization to cut-off small values of pressure below the provided
+    value.
+
+* `"enforce pressure-lambda constraints`" [list] each time the time integrator is 
+  restarted, we may re-enforce the pressure-lambda relationship for new boundary conditions. 
+  Default is empty list.
+
+  * `"method`" [string] refferes to a constraint enforcement method. The only 
+    available option is `"projection`" which is default.
+
+  * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
+
+* `"BFD1`" [list] the named list used to control the nonlinear solver.
+  It might go away in the next revision of the Native Specs. 
+  Now, only the sublist `"BFD1 parameters`" is supported. The remaining parameters
+  are used for development and unit tests.
+
 
 Transient Time Integratior
 -----------------------------
@@ -580,7 +609,38 @@ Transient Time Integratior
 The sublist `"transient time integrator`" defines parameters controling linear and 
 nonlinear solvers during transient time integration. Its parameters are similar to 
 that in the sublist `"steady state time integrator`" except for parameters controling
-pressure re-initialization.
+pressure re-initialization. Here is an example:
+
+.. code-block:: xml
+
+   <ParameterList name="transient time integrator">
+     <Parameter name="time integration method" type="string" value="BDF1"/>
+     <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
+     <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
+     <Parameter name="time stepping strategy" type="string" value="adaptive"/>
+
+     <ParameterList name="initialization">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
+
+     <ParameterList name="BDF1">
+       <Parameter name="initial time step" type="double" value="1e-07"/>
+       <Parameter name="maximum time step" type="double" value="1e+10"/>
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <ParameterList name="BDF1 parameters">
+         ...
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+The parameters were defined above. A non-empty `"initialization`" list 
+may be useful for a transient saturated simulation.
 
 
 Other Parameters
@@ -596,7 +656,8 @@ The remaining `"Flow`" parameters are
   The first three calculate the relative permeability on mesh interfaces.
 
 * `"discretization method`" [string] helps to test new discretization methods. 
-  The available options are `"mfd`", `"optimized mfd`", `"two-point flux approximation`", and
+  The available options are `"mfd`", `"optimized mfd`", `"two-point flux approximation`", 
+  `"optimized mfd experimental`" (recommended for highly anisotropic meshes), and
   `"support operator`". The last option reproduces discretization method implemented in RC1. 
   The third option is recommended for orthogonal meshes and diagonal absolute permeability.
   The second option is still experimental (no papers were published) and produces 
@@ -738,14 +799,15 @@ Here is and example:
 .. code-block:: xml
 
      <ParameterList name="Solvers">
-       <ParameterList name="GMRES via AztecOO">
+       <ParameterList name="GMRES with HypreAMG">
          <Parameter name="error tolerance" type="double" value="1e-12"/>
          <Parameter name="iterative method" type="string" value="GMRES"/>
+         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
          <Parameter name="maximum number of iterations" type="int" value="400"/>
        </ParameterList>
      </ParameterList>
 
-The name `"GMRES via AztecOO`" is selected by the user.
+The name `"GMRES with Hypre AMG`" is selected by the user.
 It can be used by a process kernel lists to define a solver.
 
 
