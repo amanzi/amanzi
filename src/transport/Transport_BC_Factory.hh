@@ -28,7 +28,9 @@ class TransportBCFactory {
      : mesh_(mesh), list_(list) {};
   ~TransportBCFactory() {};
   
-  void CreateConcentration(std::vector<BoundaryFunction*>& bcs, std::vector<int> bcs_tcc_index) const;
+  void CreateConcentration(std::vector<BoundaryFunction*>& bcs, 
+                           std::vector<std::string> bcs_tcc_name) const;
+  void ProcessConcentrationSpec(Teuchos::ParameterList& spec, BoundaryFunction* bc) const;
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
