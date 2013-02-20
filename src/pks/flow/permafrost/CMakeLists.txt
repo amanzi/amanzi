@@ -5,6 +5,7 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
+include_directories(${ATS_SOURCE_DIR}/src/pks/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/eos)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)

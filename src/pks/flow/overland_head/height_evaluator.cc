@@ -6,6 +6,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "height_model.hh"
 #include "height_evaluator.hh"
 
 
@@ -30,6 +31,9 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
   gravity_key_ = plist_.get<string>("gravity key", "gravity");
   patm_key_ = plist_.get<string>("atmospheric pressure key", "atmospheric_pressure");
 
+  // model
+  Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");
+  model_ = Teuchos::rcp(new HeightModel(model_plist));
 }
 
 
@@ -38,7 +42,8 @@ HeightEvaluator::HeightEvaluator(const HeightEvaluator& other) :
     dens_key_(other.dens_key_),
     pres_key_(other.pres_key_),
     gravity_key_(other.gravity_key_),
-    patm_key_(other.patm_key_) {}
+    patm_key_(other.patm_key_),
+    model_(other.model_) {}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -145,17 +150,14 @@ void HeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    res_c[0][c] = pres_c[0][c] < p_atm ? 0. : (pres_c[0][c] - p_atm) / (rho[0][c]*gz);
+    res_c[0][c] = pres_c[0][c] < p_atm ? 0. :
+        model_->Height(pres_c[0][c], rho[0][c], p_atm, gz);
   }
 }
 
 
 void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  // this is rather hacky.  surface_pressure is a mixed field vector -- it has
-  // pressure on cells and ponded depth on faces.
-  // -- faces are 1
-  result->ViewComponent("face",false)->PutScalar(1.0);
 
   // -- cells need the function eval
   const Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -171,15 +173,12 @@ void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
   if (wrt_key == pres_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      //      res_c[0][c] = pres_c[0][c] < p_atm ? 0. : 1. / (rho[0][c]*gz);
-      res_c[0][c] = 1. / (rho[0][c]*gz);
+      res_c[0][c] = model_->DHeightDPressure(pres_c[0][c], rho[0][c], p_atm, gz);
     }
   } else if (wrt_key == dens_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      //      res_c[0][c] = pres_c[0][c] < p_atm ? 0. : -(pres_c[0][c] - p_atm)
-      //          / (rho[0][c] * rho[0][c] * gz);
-      res_c[0][c] = -(pres_c[0][c] - p_atm) / (rho[0][c] * rho[0][c] * gz);
+      res_c[0][c] = model_->DHeightDRho(pres_c[0][c], rho[0][c], p_atm, gz);
     }
   } else {
     ASSERT(0);

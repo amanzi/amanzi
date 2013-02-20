@@ -16,6 +16,8 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+class HeightModel;
+
 class HeightEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
@@ -30,7 +32,9 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
   // values and derivatives of face values.
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
   virtual void UpdateFieldDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key);
-  
+
+  Teuchos::RCP<HeightModel> get_Model() { return model_; }
+
  protected:
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -45,6 +49,7 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
   Key gravity_key_;
   Key patm_key_;
 
+  Teuchos::RCP<HeightModel> model_;
 };
 
 } //namespace

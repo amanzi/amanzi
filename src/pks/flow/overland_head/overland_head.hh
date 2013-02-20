@@ -23,7 +23,10 @@ class MPCSurfaceSubsurfaceDirichletCoupler;
 
 namespace Flow {
 
-namespace FlowRelations { class OverlandConductivityModel; }
+namespace FlowRelations {
+  class OverlandConductivityModel;
+  class HeightModel;
+}
 
 class OverlandHeadFlow : public PKPhysicalBDFBase {
 
@@ -147,7 +150,8 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
 
-  // overland conductivity model
+  // needed physical models
+  Teuchos::RCP<FlowRelations::HeightModel> height_model_;
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
 
   // factory registration
