@@ -74,6 +74,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.ntol_multiplier = paramList_->get<double>("restart tolerance relaxation factor",1.0);
   state.ntol_multiplier_damp = paramList_->get<double>("restart tolerance relaxation factor damping",1.0);
   state.divergence_factor = paramList_->get<double>("nonlinear iteration divergence factor",1000.0);
+  state.clip_NKA = paramList_->get<bool>("NKA clipping",false);
 
   state.maxpclag = paramList_->get<int>("max preconditioner lag iterations");
   state.currentpclag = state.maxpclag;
@@ -474,7 +475,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     if (fn.IsPureNewton()) {
       clip = fn.modify_update_step(h, u, du);
     } else {
-      clip = fn.modify_update_step(h, u, du);
+      if (state.clip_NKA) clip = fn.modify_update_step(h, u, du);
       // store the damped NKA update
       // this will passed to the NKA update the next time around
       *previous_du = du;

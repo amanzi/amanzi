@@ -47,6 +47,8 @@ struct BDF1State {
     ntol_multiplier_current = 1.0;
     
     divergence_factor = 1000.0;
+
+    clip_NKA = false;
   }
 
   ~BDF1State() {
@@ -90,6 +92,8 @@ struct BDF1State {
   int uhist_size;        // extrapolation order for initial guess
   double ntol_multiplier, ntol_multiplier_damp, ntol_multiplier_current;
   double divergence_factor; // if the nonlinear update grows by more than this in one iteration, abort
+
+  bool clip_NKA; 
 
 
   bdf_nonlinear_solver_t nonlinear_solver;
