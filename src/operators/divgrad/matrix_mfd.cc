@@ -199,6 +199,8 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c] * (*Krel_face)[0][faces[m]];
+          std::cout << " Bff entry by " << Mff(m,n) << ", " << (*Krel_cell)[0][c]
+                    << ", " << (*Krel_face)[0][faces[m]] << std::endl;
         }
       }
     }
@@ -727,7 +729,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = flux->size("face",false);
 
-  std::vector<bool> flag(nfaces_owned, false);
+  std::vector<bool> done(nfaces_owned, false);
   const Epetra_MultiVector& soln_cells = *solution.ViewComponent("cell",false);
   const Epetra_MultiVector& soln_faces = *solution.ViewComponent("face",true);
   Epetra_MultiVector& flux_v = *flux->ViewComponent("face",false);
@@ -744,14 +746,14 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 
     for (int n=0; n!=nfaces; ++n) {
       int f = faces[n];
-      if (f < nfaces_owned && !flag[f]) {
+      if (f < nfaces_owned && !done[f]) {
         double s = 0.0;
         for (int m=0; m!=nfaces; ++m) {
           s += Aff_cells_[c](n, m) * dp[m];
         }
 
         flux_v[0][f] = s * dirs[n];
-        flag[f] = true;
+        done[f] = true;
 
       }
     }
@@ -759,7 +761,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 
   // ensure post-condition - we got them all
   for (int f=0; f!=nfaces_owned; ++f) {
-    ASSERT(flag[f]);
+    ASSERT(done[f]);
   }
 
 }

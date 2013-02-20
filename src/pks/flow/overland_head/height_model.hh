@@ -18,7 +18,7 @@ namespace FlowRelations {
 class HeightModel {
 public:
   explicit
-  HeightModel(Teuchos::ParameterList& plist);
+  HeightModel(Teuchos::ParameterList& plist) {}
 
   double Height(double pres, double rho, double p_atm, double g_z) {
     return (pres - p_atm) / (rho * g_z);

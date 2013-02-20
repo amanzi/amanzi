@@ -27,6 +27,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
 #include "overland_head_water_content_evaluator.hh"
+#include "height_model.hh"
 #include "height_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
 
@@ -434,7 +435,7 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     upwind_conductivity_f.PutScalar(0.0);
     upwind_conductivity_c.PutScalar(1.0);
 
-    // First do the boundary
+    // First do the boundary.
     AmanziMesh::Entity_ID_List cells;
     int nfaces = upwind_conductivity_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
@@ -445,6 +446,18 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         upwind_conductivity_f[0][f] =
           cond_model_->Conductivity(depth[0][f], slope[0][c], coef[0][c]);
       }
+    }
+
+    // Patch up zero-gradient case, which should not upwind.
+    const Epetra_MultiVector& conductivity_c =
+        *S->GetFieldData("overland_conductivity")->ViewComponent("cell",false);
+    for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+         bc!=bc_zero_gradient_->end(); ++bc) {
+      int f = bc->first;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      int c = cells[0];
+      upwind_conductivity_f[0][f] = conductivity_c[0][c];
     }
 
     // Then upwind.  This overwrites the boundary if upwinding says so.
@@ -492,7 +505,7 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 
   // pressure BCs require calculating head(pressure)
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
-  const Epetra_Vector& gravity = S->GetConstantVectorData("gravity");
+  const Epetra_Vector& gravity = *S->GetConstantVectorData("gravity");
   double gz = gravity[2];
   S->GetFieldEvaluator("surface_mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
   const Epetra_MultiVector& rho = *S->GetFieldData("surface_mass_density_liquid")
@@ -503,7 +516,7 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     int f = bc->first;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT( cells.size()==1 ) ;
-    double height = heigth_model_->Height(bc->second, rho[0][cells[0]], p_atm, gz);
+    double height = height_model_->Height(bc->second, rho[0][cells[0]], p_atm, gz);
 
     bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = height + elevation[0][f];
@@ -516,6 +529,15 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
+
+  // zero gradient: grad h = 0 implies that q = -k grad z
+  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+       bc!=bc_zero_gradient_->end(); ++bc) {
+    int f = bc->first;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_values_[f] = 0.;
+  }
+
 }
 
 
@@ -541,7 +563,7 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
 
   // pressure BCs require calculating head(pressure)
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
-  const Epetra_Vector& gravity = S->GetConstantVectorData("gravity");
+  const Epetra_Vector& gravity = *S->GetConstantVectorData("gravity");
   double gz = gravity[2];
   S->GetFieldEvaluator("surface_mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
   const Epetra_MultiVector& rho = *S->GetFieldData("surface_mass_density_liquid")
@@ -552,7 +574,7 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
     int f = bc->first;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT( cells.size()==1 ) ;
-    double height = heigth_model_->Height(bc->second, rho[0][cells[0]], p_atm, gz);
+    double height = height_model_->Height(bc->second, rho[0][cells[0]], p_atm, gz);
 
     bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = height;
@@ -565,16 +587,27 @@ void OverlandHeadFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>
     bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
+
+  // zero gradient: grad h = 0 implies that q = -k grad z
+  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+       bc!=bc_zero_gradient_->end(); ++bc) {
+    int f = bc->first;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_values_[f] = 0.;
+  }
+
 }
 
 
 void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
-  // Attempt of a hack to deal with zero rel perm
+  // If the rel perm is 0, the face value drops out and is unconstrained.
+  // Therefore we set it to Dirichlet to eliminate it from the system.
   double eps = 1.e-30;
   const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
       ->ViewComponent("face",false);
   Teuchos::RCP<CompositeVector> relperm =
       S->GetFieldData("upwind_overland_conductivity", name_);
+
   for (int f=0; f!=relperm->size("face"); ++f) {
     if ((*relperm)("face",f) < eps) {
       if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
@@ -586,6 +619,50 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
       }
     }
   }
+
+  // Now we can safely calculate q = -k grad z for zero-gradient problems
+  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<double> dp;
+  std::vector<int> dirs;
+
+  const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")
+      ->ViewComponent("cell",false);
+
+  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+       bc!=bc_zero_gradient_->end(); ++bc) {
+    int f = bc->first;
+    if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      AmanziMesh::Entity_ID c = cells[0];
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      dp.resize(faces.size());
+      for (int n=0; n!=faces.size(); ++n) {
+        dp[n] = elevation[0][faces[n]] - elevation_c[0][c];
+      }
+      AmanziMesh::Entity_ID_List::iterator my_n =
+          std::find(faces.begin(), faces.end(), f);
+      ASSERT(my_n !=faces.end());
+
+      const Teuchos::SerialDenseMatrix<int,double>& Aff = matrix_->Aff_cells()[c];
+      bc_values_[f] = 0.;
+      for (int m=0; m!=faces.size(); ++m) {
+        bc_values_[f] += Aff(*my_n,m) * dp[m];
+      }
+
+      bc_values_[f] *= dirs[*my_n];
+
+      *out_ << "BC grad h = 0: f" << f << ", c" << c << ", val=" << bc_values_[f] <<  std::endl;
+      *out_ << "  dp = ";
+      for (int m=0; m!=faces.size(); ++m) *out_ << dp[m] << ", ";
+      *out_ << std::endl << "  Aff = ";
+      for (int m=0; m!=faces.size(); ++m) *out_ << Aff(*my_n, m) << ", ";
+      *out_ << std::endl;
+    }
+  }
+
 };
 
 
@@ -625,6 +702,43 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
       }
     }
   }
+
+  // Now we can safely calculate q = -k grad z for zero-gradient problems
+  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<double> dp;
+  std::vector<int> dirs;
+
+  const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")
+      ->ViewComponent("cell",false);
+
+  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+       bc!=bc_zero_gradient_->end(); ++bc) {
+    int f = bc->first;
+    if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      AmanziMesh::Entity_ID c = cells[0];
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      dp.resize(faces.size());
+      for (int n=0; n!=faces.size(); ++n) {
+        dp[n] = elevation[0][faces[n]] - elevation_c[0][c];
+      }
+      AmanziMesh::Entity_ID_List::iterator my_n =
+          std::find(faces.begin(), faces.end(), f);
+      ASSERT(my_n !=faces.end());
+
+      const Teuchos::SerialDenseMatrix<int,double>& Aff = matrix_->Aff_cells()[c];
+      bc_values_[f] = 0.;
+      for (int m=0; m!=faces.size(); ++m) {
+        bc_values_[f] += Aff(*my_n,m) * dp[m];
+      }
+
+      bc_values_[f] *= dirs[*my_n];
+    }
+  }
+
 };
 
 
@@ -691,18 +805,22 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
+  bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
 
+  // update the stiffness matrix
+  Teuchos::RCP<const CompositeVector> cond =
+    S_next_->GetFieldData("upwind_overland_conductivity", name_);
+  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
+
   // Patch up BCs in the case of zero conductivity
   FixBCsForConsistentFaces_(S_next_.ptr());
 
   // Grab needed data.
-  Teuchos::RCP<const CompositeVector> cond =
-    S_next_->GetFieldData("upwind_overland_conductivity", name_);
   S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev","pres_elev");
 
@@ -717,14 +835,10 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   ASSERT(cells.size() == 1);
   std::cout << "Surface cell 3 is subsurface face " << f
             << " with internal cell " << cells[0] << std::endl;
-
-
-
 #endif
 
   // Update the preconditioner with darcy and gravity fluxes
   // skip accumulation terms, they're not needed
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
   mfd_preconditioner_->CreateMFDrhsVectors();
 
   // Assemble

@@ -16,10 +16,6 @@ namespace Flow {
 // -------------------------------------------------------------
 void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
-  // update the stiffness matrix
-  Teuchos::RCP<const CompositeVector> cond =
-    S->GetFieldData("upwind_overland_conductivity", name_);
-  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
 
   // update the potential
   S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
