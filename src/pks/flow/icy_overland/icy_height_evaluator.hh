@@ -16,6 +16,8 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+class IcyHeightModel;
+
 class IcyHeightEvaluator : public HeightEvaluator {
 
  public:
@@ -25,6 +27,8 @@ class IcyHeightEvaluator : public HeightEvaluator {
   IcyHeightEvaluator(const IcyHeightEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+
+  Teuchos::RCP<IcyHeightModel> get_IcyModel() { return icy_model_; }
 
  protected:
   void InitializeFromPlist_();
@@ -38,6 +42,7 @@ class IcyHeightEvaluator : public HeightEvaluator {
  protected:
   Key dens_ice_key_;
   Key unfrozen_frac_key_;
+  Teuchos::RCP<IcyHeightModel> icy_model_;
 
 };
 

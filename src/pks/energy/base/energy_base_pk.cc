@@ -176,14 +176,16 @@ void EnergyBase::UpdateBoundaryConditions_() {
     bc_values_[n] = 0.0;
   }
 
-  Functions::BoundaryFunction::Iterator bc;
-  for (bc=bc_temperature_->begin(); bc!=bc_temperature_->end(); ++bc) {
+
+  for (Functions::BoundaryFunction::Iterator bc=bc_temperature_->begin();
+       bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
     bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
-  for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
+  for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
+       bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
     bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;

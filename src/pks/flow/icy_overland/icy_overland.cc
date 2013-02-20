@@ -17,6 +17,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "unfrozen_effective_depth_evaluator.hh"
 #include "unfrozen_fraction_evaluator.hh"
 #include "unfrozen_fraction_model.hh"
+#include "icy_height_model.hh"
 #include "icy_height_evaluator.hh"
 
 
@@ -117,6 +118,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<FlowRelations::IcyHeightEvaluator> height_evaluator =
       Teuchos::rcp(new FlowRelations::IcyHeightEvaluator(height_plist));
   S->SetFieldEvaluator("ponded_depth", height_evaluator);
+  icy_height_model_ = height_evaluator->get_IcyModel();
 }
 
 
@@ -182,6 +184,18 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       }
     }
 
+    // Patch up zero-gradient case, which should not upwind.
+    const Epetra_MultiVector& conductivity_c =
+        *S->GetFieldData("overland_conductivity")->ViewComponent("cell",false);
+    for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+         bc!=bc_zero_gradient_->end(); ++bc) {
+      int f = bc->first;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      int c = cells[0];
+      upwind_conductivity_f[0][f] = conductivity_c[0][c];
+    }
+
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
 
@@ -193,12 +207,84 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       upwind_conductivity_c[0][c] *= n_liq[0][c];
     }
 
+    std::cout << "cond in update perm = " << upwind_conductivity_f[0][11] << std::endl;
+    
     // Communicate.  This could be done later, but i'm not exactly sure where, so
     // we'll do it here.
     upwind_conductivity->ScatterMasterToGhosted();
   }
 
   return update_perm;
+}
+
+// -----------------------------------------------------------------------------
+// Evaluate boundary conditions at the current time.
+// -----------------------------------------------------------------------------
+void IcyOverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
+  AmanziMesh::Entity_ID_List cells;
+
+  const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
+      ->ViewComponent("face",false);
+
+  // initialize all as null
+  for (int n=0; n!=bc_markers_.size(); ++n) {
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
+    bc_values_[n] = 0.0;
+  }
+
+  // Head BCs are standard Dirichlet, plus elevation
+  for (Functions::BoundaryFunction::Iterator bc=bc_head_->begin();
+       bc!=bc_head_->end(); ++bc) {
+    int f = bc->first;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+    bc_values_[f] = bc->second + elevation[0][f];
+  }
+
+  // pressure BCs require calculating head(pressure)
+  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
+  const Epetra_Vector& gravity = *S->GetConstantVectorData("gravity");
+  double gz = -gravity[2];
+  S->GetFieldEvaluator("surface_mass_density_liquid")->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& rho_l = *S->GetFieldData("surface_mass_density_liquid")
+      ->ViewComponent("cell",false);
+  S->GetFieldEvaluator("surface_mass_density_ice")->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& rho_i = *S->GetFieldData("surface_mass_density_ice")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
+      ->ViewComponent("face", false);
+
+  for (Functions::BoundaryFunction::Iterator bc=bc_pressure_->begin();
+       bc!=bc_pressure_->end(); ++bc) {
+    int f = bc->first;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT( cells.size()==1 ) ;
+
+    double eta = uf_model_->UnfrozenFraction(temp[0][f]);
+    double height = icy_height_model_->Height(bc->second, eta, rho_l[0][cells[0]],
+            rho_i[0][cells[0]], p_atm, gz);
+    *out_ << "BC pressure (f" << f << "): pres = " << bc->second << ", eta = "
+          << eta << " height = " << height << std::endl;
+
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+    bc_values_[f] = height + elevation[0][f];
+  }
+
+  // Standard Neumann data for flux
+  for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
+       bc!=bc_flux_->end(); ++bc) {
+    int f = bc->first;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_values_[f] = bc->second;
+  }
+
+  // zero gradient: grad h = 0 implies that q = -k grad z
+  for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+       bc!=bc_zero_gradient_->end(); ++bc) {
+    int f = bc->first;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_values_[f] = 0.;
+  }
+
 }
 
 
