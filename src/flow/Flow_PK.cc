@@ -143,7 +143,7 @@ void Flow_PK::ProcessBoundaryConditions(
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
       } else {
-        bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
+        bc_model[f] = FLOW_BC_FACE_PRESSURE;
         bc_values[f][0] = atm_pressure;
         bc_values[f][1] = bc->second * rainfall_factor[f];
         flag_essential_bc = 1;
@@ -155,11 +155,11 @@ void Flow_PK::ProcessBoundaryConditions(
       double preg = FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
       double pmin = atm_pressure;
       double pmax = atm_pressure + preg;
-      if (pressure_faces[f] < pmax) {
+      if (pressure_faces[f] < pmin) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
-      } else if (pressure_faces[f] > pmin) {
-        bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
+      } else if (pressure_faces[f] > pmax) {
+        bc_model[f] = FLOW_BC_FACE_MIXED;
         bc_values[f][0] = atm_pressure;
         bc_values[f][1] = bc->second * rainfall_factor[f];
         flag_essential_bc = 1;
@@ -225,8 +225,7 @@ void Flow_PK::ApplyEssentialBoundaryConditions(std::vector<int>& bc_model,
 {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-        bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+    if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
       pressure_faces[f] = bc_values[f][0];
     }
   }

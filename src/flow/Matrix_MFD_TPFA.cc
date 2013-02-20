@@ -413,8 +413,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
   //   cout<<endl;
   // }
   } else if (mcells == 1) {
-    if ((bc_models[face_id] == FLOW_BC_FACE_PRESSURE) ||
-        (bc_models[face_id] == FLOW_BC_FACE_PRESSURE_SEEPAGE)) {                   
+    if (bc_models[face_id] == FLOW_BC_FACE_PRESSURE) {                   
 		  pres[1] = bc_values[face_id][0];
 
       dphi = pres[0] - pres[1] + grn;

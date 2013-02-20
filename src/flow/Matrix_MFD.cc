@@ -292,8 +292,7 @@ void Matrix_MFD::ApplyBoundaryConditions(
       int f = faces[n];
       double value = bc_values[f][0];
 
-      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
         for (int m = 0; m < nfaces; m++) {
           Ff[m] -= Bff(m, n) * value;
           Bff(n, m) = Bff(m, n) = 0.0;
@@ -305,16 +304,16 @@ void Matrix_MFD::ApplyBoundaryConditions(
         Ff[n] = value;
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
         Ff[n] -= value * mesh_->face_area(f);
-      } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {  // Not used yet
+      } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
         double area = mesh_->face_area(f);
         Ff[n] += value * area;
         Bff(n, n) += bc_values[f][1] * area;
       }
 
-      // Additional work required for seepage boundary condition.
-      if (bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
-        Fc -= bc_values[f][1] * mesh_->face_area(f);
-      }
+      // If one wants to deposit infiltration in soil.
+      // if (bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      //   Fc -= bc_values[f][1] * mesh_->face_area(f);
+      // }
     }
   }
 }
@@ -464,8 +463,7 @@ void Matrix_MFD::AssembleSchurComplement(
 
     for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
       int f = faces[n];
-      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
         for (int m = 0; m < nfaces; m++) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }

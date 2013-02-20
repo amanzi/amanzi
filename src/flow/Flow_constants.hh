@@ -27,7 +27,7 @@ const int FLOW_STATE_COPY = 2;  // add ghost data to some arrays
 
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
-const int FLOW_BC_FACE_PRESSURE_SEEPAGE = 2; 
+// const int FLOW_BC_FACE_PRESSURE_SEEPAGE = 2; 
 const int FLOW_BC_FACE_FLUX = 3;
 const int FLOW_BC_FACE_MIXED = 4;
 
@@ -35,7 +35,7 @@ const int FLOW_BC_SUBMODEL_RAINFALL = 1;
 const int FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN = 2;
 const int FLOW_BC_SUBMODEL_SEEPAGE_FACT = 4;
 const int FLOW_BC_SUBMODEL_HEAD_RELATIVE = 8;
-const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 100;  // [Pa]
+const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 1000;  // [Pa]
 
 const int FLOW_SOLVER_NKA = 1;
 const int FLOW_SOLVER_NEWTON = 2;
