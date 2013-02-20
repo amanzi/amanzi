@@ -199,8 +199,8 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c] * (*Krel_face)[0][faces[m]];
-          std::cout << " Bff entry by " << Mff(m,n) << ", " << (*Krel_cell)[0][c]
-                    << ", " << (*Krel_face)[0][faces[m]] << std::endl;
+//          std::cout << " Bff entry by " << Mff(m,n) << ", " << (*Krel_cell)[0][c]
+//                    << ", " << (*Krel_face)[0][faces[m]] << std::endl;
         }
       }
     }
@@ -321,10 +321,10 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
 
-      if (f == 11) {
-        std::cout << "Face 11 (BC,val) = " << bc_markers[f] << ", "
-                  << bc_values[f] << std::endl;
-      }
+//      if (f == 11) {
+//        std::cout << "Face 11 (BC,val) = " << bc_markers[f] << ", "
+//                  << bc_values[f] << std::endl;
+//      }
     }
   }
 }
@@ -597,9 +597,9 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
   Apply(solution, residual);
   residual->Update(-1.0, *rhs_, 1.0);
 
-  std::cout << "  soln = " << (solution)("cell",0) << ", " << (solution)("face",0) << std::endl;
-  std::cout << "  rhs = " << (*rhs_)("cell",0) << ", " << (*rhs_)("face",0) << std::endl;
-  std::cout << "  res = " << (*residual)("cell",0) << ", " << (*residual)("face",0) << std::endl;
+//  std::cout << "  soln = " << (solution)("cell",0) << ", " << (solution)("face",0) << std::endl;
+//  std::cout << "  rhs = " << (*rhs_)("cell",0) << ", " << (*rhs_)("face",0) << std::endl;
+//  std::cout << "  res = " << (*residual)("cell",0) << ", " << (*residual)("face",0) << std::endl;
 }
 
 
