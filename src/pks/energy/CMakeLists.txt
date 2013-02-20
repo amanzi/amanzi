@@ -8,7 +8,6 @@
 # ATS include directories
 
 # additional common components
-add_subdirectory(bc_factory)
 add_subdirectory(constitutive_relations)
 
 # PKs

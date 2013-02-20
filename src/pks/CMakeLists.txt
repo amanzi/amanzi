@@ -15,6 +15,7 @@ add_library(pk_bases
   pk_default_base.cc
   pk_factory.cc)
 
+add_subdirectory(bc_factory)
 add_subdirectory(mpc)
 add_subdirectory(test_pks)
 add_subdirectory(energy)
