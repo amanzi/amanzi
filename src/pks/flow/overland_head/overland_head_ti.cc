@@ -85,6 +85,11 @@ void OverlandHeadFlow::fun( double t_old,
   // update the rel perm according to the scheme of choice.
   UpdatePermeabilityData_(S_next_.ptr());
 
+  // update the stiffness matrix
+  Teuchos::RCP<const CompositeVector> cond =
+    S_next_->GetFieldData("upwind_overland_conductivity", name_);
+  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
+
   // Patch up BCs in the case of zero conductivity
   FixBCsForOperator_(S_next_.ptr());
 
@@ -96,9 +101,6 @@ void OverlandHeadFlow::fun( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-  Teuchos::RCP<const CompositeVector> cond =
-      S_next_->GetFieldData("upwind_overland_conductivity", name_);
-
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  cond0 (diff): " << (*cond)("cell",cnum0) << " "
           << (*cond)("face",faces0[0]) << " " << (*cond)("face",faces0[1]) << " "
