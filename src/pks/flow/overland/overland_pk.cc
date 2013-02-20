@@ -13,7 +13,6 @@ Authors: Gianmarco Manzini
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 #include "Point.hh"
 
 #include "composite_vector_function.hh"
@@ -40,7 +39,6 @@ RegisteredPKFactory<OverlandFlow> OverlandFlow::reg_("overland flow");
 // -------------------------------------------------------------
 void OverlandFlow::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
-  CreateMesh_(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -61,9 +59,9 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     ->SetComponents(names2, locations2, num_dofs2);
 
   // -- owned secondary variables, no evaluator used
-  S->RequireField("overland_flux", name_)->SetMesh(S->GetMesh("surface"))
+  S->RequireField("surface_flux", name_)->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("overland_velocity", name_)->SetMesh(S->GetMesh("surface"))
+  S->RequireField("surface_velocity", name_)->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // -- cell volume and evaluator
@@ -77,7 +75,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_flux_ = bc_factory.CreateMassFlux();
 
   // coupling to subsurface
-  coupled_to_surface_via_residual_ = plist_.get<bool>("coupled to surface via residual", false);
+  coupled_to_subsurface_via_residual_ = plist_.get<bool>("coupled to subsurface via residual", false);
 
   // Admissibility allows negative heights of magnitude < surface_head_eps for
   // non-monotonic methods.
@@ -95,19 +93,17 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
-  bool symmetric = false;
-  matrix_->SetSymmetryProperty(symmetric);
+  symmetric_ = false;
+  matrix_->SetSymmetryProperty(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
+  matrix_->CreateMFDmassMatrices(Teuchos::null);
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
-  preconditioner_->SetSymmetryProperty(symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices();
-  preconditioner_->InitPreconditioner(mfd_pc_plist);
+  Teuchos::RCP<Operators::Matrix> precon =
+    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  set_preconditioner(precon);
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
-  modify_predictor_with_consistent_faces_ =
-    plist_.get<bool>("modify predictor with consistent faces", false);
 
   // how often to update the fluxes?
   std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
@@ -143,11 +139,11 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "face";
 
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField("elevation")->SetMesh(mesh_)->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
+  S->RequireField("slope_magnitude")->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField("pres_elev")->SetMesh(mesh_)->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
@@ -185,18 +181,20 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source", source_evaluator);
   }
 
-  // -- coupling term evaluator
-  if (plist_.isSublist("subsurface coupling evaluator")) {
+  // -- source from subsurface evaluator
+  if (plist_.isSublist("source from subsurface evaluator")) {
     is_coupling_term_ = true;
     S->RequireField("overland_source_from_subsurface")
         ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList source_plist = plist_.sublist("subsurface coupling evaluator");
-    source_plist.set("surface mesh key", "surface");
-    source_plist.set("subsurface mesh key", "domain");
-    // NOTE: this should change to "overland_molar_density_liquid" or
-    // whatever when such a thing exists.
-    source_plist.set("source key", "overland_source_from_subsurface");
+    Teuchos::ParameterList source_plist = plist_.sublist("source from subsurface evaluator");
+    if (!source_plist.isParameter("surface mesh key"))
+      source_plist.set("surface mesh key", "surface");
+    if (!source_plist.isParameter("subsurface mesh key"))
+      source_plist.set("subsurface mesh key", "domain");
+    if (!source_plist.isParameter("source key"))
+      source_plist.set("source key", "overland_source_from_subsurface");
+    source_plist.set("volume basis", true);
 
     Teuchos::RCP<FieldEvaluator> source_evaluator =
         S->RequireFieldEvaluator("overland_source_from_subsurface", source_plist);
@@ -213,7 +211,7 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   bc_pressure_->Compute(S->time());
@@ -224,77 +222,8 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
-  S->GetField("overland_flux", name_)->set_initialized();
-  S->GetField("overland_velocity", name_)->set_initialized();
-
-  // Initialize operators.
-  matrix_->CreateMFDmassMatrices(Teuchos::null);
-  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-};
-
-
-void OverlandFlow::CreateMesh_(const Teuchos::Ptr<State>& S) {
-  bool running_timers(false);
-
-  // Create mesh
-  if (S->GetMesh()->space_dimension() == 3) {
-    // The domain mesh is a 3D volume mesh or a 3D surface mesh -- construct
-    // the surface mesh.
-    // -- Ensure the domain mesh is MSTK.
-    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mesh =
-      Teuchos::rcp_dynamic_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
-
-    if (mesh == Teuchos::null) {
-      Errors::Message message("Overland Flow PK requires surface mesh, which is currently only supported by MSTK.  Make the domain mesh an MSTK mesh.");
-      Exceptions::amanzi_throw(message);
-    }
-
-    // -- Start the clock
-    running_timers = true;
-    //    Teuchos::RCP<Teuchos::Time> meshtime = Teuchos::TimeMonitor::getNewCounter("surface mesh creation");
-    //    Teuchos::TimeMonitor timer(*meshtime);
-
-    // -- Check that the surface mesh has a subset
-    std::vector<std::string> setnames;
-    if (plist_.isParameter("surface sideset name")) {
-      setnames.push_back(plist_.get<std::string>("surface sideset name"));
-    } else {
-      setnames = plist_.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
-    }
-
-    // -- Call the MSTK constructor to rip off the surface of the MSTK domain
-    // -- mesh.
-    Teuchos::RCP<AmanziMesh::Mesh> surface_mesh;
-
-    if (mesh->cell_dimension() == 3) {
-      Teuchos::RCP<AmanziMesh::Mesh> surface_mesh_3d = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,false,false));
-      S->RegisterMesh("surface_3d", surface_mesh_3d);
-
-      surface_mesh = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::FACE,true,false));
-    } else {
-      S->RegisterMesh("surface_3d", mesh);
-
-      surface_mesh = Teuchos::rcp(
-          new AmanziMesh::Mesh_MSTK(*mesh,setnames,AmanziMesh::CELL,true,false));
-    }
-
-    // -- push the mesh into state
-    S->RegisterMesh("surface", surface_mesh);
-    mesh_ = surface_mesh;
-    standalone_mode_ = false;
-
-  } else if (S->GetMesh()->space_dimension() == 2) {
-    // The domain mesh is already a 2D mesh, so simply register it as the surface
-    // mesh as well.
-    S->RegisterMesh("surface", S->GetMesh());
-    mesh_ = S->GetMesh();
-    standalone_mode_ = true;
-  } else {
-    Errors::Message message("Invalid mesh dimension for overland flow.");
-    Exceptions::amanzi_throw(message);
-  }
+  S->GetField("surface_flux", name_)->set_initialized();
+  S->GetField("surface_velocity", name_)->set_initialized();
 };
 
 
@@ -319,7 +248,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux", name_);
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
     matrix_->DeriveFlux(*potential, flux.ptr());
   }
 };
@@ -331,7 +260,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   if (update_flux_ == UPDATE_FLUX_VIS) {
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("overland_flux",name_);
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux",name_);
     Teuchos::RCP<const CompositeVector> conductivity =
         S->GetFieldData("upwind_overland_conductivity");
     matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
@@ -342,8 +271,8 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
-    Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("overland_flux");
-    Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("overland_velocity", name_);
+    Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("surface_flux");
+    Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("surface_velocity", name_);
     matrix_->DeriveCellVelocity(*flux, velocity.ptr());
 
     Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);
@@ -398,7 +327,7 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     AmanziMesh::Entity_ID_List cells;
     int nfaces = upwind_conductivity->size("face", true);
     for (int f=0; f!=nfaces; ++f) {
-      if (bc_markers_[f] != Operators::MFD_BC_NULL) {
+      if (bc_markers_[f] != Operators::MATRIX_BC_NULL) {
         upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
         ASSERT(cells.size() == 1);
         int c = cells[0];
@@ -428,7 +357,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
   for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MFD_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -436,7 +365,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   int count = 0;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second + (*elevation)("face",f);
     count ++;
   }
@@ -446,17 +375,17 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     int f = bc->first;
 
     cells.clear();
-    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = (*pres)("cell",cells[0]) + (*elevation)("face",f);
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
 };
@@ -467,7 +396,7 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
   for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MFD_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -475,7 +404,7 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S)
   int count = 0;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;// + (*elevation)("face",f);
     count ++;
   }
@@ -485,17 +414,17 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S)
     int f = bc->first;
 
     cells.clear();
-    S->GetMesh("surface")->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     ASSERT( ncells==1 ) ;
 
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = (*pres)("cell",cells[0]); // + (*elevation)("face",f);
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
 
@@ -505,7 +434,7 @@ void OverlandFlow::UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S)
       S->GetFieldData("upwind_overland_conductivity", name_);
   for (int f=0; f!=relperm->size("face"); ++f) {
     if ((*relperm)("face",f) < eps) {
-      bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = 0.0;
       //      (*relperm)("face",f) = 1.0;
     }
@@ -520,7 +449,7 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
   int nfaces = pres->size("face",true);
   for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
       (*pres)("face",f) = bc_values_[f];
     }
   }

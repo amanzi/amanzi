@@ -7,6 +7,7 @@
 #include "errors.hh"
 #include "Epetra_FECrsGraph.h"
 #include "matrix_mfd.hh"
+#include "matrix_mfd_tpfa.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -14,8 +15,21 @@ namespace Operators {
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     plist_(plist), mesh_(mesh) {
+  InitializeFromPList_();
+}
 
-  std::string methodstring = plist.get<string>("MFD method");
+
+MatrixMFD::MatrixMFD(const MatrixMFD& other) :
+    plist_(other.plist_), mesh_(other.mesh_) {
+  InitializeFromPList_();
+}
+
+
+void MatrixMFD::InitializeFromPList_() {
+  std::string methodstring = plist_.get<string>("MFD method");
+  method_ = MFD_NULL;
+
+  // standard MFD
   if (methodstring == "polyhedra") {
     method_ = MFD_POLYHEDRA;
   } else if (methodstring == "polyhedra monotone") {
@@ -30,28 +44,30 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
     method_ = MFD_OPTIMIZED;
   }
 
-  std::string precmethodstring = plist.get<string>("preconditioner", "ML");
-  if (precmethodstring == "ML") {
-    prec_method_ = TRILINOS_ML;
-  } else if (precmethodstring == "ILU" ) {
-    prec_method_ = TRILINOS_ILU;
-  } else if (precmethodstring == "Block ILU" ) {
-    prec_method_ = TRILINOS_BLOCK_ILU;
+  if (plist_.isParameter("preconditioner")) {
+    std::string precmethodstring = plist_.get<string>("preconditioner");
+    if (precmethodstring == "ML") {
+      prec_method_ = TRILINOS_ML;
+    } else if (precmethodstring == "ILU" ) {
+      prec_method_ = TRILINOS_ILU;
+    } else if (precmethodstring == "Block ILU" ) {
+      prec_method_ = TRILINOS_BLOCK_ILU;
 #ifdef HAVE_HYPRE
-  } else if (precmethodstring == "HYPRE AMG") {
-    prec_method_ = HYPRE_AMG;
-  } else if (precmethodstring == "HYPRE Euclid") {
-    prec_method_ = HYPRE_EUCLID;
-  } else if (precmethodstring == "HYPRE ParaSails") {
-    prec_method_ = HYPRE_EUCLID;
+    } else if (precmethodstring == "HYPRE AMG") {
+      prec_method_ = HYPRE_AMG;
+    } else if (precmethodstring == "HYPRE Euclid") {
+      prec_method_ = HYPRE_EUCLID;
+    } else if (precmethodstring == "HYPRE ParaSails") {
+      prec_method_ = HYPRE_EUCLID;
 #endif
-  } else {
+    } else {
 #ifdef HAVE_HYPRE
-    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
+      Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
 #else
-    Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, and ILU");
+      Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, and ILU");
 #endif
-    Exceptions::amanzi_throw(msg);
+      Exceptions::amanzi_throw(msg);
+    }
   }
 }
 
@@ -106,7 +122,7 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
     } else {
       ok = mfd.darcy_mass_inverse(c, Kc, Mff);
     }
-    
+
     Mff_cells_.push_back(Mff);
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
@@ -128,7 +144,7 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
 /* ******************************************************************
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
-void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel){
+void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel) {
   int dim = mesh_->space_dimension();
 
   WhetStone::MFD3D mfd(mesh_);
@@ -271,7 +287,9 @@ void MatrixMFD::CreateMFDrhsVectors() {
 void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
         const std::vector<double>& bc_values) {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
 
   for (int c=0; c!=ncells; ++c) {
@@ -287,7 +305,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
 
     for (int n=0; n!=nfaces; ++n) {
       int f=faces[n];
-      if (bc_markers[f] == MFD_BC_DIRICHLET) {
+      if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
         for (int m=0; m!=nfaces; ++m) {
           Ff[m] -= Bff(m, n) * bc_values[f];
           Bff(n, m) = Bff(m, n) = 0.0;
@@ -297,8 +315,13 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
 
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
-      } else if (bc_markers[f] == MFD_BC_FLUX) {
+      } else if (bc_markers[f] == MATRIX_BC_FLUX) {
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
+      }
+
+      if (f == 11) {
+        std::cout << "Face 11 (BC,val) = " << bc_markers[f] << ", "
+                  << bc_values[f] << std::endl;
       }
     }
   }
@@ -346,8 +369,8 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
   Aff_->GlobalAssemble();
   Sff_->GlobalAssemble();
-  
-  
+
+
 
   if (flag_symmetry_) {
     Afc_ = Acf_;
@@ -356,10 +379,12 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   }
 
   std::vector<std::string> names(2);
-  names[0] = "cell"; names[1] = "face";
+  names[0] = "cell";
+  names[1] = "face";
 
   std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL; locations[1] = AmanziMesh::FACE;
+  locations[0] = AmanziMesh::CELL;
+  locations[1] = AmanziMesh::FACE;
 
   std::vector<int> num_dofs(2,1);
   rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
@@ -393,7 +418,7 @@ void MatrixMFD::AssembleGlobalMatrices() {
     (*Acc_)[c] = Acc_cells_[c];
     (*Acf_).ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
     (*Aff_).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
-    
+
     if (!flag_symmetry_)
       (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
   }
@@ -413,9 +438,9 @@ void MatrixMFD::AssembleGlobalMatrices() {
     }
   }
   rhs_->GatherGhostedToMaster("face");
-  
-//   exit(0);
-  
+
+  //   exit(0);
+
 }
 
 
@@ -446,12 +471,12 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
 
     for (int n=0; n!=nfaces; ++n) {  // Symbolic boundary conditions
       int f=faces_LID[n];
-      if (bc_markers[f] == MFD_BC_DIRICHLET) {
+      if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
         for (int m=0; m!=nfaces; ++m) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }
     }
-   
+
     Epetra_IntSerialDenseVector faces_GID(nfaces);
     for (int n=0; n!=nfaces; ++n) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
     (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
@@ -478,7 +503,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
  * Parallel matvec product A * X.
  ****************************************************************** */
 void MatrixMFD::Apply(const CompositeVector& X,
-                     const Teuchos::Ptr<CompositeVector>& Y) const {
+                      const Teuchos::Ptr<CompositeVector>& Y) const {
   int ierr;
 
   // Face unknowns:  Yf = Aff_ * Xf + Afc_ * Xc
@@ -514,7 +539,7 @@ void MatrixMFD::Apply(const CompositeVector& X,
  *
  ****************************************************************** */
 void MatrixMFD::ApplyInverse(const CompositeVector& X,
-                     const Teuchos::Ptr<CompositeVector>& Y) const {
+                             const Teuchos::Ptr<CompositeVector>& Y) const {
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));
   Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
@@ -537,6 +562,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #endif
   }
+
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
 
@@ -555,7 +581,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
  * Linear algebra operations with matrices: r = f - A * x
  ****************************************************************** */
 void MatrixMFD::ComputeResidual(const CompositeVector& solution,
-          const Teuchos::Ptr<CompositeVector>& residual) const {
+        const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(1.0, *rhs_, -1.0);
 }
@@ -568,32 +594,36 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(-1.0, *rhs_, 1.0);
+
+  std::cout << "  soln = " << (solution)("cell",0) << ", " << (solution)("face",0) << std::endl;
+  std::cout << "  rhs = " << (*rhs_)("cell",0) << ", " << (*rhs_)("face",0) << std::endl;
+  std::cout << "  res = " << (*residual)("cell",0) << ", " << (*residual)("face",0) << std::endl;
 }
 
 
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-void MatrixMFD::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
+void MatrixMFD::InitPreconditioner() {
   if (prec_method_ == TRILINOS_ML) {
-    ml_plist_ =  prec_plist.sublist("ML Parameters");
+    ml_plist_ =  plist_.sublist("ML Parameters");
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ml_plist_, false));
   } else if (prec_method_ == TRILINOS_ILU) {
-    ilu_plist_ = prec_plist.sublist("ILU Parameters");
+    ilu_plist_ = plist_.sublist("ILU Parameters");
   } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    ifp_plist_ = prec_plist.sublist("Block ILU Parameters");
+    ifp_plist_ = plist_.sublist("Block ILU Parameters");
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
-    // read some boomer amg parameters 
-    hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
+    // read some boomer amg parameters
+    hypre_plist_ = plist_.sublist("HYPRE AMG Parameters");
     hypre_ncycles_ = hypre_plist_.get<int>("number of cycles",5);
     hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
     hypre_tol_ = hypre_plist_.get<double>("tolerance",0.0);
     hypre_strong_threshold_ = hypre_plist_.get<double>("strong threshold",0.25);
   } else if (prec_method_ == HYPRE_EUCLID) {
-    hypre_plist_ = prec_plist.sublist("HYPRE Euclid Parameters");
+    hypre_plist_ = plist_.sublist("HYPRE Euclid Parameters");
   } else if (prec_method_ == HYPRE_PARASAILS) {
-    hypre_plist_ = prec_plist.sublist("HYPRE ParaSails Parameters");
+    hypre_plist_ = plist_.sublist("HYPRE ParaSails Parameters");
 #endif
   }
 }
@@ -626,21 +656,21 @@ void MatrixMFD::UpdatePreconditioner() {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
     functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_)); 
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_)); 
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
-    
+    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
+    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
+    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_));
+    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
+
     Teuchos::ParameterList hypre_list;
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
     hypre_list.set("NumFunctions", 8);
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs); 
-    
+    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
+
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
     IfpHypre_Sff_->Compute();
@@ -652,10 +682,10 @@ void MatrixMFD::UpdatePreconditioner() {
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
     hypre_list.set("NumFunctions", 0);
-    
+
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
-    IfpHypre_Sff_->Compute();    
+    IfpHypre_Sff_->Compute();
   } else if (prec_method_ == HYPRE_PARASAILS) {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
 
@@ -664,10 +694,10 @@ void MatrixMFD::UpdatePreconditioner() {
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
     hypre_list.set("NumFunctions", 0);
-    
+
     IfpHypre_Sff_->SetParameters(hypre_list);
     IfpHypre_Sff_->Initialize();
-    IfpHypre_Sff_->Compute();    
+    IfpHypre_Sff_->Compute();
 #endif
   }
 }
@@ -783,10 +813,10 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
 
 // development methods
 /* ******************************************************************
-* Reduce the pressure-lambda-system to lambda-system via ellimination
-* of the known pressure. Structure of the global system is preserved
-* but off-diagola blocks are zeroed-out.
-****************************************************************** */
+ * Reduce the pressure-lambda-system to lambda-system via ellimination
+ * of the known pressure. Structure of the global system is preserved
+ * but off-diagola blocks are zeroed-out.
+ ****************************************************************** */
 void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u) {
   Teuchos::RCP<Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> rhs_f = rhs_->ViewComponent("face", false);
@@ -815,6 +845,38 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
 #endif
   }
 }
+
+
+void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
+        const Teuchos::Ptr<CompositeVector>& Pu) {
+  Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
+  Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
+  const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
+  Epetra_MultiVector update_f(u_f);
+  Afc_->Multiply(true, *Pu_c, update_f);  // Afc is kept in the transpose form.
+  update_f.Update(1., u_f, -1.);
+
+  // Replace the schur complement so it can be used as a face-only system
+  *Sff_ = *Aff_;
+
+  // Update the preconditioner with a solver
+  UpdatePreconditioner();
+
+  // Use this entry to get appropriate faces.
+  int ierr;
+  if (prec_method_ == TRILINOS_ML) {
+    ierr = ml_prec_->ApplyInverse(update_f, Pu_f);
+  } else if (prec_method_ == TRILINOS_ILU) {
+    ierr = ilu_prec_->ApplyInverse(update_f, Pu_f);
+  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
+    ierr = ifp_prec_->ApplyInverse(update_f, Pu_f);
+#ifdef HAVE_HYPRE
+  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
+    ierr = IfpHypre_Sff_->ApplyInverse(update_f, Pu_f);
+#endif
+  }
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

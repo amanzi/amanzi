@@ -77,7 +77,9 @@ public:
   virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
 
   // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
+
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
 protected:
   // These must be provided by the deriving PK.
@@ -93,6 +95,7 @@ protected:
   // -- Add any source terms into the residual.
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
                            const Teuchos::Ptr<CompositeVector>& f) = 0;
+  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) = 0;
 
   // Standard methods
   virtual void SetupEnergy_(const Teuchos::Ptr<State>& S);
@@ -119,13 +122,11 @@ protected:
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
-  std::vector<double> bc_values_;
 
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // constraint on max dT
   double dT_max_;

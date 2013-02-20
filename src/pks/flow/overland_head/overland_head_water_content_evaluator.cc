@@ -26,6 +26,7 @@ OverlandHeadWaterContentEvaluator::OverlandHeadWaterContentEvaluator(Teuchos::Pa
   height_key_ = plist_.get<string>("height key", "ponded_depth");
   dependencies_.insert(height_key_);
 
+  //  dependencies_.insert(std::string("surface_cell_volume"));
 }
 
 
@@ -44,33 +45,41 @@ OverlandHeadWaterContentEvaluator::Clone() const {
 void OverlandHeadWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  Teuchos::RCP<const CompositeVector> height = S->GetFieldData(height_key_);
-  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
+  Epetra_MultiVector& res = *result->ViewComponent("cell",false);
+  const Epetra_MultiVector& height = *S->GetFieldData(height_key_)
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& dens = *S->GetFieldData(dens_key_)
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface_cell_volume")
+      ->ViewComponent("cell",false);
 
-  for (CompositeVector::name_iterator comp=result->begin();
-       comp!=result->end(); ++comp) {
-    Epetra_MultiVector& res_v = *result->ViewComponent(*comp,false);
-    const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
-    const Epetra_MultiVector& dens_v = *dens->ViewComponent(*comp,false);
-    res_v.Multiply(1.0, height_v, dens_v, 0.);
+  int ncells = res.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    res[0][c] = cv[0][c] * height[0][c] * dens[0][c];
   }
 }
 
 
 void OverlandHeadWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  Teuchos::RCP<const CompositeVector> height = S->GetFieldData(height_key_);
-  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
+
+  Epetra_MultiVector& res = *result->ViewComponent("cell",false);
+  const Epetra_MultiVector& height = *S->GetFieldData(height_key_)
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& dens = *S->GetFieldData(dens_key_)
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface_cell_volume")
+      ->ViewComponent("cell",false);
 
   if (wrt_key == height_key_) {
-    for (CompositeVector::name_iterator comp=result->begin();
-         comp!=result->end(); ++comp) {
-      *result->ViewComponent(*comp,false) = *dens->ViewComponent(*comp,false);
+    int ncells = res.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      res[0][c] = cv[0][c] * dens[0][c];
     }
   } else if (wrt_key == dens_key_) {
-    for (CompositeVector::name_iterator comp=result->begin();
-         comp!=result->end(); ++comp) {
-      *result->ViewComponent(*comp,false) = *height->ViewComponent(*comp,false);
+    int ncells = res.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      res[0][c] = cv[0][c] * height[0][c];
     }
   }
 }

@@ -19,13 +19,34 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
   my_key_ = plist_.get<std::string>("enthalpy key", "enthalpy_liquid");
   setLinePrefix(my_key_+std::string(" evaluator"));
 
-  dependencies_.insert(std::string("molar_density_liquid"));
-  dependencies_.insert(std::string("internal_energy_liquid"));
-  dependencies_.insert(std::string("pressure"));
+  // Set up my dependencies.
+  std::size_t end = my_key_.find_first_of("_");
+  std::string domain_name = my_key_.substr(0,end);
+  if (domain_name == std::string("enthalpy")) {
+    domain_name = std::string("");
+  } else {
+    domain_name = domain_name+std::string("_");
+  }
+
+  // -- pressure
+  pres_key_ = plist_.get<std::string>("pressure key",
+          domain_name+std::string("pressure"));
+  dependencies_.insert(pres_key_);
+
+  dens_key_ = plist_.get<std::string>("molar density key",
+          domain_name+std::string("molar_density_liquid"));
+  dependencies_.insert(dens_key_);
+
+  ie_key_ = plist_.get<std::string>("internal energy key",
+          domain_name+std::string("internal_energy_liquid"));
+  dependencies_.insert(ie_key_);
 };
 
 EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other) {};
+    SecondaryVariableFieldEvaluator(other),
+    pres_key_(other.pres_key_),
+    dens_key_(other.dens_key_),
+    ie_key_(other.ie_key_) {};
 
 Teuchos::RCP<FieldEvaluator>
 EnthalpyEvaluator::Clone() const {
@@ -35,9 +56,9 @@ EnthalpyEvaluator::Clone() const {
 
 void EnthalpyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
-  Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData("molar_density_liquid");
-  Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData("internal_energy_liquid");
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
+  Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(dens_key_);
+  Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData(ie_key_);
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {

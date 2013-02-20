@@ -13,7 +13,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 
 #include "pk_factory.hh"
-#include "overland.hh"
+#include "overland_head.hh"
 
 namespace Amanzi {
 
@@ -23,13 +23,13 @@ namespace Flow {
 
 namespace FlowRelations { class UnfrozenFractionModel; }
 
-class IcyOverlandFlow : public OverlandFlow {
+class IcyOverlandFlow : public OverlandHeadFlow {
 
 public:
   IcyOverlandFlow(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, solution),
-      OverlandFlow(plist, solution) {}
+      OverlandHeadFlow(plist, solution) {}
 
   // Virtual destructor
   virtual ~IcyOverlandFlow() {}
@@ -38,7 +38,7 @@ protected:
   // setup methods
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
-  bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
+  virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
 protected:
   Teuchos::RCP<FlowRelations::UnfrozenFractionModel> uf_model_;

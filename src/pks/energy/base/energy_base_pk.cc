@@ -107,20 +107,17 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   advection_->set_num_dofs(1);
 
   // operator for the diffusion terms
-  bool symmetric = true;
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
-  matrix_->SetSymmetryProperty(symmetric);
+  matrix_->SetSymmetryProperty(true);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
 
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
-  preconditioner_->SetSymmetryProperty(symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices();
-  preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  preconditioner_->InitPreconditioner(mfd_pc_plist);
+  Teuchos::RCP<Operators::Matrix> precon =
+    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  set_preconditioner(precon);
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 
   // constraint on max delta T, which kicks us out of bad iterates faster?
@@ -152,7 +149,7 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize boundary conditions
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
 };
@@ -175,20 +172,20 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 void EnergyBase::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MFD_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
   Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_temperature_->begin(); bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
   for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
 };
@@ -200,7 +197,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
 void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
   int nfaces = temperature->size("face");
   for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
       (*temperature)("face",f) = bc_values_[f];
     }
   }
@@ -240,7 +237,7 @@ bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
 // -----------------------------------------------------------------------------
 bool EnergyBase::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
   if (modify_predictor_with_consistent_faces_) {
-    CalculateConsistentFaces(h,u.ptr());
+    CalculateConsistentFaces(u->data().ptr());
     return true;
   }
 
@@ -253,7 +250,7 @@ bool EnergyBase::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
 //
 //  This is useful for prediction steps, hacky preconditioners, etc.
 // -----------------------------------------------------------------------------
-void EnergyBase::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u) {
+void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
@@ -265,16 +262,16 @@ void EnergyBase::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVecto
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(conductivity_key_);
 
-  preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
-  preconditioner_->CreateMFDrhsVectors();
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
 
   // skip accumulation terms, they're not needed
   // Assemble and precompute the Schur complement for inversion.
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  preconditioner_->AssembleGlobalMatrices();
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  preconditioner_->UpdateConsistentFaceConstraints(u->data().ptr());
+  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
 }
 
 } // namespace Energy

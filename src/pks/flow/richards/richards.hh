@@ -21,6 +21,7 @@ namespace Amanzi {
 // forward declarations
 class MPCCoupledFlowEnergy;
 class MPCDiagonalFlowEnergy;
+class MPCSurfaceSubsurfaceDirichletCoupler;
 namespace WhetStone { class Tensor; }
 namespace Operators { class Upwinding; }
 
@@ -38,9 +39,9 @@ public:
            const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist,solution),
       PKPhysicalBDFBase(plist, solution),
-      coupled_to_surface_via_source_(false),
       coupled_to_surface_via_head_(false),
       coupled_to_surface_via_flux_(false),
+      coupled_to_surface_via_full_(false),
       coupled_to_surface_via_residual_(false),
       infiltrate_only_if_unfrozen_(false),
       modify_predictor_with_consistent_faces_(false),
@@ -82,11 +83,12 @@ public:
 
   virtual void changed_solution();
 
-  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
   // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
 protected:
   // Create of physical evaluators.
@@ -95,7 +97,7 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_();
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres);
+  virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres);
 
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual void SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S);
@@ -133,16 +135,22 @@ protected:
   FluxUpdateMode update_flux_;
   int Krel_method_;
   bool assemble_preconditioner_;
-  bool coupled_to_surface_via_source_;
-  bool coupled_to_surface_via_head_;
-  bool coupled_to_surface_via_flux_;
-  bool coupled_to_surface_via_residual_;
-  double surface_head_cutoff_;
-  double surface_head_cutoff_alpha_;
-  double surface_head_eps_;
   int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
+  bool symmetric_;
+
+  // coupling terms
+  bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
+  bool coupled_to_surface_via_flux_; // surface-subsurface Neumann coupler
+  bool coupled_to_surface_via_full_; // surface-subsurface coupler with full PC
+  bool coupled_to_surface_via_residual_; // surface-subsurface water coupler,
+                                         // old overland PK
+
+  // -- water coupler coupling parameters
+  double surface_head_cutoff_;
+  double surface_head_cutoff_alpha_;
+  double surface_head_eps_;
 
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
@@ -150,7 +158,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // custom enorm tolerances
   double mass_atol_;
@@ -162,8 +170,6 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
-  std::vector<double> bc_values_;
 
  private:
   // factory registration
@@ -172,6 +178,7 @@ protected:
   // Richards has a friend in couplers...
   friend class Amanzi::MPCCoupledFlowEnergy;
   friend class Amanzi::MPCDiagonalFlowEnergy;
+  friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;
 };
 
 }  // namespace AmanziFlow

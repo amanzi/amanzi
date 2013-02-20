@@ -89,6 +89,40 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 }
 
 
+// ---------------------------------------------------------------------------
+// Updates the total derivative d(my_field)/d(wrt_field) in state S.
+//
+// This is derived to make sure that the derivatives created within this
+// method only get cell quantities, not face quantites, in the same way that
+// EnsureCompatibility() did.
+// ---------------------------------------------------------------------------
+void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
+        Key wrt_key) {
+  Key dmy_key = std::string("d")+my_key_+std::string("_d")+wrt_key;
+  Teuchos::RCP<CompositeVector> dmy;
+  if (!S->HasField(dmy_key)) {
+    // Create the data with only cells, not cells+faces
+    Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(my_key_);
+    Teuchos::RCP<CompositeVectorFactory> new_fac =
+      S->RequireField(dmy_key, my_key_);
+    new_fac->set_owned(false);
+    new_fac->SetGhosted(my_fac->Ghosted());
+    new_fac->SetMesh(my_fac->Mesh());
+    new_fac->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    dmy = new_fac->CreateVector(true);
+    dmy->CreateData();
+    S->SetData(dmy_key, my_key_, dmy);
+    S->GetField(dmy_key,my_key_)->set_initialized();
+    S->GetField(dmy_key,my_key_)->set_io_vis(false);
+    S->GetField(dmy_key,my_key_)->set_io_checkpoint(false);
+  }
+
+  // Now it is safe to call the inherited version, which uses this data.
+  SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(S, wrt_key);
+}
+
+
 void HeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
@@ -143,8 +177,9 @@ void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
   } else if (wrt_key == dens_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = pres_c[0][c] < p_atm ? 0. : -(pres_c[0][c] - p_atm)
-          / (rho[0][c] * rho[0][c] * gz);
+      //      res_c[0][c] = pres_c[0][c] < p_atm ? 0. : -(pres_c[0][c] - p_atm)
+      //          / (rho[0][c] * rho[0][c] * gz);
+      res_c[0][c] = -(pres_c[0][c] - p_atm) / (rho[0][c] * rho[0][c] * gz);
     }
   } else {
     ASSERT(0);

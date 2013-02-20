@@ -14,6 +14,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_head)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
@@ -24,6 +25,11 @@ add_library(mpc mpc.cc weak_mpc.cc strong_mpc.cc
   mpc_coupled_flow_energy.cc
   mpc_frozen_coupled_flow_energy.cc
   permafrost_model.cc
-  mpc_surface_subsurface_water_coupler.cc)
+  mpc_surface_subsurface_coupler.cc
+  mpc_surface_subsurface_water_coupler.cc
+  mpc_surface_subsurface_neumann_coupler.cc
+  mpc_surface_subsurface_dirichlet_coupler.cc
+  mpc_surface_subsurface_full_coupler.cc)
+
 
 

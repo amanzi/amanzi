@@ -3,8 +3,7 @@
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
 License: BSD
-Authors: Gianmarco Manzini
-         Ethan Coon (ecoon@lanl.gov)
+Authors: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
 #ifndef PK_FLOW_OVERLAND_HEAD_HH_
@@ -19,6 +18,8 @@ Authors: Gianmarco Manzini
 namespace Amanzi {
 
 namespace Operators { class Upwinding; }
+class MPCSurfaceSubsurfaceDirichletCoupler;
+
 
 namespace Flow {
 
@@ -33,11 +34,13 @@ public:
       PKPhysicalBDFBase(plist, solution),
       standalone_mode_(false),
       is_source_term_(false),
-      is_coupling_term_(false),
-      coupled_to_surface_via_residual_(false),
-      surface_head_eps_(0.),
+      coupled_to_subsurface_via_flux_(false),
+      coupled_to_subsurface_via_head_(false),
+      coupled_to_subsurface_via_full_(false),
+      perm_update_required_(true),
       update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("primary variable key", "surface_pressure");
+    plist_.set("domain name", "surface");
   }
 
   // Virtual destructor
@@ -67,10 +70,15 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
+
   virtual void changed_solution();
 
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
+
+
   // evaluating consistent faces for given BCs and cell values
-  //  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
 protected:
   // setup methods
@@ -80,12 +88,17 @@ protected:
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
   virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S);
+
+  virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
+  virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
+  virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
+
   virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
           const Teuchos::RCP<CompositeVector>& pres );
 
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
-  bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
+  virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
   // physical methods
   // -- diffusion term
@@ -95,12 +108,11 @@ protected:
   // -- source terms
   void AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g);
 
-  // mesh creation
-  void CreateMesh_(const Teuchos::Ptr<State>& S);
-
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
+  friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;
+
   enum FluxUpdateMode {
     UPDATE_FLUX_ITERATION = 0,
     UPDATE_FLUX_TIMESTEP = 1,
@@ -112,26 +124,28 @@ protected:
   bool standalone_mode_; // domain mesh == surface mesh
   FluxUpdateMode update_flux_;
   bool is_source_term_;
-  bool is_coupling_term_;
-  bool coupled_to_surface_via_residual_;
-  double surface_head_eps_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
+  bool symmetric_;
+  bool perm_update_required_;
+
+  // coupling term
+  bool coupled_to_subsurface_via_flux_;
+  bool coupled_to_subsurface_via_head_;
+  bool coupled_to_subsurface_via_full_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
-  std::vector<double> bc_values_;
 
   // overland conductivity model
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;

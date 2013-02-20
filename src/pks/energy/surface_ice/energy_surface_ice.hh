@@ -18,19 +18,21 @@ Process kernel for energy equation for Richard's flow.
 namespace Amanzi {
 
 // forward declarations
+class Function;
 namespace Relations { class EOS; }
 namespace Energy { namespace EnergyRelations { class IEM; } }
 
 namespace Energy {
 
-class SurfaceIce : public EnergyBase {
+class EnergySurfaceIce : public EnergyBase {
 
 public:
-  SurfaceIce(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution);
+  EnergySurfaceIce(Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<TreeVector>& solution);
 
-  // Virtual destructor
-  virtual ~SurfaceIce() {}
-
+  // -- set up data structures
+  virtual void setup(const Teuchos::Ptr<State>& S);
+  
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
@@ -47,20 +49,30 @@ protected:
   // -- Source terms
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
                            const Teuchos::Ptr<CompositeVector>& f);
+  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
 
 
  protected:
-  // models for evaluating enthalpy
+  // models for evaluating enthalpy manually... remove me once boundary faces get in
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
 
-  Key energy_source_from_subsurface_key_;
-  Key mass_external_source_key_;
+  // simple heat condution term, q = K_s2a * (Tair - Tsurf)  
+  // air temperature function of time (not space)
+  Teuchos::RCP<Function> air_temp_;
+  double K_surface_to_air_;
 
+  // flags
+  bool standalone_mode_;
+  bool is_energy_source_term_;
+  bool is_mass_source_term_;
+  bool is_air_conductivity_;
+  bool coupled_to_subsurface_via_full_;
 
+  
 private:
   // factory registration
-  static RegisteredPKFactory<SurfaceIce> reg_;
+  static RegisteredPKFactory<EnergySurfaceIce> reg_;
 
 };
 

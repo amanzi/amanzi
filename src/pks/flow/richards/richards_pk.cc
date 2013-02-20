@@ -13,7 +13,6 @@ Authors: Neil Carlson (version 1)
 #include "flow_bc_factory.hh"
 
 #include "upwinding.hh"
-#include "Mesh_MSTK.hh"
 #include "Point.hh"
 #include "matrix_mfd.cc"
 
@@ -111,7 +110,23 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_ = bc_factory.CreateSeepageFace();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
 
+  // how often to update the fluxes?
+  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
+  if (updatestring == "iteration") {
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  } else if (updatestring == "timestep") {
+    update_flux_ = UPDATE_FLUX_TIMESTEP;
+  } else if (updatestring == "vis") {
+    update_flux_ = UPDATE_FLUX_VIS;
+  } else if (updatestring == "never") {
+    update_flux_ = UPDATE_FLUX_NEVER;
+  } else {
+    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
+    Exceptions::amanzi_throw(message);
+  }
+
   // coupling
+  // -- coupling done by a mixed Neumann/Dirichlet BC
   coupled_to_surface_via_residual_ = plist_.get<bool>("coupled to surface via residual", false);
   if (coupled_to_surface_via_residual_) {
     S->RequireField("ponded_depth");
@@ -121,13 +136,52 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     surface_head_eps_ = plist_.get<double>("surface head epsilon", 0.);
   }
 
+  // -- coupling done by a primary variable of pressure head on the surface
+  coupled_to_surface_via_head_ = plist_.get<bool>("coupled to surface via head", false);
+  if (coupled_to_surface_via_head_) {
+    S->RequireField("surface_pressure");
+    S->RequireField("doverland_source_from_subsurface_dsurface_pressure", name_)
+        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    // override the flux update -- must happen every iteration
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  }
+
+  // -- coupling done by a full preconditioner
+  coupled_to_surface_via_full_ = plist_.get<bool>("coupled to surface via full coupler", false);
+  if (coupled_to_surface_via_full_) {
+    S->RequireField("surface_pressure");
+    // override the flux update -- must happen every iteration
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  }
+
+  // -- coupling done by flux terms
+  coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
+  if (coupled_to_surface_via_flux_) {
+    S->RequireField("surface_pressure");
+    S->RequireField("doverland_source_from_subsurface_dsurface_pressure", name_)
+        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField("overland_source_from_subsurface")
+        ->SetMesh(S->GetMesh("surface"))->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  // -- Make sure coupling isn't flagged multiple ways. -- needs to
+  // -- become and ENUM please... --etc
+  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_head_));
+  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_residual_));
+  ASSERT(!(coupled_to_surface_via_head_ && coupled_to_surface_via_residual_));
+  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_full_));
+  ASSERT(!(coupled_to_surface_via_head_ && coupled_to_surface_via_full_));
+  ASSERT(!(coupled_to_surface_via_full_ && coupled_to_surface_via_residual_));
+
+
   // Create the upwinding method
   S->RequireField("numerical_rel_perm", name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
 
   string method_name = plist_.get<string>("relative permeability method", "upwind with gravity");
-  bool symmetric = false;
+  symmetric_ = false;
   if (method_name == "upwind with gravity") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux(name_,
             "relative_permeability", "numerical_rel_perm", K_));
@@ -135,7 +189,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   } else if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             "relative_permeability", "numerical_rel_perm"));
-    symmetric = true;
+    symmetric_ = true;
     Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
@@ -155,33 +209,17 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
-  matrix_->SetSymmetryProperty(symmetric);
+  matrix_->SetSymmetryProperty(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
-  preconditioner_->SetSymmetryProperty(symmetric);
-  preconditioner_->SymbolicAssembleGlobalMatrices();
-  preconditioner_->InitPreconditioner(mfd_pc_plist);
+  Teuchos::RCP<Operators::MatrixMFD> precon =
+    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  set_preconditioner(precon);
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
   modify_predictor_with_consistent_faces_ =
     plist_.get<bool>("modify predictor with consistent faces", false);
-
-  // how often to update the fluxes?
-  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
-  if (updatestring == "iteration") {
-    update_flux_ = UPDATE_FLUX_ITERATION;
-  } else if (updatestring == "timestep") {
-    update_flux_ = UPDATE_FLUX_TIMESTEP;
-  } else if (updatestring == "vis") {
-    update_flux_ = UPDATE_FLUX_VIS;
-  } else if (updatestring == "never") {
-    update_flux_ = UPDATE_FLUX_NEVER;
-  } else {
-    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
-    Exceptions::amanzi_throw(message);
-  }
 
 }
 
@@ -257,7 +295,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MFD_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   // Set extra fields as initialized -- these don't currently have evaluators,
@@ -272,9 +310,16 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("darcy_velocity", name_)->PutScalar(0.0);
   S->GetField("darcy_velocity", name_)->set_initialized();
 
+  // initialize coupling terms
   if (coupled_to_surface_via_residual_) {
     S->GetFieldData("overland_source_from_subsurface", name_)->PutScalar(0.);
     S->GetField("overland_source_from_subsurface", name_)->set_initialized();
+  }
+  if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
+    S->GetFieldData("doverland_source_from_subsurface_dsurface_pressure", name_)
+        ->PutScalar(0.);
+    S->GetField("doverland_source_from_subsurface_dsurface_pressure", name_)
+        ->set_initialized();
   }
 
   // absolute perm
@@ -282,7 +327,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   // operators
   matrix_->CreateMFDmassMatrices(K_.ptr());
-  preconditioner_->CreateMFDmassMatrices(K_.ptr());
+  mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
 };
 
 
@@ -432,11 +477,14 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       }
     }
 
-    if (coupled_to_surface_via_residual_) {
+    if (coupled_to_surface_via_residual_ ||
+        coupled_to_surface_via_full_ ||
+        coupled_to_surface_via_head_ ||
+        coupled_to_surface_via_flux_) {
       // patch up the rel perm on surface as 1 -- FIX ME --etc
-      Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
-          Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh("surface"));
+      Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
       int ncells_surface = surface->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+
       for (int c=0; c!=ncells_surface; ++c) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
@@ -467,28 +515,31 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void Richards::UpdateBoundaryConditions_() {
   for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MFD_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
+  // Dirichlet boundary conditions
   Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
   if (!infiltrate_only_if_unfrozen_) {
+    // Standard Neuman boundary conditions
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::MFD_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     }
   } else {
+    // Neumann boundary conditions that turn off if temp < freezing
     const Epetra_MultiVector& temp = *S_next_->GetFieldData("temperature")->ViewComponent("face");
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::MFD_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       if (temp[0][f] > 273.15) {
         bc_values_[f] = bc->second;
       } else {
@@ -503,20 +554,59 @@ void Richards::UpdateBoundaryConditions_() {
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
     if (pressure[0][f] < p_atm) {
-      bc_markers_[f] = Operators::MFD_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     } else {
-      bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = p_atm;
     }
   }
 
   // surface coupling
+  if (coupled_to_surface_via_head_ || coupled_to_surface_via_full_) {
+    // Face is Dirichlet with value of surface head
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
+    const Epetra_MultiVector& head = *S_next_->GetFieldData("surface_pressure")
+        ->ViewComponent("cell",false);
+
+    int ncells_surface = head.MyLength();
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+
+      // -- set that value to dirichlet
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+      bc_values_[f] = head[0][c];
+    }
+  }
+
+  // surface coupling
+  if (coupled_to_surface_via_flux_) {
+    // Face is Neumann with value of surface residual
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
+    const Epetra_MultiVector& flux =
+        *S_next_->GetFieldData("overland_source_from_subsurface")
+        ->ViewComponent("cell",false);
+
+    int ncells_surface = flux.MyLength();
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+
+      // -- set that value to Neumann
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+      *out_ << "  BC (Neumann) = " << flux[0][c] / mesh_->face_area(f) << std::endl;
+    }
+  }
+
+
   if (coupled_to_surface_via_residual_) {
     // given the surface head, calculate a new pressure with surface head on
     // the surface faces
-    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S_next_->GetMesh("surface"));
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
     const CompositeVector& ponded_depth = *S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
     const CompositeVector& dens = *S_next_->GetFieldData("molar_density_liquid");
@@ -587,14 +677,14 @@ void Richards::UpdateBoundaryConditions_() {
 
       if (q_out >= 0. || Q_ss >= 0.) {
         // Flux is outward, use the Dirichlet condition and the calculated flux
-        bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
         bc_values_[f] = pres("face",f);
         (*source)("cell",c) = q_out / dens("cell",cells[0]);
       } else {
         if (q_out < Q_ss) {
           // Flux wants to be inward and the subsurface
           // can accomodate all water on the surface.
-          bc_markers_[f] = Operators::MFD_BC_FLUX;
+          bc_markers_[f] = Operators::MATRIX_BC_FLUX;
 
           // note these are NOT the same necessarily!
           bc_values_[f] = Q_ss / mesh_->face_area(f); //surface_cell_volume("cell",c);
@@ -602,7 +692,7 @@ void Richards::UpdateBoundaryConditions_() {
         } else {
           // Flux wants to be inward, but the subsurface cannot handle the
           // entirety of the surface's water.
-          bc_markers_[f] = Operators::MFD_BC_DIRICHLET;
+          bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
           bc_values_[f] = pres("face",f);
           (*source)("cell",c) = q_out / dens("cell",cells[0]);
         }
@@ -619,7 +709,7 @@ void Richards::UpdateBoundaryConditions_() {
                  << " p_eff = " << pres("face",f) << std::endl;
         *out_ << "            h = " << ponded_depth("cell",c)
                  << ", q_out = " << q_out << ", Q_ss = " << Q_ss << std::endl;
-        if (bc_markers_[f] == Operators::MFD_BC_FLUX) {
+        if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
           *out_ << "  RESULT:  flux, " << bc_values_[f] << std::endl;
         } else {
           *out_ << "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
@@ -635,11 +725,12 @@ void Richards::UpdateBoundaryConditions_() {
 // Add a boundary marker to owned faces.
 // -----------------------------------------------------------------------------
 void
-Richards::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres) {
-  int nfaces = pres->size("face");
+Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
+  Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
+  int nfaces = pres_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MFD_BC_DIRICHLET) {
-      (*pres)("face",f) = bc_values_[f];
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
+      pres_f[0][f] = bc_values_[f];
     }
   }
 };
@@ -656,9 +747,9 @@ void Richards::changed_solution() {
 };
 
 
-bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   if (modify_predictor_with_consistent_faces_) {
-    CalculateConsistentFaces(h,u.ptr());
+    CalculateConsistentFaces(u->data().ptr());
     return true;
   }
 
@@ -666,7 +757,7 @@ bool Richards::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
 }
 
 
-void Richards::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u) {
+void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
@@ -689,18 +780,18 @@ void Richards::CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>
 
 
   // Update the preconditioner with darcy and gravity fluxes
-  preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-  preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), preconditioner_.ptr());
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), mfd_preconditioner_.ptr());
 
   // skip accumulation terms, they're not needed
 
-  // Assemble and precompute the Schur complement for inversion.
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  preconditioner_->AssembleGlobalMatrices();
+  // Assemble
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  preconditioner_->UpdateConsistentFaceConstraints(u->data().ptr());
+  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
 }
 
 } // namespace

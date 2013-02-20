@@ -21,6 +21,10 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "time_step_manager.hh"
 #include "visualization.hh"
 #include "checkpoint.hh"
+#include "state.hh"
+#include "PK.hh"
+#include "tree_vector.hh"
+#include "pk_factory.hh"
 
 #include "coordinator.hh"
 
@@ -29,10 +33,10 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 namespace Amanzi {
 
 Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
-                         Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh,
+                         Teuchos::RCP<State>& S,
                          Epetra_MpiComm* comm ) :
   parameter_list_(parameter_list),
-  mesh_(mesh),
+  S_(S),
   comm_(comm),
   restart_(false) {
   coordinator_init();
@@ -51,11 +55,6 @@ Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
 void Coordinator::coordinator_init() {
   coordinator_plist_ = parameter_list_.sublist("coordinator");
   read_parameter_list();
-
-  // create the state object
-  Teuchos::ParameterList state_plist = parameter_list_.sublist("state");
-  S_ = Teuchos::rcp(new State(state_plist));
-  S_->RegisterDomainMesh(mesh_);
 
   // checkpointing for the state
   Teuchos::ParameterList chkp_plist = parameter_list_.sublist("checkpoint");

@@ -155,8 +155,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
-  preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
-  preconditioner_->CreateMFDrhsVectors();
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
 
   // 2. Update local matrices diagonal with the accumulation terms.
   Teuchos::RCP<const CompositeVector> cell_volume =
@@ -164,8 +164,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   Teuchos::RCP<const CompositeVector> pres =
       S_next_->GetFieldData(key_);
 
-  std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-  std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
+  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+  std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
   int ncells = cell_volume->size("cell");
   for (int c=0; c!=ncells; ++c) {
     // accumulation term
@@ -174,17 +174,17 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   }
 
   // Assemble and precompute the Schur complement for inversion.
-  preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   if (assemble_preconditioner_) {
-    preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
-    preconditioner_->UpdatePreconditioner();
+    mfd_preconditioner_->AssembleGlobalMatrices();
+    mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+    mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*
   // dump the schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> sc = preconditioner_->Schur();
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
   std::stringstream filename_s;
   filename_s << "schur_" << S_next_->cycle() << ".txt";
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
@@ -203,6 +203,17 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   num_rel_perm->Print(*out_);
   */
 };
+
+
+void OverlandFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
+  preconditioner_ = precon;
+  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
+  ASSERT(mfd_preconditioner_ != Teuchos::null);
+  mfd_preconditioner_->SetSymmetryProperty(symmetric_);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+  mfd_preconditioner_->InitPreconditioner();
+}
 
 
 // Runs a very expensive FD test of the Jacobian and prints out an enorm
@@ -234,12 +245,12 @@ void OverlandFlow::test_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     df->Update(-1.0, *f2, 1.0, *f1, 1.0);
     double error = enorm(f1, df);
     //
-      AmanziGeometry::Point point = S_next_->GetMesh("surface")->cell_centroid(c);
+      AmanziGeometry::Point point = mesh_->cell_centroid(c);
       if (error > 1e-5) {
         std::cout << "Bad error at cell: " << c << std::endl;
         AmanziMesh::Entity_ID_List faces;
         std::vector<int> fdirs;
-        S_next_->GetMesh("surface")->cell_get_faces_and_dirs(c, &faces, &fdirs);
+        mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
         std::cout << "faces: " << faces[0] << ", "
             << faces[1] << ", "
             << faces[2] << ", "

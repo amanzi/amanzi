@@ -135,4 +135,12 @@ void PKPhysicalBDFBase::changed_solution() {
   solution_evaluator_->SetFieldAsChanged();
 };
 
+// -----------------------------------------------------------------------------
+// Apply the preconditioner (default application).
+// -----------------------------------------------------------------------------
+void PKPhysicalBDFBase::precon(Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> Pu) {
+  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+}
+
 } // namespace

@@ -3,12 +3,8 @@
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
 License: BSD
-Authors: Gianmarco Manzini
-         Ethan Coon (ecoon@lanl.gov)
+Authors: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
-
-#include "Mesh.hh"
-#include "Mesh_MSTK.hh"
 
 #include "overland_head.hh"
 
@@ -20,23 +16,20 @@ namespace Flow {
 // -------------------------------------------------------------
 void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
-  // update the rel perm according to the scheme of choice
-  bool update = UpdatePermeabilityData_(S.ptr());
-
   // update the stiffness matrix
   Teuchos::RCP<const CompositeVector> cond =
     S->GetFieldData("upwind_overland_conductivity", name_);
   matrix_->CreateMFDstiffnessMatrices(cond.ptr());
 
   // update the potential
-  update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
+  S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
 
   // derive fluxes -- this gets done independently fo update as precon does
   // not calculate fluxes.
   Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
-        S->GetFieldData("overland_flux", name_);
+        S->GetFieldData("surface_flux", name_);
     pres_elev->ScatterMasterToGhosted();
     matrix_->DeriveFlux(*pres_elev, flux.ptr());
   }
@@ -47,6 +40,11 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "  preselev0 (diff): " << (*pres_elev)("cell",0,0) << " "
+          << (*pres_elev)("face",0,0) << " " << (*pres_elev)("face",0,1) << " "
+          << (*pres_elev)("face",0,2) << " " << (*pres_elev)("face",0,3) << std::endl;
+  }
   matrix_->ComputeNegativeResidual(*pres_elev, g.ptr());
 };
 
@@ -93,6 +91,7 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
       *S_inter_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
 
   if (is_source_term_) {
+    // Add in external source term.
     S_next_->GetFieldEvaluator("overland_source")
         ->HasFieldChanged(S_next_.ptr(), name_);
     S_inter_->GetFieldEvaluator("overland_source")
@@ -103,7 +102,9 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData("overland_source")->ViewComponent("cell",false);
 
-    // source term is in m water / s, not in mols / s.
+    // External source term is in [m water / s], not in [mols / s].  We assume
+    // it comes in at the surface density, i.e. the surface temperature.  This
+    // may need to be changed.
     S_next_->GetFieldEvaluator("surface_molar_density_liquid")
         ->HasFieldChanged(S_next_.ptr(), name_);
     S_inter_->GetFieldEvaluator("surface_molar_density_liquid")
@@ -123,15 +124,15 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     }
   }
 
-  if (is_coupling_term_) {
+  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_full_) {
+    // Add in source term from coupling.
     S_next_->GetFieldEvaluator("overland_source_from_subsurface")
         ->HasFieldChanged(S_next_.ptr(), name_);
-
     Teuchos::RCP<const CompositeVector> source1 =
         S_next_->GetFieldData("overland_source_from_subsurface");
 
-    //  --   g <-- g - (cv*h)_t1
-    g_c.Multiply(-1., cv1, *source1->ViewComponent("cell",false), 1.);
+    // source term is in units of [mol / s]
+    g_c.Update(-1., *source1->ViewComponent("cell",false), 1.);
   }
 };
 

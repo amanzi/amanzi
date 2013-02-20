@@ -33,20 +33,21 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // my keys
+  Key key;
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
-    a_key_ = plist_.get<std::string>("molar density key");
-    my_keys_.push_back(a_key_);
+    key = plist_.get<std::string>("molar density key");
+    my_keys_.push_back(key);
   }
 
   if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-    a_key_ = plist_.get<std::string>("mass density key");
-    my_keys_.push_back(a_key_);
+    key = plist_.get<std::string>("mass density key");
+    my_keys_.push_back(key);
   }
   setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // Set up my dependencies.
-  std::size_t end = a_key_.find_first_of("_");
-  std::string domain_name = a_key_.substr(0,end);
+  std::size_t end = key.find_first_of("_");
+  std::string domain_name = key.substr(0,end);
   if (domain_name == std::string("density") ||
       domain_name == std::string("molar") ||
       domain_name == std::string("mass")) {

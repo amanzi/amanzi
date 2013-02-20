@@ -34,10 +34,11 @@ public:
       standalone_mode_(false),
       is_source_term_(false),
       is_coupling_term_(false),
-      coupled_to_surface_via_residual_(false),
+      coupled_to_subsurface_via_residual_(false),
       surface_head_eps_(0.),
       update_flux_(UPDATE_FLUX_ITERATION) {
     plist_.set("primary variable key", "ponded_depth");
+    plist_.set("domain name", "surface");
   }
 
   // Virtual destructor
@@ -67,6 +68,8 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
+
   // admissible update -- ensure non-negativity of ponded depth
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
@@ -74,9 +77,6 @@ public:
 
   // modify the predictor to ensure non-negativity of ponded depth
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
-
-  // evaluating consistent faces for given BCs and cell values
-  //  virtual void CalculateConsistentFaces(double h, const Teuchos::Ptr<TreeVector>& u);
 
 protected:
   // setup methods
@@ -101,9 +101,6 @@ protected:
   // -- source terms
   void AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g);
 
-  // mesh creation
-  void CreateMesh_(const Teuchos::Ptr<State>& S);
-
   void test_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
@@ -119,25 +116,24 @@ protected:
   FluxUpdateMode update_flux_;
   bool is_source_term_;
   bool is_coupling_term_;
-  bool coupled_to_surface_via_residual_;
+  bool coupled_to_subsurface_via_residual_;
   double surface_head_eps_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
+  bool symmetric_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
-  std::vector<double> bc_values_;
 
   // overland conductivity model
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;

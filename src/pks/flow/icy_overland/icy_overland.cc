@@ -14,9 +14,13 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "standalone_elevation_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
+#include "unfrozen_effective_depth_evaluator.hh"
 #include "unfrozen_fraction_evaluator.hh"
 #include "unfrozen_fraction_model.hh"
+#include "icy_height_evaluator.hh"
 
+
+#include "overland_head_icy_water_content_evaluator.hh"
 #include "icy_overland.hh"
 
 namespace Amanzi {
@@ -34,11 +38,11 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "face";
 
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField("elevation")->SetMesh(mesh_)->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
-  S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
+  S->RequireField("slope_magnitude")->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField("pres_elev")->SetMesh(mesh_)->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
@@ -55,7 +59,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("pres_elev", elev_evaluator);
 
   // -- unfrozen fraction model, eta
-  S->RequireField("unfrozen_fraction")->SetMesh(S->GetMesh("surface"))
+  S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_.isSublist("unfrozen fraction evaluator"));
   Teuchos::ParameterList uf_plist = plist_.sublist("unfrozen fraction evaluator");
@@ -64,8 +68,16 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("unfrozen_fraction", uf_evaluator);
   uf_model_ = uf_evaluator->get_Model();
 
-  // -- "rel perm" evaluator
-  S->RequireField("overland_conductivity")->SetMesh(S->GetMesh("surface"))
+  // -- unfrozen effective depth, h * eta
+  S->RequireField("unfrozen_effective_depth")->SetMesh(mesh_)
+                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList h_eff_plist = plist_.sublist("unfrozen effective depth");
+  Teuchos::RCP<FlowRelations::UnfrozenEffectiveDepthEvaluator> h_eff_evaluator =
+      Teuchos::rcp(new FlowRelations::UnfrozenEffectiveDepthEvaluator(h_eff_plist));
+  S->SetFieldEvaluator("unfrozen_effective_depth", h_eff_evaluator);
+
+  // -- conductivity evaluator
+  S->RequireField("overland_conductivity")->SetMesh(mesh_)
                 ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_.isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_.sublist("overland conductivity evaluator");
@@ -90,28 +102,21 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source", source_evaluator);
   }
 
-  // -- coupling term evaluator
-  if (plist_.isSublist("subsurface coupling evaluator")) {
-    is_coupling_term_ = true;
-    S->RequireField("overland_source_from_subsurface")
-        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+  // -- water content
+  S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList wc_plist = plist_.sublist("overland water content");
+  Teuchos::RCP<FlowRelations::OverlandHeadIcyWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandHeadIcyWaterContentEvaluator(wc_plist));
+  S->SetFieldEvaluator("surface_water_content", wc_evaluator);
 
-    Teuchos::ParameterList source_plist = plist_.sublist("subsurface coupling evaluator");
-    source_plist.set("surface mesh key", "surface");
-    source_plist.set("subsurface mesh key", "domain");
-    // NOTE: this should change to "overland_molar_density_liquid" or
-    // whatever when such a thing exists.
-    source_plist.set("source key", "overland_source_from_subsurface");
-
-    Teuchos::RCP<FieldEvaluator> source_evaluator =
-        S->RequireFieldEvaluator("overland_source_from_subsurface", source_plist);
-  }
-
-
-  // -- cell volume and evaluator
-  S->RequireField("surface_cell_volume")->SetMesh(mesh_)->SetGhosted()
-                                ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_cell_volume");
+  // -- ponded depth
+  S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
+                ->AddComponents(names2, locations2, num_dofs2);
+  Teuchos::ParameterList height_plist = plist_.sublist("ponded depth");
+  Teuchos::RCP<FlowRelations::IcyHeightEvaluator> height_evaluator =
+      Teuchos::rcp(new FlowRelations::IcyHeightEvaluator(height_plist));
+  S->SetFieldEvaluator("ponded_depth", height_evaluator);
 }
 
 
@@ -130,17 +135,20 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("overland_conductivity")
       ->HasFieldChanged(S, name_);
 
+  update_perm |= S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S, name_);
+  update_perm |= perm_update_required_;
 
   if (update_perm) {
     // Update the perm only if needed.
+    perm_update_required_ = false;
 
     // This needs fixed to use the model, not assume a model.
     // Then it needs to be fixed to use a smart evaluator which picks
     // vals from cells and faces.
     // Then it needs to be fixed to work on a CompositeVector whose
     // components are cells and boundary faces. --etc
-    const Epetra_MultiVector& depth = *S->GetFieldData(key_)
+    const Epetra_MultiVector& depth = *S->GetFieldData("ponded_depth")
       ->ViewComponent("face", false);
     const Epetra_MultiVector& slope = *S->GetFieldData("slope_magnitude")
       ->ViewComponent("cell", false);
@@ -148,21 +156,24 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       ->ViewComponent("cell", false);
     const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
       ->ViewComponent("face", false);
+
     Teuchos::RCP<CompositeVector> upwind_conductivity =
         S->GetFieldData("upwind_overland_conductivity", name_);
+    Epetra_MultiVector& upwind_conductivity_f =
+        *upwind_conductivity->ViewComponent("face",false);
+    Epetra_MultiVector& upwind_conductivity_c =
+        *upwind_conductivity->ViewComponent("cell",false);
 
     // initialize the face coefficients
-    upwind_conductivity->ViewComponent("face",true)->PutScalar(0.0);
-    if (upwind_conductivity->has_component("cell")) {
-      upwind_conductivity->ViewComponent("cell",true)->PutScalar(1.0);
-    }
+    upwind_conductivity_f.PutScalar(0.0);
+    upwind_conductivity_c.PutScalar(1.0);
 
     // First do the boundary
     AmanziMesh::Entity_ID_List cells;
-    int nfaces = upwind_conductivity->size("face", true);
+    int nfaces = upwind_conductivity_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
-      if (bc_markers_[f] != Operators::MFD_BC_NULL) {
-        upwind_conductivity->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      if (bc_markers_[f] != Operators::MATRIX_BC_NULL) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
         ASSERT(cells.size() == 1);
         int c = cells[0];
         double eff_depth = depth[0][f] * uf_model_->UnfrozenFraction(temp[0][f]);
@@ -174,9 +185,17 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
 
+    // Scale cells by n
+    const Epetra_MultiVector& n_liq = *S->GetFieldData("surface_molar_density_liquid")
+        ->ViewComponent("cell",false);
+    int ncells = upwind_conductivity_c.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      upwind_conductivity_c[0][c] *= n_liq[0][c];
+    }
+
     // Communicate.  This could be done later, but i'm not exactly sure where, so
     // we'll do it here.
-    upwind_conductivity->ScatterMasterToGhosted("face");
+    upwind_conductivity->ScatterMasterToGhosted();
   }
 
   return update_perm;

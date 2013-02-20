@@ -13,9 +13,12 @@ PKPhysicalBase and BDF methods of PKBDFBase.
 #ifndef AMANZI_PK_PHYSICAL_BDF_BASE_HH_
 #define AMANZI_PK_PHYSICAL_BDF_BASE_HH_
 
+#include "errors.hh"
 #include "pk_default_base.hh"
 #include "pk_bdf_base.hh"
 #include "pk_physical_base.hh"
+
+#include "matrix.hh"
 
 namespace Amanzi {
 
@@ -50,7 +53,32 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   //    state.
   virtual void changed_solution();
 
+  // Operator access/mutate
+  virtual Teuchos::RCP<Operators::Matrix> preconditioner() { return preconditioner_; }
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner) {
+    preconditioner_ = preconditioner; }
+
+  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  // BC access
+  std::vector<Operators::Matrix_bc>& bc_markers() { return bc_markers_; }
+  std::vector<double>& bc_values() { return bc_values_; }
+
+  // evaluating consistent faces for given BCs and cell values
+  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
+    Errors::Message message(std::string("Calculate consistent faces not implemented by PK: ")+name_);
+    Exceptions::amanzi_throw(message);
+  }
+
+
  protected:
+  // operators
+  Teuchos::RCP<Operators::Matrix> preconditioner_;
+
+  // BCs
+  std::vector<Operators::Matrix_bc> bc_markers_;
+  std::vector<double> bc_values_;
+
   // error criteria
   double atol_, rtol_;
   double atol0_, rtol0_;

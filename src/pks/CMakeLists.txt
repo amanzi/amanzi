@@ -6,6 +6,8 @@
 #
 
 # ATS include directories
+include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/)
+
 add_library(pk_bases
   pk_physical_bdf_base.cc
   pk_physical_base.cc
