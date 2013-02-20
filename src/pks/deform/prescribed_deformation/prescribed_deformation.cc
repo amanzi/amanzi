@@ -15,7 +15,6 @@
    ------------------------------------------------------------------------- */
 
 #include "prescribed_deformation.hh"
-#include "porosity_evaluator.hh"
 
 namespace Amanzi {
 namespace Deform {
@@ -37,16 +36,14 @@ PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
 void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
 
-  S->RequireField(key_,name_);
-
-  dependencies_.insert("cell_volume");
-
-
 }
 
 // -- Initialize owned (dependent) variables.
 void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::initialize(S);
+
+
+
 }
   
 // -- advance via one of a few methods
@@ -57,7 +54,7 @@ bool PrescribedDeformation::advance(double dt) {
   
   
   Teuchos::RCP<CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume", "cell_volume");  
-  Teuchos::RCP<FieldEvaluator> cveval = S_next_->GetFieldEvaluator("cell_volume");
+  // Teuchos::RCP<FieldEvaluator> cveval = S_next_->GetFieldEvaluator("cell_volume");
 
   double ss = S_next_->time();
   double ss0 = S_->time();
