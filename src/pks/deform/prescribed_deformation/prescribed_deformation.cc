@@ -15,6 +15,7 @@
    ------------------------------------------------------------------------- */
 
 #include "prescribed_deformation.hh"
+#include "porosity_evaluator.hh"
 
 namespace Amanzi {
 namespace Deform {
@@ -30,19 +31,35 @@ PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
     PKPhysicalBase(plist,solution)
 {
 
+
+
 }
 
 // -- Setup data
 void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
 
+  Teuchos::ParameterList poro_plist = plist_.sublist("porosity evaluator");
+  Teuchos::RCP<DeformRelations::PorosityEvaluator> porosity_evaluator 
+    = Teuchos::rcp(new DeformRelations::PorosityEvaluator(poro_plist));
+  S->SetFieldEvaluator("porosity", porosity_evaluator);
+
+  std::cout << key_ << std::endl;
+  std::cout << name_ << std::endl;
+
+  std::vector<AmanziMesh::Entity_kind> location(1);
+  location[0] = AmanziMesh::CELL;
+  std::vector<int> num_dofs(1);
+  num_dofs[0] = 1;
+  std::vector<std::string> name(1);
+  name[0] = "cell";
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(name, location, num_dofs);
 }
 
 // -- Initialize owned (dependent) variables.
 void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::initialize(S);
-
-
 
 }
   
@@ -112,6 +129,9 @@ bool PrescribedDeformation::advance(double dt) {
 
   // now update cell volumes
   cell_volume->Scale(factor);
+
+
+  solution_evaluator_->SetFieldAsChanged();
 
   std::cout << "DONE" << std::endl;
 }
