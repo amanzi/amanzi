@@ -110,23 +110,28 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S,
   // h = n(T,p) * u_l(T) + p_l
   const Epetra_MultiVector& pres = *S->GetFieldData("pressure")
       ->ViewComponent("face",false);
+  const Epetra_MultiVector& temp = *S->GetFieldData(key_)
+      ->ViewComponent("face",false);
   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
       ->ViewComponent("face",false);
 
   Epetra_MultiVector& enth_f = *enth->ViewComponent("face",false);
 
-  for (Functions::BoundaryFunction::Iterator bc = bc_temperature_->begin();
-       bc!=bc_temperature_->end(); ++bc) {
-    int f = bc->first;
-    double p = pres[0][f];
-    double T = bc->second;
-    double dens = eos_liquid_->MolarDensity(T,p);
-    double int_energy = iem_liquid_->InternalEnergy(T);
-    double enthalpy = int_energy + p/dens;
+  AmanziMesh::Entity_ID_List cells;
+  int nfaces = enth_f.MyLength();
+  for (int f=0; f!=nfaces; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (cells.size() == 1) {
+      double T = bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET ?
+          bc_values_[f] : temp[0][f];
+      double p = pres[0][f];
+      double dens = eos_liquid_->MolarDensity(T,p);
+      double int_energy = iem_liquid_->InternalEnergy(T);
+      double enthalpy = int_energy + p/dens;
 
-    enth_f[0][f] = enthalpy * fabs(flux[0][f]);
+      enth_f[0][f] = enthalpy * fabs(flux[0][f]);
+    }
   }
-
 }
 
 

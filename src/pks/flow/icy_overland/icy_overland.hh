@@ -25,7 +25,7 @@ namespace FlowRelations { class UnfrozenFractionModel; }
 
 class IcyOverlandFlow : public OverlandHeadFlow {
 
-public:
+ public:
   IcyOverlandFlow(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, solution),
@@ -34,16 +34,19 @@ public:
   // Virtual destructor
   virtual ~IcyOverlandFlow() {}
 
-protected:
+ protected:
   // setup methods
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
   virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
 
-protected:
+  virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
+
+ protected:
+  Teuchos::RCP<FlowRelations::IcyHeightModel> icy_height_model_;
   Teuchos::RCP<FlowRelations::UnfrozenFractionModel> uf_model_;
 
-private:
+ private:
   // factory registration
   static RegisteredPKFactory<IcyOverlandFlow> reg_;
 };

@@ -32,7 +32,7 @@ public:
 
   // -- set up data structures
   virtual void setup(const Teuchos::Ptr<State>& S);
-  
+
   // -- Initialize owned (dependent) variables.
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
