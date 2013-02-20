@@ -10,7 +10,7 @@ include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 add_definitions("-DMSTK_HAVE_MPI")
 
-add_library(pk_prescribed_deformation deform.cc prescribed_deformation.cc)
+add_library(pk_prescribed_deformation porosity_evaluator.cc deform.cc prescribed_deformation.cc)
 
 if ( BUILD_TESTS )
 

@@ -23,14 +23,26 @@ using namespace Amanzi::AmanziMesh;
 
 RegisteredPKFactory<PrescribedDeformation> PrescribedDeformation::reg_("prescribed deformation");
 
+  
+PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
+                                             const Teuchos::RCP<TreeVector>& solution):
+    PKDefaultBase(plist,solution),
+    PKPhysicalBase(plist,solution)
+{
+
+}
 
 // -- Setup data
 void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
-  S->RequireFieldEvaluator("cell_volume");
+  PKPhysicalBase::setup(S);
+
 }
 
 // -- Initialize owned (dependent) variables.
 void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
+  PKPhysicalBase::initialize(S);
+
+
 
 }
   
@@ -42,7 +54,7 @@ bool PrescribedDeformation::advance(double dt) {
   
   
   Teuchos::RCP<CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume", "cell_volume");  
-  Teuchos::RCP<FieldEvaluator> cveval = S_next_->GetFieldEvaluator("cell_volume");
+  // Teuchos::RCP<FieldEvaluator> cveval = S_next_->GetFieldEvaluator("cell_volume");
 
   double ss = S_next_->time();
   double ss0 = S_->time();
