@@ -67,7 +67,8 @@ public:
   ~nka();
   void nka_relax();
   void nka_restart ();
-  void nka_correction (NOX::Abstract::Vector&, const Teuchos::RCP<NOX::Abstract::Vector>, double damp=1.0);
+  void nka_correction (NOX::Abstract::Vector&, const Teuchos::RCP<NOX::Abstract::Vector>, 
+		       Teuchos::RCP<NOX::Abstract::Vector> = Teuchos::null);
 
 
 private:

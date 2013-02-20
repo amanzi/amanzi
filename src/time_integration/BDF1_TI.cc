@@ -405,8 +405,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
 
   Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
-      Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
+    Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
 
+  Teuchos::RCP<NOX::Epetra::Vector> previous_du = 
+    Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
 
   double error(0.0);
   double du_norm(0.0), previous_du_norm(0.0);
@@ -444,10 +446,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
-
+    
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
-    
+
     // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
     NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
@@ -457,7 +459,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     } else {
       // compute the accellerated correction
       if (itr > 1) {
-        fpa->nka_correction(nev_du, preconditioned_f, state.damp);
+        fpa->nka_correction(nev_du, preconditioned_f, previous_du);
       } else {
         fpa->nka_correction(nev_du, preconditioned_f);
       }
@@ -471,7 +473,13 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     bool clip;
     if (fn.IsPureNewton()) {
       clip = fn.modify_update_step(h, u, du);
+    } else {
+      clip = fn.modify_update_step(h, u, du);
+      // store the damped NKA update
+      // this will passed to the NKA update the next time around
+      *previous_du = du;
     }
+
 
     // Check the solution iterate for admissibility.
     if ( ! fn.is_admissible(u) ) { // iterate is bad; bail.

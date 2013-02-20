@@ -1211,8 +1211,6 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
     }
   } 
 
-  src_list.print(std::cout);
-
   return src_list;
 }
 
