@@ -67,17 +67,16 @@ target_link_libraries(ats
                       ${pk_flow_icy_overland}
 		              ${pk_prescribed_deformation}
                       ${pk_bases}
-                      energy_bc_factory
                       ${energy_relations_thermal_conductivity}
                       ${energy_relations_internal_energy}
                       ${energy_relations_enthalpy}
-                      flow_bc_factory
                       ${flow_relations_wrm}
                       ${flow_relations_wrm_models}
                       ${flow_relations_overland_conductivity}
                       ${flow_relations_elevation}
                       ${flow_relations_surface_subsurface_fluxes}
                       ${relations_eos}
+                      bc_factory
                       advection
                       divgrad
                       amanzi_whetstone

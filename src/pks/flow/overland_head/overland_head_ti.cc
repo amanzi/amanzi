@@ -78,6 +78,7 @@ void OverlandHeadFlow::fun( double t_old,
 
   // update boundary conditions
   bc_pressure_->Compute(t_new);
+  bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
@@ -214,6 +215,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
+  bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditionsNoElev_(S_next_.ptr());
 
