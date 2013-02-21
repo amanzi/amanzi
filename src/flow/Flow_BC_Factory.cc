@@ -427,10 +427,13 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
   if (list.get<bool>("rainfall", false))
       PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_RAINFALL, submodel);
 
-  if (list.get<string>("submodel", "pflotran") == "pflotran") {
+  std::string submodel_name = list.get<string>("submodel", "PFloTran");
+  if (submodel_name == "PFloTran") {
     PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN, submodel);
-  } else {
+  } else if (submodel_name == "FACT") {
     PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_FACT, submodel);
+  } else {
+    PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_SEEPAGE_AMANZI, submodel);
   }
 }
 

@@ -42,7 +42,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     CalculateRelativePermeability(solution_old);
 
     double time = Tp + dTp;
-    UpdateSourceBoundaryData(time, *solution_old_faces);
+    UpdateSourceBoundaryData(time, *solution_old_cells, *solution_old_faces);
 
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);

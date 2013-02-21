@@ -127,9 +127,9 @@ This list must have exactly one of the following three sublists
 .. code-block:: xml
 
       <ParameterList name="Steady">
-        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
-        <Parameter name="Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+        <Parameter name="Start" type="double" value="0.0"/>
+        <Parameter name="End" type="double" value="5.0"/>
+        <Parameter name="Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
 
 or
@@ -137,11 +137,11 @@ or
 .. code-block:: xml
 
       <ParameterList name="Initialize To Steady">
-        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="Switch" type="double" value="5.00000000000000000e-01"/>
-        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
-        <Parameter name="Steady Initial Time Step" type="double" value="1.00000000000000006e-01"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+        <Parameter name="Start" type="double" value="0.0"/>
+        <Parameter name="Switch" type="double" value="0.5"/>
+        <Parameter name="End" type="double" value="5.0"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="0.1"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
 
 or
@@ -149,9 +149,9 @@ or
 .. code-block:: xml
 
       <ParameterList name="Transient">
-        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
-        <Parameter name="Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+        <Parameter name="Start" type="double" value="0.0"/>
+        <Parameter name="End" type="double" value="5.0"/>
+        <Parameter name="Initial Time Step" type="double" value="0.1"/>
       </ParameterList>
 
 
@@ -408,10 +408,14 @@ parameters described below. Mix and match of parameters is allowed.
   to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
   Default falue is `"false`". 
 
-* `"submodel`" [string] indicates different models for seepage face boundary condition.
-  It can take values `"pflotran`" and `"stomp`". The first option leads to discontinous
-  change of boundary condition type, influx to pressure. The second option is described
-  in the document of mathematical models.
+* `"submodel`" [string] indicates different models for the seepage face boundary condition.
+  It can take values `"PFloTran`", `"FACT`", and `"Amanzi`". The first option leads to a 
+  discontinous change of the boundary condition type from the infiltration to pressure. 
+  The second option is described
+  in the document on mathematical models. It employes a smooth transition from the infiltration 
+  to mixed boundary condition. The third option combines the above two. Is uses a smooth transisiton
+  from the infiltration to pressure boundary condition. 
+  Default value is `"Amanzi`".
 
 Here is an examle:
 

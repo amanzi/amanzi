@@ -199,8 +199,8 @@ void Darcy_PK::InitPK()
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
-      *solution_faces, atm_pressure, rainfall_factor,
-      bc_submodel, bc_model, bc_values);
+      *solution_cells, *solution_faces, atm_pressure, 
+      rainfall_factor, bc_submodel, bc_model, bc_values);
 
   // Process other fundamental structures
   K.resize(ncells_owned);
@@ -416,8 +416,8 @@ int Darcy_PK::Advance(double dT_MPC)
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage, 
-      *solution_faces, atm_pressure, rainfall_factor,
-      bc_submodel, bc_model, bc_values);
+      *solution_cells, *solution_faces, atm_pressure,
+      rainfall_factor, bc_submodel, bc_model, bc_values);
 
   // calculate and assemble elemental stifness matrices
   matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);

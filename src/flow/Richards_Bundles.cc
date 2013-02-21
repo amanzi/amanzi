@@ -52,29 +52,9 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
  
 /* ******************************************************************
 * A wrapper for updating boundary conditions.
-* Warning: routine is marked as obsolete.
 ****************************************************************** */
-void Richards_PK::UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces)
-{
-  bc_pressure->Compute(Tp);
-  bc_flux->Compute(Tp);
-  bc_seepage->Compute(Tp);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(Tp);
-  else
-    bc_head->ComputeShift(Tp, shift_water_table_->Values());
-
-  ProcessBoundaryConditions(
-      bc_pressure, bc_head, bc_flux, bc_seepage,
-      p_faces, atm_pressure, rainfall_factor,
-      bc_submodel, bc_model, bc_values);
-}
-
-
-/* ******************************************************************
-* A wrapper for updating boundary conditions.
-****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces)
+void Richards_PK::UpdateSourceBoundaryData(
+    double Tp, Epetra_Vector& pressure, Epetra_Vector& lambda)
 {
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
@@ -93,7 +73,7 @@ void Richards_PK::UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces)
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
-      p_faces, atm_pressure, rainfall_factor,
+      pressure, lambda, atm_pressure, rainfall_factor,
       bc_submodel, bc_model, bc_values);
 }
 
@@ -138,7 +118,7 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
   CalculateRelativePermeability(u);
-  UpdateSourceBoundaryData(Tp, *u_faces);
+  UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // setup a new algebraic problem
   matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
@@ -163,7 +143,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
 
   // update all coefficients, boundary data, and source/sink terms
   CalculateRelativePermeability(u);
-  UpdateSourceBoundaryData(Tp, *u_faces);
+  UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // setup a new algebraic problem
   preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);

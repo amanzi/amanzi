@@ -113,13 +113,14 @@ int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
     solution_new = krylov(index);
 
     Epetra_Vector* solution_old_cells = FS->CreateCellView(*solution_old);
+    Epetra_Vector* solution_new_cells = FS->CreateCellView(*solution_new);
     Epetra_Vector* solution_new_faces = FS->CreateFaceView(*solution_new);
 
     // create algebraic problem
     CalculateRelativePermeability(*solution_new);
 
     double time = Tp + dTp;
-    UpdateSourceBoundaryData(time, *solution_new_faces);
+    UpdateSourceBoundaryData(time, *solution_new_cells, *solution_new_faces);
 
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     matrix_->CreateMFDrhsVectors();

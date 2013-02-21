@@ -100,6 +100,7 @@ void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
 void Flow_PK::ProcessBoundaryConditions(
     BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
     BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+    const Epetra_Vector& pressure_cells, 
     const Epetra_Vector& pressure_faces, const double atm_pressure,
     const std::vector<double>& rainfall_factor,
     const std::vector<int>& bc_submodel,
@@ -143,28 +144,34 @@ void Flow_PK::ProcessBoundaryConditions(
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
       } else {
-        bc_model[f] = FLOW_BC_FACE_PRESSURE;
-        bc_values[f][0] = atm_pressure;
-        bc_values[f][1] = bc->second * rainfall_factor[f];
-        flag_essential_bc = 1;
-        nseepage++;
-        area_seepage += mesh_->face_area(f);
+        int c = BoundaryFaceGetCell(f);
+        if (pressure_cells[c] < pressure_faces[f]) {
+          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_values[f][0] = bc->second * rainfall_factor[f];
+        } else {
+          bc_model[f] = FLOW_BC_FACE_PRESSURE;
+          bc_values[f][0] = atm_pressure;
+          flag_essential_bc = 1;
+          nseepage++;
+          area_seepage += mesh_->face_area(f);
+        }
       }
 
     } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {  // Model II.
-      double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
+      double I = FLOW_BC_SEEPAGE_FACE_IMPEDANCE;
+      double influx = bc->second * rainfall_factor[f];
+      double pcreg = influx / I;
       double pcmin = 3 * pcreg / 2;
       double pcmax = pcreg / 2;
 
       double pc = pressure_faces[f] - atm_pressure;
       if (pc < pcmin) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
-        bc_values[f][0] = bc->second * rainfall_factor[f];
-      } else if (pc > pcmax) {
+        bc_values[f][0] = influx;
+      } else if (pc >= pcmax) {
         bc_model[f] = FLOW_BC_FACE_MIXED;
-        double I = (2 * bc->second / pcreg) * rainfall_factor[f];
-        bc_values[f][0] = I * (atm_pressure + pcreg);
-        bc_values[f][1] = -I;
+        bc_values[f][0] = I * atm_pressure;
+        bc_values[f][1] = -I;  // Impedance I should be positive.
         flag_essential_bc = 1;
         nseepage++;
         area_seepage += mesh_->face_area(f);
@@ -172,7 +179,34 @@ void Flow_PK::ProcessBoundaryConditions(
         bc_model[f] = FLOW_BC_FACE_FLUX;
         double f = 2 * (pcreg - pc) / pcreg;
         double q = (7 - 2 * f - f * f) / 8;
-        bc_values[f][0] = q * bc->second * rainfall_factor[f]; 
+        bc_values[f][0] = q * influx; 
+      }
+
+    } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_AMANZI) {  // Model III.
+      double influx = bc->second * rainfall_factor[f];
+      double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
+
+      double pc = pressure_faces[f] - atm_pressure;
+      if (pc < pcreg) {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        bc_values[f][0] = influx;
+      } else if (pc >= 0.0) {
+        int c = BoundaryFaceGetCell(f);
+        if (pressure_cells[c] < pressure_faces[f]) {
+          bc_model[f] = FLOW_BC_FACE_FLUX;
+          bc_values[f][0] = influx;
+        } else {
+          bc_model[f] = FLOW_BC_FACE_PRESSURE;
+          bc_values[f][0] = atm_pressure;
+          flag_essential_bc = 1;
+          nseepage++;
+          area_seepage += mesh_->face_area(f);
+        }
+      } else {
+        bc_model[f] = FLOW_BC_FACE_FLUX;
+        double f = pc / pcreg;
+        double q = f * f * (3 - 2 * f);
+        bc_values[f][0] = q * influx;
       }
     }
   }
@@ -477,6 +511,17 @@ double Flow_PK::WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Ve
     }
   }
   return volume;
+}
+
+
+/* ******************************************************************
+* Returns the first cell attached to a boundary face.   
+****************************************************************** */
+int Flow_PK::BoundaryFaceGetCell(int f)
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  return cells[0];
 }
 
 

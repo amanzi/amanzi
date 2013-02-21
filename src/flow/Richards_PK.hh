@@ -104,8 +104,7 @@ class Richards_PK : public Flow_PK {
   void AssembleMatrixMFD(const Epetra_Vector &u, double Tp);
   void AssemblePreconditionerMFD(const Epetra_Vector &u, double Tp, double dTp);
 
-  void UpdateBoundaryConditions(double Tp, Epetra_Vector& p_faces);
-  void UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_faces);
+  void UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_cells, Epetra_Vector& p_faces);
   double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers

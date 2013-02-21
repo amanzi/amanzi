@@ -260,7 +260,7 @@ void Richards_PK::InitializeAuxiliaryData()
   DeriveFaceValuesFromCellValues(pressure, lambda);
 
   double time = T_physics;
-  UpdateSourceBoundaryData(time, lambda);
+  UpdateSourceBoundaryData(time, pressure, lambda);
 
   // saturations
   Epetra_Vector& ws = FS->ref_water_saturation();

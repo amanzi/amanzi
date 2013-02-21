@@ -24,8 +24,9 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 {
+  Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
-  UpdateSourceBoundaryData(Tp, *u_faces);
+  UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // set fully saturated media
   Krel_cells->PutScalar(1.0);
@@ -68,10 +69,11 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
 {
   Epetra_Vector utmp(u);
+  Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
   Epetra_Vector* utmp_faces = FS->CreateFaceView(utmp);
 
-  UpdateSourceBoundaryData(Tp, *u_faces);
+  UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // calculate and assemble elemental stiffness matrix
   CalculateRelativePermeability(u);

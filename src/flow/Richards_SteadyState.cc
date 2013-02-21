@@ -197,8 +197,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_faces, atm_pressure, rainfall_factor,
-        bc_submodel, bc_model, bc_values);
+        *solution_cells, *solution_faces, atm_pressure,
+        rainfall_factor, bc_submodel, bc_model, bc_values);
 
     // update permeabilities
     CalculateRelativePermeability(*solution);
@@ -219,11 +219,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
-    // DEBUG
-    // Matrix_Audit audit(mesh_, matrix_);
-    // audit.InitAudit();
-    // audit.RunAudit();
-
     // check convergence of non-linear residual
     L2error = matrix_->ComputeResidual(solution_new, residual);
     residual.Norm2(&L2error);
@@ -235,7 +230,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    solver->Iterate((long long)max_itrs_linear, convergence_tol_linear);
+    double tol_dynamic = std::max<double>(convergence_tol_linear, L2error * 1e-6);
+    solver->Iterate((long long)max_itrs_linear, tol_dynamic);
     int num_itrs_linear = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
 
@@ -308,8 +304,8 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     bc_seepage->Compute(time);
     ProcessBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_faces, atm_pressure, rainfall_factor,
-        bc_submodel, bc_model, bc_values);
+        *solution_cells, *solution_faces, atm_pressure,
+        rainfall_factor, bc_submodel, bc_model, bc_values);
 
     // update permeabilities
     CalculateRelativePermeability(*solution);

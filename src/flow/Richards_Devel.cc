@@ -61,8 +61,8 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
 
     ProcessBoundaryConditions(
         bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_faces, atm_pressure, rainfall_factor,
-        bc_submodel, bc_model, bc_values);
+        *solution_cells, *solution_faces, atm_pressure,
+        rainfall_factor, bc_submodel, bc_model, bc_values);
 
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);

@@ -61,6 +61,7 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessBoundaryConditions(
       BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
       BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+      const Epetra_Vector& pressure_cells, 
       const Epetra_Vector& pressure_faces, const double atm_pressure,
       const std::vector<double>& rainfall_factor,
       const std::vector<int>& bc_submodel,
@@ -122,6 +123,9 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStringPreconditioner(const std::string name, int* preconditioner);
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list, const Teuchos::ParameterList& solver_list);
   void OutputTimeHistory(std::vector<dt_tuple>& dT_history);
+
+  // extension of mesh API
+  int BoundaryFaceGetCell(int f);
 
   // extension of STL
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 
