@@ -40,12 +40,6 @@ PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
 void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
 
-  Teuchos::ParameterList poro_plist = plist_.sublist("porosity evaluator");
-  poro_plist.sublist("VerboseObject").set<std::string>("Verbosity Level","extreme");
-  Teuchos::RCP<DeformRelations::PorosityEvaluator> porosity_evaluator 
-    = Teuchos::rcp(new DeformRelations::PorosityEvaluator(poro_plist));
-  S->SetFieldEvaluator("porosity", porosity_evaluator);
-
   std::vector<AmanziMesh::Entity_kind> location(1);
   location[0] = AmanziMesh::CELL;
   std::vector<int> num_dofs(1);
@@ -55,6 +49,10 @@ void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
 
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(name, location, num_dofs);
+
+  std::cout << key_ << endl;
+  std::cout << name_ << endl;
+
 }
 
 // -- Initialize owned (dependent) variables.
