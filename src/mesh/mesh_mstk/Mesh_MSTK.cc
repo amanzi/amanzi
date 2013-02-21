@@ -833,6 +833,105 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
     int input_type = 0; /* No parallel info is given */
     int status = MSTK_Weave_DistributedMeshes(mesh, cell_dimension(),
                                               num_ghost_layers, input_type, mpicomm);
+
+    // Now we have to build parent information for global entities
+
+    MAttrib_ptr vparentgid_att = MAttrib_New(mesh,"vparent_gid",INT,MVERTEX);
+    MAttrib_ptr eparentgid_att = MAttrib_New(mesh,"eparent_gid",INT,MEDGE);
+    MAttrib_ptr fparentgid_att = MAttrib_New(mesh,"fparent_gid",INT,MFACE);
+    MAttrib_ptr rparentgid_att = MAttrib_New(mesh,"rparent_gid",INT,MREGION);
+
+    // Attach parent global ID info to entities used by other processors
+
+    idx = 0;
+    MVertex_ptr mv;
+    while ((mv = (MVertex_ptr) MESH_Next_Vertex(mesh,&idx)))
+      if (MV_PType(mv) == POVERLAP) {
+        MEnt_Get_AttVal(mv,vparentatt,&ival,&rval,&pval);
+        MEnt_Set_AttVal(mv,vparentgid_att,MV_GlobalID((MVertex_ptr)pval),0.0,
+                        NULL);
+      }
+    idx = 0;
+    MEdge_ptr me;
+    while ((me = (MEdge_ptr) MESH_Next_Edge(mesh,&idx)))
+      if (ME_PType(me) == POVERLAP) {
+        MEnt_Get_AttVal(me,eparentatt,&ival,&rval,&pval);
+        MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,
+                        NULL);
+      }
+    idx = 0;
+    MFace_ptr mf;
+    while ((mf = (MFace_ptr) MESH_Next_Face(mesh,&idx)))
+      if (MF_PType(mf) == POVERLAP) {
+        MEnt_Get_AttVal(mf,fparentatt,&ival,&rval,&pval);
+        MEnt_Set_AttVal(mf,fparentgid_att,MF_GlobalID((MFace_ptr)pval),0.0,
+                        NULL);
+      }
+    idx = 0;
+    MRegion_ptr mr;
+    while ((mr = (MRegion_ptr) MESH_Next_Region(mesh,&idx)))
+      if (MR_PType(mr) == POVERLAP) {
+        MEnt_Get_AttVal(mr,rparentatt,&ival,&rval,&pval);
+        MEnt_Set_AttVal(mr,rparentgid_att,MR_GlobalID((MRegion_ptr)pval),0.0,
+                        NULL);
+      }
+      
+    // Update attributes on ghost entities - this will ensure that
+    // ghost entities have their parent global ID information
+
+    status &= MSTK_UpdateAttr(mesh,mpicomm);
+
+    // Now reverse engineer the parents of ghost entities from the global IDs
+
+    idx = 0;
+    while ((mv = (MVertex_ptr) MESH_Next_GhostVertex(mesh,&idx))) {
+      MEnt_Get_AttVal(mv,vparentgid_att,&ival,&rval,&pval);
+      MVertex_ptr mv_parent = MESH_VertexFromGlobalID(inmesh_mstk,ival);
+      if (!mv_parent) {
+        Errors::Message 
+          mesg("Cannot find ghost vertex with given global ID");
+        amanzi_throw(mesg);
+      }
+      MEnt_Set_AttVal(mv,vparentatt,0,0.0,mv_parent);
+    }
+    idx = 0;
+    while ((me = (MEdge_ptr) MESH_Next_GhostEdge(mesh,&idx))) {
+      MEnt_Get_AttVal(me,eparentgid_att,&ival,&rval,&pval);
+      MEdge_ptr me_parent = MESH_EdgeFromGlobalID(inmesh_mstk,ival);
+      if (!me_parent) {
+        Errors::Message 
+          mesg("Cannot find ghost edge with given global ID");
+        amanzi_throw(mesg);
+      }
+      MEnt_Set_AttVal(me,eparentatt,0,0.0,me_parent);
+    }
+    idx = 0;
+    while ((mf = (MFace_ptr) MESH_Next_GhostFace(mesh,&idx))) {
+      MEnt_Get_AttVal(mf,fparentgid_att,&ival,&rval,&pval);
+      MFace_ptr mf_parent = MESH_FaceFromGlobalID(inmesh_mstk,ival);
+      if (!mf_parent) {
+        Errors::Message 
+          mesg("Cannot find ghost face with given global ID");
+        amanzi_throw(mesg);
+      }
+      MEnt_Set_AttVal(mf,fparentatt,0,0.0,mf_parent);
+    }
+    idx = 0;
+    while ((mr = (MRegion_ptr) MESH_Next_GhostRegion(mesh,&idx))) {
+      MEnt_Get_AttVal(mr,rparentgid_att,&ival,&rval,&pval);
+      MRegion_ptr mr_parent = MESH_RegionFromGlobalID(inmesh_mstk,ival);
+      if (!mr_parent) {
+        Errors::Message 
+          mesg("Cannot find ghost region with given global ID");
+        amanzi_throw(mesg);
+      }
+      MEnt_Set_AttVal(mr,rparentatt,0,0.0,mr_parent);
+    }
+
+    MAttrib_Delete(vparentgid_att);
+    MAttrib_Delete(eparentgid_att);
+    MAttrib_Delete(fparentgid_att);
+    MAttrib_Delete(rparentgid_att);
   }
 
 
