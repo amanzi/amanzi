@@ -69,6 +69,28 @@ void PKPhysicalBase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
 
 
 // -----------------------------------------------------------------------------
+// Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
+// stay current for changed_solution()
+// -----------------------------------------------------------------------------
+void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
+        const Teuchos::RCP<State>& S_inter,
+        const Teuchos::RCP<State>& S_next) {
+  PKDefaultBase::set_states(S, S_inter, S_next);
+
+  Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
+
+#if ENABLE_DBC
+  solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  ASSERT(solution_evaluator_ != Teuchos::null);
+#else
+  solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
+#endif
+
+  solution_evaluator_->SetFieldAsChanged();
+};
+
+
+// -----------------------------------------------------------------------------
 // Initialization of the PK data.
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
