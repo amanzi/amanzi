@@ -137,7 +137,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
       (*Dff_)[f] += Aff_cells_[c](n, n);
     }
   }
-  FS->CombineGhostFace2MasterFace(*Dff_, Add);
+  FS_->CombineGhostFace2MasterFace(*Dff_, Add);
 
   // convert right-hand side to a cell-based vector
   const Epetra_Map& cmap = mesh_->cell_map(false);
@@ -155,7 +155,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
   Epetra_Vector Dcc(cmap_wghost);
 
   for (int c = 0; c < ncells_owned; c++) Dcc[c] = (*Acc_)[c];
-  FS->CopyMasterCell2GhostCell(Dcc);
+  FS_->CopyMasterCell2GhostCell(Dcc);
 
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];
@@ -174,7 +174,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
       if (f >= nfaces_owned) Acf_parallel[f] = Acf_cells_[c][i];
     }
   }
-  FS->CombineGhostFace2MasterFace(Acf_parallel, Add);
+  FS_->CombineGhostFace2MasterFace(Acf_parallel, Add);
 
   // populate the global matrix
   Spp_->PutScalar(0.0);
@@ -213,6 +213,16 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 
 
 /* ******************************************************************
+* Assembles preconditioner. It has same set of parameters as matrix.
+****************************************************************** */
+void Matrix_MFD_TPFA::AssembleSchurComplement(
+    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
+{
+  AssembleGlobalMatrices();
+}
+
+ 
+/* ******************************************************************
 * Computation of the part of the jacobian which depends on
 * analytical derivatives of relative permeabilities
 ****************************************************************** */
@@ -249,24 +259,15 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
   Epetra_Vector pres_gh(cmap_wghost);
 
   // Epetra_Vector pressure_vec(solution);
-  FS->CopyMasterCell2GhostCell(solution, pres_gh);
+  FS_->CopyMasterCell2GhostCell(solution, pres_gh);
 
   Epetra_Vector perm_vert_gh(cmap_wghost);
-  Epetra_Vector& perm_vert_vec = FS->ref_vertical_permeability();
-  FS->CopyMasterCell2GhostCell(perm_vert_vec, perm_vert_gh);
+  Epetra_Vector& perm_vert_vec = FS_->ref_vertical_permeability();
+  FS_->CopyMasterCell2GhostCell(perm_vert_vec, perm_vert_gh);
 
   Epetra_Vector perm_horz_gh(cmap_wghost);
-  Epetra_Vector& perm_horz_vec = FS->ref_horizontal_permeability();
-  FS->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
-
-  // Epetra_Vector Krel_gh(cmap_wghost);
-  // FS->CopyMasterCell2GhostCell(Krel_cells, Krel_gh);
-
-  // Epetra_Vector dK_dP_gh(cmap_wghost);
-  // FS->CopyMasterCell2GhostCell(dK_dP_cells, dK_dP_gh);
-
-  // cout<<"Krel_cells\n"<<Krel_cells<<endl;
-  // cout<<"Krel_gh\n"<<Krel_gh<<endl;
+  Epetra_Vector& perm_horz_vec = FS_->ref_horizontal_permeability();
+  FS_->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
 
   for (int f = 0; f < nfaces_owned; f++){
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -345,13 +346,13 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
   double K[2];
   double dKrel_dp[2];
 
-  double rho_w = FS->ref_fluid_density();
+  double rho_w = FS_->ref_fluid_density();
 
   for (int c = 0; c < mcells; c++) {
     K[c] = 0.0;
     for (int i = 0; i < dim-1; i++) K[c] += normal[i]*normal[i]*perm_abs_horz[c];
     K[c] += normal[dim-1]*normal[dim-1]*perm_abs_vert[c];
-    K[c] /= FS->ref_fluid_viscosity();
+    K[c] /= FS_->ref_fluid_viscosity();
   }
 
   double Kabs_dist;
@@ -362,9 +363,9 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
     Kabs_dist = 2*K[0]*K[1]/(dist*(K[0] + K[1]));
   }
 
-  double rho = FS->ref_fluid_density();
+  double rho = FS_->ref_fluid_density();
   AmanziGeometry::Point gravity(dim);
-  for (int i = 0; i < dim; i++) gravity[i] = (*(FS->gravity()))[i] * rho;
+  for (int i = 0; i < dim; i++) gravity[i] = (*(FS_->gravity()))[i] * rho;
 
   double grn = dist*gravity*normal;
   // cout<<"grn "<<grn<<endl;
@@ -412,8 +413,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
   //   cout<<endl;
   // }
   } else if (mcells == 1) {
-    if ((bc_models[face_id] == FLOW_BC_FACE_PRESSURE) ||
-        (bc_models[face_id] == FLOW_BC_FACE_PRESSURE_SEEPAGE)) {                   
+    if (bc_models[face_id] == FLOW_BC_FACE_PRESSURE) {                   
 		  pres[1] = bc_values[face_id][0];
 
       dphi = pres[0] - pres[1] + grn;
@@ -457,9 +457,6 @@ void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r)
   // cout<<"NonZeros "<<NumJac_->NumGlobalEntries(cell)<<endl;;
 
   NumJac_->GlobalAssemble();
-
-  // std::cout<<"NumJac_ "<<r[cell]<<"\n";
-  // std::cout<<(*NumJac_)<<endl;
 }
 
 

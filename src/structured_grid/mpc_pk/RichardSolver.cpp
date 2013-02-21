@@ -27,6 +27,8 @@ static bool scale_soln_before_solve_DEF = true;
 static bool semi_analytic_J_DEF = false; // There is a bug in this, or at least a set of solver configs reqd
 static bool centered_diff_J_DEF = true;
 static Real variable_switch_saturation_threshold_DEF = -0.9999;
+static std::string ls_reason_DEF = "Invalid";
+static bool ls_success_DEF = false;
 
 static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
 static bool dump_Jacobian_and_exit = false;
@@ -54,6 +56,8 @@ RSParams::RSParams()
   centered_diff_J = centered_diff_J_DEF;
   variable_switch_saturation_threshold = variable_switch_saturation_threshold_DEF;
   max_num_Jacobian_reuses = max_num_Jacobian_reuses_DEF;
+  ls_success = ls_success_DEF;
+  ls_reason = ls_reason_DEF;
 }
 
 static RichardSolver* static_rs_ptr = 0;
@@ -95,6 +99,8 @@ struct CheckCtx
 };
 
 
+#undef __FUNCT__  
+#define __FUNCT__ "RichardSolverCtr"
 RichardSolver::RichardSolver(PMAmr&          _pm_amr,
 			     const RSParams& _params,
 			     Layout&         _layout)
@@ -234,6 +240,8 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "RichardSolverDtr"
 RichardSolver::~RichardSolver()
 {
     PetscErrorCode ierr;
@@ -274,11 +282,17 @@ RichardSolver::~RichardSolver()
 
 static int dump_cnt = 0;
 
+#undef __FUNCT__  
+#define __FUNCT__ "Richard_SNESConverged"
 PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm, 
                                      PetscReal dx_norm, PetscReal fnew_norm, 
                                      SNESConvergedReason *reason, void *ctx)
 {
-    CheckCtx *user = (CheckCtx *) ctx;
+    CheckCtx *check_ctx = (CheckCtx *) ctx;
+    RichardSolver* rs = check_ctx->rs;
+    RichardNLSdata* nld = check_ctx->nld;
+    const RSParams& rsp = rs->Parameters();
+
     PetscErrorCode ierr;
 
     PetscReal atol, rtol, stol;
@@ -286,36 +300,18 @@ PetscErrorCode Richard_SNESConverged(SNES snes, PetscInt it,PetscReal xnew_norm,
 
     static PetscReal dx_norm_0, fnew_norm_0;
 
-    ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf);
-    ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx);
+    if (!rsp.ls_success) {
+      *reason = SNES_DIVERGED_LINE_SEARCH;
+    }
+    else {
+      ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf); CHKPETSC(ierr);
+      ierr = SNESDefaultConverged(snes,it,xnew_norm,dx_norm,fnew_norm,reason,ctx); CHKPETSC(ierr);
+    }
 
     if (*reason > 0) {
         dump_cnt = 0;
     }
     
-#if 0
-    if (it == 1) {
-      dx_norm_0 = dx_norm;
-      fnew_norm_0 = fnew_norm;
-      if (ParallelDescriptor::IOProcessor()) {            
-	std::cout << "                   dx_norm_0: " << dx_norm_0 << std::endl;
-	std::cout << "                 fnew_norm_0: " << fnew_norm_0 << std::endl;
-      }
-    }
-    if (it != 0) // if it=0, xnew_norm=dx_norm=0 in ls.c
-      {
-	if (ParallelDescriptor::IOProcessor()) {            
-	  std::cout << "                   dx_norm: " << dx_norm 
-                    << ", dxrel: " << dx_norm / dx_norm_0 
-                    << ", stol: " << stol << std::endl;
-	  std::cout << "                    p_norm: " << dx_norm / xnew_norm << std::endl;
-	  std::cout << "                 fnew_norm: " << fnew_norm 
-                    << ", frel: " << fnew_norm / fnew_norm_0 
-                    << ", atol: " << atol 
-                    << ", rtol: " << rtol << std::endl;
-	}
-      }
-#endif
     PetscFunctionReturn(ierr);
 }
 
@@ -341,6 +337,8 @@ RichardSolver::ReusePreviousJacobian()
     return (num_remaining_Jacobian_reuses > 0);
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "Solve"
 int
 RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& nl_data)
 {
@@ -385,11 +383,12 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   PetscErrorCode (*func)(SNES,Vec,Vec,void*);
   void *fctx;
   ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
-  (*func)(snes,SolnV,RhsV,fctx);
+  ierr = (*func)(snes,SolnV,RhsV,fctx); CHKPETSC(ierr);
 
   RichardSolver::SetTheRichardSolver(this);
   dump_cnt = 0;
-  ierr = SNESSolve(snes,PETSC_NULL,SolnV);
+  params.ls_success = true;
+  ierr = SNESSolve(snes,PETSC_NULL,SolnV);// CHKPETSC(ierr);
   RichardSolver::SetTheRichardSolver(0);
 
   int iters;
@@ -397,7 +396,7 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   nl_data.SetNLIterationsTaken(iters);
 
   SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason(snes,&reason);
+  ierr = SNESGetConvergedReason(snes,&reason); CHKPETSC(ierr);
 
   if (params.scale_soln_before_solve) {
       ierr = VecPointwiseMult(SolnV,SolnV,GetSolnTypV()); // Unscale current candidate solution
@@ -412,9 +411,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   return reason;
 }
-
-
-
 
 void
 RichardSolver::ResetRhoSat()
@@ -458,6 +454,8 @@ RichardSolver::GetDt() const
   return mydt;
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "BuildOpSkel"
 void
 RichardSolver::BuildOpSkel(Mat& J)
 {
@@ -1034,6 +1032,8 @@ RichardSolver::DpDtResidual(MFTower& residual,
     }
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "CreatJac"
 void RichardSolver::CreateJac(Mat& J, 
 			      MFTower& pressure,
 			      Real dt)
@@ -1194,6 +1194,8 @@ void RichardSolver::CreateJac(Mat& J,
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY); CHKPETSC(ierr);
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "RichardRes_DpDt"
 PetscErrorCode 
 RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 {
@@ -1204,7 +1206,7 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     }
 
     if (rs->Parameters().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); // Unscale solution
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
     }
 
     MFTower& xMFT = rs->GetPressure();
@@ -1233,11 +1235,13 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
     if (rs->Parameters().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); // Reset solution scaling
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
     }
-    return 0;
+    PetscFunctionReturn(0);
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "RichardR2"
 PetscErrorCode 
 RichardR2(SNES snes,Vec x,Vec f,void *dummy)
 {
@@ -1248,7 +1252,7 @@ RichardR2(SNES snes,Vec x,Vec f,void *dummy)
     }
 
     if (rs->Parameters().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); // Unscale solution
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
     }
 
     MFTower& xMFT = rs->GetPressure();
@@ -1263,13 +1267,15 @@ RichardR2(SNES snes,Vec x,Vec f,void *dummy)
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
     if (rs->Parameters().scale_soln_before_solve) {
-        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); // Reset solution scaling
+        ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
     }
-    return 0;
+    PetscFunctionReturn(0);
 }
 
 #if defined(PETSC_3_2)
 
+#undef __FUNCT__  
+#define __FUNCT__ "RichardJacFromPM"
 PetscErrorCode 
 RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, void *dummy)
 {
@@ -1291,6 +1297,8 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
   PetscFunctionReturn(0);
 } 
 
+#undef __FUNCT__  
+#define __FUNCT__ "RecordSolve"
 void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* check_ctx)
 {
   RichardSolver* rs = check_ctx->rs;
@@ -1318,11 +1326,11 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
   MFTower& DsMFT      = *(dMFT[7]);
   MFTower& fMFT       = *(dMFT[8]);
 
-  ierr = layout.VecToMFTower(    ResMFT,      G,0);
-  ierr = layout.VecToMFTower(     DpMFT,     dp,0);
-  ierr = layout.VecToMFTower(Dp_origMFT,dp_orig,0);
-  ierr = layout.VecToMFTower(   PoldMFT,      p,0);
-  ierr = layout.VecToMFTower(   PnewMFT,   pnew,0);
+  ierr = layout.VecToMFTower(    ResMFT,      G,0); CHKPETSC(ierr);
+  ierr = layout.VecToMFTower(     DpMFT,     dp,0); CHKPETSC(ierr);
+  ierr = layout.VecToMFTower(Dp_origMFT,dp_orig,0); CHKPETSC(ierr);
+  ierr = layout.VecToMFTower(   PoldMFT,      p,0); CHKPETSC(ierr);
+  ierr = layout.VecToMFTower(   PnewMFT,   pnew,0); CHKPETSC(ierr);
 
   Real cur_time = rs->GetTime();
   Real rho = rs->GetDensity()[0];
@@ -1391,6 +1399,9 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
    changed_w 	- indicates current iterate was changed by this routine 
 
  */
+
+#undef __FUNCT__  
+#define __FUNCT__ "PostCheck"
 PetscErrorCode 
 PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool  *changed_w)
 {
@@ -1399,11 +1410,14 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     CheckCtx* check_ctx = (CheckCtx*)ctx;
     RichardSolver* rs = check_ctx->rs;
     RichardNLSdata* nld = check_ctx->nld;
-    const RSParams& rsp = rs->Parameters();
+    RSParams& rsp = rs->Parameters();
 
     if (rs==0) {
         BoxLib::Abort("Context cast failed in PostCheck");
     }
+
+    rsp.ls_success = true;
+    rsp.ls_reason = "In Progress";
 
     PetscErrorCode ierr;
     PetscReal fnorm, xnorm, ynorm, gnorm;
@@ -1411,21 +1425,21 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     PetscErrorCode (*func)(SNES,Vec,Vec,void*);
     void *fctx;
 
-    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
+    ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx); CHKPETSC(ierr);
 
     Vec& F = rs->GetResidualV();
     Vec& G = rs->GetTrialResV();
     
-    (*func)(snes,x,F,fctx);
-    ierr = VecNorm(F,NORM_2,&fnorm);
+    ierr = (*func)(snes,x,F,fctx); CHKPETSC(ierr);
+    ierr = VecNorm(F,NORM_2,&fnorm); CHKPETSC(ierr);
 
-    (*func)(snes,w,G,fctx);
-    ierr = VecNorm(G,NORM_2,&gnorm);    
+    ierr = (*func)(snes,w,G,fctx); CHKPETSC(ierr);
+    ierr = VecNorm(G,NORM_2,&gnorm);  CHKPETSC(ierr);
 
     Vec y_orig;
     if (!(rs->GetRecordFile().empty())) {
-      ierr = VecDuplicate(y,&y_orig);
-      ierr = VecCopy(y,y_orig);
+      ierr = VecDuplicate(y,&y_orig); CHKPETSC(ierr);
+      ierr = VecCopy(y,y_orig); CHKPETSC(ierr);
     }
 
     bool norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
@@ -1444,11 +1458,11 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
         }
 
         PetscReal mone = -1;
-        ierr=VecWAXPY(w,mone*ls_factor,y,x); /* w = -y + x */
+        ierr=VecWAXPY(w,mone*ls_factor,y,x); CHKPETSC(ierr); /* w = -y + x */
         *changed_w = PETSC_TRUE;
         
-        (*func)(snes,w,G,fctx);
-        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
+        ierr = (*func)(snes,w,G,fctx); CHKPETSC(ierr);
+        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr); CHKPETSC(ierr);
         norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
         
         if (ls_factor < 1 
@@ -1471,44 +1485,49 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     if (ls_iterations > rsp.max_ls_iterations) 
     {
         std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
-        ierr = PETSC_TRUE;
         if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
+        rsp.ls_success = false;
+        rsp.ls_reason = reason;
     }
     else if (ls_factor <= rsp.min_ls_factor) {
         std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
-        ierr = PETSC_TRUE;
         if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
+        rsp.ls_success = false;
+        rsp.ls_reason = reason;
     }
     else {
-        ierr = PETSC_FALSE;
-
         if (ls_factor == 1) {
             std::string reason = "Full linear step accepted";
             if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search>1) {
                 std::cout << tag << tag_ls << reason << std::endl;
             }
+            rsp.ls_reason = reason;
         }
         else {
             // Set update to the one actually used
-            ierr=VecScale(y,ls_factor);
+            ierr=VecScale(y,ls_factor); CHKPETSC(ierr);
             *changed_y = PETSC_TRUE;
+            rsp.ls_reason = "Damped step successful";
         }
+        rsp.ls_success = true;
 
         int iters = nld->NLIterationsTaken() + 1;
     }
 
     if (!(rs->GetRecordFile().empty())) {
       RecordSolve(x,y,y_orig,w,F,G,check_ctx);
-      ierr = VecDestroy(&y_orig);
+      ierr = VecDestroy(&y_orig); CHKPETSC(ierr);
     }
     
-    return ierr;
+    PetscFunctionReturn(0);
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "AltUpdate"
 PetscErrorCode
 AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *changed_dp,PetscBool *changed_pkp1)
 {
@@ -1519,7 +1538,10 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
     if (rs==0) {
         BoxLib::Abort("Context cast failed in AltUpdate");
     }
-    const RSParams& rsp = rs->Parameters();
+    RSParams& rsp = rs->Parameters();
+
+    rsp.ls_success = true;
+    rsp.ls_reason = "In Progress";
 
     if (rs->Parameters().scale_soln_before_solve) {
         Vec& Ptyp = rs->GetSolnTypV();
@@ -1582,7 +1604,10 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
     *changed_dp = PETSC_FALSE; // We changed dp and pnew, but we took care of the update already
     *changed_pkp1 = PETSC_TRUE;
 
-    PetscFunctionReturn(ierr);
+    rsp.ls_success = true;
+    rsp.ls_reason = "Damped step successful";
+
+    PetscFunctionReturn(0);
 }
 
 #if defined(PETSC_3_2)
@@ -1591,6 +1616,8 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
 #include <petsc-private/snesimpl.h> 
 #endif
 
+#undef __FUNCT__  
+#define __FUNCT__ "PostCheckAlt"
 PetscErrorCode 
 PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,PetscBool  *changed_pnew)
 {
@@ -1602,7 +1629,10 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
     if (rs==0) {
         BoxLib::Abort("Context cast failed in PostCheckAlt");
     }
-    const RSParams& rsp = rs->Parameters();
+    RSParams& rsp = rs->Parameters();
+
+    rsp.ls_success = true;
+    rsp.ls_reason = "In Progress";
 
     PetscErrorCode ierr;
     PetscReal fnorm, xnorm, ynorm, gnorm;
@@ -1616,10 +1646,10 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
     Vec& F = rs->GetResidualV();
     Vec& G = rs->GetTrialResV();
     
-    (*func)(snes,p,F,fctx);
+    ierr = (*func)(snes,p,F,fctx);CHKPETSC(ierr);
     ierr = VecNorm(F,NORM_2,&fnorm);CHKPETSC(ierr);
 
-    (*func)(snes,pnew,G,fctx);
+    ierr = (*func)(snes,pnew,G,fctx);CHKPETSC(ierr);
     ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
 
     Vec dp_orig;
@@ -1643,8 +1673,8 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
         }
 
         ierr = AltUpdate(snes,p,dp,pnew,ctx,ls_factor,changed_dp,changed_pnew);CHKPETSC(ierr);
-        (*func)(snes,pnew,G,fctx);
-        ierr=VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);CHKPETSC(ierr);
+        ierr = (*func)(snes,pnew,G,fctx);CHKPETSC(ierr);
+        ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
         norm_acceptable = gnorm < fnorm * rsp.ls_acceptance_factor;
         
         if (ls_factor < 1 
@@ -1667,39 +1697,41 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
     if (ls_iterations > rsp.max_ls_iterations) 
     {
         std::string reason = "Solution rejected.  Linear system solved, but ls_iterations too large";
-        ierr = PETSC_TRUE;
-        if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
+        if (ParallelDescriptor::IOProcessor()) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
         snes->reason = SNES_DIVERGED_LINE_SEARCH;
+        rsp.ls_success = false;
+        rsp.ls_reason = reason;
     }
     else if (ls_factor <= rsp.min_ls_factor) {
         std::string reason = "Solution rejected.  Linear system solved, but ls_factor too small";
-        ierr = PETSC_TRUE;
-        if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
+        if (ParallelDescriptor::IOProcessor()) {
             std::cout << tag << tag_ls << reason << std::endl;
         }
         snes->reason = SNES_DIVERGED_LINE_SEARCH;
+        rsp.ls_success = false;
+        rsp.ls_reason = reason;
     }
     else {
-        ierr = PETSC_FALSE;
-
         if (ls_factor == 1) {
             std::string reason = "Full linear step accepted";
             if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search>1) {
                 std::cout << tag << tag_ls << reason << std::endl;
             }
+            rsp.ls_reason = reason;
         }
+        rsp.ls_success = true;
 
         int iters = nld->NLIterationsTaken() + 1;
     }
 
     if (!(rs->GetRecordFile().empty())) {
       RecordSolve(p,dp,dp_orig,pnew,F,G,check_ctx);
-      ierr = VecDestroy(&dp_orig);
+      ierr = VecDestroy(&dp_orig);CHKPETSC(ierr);
     }
 
-    PetscFunctionReturn(ierr);
+    PetscFunctionReturn(0);
 }
 
 #endif
@@ -1711,6 +1743,8 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
 #include <petsc-private/matimpl.h> 
 #endif
 
+#undef __FUNCT__  
+#define __FUNCT__ "RichardMatFDColoringApply"
 PetscErrorCode  
 RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
 {
@@ -1931,10 +1965,10 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   if (dump_Jacobian_and_exit) {
     std::string viewer_filename="mat.output";
     PetscViewer viewer;
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,viewer_filename.c_str(),&viewer);
-    ierr = MatView(J,viewer);
-    ierr = PetscViewerDestroy(&viewer);
-    ierr = VecGetSize(w2,&N);
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,viewer_filename.c_str(),&viewer); CHKPETSC(ierr);
+    ierr = MatView(J,viewer); CHKPETSC(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKPETSC(ierr);
+    ierr = VecGetSize(w2,&N); CHKPETSC(ierr);
     if (ParallelDescriptor::IOProcessor()) {
       std::cout << "There are " << N << " rows in the Jacobian" << std::endl;
     }
@@ -1951,13 +1985,15 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag
   PetscFunctionReturn(0);
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "ComputeRichardAlpha"
 void
 RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
 {
   MFTower& PCapParamsMFT = GetPCapParams();
   MFTower& PMFT = GetPressure();
   MFTower& aMFT = GetAlpha();
-  PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0);
+  PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0); CHKPETSC(ierr);
 
   //Real total_volume_inv = 1/TotalVolume();
 
@@ -1994,6 +2030,8 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
 }
 
 
+#undef __FUNCT__  
+#define __FUNCT__ "SemiAnalyticMatFDColoringApply"
 PetscErrorCode  
 SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure *flag,void *sctx)
 {
@@ -2051,12 +2089,12 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   Vec& press = rs->GetTrialResV(); // A handy Vec to use
   ierr = VecCopy(x1_tmp,press); CHKPETSC(ierr);
   if (rs->Parameters().scale_soln_before_solve) {
-      ierr = VecPointwiseMult(press,x1_tmp,rs->GetSolnTypV()); // Mult(w,x,y): w=x.y, p=pbar.ptyp
+      ierr = VecPointwiseMult(press,x1_tmp,rs->GetSolnTypV()); CHKPETSC(ierr); // Mult(w,x,y): w=x.y, p=pbar.ptyp
   }
   rs->ComputeRichardAlpha(AlphaV,press);
 
   if (rs->Parameters().scale_soln_before_solve) {
-      ierr = VecPointwiseMult(AlphaV,AlphaV,rs->GetSolnTypV()); // Mult(w,x,y): w=x.y, alphabar=alpha.ptyp
+      ierr = VecPointwiseMult(AlphaV,AlphaV,rs->GetSolnTypV()); CHKPETSC(ierr); // Mult(w,x,y): w=x.y, alphabar=alpha.ptyp
   }
 
   Real dt_inv = 1/rs->GetDt();
@@ -2084,8 +2122,8 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
     /* Compute all the local scale factors, including ghost points */
   ierr = VecGetLocalSize(x1_tmp,&N);CHKPETSC(ierr);
 
-  ierr = VecSet(coloring->vscale,1);
-  ierr = VecScale(coloring->vscale,1/epsilon);
+  ierr = VecSet(coloring->vscale,1); CHKPETSC(ierr);
+  ierr = VecScale(coloring->vscale,1/epsilon); CHKPETSC(ierr);
 
   if (ctype == IS_COLORING_GLOBAL){
       ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
@@ -2181,10 +2219,10 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   if (dump_Jacobian_and_exit) {
     std::string viewer_filename="mat.output";
     PetscViewer viewer;
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,viewer_filename.c_str(),&viewer);
-    ierr = MatView(J,viewer);
-    ierr = PetscViewerDestroy(&viewer);
-    ierr = VecGetSize(w2,&N);
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,viewer_filename.c_str(),&viewer); CHKPETSC(ierr);
+    ierr = MatView(J,viewer); CHKPETSC(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKPETSC(ierr);
+    ierr = VecGetSize(w2,&N); CHKPETSC(ierr);
     if (ParallelDescriptor::IOProcessor()) {
       std::cout << "There are " << N << " rows in the Jacobian" << std::endl;
     }
@@ -2201,6 +2239,8 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
   PetscFunctionReturn(0);
 }
 
+#undef __FUNCT__  
+#define __FUNCT__ "RichardComputeJacobianColor"
 PetscErrorCode 
 RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,void *ctx)
 {
@@ -2242,7 +2282,8 @@ RichardComputeJacobianColor(SNES snes,Vec x1,Mat *J,Mat *B,MatStructure *flag,vo
   PetscFunctionReturn(0);
 }
 
-
+#undef __FUNCT__  
+#define __FUNCT__ "MatSqueeze"
 static void
 MatSqueeze(Mat& J,
 	   Layout& layout) 

@@ -595,14 +595,13 @@ namespace Amanzi {
                 {
                     const std::string tpc_start_times_str = "Start Times";
                     const std::string tpc_initial_time_steps_str = "Initial Time Step";
-                    const std::string tpc_initial_time_step_multipliers_str = "Initial Time Step Multiplier";
                     const std::string tpc_maximum_time_steps_str = "Maximum Time Step";
                     const ParameterList& tpc_list = ec_list.sublist(tpc_str);
                     Array<std::string> nL, nP;
                     PLoptions TPCopt(tpc_list,nL,nP,true,false); 
                     const Array<std::string> TPCoptP = TPCopt.OptParms();
 
-                    Array<double> tpc_start_times, tpc_initial_time_steps, tpc_initial_time_step_multipliers, tpc_maximum_time_steps;
+                    Array<double> tpc_start_times, tpc_initial_time_steps, tpc_maximum_time_steps;
                     for (int j=0; j<TPCoptP.size(); ++j)
                     {
                         const std::string& name = TPCoptP[j];
@@ -611,9 +610,6 @@ namespace Amanzi {
                         }
                         else if (name == tpc_initial_time_steps_str) {
                             tpc_initial_time_steps = tpc_list.get<Array<double> >(tpc_initial_time_steps_str);
-                        }
-                        else if (name == tpc_initial_time_step_multipliers_str) {
-                            tpc_initial_time_step_multipliers = tpc_list.get<Array<double> >(tpc_initial_time_step_multipliers_str);
                         }
                         else if (name == tpc_maximum_time_steps_str) {
                             tpc_maximum_time_steps = tpc_list.get<Array<double> >(tpc_maximum_time_steps_str);
@@ -629,14 +625,6 @@ namespace Amanzi {
                             tpc_initial_time_steps.resize(num_periods,-1);
                         }
                     }
-                    if (tpc_initial_time_step_multipliers.size() != num_periods) {
-                        if (tpc_initial_time_step_multipliers.size() != 0) {
-                            MyAbort("If specified, number of \""+tpc_initial_time_step_multipliers_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
-                        }
-                        else {
-                            tpc_initial_time_step_multipliers.resize(num_periods,1);
-                        }
-                    }
                     if (tpc_maximum_time_steps.size() != num_periods) {
                         if (tpc_maximum_time_steps.size() != 0) {
                             MyAbort("If specified, number of \""+tpc_maximum_time_steps_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
@@ -649,7 +637,6 @@ namespace Amanzi {
                     if (num_periods>0) {
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_start_times_str), tpc_start_times);
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_steps_str), tpc_initial_time_steps);
-                        prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_step_multipliers_str), tpc_initial_time_step_multipliers);
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_maximum_time_steps_str), tpc_maximum_time_steps);
                     }
                 }
@@ -1204,66 +1191,83 @@ namespace Amanzi {
       void convert_PermeabilityAnisotropic(const ParameterList& fPLin,
                                            ParameterList&       fPLout)
       {
+        /* Handle isotropic and anisotropic permeabilities here */
         Array<std::string> nullList, reqP;
         const std::string vertical_str = "Vertical";
         const std::string horizontal_str = "Horizontal";
+        const std::string uniform_value_str = "Value";
+        const std::string values_str = "Values";
+        const std::string times_str = "Times";
+        const std::string forms_str = "Time Functions";
 
-        Array<double> local_vvals(1); // local copy because we need to convert from m^2 to mD here
-        ParameterList vlist;
-        if (fPLin.isSublist(vertical_str)) {
-          const ParameterList& vPLin = fPLin.sublist(vertical_str);
-          const std::string values_str = "Values";        reqP.push_back(values_str);
-          const std::string times_str = "Times";          reqP.push_back(times_str);
-          const std::string forms_str = "Time Functions"; reqP.push_back(forms_str);
-          PLoptions opt(vPLin,nullList,reqP,true,true);
-          local_vvals = vPLin.get<Array<double> >(values_str);
-          if (local_vvals.size()>1) {
-            vlist.set<Array<double> >("times",vPLin.get<Array<double> >(times_str));
-            vlist.set<Array<std::string> >("forms",vPLin.get<Array<std::string> >(forms_str));
-          }
-        }
-        else if (fPLin.isParameter(vertical_str)) {
-          local_vvals[0] = fPLin.get<double>(vertical_str);
+        if (fPLin.isParameter(uniform_value_str)) {
+          /* Isotropic */
+          Array<double> local_val(1); local_val[0] = fPLin.get<double>(uniform_value_str);
+          local_val[0] *= 1.01325e15; // convert from m^2 to mDa
+          ParameterList vlist, hlist;
+          vlist.set<Array<double> >("vals",local_val);
+          fPLout.set("vertical",vlist);
+          hlist.set<Array<double> >("vals",local_val);
+          fPLout.set("horizontal",hlist);
         } else {
+          /* Ansisotropic */
+          Array<double> local_vvals(1);
+          ParameterList vlist;
+          if (fPLin.isSublist(vertical_str)) {
+            const ParameterList& vPLin = fPLin.sublist(vertical_str);
+            reqP.push_back(values_str);
+            reqP.push_back(times_str);
+            reqP.push_back(forms_str);
+            PLoptions opt(vPLin,nullList,reqP,true,true);
+            local_vvals = vPLin.get<Array<double> >(values_str);
+            if (local_vvals.size()>1) {
+              vlist.set<Array<double> >("times",vPLin.get<Array<double> >(times_str));
+              vlist.set<Array<std::string> >("forms",vPLin.get<Array<std::string> >(forms_str));
+            }
+          }
+          else if (fPLin.isParameter(vertical_str)) {
+            local_vvals[0] = fPLin.get<double>(vertical_str);
+          } else {
             std::string str = "Unrecognized vertical permeability function parameters";
             std::cout << fPLin << std::endl;
             BoxLib::Abort(str.c_str());
-        }
-
-        for (int k=0; k<local_vvals.size(); k++) {
-          local_vvals[k] *= 1.01325e15; // convert from m^2 to mDa
-        }
-        vlist.set<Array<double> >("vals",local_vvals);
-        fPLout.set("vertical",vlist);
-
-        Array<double> local_hvals(1); // local copy because we need to convert from m^2 to mD here
-        ParameterList hlist;
-        if (fPLin.isSublist(horizontal_str)) {
-          const ParameterList& hPLin = fPLin.sublist(horizontal_str);
-          const std::string values_str = "Values";        reqP.push_back(values_str);
-          const std::string times_str = "Times";          reqP.push_back(times_str);
-          const std::string forms_str = "Time Functions"; reqP.push_back(forms_str);
-          PLoptions opt(hPLin,nullList,reqP,true,true);
-          local_hvals = hPLin.get<Array<double> >(values_str);
-          if (local_hvals.size()>1) {
-            hlist.set<Array<double> >("times",hPLin.get<Array<double> >(times_str));
-            hlist.set<Array<std::string> >("forms",hPLin.get<Array<std::string> >(forms_str));
           }
-        }
-        else if (fPLin.isParameter(horizontal_str)) {
-          local_hvals[0] = fPLin.get<double>(horizontal_str);
-        }
-        else {
-          std::string str = "Unrecognized horizontal permeability function parameters";
-          std::cout << fPLin << std::endl;
-          BoxLib::Abort(str.c_str());
-        }
 
-        for (int k=0; k<local_hvals.size(); k++) {
-          local_hvals[k] *= 1.01325e15; // convert from m^2 to mDa
+          for (int k=0; k<local_vvals.size(); k++) {
+            local_vvals[k] *= 1.01325e15; // convert from m^2 to mDa
+          }
+          vlist.set<Array<double> >("vals",local_vvals);
+          fPLout.set("vertical",vlist);
+
+          Array<double> local_hvals(1); // local copy because we need to convert from m^2 to mD here
+          ParameterList hlist;
+          if (fPLin.isSublist(horizontal_str)) {
+            const ParameterList& hPLin = fPLin.sublist(horizontal_str);
+            reqP.push_back(values_str);
+            reqP.push_back(times_str);
+            reqP.push_back(forms_str);
+            PLoptions opt(hPLin,nullList,reqP,true,true);
+            local_hvals = hPLin.get<Array<double> >(values_str);
+            if (local_hvals.size()>1) {
+              hlist.set<Array<double> >("times",hPLin.get<Array<double> >(times_str));
+              hlist.set<Array<std::string> >("forms",hPLin.get<Array<std::string> >(forms_str));
+            }
+          }
+          else if (fPLin.isParameter(horizontal_str)) {
+            local_hvals[0] = fPLin.get<double>(horizontal_str);
+          }
+          else {
+            std::string str = "Unrecognized horizontal permeability function parameters";
+            std::cout << fPLin << std::endl;
+            BoxLib::Abort(str.c_str());
+          }
+
+          for (int k=0; k<local_hvals.size(); k++) {
+            local_hvals[k] *= 1.01325e15; // convert from m^2 to mDa
+          }
+          hlist.set<Array<double> >("vals",local_hvals);
+          fPLout.set("horizontal",hlist);
         }
-        hlist.set<Array<double> >("vals",local_hvals);
-        fPLout.set("horizontal",hlist);
       }
 
         //
@@ -1296,6 +1300,7 @@ namespace Amanzi {
             const std::string porosity_uniform_str = "Porosity: Uniform";
             const std::string perm_file_str = "Intrinsic Permeability: Input File";
             const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
+            const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
 
             std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
 	    std::string porosity_plotfile_in, porosity_plotfile_out;
@@ -1347,8 +1352,7 @@ namespace Amanzi {
                               rsublist.set("porosity",psublist);
                               mtest["Porosity"] = true;
                             }
-                            else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform"  || 
-				     rlabel=="Intrinsic Permeability: Uniform") {
+                            else if (rlabel==perm_uniform_str || rlabel==perm_anisotropic_uniform_str) {
                               ParameterList psublist;
                               convert_PermeabilityAnisotropic(rsslist,psublist);
                               rsublist.set("permeability",psublist);

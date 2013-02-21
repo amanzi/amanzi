@@ -1,0 +1,1 @@
+add_subdirectory(richards_1d)

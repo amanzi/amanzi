@@ -91,35 +91,148 @@ Conventions:
 
 
 
-MPC (tbw)
-=========
+MPC
+===
+
+In the MPC sublist the user specifies which process kernels are on or off, which 
+flow model is active, and the time integration mode that the MPC should run in.
+
+To turn a particular process kernel on or off use these options:
+
+ * `"disable Transport_PK`" [string], valid options are `"yes`" or `"no`".
+
+ * `"disable Flow_PK`" [string], valid options are `"yes`" or `"no`".
+
+ * `"Chemistry Model`" [string], valid options are `"On`" or `"Off`".
+
+To select a particular flow model, use this option:
+
+ * `"Flow model`" [string], valid options are `"Darcy`", `"Steady State Saturated`" 
+   (both will cause the instatiation of a Darcy_PK process kernel), `"Richards`", 
+   `"Steady State Richards`" (both will cause the instantiation of a Richards_PK 
+   process kernel.
+
+The following parameters control MPC options related to particular process kernels:
+
+ * `"transport subcycling`" [bool], default is `"false`".
+
+ * `"max chemistry to transport timestep ratio`" [double], default is 1.0.
+
+Time Integration Mode
+---------------------
+
+The MPC list must have a sublist named `"Time Integration Mode`" if flow is enabled.
+This list must have exactly one of the following three sublists
+
+.. code-block:: xml
+
+      <ParameterList name="Steady">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+
+or
+
+.. code-block:: xml
+
+      <ParameterList name="Initialize To Steady">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="Switch" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+
+or
+
+.. code-block:: xml
+
+      <ParameterList name="Transient">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+
+
+
 
 Restart from Checkpoint Data File
 ---------------------------------
 
-A user may request a restart from a Checkpoint Data file by including the sublist 
-`"Restart from Checkpoint Data File`" in the Execution Control list. This mode of restarting
+A user may request a restart from a Checkpoint Data file by including the MPC sublist 
+`"Restart from Checkpoint Data File`". This mode of restarting
 will overwrite all other initializations of data that are called out in the input file.
 The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
 terminated because its allocation of time ran out.
 
 
-* [S] `"Restart from Checkpoint Data File`" [list]
+* `"Restart from Checkpoint Data File`" [list]
 
-  * [S] `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
+  * `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
-Example:
+Example
 
 .. code-block:: xml
+  
+  <ParameterList name="MPC">
+ 
+  ...
 
-  <ParameterList name="Restart from Checkpoint Data File">
-     <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+    <ParameterList name="Restart from Checkpoint Data File">
+      <Parameter name="Checkpoint Data File Name" type="string" value="chk00123.h5"/>
+    </ParameterList>
+   
+  ...
+  
   </ParameterList>
+
 
 In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
 Data file named chk00123.h5. All other initialization of field variables that might be called 
-out in the input file is ignored.  Recall that the value of "time" is taken from the checkpoint, 
-but may be overridden by the execution control parameters.
+out in the input file is ignored.  Recall that the value for the current time and current cycle
+is read from the checkpoint. 
+
+Verbosity
+---------
+
+The MPC's verbosity is controlled by a standard verbose object sublist, for example
+
+.. code-block:: xml
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+
+
+Example for a complete MPC list
+-------------------------------
+
+The following is an example of a complete MPC list:
+
+.. code-block:: xml
+
+  <ParameterList name="MPC">
+    <ParameterList name="Time Integration Mode">
+      <ParameterList name="Initialize To Steady">
+        <Parameter name="Start" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="Switch" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="End" type="double" value="5.00000000000000000e+00"/>
+        <Parameter name="Steady Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+        <Parameter name="Transient Initial Time Step" type="double" value="1.00000000000000006e-01"/>
+      </ParameterList>
+    </ParameterList>
+    <Parameter name="disable Transport_PK" type="string" value="yes"/>
+    <Parameter name="Chemistry Model" type="string" value="Off"/>
+    <Parameter name="disable Flow_PK" type="string" value="no"/>
+    <Parameter name="Flow model" type="string" value="Steady State Saturated"/>
+    <ParameterList name="Restart from Checkpoint Data File">
+      <Parameter name="Checkpoint Data File Name" type="string" value="steady-checkpoint.h5"/>
+    </ParameterList>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
 
 
 
@@ -164,7 +277,7 @@ Water retention models
 -----------------------
 
 User defines water retention models in sublist `"Water retention models`". It contains as many sublists, 
-e.g. `"Model 1`", `"Model 2`", etc, as there are different soils. 
+e.g. `"Soil 1`", `"Soil 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
 inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
 The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
@@ -174,9 +287,9 @@ An example of the van Genuchten model specification is:
 
 .. code-block:: xml
 
-    <ParameterList name="Model 1">
-       <Parameter name="Region" type="string" value="Top Half"/>
-       <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+    <ParameterList name="Soil 1">
+       <Parameter name="region" type="string" value="Top Half"/>
+       <Parameter name="water retention model" type="string" value="van Genuchten"/>
        <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
        <Parameter name="van Genuchten m" type="double" value="0.28571"/>
        <Parameter name="van Genuchten l" type="double" value="0.5"/>
@@ -184,9 +297,9 @@ An example of the van Genuchten model specification is:
        <Parameter name="relative permeability model" type="string" value="Mualem"/>
     </ParameterList>
 
-    <ParameterList name="Model 2">
-       <Parameter name="Region" type="string" value="Bottom Half"/>
-       <Parameter name="Water retention model" type="string" value="Brooks Corey"/>
+    <ParameterList name="Soil 2">
+       <Parameter name="region" type="string" value="Bottom Half"/>
+       <Parameter name="water retention model" type="string" value="Brooks Corey"/>
        <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
        <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
        <Parameter name="Brooks Corey l" type="double" value="0.51"/>
@@ -367,16 +480,25 @@ nonlinear solvers during calculation of the initial guess time integration. Here
 
    <ParameterList name="initial guess pseudo time integrator">
      <Parameter name="time integration method" type="string" value="Picard"/>
-     <Parameter name="initialize with darcy" type="bool" value="true"/>
-     <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
-     <Parameter name="clipping saturation value" type="double" value="0.9"/>
-     <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
-     <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
      <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+     <Parameter name="linear solver" type="string" value="GMRES with TrilinosML"/>
+
+     <ParameterList name="initialization">
+       <Parameter name="method" type="string" value="saturated solver"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="clipping saturation value" type="double" value="0.9"/>
+     </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
 
      <ParameterList name="Picard">
-       <Parameter name="convergence tolerance" type="double" value="1e-08"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <ParameterList name="Picard parameters">
+         <Parameter name="convergence tolerance" type="double" value="1e-08"/>
+         <Parameter name="maximum number of iterations" type="int" value="400"/>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 
@@ -393,16 +515,27 @@ nonlinear solvers during steady state time integration. Here is an example:
 
    <ParameterList name="steady state time integrator">
      <Parameter name="time integration method" type="string" value="BDF1"/>
-     <Parameter name="initialize with darcy" type="string" value="yes"/>
-     <Parameter name="clipping saturation value" type="double" value="0.98"/>
-     <Parameter name="enforce pressure-lambda constraints" type="bool" value="false"/>
-     <Parameter name="preconditoner" type="string" value="Trilinos ML"/>
-     <Parameter name="linear solver" type="string" value="AztecOO GMRES"/>
      <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
-     <Parameter name="time stepping strategy" type="string" value="adaptive"/>
+     <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
 
-     <ParameterList name="nonlinear solver BDF1">
-      ...
+     <ParameterList name="initialization">
+       <Parameter name="method" type="string" value="saturated solver"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+       <Parameter name="clipping pressure value" type="double" value="50000.0"/>
+     </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
+
+     <ParameterList name="BDF1">
+       <Parameter name="initial time step" type="double" value="1e-07"/>
+       <Parameter name="maximum time step" type="double" value="1e+10"/>
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <ParameterList name="BDF1 parameters">
+         ...
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 
@@ -410,26 +543,6 @@ The parameters used here are
 
 * `"time integration method`" [string] defines a time integration method.
   The available options are `"BDF1`", `"BDF2`", `"Picard`", and `"backward Euler`".
-
-* `"initialize with darcy`" [bool] solves the fully saturated problem to get an
-  initial pressure field consistent with the boundary conditions.
-
-* `"clipping saturation value`" [double] is an experimental option. It is used 
-  after pressure initialization to cut-off small values of pressure. By default, the 
-  pressure threshold is equal to the atmospheric pressure.
-  The new pressure is calculated based of the provided saturation value. Default is 0.6.
-
-* `"clipping pressure value`" [double] is an experimental option. It is used 
-  after pressure initialization to cut-off small values of pressure below the provided
-  value.
-
-* `"enforce pressure-lambda constraints`" [bool] each time the time integrator is 
-  restarted, we may re-enforce the pressure-lambda relationship for new boundary conditions. 
-  Default is true.
-
-* `"preconditioner`" [string] refferes to a preconditioner sublist of the list `"Precondtioners`".
-
-* `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
 
 * `"error control options`" [Array(string)] lists various error control options. 
   A nonlinear solver is terminated when all listed options are passed. 
@@ -447,6 +560,48 @@ The parameters used here are
   called `"absolute error tolerance`" and `"relative error tolerance`". The default values
   for these parameters are 0.001. 
 
+* `"BDF1`" [list] list specified in `"time integration method`".
+  It includes the following parameters.
+
+  * `"time step increase factor`" [double] defines geometric grow rate for the
+    initial time step. If adaptive time stepping strategy is specified, this
+    parameter is ignored. Default is 1.0.
+
+  * `"BDF1 parameters`" [list] used for initialization of the BDF1 time
+    integrator. 
+
+* `"initialization`" [list] defines parameters for calculating initial pressure guess.
+  It can be used to obtain pressure field which is consistent with the boundary conditions.
+  Default is empty list.
+
+  * `"method`" [string] refferes to a constraint enforcement method. The only 
+    available option is `"projection`" which is default.
+
+  * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
+
+  * `"clipping saturation value`" [double] is an experimental option. It is used 
+    after pressure initialization to cut-off small values of pressure. By default, the 
+    pressure threshold is equal to the atmospheric pressure.
+    The new pressure is calculated based of the provided saturation value. Default is 0.6.
+
+  * `"clipping pressure value`" [double] is an experimental option. It is used 
+    after pressure initialization to cut-off small values of pressure below the provided
+    value.
+
+* `"enforce pressure-lambda constraints`" [list] each time the time integrator is 
+  restarted, we may re-enforce the pressure-lambda relationship for new boundary conditions. 
+  Default is empty list.
+
+  * `"method`" [string] refferes to a constraint enforcement method. The only 
+    available option is `"projection`" which is default.
+
+  * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
+
+* `"BFD1`" [list] the named list used to control the nonlinear solver.
+  It might go away in the next revision of the Native Specs. 
+  Now, only the sublist `"BFD1 parameters`" is supported. The remaining parameters
+  are used for development and unit tests.
+
 
 Transient Time Integratior
 -----------------------------
@@ -454,7 +609,38 @@ Transient Time Integratior
 The sublist `"transient time integrator`" defines parameters controling linear and 
 nonlinear solvers during transient time integration. Its parameters are similar to 
 that in the sublist `"steady state time integrator`" except for parameters controling
-pressure re-initialization.
+pressure re-initialization. Here is an example:
+
+.. code-block:: xml
+
+   <ParameterList name="transient time integrator">
+     <Parameter name="time integration method" type="string" value="BDF1"/>
+     <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
+     <Parameter name="linear solver" type="string" value="GMRES with HypreAMG"/>
+     <Parameter name="time stepping strategy" type="string" value="adaptive"/>
+
+     <ParameterList name="initialization">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="linear solver" type="string" value="CG with HypreAMG"/>
+     </ParameterList>
+
+     <ParameterList name="BDF1">
+       <Parameter name="initial time step" type="double" value="1e-07"/>
+       <Parameter name="maximum time step" type="double" value="1e+10"/>
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <ParameterList name="BDF1 parameters">
+         ...
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+The parameters were defined above. A non-empty `"initialization`" list 
+may be useful for a transient saturated simulation.
 
 
 Other Parameters
@@ -470,7 +656,8 @@ The remaining `"Flow`" parameters are
   The first three calculate the relative permeability on mesh interfaces.
 
 * `"discretization method`" [string] helps to test new discretization methods. 
-  The available options are `"mfd`", `"optimized mfd`", `"two-point flux approximation`", and
+  The available options are `"mfd`", `"optimized mfd`", `"two-point flux approximation`", 
+  `"optimized mfd experimental`" (recommended for highly anisotropic meshes), and
   `"support operator`". The last option reproduces discretization method implemented in RC1. 
   The third option is recommended for orthogonal meshes and diagonal absolute permeability.
   The second option is still experimental (no papers were published) and produces 
@@ -549,6 +736,33 @@ is used. Note that the boundary condition is set up separately for each componen
    </ParameterList>  
 
 
+The new structure of boundary conditions is aligned with that used for Flow.
+It allows the use to define spatially variable boundary conditions. 
+Temporary, both approaches to specifying boundary condtions are supported.
+
+.. code-block:: xml
+
+   <ParameterList name="boundary conditions">
+     <ParameterList name="concentration">
+       <ParameterList name="H+"> 
+         <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
+           <ParameterList name="boundary concentration">
+             <ParameterList name="function-constant">  <!-- any time function -->
+               <Parameter name="value" type="double" value="0.0"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="Tc-99"> <!-- Next component --> 
+       ...
+       </ParameteList>
+     </ParameteList>
+
+     <ParameterList name="outward flux">  <!-- Future boundary conditions -->
+     </ParameteList>
+   </ParameterList>
+
 Sources and Sinks
 -----------------
 
@@ -612,14 +826,15 @@ Here is and example:
 .. code-block:: xml
 
      <ParameterList name="Solvers">
-       <ParameterList name="GMRES via AztecOO">
+       <ParameterList name="GMRES with HypreAMG">
          <Parameter name="error tolerance" type="double" value="1e-12"/>
          <Parameter name="iterative method" type="string" value="GMRES"/>
+         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
          <Parameter name="maximum number of iterations" type="int" value="400"/>
        </ParameterList>
      </ParameterList>
 
-The name `"GMRES via AztecOO`" is selected by the user.
+The name `"GMRES with Hypre AMG`" is selected by the user.
 It can be used by a process kernel lists to define a solver.
 
 

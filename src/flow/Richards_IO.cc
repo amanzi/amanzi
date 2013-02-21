@@ -20,6 +20,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 #include "WRM_BrooksCorey.hh"
 #include "WRM_fake.hh"
 #include "Richards_PK.hh"
+#include "Flow_constants.hh"
 
 
 namespace Amanzi {
@@ -80,7 +81,7 @@ void Richards_PK::ProcessParameterList()
 
   // Create water retention models
   if (! rp_list_.isSublist("Water retention models")) {
-    msg << "There is no Water retention models list";
+    msg << "flow PK: there is no \"Water retention models\" list";
     Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList& vG_list = rp_list_.sublist("Water retention models");
@@ -102,12 +103,18 @@ void Richards_PK::ProcessParameterList()
     if (vG_list.isSublist(vG_list.name(i))) {
       Teuchos::ParameterList& wrm_list = vG_list.sublist(vG_list.name(i));
 
-      if (wrm_list.get<string>("Water retention model") == "van Genuchten") {
-        std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
+      std::string region;
+      if (wrm_list.isParameter("region")) {
+        region = wrm_list.get<std::string>("region");  // associated mesh block
+      } else {
+        msg << "Flow PK: WMR sublist \"" << vG_list.name(i).c_str() << "\" has no parameter \"region\".\n";
+        Exceptions::amanzi_throw(msg);
+      }
 
+      if (wrm_list.get<string>("water retention model") == "van Genuchten") {
         double m = wrm_list.get<double>("van Genuchten m");
         double alpha = wrm_list.get<double>("van Genuchten alpha");
-        double l = wrm_list.get<double>("van Genuchten l", 0.5);
+        double l = wrm_list.get<double>("van Genuchten l", FLOW_WRM_VANGENUCHTEN_L);
         double sr = wrm_list.get<double>("residual saturation");
         double pc0 = wrm_list.get<double>("regularization interval", 0.0);
         std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
@@ -116,9 +123,7 @@ void Richards_PK::ProcessParameterList()
 
         WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
 
-      } else if (wrm_list.get<string>("Water retention model") == "Brooks Corey") {
-        std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
-
+      } else if (wrm_list.get<string>("water retention model") == "Brooks Corey") {
         double lambda = wrm_list.get<double>("Brooks Corey lambda");
         double alpha = wrm_list.get<double>("Brooks Corey alpha");
         double l = wrm_list.get<double>("Brooks Corey l", 0.5);
@@ -130,12 +135,11 @@ void Richards_PK::ProcessParameterList()
 
         WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, l, alpha, sr, krel_function, pc0));
 
-      } else if (wrm_list.get<string>("Water retention model") == "fake") {
-        std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
+      } else if (wrm_list.get<string>("water retention model") == "fake") {
         WRM[iblock] = Teuchos::rcp(new WRM_fake(region));
 
       } else {
-        msg << "Richards Problem: unknown water retention model.";
+        msg << "Flow PK: unknown water retention model.";
         Exceptions::amanzi_throw(msg);
       }
       iblock++;

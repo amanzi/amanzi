@@ -143,7 +143,7 @@ void Flow_PK::ProcessBoundaryConditions(
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
       } else {
-        bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
+        bc_model[f] = FLOW_BC_FACE_PRESSURE;
         bc_values[f][0] = atm_pressure;
         bc_values[f][1] = bc->second * rainfall_factor[f];
         flag_essential_bc = 1;
@@ -152,23 +152,26 @@ void Flow_PK::ProcessBoundaryConditions(
       }
 
     } else if (bc_submodel[f] & FLOW_BC_SUBMODEL_SEEPAGE_FACT) {  // Model II.
-      double preg = FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
-      double pmin = atm_pressure;
-      double pmax = atm_pressure + preg;
-      if (pressure_faces[f] < pmax) {
+      double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
+      double pcmin = 3 * pcreg / 2;
+      double pcmax = pcreg / 2;
+
+      double pc = pressure_faces[f] - atm_pressure;
+      if (pc < pcmin) {
         bc_model[f] = FLOW_BC_FACE_FLUX;
         bc_values[f][0] = bc->second * rainfall_factor[f];
-      } else if (pressure_faces[f] > pmin) {
-        bc_model[f] = FLOW_BC_FACE_PRESSURE_SEEPAGE;
-        bc_values[f][0] = atm_pressure;
-        bc_values[f][1] = bc->second * rainfall_factor[f];
+      } else if (pc > pcmax) {
+        bc_model[f] = FLOW_BC_FACE_MIXED;
+        double I = (2 * bc->second / pcreg) * rainfall_factor[f];
+        bc_values[f][0] = I * (atm_pressure + pcreg);
+        bc_values[f][1] = -I;
         flag_essential_bc = 1;
         nseepage++;
         area_seepage += mesh_->face_area(f);
       } else {
         bc_model[f] = FLOW_BC_FACE_FLUX;
-        double f = (pressure_faces[f] - atm_pressure) / preg;
-        double q = f * (2 - f);
+        double f = 2 * (pcreg - pc) / pcreg;
+        double q = (7 - 2 * f - f * f) / 8;
         bc_values[f][0] = q * bc->second * rainfall_factor[f]; 
       }
     }
@@ -225,8 +228,7 @@ void Flow_PK::ApplyEssentialBoundaryConditions(std::vector<int>& bc_model,
 {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-        bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+    if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
       pressure_faces[f] = bc_values[f][0];
     }
   }

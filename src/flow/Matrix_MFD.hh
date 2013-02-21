@@ -44,23 +44,23 @@ namespace AmanziFlow {
 
 class Matrix_MFD : public Epetra_Operator {
  public:
-   Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->mesh(); }
+   Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_);
   ~Matrix_MFD();
 
   // main methods
-  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDrhsVectors();
-  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
-  void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
+  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
   virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   virtual void AssembleGlobalMatrices();
-  virtual void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+  virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
   double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+
+  int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
 
   void DeriveDarcyMassFlux(const Epetra_Vector& solution, 
                            const Epetra_Import& face_importer, 
@@ -76,16 +76,22 @@ class Matrix_MFD : public Epetra_Operator {
   int SetUseTranspose(bool) { return 1; }
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-  const Epetra_Map& OperatorDomainMap() const { return map; }
-  const Epetra_Map& OperatorRangeMap() const { return map; }
+  const Epetra_Map& OperatorDomainMap() const { return map_; }
+  const Epetra_Map& OperatorRangeMap() const { return map_; }
 
   const char* Label() const { return strdup("Matrix MFD"); }
   double NormInf() const { return 0.0; }
   bool HasNormInf() const { return false; }
 
+  // control methods
+  void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
+  void AddActionProperty(int action) { actions_ |= action; }
+  bool CheckActionProperty(int action) { return actions_ & action; }
+
   // development methods
-  int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
   void CreateMFDmassMatrices_ScaledStability(int method, double factor, std::vector<WhetStone::Tensor>& K);
+  int PopulatePreconditioner(Matrix_MFD& matrix);
+  void RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells() { return Aff_cells_; }
@@ -111,11 +117,12 @@ class Matrix_MFD : public Epetra_Operator {
   int npassed() { return npassed_; }
 
  protected:
-  Teuchos::RCP<Flow_State> FS;
+  Teuchos::RCP<Flow_State> FS_;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
-  Epetra_Map map;
+  Epetra_Map map_;
 
   bool flag_symmetry_;
+  int actions_;  // applly, apply inverse, or both
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;

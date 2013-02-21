@@ -30,14 +30,14 @@ namespace AmanziFlow {
 
 class Matrix_MFD_TPFA : public Matrix_MFD {
  public:
-  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : Matrix_MFD(FS_, map_) {};
+  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) : Matrix_MFD(FS, map) {};
   ~Matrix_MFD_TPFA() {};
 
   // override main methods of the base class
   void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
   void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   void AssembleGlobalMatrices();
-  void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
+  void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
   
    void AnalyticJacobian(const Epetra_Vector& solution,
                         int dim,

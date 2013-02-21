@@ -43,58 +43,58 @@
       </ParameterList>
 
       <ParameterList name="Water retention models">
-        <ParameterList name="Water Retention Model for Bfr">
-          <Parameter name="Region" type="string" value="Bfr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for Bfr">
+          <Parameter name="region" type="string" value="Bfr"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
           <Parameter name="van Genuchten m" type="double" value="0.28571"/>
           <Parameter name="residual saturation" type="double" value="0.103"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for Hcsr">
-          <Parameter name="Region" type="string" value="Hcsr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for Hcsr">
+          <Parameter name="region" type="string" value="Hcsr"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
           <Parameter name="van Genuchten m" type="double" value="0.51138"/>
           <Parameter name="residual saturation" type="double" value="0.074"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for Hfsr">
-          <Parameter name="Region" type="string" value="Hfsr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for Hfsr">
+          <Parameter name="region" type="string" value="Hfsr"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000214"/>
           <Parameter name="van Genuchten m" type="double" value="0.60112"/>
           <Parameter name="residual saturation" type="double" value="0.089"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for Hgr">
-          <Parameter name="Region" type="string" value="Hgr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for Hgr">
+          <Parameter name="region" type="string" value="Hgr"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000174"/>
           <Parameter name="van Genuchten m" type="double" value="0.42029"/>
           <Parameter name="residual saturation" type="double" value="0.134"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for CCuzr">
-          <Parameter name="Region" type="string" value="CCuzr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for CCuzr">
+          <Parameter name="region" type="string" value="CCuzr"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="5.11e-05"/>
           <Parameter name="van Genuchten m" type="double" value="0.55536"/>
           <Parameter name="residual saturation" type="double" value="0.097"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for CCugr">
-          <Parameter name="Region" type="string" value="CCugr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for CCugr">
+          <Parameter name="region" type="string" value="CCugr"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000174"/>
           <Parameter name="van Genuchten m" type="double" value="0.42029"/>
           <Parameter name="residual saturation" type="double" value="0.134"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for Rlmr">
-          <Parameter name="Region" type="string" value="Rlmr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for Rlmr">
+          <Parameter name="region" type="string" value="Rlmr"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="5.11e-05"/>
           <Parameter name="van Genuchten m" type="double" value="0.55536"/>
           <Parameter name="residual saturation" type="double" value="0.097"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for Rwiar">
-          <Parameter name="Region" type="string" value="Rwiar"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for Rwiar">
+          <Parameter name="region" type="string" value="Rwiar"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="8.17e-05"/>
           <Parameter name="van Genuchten m" type="double" value="0.39759"/>
           <Parameter name="residual saturation" type="double" value="0.135"/>

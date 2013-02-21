@@ -73,6 +73,9 @@ include(InstallManager)
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
+# Examples added as tests
+add_subdirectory(examples) 
+
 # Python modules
 add_subdirectory(tools/py_lib)
 

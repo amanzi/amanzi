@@ -27,7 +27,7 @@ const int FLOW_STATE_COPY = 2;  // add ghost data to some arrays
 
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 
-const int FLOW_BC_FACE_PRESSURE_SEEPAGE = 2; 
+// const int FLOW_BC_FACE_PRESSURE_SEEPAGE = 2; 
 const int FLOW_BC_FACE_FLUX = 3;
 const int FLOW_BC_FACE_MIXED = 4;
 
@@ -35,7 +35,7 @@ const int FLOW_BC_SUBMODEL_RAINFALL = 1;
 const int FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN = 2;
 const int FLOW_BC_SUBMODEL_SEEPAGE_FACT = 4;
 const int FLOW_BC_SUBMODEL_HEAD_RELATIVE = 8;
-const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 100;  // [Pa]
+const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 10000;  // [Pa]
 
 const int FLOW_SOLVER_NKA = 1;
 const int FLOW_SOLVER_NEWTON = 2;
@@ -47,7 +47,9 @@ const int FLOW_TIME_INTEGRATION_BDF1 = 3;
 const int FLOW_TIME_INTEGRATION_BDF2 = 4;
 const double FLOW_INITIAL_DT = 1e-8;  // [sec]
 const double FLOW_MAXIMUM_DT = 3.15e+10;  // [sec] 1000 years
-const double FLOW_YEAR = 3.15576e+7;
+const double FLOW_YEAR = 3.15576e+7;  // [sec]
+
+const double FLOW_WRM_VANGENUCHTEN_L = 0.5;
 
 const int FLOW_RELATIVE_PERM_NONE = 1; 
 const int FLOW_RELATIVE_PERM_CENTERED = 2; 
@@ -57,12 +59,12 @@ const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 5;
 const int FLOW_RELATIVE_PERM_EXPERIMENTAL = 6;
 const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-10;  // [-]
 
-const int FLOW_MFD3D_POLYHEDRA = 1;
-const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
-const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
+const int FLOW_MFD3D_POLYHEDRA = 1;  // default
+const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;  // highly experimental
 const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // without consistency
 const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;
 const int FLOW_MFD3D_OPTIMIZED = 6;
+const int FLOW_MFD3D_OPTIMIZED_EXPERIMENTAL = 7;  // experimental
 
 const int FLOW_PRECONDITIONER_TRILINOS_ML = 1;  // preconditioners
 const int FLOW_PRECONDITIONER_HYPRE_AMG = 2;
@@ -80,15 +82,14 @@ const int FLOW_TI_MAX_ITERATIONS = 400;
 const int FLOW_MATRIX_MFD = 1;  // matrix to use in linear and nonlinear solvers 
 const int FLOW_MATRIX_MFD_TPFA = 2;
 
+const int FLOW_MATRIX_ACTION_MATRIX = 1;
+const int FLOW_MATRIX_ACTION_PRECONDITIONER = 2;
+
 const int FLOW_DT_ADAPTIVE = 1;
 const double FLOW_DT_ADAPTIVE_INCREASE = 4.0;
 const double FLOW_DT_ADAPTIVE_REDUCTION = 0.1;
 const double FLOW_DT_ADAPTIVE_SAFETY_FACTOR = 0.9;
 const double FLOW_DT_ADAPTIVE_ERROR_TOLERANCE = 1e-10;
-
-// const int FLOW_SOURCE_DISTRIBUTION_NONE = 0;
-// const int FLOW_SOURCE_DISTRIBUTION_VOLUME = 1;
-// const int FLOW_SOURCE_DISTRIBUTION_PERMEABILITY = 2;
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;

@@ -54,23 +54,24 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::ParameterList sub_list;
   
   if (! native) {
-    new_list = Amanzi::AmanziInput::translate( &input_parameter_list, comm->NumProc() );
+    new_list = Amanzi::AmanziInput::translate(&input_parameter_list, comm->NumProc());
 
     std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity","Low");
     
-    if ( verbosity == "None" ) {
+    if (verbosity == "None") {
       verbLevel = Teuchos::VERB_NONE;
-    } else if ( verbosity == "Low" ) {
+    } else if (verbosity == "Low") {
       verbLevel = Teuchos::VERB_LOW;
-    } else if ( verbosity == "Medium" ) {
+    } else if (verbosity == "Medium") {
       verbLevel = Teuchos::VERB_MEDIUM;
-    } else if ( verbosity == "High" ) {
+    } else if (verbosity == "High") {
       verbLevel = Teuchos::VERB_HIGH;
-    } else if ( verbosity == "Extreme" ) {
+    } else if (verbosity == "Extreme") {
       verbLevel = Teuchos::VERB_EXTREME;
     } 
 
   } else {
+    verbLevel = Teuchos::VERB_NONE;
     new_list = input_parameter_list;
   }
   

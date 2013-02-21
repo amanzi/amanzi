@@ -29,13 +29,13 @@ namespace AmanziFlow {
 
 class Matrix_MFD_PLambda : public Matrix_MFD {
  public:
-  Matrix_MFD_PLambda(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : Matrix_MFD(FS_, map_) {};
+  Matrix_MFD_PLambda(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) : Matrix_MFD(FS, map) {};
   ~Matrix_MFD_PLambda() {};
 
   // override main methods of the base class
   void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   void AssembleGlobalMatrices();
-  void ComputeSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values) {};
+  void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;

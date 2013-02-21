@@ -14,7 +14,7 @@ namespace Amanzi {
 
   public:
     Restart(Teuchos::ParameterList& plist, Epetra_MpiComm *comm); 
-    Restart(); // this object will not create any output 
+    Restart(Epetra_MpiComm *comm); // this object will not create any output 
     ~Restart();
    
     void dump_state (State& S, bool force = false);

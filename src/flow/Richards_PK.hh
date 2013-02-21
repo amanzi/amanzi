@@ -109,10 +109,9 @@ class Richards_PK : public Flow_PK {
   double AdaptiveTimeStepEstimate(double* dTfactor);
 
   // linear problems and solvers
-  void AssembleSteadyStateProblem_MFD(Matrix_MFD* matrix_operator, bool add_preconditioner);
-  void AssembleTransientProblem_MFD(Matrix_MFD* matrix_operator, double dTp, Epetra_Vector& p, bool add_preconditioner);
+  void AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix);
+  void AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* preconditioner);
   void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
-  void SolveTransientProblem(double T, double dT, Epetra_Vector& u);
   void EnforceConstraints_MFD(double Tp, Epetra_Vector& u);
 
   // io members

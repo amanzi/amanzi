@@ -30,6 +30,8 @@ struct RSParams
     bool centered_diff_J; // Numerical J is computed with centered difference instead of forward
     Real variable_switch_saturation_threshold; // Newton iterate s if this is less than s, otherwise p
     int max_num_Jacobian_reuses; // If > 0, will try to reuse J in NL solve, reset for each solve
+    std::string ls_reason; // Pass-thru status from linesearch to convergence check
+    bool ls_success; // Pass-thru status from linesearch to convergence check
 };
 
 class RichardSolver
@@ -78,7 +80,8 @@ public:
   const Array<BoxArray>& GridArray() const {return layout.GridArray();}
   const Array<Geometry>& GeomArray() const {return layout.GeomArray();}
   const Array<IntVect>& RefRatio() const {return layout.RefRatio();}
-  const RSParams& Parameters() {return params;}
+  const RSParams& Parameters() const {return params;}
+  RSParams& Parameters() {return params;}
   PArray<PorousMedia>& PMArray() {return pm;}
 
   void UpdateDarcyVelocity(MFTower& pressure,

@@ -300,6 +300,8 @@ Usage:
 
      * [U] `"steady preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for the steady state problem, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
+     * [U] `"steady initialize with darcy`" [bool] Initialize the flow field using a Darcy solve. (default `"true`")  
+
    * [U] `"Transient Implicit Time Integration`" [list] Parameters for BDF1 time integration to reach steady-state
 
      * [U] `"transient max iterations"` [int] If during the transient calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced by the factor specified in `"transient time step reduction factor"`. (default: `"15`", suggested range: 10 ... 20)
@@ -314,7 +316,7 @@ Usage:
 
      * [U] `"transient time step reduction factor"` [double] When time step reduction is necessary during the transient calculation, use this factor. (default: `"0.8`", suggested range: 0.5 ... 0.9)
 
-     * [U] `"transient time step increase factor"` [double] When time step increase is possible during the transient calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0)
+     * [U] `"transient time step increase factor"` [double] When time step increase is possible during the transient calculation, use this factor. (default: `"1.2`", suggested range: 1.1 ... 2.0) Note that this paramter also works in the case where the flow mode `"Single Phase`" was selected. In that case, the default is `"1.0`".
 
      * [U] `"transient max time step"` [double] During the transient solve, the time step is limited to the value specified here. (default: `"1.0e+8`", suggested range: 1.0e+8 ... 10e+10)
 
@@ -338,7 +340,7 @@ Usage:
 
      * [U] `"pseudo time integrator time integration method`" [double] select the pseudo time integration method (currrently only Picard is supported). (default: `"Picard`")
 
-     * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method. (default: `"Hypre AMG`")
+     * [U] `"pseudo time integrator preconditioner`" [string] select the preconditioner to be used in the pseudo time integration method, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
 
      * [U] `"pseudo time integrator linear solver`" [string] select the linear solver to be used in the pseudo time integration method. (default: `"AztecOO`")
 

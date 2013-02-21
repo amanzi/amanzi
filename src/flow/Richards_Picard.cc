@@ -56,11 +56,9 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
+    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // call AztecOO solver

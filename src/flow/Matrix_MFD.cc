@@ -22,6 +22,17 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
+* Constructor                                      
+****************************************************************** */
+Matrix_MFD::Matrix_MFD(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map)
+    : FS_(FS), map_(map)
+{ 
+  mesh_ = FS_->mesh();
+  actions_ = 0;
+}
+
+
+/* ******************************************************************
 * Cannot destroy ML cleanly. Try Trilinos 10.10 (lipnikov@lanl.gov)                                        
 ****************************************************************** */
 Matrix_MFD::~Matrix_MFD()
@@ -67,6 +78,8 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
       ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
       ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED_EXPERIMENTAL) {
+      ok = mfd.DarcyMassInverseOptimizedTest(c, K[c], Mff);
     } else {
       ok = mfd.DarcyMassInverse(c, K[c], Mff);
     }
@@ -279,8 +292,7 @@ void Matrix_MFD::ApplyBoundaryConditions(
       int f = faces[n];
       double value = bc_values[f][0];
 
-      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
         for (int m = 0; m < nfaces; m++) {
           Ff[m] -= Bff(m, n) * value;
           Bff(n, m) = Bff(m, n) = 0.0;
@@ -292,16 +304,16 @@ void Matrix_MFD::ApplyBoundaryConditions(
         Ff[n] = value;
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
         Ff[n] -= value * mesh_->face_area(f);
-      } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {  // Not used yet
+      } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
         double area = mesh_->face_area(f);
         Ff[n] += value * area;
-        Bff(n, n) += bc_values[f][1] * area;
+        Bff(n, n) -= bc_values[f][1] * area;
       }
 
-      // Additional work required for seepage boundary condition.
-      if (bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
-        Fc -= bc_values[f][1] * mesh_->face_area(f);
-      }
+      // If one wants to deposit infiltration in soil.
+      // if (bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      //   Fc -= bc_values[f][1] * mesh_->face_area(f);
+      // }
     }
   }
 }
@@ -345,10 +357,14 @@ void Matrix_MFD::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
   // create global matrices
   Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
   Acf_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
-  Aff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
-  Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
-  Aff_->GlobalAssemble();
-  Sff_->GlobalAssemble();
+  if (actions_ & AmanziFlow::FLOW_MATRIX_ACTION_MATRIX) {
+    Aff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
+    Aff_->GlobalAssemble();
+  } 
+  if (actions_ & AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER) {
+    Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
+    Sff_->GlobalAssemble();
+  }
 
   if (flag_symmetry_)
     Afc_ = Acf_;
@@ -356,13 +372,13 @@ void Matrix_MFD::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
     Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
 
   rhs_ = Teuchos::rcp(new Epetra_Vector(super_map));
-  rhs_cells_ = Teuchos::rcp(FS->CreateCellView(*rhs_));
-  rhs_faces_ = Teuchos::rcp(FS->CreateFaceView(*rhs_));
+  rhs_cells_ = Teuchos::rcp(FS_->CreateCellView(*rhs_));
+  rhs_faces_ = Teuchos::rcp(FS_->CreateFaceView(*rhs_));
 }
 
 
 /* ******************************************************************
-* Assebmle elemental mass matrices into four global matrices. 
+* Assemble elemental mass matrices into four global matrices. 
 * We need an auxiliary GHOST-based vector to assemble the RHS.
 ****************************************************************** */
 void Matrix_MFD::AssembleGlobalMatrices()
@@ -390,7 +406,7 @@ void Matrix_MFD::AssembleGlobalMatrices()
     Aff_->SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
 
     if (!flag_symmetry_)
-        Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
+      Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
   }
   Aff_->GlobalAssemble();
 
@@ -407,7 +423,7 @@ void Matrix_MFD::AssembleGlobalMatrices()
       rhs_faces_wghost[f] += Ff_cells_[c][n];
     }
   }
-  FS->CombineGhostFace2MasterFace(rhs_faces_wghost, Add);
+  FS_->CombineGhostFace2MasterFace(rhs_faces_wghost, Add);
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces; f++) (*rhs_faces_)[f] = rhs_faces_wghost[f];
@@ -415,43 +431,58 @@ void Matrix_MFD::AssembleGlobalMatrices()
 
 
 /* ******************************************************************
-* Compute the face Schur complement of 2x2 block matrix.
+* Assembles four matrices: diagonal Acc_, two off-diagonal blocks
+* Acf_ and Afc_, and the Schur complement Sff_.
 ****************************************************************** */
-void Matrix_MFD::ComputeSchurComplement(
+void Matrix_MFD::AssembleSchurComplement(
     std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   Sff_->PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_List faces_LID;
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
+  int faces_LID[FLOW_MAX_FACES];
+  int faces_GID[FLOW_MAX_FACES];
+
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces_LID, &dirs);
-    int nfaces = faces_LID.size();
-    Epetra_SerialDenseMatrix Schur(nfaces, nfaces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+    Teuchos::SerialDenseMatrix<int, double> Schur(nfaces, nfaces);
 
     Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
     Epetra_SerialDenseVector& Bfc = Afc_cells_[c];
 
     for (int n = 0; n < nfaces; n++) {
       for (int m = 0; m < nfaces; m++) {
-        Schur(n, m) = Aff_cells_[c](n, m) - Bfc[n] * Bcf[m] / (*Acc_)[c];
+        Schur(n, m) = Aff_cells_[c](n, m) - Bfc[n] * Bcf[m] / Acc_cells_[c];
       }
     }
 
     for (int n = 0; n < nfaces; n++) {  // Symbolic boundary conditions
-      int f = faces_LID[n];
-      if (bc_model[f] == FLOW_BC_FACE_PRESSURE ||
-          bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      int f = faces[n];
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
         for (int m = 0; m < nfaces; m++) Schur(n, m) = Schur(m, n) = 0.0;
         Schur(n, n) = 1.0;
       }
     }
 
-    Epetra_IntSerialDenseVector faces_GID(nfaces);
-    for (int n = 0; n < nfaces; n++) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
-    (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
+    for (int n = 0; n < nfaces; n++) {
+      faces_LID[n] = faces[n];
+      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
+    }
+    (*Sff_).SumIntoGlobalValues(nfaces, faces_GID, Schur.values());
+
+    // check that the other matrices were not calculated already
+    if (!(actions_ & AmanziFlow::FLOW_MATRIX_ACTION_MATRIX)) {
+      (*Acc_)[c] = Acc_cells_[c];
+      Acf_->ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
+
+      if (!flag_symmetry_)
+        Afc_->ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
+    }
   }
   (*Sff_).GlobalAssemble();
 }
@@ -672,7 +703,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 /* ******************************************************************
 * Reduce the pressure-lambda-system to lambda-system via ellimination
 * of the known pressure. Structure of the global system is preserved
-* but off-diagola blocks are zeroed-out.                                               
+* but off-diagoal blocks are zeroed-out.                                               
 ****************************************************************** */
 int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u)
 {
@@ -692,12 +723,29 @@ int Matrix_MFD::ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u)
   Afc_->Multiply(true, uc, tf);  // Afc is kept in the transpose form.
   gf.Update(-1.0, tf, 1.0);
 
-  // Decomple pressure-lambda system
-  *Sff_ = *Aff_;
+  // Decouple pressure-lambda system
   Afc_->PutScalar(0.0);
   Acf_->PutScalar(0.0);
 
   return 0;
+}
+
+
+/* ******************************************************************
+* Replaces block of preconditioner by blocks of matrix.                                               
+****************************************************************** */
+int Matrix_MFD::PopulatePreconditioner(Matrix_MFD& matrix)
+{
+  if (actions_ & AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER && 
+      matrix.CheckActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX)) {
+    *Sff_ = *(matrix.Aff());
+    *Acf_ = *(matrix.Acf());
+    *Afc_ = *(matrix.Afc());
+    *Acc_ = *(matrix.Acc());
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 
@@ -713,7 +761,7 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
                                      const Epetra_Import& face_importer,
                                      Epetra_Vector& darcy_mass_flux)
 {
-  Teuchos::RCP<Epetra_Vector> solution_faces = Teuchos::rcp(FS->CreateFaceView(solution));
+  Teuchos::RCP<Epetra_Vector> solution_faces = Teuchos::rcp(FS_->CreateFaceView(solution));
 #ifdef HAVE_MPI
   Epetra_Vector solution_faces_wghost(mesh_->face_map(true));
   solution_faces_wghost.Import(*solution_faces, face_importer, Insert);

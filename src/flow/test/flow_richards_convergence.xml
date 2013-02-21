@@ -92,13 +92,13 @@
       </ParameterList>
 
       <ParameterList name="Water retention models">
-        <ParameterList name="Water Retention Model for Material 1 Region">
-          <Parameter name="Region" type="string" value="Material 1 Region"/>
-          <Parameter name="Water retention model" type="string" value="fake"/>
+        <ParameterList name="WRM for Material 1 Region">
+          <Parameter name="region" type="string" value="Material 1 Region"/>
+          <Parameter name="water retention model" type="string" value="fake"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for Material 2 Region">
-          <Parameter name="Region" type="string" value="Material 2 Region"/>
-          <Parameter name="Water retention model" type="string" value="fake"/>
+        <ParameterList name="WRM for Material 2 Region">
+          <Parameter name="region" type="string" value="Material 2 Region"/>
+          <Parameter name="water retention model" type="string" value="fake"/>
         </ParameterList>
       </ParameterList>
 

@@ -33,12 +33,11 @@ void Flow_PK::ProcessSublistTimeIntegration(
   Errors::Message msg;
 
   if (list.isSublist(name)) {
+    // obsolete way to define parameters
     ti_specs.initialize_with_darcy = list.get<bool>("initialize with darcy", false);
     ti_specs.clip_saturation = list.get<double>("clipping saturation value", -1.0);
     ti_specs.clip_pressure = list.get<double>("clipping pressure value", -1e+10);
-
-    if (list.isParameter("enforce pressure-lambda constraints"))
-        ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints");
+    ti_specs.pressure_lambda_constraints = list.get<bool>("enforce pressure-lambda constraints", true);
 
     ti_specs.dT_method = 0;
     std::string dT_name = list.get<string>("time stepping strategy", "simple");
@@ -56,6 +55,18 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
     ti_specs.atol = tmp_list.get<double>("absolute error tolerance", 1e-3);
     ti_specs.rtol = tmp_list.get<double>("relative error tolerance", 1e-3);
+
+    // new way to define parameters ovverrides the above values.
+    if (list.isSublist("initialization")) {
+      Teuchos::ParameterList& ini_list = list.sublist("initialization");
+      ti_specs.clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
+      ti_specs.clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
+    }
+
+    if (list.isSublist("pressure-lambda constraints")) {
+      Teuchos::ParameterList& pl_list = list.sublist("pressure-lambda constraints");
+      ti_specs.pressure_lambda_constraints = true;
+    }
 
   } else if (name != "none") {
     msg << "\nFlow PK: specified time integration sublist does not exist.";
@@ -133,6 +144,8 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
     *method = FLOW_MFD3D_TWO_POINT_FLUX;
   } else if (name == "optimized mfd") {
     *method = FLOW_MFD3D_OPTIMIZED;
+  } else if (name == "optimized mfd experimental") {
+    *method = FLOW_MFD3D_OPTIMIZED_EXPERIMENTAL;
   } else if (name == "mfd") {
     *method = FLOW_MFD3D_POLYHEDRA;
   } else {

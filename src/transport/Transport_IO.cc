@@ -21,6 +21,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Transport_PK.hh"
+#include "Transport_BC_Factory.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -73,17 +74,55 @@ void Transport_PK::ProcessParameterList()
   tests_tolerance = transport_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dT_debug = transport_list.get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
-  // extract list of lists of boundary conditions
-  Teuchos::ParameterList BCs_list;
-  BCs_list = transport_list.get<Teuchos::ParameterList>("Transport BCs");
-
   // populate the list of boundary influx functions
   bcs.clear();
   bcs_tcc_index.clear();
 
-  for (Teuchos::ParameterList::ConstIterator it = BCs_list.begin(); it != BCs_list.end(); ++it) {
-    if (BCs_list.isSublist(it->first)) {
-      Teuchos::ParameterList BC_list = BCs_list.sublist(it->first); 
+  if (transport_list.isSublist("Transport BCs")) {  // Obsolete format.
+    Teuchos::ParameterList& bcs_list = transport_list.get<Teuchos::ParameterList>("Transport BCs");
+    CreateConcentration(bcs_list);
+  } else if (transport_list.isSublist("boundary conditions")) {  // New flexible format.
+    std::vector<std::string> bcs_tcc_name;
+    Teuchos::RCP<Teuchos::ParameterList>
+       bcs_list = Teuchos::rcp(new Teuchos::ParameterList(transport_list.get<Teuchos::ParameterList>("boundary conditions")));
+
+    TransportBCFactory bc_factory(mesh_, bcs_list);
+    bc_factory.CreateConcentration(bcs, bcs_tcc_name);
+    for (int i = 0; i < bcs_tcc_name.size(); i++)
+        bcs_tcc_index.push_back(TS->get_component_number(bcs_tcc_name[i]));
+  } else {
+    Errors::Message msg;
+    msg << "Transport PK: does not have boundary conditions.\n";
+    Exceptions::amanzi_throw(msg);  
+  }
+
+  // Create the source object if any
+  if (transport_list.isSublist("source terms")) {
+    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(transport_list.sublist("source terms", true));
+    TransportSourceFactory src_factory(mesh_, src_list);
+    src_sink = src_factory.CreateSource();
+
+    src_sink_distribution = src_sink->CollectActionsList();
+    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      Errors::Message msg;
+      msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
+      Exceptions::amanzi_throw(msg);  
+    }
+  } else {
+    src_sink = NULL;
+  }
+}
+
+
+/* ******************************************************************
+* Process Dirichet BC (concentration).
+* Warning: the routine is marked as obsolete.
+****************************************************************** */
+void Transport_PK::CreateConcentration(Teuchos::ParameterList& bcs_list)
+{
+  for (Teuchos::ParameterList::ConstIterator it = bcs_list.begin(); it != bcs_list.end(); ++it) {
+    if (bcs_list.isSublist(it->first)) {
+      Teuchos::ParameterList bc_list = bcs_list.sublist(it->first); 
       
       bool flag_BCX = false;
       for (int i = 0; i < number_components; i++) {
@@ -93,19 +132,19 @@ void Transport_PK::ProcessParameterList()
         string tcc_name(tcc_char_name);
 	      string tcc_name_alt(TS->get_component_name(i));
 		
-        if (BC_list.isParameter(tcc_name) || BC_list.isParameter(tcc_name_alt)) {
+        if (bc_list.isParameter(tcc_name) || bc_list.isParameter(tcc_name_alt)) {
           flag_BCX = true;
           std::vector<std::string> regions, functions;
           std::vector<double> times, values;
 	  
-          regions = BC_list.get<Teuchos::Array<std::string> >("Regions").toVector();
-          times = BC_list.get<Teuchos::Array<double> >("Times").toVector();
-          if (BC_list.isParameter(tcc_name)) {
-            values = BC_list.get<Teuchos::Array<double> >(tcc_name).toVector();
-          } else if ( BC_list.isParameter(tcc_name_alt)) {
-            values = BC_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
+          regions = bc_list.get<Teuchos::Array<std::string> >("Regions").toVector();
+          times = bc_list.get<Teuchos::Array<double> >("Times").toVector();
+          if (bc_list.isParameter(tcc_name)) {
+            values = bc_list.get<Teuchos::Array<double> >(tcc_name).toVector();
+          } else if (bc_list.isParameter(tcc_name_alt)) {
+            values = bc_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
           }
-          functions = BC_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
+          functions = bc_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
 	  
           int nfunctions = functions.size();  // convert strings to forms
           std::vector<TabularFunction::Form> forms(functions.size());
@@ -129,22 +168,6 @@ void Transport_PK::ProcessParameterList()
         Exceptions::amanzi_throw(msg);
       }
     }
-  }
-
-  // Create the source object if any
-  if (transport_list.isSublist("source terms")) {
-    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(transport_list.sublist("source terms", true));
-    TransportSourceFactory src_factory(mesh_, src_list);
-    src_sink = src_factory.CreateSource();
-
-    src_sink_distribution = src_sink->CollectActionsList();
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      Errors::Message msg;
-      msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
-      Exceptions::amanzi_throw(msg);  
-    }
-  } else {
-    src_sink = NULL;
   }
 }
 

@@ -87,7 +87,7 @@ if (BUILD_TESTS)
         # Test: mpc-mstk
 	add_amanzi_test(mpc-mstk test_mpc_mstk
 	                KIND      int
-			SOURCE    test/Main.cc test/test_driver.cpp
+			SOURCE    test/Main.cc test/test_driver.cc
 			LINK_LIBS mpc
 			          mesh
 				  mesh_factory

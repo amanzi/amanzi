@@ -83,9 +83,9 @@
       </ParameterList>
 
       <ParameterList name="Water retention models">
-        <ParameterList name="Water retention model for Material 1">
-          <Parameter name="Region" type="string" value="Material 1"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+        <ParameterList name="WRM for Material 1">
+          <Parameter name="region" type="string" value="Material 1"/>
+          <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
           <Parameter name="van Genuchten m" type="double" value="0.31138"/>
           <Parameter name="residual saturation" type="double" value="0.074"/>

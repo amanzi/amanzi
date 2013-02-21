@@ -215,10 +215,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
+    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // DEBUG
@@ -328,11 +326,9 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
     preconditioner_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, preconditioner_);
     AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_cells, flux, residual, static_cast<Matrix_MFD_PLambda*>(preconditioner_));
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_->AssembleGlobalMatrices();
-    preconditioner_->ComputeSchurComplement(bc_model, bc_values);
+    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
     // check convergence of non-linear residual
