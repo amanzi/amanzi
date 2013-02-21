@@ -62,7 +62,7 @@ TEST(Extract_Surface_MSTK1_4P)
 
   // Number of cells (quadrilaterals) in surface mesh
 
-  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
       
   // Check if centroid of the surface mesh cell is the same as its
   // parent (face) in the volume mesh
@@ -85,9 +85,9 @@ TEST(Extract_Surface_MSTK1_4P)
   // parent node in the volume mesh
 
   for (int k = 0; k < nnodes_surf; k++) {
-    Amanzi::AmanziMesh::Entity_ID_List nodecells;
-    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
-    if (nodecells.size() == 0) continue;
+//    Amanzi::AmanziMesh::Entity_ID_List nodecells;
+//    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
+//    if (nodecells.size() == 0) continue;
 
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE,k);
     Amanzi::AmanziGeometry::Point coord1;
@@ -170,7 +170,7 @@ TEST(Extract_Surface_MSTK2_4P)
 
   // Number of cells (quadrilaterals) in surface mesh
 
-  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
 
   // Check if centroid of a surface mesh cell is the same as its
   // parent (face) in the volume mesh
@@ -194,9 +194,9 @@ TEST(Extract_Surface_MSTK2_4P)
   // as its parent in the volume mesh
 
   for (int k = 0; k < nnodes_surf; k++) {
-    Amanzi::AmanziMesh::Entity_ID_List nodecells;
-    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
-    if (nodecells.size() == 0) continue;
+//    Amanzi::AmanziMesh::Entity_ID_List nodecells;
+//    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
+//    if (nodecells.size() == 0) continue;
 
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE,k);
     Amanzi::AmanziGeometry::Point coord1;
@@ -265,7 +265,7 @@ TEST(Extract_Surface_MSTK3_4P)
 
   // Number of cells (quadrilaterals) in surface mesh
 
-  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
       
   // Check if centroid of the surface mesh cell is the same as its
   // parent (face) in the volume mesh
@@ -286,9 +286,9 @@ TEST(Extract_Surface_MSTK3_4P)
   // as its parent in the volume mesh
 
   for (int k = 0; k < nnodes_surf; k++) {
-    Amanzi::AmanziMesh::Entity_ID_List nodecells;
-    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
-    if (nodecells.size() == 0) continue;
+//    Amanzi::AmanziMesh::Entity_ID_List nodecells;
+//    surfmesh.node_get_cells(k,Amanzi::AmanziMesh::OWNED,&nodecells);
+//    if (nodecells.size() == 0) continue;
 
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::NODE,k);
     Amanzi::AmanziGeometry::Point coord1;
