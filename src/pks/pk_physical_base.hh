@@ -34,6 +34,11 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   virtual void solution_to_state(const Teuchos::RCP<TreeVector>& soln,
                                  const Teuchos::RCP<State>& S);
 
+  // new virtual set_states() to also get the primary field evaulator.
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+          const Teuchos::RCP<State>& S_inter,
+          const Teuchos::RCP<State>& S_next);
+
 
   // -- setup
   virtual void setup(const Teuchos::Ptr<State>& S);
