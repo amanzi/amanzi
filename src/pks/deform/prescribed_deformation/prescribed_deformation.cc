@@ -1,3 +1,4 @@
+
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
@@ -15,6 +16,7 @@
    ------------------------------------------------------------------------- */
 
 #include "prescribed_deformation.hh"
+#include "porosity_evaluator.hh"
 
 namespace Amanzi {
 namespace Deform {
@@ -23,14 +25,41 @@ using namespace Amanzi::AmanziMesh;
 
 RegisteredPKFactory<PrescribedDeformation> PrescribedDeformation::reg_("prescribed deformation");
 
+  
+PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
+                                             const Teuchos::RCP<TreeVector>& solution):
+    PKDefaultBase(plist,solution),
+    PKPhysicalBase(plist,solution)
+{
+
+
+
+}
 
 // -- Setup data
 void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
-  S->RequireFieldEvaluator("cell_volume");
+  PKPhysicalBase::setup(S);
+
+  Teuchos::ParameterList poro_plist = plist_.sublist("porosity evaluator");
+  poro_plist.sublist("VerboseObject").set<std::string>("Verbosity Level","extreme");
+  Teuchos::RCP<DeformRelations::PorosityEvaluator> porosity_evaluator 
+    = Teuchos::rcp(new DeformRelations::PorosityEvaluator(poro_plist));
+  S->SetFieldEvaluator("porosity", porosity_evaluator);
+
+  std::vector<AmanziMesh::Entity_kind> location(1);
+  location[0] = AmanziMesh::CELL;
+  std::vector<int> num_dofs(1);
+  num_dofs[0] = 1;
+  std::vector<std::string> name(1);
+  name[0] = "cell";
+
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(name, location, num_dofs);
 }
 
 // -- Initialize owned (dependent) variables.
 void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
+  PKPhysicalBase::initialize(S);
 
 }
   
@@ -42,7 +71,7 @@ bool PrescribedDeformation::advance(double dt) {
   
   
   Teuchos::RCP<CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume", "cell_volume");  
-  Teuchos::RCP<FieldEvaluator> cveval = S_next_->GetFieldEvaluator("cell_volume");
+  // Teuchos::RCP<FieldEvaluator> cveval = S_next_->GetFieldEvaluator("cell_volume");
 
   double ss = S_next_->time();
   double ss0 = S_->time();
@@ -100,6 +129,8 @@ bool PrescribedDeformation::advance(double dt) {
 
   // now update cell volumes
   cell_volume->Scale(factor);
+
+  solution_evaluator_->SetFieldAsChanged();
 
   std::cout << "DONE" << std::endl;
 }
