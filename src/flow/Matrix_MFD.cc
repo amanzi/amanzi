@@ -307,7 +307,7 @@ void Matrix_MFD::ApplyBoundaryConditions(
       } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
         double area = mesh_->face_area(f);
         Ff[n] += value * area;
-        Bff(n, n) += bc_values[f][1] * area;
+        Bff(n, n) -= bc_values[f][1] * area;
       }
 
       // If one wants to deposit infiltration in soil.

@@ -35,7 +35,7 @@ const int FLOW_BC_SUBMODEL_RAINFALL = 1;
 const int FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN = 2;
 const int FLOW_BC_SUBMODEL_SEEPAGE_FACT = 4;
 const int FLOW_BC_SUBMODEL_HEAD_RELATIVE = 8;
-const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 1000;  // [Pa]
+const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 10000;  // [Pa]
 
 const int FLOW_SOLVER_NKA = 1;
 const int FLOW_SOLVER_NEWTON = 2;
@@ -47,7 +47,7 @@ const int FLOW_TIME_INTEGRATION_BDF1 = 3;
 const int FLOW_TIME_INTEGRATION_BDF2 = 4;
 const double FLOW_INITIAL_DT = 1e-8;  // [sec]
 const double FLOW_MAXIMUM_DT = 3.15e+10;  // [sec] 1000 years
-const double FLOW_YEAR = 3.15576e+7;
+const double FLOW_YEAR = 3.15576e+7;  // [sec]
 
 const double FLOW_WRM_VANGENUCHTEN_L = 0.5;
 

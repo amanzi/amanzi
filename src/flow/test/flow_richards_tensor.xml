@@ -8,12 +8,6 @@
    
   <!--  REGIONS  -->
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Material 1 Region">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
