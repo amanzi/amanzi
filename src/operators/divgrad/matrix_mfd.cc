@@ -199,8 +199,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c] * (*Krel_face)[0][faces[m]];
-//          std::cout << " Bff entry by " << Mff(m,n) << ", " << (*Krel_cell)[0][c]
-//                    << ", " << (*Krel_face)[0][faces[m]] << std::endl;
         }
       }
     }

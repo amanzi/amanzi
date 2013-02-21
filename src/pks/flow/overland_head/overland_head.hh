@@ -90,7 +90,7 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
-  virtual void UpdateBoundaryConditionsNoElev_(const Teuchos::Ptr<State>& S);
+  virtual void UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S);
 
   virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);

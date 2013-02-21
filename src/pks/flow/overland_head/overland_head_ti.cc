@@ -216,19 +216,17 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // update boundary conditions
-  bc_pressure_->Compute(S_next_->time());
-  bc_head_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditionsNoElev_(S_next_.ptr());
+  UpdateBoundaryConditionsMarkers_(S_next_.ptr());
 
   // update the rel perm according to the scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
 
-  // Patch up BCs in the case of zero conductivity
-  FixBCsForPrecon_(S_next_.ptr());
-
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
+  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
+
+  // Patch up BCs in the case of zero conductivity
+  FixBCsForPrecon_(S_next_.ptr());
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
@@ -241,7 +239,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
   mfd_preconditioner_->CreateMFDrhsVectors();
 
   // 2.a: scale the cell by dh_dp

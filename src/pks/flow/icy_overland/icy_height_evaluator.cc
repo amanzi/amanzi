@@ -6,6 +6,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "icy_height_model.hh"
 #include "icy_height_evaluator.hh"
 
 
@@ -22,13 +23,19 @@ IcyHeightEvaluator::IcyHeightEvaluator(Teuchos::ParameterList& plist) :
 
   unfrozen_frac_key_ = plist_.get<string>("unfrozen fraction key", "unfrozen_fraction");
   dependencies_.insert(unfrozen_frac_key_);
+
+  // model
+  Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");
+  icy_model_ = Teuchos::rcp(new IcyHeightModel(model_plist));
+
 }
 
 
 IcyHeightEvaluator::IcyHeightEvaluator(const IcyHeightEvaluator& other) :
     HeightEvaluator(other),
     dens_ice_key_(other.dens_ice_key_),
-    unfrozen_frac_key_(other.unfrozen_frac_key_) {}
+    unfrozen_frac_key_(other.unfrozen_frac_key_),
+    icy_model_(other.icy_model_) {}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -63,8 +70,8 @@ void IcyHeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    res_c[0][c] = pres_c[0][c] < p_atm ? 0. : (pres_c[0][c] - p_atm)
-        / ( (eta[0][c]*rho_l[0][c] + (1.0-eta[0][c])*rho_i[0][c]) * gz);
+    res_c[0][c] = pres_c[0][c] < p_atm ? 0. :
+        icy_model_->Height(pres_c[0][c], eta[0][c], rho_l[0][c], rho_i[0][c], p_atm, gz);
   }
 }
 
@@ -96,26 +103,26 @@ void IcyHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Stat
   if (wrt_key == pres_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      double denom = ( (eta[0][c]*rho_l[0][c] + (1.0-eta[0][c])*rho_i[0][c]) * gz);
-      res_c[0][c] = 1. / denom;
+      res_c[0][c] = icy_model_->DHeightDPressure(pres_c[0][c], eta[0][c],
+              rho_l[0][c], rho_i[0][c], p_atm, gz);
     }
   } else if (wrt_key == dens_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      double denom = ( (eta[0][c]*rho_l[0][c] + (1.0-eta[0][c])*rho_i[0][c]) * gz);
-      res_c[0][c] = -(pres_c[0][c] - p_atm) / (denom * denom) * gz * eta[0][c];
+      res_c[0][c] = icy_model_->DHeightDRho_l(pres_c[0][c], eta[0][c],
+              rho_l[0][c], rho_i[0][c], p_atm, gz);
     }
   } else if (wrt_key == dens_ice_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      double denom = ( (eta[0][c]*rho_l[0][c] + (1.0-eta[0][c])*rho_i[0][c]) * gz);
-      res_c[0][c] = -(pres_c[0][c] - p_atm) / (denom * denom) * gz * (1. - eta[0][c]);
+      res_c[0][c] = icy_model_->DHeightDRho_i(pres_c[0][c], eta[0][c],
+              rho_l[0][c], rho_i[0][c], p_atm, gz);
     }
   } else if (wrt_key == unfrozen_frac_key_) {
     int ncells = res_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      double denom = ( (eta[0][c]*rho_l[0][c] + (1.0-eta[0][c])*rho_i[0][c]) * gz);
-      res_c[0][c] = -(pres_c[0][c] - p_atm) / (denom * denom) * gz * (rho_l[0][c] - rho_i[0][c]);
+      res_c[0][c] = icy_model_->DHeightDEta(pres_c[0][c], eta[0][c],
+              rho_l[0][c], rho_i[0][c], p_atm, gz);
     }
   } else {
     ASSERT(0);
