@@ -7,15 +7,14 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
-#define AMANZI_FLOWRELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
+#ifndef AMANZI_RELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
+#define AMANZI_RELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
 
 #include "field_evaluator_factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
 class OverlandSourceFromSubsurfaceFluxEvaluator :
     public SecondaryVariableFieldEvaluator {
@@ -55,7 +54,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

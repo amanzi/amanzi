@@ -52,6 +52,10 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     flux_key_ = plist_.get<std::string>("flux key",
             domain_prefix_+std::string("flux"));
   }
+  if (flux_key_ == std::string()) {
+    flux_key_ = plist_.get<std::string>("energy flux key",
+            domain_prefix_+std::string("energy_flux"));
+  }
   if (conductivity_key_ == std::string()) {
     conductivity_key_ = plist_.get<std::string>("conductivity key",
             domain_prefix_+std::string("thermal_conductivity"));
@@ -90,15 +94,45 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Require a field and evaluator for cell volume.
   S->RequireFieldEvaluator(cell_vol_key_);
 
-  // Require a field for the flux.
+  // Require a field for the mass flux for advection.
   S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
                                 ->AddComponent("face", AmanziMesh::FACE, 1);
+
+  // Require a field for the energy flux.
+  std::string updatestring = plist_.get<std::string>("update flux mode", "never");
+  if (updatestring == "iteration") {
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  } else if (updatestring == "timestep") {
+    update_flux_ = UPDATE_FLUX_TIMESTEP;
+  } else if (updatestring == "vis") {
+    update_flux_ = UPDATE_FLUX_VIS;
+  } else if (updatestring == "never") {
+    update_flux_ = UPDATE_FLUX_NEVER;
+  } else {
+    Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
+    Exceptions::amanzi_throw(message);
+  }
 
   // boundary conditions
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
   EnergyBCFactory bc_factory(mesh_, bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
+
+  // coupling terms
+  // -- subsurface PK, coupled to the surface
+  coupled_to_surface_ = plist_.get<bool>("coupled to surface", false);
+  if (coupled_to_surface_) {
+    // surface temperature used for BCs
+    S->RequireField("surface_temperature");
+    update_flux_ = UPDATE_FLUX_ITERATION;
+  }
+
+  // flux of energy
+  if (update_flux_ != UPDATE_FLUX_NEVER) {
+    S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
@@ -152,6 +186,12 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
   bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
+  // initialize flux
+  if (update_flux_ != UPDATE_FLUX_NEVER) {
+    S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
+    S->GetField("darcy_flux", name_)->set_initialized();
+  }
+
 };
 
 
@@ -164,6 +204,20 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   niter_ = 0;
+
+  bool update = S->GetFieldEvaluator(conductivity_key_)
+      ->HasFieldChanged(S.ptr(), name_);
+
+  if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
+      (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
+    Teuchos::RCP<const CompositeVector> conductivity =
+        S->GetFieldData(conductivity_key_);
+    matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
+
+    Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
+    matrix_->DeriveFlux(*temp, flux.ptr());
+  }
 };
 
 
@@ -176,7 +230,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
     bc_values_[n] = 0.0;
   }
 
-
+  // Dirichlet temperature boundary conditions
   for (Functions::BoundaryFunction::Iterator bc=bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
@@ -184,12 +238,33 @@ void EnergyBase::UpdateBoundaryConditions_() {
     bc_values_[f] = bc->second;
   }
 
+  // Neumann flux boundary conditions
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
     bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
+
+  // Dirichlet temperature boundary conditions from a coupled surface.
+  if (coupled_to_surface_) {
+    // Face is Dirichlet with value of surface temp
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
+    const Epetra_MultiVector& temp = *S_next_->GetFieldData("surface_temperature")
+        ->ViewComponent("cell",false);
+
+    int ncells_surface = temp.MyLength();
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+
+      // -- set that value to dirichlet
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+      bc_values_[f] = temp[0][c];
+    }
+  }
+
 };
 
 

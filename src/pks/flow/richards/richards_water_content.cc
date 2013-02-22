@@ -34,7 +34,7 @@ RichardsWaterContent::RichardsWaterContent(Teuchos::ParameterList& plist) :
   dependencies_.insert(std::string("saturation_gas"));
   dependencies_.insert(std::string("molar_density_gas"));
   dependencies_.insert(std::string("mol_frac_gas"));
-  //  dependencies_.insert(std::string("cell_volume"));
+  dependencies_.insert(std::string("cell_volume"));
 };
 
 RichardsWaterContent::RichardsWaterContent(const RichardsWaterContent& other) :

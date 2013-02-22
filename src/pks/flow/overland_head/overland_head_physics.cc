@@ -60,18 +60,10 @@ void OverlandHeadFlow::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) 
       S_next_->GetFieldData("surface_water_content");
   Teuchos::RCP<const CompositeVector> wc0 =
       S_inter_->GetFieldData("surface_water_content");
-  Teuchos::RCP<const CompositeVector> cv1 =
-    S_next_->GetFieldData("surface_cell_volume");
-  Teuchos::RCP<const CompositeVector> cv0 =
-    S_inter_->GetFieldData("surface_cell_volume");
 
   // Water content only has cells, while the residual has cells and faces.
-  //  --   g <-- g - (cv*h)_t0/dt
-  g->ViewComponent("cell",false)->Multiply(-1./dt,
-          *cv0->ViewComponent("cell",false), *wc0->ViewComponent("cell",false), 1.);
-  //  --   g <-- g + (cv*h)_t1/dt
-  g->ViewComponent("cell",false)->Multiply(1./dt,
-          *cv1->ViewComponent("cell",false), *wc1->ViewComponent("cell",false), 1.);
+  g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
+          -1.0/dt, *wc0->ViewComponent("cell",false), 1.0);
 };
 
 

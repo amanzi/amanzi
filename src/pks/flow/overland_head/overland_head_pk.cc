@@ -121,17 +121,9 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
     Teuchos::ParameterList source_plist =
         plist_.sublist("source from subsurface evaluator");
-    if (!source_plist.isParameter("surface mesh key"))
-      source_plist.set("surface mesh key", "surface");
-    if (!source_plist.isParameter("subsurface mesh key"))
-      source_plist.set("subsurface mesh key", "domain");
-    if (!source_plist.isParameter("source key"))
-      source_plist.set("source key", "overland_source_from_subsurface");
-    source_plist.set("volume basis", false);
-
-    Teuchos::RCP<FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator>
+    Teuchos::RCP<Relations::OverlandSourceFromSubsurfaceFluxEvaluator>
         source_evaluator = Teuchos::rcp(
-            new FlowRelations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
+            new Relations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
     S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
