@@ -30,6 +30,8 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   K_liq_ = sublist.get<double>("thermal conductivity of water");
   K_ice_ = sublist.get<double>("thermal conductivity of ice");
+
+  min_K_ = sublist.get<double>("minimum thermal conductivity", 0.);
 }
 
 
@@ -39,8 +41,9 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
     uf_key_(other.uf_key_),
     height_key_(other.height_key_),
     K_liq_(other.K_liq_),
-    K_ice_(other.K_ice_) {}
-    
+    K_ice_(other.K_ice_),
+    min_K_(other.min_K_) {}
+
 
 Teuchos::RCP<FieldEvaluator>
 ThermalConductivitySurfaceEvaluator::Clone() const {
@@ -64,8 +67,9 @@ void ThermalConductivitySurfaceEvaluator::EvaluateField_(
 
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = height_v[0][i] * (K_liq_ * eta_v[0][i]
-              + K_ice_ * (1. - eta_v[0][i]));
+      result_v[0][i] = std::max(min_K_,
+              height_v[0][i] * (K_liq_ * eta_v[0][i] + K_ice_ * (1. - eta_v[0][i])));
+
     }
   }
 }

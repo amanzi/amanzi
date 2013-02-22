@@ -101,12 +101,20 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // update the stiffness matrix
   matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+
+  // update the flux if needed
+  if (update_flux_ == UPDATE_FLUX_ITERATION) {
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
+    matrix_->DeriveFlux(*temp, flux.ptr());
+  }
+
+  // finish assembly of the stiffness matrix
   matrix_->CreateMFDrhsVectors();
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
   matrix_->ComputeNegativeResidual(*temp, g);
 };
 

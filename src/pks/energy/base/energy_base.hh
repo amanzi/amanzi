@@ -117,7 +117,14 @@ protected:
           const Teuchos::Ptr<CompositeVector>& f);
 
  protected:
-          int niter_;
+  enum FluxUpdateMode {
+    UPDATE_FLUX_ITERATION = 0,
+    UPDATE_FLUX_TIMESTEP = 1,
+    UPDATE_FLUX_VIS = 2,
+    UPDATE_FLUX_NEVER = 3
+  };
+
+  int niter_;
 
   // boundary conditions
   Teuchos::RCP<Functions::BoundaryFunction> bc_temperature_;
@@ -128,16 +135,19 @@ protected:
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
-  // constraint on max dT
+  // flags and control
   double dT_max_;
+  FluxUpdateMode update_flux_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
+  bool coupled_to_surface_;
 
   // Keys
   Key energy_key_;
   Key cell_vol_key_;
   Key enthalpy_key_;
   Key flux_key_;
+  Key energy_flux_key_;
   Key conductivity_key_;
   Key de_dT_key_;
 

@@ -5,8 +5,10 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
+include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/surface_subsurface_fluxes)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/bc_factory)
+
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/thermal_conductivity)
