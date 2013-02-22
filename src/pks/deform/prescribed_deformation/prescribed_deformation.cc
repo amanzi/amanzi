@@ -118,16 +118,14 @@ bool PrescribedDeformation::advance(double dt) {
     newpos.push_back( new_coords );
   }
   
-  std::cout << "now modifying the mesh..." << std::endl;
+  const CompositeVector& cv = *S_->GetFieldData("cell_volume"); //->ViewComponent("cell",false);
+  
+  solution_->set_data(cv);
+  
   // compute the deformed mesh
   write_access_mesh_->deform( nodeids, newpos, true, &finpos);
-
-  std::cout << "cell volume = " << write_access_mesh_->cell_volume(0) << std::endl;
-
-
-  // now update cell volumes
-  cell_volume->Scale(factor);
-
+   
+  
   solution_evaluator_->SetFieldAsChanged();
 
   std::cout << "DONE" << std::endl;
