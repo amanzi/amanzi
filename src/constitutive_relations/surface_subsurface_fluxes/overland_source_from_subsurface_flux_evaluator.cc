@@ -10,8 +10,7 @@
 #include "overland_source_from_subsurface_flux_evaluator.hh"
 
 namespace Amanzi {
-namespace Flow {
-namespace FlowRelations {
+namespace Relations {
 
 Utils::RegisteredFactory<FieldEvaluator,OverlandSourceFromSubsurfaceFluxEvaluator>
 OverlandSourceFromSubsurfaceFluxEvaluator::fac_("overland source from subsurface via flux");
@@ -150,6 +149,5 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateFieldPartialDerivative_(
   // don't do for now.
 }
 
-} // namespace
 } // namespace
 } // namespace

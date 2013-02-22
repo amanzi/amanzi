@@ -57,7 +57,7 @@ protected:
   Teuchos::RCP<Relations::EOS> eos_liquid_;
   Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
 
-  // simple heat condution term, q = K_s2a * (Tair - Tsurf)  
+  // simple heat condution term, q = K_s2a * (Tair - Tsurf)
   // air temperature function of time (not space)
   Teuchos::RCP<Function> air_temp_;
   double K_surface_to_air_;
@@ -69,7 +69,6 @@ protected:
   bool is_air_conductivity_;
   bool coupled_to_subsurface_via_full_;
 
-  
 private:
   // factory registration
   static RegisteredPKFactory<EnergySurfaceIce> reg_;

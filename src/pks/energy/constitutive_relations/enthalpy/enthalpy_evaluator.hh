@@ -39,6 +39,7 @@ class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
   Key pres_key_;
   Key dens_key_;
   Key ie_key_;
+  bool include_work_;
 };
 
 } // namespace
