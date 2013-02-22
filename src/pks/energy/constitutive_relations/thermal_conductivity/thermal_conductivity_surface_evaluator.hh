@@ -39,6 +39,7 @@ class ThermalConductivitySurfaceEvaluator :
 
   double K_liq_;
   double K_ice_;
+  double min_K_;
 };
 
 } // namespace
