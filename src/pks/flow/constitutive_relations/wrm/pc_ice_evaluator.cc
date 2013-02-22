@@ -1,0 +1,118 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+/*
+  ViscosityEvaluator is the interface between state/data and the model, a VPM.
+
+  License: BSD
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+#include "pc_ice_water.hh"
+#include "pc_ice_evaluator.hh"
+
+namespace Amanzi {
+namespace Flow {
+namespace FlowRelations {
+
+// registry of method
+Utils::RegisteredFactory<FieldEvaluator,PCIceEvaluator> PCIceEvaluator::factory_("capillary pressure, water over ice");
+
+PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist) {
+
+  // my keys
+  my_key_ = plist_.get<std::string>("capillary pressure of ice-water key",
+          "capillary_pressure_liq_ice");
+  setLinePrefix(my_key_+std::string(" evaluator"));
+
+  // -- temperature
+  temp_key_ = plist_.get<std::string>("temperature key", "temperature");
+  dependencies_.insert(temp_key_);
+
+  // Construct my PCIce model
+  model_ = Teuchos::rcp(new PCIceWater(plist_.sublist("capillary pressure of ice-water")));
+
+  if (model_->IsMolarBasis()) {
+    dens_key_ = plist_.get<std::string>("molar density key", "molar_density_liquid");
+  } else {
+    dens_key_ = plist_.get<std::string>("mass density key", "mass_density_liquid");
+  }
+  dependencies_.insert(dens_key_);
+};
+
+
+PCIceEvaluator::PCIceEvaluator(const PCIceEvaluator& other) :
+    SecondaryVariableFieldEvaluator(other),
+    model_(other.model_),
+    temp_key_(other.temp_key_),
+    dens_key_(other.dens_key_) {}
+
+
+Teuchos::RCP<FieldEvaluator> PCIceEvaluator::Clone() const {
+  return Teuchos::rcp(new PCIceEvaluator(*this));
+}
+
+
+void PCIceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+                         const Teuchos::Ptr<CompositeVector>& result) {
+  // Pull dependencies out of state.
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
+
+  // evaluate pc
+  for (CompositeVector::name_iterator comp=result->begin();
+       comp!=result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+    const Epetra_MultiVector& dens_v = *(dens->ViewComponent(*comp,false));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+    int count = result->size(*comp);
+    for (int id=0; id!=count; ++id) {
+      result_v[0][id] = model_->CapillaryPressure(temp_v[0][id], dens_v[0][id]);
+    }
+  }
+}
+
+
+void PCIceEvaluator::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S, Key wrt_key,
+    const Teuchos::Ptr<CompositeVector>& result) {
+
+  // Pull dependencies out of state.
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
+
+  if (wrt_key == temp_key_) {
+    // evaluate d/dT( pc )
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+      const Epetra_MultiVector& dens_v = *(dens->ViewComponent(*comp,false));
+      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+      int count = result->size(*comp);
+      for (int id=0; id!=count; ++id) {
+        result_v[0][id] = model_->DCapillaryPressureDT(temp_v[0][id], dens_v[0][id]);
+      }
+    }
+  } else if (wrt_key == dens_key_) {
+    // evaluate d/drho( pc )
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
+      const Epetra_MultiVector& dens_v = *(dens->ViewComponent(*comp,false));
+      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+
+      int count = result->size(*comp);
+      for (int id=0; id!=count; ++id) {
+        result_v[0][id] = model_->DCapillaryPressureDRho(temp_v[0][id], dens_v[0][id]);
+      }
+    }
+  } else {
+    ASSERT(0);
+  }
+}
+
+} // namespace
+} // namespace
+} // namespace
