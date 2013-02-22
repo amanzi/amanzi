@@ -254,22 +254,6 @@ void Flow_PK::ProcessBoundaryConditions(
 
 
 /* ******************************************************************
-* Add a boundary marker to owned faces.                                          
-****************************************************************** */
-void Flow_PK::ApplyEssentialBoundaryConditions(std::vector<int>& bc_model,
-                                               std::vector<bc_tuple>& bc_values,
-                                               Epetra_Vector& pressure_faces)
-{
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f = 0; f < nfaces; f++) {
-    if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
-      pressure_faces[f] = bc_values[f][0];
-    }
-  }
-}
-
-
-/* ******************************************************************
 *  Calculate inner product e^T K e in each cell.                                               
 ****************************************************************** */
 void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy)

@@ -67,10 +67,6 @@ class Flow_PK : public BDF2::fnBase {
       const std::vector<int>& bc_submodel,
       std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  void ApplyEssentialBoundaryConditions(std::vector<int>& bc_model,
-                                        std::vector<bc_tuple>& bc_values,
-                                        Epetra_Vector& pressure_faces);
-
   void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
   void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
 
