@@ -79,7 +79,7 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
       ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED_EXPERIMENTAL) {
-      ok = mfd.DarcyMassInverseOptimizedTest(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseOptimizedScaled(c, K[c], Mff);
     } else {
       ok = mfd.DarcyMassInverse(c, K[c], Mff);
     }

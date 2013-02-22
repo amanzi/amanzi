@@ -199,9 +199,9 @@ int MFD3D::DarcyMassInverseSO(int cell, const Tensor& permeability,
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d; i++) {
-      int k = FindPosition(corner_faces[i], faces);
+      int k = FindPosition_(corner_faces[i], faces);
       for (int j = i; j < d; j++) {
-        int l = FindPosition(corner_faces[j], faces);
+        int l = FindPosition_(corner_faces[j], faces);
         W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs[k] * fdirs[l];
         W(l, k) = W(k, l);
       }
@@ -248,44 +248,23 @@ int MFD3D::DarcyMassInverseOptimized(int cell, const Tensor& permeability,
 
 
 /* ******************************************************************
-* Darcy inverse mass matrix via optimization, experimetnal.
+* Darcy inverse mass matrix via optimization, experimental.
 ****************************************************************** */
-int MFD3D::DarcyMassInverseOptimizedTest(int cell, const Tensor& permeability,
-                                         Teuchos::SerialDenseMatrix<int, double>& W)
+int MFD3D::DarcyMassInverseOptimizedScaled(int cell, const Tensor& permeability,
+                                           Teuchos::SerialDenseMatrix<int, double>& W)
 {
   int d = mesh_->space_dimension();
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
-  int nfaces = faces.size();
+  int nfaces = W.numRows();
 
   Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverse(cell, permeability, R, Wc);
+  int ok = L2consistencyInverseScaled(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
-
-  // rescale matrices Wc and R
-  for (int i = 0; i < nfaces; i++) {
-    double ai = mesh_->face_area(faces[i]);
-    for (int j = 0; j < nfaces; j++) {
-      double aj = mesh_->face_area(faces[j]);
-      Wc(i, j) /= ai * aj;
-    }
-    for (int j = 0; j < d; j++) R(i, j) /= ai; 
-  }
  
   ok = StabilityOptimized(permeability, R, Wc, W);
+  RescaleDarcyMassInverse_(cell, W);
 
-  // rescale matrix W
-  for (int i = 0; i < nfaces; i++) {
-    double ai = mesh_->face_area(faces[i]);
-    for (int j = 0; j < nfaces; j++) {
-      double aj = mesh_->face_area(faces[j]);
-      W(i, j) *= ai * aj;
-    }
-  }
   return ok;
 }
 
@@ -383,6 +362,84 @@ int MFD3D::L2consistencyInverse(int cell, const Tensor& T,
 
 
 /* ******************************************************************
+* Consistency condition for inverse of mass matrix in space of Darcy 
+* fluxes. Only the upper triangular part of Wc is calculated.
+****************************************************************** */
+int MFD3D::L2consistencyInverseScaled(int cell, const Tensor& T,
+                                      Teuchos::SerialDenseMatrix<int, double>& R,
+                                      Teuchos::SerialDenseMatrix<int, double>& Wc)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+
+  int num_faces = faces.size();
+  if (num_faces != R.numRows()) return num_faces;  // matrix was not reshaped
+
+  // calculate areas of possibly curved faces
+  std::vector<double> areas(num_faces, 0.0);
+  for (int i = 0; i < num_faces; i++) {
+    int f = faces[i];
+    areas[i] = norm(mesh_->face_normal(f));
+  }
+
+  // populate matrix W_0
+  int d = mesh_->space_dimension();
+  AmanziGeometry::Point v1(d);
+  double volume = mesh_->cell_volume(cell);
+
+  for (int i = 0; i < num_faces; i++) {
+    int f = faces[i];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+    v1 = T * normal;
+
+    for (int j = i; j < num_faces; j++) {
+      f = faces[j];
+      const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
+      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
+    }
+  }
+
+  // populate matrix R
+  const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
+
+  for (int i = 0; i < num_faces; i++) {
+    int f = faces[i];
+    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    for (int k = 0; k < d; k++) R(i, k) = (fm[k] - cm[k]) * mesh_->face_area(f);
+  }
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Rescale matrix to area-weighted fluxes.
+****************************************************************** */
+void MFD3D::RescaleDarcyMassInverse_(int cell, Teuchos::SerialDenseMatrix<int, double>& W)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  int num_faces = faces.size();
+
+  // calculate areas of possibly curved faces
+  std::vector<double> areas(num_faces, 0.0);
+  for (int i = 0; i < num_faces; i++) {
+    int f = faces[i];
+    areas[i] = norm(mesh_->face_normal(f));
+  }
+
+  // back to area-weighted fluxes
+  for (int i = 0; i < num_faces; i++) {
+    for (int j = 0; j < num_faces; j++) W(i, j) *= areas[i] * areas[j];
+  }
+}
+
+
+/* ******************************************************************
 * Consistency condition for stiffness matrix in heat conduction. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
@@ -434,7 +491,7 @@ int MFD3D::H1consistency(int cell, const Tensor& T,
       v3 = v1^v2;
       double u = dirs[i] * norm(v3) / (4 * area);
 
-      int pos = FindPosition(v, nodes);
+      int pos = FindPosition_(v, nodes);
       for (int k = 0; k < d; k++) N(pos, k) += normal[k] * u;
     }
   }
@@ -810,7 +867,7 @@ int MFD3D::cell_get_face_adj_cell(const int cell, const int face)
 /* ******************************************************************
 * Returns position of the number v in the list of nodes.  
 ****************************************************************** */
-int MFD3D::FindPosition(int v, AmanziMesh::Entity_ID_List nodes)
+int MFD3D::FindPosition_(int v, AmanziMesh::Entity_ID_List nodes)
 {
   for (int i = 0; i < nodes.size(); i++) {
     if (nodes[i] == v) return i;

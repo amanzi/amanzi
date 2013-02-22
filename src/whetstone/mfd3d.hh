@@ -68,8 +68,8 @@ class MFD3D {
                                Teuchos::SerialDenseMatrix<int, double>& W);
   int DarcyMassInverseOptimized(int cell, const Tensor& permeability,
                                 Teuchos::SerialDenseMatrix<int, double>& W);
-  int DarcyMassInverseOptimizedTest(int cell, const Tensor& permeability,
-                                    Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseOptimizedScaled(int cell, const Tensor& permeability,
+                                      Teuchos::SerialDenseMatrix<int, double>& W);
 
   int ElasticityStiffness(int cell, const Tensor& deformation,
                           Teuchos::SerialDenseMatrix<int, double>& A); 
@@ -81,6 +81,9 @@ class MFD3D {
   int L2consistencyInverse(int cell, const Tensor& permeability,
                            Teuchos::SerialDenseMatrix<int, double>& R,
                            Teuchos::SerialDenseMatrix<int, double>& Wc);
+  int L2consistencyInverseScaled(int cell, const Tensor& permeability,
+                                 Teuchos::SerialDenseMatrix<int, double>& R,
+                                 Teuchos::SerialDenseMatrix<int, double>& Wc);
   int H1consistency(int cell, const Tensor& T,
                     Teuchos::SerialDenseMatrix<int, double>& N,
                     Teuchos::SerialDenseMatrix<int, double>& Mc);
@@ -120,12 +123,13 @@ class MFD3D {
   int cell_get_face_adj_cell(const int cell, const int face);
 
   // access members
-  double get_scaling_factor() { return scaling_factor_; }
-  double get_scalar_stability() { return scalar_stability_; }
-  Teuchos::SerialDenseMatrix<int, double>& get_matrix_stability() { return matrix_stability_; }
+  double scaling_factor() { return scaling_factor_; }
+  double scalar_stability() { return scalar_stability_; }
+  Teuchos::SerialDenseMatrix<int, double>& matrix_stability() { return matrix_stability_; }
 
  private:
-  int FindPosition(int v, AmanziMesh::Entity_ID_List nodes);
+  int FindPosition_(int v, AmanziMesh::Entity_ID_List nodes);
+  void RescaleDarcyMassInverse_(int cell, Teuchos::SerialDenseMatrix<int, double>& W);
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 
   int stability_method_;  

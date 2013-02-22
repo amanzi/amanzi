@@ -78,7 +78,7 @@ Epetra_Map* Flow_PK::CreateSuperMap()
 
 
 /* ******************************************************************
-* Process 
+* Populate data needed by submodels.
 ****************************************************************** */
 void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
                                        std::vector<double>& rainfall_factor)
@@ -86,7 +86,7 @@ void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_submodel[f] & FLOW_BC_SUBMODEL_RAINFALL) {
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      rainfall_factor[f] = fabs(normal[dim - 1]) / mesh_->face_area(f);
+      rainfall_factor[f] = fabs(normal[dim - 1]) / norm(normal);
     }
   }
 }
