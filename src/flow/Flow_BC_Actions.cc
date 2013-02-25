@@ -28,7 +28,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Flow_PK::ProcessShiftWaterTableList(
     const Teuchos::ParameterList& list, BoundaryFunction* bc_head,
-    Teuchos::RCP<Epetra_Vector> shift_water_table_)
+    Teuchos::RCP<Epetra_Vector>& shift_water_table_)
 {
   std::string name("relative position of water table");
   if (list.isParameter(name)) {

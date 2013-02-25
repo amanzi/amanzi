@@ -72,7 +72,7 @@ class Flow_PK : public BDF2::fnBase {
 
   void ProcessShiftWaterTableList(
       const Teuchos::ParameterList& list, BoundaryFunction* bc_head,
-      Teuchos::RCP<Epetra_Vector> shift_water_table_);
+      Teuchos::RCP<Epetra_Vector>& shift_water_table_);
   void CalculateShiftWaterTable(
       const std::string region, Teuchos::RCP<Epetra_Vector> shift_water_table_);
 
