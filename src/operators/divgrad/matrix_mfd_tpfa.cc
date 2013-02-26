@@ -196,13 +196,14 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   // create auxiliaty with-ghost copy of Acf_cells
   CompositeVector Acf_parallel(mesh_,names_f,locations_f,ndofs,true);
   Acf_parallel.CreateData();
+  Acf_parallel.PutScalar(0.);
   Epetra_MultiVector& Acf_parallel_f = *Acf_parallel.ViewComponent("face",true);
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int mfaces = faces.size();
 
-    for (int i = 0; i < mfaces; i++) {
+    for (int i=0; i!=mfaces; ++i) {
       int f = faces[i];
       if (f >= nfaces_owned) Acf_parallel_f[0][f] = Acf_cells_[c][i];
     }
@@ -211,7 +212,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
   // populate the global matrix
   Spp_->PutScalar(0.0);
-  for (AmanziMesh::Entity_ID f = 0; f < nfaces_owned; f++) {
+  for (AmanziMesh::Entity_ID f=0; f!=nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int mcells = cells.size();
 
@@ -234,7 +235,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
     for (int n = 0; n < mcells; n++) {
       for (int m = n; m < mcells; m++) {
-        Bpp(n, m) -= Acf_copy[n] * Acf_copy[m] / (*Dff_)("face",f);
+        Bpp(n, m) -= Acf_copy[n] * Acf_copy[m] / Dff_f[0][f];
         Bpp(m, n) = Bpp(n, m);
       }
     }
@@ -416,17 +417,10 @@ void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
   Afc_->Multiply(true,*uc, update_f);  // Afc is kept in the transpose form.
   rhs_f.Update(-1.0, update_f, 1.0);
 
-  std::cout << "In MatrixMFDTPFA:" << std::endl;
-  std::cout << "  uc = " << (*uc)[0][0] << std::endl;
-  std::cout << "    update_f = " << update_f[0][2] << ", rhs = " << rhs_f[0][2] << std::endl;
-
   int nfaces = rhs_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
     uf[0][f] = rhs_f[0][f] / Dff_f[0][f];
   }
-
-  std::cout << "    dff = " << Dff_f[0][2] << std::endl;
-  std::cout << "  uf = " << uf[0][2] << std::endl;
 }
 
 void MatrixMFD_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
@@ -441,18 +435,10 @@ void MatrixMFD_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
   Afc_->Multiply(true, *Pu_c, Pu_f);  // Afc is kept in the transpose form.
   Pu_f.Update(1., u_f, -1.);
 
-  std::cout << "In MatrixMFDTPFA:" << std::endl;
-  std::cout << "  Ph_c = " << (*Pu_c)[0][0] << std::endl;
-  std::cout << "  u_f = " << (u_f)[0][0] << std::endl;
-  std::cout << "    update_f = " << Pu_f[0][0] << ", Dff = " << Dff_f[0][0] << std::endl;
-
   int nfaces = Pu_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
     Pu_f[0][f] /= Dff_f[0][f];
   }
-
-  std::cout << "  Ph_f = " << Pu_f[0][0] << std::endl;
-
 }
 
 }  // namespace AmanziFlow
