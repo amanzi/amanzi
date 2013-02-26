@@ -50,27 +50,47 @@ void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(name, location, num_dofs);
 
-  std::cout << key_ << endl;
-  std::cout << name_ << endl;
+  // create storage for the centroid displacement
 
+  location.resize(3);
+  location[0] = AmanziMesh::CELL;  
+  location[1] = AmanziMesh::CELL;
+  location[2] = AmanziMesh::CELL;
+
+  num_dofs.resize(3,1);
+  
+  name.resize(3);
+  name[0] = "cell x";
+  name[1] = "cell y";
+  name[2] = "cell z";
+
+  S->RequireField("centroid", name_)->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(name, location, num_dofs);
+  
 }
 
 // -- Initialize owned (dependent) variables.
 void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::initialize(S);
+  PKPhysicalBase::initialize(S); 
+  // initialize the centroid displacement to be zero
+  
+  CompositeVector& centroid = *S->GetFieldData("centroid",name_);
+  const AmanziMesh::Mesh& mesh = *S->GetMesh();
 
+  int c_owned = centroid.size("cell x");
+  for (int c=0; c != c_owned; ++c) {
+    const AmanziGeometry::Point& xc = mesh.cell_centroid(c);
+    centroid("cell x",c) = xc[0]; 
+    centroid("cell y",c) = xc[1]; 
+    centroid("cell z",c) = xc[2];
+  }
+  S->GetField("centroid",name_)->set_initialized();
 }
   
-// -- advance via one of a few methods
 bool PrescribedDeformation::advance(double dt) {
-  std::cout << "ADVANCING prescribed deformation" << std:: endl;
 
   AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S_next_->GetMesh());
   
-  
-  Teuchos::RCP<CompositeVector> cell_volume = S_next_->GetFieldData("cell_volume", "cell_volume");  
-  // Teuchos::RCP<FieldEvaluator> cveval = S_next_->GetFieldEvaluator("cell_volume");
-
   double ss = S_next_->time();
   double ss0 = S_->time();
 
@@ -79,13 +99,10 @@ bool PrescribedDeformation::advance(double dt) {
 
   double factor = thickness/thickness0;
 
-  std::cout << "factor = " << factor << std::endl;
-
-
   // get space dimensions
   int dim = write_access_mesh_->space_dimension();
 
-    // set the list of the new position coords
+  // set the list of the new position coords
   AmanziGeometry::Point_List newpos, finpos;
   
   // move the mid point on the mesh top
@@ -94,8 +111,6 @@ bool PrescribedDeformation::advance(double dt) {
   // number of vertices
   int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
                                Amanzi::AmanziMesh::OWNED);
-
-  std::cout << "number of nodes = " << nV << std::endl;
 
   Amanzi::AmanziGeometry::Point coords, new_coords;
   coords.init(dim);
@@ -118,17 +133,34 @@ bool PrescribedDeformation::advance(double dt) {
     newpos.push_back( new_coords );
   }
   
-  const CompositeVector& cv = *S_->GetFieldData("cell_volume"); //->ViewComponent("cell",false);
-  
-  solution_->set_data(cv);
-  
-  // compute the deformed mesh
+
+  // get the cell volumes from the previous time step
+  const CompositeVector& cv = *S_->GetFieldData("cell_volume"); 
+
+  // deform the mesh
   write_access_mesh_->deform( nodeids, newpos, true, &finpos);
-   
-  
+
+  // get the new cell volumes, after deformation
+  const CompositeVector& cv_new = *S_next_->GetFieldData("cell_volume");
+
+  // compute the cell-wise volume change factor
+  CompositeVector& def = *S_next_->GetFieldData("deformation",name_);
+  def.ReciprocalMultiply(1.0, cv, cv_new, 0.0);
+
+  // store the current centroids
+  CompositeVector& centroid = *S_next_->GetFieldData("centroid",name_);
+  const AmanziMesh::Mesh& mesh = *S_next_->GetMesh();
+
+  int c_owned = centroid.size("cell x");
+  for (int c=0; c != c_owned; ++c) {
+    const AmanziGeometry::Point& xc = mesh.cell_centroid(c);
+    centroid("cell x",c) = xc[0]; 
+    centroid("cell y",c) = xc[1]; 
+    centroid("cell z",c) = xc[2];
+  }  
+
   solution_evaluator_->SetFieldAsChanged();
 
-  std::cout << "DONE" << std::endl;
 }
 
 } // namespace
