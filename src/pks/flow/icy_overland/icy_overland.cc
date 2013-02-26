@@ -119,6 +119,13 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::IcyHeightEvaluator(height_plist));
   S->SetFieldEvaluator("ponded_depth", height_evaluator);
   icy_height_model_ = height_evaluator->get_IcyModel();
+
+  // -- overwrite the upwinding, which was created with ponded_depth, to use
+  // -- unfrozen ponded depth.
+  upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
+          "overland_conductivity", "upwind_overland_conductivity",
+          "pres_elev", "unfrozen_effective_depth"));
+
 }
 
 

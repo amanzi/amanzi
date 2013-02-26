@@ -276,13 +276,18 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     matrix_->DeriveCellVelocity(*flux, velocity.ptr());
 
     Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);
-    const Epetra_MultiVector& pres_cells = *pressure->ViewComponent("cell",false);
-    Epetra_MultiVector& vel_cells = *velocity->ViewComponent("cell",false);
+    const Epetra_MultiVector& pres_c = *pressure->ViewComponent("cell",false);
+
+    S->GetFieldEvaluator("surface_molar_density_liquid")->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface_molar_density_liquid")
+        ->ViewComponent("cell",false);
+
+    Epetra_MultiVector& vel_c = *velocity->ViewComponent("cell",false);
 
     int ncells = velocity->size("cell");
     for (int c=0; c!=ncells; ++c) {
-      vel_cells[0][c] /= std::max( pres_cells[0][c] , 1e-7);
-      vel_cells[1][c] /= std::max( pres_cells[0][c] , 1e-7);
+      vel_c[0][c] /= (std::max( pres_c[0][c] , 1e-7) * nliq_c[0][c]);
+      vel_c[1][c] /= (std::max( pres_c[0][c] , 1e-7) * nliq_c[0][c]);
     }
   }
 };

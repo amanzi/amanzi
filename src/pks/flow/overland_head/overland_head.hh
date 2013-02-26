@@ -75,8 +75,6 @@ public:
 
   virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
-  virtual void changed_solution();
-
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
 

@@ -26,6 +26,8 @@ Process kernel for energy equation for overland flow.
 namespace Amanzi {
 namespace Energy {
 
+#define DEBUG_FLAG 1
+
 RegisteredPKFactory<EnergySurfaceIce> EnergySurfaceIce::reg_("surface energy");
 
 // -------------------------------------------------------------
@@ -215,9 +217,9 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
       ->ViewComponent("face",false);
   Epetra_MultiVector& enth_f = *enth->ViewComponent("face",false);
-  const Epetra_MultiVector& pres = *S->GetFieldData("surface_pressure")
+  const Epetra_MultiVector& pres_c = *S->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
+  const Epetra_MultiVector& temp_f = *S->GetFieldData("surface_temperature")
       ->ViewComponent("face",false);
 
   AmanziMesh::Entity_ID_List cells;
@@ -226,11 +228,11 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (cells.size() == 1) {
       double T = bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET ?
-          bc_values_[f] : temp[0][f];
-      double p = pres[0][cells[0]];
+          bc_values_[f] : temp_f[0][f];
+      double p = pres_c[0][cells[0]];
       double dens = eos_liquid_->MolarDensity(T,p);
       double int_energy = iem_liquid_->InternalEnergy(T);
-      double enthalpy = int_energy + p/dens;
+      double enthalpy = int_energy;// + p/dens;
 
       enth_f[0][f] = enthalpy * fabs(flux[0][f]);
     }
@@ -244,6 +246,15 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
 void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
+
+#if DEBUG_FLAG
+  AmanziMesh::Entity_ID_List faces, faces0;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+  Teuchos::OSTab tab = getOSTab();
+#endif
+
 
   // Note that energy sources are based upon face areas, which are not cell volumes.
   Teuchos::RCP<const Epetra_MultiVector> fa0;
@@ -275,6 +286,13 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     for (int c=0; c!=ncells; ++c) {
       g_c[0][c] -= 0.5* ((*fa0)[0][c] * source0[0][c] + (*fa1)[0][c] * source1[0][c]);
     }
+
+#if DEBUG_FLAG
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "  res_source: Q_E: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+    }
+#endif
+
   }
 
   // external sources of mass, bringing enthalpy
@@ -286,8 +304,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     double T_air1 = air_temp_->operator()(&time);
     double n1 = eos_liquid_->MolarDensity(T_air1, patm);
     double u1 = iem_liquid_->InternalEnergy(T_air1);
-    //    double enth1 = u1 + patm / n1;
-    double enth1 = u1;
+    double enth1 = u1;// + patm / n1;
 
     // get enthalpy of outgoing water
     const Epetra_MultiVector& enth_surf = *S->GetFieldData(enthalpy_key_)
@@ -335,19 +352,30 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         g_c[0][c] -= molar_flux * enth_surf[0][c];
       }
     }
+#if DEBUG_FLAG
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "  res_source: E*Q_m: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+    }
+#endif
   }
 
   // conduction of heat to air
   if (is_air_conductivity_) {
     double time = S->time();
     double T_air1 = air_temp_->operator()(&time);
-    const Epetra_MultiVector& temp =
-        *S_inter_->GetFieldData(key_)->ViewComponent("cell",false);
+    const Epetra_MultiVector& temp_c =
+        *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
     int ncells = g_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= K_surface_to_air_ * (T_air1 - temp[0][c]) * (*fa1)[0][c];
+      g_c[0][c] -= K_surface_to_air_ * (T_air1 - temp_c[0][c]) * (*fa1)[0][c];
     }
+#if DEBUG_FLAG
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "  res_source: K(Tair-T): " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+    }
+#endif
+
   }
 
   // coupling to subsurface
@@ -389,6 +417,13 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         g_c[0][c] -= flux * enth_surf[0][c] + e_source1[0][cells[0]];
       }
     }
+
+#if DEBUG_FLAG
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "  res_source: q^E_ss + E*q^m_ss: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+    }
+#endif
+
   }
 
 }

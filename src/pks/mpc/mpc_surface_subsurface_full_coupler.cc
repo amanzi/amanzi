@@ -86,52 +86,23 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
 
 #if DEBUG_FLAG
   Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    int cnum0 = 39; int fnum0 = 171;
-    int cnum = 49; int fnum = 212;
-    *out_ << "Preconditioner application" << std::endl;
-    *out_ << " SubSurface precon:" << std::endl;
-    *out_ << "  p0: " << (*domain_u_new)("cell",cnum0) << " " << (*domain_u_new)("face",fnum0)
+  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    AmanziMesh::Entity_ID_List fnums,fnums0;
+    std::vector<int> dirs;
+    surf_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+    surf_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+
+    std::cout << "Preconditioner application" << std::endl;
+    std::cout << " SubSurface precon:" << std::endl;
+    std::cout << "  p0: " << (*domain_u_new)("cell",c0_) << " " << (*domain_u_new)("face",fnums0[0])
           << std::endl;
-    *out_ << "  p1: " << (*domain_u_new)("cell",cnum) << " " << (*domain_u_new)("face",fnum)
+    std::cout << "  p1: " << (*domain_u_new)("cell",c1_) << " " << (*domain_u_new)("face",fnums[0])
           << std::endl;
-    *out_ << "  PC*p0: " << (*domain_Pu)("cell",cnum0) << " " << (*domain_Pu)("face",fnum0)
+    std::cout << "  PC*p0: " << (*domain_Pu)("cell",c0_) << " " << (*domain_Pu)("face",fnums0[0])
           << std::endl;
-    *out_ << "  PC*p1: " << (*domain_Pu)("cell",cnum) << " " << (*domain_Pu)("face",fnum)
+    std::cout << "  PC*p1: " << (*domain_Pu)("cell",c1_) << " " << (*domain_Pu)("face",fnums[0])
           << std::endl;
-
-    if (S_next_->cycle() > 300) {
-      if (std::abs((*domain_Pu)("face",500)) > 1.e12) {
-        *out_ << "BLOWING UP, dumping precon" << std::endl;
-
-        std::stringstream filename_s;
-        filename_s << "schur_" << S_next_->cycle() << "blowup.txt";
-        EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *preconditioner_->Schur());
-
-        std::stringstream filename_a;
-        filename_a << "aff_" << S_next_->cycle() << "blowup.txt";
-        EpetraExt::RowMatrixToMatlabFile(filename_a.str().c_str(), *preconditioner_->Aff());
-
-        std::stringstream filename_t;
-        filename_t << "tpfa_" << S_next_->cycle() << "blowup.txt";
-        EpetraExt::RowMatrixToMatlabFile(filename_t.str().c_str(), *surf_preconditioner_->TPFA());
-      } else {
-        std::stringstream filename_s;
-        filename_s << "schur_" << S_next_->cycle() << ".txt";
-        EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *preconditioner_->Schur());
-
-        std::stringstream filename_a;
-        filename_a << "aff_" << S_next_->cycle() << ".txt";
-        EpetraExt::RowMatrixToMatlabFile(filename_a.str().c_str(), *preconditioner_->Aff());
-
-        std::stringstream filename_t;
-        filename_t << "tpfa_" << S_next_->cycle() << ".txt";
-        EpetraExt::RowMatrixToMatlabFile(filename_t.str().c_str(), *surf_preconditioner_->TPFA());
-
-      }
-    }
-
-  }
+    //  }
 #endif
 
   // Correction applies to both the domain face and the surface cell.
@@ -196,17 +167,20 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    int cnum0 = 3;
-    int cnum = 4; int fnum = 11;
-    *out_ << " Surface precon:" << std::endl;
-    *out_ << "  u0: " << (*surf_u)("cell",cnum0) << ", "
-          << (*surf_u)("face",fnum) << ", "
-          << (*surf_u)("cell",cnum) << std::endl;
-    *out_ << "  u0: " << (*surf_Pu)("cell",cnum0) << ", "
-          << (*surf_Pu)("face",fnum) << ", "
-          << (*surf_Pu)("cell",cnum) << std::endl;
-  }
+  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  //    AmanziMesh::Entity_ID_List fnums,fnums0;
+  //    std::vector<int> dirs;
+  //    surf_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+  //    surf_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+
+    std::cout << " Surface precon:" << std::endl;
+    std::cout << "  u0: " << (*surf_u)("cell",c0_) << ", "
+          << (*surf_u)("face",fnums0[0]) << ", "
+          << (*surf_u)("cell",c1_) << std::endl;
+    std::cout << "  u0: " << (*surf_Pu)("cell",c0_) << ", "
+          << (*surf_Pu)("face",fnums[0]) << ", "
+          << (*surf_Pu)("cell",c1_) << std::endl;
+    //  }
 #endif
 }
 
