@@ -71,12 +71,6 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
   for (int fs=0; fs!=nfaces_surf; ++fs) {
     surface_mesh_->face_get_cells(fs, AmanziMesh::USED, &surf_cells);
     int ncells_surf = surf_cells.size(); ASSERT(ncells_surf <= 2);
-    if (ncells_surf > 1) {
-      std::cout << "Adding ff connection on rank "
-                << mesh_->get_comm()->MyPID() << std::endl;
-      std::cout << "  surface cell local IDs = (" << surf_cells[0]
-                << ", " << surf_cells[1] << ")" << std::endl;
-    }
 
     // get the equivalent faces on the subsurface mesh
     for (int n=0; n!=ncells_surf; ++n) {
@@ -88,13 +82,6 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
     ierr = ff_graph.InsertGlobalIndices(ncells_surf, equiv_face_GID,
             ncells_surf, equiv_face_GID);
     ASSERT(!ierr);
-
-    if (ncells_surf > 1) {
-      std::cout << "  subsurface face local IDs = (" << surf_cells[0]
-                << ", " << surf_cells[1] << ")" << std::endl;
-      std::cout << "  subsurface face global IDs = (" << equiv_face_GID[0]
-                << ", " << equiv_face_GID[1] << ")" << std::endl;
-    }
   }
 
   if (mesh_->get_comm()->MyPID() == 0) mesh_->get_comm()->Barrier();
@@ -165,10 +152,6 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
       indices[m] = fmap_wghost.GID(indices[m]);
     }
-
-    std::cout << "SumIntoGlobalValues: row " << frow_global << " = ";
-    for (int m=0; m!=entries; ++m) std::cout << indices[m] << ", ";
-    std::cout << std::endl;
 
     ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices);
     ASSERT(!ierr);
@@ -244,12 +227,15 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
 
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    AmanziMesh::Entity_ID frow_global = fmap_wghost.GID(frow);
     for (int m=0; m!=entries; ++m) {
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
+      indices[m] = fmap_wghost.GID(indices[m]);
     }
 
-    ierr = Sff_->SumIntoMyValues(frow, entries, values, indices);
+    ierr = Sff_->SumIntoGlobalValues(frow_global, entries, values, indices);
     ASSERT(!ierr);
+
   }
 
   ierr = Sff_->GlobalAssemble();
