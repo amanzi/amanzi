@@ -36,11 +36,6 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_->AssembleGlobalMatrices();
 
   // calculate the residual
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  preselev0 (diff): " << (*pres_elev)("cell",0,0) << " "
-          << (*pres_elev)("face",0,0) << " " << (*pres_elev)("face",0,1) << " "
-          << (*pres_elev)("face",0,2) << " " << (*pres_elev)("face",0,3) << std::endl;
-  }
   matrix_->ComputeNegativeResidual(*pres_elev, g.ptr());
 };
 

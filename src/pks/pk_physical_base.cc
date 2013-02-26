@@ -46,6 +46,7 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   pv_sublist.set("evaluator name", key_);
   solution_evaluator_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(pv_sublist));
   S->SetFieldEvaluator(key_, solution_evaluator_);
+
 };
 
 

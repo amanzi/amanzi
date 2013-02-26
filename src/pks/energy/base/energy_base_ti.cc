@@ -39,14 +39,13 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 #if DEBUG_FLAG
   AmanziMesh::Entity_ID_List faces, faces0;
   std::vector<int> dirs;
-  int cnum = 4; int cnum0 = 0;
-  mesh_->cell_get_faces_and_dirs(cnum0, &faces0, &dirs);
-  mesh_->cell_get_faces_and_dirs(cnum, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Residual calculation:" << std::endl;
-    *out_ << "  T0: " << (*u)("cell",cnum0) << " " << (*u)("face",faces0[0]) << std::endl;
-    *out_ << "  T1: " << (*u)("cell",cnum) << " " << (*u)("face",faces[0]) << std::endl;
+    *out_ << "  T0: " << (*u)("cell",c0_) << " " << (*u)("face",faces0[0]) << std::endl;
+    *out_ << "  T1: " << (*u)("cell",c1_) << " " << (*u)("face",faces[0]) << std::endl;
   }
 #endif
 
@@ -66,8 +65,8 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after diffusion): " << (*res)("cell",cnum0) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after diffusion): " << (*res)("cell",cnum) << " " << (*res)("face",faces[0]) << std::endl;
+    *out_ << "  res0 (after diffusion): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
+    *out_ << "  res1 (after diffusion): " << (*res)("cell",c1_) << " " << (*res)("face",faces[0]) << std::endl;
   }
 #endif
 
@@ -75,8 +74,8 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after accumulation): " << (*res)("cell",cnum0) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after accumulation): " << (*res)("cell",cnum) << " " << (*res)("face",faces[0]) << std::endl;
+    *out_ << "  res0 (after accumulation): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
+    *out_ << "  res1 (after accumulation): " << (*res)("cell",c1_) << " " << (*res)("face",faces[0]) << std::endl;
   }
 #endif
 
@@ -84,8 +83,8 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAdvection_(S_next_.ptr(), res.ptr(), true);
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after advection): " << (*res)("cell",cnum0) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after advection): " << (*res)("cell",cnum) << " " << (*res)("face",faces[0]) << std::endl;
+    *out_ << "  res0 (after advection): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
+    *out_ << "  res1 (after advection): " << (*res)("cell",c1_) << " " << (*res)("face",faces[0]) << std::endl;
   }
 #endif
 
@@ -93,8 +92,8 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddSources_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after sources): " << (*res)("cell",cnum0) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after sources): " << (*res)("cell",cnum) << " " << (*res)("face",faces[0]) << std::endl;
+    *out_ << "  res0 (after sources): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
+    *out_ << "  res1 (after sources): " << (*res)("cell",c1_) << " " << (*res)("face",faces[0]) << std::endl;
   }
 #endif
 
@@ -121,15 +120,14 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 #if DEBUG_FLAG
   AmanziMesh::Entity_ID_List faces, faces0;
   std::vector<int> dirs;
-  int cnum = 4; int cnum0 = 0;
-  mesh_->cell_get_faces_and_dirs(cnum0, &faces0, &dirs);
-  mesh_->cell_get_faces_and_dirs(cnum, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
 
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    *out_ << "  T0: " << (*u->data())("cell",cnum0) << " " << (*u->data())("face",faces0[0]) << std::endl;
-    *out_ << "  T1: " << (*u->data())("cell",cnum) << " " << (*u->data())("face",faces[0]) << std::endl;
+    *out_ << "  T0: " << (*u->data())("cell",c0_) << " " << (*u->data())("face",faces0[0]) << std::endl;
+    *out_ << "  T1: " << (*u->data())("cell",c1_) << " " << (*u->data())("face",faces[0]) << std::endl;
   }
 #endif
 
@@ -138,8 +136,8 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  PC*T0: " << (*Pu->data())("cell",cnum0) << " " << (*Pu->data())("face",faces0[0]) << std::endl;
-    *out_ << "  PC*T1: " << (*Pu->data())("cell",cnum) << " " << (*Pu->data())("face",faces[0]) << std::endl;
+    *out_ << "  PC*T0: " << (*Pu->data())("cell",c0_) << " " << (*Pu->data())("face",faces0[0]) << std::endl;
+    *out_ << "  PC*T1: " << (*Pu->data())("cell",c1_) << " " << (*Pu->data())("face",faces[0]) << std::endl;
   }
 #endif
 };
