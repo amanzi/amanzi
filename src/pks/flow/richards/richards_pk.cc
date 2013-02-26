@@ -417,6 +417,19 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> darcy_velocity = S->GetFieldData("darcy_velocity", name_);
     Teuchos::RCP<const CompositeVector> flux = S->GetFieldData("darcy_flux");
     matrix_->DeriveCellVelocity(*flux, darcy_velocity.ptr());
+
+    S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& nliq_c = *S->GetFieldData("molar_density_liquid")
+        ->ViewComponent("cell",false);
+
+    Epetra_MultiVector& vel_c = *darcy_velocity->ViewComponent("cell",false);
+    int ncells = vel_c.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      for (int n=0; n!=vel_c.NumVectors(); ++n) {
+        vel_c[n][c] /= nliq_c[0][c];
+      }
+    }
+
   }
 };
 
