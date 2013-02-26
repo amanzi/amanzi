@@ -35,7 +35,8 @@ void BoundaryFunction::Define(const std::vector<std::string> &regions,
       this_domain.insert(face_list.begin(), face_list.end());
     } else {
       Errors::Message m;
-      m << "\n   unknown region name or wrong topological dimension for \"" << r->c_str() << "\"";
+      m << "\n BoundaryFunction: unknown region name or wrong topological dimension for \"" 
+        << r->c_str() << "\"";
       Exceptions::amanzi_throw(m);
     }
 
@@ -53,9 +54,15 @@ void BoundaryFunction::Define(const std::vector<std::string> &regions,
     std::set_intersection(prev_domain.begin(), prev_domain.end(),
                           this_domain.begin(), this_domain.end(),
                           std::inserter(overlap, overlap.end()));
-    if (overlap.size() != 0) {
+
+    int nover = overlap.size(); 
+    if (nover != 0) {
+      cout << "BoundaryFunction: the number of repeated faces is " << nover << endl;
+      for (std::set<AmanziMesh::Entity_ID>::iterator i = overlap.begin(); i != overlap.end(); ++i) 
+          cout << "  face id: " << *i << "  centroid: " << mesh_->face_centroid(*i) << endl; 
+
       Errors::Message m;
-      m << "conflicting definition";
+      m << "\nBoundaryFunction: overlapping side sets or duplicate entries.";
       Exceptions::amanzi_throw(m);
     }
   }
