@@ -374,14 +374,20 @@ void OverlandHeadFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> velocity = S->GetFieldData("surface_velocity", name_);
     matrix_->DeriveCellVelocity(*flux, velocity.ptr());
 
-    Teuchos::RCP<const CompositeVector> depth = S->GetFieldData("ponded_depth");
-    const Epetra_MultiVector& depth_c = *depth->ViewComponent("cell",false);
+    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& depth_c = *S->GetFieldData("ponded_depth")
+        ->ViewComponent("cell",false);
+
+    S->GetFieldEvaluator("surface_molar_density_liquid")->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface_molar_density_liquid")
+        ->ViewComponent("cell",false);
+
     Epetra_MultiVector& vel_c = *velocity->ViewComponent("cell",false);
 
     int ncells = velocity->size("cell");
     for (int c=0; c!=ncells; ++c) {
-      vel_c[0][c] /= std::max( depth_c[0][c] , 1e-7);
-      vel_c[1][c] /= std::max( depth_c[0][c] , 1e-7);
+      vel_c[0][c] /= (std::max( depth_c[0][c] , 1e-7) * nliq_c[0][c]);
+      vel_c[1][c] /= (std::max( depth_c[0][c] , 1e-7) * nliq_c[0][c]);
     }
   }
 };
@@ -718,19 +724,6 @@ void OverlandHeadFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
       (*pres)("face",f) = bc_values_[f];
     }
   }
-};
-
-
-// -----------------------------------------------------------------------------
-// Experimental approach -- calling this indicates that the time
-// integration scheme is changing the value of the solution in
-// state.
-// -----------------------------------------------------------------------------
-void OverlandHeadFlow::changed_solution() {
-  solution_evaluator_->SetFieldAsChanged();
-  // communicate both faces and cells -- faces for flux and cells for rel perm
-  // upwinding overlap
-  S_next_->GetFieldData(key_)->ScatterMasterToGhosted();
 };
 
 
