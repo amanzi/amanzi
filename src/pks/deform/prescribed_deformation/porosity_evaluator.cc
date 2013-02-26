@@ -18,9 +18,6 @@ Utils::RegisteredFactory<FieldEvaluator,PorosityEvaluator> PorosityEvaluator::fa
 PorosityEvaluator::PorosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-
-  std::cout << "POROSITY EVALUATOR: constructor" << std::endl;
-
   my_key_ = "porosity";
   setLinePrefix(my_key_+std::string(" evaluator"));
   
@@ -44,14 +41,14 @@ PorosityEvaluator::Clone() const {
 void PorosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  std::cout << "POROSITY EVALUATOR: evaluating porosity..." << std::endl;
+  CompositeVector& rho = *S->GetFieldData("porosity",my_key_);
+  const CompositeVector& deformation = *S->GetFieldData("deformation");
 
-  Epetra_MultiVector& rho = *S->GetFieldData("porosity",my_key_)->ViewComponent("cell",false);
-
-  // modify porosity here
-  // ...
-
+  // (new rho) = deformation + (old rho) - 1.0
+  rho.Update(1.0, deformation, 1.0);
+  rho.Shift(-1.0);
 }
+
 
 
 void PorosityEvaluator::EvaluateFieldPartialDerivative_(
@@ -65,8 +62,7 @@ void PorosityEvaluator::EvaluateFieldPartialDerivative_(
   
 void PorosityEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // special EnsureCompatibility to add in a evaluator for Porosity
-  std::cout << "POROSITY EVALUATOR: porosity evaluator ensure compatibility" << std::endl;
-
+  
   // Call the base class's method since we do not need anything special here
   SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
 };
