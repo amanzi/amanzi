@@ -60,6 +60,11 @@ class PKDefaultBase : public PK, public Teuchos::VerboseObject<PKDefaultBase> {
   // fancy OS
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::EVerbosityLevel verbosity_;
+
+  // cruft for easier global debugging
+  AmanziMesh::Entity_ID c0_;
+  AmanziMesh::Entity_ID c1_;
+
 };
 
 } // namespace

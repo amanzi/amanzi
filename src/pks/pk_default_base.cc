@@ -27,6 +27,10 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
   // get the fancy output ??
   verbosity_ = getVerbLevel();
   out_ = getOStream();
+
+  // cells to debug
+  c0_ = plist_.get<int>("debug cell 0",0);
+  c1_ = plist_.get<int>("debug cell 0",1);
 }
 
 
