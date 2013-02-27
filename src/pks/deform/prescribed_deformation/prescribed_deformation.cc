@@ -51,22 +51,11 @@ void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
     ->SetComponents(name, location, num_dofs);
 
   // create storage for the centroid displacement
-
-  location.resize(3);
-  location[0] = AmanziMesh::CELL;  
-  location[1] = AmanziMesh::CELL;
-  location[2] = AmanziMesh::CELL;
-
-  num_dofs.resize(3,1);
-  
-  name.resize(3);
-  name[0] = "cell x";
-  name[1] = "cell y";
-  name[2] = "cell z";
+  num_dofs[0] = 3;
 
   S->RequireField("centroid", name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(name, location, num_dofs);
-  
+
 }
 
 // -- Initialize owned (dependent) variables.
@@ -74,19 +63,19 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::initialize(S); 
   // initialize the centroid displacement to be zero
   
-  CompositeVector& centroid = *S->GetFieldData("centroid",name_);
-  const AmanziMesh::Mesh& mesh = *S->GetMesh();
+  Epetra_MultiVector& centroid = *S->GetFieldData("centroid",name_)
+      ->ViewComponent("cell",false);
 
-  int c_owned = centroid.size("cell x");
+  int c_owned = centroid.MyLength();
   for (int c=0; c != c_owned; ++c) {
-    const AmanziGeometry::Point& xc = mesh.cell_centroid(c);
-    centroid("cell x",c) = xc[0]; 
-    centroid("cell y",c) = xc[1]; 
-    centroid("cell z",c) = xc[2];
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    centroid[0][c] = xc[0]; 
+    centroid[1][c] = xc[1]; 
+    centroid[2][c] = xc[2]; 
   }
   S->GetField("centroid",name_)->set_initialized();
 }
-  
+
 bool PrescribedDeformation::advance(double dt) {
 
   AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S_next_->GetMesh());
@@ -94,10 +83,14 @@ bool PrescribedDeformation::advance(double dt) {
   double ss = S_next_->time();
   double ss0 = S_->time();
 
-  double thickness = 0.8 + 0.2*cos( ss / (365.25*24*60*60) * 2.0*M_PI );   
-  double thickness0 = 0.8 + 0.2*cos( ss0 / (365.25*24*60*60) * 2.0*M_PI );
+  std::cout << "Advancing from " << ss0 << " to " << ss << std::endl;
+  double thickness = 0.9 + 0.1*std::cos( ss / (365.25*24*60*60) * 2.0*M_PI );   
+  double thickness0 = 0.9 + 0.1*std::cos( ss0 / (365.25*24*60*60) * 2.0*M_PI );
+  std::cout << std::setprecision(16);
+  std::cout << "  thicknesses: " << thickness << ", " << thickness0 << std::endl;
 
   double factor = thickness/thickness0;
+  std::cout << "SETTING factor = " << factor << std::endl;
 
   // get space dimensions
   int dim = write_access_mesh_->space_dimension();
@@ -127,40 +120,55 @@ bool PrescribedDeformation::advance(double dt) {
     }
     // new_coords[dim-1] = coords[dim-1] * fac;
     new_coords[dim-1] = coords[dim-1] * factor;
-    
+
     // puch back for deform method
     nodeids.push_back(iV);
     newpos.push_back( new_coords );
   }
-  
+
 
   // get the cell volumes from the previous time step
-  const CompositeVector& cv = *S_->GetFieldData("cell_volume"); 
+  const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
+      ->ViewComponent("cell",false);
 
   // deform the mesh
-  write_access_mesh_->deform( nodeids, newpos, true, &finpos);
+  write_access_mesh_->deform( nodeids, newpos, true, &finpos); // deforms the mesh itself
+  solution_evaluator_->SetFieldAsChanged(); // mark the placeholder evaluator as changed
 
+  // -- this is no longer necessary, but I'm leaving it here to note how it
+  //    should have been if it were needed...
   // get the new cell volumes, after deformation
-  const CompositeVector& cv_new = *S_next_->GetFieldData("cell_volume");
+  // bool changed = S_next_->GetFieldEvaluator("cell_volume")
+  //     ->HasFieldChanged(S_next_.ptr(), name_);  // update the cell volume if the
+  //                                               // placeholder eval has changed
+  // const CompositeVector& cv_new = *S_next_->GetFieldData("cell_volume");
+  // -- END no longer needed code.
 
-  // compute the cell-wise volume change factor
-  CompositeVector& def = *S_next_->GetFieldData("deformation",name_);
-  def.ReciprocalMultiply(1.0, cv, cv_new, 0.0);
+
+  // setting deformation to be rock_volume at old time, (1-poro_old)*CV_old
+  Epetra_MultiVector& def = *S_next_->GetFieldData("deformation",name_)
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& poro = *S_->GetFieldData("porosity")
+      ->ViewComponent("cell",false);
+
+  int c_owned = def.MyLength();
+  for (int c=0; c!=c_owned; ++c) {
+    def[0][c] = (1. - poro[0][c]) * cv[0][c];
+  }
+
 
   // store the current centroids
-  CompositeVector& centroid = *S_next_->GetFieldData("centroid",name_);
-  const AmanziMesh::Mesh& mesh = *S_next_->GetMesh();
+  Epetra_MultiVector& centroid = *S_next_->GetFieldData("centroid",name_)
+      ->ViewComponent("cell",false);
 
-  int c_owned = centroid.size("cell x");
   for (int c=0; c != c_owned; ++c) {
-    const AmanziGeometry::Point& xc = mesh.cell_centroid(c);
-    centroid("cell x",c) = xc[0]; 
-    centroid("cell y",c) = xc[1]; 
-    centroid("cell z",c) = xc[2];
-  }  
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    centroid[0][c] = xc[0];
+    centroid[1][c] = xc[1];
+    centroid[2][c] = xc[2];
+  }
 
-  solution_evaluator_->SetFieldAsChanged();
-
+  return false;
 }
 
 } // namespace
