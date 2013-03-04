@@ -7,14 +7,14 @@
   </ParameterList>    
    
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
+    <!-- ParameterList name="Computational domain">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="101"/>
         <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Entity" type="string" value="Cell"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList -->
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="103"/>
