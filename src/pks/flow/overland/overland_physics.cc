@@ -36,8 +36,8 @@ void OverlandFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("surface_flux", name_);
-    pres_elev->ScatterMasterToGhosted();
     matrix_->DeriveFlux(*pres_elev, flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 
   // assemble the stiffness matrix

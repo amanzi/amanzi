@@ -125,6 +125,14 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       } else {
         // Parameterization of a linear scaling between upwind and downwind.
         double param = abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
+        if (!(param >= 0.5) || !(param <= 1.0)) {
+          std::cout << "BAD FLUX!" << std::endl;
+          std::cout << "  flux = " << flux_v[0][f] << std::endl;
+          std::cout << "  param = " << param << std::endl;
+          std::cout << "  flow_eps = " << flow_eps << std::endl;
+        }
+
+
         ASSERT(param >= 0.5);
         ASSERT(param <= 1.0);
 
@@ -132,6 +140,8 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       }
     }
   }
+
+  face_coef->ScatterMasterToGhosted("face");
 };
 
 } //namespace

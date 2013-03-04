@@ -36,19 +36,7 @@ class Richards : public PKPhysicalBDFBase {
 
 public:
   Richards(Teuchos::ParameterList& plist,
-           const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      PKPhysicalBDFBase(plist, solution),
-      coupled_to_surface_via_head_(false),
-      coupled_to_surface_via_flux_(false),
-      coupled_to_surface_via_full_(false),
-      coupled_to_surface_via_residual_(false),
-      infiltrate_only_if_unfrozen_(false),
-      modify_predictor_with_consistent_faces_(false),
-      niter_(0) {
-    // set a few parameters before setup
-    plist_.set("primary variable key", "pressure");
-  }
+           const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~Richards() {}
@@ -80,8 +68,6 @@ public:
   // error monitor
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
-
-  virtual void changed_solution();
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 

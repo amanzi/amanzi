@@ -84,9 +84,9 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     namestream << domain_prefix_ << "energy_residual_" << i;
     std::stringstream solnstream;
     solnstream << domain_prefix_ << "energy_solution_" << i;
-    S->RequireField(namestream.str(), name_)->SetMesh(mesh_)->SetGhosted()
+    S->RequireField(namestream.str(), name_)->SetMesh(mesh_)
                     ->SetComponents(names2, locations2, num_dofs2);
-    S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)->SetGhosted()
+    S->RequireField(solnstream.str(), name_)->SetMesh(mesh_)
                     ->SetComponents(names2, locations2, num_dofs2);
   }
 #endif

@@ -54,6 +54,9 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
   // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
 
+  Epetra_MultiVector& face_coef_f = *face_coef->ViewComponent("face",true);
+  const Epetra_MultiVector& cell_coef_c = *cell_coef.ViewComponent("cell",true);
+
   int c_used = cell_coef.size("cell", true);
   for (int c=0; c!=c_used; ++c) {
     std::vector<int> fdirs;
@@ -61,7 +64,7 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
 
     for (int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
-      (*face_coef)("face",f) += cell_coef("cell",c) / 2.0;
+      face_coef_f[0][f] += cell_coef_c[0][c] / 2.0;
     }
   }
 };

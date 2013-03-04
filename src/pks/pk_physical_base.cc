@@ -87,7 +87,7 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
 
-  solution_evaluator_->SetFieldAsChanged();
+  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
 
 
@@ -115,6 +115,8 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
     if (ic_plist.get<bool>("initialize faces from cells", false)) {
       DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
     }
+
+    solution_evaluator_->SetFieldAsChanged(S); // communicates if necessary
   }
 
   // -- Push the data into the solution.

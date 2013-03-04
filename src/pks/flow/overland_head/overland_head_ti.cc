@@ -16,7 +16,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 #define DEBUG_ICE_FLAG 0
 #define DEBUG_RES_FLAG 0
 

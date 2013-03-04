@@ -24,7 +24,7 @@ subsurface-face-only Schur complement that captures all terms.
 
 namespace Amanzi {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 RegisteredPKFactory<MPCSurfaceSubsurfaceFullCoupler>
 MPCSurfaceSubsurfaceFullCoupler::reg_("surface-subsurface full coupler");
@@ -86,23 +86,23 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
 
 #if DEBUG_FLAG
   Teuchos::OSTab tab = getOSTab();
-  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     AmanziMesh::Entity_ID_List fnums,fnums0;
     std::vector<int> dirs;
     surf_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
     surf_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
 
-    std::cout << "Preconditioner application" << std::endl;
-    std::cout << " SubSurface precon:" << std::endl;
-    std::cout << "  p0: " << (*domain_u_new)("cell",c0_) << " " << (*domain_u_new)("face",fnums0[0])
+    *out_ << "Preconditioner application" << std::endl;
+    *out_ << " SubSurface precon:" << std::endl;
+    *out_ << "  p0: " << (*domain_u_new)("cell",c0_) << " " << (*domain_u_new)("face",fnums0[0])
           << std::endl;
-    std::cout << "  p1: " << (*domain_u_new)("cell",c1_) << " " << (*domain_u_new)("face",fnums[0])
+    *out_ << "  p1: " << (*domain_u_new)("cell",c1_) << " " << (*domain_u_new)("face",fnums[0])
           << std::endl;
-    std::cout << "  PC*p0: " << (*domain_Pu)("cell",c0_) << " " << (*domain_Pu)("face",fnums0[0])
+    *out_ << "  PC*p0: " << (*domain_Pu)("cell",c0_) << " " << (*domain_Pu)("face",fnums0[0])
           << std::endl;
-    std::cout << "  PC*p1: " << (*domain_Pu)("cell",c1_) << " " << (*domain_Pu)("face",fnums[0])
+    *out_ << "  PC*p1: " << (*domain_Pu)("cell",c1_) << " " << (*domain_Pu)("face",fnums[0])
           << std::endl;
-    //  }
+  }
 #endif
 
   // Correction applies to both the domain face and the surface cell.
@@ -167,20 +167,20 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
 
 #if DEBUG_FLAG
-  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
   //    AmanziMesh::Entity_ID_List fnums,fnums0;
   //    std::vector<int> dirs;
   //    surf_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
   //    surf_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
 
-    std::cout << " Surface precon:" << std::endl;
-    std::cout << "  u0: " << (*surf_u)("cell",c0_) << ", "
+    *out_ << " Surface precon:" << std::endl;
+    *out_ << "  u0: " << (*surf_u)("cell",c0_) << ", "
           << (*surf_u)("face",fnums0[0]) << ", "
           << (*surf_u)("cell",c1_) << std::endl;
-    std::cout << "  u0: " << (*surf_Pu)("cell",c0_) << ", "
+    *out_ << "  u0: " << (*surf_Pu)("cell",c0_) << ", "
           << (*surf_Pu)("face",fnums[0]) << ", "
           << (*surf_Pu)("cell",c1_) << std::endl;
-    //  }
+  }
 #endif
 }
 

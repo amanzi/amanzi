@@ -117,8 +117,7 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    for (int n = 0; n < ncells; n++)
-      cells_GID[n] = cmap_wghost.GID(cells[n]);
+    for (int n = 0; n < ncells; n++) cells_GID[n] = cmap_wghost.GID(cells[n]);
 
     pp_graph.InsertGlobalIndices(ncells, cells_GID, ncells, cells_GID);
   }
@@ -155,13 +154,13 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   // Dff
-  Dff_->PutScalar(0.0);
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",true);
-  for (int c = 0; c < ncells_owned; c++) {
+  Dff_f.PutScalar(0.);
+  for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int mfaces = faces.size();
 
-    for (int n = 0; n < mfaces; n++) {
+    int mfaces = faces.size();
+    for (int n=0; n!=mfaces; ++n) {
       int f = faces[n];
       Dff_f[0][f] += Aff_cells_[c](n, n);
     }
@@ -169,6 +168,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   Dff_->GatherGhostedToMaster();
 
   // convert right-hand side to a cell-based vector
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   Epetra_Vector Tc(cmap);
@@ -176,7 +176,10 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
   Teuchos::RCP<Epetra_MultiVector> rhs_faces = rhs_->ViewComponent("face",false);
   Teuchos::RCP<Epetra_MultiVector> rhs_cells = rhs_->ViewComponent("cell",false);
-  for (int f=0; f!=nfaces_owned; ++f) (*rhs_faces)[0][f] /= Dff_f[0][f];
+
+  for (int f=0; f!=nfaces_owned; ++f) {
+    (*rhs_faces)[0][f] /= Dff_f[0][f];
+  }
   (*Acf_).Multiply(false, *rhs_faces, Tc);
   for (int c=0; c!=ncells_owned; ++c) (*rhs_cells)[0][c] -= Tc[c];
   for (int f=0; f!=nfaces_owned; ++f) (*rhs_faces)[0][f] *= Dff_f[0][f];
@@ -196,18 +199,21 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   // create auxiliaty with-ghost copy of Acf_cells
   CompositeVector Acf_parallel(mesh_,names_f,locations_f,ndofs,true);
   Acf_parallel.CreateData();
-  Acf_parallel.PutScalar(0.);
   Epetra_MultiVector& Acf_parallel_f = *Acf_parallel.ViewComponent("face",true);
+  // note the PutScalar is called on MultiVector to ensure ghost entries are
+  // initialized
+  Acf_parallel_f.PutScalar(0.);
 
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int mfaces = faces.size();
 
+    int mfaces = faces.size();
     for (int i=0; i!=mfaces; ++i) {
       int f = faces[i];
       if (f >= nfaces_owned) Acf_parallel_f[0][f] = Acf_cells_[c][i];
     }
   }
+
   Acf_parallel.GatherGhostedToMaster();
 
   // populate the global matrix
@@ -223,10 +229,10 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
       cells_GID[n] = cmap_wghost.GID(c);
 
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
       Bpp(n, n) = Dcc_c[0][c] / faces.size();
       if (c < ncells_owned) {
         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
+        ASSERT(i>=0);
         Acf_copy[n] = Acf_cells_[c][i];
       } else {
         Acf_copy[n] = Acf_parallel_f[0][f];

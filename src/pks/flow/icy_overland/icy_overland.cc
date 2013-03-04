@@ -214,11 +214,11 @@ bool IcyOverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       upwind_conductivity_c[0][c] *= n_liq[0][c];
     }
 
-    std::cout << "cond in update perm = " << upwind_conductivity_f[0][11] << std::endl;
-    
+    //    std::cout << "cond in update perm = " << upwind_conductivity_f[0][11] << std::endl;
+
     // Communicate.  This could be done later, but i'm not exactly sure where, so
     // we'll do it here.
-    upwind_conductivity->ScatterMasterToGhosted();
+    //    upwind_conductivity->ScatterMasterToGhosted();
   }
 
   return update_perm;

@@ -133,7 +133,7 @@ bool PrescribedDeformation::advance(double dt) {
 
   // deform the mesh
   write_access_mesh_->deform( nodeids, newpos, true, &finpos); // deforms the mesh itself
-  solution_evaluator_->SetFieldAsChanged(); // mark the placeholder evaluator as changed
+  solution_evaluator_->SetFieldAsChanged(S_next_.ptr()); // mark the placeholder evaluator as changed
 
   // -- this is no longer necessary, but I'm leaving it here to note how it
   //    should have been if it were needed...

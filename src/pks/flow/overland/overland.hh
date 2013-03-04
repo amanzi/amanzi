@@ -73,8 +73,6 @@ public:
   // admissible update -- ensure non-negativity of ponded depth
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
 
-  virtual void changed_solution();
-
   // modify the predictor to ensure non-negativity of ponded depth
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 

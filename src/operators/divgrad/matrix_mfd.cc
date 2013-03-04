@@ -751,6 +751,17 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
         }
 
         flux_v[0][f] = s * dirs[n];
+        if (!(std::abs(flux_v[0][f]) >= 0.)) {
+          std::cout << "DEAD FLUX!" << std::endl;
+          for (int m=0; m!=nfaces; ++m) {
+            std::cout << "  dp = " << dp[m] << ", Aff = ";
+            for (int n=0; n!=nfaces; ++n) std::cout << Aff_cells_[c](m,n) << ", ";
+            std::cout << std::endl;
+          }
+
+          ASSERT(0);
+        }
+
         done[f] = true;
 
       }

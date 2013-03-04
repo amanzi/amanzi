@@ -104,6 +104,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_(double h, Teuchos::RCP<Tr
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S_inter_->GetFieldData("cell_volume")
       ->ViewComponent("cell",false);
+#if DEBUG_FLAG
   std::cout << "Testing new Permafrost evaluation: " << std::endl;
   std::cout << "    p = " << p1[0][96] << ", T = " << T1[0][96] << std::endl;
   std::cout << "  From Vectorized approach:" << std::endl;
@@ -127,6 +128,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_(double h, Teuchos::RCP<Tr
             << ",  " << (*S_inter_->GetFieldData("dwater_content_dpressure"))("cell",96)
             << "\t ] \t\t[  "
             << jac(1,0) << ",  " << jac(1,1) << "\t ]" << std::endl;
+#endif
+
   // project energy and water content
   double dt_next = S_next_->time() - S_inter_->time();
   double dt_prev = S_inter_->time() - S_work_->time();
@@ -157,9 +160,12 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_(double h, Teuchos::RCP<Tr
   double dt_ratio = (dt_next + dt_prev) / dt_prev;
   wc2.Update(dt_ratio, wc1, 1. - dt_ratio);
   e2.Update(dt_ratio, e1, 1. - dt_ratio);
+
+#if DEBUG_FLAG
   std::cout << "S0 wc,e: " << wc0[0][96] << ", " << e0[0][96] << std::endl;
   std::cout << "S1 wc,e: " << wc1[0][96] << ", " << e1[0][96] << std::endl;
   std::cout << "Desired wc,e: " << wc2[0][96] << ", " << e2[0][96] << std::endl;
+#endif
 
   // Check and update
   const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
@@ -178,10 +184,12 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_(double h, Teuchos::RCP<Tr
     double T = T1[0][c];
 
     // uses intensive forms, so must divide by cell volume.
+#if DEBUG_FLAG
     std::cout << "Inverting: c = " << c << std::endl;
     std::cout << "   p,T  = " << p << ", " << T << std::endl;
     std::cout << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
     std::cout << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
+#endif
     ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
 
     if (!ierr) { // valid solution, no zero determinates, etc
@@ -213,6 +221,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
       ->ViewComponent("cell",false);
 
   // DEBUG CRUFT
+#if DEBUG_FLAG
   for (std::vector<int>::const_iterator lcv = cells_to_track_.begin();
        lcv!=cells_to_track_.end(); ++lcv) {
     std::cout << "Check on Prev guesses: c = " << *lcv << std::endl;
@@ -243,6 +252,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
             << ",  " << (*S_inter_->GetFieldData("dwater_content_dpressure"))("cell",96)
             << "\t ] \t\t[  "
             << jac(1,0) << ",  " << jac(1,1) << "\t ]" << std::endl;
+#endif
+
   // project energy and water content
   double dt_next = S_next_->time() - S_inter_->time();
   double dt_prev = S_inter_->time() - S_work_->time();
@@ -273,9 +284,12 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
   double dt_ratio = (dt_next + dt_prev) / dt_prev;
   wc2.Update(dt_ratio, wc1, 1. - dt_ratio);
   e2.Update(dt_ratio, e1, 1. - dt_ratio);
+
+#if DEBUG_FLAG
   std::cout << "S0 wc,e: " << wc0[0][96] << ", " << e0[0][96] << std::endl;
   std::cout << "S1 wc,e: " << wc1[0][96] << ", " << e1[0][96] << std::endl;
   std::cout << "Desired wc,e: " << wc2[0][96] << ", " << e2[0][96] << std::endl;
+#endif
 
   // Check and update
   const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
@@ -327,12 +341,15 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
       double p = p1[0][c];
       double T = T1[0][c];
 
+#if DEBUG_FLAG
       std::cout << "Inverting: c = " << c << std::endl;
       std::cout << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
+#endif
 
       // uses intensive forms, so must divide by cell volume.
       ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
 
+#if DEBUG_FLAG
       std::cout << "   p_ewc,T_ewc  = " << p << ", " << T << std::endl;
       std::cout << "   p_guess,T_guess  = " << pres_guess_c[0][c]
                 << ", " << temp_guess_c[0][c] << std::endl;
@@ -340,6 +357,8 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
       std::cout << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
 
       cells_to_track_.push_back(c);
+#endif
+
       //      ASSERT(!ierr); // remove me for robustness --etc
       if (!ierr) { // valid solution, no zero determinates, etc
         temp_guess_c[0][c] = T;
@@ -347,7 +366,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
       }
     }
   }
-  return ewc_any;
+  return true;  // must be true, not ewc_any, or else do an AllToAll to collect ewc_any
 }
 
 
@@ -667,8 +686,8 @@ void MPCFrozenCoupledFlowEnergy::initialize(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(Teval_fe);
     Teuchos::RCP<PrimaryVariableFieldEvaluator> peval =
       Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(peval_fe);
-    Teval->SetFieldAsChanged();
-    peval->SetFieldAsChanged();
+    Teval->SetFieldAsChanged(S);
+    peval->SetFieldAsChanged(S);
   }
 }
 
@@ -989,6 +1008,7 @@ void MPCFrozenCoupledFlowEnergy::precon_smart_ewc_(Teuchos::RCP<const TreeVector
     if (ewc_precon) {
       ewc_any = true;
 
+#if DEBUG_FLAG
       std::cout << "-----------------------------------------" << std::endl;
       std::cout << "Using EWC Precon on cell " << c << std::endl;
       std::cout << " with residual (T,p) = " << res_temp_c[0][c] << ", "
@@ -997,6 +1017,7 @@ void MPCFrozenCoupledFlowEnergy::precon_smart_ewc_(Teuchos::RCP<const TreeVector
       std::cout << "  dT,dp = " << dtemp_c[0][c] << ", " << dpres_c[0][c] << std::endl;
       std::cout << "  T,p_new = " << temp_prev[0][c] - dtemp_c[0][c]
                 << ", " << pres_prev[0][c] - dpres_c[0][c] << std::endl;
+#endif
 
       dTp[0] = dtemp_c[0][c]; dTp[1] = dpres_c[0][c];
       dewc = jac_[c] * dTp;
@@ -1006,12 +1027,14 @@ void MPCFrozenCoupledFlowEnergy::precon_smart_ewc_(Teuchos::RCP<const TreeVector
       double e_new_int = e_prev[0][c] - dewc[0];
       double wc_new_int = wc_prev[0][c] - dewc[1];
 
+#if DEBUG_FLAG
       std::cout << "  --- " << std::endl;
       std::cout << " Jac = [ " << jac_[c](0,0) << ", " << jac_[c](0,1) << "]" << std::endl;
       std::cout << "       [ " << jac_[c](1,0) << ", " << jac_[c](1,1) << "]" << std::endl;
       std::cout << "  e,wc_old = " << e_prev[0][c] << ", " << wc_prev[0][c] << std::endl;
       std::cout << "  de,dwc = " << dewc[0] << ", " << dewc[1] << std::endl;
       std::cout << "  e,wc_new = " << e_new_int << ", " << wc_new_int << std::endl;
+#endif
 
       // inverting for corrected (T',p') = E-WC^inv(e',wc')
       double T_new = temp_prev[0][c];
@@ -1021,7 +1044,9 @@ void MPCFrozenCoupledFlowEnergy::precon_smart_ewc_(Teuchos::RCP<const TreeVector
       int ierr = model_->InverseEvaluate(e_new_int/cell_volume[0][c],
               wc_new_int/cell_volume[0][c], poro[0][c], T_new, p_new);
 
+#if DEBUG_FLAG
       std::cout << "  T,p_new = " << T_new << ", " << p_new << std::endl;
+#endif
 
       //      ASSERT(!ierr); // remove me for robustness --etc
       if (!ierr) { // valid solution, no zero determinates, etc
