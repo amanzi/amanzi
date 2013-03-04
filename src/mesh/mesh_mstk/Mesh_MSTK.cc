@@ -1079,6 +1079,13 @@ Mesh_MSTK::~Mesh_MSTK() {
   if (OwnedCells) MSet_Delete(OwnedCells);
   if (GhostCells) MSet_Delete(GhostCells);
 
+  if (entities_deleted) {
+    if (deleted_vertices) List_Delete(deleted_vertices);
+    if (deleted_edges) List_Delete(deleted_edges);
+    if (deleted_faces) List_Delete(deleted_faces);
+    if (deleted_regions) List_Delete(deleted_regions);
+  }
+
   MAttrib_Delete(celltype_att);
   if (vparentatt) MAttrib_Delete(vparentatt);
   if (eparentatt) MAttrib_Delete(eparentatt);
@@ -3386,7 +3393,6 @@ void Mesh_MSTK::init_pcell_lists() {
 
 
 void Mesh_MSTK::init_set_info() {
-  int idx;
   MSet_ptr mset;
   char setname[256];
   
@@ -3405,42 +3411,79 @@ void Mesh_MSTK::init_set_info() {
 
     strcpy(setname,rgn->name().c_str());
 
-    mset = MESH_MSetByName(mesh,setname);
+    MType entdim;
+    if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
-    if (mset) {
+      AmanziGeometry::LabeledSetRegionPtr lsrgn =
+        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
 
-      // The only time a mesh set by this name should already exist is
-      // if the region is of type labeled set. In that case, verify
-      // that the entity types in the set are the same as the one
-      // requested in the region
-      
-      if (rgn->type() == AmanziGeometry::LABELEDSET) {
+      char internal_name[256];
+      std::string label = lsrgn->label();
+      std::string entity_type = lsrgn->entity_str();
+      if (entity_type == "CELL")
+        sprintf(internal_name,"matset_%s",label.c_str());
+      else if (entity_type == "FACE")
+        sprintf(internal_name,"sideset_%s",label.c_str());
+      else if (entity_type == "NODE")
+        sprintf(internal_name,"nodeset_%s",label.c_str());
 
-        AmanziGeometry::LabeledSetRegionPtr lsrgn =
-          dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
-        
-        MType entdim = MSet_EntDim(mset);
-        if (Mesh::space_dimension() == 3) {
+      mset = MESH_MSetByName(mesh,internal_name);
+   
+      if (!mset) {
+	Errors::Message mesg("Missing labeled set or error in input");
+	amanzi_throw(mesg);
+      }
 
-          if ((lsrgn->entity_str() == "CELL" && entdim != MREGION) ||
-              (lsrgn->entity_str() == "FACE" && entdim != MFACE) ||
-              (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
-            Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set");
-            amanzi_throw(mesg);
-          }
-        }
-        else if (Mesh::space_dimension() == 2) {
-          if ((lsrgn->entity_str() == "CELL" && entdim != MFACE) ||
-              (lsrgn->entity_str() == "FACE" && entdim != MEDGE) ||
-              (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
-            std::cerr << "Mismatch of entity type in labeled set region and mesh set" << std::endl;
-            throw std::exception();
-          }
+      entdim = MSet_EntDim(mset);
+      if (Mesh::space_dimension() == 3) {
+
+        if ((lsrgn->entity_str() == "CELL" && entdim != MREGION) ||
+            (lsrgn->entity_str() == "FACE" && entdim != MFACE) ||
+            (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
+          Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set");
+          amanzi_throw(mesg);
         }
       }
+      else if (Mesh::space_dimension() == 2) {
+        if ((lsrgn->entity_str() == "CELL" && entdim != MFACE) ||
+            (lsrgn->entity_str() == "FACE" && entdim != MEDGE) ||
+            (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
+          std::cerr << "Mismatch of entity type in labeled set region and mesh set" << std::endl;
+          throw std::exception();
+        }
+      }
+
     }
-    else { 
-      // Create it on demand later
+    else
+      mset = MESH_MSetByName(mesh,setname);
+  
+    if (mset) {
+      if (entities_deleted) {
+        entdim = MSet_EntDim(mset);
+        int idx=0;
+        switch (entdim) {
+        case MREGION:
+          MRegion_ptr region;
+          while (region = List_Next_Entry(deleted_regions,&idx))
+            MSet_Rem(mset,region);
+          break;
+        case MFACE:
+          MFace_ptr face;
+          while (face = List_Next_Entry(deleted_faces,&idx))
+            MSet_Rem(mset,face);
+          break;
+        case MEDGE:
+          MEdge_ptr edge;
+          while (edge = List_Next_Entry(deleted_edges,&idx))
+            MSet_Rem(mset,edge);
+          break;
+        case MVERTEX:
+          MVertex_ptr vertex;
+          while (vertex = List_Next_Entry(deleted_vertices,&idx))
+            MSet_Rem(mset,vertex);
+          break;
+        }
+      }
     }
   }
   
@@ -3460,7 +3503,7 @@ void Mesh_MSTK::collapse_degen_edges() {
   double len2;
   int ival;
   void *pval;
-  Cell_type celltype;
+  Cell_type celltype;  
 
   idx = 0;
   while ((edge = MESH_Next_Edge(mesh,&idx))) {
@@ -3470,6 +3513,17 @@ void Mesh_MSTK::collapse_degen_edges() {
     if (len2 <= 1.0e-32) {
 
       /* Degenerate edge  - must collapse */
+
+      /* If its the first time, we have to allocate
+         these lists */
+      if (!entities_deleted) {
+        deleted_vertices = List_New(0);
+        deleted_edges = List_New(0);
+        deleted_faces = List_New(0);
+        deleted_regions = List_New(0);
+      }
+
+      entities_deleted = true;
 
       /* Collapse, choosing the vertex to be deleted and vertex to
 	 be kept consistently. If topological constraints permit,
@@ -3495,6 +3549,9 @@ void Mesh_MSTK::collapse_degen_edges() {
         vdelid = MV_ID(vdel);
       }
 
+      eregs = ME_Regions(edge);
+      efaces = ME_Faces(edge);
+
       vkeep = ME_Collapse(edge, vkeep, topoflag);
 
       if (!vkeep) {
@@ -3509,7 +3566,36 @@ void Mesh_MSTK::collapse_degen_edges() {
         Errors::Message mesg("Could not collapse degenerate edge. Expect computational issues with connected elements");
         amanzi_throw(mesg);
       }
+      
+      vregs = MV_Regions(vkeep);
+      vfaces = MV_Faces(vkeep);
 
+      if (eregs) {
+        MRegion_ptr reg;
+        int idx1 = 0;
+        while ((reg = List_Next_Entry(eregs,&idx1))) {
+          if (!List_Contains(vregs,reg)) 
+            List_Add(deleted_regions,reg);
+        }
+      }
+      
+      if (efaces) {
+        MFace_ptr face;
+        int idx1 = 0;
+        while ((face = List_Next_Entry(efaces,&idx2))) {
+          if (!List_Contains(vfaces,face))
+            List_Add(deleted_faces,face);
+        }
+      }
+
+      List_Add(deleted_edges,edge);
+
+      List_Add(deleted_vertices,vdel);
+
+      if (vregs) List_Delete(vregs);
+      if (vfaces) List_Delete(vfaces);
+      if (eregs) List_Delete(eregs);
+      if (efaces) List_Delete(efaces);
     }
 
   }
@@ -4147,6 +4233,12 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension,
   serial_run =  (!mpicomm || numprocs == 1) ? true : false;
 
   parent_mesh = NULL;
+
+  AllVerts = OwnedVerts = NotOwnedVerts = NULL;
+  AllFaces = OwnedFaces = NotOwnedFaces = NULL;
+  AllCells = OwnedCells = GhostCells = NULL;
+  deleted_vertices = deleted_edges = deleted_faces = deleted_regions = NULL;
+  entities_deleted = false;
 }
 
 

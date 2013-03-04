@@ -63,6 +63,12 @@ private:
   MSet_ptr AllCells, OwnedCells, GhostCells;
 
 
+  // Deleted entity lists if some pre-processing had to be done
+  // to the mesh to eliminate degenerate entities
+
+  bool entities_deleted;
+  List_ptr deleted_vertices, deleted_edges, deleted_faces, deleted_regions;
+
   // Local ID to MSTK handle map
 
   std::vector<MEntity_ptr> vtx_id_to_handle;
