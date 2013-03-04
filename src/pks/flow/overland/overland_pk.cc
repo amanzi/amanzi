@@ -139,10 +139,10 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "face";
 
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->SetMesh(mesh_)->SetGhosted()
+  S->RequireField("elevation")->SetMesh(mesh_)
                 ->SetComponents(names2, locations2, num_dofs2);
   S->RequireField("slope_magnitude")->SetMesh(mesh_)
-                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+                ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField("pres_elev")->SetMesh(mesh_)->SetGhosted()
                 ->SetComponents(names2, locations2, num_dofs2);
 
@@ -153,6 +153,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
+    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
@@ -250,6 +251,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
     matrix_->DeriveFlux(*potential, flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 };
 
@@ -268,6 +270,7 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     matrix_->DeriveFlux(*potential, flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
@@ -278,16 +281,12 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const CompositeVector> pressure = S->GetFieldData(key_);
     const Epetra_MultiVector& pres_c = *pressure->ViewComponent("cell",false);
 
-    S->GetFieldEvaluator("surface_molar_density_liquid")->HasFieldChanged(S.ptr(), name_);
-    const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface_molar_density_liquid")
-        ->ViewComponent("cell",false);
-
     Epetra_MultiVector& vel_c = *velocity->ViewComponent("cell",false);
 
     int ncells = velocity->size("cell");
     for (int c=0; c!=ncells; ++c) {
-      vel_c[0][c] /= (std::max( pres_c[0][c] , 1e-7) * nliq_c[0][c]);
-      vel_c[1][c] /= (std::max( pres_c[0][c] , 1e-7) * nliq_c[0][c]);
+      vel_c[0][c] /= std::max( pres_c[0][c] , 1e-7);
+      vel_c[1][c] /= std::max( pres_c[0][c] , 1e-7);
     }
   }
 };
@@ -346,7 +345,7 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // Communicate.  This could be done later, but i'm not exactly sure where, so
     // we'll do it here.
-    upwind_conductivity->ScatterMasterToGhosted("face");
+    //    upwind_conductivity->ScatterMasterToGhosted("face");
   }
 
   return update_perm;
@@ -517,18 +516,6 @@ bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   //return false;
   */
 }
-
-// -----------------------------------------------------------------------------
-// Experimental approach -- calling this indicates that the time
-// integration scheme is changing the value of the solution in
-// state.
-// -----------------------------------------------------------------------------
-void OverlandFlow::changed_solution() {
-  solution_evaluator_->SetFieldAsChanged();
-  // communicate both faces and cells -- faces for flux and cells for rel perm
-  // upwinding overlap
-  S_next_->GetFieldData(key_)->ScatterMasterToGhosted();
-};
 
 } // namespace
 } // namespace

@@ -33,6 +33,7 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
   int ierr(0);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? MFD_QUAD_FACES : MFD_HEX_FACES;
@@ -62,11 +63,11 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
 
   // additional face-to-face connections for the TPF on surface.
   AmanziMesh::Entity_ID_List surf_cells;
+  int equiv_face_LID[2];
   int equiv_face_GID[2];
+  int surf_cell_GID[2];
 
   int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-  if (mesh_->get_comm()->MyPID() != 0) mesh_->get_comm()->Barrier();
 
   for (int fs=0; fs!=nfaces_surf; ++fs) {
     surface_mesh_->face_get_cells(fs, AmanziMesh::USED, &surf_cells);
@@ -74,17 +75,24 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
 
     // get the equivalent faces on the subsurface mesh
     for (int n=0; n!=ncells_surf; ++n) {
-      surf_cells[n] = surface_mesh_->entity_get_parent(AmanziMesh::CELL, surf_cells[n]);
-      equiv_face_GID[n] = fmap_wghost.GID(surf_cells[n]);
+      equiv_face_LID[n] = surface_mesh_->entity_get_parent(AmanziMesh::CELL, surf_cells[n]);
+      equiv_face_GID[n] = fmap_wghost.GID(equiv_face_LID[n]);
+
+      surf_cell_GID[n] = surf_cmap_wghost.GID(surf_cells[n]);
     }
+
+    // if (ncells_surf == 2) {
+    //   if (71 == surf_cell_GID[0] || 71 == surf_cell_GID[1] ||
+    //       25 == surf_cell_GID[0] || 25 == surf_cell_GID[1]) {
+    //     std::cout << "Interesting face: " << surf_cell_GID[0] << ", " << surf_cell_GID[1] << std::endl;
+    //   }
+    // }
 
     // insert the connection
     ierr = ff_graph.InsertGlobalIndices(ncells_surf, equiv_face_GID,
             ncells_surf, equiv_face_GID);
     ASSERT(!ierr);
   }
-
-  if (mesh_->get_comm()->MyPID() == 0) mesh_->get_comm()->Barrier();
 
   ierr = cf_graph.FillComplete(fmap, cmap);
   ASSERT(!ierr);
@@ -128,39 +136,76 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
   MatrixMFD::AssembleGlobalMatrices();
 
   // Add the TPFA on the surface parts from surface_A.
+  const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   const Epetra_FECrsMatrix& Spp = *surface_A_->TPFA();
 
   int entries = 0;
+  int gentries = 0;
   double *values;
   values = new double[9];
+  double *gvalues;
+  gvalues = new double[9];
+  int *surfindices;
+  surfindices = new int[9];
+  int *gsurfindices;
+  gsurfindices = new int[9];
   int *indices;
   indices = new int[9];
+  int *indices_global;
+  indices_global = new int[9];
 
   // Loop over surface cells (subsurface faces)
+  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
-    ierr = Spp.ExtractMyRowCopy(sc, 9, entries, values, indices);
+    AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
+    ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, gsurfindices);
     ASSERT(!ierr);
 
-    // Convert Spp local cell numbers to Aff local face numbers
+    // Convert Spp global cell numbers to Aff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
+    ASSERT(frow < nfaces_sub);
     int frow_global = fmap_wghost.GID(frow);
 
     for (int m=0; m!=entries; ++m) {
-      indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
-      indices[m] = fmap_wghost.GID(indices[m]);
+      surfindices[m] = surf_cmap_wghost.LID(gsurfindices[m]);
+      indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,surfindices[m]);
+      indices_global[m] = fmap_wghost.GID(indices[m]);
     }
 
-    ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices);
+    ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
+    // if (sc_global == 25 || sc_global == 71) {
+    //   std::cout << "ERROR: " << std::endl;
+    //   std::cout << "  face = " << sc << ", " << sc_global << ", "
+    //             << frow << ", " << frow_global << std::endl;
+    //   AmanziGeometry::Point cc = surface_mesh_->cell_centroid(sc);
+    //   std::cout << "  location = " << cc << std::endl;
+    //   std::cout << "  surf cL = ";
+    //   for (int m=0; m!=entries; ++m) std::cout << surfindices[m] << ", ";
+
+    //   std::cout << std::endl << "  surf cG = ";
+    //   for (int m=0; m!=entries; ++m) surfindices[m] = surf_cmap_wghost.GID(surfindices[m]);
+    //   for (int m=0; m!=entries; ++m) std::cout << surfindices[m] << ", ";
+    //   std::cout << std::endl << "  sub fL = ";
+    //   for (int m=0; m!=entries; ++m) std::cout << indices[m] << ", ";
+    //   std::cout << std::endl << "  sub fG = ";
+    //   for (int m=0; m!=entries; ++m) std::cout << indices_global[m] << ", ";
+    //   std::cout << std::endl;
+    //   ASSERT(0);
+    // }
     ASSERT(!ierr);
   }
 
   ierr = Aff_->GlobalAssemble();
   ASSERT(!ierr);
 
+  delete[] gsurfindices;
+  delete[] surfindices;
   delete[] indices;
+  delete[] indices_global;
+  delete[] gvalues;
   delete[] values;
 
 
@@ -208,6 +253,7 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   MatrixMFD::ComputeSchurComplement(new_markers, bc_values);
 
   // Add the TPFA on the surface parts from surface_A.
+  const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   // ASSUMES surface_A_'s AssembleGlobalMatrices() has been called
@@ -222,13 +268,15 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   // Loop over surface cells (subsurface faces)
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
-    ierr = Spp.ExtractMyRowCopy(sc, 9, entries, values, indices);
+    AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
+    ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, indices);
     ASSERT(!ierr);
 
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     AmanziMesh::Entity_ID frow_global = fmap_wghost.GID(frow);
     for (int m=0; m!=entries; ++m) {
+      indices[m] = surf_cmap_wghost.LID(indices[m]);
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
       indices[m] = fmap_wghost.GID(indices[m]);
     }

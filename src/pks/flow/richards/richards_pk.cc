@@ -38,6 +38,25 @@ namespace Flow {
 
 RegisteredPKFactory<Richards> Richards::reg_("richards flow");
 
+// -------------------------------------------------------------
+// Constructor
+// -------------------------------------------------------------
+Richards::Richards(Teuchos::ParameterList& plist,
+         const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist,solution),
+    PKPhysicalBDFBase(plist, solution),
+    coupled_to_surface_via_head_(false),
+    coupled_to_surface_via_flux_(false),
+    coupled_to_surface_via_full_(false),
+    coupled_to_surface_via_residual_(false),
+    infiltrate_only_if_unfrozen_(false),
+    modify_predictor_with_consistent_faces_(false),
+    niter_(0) {
+
+  // set a few parameters before setup
+  plist_.set("primary variable key", "pressure");
+  plist_.sublist("primary variable evaluator").set("manage communication", true);
+}
 
 // -------------------------------------------------------------
 // Setup data
@@ -360,6 +379,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", name_);
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 
   // As a diagnostic, calculate the mass balance error
@@ -509,14 +529,17 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   // Scale cells by n/visc if needed.
   if (update_perm) {
-    Teuchos::RCP<const CompositeVector> n_liq = S->GetFieldData("molar_density_liquid");
-    Teuchos::RCP<const CompositeVector> visc = S->GetFieldData("viscosity_liquid");
+    const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& visc = *S->GetFieldData("viscosity_liquid")
+        ->ViewComponent("cell",false);
+
     for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-      (*uw_rel_perm)("cell",c) *= (*n_liq)("cell",c) / (*visc)("cell",c);
+      (*uw_rel_perm)("cell",c) *= n_liq[0][c] / visc[0][c];
     }
 
     // communicate
-    uw_rel_perm->ScatterMasterToGhosted();
+    //    uw_rel_perm->ScatterMasterToGhosted();
   }
 
   return update_perm;
@@ -746,17 +769,6 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
       pres_f[0][f] = bc_values_[f];
     }
   }
-};
-
-
-// -----------------------------------------------------------------------------
-// Experimental approach -- calling this indicates that the time
-// integration scheme is changing the value of the solution in
-// state.
-// -----------------------------------------------------------------------------
-void Richards::changed_solution() {
-  solution_evaluator_->SetFieldAsChanged();
-  S_next_->GetFieldData(key_)->ScatterMasterToGhosted("face");
 };
 
 

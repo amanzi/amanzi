@@ -36,7 +36,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, head basis");
 
@@ -72,14 +72,14 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(key_, name_)->SetMesh(mesh_)
     ->SetComponents(names2, locations2, num_dofs2);
 
   // -- owned secondary variables, no evaluator used
   S->RequireField("surface_flux", name_)->SetMesh(S->GetMesh("surface"))
                 ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("surface_velocity", name_)->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 3);
+                ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // -- cell volume and evaluator
   S->RequireFieldEvaluator("surface_cell_volume");
@@ -199,7 +199,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+                ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
 
@@ -207,9 +207,11 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   if (standalone_mode_) {
     ASSERT(plist_.isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
+    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
+    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
@@ -283,12 +285,19 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
       head[0][c] = pres[0][f];
     }
-    S->GetField(key_,name_)->set_initialized();
+
+    // note we do not mark as initialized here to allow the PKPhysicalBDFBase
+    // to initialize face values via a function if need be.
+    S->GetFieldData(key_,name_)->ViewComponent("face",false)->PutScalar(0.);
   }
-  S->GetFieldData(key_,name_)->ViewComponent("face",false)->PutScalar(0.);
 
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
+
+  // mark as initialized
+  if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
+    S->GetField(key_,name_)->set_initialized();
+  }
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -345,8 +354,8 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     // derive the fluxes
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
-    potential->ScatterMasterToGhosted();
     matrix_->DeriveFlux(*potential, flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 };
 
@@ -365,8 +374,8 @@ void OverlandHeadFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     // derive the fluxes
     S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-    potential->ScatterMasterToGhosted();
     matrix_->DeriveFlux(*potential, flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
@@ -471,7 +480,7 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // Communicate.  This could be done later, but i'm not exactly sure where, so
     // we'll do it here.
-    upwind_conductivity->ScatterMasterToGhosted();
+    //    upwind_conductivity->ScatterMasterToGhosted();
   }
 
   return update_perm;
@@ -613,10 +622,11 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells =
       matrix_->Aff_cells();
 
+  int nfaces_owned = elevation.MyLength();
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
-    if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
+    if ((f < nfaces_owned) && (bc_markers_[f] == Operators::MATRIX_BC_FLUX)) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
       AmanziMesh::Entity_ID c = cells[0];
@@ -780,16 +790,11 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   Teuchos::RCP<CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev","pres_elev");
 
 #if DEBUG_FLAG
-  *out_ << "Consistent faces:" << std::endl;
-  *out_ << "  u_c = " << (*u)("cell",3) << ",  pres_e_c = " << (*pres_elev)("cell",3) << std::endl;
-  *out_ << "  u_c = " << (*u)("cell",4) << ",  pres_e_c = " << (*pres_elev)("cell",4) << std::endl;
-
-  AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, 3);
-  AmanziMesh::Entity_ID_List cells;
-  S_next_->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-  ASSERT(cells.size() == 1);
-  std::cout << "Surface cell 3 is subsurface face " << f
-            << " with internal cell " << cells[0] << std::endl;
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "Consistent faces:" << std::endl;
+    *out_ << "  u_c = " << (*u)("cell",c0_) << ",  pres_e_c = " << (*pres_elev)("cell",c0_) << std::endl;
+    *out_ << "  u_c = " << (*u)("cell",c1_) << ",  pres_e_c = " << (*pres_elev)("cell",c1_) << std::endl;
+  }
 #endif
 
   // Update the preconditioner with darcy and gravity fluxes
@@ -810,9 +815,19 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
           -1., elevation, 0.);
 
 #if DEBUG_FLAG
-  *out_ << "  cond = " << (*cond)("face",11) << std::endl;
-  *out_ << "  pres_e_f = " << (*pres_elev)("face",11) << std::endl;
-  *out_ << "  u_f = " << (*u)("face",11) << std::endl;
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    AmanziMesh::Entity_ID_List faces, faces0;
+    std::vector<int> dirs;
+    mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
+    mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+
+    *out_ << "  cond = " << (*cond)("face",faces0[0]) << std::endl;
+    *out_ << "  pres_e_f = " << (*pres_elev)("face",faces0[0]) << std::endl;
+    *out_ << "  u_f = " << (*u)("face",faces0[0]) << std::endl;
+    *out_ << "  cond = " << (*cond)("face",faces1[0]) << std::endl;
+    *out_ << "  pres_e_f = " << (*pres_elev)("face",faces1[0]) << std::endl;
+    *out_ << "  u_f = " << (*u)("face",faces1[0]) << std::endl;
+  }
 #endif
 }
 

@@ -139,8 +139,8 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     }
   }
 
-  elev->ScatterMasterToGhosted();
-  slope->ScatterMasterToGhosted();
+  //  elev->ScatterMasterToGhosted();
+  //  slope->ScatterMasterToGhosted();
 
 }
 

@@ -64,7 +64,7 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
     *out_ << "ENorm (Infnorm) of: " << name_ << ": ";
   }
 
@@ -80,7 +80,7 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
       enorm_comp = std::max<double>(enorm_comp, tmp);
     }
 
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
       double buf(0.);
       MPI_Allreduce(&enorm_comp, &buf, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
@@ -92,7 +92,7 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_val = std::max<double>(enorm_val, enorm_comp);
   }
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
     *out_ << std::endl;
   }
 
@@ -132,7 +132,7 @@ void PKPhysicalBDFBase::set_states(const Teuchos::RCP<const State>& S,
 // state.
 // -----------------------------------------------------------------------------
 void PKPhysicalBDFBase::changed_solution() {
-  solution_evaluator_->SetFieldAsChanged();
+  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
 
 // -----------------------------------------------------------------------------

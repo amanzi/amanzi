@@ -338,7 +338,7 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
 
   // Write out Inf norms too.
   Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
     double infnorm_c(0.), infnorm_f(0.);
     res_c.NormInf(&infnorm_c);
     res_f.NormInf(&infnorm_f);

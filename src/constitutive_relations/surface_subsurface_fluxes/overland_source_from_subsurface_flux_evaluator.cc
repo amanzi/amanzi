@@ -49,7 +49,8 @@ OverlandSourceFromSubsurfaceFluxEvaluator::OverlandSourceFromSubsurfaceFluxEvalu
     dens_key_(other.dens_key_),
     surface_mesh_key_(other.surface_mesh_key_),
     subsurface_mesh_key_(other.subsurface_mesh_key_),
-    face_and_dirs_(other.face_and_dirs_) {}
+    face_and_dirs_(other.face_and_dirs_),
+    volume_basis_(other.volume_basis_) {}
 
 Teuchos::RCP<FieldEvaluator> OverlandSourceFromSubsurfaceFluxEvaluator::Clone() const {
   return Teuchos::rcp(new OverlandSourceFromSubsurfaceFluxEvaluator(*this));
@@ -120,11 +121,6 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateField_(const Teuchos::Pt
       res_v[0][c] = flux[0][(*face_and_dirs_)[c].first] * (*face_and_dirs_)[c].second
           / dens[0][cells[0]];
     }
-    Teuchos::OSTab tab = getOSTab();
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "Source, sub -> surface c3 = " << res_v[0][3] << std::endl;
-      *out_ << "Source, sub -> surface c4 = " << res_v[0][4] << std::endl;
-    }
   } else {
     int ncells = result->size("cell",false);
     for (int c=0; c!=ncells; ++c) {
@@ -133,11 +129,6 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateField_(const Teuchos::Pt
       ASSERT(cells.size() == 1);
 
       res_v[0][c] = flux[0][(*face_and_dirs_)[c].first] * (*face_and_dirs_)[c].second;
-    }
-    Teuchos::OSTab tab = getOSTab();
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "Source, sub -> surface c3 = " << res_v[0][3] << std::endl;
-      *out_ << "Source, sub -> surface c4 = " << res_v[0][4] << std::endl;
     }
   }
 }
