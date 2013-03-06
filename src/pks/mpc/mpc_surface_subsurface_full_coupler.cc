@@ -24,7 +24,7 @@ subsurface-face-only Schur complement that captures all terms.
 
 namespace Amanzi {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 RegisteredPKFactory<MPCSurfaceSubsurfaceFullCoupler>
 MPCSurfaceSubsurfaceFullCoupler::reg_("surface-subsurface full coupler");
@@ -89,33 +89,65 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     AmanziMesh::Entity_ID_List fnums,fnums0;
     std::vector<int> dirs;
-    surf_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-    surf_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+    domain_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+    domain_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
 
     *out_ << "Preconditioner application" << std::endl;
     *out_ << " SubSurface precon:" << std::endl;
-    *out_ << "  p0: " << (*domain_u_new)("cell",c0_) << " " << (*domain_u_new)("face",fnums0[0])
+    *out_ << "  p0: " << (*domain_u_new)("cell",c0_) << " "
+        //          << (*domain_u_new)("face",fnums0[0])
+          << (*domain_u_new)("face",fnums0[0]) << ", "
+          << (*domain_u_new)("face",fnums0[1]) << ", "
+          << (*domain_u_new)("face",fnums0[2]) << ", "
+          << (*domain_u_new)("face",fnums0[3])
           << std::endl;
-    *out_ << "  p1: " << (*domain_u_new)("cell",c1_) << " " << (*domain_u_new)("face",fnums[0])
+    *out_ << "  p1: " << (*domain_u_new)("cell",c1_) << " "
+        //          << (*domain_u_new)("face",fnums[0])
+          << (*domain_u_new)("face",fnums[0]) << ", "
+          << (*domain_u_new)("face",fnums[1]) << ", "
+          << (*domain_u_new)("face",fnums[2]) << ", "
+          << (*domain_u_new)("face",fnums[3])
           << std::endl;
-    *out_ << "  PC*p0: " << (*domain_Pu)("cell",c0_) << " " << (*domain_Pu)("face",fnums0[0])
+    *out_ << "  PC*p0: " << (*domain_Pu)("cell",c0_) << " "
+        //          << (*domain_Pu)("face",fnums0[0])
+          << (*domain_Pu)("face",fnums0[0]) << ", "
+          << (*domain_Pu)("face",fnums0[1]) << ", "
+          << (*domain_Pu)("face",fnums0[2]) << ", "
+          << (*domain_Pu)("face",fnums0[3])
           << std::endl;
-    *out_ << "  PC*p1: " << (*domain_Pu)("cell",c1_) << " " << (*domain_Pu)("face",fnums[0])
+    *out_ << "  PC*p1: " << (*domain_Pu)("cell",c1_) << " "
+        //          << (*domain_Pu)("face",fnums[0])
+          << (*domain_Pu)("face",fnums[0]) << ", "
+          << (*domain_Pu)("face",fnums[1]) << ", "
+          << (*domain_Pu)("face",fnums[2]) << ", "
+          << (*domain_Pu)("face",fnums[3])
           << std::endl;
   }
 #endif
 
   // Correction applies to both the domain face and the surface cell.
   // Additionally, drift in the difference between lambda and p_surf
-  // needs to be corrected.
+  // needs to be corrected.  Also trying damping?
   Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
   Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
   Epetra_MultiVector& surf_Pu_f = *surf_Pu->ViewComponent("face",false);
   const Epetra_MultiVector& p_surf = *S_next_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
   const Epetra_MultiVector& lambda = *S_next_->GetFieldData("pressure")->ViewComponent("face",false);
 
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
   for (int cs=0; cs!=ncells_surf; ++cs) {
     AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
+
+    // DAMPING CODE START
+    double p_old = p_surf[0][cs];
+    double p_new = p_old - domain_Pu_f[0][f];
+    if (p_new > patm) {
+      domain_Pu_f[0][f] *= 0.2;
+      std::cout << "  DAMPING: p_old = " << p_old << ", p_new = " << p_new << ", p_damped = " << p_old - domain_Pu_f[0][f] << std::endl;
+    }
+    // DAMPING CODE END
+
     surf_Pu_c[0][cs] = domain_Pu_f[0][f];
     domain_Pu_f[0][f] += lambda[0][f] - p_surf[0][cs];
   }
@@ -168,18 +200,21 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-  //    AmanziMesh::Entity_ID_List fnums,fnums0;
-  //    std::vector<int> dirs;
-  //    surf_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-  //    surf_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+     AmanziMesh::Entity_ID_List fnums,fnums0;
+     std::vector<int> dirs;
+     surf_mesh_->cell_get_faces_and_dirs(surf_c0_, &fnums0, &dirs);
+     surf_mesh_->cell_get_faces_and_dirs(surf_c1_, &fnums, &dirs);
 
     *out_ << " Surface precon:" << std::endl;
-    *out_ << "  u0: " << (*surf_u)("cell",c0_) << ", "
-          << (*surf_u)("face",fnums0[0]) << ", "
-          << (*surf_u)("cell",c1_) << std::endl;
-    *out_ << "  u0: " << (*surf_Pu)("cell",c0_) << ", "
-          << (*surf_Pu)("face",fnums[0]) << ", "
-          << (*surf_Pu)("cell",c1_) << std::endl;
+    *out_ << "  u0: " << (*surf_u)("cell",surf_c0_) << ", "
+          << (*surf_u)("face",fnums0[0]) << std::endl;
+    *out_ << "  u1: " << (*surf_u)("cell",surf_c1_) << ", "
+          << (*surf_u)("face",fnums[0]) << std::endl;
+    *out_ << "  PC*u0: " << (*surf_Pu)("cell",surf_c0_) << ", "
+          << (*surf_Pu)("face",fnums0[0]) << std::endl;
+    *out_ << "  PC*u1: " << (*surf_Pu)("cell",surf_c1_) << ", "
+          << (*surf_Pu)("face",fnums[0]) << std::endl;
+
   }
 #endif
 }
@@ -199,22 +234,44 @@ bool MPCSurfaceSubsurfaceFullCoupler::modify_predictor(double h, Teuchos::RCP<Tr
   Teuchos::RCP<TreeVector> surf_u = u->SubVector(surf_pk_name_);
   Teuchos::RCP<TreeVector> domain_u = u->SubVector(domain_pk_name_);
 
-  bool changed = surf_pk_->modify_predictor(h, surf_u);
-  changed |= domain_pk_->modify_predictor(h, domain_u);
+  const Epetra_MultiVector& surf_u_prev_c =
+    *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
-  if (changed) {
-    Epetra_MultiVector& domain_u_f =
+  Epetra_MultiVector& domain_u_f =
       *domain_u->data()->ViewComponent("face",false);
-    const Epetra_MultiVector& surf_u_c =
+  Epetra_MultiVector& surf_u_c =
       *surf_u->data()->ViewComponent("cell",false);
 
-    int ncells_surf = surf_u_c.MyLength();
-    for (int c=0; c!=ncells_surf; ++c) {
-      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      domain_u_f[0][f] = surf_u_c[0][c];
+  int ncells = surf_u_c.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+
+    double dp = surf_u_c[0][c] - surf_u_prev_c[0][c];
+    double pnew = surf_u_c[0][c] - patm;
+    double pold = surf_u_prev_c[0][c] - patm;
+
+    if (pnew > 0) {
+      if (dp > pnew) {
+        std::cout << "CHANGING (first over?): p = " << surf_u_c[0][c] << " to " << patm + .001 << std::endl;
+        surf_u_c[0][c] = patm + .001;
+        domain_u_f[0][f] = surf_u_c[0][c];
+
+      } else if (pold > 0 && dp > pold) {
+        std::cout << "CHANGING (second over?): p = " << surf_u_c[0][c] << " to " << patm + 2*pold << std::endl;
+        surf_u_c[0][c] = patm + 2*pold;
+        domain_u_f[0][f] = surf_u_c[0][c];
+      }
     }
   }
-  return changed;
+
+
+
+
+  surf_pk_->modify_predictor(h, surf_u);
+  domain_pk_->modify_predictor(h, domain_u);
+
+  return true;
 }
 
 } // namespace

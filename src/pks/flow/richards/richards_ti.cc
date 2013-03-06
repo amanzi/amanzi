@@ -49,9 +49,15 @@ void Richards::fun(double t_old,
     *out_ << "----------------------------------------------------------------" << std::endl;
     *out_ << "Richards Residual calculation: T0 = " << t_old
           << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << "  p0: " << (*u)("cell",c0_) << " " << (*u)("face",fnums0[0])
+    *out_ << "  p0: " << (*u)("cell",c0_) << " "
+        //          << (*u)("face",fnums0[0])
+          << (*u)("face",fnums0[0]) << " " << (*u)("face",fnums0[1]) << " "
+          << (*u)("face",fnums0[2]) << " " << (*u)("face",fnums0[3])
           << std::endl;
-    *out_ << "  p1: " << (*u)("cell",c1_) << " " << (*u)("face",fnums[0])
+    *out_ << "  p1: " << (*u)("cell",c1_) << " "
+        //          << (*u)("face",fnums[0])
+          << (*u)("face",fnums[0]) << " " << (*u)("face",fnums[1]) << " "
+          << (*u)("face",fnums[2]) << " " << (*u)("face",fnums[3])
           << std::endl;
   }
 #endif

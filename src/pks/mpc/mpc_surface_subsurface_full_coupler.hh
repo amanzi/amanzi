@@ -29,7 +29,10 @@ class MPCSurfaceSubsurfaceFullCoupler : public MPCSurfaceSubsurfaceCoupler {
   MPCSurfaceSubsurfaceFullCoupler(Teuchos::ParameterList& plist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCSurfaceSubsurfaceCoupler(plist, soln) {}
+      MPCSurfaceSubsurfaceCoupler(plist, soln) {
+    surf_c0_ = plist_.get<int>("surface debug cell 0", 0);
+    surf_c1_ = plist_.get<int>("surface debug cell 1", 1);
+  }
 
   // -- Setup data.
   virtual void setup(const Teuchos::Ptr<State>& S);
@@ -45,6 +48,9 @@ class MPCSurfaceSubsurfaceFullCoupler : public MPCSurfaceSubsurfaceCoupler {
  protected:
   Teuchos::RCP<Operators::MatrixMFD_Surf> preconditioner_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
+
+  int surf_c0_;
+  int surf_c1_;
 
  private:
   // factory registration
