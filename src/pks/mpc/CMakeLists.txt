@@ -29,7 +29,8 @@ add_library(mpc mpc.cc weak_mpc.cc strong_mpc.cc
   mpc_surface_subsurface_water_coupler.cc
   mpc_surface_subsurface_neumann_coupler.cc
   mpc_surface_subsurface_dirichlet_coupler.cc
-  mpc_surface_subsurface_full_coupler.cc)
+  mpc_surface_subsurface_full_coupler.cc
+  mpc_surface_subsurface_energy_coupler.cc)
 
 
 
