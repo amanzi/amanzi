@@ -3582,7 +3582,7 @@ void Mesh_MSTK::collapse_degen_edges() {
       if (efaces) {
         MFace_ptr face;
         int idx1 = 0;
-        while ((face = List_Next_Entry(efaces,&idx2))) {
+        while ((face = List_Next_Entry(efaces,&idx1))) {
           if (!List_Contains(vfaces,face))
             List_Add(deleted_faces,face);
         }
