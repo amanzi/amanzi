@@ -30,7 +30,7 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
 
   // cells to debug
   c0_ = plist_.get<int>("debug cell 0",0);
-  c1_ = plist_.get<int>("debug cell 0",1);
+  c1_ = plist_.get<int>("debug cell 1",1);
 }
 
 

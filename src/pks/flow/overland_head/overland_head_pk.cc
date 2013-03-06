@@ -271,6 +271,9 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
+  // Initialize BDF stuff and physical domain stuff.
+  PKPhysicalBDFBase::initialize(S);
+
   Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
   if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
     Epetra_MultiVector& head = *S->GetFieldData(key_, name_)
@@ -285,14 +288,7 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
       head[0][c] = pres[0][f];
     }
-
-    // note we do not mark as initialized here to allow the PKPhysicalBDFBase
-    // to initialize face values via a function if need be.
-    S->GetFieldData(key_,name_)->ViewComponent("face",false)->PutScalar(0.);
   }
-
-  // Initialize BDF stuff and physical domain stuff.
-  PKPhysicalBDFBase::initialize(S);
 
   // mark as initialized
   if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
@@ -738,19 +734,32 @@ void OverlandHeadFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 
 
 bool OverlandHeadFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  bool changed = false;
   // const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
   // const Epetra_MultiVector& u_prev_c =
   //   *S_->GetFieldData(key_)->ViewComponent("cell",false);
   // Epetra_MultiVector& u_c = *u->data()->ViewComponent("cell",false);
 
+  // const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface_cell_volume")
+  //     ->ViewComponent("cell",false);
+  // const Epetra_MultiVector& slope = *S_next_->GetFieldData("slope_magnitude")
+  //     ->ViewComponent("cell",false);
+  // const Epetra_MultiVector& coef = *S_next_->GetFieldData("manning_coefficient")
+  //       ->ViewComponent("cell", false);
+  // const Epetra_MultiVector& source = *S_next_->GetFieldData("overland_source_from_subsurface")
+  //       ->ViewComponent("cell", false);
+  // const Epetra_MultiVector& nliq = *S_next_->GetFieldData("surface_molar_density_liquid")
+  //       ->ViewComponent("cell", false);
+  // double dt = S_next_->time() - S_->time();
+
   // // Damp the spurt of water
   // int ncells = u_c.MyLength();
   // for (int c=0; c!=ncells; ++c) {
-  //   if ((u_prev_c[0][c] < patm) &&
-  //       (u_c[0][c] > patm)) {
-  //     u_c[0][c] = patm - 1.;
-  //     changed = true;
+  //   double h0 = source[0][c]
+
+
+  //   if ((u_prev_c[0][c] < p_balanced) &&
+  //       (u_c[0][c] > p_balanced)) {
+  //     u_c[0][c] = p_balanced;
   //   }
   // }
 
@@ -758,9 +767,9 @@ bool OverlandHeadFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
     CalculateConsistentFaces(u->data().ptr());
     return true;
   }
-  if (changed) return true;
+  return true;
 
-  return PKPhysicalBDFBase::modify_predictor(h, u);
+  //  PKPhysicalBDFBase::modify_predictor(h, u);
 };
 
 

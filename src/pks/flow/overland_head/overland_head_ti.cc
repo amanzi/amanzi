@@ -16,7 +16,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 #define DEBUG_ICE_FLAG 0
 #define DEBUG_RES_FLAG 0
 
@@ -40,35 +40,40 @@ void OverlandHeadFlow::fun( double t_old,
 
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
-#if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List faces, faces0;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+  // zero out residual
+  Teuchos::RCP<CompositeVector> res = g->data();
+  res->PutScalar(0.0);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+#if DEBUG_FLAG
+  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
+    AmanziMesh::Entity_ID_List faces, faces0;
+    std::vector<int> dirs;
+    mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
+    mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+
     S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
     Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> preselev= S_next_->GetFieldData("pres_elev");
 
-    *out_ << "----------------------------------------------------------------" << std::endl;
+    std::cout << "----------------------------------------------------------------" << std::endl;
 
-    *out_ << "OverlandHead Residual calculation: T0 = " << t_old
+    std::cout << "OverlandHead Residual calculation: T0 = " << t_old
           << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << std::setprecision(15);
-    *out_ << "  p0: " << (*u)("cell",0,c0_) << std::endl;
-    *out_ << "  h0: " << (*depth)("cell",0,c0_) << " "
+    std::cout << std::setprecision(15);
+    std::cout << "  p0: " << (*u)("cell",0,c0_) << std::endl;
+    std::cout << "  h0: " << (*depth)("cell",0,c0_) << " "
           << (*depth)("face",0,faces0[0]) << " " << (*depth)("face",0,faces0[1]) << " "
           << (*depth)("face",0,faces0[2]) << " " << (*depth)("face",0,faces0[3]) << std::endl;
-    *out_ << "  hz0: " << (*preselev)("cell",0,c0_) << " "
+    std::cout << "  hz0: " << (*preselev)("cell",0,c0_) << " "
           << (*preselev)("face",0,faces0[0]) << " " << (*preselev)("face",0,faces0[1]) << " "
           << (*preselev)("face",0,faces0[2]) << " " << (*preselev)("face",0,faces0[3]) << std::endl;
-    *out_ << " --" << std::endl;
-    *out_ << "  p1: " << (*u)("cell",c1_) << std::endl;
-    *out_ << "  h1: " << (*depth)("cell",c1_) << " "
+    std::cout << " --" << std::endl;
+    std::cout << "  p1: " << (*u)("cell",c1_) << std::endl;
+    std::cout << "  h1: " << (*depth)("cell",c1_) << " "
           << (*depth)("face",faces[0]) << " " << (*depth)("face",faces[1]) << " "
           << (*depth)("face",faces[2]) << " " << (*depth)("face",faces[3]) << std::endl;
-    *out_ << "  hz1: " << (*preselev)("cell",c1_) << " "
+    std::cout << "  hz1: " << (*preselev)("cell",c1_) << " "
           << (*preselev)("face",faces[0]) << " " << (*preselev)("face",faces[1]) << " "
           << (*preselev)("face",faces[2]) << " " << (*preselev)("face",faces[3]) << std::endl;
   }
@@ -94,25 +99,27 @@ void OverlandHeadFlow::fun( double t_old,
   // Patch up BCs in the case of zero conductivity
   FixBCsForOperator_(S_next_.ptr());
 
-  // zero out residual
-  Teuchos::RCP<CompositeVector> res = g->data();
-  res->PutScalar(0.0);
-
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  cond0 (diff): " << (*cond)("cell",c0_) << " "
+  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
+    AmanziMesh::Entity_ID_List faces, faces0;
+    std::vector<int> dirs;
+    mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
+    mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+
+    std::cout << "  cond0 (diff): " << (*cond)("cell",c0_) << " "
           << (*cond)("face",faces0[0]) << " " << (*cond)("face",faces0[1]) << " "
           << (*cond)("face",faces0[2]) << " " << (*cond)("face",faces0[3]) << std::endl;
-    *out_ << "  cond1 (diff): " << (*cond)("cell",c1_) << " "
+    std::cout << "  cond1 (diff): " << (*cond)("cell",c1_) << " "
           << (*cond)("face",faces[0]) << " " << (*cond)("face",faces[1]) << " "
           << (*cond)("face",faces[2]) << " " << (*cond)("face",faces[3]) << std::endl;
-    *out_ << "  res0 (diff): " << (*res)("cell",c0_) << " "
+    std::cout << "  res0 (diff): " << (*res)("cell",c0_) << " "
              << (*res)("face",faces0[0]) << " " << (*res)("face",faces0[1]) << " "
              << (*res)("face",faces0[2]) << " " << (*res)("face",faces0[3]) << std::endl;
-    *out_ << "  res1 (diff): " << (*res)("cell",c1_) << " "
+    std::cout << "  res1 (diff): " << (*res)("cell",c1_) << " "
              << (*res)("face",faces[0]) << " " << (*res)("face",faces[1]) << " "
              << (*res)("face",faces[2]) << " " << (*res)("face",faces[3]) << std::endl;
   }
