@@ -18,6 +18,7 @@ class OverlandConductivityModel {
  public:
 
   virtual double Conductivity(double depth, double slope, double coef) = 0;
+  virtual double DConductivityDDepth(double depth, double slope, double coef) = 0;
 
 };
 

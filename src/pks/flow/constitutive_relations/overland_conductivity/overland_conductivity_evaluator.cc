@@ -77,8 +77,27 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
 
-  ASSERT(0);
-  // not implemented, likely not needed.
+  Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
+  Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
+  Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
+
+  if (wrt_key == depth_key_) {
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
+      const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
+      const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = model_->DConductivityDDepth(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      }
+    }
+
+  } else {
+    ASSERT(0);
+  }
 }
 
 

@@ -22,6 +22,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "upwinding.hh"
 #include "upwind_potential_difference.hh"
 #include "elevation_evaluator.hh"
+#include "pres_elev_evaluator.hh"
 #include "meshed_elevation_evaluator.hh"
 #include "standalone_elevation_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
@@ -36,7 +37,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, head basis");
 
@@ -127,6 +128,10 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
+  if (coupled_to_subsurface_via_full_) {
+    full_jacobian_ = plist_.get<bool>("TPFA use full Jacobian", false);
+  }
+
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
@@ -156,7 +161,9 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
   Teuchos::RCP<Operators::Matrix> precon;
   if (coupled_to_subsurface_via_full_) {
-    precon = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
+    tpfa_preconditioner_ =
+        Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
+    precon = tpfa_preconditioner_;
   } else {
     precon = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
   }
@@ -216,7 +223,11 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
-  S->SetFieldEvaluator("pres_elev", elev_evaluator);
+ 
+  Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval = 
+      Teuchos::rcp(new FlowRelations::PresElevEvaluator(
+          plist_.sublist("pres_elev evaluator")));
+  S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
@@ -353,6 +364,46 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     matrix_->DeriveFlux(*potential, flux.ptr());
     flux->ScatterMasterToGhosted();
   }
+
+  // As a diagnostic, calculate the mass balance error
+#if DEBUG_FLAG
+  if (S_next_ != Teuchos::null) {
+    Teuchos::RCP<const CompositeVector> wc1 =
+        S_next_->GetFieldData("surface_water_content");
+    Teuchos::RCP<const CompositeVector> wc0 =
+        S_->GetFieldData("surface_water_content");
+    Teuchos::RCP<const CompositeVector> flux =
+        S->GetFieldData("surface_flux", name_);
+
+    // source terms
+    Teuchos::RCP<CompositeVector> error = Teuchos::rcp(new CompositeVector(*wc1));
+    error->CreateData();
+    error->PutScalar(0.);
+    AddSourceTerms_(error.ptr());
+    error->Scale(dt);
+
+    for (int c=0; c!=error->size("cell"); ++c) {
+      // accumulation
+      (*error)("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
+
+      // flux
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int n=0; n!=faces.size(); ++n) {
+        (*error)("cell",c) += (*flux)("face",faces[n]) * dirs[n] * dt;
+      }
+    }
+
+    double einf(0.0);
+    error->NormInf(&einf);
+
+    // VerboseObject stuff.
+    Teuchos::OSTab tab = getOSTab();
+    *out_ << "Final Mass Balance Error: " << einf << std::endl;
+  }
+#endif
+
 };
 
 
@@ -824,7 +875,7 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
           -1., elevation, 0.);
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     AmanziMesh::Entity_ID_List faces, faces0;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
@@ -833,9 +884,9 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
     *out_ << "  cond = " << (*cond)("face",faces0[0]) << std::endl;
     *out_ << "  pres_e_f = " << (*pres_elev)("face",faces0[0]) << std::endl;
     *out_ << "  u_f = " << (*u)("face",faces0[0]) << std::endl;
-    *out_ << "  cond = " << (*cond)("face",faces1[0]) << std::endl;
-    *out_ << "  pres_e_f = " << (*pres_elev)("face",faces1[0]) << std::endl;
-    *out_ << "  u_f = " << (*u)("face",faces1[0]) << std::endl;
+    *out_ << "  cond = " << (*cond)("face",faces[0]) << std::endl;
+    *out_ << "  pres_e_f = " << (*pres_elev)("face",faces[0]) << std::endl;
+    *out_ << "  u_f = " << (*u)("face",faces[0]) << std::endl;
   }
 #endif
 }

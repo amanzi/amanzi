@@ -59,6 +59,14 @@ class MatrixMFD_TPFA : public MatrixMFD {
   virtual void InitPreconditioner(Teuchos::ParameterList& prec_list);
   virtual void UpdatePreconditioner();
 
+  void AnalyticJacobian(const CompositeVector& height,
+                        const CompositeVector& potential,
+                        const CompositeVector& Krel,
+                        const CompositeVector& dKrel_dp,
+                        const CompositeVector& Krel_cell,
+                        const CompositeVector& dKrel_cell_dp);
+
+  
   const char* Label() const {
     return strdup("Matrix MFD_TPFA");
   }
@@ -74,6 +82,18 @@ class MatrixMFD_TPFA : public MatrixMFD {
 
  protected:
 
+  void ComputeJacobianLocal(int mcells,
+                            int face_id,
+                            double dist,
+                            double *height,
+                            double *potential,
+                            double *k_rel,
+                            double *dk_rel_dp,
+                            double *k_rel_cell,
+                            double *dk_rel_cell_dp,
+                            Teuchos::SerialDenseMatrix<int, double>& Jpp);
+
+  
   Teuchos::RCP<CompositeVector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> NumJac_;  // Numerical Jacobian

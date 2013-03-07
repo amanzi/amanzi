@@ -24,6 +24,8 @@ public:
 
   virtual double Conductivity(double depth, double slope, double coef);
 
+  virtual double DConductivityDDepth(double depth, double slope, double coef);
+
 protected:
   Teuchos::ParameterList plist_;
 

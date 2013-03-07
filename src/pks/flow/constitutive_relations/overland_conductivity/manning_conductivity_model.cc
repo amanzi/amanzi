@@ -28,6 +28,13 @@ double ManningConductivityModel::Conductivity(double depth, double slope, double
   return std::pow(std::max(depth,0.), exponent) / scaling;
 }
 
+double ManningConductivityModel::DConductivityDDepth(double depth, double slope, double coef) {
+  if (depth <= 0.) return 0.;
+  double exponent = manning_exp_ + 1.0;
+  double scaling = coef * std::sqrt(std::max(slope, slope_regularization_));
+  return std::pow(std::max(depth,0.), exponent - 1.) * exponent / scaling;
+}
+
 
 } // namespace
 } // namespace

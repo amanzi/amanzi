@@ -227,6 +227,17 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
+
+
+  Teuchos::RCP<const CompositeVector> eff_p = S_next_->GetFieldData("surface_effective_pressure");
+  Teuchos::RCP<const CompositeVector> surf_p = S_next_->GetFieldData("surface_pressure");
+  std::cout << " EFF P Mesh == mesh_? " << (eff_p->mesh() == mesh_) << std::endl;
+  std::cout << " Surf P Mesh == mesh_? " << (surf_p->mesh() == mesh_) << std::endl;
+  std::cout << "  IS DEP? " << (S_next_->GetFieldEvaluator("surface_effective_pressure")->IsDependency(S_next_.ptr(), "surface_pressure")) << std::endl;
+
+
+
+  
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
@@ -281,6 +292,13 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       *S_next_->GetFieldData("dsurface_water_content_d"+key_)
       ->ViewComponent("cell",false);
 
+  std::cout << "AVAIL KEYS:" << std::endl;
+  for (State::FieldMap::const_iterator lcv=S_next_->field_begin();
+       lcv!=S_next_->field_end(); ++lcv) {
+    std::cout << lcv->first << std::endl;
+  }
+       
+
   // -- get other pieces
   const Epetra_MultiVector& head =
       *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
@@ -326,6 +344,48 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   if (coupled_to_subsurface_via_full_) {
     mfd_preconditioner_->AssembleGlobalMatrices();
+
+    if (full_jacobian_) {
+      // JACOBIAN?
+      // These are already updated for UpdatePerm
+      Teuchos::RCP<const CompositeVector> depth =
+          S_next_->GetFieldData("ponded_depth");
+      Teuchos::RCP<const CompositeVector> ddepth_dp =
+          S_next_->GetFieldData("dponded_depth_dsurface_pressure");
+      Teuchos::RCP<const CompositeVector> pres_elev =
+          S_next_->GetFieldData("pres_elev");
+
+      // conducitivity and dcond_dh
+      S_next_->GetFieldEvaluator("overland_conductivity")
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+      Teuchos::RCP<const CompositeVector> cond =
+          S_next_->GetFieldData("overland_conductivity");
+      Teuchos::RCP<const CompositeVector> dcond_dp =
+          S_next_->GetFieldData("doverland_conductivity_dsurface_pressure");
+      CompositeVector dcond_dh(*dcond_dp);
+      dcond_dh.CreateData();
+      dcond_dh.ReciprocalMultiply(1., *ddepth_dp, *dcond_dp, 0.);
+
+
+      // Krel_cell gets n_liq
+      Teuchos::RCP<const CompositeVector> uw_cond =
+          S_next_->GetFieldData("upwind_overland_conductivity");
+      CompositeVector duw_cond_cell_dh(*uw_cond);
+      duw_cond_cell_dh.CreateData();
+      duw_cond_cell_dh.ViewComponent("face",false)->PutScalar(0.);
+
+      S_next_->GetFieldEvaluator("surface_molar_density_liquid")
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+      Teuchos::RCP<const Epetra_MultiVector> dn_liq_dp =
+          S_next_->GetFieldData("dsurface_molar_density_liquid_dsurface_pressure")
+                  ->ViewComponent("cell",false);
+      duw_cond_cell_dh.ViewComponent("cell",false)
+          ->ReciprocalMultiply(1., dh_dp, *dn_liq_dp, 0.);
+
+      // Add in the Jacobian
+      tpfa_preconditioner_->AnalyticJacobian(*depth, *pres_elev, *cond, dcond_dh,
+              *uw_cond, duw_cond_cell_dh);
+    }
 
     // TPFA
     Teuchos::RCP<Operators::MatrixMFD_TPFA> precon_tpfa =
@@ -387,6 +447,65 @@ void OverlandHeadFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> 
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   mfd_preconditioner_->InitPreconditioner();
 }
+
+
+double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du) {
+  // Calculate water content at the solution.
+  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& wc = *S_next_->GetFieldData("surface_water_content")
+      ->ViewComponent("cell",false);
+
+  Teuchos::RCP<const CompositeVector> res = du->data();
+  const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
+  const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+  const Epetra_MultiVector& height_f = *u->data()->ViewComponent("face",false);
+  double h = S_next_->time() - S_inter_->time();
+
+  // Cell error is based upon error in mass conservation relative to
+  // the current water content
+  double wc_base = 33.; // 1 cm on .25 m x .25 m blocks @ 55k n_liq ~ 33 mol
+  double enorm_cell(0.);
+  int ncells = res_c.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    double tmp = std::abs(h*res_c[0][c])
+        / (wc_base * atol_ + rtol_*std::abs(wc[0][c]));
+    enorm_cell = std::max<double>(enorm_cell, tmp);
+  }
+
+  // Face error give by heights?  Loose tolerance
+  double enorm_face(0.);
+  int nfaces = res_f.MyLength();
+  for (int f=0; f!=nfaces; ++f) {
+    double tmp = std::abs(res_f[0][f]) / (atol_ + rtol_*( 1. ));
+    enorm_face = std::max<double>(enorm_face, tmp);
+  }
+
+
+  // Write out Inf norms too.
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
+    double infnorm_c(0.), infnorm_f(0.);
+    res_c.NormInf(&infnorm_c);
+    res_f.NormInf(&infnorm_f);
+
+#ifdef HAVE_MPI
+    double buf_c(enorm_cell), buf_f(enorm_face);
+    MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+
+    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
+    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
+  }
+
+  double enorm_val(std::max<double>(enorm_face, enorm_cell));
+#ifdef HAVE_MPI
+  double buf = enorm_val;
+  MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+  return enorm_val;
+};
 
 }  // namespace Flow
 }  // namespace Amanzi

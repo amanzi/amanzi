@@ -17,7 +17,10 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 namespace Amanzi {
 
-namespace Operators { class Upwinding; }
+namespace Operators {
+  class Upwinding;
+  class MatrixMFD_TPFA;
+}
 class MPCSurfaceSubsurfaceDirichletCoupler;
 
 
@@ -27,6 +30,7 @@ namespace FlowRelations {
   class OverlandConductivityModel;
   class HeightModel;
 }
+
 
 class OverlandHeadFlow : public PKPhysicalBDFBase {
 
@@ -41,7 +45,8 @@ public:
       coupled_to_subsurface_via_head_(false),
       coupled_to_subsurface_via_full_(false),
       perm_update_required_(true),
-      update_flux_(UPDATE_FLUX_ITERATION) {
+      update_flux_(UPDATE_FLUX_ITERATION),
+      full_jacobian_(false) {
     plist_.set("primary variable key", "surface_pressure");
     plist_.set("domain name", "surface");
   }
@@ -74,6 +79,10 @@ public:
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
   virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
+
+  // error monitor
+  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du);
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
@@ -134,6 +143,7 @@ protected:
   bool coupled_to_subsurface_via_flux_;
   bool coupled_to_subsurface_via_head_;
   bool coupled_to_subsurface_via_full_;
+  bool full_jacobian_;
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
@@ -141,6 +151,7 @@ protected:
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
