@@ -41,7 +41,9 @@ IEMWaterVaporEvaluator::Clone() const {
 }
 
 void IEMWaterVaporEvaluator::InitializeFromPlist_() {
-  my_key_ = plist_.get<std::string>("internal energy key");
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<std::string>("internal energy key");
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   // Set up my dependencies.

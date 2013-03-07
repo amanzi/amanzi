@@ -18,7 +18,10 @@ OverlandSourceFromSubsurfaceFluxEvaluator::fac_("overland source from subsurface
 OverlandSourceFromSubsurfaceFluxEvaluator::OverlandSourceFromSubsurfaceFluxEvaluator(
         Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = plist_.get<std::string>("source key", "overland_source_from_subsurface");
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<std::string>("source key", "overland_source_from_subsurface");
+  }
+
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   flux_key_ = plist_.get<std::string>("flux key", "darcy_flux");

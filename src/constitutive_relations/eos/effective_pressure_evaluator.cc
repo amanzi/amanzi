@@ -18,7 +18,10 @@ Utils::RegisteredFactory<FieldEvaluator,EffectivePressureEvaluator> EffectivePre
 
 EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = ep_plist_.get<std::string>("effective pressure key", "effective_pressure");
+  if (my_key_ == std::string("")) {
+    my_key_ = ep_plist_.get<std::string>("effective pressure key", "effective_pressure");
+  }
+
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   std::size_t end = my_key_.find_first_of("_");

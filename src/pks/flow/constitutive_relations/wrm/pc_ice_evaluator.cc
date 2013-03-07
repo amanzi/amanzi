@@ -21,8 +21,10 @@ PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
   // my keys
-  my_key_ = plist_.get<std::string>("capillary pressure of ice-water key",
-          "capillary_pressure_liq_ice");
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<std::string>("capillary pressure of ice-water key",
+            "capillary_pressure_liq_ice");
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   // -- temperature

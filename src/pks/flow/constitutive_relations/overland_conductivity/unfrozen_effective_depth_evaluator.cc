@@ -25,7 +25,10 @@ UnfrozenEffectiveDepthEvaluator::UnfrozenEffectiveDepthEvaluator(Teuchos::Parame
   uf_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
   dependencies_.insert(uf_key_);
 
-  my_key_ = "unfrozen_effective_depth";
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<std::string>("unfrozen effective depth key",
+            "unfrozen_effective_depth");
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
 }

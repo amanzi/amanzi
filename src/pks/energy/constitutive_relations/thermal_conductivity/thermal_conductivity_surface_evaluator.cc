@@ -16,8 +16,10 @@ namespace EnergyRelations {
 ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
       Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = plist_.get<std::string>("thermal conductivity key",
-          "surface_thermal_conductivity");
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<std::string>("thermal conductivity key",
+            "surface_thermal_conductivity");
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   uf_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
