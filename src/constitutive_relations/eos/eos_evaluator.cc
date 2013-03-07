@@ -66,6 +66,16 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
           domain_name+std::string("effective_pressure"));
   dependencies_.insert(pres_key_);
 
+  // -- logging
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME)) {
+  Teuchos::OSTab tab = getOSTab();
+    for (KeySet::const_iterator dep=dependencies_.begin();
+         dep!=dependencies_.end(); ++dep) {
+      *out_ << " dep: " << *dep << std::endl;
+    }
+  }
+
+  
   // Construct my EOS model
   ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory eos_fac;
