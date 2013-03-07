@@ -26,7 +26,10 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   coef_key_ = plist_.get<std::string>("coefficient key", "manning_coefficient");
   dependencies_.insert(coef_key_);
 
-  my_key_ = "overland_conductivity";
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<std::string>("overland conductivity key",
+            "overland_conductivity");
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   // create the model, hard-coded until we have a 2nd model

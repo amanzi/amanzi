@@ -22,7 +22,9 @@ UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& pli
   temp_key_ = plist_.get<std::string>("temperature key", "surface_temperature");
   dependencies_.insert(temp_key_);
 
-  my_key_ = "unfrozen_fraction";
+  if (my_key_ == std::string("")) {
+    my_key_ = "unfrozen_fraction";
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   // create the model, hard-coded until we have a 2nd model

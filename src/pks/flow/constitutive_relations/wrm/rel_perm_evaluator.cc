@@ -46,7 +46,9 @@ RelPermEvaluator::Clone() const {
 
 void RelPermEvaluator::InitializeFromPlist_() {
   // my keys are for saturation and rel perm.
-  my_key_ = plist_.get<string>("rel perm key", "relative_permeability");
+  if (my_key_ == std::string("")) {
+    my_key_ = plist_.get<string>("rel perm key", "relative_permeability");
+  }
   setLinePrefix(my_key_+std::string(" evaluator"));
 
   // my dependencies are just saturation.
