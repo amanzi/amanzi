@@ -32,7 +32,7 @@ class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
 
  private:
   bool updated_once_;
-  Key pres_key_;
+
 };
 
 } //namespace
