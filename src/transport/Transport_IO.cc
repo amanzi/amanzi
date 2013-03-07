@@ -110,6 +110,7 @@ void Transport_PK::ProcessParameterList()
     }
   } else {
     src_sink = NULL;
+    src_sink_distribution = 0;
   }
 }
 
