@@ -136,45 +136,27 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
 
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
+  // Damp surface corrections
+  if (damping_coef_ > 0.) {
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
+
+      double p_old = p_surf[0][cs];
+      double p_new = p_old - domain_Pu_f[0][f];
+      if ((p_new > patm) && (std::abs(domain_Pu_f[0][f]) > damping_cutoff_)) {
+        domain_Pu_f[0][f] *= damping_coef_;
+        std::cout << "  DAMPING: p_old = " << p_old << ", p_new = " << p_new << ", p_damped = " << p_old - domain_Pu_f[0][f] << std::endl;
+      }
+    }
+  }
+
   for (int cs=0; cs!=ncells_surf; ++cs) {
     AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
-
-    // DAMPING CODE START
-    double p_old = p_surf[0][cs];
-    double p_new = p_old - domain_Pu_f[0][f];
-    if (p_new > patm) {
-      domain_Pu_f[0][f] *= 0.2;
-      std::cout << "  DAMPING: p_old = " << p_old << ", p_new = " << p_new << ", p_damped = " << p_old - domain_Pu_f[0][f] << std::endl;
-    }
-    // DAMPING CODE END
-
     surf_Pu_c[0][cs] = domain_Pu_f[0][f];
     domain_Pu_f[0][f] += lambda[0][f] - p_surf[0][cs];
   }
 
-  /*
-  // Update surface with correction of faces
-  Teuchos::RCP<CompositeVector> soln =
-    S_next_->GetFieldData("surface_pressure",surf_pk_name_);
-  Epetra_MultiVector& soln_c = *soln->ViewComponent("cell",false);
-  Epetra_MultiVector& soln_f = *soln->ViewComponent("face",false);
-
-  CompositeVector soln_copy(*soln);
-  soln_copy.CreateData();
-  soln_copy = *soln;
-
-  // -- calculate the new soln on faces
-  soln_c.Update(-1., surf_Pu_c, 1.);
-  surf_pk_->CalculateConsistentFaces(soln.ptr());
-
-  // -- update preconditioned val on faces
-  surf_Pu_f = *soln_copy.ViewComponent("face",false);
-  surf_Pu_f.Update(-1., soln_f, 1.);
-
-  // -- get old solution back in soln
-  *soln = soln_copy;
-  */
-
+  // Update surface faces.
   Teuchos::RCP<CompositeVector> surf_Ph = Teuchos::rcp(new CompositeVector(*surf_Pu));
   surf_Ph->CreateData();
   surf_Ph->PutScalar(0.);
@@ -199,7 +181,8 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (surf_c0_ < surf_u->size("cell",false) && surf_c1_ < surf_u->size("cell",false)) {
+    //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
      AmanziMesh::Entity_ID_List fnums,fnums0;
      std::vector<int> dirs;
      surf_mesh_->cell_get_faces_and_dirs(surf_c0_, &fnums0, &dirs);
@@ -231,47 +214,50 @@ void MPCSurfaceSubsurfaceFullCoupler::update_precon(double t,
 
 // Modify predictor to ensure lambda and surface cell remain consistent
 bool MPCSurfaceSubsurfaceFullCoupler::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  bool changed(false);
+
   Teuchos::RCP<TreeVector> surf_u = u->SubVector(surf_pk_name_);
   Teuchos::RCP<TreeVector> domain_u = u->SubVector(domain_pk_name_);
 
-  const Epetra_MultiVector& surf_u_prev_c =
-    *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
-  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+  if (modify_predictor_heuristic_) {
+    const Epetra_MultiVector& surf_u_prev_c =
+        *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
+    const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
-  Epetra_MultiVector& domain_u_f =
-      *domain_u->data()->ViewComponent("face",false);
-  Epetra_MultiVector& surf_u_c =
-      *surf_u->data()->ViewComponent("cell",false);
+    Epetra_MultiVector& domain_u_f =
+        *domain_u->data()->ViewComponent("face",false);
+    Epetra_MultiVector& surf_u_c =
+        *surf_u->data()->ViewComponent("cell",false);
 
-  int ncells = surf_u_c.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    int ncells = surf_u_c.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
 
-    double dp = surf_u_c[0][c] - surf_u_prev_c[0][c];
-    double pnew = surf_u_c[0][c] - patm;
-    double pold = surf_u_prev_c[0][c] - patm;
+      double dp = surf_u_c[0][c] - surf_u_prev_c[0][c];
+      double pnew = surf_u_c[0][c] - patm;
+      double pold = surf_u_prev_c[0][c] - patm;
 
-    if (pnew > 0) {
-      if (dp > pnew) {
-        std::cout << "CHANGING (first over?): p = " << surf_u_c[0][c] << " to " << patm + .001 << std::endl;
-        surf_u_c[0][c] = patm + .001;
-        domain_u_f[0][f] = surf_u_c[0][c];
+      if (pnew > 0) {
+        if (dp > pnew) {
+          std::cout << "CHANGING (first over?): p = " << surf_u_c[0][c] << " to " << patm + .001 << std::endl;
+          surf_u_c[0][c] = patm + .001;
+          domain_u_f[0][f] = surf_u_c[0][c];
 
-      } else if (pold > 0 && dp > pold) {
-        std::cout << "CHANGING (second over?): p = " << surf_u_c[0][c] << " to " << patm + 2*pold << std::endl;
-        surf_u_c[0][c] = patm + 2*pold;
-        domain_u_f[0][f] = surf_u_c[0][c];
+        } else if (pold > 0 && dp > pold) {
+          std::cout << "CHANGING (second over?): p = " << surf_u_c[0][c] << " to " << patm + 2*pold << std::endl;
+          surf_u_c[0][c] = patm + 2*pold;
+          domain_u_f[0][f] = surf_u_c[0][c];
+        }
       }
     }
+    changed = true;
   }
 
 
+  changed |= surf_pk_->modify_predictor(h, surf_u);
+  changed |= domain_pk_->modify_predictor(h, domain_u);
 
-
-  surf_pk_->modify_predictor(h, surf_u);
-  domain_pk_->modify_predictor(h, domain_u);
-
-  return true;
+  return changed;
 }
 
 } // namespace
