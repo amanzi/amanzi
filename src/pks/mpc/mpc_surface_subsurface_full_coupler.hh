@@ -32,6 +32,12 @@ class MPCSurfaceSubsurfaceFullCoupler : public MPCSurfaceSubsurfaceCoupler {
       MPCSurfaceSubsurfaceCoupler(plist, soln) {
     surf_c0_ = plist_.get<int>("surface debug cell 0", 0);
     surf_c1_ = plist_.get<int>("surface debug cell 1", 1);
+    damping_coef_ = plist.get<double>("damping coefficient", -1.);
+    if (damping_coef_ > 0.) {
+      damping_cutoff_ = plist.get<double>("damping cutoff", 0.1);
+    }
+
+    modify_predictor_heuristic_ = plist.get<bool>("modify predictor with heuristic", false);
   }
 
   // -- Setup data.
@@ -51,6 +57,9 @@ class MPCSurfaceSubsurfaceFullCoupler : public MPCSurfaceSubsurfaceCoupler {
 
   int surf_c0_;
   int surf_c1_;
+  double damping_coef_;
+  double damping_cutoff_;
+  bool modify_predictor_heuristic_;
 
  private:
   // factory registration
