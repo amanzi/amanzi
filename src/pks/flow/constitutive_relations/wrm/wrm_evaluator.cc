@@ -6,6 +6,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+
 #include "wrm_evaluator.hh"
 #include "wrm_factory.hh"
 
@@ -19,30 +20,16 @@ Utils::RegisteredFactory<FieldEvaluator,WRMEvaluator> WRMEvaluator::factory_("WR
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     calc_other_sat_(true) {
+
   ASSERT(plist_.isSublist("WRM parameters"));
-
-  WRMFactory fac;
-
-  Teuchos::ParameterList region_list = plist_.sublist("WRM parameters");
-  wrms_ = Teuchos::rcp(new WRMRegionPairList());
-
-  for (Teuchos::ParameterList::ConstIterator lcv=region_list.begin();
-       lcv!=region_list.end(); ++lcv) {
-    std::string name = lcv->first;
-    if (region_list.isSublist(name)) {
-      Teuchos::ParameterList sublist = region_list.sublist(name);
-      std::string region = sublist.get<std::string>("region");
-      wrms_->push_back(std::make_pair(region, fac.createWRM(sublist)));
-    } else {
-      ASSERT(0);
-    }
-  }
+  Teuchos::ParameterList wrm_plist = plist_.sublist("WRM parameters");
+  wrms_ = createWRMPartition(wrm_plist);
 
   InitializeFromPlist_();
 }
 
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
-                           const Teuchos::RCP<std::vector<WRMRegionPair> >& wrms) :
+                           const Teuchos::RCP<WRMPartition>& wrms) :
     SecondaryVariablesFieldEvaluator(plist),
     wrms_(wrms) {
   InitializeFromPlist_();
@@ -79,6 +66,8 @@ void WRMEvaluator::InitializeFromPlist_() {
 
 void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
+  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->mesh());
+
   Epetra_MultiVector& sat = *results[0]->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(cap_pres_key_)->ViewComponent("cell",false);
 
@@ -87,36 +76,15 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   if (calc_other_sat_) {
     Epetra_MultiVector& sat_g = *results[1]->ViewComponent("cell",false);
 
-    for (WRMRegionPairList::iterator region=wrms_->begin();
-         region!=wrms_->end(); ++region) {
-      std::string name = region->first;
-      int ncells = results[0]->mesh()->get_set_size(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED);
-      AmanziMesh::Entity_ID_List cells(ncells);
-      results[0]->mesh()->get_set_entities(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
-
-      // use the wrm to evaluate saturation on each cell in the region
-      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
-        double s = region->second->saturation(pres[0][*c]);
-        sat[0][*c] = s;
-        sat_g[0][*c] = 1.0 - s;
-      }
+    AmanziMesh::Entity_ID ncells = sat.MyLength();
+    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+      sat[0][c] = wrms_->second[(*wrms_->first)[c]]->saturation(pres[0][c]);
+      sat_g[0][c] = 1.0 - sat[0][c];
     }
   } else {
-    for (WRMRegionPairList::iterator region=wrms_->begin();
-         region!=wrms_->end(); ++region) {
-      std::string name = region->first;
-      int ncells = results[0]->mesh()->get_set_size(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED);
-      AmanziMesh::Entity_ID_List cells(ncells);
-      results[0]->mesh()->get_set_entities(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
-
-      // use the wrm to evaluate saturation on each cell in the region
-      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
-        sat[0][*c] = region->second->saturation(pres[0][*c]);
-      }
+    AmanziMesh::Entity_ID ncells = sat.MyLength();
+    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+      sat[0][c] = wrms_->second[(*wrms_->first)[c]]->saturation(pres[0][c]);
     }
   }
 }
@@ -124,6 +92,8 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
+  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->mesh());
+
   ASSERT(wrt_key == cap_pres_key_);
   Epetra_MultiVector& dsat = *results[0]->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(cap_pres_key_)->ViewComponent("cell",false);
@@ -134,36 +104,15 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
   if (calc_other_sat_) {
     Epetra_MultiVector& dsat_g = *results[1]->ViewComponent("cell",false);
 
-    for (WRMRegionPairList::iterator region=wrms_->begin();
-         region!=wrms_->end(); ++region) {
-      std::string name = region->first;
-      int ncells = results[0]->mesh()->get_set_size(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED);
-      AmanziMesh::Entity_ID_List cells(ncells);
-      results[0]->mesh()->get_set_entities(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
-
-      // use the wrm to evaluate saturation on each cell in the region
-      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
-        double ds = region->second->d_saturation(pres[0][*c]);
-        dsat[0][*c] = ds;
-        dsat_g[0][*c] = -ds;
-      }
+    AmanziMesh::Entity_ID ncells = dsat.MyLength();
+    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+      dsat[0][c] = wrms_->second[(*wrms_->first)[c]]->d_saturation(pres[0][c]);
+      dsat_g[0][c] = -dsat[0][c];
     }
   } else {
-    for (WRMRegionPairList::iterator region=wrms_->begin();
-         region!=wrms_->end(); ++region) {
-      std::string name = region->first;
-      int ncells = results[0]->mesh()->get_set_size(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED);
-      AmanziMesh::Entity_ID_List cells(ncells);
-      results[0]->mesh()->get_set_entities(name,
-              AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
-
-      // use the wrm to evaluate saturation on each cell in the region
-      for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
-        dsat[0][*c] = region->second->d_saturation(pres[0][*c]);
-      }
+    AmanziMesh::Entity_ID ncells = dsat.MyLength();
+    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+      dsat[0][c] = wrms_->second[(*wrms_->first)[c]]->d_saturation(pres[0][c]);
     }
   }
 }

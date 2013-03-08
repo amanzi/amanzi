@@ -558,16 +558,16 @@ void MPCFrozenCoupledFlowEnergy::SetUpModels_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Flow::FlowRelations::WRMPermafrostEvaluator> wrm_me =
       Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMPermafrostEvaluator>(me);
   ASSERT(wrm_me != Teuchos::null);
-  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModelRegionPairList> wrms =
+  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModelPartition> wrms =
       wrm_me->get_WRMPermafrostModels();
 
   // this needs fixed eventually, but for now assuming one WRM, and therefore
   // one model --etc
-  ASSERT(wrms->size() == 1);
+  ASSERT(wrms->second.size() == 1);
 
   // -- WRMs
   model_ = Teuchos::rcp(new PermafrostModel());
-  model_->set_WRM((*wrms)[0].second);
+  model_->set_WRM(wrms->second[0]);
 
   // -- liquid EOS
   me = S->GetFieldEvaluator("molar_density_liquid");

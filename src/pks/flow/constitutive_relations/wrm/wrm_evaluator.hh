@@ -9,6 +9,7 @@
 #ifndef AMANZI_FLOW_RELATIONS_WRM_EVALUATOR_
 #define AMANZI_FLOW_RELATIONS_WRM_EVALUATOR_
 
+#include "wrm_partition.hh"
 #include "wrm.hh"
 #include "secondary_variables_field_evaluator.hh"
 #include "factory.hh"
@@ -24,12 +25,12 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
   explicit
   WRMEvaluator(Teuchos::ParameterList& plist);
   WRMEvaluator(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<WRMRegionPairList>& wrms);
+               const Teuchos::RCP<WRMPartition>& wrms);
   WRMEvaluator(const WRMEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  Teuchos::RCP<WRMRegionPairList> get_WRMs() { return wrms_; }
+  Teuchos::RCP<WRMPartition> get_WRMs() { return wrms_; }
 
  protected:
   void InitializeFromPlist_();
@@ -41,7 +42,7 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results);
 
  protected:
-  Teuchos::RCP<WRMRegionPairList> wrms_;
+  Teuchos::RCP<WRMPartition> wrms_;
   bool calc_other_sat_;
   Key cap_pres_key_;
 

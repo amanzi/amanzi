@@ -7,24 +7,23 @@
 */
 
 #include "rel_perm_evaluator.hh"
-#include "wrm_factory.hh"
 
 namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
-//     SecondaryVariableFieldEvaluator(plist) {
-//   ASSERT(plist_.isSublist("WRM parameters"));
-//   Teuchos::ParameterList sublist = plist_.sublist("WRM parameters");
-//   WRMFactory fac;
-//   wrm_ = fac.createWRM(sublist);
+RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
+    SecondaryVariableFieldEvaluator(plist),
+    min_val_(0.) {
 
-//   InitializeFromPlist_();
-// }
+  ASSERT(plist_.isSublist("WRM parameters"));
+  Teuchos::ParameterList sublist = plist_.sublist("WRM parameters");
+  wrms_ = createWRMPartition(sublist);
+  InitializeFromPlist_();
+}
 
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<WRMRegionPairList>& wrms) :
+        const Teuchos::RCP<WRMPartition>& wrms) :
     SecondaryVariableFieldEvaluator(plist),
     wrms_(wrms),
     min_val_(0.) {
@@ -63,25 +62,17 @@ void RelPermEvaluator::InitializeFromPlist_() {
 void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
+  if (!wrms_->first->initialized()) wrms_->first->Initialize(result->mesh());
 
+  const Epetra_MultiVector& sat = *S->GetFieldData(sat_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& res_v = *result->ViewComponent("cell",false);
 
   // Evaluate the evaluator to calculate sat.
-  for (WRMRegionPairList::iterator region=wrms_->begin();
-       region!=wrms_->end(); ++region) {
-    std::string name = region->first;
-    int ncells = sat->mesh()->get_set_size(name,
-            AmanziMesh::CELL, AmanziMesh::OWNED);
-    AmanziMesh::Entity_ID_List cells(ncells);
-    sat->mesh()->get_set_entities(name,
-            AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
-
-    // use the wrm to evaluate saturation on each cell in the region
-    for (AmanziMesh::Entity_ID_List::iterator c=cells.begin(); c!=cells.end(); ++c) {
-      double pc = region->second->capillaryPressure((*sat)("cell", *c));
-      res_v[0][*c] = std::max(region->second->k_relative(pc), min_val_);
-    }
+  int ncells = res_v.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    int index = (*wrms_->first)[c];
+    double pc = wrms_->second[index]->capillaryPressure(sat[0][c]);
+    res_v[0][c] = std::max(wrms_->second[index]->k_relative(pc), min_val_);
   }
 }
 
