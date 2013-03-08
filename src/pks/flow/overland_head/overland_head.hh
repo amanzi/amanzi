@@ -41,8 +41,7 @@ public:
       PKPhysicalBDFBase(plist, solution),
       standalone_mode_(false),
       is_source_term_(false),
-      coupled_to_subsurface_via_flux_(false),
-      coupled_to_subsurface_via_head_(false),
+      coupled_to_subsurface_via_residual_(false),
       coupled_to_subsurface_via_full_(false),
       perm_update_required_(true),
       update_flux_(UPDATE_FLUX_ITERATION),
@@ -140,8 +139,7 @@ protected:
   bool perm_update_required_;
 
   // coupling term
-  bool coupled_to_subsurface_via_flux_;
-  bool coupled_to_subsurface_via_head_;
+  bool coupled_to_subsurface_via_residual_;
   bool coupled_to_subsurface_via_full_;
   bool full_jacobian_;
 

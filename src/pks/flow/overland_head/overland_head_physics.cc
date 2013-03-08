@@ -107,7 +107,7 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     }
   }
 
-  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_full_) {
     // Add in source term from coupling.
     S_next_->GetFieldEvaluator("overland_source_from_subsurface")
         ->HasFieldChanged(S_next_.ptr(), name_);

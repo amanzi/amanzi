@@ -88,33 +88,13 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireScalar("atmospheric_pressure");
 
   // -- coupling to subsurface
-  coupled_to_subsurface_via_flux_ =
-      plist_.get<bool>("coupled to subsurface via flux", false);
-  coupled_to_subsurface_via_head_ =
-      plist_.get<bool>("coupled to subsurface via head", false);
+  coupled_to_subsurface_via_residual_ =
+      plist_.get<bool>("coupled to subsurface via residual new", false);
   coupled_to_subsurface_via_full_ =
       plist_.get<bool>("coupled to subsurface via full coupler", false);
-  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_head_));
-  ASSERT(!(coupled_to_subsurface_via_full_ && coupled_to_subsurface_via_head_));
-  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_full_));
+  ASSERT(!(coupled_to_subsurface_via_residual_ && coupled_to_subsurface_via_full_));
 
-  if (coupled_to_subsurface_via_flux_) {
-    // -- coupling term in PC, filled in by subsurface PK.
-    S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
-        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    // -- source term from subsurface, owned by me but filled in by the coupler
-    S->RequireField("overland_source_from_subsurface", name_)
-        ->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  if (coupled_to_subsurface_via_head_) {
-    // -- coupling term in PC, filled in by subsurface PK.
-    S->RequireField("doverland_source_from_subsurface_dsurface_pressure")
-        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_full_) {
     // -- source term from subsurface, filled in by evaluator,
     //    which picks the fluxes from "darcy_flux" field.
     S->RequireField("overland_source_from_subsurface")
@@ -128,7 +108,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
-  if (coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_full_ || coupled_to_subsurface_via_residual_) {
     full_jacobian_ = plist_.get<bool>("TPFA use full Jacobian", false);
   }
 
@@ -160,7 +140,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
   Teuchos::RCP<Operators::Matrix> precon;
-  if (coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_full_ || coupled_to_subsurface_via_residual_) {
     tpfa_preconditioner_ =
         Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
     precon = tpfa_preconditioner_;
@@ -207,8 +187,6 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
                 ->AddComponents(names2, locations2, num_dofs2);
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
                 ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
-                ->AddComponents(names2, locations2, num_dofs2);
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
@@ -223,10 +201,15 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
- 
-  Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval = 
-      Teuchos::rcp(new FlowRelations::PresElevEvaluator(
-          plist_.sublist("pres_elev evaluator")));
+
+  // -- evaluator for potential field, h + z
+  S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+                ->AddComponents(names2, locations2, num_dofs2);
+  Teuchos::ParameterList pres_elev_plist = plist_.sublist("potential evaluator");
+  pres_elev_plist.set("manage communication", true);
+  Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
+      Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
+
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
   // -- conductivity evaluator
@@ -322,14 +305,6 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
   S->GetField("surface_flux", name_)->set_initialized();
   S->GetField("surface_velocity", name_)->set_initialized();
-
-  // initialize coupling terms
-  if (coupled_to_subsurface_via_flux_) {
-    S->GetFieldData("overland_source_from_subsurface", name_)
-        ->PutScalar(0.);
-    S->GetField("overland_source_from_subsurface", name_)
-        ->set_initialized();
-  }
 };
 
 
@@ -384,7 +359,7 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
     for (int c=0; c!=error->size("cell"); ++c) {
       // accumulation
-      (*error)("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
+      (*error)("cell",c) += (*wc1)("cell",c) - (*wc0)("cell",c);
 
       // flux
       AmanziMesh::Entity_ID_List faces;
