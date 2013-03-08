@@ -64,7 +64,7 @@ class MPCCoupledFlowEnergy : public StrongMPC {
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
-  void ComputeShurComplementPK_();
+  void ComputeSchurComplementPK_();
   void SymbolicAssembleGlobalMatrices_(const Teuchos::Ptr<State>& S);
   void InitPreconditioner_(Teuchos::ParameterList& prec_plist);
 
