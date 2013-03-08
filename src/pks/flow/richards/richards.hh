@@ -10,6 +10,7 @@
 #ifndef PK_FLOW_RICHARDS_HH_
 #define PK_FLOW_RICHARDS_HH_
 
+#include "wrm_partition.hh"
 #include "boundary_function.hh"
 #include "matrix_mfd.hh"
 
@@ -142,6 +143,7 @@ protected:
   // permeability
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
+  Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;

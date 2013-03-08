@@ -14,6 +14,7 @@ MACRO(WHOLE_ARCHIVE inlib)
 ENDMACRO(WHOLE_ARCHIVE inlib)
 
 add_library(flow_relations_wrm
+  wrm_partition.cc
   wrm_permafrost_evaluator.cc
   wrm_evaluator.cc
   rel_perm_evaluator.cc

@@ -281,6 +281,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
       Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
+  wrms_ = wrm->get_WRMs();
 
   // -- Liquid density and viscosity for the transmissivity.
   S->RequireField("molar_density_liquid")->SetMesh(mesh_)->SetGhosted()
@@ -505,10 +506,9 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   }
 
   if (update_perm) {
-    // upwind
-    upwinding_->Update(S);
-
-    // patch up the BCs -- FIX ME --etc
+    // patch up the BCs
+    const Epetra_MultiVector& pres_f = *S->GetFieldData(key_)
+        ->ViewComponent("face",false);
     for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
       AmanziMesh::Entity_ID_List cells;
       uw_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -523,17 +523,20 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         coupled_to_surface_via_full_ ||
         coupled_to_surface_via_head_ ||
         coupled_to_surface_via_flux_) {
-      // patch up the rel perm on surface as 1 -- FIX ME --etc
+      // patch up the rel perm on surface
       Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+
       int ncells_surface = surface->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
 
       for (int c=0; c!=ncells_surface; ++c) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
-        AmanziMesh::Entity_ID f =
-            surface->entity_get_parent(AmanziMesh::CELL, c);
+        AmanziMesh::Entity_ID f = surface->entity_get_parent(AmanziMesh::CELL, c);
         (*uw_rel_perm)("face",f) = 1.0;
       }
     }
+    
+    // upwind
+    upwinding_->Update(S);
   }
 
   // Scale cells by n/visc if needed.

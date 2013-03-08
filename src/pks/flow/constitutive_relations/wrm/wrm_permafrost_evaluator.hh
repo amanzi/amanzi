@@ -10,6 +10,7 @@
 #define AMANZI_FLOW_RELATIONS_WRM_PERMAFROST_EVALUATOR_
 
 #include "wrm.hh"
+#include "wrm_partition.hh"
 #include "wrm_permafrost_model.hh"
 #include "secondary_variables_field_evaluator.hh"
 #include "factory.hh"
@@ -24,15 +25,15 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
   explicit
   WRMPermafrostEvaluator(Teuchos::ParameterList& plist);
   WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<WRMRegionPairList>& wrms);
+                         const Teuchos::RCP<WRMPartition>& wrms);
   WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<WRMPermafrostModelRegionPairList>& models);
+                         const Teuchos::RCP<WRMPermafrostModelPartition>& models);
   WRMPermafrostEvaluator(const WRMPermafrostEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  Teuchos::RCP<WRMRegionPairList> get_WRMs() { return wrms_; }
-  Teuchos::RCP<WRMPermafrostModelRegionPairList> get_WRMPermafrostModels() { return permafrost_models_; }
+  Teuchos::RCP<WRMPartition> get_WRMs() { return wrms_; }
+  Teuchos::RCP<WRMPermafrostModelPartition> get_WRMPermafrostModels() { return permafrost_models_; }
 
  protected:
   // Required methods from SecondaryVariableFieldEvaluator
@@ -48,8 +49,8 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
   Key pc_ice_key_;
   Key s_l_key_;
 
-  Teuchos::RCP<WRMPermafrostModelRegionPairList> permafrost_models_;
-  Teuchos::RCP<WRMRegionPairList> wrms_;
+  Teuchos::RCP<WRMPermafrostModelPartition> permafrost_models_;
+  Teuchos::RCP<WRMPartition> wrms_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,WRMPermafrostEvaluator> factory_;
