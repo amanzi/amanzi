@@ -49,6 +49,7 @@ Richards::Richards(Teuchos::ParameterList& plist,
     coupled_to_surface_via_flux_(false),
     coupled_to_surface_via_full_(false),
     coupled_to_surface_via_residual_(false),
+    coupled_to_surface_via_residual_new_(false),
     infiltrate_only_if_unfrozen_(false),
     modify_predictor_with_consistent_faces_(false),
     niter_(0) {
@@ -153,6 +154,13 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
         ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
 
     surface_head_eps_ = plist_.get<double>("surface head epsilon", 0.);
+  }
+
+  // -- coupling done by a mixed Neumann/Dirichlet BC
+  coupled_to_surface_via_residual_new_ = plist_.get<bool>("coupled to surface via residual new", false);
+  if (coupled_to_surface_via_residual_new_) {
+    S->RequireField("overland_source_from_subsurface", name_)
+        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- coupling done by a primary variable of pressure head on the surface
@@ -330,7 +338,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("darcy_velocity", name_)->set_initialized();
 
   // initialize coupling terms
-  if (coupled_to_surface_via_residual_) {
+  if (coupled_to_surface_via_residual_ || coupled_to_surface_via_residual_new_) {
     S->GetFieldData("overland_source_from_subsurface", name_)->PutScalar(0.);
     S->GetField("overland_source_from_subsurface", name_)->set_initialized();
   }
@@ -511,6 +519,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     }
 
     if (coupled_to_surface_via_residual_ ||
+        coupled_to_surface_via_residual_new_ ||
         coupled_to_surface_via_full_ ||
         coupled_to_surface_via_head_ ||
         coupled_to_surface_via_flux_) {
@@ -618,7 +627,7 @@ void Richards::UpdateBoundaryConditions_() {
   }
 
   // surface coupling
-  if (coupled_to_surface_via_flux_) {
+  if (coupled_to_surface_via_flux_ || coupled_to_surface_via_residual_new_) {
     // Face is Neumann with value of surface residual
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
     const Epetra_MultiVector& flux =
@@ -637,7 +646,6 @@ void Richards::UpdateBoundaryConditions_() {
       *out_ << "  BC (Neumann) = " << flux[0][c] / mesh_->face_area(f) << std::endl;
     }
   }
-
 
   if (coupled_to_surface_via_residual_) {
     // given the surface head, calculate a new pressure with surface head on

@@ -46,6 +46,7 @@ void Richards::fun(double t_old,
   mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << std::setprecision(15);
     *out_ << "----------------------------------------------------------------" << std::endl;
     *out_ << "Richards Residual calculation: T0 = " << t_old
           << " T1 = " << t_new << " H = " << h << std::endl;

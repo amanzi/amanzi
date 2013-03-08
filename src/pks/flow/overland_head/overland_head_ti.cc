@@ -56,6 +56,20 @@ void OverlandHeadFlow::fun( double t_old,
     Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> preselev= S_next_->GetFieldData("pres_elev");
 
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    std::cout << "  depth cell " << ncells << " = " << (*depth)("cell",ncells)
+              << std::endl;
+    std::cout << "  depth face " << nfaces << " = " << (*depth)("face",nfaces)
+              << std::endl;
+    std::cout << "  pelev cell " << ncells << " = " << (*preselev)("cell",ncells)
+              << std::endl;
+    std::cout << "  pelev face " << nfaces << " = " << (*preselev)("face",nfaces)
+              << std::endl;
+
+
+
+
     std::cout << "----------------------------------------------------------------" << std::endl;
 
     std::cout << "OverlandHead Residual calculation: T0 = " << t_old
@@ -231,13 +245,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   Teuchos::RCP<const CompositeVector> eff_p = S_next_->GetFieldData("surface_effective_pressure");
   Teuchos::RCP<const CompositeVector> surf_p = S_next_->GetFieldData("surface_pressure");
-  std::cout << " EFF P Mesh == mesh_? " << (eff_p->mesh() == mesh_) << std::endl;
-  std::cout << " Surf P Mesh == mesh_? " << (surf_p->mesh() == mesh_) << std::endl;
-  std::cout << "  IS DEP? " << (S_next_->GetFieldEvaluator("surface_effective_pressure")->IsDependency(S_next_.ptr(), "surface_pressure")) << std::endl;
 
-
-
-  
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
@@ -292,13 +300,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       *S_next_->GetFieldData("dsurface_water_content_d"+key_)
       ->ViewComponent("cell",false);
 
-  std::cout << "AVAIL KEYS:" << std::endl;
-  for (State::FieldMap::const_iterator lcv=S_next_->field_begin();
-       lcv!=S_next_->field_end(); ++lcv) {
-    std::cout << lcv->first << std::endl;
-  }
-       
-
   // -- get other pieces
   const Epetra_MultiVector& head =
       *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
@@ -306,43 +307,18 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   int ncells = head.MyLength();
 
-  if (coupled_to_subsurface_via_flux_ || coupled_to_subsurface_via_head_) {
-    // Coupled to subsurface, needs derivatives of coupling terms.
-    const Epetra_MultiVector& dQ_dp =
-        *S_next_->GetFieldData("doverland_source_from_subsurface_dsurface_pressure")
-        ->ViewComponent("cell",false);
-
-    for (int c=0; c!=ncells; ++c) {
-      *out_ << "Acc diff terms, + " << Acc_cells[c] << std::endl;
-      if (head[0][c] >= p_atm) {
-        // - add accumulation terms, treating h as h, which goes zero.
-        Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
-        *out_ << "Acc accum terms, +" << dwc_dp[0][c] / dh_dp[0][c] / h <<std::endl;
-      } else {
-        *out_ << "Acc accum terms, +" << 0. <<std::endl;
-      }
-
-      // add source term
-      Acc_cells[c] -= dQ_dp[0][c] / dh_dp[0][c];
-      *out_ << "Acc dQ terms, -" << dQ_dp[0][c] / dh_dp[0][c] << std::endl;
-      *out_ << "dh_dp = " << dh_dp[0][c] << std::endl;
-    }
-  } else {
-    // no Coupling term
-    for (int c=0; c!=ncells; ++c) {
-      // - add accumulation terms, treating h as h_bar, which is allowed to go
-      // - negative.  This results in a non-zero preconditioner when p < p_atm,
-      // - resulting in a correction that should take p >= p_atm.
-      Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
-      //      *out_ << " adding acc term = " << dwc_dp[0][c] / dh_dp[0][c] / h << std::endl;
-    }
+  for (int c=0; c!=ncells; ++c) {
+    // - add accumulation terms, treating h as h_bar, which is allowed to go
+    // - negative.  This results in a non-zero preconditioner when p < p_atm,
+    // - resulting in a correction that should take p >= p_atm.
+    Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
   }
 
   // Assemble and precompute the Schur complement for inversion.
   // Note boundary conditions are in height variables.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  if (coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_full_ || coupled_to_subsurface_via_residual_) {
     mfd_preconditioner_->AssembleGlobalMatrices();
 
     if (full_jacobian_) {
@@ -469,15 +445,28 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
     double tmp = std::abs(h*res_c[0][c])
-        / (wc_base * atol_ + rtol_*std::abs(wc[0][c]));
+        / (atol_*wc_base + rtol_*std::abs(wc[0][c]));
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
+
+
+#if DEBUG_FLAG
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "ERRORS:" << std::endl;
+    *out_ << "  cell0: h*res = " << std::abs(h*res_c[0][c0_])
+          << ", abs= " << atol_*wc_base
+          << ", rel= " << rtol_*std::abs(wc[0][c0_]) << std::endl;
+    *out_ << "  cell1: h*res = " << std::abs(h*res_c[0][c1_])
+          << ", abs= " << atol_*wc_base
+          << ", rel= " << rtol_*std::abs(wc[0][c1_]) << std::endl;
+  }
+#endif
 
   // Face error give by heights?  Loose tolerance
   double enorm_face(0.);
   int nfaces = res_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = std::abs(res_f[0][f]) / (atol_ + rtol_*( 1. ));
+    double tmp = std::abs(res_f[0][f]) / (atol_ + rtol_*(height_f[0][f]));
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 
