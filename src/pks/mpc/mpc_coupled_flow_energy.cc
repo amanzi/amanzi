@@ -173,7 +173,7 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
       (*D_Tp_)[0][c] = 0.;
   }
 
-  ComputeShurComplementPK_();
+  ComputeSchurComplementPK_();
 
   if (prec_method_ == TRILINOS_ML) {
     if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
@@ -254,7 +254,7 @@ void MPCCoupledFlowEnergy::update_precon(double t, Teuchos::RCP<const TreeVector
   */
 };
 
-void MPCCoupledFlowEnergy::ComputeShurComplementPK_(){
+void MPCCoupledFlowEnergy::ComputeSchurComplementPK_(){
   int ierr(0);
 
   Teuchos::RCP<const CompositeVector> pres = S_->GetFieldData("pressure");
