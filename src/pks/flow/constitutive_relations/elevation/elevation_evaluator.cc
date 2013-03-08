@@ -22,17 +22,25 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
 
 void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
-  // If they haven't been done yet, update slope and elevation.
-  if (!updated_once_) {
-    EvaluateElevationAndSlope_(S, results);
-    updated_once_ = true;
-  }
+  EvaluateElevationAndSlope_(S, results);
 }
 
 // This is hopefully never called?
 void ElevationEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   ASSERT(0);
+}
+
+// Custom EnsureCompatibility forces this to be updated once.
+bool ElevationEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
+                                         Key request) {
+  bool changed = SecondaryVariablesFieldEvaluator::HasFieldChanged(S,request);
+  if (!updated_once_) {
+    UpdateField_(S);
+    updated_once_ = true;
+    return true;
+  }
+  return changed;
 }
 
 } //namespace

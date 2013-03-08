@@ -1,7 +1,12 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-  The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
+  The elevation evaluator gets the surface elevation and slope.
+
+  This is not a normal SecondaryVariablesFieldEvaluator, as it has no
+  dependencies, which means we have to force it to update (dependencies
+  will never have changed) in HasFieldChanged.  This is done this
+  way so that when the mesh changes, this can be updated appropriately.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
@@ -30,7 +35,9 @@ class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void EvaluateElevationAndSlope_(const Teuchos::Ptr<State>& S,
           const std::vector<Teuchos::Ptr<CompositeVector> >& results) = 0;
 
- private:
+  virtual bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request);
+
+ protected:
   bool updated_once_;
 
 };
