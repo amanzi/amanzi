@@ -143,14 +143,34 @@ void MPCSurfaceSubsurfaceResidualCoupler::precon(Teuchos::RCP<const TreeVector> 
 #endif
 
   int ncells_surf = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  // Damp surface corrections
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
   Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
 
   const Epetra_MultiVector& domain_p_f = *S_next_->GetFieldData("pressure")
       ->ViewComponent("face",false);
 
+  // Cap surface corrections
+  //   In the case that we are starting to infiltrate on dry ground, the low
+  //   initial surface rel perm means that to turn on this source, we would
+  //   require a huge pressure gradient (to fight the small rel perm).  The
+  //   changing rel perm is not represented in the preconditioner, so the
+  //   preconditioner tries match the flux by applying a huge gradient,
+  //   resulting in a huge update to the surface pressure.  This phenomenon,
+  //   known as the spurt, is capped.
+  if (true) {
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
+
+      double p_old = domain_p_f[0][f];
+      double p_new = p_old - domain_Pu_f[0][f];
+      if ((p_new > patm) && (p_old < patm - 0.002) && (std::abs(domain_Pu_f[0][f]) > 10000.)) {
+        domain_Pu_f[0][f] = p_old - (patm - 0.001);
+        std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
+      }
+    }
+  }
+
+  // Damp surface corrections
   if (damping_coef_ > 0.) {
     for (int cs=0; cs!=ncells_surf; ++cs) {
       AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
@@ -188,8 +208,7 @@ void MPCSurfaceSubsurfaceResidualCoupler::precon(Teuchos::RCP<const TreeVector> 
   S_next_->GetFieldData("surface_pressure",surf_pk_name_)
       ->ViewComponent("cell",false)->Update(-1., surf_Pu_c, 1.);
   surf_pk_->changed_solution();
-  S_next_->GetFieldEvaluator("ponded_depth")
-      ->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
 
   // put delta ponded depth into surf_Ph_cell
   surf_Ph->ViewComponent("cell",false)

@@ -23,6 +23,27 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
 void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   EvaluateElevationAndSlope_(S, results);
+
+  // If boundary faces are requested, grab the slopes on the internal cell
+  Teuchos::Ptr<CompositeVector> slope = results[1];
+
+  if (slope->has_component("boundary_face")) {
+    const Epetra_Map& vandelay_map = slope->mesh()->exterior_face_epetra_map();
+    Epetra_MultiVector& slope_bf = *slope->ViewComponent("boundary_face",false);
+    const Epetra_MultiVector& slope_c = *slope->ViewComponent("cell",false);
+
+    // calculate boundary face values
+    AmanziMesh::Entity_ID_List cells;
+    int nbfaces = slope_bf.MyLength();
+    for (int bf=0; bf!=nbfaces; ++bf) {
+      // given a boundary face, we need the internal cell to choose the right WRM
+      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      slope->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+
+      slope_bf[0][bf] = slope_c[0][cells[0]];
+    }
+  }
 }
 
 // This is hopefully never called?

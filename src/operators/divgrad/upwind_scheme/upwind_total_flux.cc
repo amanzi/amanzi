@@ -44,7 +44,6 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
 
   // initialize the face coefficients
-  face_coef->ViewComponent("face",true)->PutScalar(0.0);
   if (face_coef->has_component("cell")) {
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
@@ -96,48 +95,50 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   // Determine the face coefficient of local faces.
   // These parameters may be key to a smooth convergence rate near zero flux.
   double flow_eps_factor = 1.e-6;
+  double coefs[2];
 
   int nfaces = face_coef->size("face",false);
   for (int f=0; f!=nfaces; ++f) {
     int uw = upwind_cell[f];
     int dw = downwind_cell[f];
+    ASSERT(!((uw == -1) && (dw == -1)));
 
-    if ((uw == -1) || (dw == -1)) {
-      int c = uw == -1 ? dw : uw;
-      ASSERT(c != -1);
-      // boundary face
-      coef_faces[0][f] = coef_cells[0][c];
+    // uw coef
+    if (uw == -1) {
+      coefs[0] = coef_faces[0][f];
     } else {
-      ASSERT(uw != -1);
-      ASSERT(dw != -1);
+      coefs[0] = coef_cells[0][uw];
+    }
 
-      // Determine the size of the overlap region, a smooth transition region
-      // near zero flux
-      double cuw = coef_cells[0][uw];
-      double cdw = coef_cells[0][dw];
-      double flow_eps = ( 1.0 - std::abs(cuw - cdw) ) * std::sqrt(cuw * cdw) * flow_eps_factor;
+    // dw coef
+    if (dw == -1) {
+      coefs[1] = coef_faces[0][f];
+    } else {
+      coefs[1] = coef_cells[0][dw];
+    }
 
-      // Determine the coefficient
-      if (abs(flux_v[0][f]) >= flow_eps) {
-        int uw = upwind_cell[f];
-        ASSERT(uw != -1);
-        coef_faces[0][f] = cuw;
-      } else {
-        // Parameterization of a linear scaling between upwind and downwind.
-        double param = abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
-        if (!(param >= 0.5) || !(param <= 1.0)) {
-          std::cout << "BAD FLUX!" << std::endl;
-          std::cout << "  flux = " << flux_v[0][f] << std::endl;
-          std::cout << "  param = " << param << std::endl;
-          std::cout << "  flow_eps = " << flow_eps << std::endl;
-        }
+    // Determine the size of the overlap region, a smooth transition region
+    // near zero flux
+    double flow_eps = ( 1.0 - std::abs(coefs[0] - coefs[1]) )
+        * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor;
 
-
-        ASSERT(param >= 0.5);
-        ASSERT(param <= 1.0);
-
-        coef_faces[0][f] = cuw * param + cdw * (1. - param);
+    // Determine the coefficient
+    if (abs(flux_v[0][f]) >= flow_eps) {
+      coef_faces[0][f] = coefs[0];
+    } else {
+      // Parameterization of a linear scaling between upwind and downwind.
+      double param = abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
+      if (!(param >= 0.5) || !(param <= 1.0)) {
+        std::cout << "BAD FLUX!" << std::endl;
+        std::cout << "  flux = " << flux_v[0][f] << std::endl;
+        std::cout << "  param = " << param << std::endl;
+        std::cout << "  flow_eps = " << flow_eps << std::endl;
       }
+
+      ASSERT(param >= 0.5);
+      ASSERT(param <= 1.0);
+
+      coef_faces[0][f] = coefs[0] * param + coefs[1] * (1. - param);
     }
   }
 

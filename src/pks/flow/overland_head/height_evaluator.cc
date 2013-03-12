@@ -105,16 +105,16 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key) {
   Key dmy_key = std::string("d")+my_key_+std::string("_d")+wrt_key;
   Teuchos::RCP<CompositeVector> dmy;
-  if (!S->HasField(dmy_key)) {
-    // Create the data with only cells, not cells+faces
+  if (S->HasField(dmy_key)) {
+    // Get the field...
+    dmy = S->GetFieldData(dmy_key, my_key_);
+  } else {
+    // or create the field.  Note we have to do extra work that is normally
+    // done by State in initialize.
     Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(my_key_);
     Teuchos::RCP<CompositeVectorFactory> new_fac =
       S->RequireField(dmy_key, my_key_);
-    new_fac->set_owned(false);
-    new_fac->SetGhosted(my_fac->Ghosted());
-    new_fac->SetMesh(my_fac->Mesh());
-    new_fac->AddComponent("cell", AmanziMesh::CELL, 1);
-
+    new_fac->Update(*my_fac);
     dmy = new_fac->CreateVector(true);
     dmy->CreateData();
     S->SetData(dmy_key, my_key_, dmy);
@@ -123,8 +123,33 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
     S->GetField(dmy_key,my_key_)->set_io_checkpoint(false);
   }
 
-  // Now it is safe to call the inherited version, which uses this data.
-  SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(S, wrt_key);
+  // Now update the values.
+  dmy->PutScalar(0.0);
+
+  // Only get derivatives in cells
+  for (KeySet::const_iterator dep=dependencies_.begin();
+       dep!=dependencies_.end(); ++dep) {
+    Teuchos::RCP<CompositeVector> tmp = Teuchos::rcp(new CompositeVector(*dmy));
+    tmp->CreateData();
+    if (wrt_key == *dep) {
+      // partial F / partial x
+      EvaluateFieldPartialDerivative_(S, wrt_key, tmp.ptr());
+      dmy->ViewComponent("cell",false)->Update(1.0,
+              *tmp->ViewComponent("cell",false), 1.0);
+    } else if (S->GetFieldEvaluator(*dep)->IsDependency(S, wrt_key)) {
+      // partial F / partial dep * ddep/dx
+      // -- ddep/dx
+      Key ddep_key = std::string("d")+*dep+std::string("_d")+wrt_key;
+      Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
+      // -- partial F / partial dep
+      EvaluateFieldPartialDerivative_(S, *dep, tmp.ptr());
+
+      dmy->ViewComponent("cell",false)
+          ->Multiply(1.0, *ddep->ViewComponent("cell",false),
+                     *tmp->ViewComponent("cell",false), 1.0);
+    }
+  }
+  dmy->ViewComponent("face",false)->PutScalar(1.0);
 }
 
 
@@ -183,6 +208,10 @@ void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
   } else {
     ASSERT(0);
   }
+
+  // -- faces just get zero?
+  result->ViewComponent("face",false)->PutScalar(0.);
+
 }
 
 

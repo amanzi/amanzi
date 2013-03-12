@@ -125,23 +125,39 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   }
 #endif
 
-  // Correction applies to both the domain face and the surface cell.
-  // Additionally, drift in the difference between lambda and p_surf
-  // needs to be corrected.  Also trying damping?
-  Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
-  Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
-  Epetra_MultiVector& surf_Pu_f = *surf_Pu->ViewComponent("face",false);
-  const Epetra_MultiVector& p_surf = *S_next_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
-  const Epetra_MultiVector& lambda = *S_next_->GetFieldData("pressure")->ViewComponent("face",false);
-
+  // Alterations to PC'd value from capping and damping
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+  Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
+  const Epetra_MultiVector& surf_p_c = *S_next_->GetFieldData("surface_pressure")
+      ->ViewComponent("cell",false);
+
+  // Cap surface corrections
+  //   In the case that we are starting to infiltrate on dry ground, the low
+  //   initial surface rel perm means that to turn on this source, we would
+  //   require a huge pressure gradient (to fight the small rel perm).  The
+  //   changing rel perm is not represented in the preconditioner, so the
+  //   preconditioner tries match the flux by applying a huge gradient,
+  //   resulting in a huge update to the surface pressure.  This phenomenon,
+  //   known as the spurt, is capped.
+  if (cap_the_spurt_) {
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
+
+      double p_old = surf_p_c[0][cs];
+      double p_new = p_old - domain_Pu_f[0][f];
+      if ((p_new > patm) && (p_old < patm - 0.002) && (std::abs(domain_Pu_f[0][f]) > 10000.)) {
+        domain_Pu_f[0][f] = p_old - (patm - 0.001);
+        std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
+      }
+    }
+  }
 
   // Damp surface corrections
   if (damping_coef_ > 0.) {
     for (int cs=0; cs!=ncells_surf; ++cs) {
       AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
 
-      double p_old = p_surf[0][cs];
+      double p_old = surf_p_c[0][cs];
       double p_new = p_old - domain_Pu_f[0][f];
       if ((p_new > patm) && (std::abs(domain_Pu_f[0][f]) > damping_cutoff_)) {
         domain_Pu_f[0][f] *= damping_coef_;
@@ -150,10 +166,17 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
     }
   }
 
+  // Correction applies to both the domain face and the surface cell.
+  // Additionally, drift in the difference between lambda and p_surf
+  // needs to be corrected.
+  Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
+  const Epetra_MultiVector& domain_p_f = *S_next_->GetFieldData("pressure")
+      ->ViewComponent("face",false);
+
   for (int cs=0; cs!=ncells_surf; ++cs) {
     AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
     surf_Pu_c[0][cs] = domain_Pu_f[0][f];
-    domain_Pu_f[0][f] += lambda[0][f] - p_surf[0][cs];
+    domain_Pu_f[0][f] += domain_p_f[0][f] - surf_p_c[0][cs];
   }
 
   // Update surface faces.
@@ -165,20 +188,23 @@ void MPCSurfaceSubsurfaceFullCoupler::precon(Teuchos::RCP<const TreeVector> u,
   *surf_Ph->ViewComponent("cell",false) = *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false);
 
   // update the new ponded depth
-  S_next_->GetFieldData("surface_pressure",surf_pk_name_)->ViewComponent("cell",false)->Update(-1., surf_Pu_c, 1.);
+  S_next_->GetFieldData("surface_pressure",surf_pk_name_)
+      ->ViewComponent("cell",false)->Update(-1., surf_Pu_c, 1.);
   surf_pk_->changed_solution();
   S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
 
-  // revert solution so we don't break things
-  S_next_->GetFieldData("surface_pressure",surf_pk_name_)->ViewComponent("cell",false)->Update(1., surf_Pu_c, 1.);
-  surf_pk_->changed_solution();
-
   // put delta ponded depth into surf_Ph_cell
-  surf_Ph->ViewComponent("cell",false)->Update(-1., *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false), 1.);
+  surf_Ph->ViewComponent("cell",false)
+      ->Update(-1., *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false), 1.);
 
   // update delta faces
   surf_preconditioner_->UpdateConsistentFaceCorrection(*surf_u, surf_Ph.ptr());
   *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
+
+  // revert solution so we don't break things
+  S_next_->GetFieldData("surface_pressure",surf_pk_name_)
+      ->ViewComponent("cell",false)->Update(1., surf_Pu_c, 1.);
+  surf_pk_->changed_solution();
 
 #if DEBUG_FLAG
   if (surf_c0_ < surf_u->size("cell",false) && surf_c1_ < surf_u->size("cell",false)) {

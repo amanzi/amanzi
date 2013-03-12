@@ -55,8 +55,7 @@ protected:
 private:
   // factory registration
   static RegisteredPKFactory<Permafrost> reg_;
-  
-  
+
 };
 
 }  // namespace AmanziFlow
