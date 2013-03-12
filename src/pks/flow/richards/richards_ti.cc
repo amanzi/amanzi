@@ -85,6 +85,29 @@ void Richards::fun(double t_old,
     Teuchos::RCP<const CompositeVector> satl0 =
         S_inter_->GetFieldData("saturation_liquid");
 
+
+    Teuchos::RCP<const CompositeVector> relperm =
+        S_next_->GetFieldData("relative_permeability");
+    Teuchos::RCP<const Epetra_MultiVector> relperm_bf =
+        relperm->ViewComponent("boundary_face",false);
+    Teuchos::RCP<const CompositeVector> uw_relperm =
+        S_next_->GetFieldData("numerical_rel_perm");
+    Teuchos::RCP<const Epetra_MultiVector> uw_relperm_bf =
+        uw_relperm->ViewComponent("boundary_face",false);
+    Teuchos::RCP<const CompositeVector> flux_dir =
+        S_next_->GetFieldData("darcy_flux_direction");
+
+    AmanziMesh::Entity_ID_List fnums0,fnums1;
+    std::vector<int> dirs,dirs1;
+    mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+    mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs1);
+
+    std::cout << "WTF: face = " << fnums0[1] << std::endl;
+    std::cout << "WTF: face = " << fnums1[1] << std::endl;
+    const Epetra_Map& vandelay_map = mesh_->exterior_face_epetra_map();
+    int bf0 = vandelay_map.LID(fnums0[1]);
+    int bf1 = vandelay_map.LID(fnums1[1]);
+
     if (S_next_->HasField("saturation_ice")) {
       Teuchos::RCP<const CompositeVector> sati1 =
           S_next_->GetFieldData("saturation_ice");
@@ -104,6 +127,17 @@ void Richards::fun(double t_old,
       *out_ << "    sat_old_1: " << (*satl0)("cell",c1_) << std::endl;
       *out_ << "    sat_new_1: " << (*satl1)("cell",c1_) << std::endl;
     }
+
+    *out_ << "    WTF0: fdir, krel_f, krel_c = " << (*flux_dir)("face",fnums0[1])*dirs[1]
+          << ",  " << (*relperm_bf)[0][bf0] << ",  " << (*relperm)("cell",c0_)
+          << std::endl;
+    *out_ << "    WTF1: fdir, krel_f, krel_c = " << (*flux_dir)("face",fnums1[1])*dirs1[1]
+          << ",  " << (*relperm_bf)[0][bf1] << ",  " << (*relperm)("cell",c1_)
+          << std::endl;
+    *out_ << "    k_rel0: " << (*uw_relperm)("cell",c0_) << " "
+          << (*uw_relperm)("face",fnums0[1]) << std::endl;
+    *out_ << "    k_rel1: " << (*uw_relperm)("cell",c1_) << " "
+          << (*uw_relperm)("face",fnums1[1]) << std::endl;
 
 
     *out_ << "  res0 (after diffusion): " << (*res)("cell",c0_)

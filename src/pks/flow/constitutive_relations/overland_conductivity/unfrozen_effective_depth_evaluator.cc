@@ -52,7 +52,8 @@ void UnfrozenEffectiveDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& 
   Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
   Teuchos::RCP<const CompositeVector> uf = S->GetFieldData(uf_key_);
 
-  result->Multiply(1., *depth, *uf, 0.);
+  int ierr = result->Multiply(1., *depth, *uf, 0.);
+  ASSERT(!ierr);
 }
 
 
