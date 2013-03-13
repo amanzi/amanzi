@@ -132,7 +132,7 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 #endif
 
   // apply the preconditioner
-  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+  preconditioner_->ApplyInverse(*u, Pu.ptr());
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {

@@ -57,7 +57,7 @@ void AdvectionDiffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<T
   //  *Pu = *u;
 
   // MFD ML preconditioner
-  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+  preconditioner_->ApplyInverse(*u, Pu.ptr());
 
   std::cout << "  Pu: " << (*Pu->data())("cell",0) << " " << (*Pu->data())("face",0) << std::endl;
 };

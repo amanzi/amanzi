@@ -193,7 +193,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 #endif
 
   // Apply the preconditioner
-  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+  preconditioner_->ApplyInverse(*u, Pu.ptr());
 
 #if DEBUG_FLAG
   // Dump correction
