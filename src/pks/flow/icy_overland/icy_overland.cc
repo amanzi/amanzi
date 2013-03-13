@@ -190,8 +190,6 @@ void IcyOverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     double eta = uf_model_->UnfrozenFraction(temp[0][f]);
     double height = icy_height_model_->Height(bc->second, eta, rho_l[0][cells[0]],
             rho_i[0][cells[0]], p_atm, gz);
-    *out_ << "BC pressure (f" << f << "): pres = " << bc->second << ", eta = "
-          << eta << " height = " << height << std::endl;
 
     bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = height + elevation[0][f];

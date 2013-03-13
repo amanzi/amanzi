@@ -98,8 +98,8 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new EnergyRelations::ThermalConductivitySurfaceEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
-  // -- source terms
-  // -- -- external source of energy
+  // source terms
+  // -- external source of energy
   if (plist_.isSublist("energy source evaluator")) {
     Teuchos::ParameterList source_plist = plist_.sublist("energy source evaluator");
     source_plist.set("evaluator name", "surface_energy_source");
@@ -111,31 +111,19 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->SetFieldEvaluator("surface_energy_source", source_evaluator);
   }
 
-  // -- -- Air temperature
-  if (plist_.isSublist("air temperature")) {
-    Teuchos::ParameterList air_plist = plist_.sublist("air temperature");
-
-    FunctionFactory fac;
-    air_temp_ = Teuchos::rcp(fac.Create(air_plist.sublist("temperature function")));
-
-    // If there is air temperature and a mass source, this provides enthalpy
-    is_mass_source_term_ = S->HasFieldEvaluator("overland_source");
-
-    // If there is air temperature and a conductivity, this provides heat transfer.
-    if (air_plist.isParameter("air to surface conductivity")) {
-      is_air_conductivity_ = true;
-      K_surface_to_air_ = air_plist.get<double>("air to surface conductivity");
-    }
-
-  } else {
-    // Make sure there is no mass source.
-    if (S->HasFieldEvaluator("overland_source")) {
-      Errors::Message m("Overland Energy equation found a mass source without an air temperature.");
-      Exceptions::amanzi_throw(m);
-    }
+  // -- external mass source, plus air temp: this provides enthalpy
+  is_mass_source_term_ = S->HasFieldEvaluator("overland_source");
+  if (is_mass_source_term_) {
+    S->RequireScalar("air_temperature");
   }
 
-  // coupling to subsurface
+  is_air_conductivity_ = plist_.isParameter("air to surface conductivity");
+  if (is_air_conductivity_) {
+    K_surface_to_air_ = plist_.get<double>("air to surface conductivity");
+    S->RequireScalar("air_temperature");
+  }
+
+  // -- coupling to subsurface
   coupled_to_subsurface_via_full_ =
       plist_.get<bool>("coupled to subsurface via full coupler", false);
   if (coupled_to_subsurface_via_full_) {
@@ -301,7 +289,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
     // calculate enthalpy of incoming water
     double time = S_next_->time();
-    double T_air1 = air_temp_->operator()(&time);
+    const double& T_air1 = *S_next_->GetScalarData("air_temperature");
     double n1 = eos_liquid_->MolarDensity(T_air1, patm);
     double u1 = iem_liquid_->InternalEnergy(T_air1);
     double enth1 = u1;// + patm / n1;
@@ -362,7 +350,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   // conduction of heat to air
   if (is_air_conductivity_) {
     double time = S->time();
-    double T_air1 = air_temp_->operator()(&time);
+    const double& T_air1 = *S->GetScalarData("air_temperature");
     const Epetra_MultiVector& temp_c =
         *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
@@ -372,7 +360,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "  res_source: K(Tair-T): " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+      *out_ << "  res_source: K(" << T_air1 << "-T): " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
     }
 #endif
 
