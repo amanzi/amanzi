@@ -20,7 +20,7 @@ Derived MPC for flow and energy.  This couples using a block-diagonal coupler.
 
 namespace Amanzi {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> MPCFrozenCoupledFlowEnergy::reg_("frozen energy-flow preconditioner coupled");
 
@@ -285,12 +285,6 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
   wc2.Update(dt_ratio, wc1, 1. - dt_ratio);
   e2.Update(dt_ratio, e1, 1. - dt_ratio);
 
-#if DEBUG_FLAG
-  std::cout << "S0 wc,e: " << wc0[0][96] << ", " << e0[0][96] << std::endl;
-  std::cout << "S1 wc,e: " << wc1[0][96] << ", " << e1[0][96] << std::endl;
-  std::cout << "Desired wc,e: " << wc2[0][96] << ", " << e2[0][96] << std::endl;
-#endif
-
   // Check and update
   const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
       ->ViewComponent("cell",false);
@@ -298,7 +292,6 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
   double wc_scale = 10.;
   double e_scale = 10000.;
 
-  double ewc_any = false;
   int ncells = wc0.MyLength();
   for (int c=0; c!=ncells; ++c) {
     bool ewc_predictor = false;
@@ -311,7 +304,7 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
     // invert the T-projection to get what it was projected from
     double T_prev2 = (T_guess - dt_ratio*T_prev) / (1. - dt_ratio);
 
-    // Curve looks like __|    with discontinuity at 0.
+    // Curve looks like __|--    with discontinuity at 0.
     if (T_guess < T_prev) { // getting colder, so the upper cusp is the problem
       if (T_guess > 273.15) {
         ewc_predictor = false;  // both above freezing, in the upper branch
@@ -337,13 +330,15 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
     }
 
     if (ewc_predictor) {
-      ewc_any = true;
       double p = p1[0][c];
       double T = T1[0][c];
 
 #if DEBUG_FLAG
       std::cout << "Inverting: c = " << c << std::endl;
       std::cout << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
+      std::cout << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl;
+      std::cout << "   Prev p,T: " << p << ", " << T << std::endl;
+      std::cout << "   Desired wc,e: " << wc2[0][c] << ", " << e2[0][c] << std::endl;
 #endif
 
       // uses intensive forms, so must divide by cell volume.
@@ -351,22 +346,27 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
 
 #if DEBUG_FLAG
       std::cout << "   p_ewc,T_ewc  = " << p << ", " << T << std::endl;
-      std::cout << "   p_guess,T_guess  = " << pres_guess_c[0][c]
-                << ", " << temp_guess_c[0][c] << std::endl;
-      std::cout << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
-      std::cout << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
-
       cells_to_track_.push_back(c);
 #endif
 
       //      ASSERT(!ierr); // remove me for robustness --etc
       if (!ierr) { // valid solution, no zero determinates, etc
-        temp_guess_c[0][c] = T;
-        pres_guess_c[0][c] = p;
+        // Return the smaller change
+        if (std::abs(T - T_prev) < std::abs(T_guess - T_prev)) {
+#if DEBUG_FLAG
+          std::cout << "   EWC Accepted" << std::endl;
+#endif
+          temp_guess_c[0][c] = T;
+          pres_guess_c[0][c] = p;
+        } else {
+#if DEBUG_FLAG
+          std::cout << "   EWC Rejected" << std::endl;
+#endif
+        }
       }
     }
   }
-  return true;  // must be true, not ewc_any, or else do an AllToAll to collect ewc_any
+  return true;
 }
 
 
