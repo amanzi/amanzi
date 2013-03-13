@@ -72,97 +72,54 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& pres_c = *S->GetFieldData(cap_pres_key_)
       ->ViewComponent("cell",false);
 
-  // Loop over names in the target and then owned entities in that name,
-  // evaluating the evaluator to calculate sat.
+  // calculate cell values
+  AmanziMesh::Entity_ID ncells = sat_c.MyLength();
+  for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+    sat_c[0][c] = wrms_->second[(*wrms_->first)[c]]->saturation(pres_c[0][c]);
+  }
+
+  // Potentially do face values as well.
+  if (results[0]->has_component("boundary_face")) {
+    Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
+    const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)
+        ->ViewComponent("boundary_face",false);
+
+    // Need to get boundary face's inner cell to specify the WRM.
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
+    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+    AmanziMesh::Entity_ID_List cells;
+
+    // calculate boundary face values
+    int nbfaces = sat_bf.MyLength();
+    for (int bf=0; bf!=nbfaces; ++bf) {
+      // given a boundary face, we need the internal cell to choose the right WRM
+      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+
+      int index = (*wrms_->first)[cells[0]];
+      sat_bf[0][bf] = wrms_->second[index]->saturation(pres_bf[0][bf]);
+    }
+  }
+
+  // If needed, also do gas saturation
   if (calc_other_sat_) {
-    // calculate cell values
-    Epetra_MultiVector& sat_g_c = *results[1]->ViewComponent("cell",false);
+    for (CompositeVector::name_iterator comp=results[1]->begin();
+         comp!=results[1]->end(); ++comp) {
 
-    AmanziMesh::Entity_ID ncells = sat_c.MyLength();
-    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
-      sat_c[0][c] = wrms_->second[(*wrms_->first)[c]]->saturation(pres_c[0][c]);
-      sat_g_c[0][c] = 1.0 - sat_c[0][c];
-    }
-
-    // Potentially do face values as well.
-    if (results[0]->has_component("boundary_face")) {
-      if (results[1]->has_component("boundary_face")) {
-        // face for satg and sat
-        Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
-        Epetra_MultiVector& sat_g_bf = *results[1]->ViewComponent("boundary_face",false);
-        const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)
-            ->ViewComponent("boundary_face",false);
-
-        Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
-        const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-
-        // calculate boundary face values
-        AmanziMesh::Entity_ID_List cells;
-        int nbfaces = sat_bf.MyLength();
-        for (int bf=0; bf!=nbfaces; ++bf) {
-          // given a boundary face, we need the internal cell to choose the right WRM
-          AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
-          mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-          ASSERT(cells.size() == 1);
-
-          int index = (*wrms_->first)[cells[0]];
-          sat_bf[0][bf] = wrms_->second[index]->saturation(pres_bf[0][bf]);
-          sat_g_bf[0][bf] = 1.0 - sat_bf[0][bf];
-        }
+      if (results[0]->has_component(*comp)) {
+        // sat_g = 1 - sat_l
+        results[1]->ViewComponent(*comp,false)->PutScalar(1.);
+        results[1]->ViewComponent(*comp,false)->Update(-1,
+                *results[0]->ViewComponent(*comp,false), 1.);
       } else {
-        // face for just sat
-        Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
-        const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)
-            ->ViewComponent("boundary_face",false);
+        // sat_l not available on this component, loop and call the model
 
-        Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
-        const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-
-        // calculate boundary face values
-        AmanziMesh::Entity_ID_List cells;
-        int nbfaces = sat_bf.MyLength();
-        for (int bf=0; bf!=nbfaces; ++bf) {
-          // given a boundary face, we need the internal cell to choose the right WRM
-          AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
-          mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-          ASSERT(cells.size() == 1);
-
-          int index = (*wrms_->first)[cells[0]];
-          sat_bf[0][bf] = wrms_->second[index]->saturation(pres_bf[0][bf]);
-        }
+        // Currently this is not ever the case.  If this error shows up, it
+        // can easily be implemented. -- etc
+        ASSERT(0);
       }
     }
-
-  } else {
-    // calculate cell values
-    AmanziMesh::Entity_ID ncells = sat_c.MyLength();
-    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
-      sat_c[0][c] = wrms_->second[(*wrms_->first)[c]]->saturation(pres_c[0][c]);
-    }
-
-    // Potentially do face values as well.
-    if (results[0]->has_component("boundary_face")) {
-      Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
-      const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)
-          ->ViewComponent("boundary_face",false);
-
-      Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
-      const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
-
-      // calculate boundary face values
-      AmanziMesh::Entity_ID_List cells;
-      int nbfaces = sat_bf.MyLength();
-      for (int bf=0; bf!=nbfaces; ++bf) {
-        // given a boundary face, we need the internal cell to choose the right WRM
-        AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
-        mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
-
-        int index = (*wrms_->first)[cells[0]];
-        sat_bf[0][bf] = wrms_->second[index]->saturation(pres_bf[0][bf]);
-      }
-    }
-
   }
 }
 
@@ -172,26 +129,60 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
   if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->mesh());
 
   ASSERT(wrt_key == cap_pres_key_);
-  Epetra_MultiVector& dsat = *results[0]->ViewComponent("cell",false);
-  const Epetra_MultiVector& pres = *S->GetFieldData(cap_pres_key_)->ViewComponent("cell",false);
-  const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
-  // Loop over names in the target and then owned entities in that name,
-  // evaluating the evaluator to calculate sat and rel perm.
-  if (calc_other_sat_) {
-    Epetra_MultiVector& dsat_g = *results[1]->ViewComponent("cell",false);
+  Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell",false);
+  const Epetra_MultiVector& pres_c = *S->GetFieldData(cap_pres_key_)
+      ->ViewComponent("cell",false);
 
-    AmanziMesh::Entity_ID ncells = dsat.MyLength();
-    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
-      dsat[0][c] = wrms_->second[(*wrms_->first)[c]]->d_saturation(pres[0][c]);
-      dsat_g[0][c] = -dsat[0][c];
-    }
-  } else {
-    AmanziMesh::Entity_ID ncells = dsat.MyLength();
-    for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
-      dsat[0][c] = wrms_->second[(*wrms_->first)[c]]->d_saturation(pres[0][c]);
+  // calculate cell values
+  AmanziMesh::Entity_ID ncells = sat_c.MyLength();
+  for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+    sat_c[0][c] = wrms_->second[(*wrms_->first)[c]]->d_saturation(pres_c[0][c]);
+  }
+
+  // Potentially do face values as well.
+  if (results[0]->has_component("boundary_face")) {
+    Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
+    const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)
+        ->ViewComponent("boundary_face",false);
+
+    // Need to get boundary face's inner cell to specify the WRM.
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
+    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+    AmanziMesh::Entity_ID_List cells;
+
+    // calculate boundary face values
+    int nbfaces = sat_bf.MyLength();
+    for (int bf=0; bf!=nbfaces; ++bf) {
+      // given a boundary face, we need the internal cell to choose the right WRM
+      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+
+      int index = (*wrms_->first)[cells[0]];
+      sat_bf[0][bf] = wrms_->second[index]->d_saturation(pres_bf[0][bf]);
     }
   }
+
+  // If needed, also do gas saturation
+  if (calc_other_sat_) {
+    for (CompositeVector::name_iterator comp=results[1]->begin();
+         comp!=results[1]->end(); ++comp) {
+
+      if (results[0]->has_component(*comp)) {
+        // d_sat_g =  - d_sat_l
+        results[1]->ViewComponent(*comp,false)->Update(-1,
+                *results[0]->ViewComponent(*comp,false), 0.);
+      } else {
+        // sat_l not available on this component, loop and call the model
+
+        // Currently this is not ever the case.  If this error shows up, it
+        // can easily be implemented. -- etc
+        ASSERT(0);
+      }
+    }
+  }
+
 }
 
 

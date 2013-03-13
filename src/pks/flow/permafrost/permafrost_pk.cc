@@ -51,8 +51,17 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("water_content", wc);
 
   // -- Water retention evaluators, for saturation and rel perm.
+  std::vector<AmanziMesh::Entity_kind> locations2(2);
+  std::vector<std::string> names2(2);
+  std::vector<int> num_dofs2(2,1);
+  locations2[0] = AmanziMesh::CELL;
+  locations2[1] = AmanziMesh::BOUNDARY_FACE;
+  names2[0] = "cell";
+  names2[1] = "boundary_face";
+
+  // -- rel perm on cells + boundary faces
   S->RequireField("relative_permeability")->SetMesh(S->GetMesh())->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponents(names2,locations2,num_dofs2);
 
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
   Teuchos::ParameterList wrm_plist = plist_.sublist("water retention evaluator");
