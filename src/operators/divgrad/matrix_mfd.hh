@@ -30,6 +30,7 @@
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "tree_vector.hh"
 #include "composite_vector.hh"
 #include "mfd3d.hpp"
 
@@ -173,6 +174,17 @@ class MatrixMFD : public Matrix {
                      const Teuchos::Ptr<CompositeVector>& Y) const;
   virtual void ApplyInverse(const CompositeVector& X,
                             const Teuchos::Ptr<CompositeVector>& Y) const;
+
+  virtual void Apply(const TreeVector& X,
+                     const Teuchos::Ptr<TreeVector>& Y) const {
+    return Apply(*X.data(), Y->data().ptr());
+  }
+
+  virtual void ApplyInverse(const TreeVector& X,
+                            const Teuchos::Ptr<TreeVector>& Y) const {
+    return ApplyInverse(*X.data(), Y->data().ptr());
+  }
+
   void ComputeResidual(const CompositeVector& X,
                        const Teuchos::Ptr<CompositeVector>& F) const;
   void ComputeNegativeResidual(const CompositeVector& X,

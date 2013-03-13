@@ -407,6 +407,36 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
   Epetra_MultiVector pres_c = *(pressure_data->ViewComponent("cell", false));
   Epetra_MultiVector temp_c = *(temp_data->ViewComponent("cell", false));
 
+
+  // UGLY HACKERY!
+  double maxp(0.);
+  pres_c.NormInf(&maxp);
+  double maxT(0.);
+  temp_c.NormInf(&maxT);
+  if (maxT > maxp) {
+    for (int c=0; c!=temp_c.MyLength(); ++c) {
+      if (std::abs(std::abs(temp_c[0][c]) - maxT) < 1.e-10) {
+        flow_pk->c0_ = c;
+        energy_pk->c0_ = c;
+        c0_ = c;
+        std::cout << "WORST CELL (TEMP) IS " << c << std::endl;
+      }
+    }
+  } else {
+    for (int c=0; c!=temp_c.MyLength(); ++c) {
+      if (std::abs(std::abs(pres_c[0][c]) - maxp) < 1.e-10) {
+        flow_pk->c0_ = c;
+        energy_pk->c0_ = c;
+        c0_ = c;
+        std::cout << "WORST CELL (PRES) IS " << c << std::endl;
+      }
+    }
+  }
+  // END UGLY HACKERY!
+
+
+
+
   Epetra_MultiVector pres_f = *pressure_data->ViewComponent("face", false);
   Epetra_MultiVector temp_f = *temp_data->ViewComponent("face", false);
 
@@ -493,12 +523,17 @@ void MPCCoupledFlowEnergy::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
  }
 
  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+   AmanziMesh::Entity_ID_List fnums0,fnums1;
+   std::vector<int> dirs,dirs1;
+   Ppressure_data->mesh()->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+   Ppressure_data->mesh()->cell_get_faces_and_dirs(c1_, &fnums1, &dirs1);
+
    Teuchos::OSTab tab = getOSTab();
    *out_ << "Preconditioned Updates:" << std::endl;
-   *out_ << "  Pp0: " << Ppressure_c[0][0] << " " << Ppressure_f[0][3] << std::endl;
-   *out_ << "  Pp1: " << Ppressure_c[0][99] << " " << Ppressure_f[0][500] << std::endl;
-   *out_ << "  PT0: " << Ptemp_c[0][0] << " " << Ptemp_f[0][3] << std::endl;
-   *out_ << "  PT1: " << Ptemp_c[0][99] << " " << Ptemp_f[0][500] << std::endl;
+   *out_ << "  Pp0: " << Ppressure_c[0][c0_] << " " << Ppressure_f[0][fnums0[0]] << std::endl;
+   *out_ << "  Pp1: " << Ppressure_c[0][c1_] << " " << Ppressure_f[0][fnums1[0]] << std::endl;
+   *out_ << "  PT0: " << Ptemp_c[0][c0_] << " " << Ptemp_f[0][fnums0[0]] << std::endl;
+   *out_ << "  PT1: " << Ptemp_c[0][c1_] << " " << Ptemp_f[0][fnums1[0]] << std::endl;
  }
 };
 

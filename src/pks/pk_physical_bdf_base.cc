@@ -140,7 +140,7 @@ void PKPhysicalBDFBase::changed_solution() {
 // -----------------------------------------------------------------------------
 void PKPhysicalBDFBase::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
-  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+  preconditioner_->ApplyInverse(*u, Pu.ptr());
 }
 
 } // namespace
