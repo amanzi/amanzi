@@ -165,6 +165,10 @@ protected:
   friend class Amanzi::MPCCoupledFlowEnergy;
   friend class Amanzi::MPCDiagonalFlowEnergy;
   friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;
+
+  // is this a dynamic mesh problem
+  bool dynamic_mesh_;
+
 };
 
 }  // namespace AmanziFlow
