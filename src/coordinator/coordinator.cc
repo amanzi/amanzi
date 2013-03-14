@@ -115,6 +115,8 @@ void Coordinator::initialize() {
     ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
+    
+    DeformCheckpointMesh(S_.ptr());
   }
 
   // vis for the state

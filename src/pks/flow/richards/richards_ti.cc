@@ -33,6 +33,8 @@ void Richards::fun(double t_old,
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
+  if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
+  
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
@@ -202,6 +204,11 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     *out_ << "Precon update at t = " << t << std::endl;
   }
 #endif
+  
+  if (dynamic_mesh_) {
+    matrix_->CreateMFDmassMatrices(K_.ptr());
+    mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
+  }
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
