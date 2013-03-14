@@ -55,6 +55,15 @@ void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("centroid", name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(name, location, num_dofs);
 
+
+  // create storage for the vertex coordinates
+  // we need to checkpoint those to be able to create
+  // the deformed mesh after restart
+  location[0] = AmanziMesh::NODE;
+  num_dofs[0] = 3;
+  name[0] = "node";
+  S->RequireField("vertex coordinate", name_)->SetMesh(mesh_)->SetGhosted()
+    ->SetComponents(name, location, num_dofs);
 }
 
 // -- Initialize owned (dependent) variables.
@@ -73,6 +82,34 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
     centroid[2][c] = xc[2]; 
   }
   S->GetField("centroid",name_)->set_initialized();
+
+
+  // initialize the vertex coordinate to the current mesh
+  AmanziGeometry::Point_List pos;
+  Entity_ID_List nodeids;
+  Amanzi::AmanziGeometry::Point coords;
+  
+  // spatial dimension
+  int dim = mesh_->space_dimension();
+  // number of vertices
+  int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
+			       Amanzi::AmanziMesh::OWNED);  
+  coords.init(dim);
+  
+  Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate",name_)
+    ->ViewComponent("node",false);
+
+  // search the id of the mid point on the top
+  for (int iV=0; iV<nV; iV++) {
+    
+    // get the coords of the node
+    mesh_->node_get_coordinates(iV,&coords);
+    
+    for ( int s=0; s<dim; ++s ) {
+      vc[s][iV] = coords[s];
+    }
+  }
+  S->GetField("vertex coordinate",name_)->set_initialized();
 }
 
 bool PrescribedDeformation::advance(double dt) {
@@ -167,8 +204,7 @@ bool PrescribedDeformation::advance(double dt) {
       
   }
   
-  
-  
+
   // get the cell volumes from the previous time step
   const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
     ->ViewComponent("cell",false);
@@ -176,7 +212,23 @@ bool PrescribedDeformation::advance(double dt) {
   // deform the mesh
   write_access_mesh_->deform( nodeids, newpos, true, &finpos); // deforms the mesh itself
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr()); // mark the placeholder evaluator as changed
-  
+
+
+  // update vertex coordinates in state
+  Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
+    ->ViewComponent("node",false);
+  int dim = write_access_mesh_->space_dimension();
+  int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
+					    Amanzi::AmanziMesh::OWNED);  
+  // loop over vertices and update vc
+  for (int iV=0; iV<nV; iV++) {
+    // get the coords of the node
+    write_access_mesh_->node_get_coordinates(iV,&coords);
+    for ( int s=0; s<dim; ++s ) {
+      vc[s][iV] = coords[s];
+    }
+  }
+
   // -- this is no longer necessary, but I'm leaving it here to note how it
   //    should have been if it were needed...
   // get the new cell volumes, after deformation
