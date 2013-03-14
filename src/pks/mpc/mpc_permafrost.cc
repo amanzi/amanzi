@@ -21,31 +21,24 @@ subtree:
 
 ------------------------------------------------------------------------- */
 
-#ifndef MPC_PERMAFROST_HH_
-#define MPC_FROZEN_PREC_COUPLED_FLOW_ENERGY_HH_
-
-#include "mpc_coupled_cells.hh"
+#include "mpc_permafrost.hh"
 
 namespace Amanzi {
 
-class PermafrostModel;
+RegisteredPKFactory<MPCPermafrost> MPCPermafrost::reg_("permafrost model");
 
-class MPCPermafrost : public MPCCoupledCells {
+// -------------------------------------------------------------
+// Setup data
+// -------------------------------------------------------------
+void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
+  // off-diagonal terms needed by MPCCoupledCells
+  plist_.set("conserved quantity A", "water_content");
+  plist_.set("conserved quantity B", "energy");
+  plist_.set("primary variable A", "pressure");
+  plist_.set("primary variable B", "temperature");
 
-public:
-  MPCPermafrost(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, soln),
-      MPCCoupledCells(plist, soln) {}
+  plist_.set("mesh key", "domain");
+  MPCCoupledCells::setup(S);
+}
 
-
-  virtual void setup(const Teuchos::Ptr<State>& S);
-
-private:
-  // factory registration
-  static RegisteredPKFactory<MPCPermafrost> reg_;
-
-};
 } // namespace
-
-#endif
