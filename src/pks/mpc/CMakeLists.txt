@@ -32,7 +32,8 @@ add_library(mpc mpc.cc
   mpc_surface_subsurface_dirichlet_coupler.cc
   mpc_surface_subsurface_full_coupler.cc
   mpc_surface_subsurface_residual_coupler.cc
-  mpc_surface_subsurface_energy_coupler.cc)
+  mpc_surface_subsurface_energy_coupler.cc
+  mpc_permafrost.cc)
 
 
 
