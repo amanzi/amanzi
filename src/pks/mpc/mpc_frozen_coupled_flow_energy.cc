@@ -97,9 +97,6 @@ void MPCFrozenCoupledFlowEnergy::setup(const Teuchos::Ptr<State>& S) {
       cusp_size_T_thawing_ = plist_.get<double>("cusp distance in T, thawing", 0.005);
     }
   }
-
-  // this is only for testing, do not use!
-  consistent_by_average_ = plist_.get<bool>("evaluate face consistency via averages", false);
 }
 
 
@@ -690,42 +687,10 @@ void MPCFrozenCoupledFlowEnergy::precon_ewc_(Teuchos::RCP<const TreeVector> u,
     }
   }
 
-  // update with consistent faces
-  if (consistent_by_average_) {
-    // update faces from averages of cells -- this cannot work most of the time
-    Teuchos::RCP<CompositeVector> temp_new_cv = temp_new->data();
-    Teuchos::RCP<CompositeVector> pres_new_cv = pres_new->data();
-    temp_new_cv->ScatterMasterToGhosted("cell");
-    pres_new_cv->ScatterMasterToGhosted("cell");
-
-    Teuchos::RCP<const CompositeVector> temp_prev_cv =
-        S_next_->GetFieldData("temperature");
-    Teuchos::RCP<const CompositeVector> pres_prev_cv =
-        S_next_->GetFieldData("pressure");
-    Teuchos::RCP<CompositeVector> dtemp_cv = dtemp->data();
-    Teuchos::RCP<CompositeVector> dpres_cv = dpres->data();
-
-    AmanziMesh::Entity_ID_List cells;
-    int f_owned = temp_new_cv->size("face");
-    for (int f=0; f!=f_owned; ++f) {
-      cells.clear();
-      temp_new_cv->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-      if (cells.size() == 2) {
-        (*temp_new_cv)("face",f) = ((*temp_new_cv)("cell",cells[0]) +
-                (*temp_new_cv)("cell",cells[1])) / 2.0;
-        (*pres_new_cv)("face",f) = ((*pres_new_cv)("cell",cells[0]) +
-                (*pres_new_cv)("cell",cells[1])) / 2.0;
-      } else {
-        // standard precon has already done BCs, leave these alone
-        (*temp_new_cv)("face",f) = (*temp_prev_cv)("face",f) - (*dtemp_cv)("face",f);
-        (*pres_new_cv)("face",f) = (*pres_prev_cv)("face",f) - (*dpres_cv)("face",f);
-      }
-    }
-  } else {
-    double h = S_next_->time() - S_inter_->time();
-    energy_pk_->CalculateConsistentFaces(temp_new->data().ptr());
-    flow_pk_->CalculateConsistentFaces(pres_new->data().ptr());
-  }
+  // Calculate consistent faces
+  double h = S_next_->time() - S_inter_->time();
+  energy_pk_->CalculateConsistentFaces(temp_new->data().ptr());
+  flow_pk_->CalculateConsistentFaces(pres_new->data().ptr());
 
   // calculate the correction
   *dtemp->data() = *S_next_->GetFieldData("temperature");
@@ -883,42 +848,9 @@ void MPCFrozenCoupledFlowEnergy::precon_smart_ewc_(Teuchos::RCP<const TreeVector
 
   if (ewc_any) {
     // update with consistent faces
-    if (consistent_by_average_) {
-      // update faces from averages of cells -- this cannot work most of the time
-      Teuchos::RCP<CompositeVector> temp_new_cv = temp_new->data();
-      Teuchos::RCP<CompositeVector> pres_new_cv = pres_new->data();
-      temp_new_cv->ScatterMasterToGhosted("cell");
-      pres_new_cv->ScatterMasterToGhosted("cell");
-
-      Teuchos::RCP<const CompositeVector> temp_prev_cv =
-          S_next_->GetFieldData("temperature");
-      Teuchos::RCP<const CompositeVector> pres_prev_cv =
-          S_next_->GetFieldData("pressure");
-      Teuchos::RCP<CompositeVector> dtemp_cv = dtemp->data();
-      Teuchos::RCP<CompositeVector> dpres_cv = dpres->data();
-
-      AmanziMesh::Entity_ID_List cells;
-      int f_owned = temp_new_cv->size("face");
-      for (int f=0; f!=f_owned; ++f) {
-        cells.clear();
-        temp_new_cv->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-        if (cells.size() == 2) {
-          (*temp_new_cv)("face",f) = ((*temp_new_cv)("cell",cells[0]) +
-                  (*temp_new_cv)("cell",cells[1])) / 2.0;
-          (*pres_new_cv)("face",f) = ((*pres_new_cv)("cell",cells[0]) +
-                  (*pres_new_cv)("cell",cells[1])) / 2.0;
-        } else {
-          // standard precon has already done BCs, leave these alone
-          (*temp_new_cv)("face",f) = (*temp_prev_cv)("face",f) - (*dtemp_cv)("face",f);
-          (*pres_new_cv)("face",f) = (*pres_prev_cv)("face",f) - (*dpres_cv)("face",f);
-        }
-      }
-
-    } else {
-      double h = S_next_->time() - S_inter_->time();
-      energy_pk_->CalculateConsistentFaces(temp_new->data().ptr());
-      flow_pk_->CalculateConsistentFaces(pres_new->data().ptr());
-    }
+    double h = S_next_->time() - S_inter_->time();
+    energy_pk_->CalculateConsistentFaces(temp_new->data().ptr());
+    flow_pk_->CalculateConsistentFaces(pres_new->data().ptr());
 
     // calculate the correction
     *dtemp->data() = *S_next_->GetFieldData("temperature");
