@@ -12,53 +12,53 @@ block-diagonal coupler.
 #ifndef MPC_FROZEN_PREC_COUPLED_FLOW_ENERGY_HH_
 #define MPC_FROZEN_PREC_COUPLED_FLOW_ENERGY_HH_
 
-#include "mpc_coupled_flow_energy.hh"
+#include "mpc_coupled_cells.hh"
 
 namespace Amanzi {
 
 class PermafrostModel;
+namespace Flow { class Richards; }
+namespace Energy { class TwoPhase; }
 
-class MPCFrozenCoupledFlowEnergy : public MPCCoupledFlowEnergy {
+class MPCFrozenCoupledFlowEnergy : public MPCCoupledCells {
 
 public:
   MPCFrozenCoupledFlowEnergy(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCCoupledFlowEnergy(plist, soln),
+      MPCCoupledCells(plist, soln),
       consistent_by_average_(false) {}
 
   // Virtual destructor
   virtual ~MPCFrozenCoupledFlowEnergy() {}
 
-  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
-
-  // preconditioner application
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-
-  // updates the preconditioner
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-
-  // update the predictor to be physically consistent
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
-
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
-
   // -- Initialize owned (dependent) variables.
   virtual void setup(const Teuchos::Ptr<State>& S);
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
-  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
-
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
+
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+
+  // update the predictor to be physically consistent
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+
+  // updates the preconditioner
+  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
+  // preconditioner application
+  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+
  protected:
-  void SetUpModels_(const Teuchos::Ptr<State>& S);
   virtual bool modify_predictor_heuristic_(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up);
-  void initial_condition_from_frozen_column_(const Teuchos::Ptr<State>& S);
+
+  void InitializeModels_(const Teuchos::Ptr<State>& S);
+  void InitialConditionFromFrozenColumn_(const Teuchos::Ptr<State>& S);
 
   virtual void precon_ewc_(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<TreeVector> Pu);
@@ -82,7 +82,9 @@ public:
     PRECON_SMART_EWC = 4,
   };
 
-  double the_res_norm_;
+  // PKs
+  Teuchos::RCP<Flow::Richards> flow_pk_;
+  Teuchos::RCP<Energy::TwoPhase> energy_pk_;
 
   // preconditioner methods
   PreconditionerType precon_type_;
