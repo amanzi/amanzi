@@ -51,7 +51,9 @@ Richards::Richards(Teuchos::ParameterList& plist,
     coupled_to_surface_via_residual_(false),
     infiltrate_only_if_unfrozen_(false),
     modify_predictor_with_consistent_faces_(false),
-    niter_(0) {
+    niter_(0),
+    dynamic_mesh_(false)
+{
 
   // set a few parameters before setup
   plist_.set("primary variable key", "pressure");
@@ -311,6 +313,10 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
 #endif
+  
+  // check whether this is a dynamic mesh problem
+  if (S->HasField("vertex coordinate")) dynamic_mesh_ = true;
+
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);

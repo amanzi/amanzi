@@ -169,7 +169,7 @@ bool PrescribedDeformation::advance(double dt) {
       
     case 2: // this is denting the the mesh with a gaussian that is centered at (x,y) = (0,0)
       {
-        tmax_ = 3e7;
+        tmax_ = 3e10;
         sigma_ = .1;
         mag_ = 1.0;
         
