@@ -17,6 +17,7 @@ BDF.
 
 #include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
+#include "matrix.hh"
 #include "pk_default_base.hh"
 
 namespace Amanzi {
@@ -43,6 +44,12 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   // -- Choose a time step compatible with physics.
   virtual double get_dt();
 
+  // Operator access/mutate/use
+  virtual Teuchos::RCP<Operators::Matrix> preconditioner() { return preconditioner_; }
+  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner) {
+    preconditioner_ = preconditioner; }
+  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
   // -- Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool advance(double dt);
 
@@ -60,6 +67,9 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   bool backtracking_;
   int backtracking_count_;
   int backtracking_iterations_;
+
+  // operators
+  Teuchos::RCP<Operators::Matrix> preconditioner_;
 
   // timing
   Teuchos::RCP<Teuchos::Time> step_walltime_;

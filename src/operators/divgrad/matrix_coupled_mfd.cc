@@ -41,6 +41,7 @@
  */
 
 #include "Epetra_FECrsGraph.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
 #include "matrix_mfd.hh"
@@ -97,10 +98,10 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
   // pull X data
   Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->data();
   Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->data();
-  Epetra_MultiVector XA_c = *XA->ViewComponent("cell", false);
-  Epetra_MultiVector XB_c = *XA->ViewComponent("cell", false);
-  Epetra_MultiVector XA_f = *XA->ViewComponent("face", false);
-  Epetra_MultiVector XB_f = *XA->ViewComponent("face", false);
+  const Epetra_MultiVector& XA_c = *XA->ViewComponent("cell", false);
+  const Epetra_MultiVector& XB_c = *XB->ViewComponent("cell", false);
+  const Epetra_MultiVector& XA_f = *XA->ViewComponent("face", false);
+  const Epetra_MultiVector& XB_f = *XB->ViewComponent("face", false);
 
   // Temporary cell and face vectors.
   Epetra_MultiVector Xc(*double_cmap_, 1);
@@ -108,8 +109,6 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
 
   Epetra_MultiVector Yc(*double_cmap_, 1);
   Epetra_MultiVector Yf(*double_fmap_, 1);
-
-  Epetra_MultiVector test_res(*double_fmap_, 1);
 
   int ierr(0);
 
@@ -145,6 +144,8 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
+  std::cout << "Xf = " << Xf[0][0] << ", " << Xf[0][1] << std::endl;
+
   if (prec_method_ == TRILINOS_ML) {
     ierr = ml_prec_->ApplyInverse(Xf, Yf);
   } else if (prec_method_ == TRILINOS_ILU) {
@@ -160,10 +161,19 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
   }
   ASSERT(!ierr);
 
+
+  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
+  std::cout << "Yf = " << Yf[0][0] << ", " << Yf[0][1] << std::endl;
+
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
   // Yc <-- A2f2c * Yf
   ierr = A2f2c_->Multiply(false, Yf, Yc);
   ASSERT(!ierr);
+
+
+  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
+  std::cout << "Yc = " << Yc[0][0] << ", " << Yc[0][1] << std::endl;
+
 
   // Yc -= (x_Ac,x_Bc)^T
   for (int c=0; c!=ncells; ++c){
@@ -176,13 +186,17 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
   // Yc <-- -Yc
   Yc.Scale(-1.0);
 
+
+  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
+  std::cout << "Yc = " << Yc[0][0] << ", " << Yc[0][1] << std::endl;
+
   // pull Y data
-  Teuchos::RCP<const CompositeVector> YA = Y->SubVector(0)->data();
-  Teuchos::RCP<const CompositeVector> YB = Y->SubVector(1)->data();
-  Epetra_MultiVector YA_c = *YA->ViewComponent("cell", false);
-  Epetra_MultiVector YB_c = *YA->ViewComponent("cell", false);
-  Epetra_MultiVector YA_f = *YA->ViewComponent("face", false);
-  Epetra_MultiVector YB_f = *YA->ViewComponent("face", false);
+  Teuchos::RCP<CompositeVector> YA = Y->SubVector(0)->data();
+  Teuchos::RCP<CompositeVector> YB = Y->SubVector(1)->data();
+  Epetra_MultiVector& YA_c = *YA->ViewComponent("cell", false);
+  Epetra_MultiVector& YB_c = *YB->ViewComponent("cell", false);
+  Epetra_MultiVector& YA_f = *YA->ViewComponent("face", false);
+  Epetra_MultiVector& YB_f = *YB->ViewComponent("face", false);
 
   // Yc <-- inv(A2c2c) * Yc
   // Copy data back into Y-vectors
@@ -193,10 +207,21 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
         + A2c2c_cells_Inv_[c](1,1)*Yc[0][2*c + 1];
   }
 
+  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
+  std::cout << "YA_c = " << YA_c[0][0] << ", " << YA_c[0][99] << std::endl;
+  std::cout << "YB_c = " << YB_c[0][0] << ", " << YB_c[0][99] << std::endl;
+
+
   for (int f=0; f!=nfaces; ++f){
     YA_f[0][f] = Yf[0][2*f];
     YB_f[0][f] = Yf[0][2*f + 1];
   }
+
+  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
+  std::cout << "YA_f = " << YA_f[0][0] << ", " << YA_f[0][500] << std::endl;
+  std::cout << "YB_f = " << YB_f[0][0] << ", " << YB_f[0][500] << std::endl;
+
+
 }
 
 
@@ -348,6 +373,12 @@ void MatrixCoupledMFD::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
   ierr = P2f2f_->GlobalAssemble();
   ASSERT(!ierr);
   is_matrix_constructed_ = true;
+
+  // DEBUG dump
+  // std::stringstream filename_s;
+  // filename_s << "schur_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+
 }
 
 
