@@ -65,6 +65,15 @@ double PKBDFBase::get_dt() { return dt_; }
 
 
 // -----------------------------------------------------------------------------
+// Apply the preconditioner (default application).
+// -----------------------------------------------------------------------------
+void PKBDFBase::precon(Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> Pu) {
+  preconditioner_->ApplyInverse(*u, Pu.ptr());
+}
+
+
+// -----------------------------------------------------------------------------
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
 bool PKBDFBase::advance(double dt) {

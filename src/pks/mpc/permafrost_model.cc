@@ -10,6 +10,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "exceptions.hh"
 #include "eos.hh"
 #include "wrm_permafrost_model.hh"
 #include "vapor_pressure_relation.hh"
@@ -21,6 +22,9 @@
 #include "permafrost_model.hh"
 
 namespace Amanzi {
+
+#define DEBUG_FLAG 1
+
 
 bool PermafrostModel::IsSetUp() {
   if (wrm_ == Teuchos::null) return false;
@@ -41,45 +45,52 @@ bool PermafrostModel::IsSetUp() {
 
 
 int PermafrostModel::EvaluateEnergyAndWaterContent(double T, double p, double poro, AmanziGeometry::Point& result) {
-  double eff_p = std::max(p_atm_, p);
+  int ierr = 0;
 
-  double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-  double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
-  double rho_i = ice_eos_->MolarDensity(T,eff_p);
-  double rho_g = gas_eos_->MolarDensity(T,eff_p);
+  try {
+    double eff_p = std::max(p_atm_, p);
 
-  double omega = vpr_->SaturatedVaporPressure(T)/p_atm_;
-
-  double pc_i;
-  if (pc_i_->IsMolarBasis()) {
-    pc_i = pc_i_->CapillaryPressure(T, rho_l);
-  } else {
+    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
     double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
-    pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
+    double rho_i = ice_eos_->MolarDensity(T,eff_p);
+    double rho_g = gas_eos_->MolarDensity(T,eff_p);
+    double omega = vpr_->SaturatedVaporPressure(T)/p_atm_;
+
+    double pc_i;
+    if (pc_i_->IsMolarBasis()) {
+      pc_i = pc_i_->CapillaryPressure(T, rho_l);
+    } else {
+      double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+      pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
+    }
+
+    double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
+
+    double sats[3];
+    wrm_->saturations(pc_l, pc_i, sats);
+    double s_g = sats[0];
+    double s_l = sats[1];
+    double s_i = sats[2];
+
+    double u_l = liquid_iem_->InternalEnergy(T);
+    double u_g = gas_iem_->InternalEnergy(T, omega);
+    double u_i = ice_iem_->InternalEnergy(T);
+
+    double u_rock = rock_iem_->InternalEnergy(T);
+
+    // water content
+    result[1] = poro * (rho_l * s_l + rho_i * s_i + rho_g * s_g * omega);
+
+    // energy
+    result[0] = poro * (u_l * rho_l * s_l + u_i * rho_i * s_i + u_g * rho_g * s_g)
+        + (1.0 - poro) * (rho_rock_ * u_rock);
+  } catch (const Exceptions::Amanzi_exception& e) {
+    if (e.what() == std::string("Cut time step")) {
+      ierr = 1;
+    }
   }
 
-  double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
-
-  double sats[3];
-  wrm_->saturations(pc_l, pc_i, sats);
-  double s_g = sats[0];
-  double s_l = sats[1];
-  double s_i = sats[2];
-
-  double u_l = liquid_iem_->InternalEnergy(T);
-  double u_g = gas_iem_->InternalEnergy(T, omega);
-  double u_i = ice_iem_->InternalEnergy(T);
-
-  double u_rock = rock_iem_->InternalEnergy(T);
-
-  // water content
-  result[1] = poro * (rho_l * s_l + rho_i * s_i + rho_g * s_g * omega);
-
-  // energy
-  result[0] = poro * (u_l * rho_l * s_l + u_i * rho_i * s_i + u_g * rho_g * s_g)
-      + (1.0 - poro) * (rho_rock_ * u_rock);
-
-  return 0;
+  return ierr;
 }
 
 
@@ -94,16 +105,21 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
   double eps_T = 1.e-7;
   double eps_p = 1.e-3;
 
-  EvaluateEnergyAndWaterContent(T, p, poro, result);
+  int ierr = EvaluateEnergyAndWaterContent(T, p, poro, result);
+  if (ierr) return ierr;
 
   AmanziGeometry::Point test(result);
   // d / dT
-  EvaluateEnergyAndWaterContent(T+eps_T, p, poro, test);
+  ierr = EvaluateEnergyAndWaterContent(T+eps_T, p, poro, test);
+  if (ierr) return ierr;
+
   jac(0,0) = (test[0] - result[0]) / (eps_T);
   jac(1,0) = (test[1] - result[1]) / (eps_T);
 
   // d / dp
-  EvaluateEnergyAndWaterContent(T, p + eps_p, poro, test);
+  ierr = EvaluateEnergyAndWaterContent(T, p + eps_p, poro, test);
+  if (ierr) return ierr;
+
   jac(0,1) = (test[0] - result[0]) / (eps_p);
   jac(1,1) = (test[1] - result[1]) / (eps_p);
 
@@ -174,6 +190,11 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
     return ierr + 10;
   }
 
+#if DEBUG_FLAG
+  std::cout << "Inverse Evaluating, e=" << energy << ", wc=" << wc << std::endl;
+  std::cout << "   guess T,p (res) = " << T << ", " << p << " (" << res[0] << ", " << res[1] << ")" << std::endl;
+#endif
+
   AmanziGeometry::Point f(2);
   f[0] = energy;
   f[1] = wc;
@@ -218,8 +239,12 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
       std::cout << "Error in evaluation: " << ierr << std::endl;
       return ierr + 10;
     }
-
     res = res - f;
+
+#if DEBUG_FLAG
+      std::cout << "  Iter: " << stepnum;
+      std::cout << " corrected T,p (res) = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ")" << std::endl;
+#endif
 
     // check convergence and damping
     scaled_res[0] = res[0] / e_scale; scaled_res[1] = res[1] / wc_scale;
@@ -241,6 +266,11 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
         return ierr + 10;
       }
       res = res - f;
+
+#if DEBUG_FLAG
+      std::cout << "    Damping: " << stepnum;
+      std::cout << " corrected T,p (res) = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ")" << std::endl;
+#endif
 
       // check the new residual
       scaled_res[0] = res[0] / e_scale; scaled_res[1] = res[1] / wc_scale;

@@ -59,7 +59,6 @@ protected:
 
   // simple heat condution term, q = K_s2a * (Tair - Tsurf)
   // air temperature function of time (not space)
-  Teuchos::RCP<Function> air_temp_;
   double K_surface_to_air_;
 
   // flags

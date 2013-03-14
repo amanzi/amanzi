@@ -203,7 +203,7 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #endif
 
   // apply the preconditioner
-  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+  preconditioner_->ApplyInverse(*u, Pu.ptr());
 
   // Dump correction
 #if DEBUG_FLAG
@@ -326,8 +326,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       // These are already updated for UpdatePerm
       Teuchos::RCP<const CompositeVector> depth =
           S_next_->GetFieldData("ponded_depth");
-      Teuchos::RCP<const CompositeVector> ddepth_dp =
-          S_next_->GetFieldData("dponded_depth_dsurface_pressure");
       Teuchos::RCP<const CompositeVector> pres_elev =
           S_next_->GetFieldData("pres_elev");
 
@@ -340,7 +338,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
           S_next_->GetFieldData("doverland_conductivity_dsurface_pressure");
       CompositeVector dcond_dh(*dcond_dp);
       dcond_dh.CreateData();
-      dcond_dh.ReciprocalMultiply(1., *ddepth_dp, *dcond_dp, 0.);
+      dcond_dh.ViewComponent("cell",false)->ReciprocalMultiply(1., dh_dp,
+                  *dcond_dp->ViewComponent("cell",false), 0.);
 
 
       // Krel_cell gets n_liq
@@ -352,11 +351,11 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
       S_next_->GetFieldEvaluator("surface_molar_density_liquid")
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-      Teuchos::RCP<const Epetra_MultiVector> dn_liq_dp =
-          S_next_->GetFieldData("dsurface_molar_density_liquid_dsurface_pressure")
+      const Epetra_MultiVector& dn_liq_dp =
+          *S_next_->GetFieldData("dsurface_molar_density_liquid_dsurface_pressure")
                   ->ViewComponent("cell",false);
       duw_cond_cell_dh.ViewComponent("cell",false)
-          ->ReciprocalMultiply(1., dh_dp, *dn_liq_dp, 0.);
+          ->ReciprocalMultiply(1., dh_dp, dn_liq_dp, 0.);
 
       // Add in the Jacobian
       tpfa_preconditioner_->AnalyticJacobian(*depth, *pres_elev, *cond, dcond_dh,
@@ -428,7 +427,8 @@ void OverlandHeadFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> 
 double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
   // Calculate water content at the solution.
-  S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface_water_content")
+      ->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& wc = *S_next_->GetFieldData("surface_water_content")
       ->ViewComponent("cell",false);
 

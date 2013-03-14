@@ -53,13 +53,6 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   //    state.
   virtual void changed_solution();
 
-  // Operator access/mutate
-  virtual Teuchos::RCP<Operators::Matrix> preconditioner() { return preconditioner_; }
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner) {
-    preconditioner_ = preconditioner; }
-
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-
   // BC access
   std::vector<Operators::Matrix_bc>& bc_markers() { return bc_markers_; }
   std::vector<double>& bc_values() { return bc_values_; }
@@ -72,9 +65,6 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
 
  protected:
-  // operators
-  Teuchos::RCP<Operators::Matrix> preconditioner_;
-
   // BCs
   std::vector<Operators::Matrix_bc> bc_markers_;
   std::vector<double> bc_values_;

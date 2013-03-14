@@ -9,6 +9,8 @@ Authors: Neil Carlson (version 1)
 ------------------------------------------------------------------------- */
 #include "boost/math/special_functions/fpclassify.hpp"
 
+#include "Epetra_Import.h"
+
 #include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 
@@ -52,7 +54,9 @@ Richards::Richards(Teuchos::ParameterList& plist,
     coupled_to_surface_via_residual_new_(false),
     infiltrate_only_if_unfrozen_(false),
     modify_predictor_with_consistent_faces_(false),
-    niter_(0) {
+    niter_(0),
+    dynamic_mesh_(false)
+{
 
   // set a few parameters before setup
   plist_.set("primary variable key", "pressure");
@@ -76,7 +80,6 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
 void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // Require fields and evaluators for those fields.
-  // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
   std::vector<AmanziMesh::Entity_kind> locations2(2);
   std::vector<std::string> names2(2);
   std::vector<int> num_dofs2(2,1);
@@ -85,10 +88,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
+  // -- primary variable: pressure on both cells and faces, ghosted, with 1 dof
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
                     ->SetComponents(names2, locations2, num_dofs2);
 
 #if DEBUG_RES_FLAG
+  // -- residuals of various iterations for debugging
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
     namestream << "flow_residual_" << i;
@@ -269,15 +274,25 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<RichardsWaterContent> wc = Teuchos::rcp(new RichardsWaterContent(wc_plist));
   S->SetFieldEvaluator("water_content", wc);
 
-  // -- Water retention evaluators, for saturation and rel perm.
-  S->RequireField("relative_permeability")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // -- Water retention evaluators
+  // -- saturation
   Teuchos::ParameterList wrm_plist = plist_.sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMEvaluator(wrm_plist));
   S->SetFieldEvaluator("saturation_liquid", wrm);
   S->SetFieldEvaluator("saturation_gas", wrm);
 
+  // -- rel perm
+  std::vector<AmanziMesh::Entity_kind> locations2(2);
+  std::vector<std::string> names2(2);
+  std::vector<int> num_dofs2(2,1);
+  locations2[0] = AmanziMesh::CELL;
+  locations2[1] = AmanziMesh::BOUNDARY_FACE;
+  names2[0] = "cell";
+  names2[1] = "boundary_face";
+
+  S->RequireField("relative_permeability")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponents(names2, locations2, num_dofs2);
   Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
       Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
@@ -320,6 +335,10 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
 #endif
+  
+  // check whether this is a dynamic mesh problem
+  if (S->HasField("vertex coordinate")) dynamic_mesh_ = true;
+
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -506,35 +525,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   }
 
   if (update_perm) {
-    // patch up the BCs
-    const double& p_atm = *S->GetScalarData("atmospheric_pressure");
-    const Epetra_MultiVector& pres_f = *S->GetFieldData(key_)
-        ->ViewComponent("face",false);
-    for (int f=0; f!=uw_rel_perm->size("face",false); ++f) {
-      AmanziMesh::Entity_ID_List cells;
-      uw_rel_perm->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
-      if (cells.size() == 1) {
-        (*uw_rel_perm)("face",f) = wrms_->second[ (*wrms_->first)[cells[0]] ]
-          ->k_relative(p_atm - pres_f[0][f]);
-      }
-    }
-
-    if (coupled_to_surface_via_residual_ ||
-        coupled_to_surface_via_residual_new_ ||
-        coupled_to_surface_via_full_ ||
-        coupled_to_surface_via_head_ ||
-        coupled_to_surface_via_flux_) {
-      // patch up the rel perm on surface
-      Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-
-      int ncells_surface = surface->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-
-      for (int c=0; c!=ncells_surface; ++c) {
-        // -- get the surface cell's equivalent subsurface face and neighboring cell
-        AmanziMesh::Entity_ID f = surface->entity_get_parent(AmanziMesh::CELL, c);
-        (*uw_rel_perm)("face",f) = 1.0;
-      }
-    }
+    // patch up the BCs -- move rel perm on boundary_faces into uw_rel_perm on faces
+    const Epetra_Import& vandelay = mesh_->exterior_face_importer();
+    const Epetra_MultiVector& rel_perm_bf =
+        *rel_perm->ViewComponent("boundary_face",false);
+    Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+    uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
 
     // upwind
     upwinding_->Update(S);

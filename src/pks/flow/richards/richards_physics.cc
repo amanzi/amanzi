@@ -25,7 +25,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // update the stiffness matrix
   Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData("numerical_rel_perm", name_);
+    S->GetFieldData("numerical_rel_perm");
   matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
 
   // derive fluxes

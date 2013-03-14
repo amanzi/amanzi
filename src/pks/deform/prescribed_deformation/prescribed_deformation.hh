@@ -53,6 +53,13 @@ class PrescribedDeformation : public PKPhysicalBase {
   virtual double get_dt() { return 1.0e99; }
   
  private:
+
+  int prescribed_deformation_case_;
+  double deformation_fn_2(double x, double y, double t);
+  double tmax_, sigma_, mag_;
+
+
+
   // A few options for advance
   bool advance_analytic_(double dt);
   

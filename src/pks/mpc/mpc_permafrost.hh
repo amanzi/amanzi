@@ -5,60 +5,72 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Interface for the derived MPC for flow and energy.  This couples using a
-block-diagonal coupler.
+MPC for the Coupled Permafrost model.  This MPC sits at the top of the
+subtree:
+
+                    MPCPermafrost
+                     /          \
+                    /            \
+                   /              \
+         surf/subsurf            surf/subsurf
+           water                   energy
+         /      \                  /      \
+        /        \                /        \
+    flow/        flow/         energy/     energy/
+  permafrost  icy_overland    threephase    surface_ice
+
 ------------------------------------------------------------------------- */
 
-#ifndef MPC_FROZEN_PREC_COUPLED_FLOW_ENERGY_HH_
+#ifndef MPC_PERMAFROST_HH_
 #define MPC_FROZEN_PREC_COUPLED_FLOW_ENERGY_HH_
 
-#include "mpc_coupled_cells.hh"
+#include "mpc_coupled_flow_energy.hh"
 
 namespace Amanzi {
 
 class PermafrostModel;
-namespace Flow { class Richards; }
-namespace Energy { class TwoPhase; }
 
-class MPCFrozenCoupledFlowEnergy : public MPCCoupledCells {
+class MPCPermafrost : public MPCCoupledFlowEnergy {
 
 public:
-  MPCFrozenCoupledFlowEnergy(Teuchos::ParameterList& plist,
+  MPCPermafrost(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCCoupledCells(plist, soln),
+      MPCCoupledFlowEnergy(plist, soln),
       consistent_by_average_(false) {}
 
   // Virtual destructor
-  virtual ~MPCFrozenCoupledFlowEnergy() {}
+  virtual ~MPCPermafrost() {}
+
+  virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
+
+  // preconditioner application
+  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  // updates the preconditioner
+  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
+  // update the predictor to be physically consistent
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // -- Initialize owned (dependent) variables.
   virtual void setup(const Teuchos::Ptr<State>& S);
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
+  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
+
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
-
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
-
-  // update the predictor to be physically consistent
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
-
-  // updates the preconditioner
-  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-
-  // preconditioner application
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-
-
  protected:
+  void SetUpModels_(const Teuchos::Ptr<State>& S);
   virtual bool modify_predictor_heuristic_(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up);
-
-  void InitializeModels_(const Teuchos::Ptr<State>& S);
-  void InitialConditionFromFrozenColumn_(const Teuchos::Ptr<State>& S);
+  void initial_condition_from_frozen_column_(const Teuchos::Ptr<State>& S);
 
   virtual void precon_ewc_(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<TreeVector> Pu);
@@ -82,9 +94,7 @@ public:
     PRECON_SMART_EWC = 4,
   };
 
-  // PKs
-  Teuchos::RCP<Flow::Richards> flow_pk_;
-  Teuchos::RCP<Energy::TwoPhase> energy_pk_;
+  double the_res_norm_;
 
   // preconditioner methods
   PreconditionerType precon_type_;
@@ -106,7 +116,7 @@ public:
 
 private:
   // factory registration
-  static RegisteredPKFactory<MPCFrozenCoupledFlowEnergy> reg_;
+  static RegisteredPKFactory<MPCPermafrost> reg_;
 
 };
 } // namespace

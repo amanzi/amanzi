@@ -38,8 +38,6 @@ class IcyOverlandFlow : public OverlandHeadFlow {
   // setup methods
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
-  virtual bool UpdatePermeabilityData_(const Teuchos::Ptr<State>& S);
-
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
 
  protected:

@@ -33,6 +33,8 @@ void Richards::fun(double t_old,
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
+  if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
+  
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
@@ -50,16 +52,13 @@ void Richards::fun(double t_old,
     *out_ << "----------------------------------------------------------------" << std::endl;
     *out_ << "Richards Residual calculation: T0 = " << t_old
           << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << "  p0: " << (*u)("cell",c0_) << " "
-        //          << (*u)("face",fnums0[0])
-          << (*u)("face",fnums0[0]) << " " << (*u)("face",fnums0[1]) << " "
-          << (*u)("face",fnums0[2]) << " " << (*u)("face",fnums0[3])
-          << std::endl;
-    *out_ << "  p1: " << (*u)("cell",c1_) << " "
-        //          << (*u)("face",fnums[0])
-          << (*u)("face",fnums[0]) << " " << (*u)("face",fnums[1]) << " "
-          << (*u)("face",fnums[2]) << " " << (*u)("face",fnums[3])
-          << std::endl;
+    *out_ << "  p0: " << (*u)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "  p1: " << (*u)("cell",c1_);
+    for (int n=0; n!=fnums.size(); ++n) *out_ << ",  " << (*u)("face",fnums[n]);
+    *out_ << std::endl;
+
   }
 #endif
 
@@ -85,6 +84,18 @@ void Richards::fun(double t_old,
     Teuchos::RCP<const CompositeVector> satl0 =
         S_inter_->GetFieldData("saturation_liquid");
 
+
+    Teuchos::RCP<const CompositeVector> relperm =
+        S_next_->GetFieldData("relative_permeability");
+    Teuchos::RCP<const Epetra_MultiVector> relperm_bf =
+        relperm->ViewComponent("boundary_face",false);
+    Teuchos::RCP<const CompositeVector> uw_relperm =
+        S_next_->GetFieldData("numerical_rel_perm");
+    Teuchos::RCP<const Epetra_MultiVector> uw_relperm_bf =
+        uw_relperm->ViewComponent("boundary_face",false);
+    Teuchos::RCP<const CompositeVector> flux_dir =
+        S_next_->GetFieldData("darcy_flux_direction");
+
     if (S_next_->HasField("saturation_ice")) {
       Teuchos::RCP<const CompositeVector> sati1 =
           S_next_->GetFieldData("saturation_ice");
@@ -105,11 +116,16 @@ void Richards::fun(double t_old,
       *out_ << "    sat_new_1: " << (*satl1)("cell",c1_) << std::endl;
     }
 
+    *out_ << "    k_rel0: " << (*uw_relperm)("cell",c0_) << " "
+          << (*uw_relperm)("face",fnums0[0]) << std::endl;
+    *out_ << "    k_rel1: " << (*uw_relperm)("cell",c1_) << " "
+          << (*uw_relperm)("face",fnums[1]) << std::endl;
+
 
     *out_ << "  res0 (after diffusion): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
     *out_ << "  res1 (after diffusion): " << (*res)("cell",c1_)
-          << " " << (*res)("face",fnums[0]) << std::endl;
+          << " " << (*res)("face",fnums[1]) << std::endl;
   }
 #endif
 
@@ -121,7 +137,7 @@ void Richards::fun(double t_old,
     *out_ << "  res0 (after accumulation): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
     *out_ << "  res1 (after accumulation): " << (*res)("cell",c1_)
-          << " " << (*res)("face",fnums[0]) << std::endl;
+          << " " << (*res)("face",fnums[1]) << std::endl;
   }
 #endif
 
@@ -157,12 +173,12 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
     *out_ << "  p0: " << (*u->data())("cell",c0_) << " "
           << (*u->data())("face",fnums0[0]) << std::endl;
     *out_ << "  p1: " << (*u->data())("cell",c1_) << " "
-          << (*u->data())("face",fnums[0]) << std::endl;
+          << (*u->data())("face",fnums[1]) << std::endl;
   }
 #endif
 
   // Apply the preconditioner
-  preconditioner_->ApplyInverse(*u->data(), Pu->data().ptr());
+  preconditioner_->ApplyInverse(*u, Pu.ptr());
 
 #if DEBUG_FLAG
   // Dump correction
@@ -170,7 +186,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
     *out_ << "  PC*p0: " << (*Pu->data())("cell",c0_) << " "
           << (*Pu->data())("face",fnums0[0]) << std::endl;
     *out_ << "  PC*p1: " << (*Pu->data())("cell",c1_) << " "
-          << (*Pu->data())("face",fnums[0]) << std::endl;
+          << (*Pu->data())("face",fnums[1]) << std::endl;
   }
 #endif
 };
@@ -188,6 +204,11 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     *out_ << "Precon update at t = " << t << std::endl;
   }
 #endif
+  
+  if (dynamic_mesh_) {
+    matrix_->CreateMFDmassMatrices(K_.ptr());
+    mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
+  }
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);

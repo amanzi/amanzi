@@ -62,18 +62,45 @@ void RelPermEvaluator::InitializeFromPlist_() {
 void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
+  // initialize the MeshPartition if needed to make sure all cells are covered
   if (!wrms_->first->initialized()) wrms_->first->Initialize(result->mesh());
 
-  const Epetra_MultiVector& sat = *S->GetFieldData(sat_key_)->ViewComponent("cell",false);
-  const Epetra_MultiVector& res_v = *result->ViewComponent("cell",false);
+  const Epetra_MultiVector& sat_c = *S->GetFieldData(sat_key_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& res_v = *result->ViewComponent("cell",false);
 
   // Evaluate the evaluator to calculate sat.
   int ncells = res_v.MyLength();
   for (int c=0; c!=ncells; ++c) {
     int index = (*wrms_->first)[c];
-    double pc = wrms_->second[index]->capillaryPressure(sat[0][c]);
+    double pc = wrms_->second[index]->capillaryPressure(sat_c[0][c]);
     res_v[0][c] = std::max(wrms_->second[index]->k_relative(pc), min_val_);
   }
+
+  // Potentially do face values as well.
+  if (result->has_component("boundary_face")) {
+    const Epetra_MultiVector& sat_bf = *S->GetFieldData(sat_key_)
+        ->ViewComponent("boundary_face",false);
+    Epetra_MultiVector& res_v = *result->ViewComponent("boundary_face",false);
+
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->mesh();
+    const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+
+    // Evaluate the evaluator to calculate sat.
+    AmanziMesh::Entity_ID_List cells;
+    int nbfaces = res_v.MyLength();
+    for (int bf=0; bf!=nbfaces; ++bf) {
+      // given a boundary face, we need the internal cell to choose the right WRM
+      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+
+      int index = (*wrms_->first)[cells[0]];
+      double pc = wrms_->second[index]->capillaryPressure(sat_bf[0][bf]);
+      res_v[0][bf] = std::max(wrms_->second[index]->k_relative(pc), min_val_);
+    }
+  }
+
 }
 
 

@@ -13,7 +13,7 @@
 
 namespace Amanzi {
 
-class CompositeVector;
+class TreeVector;
 
 namespace Operators {
 
@@ -28,10 +28,10 @@ enum Matrix_bc {
 class Matrix {
 
 public:
-  virtual void Apply(const CompositeVector& X,
-                     const Teuchos::Ptr<CompositeVector>& Y) const = 0;
-  virtual void ApplyInverse(const CompositeVector& X,
-                            const Teuchos::Ptr<CompositeVector>& Y) const = 0;
+  virtual void Apply(const TreeVector& X,
+                     const Teuchos::Ptr<TreeVector>& Y) const = 0;
+  virtual void ApplyInverse(const TreeVector& X,
+                            const Teuchos::Ptr<TreeVector>& Y) const = 0;
 
 };
 

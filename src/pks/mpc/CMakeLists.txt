@@ -20,9 +20,10 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 
-add_library(mpc mpc.cc weak_mpc.cc strong_mpc.cc
-  mpc_diagonal_flow_energy.cc
-  mpc_coupled_flow_energy.cc
+add_library(mpc mpc.cc
+  weak_mpc.cc
+  strong_mpc.cc
+  mpc_coupled_cells.cc
   mpc_frozen_coupled_flow_energy.cc
   permafrost_model.cc
   mpc_surface_subsurface_coupler.cc

@@ -12,6 +12,7 @@ include_directories(upwind_scheme)
 add_library(divgrad matrix_mfd.cc
                     matrix_mfd_tpfa.cc
                     matrix_mfd_surf.cc
+                    matrix_coupled_mfd.cc
                     upwind_scheme/upwind_cell_centered.cc
                     upwind_scheme/upwind_arithmetic_mean.cc
                     upwind_scheme/upwind_total_flux.cc
