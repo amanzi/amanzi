@@ -17,27 +17,27 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
 
-#include "field.hh"
+#include "Field.hh"
 
 namespace Amanzi {
 
-class FieldConstantVector : public Field {
+class Field_ConstantVector : public Field {
 
 public:
   // constructors
-  FieldConstantVector(std::string fieldname, std::string owner);
-  FieldConstantVector(std::string fieldname, std::string owner, int dimension);
-  FieldConstantVector(std::string fieldname, std::string owner,
+  Field_ConstantVector(std::string fieldname, std::string owner);
+  Field_ConstantVector(std::string fieldname, std::string owner, int dimension);
+  Field_ConstantVector(std::string fieldname, std::string owner,
                        Teuchos::RCP<Epetra_Vector>& data);
 
   // copy constructor and assignment
-  explicit FieldConstantVector(const FieldConstantVector& other);
+  explicit Field_ConstantVector(const Field_ConstantVector& other);
   virtual Teuchos::RCP<Field> Clone() const;
   virtual Teuchos::RCP<Field> Clone(std::string fieldname) const;
   virtual Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const;
 
   // destructor
-  ~FieldConstantVector() {}
+  ~Field_ConstantVector() {}
 
   // Creation of the actual data (data is created lazily, allowing empty fields).
   virtual void CreateData();
@@ -75,7 +75,7 @@ protected:
 
 private:
   // operator= disabled
-  FieldConstantVector& operator=(const FieldConstantVector&);
+  Field_ConstantVector& operator=(const Field_ConstantVector&);
 
 }; // class Field
 

@@ -21,7 +21,7 @@ dependency tree.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "state.hh"
+#include "State.hh"
 
 namespace Amanzi {
 

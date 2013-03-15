@@ -17,7 +17,9 @@ accessing the new state-dev from the old Flow PK.
 #include "Teuchos_ParameterList.hpp"
 
 #include "Mesh.hh"
-#include "state.hh"
+#include "State.hh"
+
+namespace Amanzi {
 
 class PK_State {
 
@@ -28,14 +30,14 @@ public:
     PK_STATE_CONSTRUCT_MODE_VIEW_DATA_GHOSTED,
     PK_STATE_CONSTRUCT_MODE_COPY_DATA,
     PK_STATE_CONSTRUCT_MODE_COPY_DATA_GHOSTED,
-  }
+  };
 
   PK_State(std::string name, Teuchos::RCP<AmanziMesh::Mesh> mesh);
   PK_State(std::string name, Teuchos::RCP<State> S);
   PK_State(std::string name, State& S);
-  PK_State(PK_State& other, ConstructMode mode=CONSTRUCT_MODE_COPY_POINTERS);
+  PK_State(PK_State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_POINTERS);
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
 
   // data management
   void CopyMasterCell2GhostCell(Epetra_Vector& v);
@@ -51,6 +53,9 @@ public:
   Epetra_Vector* CreateCellView(const Epetra_Vector& u) const;
   Epetra_Vector* CreateFaceView(const Epetra_Vector& u) const;
 
+  double normLpCell(const Epetra_Vector& v1, double p);
+  double normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p);
+
   // extension of Trilinos
   void MinValueMasterCells(Epetra_MultiVector& v, double* vmin);
   void MaxValueMasterCells(Epetra_MultiVector& v, double* vmax);
@@ -58,7 +63,12 @@ public:
 protected:
 
   Teuchos::RCP<State> S_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::string name_;
   bool ghosted_;
 };
+
+
+} // namespace
+
+#endif

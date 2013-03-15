@@ -16,27 +16,27 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include <string>
 #include "Teuchos_RCP.hpp"
 
-#include "field.hh"
+#include "Field.hh"
 
 namespace Amanzi {
 
 class Function;
 
-class FieldScalar : public Field {
+class Field_Scalar : public Field {
 
 public:
   // constructors
-  FieldScalar(std::string fieldname, std::string owner);
-  FieldScalar(std::string fieldname, std::string owner, Teuchos::RCP<double>& data);
+  Field_Scalar(std::string fieldname, std::string owner);
+  Field_Scalar(std::string fieldname, std::string owner, Teuchos::RCP<double>& data);
 
   // copy constructor and assignment
-  explicit FieldScalar(const FieldScalar& other);
+  explicit Field_Scalar(const Field_Scalar& other);
   virtual Teuchos::RCP<Field> Clone() const;
   virtual Teuchos::RCP<Field> Clone(std::string fieldname) const;
   virtual Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const;
 
   // destructor
-  ~FieldScalar() {}
+  ~Field_Scalar() {}
 
   // Creation of the actual data (data is created lazily, allowing empty fields).
   virtual void CreateData();
@@ -65,7 +65,7 @@ public:
 
 private:
   // operator= disabled
-  FieldScalar& operator=(const FieldScalar&);
+  Field_Scalar& operator=(const Field_Scalar&);
 
 }; // class Field
 

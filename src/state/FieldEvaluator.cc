@@ -11,7 +11,7 @@ dependency tree.
 ------------------------------------------------------------------------- */
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "field_evaluator.hh"
+#include "FieldEvaluator.hh"
 
 
 namespace Amanzi {

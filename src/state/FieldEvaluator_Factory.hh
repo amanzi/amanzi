@@ -13,12 +13,12 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "field_evaluator.hh"
+#include "FieldEvaluator.hh"
 #include "factory.hh"
 
 namespace Amanzi {
 
-class FieldEvaluatorFactory : public Utils::Factory<FieldEvaluator> {
+class FieldEvaluator_Factory : public Utils::Factory<FieldEvaluator> {
 
 public:
   Teuchos::RCP<FieldEvaluator> createFieldEvaluator(Teuchos::ParameterList& plist);

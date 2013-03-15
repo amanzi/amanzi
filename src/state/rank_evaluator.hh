@@ -12,12 +12,12 @@ A field evaluator for MPI ranks.
 #ifndef AMANZI_COMM_RANK_FIELD_EVALUATOR_
 #define AMANZI_COMM_RANK_FIELD_EVALUATOR_
 
-#include "field_evaluator.hh"
-#include "field_evaluator_factory.hh"
+#include "FieldEvaluator.hh"
+#include "FieldEvaluator_Factory.hh"
 
 namespace Amanzi {
 
-class RankModel : public FieldEvaluator {
+class RankEvaluator : public FieldEvaluator {
 
  public:
 
@@ -25,9 +25,9 @@ class RankModel : public FieldEvaluator {
   // Constructors
   // ---------------------------------------------------------------------------
   explicit
-  RankModel(Teuchos::ParameterList& plist);
+  RankEvaluator(Teuchos::ParameterList& plist);
 
-  RankModel(const RankModel& other);
+  RankEvaluator(const RankEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
   virtual void operator=(const FieldEvaluator& other) {};
@@ -65,7 +65,7 @@ class RankModel : public FieldEvaluator {
   bool computed_once_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,RankModel> fac_;
+  static Utils::RegisteredFactory<FieldEvaluator,RankEvaluator> fac_;
 };
 
 } // namespace

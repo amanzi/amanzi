@@ -22,11 +22,11 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "composite_vector.hh"
 #include "function-factory.hh"
 #include "function.hh"
-#include "field_evaluator_factory.hh"
+#include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
 #include "rank_evaluator.hh"
 
-#include "state.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
@@ -42,22 +42,35 @@ State::State(Teuchos::ParameterList& state_plist) :
 //
 // Could get a better implementation with a CopyMode, see TransportState in
 // Amanzi as an example.  I'm not sure its needed at this point, however.
-State::State(const State& other) :
+State::State(const State& other, StateConstructMode mode) :
     state_plist_(other.state_plist_),
     meshes_(other.meshes_),
     field_factories_(other.field_factories_),
     time_(other.time_),
     cycle_(other.cycle_) {
 
-  for (FieldMap::const_iterator f_it=other.fields_.begin();
-       f_it!=other.fields_.end(); ++f_it) {
-    fields_[f_it->first] = f_it->second->Clone();
+  if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
+    for (FieldMap::const_iterator f_it=other.fields_.begin();
+         f_it!=other.fields_.end(); ++f_it) {
+      fields_[f_it->first] = f_it->second->Clone();
+    }
+
+    for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
+         fm_it!=other.field_evaluators_.end(); ++fm_it) {
+      field_evaluators_[fm_it->first] = fm_it->second->Clone();
+    }
+  } else {
+    for (FieldMap::const_iterator f_it=other.fields_.begin();
+         f_it!=other.fields_.end(); ++f_it) {
+      fields_[f_it->first] = f_it->second;
+    }
+
+    for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
+         fm_it!=other.field_evaluators_.end(); ++fm_it) {
+      field_evaluators_[fm_it->first] = fm_it->second;
+    }
   }
 
-  for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
-       fm_it!=other.field_evaluators_.end(); ++fm_it) {
-    field_evaluators_[fm_it->first] = fm_it->second->Clone();
-  }
 };
 
 // operator=:
@@ -206,7 +219,7 @@ State::RequireFieldEvaluator(Key key) {
       }
 
       // -- Create and set the evaluator.
-      FieldEvaluatorFactory evaluator_factory;
+      FieldEvaluator_Factory evaluator_factory;
       evaluator = evaluator_factory.createFieldEvaluator(sublist);
       SetFieldEvaluator(key, evaluator);
     }
@@ -254,7 +267,7 @@ State::RequireFieldEvaluator(Key key, Teuchos::ParameterList& plist) {
   // Create a new evaluator.
   if (evaluator == Teuchos::null) {
     // -- Create and set the evaluator.
-    FieldEvaluatorFactory evaluator_factory;
+    FieldEvaluator_Factory evaluator_factory;
     evaluator = evaluator_factory.createFieldEvaluator(plist);
     SetFieldEvaluator(key, evaluator);
   }
@@ -317,7 +330,7 @@ void State::RequireScalar(Key fieldname, Key owner) {
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname, CONSTANT_SCALAR, owner);
 
   if (field == Teuchos::null) {
-    Teuchos::RCP<FieldScalar> newfield = Teuchos::rcp(new FieldScalar(fieldname, owner));
+    Teuchos::RCP<Field_Scalar> newfield = Teuchos::rcp(new Field_Scalar(fieldname, owner));
     fields_[fieldname] = newfield;
   } else if (owner != Key("state")) {
     field->set_owner(owner);
@@ -331,12 +344,12 @@ void State::RequireConstantVector(Key fieldname, Key owner,
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname, CONSTANT_VECTOR, owner);
 
   if (field == Teuchos::null) {
-    Teuchos::RCP<FieldConstantVector> field =
-        Teuchos::rcp(new FieldConstantVector(fieldname, Key("state"), dimension));
+    Teuchos::RCP<Field_ConstantVector> field =
+        Teuchos::rcp(new Field_ConstantVector(fieldname, Key("state"), dimension));
     fields_[fieldname] = field;
   } else {
-    Teuchos::RCP<FieldConstantVector> cv =
-        Teuchos::rcp_static_cast<FieldConstantVector>(field);
+    Teuchos::RCP<Field_ConstantVector> cv =
+        Teuchos::rcp_static_cast<Field_ConstantVector>(field);
     cv->set_dimension(dimension);
 
     if (owner != Key("state")) {
@@ -357,8 +370,8 @@ State::RequireField(Key fieldname, Key owner) {
 
   if (field == Teuchos::null) {
     // Create the field and CV factory.
-    Teuchos::RCP<FieldCompositeVector> field =
-        Teuchos::rcp(new FieldCompositeVector(fieldname, owner));
+    Teuchos::RCP<Field_CompositeVector> field =
+        Teuchos::rcp(new Field_CompositeVector(fieldname, owner));
     fields_[fieldname] = field;
     field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorFactory());
   } else if (owner != Key("state")) {
@@ -378,8 +391,8 @@ void State::RequireGravity() {
   if (dim > 1) subfield_names[1] = "y";
   if (dim > 2) subfield_names[2] = "z";
   Teuchos::RCP<Field> field = GetField_(fieldname);
-  Teuchos::RCP<FieldConstantVector> cvfield =
-    Teuchos::rcp_dynamic_cast<FieldConstantVector>(field, true);
+  Teuchos::RCP<Field_ConstantVector> cvfield =
+    Teuchos::rcp_dynamic_cast<Field_ConstantVector>(field, true);
   cvfield->set_subfield_names(subfield_names);
 };
 
@@ -500,7 +513,7 @@ void State::Setup() {
       Teuchos::ParameterList plist;
       plist.set("evaluator name", rank_key);
       plist.set("mesh name", mesh_it->first);
-      SetFieldEvaluator(rank_key, Teuchos::rcp(new RankModel(plist)));
+      SetFieldEvaluator(rank_key, Teuchos::rcp(new RankEvaluator(plist)));
     }
   }
 

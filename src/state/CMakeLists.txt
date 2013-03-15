@@ -50,19 +50,20 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 file(GLOB state_inc_files "*.hh")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
-                   SOURCE State.cc State_Old.cc 
-                          checkpoint.cc Restart.cc 
-                          visualization.cc Vis.cc 
+                   SOURCE State.cc State_Old.cc
+                          PK_State.cc
+                          checkpoint.cc Restart.cc
+                          visualization.cc Vis.cc
                           chemistry_data.cc
                           cell_volume_evaluator.cc
                           Field.cc
-			  field_composite_vector.cc
-			  field_constant_vector.cc
-			  field_evaluator.cc
-			  field_evaluator_factory.cc
-			  field_scalar.cc
-			  io_event.cc
-			  rank_evaluator.cc
+			              Field_CompositeVector.cc
+			              Field_ConstantVector.cc
+			              Field_Scalar.cc
+			              FieldEvaluator.cc
+			              FieldEvaluator_Factory.cc
+			              io_event.cc
+			              rank_evaluator.cc
                    HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})

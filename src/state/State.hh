@@ -34,14 +34,20 @@
 #include "visualization.hh"
 #include "checkpoint.hh"
 
-#include "field.hh"
-#include "field_scalar.hh"
-#include "field_constant_vector.hh"
-#include "field_composite_vector.hh"
+#include "Field.hh"
+#include "Field_Scalar.hh"
+#include "Field_ConstantVector.hh"
+#include "Field_CompositeVector.hh"
 
 namespace Amanzi {
 
 class FieldEvaluator;
+
+enum StateConstructMode {
+  STATE_CONSTRUCT_MODE_COPY_POINTERS,
+  STATE_CONSTRUCT_MODE_COPY_DATA
+};
+
 
 class State {
 
@@ -61,7 +67,7 @@ class State {
   explicit State(Teuchos::ParameterList& state_plist);
 
   // Copy constructor, copies memory not pointers.
-  explicit State(const State& other);
+  State(const State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_DATA);
 
   // Assignment operator, copies memory not pointers.  Note this
   // implementation requires the State being copied has the same structure (in

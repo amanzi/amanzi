@@ -12,8 +12,8 @@ A field evaluator for an unchanging cell volume.
 #ifndef AMANZI_CELL_VOLUME_FIELD_EVALUATOR_
 #define AMANZI_CELL_VOLUME_FIELD_EVALUATOR_
 
-#include "field_evaluator.hh"
-#include "field_evaluator_factory.hh"
+#include "FieldEvaluator.hh"
+#include "FieldEvaluator_Factory.hh"
 
 namespace Amanzi {
 

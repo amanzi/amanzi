@@ -17,69 +17,69 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
-#include "field.hh"
-#include "field_composite_vector.hh"
+#include "Field.hh"
+#include "Field_CompositeVector.hh"
 
 namespace Amanzi {
 
-FieldCompositeVector::FieldCompositeVector(std::string fieldname, std::string owner) :
+Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string owner) :
     Field::Field(fieldname, owner), data_() {
   type_ = COMPOSITE_VECTOR_FIELD;
 };
 
-FieldCompositeVector::FieldCompositeVector(std::string fieldname, std::string owner,
+Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string owner,
                                            Teuchos::RCP<CompositeVector>& data) :
     Field::Field(fieldname, owner), data_(data) {
   type_ = COMPOSITE_VECTOR_FIELD;
 };
 
 // copy constructor:
-FieldCompositeVector::FieldCompositeVector(const FieldCompositeVector& other) :
+Field_CompositeVector::Field_CompositeVector(const Field_CompositeVector& other) :
     Field::Field(other),
     subfield_names_(other.subfield_names_) {
   data_ = Teuchos::rcp(new CompositeVector(*other.data_));
 };
 
 // Virtual copy constructor
-Teuchos::RCP<Field> FieldCompositeVector::Clone() const {
-  return Teuchos::rcp(new FieldCompositeVector(*this));
+Teuchos::RCP<Field> Field_CompositeVector::Clone() const {
+  return Teuchos::rcp(new Field_CompositeVector(*this));
 }
 
 // Virtual copy constructor with non-empty name
-Teuchos::RCP<Field> FieldCompositeVector::Clone(std::string fieldname) const {
-  Teuchos::RCP<FieldCompositeVector> other = Teuchos::rcp(new FieldCompositeVector(*this));
+Teuchos::RCP<Field> Field_CompositeVector::Clone(std::string fieldname) const {
+  Teuchos::RCP<Field_CompositeVector> other = Teuchos::rcp(new Field_CompositeVector(*this));
   other->fieldname_ = fieldname;
   return other;
 };
 
 // Virtual copy constructor with non-empty name
-Teuchos::RCP<Field> FieldCompositeVector::Clone(std::string fieldname, std::string owner) const {
-  Teuchos::RCP<FieldCompositeVector> other = Teuchos::rcp(new FieldCompositeVector(*this));
+Teuchos::RCP<Field> Field_CompositeVector::Clone(std::string fieldname, std::string owner) const {
+  Teuchos::RCP<Field_CompositeVector> other = Teuchos::rcp(new Field_CompositeVector(*this));
   other->fieldname_ = fieldname;
   other->owner_ = owner;
   return other;
 };
 
 // Create the data
-void FieldCompositeVector::CreateData() {
+void Field_CompositeVector::CreateData() {
   data_->CreateData();
 }
 
 // write-access to the data
-Teuchos::RCP<CompositeVector> FieldCompositeVector::GetFieldData() {
+Teuchos::RCP<CompositeVector> Field_CompositeVector::GetFieldData() {
   return data_;
 };
 
 // Overwrite data by pointer, not copy
-void FieldCompositeVector::SetData(const Teuchos::RCP<CompositeVector>& data) {
+void Field_CompositeVector::SetData(const Teuchos::RCP<CompositeVector>& data) {
   data_ = data;
 };
 
-void FieldCompositeVector::SetData(const CompositeVector& data) {
+void Field_CompositeVector::SetData(const CompositeVector& data) {
   *data_ = data;
 };
 
-void FieldCompositeVector::Initialize(Teuchos::ParameterList& plist) {
+void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ protect against unset names -----
   EnsureSubfieldNames_();
 
@@ -118,7 +118,7 @@ void FieldCompositeVector::Initialize(Teuchos::ParameterList& plist) {
 };
 
 
-void FieldCompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
+void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
   if (io_vis_ && (vis->mesh() == data_->mesh())) {
     EnsureSubfieldNames_();
 
@@ -146,7 +146,7 @@ void FieldCompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
 };
 
 
-void FieldCompositeVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) {
+void Field_CompositeVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) {
   if (io_checkpoint_) {
     EnsureSubfieldNames_();
 
@@ -169,7 +169,7 @@ void FieldCompositeVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) 
 };
 
 
-void FieldCompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
+void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(*data_->comm(), filename));
   EnsureSubfieldNames_();
@@ -195,7 +195,7 @@ void FieldCompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
   }
 }
 
-void FieldCompositeVector::ReadCheckpoint_(std::string filename) {
+void Field_CompositeVector::ReadCheckpoint_(std::string filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(*data_->comm(), filename));
   ReadCheckpoint(file_input.ptr());
@@ -204,7 +204,7 @@ void FieldCompositeVector::ReadCheckpoint_(std::string filename) {
 
 // modify methods
 // -- set data from file
-void FieldCompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_input) {
+void Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_input) {
   EnsureSubfieldNames_();
 
   // loop over the components and dump them to the checkpoint file if possible
@@ -227,7 +227,7 @@ void FieldCompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_inp
 }
 
 
-void FieldCompositeVector::EnsureSubfieldNames_() {
+void Field_CompositeVector::EnsureSubfieldNames_() {
   // set default values for subfield names, ensuring they are unique
   if (subfield_names_.size() == 0) {
     subfield_names_.resize(data_->num_components());

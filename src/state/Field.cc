@@ -14,7 +14,7 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 ------------------------------------------------------------------------- */
 
 #include "errors.hh"
-#include "field.hh"
+#include "Field.hh"
 
 namespace Amanzi {
 

@@ -8,7 +8,7 @@
    ------------------------------------------------------------------------- */
 
 #include <string>
-#include "field_evaluator_factory.hh"
+#include "FieldEvaluator_Factory.hh"
 
 namespace Amanzi {
 
@@ -16,7 +16,7 @@ namespace Amanzi {
 template<> Utils::Factory<FieldEvaluator>::map_type* Utils::Factory<FieldEvaluator>::map_;
 
 // method for instantiating FieldEvaluator implementations
-Teuchos::RCP<FieldEvaluator> FieldEvaluatorFactory::createFieldEvaluator(Teuchos::ParameterList& plist) {
+Teuchos::RCP<FieldEvaluator> FieldEvaluator_Factory::createFieldEvaluator(Teuchos::ParameterList& plist) {
   std::string field_evaluator_typename = plist.get<std::string>("field evaluator type");
   return Teuchos::rcp(CreateInstance(field_evaluator_typename, plist));
 };

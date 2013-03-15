@@ -25,7 +25,7 @@ PK_State::PK_State(PK_State& other, StateConstructMode mode) :
     name_(other.name_),
     mesh_(other.mesh_),
     ghosted_(other.ghosted_) {
-  S_ = Teuchos::rcp(new State(other.S_, mode));
+  S_ = Teuchos::rcp(new State(*other.S_, mode));
 }
 
 

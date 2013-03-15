@@ -17,25 +17,25 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "Teuchos_RCP.hpp"
 
 #include "composite_vector.hh"
-#include "field.hh"
+#include "Field.hh"
 
 namespace Amanzi {
 
-class FieldCompositeVector : public Field {
+class Field_CompositeVector : public Field {
 
 public:
   // constructors
-  FieldCompositeVector(std::string fieldname, std::string owner);
-  FieldCompositeVector(std::string fieldname, std::string owner, Teuchos::RCP<CompositeVector>& data);
+  Field_CompositeVector(std::string fieldname, std::string owner);
+  Field_CompositeVector(std::string fieldname, std::string owner, Teuchos::RCP<CompositeVector>& data);
 
   // copy constructors
-  explicit FieldCompositeVector(const FieldCompositeVector& other);
+  explicit Field_CompositeVector(const Field_CompositeVector& other);
   Teuchos::RCP<Field> Clone() const;
   Teuchos::RCP<Field> Clone(std::string fieldname) const;
   Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const;
 
   // destructor
-  ~FieldCompositeVector() {}
+  ~Field_CompositeVector() {}
 
   // data creation
   void CreateData();
@@ -69,7 +69,7 @@ protected:
 
 private:
   // Assignment for the field disabled
-  FieldCompositeVector& operator=(const FieldCompositeVector&);
+  Field_CompositeVector& operator=(const Field_CompositeVector&);
 
   // check to ensure subfield names are set
   void EnsureSubfieldNames_();

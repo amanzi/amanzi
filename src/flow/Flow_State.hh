@@ -77,8 +77,6 @@ public:
 
   // miscaleneous
   double get_time() { return (S_ == Teuchos::null) ? -1.0 : S_->time(); }
-  double normLpCell(const Epetra_Vector& v1, double p);
-  double normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p);
 
   // debug routines
   void set_fluid_density(double rho);
