@@ -1,5 +1,5 @@
-#ifndef __Transport_State_hpp__
-#define __Transport_State_hpp__
+#ifndef __Transport_State_Old_hpp__
+#define __Transport_State_Old_hpp__
 
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
@@ -21,12 +21,12 @@ CopyMemory     // copy non-overlap vector to overlap vectors
 
 
 /* The transport state is equivalent to the global state. */
-class Transport_State {
+class Transport_State_Old {
  public:
-  Transport_State() {};
-  explicit Transport_State(State_Old& S);
-  Transport_State(Transport_State& S, TransportCreateMode mode = CopyPointers);
-  ~Transport_State() {};
+  Transport_State_Old() {};
+  explicit Transport_State_Old(State_Old& S);
+  Transport_State_Old(Transport_State_Old& S, TransportCreateMode mode = CopyPointers);
+  ~Transport_State_Old() {};
 
   // data management
   void CopyMasterCell2GhostCell(Epetra_Vector& v);

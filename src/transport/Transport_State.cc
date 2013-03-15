@@ -1,25 +1,25 @@
 
-#include "Transport_State_New.hh"
+#include "Transport_State.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
 
-Transport_State_New::Transport_State_New(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
     PK_State(std::string("state"), mesh) {
   Construct_();
 }
 
-Transport_State_New::Transport_State_New(Teuchos::RCP<State> S) :
+Transport_State::Transport_State(Teuchos::RCP<State> S) :
     PK_State(std::string("state"), S) {
   Construct_();
 }
 
-Transport_State_New::Transport_State_New(State& S) :
+Transport_State::Transport_State(State& S) :
     PK_State(std::string("state"), S) {
   Construct_();
 }
 
-Transport_State_New::Transport_State_New(Transport_State_New& other,
+Transport_State::Transport_State(Transport_State& other,
         PKStateConstructMode mode) :
     PK_State(other),
     comp_numbers_(other.comp_numbers_),
@@ -55,7 +55,7 @@ Transport_State_New::Transport_State_New(Transport_State_New& other,
 }
 
 
-void Transport_State_New::Construct_() {
+void Transport_State::Construct_() {
   // Somehow much set up comp_names and comp_numbers!
 
   // Require data, all owned
@@ -75,7 +75,7 @@ void Transport_State_New::Construct_() {
 
 }
 
-void Transport_State_New::Initialize() {
+void Transport_State::Initialize() {
   S_->GetField("total_component_concentration",name_)->set_initialized();
   S_->GetField("fluid_density",name_)->set_initialized();
   S_->GetField("porosity",name_)->set_initialized();
@@ -85,7 +85,7 @@ void Transport_State_New::Initialize() {
 }
 
 
-int Transport_State_New::get_component_number(const std::string component_name) {
+int Transport_State::get_component_number(const std::string component_name) {
   std::map<std::string,int>::const_iterator lb =
     comp_numbers_.lower_bound(component_name);
   if (lb != comp_numbers_.end() && !(comp_numbers_.key_comp()(key, lb->first))) {

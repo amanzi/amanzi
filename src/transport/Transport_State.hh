@@ -18,18 +18,18 @@ accessing the new state-dev from the old Flow PK.
 namespace Amanzi {
 namespace AmanziTransport {
 
-class Transport_State_New : public PK_State {
+class Transport_State : public PK_State {
 
-  explicit Transport_State_New(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+  explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
     PK_State(std::string("state"), mesh) { Construct_(); }
 
-  explicit Transport_State_New(Teuchos::RCP<State> S) :
+  explicit Transport_State(Teuchos::RCP<State> S) :
     PK_State(std::string("state"), S) { Construct_(); }
 
-  explicit Transport_State_New(State& S) :
+  explicit Transport_State(State& S) :
     PK_State(std::string("state"), S) {}
 
-  Transport_State_New(Transport_State_New& other, PKStateConstructMode mode) :
+  Transport_State(Transport_State& other, PKStateConstructMode mode) :
       PK_State(other) {
     if (mode == PK_STATE_CONSTRUCT_MODE_VIEW_DATA) {
       ghosted_ = false;

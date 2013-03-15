@@ -21,7 +21,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 
 #include "State_Old.hh"
-#include "Flow_State.hh"
+#include "Flow_State_Old.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -29,7 +29,7 @@ namespace AmanziFlow {
 /* *******************************************************************
 * Flow state is build from scratch and filled with zeros.         
 ******************************************************************* */
-Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
+Flow_State_Old::Flow_State_Old(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
 {
   int dim = mesh->space_dimension();
   const Epetra_BlockMap& cmap = mesh->cell_map(false);
@@ -61,7 +61,7 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
 /* *******************************************************************
 * Flow state is build from the pointer to state S.        
 ******************************************************************* */
-Flow_State::Flow_State(Teuchos::RCP<State_Old> S) : S_(NULL)
+Flow_State_Old::Flow_State_Old(Teuchos::RCP<State_Old> S) : S_(NULL)
 {
   vertical_permeability_ = S->get_vertical_permeability();
   horizontal_permeability_ = S->get_horizontal_permeability();
@@ -91,7 +91,7 @@ Flow_State::Flow_State(Teuchos::RCP<State_Old> S) : S_(NULL)
 /* *******************************************************************
 * Flow state is build from state S.        
 ******************************************************************* */
-Flow_State::Flow_State(State_Old& S) : S_(NULL)
+Flow_State_Old::Flow_State_Old(State_Old& S) : S_(NULL)
 {
   vertical_permeability_ = S.get_vertical_permeability();
   horizontal_permeability_ = S.get_horizontal_permeability();
@@ -122,7 +122,7 @@ Flow_State::Flow_State(State_Old& S) : S_(NULL)
 * mode = FLOW_STATE_VIEW (default) a view of the given state           
 * mode = FLOW_STATE_COPY allocates new memory for selected variable                    
 ******************************************************************* */
-Flow_State::Flow_State(Flow_State& FS, int mode) : S_(NULL)
+Flow_State_Old::Flow_State_Old(Flow_State_Old& FS, int mode) : S_(NULL)
 {
   vertical_permeability_ = FS.vertical_permeability();
   horizontal_permeability_ = FS.horizontal_permeability();
@@ -157,7 +157,7 @@ Flow_State::Flow_State(Flow_State& FS, int mode) : S_(NULL)
 * Copy cell-based data from master to ghost positions.              
 * WARNING: vector v must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
+void Flow_State_Old::CopyMasterCell2GhostCell(Epetra_Vector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -178,7 +178,7 @@ void Flow_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 * Copy cell-based data from master to ghost positions.              
 * WARNING: MultiVector v must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
+void Flow_State_Old::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -198,7 +198,7 @@ void Flow_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 * Copy face-based data from master to ghost positions.              
 * WARNING: vector v must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::CopyMasterFace2GhostFace(Epetra_Vector& v)
+void Flow_State_Old::CopyMasterFace2GhostFace(Epetra_Vector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->face_map(false);
@@ -219,7 +219,7 @@ void Flow_State::CopyMasterFace2GhostFace(Epetra_Vector& v)
 * performs the operation 'mode' there. 
 * WARNING: Vector v must contain ghost faces.              
 ******************************************************************* */
-void Flow_State::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
+void Flow_State_Old::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
@@ -239,7 +239,7 @@ void Flow_State::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMod
 * Copy face-based data from master to ghost positions.              
 * WARNING: vector vghost must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vghost)
+void Flow_State_Old::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vghost)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -258,7 +258,7 @@ void Flow_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector&
 * performs the operation 'mode' there. 
 * WARNING: Vector v must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMode mode)
+void Flow_State_Old::CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -278,7 +278,7 @@ void Flow_State::CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMod
 * Copy face-based data from master to ghost positions.              
 * WARNING: vector vhost must contain ghost cells.              
 ******************************************************************* */
-void Flow_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vghost)
+void Flow_State_Old::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vghost)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->face_map(false);
@@ -295,7 +295,7 @@ void Flow_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector&
 /* *******************************************************************
 * Lp norm of the vector v1.    
 ******************************************************************* */
-double Flow_State::normLpCell(const Epetra_Vector& v1, double p)
+double Flow_State_Old::normLpCell(const Epetra_Vector& v1, double p)
 {
   int ncells = (mesh_->cell_map(false)).NumMyElements();
 
@@ -313,7 +313,7 @@ double Flow_State::normLpCell(const Epetra_Vector& v1, double p)
 /* *******************************************************************
 * Lp norm of the component-wise product v1 .* v2             
 ******************************************************************* */
-double Flow_State::normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p)
+double Flow_State_Old::normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p)
 {
   int ncells = (mesh_->cell_map(false)).NumMyElements();
 
@@ -331,7 +331,7 @@ double Flow_State::normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, 
 /* *******************************************************************
 * Extract cells from a supervector             
 ******************************************************************* */
-Epetra_Vector* Flow_State::CreateCellView(const Epetra_Vector& u) const
+Epetra_Vector* Flow_State_Old::CreateCellView(const Epetra_Vector& u) const
 {
   double* data;
   u.ExtractView(&data);
@@ -342,7 +342,7 @@ Epetra_Vector* Flow_State::CreateCellView(const Epetra_Vector& u) const
 /* *******************************************************************
 * Extract faces from a supervector             
 ******************************************************************* */
-Epetra_Vector* Flow_State::CreateFaceView(const Epetra_Vector& u) const
+Epetra_Vector* Flow_State_Old::CreateFaceView(const Epetra_Vector& u) const
 {
   double* data;
   u.ExtractView(&data);
@@ -355,7 +355,7 @@ Epetra_Vector* Flow_State::CreateFaceView(const Epetra_Vector& u) const
 * DEBUG: create constant fluid density. Since it is debug, we
 * do not verify that rho is positive.    
 ******************************************************************* */
-void Flow_State::set_fluid_density(double rho)
+void Flow_State_Old::set_fluid_density(double rho)
 {
   *fluid_density_ = rho;
 }
@@ -364,7 +364,7 @@ void Flow_State::set_fluid_density(double rho)
 /* *******************************************************************
 * DEBUG: create constant fluid viscosity
 ******************************************************************* */
-void Flow_State::set_fluid_viscosity(double mu)
+void Flow_State_Old::set_fluid_viscosity(double mu)
 {
   *fluid_viscosity_ = mu;
 }
@@ -373,7 +373,7 @@ void Flow_State::set_fluid_viscosity(double mu)
 /* *******************************************************************
 * DEBUG: create constant porosity
 ******************************************************************* */
-void Flow_State::set_porosity(double phi)
+void Flow_State_Old::set_porosity(double phi)
 {
   porosity_->PutScalar(phi);
 }
@@ -382,7 +382,7 @@ void Flow_State::set_porosity(double phi)
 /* *******************************************************************
 * DEBUG: create hydrostatic pressure with p0 at height z0.
 ******************************************************************* */
-void Flow_State::set_pressure_hydrostatic(double z0, double p0)
+void Flow_State_Old::set_pressure_hydrostatic(double z0, double p0)
 {
   int dim = mesh_->space_dimension();
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -400,13 +400,13 @@ void Flow_State::set_pressure_hydrostatic(double z0, double p0)
 /* *******************************************************************
  * DEBUG: create diagonal permeability
  ****************************************************************** */
-void Flow_State::set_permeability(double Kh, double Kv)
+void Flow_State_Old::set_permeability(double Kh, double Kv)
 {
   horizontal_permeability_->PutScalar(Kh);
   vertical_permeability_->PutScalar(Kv);
 }
 
-void Flow_State::set_permeability(double Kh, double Kv, const string region)
+void Flow_State_Old::set_permeability(double Kh, double Kv, const string region)
 {
   AmanziMesh::Entity_ID_List block;
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
@@ -423,7 +423,7 @@ void Flow_State::set_permeability(double Kh, double Kv, const string region)
 /* *******************************************************************
  * DEBUG: create constant porosity
  ****************************************************************** */
-void Flow_State::set_specific_storage(double ss)
+void Flow_State_Old::set_specific_storage(double ss)
 {
   specific_storage_->PutScalar(ss);
 }
@@ -432,7 +432,7 @@ void Flow_State::set_specific_storage(double ss)
 /* *******************************************************************
  * DEBUG: create constant gravity
  ****************************************************************** */
-void Flow_State::set_gravity(double g)
+void Flow_State_Old::set_gravity(double g)
 {
   int dim = mesh_->space_dimension();
   for (int i = 0; i < dim-1; i++) (*gravity_)[i] = 0.0;

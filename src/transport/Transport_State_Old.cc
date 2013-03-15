@@ -19,7 +19,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "errors.hh"
 
 #include "State_Old.hh"
-#include "Transport_State.hh"
+#include "Transport_State_Old.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -27,7 +27,7 @@ namespace AmanziTransport {
 /* *******************************************************************
 * Create Flow state from a state.                     
 ******************************************************************* */
-Transport_State::Transport_State(State_Old& S)
+Transport_State_Old::Transport_State_Old(State_Old& S)
 {
   total_component_concentration_ = S.get_total_component_concentration();
   porosity_ = S.get_porosity();
@@ -48,7 +48,7 @@ Transport_State::Transport_State(State_Old& S)
 * mode = CopyMemory   creates internal transport state based on 
 *                     ovelapped mesh maps                       
 ******************************************************************* */
-Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
+Transport_State_Old::Transport_State_Old(Transport_State_Old& S, TransportCreateMode mode)
 {
   if (mode == CopyPointers) {
     total_component_concentration_ = S.total_component_concentration();
@@ -107,7 +107,7 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 * Copy cell-based data from master to ghost positions.              
 * WARNING: Vector v must contain ghost cells.                
 ******************************************************************* */
-void Transport_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
+void Transport_State_Old::CopyMasterCell2GhostCell(Epetra_Vector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -126,7 +126,7 @@ void Transport_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 /* *******************************************************************
 * Routine imports a short vector to a parallel overlapping vector.                
 ******************************************************************* */
-void Transport_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vv)
+void Transport_State_Old::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vv)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -149,7 +149,7 @@ void Transport_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Ve
 * Copy cell-based data from master to ghost positions.              
 * WARNING: MultiVector v must contain ghost cells.                
 ******************************************************************* */
-void Transport_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
+void Transport_State_Old::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -168,7 +168,7 @@ void Transport_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 /* *******************************************************************
 * Routine imports a short multivector to a parallel overlapping multivector.                
 ******************************************************************* */
-void Transport_State::CopyMasterMultiCell2GhostMultiCell(const Epetra_MultiVector& v, 
+void Transport_State_Old::CopyMasterMultiCell2GhostMultiCell(const Epetra_MultiVector& v, 
                                                          Epetra_MultiVector& vv,
                                                          int parallel_comm)
 {
@@ -199,7 +199,7 @@ void Transport_State::CopyMasterMultiCell2GhostMultiCell(const Epetra_MultiVecto
 /* *******************************************************************
 * Routine imports a short vector to a parallel overlapping vector.                
 ******************************************************************* */
-void Transport_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vv)
+void Transport_State_Old::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vv)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->face_map(false);
@@ -221,7 +221,7 @@ void Transport_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Ve
 /* *******************************************************************
 * Calculate minimum values in a multivector using master cells.            
 ******************************************************************* */
-void Transport_State::MinValueMasterCells(Epetra_MultiVector& v, double* vmin)
+void Transport_State_Old::MinValueMasterCells(Epetra_MultiVector& v, double* vmin)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -240,7 +240,7 @@ void Transport_State::MinValueMasterCells(Epetra_MultiVector& v, double* vmin)
 /* *******************************************************************
 * Calculate miximum values in a multivector using master cells.             
 ******************************************************************* */
-void Transport_State::MaxValueMasterCells(Epetra_MultiVector& v, double* vmax)
+void Transport_State_Old::MaxValueMasterCells(Epetra_MultiVector& v, double* vmax)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -261,7 +261,7 @@ void Transport_State::MaxValueMasterCells(Epetra_MultiVector& v, double* vmax)
 * is measuared relative to state v0; so that v1 is at time dT. The
 * interpolated data are at time dT_int.            
 ******************************************************************* */
-void Transport_State::InterpolateCellVector(
+void Transport_State_Old::InterpolateCellVector(
     const Epetra_Vector& v0, const Epetra_Vector& v1, double dT_int, double dT, Epetra_Vector& v_int)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -275,7 +275,7 @@ void Transport_State::InterpolateCellVector(
 /* *******************************************************************
  * DEBUG: create constant analytical Darcy velocity fieldx u     
  ****************************************************************** */
-void Transport_State::AnalyticDarcyFlux(const AmanziGeometry::Point& u)
+void Transport_State_Old::AnalyticDarcyFlux(const AmanziGeometry::Point& u)
 {
   const Epetra_BlockMap& fmap = (*darcy_flux_).Map();
 
@@ -284,7 +284,7 @@ void Transport_State::AnalyticDarcyFlux(const AmanziGeometry::Point& u)
     (*darcy_flux_)[f] = u * normal;
   }
 }
-void Transport_State::AnalyticDarcyFlux(
+void Transport_State_Old::AnalyticDarcyFlux(
     AmanziGeometry::Point f_vel(const AmanziGeometry::Point&, double), double t)
 {
   const Epetra_BlockMap& fmap = (*darcy_flux_).Map();
@@ -300,7 +300,7 @@ void Transport_State::AnalyticDarcyFlux(
 /* *******************************************************************
  * DEBUG: create analytical concentration C = f(x, t)       
  ****************************************************************** */
-void Transport_State::AnalyticTotalComponentConcentration(double f(const AmanziGeometry::Point&, double), double t)
+void Transport_State_Old::AnalyticTotalComponentConcentration(double f(const AmanziGeometry::Point&, double), double t)
 {
   const Epetra_BlockMap& cmap = (*total_component_concentration_).Map();
 
@@ -309,7 +309,7 @@ void Transport_State::AnalyticTotalComponentConcentration(double f(const AmanziG
     (*total_component_concentration_)[0][c] = f(xc, t);
   }
 }
-void Transport_State::AnalyticTotalComponentConcentration(double tcc)
+void Transport_State_Old::AnalyticTotalComponentConcentration(double tcc)
 {
   const Epetra_BlockMap& cmap = (*total_component_concentration_).Map();
 
@@ -320,7 +320,7 @@ void Transport_State::AnalyticTotalComponentConcentration(double tcc)
 
 
 /* **************************************************************** */
-void Transport_State::error_total_component_concentration(
+void Transport_State_Old::error_total_component_concentration(
     double f(const AmanziGeometry::Point&, double), double t, double* L1, double* L2)
 {
   int i, j, c;
@@ -344,7 +344,7 @@ void Transport_State::error_total_component_concentration(
 /* *******************************************************************
  * DEBUG: create constant analytical porosity                    
  ****************************************************************** */
-void Transport_State::AnalyticPorosity(double phi)
+void Transport_State_Old::AnalyticPorosity(double phi)
 {
   const Epetra_BlockMap& cmap = (*porosity_).Map();
 
@@ -357,7 +357,7 @@ void Transport_State::AnalyticPorosity(double phi)
 /* ******************************************************************
  * DEBUG: create constant analytical water saturation            
  ***************************************************************** */
-void Transport_State::AnalyticWaterSaturation(double ws)
+void Transport_State_Old::AnalyticWaterSaturation(double ws)
 {
   const Epetra_BlockMap& cmap = (*water_saturation_).Map();
 
@@ -371,7 +371,7 @@ void Transport_State::AnalyticWaterSaturation(double ws)
 /* *****************************************************************
  * DEBUG: create constant analytical water density               
  **************************************************************** */
-void Transport_State::AnalyticWaterDensity(double wd)
+void Transport_State_Old::AnalyticWaterDensity(double wd)
 {
   const Epetra_BlockMap& cmap = (*water_density_).Map();
 

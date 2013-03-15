@@ -6,9 +6,9 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 Routine provide basic operations with components of the flow state,
 such as density, pressure, darcy mass flux, etc. 
 Usage:
-  Flow_State FS;       // for stand-alone initialization
-  Flow_State FS(S);    // for initialization from the state S
-  Flow_State FS(FS_);  // copy constructor
+  Flow_State_Old FS;       // for stand-alone initialization
+  Flow_State_Old FS(S);    // for initialization from the state S
+  Flow_State_Old FS(FS_);  // copy constructor
 */
 
 #ifndef __FLOW_STATE_HH__
@@ -26,13 +26,13 @@ Usage:
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Flow_State {
+class Flow_State_Old {
  public:
-  explicit Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
-  explicit Flow_State(Teuchos::RCP<State_Old> S);
-  explicit Flow_State(State_Old& S);
-  Flow_State(Flow_State& S, int mode = AmanziFlow::FLOW_STATE_VIEW);
-  ~Flow_State() {};
+  explicit Flow_State_Old(Teuchos::RCP<AmanziMesh::Mesh> mesh);
+  explicit Flow_State_Old(Teuchos::RCP<State_Old> S);
+  explicit Flow_State_Old(State_Old& S);
+  Flow_State_Old(Flow_State_Old& S, int mode = AmanziFlow::FLOW_STATE_VIEW);
+  ~Flow_State_Old() {};
 
   // data management
   void CopyMasterCell2GhostCell(Epetra_Vector& v);
