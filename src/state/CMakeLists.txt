@@ -50,12 +50,12 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 file(GLOB state_inc_files "*.hh")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
-                   SOURCE state.cc State_Old.cc 
+                   SOURCE State.cc State_Old.cc 
                           checkpoint.cc Restart.cc 
                           visualization.cc Vis.cc 
                           chemistry_data.cc
                           cell_volume_evaluator.cc
-                          field.cc
+                          Field.cc
 			  field_composite_vector.cc
 			  field_constant_vector.cc
 			  field_evaluator.cc
