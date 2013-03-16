@@ -260,7 +260,7 @@ void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Ten
 {
   for (int c = 0; c < ncells_owned; c++) {
     Kxy[c] = 0.0;
-    int idim = std::max<int>(1, K[c].size() - 1);
+    int idim = std::max(1, K[c].size() - 1);
     for (int i = 0; i < idim; i++) Kxy[c] += K[c](i, i);
     Kxy[c] /= idim;
   }

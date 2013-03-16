@@ -28,8 +28,9 @@ namespace AmanziFlow {
 
 class Flow_State_Old {
  public:
-  explicit Flow_State_Old(Teuchos::RCP<AmanziMesh::Mesh> mesh);
-  explicit Flow_State_Old(Teuchos::RCP<State_Old> S);
+
+  explicit Flow_State_Old(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
+  explicit Flow_State_Old(const Teuchos::RCP<State_Old>& S);
   explicit Flow_State_Old(State_Old& S);
   Flow_State_Old(Flow_State_Old& S, int mode = AmanziFlow::FLOW_STATE_VIEW);
   ~Flow_State_Old() {};
@@ -63,7 +64,7 @@ class Flow_State_Old {
 
   Teuchos::RCP<Epetra_Vector> specific_storage() { return specific_storage_; }
   Teuchos::RCP<Epetra_Vector> specific_yield() { return specific_yield_; }
-  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
 
   State_Old* state() { return S_; }
 
@@ -120,7 +121,7 @@ class Flow_State_Old {
   Teuchos::RCP<Epetra_Vector> specific_storage_;
   Teuchos::RCP<Epetra_Vector> specific_yield_;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace AmanziFlow

@@ -30,15 +30,15 @@ double Darcy_PK::ErrorEstimate(double* dTfactor)
     error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
     tol = ti_specs->rtol * fabs((*solution)[c]) + ti_specs->atol;
 
-    dTfactor_cell = sqrt(tol / std::max<double>(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
-    *dTfactor = std::min<double>(*dTfactor, dTfactor_cell);
+    dTfactor_cell = sqrt(tol / std::max(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
+    *dTfactor = std::min(*dTfactor, dTfactor_cell);
 
-    error_max = std::max<double>(error_max, error - tol);
+    error_max = std::max(error_max, error - tol);
   }
 
   *dTfactor *= FLOW_DT_ADAPTIVE_SAFETY_FACTOR;
-  *dTfactor = std::min<double>(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
-  *dTfactor = std::max<double>(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
+  *dTfactor = std::min(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
+  *dTfactor = std::max(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
 
 #ifdef HAVE_MPI
     double dT_tmp = *dTfactor;

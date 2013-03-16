@@ -31,7 +31,7 @@ void Transport_PK::CheckDivergenceProperty()
   int i, c, f;
   double div, u, umax, error_max, error_avg;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
   Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
   error_max = error_avg = 0.0;
@@ -199,6 +199,34 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
       Exceptions::amanzi_throw(msg);
     }
   }
+}
+
+
+/* ******************************************************************
+* Calculate change of tracer volume per second due to boundary flux.
+* This is the simplified version lipnikov@lanl.gov)
+****************************************************************** */
+double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
+{
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  double volume = 0.0;
+
+  for (int n = 0; n < bcs.size(); n++) {
+    int i = bcs_tcc_index[n];
+
+    if (i == idx_tracer) {
+      for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        int c2 = (*downwind_cell_)[f];
+
+        if (c2 >= 0) {
+          double u = fabs(darcy_flux[f]);
+          volume += u * bc->second;
+        }
+      }
+    }
+  }
+  return volume;
 }
 
 

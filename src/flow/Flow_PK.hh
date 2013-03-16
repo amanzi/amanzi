@@ -127,26 +127,29 @@ class Flow_PK : public BDF2::fnBase {
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 
                         const std::vector<AmanziMesh::Entity_ID>& v2, 
                         std::vector<AmanziMesh::Entity_ID>* vv);
- public:
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
+
+public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
   int MyPID;  // parallel information: will be moved to private
   int verbosity, verbosity_AztecOO;  // output information
   int missed_bc_faces_;
- 
+
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<Flow_State> FS_aux;  // adds ghosts to selected state variables 
-  
-  int ti_phase_counter;  
+
+  int ti_phase_counter;
   double T_physics, dT, dTnext;
   int flow_status_;
   int dim;
 
- private:
+private:  // this should probably be protected too, not private
   int nseepage_prev;
 
- private:
+protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 

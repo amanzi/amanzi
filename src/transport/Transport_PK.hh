@@ -148,6 +148,9 @@ class Transport_PK : public Explicit_TI::fnBase {
   // obsolete methods
   void CreateConcentration(Teuchos::ParameterList& bcs_list);
 
+  // miscaleneous methods
+  double TracerVolumeChangePerSecond(int idx_tracer);
+
  public:
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
@@ -202,11 +205,13 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 
+  double mass_tracer_exact;  // statistics for tracer
+
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
   int nnodes_wghost;
  
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 };
 

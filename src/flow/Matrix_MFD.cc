@@ -6,7 +6,7 @@ Amanzi is released under the three-clause BSD License.
 The terms of use and "as is" disclaimer for this license are 
 provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -188,10 +188,20 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
       double* braw = Bff.values();
       double* mraw = Mff.values();
       for (int n = 0; n < nfaces * nfaces; n++) braw[n] = mraw[n];
-    } else if (method == FLOW_RELATIVE_PERM_CENTERED ||
-               method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {  // centered permeability for diffusion
+
+    } else if (method == FLOW_RELATIVE_PERM_CENTERED) {  // centered permeability for diffusion
       for (int n = 0; n < nfaces; n++)
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
+
+    } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+      for (int n = 0; n < nfaces; n++)
+        for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
+
+      // add upwind correction
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        Bff(n, n) += Mff(n, n) * std::max(0.0, Krel_faces[f] - Krel_cells[c]); 
+      }
     } else {
       for (int n = 0; n < nfaces; n++)
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];

@@ -53,7 +53,7 @@ double calculatePressureCellError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& pressu
       pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
     else
       pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-    // cout << z << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
+      // cout << z << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
     error_L2 += std::pow(pressure[c] - pressure_exact, 2.0) * volume;
   }
   return sqrt(error_L2);

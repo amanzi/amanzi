@@ -29,7 +29,8 @@ namespace AmanziFlow {
 /* *******************************************************************
 * Flow state is build from scratch and filled with zeros.         
 ******************************************************************* */
-Flow_State_Old::Flow_State_Old(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
+
+Flow_State_Old::Flow_State_Old(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) : S_(NULL)
 {
   int dim = mesh->space_dimension();
   const Epetra_BlockMap& cmap = mesh->cell_map(false);
@@ -61,7 +62,7 @@ Flow_State_Old::Flow_State_Old(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
 /* *******************************************************************
 * Flow state is build from the pointer to state S.        
 ******************************************************************* */
-Flow_State_Old::Flow_State_Old(Teuchos::RCP<State_Old> S) : S_(NULL)
+Flow_State_Old::Flow_State_Old(const Teuchos::RCP<State_Old>& S) : S_(NULL)
 {
   vertical_permeability_ = S->get_vertical_permeability();
   horizontal_permeability_ = S->get_horizontal_permeability();

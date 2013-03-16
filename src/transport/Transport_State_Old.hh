@@ -48,7 +48,7 @@ class Transport_State_Old {
   Teuchos::RCP<Epetra_Vector> prev_water_saturation() { return prev_water_saturation_; }  
   Teuchos::RCP<Epetra_Vector> darcy_flux() { return darcy_flux_; }
   Teuchos::RCP<Epetra_Vector> water_density() { return water_density_; }
-  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
 
   Epetra_MultiVector& ref_total_component_concentration() { return *total_component_concentration_; }
 
@@ -89,7 +89,7 @@ class Transport_State_Old {
   Teuchos::RCP<Epetra_Vector> porosity_;
   Teuchos::RCP<Epetra_Vector> water_density_;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace AmanziTransport

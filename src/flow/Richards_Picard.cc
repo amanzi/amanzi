@@ -135,7 +135,7 @@ double Richards_PK::ErrorNormPicardExperimental(const Epetra_Vector& u, const Ep
   double error_p = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
-    error_p = std::max<double>(error_p, tmp);
+    error_p = std::max(error_p, tmp);
   }
 
 #ifdef HAVE_MPI

@@ -60,6 +60,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
+  mass_tracer_exact = 0.0;
 }
 
 
@@ -183,7 +184,7 @@ double Transport_PK::CalculateTransportDt()
   // loop over faces and accumulate upwinding fluxes
   int  i, f, c, c1;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
   const Epetra_Map& fmap = mesh->face_map(true);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
@@ -204,7 +205,7 @@ double Transport_PK::CalculateTransportDt()
   int cmin_dT = 0;
   for (c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * std::min<double>(ws_prev[c], ws[c]) / outflux;
+    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * std::min(ws_prev[c], ws[c]) / outflux;
     if (dT_cell < dT) {
       dT = dT_cell;
       cmin_dT = c;
@@ -367,8 +368,22 @@ void Transport_PK::Advance(double dT_MPC)
     tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
     tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
 
-    if (MyPID == 0) 
-        printf("Transport PK: tracer: %9.6g to %9.6g  at %12.7g [sec]\n", tccmin, tccmax, T_physics);
+    const Epetra_Vector& phi = TS->ref_porosity();
+    mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
+    double mass_tracer = 0.0;
+    for (int c = 0; c < ncells_owned; c++) {
+      mass_tracer += ws[c] * phi[c] * tcc_next[0][c] * mesh_->cell_volume(c);
+    }
+
+    double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
+    mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
+    mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
+
+    if (MyPID == 0) {
+      double mass_loss = mass_exact - mass_tracer;
+      printf("Transport PK: tracer: %9.6g to %9.6g  at %12.7g [sec]\n", tccmin, tccmax, T_physics);
+      printf("   (for T < T0) mass: %10.5e [kg], mass loss: %10.5e [kg]\n", mass_tracer, mass_loss);
+    }
   }
 
   // DEBUG
@@ -650,7 +665,7 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
  ****************************************************************** */
 void Transport_PK::IdentifyUpwindCells()
 {
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     (*upwind_cell_)[f] = -1;  // negative value indicates boundary

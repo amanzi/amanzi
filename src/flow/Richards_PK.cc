@@ -359,7 +359,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 /* ******************************************************************
 * Generic initialization of a next time integration phase.
 ****************************************************************** */
-void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
+void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   ResetPKtimes(T0, dT0);
   bool ini_with_darcy = ti_specs.initialize_with_darcy;
@@ -584,7 +584,7 @@ int Richards_PK::Advance(double dT_MPC)
     double err, dTfactor;
     err = AdaptiveTimeStepEstimate(&dTfactor);
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dTnext = std::min<double>(dT_MPC * dTfactor, ti_specs->dTmax);
+    dTnext = std::min(dT_MPC * dTfactor, ti_specs->dTmax);
   }
 
   dt_tuple times(time, dT_MPC);
@@ -743,15 +743,15 @@ double Richards_PK::AdaptiveTimeStepEstimate(double* dTfactor)
     error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dT / 2;
     tol = ti_specs_trs_.rtol * fabs((*solution)[c]) + ti_specs_trs_.atol;
 
-    dTfactor_cell = sqrt(tol / std::max<double>(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
-    *dTfactor = std::min<double>(*dTfactor, dTfactor_cell);
+    dTfactor_cell = sqrt(tol / std::max(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
+    *dTfactor = std::min(*dTfactor, dTfactor_cell);
 
-    error_max = std::max<double>(error_max, error - tol);
+    error_max = std::max(error_max, error - tol);
   }
 
   *dTfactor *= FLOW_DT_ADAPTIVE_SAFETY_FACTOR;
-  *dTfactor = std::min<double>(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
-  *dTfactor = std::max<double>(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
+  *dTfactor = std::min(*dTfactor, FLOW_DT_ADAPTIVE_INCREASE);
+  *dTfactor = std::max(*dTfactor, FLOW_DT_ADAPTIVE_REDUCTION);
 
 #ifdef HAVE_MPI
     double dT_tmp = *dTfactor;
@@ -813,8 +813,8 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
       int f = faces[n];
       int c2 = mfd.cell_get_face_adj_cell(c, f);
       if (c2 >= 0) {
-        wsmin = std::min<double>(wsmin, ws[c2]);
-        wsmax = std::max<double>(wsmax, ws[c2]);
+        wsmin = std::min(wsmin, ws[c2]);
+        wsmax = std::max(wsmax, ws[c2]);
       }
     }
 
@@ -827,8 +827,8 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
     }
 
     // limit new saturation
-    ws[c] = std::max<double>(ws[c], wsmin);
-    ws[c] = std::min<double>(ws[c], wsmax);
+    ws[c] = std::max(ws[c], wsmin);
+    ws[c] = std::min(ws[c], wsmax);
   }
 }
 

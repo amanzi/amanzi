@@ -91,7 +91,7 @@ class JFNK_Preconditioner : public Epetra_Operator {
 	private:
 // 		Teuchos::RCP<Flow_State> FS;
                 BDF2::fnBase* FPK;
-		Teuchos::RCP<AmanziMesh::Mesh> mesh;
+		Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 //		Epetra_Map map;
 };
 

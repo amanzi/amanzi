@@ -470,9 +470,9 @@ int Darcy_PK::Advance(double dT_MPC)
     double err, dTfactor;
     err = ErrorEstimate(&dTfactor);
     if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dT_desirable_ = std::min<double>(dT_MPC * dTfactor, ti_specs->dTmax);
+    dT_desirable_ = std::min(dT_MPC * dTfactor, ti_specs->dTmax);
   } else {
-    dT_desirable_ = std::min<double>(dT_desirable_ * ti_specs->dTfactor, ti_specs->dTmax);
+    dT_desirable_ = std::min(dT_desirable_ * ti_specs->dTfactor, ti_specs->dTmax);
   }
 
   dt_tuple times(time, dT_MPC);

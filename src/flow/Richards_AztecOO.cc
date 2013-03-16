@@ -11,6 +11,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include "Matrix_MFD.hh"
+#include "Matrix_Audit.hh"
 #include "Richards_PK.hh"
 
 
@@ -51,6 +52,10 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 
   solver_tmp->SetLHS(&u);
   solver_tmp->Iterate((long long)max_itrs_linear, convergence_tol_linear);
+
+  // Matrix_Audit audit(mesh_, matrix_);
+  // audit.InitAudit();
+  // audit.RunAudit();
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
     int num_itrs = solver_tmp->NumIters();

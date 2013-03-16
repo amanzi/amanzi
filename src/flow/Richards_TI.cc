@@ -28,7 +28,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
-{      
+{ 
   AssembleMatrixMFD(u, Tp);
   matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 
@@ -132,7 +132,7 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
     error_r = 0.0;
   }
 
-  error = std::max<double>(error_r, error_p);
+  error = std::max(error_r, error_p);
 
 #ifdef HAVE_MPI
   double buf = error;
@@ -176,7 +176,7 @@ double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du
   double absolute_tol = 1.0, relative_tol = 1e-6;
   for (int n = 0; n < u.MyLength(); n++) {
     double tmp = fabs(du[n]) / (absolute_tol + relative_tol * fabs(u[n]));
-    error_norm = std::max<double>(error_norm, tmp);
+    error_norm = std::max(error_norm, tmp);
   }
  
 #ifdef HAVE_MPI

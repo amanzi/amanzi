@@ -48,7 +48,6 @@ enum StateConstructMode {
   STATE_CONSTRUCT_MODE_COPY_DATA
 };
 
-
 class State {
 
  private:

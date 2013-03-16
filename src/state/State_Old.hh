@@ -49,7 +49,7 @@ class State_Old : public Teuchos::VerboseObject<State_Old> {
   Teuchos::RCP<Epetra_Vector>      get_specific_storage() { return specific_storage; }
   Teuchos::RCP<Epetra_Vector>      get_specific_yield() { return specific_yield; }
   
-  const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
+  Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
   double get_time () const { return time; };
   double get_last_time () const { return last_time; }
