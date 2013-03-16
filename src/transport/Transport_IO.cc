@@ -47,7 +47,7 @@ void Transport_PK::ProcessParameterList()
   std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
   ProcessStringVerbosity(verbosity_name, &verbosity);
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
 
   // global transport parameters
   cfl_ = transport_list.get<double>("CFL", 1.0);
@@ -276,7 +276,7 @@ void Transport_PK::PrintStatistics() const
 **************************************************************** */
 void Transport_PK::WriteGMVfile(Teuchos::RCP<Transport_State> TS) const
 {
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
   Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
 
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");

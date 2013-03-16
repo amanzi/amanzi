@@ -145,7 +145,6 @@ class Richards_PK : public Flow_PK {
   void PrintStatistics() const;
   
   // access methods
-  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
 
@@ -166,7 +165,6 @@ class Richards_PK : public Flow_PK {
   double rho, mu;
   double atm_pressure;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map* super_map_;
 
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators

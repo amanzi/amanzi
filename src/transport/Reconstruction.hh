@@ -32,15 +32,14 @@ const double RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
 class Reconstruction {  
  public:
   Reconstruction() { status = RECONSTRUCTION_NULL; }
-  Reconstruction(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, 
-                 Teuchos::RCP<Epetra_Vector> scalar_field) { 
-    mesh_ = mesh;
-    scalar_field_ = scalar_field;
-  }
+  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, 
+                 Teuchos::RCP<Epetra_Vector> scalar_field) :
+    mesh_(mesh), scalar_field_(scalar_field) {}
+
   ~Reconstruction() {};
 
   void Init();
-  void reset_field(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh,
+  void reset_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    Teuchos::RCP<Epetra_Vector> scalar_field) { 
     mesh_ = mesh;
     scalar_field_ = scalar_field;
@@ -66,7 +65,7 @@ class Reconstruction {
   int findMinimalDiagonalEntry(Teuchos::SerialDenseMatrix<int, double>& matrix);
   void printLeastSquareSystem(Teuchos::SerialDenseMatrix<int, double>matrix, double* rhs);
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   Teuchos::RCP<Epetra_Vector> scalar_field_;  // scalar cell-centered field
   Teuchos::RCP<Epetra_MultiVector> gradient_;

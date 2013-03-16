@@ -118,7 +118,7 @@ class Matrix_MFD : public Epetra_Operator {
 
  protected:
   Teuchos::RCP<Flow_State> FS_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Epetra_Map map_;
 
   bool flag_symmetry_;

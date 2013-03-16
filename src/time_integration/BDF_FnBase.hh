@@ -29,15 +29,14 @@ class fnBase {
   virtual void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc) = 0;
 
   // access to AmanziMesh
-  virtual Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh() = 0;
-  
+  virtual Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh() = 0;
+
   // access to Epetra Map
   virtual const Epetra_Map& super_map() = 0;
-  
+
   // Apply Preconditioner
   virtual int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) = 0;
-    
-  
+
   // check the admissibility of a solution
   // override with the actual admissibility check
   virtual bool is_admissible(const Epetra_Vector& up) { return true; }

@@ -182,7 +182,7 @@ double Transport_PK::CalculateTransportDt()
   // loop over faces and accumulate upwinding fluxes
   int  i, f, c, c1;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
   const Epetra_Map& fmap = mesh->face_map(true);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
@@ -661,7 +661,7 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
  ****************************************************************** */
 void Transport_PK::IdentifyUpwindCells()
 {
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     (*upwind_cell_)[f] = -1;  // negative value indicates boundary

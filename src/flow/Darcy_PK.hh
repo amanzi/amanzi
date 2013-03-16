@@ -83,7 +83,6 @@ class Darcy_PK : public Flow_PK {
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
 
   // access methods
-  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
   Epetra_Vector& ref_solution() { return *solution; }
   Epetra_Vector& ref_solution_faces() { return *solution_faces; }
   Epetra_Import& face_importer() { return *face_importer_; }
@@ -107,7 +106,6 @@ class Darcy_PK : public Flow_PK {
   double rho_, mu_;
   double atm_pressure;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map* super_map_;
   int dim;
 

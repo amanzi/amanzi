@@ -211,7 +211,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   int nfaces_owned, nfaces_wghost;
   int nnodes_wghost;
  
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 };
 

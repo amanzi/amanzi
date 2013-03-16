@@ -31,7 +31,7 @@ void Transport_PK::CheckDivergenceProperty()
   int i, c, f;
   double div, u, umax, error_max, error_avg;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
   Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
   error_max = error_avg = 0.0;

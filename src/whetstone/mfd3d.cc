@@ -33,9 +33,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh) 
-{ 
-  mesh_ = mesh; 
+MFD3D::MFD3D(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  mesh_(mesh) {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
 }
 

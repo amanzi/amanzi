@@ -127,7 +127,10 @@ class Flow_PK : public BDF2::fnBase {
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 
                         const std::vector<AmanziMesh::Entity_ID>& v2, 
                         std::vector<AmanziMesh::Entity_ID>* vv);
- public:
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
+
+public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
@@ -146,8 +149,8 @@ class Flow_PK : public BDF2::fnBase {
  private:
   int nseepage_prev;
 
- private:
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+ protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace AmanziFlow
