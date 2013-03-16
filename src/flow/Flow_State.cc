@@ -43,7 +43,7 @@ Flow_State::Flow_State(Flow_State& other,
   } else if (mode == PK_STATE_CONSTRUCT_MODE_COPY_DATA_GHOSTED) {
     ghosted_ = true;
 
-    CompositeVectorFactory fac();
+    CompositeVectorFactory fac;
     fac.SetMesh(mesh_);
     fac.SetComponent("face", AmanziMesh::FACE, 1);
     Teuchos::RCP<CompositeVector> flux = fac.CreateVector(true);
@@ -83,6 +83,8 @@ void Flow_State::Construct_() {
     ->SetComponent("cell", AmanziMesh::CELL, 1);
   S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(false)
     ->SetComponent("face", AmanziMesh::FACE, 1);
+  S_->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
 
 };
 
@@ -98,14 +100,15 @@ void Flow_State::Initialize() {
   S_->GetField("specific_storage",name_)->set_initialized();
   S_->GetField("specific_yield",name_)->set_initialized();
   S_->GetField("darcy_flux",name_)->set_initialized();
+  S_->GetField("darcy_velocity",name_)->set_initialized();
 }
 
 Teuchos::RCP<AmanziGeometry::Point>
 Flow_State::gravity() {
   Teuchos::RCP<Epetra_Vector> gvec = S_->GetConstantVectorData("gravity", name_);
   Teuchos::RCP<AmanziGeometry::Point> gpoint =
-    Teuchos::rcp(new AmanziGeometry::Point(gvec.MySize()));
-  for (int i=0; i!=gvec.MySize(); ++i) gpoint[i] = gvec;
+    Teuchos::rcp(new AmanziGeometry::Point(gvec->MyLength()));
+  for (int i=0; i!=gvec->MyLength(); ++i) (*gpoint)[i] = (*gvec)[i];
   return gpoint;
 }
 
@@ -116,7 +119,7 @@ void Flow_State::set_fluid_density(double rho) {
 }
 
 void Flow_State::set_fluid_viscosity(double mu) {
-  *fluid_viscosity() = rho;
+  *fluid_viscosity() = mu;
 }
 
 void Flow_State::set_porosity(double phi) {

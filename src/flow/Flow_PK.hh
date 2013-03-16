@@ -147,7 +147,7 @@ class Flow_PK : public BDF2::fnBase {
   int nseepage_prev;
 
  private:
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace AmanziFlow

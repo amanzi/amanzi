@@ -36,27 +36,28 @@ public:
   Teuchos::RCP<double> fluid_viscosity() {
     return S_->GetScalarData("fluid_viscosity", name_); }
   Teuchos::RCP<Epetra_Vector> pressure() {
-    return S_->GetFieldData("pressure", name_)->ViewComponent("cell", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("pressure", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> lambda() {
-    return S_->GetFieldData("pressure", name_)->ViewComponent("face", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("pressure", name_)->ViewComponent("face", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> darcy_flux() {
-    return S_->GetFieldData("darcy_flux", name_)->ViewComponent("face", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("darcy_flux", name_)->ViewComponent("face", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_MultiVector> darcy_velocity() {
+    return S_->GetFieldData("darcy_velocity", name_)->ViewComponent("face", ghosted_); }
 
   Teuchos::RCP<Epetra_Vector> vertical_permeability() {
-    return S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> horizontal_permeability() {
-    return S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_)(1); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_))(1)); }
   Teuchos::RCP<Epetra_Vector> porosity() {
-    return S_->GetFieldData("porosity", name_)->ViewComponent("cell", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("porosity", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> water_saturation() {
-    return S_->GetFieldData("water_saturation", name_)->ViewComponent("cell", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("water_saturation", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> prev_water_saturation() {
-    return S_->GetFieldData("prev_water_saturation", name_)->ViewComponent("cell", ghosted_)(0); }
-
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("prev_water_saturation", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> specific_storage() {
-    return S_->GetFieldData("specific_storage", name_)->ViewComponent("cell", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_storage", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> specific_yield() {
-    return S_->GetFieldData("specific_yield", name_)->ViewComponent("cell", ghosted_)(0); }
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_yield", name_)->ViewComponent("cell", ghosted_))(0)); }
 
   double ref_fluid_density() { return *fluid_density(); }
   double ref_fluid_viscosity() { return *fluid_viscosity(); }
@@ -93,6 +94,8 @@ protected:
 
 
 };
+
+} // namespace
 } // namespace
 
 #endif

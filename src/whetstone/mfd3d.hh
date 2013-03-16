@@ -52,7 +52,7 @@ const int WHETSTONE_STABILITY_OPTIMIZED_GEOMETRY = 4;
 
 class MFD3D { 
  public:
-  explicit MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh);
+  explicit MFD3D(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
   ~MFD3D() {};
 
   // primary methods
@@ -130,7 +130,7 @@ class MFD3D {
  private:
   int FindPosition_(int v, AmanziMesh::Entity_ID_List nodes);
   void RescaleDarcyMassInverse_(int cell, Teuchos::SerialDenseMatrix<int, double>& W);
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   int stability_method_;  
   double scalar_stability_, scaling_factor_;

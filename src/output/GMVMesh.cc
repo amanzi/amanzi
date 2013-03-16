@@ -3,7 +3,7 @@
 namespace Amanzi {
 namespace GMV {
 
-static inline void write_mesh_to_file_(AmanziMesh::Mesh &mesh_map, std::string filename)
+static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh_map, std::string filename)
 {
   int dim = mesh_map.space_dimension();
   gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
@@ -57,7 +57,7 @@ static inline void write_mesh_to_file_(AmanziMesh::Mesh &mesh_map, std::string f
 }
 
 
-void create_mesh_file(AmanziMesh::Mesh &mesh_map, std::string filename)
+void create_mesh_file(const AmanziMesh::Mesh &mesh_map, std::string filename)
 {
   write_mesh_to_file_(mesh_map, filename);
   gmvwrite_closefile();
@@ -111,7 +111,7 @@ void open_data_file(std::string meshfile,
 }
 
 
-void open_data_file(AmanziMesh::Mesh &mesh_map, std::string filename) 
+void open_data_file(const AmanziMesh::Mesh &mesh_map, std::string filename) 
 {
   unsigned int num_nodes = mesh_map.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   unsigned int num_cells = mesh_map.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -120,7 +120,7 @@ void open_data_file(AmanziMesh::Mesh &mesh_map, std::string filename)
 }
 
 
-void open_data_file(AmanziMesh::Mesh &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits) 
+void open_data_file(const AmanziMesh::Mesh &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits) 
 {
   unsigned int num_nodes = mesh_map.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   unsigned int num_cells = mesh_map.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

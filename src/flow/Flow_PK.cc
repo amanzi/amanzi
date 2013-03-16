@@ -526,7 +526,7 @@ int Flow_PK::FindPosition(int f, AmanziMesh::Entity_ID_List faces)
 **************************************************************** */
 void Flow_PK::WriteGMVfile(Teuchos::RCP<Flow_State> FS) const
 {
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = FS->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = FS->mesh();
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();

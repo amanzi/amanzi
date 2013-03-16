@@ -16,7 +16,7 @@ namespace Amanzi {
 namespace GMV {
 
 // Write a GMV file containing only mesh data to be used as a "fromfile".
-void create_mesh_file(AmanziMesh::Mesh &mesh_maps, std::string filename);
+void create_mesh_file(const AmanziMesh::Mesh &mesh_maps, std::string filename);
 
 // Opens and initializes a GMV file for writing which references a "fromfile" for mesh definition.
 void open_data_file(std::string mesh_fromfile, std::string filename_path, unsigned int num_nodes, unsigned int num_cells);
@@ -31,11 +31,11 @@ void open_data_file(std::string mesh_fromfile,
                     unsigned int digits);
 
 // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile".
-void open_data_file(AmanziMesh::Mesh &mesh_maps, std::string filename);
+void open_data_file(const AmanziMesh::Mesh &mesh_maps, std::string filename);
 
 // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile"
 // adds a suffix of the type .000302 with, in this case, cycleno=302 and digits= 6
-void open_data_file(AmanziMesh::Mesh &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits);
+void open_data_file(const AmanziMesh::Mesh &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits);
 
 // start the variables section (call this after write_cycle or write_time)
 void start_data();
