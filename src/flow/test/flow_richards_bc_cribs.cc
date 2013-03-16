@@ -25,7 +25,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 
-#include "State_Old.hh"
+#include "State.hh"
 #include "Flow_State.hh"
 #include "Richards_PK.hh"
 
@@ -60,7 +60,8 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
-  State_Old S(state_list, mesh);
+  State S(state_list);
+  S.RegisterDomainMesh(mesh);
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
 
   // create Richards process kernel
@@ -83,7 +84,7 @@ TEST(FLOW_3D_RICHARDS) {
   GMV::start_data();
   GMV::write_cell_data(pressure, 0, "pressure");
   GMV::write_cell_data(saturation, 0, "saturation");
-  GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
+  GMV::write_cell_data(*FS->vertical_permeability(), 0, "vert_permeability");
   GMV::close_data_file();
 
   // check the pressure profile

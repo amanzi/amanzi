@@ -25,6 +25,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
@@ -101,7 +102,7 @@ if (BUILD_TESTS)
 	  	          test/Main.cc
 	 		  test/test_restart.cc
 	 		  test/test_vis.cc
-                      LINK_LIBS state mesh_factory mesh ${UnitTest_LIBRARIES})
+                      LINK_LIBS state mesh_factory mesh data_structures ${UnitTest_LIBRARIES})
     endif()
 
 endif()

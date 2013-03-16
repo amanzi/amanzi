@@ -24,6 +24,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
@@ -50,7 +51,7 @@ set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc
                         Reconstruction.cc)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
-                   LINK_LIBS geometry mesh error_handling state time_integration ${Epetra_LIBRARIES})
+                   LINK_LIBS geometry mesh error_handling state data_structures time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes
@@ -64,7 +65,7 @@ if ( BUILD_TESTS )
     include_directories(${TRANSPORT_SOURCE_DIR})
     include_directories(${Boost_INCLUDE_DIRS})
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions)
+    set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions data_structures)
 
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics
@@ -93,7 +94,7 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions data_structures)
 
         add_amanzi_test(transport_advance_mstk transport_advance_mstk
 	                KIND unit
@@ -139,7 +140,7 @@ if ( BUILD_TESTS )
     endif()    
 
     if ( ENABLE_STK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions data_structures)
 
         add_amanzi_test(transport_advance_stk transport_advance_stk
 	                KIND unit

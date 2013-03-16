@@ -52,7 +52,7 @@ const int WHETSTONE_STABILITY_OPTIMIZED_GEOMETRY = 4;
 
 class MFD3D { 
  public:
-  explicit MFD3D(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+  explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
 
   // primary methods

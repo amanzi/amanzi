@@ -60,7 +60,7 @@ list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration)
+                   LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration data_structures state)
 
 #
 # Library: matrix audit
@@ -91,7 +91,7 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
  
         # Test: miscaleneous Darcy flow routines
         add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cc)
@@ -148,7 +148,7 @@ if (BUILD_TESTS)
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
-    set(amanzi_libs geometry mesh mesh_factory state flow whetstone)
+    set(amanzi_libs geometry mesh mesh_factory state flow whetstone data_structures)
  
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
@@ -163,7 +163,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
-    set(amanzi_libs geometry mesh mesh_factory flow state whetstone solvers output)
+    set(amanzi_libs geometry mesh mesh_factory flow state whetstone solvers output data_structures)
     
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit

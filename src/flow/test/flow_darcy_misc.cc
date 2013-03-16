@@ -36,7 +36,7 @@ class DarcyProblem {
  public:
   Epetra_MpiComm* comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
-  State_Old* S;
+  State* S;
   Teuchos::ParameterList dp_list;
   AmanziFlow::Darcy_PK* DPK;
   int MyPID;
@@ -76,7 +76,8 @@ class DarcyProblem {
 
     // create Darcy process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-    S = new State_Old(state_list, mesh);
+    S = new State(state_list);
+    S->RegisterDomainMesh(mesh);
     S->set_time(0.0);
 
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
