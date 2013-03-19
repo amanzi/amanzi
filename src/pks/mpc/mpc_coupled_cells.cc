@@ -68,12 +68,12 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Operators::Matrix> pcB = sub_pks_[1]->preconditioner();
 
 #ifdef ENABLE_DBC
-  Teuchos::RCP<Operators::MatrixMFD> pcA_mfd =
-      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcA);
-  ASSERT(pcA_mfd != Teuchos::null);
   Teuchos::RCP<Operators::MatrixMFD> pcB_mfd =
       Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcB);
   ASSERT(pcB_mfd != Teuchos::null);
+  Teuchos::RCP<Operators::MatrixMFD> pcA_mfd =
+      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcA);
+  ASSERT(pcA_mfd != Teuchos::null);
 #else
   Teuchos::RCP<Operators::MatrixMFD> pcA_mfd =
       Teuchos::rcp_static_cast<Operators::MatrixMFD>(pcA);
@@ -137,10 +137,10 @@ void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tree
 
     Teuchos::OSTab tab = getOSTab();
     *out_ << "Preconditioned Updates:" << std::endl;
-    *out_ << "  Pp0: " << (*Pu->SubVector(0)->data())("cell",c0_) << " " << (*Pu->SubVector(0)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  Pp1: " << (*Pu->SubVector(0)->data())("cell",c1_) << " " << (*Pu->SubVector(0)->data())("face",fnums[1]) << std::endl;
-    *out_ << "  PT0: " << (*Pu->SubVector(1)->data())("cell",c0_) << " " << (*Pu->SubVector(1)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  PT1: " << (*Pu->SubVector(1)->data())("cell",c1_) << " " << (*Pu->SubVector(1)->data())("face",fnums[1]) << std::endl;
+    *out_ << "  Pp(" << c0_ << "): " << (*Pu->SubVector(0)->data())("cell",c0_) << " " << (*Pu->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+    *out_ << "  Pp(" << c1_ << "): " << (*Pu->SubVector(0)->data())("cell",c1_) << " " << (*Pu->SubVector(0)->data())("face",fnums[1]) << std::endl;
+    *out_ << "  PT(" << c0_ << "): " << (*Pu->SubVector(1)->data())("cell",c0_) << " " << (*Pu->SubVector(1)->data())("face",fnums0[0]) << std::endl;
+    *out_ << "  PT(" << c1_ << "): " << (*Pu->SubVector(1)->data())("cell",c1_) << " " << (*Pu->SubVector(1)->data())("face",fnums[1]) << std::endl;
   }
 }
 

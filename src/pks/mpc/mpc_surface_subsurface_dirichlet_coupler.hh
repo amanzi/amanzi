@@ -7,24 +7,10 @@ Author: Ethan Coon
 
 Interface for the derived MPC for water coupling between surface and subsurface.
 
-In this method, a Dirichlet BC is used on the subsurface.  The operator looks like:
-
-            p      lamda    p_surf
-         -------------------------
-p       | A-K/dz |  K/dz |   0    | ( dp  )  =  res_mass_sub
-         -------------------------
-lambda  |     0  |    1  |   -1   | ( dl  )  =  res_Dirichlet BC
-         -------------------------
-p_surf  |   K/dz |   0   |As-K/dz | ( dps )  =  res_mass_surf
-         -------------------------
-
-This operator is pretty tightly coupled, so we ignore the (p_surf,p) entry
-(row 3, col 0 block).  With this zeroed out, we can solve the (3,3) block,
-back substitute into res_Dirichlet BC, adding 1*dps, and solve the (p,lambda)
-system.
-
-To do this, we need the Dirichlet BC, which is given by the value of pressure
-on the surface.
+In this method, a Dirichlet BC is used on the subsurface boundary for
+the operator, but the preconditioner is for the dirichlet system with no
+extra unknowns.  On the surface, the TPFA is used, resulting in a
+subsurface-face-only Schur complement that captures all terms.
 
 ------------------------------------------------------------------------- */
 
@@ -35,25 +21,62 @@ on the surface.
 
 namespace Amanzi {
 
+namespace Operators {
+  class MatrixMFD_Surf;
+  class MatrixMFD_TPFA;
+}
+
 class MPCSurfaceSubsurfaceDirichletCoupler : public MPCSurfaceSubsurfaceCoupler {
 
  public:
   MPCSurfaceSubsurfaceDirichletCoupler(Teuchos::ParameterList& plist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCSurfaceSubsurfaceCoupler(plist, soln) {}
+      MPCSurfaceSubsurfaceCoupler(plist, soln) {
+    surf_c0_ = plist_.get<int>("surface debug cell 0", 0);
+    surf_c1_ = plist_.get<int>("surface debug cell 1", 1);
+  }
+
+  // -- Setup data.
+  virtual void setup(const Teuchos::Ptr<State>& S);
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  // updates the preconditioner
+  virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
+ protected:
+  // Apply the preconditioner matrix.
+  virtual void PreconApply_(Teuchos::RCP<const TreeVector> u,
+                            Teuchos::RCP<TreeVector> Pu);
+
+  // Hackery hook for inheriting MPCs.
+  virtual void PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
+          Teuchos::RCP<TreeVector> Pu) {};
+
+  // Given updates to subsurface, calculate updates to surface cells.
+  virtual void PreconUpdateSurfaceCells_(Teuchos::RCP<const TreeVector> u,
+          Teuchos::RCP<TreeVector> Pu);
+
+  // Given updates to surface cells, calculate updates to surface faces.
+  virtual void PreconUpdateSurfaceFaces_(Teuchos::RCP<const TreeVector> u,
+          Teuchos::RCP<TreeVector> Pu);
+
+ protected:
+  Teuchos::RCP<Operators::MatrixMFD_Surf> mfd_preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
+
+  int surf_c0_;
+  int surf_c1_;
 
  private:
   // factory registration
   static RegisteredPKFactory<MPCSurfaceSubsurfaceDirichletCoupler> reg_;
 
-
 };
 
 } // namespace
 
-
 #endif
+

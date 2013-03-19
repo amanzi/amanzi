@@ -17,7 +17,7 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class PCLiqAtm;
+class PCIceWater;
 
 class PCIceEvaluator : public SecondaryVariableFieldEvaluator {
 

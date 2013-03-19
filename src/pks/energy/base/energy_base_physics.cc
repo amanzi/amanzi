@@ -34,9 +34,6 @@ void EnergyBase::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
-  std::cout << "  energy (t-dt) = " << (*e0)("cell",0) << std::endl;
-  std::cout << "  energy (t)    = " << (*e1)("cell",0) << std::endl;
-
   g->ViewComponent("cell", false)
     ->Update(1.0/dt, *e1->ViewComponent("cell", false),
           -1.0/dt, *e0->ViewComponent("cell", false), 1.0);

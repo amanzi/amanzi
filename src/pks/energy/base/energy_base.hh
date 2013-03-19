@@ -140,7 +140,8 @@ protected:
   FluxUpdateMode update_flux_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
-  bool coupled_to_surface_;
+  bool coupled_to_surface_via_temp_;
+  bool coupled_to_surface_via_flux_;
 
   // Keys
   Key energy_key_;

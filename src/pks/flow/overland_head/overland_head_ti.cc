@@ -45,8 +45,8 @@ void OverlandHeadFlow::fun( double t_old,
   res->PutScalar(0.0);
 
 #if DEBUG_FLAG
-  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-  if (c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
     AmanziMesh::Entity_ID_List faces, faces0;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
@@ -56,38 +56,25 @@ void OverlandHeadFlow::fun( double t_old,
     Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> preselev= S_next_->GetFieldData("pres_elev");
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    std::cout << "  depth cell " << ncells << " = " << (*depth)("cell",ncells)
-              << std::endl;
-    std::cout << "  depth face " << nfaces << " = " << (*depth)("face",nfaces)
-              << std::endl;
-    std::cout << "  pelev cell " << ncells << " = " << (*preselev)("cell",ncells)
-              << std::endl;
-    std::cout << "  pelev face " << nfaces << " = " << (*preselev)("face",nfaces)
-              << std::endl;
 
+    *out_ << "----------------------------------------------------------------" << std::endl;
 
-
-
-    std::cout << "----------------------------------------------------------------" << std::endl;
-
-    std::cout << "OverlandHead Residual calculation: T0 = " << t_old
+    *out_ << "Residual calculation: T0 = " << t_old
           << " T1 = " << t_new << " H = " << h << std::endl;
-    std::cout << std::setprecision(15);
-    std::cout << "  p0: " << (*u)("cell",0,c0_) << std::endl;
-    std::cout << "  h0: " << (*depth)("cell",0,c0_) << " "
+    *out_ << std::setprecision(15);
+    *out_ << "  p0: " << (*u)("cell",0,c0_) << std::endl;
+    *out_ << "  h0: " << (*depth)("cell",0,c0_) << " "
           << (*depth)("face",0,faces0[0]) << " " << (*depth)("face",0,faces0[1]) << " "
           << (*depth)("face",0,faces0[2]) << " " << (*depth)("face",0,faces0[3]) << std::endl;
-    std::cout << "  hz0: " << (*preselev)("cell",0,c0_) << " "
+    *out_ << "  hz0: " << (*preselev)("cell",0,c0_) << " "
           << (*preselev)("face",0,faces0[0]) << " " << (*preselev)("face",0,faces0[1]) << " "
           << (*preselev)("face",0,faces0[2]) << " " << (*preselev)("face",0,faces0[3]) << std::endl;
-    std::cout << " --" << std::endl;
-    std::cout << "  p1: " << (*u)("cell",c1_) << std::endl;
-    std::cout << "  h1: " << (*depth)("cell",c1_) << " "
+    *out_ << " --" << std::endl;
+    *out_ << "  p1: " << (*u)("cell",c1_) << std::endl;
+    *out_ << "  h1: " << (*depth)("cell",c1_) << " "
           << (*depth)("face",faces[0]) << " " << (*depth)("face",faces[1]) << " "
           << (*depth)("face",faces[2]) << " " << (*depth)("face",faces[3]) << std::endl;
-    std::cout << "  hz1: " << (*preselev)("cell",c1_) << " "
+    *out_ << "  hz1: " << (*preselev)("cell",c1_) << " "
           << (*preselev)("face",faces[0]) << " " << (*preselev)("face",faces[1]) << " "
           << (*preselev)("face",faces[2]) << " " << (*preselev)("face",faces[3]) << std::endl;
   }
@@ -117,23 +104,23 @@ void OverlandHeadFlow::fun( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-  //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-  if (c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
     AmanziMesh::Entity_ID_List faces, faces0;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
     mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
 
-    std::cout << "  cond0 (diff): " << (*cond)("cell",c0_) << " "
+    *out_ << "  cond0 (diff): " << (*cond)("cell",c0_) << " "
           << (*cond)("face",faces0[0]) << " " << (*cond)("face",faces0[1]) << " "
           << (*cond)("face",faces0[2]) << " " << (*cond)("face",faces0[3]) << std::endl;
-    std::cout << "  cond1 (diff): " << (*cond)("cell",c1_) << " "
+    *out_ << "  cond1 (diff): " << (*cond)("cell",c1_) << " "
           << (*cond)("face",faces[0]) << " " << (*cond)("face",faces[1]) << " "
           << (*cond)("face",faces[2]) << " " << (*cond)("face",faces[3]) << std::endl;
-    std::cout << "  res0 (diff): " << (*res)("cell",c0_) << " "
+    *out_ << "  res0 (diff): " << (*res)("cell",c0_) << " "
              << (*res)("face",faces0[0]) << " " << (*res)("face",faces0[1]) << " "
              << (*res)("face",faces0[2]) << " " << (*res)("face",faces0[3]) << std::endl;
-    std::cout << "  res1 (diff): " << (*res)("cell",c1_) << " "
+    *out_ << "  res1 (diff): " << (*res)("cell",c1_) << " "
              << (*res)("face",faces[0]) << " " << (*res)("face",faces[1]) << " "
              << (*res)("face",faces[2]) << " " << (*res)("face",faces[3]) << std::endl;
   }
@@ -141,7 +128,8 @@ void OverlandHeadFlow::fun( double t_old,
 #endif
 
 #if DEBUG_ICE_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
     *out_ << " WATER BUDGET" << std::endl;
     Teuchos::RCP<const CompositeVector> cond0 = S_next_->GetFieldData("overland_conductivity");
     Teuchos::RCP<const CompositeVector> dens0 = S_inter_->GetFieldData("surface_molar_density_liquid");
@@ -161,7 +149,8 @@ void OverlandHeadFlow::fun( double t_old,
   // accumulation term
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
     *out_ << "  res0 (acc): " << (*res)("cell",c0_) << std::endl;
     *out_ << "  res1 (acc): " << (*res)("cell",c1_) << std::endl;
 
@@ -171,7 +160,8 @@ void OverlandHeadFlow::fun( double t_old,
   // add rhs load value
   AddSourceTerms_(res.ptr());
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
     *out_ << "  res0 (source): " << (*res)("cell",c0_) << std::endl;
     *out_ << "  res1 (source): " << (*res)("cell",c1_) << std::endl;
   }
@@ -194,7 +184,8 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(c0_, &faces, &dirs);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < u->data()->size("cell",false) && c1_ < u->data()->size("cell",false)) {
     *out_ << "Precon application:" << std::endl;
     *out_ << "  p0: " << (*u->data())("cell",0,c0_) << " "
           << std::endl;
@@ -207,7 +198,8 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 
   // Dump correction
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < u->data()->size("cell",false) && c1_ < u->data()->size("cell",false)) {
     *out_ << "  PC*p0, pre-var change: " << (*Pu->data())("cell",0,c0_) << " "
           << std::endl;
         //          << (*Pu->data())("face",0,0) << " " << (*Pu->data())("cell",0,cells[1]) << std::endl;
@@ -225,7 +217,8 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 
   // Dump correction
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
+      c0_ < u->data()->size("cell",false) && c1_ < u->data()->size("cell",false)) {
     *out_ << "  PC*p0: " << (*Pu->data())("cell",0,c0_) << " "
           << std::endl;
         //          << (*Pu->data())("face",0,0) << " " << (*Pu->data())("cell",0,cells[1]) << std::endl;
@@ -241,13 +234,12 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
-
-
   Teuchos::RCP<const CompositeVector> eff_p = S_next_->GetFieldData("surface_effective_pressure");
   Teuchos::RCP<const CompositeVector> surf_p = S_next_->GetFieldData("surface_pressure");
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true) &&
+      c0_ < eff_p->size("cell",false) && c1_ < eff_p->size("cell",false)) {
     *out_ << "Precon update at t = " << t << std::endl;
     *out_ << "  p0: " << (*up->data())("cell",0,c0_) << " "
           << std::endl;
@@ -273,7 +265,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   FixBCsForPrecon_(S_next_.ptr());
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true) &&
+      c0_ < cond->size("cell",false) && c1_ < cond->size("cell",false)) {
     *out_ << "  conductivity0: " << (*cond)("cell",0,c0_) << " "
           << (*cond)("face",0,0) << std::endl;
     *out_ << "  bcs: " << std::endl;
@@ -318,7 +311,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   // Note boundary conditions are in height variables.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
-  if (coupled_to_subsurface_via_full_ || coupled_to_subsurface_via_residual_) {
+  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     mfd_preconditioner_->AssembleGlobalMatrices();
 
     if (full_jacobian_) {
@@ -451,7 +444,8 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
 
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true) &&
+      c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
     *out_ << "ERRORS:" << std::endl;
     *out_ << "  cell0: h*res = " << std::abs(h*res_c[0][c0_])
           << ", abs= " << atol_*wc_base

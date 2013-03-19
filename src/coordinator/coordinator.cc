@@ -41,8 +41,8 @@ Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
   restart_(false) {
   coordinator_init();
 
-  setLinePrefix("Coordinator");
-  setDefaultVerbLevel(ATS::VerbosityLevel::level_);
+  setLinePrefix(Amanzi::VerbosityLevel::verbosityHeader("Coordinator"));
+  setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
   Teuchos::readVerboseObjectSublist(&parameter_list_,this);
   // get the fancy output ??
   verbosity_ = getVerbLevel();

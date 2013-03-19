@@ -8,7 +8,7 @@ Author: Ethan Coon
 Interface for the derived MPC for water coupling between surface and subsurface.
 
 In this method, a Dirichlet BC is used on the subsurface boundary for
-the operator, but the preconditioner is for the dirichlet system with no
+the operator, but the preconditioner is for the flux system with no
 extra unknowns.  On the surface, the TPFA is used, resulting in a
 subsurface-face-only Schur complement that captures all terms.
 
@@ -19,19 +19,22 @@ subsurface-face-only Schur complement that captures all terms.
 #include "matrix_mfd_tpfa.hh"
 #include "pk_physical_bdf_base.hh"
 
-#include "mpc_surface_subsurface_dirichlet_coupler.hh"
+#include "mpc_surface_subsurface_flux_coupler.hh"
 
 
 namespace Amanzi {
 
 #define DEBUG_FLAG 1
 
-RegisteredPKFactory<MPCSurfaceSubsurfaceDirichletCoupler>
-MPCSurfaceSubsurfaceDirichletCoupler::reg_("surface-subsurface Dirichlet coupler");
+RegisteredPKFactory<MPCSurfaceSubsurfaceFluxCoupler>
+MPCSurfaceSubsurfaceFluxCoupler::reg_("surface-subsurface flux coupler");
 
 // -- Setup data.
-void MPCSurfaceSubsurfaceDirichletCoupler::setup(const Teuchos::Ptr<State>& S) {
+void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
   MPCSurfaceSubsurfaceCoupler::setup(S);
+
+  // get the flux key
+  flux_key_ = plist_.get<std::string>("flux key");
 
   // Get the domain's preconditioner and replace it with a MatrixMFD_Surf.
   Teuchos::RCP<Operators::Matrix> precon = domain_pk_->preconditioner();
@@ -39,8 +42,7 @@ void MPCSurfaceSubsurfaceDirichletCoupler::setup(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
   ASSERT(mfd_precon != Teuchos::null);
 
-  mfd_preconditioner_ =
-      Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
+  mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
   preconditioner_ = mfd_preconditioner_;
 
   // Get the surface's preconditioner and ensure it is TPFA.
@@ -53,16 +55,43 @@ void MPCSurfaceSubsurfaceDirichletCoupler::setup(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->set_surface_A(surf_preconditioner_);
 
   // give the PCs back to the PKs
-  domain_pk_->set_preconditioner(preconditioner_);
+  domain_pk_->set_preconditioner(mfd_preconditioner_);
   surf_pk_->set_preconditioner(surf_preconditioner_);
+}
 
+
+// -------------------------------------------------------------
+// Special function evaluation process
+// -------------------------------------------------------------
+void MPCSurfaceSubsurfaceFluxCoupler::fun(double t_old, double t_new,
+        Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
+        Teuchos::RCP<TreeVector> g) {
+
+  // evaluate the residual of the surface equation
+  Teuchos::RCP<TreeVector> surf_u_new = u_new->SubVector(surf_pk_name_);
+  Teuchos::RCP<TreeVector> surf_g = g->SubVector(surf_pk_name_);
+  surf_pk_->fun(t_old, t_new, Teuchos::null, surf_u_new, surf_g);
+
+  // The residual of the surface equation provides the flux.  This is the mass
+  // imbalance on the surface, and is used in the subsurface PK.
+  Teuchos::RCP<CompositeVector> source =
+      S_next_->GetFieldData(flux_key_, domain_pk_name_);
+  *source->ViewComponent("cell",false) = *surf_g->data()->ViewComponent("cell",false);
+
+  // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
+  Teuchos::RCP<TreeVector> domain_u_new = u_new->SubVector(domain_pk_name_);
+  Teuchos::RCP<TreeVector> domain_g = g->SubVector(domain_pk_name_);
+  domain_pk_->fun(t_old, t_new, Teuchos::null, domain_u_new, domain_g);
+
+  // Set the surf cell residual to 0.
+  surf_g->data()->ViewComponent("cell",false)->PutScalar(0.);
 }
 
 
 // -------------------------------------------------------------
 // Apply preconditioner to u and returns the result in Pu
 // -------------------------------------------------------------
-void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector> u,
+void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   // Apply the combined preconditioner to the subsurface residual
   PreconApply_(u,Pu);
@@ -141,74 +170,50 @@ void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector>
 }
 
 
+void MPCSurfaceSubsurfaceFluxCoupler::PreconApply_(
+    Teuchos::RCP<const TreeVector> u,
+    Teuchos::RCP<TreeVector> Pu) {
+  preconditioner_->ApplyInverse(*u->SubVector(domain_pk_name_),
+          Pu->SubVector(domain_pk_name_).ptr());
+};
+
+
 // -------------------------------------------------------------
-// Apply preconditioner to u and returns the result in Pu
+// Post-processing in the preconditioner takes the corrections from the
+// surface cell's parent faces and uses them for the surface cell, and then
+// calculates a correction for the surface faces.
 // -------------------------------------------------------------
-void MPCSurfaceSubsurfaceDirichletCoupler::PreconApply_(
+void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceCells_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
 
-  // Grab the surface cell residuals and stick them in the corresponding
-  // subsurface face locations.
-  Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(domain_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> domain_u_new = Teuchos::rcp(new CompositeVector(*domain_u));
-  domain_u_new->CreateData();
-  *domain_u_new = *domain_u;
-
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->data();
   Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->data();
   Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
-
-
-  const Epetra_MultiVector& surf_u_c = *u->SubVector(surf_pk_name_)
-      ->data()->ViewComponent("cell",false);
-  Epetra_MultiVector& domain_u_new_f = *domain_u_new->ViewComponent("face",false);
-
-  int ncells_surf = surf_u_c.MyLength();
-  for (int cs=0; cs!=ncells_surf; ++cs) {
-    AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
-    domain_u_new_f[0][f] = surf_u_c[0][cs];
-  }
-
-  // Apply the combined preconditioner
-  mfd_preconditioner_->ApplyInverse(*domain_u_new, domain_Pu.ptr());
-}
-
-
-
-// ------------------------------------------------------------------------------
-// Correction applies to both the domain face and the surface cell.
-// Additionally, drift in the difference between lambda and p_surf needs to be
-// corrected.
-// ------------------------------------------------------------------------------
-void MPCSurfaceSubsurfaceDirichletCoupler::PreconUpdateSurfaceCells_(
-    Teuchos::RCP<const TreeVector> u,
-    Teuchos::RCP<TreeVector> Pu) {
-
-
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
-  Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
-  Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
 
   int ncells_surf = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  // Correction applies to both the domain face and the surface cell.  Also
+  // correct for drift.
+  const Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
   const Epetra_MultiVector& domain_p_f = *S_next_->GetFieldData("pressure")
       ->ViewComponent("face",false);
+  Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
   const Epetra_MultiVector& surf_p_c = *S_next_->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
 
   for (int cs=0; cs!=ncells_surf; ++cs) {
     AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
-    surf_Pu_c[0][cs] = domain_Pu_f[0][f];
-    domain_Pu_f[0][f] += domain_p_f[0][f] - surf_p_c[0][cs];
+    surf_Pu_c[0][cs] = domain_Pu_f[0][f] - domain_p_f[0][f] + surf_p_c[0][cs];
   }
 }
 
 
-// ------------------------------------------------------------------------------
-// Calculate the surface face update.
-// ------------------------------------------------------------------------------
-void MPCSurfaceSubsurfaceDirichletCoupler::PreconUpdateSurfaceFaces_(
+// -------------------------------------------------------------
+// Post-processing in the preconditioner takes the corrections from the
+// surface cell's parent faces and uses them for the surface cell, and then
+// calculates a correction for the surface faces.
+// -------------------------------------------------------------
+void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceFaces_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
   // update delta faces
@@ -219,7 +224,7 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconUpdateSurfaceFaces_(
 
 
 // updates the preconditioner
-void MPCSurfaceSubsurfaceDirichletCoupler::update_precon(double t,
+void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   MPCSurfaceSubsurfaceCoupler::update_precon(t, up, h);
   mfd_preconditioner_->AssembleGlobalMatrices();

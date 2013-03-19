@@ -49,9 +49,6 @@ Richards::Richards(Teuchos::ParameterList& plist,
     PKPhysicalBDFBase(plist, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
-    coupled_to_surface_via_full_(false),
-    coupled_to_surface_via_residual_(false),
-    coupled_to_surface_via_residual_new_(false),
     infiltrate_only_if_unfrozen_(false),
     modify_predictor_with_consistent_faces_(false),
     niter_(0),
@@ -151,60 +148,23 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
 
   // coupling
-  // -- coupling done by a mixed Neumann/Dirichlet BC
-  coupled_to_surface_via_residual_ = plist_.get<bool>("coupled to surface via residual", false);
-  if (coupled_to_surface_via_residual_) {
-    S->RequireField("ponded_depth");
-    S->RequireField("overland_source_from_subsurface", name_)
-        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    surface_head_eps_ = plist_.get<double>("surface head epsilon", 0.);
-  }
-
-  // -- coupling done by a mixed Neumann/Dirichlet BC
-  coupled_to_surface_via_residual_new_ = plist_.get<bool>("coupled to surface via residual new", false);
-  if (coupled_to_surface_via_residual_new_) {
-    S->RequireField("overland_source_from_subsurface", name_)
+  // -- coupling done by a Neumann condition
+  coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
+  if (coupled_to_surface_via_flux_) {
+    S->RequireField("surface_subsurface_flux", name_)
         ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // -- coupling done by a primary variable of pressure head on the surface
+  // -- coupling done by a Dirichlet condition
   coupled_to_surface_via_head_ = plist_.get<bool>("coupled to surface via head", false);
   if (coupled_to_surface_via_head_) {
     S->RequireField("surface_pressure");
-    S->RequireField("doverland_source_from_subsurface_dsurface_pressure", name_)
-        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
-
     // override the flux update -- must happen every iteration
     update_flux_ = UPDATE_FLUX_ITERATION;
   }
 
-  // -- coupling done by a full preconditioner
-  coupled_to_surface_via_full_ = plist_.get<bool>("coupled to surface via full coupler", false);
-  if (coupled_to_surface_via_full_) {
-    S->RequireField("surface_pressure");
-    // override the flux update -- must happen every iteration
-    update_flux_ = UPDATE_FLUX_ITERATION;
-  }
-
-  // -- coupling done by flux terms
-  coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
-  if (coupled_to_surface_via_flux_) {
-    S->RequireField("surface_pressure");
-    S->RequireField("doverland_source_from_subsurface_dsurface_pressure", name_)
-        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireField("overland_source_from_subsurface")
-        ->SetMesh(S->GetMesh("surface"))->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  // -- Make sure coupling isn't flagged multiple ways. -- needs to
-  // -- become and ENUM please... --etc
+  // -- Make sure coupling isn't flagged multiple ways.
   ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_head_));
-  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_residual_));
-  ASSERT(!(coupled_to_surface_via_head_ && coupled_to_surface_via_residual_));
-  ASSERT(!(coupled_to_surface_via_flux_ && coupled_to_surface_via_full_));
-  ASSERT(!(coupled_to_surface_via_head_ && coupled_to_surface_via_full_));
-  ASSERT(!(coupled_to_surface_via_full_ && coupled_to_surface_via_residual_));
 
 
   // Create the upwinding method
@@ -335,7 +295,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
 #endif
-  
+
   // check whether this is a dynamic mesh problem
   if (S->HasField("vertex coordinate")) dynamic_mesh_ = true;
 
@@ -358,15 +318,9 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("darcy_velocity", name_)->set_initialized();
 
   // initialize coupling terms
-  if (coupled_to_surface_via_residual_ || coupled_to_surface_via_residual_new_) {
-    S->GetFieldData("overland_source_from_subsurface", name_)->PutScalar(0.);
-    S->GetField("overland_source_from_subsurface", name_)->set_initialized();
-  }
-  if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
-    S->GetFieldData("doverland_source_from_subsurface_dsurface_pressure", name_)
-        ->PutScalar(0.);
-    S->GetField("doverland_source_from_subsurface_dsurface_pressure", name_)
-        ->set_initialized();
+  if (coupled_to_surface_via_flux_) {
+    S->GetFieldData("surface_subsurface_flux", name_)->PutScalar(0.);
+    S->GetField("surface_subsurface_flux", name_)->set_initialized();
   }
 
   // absolute perm
@@ -608,7 +562,7 @@ void Richards::UpdateBoundaryConditions_() {
   }
 
   // surface coupling
-  if (coupled_to_surface_via_head_ || coupled_to_surface_via_full_) {
+  if (coupled_to_surface_via_head_) {
     // Face is Dirichlet with value of surface head
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
     const Epetra_MultiVector& head = *S_next_->GetFieldData("surface_pressure")
@@ -627,11 +581,10 @@ void Richards::UpdateBoundaryConditions_() {
   }
 
   // surface coupling
-  if (coupled_to_surface_via_flux_ || coupled_to_surface_via_residual_new_) {
+  if (coupled_to_surface_via_flux_) {
     // Face is Neumann with value of surface residual
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
-    const Epetra_MultiVector& flux =
-        *S_next_->GetFieldData("overland_source_from_subsurface")
+    const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_subsurface_flux")
         ->ViewComponent("cell",false);
 
     int ncells_surface = flux.MyLength();
@@ -643,125 +596,8 @@ void Richards::UpdateBoundaryConditions_() {
       // -- set that value to Neumann
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
-      *out_ << "  BC (Neumann) = " << flux[0][c] / mesh_->face_area(f) << std::endl;
     }
   }
-
-  if (coupled_to_surface_via_residual_) {
-    // given the surface head, calculate a new pressure with surface head on
-    // the surface faces
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
-    const CompositeVector& ponded_depth = *S_next_->GetFieldData("ponded_depth");
-    Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
-    const CompositeVector& dens = *S_next_->GetFieldData("molar_density_liquid");
-    const CompositeVector& surface_cell_volume =
-        *S_next_->GetFieldData("surface_cell_volume");
-    const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
-    Teuchos::RCP<const Epetra_Vector> gvec = S_next_->GetConstantVectorData("gravity");
-    Teuchos::RCP<CompositeVector> source =
-        S_next_->GetFieldData("overland_source_from_subsurface", name_);
-    double dt = S_next_->time() - S_inter_->time();
-
-    // -- set up a pressure vector containing current subsurface pressures
-    // -- plus the effective pressure from the surface head
-    CompositeVector pres(*S_next_->GetFieldData("pressure"));
-    pres = *S_next_->GetFieldData("pressure");
-
-    int ncells_surface = ponded_depth.size("cell");
-    for (int c=0; c!=ncells_surface; ++c) {
-      // -- get the surface cell's equivalent subsurface face and neighboring cell
-      AmanziMesh::Entity_ID f =
-        surface->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-      ASSERT(cells.size() == 1);
-
-      // -- assign lambda value
-      //      pres("face",f) = std::max(
-      //          -ponded_depth("cell",c)*(*rho)("cell",cells[0])*(*gvec)[2] + p_atm,
-      //          p_atm);
-      pres("face",f) = -ponded_depth("cell",c)*(*rho)("cell",cells[0])*(*gvec)[2] + p_atm;
-    }
-
-    // Calculate the fluxes that would result with this new head.
-    UpdatePermeabilityData_(S_next_.ptr());
-    S_next_->GetFieldEvaluator(key_)->HasFieldChanged(S_next_.ptr(), name_);
-    S_next_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_next_.ptr(), name_);
-
-    Teuchos::RCP<const CompositeVector> rel_perm = S_next_->GetFieldData("numerical_rel_perm");
-    // -- update the stiffness matrix
-    matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-
-    // -- derive the Darcy fluxes
-    Teuchos::RCP<CompositeVector> darcy_flux = S_next_->GetFieldData("darcy_flux", name_);
-    matrix_->DeriveFlux(pres, darcy_flux.ptr());
-
-    // -- add in gravitational fluxes
-    AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), darcy_flux.ptr());
-
-    // Determine the BC
-    for (int c=0; c!=ncells_surface; ++c) {
-      // -- get the surface cell's equivalent subsurface face and neighboring cell
-      AmanziMesh::Entity_ID f =
-        surface->entity_get_parent(AmanziMesh::CELL, c);
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-      ASSERT(cells.size() == 1);
-
-      // -- get the direction of the flux
-      AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
-      int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-
-      double q_out = (*darcy_flux)("face",f) * dirs[my_n];
-      double Q_ss = ((*source)("cell",c)
-                     - ponded_depth("cell",c) * surface_cell_volume("cell",c) / dt)
-          * dens("cell",cells[0]); // residual mismatch, plus water available on surface
-
-      if (q_out >= 0. || Q_ss >= 0.) {
-        // Flux is outward, use the Dirichlet condition and the calculated flux
-        bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-        bc_values_[f] = pres("face",f);
-        (*source)("cell",c) = q_out / dens("cell",cells[0]);
-      } else {
-        if (q_out < Q_ss) {
-          // Flux wants to be inward and the subsurface
-          // can accomodate all water on the surface.
-          bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-
-          // note these are NOT the same necessarily!
-          bc_values_[f] = Q_ss / mesh_->face_area(f); //surface_cell_volume("cell",c);
-          (*source)("cell",c) = Q_ss / dens("cell",cells[0]);
-        } else {
-          // Flux wants to be inward, but the subsurface cannot handle the
-          // entirety of the surface's water.
-          bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
-          bc_values_[f] = pres("face",f);
-          (*source)("cell",c) = q_out / dens("cell",cells[0]);
-        }
-      }
-
-
-      Teuchos::OSTab tab = getOSTab();
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-        *out_ << "SURFACE BC: c_surf: " << c << " f: " << f << " c_sub: "
-                 << cells[0] << std::endl;
-        *out_ << "   sizes:  cell_area: " << surface_cell_volume("cell",c)
-                 << "  face area: " << mesh_->face_area(f) << std::endl;
-        *out_ << "            p = " << pres("cell",cells[0])
-                 << " p_eff = " << pres("face",f) << std::endl;
-        *out_ << "            h = " << ponded_depth("cell",c)
-                 << ", q_out = " << q_out << ", Q_ss = " << Q_ss << std::endl;
-        if (bc_markers_[f] == Operators::MATRIX_BC_FLUX) {
-          *out_ << "  RESULT:  flux, " << bc_values_[f] << std::endl;
-        } else {
-          *out_ << "  RESULT:  dirichlet, " << bc_values_[f] << std::endl;
-        }
-      }
-    }
-  }
-
 };
 
 

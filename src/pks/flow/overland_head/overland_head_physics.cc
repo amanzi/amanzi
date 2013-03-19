@@ -100,14 +100,21 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
         *S_next_->GetFieldData("surface_molar_density_liquid")
         ->ViewComponent("cell",false);
 
-    int ncells = g_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= 0.5* (cv0[0][c] * source0[0][c] * nliq0[0][c]
-                         + cv1[0][c] * source1[0][c] * nliq1[0][c]);
+    double air_temp;
+    if (source_only_if_unfrozen_) {
+      air_temp = *S_next_->GetScalarData("air_temperature");
+    }
+
+    if (!source_only_if_unfrozen_ || air_temp > 273.15) {
+      int ncells = g_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        g_c[0][c] -= 0.5* (cv0[0][c] * source0[0][c] * nliq0[0][c]
+                           + cv1[0][c] * source1[0][c] * nliq1[0][c]);
+      }
     }
   }
 
-  if (coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_head_) {
     // Add in source term from coupling.
     S_next_->GetFieldEvaluator("overland_source_from_subsurface")
         ->HasFieldChanged(S_next_.ptr(), name_);

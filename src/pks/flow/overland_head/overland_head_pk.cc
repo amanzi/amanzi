@@ -56,7 +56,7 @@ void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
   }
 
   PKPhysicalBDFBase::setup(S);
-  setLinePrefix("overland");  // make the prefix fit in the available space.
+  //  setLinePrefix("overland");  // make the prefix fit in the available space.
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -88,27 +88,21 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireScalar("atmospheric_pressure");
 
   // -- coupling to subsurface
-  coupled_to_subsurface_via_residual_ =
-      plist_.get<bool>("coupled to subsurface via residual new", false);
-  coupled_to_subsurface_via_full_ =
-      plist_.get<bool>("coupled to subsurface via full coupler", false);
-  ASSERT(!(coupled_to_subsurface_via_residual_ && coupled_to_subsurface_via_full_));
+  coupled_to_subsurface_via_flux_ =
+      plist_.get<bool>("coupled to subsurface via flux", false);
+  coupled_to_subsurface_via_head_ =
+      plist_.get<bool>("coupled to subsurface via head", false);
+  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_head_));
 
-  if (coupled_to_subsurface_via_full_) {
+  if (coupled_to_subsurface_via_head_) {
     // -- source term from subsurface, filled in by evaluator,
     //    which picks the fluxes from "darcy_flux" field.
-    S->RequireField("overland_source_from_subsurface")
+    S->RequireFieldEvaluator("surface_subsurface_flux");
+    S->RequireField("surface_subsurface_flux")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    Teuchos::ParameterList source_plist =
-        plist_.sublist("source from subsurface evaluator");
-    Teuchos::RCP<Relations::OverlandSourceFromSubsurfaceFluxEvaluator>
-        source_evaluator = Teuchos::rcp(
-            new Relations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
-    S->SetFieldEvaluator("overland_source_from_subsurface", source_evaluator);
   }
 
-  if (coupled_to_subsurface_via_full_ || coupled_to_subsurface_via_residual_) {
+  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     full_jacobian_ = plist_.get<bool>("TPFA use full Jacobian", false);
   }
 
@@ -140,7 +134,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
   Teuchos::RCP<Operators::Matrix> precon;
-  if (coupled_to_subsurface_via_full_ || coupled_to_subsurface_via_residual_) {
+  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     tpfa_preconditioner_ =
         Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
     precon = tpfa_preconditioner_;
@@ -217,9 +211,15 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- source term evaluator
   if (plist_.isSublist("source evaluator")) {
-    Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
-    source_plist.set("evaluator name", "overland_source");
     is_source_term_ = true;
+
+    Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
+    source_only_if_unfrozen_ = source_plist.get<bool>("source only if unfrozen",false);
+    if (source_only_if_unfrozen_) {
+      S->RequireScalar("air_temperature");
+    }
+
+    source_plist.set("evaluator name", "overland_source");
     S->RequireField("overland_source")->SetMesh(mesh_)
         ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::RCP<FieldEvaluator> source_evaluator =
@@ -263,7 +263,6 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   // initial condition is tricky
-  // -- set the cell initial condition if it is taken from the subsurface
   if (!plist_.isSublist("initial condition")) {
     std::stringstream messagestream;
     messagestream << name_ << " has no initial condition parameter list.";
@@ -274,10 +273,11 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
 
+  // -- set the cell initial condition if it is taken from the subsurface
   Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
   if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
-    Epetra_MultiVector& head = *S->GetFieldData(key_, name_)
-        ->ViewComponent("cell",false);
+    Teuchos::RCP<CompositeVector> head_cv = S->GetFieldData(key_, name_);
+    Epetra_MultiVector& head = *head_cv->ViewComponent("cell",false);
     const Epetra_MultiVector& pres = *S->GetFieldData("pressure")
         ->ViewComponent("face",false);
 
@@ -288,11 +288,16 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
       head[0][c] = pres[0][f];
     }
-  }
 
-  // mark as initialized
-  if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
-    S->GetField(key_,name_)->set_initialized();
+    // -- Update faces from cells if needed.
+    if (ic_plist.get<bool>("initialize faces from cells", false)) {
+      DeriveFaceValuesFromCellValues_(head_cv.ptr());
+    }
+
+    // mark as initialized
+    if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
+      S->GetField(key_,name_)->set_initialized();
+    }
   }
 
   // Initialize boundary conditions.
@@ -741,35 +746,6 @@ void OverlandHeadFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 
 
 bool OverlandHeadFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  // const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
-  // const Epetra_MultiVector& u_prev_c =
-  //   *S_->GetFieldData(key_)->ViewComponent("cell",false);
-  // Epetra_MultiVector& u_c = *u->data()->ViewComponent("cell",false);
-
-  // const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface_cell_volume")
-  //     ->ViewComponent("cell",false);
-  // const Epetra_MultiVector& slope = *S_next_->GetFieldData("slope_magnitude")
-  //     ->ViewComponent("cell",false);
-  // const Epetra_MultiVector& coef = *S_next_->GetFieldData("manning_coefficient")
-  //       ->ViewComponent("cell", false);
-  // const Epetra_MultiVector& source = *S_next_->GetFieldData("overland_source_from_subsurface")
-  //       ->ViewComponent("cell", false);
-  // const Epetra_MultiVector& nliq = *S_next_->GetFieldData("surface_molar_density_liquid")
-  //       ->ViewComponent("cell", false);
-  // double dt = S_next_->time() - S_->time();
-
-  // // Damp the spurt of water
-  // int ncells = u_c.MyLength();
-  // for (int c=0; c!=ncells; ++c) {
-  //   double h0 = source[0][c]
-
-
-  //   if ((u_prev_c[0][c] < p_balanced) &&
-  //       (u_c[0][c] > p_balanced)) {
-  //     u_c[0][c] = p_balanced;
-  //   }
-  // }
-
   if (modify_predictor_with_consistent_faces_) {
     CalculateConsistentFaces(u->data().ptr());
     return true;

@@ -41,11 +41,12 @@ public:
       PKPhysicalBDFBase(plist, solution),
       standalone_mode_(false),
       is_source_term_(false),
-      coupled_to_subsurface_via_residual_(false),
-      coupled_to_subsurface_via_full_(false),
+      coupled_to_subsurface_via_head_(false),
+      coupled_to_subsurface_via_flux_(false),
       perm_update_required_(true),
       update_flux_(UPDATE_FLUX_ITERATION),
-      full_jacobian_(false) {
+      full_jacobian_(false),
+      source_only_if_unfrozen_(false) {
     plist_.set("primary variable key", "surface_pressure");
     plist_.set("domain name", "surface");
   }
@@ -137,10 +138,11 @@ protected:
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
   bool perm_update_required_;
+  bool source_only_if_unfrozen_;
 
   // coupling term
-  bool coupled_to_subsurface_via_residual_;
-  bool coupled_to_subsurface_via_full_;
+  bool coupled_to_subsurface_via_head_;
+  bool coupled_to_subsurface_via_flux_;
   bool full_jacobian_;
 
   // work data space

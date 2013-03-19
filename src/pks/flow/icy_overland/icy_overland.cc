@@ -73,33 +73,19 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
-  // -- unfrozen fraction model, eta
-  S->RequireField("unfrozen_fraction")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponents(names_bf, locations_bf, num_dofs2);
-
-  ASSERT(plist_.isSublist("unfrozen fraction evaluator"));
-  Teuchos::ParameterList uf_plist = plist_.sublist("unfrozen fraction evaluator");
-  Teuchos::RCP<FlowRelations::UnfrozenFractionEvaluator> uf_evaluator =
-      Teuchos::rcp(new FlowRelations::UnfrozenFractionEvaluator(uf_plist));
-  S->SetFieldEvaluator("unfrozen_fraction", uf_evaluator);
-  uf_model_ = uf_evaluator->get_Model();
-
-  // -- unfrozen effective depth, h * eta
-  S->RequireField("unfrozen_effective_depth")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponents(names_bf, locations_bf, num_dofs2);
-
-  Teuchos::ParameterList h_eff_plist = plist_.sublist("unfrozen effective depth");
-  Teuchos::RCP<FlowRelations::UnfrozenEffectiveDepthEvaluator> h_eff_evaluator =
-      Teuchos::rcp(new FlowRelations::UnfrozenEffectiveDepthEvaluator(h_eff_plist));
-  S->SetFieldEvaluator("unfrozen_effective_depth", h_eff_evaluator);
-
   // -- source term evaluator
   if (plist_.isSublist("source evaluator")) {
-    Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
-    source_plist.set("evaluator name", "overland_source");
     is_source_term_ = true;
+
+    Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
+    source_only_if_unfrozen_ = source_plist.get<bool>("source only if unfrozen",false);
+    if (source_only_if_unfrozen_) {
+      S->RequireScalar("air_temperature");
+    }
+
+    source_plist.set("evaluator name", "overland_source");
     S->RequireField("overland_source")->SetMesh(mesh_)
-        ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::RCP<FieldEvaluator> source_evaluator =
         Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
     S->SetFieldEvaluator("overland_source", source_evaluator);
