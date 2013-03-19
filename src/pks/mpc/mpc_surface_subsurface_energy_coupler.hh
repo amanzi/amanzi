@@ -43,7 +43,7 @@ class MPCSurfaceSubsurfaceEnergyCoupler : public MPCSurfaceSubsurfaceCoupler {
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
  protected:
-  Teuchos::RCP<Operators::MatrixMFD_Surf> preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_Surf> mfd_preconditioner_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
 
  private:

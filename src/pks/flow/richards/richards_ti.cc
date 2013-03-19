@@ -34,7 +34,7 @@ void Richards::fun(double t_old,
   Teuchos::OSTab tab = getOSTab();
 
   if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
-  
+
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
@@ -50,15 +50,14 @@ void Richards::fun(double t_old,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << std::setprecision(15);
     *out_ << "----------------------------------------------------------------" << std::endl;
-    *out_ << "Richards Residual calculation: T0 = " << t_old
+    *out_ << "Residual calculation: T0 = " << t_old
           << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << "  p0: " << (*u)("cell",c0_);
+    *out_ << "  p(" << c0_ << "): " << (*u)("cell",c0_);
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
     *out_ << std::endl;
-    *out_ << "  p1: " << (*u)("cell",c1_);
+    *out_ << "  p(" << c1_ << "): " << (*u)("cell",c1_);
     for (int n=0; n!=fnums.size(); ++n) *out_ << ",  " << (*u)("face",fnums[n]);
     *out_ << std::endl;
-
   }
 #endif
 
@@ -101,30 +100,30 @@ void Richards::fun(double t_old,
           S_next_->GetFieldData("saturation_ice");
       Teuchos::RCP<const CompositeVector> sati0 =
           S_inter_->GetFieldData("saturation_ice");
-      *out_ << "    sat_old_0: " << (*satl0)("cell",c0_) << ", "
+      *out_ << "    sat_old(" << c0_ << "): " << (*satl0)("cell",c0_) << ", "
             << (*sati0)("cell",c0_) << std::endl;
-      *out_ << "    sat_new_0: " << (*satl1)("cell",c0_) << ", "
+      *out_ << "    sat_new(" << c0_ << "): " << (*satl1)("cell",c0_) << ", "
             << (*sati1)("cell",c0_) << std::endl;
-      *out_ << "    sat_old_1: " << (*satl0)("cell",c1_) << ", "
+      *out_ << "    sat_old(" << c1_ << "): " << (*satl0)("cell",c1_) << ", "
             << (*sati0)("cell",c1_) << std::endl;
-      *out_ << "    sat_new_1: " << (*satl1)("cell",c1_) << ", "
+      *out_ << "    sat_new(" << c1_ << "): " << (*satl1)("cell",c1_) << ", "
             << (*sati1)("cell",c1_) << std::endl;
     } else {
-      *out_ << "    sat_old_0: " << (*satl0)("cell",c0_) << std::endl;
-      *out_ << "    sat_new_0: " << (*satl1)("cell",c0_) << std::endl;
-      *out_ << "    sat_old_1: " << (*satl0)("cell",c1_) << std::endl;
-      *out_ << "    sat_new_1: " << (*satl1)("cell",c1_) << std::endl;
+      *out_ << "    sat_old(" << c0_ << "): " << (*satl0)("cell",c0_) << std::endl;
+      *out_ << "    sat_new(" << c0_ << "): " << (*satl1)("cell",c0_) << std::endl;
+      *out_ << "    sat_old(" << c1_ << "): " << (*satl0)("cell",c1_) << std::endl;
+      *out_ << "    sat_new(" << c1_ << "): " << (*satl1)("cell",c1_) << std::endl;
     }
 
-    *out_ << "    k_rel0: " << (*uw_relperm)("cell",c0_) << " "
+    *out_ << "    k_rel(" << c0_ << "): " << (*relperm)("cell",c0_) << " "
           << (*uw_relperm)("face",fnums0[0]) << std::endl;
-    *out_ << "    k_rel1: " << (*uw_relperm)("cell",c1_) << " "
+    *out_ << "    k_rel(" << c1_ << "): " << (*relperm)("cell",c1_) << " "
           << (*uw_relperm)("face",fnums[1]) << std::endl;
 
 
-    *out_ << "  res0 (after diffusion): " << (*res)("cell",c0_)
+    *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
-    *out_ << "  res1 (after diffusion): " << (*res)("cell",c1_)
+    *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c1_)
           << " " << (*res)("face",fnums[1]) << std::endl;
   }
 #endif
@@ -134,9 +133,9 @@ void Richards::fun(double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after accumulation): " << (*res)("cell",c0_)
+    *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
-    *out_ << "  res1 (after accumulation): " << (*res)("cell",c1_)
+    *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c1_)
           << " " << (*res)("face",fnums[1]) << std::endl;
   }
 #endif
@@ -170,9 +169,9 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   // Dump residual
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    *out_ << "  p0: " << (*u->data())("cell",c0_) << " "
+    *out_ << "  p(" << c0_ << "): " << (*u->data())("cell",c0_) << " "
           << (*u->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  p1: " << (*u->data())("cell",c1_) << " "
+    *out_ << "  p(" << c1_ << "): " << (*u->data())("cell",c1_) << " "
           << (*u->data())("face",fnums[1]) << std::endl;
   }
 #endif
@@ -183,9 +182,9 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 #if DEBUG_FLAG
   // Dump correction
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  PC*p0: " << (*Pu->data())("cell",c0_) << " "
+    *out_ << "  PC*p(" << c0_ << "): " << (*Pu->data())("cell",c0_) << " "
           << (*Pu->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  PC*p1: " << (*Pu->data())("cell",c1_) << " "
+    *out_ << "  PC*p(" << c1_ << "): " << (*Pu->data())("cell",c1_) << " "
           << (*Pu->data())("face",fnums[1]) << std::endl;
   }
 #endif
@@ -252,43 +251,6 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   for (int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / h;
     Fc_cells[c] += pres[0][c] * dwc_dp[0][c] / h;
-  }
-
-  // If coupled, update the vector used by surface preconditioner to get the
-  // contribution of d overland_source_from_subsurface / d surface_pressure,
-  // which is currently in our face unknown.
-  //
-  // Note this must be done prior to boundary conditions being applied.
-  if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
-    Epetra_MultiVector& dsource = *S_next_->GetFieldData(
-        "doverland_source_from_subsurface_dsurface_pressure", name_)
-        ->ViewComponent("cell",false);
-
-    Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S_next_->GetMesh("surface"));
-
-    std::vector<Epetra_SerialDenseVector>& Acf_cells = mfd_preconditioner_->Acf_cells();
-
-    int ncells_surface = dsource.MyLength();
-    for (int c=0; c!=ncells_surface; ++c) {
-      // -- get the surface cell's equivalent subsurface face
-      AmanziMesh::Entity_ID f =
-        surface->entity_get_parent(AmanziMesh::CELL, c);
-
-      // -- and the cell inside that face
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
-      ASSERT(cells.size() == 1);
-
-      // -- find my face index in the local numbering
-      AmanziMesh::Entity_ID_List faces;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
-      int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-
-      // -- set the value
-      dsource[0][c] = Acf_cells[cells[0]](my_n);
-    }
   }
 
   // Assemble and precompute the Schur complement for inversion.

@@ -19,9 +19,9 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
   name_ = plist_.get<std::string>("PK name");
 
   // set up the VerboseObject
-  setLinePrefix(name_);
+  setLinePrefix(Amanzi::VerbosityLevel::verbosityHeader(name_));
 
-  setDefaultVerbLevel(ATS::VerbosityLevel::level_);
+  setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
   Teuchos::readVerboseObjectSublist(&plist_,this);
 
   // get the fancy output ??

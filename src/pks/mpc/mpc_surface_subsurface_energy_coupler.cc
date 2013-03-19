@@ -39,7 +39,9 @@ void MPCSurfaceSubsurfaceEnergyCoupler::setup(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
   ASSERT(mfd_precon != Teuchos::null);
 
-  preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
+  mfd_preconditioner_ =
+      Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
+  preconditioner_ = mfd_preconditioner_;
 
   // Get the surface's preconditioner and ensure it is TPFA.
   Teuchos::RCP<Operators::Matrix> surf_precon = surf_pk_->preconditioner();
@@ -48,10 +50,10 @@ void MPCSurfaceSubsurfaceEnergyCoupler::setup(const Teuchos::Ptr<State>& S) {
   ASSERT(surf_preconditioner_ != Teuchos::null);
 
   // set the surface A in the MFD_Surf.
-  preconditioner_->set_surface_A(surf_preconditioner_);
+  mfd_preconditioner_->set_surface_A(surf_preconditioner_);
 
   // give the PCs back to the PKs
-  domain_pk_->set_preconditioner(preconditioner_);
+  domain_pk_->set_preconditioner(mfd_preconditioner_);
   surf_pk_->set_preconditioner(surf_preconditioner_);
 
 }
@@ -82,7 +84,7 @@ void MPCSurfaceSubsurfaceEnergyCoupler::precon(Teuchos::RCP<const TreeVector> u,
   }
 
   // Apply the combined preconditioner
-  preconditioner_->ApplyInverse(*domain_u_new, domain_Pu.ptr());
+  mfd_preconditioner_->ApplyInverse(*domain_u_new, domain_Pu.ptr());
 
 #if DEBUG_FLAG
   Teuchos::OSTab tab = getOSTab();
@@ -140,10 +142,10 @@ void MPCSurfaceSubsurfaceEnergyCoupler::precon(Teuchos::RCP<const TreeVector> u,
 void MPCSurfaceSubsurfaceEnergyCoupler::update_precon(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   MPCSurfaceSubsurfaceCoupler::update_precon(t, up, h);
-  preconditioner_->AssembleGlobalMatrices();
-  preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
+  mfd_preconditioner_->AssembleGlobalMatrices();
+  mfd_preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
           domain_pk_->bc_values());
-  preconditioner_->UpdatePreconditioner();
+  mfd_preconditioner_->UpdatePreconditioner();
 }
 
 // Modify predictor to ensure lambda and surface cell remain consistent

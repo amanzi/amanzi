@@ -41,7 +41,8 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& plist,
     is_energy_source_term_(false),
     is_mass_source_term_(false),
     is_air_conductivity_(false),
-    coupled_to_subsurface_via_full_(false) {
+    coupled_to_subsurface_via_temp_(false),
+    coupled_to_subsurface_via_flux_(false) {
 
   plist_.set("primary variable key", "surface_temperature");
   plist_.set("domain name", "surface");
@@ -115,6 +116,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   is_mass_source_term_ = S->HasFieldEvaluator("overland_source");
   if (is_mass_source_term_) {
     S->RequireScalar("air_temperature");
+    mass_source_only_if_unfrozen_ = plist_.get<bool>("mass source only if unfrozen", false);
   }
 
   is_air_conductivity_ = plist_.isParameter("air to surface conductivity");
@@ -124,9 +126,13 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   }
 
   // -- coupling to subsurface
-  coupled_to_subsurface_via_full_ =
-      plist_.get<bool>("coupled to subsurface via full coupler", false);
-  if (coupled_to_subsurface_via_full_) {
+  coupled_to_subsurface_via_temp_ =
+      plist_.get<bool>("coupled to subsurface via temperature", false);
+  coupled_to_subsurface_via_flux_ =
+      plist_.get<bool>("coupled to subsurface via flux", false);
+  ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
+
+  if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- kill the preconditioner and replace with a TPFA precon
     Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
     Teuchos::RCP<Operators::Matrix> precon =
@@ -134,26 +140,15 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     set_preconditioner(precon);
 
     // -- ensure mass source from subsurface exists
-    S->RequireFieldEvaluator("overland_source_from_subsurface");
-
-    // -- energy source term from subsurface
-    S->RequireField("overland_energy_source_from_subsurface")
+    S->RequireField("surface_subsurface_flux")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
 
-    Teuchos::ParameterList source_plist =
-        plist_.sublist("source from subsurface evaluator");
-    if (!plist_.isParameter("source key"))
-      source_plist.set("source key", "overland_energy_source_from_subsurface");
-    if (!plist_.isParameter("flux key"))
-      source_plist.set("flux key", "energy_flux");
-    if (!plist_.isParameter("pressure key"))
-      source_plist.set("pressure key", "temperature");
-    source_plist.set("volume basis", false);
-
-    Teuchos::RCP<Relations::OverlandSourceFromSubsurfaceFluxEvaluator>
-        source_evaluator = Teuchos::rcp(
-            new Relations::OverlandSourceFromSubsurfaceFluxEvaluator(source_plist));
-    S->SetFieldEvaluator("overland_energy_source_from_subsurface", source_evaluator);
+  if (coupled_to_subsurface_via_temp_) {
+    S->RequireFieldEvaluator("surface_subsurface_energy_flux");
+    // -- energy source term from subsurface
+    S->RequireField("surface_subsurface_energy_flux")
+        ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // Many quantities are based upon face areas, which are not the cell volume,
@@ -161,7 +156,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   if (!standalone_mode_) {
     S->RequireFieldEvaluator("surface_3d_cell_volume");
   }
-
 }
 
 
@@ -169,8 +163,43 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // Initialize the needed models to plug in enthalpy.
 // -------------------------------------------------------------
 void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
+  // -- set the cell initial condition if it is taken from the subsurface
+  if (!plist_.isSublist("initial condition")) {
+    std::stringstream messagestream;
+    messagestream << name_ << " has no initial condition parameter list.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
   // Call the base class's initialize.
   EnergyBase::initialize(S);
+
+  // Set the cell initial condition if it is taken from the subsurface
+  Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
+  if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
+    Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
+    Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
+    const Epetra_MultiVector& temp = *S->GetFieldData("temperature")
+        ->ViewComponent("face",false);
+
+    int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face and neighboring cell
+      AmanziMesh::Entity_ID f =
+          mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      surf_temp[0][c] = temp[0][f];
+    }
+
+    // -- Update faces from cells if needed.
+    if (ic_plist.get<bool>("initialize faces from cells", false)) {
+      DeriveFaceValuesFromCellValues_(surf_temp_cv.ptr());
+    }
+
+    // mark as initialized
+    if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
+      S->GetField(key_,name_)->set_initialized();
+    }
+  }
 
   // For the boundary conditions, we currently hack in the enthalpy to
   // the boundary faces to correctly advect in a Dirichlet temperature
@@ -285,59 +314,61 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
   // external sources of mass, bringing enthalpy
   if (is_mass_source_term_) {
-    const double& patm = *S->GetScalarData("atmospheric_pressure");
-
-    // calculate enthalpy of incoming water
-    double time = S_next_->time();
     const double& T_air1 = *S_next_->GetScalarData("air_temperature");
-    double n1 = eos_liquid_->MolarDensity(T_air1, patm);
-    double u1 = iem_liquid_->InternalEnergy(T_air1);
-    double enth1 = u1;// + patm / n1;
 
-    // get enthalpy of outgoing water
-    const Epetra_MultiVector& enth_surf = *S->GetFieldData(enthalpy_key_)
-        ->ViewComponent("cell",false);
+    if (!mass_source_only_if_unfrozen_ || (T_air1 > 273.15)) {
+      // calculate enthalpy of incoming water
+      const double& patm = *S->GetScalarData("atmospheric_pressure");
+      double time = S_next_->time();
+      double n1 = eos_liquid_->MolarDensity(T_air1, patm);
+      double u1 = iem_liquid_->InternalEnergy(T_air1);
+      double enth1 = u1;// + patm / n1;
 
-    // get the source in mols / s
-    S_next_->GetFieldEvaluator("overland_source")
-        ->HasFieldChanged(S_next_.ptr(), name_);
-    S_inter_->GetFieldEvaluator("overland_source")
-        ->HasFieldChanged(S_inter_.ptr(), name_);
-    const Epetra_MultiVector& source0 =
-        *S_inter_->GetFieldData("overland_source")->ViewComponent("cell",false);
-    const Epetra_MultiVector& source1 =
-        *S_next_->GetFieldData("overland_source")->ViewComponent("cell",false);
+      // get enthalpy of outgoing water
+      const Epetra_MultiVector& enth_surf = *S->GetFieldData(enthalpy_key_)
+          ->ViewComponent("cell",false);
 
-    // mass source done in cell_volume (rain falls straight down!)
-    const Epetra_MultiVector& cv1 =
-        *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
-    const Epetra_MultiVector& cv0 =
-        *S_inter_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+      // get the source in mols / s
+      S_next_->GetFieldEvaluator("overland_source")
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_inter_->GetFieldEvaluator("overland_source")
+          ->HasFieldChanged(S_inter_.ptr(), name_);
+      const Epetra_MultiVector& source0 =
+          *S_inter_->GetFieldData("overland_source")->ViewComponent("cell",false);
+      const Epetra_MultiVector& source1 =
+          *S_next_->GetFieldData("overland_source")->ViewComponent("cell",false);
 
-    // External source term is in [m water / s], not in [mols / s].  We assume
-    // it comes in at the surface density, i.e. the surface temperature.  This
-    // may need to be changed.
-    S_next_->GetFieldEvaluator("surface_molar_density_liquid")
-        ->HasFieldChanged(S_next_.ptr(), name_);
-    S_inter_->GetFieldEvaluator("surface_molar_density_liquid")
-        ->HasFieldChanged(S_inter_.ptr(), name_);
+      // mass source done in cell_volume (rain falls straight down!)
+      const Epetra_MultiVector& cv1 =
+          *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
+      const Epetra_MultiVector& cv0 =
+          *S_inter_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
 
-    const Epetra_MultiVector& nliq0 =
-        *S_inter_->GetFieldData("surface_molar_density_liquid")
-        ->ViewComponent("cell",false);
-    const Epetra_MultiVector& nliq1 =
-        *S_next_->GetFieldData("surface_molar_density_liquid")
-        ->ViewComponent("cell",false);
+      // External source term is in [m water / s], not in [mols / s].  We assume
+      // it comes in at the surface density, i.e. the surface temperature.  This
+      // may need to be changed.
+      S_next_->GetFieldEvaluator("surface_molar_density_liquid")
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_inter_->GetFieldEvaluator("surface_molar_density_liquid")
+          ->HasFieldChanged(S_inter_.ptr(), name_);
 
-    int ncells = g_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      double molar_flux = 0.5 * (cv0[0][c] * source0[0][c] * nliq0[0][c] + cv1[0][c] * source1[0][c] * nliq1[0][c]);
+      const Epetra_MultiVector& nliq0 =
+          *S_inter_->GetFieldData("surface_molar_density_liquid")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& nliq1 =
+          *S_next_->GetFieldData("surface_molar_density_liquid")
+          ->ViewComponent("cell",false);
 
-      // upwind the enthalpy
-      if (molar_flux > 0) {
-        g_c[0][c] -= molar_flux * enth1;
-      } else {
-        g_c[0][c] -= molar_flux * enth_surf[0][c];
+      int ncells = g_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        double molar_flux = 0.5 * (cv0[0][c] * source0[0][c] * nliq0[0][c] + cv1[0][c] * source1[0][c] * nliq1[0][c]);
+
+        // upwind the enthalpy
+        if (molar_flux > 0) {
+          g_c[0][c] -= molar_flux * enth1;
+        } else {
+          g_c[0][c] -= molar_flux * enth_surf[0][c];
+        }
       }
     }
 #if DEBUG_FLAG
@@ -368,20 +399,14 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
   // coupling to subsurface
   // -- two parts -- conduction and advection
-  if (coupled_to_subsurface_via_full_) {
-    S->GetFieldEvaluator("overland_source_from_subsurface")
-        ->HasFieldChanged(S.ptr(), name_);
+  // -- advection source
+  if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     S->GetFieldEvaluator("enthalpy")->HasFieldChanged(S.ptr(), name_);
     S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
 
-    // -- conduction source
-    const Epetra_MultiVector& e_source1 =
-        *S->GetFieldData("overland_energy_source_from_subsurface")
-        ->ViewComponent("cell",false);
-
     // -- advection source
     const Epetra_MultiVector& source1 =
-        *S->GetFieldData("overland_source_from_subsurface")->ViewComponent("cell",false);
+        *S->GetFieldData("surface_subsurface_flux")->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_surf =
         *S->GetFieldData(enthalpy_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_subsurf =
@@ -400,15 +425,35 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
         ASSERT(cells.size() == 1);
 
-        g_c[0][c] -= flux * enth_subsurf[0][cells[0]] + e_source1[0][cells[0]];
+        g_c[0][c] -= flux * enth_subsurf[0][cells[0]];
       } else { // infiltration
-        g_c[0][c] -= flux * enth_surf[0][c] + e_source1[0][cells[0]];
+        g_c[0][c] -= flux * enth_surf[0][c];
       }
     }
 
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "  res_source: q^E_ss + E*q^m_ss: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+      *out_ << "  res_source: E*q^m_ss: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+    }
+#endif
+  }
+
+  // -- conduction source
+  if (coupled_to_subsurface_via_temp_) {
+    const Epetra_MultiVector& e_source1 =
+        *S->GetFieldData("surface_subsurface_energy_flux")
+        ->ViewComponent("cell",false);
+
+    AmanziMesh::Entity_ID_List cells;
+
+    int ncells = g_c.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      g_c[0][c] -= e_source1[0][cells[0]];
+    }
+
+#if DEBUG_FLAG
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+      *out_ << "  res_source: q^E_ss: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
     }
 #endif
 

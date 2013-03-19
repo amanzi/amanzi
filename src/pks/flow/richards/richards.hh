@@ -130,10 +130,6 @@ protected:
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
   bool coupled_to_surface_via_flux_; // surface-subsurface Neumann coupler
-  bool coupled_to_surface_via_full_; // surface-subsurface coupler with full PC
-  bool coupled_to_surface_via_residual_; // surface-subsurface water coupler,
-                                         // old overland PK
-  bool coupled_to_surface_via_residual_new_; // surface-subsurface water coupler,
 
   // -- water coupler coupling parameters
   double surface_head_cutoff_;

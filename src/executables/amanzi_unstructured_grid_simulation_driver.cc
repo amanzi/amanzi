@@ -46,7 +46,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
         const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
 
   using Teuchos::OSTab;
-  setDefaultVerbLevel(ATS::VerbosityLevel::level_);
+  setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
   Teuchos::EVerbosityLevel verbLevel = getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = getOStream();
   OSTab tab = getOSTab(); // This sets the line prefix and adds one tab

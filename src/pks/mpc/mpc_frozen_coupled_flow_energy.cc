@@ -281,8 +281,10 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_(double h, Teuchos::RCP<Tr
   e2.Update(dt_ratio, e1, 1. - dt_ratio);
 
   // Check and update
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
-      ->ViewComponent("cell",false);
+  Teuchos::RCP<const Epetra_MultiVector> poro;
+  if (poro_key_ != std::string("")) {
+    poro = S_next_->GetFieldData("porosity")->ViewComponent("cell",false);
+  }
 
   double wc_scale = 10.;
   double e_scale = 10000.;
@@ -303,7 +305,11 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_ewc_(double h, Teuchos::RCP<Tr
     std::cout << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
     std::cout << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
 #endif
-    ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
+    if (poro == Teuchos::null) {
+      ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], 1.0, T, p);
+    } else {
+      ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], (*poro)[0][c], T, p);
+    }
 
     if (!ierr) { // valid solution, no zero determinates, etc
       temp_guess_c[0][c] = T;
@@ -376,8 +382,10 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
   e2.Update(dt_ratio, e1, 1. - dt_ratio);
 
   // Check and update
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
-      ->ViewComponent("cell",false);
+  Teuchos::RCP<const Epetra_MultiVector> poro;
+  if (poro_key_ != std::string("")) {
+    poro = S_next_->GetFieldData("porosity")->ViewComponent("cell",false);
+  }
 
   double wc_scale = 10.;
   double e_scale = 10000.;
@@ -432,7 +440,11 @@ bool MPCFrozenCoupledFlowEnergy::modify_predictor_smart_ewc_(double h, Teuchos::
 #endif
 
       // uses intensive forms, so must divide by cell volume.
-      ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
+      if (poro == Teuchos::null) {
+        ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], 1.0, T, p);
+      } else {
+        ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], (*poro)[0][c], T, p);
+      }
 
 #if DEBUG_FLAG
       std::cout << "   p_ewc,T_ewc  = " << p << ", " << T << std::endl;

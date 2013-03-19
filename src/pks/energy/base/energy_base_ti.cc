@@ -43,9 +43,12 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Residual calculation:" << std::endl;
-    *out_ << "  T0: " << (*u)("cell",c0_) << " " << (*u)("face",faces0[0]) << std::endl;
-    *out_ << "  T1: " << (*u)("cell",c1_) << " " << (*u)("face",faces[1]) << std::endl;
+    *out_ << "----------------------------------------------------------------" << std::endl;
+
+    *out_ << "Residual calculation: T0 = " << t_old
+          << " T(" << c1_ << ") = " << t_new << " H = " << h << std::endl;
+    *out_ << "  T(" << c0_ << "): " << (*u)("cell",c0_) << " " << (*u)("face",faces0[0]) << std::endl;
+    *out_ << "  T(" << c1_ << "): " << (*u)("cell",c1_) << " " << (*u)("face",faces[1]) << std::endl;
   }
 #endif
 
@@ -126,8 +129,8 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    *out_ << "  T0: " << (*u->data())("cell",c0_) << " " << (*u->data())("face",faces0[0]) << std::endl;
-    *out_ << "  T1: " << (*u->data())("cell",c1_) << " " << (*u->data())("face",faces[1]) << std::endl;
+    *out_ << "  T(" << c0_ << "): " << (*u->data())("cell",c0_) << " " << (*u->data())("face",faces0[0]) << std::endl;
+    *out_ << "  T(" << c1_ << "): " << (*u->data())("cell",c1_) << " " << (*u->data())("face",faces[1]) << std::endl;
   }
 #endif
 
@@ -136,8 +139,8 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  PC*T0: " << (*Pu->data())("cell",c0_) << " " << (*Pu->data())("face",faces0[0]) << std::endl;
-    *out_ << "  PC*T1: " << (*Pu->data())("cell",c1_) << " " << (*Pu->data())("face",faces[1]) << std::endl;
+    *out_ << "  PC*T(" << c0_ << "): " << (*Pu->data())("cell",c0_) << " " << (*Pu->data())("face",faces0[0]) << std::endl;
+    *out_ << "  PC*T(" << c1_ << "): " << (*Pu->data())("cell",c1_) << " " << (*Pu->data())("face",faces[1]) << std::endl;
   }
 #endif
 };
@@ -248,7 +251,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   }
 
   // Write out Inf norms too.
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = getOSTab(2);
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     double infnorm_c(0.), infnorm_f(0.);
     res_c.NormInf(&infnorm_c);

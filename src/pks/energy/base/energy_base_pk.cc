@@ -121,8 +121,15 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // coupling terms
   // -- subsurface PK, coupled to the surface
-  coupled_to_surface_ = plist_.get<bool>("coupled to surface", false);
-  if (coupled_to_surface_) {
+  coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
+  if (coupled_to_surface_via_flux_) {
+    S->RequireField("surface_subsurface_energy_flux", name_)
+        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  coupled_to_surface_via_temp_ =
+      plist_.get<bool>("coupled to surface via temperature", false);
+  if (coupled_to_surface_via_temp_) {
     // surface temperature used for BCs
     S->RequireField("surface_temperature");
     update_flux_ = UPDATE_FLUX_ITERATION;
@@ -192,6 +199,12 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
     S->GetField("darcy_flux", name_)->set_initialized();
   }
 
+  // initialize coupling terms
+  if (coupled_to_surface_via_flux_) {
+    S->GetFieldData("surface_subsurface_energy_flux", name_)->PutScalar(0.);
+    S->GetField("surface_subsurface_energy_flux", name_)->set_initialized();
+  }
+
 };
 
 
@@ -247,7 +260,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
   }
 
   // Dirichlet temperature boundary conditions from a coupled surface.
-  if (coupled_to_surface_) {
+  if (coupled_to_surface_via_temp_) {
     // Face is Dirichlet with value of surface temp
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
     const Epetra_MultiVector& temp = *S_next_->GetFieldData("surface_temperature")
@@ -265,6 +278,25 @@ void EnergyBase::UpdateBoundaryConditions_() {
     }
   }
 
+  // surface coupling
+  if (coupled_to_surface_via_flux_) {
+    // Face is Neumann with value of surface residual
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_next_->GetMesh("surface");
+    const Epetra_MultiVector& flux =
+        *S_next_->GetFieldData("surface_subsurface_energy_flux")
+        ->ViewComponent("cell",false);
+
+    int ncells_surface = flux.MyLength();
+    for (int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face
+      AmanziMesh::Entity_ID f =
+        surface->entity_get_parent(AmanziMesh::CELL, c);
+
+      // -- set that value to Neumann
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+    }
+  }
 };
 
 

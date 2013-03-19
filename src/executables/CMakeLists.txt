@@ -76,6 +76,7 @@ target_link_libraries(ats
                       ${flow_relations_elevation}
                       ${flow_relations_surface_subsurface_fluxes}
                       ${relations_eos}
+                      relations_ewc
                       bc_factory
                       advection
                       divgrad

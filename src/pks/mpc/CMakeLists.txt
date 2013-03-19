@@ -9,6 +9,7 @@
 include_directories(${ATS_SOURCE_DIR}/src/data_structures)
 include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
+include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/ewc)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
@@ -24,15 +25,12 @@ add_library(mpc mpc.cc
   weak_mpc.cc
   strong_mpc.cc
   mpc_coupled_cells.cc
-  mpc_frozen_coupled_flow_energy.cc
-  permafrost_model.cc
   mpc_surface_subsurface_coupler.cc
-  mpc_surface_subsurface_water_coupler.cc
-  mpc_surface_subsurface_neumann_coupler.cc
   mpc_surface_subsurface_dirichlet_coupler.cc
-  mpc_surface_subsurface_full_coupler.cc
-  mpc_surface_subsurface_residual_coupler.cc
-  mpc_surface_subsurface_energy_coupler.cc
+  mpc_surface_subsurface_flux_coupler.cc
+  mpc_water_coupler.cc
+  mpc_delegate_ewc.cc
+  mpc_subsurface.cc
   mpc_permafrost.cc)
 
 

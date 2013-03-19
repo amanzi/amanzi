@@ -66,7 +66,9 @@ protected:
   bool is_energy_source_term_;
   bool is_mass_source_term_;
   bool is_air_conductivity_;
-  bool coupled_to_subsurface_via_full_;
+  bool coupled_to_subsurface_via_temp_;
+  bool coupled_to_subsurface_via_flux_;
+  bool mass_source_only_if_unfrozen_;
 
 private:
   // factory registration

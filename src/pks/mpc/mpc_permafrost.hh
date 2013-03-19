@@ -32,7 +32,7 @@ class PermafrostModel;
 
 class MPCPermafrost : public MPCCoupledCells {
 
-public:
+ public:
   MPCPermafrost(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
@@ -41,7 +41,14 @@ public:
 
   virtual void setup(const Teuchos::Ptr<State>& S);
 
-private:
+  // applies preconditioner to u and returns the result in Pu
+  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+ protected:
+  Teuchos::RCP<MPCSurfaceSubsurfaceFluxCoupler> coupled_flow_pk_;
+  Teuchos::RCP<MPCSurfaceSubsurfaceFluxCoupler> coupled_energy_pk_;
+
+ private:
   // factory registration
   static RegisteredPKFactory<MPCPermafrost> reg_;
 

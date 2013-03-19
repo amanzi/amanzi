@@ -28,7 +28,7 @@
 #endif
 
 
-Teuchos::EVerbosityLevel ATS::VerbosityLevel::level_ = Teuchos::VERB_MEDIUM;
+Teuchos::EVerbosityLevel Amanzi::VerbosityLevel::level_ = Teuchos::VERB_MEDIUM;
 
 int main(int argc, char *argv[])
 {
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   driver_parameter_list = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::FancyOStream> fos;
-  Teuchos::readVerboseObjectSublist(&driver_parameter_list,&fos,&ATS::VerbosityLevel::level_);
+  Teuchos::readVerboseObjectSublist(&driver_parameter_list,&fos,&Amanzi::VerbosityLevel::level_);
 
   const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
 
