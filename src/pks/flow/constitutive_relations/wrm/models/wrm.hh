@@ -21,6 +21,7 @@ class WRM {
 public:
   // required methods from the base class
   virtual double k_relative(double pc) = 0;
+  virtual double d_k_relative(double pc) = 0;
   virtual double saturation(double pc) = 0;
   virtual double d_saturation(double pc) = 0;
   virtual double capillaryPressure(double saturation) = 0;

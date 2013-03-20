@@ -52,6 +52,29 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
 }
 
 
+bool MPCSurfaceSubsurfaceCoupler::modify_predictor(double h,
+        Teuchos::RCP<TreeVector> up) {
+  // Do any modifications on the sub PKs
+  bool changed = StrongMPC::modify_predictor(h, up);
+
+  // ensure the two match
+  if (changed) {
+    Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->data()
+        ->ViewComponent("face",false);
+    const Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_name_)->data()
+        ->ViewComponent("cell",false);
+
+    int ncells = surf_u_c.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      domain_u_f[0][f] = surf_u_c[0][c];
+    }
+  }
+
+  return changed;
+}
+
+
 
 
 } // namespace

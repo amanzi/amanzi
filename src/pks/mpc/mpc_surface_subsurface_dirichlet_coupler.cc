@@ -171,7 +171,12 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconApply_(
   }
 
   // Apply the combined preconditioner
-  mfd_preconditioner_->ApplyInverse(*domain_u_new, domain_Pu.ptr());
+  //  mfd_preconditioner_->ApplyInverse(*domain_u_new, domain_Pu.ptr());
+  Teuchos::RCP<TreeVector> domain_u_TV = Teuchos::rcp(new TreeVector("domain_u_TV"));
+  domain_u_TV->set_data(domain_u_new);
+  Teuchos::RCP<TreeVector> domain_Pu_TV = Teuchos::rcp(new TreeVector("domain_Pu_TV"));
+  domain_Pu_TV->set_data(domain_Pu);
+  domain_pk_->precon(domain_u_TV, domain_Pu_TV);
 }
 
 

@@ -27,6 +27,8 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
   // -- Setup data.
    virtual void setup(const Teuchos::Ptr<State>& S);
 
+  bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+
  protected:
   Key domain_mesh_key_;
   Key surf_mesh_key_;
