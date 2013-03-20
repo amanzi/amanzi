@@ -42,10 +42,10 @@ void Richards::fun(double t_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
 #if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List fnums,fnums0;
+  AmanziMesh::Entity_ID_List fnums1,fnums0;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << std::setprecision(15);
@@ -56,7 +56,7 @@ void Richards::fun(double t_old,
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
     *out_ << std::endl;
     *out_ << "  p(" << c1_ << "): " << (*u)("cell",c1_);
-    for (int n=0; n!=fnums.size(); ++n) *out_ << ",  " << (*u)("face",fnums[n]);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u)("face",fnums1[n]);
     *out_ << std::endl;
   }
 #endif
@@ -115,16 +115,17 @@ void Richards::fun(double t_old,
       *out_ << "    sat_new(" << c1_ << "): " << (*satl1)("cell",c1_) << std::endl;
     }
 
-    *out_ << "    k_rel(" << c0_ << "): " << (*relperm)("cell",c0_) << " "
-          << (*uw_relperm)("face",fnums0[0]) << std::endl;
-    *out_ << "    k_rel(" << c1_ << "): " << (*relperm)("cell",c1_) << " "
-          << (*uw_relperm)("face",fnums[1]) << std::endl;
-
+    *out_ << "    k_rel(" << c0_ << "): " << (*relperm)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "    k_rel(" << c1_ << "): " << (*relperm)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums1[n]);
+    *out_ << std::endl;
 
     *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
     *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c1_)
-          << " " << (*res)("face",fnums[1]) << std::endl;
+          << " " << (*res)("face",fnums1[1]) << std::endl;
   }
 #endif
 
@@ -136,7 +137,7 @@ void Richards::fun(double t_old,
     *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
     *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c1_)
-          << " " << (*res)("face",fnums[1]) << std::endl;
+          << " " << (*res)("face",fnums1[1]) << std::endl;
   }
 #endif
 
@@ -161,10 +162,10 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   Teuchos::OSTab tab = getOSTab();
 
 #if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List fnums,fnums0;
+  AmanziMesh::Entity_ID_List fnums1,fnums0;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
 
   // Dump residual
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
@@ -172,7 +173,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
     *out_ << "  p(" << c0_ << "): " << (*u->data())("cell",c0_) << " "
           << (*u->data())("face",fnums0[0]) << std::endl;
     *out_ << "  p(" << c1_ << "): " << (*u->data())("cell",c1_) << " "
-          << (*u->data())("face",fnums[1]) << std::endl;
+          << (*u->data())("face",fnums1[1]) << std::endl;
   }
 #endif
 
@@ -185,7 +186,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
     *out_ << "  PC*p(" << c0_ << "): " << (*Pu->data())("cell",c0_) << " "
           << (*Pu->data())("face",fnums0[0]) << std::endl;
     *out_ << "  PC*p(" << c1_ << "): " << (*Pu->data())("cell",c1_) << " "
-          << (*Pu->data())("face",fnums[1]) << std::endl;
+          << (*Pu->data())("face",fnums1[1]) << std::endl;
   }
 #endif
 };
