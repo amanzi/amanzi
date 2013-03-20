@@ -173,8 +173,9 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
 void MPCSurfaceSubsurfaceFluxCoupler::PreconApply_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
-  preconditioner_->ApplyInverse(*u->SubVector(domain_pk_name_),
-          Pu->SubVector(domain_pk_name_).ptr());
+  // preconditioner_->ApplyInverse(*u->SubVector(domain_pk_name_),
+  //         Pu->SubVector(domain_pk_name_).ptr());
+  domain_pk_->precon(u->SubVector(domain_pk_name_), Pu->SubVector(domain_pk_name_));
 };
 
 

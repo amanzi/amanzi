@@ -25,6 +25,7 @@ public:
 
   // required methods from the base class
   double k_relative(double pc);
+  double d_k_relative(double pc);
   double saturation(double pc);
   double d_saturation(double pc);
   double capillaryPressure(double saturation);

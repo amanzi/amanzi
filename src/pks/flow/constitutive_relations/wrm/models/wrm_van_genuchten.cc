@@ -49,6 +49,24 @@ double WRMVanGenuchten::k_relative(double pc) {
 
 
 /* ******************************************************************
+ * D Relative permeability / D capillary pressure pc.
+ ****************************************************************** */
+double WRMVanGenuchten::d_k_relative(double pc) {
+  if (pc > 0.) {
+    double se = std::pow(1.0 + std::pow(alpha_*pc,n_),-m_);
+    double dsdp = d_saturation(pc);
+    double x = pow(se, 1./m_);
+    double y = pow(1. - x, m_);
+
+    double dkdse = (1.0 - y) * (0.5 * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, 0.5 - 1.0);
+    return dkdse * dsdp / (1 - sr_);
+  } else {
+    return 0.0;
+  }
+}
+
+
+/* ******************************************************************
  * Saturation formula (3.5)-(3.6).
  ****************************************************************** */
 double WRMVanGenuchten::saturation(double pc) {

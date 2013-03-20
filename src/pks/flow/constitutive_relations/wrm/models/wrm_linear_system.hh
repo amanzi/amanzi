@@ -28,6 +28,7 @@ public:
 
   // required methods from the base class
   virtual double k_relative(double pc) { return 1.0; }
+  virtual double d_k_relative(double pc) { return 0.0; }
   virtual double saturation(double pc) { return sat_at_zero_pc_ + alpha_*pc; }
   virtual double d_saturation(double pc) { return alpha_; }
   virtual double capillaryPressure(double saturation) { return (saturation-sat_at_zero_pc_)/alpha_; }
