@@ -105,11 +105,18 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
       air_temp = *S_next_->GetScalarData("air_temperature");
     }
 
-    if (!source_only_if_unfrozen_ || air_temp > 273.15) {
+    if (!source_only_if_unfrozen_) {
       int ncells = g_c.MyLength();
       for (int c=0; c!=ncells; ++c) {
         g_c[0][c] -= 0.5* (cv0[0][c] * source0[0][c] * nliq0[0][c]
                            + cv1[0][c] * source1[0][c] * nliq1[0][c]);
+      }
+    } else {
+      int ncells = g_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        double factor = air_temp > 274.15 ? 1. : air_temp < 273.15 ? 0. : air_temp - 273.15;
+        g_c[0][c] -= factor * 0.5* (cv0[0][c] * source0[0][c] * nliq0[0][c]
+                + cv1[0][c] * source1[0][c] * nliq1[0][c]);
       }
     }
   }
