@@ -26,6 +26,7 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
+#include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
 #include "rel_perm_evaluator.hh"
 #include "richards_water_content.hh"
@@ -51,6 +52,7 @@ Richards::Richards(Teuchos::ParameterList& plist,
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),
     modify_predictor_with_consistent_faces_(false),
+    modify_predictor_bc_flux_(false),
     niter_(0),
     dynamic_mesh_(false)
 {
@@ -213,6 +215,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   modify_predictor_with_consistent_faces_ =
     plist_.get<bool>("modify predictor with consistent faces", false);
 
+  // predictors for time integration
+  modify_predictor_bc_flux_ = plist_.get<bool>("modify predictor for flux BCs", false);
 }
 
 
@@ -304,6 +308,12 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
+
+  // Initialize predictors
+  if (modify_predictor_bc_flux_) {
+    flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(mesh_, matrix_,
+            wrms_, &bc_markers_, &bc_values_));
+  }
 
   // Set extra fields as initialized -- these don't currently have evaluators,
   // and will be initialized in the call to commit_state()
@@ -617,12 +627,22 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
 
 
 bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  bool changed(false);
   if (modify_predictor_with_consistent_faces_) {
     CalculateConsistentFaces(u->data().ptr());
-    return true;
+    changed = true;
   }
 
-  return PKPhysicalBDFBase::modify_predictor(h, u);
+  if (modify_predictor_bc_flux_) {
+    // update boundary conditions
+    bc_pressure_->Compute(S_next_->time());
+    bc_flux_->Compute(S_next_->time());
+    UpdateBoundaryConditions_();
+
+    changed |= flux_predictor_->modify_predictor(h, u);
+  }
+
+  return changed;
 }
 
 
