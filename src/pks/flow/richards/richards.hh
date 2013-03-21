@@ -23,6 +23,7 @@ namespace Amanzi {
 class MPCCoupledFlowEnergy;
 class MPCDiagonalFlowEnergy;
 class MPCSurfaceSubsurfaceDirichletCoupler;
+class PredictorDelegateBCFlux;
 namespace WhetStone { class Tensor; }
 namespace Operators { class Upwinding; }
 
@@ -155,6 +156,10 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
+
+  // delegates
+  bool modify_predictor_bc_flux_;
+  Teuchos::RCP<PredictorDelegateBCFlux> flux_predictor_;
 
  private:
   // factory registration

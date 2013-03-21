@@ -122,7 +122,7 @@ void Richards::fun(double t_old,
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums1[n]);
     *out_ << std::endl;
 
-    *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c0_)
+    *out_ << "  res(" << c0_ << ") (after diffusion): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
     *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c1_)
           << " " << (*res)("face",fnums1[1]) << std::endl;
@@ -134,7 +134,7 @@ void Richards::fun(double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c0_)
+    *out_ << "  res(" << c0_ << ") (after accumulation): " << (*res)("cell",c0_)
           << " " << (*res)("face",fnums0[0]) << std::endl;
     *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c1_)
           << " " << (*res)("face",fnums1[1]) << std::endl;
@@ -301,6 +301,11 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   S_next_->GetFieldEvaluator("water_content")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& wc = *S_next_->GetFieldData("water_content")
       ->ViewComponent("cell",false);
+  const Epetra_MultiVector& flux = *S_next_->GetFieldData("darcy_flux")
+      ->ViewComponent("face",false);
+  double flux_max(0.);
+  flux.NormInf(&flux_max);
+
 
   Teuchos::RCP<const CompositeVector> res = du->data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
@@ -317,12 +322,11 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
-  // Face error given by tolerances on pressure?  Not sure what should be here!
+  // Face error is mismatch in flux, so relative to flux.
   double enorm_face(0.);
   int nfaces = res_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = std::abs(res_f[0][f]) /
-        (atol_ + rtol_*( std::abs(pres_f[0][f] - 101325.0) + 101325.));
+    double tmp = std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 

@@ -54,6 +54,7 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
   double damping_coef_;
   double damping_cutoff_;
   bool modify_predictor_heuristic_;
+  bool modify_predictor_bc_flux_;
 
  private:
   static RegisteredPKFactory< MPCWaterCoupler<BaseCoupler> > reg_;
@@ -75,6 +76,8 @@ MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
     damping_cutoff_ = plist.get<double>("damping cutoff", 0.1);
   }
 
+  modify_predictor_flux_bc_ =
+      plist.get<bool>("modify predictor for flux BCs", false);
   modify_predictor_heuristic_ =
       plist.get<bool>("modify predictor with heuristic", false);
   face_limiter_ = plist.get<double>("global face limiter", -1);
@@ -245,6 +248,19 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
     }
     changed = true;
   }
+
+
+  // MOVE ME TO MPC_SURFACE_SUBSURFACE_FLUX_COUPLER! --etc
+  if (modify_predictor_flux_bc_) {
+    // must set the BCs for the subsurface, which are dependent upon the
+    // surface residual.
+    Teuchos::RCP<TreeVector> surf_u = up->SubVector(this->surf_pk_name_);
+    Teuchos::RCP<TreeVector> res = Teuchos::rcp(new TreeVector(*surf_u));
+
+    this_->surf_pk_->fun(S_inter_->time(), S_next_->time(), Teuchos::null,
+                         surf_u, res);
+  }
+
 
   changed |= BaseCoupler::modify_predictor(h, up);
   return changed;
