@@ -309,12 +309,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
-  // Initialize predictors
-  if (modify_predictor_bc_flux_) {
-    flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(mesh_, matrix_,
-            wrms_, &bc_markers_, &bc_values_));
-  }
-
   // Set extra fields as initialized -- these don't currently have evaluators,
   // and will be initialized in the call to commit_state()
   S->GetFieldData("numerical_rel_perm",name_)->PutScalar(1.0);
@@ -634,10 +628,25 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   }
 
   if (modify_predictor_bc_flux_) {
+    if (flux_predictor_ == Teuchos::null) {
+      flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
+              wrms_, &bc_markers_, &bc_values_));
+    }
+
     // update boundary conditions
     bc_pressure_->Compute(S_next_->time());
     bc_flux_->Compute(S_next_->time());
     UpdateBoundaryConditions_();
+
+    bool update = UpdatePermeabilityData_(S_next_.ptr());
+    Teuchos::RCP<const CompositeVector> rel_perm =
+        S_next_->GetFieldData("numerical_rel_perm");
+    matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+    matrix_->CreateMFDrhsVectors();
+    Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+    Teuchos::RCP<const Epetra_Vector> gvec = S_next_->GetConstantVectorData("gravity");
+    AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
+    matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
     changed |= flux_predictor_->modify_predictor(h, u);
   }

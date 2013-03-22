@@ -48,6 +48,12 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();
 
+  std::cout << "Affs = ";
+  for (int i=0; i!=6; ++i)
+    std::cout << matrix_->Aff_cells()[9](1,i) << ", ";
+  std::cout << std::endl;
+  std::cout << "RHS = " << (*matrix_->rhs())("face",500) << std::endl;
+
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, g.ptr());
 };

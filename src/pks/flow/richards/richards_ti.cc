@@ -122,10 +122,12 @@ void Richards::fun(double t_old,
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums1[n]);
     *out_ << std::endl;
 
-    *out_ << "  res(" << c0_ << ") (after diffusion): " << (*res)("cell",c0_)
-          << " " << (*res)("face",fnums0[0]) << std::endl;
-    *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c1_)
-          << " " << (*res)("face",fnums1[1]) << std::endl;
+    *out_ << "  res(" << c0_ << ") (after diffusion): " << (*res)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*res)("face",fnums1[n]);
+    *out_ << std::endl;
   }
 #endif
 
@@ -326,7 +328,7 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   double enorm_face(0.);
   int nfaces = res_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
+    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 
