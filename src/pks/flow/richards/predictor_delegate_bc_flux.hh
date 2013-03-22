@@ -11,6 +11,7 @@
 #define PREDICTOR_DELEGATE_BC_FLUX_
 
 #include "Mesh.hh"
+#include "state.hh"
 
 #include "matrix_mfd.hh"
 #include "wrm_partition.hh"
@@ -21,11 +22,13 @@ namespace Flow {
 class PredictorDelegateBCFlux {
 
  public:
-  PredictorDelegateBCFlux(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  PredictorDelegateBCFlux(const Teuchos::RCP<const State>& S_next,
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::RCP<Operators::MatrixMFD>& matrix,
                           const Teuchos::RCP<FlowRelations::WRMPartition>& wrms,
                           std::vector<Operators::Matrix_bc>* bc_markers,
                           std::vector<double>* bc_values) :
+      S_next_(S_next),
       mesh_(mesh),
       matrix_(matrix),
       wrms_(wrms),
@@ -44,34 +47,30 @@ class PredictorDelegateBCFlux {
                   int face_index,
                   double cell_p,
                   double bc_flux,
+                  double g_flux,
                   int dir,
                   double patm,
                   const Teuchos::RCP<FlowRelations::WRM>& wrm) :
         Aff_(Aff), lambda_(lambda), face_index_(face_index),
-        cell_p_(cell_p), bc_flux_(bc_flux), wrm_(wrm), dir_(dir), patm_(patm) {
-
-      double krel = wrm_->k_relative(patm_ - (*lambda_)[face_index_]);
-      face_Mff_ = (*Aff_)[face_index_] / krel;
+        cell_p_(cell_p), bc_flux_(bc_flux), g_flux_(g_flux),
+        wrm_(wrm), dir_(dir), patm_(patm) {
     }
 
     double operator()(double face_p) {
       (*lambda_)[face_index_] = face_p;
-      (*Aff_)[face_index_] = face_Mff_ * wrm_->k_relative(patm_ - face_p);
-      return flux_() - bc_flux_;
-    }
-
-    double derivative(double face_p) {
-      double deriv = face_Mff_ * wrm_->d_k_relative(patm_ - face_p) * (face_p - cell_p_)
-                      + face_Mff_ * wrm_->k_relative(patm_ - face_p);
-      return -deriv;
+      double Krel = wrm_->k_relative(patm_ - face_p);
+      std::cout << "Fluxes: " << flux_() << ", " << g_flux_*Krel << ", " << bc_flux_ << std::endl;
+      return flux_() + g_flux_*Krel - bc_flux_;
     }
 
    protected:
 
     double flux_() {
       double s = 0.;
+      double Krel = wrm_->k_relative(patm_ - (*lambda_)[face_index_]);
+
       for (int n=0; n!=lambda_->size(); ++n)
-        s += (*Aff_)[n] * (cell_p_ - (*lambda_)[n]);
+        s += (*Aff_)[n] * Krel * (cell_p_ - (*lambda_)[n]);
       return s * dir_;
     }
 
@@ -82,6 +81,7 @@ class PredictorDelegateBCFlux {
     double face_Mff_;
     double cell_p_;
     double bc_flux_;
+    double g_flux_;
     int dir_;
     double patm_;
     Teuchos::RCP<FlowRelations::WRM> wrm_;
@@ -98,12 +98,11 @@ class PredictorDelegateBCFlux {
  protected:
   Teuchos::RCP<FluxBCFunctor> CreateFunctor_(int f,
           const Teuchos::Ptr<const CompositeVector>& pres);
-  int CalculateLambdaNewton_(int f, const Teuchos::Ptr<const CompositeVector>& pres,
-                             double& lambda);
   int CalculateLambdaToms_(int f, const Teuchos::Ptr<const CompositeVector>& pres,
                              double& lambda);
 
  protected:
+  Teuchos::RCP<const State> S_next_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<FlowRelations::WRMPartition> wrms_;

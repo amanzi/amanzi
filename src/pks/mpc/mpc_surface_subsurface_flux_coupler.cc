@@ -111,59 +111,43 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    AmanziMesh::Entity_ID_List fnums,fnums0;
+    AmanziMesh::Entity_ID_List fnums1,fnums0;
     std::vector<int> dirs;
     domain_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-    domain_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+    domain_mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
 
     *out_ << "Preconditioner application" << std::endl;
     *out_ << " SubSurface precon:" << std::endl;
-    *out_ << "  p0: " << (*domain_u)("cell",c0_) << " "
-        //          << (*domain_u)("face",fnums0[0])
-          << (*domain_u)("face",fnums0[0]) << ", "
-          << (*domain_u)("face",fnums0[1]) << ", "
-          << (*domain_u)("face",fnums0[2]) << ", "
-          << (*domain_u)("face",fnums0[3])
-          << std::endl;
-    *out_ << "  p1: " << (*domain_u)("cell",c1_) << " "
-        //          << (*domain_u)("face",fnums[0])
-          << (*domain_u)("face",fnums[0]) << ", "
-          << (*domain_u)("face",fnums[1]) << ", "
-          << (*domain_u)("face",fnums[2]) << ", "
-          << (*domain_u)("face",fnums[3])
-          << std::endl;
-    *out_ << "  PC*p0: " << (*domain_Pu)("cell",c0_) << " "
-        //          << (*domain_Pu)("face",fnums0[0])
-          << (*domain_Pu)("face",fnums0[0]) << ", "
-          << (*domain_Pu)("face",fnums0[1]) << ", "
-          << (*domain_Pu)("face",fnums0[2]) << ", "
-          << (*domain_Pu)("face",fnums0[3])
-          << std::endl;
-    *out_ << "  PC*p1: " << (*domain_Pu)("cell",c1_) << " "
-        //          << (*domain_Pu)("face",fnums[0])
-          << (*domain_Pu)("face",fnums[0]) << ", "
-          << (*domain_Pu)("face",fnums[1]) << ", "
-          << (*domain_Pu)("face",fnums[2]) << ", "
-          << (*domain_Pu)("face",fnums[3])
-          << std::endl;
+    *out_ << "  p0: " << (*domain_u)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ", " << (*domain_u)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "  p1: " << (*domain_u)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ", " << (*domain_u)("face",fnums1[n]);
+    *out_ << std::endl;
+    *out_ << "  PC*p0: " << (*domain_Pu)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ", " << (*domain_Pu)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "  PC*p1: " << (*domain_Pu)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ", " << (*domain_Pu)("face",fnums1[n]);
+    *out_ << std::endl;
   }
 
   if (surf_c0_ < surf_u->size("cell",false) && surf_c1_ < surf_u->size("cell",false)) {
     //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-     AmanziMesh::Entity_ID_List fnums,fnums0;
+     AmanziMesh::Entity_ID_List fnums1,fnums0;
      std::vector<int> dirs;
      surf_mesh_->cell_get_faces_and_dirs(surf_c0_, &fnums0, &dirs);
-     surf_mesh_->cell_get_faces_and_dirs(surf_c1_, &fnums, &dirs);
+     surf_mesh_->cell_get_faces_and_dirs(surf_c1_, &fnums1, &dirs);
 
     *out_ << " Surface precon:" << std::endl;
     *out_ << "  u0: " << (*surf_u)("cell",surf_c0_) << ", "
           << (*surf_u)("face",fnums0[0]) << std::endl;
     *out_ << "  u1: " << (*surf_u)("cell",surf_c1_) << ", "
-          << (*surf_u)("face",fnums[0]) << std::endl;
+          << (*surf_u)("face",fnums1[0]) << std::endl;
     *out_ << "  PC*u0: " << (*surf_Pu)("cell",surf_c0_) << ", "
           << (*surf_Pu)("face",fnums0[0]) << std::endl;
     *out_ << "  PC*u1: " << (*surf_Pu)("cell",surf_c1_) << ", "
-          << (*surf_Pu)("face",fnums[0]) << std::endl;
+          << (*surf_Pu)("face",fnums1[0]) << std::endl;
 
   }
 #endif
@@ -233,6 +217,63 @@ void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
           domain_pk_->bc_values());
   mfd_preconditioner_->UpdatePreconditioner();
 }
+
+
+// -----------------------------------------------------------------------------
+// Modify the nonlinear predictor to avoid issues.
+// This is very delicate code to get the order correct...
+// -----------------------------------------------------------------------------
+bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor(double h,
+        Teuchos::RCP<TreeVector> up) {
+  bool changed(false);
+
+  if (modify_predictor_flux_bc_) {
+    // To get this to work, we want to first modify the surface predictor,
+    // then call the surface residual function to get the surface flux BCs,
+    // then call the subsurface modify_predictor.  The subsurface modify
+    // routine will alter the surface face lambdas to make them reasonably
+    // consistent with the flux BCs.
+
+    // -- call surface's modify_predictor()
+    Teuchos::RCP<TreeVector> surf_u = up->SubVector(surf_pk_name_);
+    changed |= surf_pk_->modify_predictor(h, surf_u);
+
+    // -- call the surface residual function to get the surface flux BCs
+    Teuchos::RCP<TreeVector> surf_g = Teuchos::rcp(new TreeVector(*surf_u));
+    surf_pk_->fun(S_inter_->time(), S_next_->time(), Teuchos::null,
+                         surf_u, surf_g);
+
+    // -- set the flux BCs
+    Teuchos::RCP<CompositeVector> source =
+        S_next_->GetFieldData(flux_key_, domain_pk_name_);
+    *source->ViewComponent("cell",false) = *surf_g->data()->ViewComponent("cell",false);
+
+    // -- call the subsurface modify_predictor(), which uses those BCs
+    Teuchos::RCP<TreeVector> domain_u = up->SubVector(domain_pk_name_);
+    changed |= domain_pk_->modify_predictor(h, domain_u);
+
+    // -- ensure the surface cell's predictor matches the subsurface face
+    //    values (this is backwards from MPCSurfaceSubsurfaceCoupler's
+    //    version.
+    if (changed) {
+      const Epetra_MultiVector& domain_u_f = *domain_u->data()
+          ->ViewComponent("face",false);
+      Epetra_MultiVector& surf_u_c = *surf_u->data()->ViewComponent("cell",false);
+
+      int ncells = surf_u_c.MyLength();
+      for (int c=0; c!=ncells; ++c) {
+        int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+        surf_u_c[0][c] = domain_u_f[0][f];
+      }
+    }
+
+  } else {
+    changed |= MPCSurfaceSubsurfaceCoupler::modify_predictor(h, up);
+  }
+
+  return changed;
+}
+
 
 } // namespace
 

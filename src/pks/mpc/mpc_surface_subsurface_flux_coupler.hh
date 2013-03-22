@@ -34,9 +34,13 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
   MPCSurfaceSubsurfaceFluxCoupler(Teuchos::ParameterList& plist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCSurfaceSubsurfaceCoupler(plist, soln) {
+      MPCSurfaceSubsurfaceCoupler(plist, soln),
+      modify_predictor_flux_bc_(false) {
     surf_c0_ = plist_.get<int>("surface debug cell 0", 0);
     surf_c1_ = plist_.get<int>("surface debug cell 1", 1);
+
+    modify_predictor_flux_bc_ =
+      plist.get<bool>("modify predictor for flux BCs", false);
   }
 
   // -- Setup data.
@@ -51,6 +55,8 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
+
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
  protected:
   virtual void PreconApply_(Teuchos::RCP<const TreeVector> u,
@@ -77,6 +83,8 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
 
   int surf_c0_;
   int surf_c1_;
+
+  bool modify_predictor_flux_bc_;
 
  private:
   // factory registration
