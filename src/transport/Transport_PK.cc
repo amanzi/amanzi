@@ -373,12 +373,12 @@ void Transport_PK::Advance(double dT_MPC)
       mass_tracer += ws[c] * phi[c] * tcc_next[0][c] * mesh_->cell_volume(c);
     }
 
-    double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact;
+    double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
     mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
-    mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_tracer_exact, 1);
+    mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
 
     if (MyPID == 0) {
-      double mass_loss = mass_tracer_exact - mass_tracer;
+      double mass_loss = mass_exact - mass_tracer;
       printf("Transport PK: tracer: %9.6g to %9.6g  at %12.7g [sec]\n", tccmin, tccmax, T_physics);
       printf("   (for T < T0) mass: %10.5e [kg], mass loss: %10.5e [kg]\n", mass_tracer, mass_loss);
     }

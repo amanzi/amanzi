@@ -47,7 +47,7 @@ class Richards_PK : public Flow_PK {
   void InitSteadyState(double T0, double dT0);
   void InitTransient(double T0, double dT0);
   void InitPicard(double T0);
-  void InitNextTI(double T0, double dT0, TI_Specs ti_specs);
+  void InitNextTI(double T0, double dT0, TI_Specs& ti_specs);
 
   double CalculateFlowDt();
   int Advance(double dT_MPC); 

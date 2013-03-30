@@ -177,12 +177,8 @@ void Richards_PK::ProcessParameterList()
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
 
-    if (ti_specs_sss_.initialize_with_darcy == true || 
-        ti_specs_sss_.ti_method == FLOW_TIME_INTEGRATION_PICARD ||
-        ti_specs_sss_.ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
-      std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
-      ProcessStringLinearSolver(linear_solver_name, &ti_specs_sss_.ls_specs);
-    }
+    std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
+    ProcessStringLinearSolver(linear_solver_name, &ti_specs_sss_.ls_specs);
 
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
@@ -203,12 +199,8 @@ void Richards_PK::ProcessParameterList()
     ti_specs_trs_.preconditioner_name = FindStringPreconditioner(trs_list);
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
 
-    if (ti_specs_trs_.initialize_with_darcy == true || 
-        ti_specs_trs_.ti_method == FLOW_TIME_INTEGRATION_PICARD ||
-        ti_specs_trs_.ti_method == FLOW_TIME_INTEGRATION_BACKWARD_EULER) {
-      std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
-      ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
-    }
+    std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
+    ProcessStringLinearSolver(linear_solver_name, &ti_specs_trs_.ls_specs);
 
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
     ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
@@ -323,7 +315,7 @@ void Richards_PK::ProcessStringLinearSolver(const std::string name, LinearSolver
 
   Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
   ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
-  ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-10);
+  ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);
 
   ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
   ProcessStringPreconditioner(ls_specs->preconditioner_name, &ls_specs->preconditioner_method);

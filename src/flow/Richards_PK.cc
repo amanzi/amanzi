@@ -358,7 +358,7 @@ void Richards_PK::InitTransient(double T0, double dT0)
 /* ******************************************************************
 * Generic initialization of a next time integration phase.
 ****************************************************************** */
-void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
+void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   ResetPKtimes(T0, dT0);
   bool ini_with_darcy = ti_specs.initialize_with_darcy;
