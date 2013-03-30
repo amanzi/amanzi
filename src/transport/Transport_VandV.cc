@@ -202,6 +202,34 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
 }
 
 
+/* ******************************************************************
+* Calculate change of tracer volume per second due to boundary flux.
+* We assume that traer is the first component.
+****************************************************************** */
+double Transport_PK::TracerVolumeChangePerSecond()
+{
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  double volume = 0.0;
+
+  for (int n = 0; n < bcs.size(); n++) {
+    int i = bcs_tcc_index[n];
+
+    if (i == 0) {
+      for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        int c2 = (*downwind_cell_)[f];
+
+        if (c2 >= 0) {
+          double u = fabs(darcy_flux[f]);
+          volume += u * bc->second;
+        }
+      }
+    }
+  }
+  return volume;
+}
+
+
 /* *******************************************************************
  * Calculates best least square fit for data (h[i], error[i]).                       
  ****************************************************************** */

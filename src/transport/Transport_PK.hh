@@ -148,6 +148,9 @@ class Transport_PK : public Explicit_TI::fnBase {
   // obsolete methods
   void CreateConcentration(Teuchos::ParameterList& bcs_list);
 
+  // miscaleneous methods
+  double TracerVolumeChangePerSecond();
+
  public:
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
@@ -201,6 +204,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<BoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
+
+  double mass_tracer_exact;  // statistics for tracer
 
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
