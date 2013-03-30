@@ -149,7 +149,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   void CreateConcentration(Teuchos::ParameterList& bcs_list);
 
   // miscaleneous methods
-  double TracerVolumeChangePerSecond();
+  double TracerVolumeChangePerSecond(int idx_tracer);
 
  public:
   int MyPID;  // parallel information: will be moved to private

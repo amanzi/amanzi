@@ -99,7 +99,6 @@ int Matrix_Audit::CheckSpectralBounds()
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
     for (int k=2; k<n; k++) {
       e = dmem1[k];
-      if (e > 0.99) continue;
       a = std::min<double>(a, e);
       b = std::max<double>(b, e);
     }
@@ -168,7 +167,6 @@ int Matrix_Audit::CheckSpectralBoundsExtended()
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
     for (int k=2; k<n; k++) {
       e = dmem1[k];
-      if (e > 0.99) continue;
       a = std::min<double>(a, e);
       b = std::max<double>(b, e);
     }
@@ -216,6 +214,7 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
         Acell(i, j) -= Afc[i] * Acf[j] / Acc;
       }
     }
+    Teuchos::SerialDenseMatrix<int, double> Acopy(Acell);
 
     lapack.GEEV('N', 'N', n, Acell.values(), n, dmem1, dmem2, 
                 &VL, 1, &VR, 1, dwork1, lwork1, &info);
@@ -225,7 +224,6 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
     for (int k=2; k<n; k++) {
       e = dmem1[k];
-      if (e > 0.99) continue;
       a = std::min<double>(a, e);
       b = std::max<double>(b, e);
     }

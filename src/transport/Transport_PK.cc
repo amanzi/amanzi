@@ -367,7 +367,7 @@ void Transport_PK::Advance(double dT_MPC)
     tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
 
     const Epetra_Vector& phi = TS->ref_porosity();
-    mass_tracer_exact += TracerVolumeChangePerSecond() * dT_MPC;
+    mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
     double mass_tracer = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
       mass_tracer += ws[c] * phi[c] * tcc_next[0][c] * mesh_->cell_volume(c);
@@ -378,9 +378,9 @@ void Transport_PK::Advance(double dT_MPC)
     mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_tracer_exact, 1);
 
     if (MyPID == 0) {
+      double mass_loss = mass_tracer_exact - mass_tracer;
       printf("Transport PK: tracer: %9.6g to %9.6g  at %12.7g [sec]\n", tccmin, tccmax, T_physics);
-      printf("              tracer mass =%10.5e [kg], total boundary flux = %10.5e [kg]\n", 
-          mass_tracer, mass_tracer_exact);
+      printf("   (for T < T0) mass: %10.5e [kg], mass loss: %10.5e [kg]\n", mass_tracer, mass_loss);
     }
   }
 
