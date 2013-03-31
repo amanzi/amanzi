@@ -49,7 +49,7 @@ void Matrix_Audit::InitAudit()
   lda = 1;
   for (int i = 0; i < A->size(); i++) {
     Teuchos::SerialDenseMatrix<int, double>& Ai = (*A)[i];
-    lda = std::max<int>(lda, Ai.numRows());
+    lda = std::max(lda, Ai.numRows());
   }
 
   // allocate memory for Lapack
@@ -99,16 +99,16 @@ int Matrix_Audit::CheckSpectralBounds()
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
     for (int k=2; k<n; k++) {
       e = dmem1[k];
-      a = std::min<double>(a, e);
-      b = std::max<double>(b, e);
+      a = std::min(a, e);
+      b = std::max(b, e);
     }
 
-    emin = std::min<double>(emin, a);
-    emax = std::max<double>(emax, b);
+    emin = std::min(emin, a);
+    emax = std::max(emax, b);
 
     double cnd = b / a;
-    cndmin = std::min<double>(cndmin, cnd);
-    cndmax = std::max<double>(cndmax, cnd);
+    cndmin = std::min(cndmin, cnd);
+    cndmax = std::max(cndmax, cnd);
     cndavg += cnd;
   }
   cndavg /= A->size();
@@ -167,16 +167,16 @@ int Matrix_Audit::CheckSpectralBoundsExtended()
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
     for (int k=2; k<n; k++) {
       e = dmem1[k];
-      a = std::min<double>(a, e);
-      b = std::max<double>(b, e);
+      a = std::min(a, e);
+      b = std::max(b, e);
     }
 
-    emin = std::min<double>(emin, a);
-    emax = std::max<double>(emax, b);
+    emin = std::min(emin, a);
+    emax = std::max(emax, b);
 
     double cnd = b / a;
-    cndmin = std::min<double>(cndmin, cnd);
-    cndmax = std::max<double>(cndmax, cnd);
+    cndmin = std::min(cndmin, cnd);
+    cndmax = std::max(cndmax, cnd);
     cndavg += cnd;
   }
   cndavg /= A->size();
@@ -224,16 +224,16 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
     for (int k=2; k<n; k++) {
       e = dmem1[k];
-      a = std::min<double>(a, e);
-      b = std::max<double>(b, e);
+      a = std::min(a, e);
+      b = std::max(b, e);
     }
 
-    emin = std::min<double>(emin, a);
-    emax = std::max<double>(emax, b);
+    emin = std::min(emin, a);
+    emax = std::max(emax, b);
 
     double cnd = b / a;
-    cndmin = std::min<double>(cndmin, cnd);
-    cndmax = std::max<double>(cndmax, cnd);
+    cndmin = std::min(cndmin, cnd);
+    cndmax = std::max(cndmax, cnd);
     cndavg += cnd;
   }
   cndavg /= A->size();

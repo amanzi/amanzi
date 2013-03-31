@@ -146,7 +146,7 @@ int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
     int num_itrs = solver->NumIters();
 
     // update d_krylov history
-    m = std::min<int>(++m, mmax);
+    m = std::min(++m, mmax);
     Epetra_Vector* solution_diff = d_krylov(index);
     *solution_diff = *solution_new;
     solution_diff->Update(-1.0, *solution_old, 1.0);

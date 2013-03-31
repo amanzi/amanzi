@@ -407,7 +407,7 @@ void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
       for (double s = spe[0]; s < spe[2]; s += spe[1]) {
         ofile << s << " ";
         for (int mb = 0; mb < WRM.size(); mb++) {
-          double ss = std::max<double>(s, WRM[mb]->residualSaturation());
+          double ss = std::max(s, WRM[mb]->residualSaturation());
           double pc = WRM[mb]->capillaryPressure(ss);
           double krel = WRM[mb]->k_relative(pc);
           ofile << krel << " ";

@@ -702,7 +702,7 @@ int MFD3D::StabilityOptimized(const Tensor& T,
   // find correct scaling of a stability term
   double lower, upper, eigmin = Mc(0, 0);
   // T.spectral_bounds(&lower, &upper);
-  for (int k = 1; k < nrows; k++) eigmin = std::min<double>(eigmin, Mc(k, k));
+  for (int k = 1; k < nrows; k++) eigmin = std::min(eigmin, Mc(k, k));
 
   // find null space of N^T
   Teuchos::SerialDenseMatrix<int, double> U(nrows, nrows);
@@ -765,10 +765,10 @@ int MFD3D::StabilityOptimized(const Tensor& T,
   int status = WHETSTONE_ELEMENTAL_MATRIX_OK;
   for (int loop = 0; loop < 3; loop++) {
     if (loop == 1) {   
-      for (int i = 0; i < mcols; i++) G(i) = std::max<double>(G(i), 0.0);
+      for (int i = 0; i < mcols; i++) G(i) = std::max(G(i), 0.0);
       status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
     } else if (loop == 2) {
-      for (int i = mcols; i < nparam; i++) G(i) = std::max<double>(G(i), 0.0);
+      for (int i = mcols; i < nparam; i++) G(i) = std::max(G(i), 0.0);
       status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
     }
 

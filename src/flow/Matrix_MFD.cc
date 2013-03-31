@@ -192,6 +192,7 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
                method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {  // centered permeability for diffusion
       for (int n = 0; n < nfaces; n++)
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
+      // for (int n = 0; n < nfaces; n++) Bff(n, n) += max
     } else {
       for (int n = 0; n < nfaces; n++)
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_faces[faces[m]];

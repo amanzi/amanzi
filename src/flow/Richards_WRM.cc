@@ -120,7 +120,7 @@ void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
   double max_flux, min_flux;
   flux.MaxValue(&max_flux);
   flux.MinValue(&min_flux);
-  double tol = FLOW_RELATIVE_PERM_TOLERANCE * std::max<double>(fabs(max_flux), fabs(min_flux));
+  double tol = FLOW_RELATIVE_PERM_TOLERANCE * std::max(fabs(max_flux), fabs(min_flux));
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);

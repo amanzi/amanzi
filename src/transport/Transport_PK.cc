@@ -203,7 +203,7 @@ double Transport_PK::CalculateTransportDt()
   int cmin_dT = 0;
   for (c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * std::min<double>(ws_prev[c], ws[c]) / outflux;
+    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * std::min(ws_prev[c], ws[c]) / outflux;
     if (dT_cell < dT) {
       dT = dT_cell;
       cmin_dT = c;

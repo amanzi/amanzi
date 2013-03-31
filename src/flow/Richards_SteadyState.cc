@@ -230,7 +230,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    double tol_dynamic = std::max<double>(convergence_tol_linear, L2error * 1e-8);
+    double tol_dynamic = std::max(convergence_tol_linear, L2error * 1e-8);
     solver->Iterate((long long)max_itrs_linear, tol_dynamic);
     int num_itrs_linear = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
