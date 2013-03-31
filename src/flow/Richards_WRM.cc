@@ -62,7 +62,7 @@ void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
 
   } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
     CalculateRelativePermeabilityUpwindGravity(p);
-    AverageRelativePermeability();
+    // AverageRelativePermeability();
   }
 }
 
@@ -167,7 +167,8 @@ void Richards_PK::CalculateRelativePermeabilityArithmeticMean(const Epetra_Vecto
 
 
 /* ******************************************************************
-* Defines upwinded relative permeabilities for faces using gravity. 
+* Defines upwinded relative permeabilities for faces using gravity.
+* Routine is OBSOLETE. 
 ****************************************************************** */
 void Richards_PK::AverageRelativePermeability()
 {
