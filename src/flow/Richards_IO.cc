@@ -271,7 +271,7 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
   } else if (name == "upwind experimental") {
     *method = AmanziFlow::FLOW_RELATIVE_PERM_EXPERIMENTAL;
   } else {
-    msg << "Richards Problem: unknown relative permeability method has been specified.";
+    msg << "Flow PK: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);
   }
 }
