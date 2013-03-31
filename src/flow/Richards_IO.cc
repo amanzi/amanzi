@@ -50,7 +50,7 @@ void Richards_PK::ProcessParameterList()
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   ProcessStringRelativePermeability(krel_method_name, &Krel_method);
  
-  atm_pressure = rp_list_.get<double>("atmospheric pressure", 101325.0);
+  atm_pressure = rp_list_.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
   string mfd3d_method_name = rp_list_.get<string>("discretization method", "optimized mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
@@ -81,7 +81,7 @@ void Richards_PK::ProcessParameterList()
 
   // Create water retention models
   if (! rp_list_.isSublist("Water retention models")) {
-    msg << "flow PK: there is no \"Water retention models\" list";
+    msg << "Flow PK: there is no \"Water retention models\" list";
     Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList& vG_list = rp_list_.sublist("Water retention models");
@@ -91,7 +91,7 @@ void Richards_PK::ProcessParameterList()
     if (vG_list.isSublist(vG_list.name(i))) {
       nblocks++;
     } else {
-      msg << "Richards Problem: water retention model contains an entry that is not a sublist.";
+      msg << "Flow PK: WRM contains an entry that is not a sublist.";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -112,24 +112,26 @@ void Richards_PK::ProcessParameterList()
       }
 
       if (wrm_list.get<string>("water retention model") == "van Genuchten") {
-        double m = wrm_list.get<double>("van Genuchten m");
-        double alpha = wrm_list.get<double>("van Genuchten alpha");
+        double m = wrm_list.get<double>("van Genuchten m", FLOW_WRM_EXCEPTION);
+        double alpha = wrm_list.get<double>("van Genuchten alpha", FLOW_WRM_EXCEPTION);
         double l = wrm_list.get<double>("van Genuchten l", FLOW_WRM_VANGENUCHTEN_L);
-        double sr = wrm_list.get<double>("residual saturation");
-        double pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        double sr = wrm_list.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
+        double pc0 = wrm_list.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
         std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+
         VerifyWRMparameters(m, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
         WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
 
       } else if (wrm_list.get<string>("water retention model") == "Brooks Corey") {
-        double lambda = wrm_list.get<double>("Brooks Corey lambda");
-        double alpha = wrm_list.get<double>("Brooks Corey alpha");
-        double l = wrm_list.get<double>("Brooks Corey l", 0.5);
-        double sr = wrm_list.get<double>("residual saturation");
-        double pc0 = wrm_list.get<double>("regularization interval", 0.0);
+        double lambda = wrm_list.get<double>("Brooks Corey lambda", FLOW_WRM_EXCEPTION);
+        double alpha = wrm_list.get<double>("Brooks Corey alpha", FLOW_WRM_EXCEPTION);
+        double l = wrm_list.get<double>("Brooks Corey l", FLOW_WRM_BROOKS_COREY_L);
+        double sr = wrm_list.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
+        double pc0 = wrm_list.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
         std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
+
         VerifyWRMparameters(lambda, alpha, sr, pc0);
         VerifyStringMualemBurdine(krel_function);
 
@@ -212,12 +214,16 @@ void Richards_PK::ProcessParameterList()
   // allowing developer to use non-standard simulation modes
   if (! rp_list_.isParameter("developer access granted")) AnalysisTI_Specs();
 
-  // experimental solver
+  // experimental solver (NKA is default)
   string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");
   ProcessStringExperimentalSolver(experimental_solver_name, &experimental_solver_);
 
   // optional debug output
   CalculateWRMcurves(rp_list_);
+
+  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
+    if (MyPID == 0) rp_list_.unused(std::cout);
+  }
 }
 
 
@@ -291,7 +297,7 @@ void Richards_PK::VerifyWRMparameters(double m, double alpha, double sr, double 
 {
   Errors::Message msg;
   if (m < 0.0 || alpha < 0.0 || sr < 0.0 || pc0 < 0.0) {
-    msg << "Flow PK: Negative parameter in one of the water retention models.";
+    msg << "Flow PK: Negative/undefined parameter in a water retention model.";
     Exceptions::amanzi_throw(msg);    
   }
   if (sr > 1.0) {
