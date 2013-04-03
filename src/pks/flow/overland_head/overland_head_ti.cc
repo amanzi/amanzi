@@ -237,15 +237,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   Teuchos::RCP<const CompositeVector> eff_p = S_next_->GetFieldData("surface_effective_pressure");
   Teuchos::RCP<const CompositeVector> surf_p = S_next_->GetFieldData("surface_pressure");
 
-#if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true) &&
-      c0_ < eff_p->size("cell",false) && c1_ < eff_p->size("cell",false)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
     *out_ << "Precon update at t = " << t << std::endl;
-    *out_ << "  p0: " << (*up->data())("cell",0,c0_) << " "
-          << std::endl;
-    //              << (*up->data())("face",0,0) << std::endl;
-  }
-#endif
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
@@ -312,10 +305,15 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  assembling..." << std::endl;
     mfd_preconditioner_->AssembleGlobalMatrices();
 
     if (full_jacobian_) {
-      // JACOBIAN?
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+        *out_ << "    including full Jacobian terms" << std::endl;
+
+    // JACOBIAN?
       // These are already updated for UpdatePerm
       Teuchos::RCP<const CompositeVector> depth =
           S_next_->GetFieldData("ponded_depth");
@@ -360,6 +358,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
 
     // Scale Spp by -dh/dp
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  scaling by dh/dp" << std::endl;
 
     // NOTE: dh/dp to take it to p variable, the negative sign is due to the
     //       equation being K/dz ( p - lambda ) = q = dwc/dt - div q_surf - Q,
@@ -376,6 +376,9 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     //    EpetraExt::RowMatrixToMatlabFile("TPFAafter.txt", *Spp);
 
   } else if (assemble_preconditioner_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  assembling..." << std::endl;
+
     mfd_preconditioner_->AssembleGlobalMatrices();
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
     mfd_preconditioner_->UpdatePreconditioner();

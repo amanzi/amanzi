@@ -142,7 +142,6 @@ protected:
   // flags and control
   double dT_max_;
   FluxUpdateMode update_flux_;
-  bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
 
   bool coupled_to_subsurface_via_temp_;

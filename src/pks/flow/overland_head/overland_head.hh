@@ -134,7 +134,6 @@ protected:
   bool standalone_mode_; // domain mesh == surface mesh
   FluxUpdateMode update_flux_;
   bool is_source_term_;
-  bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
   bool perm_update_required_;

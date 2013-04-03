@@ -192,18 +192,20 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceFaces_(
 void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   MPCSurfaceSubsurfaceCoupler::update_precon(t, up, h);
-  mfd_preconditioner_->AssembleGlobalMatrices();
-  mfd_preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
-          domain_pk_->bc_values());
 
-  // Dump the Schur complement
-  // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
-  // std::stringstream filename_s;
-  // filename_s << "schur_" << S_next_->cycle() << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  if (assemble_preconditioner_) {
+    mfd_preconditioner_->AssembleGlobalMatrices();
+    mfd_preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
+            domain_pk_->bc_values());
 
-  mfd_preconditioner_->UpdatePreconditioner();
+    // Dump the Schur complement
+    // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
+    // std::stringstream filename_s;
+    // filename_s << "schur_" << S_next_->cycle() << ".txt";
+    // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
 
+    mfd_preconditioner_->UpdatePreconditioner();
+  }
 }
 
 

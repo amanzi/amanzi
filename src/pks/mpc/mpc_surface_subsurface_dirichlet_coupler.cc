@@ -197,10 +197,13 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconUpdateSurfaceFaces_(
 void MPCSurfaceSubsurfaceDirichletCoupler::update_precon(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   MPCSurfaceSubsurfaceCoupler::update_precon(t, up, h);
-  mfd_preconditioner_->AssembleGlobalMatrices();
-  mfd_preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
-          domain_pk_->bc_values());
-  mfd_preconditioner_->UpdatePreconditioner();
+
+  if (assemble_preconditioner_) {
+    mfd_preconditioner_->AssembleGlobalMatrices();
+    mfd_preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
+            domain_pk_->bc_values());
+    mfd_preconditioner_->UpdatePreconditioner();
+  }
 }
 
 } // namespace

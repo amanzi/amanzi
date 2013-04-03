@@ -155,7 +155,6 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
-
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon update at t = " << t << std::endl;
   }
@@ -219,8 +218,12 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
 
   // Assemble
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  assembling..." << std::endl;
     mfd_preconditioner_->AssembleGlobalMatrices();
   } else if (assemble_preconditioner_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  assembling..." << std::endl;
     // -- assemble
     mfd_preconditioner_->AssembleGlobalMatrices();
     // -- form and prep the Schur complement for inversion

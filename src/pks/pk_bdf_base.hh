@@ -70,6 +70,7 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
 
   // operators
   Teuchos::RCP<Operators::Matrix> preconditioner_;
+  bool assemble_preconditioner_;
 
   // timing
   Teuchos::RCP<Teuchos::Time> step_walltime_;

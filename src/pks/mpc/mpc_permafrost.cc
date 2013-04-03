@@ -20,7 +20,10 @@ subtree:
   permafrost  icy_overland    threephase    surface_ice
 
 ------------------------------------------------------------------------- */
+#include "field_evaluator.hh"
 
+#include "matrix_coupled_mfd_surf.hh"
+#include "matrix_mfd_surf.hh"
 #include "mpc_surface_subsurface_flux_coupler.hh"
 #include "mpc_permafrost.hh"
 
@@ -34,14 +37,61 @@ RegisteredPKFactory<MPCPermafrost> MPCPermafrost::reg_("permafrost model");
 // Setup data
 // -------------------------------------------------------------
 void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
-  // off-diagonal terms needed by MPCCoupledCells
-  plist_.set("conserved quantity A", "water_content");
-  plist_.set("conserved quantity B", "energy");
-  plist_.set("primary variable A", "pressure");
-  plist_.set("primary variable B", "temperature");
+  StrongMPC::setup(S);
 
-  plist_.set("mesh key", "domain");
-  MPCCoupledCells::setup(S);
+  // option to decoupled and revert to StrongMPC
+  decoupled_ = plist_.get<bool>("decoupled",false);
+
+  // off-diagonal terms needed by MPCCoupledCells
+  A_key_ = plist_.get<std::string>("conserved quantity A", "water_content");
+  B_key_ = plist_.get<std::string>("conserved quantity B", "energy");
+  y1_key_ = plist_.get<std::string>("primary variable A", "pressure");
+  y2_key_ = plist_.get<std::string>("primary variable B", "temperature");
+  dA_dy2_key_ = std::string("d")+A_key_+std::string("_d")+y2_key_;
+  dB_dy1_key_ = std::string("d")+B_key_+std::string("_d")+y1_key_;
+
+  Key mesh_key = plist_.get<std::string>("mesh key", "domain");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_key);
+
+  Key surf_mesh_key = plist_.get<std::string>("surface mesh key", "surface");
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key);
+
+  // Create the precon
+  Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
+  mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixCoupledMFDSurf(
+      pc_sublist, mesh, surf_mesh));
+  preconditioner_ = mfd_surf_preconditioner_;
+
+  // Set the subblocks.  Note these are the flux-coupled PCs, which are
+  // MatrixMFD_Surfs.
+  Teuchos::RCP<Operators::Matrix> pcA = sub_pks_[0]->preconditioner();
+  Teuchos::RCP<Operators::Matrix> pcB = sub_pks_[1]->preconditioner();
+
+#ifdef ENABLE_DBC
+  Teuchos::RCP<Operators::MatrixMFD_Surf> pcB_mfd =
+      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(pcB);
+  ASSERT(pcB_mfd != Teuchos::null);
+  Teuchos::RCP<Operators::MatrixMFD_Surf> pcA_mfd =
+      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(pcA);
+  ASSERT(pcA_mfd != Teuchos::null);
+#else
+  Teuchos::RCP<Operators::MatrixMFD_Surf> pcA_mfd =
+      Teuchos::rcp_static_cast<Operators::MatrixMFD_Surf>(pcA);
+  Teuchos::RCP<Operators::MatrixMFD_Surf> pcB_mfd =
+      Teuchos::rcp_static_cast<Operators::MatrixMFD_Surf>(pcB);
+#endif
+
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> pcA_surf;
+  pcA_mfd->GetSurfaceOperator(pcA_surf);
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> pcB_surf;
+  pcB_mfd->GetSurfaceOperator(pcB_surf);
+
+  mfd_surf_preconditioner_->SetSubBlocks(pcA_mfd, pcB_mfd);
+  mfd_surf_preconditioner_->SetSurfaceOperators(pcA_surf, pcB_surf);
+
+  // setup and initialize the preconditioner
+  mfd_surf_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_surf_preconditioner_->InitPreconditioner();
 
   // grab the PKs
   coupled_flow_pk_ =
@@ -50,6 +100,37 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   coupled_energy_pk_ =
       Teuchos::rcp_dynamic_cast<MPCSurfaceSubsurfaceFluxCoupler>(sub_pks_[1]);
   ASSERT(coupled_energy_pk_ != Teuchos::null);
+}
+
+
+// updates the preconditioner.  Note this is currently identical to
+// MPCCoupledCells::update_precon(), but may change to include surface
+// coupling terms.
+void MPCPermafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up,
+        double h) {
+  StrongMPC::update_precon(t,up,h);
+
+  if (!decoupled_) {
+    S_next_->GetFieldEvaluator(A_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y2_key_);
+    S_next_->GetFieldEvaluator(B_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y1_key_);
+    Teuchos::RCP<const CompositeVector> dA_dy2 = S_next_->GetFieldData(dA_dy2_key_);
+    Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
+
+    // scale by 1/h
+    Epetra_MultiVector Ccc(*dA_dy2->ViewComponent("cell",false));
+    Ccc = *dA_dy2->ViewComponent("cell",false);
+    Ccc.Scale(1./h);
+
+    Epetra_MultiVector Dcc(*dB_dy1->ViewComponent("cell",false));
+    Dcc = *dB_dy1->ViewComponent("cell",false);
+    Dcc.Scale(1./h);
+
+    // Assemble the precon, form Schur complement
+    mfd_surf_preconditioner_->ComputeSchurComplement(Ccc, Dcc);
+    mfd_surf_preconditioner_->UpdatePreconditioner();
+  }
 }
 
 
@@ -70,7 +151,7 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   domain_Pu_tv->PushBack(Pu->SubVector(1)->SubVector(0));
 
   // call the operator's inverse
-  preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
+  mfd_surf_preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
 
   // Now post-process
   coupled_flow_pk_->PreconPostprocess_(u->SubVector(0), Pu->SubVector(0));

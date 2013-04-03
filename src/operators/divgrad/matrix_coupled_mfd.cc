@@ -53,13 +53,17 @@ namespace Operators {
 
 MatrixCoupledMFD::MatrixCoupledMFD(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    plist_(plist), mesh_(mesh) {
+    plist_(plist),
+    mesh_(mesh),
+    is_matrix_constructed_(false) {
   InitializeFromPList_();
 }
 
 
 MatrixCoupledMFD::MatrixCoupledMFD(const MatrixCoupledMFD& other) :
-    plist_(other.plist_), mesh_(other.mesh_) {
+    plist_(other.plist_),
+    mesh_(other.mesh_),
+    is_matrix_constructed_(false) {
   InitializeFromPList_();
 }
 
@@ -469,6 +473,8 @@ void MatrixCoupledMFD::InitPreconditioner() {
  * Rebuild preconditioner.
  ****************************************************************** */
 void MatrixCoupledMFD::UpdatePreconditioner() {
+  ASSERT(is_matrix_constructed_);
+
   if (prec_method_ == TRILINOS_ML) {
     if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
     ml_prec_->SetParameterList(ml_plist_);

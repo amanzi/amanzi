@@ -159,10 +159,13 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Operators::Matrix> precon =
     Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
   set_preconditioner(precon);
-  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 
   // constraint on max delta T, which kicks us out of bad iterates faster?
   dT_max_ = plist_.get<double>("maximum temperature change", 10.);
+
+  // ewc and other predictors can result in odd face values
+  modify_predictor_with_consistent_faces_ =
+    plist_.get<bool>("modify predictor with consistent faces", false);
 };
 
 
@@ -216,8 +219,11 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  niter_ = 0;
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Commiting state." << std::endl;
 
+  niter_ = 0;
   bool update = S->GetFieldEvaluator(conductivity_key_)
       ->HasFieldChanged(S.ptr(), name_);
 
@@ -238,6 +244,10 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
 void EnergyBase::UpdateBoundaryConditions_() {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Updating BCs." << std::endl;
+
   for (int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
@@ -318,6 +328,9 @@ void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& t
 // -----------------------------------------------------------------------------
 bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Checking admissibility..." << std::endl;
+
   // For some reason, wandering PKs break most frequently with an unreasonable
   // temperature.  This simply tries to catch that before it happens.
   Teuchos::RCP<const CompositeVector> temp = up->data();
@@ -328,7 +341,7 @@ bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   ierr |= temp_v.MaxValue(&maxT);
 
   if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_EXTREME,true)) {
-    *out_ << "Admissible T? (min/max): " << minT << ",  " << maxT << std::endl;
+    *out_ << "    Admissible T? (min/max): " << minT << ",  " << maxT << std::endl;
   }
 
   if (ierr || minT < 200.0 || maxT > 300.0) {
@@ -345,12 +358,19 @@ bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
 // BDF takes a prediction step -- make sure it is physical and otherwise ok.
 // -----------------------------------------------------------------------------
 bool EnergyBase::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Modifying predictor:" << std::endl;
+
   if (modify_predictor_with_consistent_faces_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  modifications for consistent face pressures." << std::endl;
     CalculateConsistentFaces(u->data().ptr());
     return true;
   }
 
-  return PKPhysicalBDFBase::modify_predictor(h, u);
+  return false;
+  //return PKPhysicalBDFBase::modify_predictor(h, u);
 }
 
 
