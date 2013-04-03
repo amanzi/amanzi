@@ -142,7 +142,6 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     precon = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
   }
   set_preconditioner(precon);
-  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
   modify_predictor_with_consistent_faces_ =
     plist_.get<bool>("modify predictor with consistent faces", false);
 
@@ -327,6 +326,10 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Commiting state." << std::endl;
+
   // update boundary conditions
   bc_pressure_->Compute(S->time());
   bc_head_->Compute(S->time());
@@ -396,6 +399,10 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // Update diagnostics -- used prior to vis.
 // -----------------------------------------------------------------------------
 void OverlandHeadFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Calculating diagnostic variables." << std::endl;
+
   // update the cell velocities
   if (update_flux_ == UPDATE_FLUX_VIS) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux",name_);
@@ -440,6 +447,10 @@ void OverlandHeadFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Updating permeability?";
+
   bool update_perm = S->GetFieldEvaluator("overland_conductivity")
       ->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S, name_);
@@ -490,6 +501,10 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     //    upwind_conductivity->ScatterMasterToGhosted();
   }
 
+  if (update_perm && out_.get() &&
+      includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    *out_ << " TRUE." << std::endl;
+  }
   return update_perm;
 }
 
@@ -498,8 +513,11 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
 void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
-  AmanziMesh::Entity_ID_List cells;
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Updating BCs." << std::endl;
 
+  AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
       ->ViewComponent("face",false);
 
@@ -559,8 +577,11 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time without elevation.
 // -----------------------------------------------------------------------------
 void OverlandHeadFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S) {
-  AmanziMesh::Entity_ID_List cells;
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Updating BCs Markers only." << std::endl;
 
+  AmanziMesh::Entity_ID_List cells;
   // initialize all as null
   for (int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::MATRIX_BC_NULL;
@@ -597,6 +618,10 @@ void OverlandHeadFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State
 
 
 void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "    Tweaking BCs for the Operator." << std::endl;
+
   // If the rel perm is 0, the face value drops out and is unconstrained.
   // Therefore we set it to Dirichlet to eliminate it from the system.
   double eps = 1.e-30;
@@ -657,6 +682,10 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
 
 void OverlandHeadFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "    Tweaking BCs for the PC." << std::endl;
+
   // Attempt of a hack to deal with zero rel perm
   double eps = 1.e-30;
   Teuchos::RCP<CompositeVector> relperm =
@@ -673,6 +702,10 @@ void OverlandHeadFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
 };
 
 void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "    Tweaking BCs for calculation of consistent faces." << std::endl;
+
   // If the rel perm is 0, the face value drops out and is unconstrained.
   // Therefore we set it to Dirichlet to eliminate it from the system.
   double eps = 1.e-30;
@@ -745,12 +778,18 @@ void OverlandHeadFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 
 
 bool OverlandHeadFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Modifying predictor:" << std::endl;
+
   if (modify_predictor_with_consistent_faces_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  modifications for consistent face pressures." << std::endl;
     CalculateConsistentFaces(u->data().ptr());
     return true;
   }
-  return true;
 
+  return true;
   //  PKPhysicalBDFBase::modify_predictor(h, u);
 };
 

@@ -28,10 +28,10 @@ void Richards::fun(double t_old,
                    Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new,
                    Teuchos::RCP<TreeVector> g) {
-  niter_++;
-
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
+
+  niter_++;
 
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
@@ -51,8 +51,6 @@ void Richards::fun(double t_old,
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
-    Teuchos::RCP<const CompositeVector> T_old = S_inter_->GetFieldData("temperature");
-    Teuchos::RCP<const CompositeVector> T_new = S_next_->GetFieldData("temperature");
 
     *out_ << std::setprecision(15);
     *out_ << "----------------------------------------------------------------" << std::endl;
@@ -61,29 +59,17 @@ void Richards::fun(double t_old,
     *out_ << "  p_old(" << c0_ << "): " << (*u_old)("cell",c0_);
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
     *out_ << std::endl;
-    *out_ << "  T_old(" << c0_ << "): " << (*T_old)("cell",c0_);
-    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums0[n]);
-    *out_ << std::endl;
 
     *out_ << "  p_old(" << c1_ << "): " << (*u_old)("cell",c1_);
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums1[n]);
-    *out_ << std::endl;
-    *out_ << "  T_old(" << c1_ << "): " << (*T_old)("cell",c1_);
-    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums1[n]);
     *out_ << std::endl;
 
     *out_ << "  p_new(" << c0_ << "): " << (*u)("cell",c0_);
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
     *out_ << std::endl;
-    *out_ << "  T_new(" << c0_ << "): " << (*T_new)("cell",c0_);
-    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums0[n]);
-    *out_ << std::endl;
 
     *out_ << "  p_new(" << c1_ << "): " << (*u)("cell",c1_);
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u)("face",fnums1[n]);
-    *out_ << std::endl;
-    *out_ << "  T_new(" << c1_ << "): " << (*T_new)("cell",c1_);
-    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums1[n]);
     *out_ << std::endl;
   }
 #endif
@@ -224,12 +210,8 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
-
-#if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
     *out_ << "Precon update at t = " << t << std::endl;
-  }
-#endif
 
   if (dynamic_mesh_) {
     matrix_->CreateMFDmassMatrices(K_.ptr());
@@ -301,6 +283,8 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   if (assemble_preconditioner_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  assembling..." << std::endl;
     mfd_preconditioner_->AssembleGlobalMatrices();
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
     mfd_preconditioner_->UpdatePreconditioner();

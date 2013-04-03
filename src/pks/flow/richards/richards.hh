@@ -122,7 +122,6 @@ protected:
   // control switches
   FluxUpdateMode update_flux_;
   int Krel_method_;
-  bool assemble_preconditioner_;
   int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
@@ -141,6 +140,7 @@ protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
   Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
+  bool upwind_from_prev_flux_;
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;

@@ -25,6 +25,9 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 
   // initial timestep
   dt_ = plist_.get<double>("initial time step", 1.);
+
+  // precon assembly
+  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 };
 
 

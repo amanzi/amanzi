@@ -19,6 +19,7 @@ namespace Operators {
 
 class MatrixCoupledMFDSurf : public MatrixCoupledMFD {
 
+ public:
   MatrixCoupledMFDSurf(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
@@ -34,6 +35,12 @@ class MatrixCoupledMFDSurf : public MatrixCoupledMFD {
                            const Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
     surface_A_ = surface_A;
     surface_B_ = surface_B;
+  }
+
+  void GetSurfaceOperators(Teuchos::RCP<MatrixMFD_TPFA>& surface_A,
+                           Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
+    surface_A = surface_A_;
+    surface_B = surface_B_;
   }
 
  protected:

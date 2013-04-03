@@ -102,7 +102,7 @@ bool MPCSubsurface::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
     modified = modify_predictor_heuristic_(h, up);
   }
 
-  // potentiall update faces
+  // potentially update faces
   modified |= MPCCoupledCells::modify_predictor(h, up);
   return modified;
 }

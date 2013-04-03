@@ -38,6 +38,8 @@ class MatrixMFD_Surf : public MatrixMFD {
 
   virtual void SetSurfaceOperator(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
     surface_A_ = surface_A; }
+  virtual void GetSurfaceOperator(Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
+    surface_A = surface_A_; }
 
  protected:
   virtual void FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,

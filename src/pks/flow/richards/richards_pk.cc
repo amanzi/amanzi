@@ -53,6 +53,7 @@ Richards::Richards(Teuchos::ParameterList& plist,
     infiltrate_only_if_unfrozen_(false),
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_bc_flux_(false),
+    upwind_from_prev_flux_(false),
     niter_(0),
     dynamic_mesh_(false)
 {
@@ -185,8 +186,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     symmetric_ = true;
     Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
-    upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-            "relative_permeability", "numerical_rel_perm", "darcy_flux_direction"));
+    upwind_from_prev_flux_ = plist_.get<bool>("upwind flux from previous iteration", true);
+    if (upwind_from_prev_flux_) {
+      upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+              "relative_permeability", "numerical_rel_perm", "darcy_flux"));
+    } else {
+      upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+              "relative_permeability", "numerical_rel_perm", "darcy_flux_direction"));
+    }
     Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (method_name == "arithmetic mean") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
@@ -210,7 +217,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Operators::MatrixMFD> precon =
     Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
   set_preconditioner(precon);
-  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
+
   modify_predictor_with_consistent_faces_ =
     plist_.get<bool>("modify predictor with consistent faces", false);
 
@@ -343,6 +350,10 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Commiting state." << std::endl;
+
   niter_ = 0;
 
   bool update = UpdatePermeabilityData_(S.ptr());
@@ -401,6 +412,10 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // Update any diagnostic variables prior to vis (in this case velocity field).
 // -----------------------------------------------------------------------------
 void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Calculating diagnostic variables." << std::endl;
+
   // update the cell velocities
   if (update_flux_ == UPDATE_FLUX_VIS) {
     Teuchos::RCP<const CompositeVector> rel_perm =
@@ -445,6 +460,10 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Updating permeability?";
+
   Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
@@ -459,7 +478,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         ->HasFieldChanged(S, name_);
     update_dir |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
 
-    if (update_dir) {
+    if (update_dir && !upwind_from_prev_flux_) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData("darcy_flux_direction", name_);
@@ -506,7 +525,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
           // -- set that value to the unfrozen fraction to ensure we don't advect ice
           uw_rel_perm_f[0][f] = std::max(uf[0][c], 1.e-30);
-          //          uw_rel_perm_f[0][f] = uf[0][c];
         }
       } else {
         for (int c=0; c!=ncells_surface; ++c) {
@@ -539,6 +557,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     //    uw_rel_perm->ScatterMasterToGhosted();
   }
 
+  if (update_perm && out_.get() &&
+      includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    *out_ << " TRUE." << std::endl;
+  }
   return update_perm;
 };
 
@@ -547,6 +569,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
 void Richards::UpdateBoundaryConditions_() {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Updating BCs." << std::endl;
+
   for (int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
@@ -651,8 +677,16 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
 
 
 bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Modifying predictor:" << std::endl;
+
   bool changed(false);
   if (modify_predictor_bc_flux_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
+
+
     if (flux_predictor_ == Teuchos::null) {
       flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
               wrms_, &bc_markers_, &bc_values_));
@@ -680,6 +714,8 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   }
 
   if (modify_predictor_with_consistent_faces_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+      *out_ << "  modifications for consistent face pressures." << std::endl;
     CalculateConsistentFaces(u->data().ptr());
     changed = true;
   }
