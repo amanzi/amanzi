@@ -97,6 +97,7 @@ void PermafrostWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
   if (wrt_key == "porosity") {
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = s_l[0][c]*n_l[0][c]
+          + s_i[0][c]*n_i[0][c]
           + s_g[0][c]*n_g[0][c]*omega_g[0][c];
     }
   } else if (wrt_key == "saturation_liquid") {

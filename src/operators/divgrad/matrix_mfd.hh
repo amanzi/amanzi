@@ -206,6 +206,12 @@ class MatrixMFD : public Matrix {
           const Teuchos::Ptr<CompositeVector>& Pu);
 
  protected:
+  virtual void FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
+          const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph);
+  virtual void CreateMatrices_(const Epetra_CrsGraph& cf_graph,
+          const Epetra_FECrsGraph& ff_graph);
+
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
   bool flag_symmetry_;
@@ -230,12 +236,14 @@ class MatrixMFD : public Matrix {
   int nokay_;
   int npassed_; // performance of algorithms generating mass matrices
 
-  enum { TRILINOS_ML,
-         TRILINOS_ILU,
-         TRILINOS_BLOCK_ILU,
-         HYPRE_AMG,
-         HYPRE_EUCLID,
-         HYPRE_PARASAILS } prec_method_;
+  enum PrecMethod { PREC_METHOD_NULL,
+                    TRILINOS_ML,
+                    TRILINOS_ILU,
+                    TRILINOS_BLOCK_ILU,
+                    HYPRE_AMG,
+                    HYPRE_EUCLID,
+                    HYPRE_PARASAILS };
+  PrecMethod prec_method_;
 
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
@@ -257,7 +265,7 @@ class MatrixMFD : public Matrix {
   Teuchos::RCP<CompositeVector> vector_x_; // work vectors for AztecOO
   Teuchos::RCP<CompositeVector> vector_y_;
 
-  friend class MPCCoupledFlowEnergy;
+  friend class MatrixCoupledMFD;
 };
 
 

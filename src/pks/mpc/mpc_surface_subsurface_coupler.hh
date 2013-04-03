@@ -17,6 +17,10 @@ multiple coupler types.
 namespace Amanzi {
 
 class PKPhysicalBDFBase;
+namespace Operators {
+  class MatrixMFD_Surf;
+  class MatrixMFD_TPFA;
+}
 
 class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
 
@@ -30,15 +34,26 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
   bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
  protected:
+  // mesh info
   Key domain_mesh_key_;
   Key surf_mesh_key_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
 
+  // pk info
   Key domain_pk_name_;
   Key surf_pk_name_;
   Teuchos::RCP<PKPhysicalBDFBase> surf_pk_;
   Teuchos::RCP<PKPhysicalBDFBase> domain_pk_;
+
+  // PC info
+  Teuchos::RCP<Operators::MatrixMFD_Surf> mfd_preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
+
+  // debug
+  int surf_c0_;
+  int surf_c1_;
+
 
 };
 

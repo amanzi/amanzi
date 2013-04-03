@@ -34,6 +34,10 @@ public:
       PKDefaultBase(plist, solution),
       PKPhysicalBDFBase(plist, solution),
       modify_predictor_with_consistent_faces_(false),
+      coupled_to_subsurface_via_temp_(false),
+      coupled_to_subsurface_via_flux_(false),
+      coupled_to_surface_via_temp_(false),
+      coupled_to_surface_via_flux_(false),
       niter_(0) {
     if (!plist_.isParameter("primary variable key"))
       plist_.set("primary variable key", "temperature");
@@ -140,6 +144,9 @@ protected:
   FluxUpdateMode update_flux_;
   bool assemble_preconditioner_;
   bool modify_predictor_with_consistent_faces_;
+
+  bool coupled_to_subsurface_via_temp_;
+  bool coupled_to_subsurface_via_flux_;
   bool coupled_to_surface_via_temp_;
   bool coupled_to_surface_via_flux_;
 

@@ -65,6 +65,8 @@ void StrongMPC::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void StrongMPC::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+  solution_to_state(u_new, S_next_);
+
   // loop over sub-PKs
   for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {

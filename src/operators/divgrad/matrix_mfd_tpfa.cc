@@ -100,8 +100,10 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
  * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.
  ****************************************************************** */
 void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
+  // get the standard matrices
   MatrixMFD::SymbolicAssembleGlobalMatrices();
 
+  // also create a cell-cell matrix for the TPFA
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -129,6 +131,7 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
   std::vector<int> ndofs(1,1);
   Dff_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, ndofs, true));
   Dff_->CreateData();
+  Dff_->PutScalar(0.);
 
   Spp_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, pp_graph));
   Spp_->GlobalAssemble();

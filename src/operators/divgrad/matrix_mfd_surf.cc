@@ -7,6 +7,7 @@
 
 */
 #include "Epetra_FECrsGraph.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
 #include "matrix_mfd_surf.hh"
@@ -29,39 +30,19 @@ MatrixMFD_Surf::MatrixMFD_Surf(const MatrixMFD& other,
     MatrixMFD(other),
     surface_mesh_(surface_mesh) {}
 
-void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
+
+void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
+          const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph) {
+  // get the standard fill
+  MatrixMFD::FillMatrixGraphs_(cf_graph, ff_graph);
+
+  // additional face-to-face connections for the TPF on surface.
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
   int ierr(0);
 
-  int avg_entries_row = (mesh_->space_dimension() == 2) ? MFD_QUAD_FACES : MFD_HEX_FACES;
-  Epetra_CrsGraph cf_graph(Copy, cmap, fmap_wghost, avg_entries_row, false);  // FIX (lipnikov@lanl.gov)
-  Epetra_FECrsGraph ff_graph(Copy, fmap, 2*avg_entries_row);
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-  int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
-  int faces_GID[MFD_MAX_FACES];
-
-  // deals with the standard MFD connections
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=ncells; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int n=0; n!=nfaces; ++n) {
-      faces_LID[n] = faces[n];
-      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
-    }
-    ierr = cf_graph.InsertMyIndices(c, nfaces, faces_LID);
-    ASSERT(!ierr);
-    ierr = ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
-    ASSERT(!ierr);
-  }
-
-  // additional face-to-face connections for the TPF on surface.
   AmanziMesh::Entity_ID_List surf_cells;
   int equiv_face_LID[2];
   int equiv_face_GID[2];
@@ -81,52 +62,13 @@ void MatrixMFD_Surf::SymbolicAssembleGlobalMatrices() {
       surf_cell_GID[n] = surf_cmap_wghost.GID(surf_cells[n]);
     }
 
-    // if (ncells_surf == 2) {
-    //   if (71 == surf_cell_GID[0] || 71 == surf_cell_GID[1] ||
-    //       25 == surf_cell_GID[0] || 25 == surf_cell_GID[1]) {
-    //     std::cout << "Interesting face: " << surf_cell_GID[0] << ", " << surf_cell_GID[1] << std::endl;
-    //   }
-    // }
-
     // insert the connection
-    ierr = ff_graph.InsertGlobalIndices(ncells_surf, equiv_face_GID,
+    ierr = ff_graph->InsertGlobalIndices(ncells_surf, equiv_face_GID,
             ncells_surf, equiv_face_GID);
     ASSERT(!ierr);
   }
-
-  ierr = cf_graph.FillComplete(fmap, cmap);
-  ASSERT(!ierr);
-
-  ierr = ff_graph.GlobalAssemble();  // Symbolic graph is complete.
-  ASSERT(!ierr);
-
-  // create global matrices
-  Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  Acf_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
-  Aff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
-  Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
-  Aff_->GlobalAssemble();
-  Sff_->GlobalAssemble();
-
-  // Symmetry
-  if (flag_symmetry_) {
-    Afc_ = Acf_;
-  } else {
-    Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
-  }
-
-  std::vector<std::string> names(2);
-  names[0] = "cell";
-  names[1] = "face";
-
-  std::vector<AmanziMesh::Entity_kind> locations(2);
-  locations[0] = AmanziMesh::CELL;
-  locations[1] = AmanziMesh::FACE;
-
-  std::vector<int> num_dofs(2,1);
-  rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
-  rhs_->CreateData();
 }
+
 
 // Assumes the Surface A was already assembled.
 void MatrixMFD_Surf::AssembleGlobalMatrices() {
@@ -272,6 +214,11 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, indices);
     ASSERT(!ierr);
 
+    std::cout << "Adding vals to surf cell " << sc << ":" << std::endl;
+    for (int m=0; m!=entries; ++m) {
+      std::cout << "  ind(" << indices[m] << ") = " << values[m] << std::endl;
+    }
+
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     AmanziMesh::Entity_ID frow_global = fmap_wghost.GID(frow);
@@ -292,7 +239,10 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   delete[] indices;
   delete[] values;
 
-
+  // dump the schur complement
+  std::stringstream filename_s;
+  filename_s << "schur_" << 0 << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
 }
 
 

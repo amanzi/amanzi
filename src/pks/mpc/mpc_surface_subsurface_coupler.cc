@@ -11,6 +11,8 @@ multiple coupler types.
 
 #include "pk_physical_bdf_base.hh"
 
+#include "matrix_mfd_surf.hh"
+#include "matrix_mfd_tpfa.hh"
 #include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {
@@ -25,14 +27,20 @@ MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList&
 
   surf_pk_name_ = plist.get<std::string>("surface PK name");
   domain_pk_name_ = plist.get<std::string>("subsurface PK name");
+
+  surf_c0_ = plist_.get<int>("surface debug cell 0", 0);
+  surf_c1_ = plist_.get<int>("surface debug cell 1", 1);
+
 };
 
 void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
+  StrongMPC::setup(S);
+
+  // get the mesh info
   surf_mesh_ = S->GetMesh(surf_mesh_key_);
   domain_mesh_ = S->GetMesh(domain_mesh_key_);
 
-  StrongMPC::setup(S);
-
+  // get the pk info
   if (sub_pks_[0]->name() == domain_pk_name_) {
     domain_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
     ASSERT(domain_pk_ != Teuchos::null);
@@ -48,6 +56,29 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
   } else {
     ASSERT(0);
   }
+
+  // Get the domain's preconditioner and replace it with a MatrixMFD_Surf.
+  Teuchos::RCP<Operators::Matrix> precon = domain_pk_->preconditioner();
+  Teuchos::RCP<Operators::MatrixMFD> mfd_precon =
+    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
+  ASSERT(mfd_precon != Teuchos::null);
+
+  mfd_preconditioner_ =
+      Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
+  preconditioner_ = mfd_preconditioner_;
+
+  // Get the surface's preconditioner and ensure it is TPFA.
+  Teuchos::RCP<Operators::Matrix> surf_precon = surf_pk_->preconditioner();
+  surf_preconditioner_ =
+    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(surf_precon);
+  ASSERT(surf_preconditioner_ != Teuchos::null);
+
+  // set the surface A in the MFD_Surf.
+  mfd_preconditioner_->SetSurfaceOperator(surf_preconditioner_);
+
+  // give the PCs back to the PKs
+  domain_pk_->set_preconditioner(preconditioner_);
+  surf_pk_->set_preconditioner(surf_preconditioner_);
 
 }
 

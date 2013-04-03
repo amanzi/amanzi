@@ -40,17 +40,8 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
           double (&dsats)[3]);
 
  private:
-
   bool saturations_if_saturated_(double pc_liq, double pc_ice, double (&sats)[3]);
-  bool dsaturations_dpc_ice_if_saturated_(double pc_liq, double pc_ice,
-          double (&dsats)[3]);
-  bool dsaturations_dpc_liq_if_saturated_(double pc_liq, double pc_ice,
-          double (&dsats)[3]);
   bool saturations_if_above_freezing_(double pc_liq, double pc_ice, double (&sats)[3]);
-  bool dsaturations_dpc_ice_if_above_freezing_(double pc_liq, double pc_ice,
-          double (&dsats)[3]);
-  bool dsaturations_dpc_liq_if_above_freezing_(double pc_liq, double pc_ice,
-          double (&dsats)[3]);
 
   double eps_;
   int max_it_;
@@ -77,56 +68,6 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
     Teuchos::RCP<WRM> wrm_;
 
   };
-
-
-  // this Functor gets used within a root-finding algorithm
-  class DSatIce_DPCil_Functor_ {
-   public:
-    DSatIce_DPCil_Functor_(double s_i, double pc_liq, double pc_ice,
-                   const Teuchos::RCP<WRM>& wrm) :
-        s_i_(s_i), pc_liq_(pc_liq), pc_ice_(pc_ice), wrm_(wrm) {}
-
-    double operator()(double ds_i) {
-      double sstar =  wrm_->saturation(pc_liq_);
-      double tmp = (1.0 - s_i_) * sstar;
-      return -ds_i * sstar
-          - wrm_->d_saturation( pc_ice_ + wrm_->capillaryPressure( tmp + s_i_))
-          * (1.0 + wrm_->d_capillaryPressure( tmp + s_i_ )
-             * ds_i * (1.0 - sstar));
-    }
-
-   private:
-    double pc_liq_;
-    double pc_ice_;
-    double s_i_;
-    Teuchos::RCP<WRM> wrm_;
-  };
-
-
-  // this Functor gets used within a root-finding algorithm
-  class DSatIce_DPClg_Functor_ {
-   public:
-    DSatIce_DPClg_Functor_(double s_i, double pc_liq, double pc_ice,
-                   const Teuchos::RCP<WRM>& wrm) :
-        s_i_(s_i), pc_liq_(pc_liq), pc_ice_(pc_ice), wrm_(wrm) {}
-
-    double operator()(double ds_i) {
-      double sstar =  wrm_->saturation(pc_liq_);
-      double sstarprime = wrm_->d_saturation(pc_liq_);
-      double tmp = (1.0 - s_i_) * sstar;
-      return -ds_i * sstar + (1.0 - s_i_) * sstarprime
-          - wrm_->d_saturation( pc_ice_ + wrm_->capillaryPressure( tmp + s_i_))
-          * wrm_->d_capillaryPressure( tmp + s_i_ )
-          * (ds_i * (1.0 - sstar) + (1.0 - s_i_)*sstarprime);
-    }
-
-   private:
-    double pc_liq_;
-    double pc_ice_;
-    double s_i_;
-    Teuchos::RCP<WRM> wrm_;
-  };
-
 
   struct Tol_ {
     Tol_(double eps) : eps_(eps) {}

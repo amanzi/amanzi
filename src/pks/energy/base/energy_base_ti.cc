@@ -34,6 +34,8 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
+  // pointer-copy temperature into states and update any auxilary data
+  solution_to_state(u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
 #if DEBUG_FLAG
@@ -43,17 +45,18 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
+
     *out_ << "----------------------------------------------------------------" << std::endl;
 
-    *out_ << "Residual calculation: T0 = " << t_old
-          << " T(" << c1_ << ") = " << t_new << " H = " << h << std::endl;
-    *out_ << "  T(" << c0_ << "): " << (*u)("cell",c0_) << " " << (*u)("face",faces0[0]) << std::endl;
-    *out_ << "  T(" << c1_ << "): " << (*u)("cell",c1_) << " " << (*u)("face",faces[1]) << std::endl;
+    *out_ << "Residual calculation: t0 = " << t_old
+          << " t1 = " << t_new << " h = " << h << std::endl;
+    *out_ << "  T_old(" << c0_ << "): " << (*u_old)("cell",c0_) << " " << (*u_old)("face",faces0[0]) << std::endl;
+    *out_ << "  T_old(" << c1_ << "): " << (*u_old)("cell",c1_) << " " << (*u_old)("face",faces[1]) << std::endl;
+    *out_ << "  T_new(" << c0_ << "): " << (*u)("cell",c0_) << " " << (*u)("face",faces0[0]) << std::endl;
+    *out_ << "  T_new(" << c1_ << "): " << (*u)("cell",c1_) << " " << (*u)("face",faces[1]) << std::endl;
   }
 #endif
-
-  // pointer-copy temperature into states and update any auxilary data
-  solution_to_state(u_new, S_next_);
 
   // update boundary conditions
   bc_temperature_->Compute(t_new);
@@ -179,8 +182,6 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   // -- update the accumulation derivatives, de/dT
   S_next_->GetFieldEvaluator(energy_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-
-  // -- get the accumulation deriv
   const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(de_dT_key_)
       ->ViewComponent("cell",false);
 
@@ -189,8 +190,25 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
 
   // -- update the diagonal
   int ncells = de_dT.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    Acc_cells[c] += de_dT[0][c] / h;
+
+  if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
+    // do not add in de/dT if the height is 0
+    const Epetra_MultiVector& pres = *S_next_->GetFieldData("surface_pressure")
+        ->ViewComponent("cell",false);
+    const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+    for (int c=0; c!=ncells; ++c) {
+      Acc_cells[c] += pres[0][c] >= patm ? de_dT[0][c] / h : 0.;
+      if (ncells == 1) {
+        std::cout << "adding surface deriv = " << (pres[0][c] >= patm ? de_dT[0][c] / h : 0.) << std::endl;
+      }
+    }
+  } else {
+    for (int c=0; c!=ncells; ++c) {
+      Acc_cells[c] += de_dT[0][c] / h;
+      if (ncells == 1) {
+        std::cout << "adding surface deriv = " << de_dT[0][c] / h << std::endl;
+      }
+    }
   }
 
   // -- update preconditioner with source term derivatives if needed
@@ -200,7 +218,9 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   // Assemble
-  if (assemble_preconditioner_) {
+  if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
+    mfd_preconditioner_->AssembleGlobalMatrices();
+  } else if (assemble_preconditioner_) {
     // -- assemble
     mfd_preconditioner_->AssembleGlobalMatrices();
     // -- form and prep the Schur complement for inversion
@@ -228,6 +248,11 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
   const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
 
+  const Epetra_MultiVector& flux = *S_next_->GetFieldData(energy_flux_key_)
+      ->ViewComponent("face",false);
+  double flux_max(0.);
+  flux.NormInf(&flux_max);
+
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
   const CompositeVector& temp = *u->data();
@@ -242,11 +267,11 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
-  // Face error is based upon temperature?  This is unclear!
+  // Face error is mismatch in flux.
   double enorm_face(0.);
   int nfaces = res_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
+    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_+rtol_*flux_max);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 

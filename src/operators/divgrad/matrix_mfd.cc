@@ -14,13 +14,15 @@ namespace Operators {
 
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    plist_(plist), mesh_(mesh) {
+    plist_(plist),
+    mesh_(mesh) {
   InitializeFromPList_();
 }
 
 
 MatrixMFD::MatrixMFD(const MatrixMFD& other) :
-    plist_(other.plist_), mesh_(other.mesh_) {
+    plist_(other.plist_),
+    mesh_(other.mesh_) {
   InitializeFromPList_();
 }
 
@@ -44,6 +46,8 @@ void MatrixMFD::InitializeFromPList_() {
     method_ = MFD_OPTIMIZED;
   }
 
+  // method for inversion
+  prec_method_ = PREC_METHOD_NULL;
   if (plist_.isParameter("preconditioner")) {
     std::string precmethodstring = plist_.get<string>("preconditioner");
     if (precmethodstring == "ML") {
@@ -339,14 +343,38 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? MFD_QUAD_FACES : MFD_HEX_FACES;
-  Epetra_CrsGraph cf_graph(Copy, cmap, fmap_wghost, avg_entries_row, false);  // FIX (lipnikov@lanl.gov)
-  Epetra_FECrsGraph ff_graph(Copy, fmap, 2*avg_entries_row);
+
+  // allocate the graphs
+  Teuchos::RCP<Epetra_CrsGraph> cf_graph =
+      Teuchos::rcp(new Epetra_CrsGraph(Copy, cmap, fmap_wghost, avg_entries_row, false));
+  Teuchos::RCP<Epetra_FECrsGraph> ff_graph =
+      Teuchos::rcp(new Epetra_FECrsGraph(Copy, fmap, 2*avg_entries_row));
+
+  // fill the graphs
+  FillMatrixGraphs_(cf_graph.ptr(), ff_graph.ptr());
+
+  int ierr = cf_graph->FillComplete(fmap, cmap);
+  ASSERT(!ierr);
+  ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
+  ASSERT(!ierr);
+
+  // allocate the matrices
+  CreateMatrices_(*cf_graph, *ff_graph);
+}
+
+
+void MatrixMFD::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
+          const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph) {
+  const Epetra_Map& cmap = mesh_->cell_map(false);
+  const Epetra_Map& fmap = mesh_->face_map(false);
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
   int faces_GID[MFD_MAX_FACES];
 
+  // fill the graphs
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -356,21 +384,22 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
       faces_LID[n] = faces[n];
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
-    cf_graph.InsertMyIndices(c, nfaces, faces_LID);
-    ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
+    cf_graph->InsertMyIndices(c, nfaces, faces_LID);
+    ff_graph->InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
   }
-  cf_graph.FillComplete(fmap, cmap);
-  ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+}
 
+void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
+        const Epetra_FECrsGraph& ff_graph) {
   // create global matrices
+  const Epetra_Map& cmap = mesh_->cell_map(false);
   Acc_ = Teuchos::rcp(new Epetra_Vector(cmap));
+
   Acf_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
   Aff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
   Sff_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, ff_graph));
   Aff_->GlobalAssemble();
   Sff_->GlobalAssemble();
-
-
 
   if (flag_symmetry_) {
     Afc_ = Acf_;
@@ -378,6 +407,7 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
     Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
   }
 
+  // create the RHS
   std::vector<std::string> names(2);
   names[0] = "cell";
   names[1] = "face";
@@ -482,6 +512,7 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
     (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
   }
   (*Sff_).GlobalAssemble();
+
 }
 
 /* ******************************************************************
@@ -540,6 +571,11 @@ void MatrixMFD::Apply(const CompositeVector& X,
  ****************************************************************** */
 void MatrixMFD::ApplyInverse(const CompositeVector& X,
                              const Teuchos::Ptr<CompositeVector>& Y) const {
+  if (prec_method_ == PREC_METHOD_NULL) {
+    Errors::Message msg("MatrixMFD::ApplyInverse requires a specified preconditioner method");
+    Exceptions::amanzi_throw(msg);
+  }
+
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));
   Epetra_MultiVector Tf(*Y->ViewComponent("face", false));

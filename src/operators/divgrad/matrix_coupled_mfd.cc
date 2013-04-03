@@ -65,6 +65,7 @@ MatrixCoupledMFD::MatrixCoupledMFD(const MatrixCoupledMFD& other) :
 
 
 void MatrixCoupledMFD::InitializeFromPList_() {
+  prec_method_ = PREC_METHOD_NULL;
   if (plist_.isParameter("preconditioner")) {
     std::string precmethodstring = plist_.get<string>("preconditioner");
     if (precmethodstring == "ML") {
@@ -95,6 +96,11 @@ void MatrixCoupledMFD::InitializeFromPList_() {
 
 void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
         const Teuchos::Ptr<TreeVector>& Y) const {
+  if (prec_method_ == PREC_METHOD_NULL) {
+    Errors::Message msg("MatrixMFD::ApplyInverse requires a specified preconditioner method");
+    Exceptions::amanzi_throw(msg);
+  }
+
   // pull X data
   Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->data();
   Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->data();
@@ -388,7 +394,7 @@ void MatrixCoupledMFD::SymbolicAssembleGlobalMatrices() {
   const Epetra_BlockMap& fmap = mesh_->face_map(false);
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
 
-  // Make the maps
+  // Make the double maps
   double_fmap_ = Teuchos::rcp(new Epetra_BlockMap(fmap.NumGlobalPoints(),
           fmap.NumMyPoints(), fmap.MyGlobalElements(), 2,
           fmap.IndexBase(), fmap.Comm() ));
@@ -405,41 +411,28 @@ void MatrixCoupledMFD::SymbolicAssembleGlobalMatrices() {
 
   // Make the matrix graphs
   int avg_entries_row = 6;
-  Epetra_CrsGraph cf_graph(Copy, *double_cmap_, *double_fmap_wghost_,
-                           avg_entries_row, false);
-  Epetra_FECrsGraph ff_graph(Copy, *double_fmap_, 2*avg_entries_row - 1, false);
+  Teuchos::RCP<Epetra_CrsGraph> cf_graph =
+      Teuchos::rcp(new Epetra_CrsGraph(Copy, *double_cmap_, *double_fmap_wghost_,
+              avg_entries_row, false));
+  Teuchos::RCP<Epetra_FECrsGraph> ff_graph =
+      Teuchos::rcp(new Epetra_FECrsGraph(Copy, *double_fmap_, 2*avg_entries_row - 1,
+              false));
 
-  // Workspace
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-  const int MFD_MAX_FACES = 14;
-  int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
-  int faces_GID[MFD_MAX_FACES];
+  // Fill the graphs from the symbolic patterns in matrix_mfd from one of the
+  // sub-block matrices.
 
-  // Fill the graphs
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=ncells; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int n=0; n!=nfaces; ++n) {
-      faces_LID[n] = faces[n];
-      faces_GID[n] = double_fmap_wghost_->GID(faces_LID[n]);
-    }
-
-    cf_graph.InsertMyIndices(c, nfaces, faces_LID);
-    ierr = ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
-    ASSERT(!ierr);
-  }
+  // IT IS ASSUMED that the two sub-block matrices fill in identical ways!
+  blockA_->FillMatrixGraphs_(cf_graph.ptr(), ff_graph.ptr());
 
   // Assemble the graphs
-  cf_graph.FillComplete(*double_fmap_, *double_cmap_);
-  ierr = ff_graph.GlobalAssemble();  // Symbolic graph is complete.
+  ierr = cf_graph->FillComplete(*double_fmap_, *double_cmap_);
+  ASSERT(!ierr);
+  ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
   ASSERT(!ierr);
 
   // Create the matrices
-  A2f2c_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, cf_graph));
-  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, ff_graph, false));
+  A2f2c_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph));
+  P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
   ierr = P2f2f_->GlobalAssemble();
   ASSERT(!ierr);
 }

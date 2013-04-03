@@ -32,6 +32,7 @@
    ------------------------------------------------------------------------- */
 
 #include <fstream>
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "field_evaluator.hh"
 #include "matrix_mfd.hh"
@@ -43,10 +44,14 @@ namespace Amanzi {
 MPCCoupledCells::MPCCoupledCells(Teuchos::ParameterList& plist,
         const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist,soln),
-    StrongMPC(plist,soln) {}
+    StrongMPC(plist,soln),
+    decoupled_(false)
+{}
 
 void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   StrongMPC::setup(S);
+
+  decoupled_ = plist_.get<bool>("decoupled",false);
 
   A_key_ = plist_.get<std::string>("conserved quantity A");
   B_key_ = plist_.get<std::string>("conserved quantity B");
@@ -96,34 +101,34 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
   StrongMPC::update_precon(t,up,h);
 
   // Update and get the off-diagonal terms.
-  S_next_->GetFieldEvaluator(A_key_)
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y2_key_);
-  S_next_->GetFieldEvaluator(B_key_)
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y1_key_);
-  Teuchos::RCP<const CompositeVector> dA_dy2 = S_next_->GetFieldData(dA_dy2_key_);
-  Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
+  if (!decoupled_) {
+    S_next_->GetFieldEvaluator(A_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y2_key_);
+    S_next_->GetFieldEvaluator(B_key_)
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y1_key_);
+    Teuchos::RCP<const CompositeVector> dA_dy2 = S_next_->GetFieldData(dA_dy2_key_);
+    Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
 
-  // scale by 1/h
-  Epetra_MultiVector Ccc(*dA_dy2->ViewComponent("cell",false));
-  Ccc = *dA_dy2->ViewComponent("cell",false);
-  Ccc.Scale(1./h);
+    // scale by 1/h
+    Epetra_MultiVector Ccc(*dA_dy2->ViewComponent("cell",false));
+    Ccc = *dA_dy2->ViewComponent("cell",false);
+    Ccc.Scale(1./h);
 
-  Epetra_MultiVector Dcc(*dB_dy1->ViewComponent("cell",false));
-  Dcc = *dB_dy1->ViewComponent("cell",false);
-  Dcc.Scale(1./h);
+    Epetra_MultiVector Dcc(*dB_dy1->ViewComponent("cell",false));
+    Dcc = *dB_dy1->ViewComponent("cell",false);
+    Dcc.Scale(1./h);
 
-  // Assemble the precon, form Schur complement
-  mfd_preconditioner_->ComputeSchurComplement(Ccc, Dcc);
-  mfd_preconditioner_->UpdatePreconditioner();
+    mfd_preconditioner_->ComputeSchurComplement(Ccc, Dcc);
 
+    // Assemble the precon, form Schur complement
+    mfd_preconditioner_->UpdatePreconditioner();
+  }
 }
 
 
 // applies preconditioner to u and returns the result in Pu
 void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  // std::ofstream file;
-  // file.open("residual.txt");
-  // u->Print(file);
+  if (decoupled_) return StrongMPC::precon(u,Pu);
 
   preconditioner_->ApplyInverse(*u, Pu.ptr());
 

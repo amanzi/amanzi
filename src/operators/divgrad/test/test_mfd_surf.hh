@@ -73,7 +73,7 @@ struct test_mfd {
 
     // -- combined on domain
     As = Teuchos::rcp(new Operators::MatrixMFD_Surf(mfd_plist, mesh, surf_mesh));
-    As->set_surface_A(Atpf);
+    As->SetSurfaceOperator(Atpf);
     As->SetSymmetryProperty(false);
     As->SymbolicAssembleGlobalMatrices();
     As->CreateMFDmassMatrices(Teuchos::null);

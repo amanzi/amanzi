@@ -52,8 +52,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     flux_key_ = plist_.get<std::string>("flux key",
             domain_prefix_+std::string("flux"));
   }
-  if (flux_key_ == std::string()) {
-    flux_key_ = plist_.get<std::string>("energy flux key",
+  if (energy_flux_key_ == std::string()) {
+    energy_flux_key_ = plist_.get<std::string>("energy flux key",
             domain_prefix_+std::string("energy_flux"));
   }
   if (conductivity_key_ == std::string()) {
@@ -99,7 +99,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
                                 ->AddComponent("face", AmanziMesh::FACE, 1);
 
   // Require a field for the energy flux.
-  std::string updatestring = plist_.get<std::string>("update flux mode", "never");
+  std::string updatestring = plist_.get<std::string>("update flux mode", "timestep");
   if (updatestring == "iteration") {
     update_flux_ = UPDATE_FLUX_ITERATION;
   } else if (updatestring == "timestep") {
@@ -195,8 +195,8 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize flux
   if (update_flux_ != UPDATE_FLUX_NEVER) {
-    S->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
-    S->GetField("darcy_flux", name_)->set_initialized();
+    S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
+    S->GetField(energy_flux_key_, name_)->set_initialized();
   }
 
   // initialize coupling terms
