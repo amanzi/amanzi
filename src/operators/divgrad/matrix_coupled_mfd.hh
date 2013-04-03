@@ -56,13 +56,10 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include "tree_vector.hh"
-#include "matrix.hh"
+#include "matrix_mfd.hh"
 
 namespace Amanzi {
 namespace Operators {
-
-
-class MatrixMFD;
 
 class MatrixCoupledMFD : public Matrix {
 
@@ -118,12 +115,14 @@ class MatrixCoupledMFD : public Matrix {
   bool decoupled_;
 
   // preconditioning (This should be moved to Matrix?)
-  enum { TRILINOS_ML,
-         TRILINOS_ILU,
-         TRILINOS_BLOCK_ILU,
-         HYPRE_AMG,
-         HYPRE_EUCLID,
-         HYPRE_PARASAILS } prec_method_;
+  enum PrecMethod { PREC_METHOD_NULL,
+                    TRILINOS_ML,
+                    TRILINOS_ILU,
+                    TRILINOS_BLOCK_ILU,
+                    HYPRE_AMG,
+                    HYPRE_EUCLID,
+                    HYPRE_PARASAILS };
+  PrecMethod prec_method_;
 
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;

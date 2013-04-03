@@ -330,7 +330,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       Teuchos::RCP<const CompositeVector> dcond_dp =
           S_next_->GetFieldData("doverland_conductivity_dsurface_pressure");
       CompositeVector dcond_dh(*dcond_dp);
-      dcond_dh.CreateData();
       dcond_dh.ViewComponent("cell",false)->ReciprocalMultiply(1., dh_dp,
                   *dcond_dp->ViewComponent("cell",false), 0.);
 
@@ -339,7 +338,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
       Teuchos::RCP<const CompositeVector> uw_cond =
           S_next_->GetFieldData("upwind_overland_conductivity");
       CompositeVector duw_cond_cell_dh(*uw_cond);
-      duw_cond_cell_dh.CreateData();
       duw_cond_cell_dh.ViewComponent("face",false)->PutScalar(0.);
 
       S_next_->GetFieldEvaluator("surface_molar_density_liquid")

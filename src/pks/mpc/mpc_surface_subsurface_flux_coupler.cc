@@ -35,28 +35,6 @@ void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
 
   // get the flux key
   flux_key_ = plist_.get<std::string>("flux key");
-
-  // Get the domain's preconditioner and replace it with a MatrixMFD_Surf.
-  Teuchos::RCP<Operators::Matrix> precon = domain_pk_->preconditioner();
-  Teuchos::RCP<Operators::MatrixMFD> mfd_precon =
-    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
-  ASSERT(mfd_precon != Teuchos::null);
-
-  mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
-  preconditioner_ = mfd_preconditioner_;
-
-  // Get the surface's preconditioner and ensure it is TPFA.
-  Teuchos::RCP<Operators::Matrix> surf_precon = surf_pk_->preconditioner();
-  surf_preconditioner_ =
-    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(surf_precon);
-  ASSERT(surf_preconditioner_ != Teuchos::null);
-
-  // set the surface A in the MFD_Surf.
-  mfd_preconditioner_->set_surface_A(surf_preconditioner_);
-
-  // give the PCs back to the PKs
-  domain_pk_->set_preconditioner(mfd_preconditioner_);
-  surf_pk_->set_preconditioner(surf_preconditioner_);
 }
 
 
@@ -66,6 +44,8 @@ void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
 void MPCSurfaceSubsurfaceFluxCoupler::fun(double t_old, double t_new,
         Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
         Teuchos::RCP<TreeVector> g) {
+  // propagate updated info into state
+  solution_to_state(u_new, S_next_);
 
   // evaluate the residual of the surface equation
   Teuchos::RCP<TreeVector> surf_u_new = u_new->SubVector(surf_pk_name_);
@@ -215,7 +195,15 @@ void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
   mfd_preconditioner_->AssembleGlobalMatrices();
   mfd_preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
           domain_pk_->bc_values());
+
+  // Dump the Schur complement
+  // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
+  // std::stringstream filename_s;
+  // filename_s << "schur_" << S_next_->cycle() << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+
   mfd_preconditioner_->UpdatePreconditioner();
+
 }
 
 

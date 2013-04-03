@@ -29,36 +29,6 @@ namespace Amanzi {
 RegisteredPKFactory<MPCSurfaceSubsurfaceDirichletCoupler>
 MPCSurfaceSubsurfaceDirichletCoupler::reg_("surface-subsurface Dirichlet coupler");
 
-// -- Setup data.
-void MPCSurfaceSubsurfaceDirichletCoupler::setup(const Teuchos::Ptr<State>& S) {
-  MPCSurfaceSubsurfaceCoupler::setup(S);
-
-  // Get the domain's preconditioner and replace it with a MatrixMFD_Surf.
-  Teuchos::RCP<Operators::Matrix> precon = domain_pk_->preconditioner();
-  Teuchos::RCP<Operators::MatrixMFD> mfd_precon =
-    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
-  ASSERT(mfd_precon != Teuchos::null);
-
-  mfd_preconditioner_ =
-      Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
-  preconditioner_ = mfd_preconditioner_;
-
-  // Get the surface's preconditioner and ensure it is TPFA.
-  Teuchos::RCP<Operators::Matrix> surf_precon = surf_pk_->preconditioner();
-  surf_preconditioner_ =
-    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(surf_precon);
-  ASSERT(surf_preconditioner_ != Teuchos::null);
-
-  // set the surface A in the MFD_Surf.
-  mfd_preconditioner_->set_surface_A(surf_preconditioner_);
-
-  // give the PCs back to the PKs
-  domain_pk_->set_preconditioner(preconditioner_);
-  surf_pk_->set_preconditioner(surf_preconditioner_);
-
-}
-
-
 // -------------------------------------------------------------
 // Apply preconditioner to u and returns the result in Pu
 // -------------------------------------------------------------

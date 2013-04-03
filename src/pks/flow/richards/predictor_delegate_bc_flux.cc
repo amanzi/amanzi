@@ -89,6 +89,9 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
   std::cout << " Flux correcting face " << f << ": q = " << (*bc_values_)[f] << std::endl;
 #endif
 
+  // start by making sure lambda is a reasonable guess, which may not be the case
+  if (std::abs(lambda) > 1.e7) lambda = 101325.;
+
   Teuchos::RCP<FluxBCFunctor> func = CreateFunctor_(f,pres);
 
   // -- convergence criteria

@@ -40,10 +40,7 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& plist,
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
-    is_air_conductivity_(false),
-    coupled_to_subsurface_via_temp_(false),
-    coupled_to_subsurface_via_flux_(false) {
-
+    is_air_conductivity_(false) {
   plist_.set("primary variable key", "surface_temperature");
   plist_.set("domain name", "surface");
 }
@@ -486,6 +483,9 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
   }
 
 }
+
+
+
 
 } // namespace
 } // namespace

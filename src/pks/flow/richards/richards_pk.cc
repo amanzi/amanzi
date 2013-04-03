@@ -56,7 +56,6 @@ Richards::Richards(Teuchos::ParameterList& plist,
     niter_(0),
     dynamic_mesh_(false)
 {
-
   // set a few parameters before setup
   plist_.set("primary variable key", "pressure");
   plist_.sublist("primary variable evaluator").set("manage communication", true);
@@ -490,6 +489,37 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
     uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
 
+    // patch up the surface, use 1
+    //    if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
+    if (S->HasMesh("surface")) {
+      Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+      int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+      if (S->HasFieldEvaluator("unfrozen_fraction")) {
+        S->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S.ptr(), name_);
+        const Epetra_MultiVector& uf = *S->GetFieldData("unfrozen_fraction")
+            ->ViewComponent("cell",false);
+        for (int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face
+          AmanziMesh::Entity_ID f =
+              surface->entity_get_parent(AmanziMesh::CELL, c);
+
+          // -- set that value to the unfrozen fraction to ensure we don't advect ice
+          uw_rel_perm_f[0][f] = std::max(uf[0][c], 1.e-30);
+          //          uw_rel_perm_f[0][f] = uf[0][c];
+        }
+      } else {
+        for (int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face
+          AmanziMesh::Entity_ID f =
+              surface->entity_get_parent(AmanziMesh::CELL, c);
+
+          // -- set that value to 1
+          uw_rel_perm_f[0][f] = 1.0;
+        }
+      }
+    }
+
     // upwind
     upwinding_->Update(S);
   }
@@ -622,11 +652,6 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
 
 bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   bool changed(false);
-  if (modify_predictor_with_consistent_faces_) {
-    CalculateConsistentFaces(u->data().ptr());
-    changed = true;
-  }
-
   if (modify_predictor_bc_flux_) {
     if (flux_predictor_ == Teuchos::null) {
       flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
@@ -649,6 +674,14 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
     matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
     changed |= flux_predictor_->modify_predictor(h, u);
+    changed_solution(); // mark the solution as changed, as modifying with
+                        // consistent faces will then get the updated boundary
+                        // conditions
+  }
+
+  if (modify_predictor_with_consistent_faces_) {
+    CalculateConsistentFaces(u->data().ptr());
+    changed = true;
   }
 
   return changed;

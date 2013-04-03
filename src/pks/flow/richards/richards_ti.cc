@@ -33,13 +33,15 @@ void Richards::fun(double t_old,
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
 
-  if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
-
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
+  // pointer-copy temperature into state and update any auxilary data
+  solution_to_state(u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->data();
+
+  if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
 
 #if DEBUG_FLAG
   AmanziMesh::Entity_ID_List fnums1,fnums0;
@@ -48,21 +50,43 @@ void Richards::fun(double t_old,
   mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
+    Teuchos::RCP<const CompositeVector> T_old = S_inter_->GetFieldData("temperature");
+    Teuchos::RCP<const CompositeVector> T_new = S_next_->GetFieldData("temperature");
+
     *out_ << std::setprecision(15);
     *out_ << "----------------------------------------------------------------" << std::endl;
-    *out_ << "Residual calculation: T0 = " << t_old
-          << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << "  p(" << c0_ << "): " << (*u)("cell",c0_);
+    *out_ << "Residual calculation: t0 = " << t_old
+          << " t1 = " << t_new << " h = " << h << std::endl;
+    *out_ << "  p_old(" << c0_ << "): " << (*u_old)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "  T_old(" << c0_ << "): " << (*T_old)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums0[n]);
+    *out_ << std::endl;
+
+    *out_ << "  p_old(" << c1_ << "): " << (*u_old)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums1[n]);
+    *out_ << std::endl;
+    *out_ << "  T_old(" << c1_ << "): " << (*T_old)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums1[n]);
+    *out_ << std::endl;
+
+    *out_ << "  p_new(" << c0_ << "): " << (*u)("cell",c0_);
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
     *out_ << std::endl;
-    *out_ << "  p(" << c1_ << "): " << (*u)("cell",c1_);
+    *out_ << "  T_new(" << c0_ << "): " << (*T_new)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums0[n]);
+    *out_ << std::endl;
+
+    *out_ << "  p_new(" << c1_ << "): " << (*u)("cell",c1_);
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u)("face",fnums1[n]);
+    *out_ << std::endl;
+    *out_ << "  T_new(" << c1_ << "): " << (*T_new)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums1[n]);
     *out_ << std::endl;
   }
 #endif
-
-  // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(u_new, S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(t_new);
@@ -115,10 +139,10 @@ void Richards::fun(double t_old,
       *out_ << "    sat_new(" << c1_ << "): " << (*satl1)("cell",c1_) << std::endl;
     }
 
-    *out_ << "    k_rel(" << c0_ << "): " << (*relperm)("cell",c0_);
+    *out_ << "    k_rel(" << c0_ << "): " << (*uw_relperm)("cell",c0_);
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums0[n]);
     *out_ << std::endl;
-    *out_ << "    k_rel(" << c1_ << "): " << (*relperm)("cell",c1_);
+    *out_ << "    k_rel(" << c1_ << "): " << (*uw_relperm)("cell",c1_);
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums1[n]);
     *out_ << std::endl;
 
@@ -206,7 +230,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     *out_ << "Precon update at t = " << t << std::endl;
   }
 #endif
-  
+
   if (dynamic_mesh_) {
     matrix_->CreateMFDmassMatrices(K_.ptr());
     mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
@@ -230,6 +254,23 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       S_next_->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
+
+#if DEBUG_FLAG
+  AmanziMesh::Entity_ID_List fnums1,fnums0;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "  In update precon:" << std::endl;
+    *out_ << "    k_rel(" << c0_ << "): " << (*rel_perm)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*rel_perm)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "    k_rel(" << c1_ << "): " << (*rel_perm)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*rel_perm)("face",fnums1[n]);
+    *out_ << std::endl;
+  }
+#endif
 
   // Update the preconditioner with darcy and gravity fluxes
   mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());

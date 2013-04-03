@@ -94,7 +94,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_.sublist("overland water content");
+  Teuchos::ParameterList wc_plist = plist_.sublist("overland water content evaluator");
   Teuchos::RCP<FlowRelations::OverlandHeadIcyWaterContentEvaluator> wc_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandHeadIcyWaterContentEvaluator(wc_plist));
   S->SetFieldEvaluator("surface_water_content", wc_evaluator);
@@ -102,7 +102,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
-  Teuchos::ParameterList height_plist = plist_.sublist("ponded depth");
+  Teuchos::ParameterList height_plist = plist_.sublist("ponded depth evaluator");
   Teuchos::RCP<FlowRelations::IcyHeightEvaluator> height_evaluator =
       Teuchos::rcp(new FlowRelations::IcyHeightEvaluator(height_plist));
   S->SetFieldEvaluator("ponded_depth", height_evaluator);

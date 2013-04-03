@@ -130,12 +130,17 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
   for (KeySet::const_iterator dep=dependencies_.begin();
        dep!=dependencies_.end(); ++dep) {
     Teuchos::RCP<CompositeVector> tmp = Teuchos::rcp(new CompositeVector(*dmy));
-    tmp->CreateData();
+
     if (wrt_key == *dep) {
       // partial F / partial x
       EvaluateFieldPartialDerivative_(S, wrt_key, tmp.ptr());
       dmy->ViewComponent("cell",false)->Update(1.0,
               *tmp->ViewComponent("cell",false), 1.0);
+
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME)) {
+        *out_ << dmy_key << " = " << (*tmp)("cell",0) << std::endl;
+      }
+
     } else if (S->GetFieldEvaluator(*dep)->IsDependency(S, wrt_key)) {
       // partial F / partial dep * ddep/dx
       // -- ddep/dx
@@ -143,6 +148,11 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
       Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
       // -- partial F / partial dep
       EvaluateFieldPartialDerivative_(S, *dep, tmp.ptr());
+
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME)) {
+        *out_ << ddep_key << " = " << (*ddep)("cell",0) << ", ";
+        *out_ << "d"<< my_key_ << "_d" << *dep << " = " << (*tmp)("cell",0) << std::endl;
+      }
 
       dmy->ViewComponent("cell",false)
           ->Multiply(1.0, *ddep->ViewComponent("cell",false),

@@ -230,7 +230,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_.sublist("overland water content");
+  Teuchos::ParameterList wc_plist = plist_.sublist("overland water content evaluator");
   Teuchos::RCP<FlowRelations::OverlandHeadWaterContentEvaluator> wc_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandHeadWaterContentEvaluator(wc_plist));
   S->SetFieldEvaluator("surface_water_content", wc_evaluator);
@@ -238,7 +238,7 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
-  Teuchos::ParameterList height_plist = plist_.sublist("ponded depth");
+  Teuchos::ParameterList height_plist = plist_.sublist("ponded depth evaluator");
   Teuchos::RCP<FlowRelations::HeightEvaluator> height_evaluator =
       Teuchos::rcp(new FlowRelations::HeightEvaluator(height_plist));
   S->SetFieldEvaluator("ponded_depth", height_evaluator);
@@ -363,7 +363,6 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
     // source terms
     Teuchos::RCP<CompositeVector> error = Teuchos::rcp(new CompositeVector(*wc1));
-    error->CreateData();
     error->PutScalar(0.);
     AddSourceTerms_(error.ptr());
     error->Scale(dt);

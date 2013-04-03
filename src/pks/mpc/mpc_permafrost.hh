@@ -36,7 +36,8 @@ class MPCPermafrost : public MPCCoupledCells {
   MPCPermafrost(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCCoupledCells(plist, soln) {}
+      MPCCoupledCells(plist, soln)
+  {}
 
 
   virtual void setup(const Teuchos::Ptr<State>& S);
@@ -53,6 +54,7 @@ class MPCPermafrost : public MPCCoupledCells {
   static RegisteredPKFactory<MPCPermafrost> reg_;
 
 };
+
 } // namespace
 
 #endif

@@ -55,7 +55,7 @@ void RelPermEvaluator::InitializeFromPlist_() {
   dependencies_.insert(sat_key_);
 
   // cutoff above 0?
-  min_val_ = plist_.get<double>("minimum rel perm cutoff", 1.e-30);
+  min_val_ = plist_.get<double>("minimum rel perm cutoff", 0.);
 }
 
 

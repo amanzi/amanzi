@@ -1,6 +1,6 @@
 
-#ifndef PK_FLOW_PERMAFROST_HH_
-#define PK_FLOW_PERMAFROST_HH_
+#ifndef PK_FLOW_RICHARDS_STEADYSTATE_HH_
+#define PK_FLOW_RICHARDS_STEADYSTATE_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -24,9 +24,7 @@ namespace Flow {
 class RichardsSteadyState : public Richards {
 public:
   // Constructors.
-  RichardsSteadyState(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      Richards(plist, solution) {}
+  RichardsSteadyState(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~RichardsSteadyState() {}
@@ -45,7 +43,7 @@ protected:
  protected:
   int max_iters_;
 
-private:
+ private:
   // factory registration
   static RegisteredPKFactory<RichardsSteadyState> reg_;
 

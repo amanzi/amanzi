@@ -21,26 +21,15 @@ subsurface-face-only Schur complement that captures all terms.
 
 namespace Amanzi {
 
-namespace Operators {
-  class MatrixMFD_Surf;
-  class MatrixMFD_TPFA;
-}
-class MPCPermafrost;
-
-
 class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
 
  public:
   MPCSurfaceSubsurfaceFluxCoupler(Teuchos::ParameterList& plist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      MPCSurfaceSubsurfaceCoupler(plist, soln),
-      modify_predictor_flux_bc_(false) {
-    surf_c0_ = plist_.get<int>("surface debug cell 0", 0);
-    surf_c1_ = plist_.get<int>("surface debug cell 1", 1);
-
+      MPCSurfaceSubsurfaceCoupler(plist, soln) {
     modify_predictor_flux_bc_ =
-      plist.get<bool>("modify predictor for flux BCs", false);
+      plist_.get<bool>("modify predictor for flux BCs", false);
   }
 
   // -- Setup data.
@@ -76,14 +65,7 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
 
 
  protected:
-  Teuchos::RCP<Operators::MatrixMFD_Surf> mfd_preconditioner_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
-
   Key flux_key_;
-
-  int surf_c0_;
-  int surf_c1_;
-
   bool modify_predictor_flux_bc_;
 
  private:

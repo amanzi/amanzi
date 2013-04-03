@@ -171,7 +171,6 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
 
   // Calculate delta h on the surface
   Teuchos::RCP<CompositeVector> surf_Ph = Teuchos::rcp(new CompositeVector(*surf_Pu));
-  surf_Ph->CreateData();
   surf_Ph->PutScalar(0.);
 
   // old ponded depth

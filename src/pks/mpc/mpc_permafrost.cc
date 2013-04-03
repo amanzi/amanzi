@@ -55,6 +55,8 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
 
 void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<TreeVector> Pu) {
+  if (decoupled_) return StrongMPC::precon(u,Pu);
+
   // make a new TreeVector that is just the subsurface values (by pointer).
   // -- note these const casts are necessary to create the new TreeVector, but
   //    since the TreeVector COULD be const (it is only used in a single method,
@@ -67,7 +69,7 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   domain_Pu_tv->PushBack(Pu->SubVector(0)->SubVector(0));
   domain_Pu_tv->PushBack(Pu->SubVector(1)->SubVector(0));
 
-  // call the inherited precon() on these newly ordered TreeVectors
+  // call the operator's inverse
   preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
 
   // Now post-process
