@@ -203,11 +203,16 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
 template<class BaseCoupler>
 bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
         Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+
   // call the BaseCoupler's modify_predictor(), which calls the sub-PKs modify
   // and ensures the surface and subsurface match.
   bool changed = BaseCoupler::modify_predictor(h, up);
 
   if (modify_predictor_heuristic_) {
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+      *out_ << " Modifying predictor with water heuristic" << std::endl;
+
     const Epetra_MultiVector& surf_u_prev_c =
         *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
@@ -227,18 +232,17 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
 
       if (pnew > 0) {
         if (dp > pnew) {
-#if DEBUG_FLAG
-          std::cout << "CHANGING (first over?): p = " << surf_u_c[0][c]
-                    << " to " << patm + .001 << std::endl;
-#endif
+          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+            *out_ << "CHANGING (first over?): p = " << surf_u_c[0][c]
+                  << " to " << patm + .001 << std::endl;
           surf_u_c[0][c] = patm + .001;
           domain_u_f[0][f] = surf_u_c[0][c];
 
         } else if (pold > 0 && dp > pold) {
-#if DEBUG_FLAG
-          std::cout << "CHANGING (second over?): p = " << surf_u_c[0][c]
-                    << " to " << patm + 2*pold << std::endl;
-#endif
+          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+            *out_ << "CHANGING (second over?): p = " << surf_u_c[0][c]
+                  << " to " << patm + 2*pold << std::endl;
+
           surf_u_c[0][c] = patm + 2*pold;
           domain_u_f[0][f] = surf_u_c[0][c];
         }
