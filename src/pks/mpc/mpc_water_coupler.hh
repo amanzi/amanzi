@@ -203,7 +203,9 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
 template<class BaseCoupler>
 bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
         Teuchos::RCP<TreeVector> up) {
-  bool changed(false);
+  // call the BaseCoupler's modify_predictor(), which calls the sub-PKs modify
+  // and ensures the surface and subsurface match.
+  bool changed = BaseCoupler::modify_predictor(h, up);
 
   if (modify_predictor_heuristic_) {
     const Epetra_MultiVector& surf_u_prev_c =
@@ -245,8 +247,6 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
     changed = true;
   }
 
-
-  changed |= BaseCoupler::modify_predictor(h, up);
   return changed;
 }
 

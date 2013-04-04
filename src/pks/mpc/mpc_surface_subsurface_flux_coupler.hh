@@ -48,6 +48,8 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
  protected:
+  bool modify_predictor_for_flux_bc_(double h, Teuchos::RCP<TreeVector> up);
+
   virtual void PreconApply_(Teuchos::RCP<const TreeVector> u,
                             Teuchos::RCP<TreeVector> Pu);
 

@@ -35,6 +35,7 @@ void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
 
   // get the flux key
   flux_key_ = plist_.get<std::string>("flux key");
+
 }
 
 
@@ -137,6 +138,10 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
 void MPCSurfaceSubsurfaceFluxCoupler::PreconApply_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Precon applying the subsurf + surf TPFA operator." << std::endl;
+
   // preconditioner_->ApplyInverse(*u->SubVector(domain_pk_name_),
   //         Pu->SubVector(domain_pk_name_).ptr());
   domain_pk_->precon(u->SubVector(domain_pk_name_), Pu->SubVector(domain_pk_name_));
@@ -151,6 +156,9 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconApply_(
 void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceCells_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Precon updating surface cells." << std::endl;
 
   Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->data();
   Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
@@ -181,6 +189,10 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceCells_(
 void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceFaces_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Precon updating surface faces." << std::endl;
+
   // update delta faces
   Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->data();
   Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
@@ -191,6 +203,10 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceFaces_(
 // updates the preconditioner
 void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "Precon update at t = " << t << std::endl;
+
   MPCSurfaceSubsurfaceCoupler::update_precon(t, up, h);
 
   if (assemble_preconditioner_) {
@@ -209,58 +225,60 @@ void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
 }
 
 
+bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor_for_flux_bc_(double h,
+        Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Modifying predictor for Flux BCs" << std::endl;
+
+  // To get this to work, we want to first modify the surface predictor,
+  // then call the surface residual function to get the surface flux BCs,
+  // then call the subsurface modify_predictor.  The subsurface modify
+  // routine will alter the surface face lambdas to make them reasonably
+  // consistent with the flux BCs.
+
+  // -- call surface's modify_predictor()
+  Teuchos::RCP<TreeVector> surf_u = up->SubVector(surf_pk_name_);
+  surf_pk_->modify_predictor(h, surf_u);
+
+  // -- call the surface residual function to get the surface flux BCs
+  Teuchos::RCP<TreeVector> surf_g = Teuchos::rcp(new TreeVector(*surf_u));
+  surf_pk_->fun(S_inter_->time(), S_next_->time(), Teuchos::null,
+                surf_u, surf_g);
+
+  // -- set the flux BCs
+  Teuchos::RCP<CompositeVector> source =
+      S_next_->GetFieldData(flux_key_, domain_pk_name_);
+  *source->ViewComponent("cell",false) = *surf_g->data()->ViewComponent("cell",false);
+
+  // -- call the subsurface modify_predictor(), which uses those BCs
+  Teuchos::RCP<TreeVector> domain_u = up->SubVector(domain_pk_name_);
+  domain_pk_->modify_predictor(h, domain_u);
+
+  // ensure the surface and subsurface match
+  modify_predictor_copy_subsurf_to_surf_(h,up);
+
+  return true;
+}
+
+
+
 // -----------------------------------------------------------------------------
 // Modify the nonlinear predictor to avoid issues.
 // This is very delicate code to get the order correct...
 // -----------------------------------------------------------------------------
 bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor(double h,
         Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "Modifying predictor" << std::endl;
+
   bool changed(false);
-
   if (modify_predictor_flux_bc_) {
-    // To get this to work, we want to first modify the surface predictor,
-    // then call the surface residual function to get the surface flux BCs,
-    // then call the subsurface modify_predictor.  The subsurface modify
-    // routine will alter the surface face lambdas to make them reasonably
-    // consistent with the flux BCs.
-
-    // -- call surface's modify_predictor()
-    Teuchos::RCP<TreeVector> surf_u = up->SubVector(surf_pk_name_);
-    changed |= surf_pk_->modify_predictor(h, surf_u);
-
-    // -- call the surface residual function to get the surface flux BCs
-    Teuchos::RCP<TreeVector> surf_g = Teuchos::rcp(new TreeVector(*surf_u));
-    surf_pk_->fun(S_inter_->time(), S_next_->time(), Teuchos::null,
-                         surf_u, surf_g);
-
-    // -- set the flux BCs
-    Teuchos::RCP<CompositeVector> source =
-        S_next_->GetFieldData(flux_key_, domain_pk_name_);
-    *source->ViewComponent("cell",false) = *surf_g->data()->ViewComponent("cell",false);
-
-    // -- call the subsurface modify_predictor(), which uses those BCs
-    Teuchos::RCP<TreeVector> domain_u = up->SubVector(domain_pk_name_);
-    changed |= domain_pk_->modify_predictor(h, domain_u);
-
-    // -- ensure the surface cell's predictor matches the subsurface face
-    //    values (this is backwards from MPCSurfaceSubsurfaceCoupler's
-    //    version.
-    if (changed) {
-      const Epetra_MultiVector& domain_u_f = *domain_u->data()
-          ->ViewComponent("face",false);
-      Epetra_MultiVector& surf_u_c = *surf_u->data()->ViewComponent("cell",false);
-
-      int ncells = surf_u_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        surf_u_c[0][c] = domain_u_f[0][f];
-      }
-    }
-
+    changed = modify_predictor_for_flux_bc_(h, up);
   } else {
-    changed |= MPCSurfaceSubsurfaceCoupler::modify_predictor(h, up);
+    changed = MPCSurfaceSubsurfaceCoupler::modify_predictor(h, up);
   }
-
   return changed;
 }
 

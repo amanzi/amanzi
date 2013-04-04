@@ -22,8 +22,10 @@ subtree:
 ------------------------------------------------------------------------- */
 #include "field_evaluator.hh"
 
+#include "permafrost_model.hh"
 #include "matrix_coupled_mfd_surf.hh"
 #include "matrix_mfd_surf.hh"
+#include "mpc_delegate_ewc.hh"
 #include "mpc_surface_subsurface_flux_coupler.hh"
 #include "mpc_permafrost.hh"
 
@@ -56,7 +58,6 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   Key surf_mesh_key = plist_.get<std::string>("surface mesh key", "surface");
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key);
 
-  // Create the precon
   Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
   mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixCoupledMFDSurf(
       pc_sublist, mesh, surf_mesh));
@@ -93,6 +94,28 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   mfd_surf_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_surf_preconditioner_->InitPreconditioner();
 
+  // select the method used for nonlinear prediction
+  std::string predictor_string = plist_.get<std::string>("predictor type", "none");
+  if (predictor_string == "none") {
+    predictor_type_ = PREDICTOR_NONE;
+  } else if (predictor_string == "ewc") {
+    predictor_type_ = PREDICTOR_EWC;
+  } else if (predictor_string == "smart ewc") {
+    predictor_type_ = PREDICTOR_SMART_EWC;
+  } else {
+    Errors::Message message(std::string("Invalid predictor type ")+predictor_string);
+    Exceptions::amanzi_throw(message);
+  }
+
+  // create the EWC delegate if requested.
+  if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
+    ewc_ = Teuchos::rcp(new MPCDelegateEWC(plist_));
+
+    Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
+    ewc_->set_model(model);
+    ewc_->setup(S);
+  }
+
   // grab the PKs
   coupled_flow_pk_ =
       Teuchos::rcp_dynamic_cast<MPCSurfaceSubsurfaceFluxCoupler>(sub_pks_[0]);
@@ -103,11 +126,56 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
 }
 
 
+void MPCPermafrost::initialize(const Teuchos::Ptr<State>& S) {
+  StrongMPC::initialize(S);
+  if (ewc_ != Teuchos::null) ewc_->initialize(S);
+}
+
+
+void MPCPermafrost::set_states(const Teuchos::RCP<const State>& S,
+        const Teuchos::RCP<State>& S_inter,
+        const Teuchos::RCP<State>& S_next) {
+  StrongMPC::set_states(S,S_inter,S_next);
+  if (ewc_ != Teuchos::null) ewc_->set_states(S,S_inter,S_next);
+}
+
+
+void MPCPermafrost::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  StrongMPC::commit_state(dt,S);
+  if (ewc_ != Teuchos::null) ewc_->commit_state(dt,S);
+}
+
+
+// update the predictor to be physically consistent
+bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Modifying predictor." << std::endl;
+
+  bool changed(false);
+  if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
+    // make a new TreeVector that is just the subsurface values (by pointer).
+    Teuchos::RCP<TreeVector> domain_u_tv = Teuchos::rcp(new TreeVector("domain_u_tv"));
+    domain_u_tv->PushBack(up->SubVector(0)->SubVector(0));
+    domain_u_tv->PushBack(up->SubVector(1)->SubVector(0));
+    changed = ewc_->modify_predictor(h, domain_u_tv);
+  }
+
+  // potentially update faces
+  changed |= StrongMPC::modify_predictor(h, up);
+  return changed;
+}
+
+
 // updates the preconditioner.  Note this is currently identical to
 // MPCCoupledCells::update_precon(), but may change to include surface
 // coupling terms.
 void MPCPermafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "Precon update at t = " << t << std::endl;
+
   StrongMPC::update_precon(t,up,h);
 
   if (!decoupled_) {
@@ -136,12 +204,19 @@ void MPCPermafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 
 void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "Precon application:" << std::endl;
+
   if (decoupled_) return StrongMPC::precon(u,Pu);
 
   // make a new TreeVector that is just the subsurface values (by pointer).
   // -- note these const casts are necessary to create the new TreeVector, but
   //    since the TreeVector COULD be const (it is only used in a single method,
   //    in which it is const), const-correctness is not violated here.
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Precon pulling subsurface vectors." << std::endl;
+
   Teuchos::RCP<TreeVector> domain_u_tv = Teuchos::rcp(new TreeVector("domain_u_tv"));
   domain_u_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(u->SubVector(0)->SubVector(0)));
   domain_u_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(u->SubVector(1)->SubVector(0)));
@@ -151,6 +226,8 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   domain_Pu_tv->PushBack(Pu->SubVector(1)->SubVector(0));
 
   // call the operator's inverse
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Precon applying coupled subsurface operator." << std::endl;
   mfd_surf_preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
 
   // Now post-process
@@ -164,7 +241,6 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   coupled_energy_pk_->PreconUpdateSurfaceFaces_(u->SubVector(1), Pu->SubVector(1));
 
 #if DEBUG_FLAG
-  Teuchos::OSTab tab = getOSTab();
   Teuchos::RCP<const CompositeVector> surf_p = u->SubVector(0)->SubVector(1)->data();
   Teuchos::RCP<const CompositeVector> domain_p = u->SubVector(0)->SubVector(0)->data();
   Teuchos::RCP<const CompositeVector> surf_Pp = Pu->SubVector(0)->SubVector(1)->data();
