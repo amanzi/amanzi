@@ -15,12 +15,13 @@ energy/water-content space instead of temperature/pressure space.
 #include "tensor.hpp"
 #include "state.hh"
 #include "tree_vector.hh"
+#include "pk_default_base.hh"
 
 namespace Amanzi {
 
 class EWCModel;
 
-class MPCDelegateEWC {
+class MPCDelegateEWC : public Teuchos::VerboseObject<MPCDelegateEWC> {
 
  public:
 
@@ -53,6 +54,8 @@ class MPCDelegateEWC {
 
  protected:
   Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::EVerbosityLevel verbosity_;
 
   // model
   Teuchos::RCP<EWCModel> model_;

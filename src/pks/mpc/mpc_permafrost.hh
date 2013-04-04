@@ -30,6 +30,8 @@ namespace Amanzi {
 
 namespace Operators { class MatrixCoupledMFDSurf; }
 
+class MPCDelegateEWC;
+
 class MPCPermafrost : public StrongMPC {
 
  public:
@@ -41,6 +43,16 @@ class MPCPermafrost : public StrongMPC {
 
 
   virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void initialize(const Teuchos::Ptr<State>& S);
+
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next);
+
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+
+  // update the predictor to be physically consistent
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
@@ -59,10 +71,22 @@ class MPCPermafrost : public StrongMPC {
 
   bool decoupled_;
 
+  enum PredictorType {
+    PREDICTOR_NONE = 0,
+    PREDICTOR_EWC,
+    PREDICTOR_SMART_EWC
+  };
+  // prediction methods
+  PredictorType predictor_type_;
+
   Teuchos::RCP<MPCSurfaceSubsurfaceFluxCoupler> coupled_flow_pk_;
   Teuchos::RCP<MPCSurfaceSubsurfaceFluxCoupler> coupled_energy_pk_;
 
   Teuchos::RCP<Operators::MatrixCoupledMFDSurf> mfd_surf_preconditioner_;
+
+  // EWC delegate
+  Teuchos::RCP<MPCDelegateEWC> ewc_;
+
 
  private:
   // factory registration

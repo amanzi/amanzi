@@ -82,30 +82,55 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
 
 }
 
-
-bool MPCSurfaceSubsurfaceCoupler::modify_predictor(double h,
+bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_surf_to_subsurf_(double h,
         Teuchos::RCP<TreeVector> up) {
-  // Do any modifications on the sub PKs
-  bool changed = StrongMPC::modify_predictor(h, up);
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Modifying predictor, copying surf -> sub-surf" << std::endl;
 
-  // ensure the two match
-  if (changed) {
-    Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->data()
-        ->ViewComponent("face",false);
-    const Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_name_)->data()
-        ->ViewComponent("cell",false);
+  Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->data()
+      ->ViewComponent("face",false);
+  const Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_name_)->data()
+      ->ViewComponent("cell",false);
 
-    int ncells = surf_u_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
-      int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
-      domain_u_f[0][f] = surf_u_c[0][c];
-    }
+  int ncells = surf_u_c.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    domain_u_f[0][f] = surf_u_c[0][c];
   }
-
-  return changed;
 }
 
 
+bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_subsurf_to_surf_(double h,
+        Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Modifying predictor, copying sub-surf -> surf" << std::endl;
 
+  const Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->data()
+      ->ViewComponent("face",false);
+  Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_name_)->data()
+      ->ViewComponent("cell",false);
 
+  int ncells = surf_u_c.MyLength();
+  for (int c=0; c!=ncells; ++c) {
+    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    surf_u_c[0][c] = domain_u_f[0][f];
+  }
+}
+
+bool MPCSurfaceSubsurfaceCoupler::modify_predictor(double h,
+        Teuchos::RCP<TreeVector> up) {
+
+  // In most cases, we first deal with the subsurface, then the surface.
+  bool changed = domain_pk_->modify_predictor(h, up->SubVector(domain_pk_name_));
+
+  // Ensure surface face values match subsurface values
+  if (changed) modify_predictor_copy_subsurf_to_surf_(h, up);
+
+  // Call the surface modify_predictor() to update surface faces.
+  changed |= surf_pk_->modify_predictor(h, up->SubVector(surf_pk_name_));
+
+  return changed;
+}
 } // namespace

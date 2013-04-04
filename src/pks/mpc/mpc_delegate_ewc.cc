@@ -8,7 +8,7 @@ Author: Ethan Coon
 Interface for EWC, a helper class that does projections and preconditioners in
 energy/water-content space instead of temperature/pressure space.
 ------------------------------------------------------------------------- */
-
+#include "global_verbosity.hh"
 #include "ewc_model.hh"
 #include "mpc_delegate_ewc.hh"
 
@@ -26,6 +26,19 @@ MPCDelegateEWC::MPCDelegateEWC(Teuchos::ParameterList& plist) :
 // Allocate any data or models required.
 // -----------------------------------------------------------------------------
 void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
+  // Verbosity
+  std::string name = plist_.get<std::string>("PK name")+std::string(" EWC");
+
+  // set up the VerboseObject
+  setLinePrefix(Amanzi::VerbosityLevel::verbosityHeader(name));
+
+  setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
+  Teuchos::readVerboseObjectSublist(&plist_,this);
+
+  // get the fancy output ??
+  verbosity_ = getVerbLevel();
+  out_ = getOStream();
+
   // Get the mesh
   Key domain = plist_.get<std::string>("domain key", "");
   if (domain.size() != 0) {
@@ -193,6 +206,10 @@ void MPCDelegateEWC::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeV
 
 
 bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Modifying predictor using EWC algorithm" << std::endl;
+
   // projected guesses for T and p
   Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->data();
   Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
@@ -249,10 +266,10 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
 
     // uses intensive forms, so must divide by cell volume.
 #if DEBUG_FLAG
-    std::cout << "Inverting: c = " << c << std::endl;
-    std::cout << "   p,T  = " << p << ", " << T << std::endl;
-    std::cout << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
-    std::cout << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
+    *out_ << "Inverting: c = " << c << std::endl;
+    *out_ << "   p,T  = " << p << ", " << T << std::endl;
+    *out_ << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
+    *out_ << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
 #endif
     ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
 
@@ -266,6 +283,10 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
 
 
 bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Modifying predictor using SmartEWC algorithm" << std::endl;
+
   // projected guesses for T and p
   Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->data();
   Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
@@ -353,26 +374,27 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
       double p = p1[0][c];
       double T = T1[0][c];
 
-#if DEBUG_FLAG
-      std::cout << "Inverting: c = " << c << std::endl;
-      std::cout << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
-      std::cout << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl;
-      std::cout << "   Prev p,T: " << p << ", " << T << std::endl;
-      std::cout << "   Desired wc,e: " << wc2[0][c] << ", " << e2[0][c] << std::endl;
-#endif
+
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+        *out_ << "Inverting: c = " << c << std::endl;
+        *out_ << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
+        *out_ << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl;
+        *out_ << "   Prev p,T: " << p << ", " << T << std::endl;
+        *out_ << "   Desired wc,e: " << wc2[0][c] << ", " << e2[0][c] << std::endl;
+      }
 
       // uses intensive forms, so must divide by cell volume.
       ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c],
               poro[0][c], T, p);
 
-#if DEBUG_FLAG
-      std::cout << "   p_ewc,T_ewc  = " << p << ", " << T << std::endl;
-#endif
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+        *out_ << "   p_ewc,T_ewc  = " << p << ", " << T << std::endl;
+      }
 
       if (!ierr) { // valid solution, no zero determinates, etc
-#if DEBUG_FLAG
-        std::cout << "   EWC Accepted" << std::endl;
-#endif
+        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+          *out_ << "   EWC Accepted" << std::endl;
+        }
         temp_guess_c[0][c] = T;
         pres_guess_c[0][c] = p;
       }
