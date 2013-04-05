@@ -213,6 +213,54 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
     *out_ << "Precon update at t = " << t << std::endl;
 
+
+
+#if DEBUG_FLAG
+  AmanziMesh::Entity_ID_List fnums1,fnums0;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    Teuchos::RCP<const CompositeVector> u = up->data();
+    Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
+    Teuchos::RCP<const CompositeVector> T_old = S_inter_->GetFieldData("temperature");
+    Teuchos::RCP<const CompositeVector> T_new = S_next_->GetFieldData("temperature");
+
+    *out_ << std::setprecision(15);
+    *out_ << "  p_old(" << c0_ << "): " << (*u_old)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "  T_old(" << c0_ << "): " << (*T_old)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums0[n]);
+    *out_ << std::endl;
+
+    *out_ << "  p_old(" << c1_ << "): " << (*u_old)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums1[n]);
+    *out_ << std::endl;
+    *out_ << "  T_old(" << c1_ << "): " << (*T_old)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums1[n]);
+    *out_ << std::endl;
+
+    *out_ << "  p_new(" << c0_ << "): " << (*u)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
+    *out_ << std::endl;
+    *out_ << "  T_new(" << c0_ << "): " << (*T_new)("cell",c0_);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums0[n]);
+    *out_ << std::endl;
+
+    *out_ << "  p_new(" << c1_ << "): " << (*u)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u)("face",fnums1[n]);
+    *out_ << std::endl;
+    *out_ << "  T_new(" << c1_ << "): " << (*T_new)("cell",c1_);
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums1[n]);
+    *out_ << std::endl;
+  }
+#endif
+
+
+
+
   if (dynamic_mesh_) {
     matrix_->CreateMFDmassMatrices(K_.ptr());
     mfd_preconditioner_->CreateMFDmassMatrices(K_.ptr());
@@ -238,10 +286,10 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       S_next_->GetConstantVectorData("gravity");
 
 #if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List fnums1,fnums0;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
+  // AmanziMesh::Entity_ID_List fnums1,fnums0;
+  // std::vector<int> dirs;
+  // mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+  // mesh_->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "  In update precon:" << std::endl;

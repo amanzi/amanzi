@@ -153,6 +153,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   matrix_->SetSymmetryProperty(true);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
+  matrix_->InitPreconditioner(); // this is needed to calc consistent faces
 
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
@@ -305,6 +306,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
       // -- set that value to Neumann
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+      std::cout << " setting BC from surface energy flux = " << flux[0][c] << std::endl;
     }
   }
 };
@@ -357,15 +359,20 @@ bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
 // -----------------------------------------------------------------------------
 // BDF takes a prediction step -- make sure it is physical and otherwise ok.
 // -----------------------------------------------------------------------------
-bool EnergyBase::modify_predictor(double h, const Teuchos::RCP<TreeVector>& u) {
+bool EnergyBase::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
     *out_ << "Modifying predictor:" << std::endl;
 
   if (modify_predictor_with_consistent_faces_) {
+    std::cout << " old temp top face = " << (*u->data())("face",500) << std::endl;
+
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-      *out_ << "  modifications for consistent face pressures." << std::endl;
+      *out_ << "  modifications for consistent face temperatures." << std::endl;
     CalculateConsistentFaces(u->data().ptr());
+
+    std::cout << " new temp top face = " << (*u->data())("face",500) << std::endl;
+
     return true;
   }
 
@@ -386,21 +393,25 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   UpdateBoundaryConditions_();
 
   // div K_e grad u
+  changed_solution();
   S_next_->GetFieldEvaluator(conductivity_key_)
       ->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(conductivity_key_);
 
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(conductivity.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
+  std::cout << " Cond cell 99 = " << (*conductivity)("cell",99) << std::endl;
+  std::cout << " Temp cell 99 = " << (*u)("cell",99) << std::endl;
+
+  matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
+  matrix_->CreateMFDrhsVectors();
 
   // skip accumulation terms, they're not needed
   // Assemble and precompute the Schur complement for inversion.
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  mfd_preconditioner_->AssembleGlobalMatrices();
+  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
+  matrix_->UpdateConsistentFaceConstraints(u.ptr());
 }
 
 } // namespace Energy

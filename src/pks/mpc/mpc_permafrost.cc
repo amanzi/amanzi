@@ -149,8 +149,24 @@ void MPCPermafrost::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // update the predictor to be physically consistent
 bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+
+  AmanziMesh::Entity_ID_List fnums1,fnums0;
+  std::vector<int> dirs;
+  up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
+  up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Modifying predictor." << std::endl;
+    *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c0_)
+          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c0_)
+          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+    *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c1_)
+          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
+    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c1_)
+          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
+  }
+
 
   bool changed(false);
   if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
@@ -163,6 +179,18 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
 
   // potentially update faces
   changed |= StrongMPC::modify_predictor(h, up);
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c0_)
+          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c0_)
+          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+    *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c1_)
+          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
+    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c1_)
+          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
+  }
+
   return changed;
 }
 
