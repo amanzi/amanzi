@@ -443,20 +443,6 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
-
-#if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true) &&
-      c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
-    *out_ << "ERRORS:" << std::endl;
-    *out_ << "  cell0: h*res = " << std::abs(h*res_c[0][c0_])
-          << ", abs= " << atol_*wc_base
-          << ", rel= " << rtol_*std::abs(wc[0][c0_]) << std::endl;
-    *out_ << "  cell1: h*res = " << std::abs(h*res_c[0][c1_])
-          << ", abs= " << atol_*wc_base
-          << ", rel= " << rtol_*std::abs(wc[0][c1_]) << std::endl;
-  }
-#endif
-
   // Face error give by heights?  Loose tolerance
   double enorm_face(0.);
   int nfaces = res_f.MyLength();
@@ -464,7 +450,6 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
     double tmp = std::abs(res_f[0][f]) / (atol_ + rtol_*(height_f[0][f]));
     enorm_face = std::max<double>(enorm_face, tmp);
   }
-
 
   // Write out Inf norms too.
   Teuchos::OSTab tab = getOSTab();

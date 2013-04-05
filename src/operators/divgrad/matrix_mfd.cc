@@ -597,6 +597,8 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
     ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #endif
+  } else {
+    ASSERT(0);
   }
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
@@ -890,6 +892,8 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
     ierr = IfpHypre_Sff_->ApplyInverse(*rhs_f, *u->ViewComponent("face",false));
 #endif
+  } else {
+    ASSERT(0);
   }
 }
 

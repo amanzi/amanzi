@@ -78,7 +78,7 @@ public:
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
-  virtual bool modify_predictor(double h, const Teuchos::RCP<TreeVector>& u);
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);

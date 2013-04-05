@@ -378,9 +378,11 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
       if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
         *out_ << "Inverting: c = " << c << std::endl;
         *out_ << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
+        *out_ << "   2Prev wc,e: " << wc0[0][c] << ", " << e0[0][c] << std::endl;
         *out_ << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl;
-        *out_ << "   Prev p,T: " << p << ", " << T << std::endl;
         *out_ << "   Desired wc,e: " << wc2[0][c] << ", " << e2[0][c] << std::endl;
+        *out_ << "   Prev p,T: " << p << ", " << T << std::endl;
+        *out_ << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << temp_guess_c[0][c] << std::endl;
       }
 
       // uses intensive forms, so must divide by cell volume.

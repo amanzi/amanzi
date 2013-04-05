@@ -130,7 +130,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   matrix_->SetSymmetryProperty(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
-
+  matrix_->InitPreconditioner();
 
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
   Teuchos::RCP<Operators::Matrix> precon;
@@ -829,14 +829,14 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
 
   // Update the preconditioner with darcy and gravity fluxes
   // skip accumulation terms, they're not needed
-  mfd_preconditioner_->CreateMFDrhsVectors();
+  matrix_->CreateMFDrhsVectors();
 
   // Assemble
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  mfd_preconditioner_->AssembleGlobalMatrices();
+  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  mfd_preconditioner_->UpdateConsistentFaceConstraints(pres_elev.ptr());
+  matrix_->UpdateConsistentFaceConstraints(pres_elev.ptr());
 
   // back out heights from pres_elev
   const Epetra_MultiVector& elevation = *S_next_->GetFieldData("elevation")

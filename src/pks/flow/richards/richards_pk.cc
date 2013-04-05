@@ -211,6 +211,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
   matrix_->SetSymmetryProperty(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
+  matrix_->InitPreconditioner();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
@@ -714,10 +715,16 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   }
 
   if (modify_predictor_with_consistent_faces_) {
+    std::cout << std::setprecision(15);
+    std::cout << " old pressure top face = " << (*u->data())("face",500) << std::endl;
+
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
       *out_ << "  modifications for consistent face pressures." << std::endl;
     CalculateConsistentFaces(u->data().ptr());
     changed = true;
+
+    std::cout << " new pressure top face = " << (*u->data())("face",500) << std::endl;
+
   }
 
   return changed;
@@ -745,20 +752,23 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
 
+  std::cout << " Krel face 500 = " << (*rel_perm)("face",500) << std::endl;
+  std::cout << " Pres cell 99 = " << (*u)("cell",99) << std::endl;
+
 
   // Update the preconditioner with darcy and gravity fluxes
-  mfd_preconditioner_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-  mfd_preconditioner_->CreateMFDrhsVectors();
-  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), mfd_preconditioner_.ptr());
+  matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  matrix_->CreateMFDrhsVectors();
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
 
   // skip accumulation terms, they're not needed
 
   // Assemble
-  mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  mfd_preconditioner_->AssembleGlobalMatrices();
+  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  matrix_->AssembleGlobalMatrices();
 
   // derive the consistent faces, involves a solve
-  mfd_preconditioner_->UpdateConsistentFaceConstraints(u.ptr());
+  matrix_->UpdateConsistentFaceConstraints(u.ptr());
 }
 
 } // namespace
