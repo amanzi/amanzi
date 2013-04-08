@@ -11,8 +11,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 ------------------------------------------------------------------------- */
 
 #include "errors.hh"
-#include "Function.hh"
-#include "FunctionFactory.hh"
+#include "function.hh"
+#include "function-factory.hh"
 
 #include "field.hh"
 #include "field_scalar.hh"

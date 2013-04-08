@@ -17,7 +17,7 @@ namespace Amanzi {
 namespace Functions {
 
 void BoundaryFunction::Define(const std::vector<std::string> &regions,
-        const Teuchos::RCP<const Function> &f) {
+        const Teuchos::RCP<const VectorFunction> &f) {
 
   // Create the domain
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));
@@ -28,7 +28,7 @@ void BoundaryFunction::Define(const std::vector<std::string> &regions,
 
 
 void BoundaryFunction::Define(std::string region,
-        const Teuchos::RCP<const Function> &f) {
+        const Teuchos::RCP<const VectorFunction> &f) {
 
   RegionList regions(1,region);
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));

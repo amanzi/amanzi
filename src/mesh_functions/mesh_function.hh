@@ -18,7 +18,7 @@ Function applied to a mesh component.
 
 #include "Teuchos_RCP.hpp"
 #include "Mesh.hh"
-#include "function.hh"
+#include "vector_function.hh"
 
 namespace Amanzi {
 namespace Functions {
@@ -32,7 +32,7 @@ public:
   typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
 
   // A specification for domain and function.
-  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const Function> > Spec;
+  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const VectorFunction> > Spec;
   typedef std::vector<Teuchos::RCP<Spec> > SpecList;
 
   // constructor
