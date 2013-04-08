@@ -11,7 +11,7 @@ Authors:  Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include <vector>
 
-#include "function-factory.hh"
+#include "vector_function_factory.hh"
 #include "errors.hh"
 
 #include "Transport_BC_Factory.hh"
@@ -86,17 +86,17 @@ void TransportBCFactory::ProcessConcentrationSpec(
   }
 
   // Make the boundary pressure function.
-  Teuchos::RCP<Function> f;
-  FunctionFactory f_fact;
+  Teuchos::RCP<VectorFunction> f;
+  VectorFunctionFactory f_fact;
   try {
-    f = Teuchos::rcp(f_fact.Create(*f_list));
+    f = f_fact.Create(*f_list);
   } catch (Errors::Message& m) {
     msg << "error in sublist \"boundary pressure\": " << m.what();
     Exceptions::amanzi_throw(msg);
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
+  bc->Define(regions, f); // , Amanzi::BOUNDARY_FUNCTION_ACTION_NONE); // needs to be fixed
 }
 
 }  // namespace AmanziTransport

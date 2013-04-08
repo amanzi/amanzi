@@ -17,7 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "unique_mesh_function.hh"
+#include "domain-function.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -29,10 +29,10 @@ class TransportSourceFactory {
      : mesh_(mesh), params_(params) {};
   ~TransportSourceFactory() {};
   
-  Functions::UniqueMeshFunction* CreateSource();
+  Functions::DomainFunction* CreateSource();
 
  private:
-  void ProcessSourceSpec(Teuchos::ParameterList& list, const std::string& name, Functions::UniqueMeshFunction* src) const;
+  void ProcessSourceSpec(Teuchos::ParameterList& list, const std::string& name, Functions::DomainFunction* src) const;
   void ProcessStringActions(const std::string& name, int* method) const;
      
  private:
