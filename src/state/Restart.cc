@@ -83,7 +83,7 @@ void Amanzi::Restart::read_parameters(Teuchos::ParameterList& plist)
 }
 
 
-void Amanzi::Restart::dump_state(State& S, bool force)
+void Amanzi::Restart::dump_state(State_Old& S, bool force)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -234,7 +234,7 @@ void Amanzi::Restart::dump_state(State& S, bool force)
 }
 
 
-void Amanzi::Restart::read_state(State& S, std::string& filename)
+void Amanzi::Restart::read_state(State_Old& S, std::string& filename)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();

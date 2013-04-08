@@ -112,7 +112,7 @@ void Transport_PK::CheckInfluxBC() const
 
     for (int n = 0; n < bcs.size(); n++) {
       if (i == bcs_tcc_index[n]) {
-        for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        for (Amanzi::Functions::BoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
           int f = bc->first;
           influx_face[f] = 1;
         }
@@ -121,7 +121,7 @@ void Transport_PK::CheckInfluxBC() const
 
     for (int n = 0; n < bcs.size(); n++) {
       if (i == bcs_tcc_index[n]) {
-        for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        for (Amanzi::Functions::BoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
           int f = bc->first;
           if (darcy_flux[f] < 0 && influx_face[f] == 0) {
             char component[3];

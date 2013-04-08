@@ -17,8 +17,8 @@ Usage:
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "BoundaryFunction.hh"
-#include "DomainFunction.hh"
+#include "boundary_function.hh"
+#include "unique_mesh_function.hh"
 #include "mfd3d.hh"
 #include "BDF_FnBase.hh"
 
@@ -59,8 +59,8 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
                                 std::vector<double>& rainfall_factor);
   void ProcessBoundaryConditions(
-      BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
-      BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+				 Functions::BoundaryFunction* bc_pressure, Functions::BoundaryFunction* bc_head,
+				 Functions::BoundaryFunction* bc_flux, Functions::BoundaryFunction* bc_seepage,
       const Epetra_Vector& pressure_cells, 
       const Epetra_Vector& pressure_faces, const double atm_pressure,
       const std::vector<double>& rainfall_factor,
@@ -68,10 +68,10 @@ class Flow_PK : public BDF2::fnBase {
       std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
-  void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
+  void AddSourceTerms(Functions::UniqueMeshFunction* src_sink, Epetra_Vector& rhs);
 
   void ProcessShiftWaterTableList(
-      const Teuchos::ParameterList& list, BoundaryFunction* bc_head,
+				  const Teuchos::ParameterList& list, Functions::BoundaryFunction* bc_head,
       Teuchos::RCP<Epetra_Vector>& shift_water_table_);
   void CalculateShiftWaterTable(
       const std::string region, Teuchos::RCP<Epetra_Vector> shift_water_table_);
@@ -99,7 +99,7 @@ class Flow_PK : public BDF2::fnBase {
 
   // control members
   void ValidateBoundaryConditions(
-      BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
+				  Functions::BoundaryFunction *bc_pressure, Functions::BoundaryFunction *bc_head, Functions::BoundaryFunction *bc_flux) const;
   void WriteGMVfile(Teuchos::RCP<Flow_State> FS) const;
  
   void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }

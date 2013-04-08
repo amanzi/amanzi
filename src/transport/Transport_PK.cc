@@ -20,7 +20,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "errors.hh"
-#include "TabularFunction.hh"
+#include "tabular-function.hh"
 #include "GMVMesh.hh"
 
 #include "Explicit_TI_RK.hh"
@@ -138,10 +138,12 @@ int Transport_PK::InitPK()
 
   CheckInfluxBC();
 
-  // source term memory allocation
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  }
+  
+  // commented out to compile with new function code, need to fix
+  // // source term memory allocation
+  // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  //   Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  // }
  
   return 0;
 }
@@ -433,7 +435,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   // loop over exterior boundary sets
   for (int n = 0; n < bcs.size(); n++) {
     int i = bcs_tcc_index[n];
-    for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+    for (Amanzi::Functions::BoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
       int f = bc->first;
       int c2 = (*downwind_cell_)[f];
 
@@ -620,22 +622,24 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 * Computes source and sink terms and adds them to vector tcc.                                   
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
-                                         DomainFunction* src_sink, Epetra_MultiVector& tcc)
+                                         Functions::UniqueMeshFunction* src_sink, Epetra_MultiVector& tcc)
 {
   int num_components = tcc.NumVectors();
   for (int i = 0; i < num_components; i++) {
     std::string name(TS->get_component_name(i));
+    
+    // commented out to make compile with new function code, need to fix
+    
+    // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+    //   src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
+    // else
+    //   src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
 
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-      src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
-    else
-      src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
-
-    Amanzi::Iterator src;
-    for (src = src_sink->begin(); src != src_sink->end(); ++src) {
-      int c = src->first;
-      tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
-    }
+    // Amanzi::Iterator src;
+    // for (src = src_sink->begin(); src != src_sink->end(); ++src) {
+    //   int c = src->first;
+    //   tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
+    // }
   }
 }
 

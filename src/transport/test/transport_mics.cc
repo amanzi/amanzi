@@ -18,7 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Transport_PK.hh"
 
 
@@ -64,7 +64,7 @@ TEST(CONSTRUCTOR) {
 
   /* create a Transport state with two components */
   int num_components = 2;
-  State mpc_state(num_components, 0, mesh);
+  State_Old mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");

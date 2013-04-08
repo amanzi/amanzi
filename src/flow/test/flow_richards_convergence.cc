@@ -135,7 +135,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     // create Richards process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-    State* S = new State(state_list, mesh);
+    State_Old* S = new State_Old(state_list, mesh);
     S->set_time(0.0);
 
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));

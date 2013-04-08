@@ -56,20 +56,23 @@ void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
 void Richards_PK::UpdateSourceBoundaryData(
     double Tp, Epetra_Vector& pressure, Epetra_Vector& lambda)
 {
-  if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-      src_sink->ComputeDistribute(Tp, Kxy->Values()); 
-    else
-      src_sink->ComputeDistribute(Tp, NULL);
-  }
+  // commented out to make compile with new function code, need to fix
+
+  // if (src_sink != NULL) {
+  //   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+  //     src_sink->ComputeDistribute(Tp, Kxy->Values()); 
+  //   else
+  //     src_sink->ComputeDistribute(Tp, NULL);
+  // }
 
   bc_pressure->Compute(Tp);
   bc_flux->Compute(Tp);
   bc_seepage->Compute(Tp);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(Tp);
-  else
-    bc_head->ComputeShift(Tp, shift_water_table_->Values());
+  // commented out to make compile with new function code, need to fix  
+  // else
+  //   bc_head->ComputeShift(Tp, shift_water_table_->Values());
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,

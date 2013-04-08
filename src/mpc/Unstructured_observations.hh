@@ -5,7 +5,7 @@
 #include "Teuchos_Array.hpp"
 
 #include "ObservationData.hh"
-#include "State.hh"
+#include "State_Old.hh"
 #include "TimeStepManager.hh"
 
 namespace Amanzi {
@@ -43,7 +43,7 @@ class Unstructured_observations
   Unstructured_observations (Teuchos::ParameterList observations_plist_,
                              Amanzi::ObservationData& observation_data_);
 
-  void make_observations(State& state);
+  void make_observations(State_Old& state);
   bool observation_requested(double time, double last_time, const std::vector<double>& T,
                              const std::vector<std::vector<double> >& SPS);
   bool observation_requested(int cycle, const std::vector<int>& cyc, 

@@ -25,6 +25,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -50,7 +51,7 @@ file(GLOB hdf5_source "HDF5Mesh*.cc")
 list(APPEND output_source_files "${hdf5_source}")
 list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 
-file(GLOB hdf5mpi_source "HDF5MPIMesh*.cc")
+file(GLOB hdf5mpi_source "hdf5mpi_mesh*.cc")
 list(APPEND output_source_files "${hdf5mpi_source}")
 list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
 

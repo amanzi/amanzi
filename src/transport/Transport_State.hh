@@ -24,7 +24,7 @@ CopyMemory     // copy non-overlap vector to overlap vectors
 class Transport_State {
  public:
   Transport_State() {};
-  explicit Transport_State(State& S);
+  explicit Transport_State(State_Old& S);
   Transport_State(Transport_State& S, TransportCreateMode mode = CopyPointers);
   ~Transport_State() {};
 
@@ -81,7 +81,7 @@ class Transport_State {
   std::string get_component_name(const int component_number) { return S_->get_component_name(component_number); }
 
  private:
-  State* S_;  
+  State_Old* S_;  
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_;
   Teuchos::RCP<Epetra_Vector> water_saturation_;
   Teuchos::RCP<Epetra_Vector> prev_water_saturation_;

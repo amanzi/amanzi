@@ -44,7 +44,8 @@ enum Entity_kind
   NODE = 0,
   EDGE,
   FACE,
-  CELL
+  CELL,
+  BOUNDARY_FACE
 };
 
 // Check if Entity_kind is valid

@@ -20,7 +20,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "errors.hh"
 #include "Mesh.hh"
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Flow_State.hh"
 
 namespace Amanzi {
@@ -61,7 +61,7 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) : S_(NULL)
 /* *******************************************************************
 * Flow state is build from the pointer to state S.        
 ******************************************************************* */
-Flow_State::Flow_State(Teuchos::RCP<State> S) : S_(NULL)
+Flow_State::Flow_State(Teuchos::RCP<State_Old> S) : S_(NULL)
 {
   vertical_permeability_ = S->get_vertical_permeability();
   horizontal_permeability_ = S->get_horizontal_permeability();
@@ -91,7 +91,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S) : S_(NULL)
 /* *******************************************************************
 * Flow state is build from state S.        
 ******************************************************************* */
-Flow_State::Flow_State(State& S) : S_(NULL)
+Flow_State::Flow_State(State_Old& S) : S_(NULL)
 {
   vertical_permeability_ = S.get_vertical_permeability();
   horizontal_permeability_ = S.get_horizontal_permeability();

@@ -24,7 +24,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Flow_State.hh"
 #include "Richards_PK.hh"
 
@@ -65,7 +65,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  State* S = new State(state_list, mesh);
+  State_Old* S = new State_Old(state_list, mesh);
   RCP<Flow_State> FS = Teuchos::rcp(new AmanziFlow::Flow_State(*S));
 
   // create Richards problem

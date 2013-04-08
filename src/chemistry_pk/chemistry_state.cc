@@ -6,7 +6,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCPDecl.hpp"
 
-#include "State.hh"
+#include "State_Old.hh"
 
 //#include "cell_geometry.hh"
 
@@ -19,7 +19,7 @@
 namespace amanzi {
 namespace chemistry {
 
-Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
+Chemistry_State::Chemistry_State(Teuchos::RCP<State_Old> S)
     : simulation_state_(S) {
 
 }  // end Chemistry_State

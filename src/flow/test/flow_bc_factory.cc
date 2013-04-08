@@ -17,8 +17,8 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "BoundaryFunction.hh"
-#include "FunctionFactory.hh"
+#include "boundary_function.hh"
+#include "function-factory.hh"
 #include "errors.hh"
 
 #include "MeshFactory.hh"
@@ -85,13 +85,13 @@ TEST_FIXTURE(bits_and_pieces, pressure_empty)
   MeshFactory mesh_fact(&comm);
 
   Teuchos::RCP<Mesh> mesh(mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
-  BoundaryFunction bf(mesh);
+  Functions::BoundaryFunction bf(mesh);
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
   FlowBCFactory bc_fact(mesh, params);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<int> submodel(ncells);
-  BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
+  Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
 
   bc->Compute(0.0);
   CHECK(bc->end() == bc->begin());
@@ -112,7 +112,7 @@ TEST_FIXTURE(bits_and_pieces, pressure)
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<int> submodel(ncells);
-  BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
+  Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
 
   bc->Compute(0.0);
   CHECK_EQUAL(12, bc->size());
@@ -130,7 +130,7 @@ SUITE(pressure_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
@@ -141,7 +141,7 @@ SUITE(pressure_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_region)
@@ -154,10 +154,10 @@ SUITE(pressure_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
     foo.set("regions", 0.0);  // wrong -- type should be Array<string>
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_function)
@@ -171,14 +171,14 @@ SUITE(pressure_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
     foo.set("boundary pressure", 0);  // wrong - not a sublist
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
     foo.remove("boundary pressure");
     foo.sublist("boundary pressure").sublist("function-constant");  // incomplete
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 }
 
@@ -189,13 +189,13 @@ TEST_FIXTURE(bits_and_pieces, mass_flux_empty)
   MeshFactory mesh_fact(&comm);
   Teuchos::RCP<Mesh> mesh(mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
 
-  BoundaryFunction bf(mesh);
+  Functions::BoundaryFunction bf(mesh);
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
   FlowBCFactory bc_fact(mesh, params);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<int> submodel(ncells);
-  BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
+  Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
 
   bc->Compute(0.0);
   CHECK(bc->end() == bc->begin());
@@ -214,7 +214,7 @@ TEST_FIXTURE(bits_and_pieces, mass_flux)
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<int> submodel(ncells);
-  BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
+  Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel);
 
   bc->Compute(0.0);
   CHECK_EQUAL(12, bc->size());
@@ -229,7 +229,7 @@ SUITE(mass_flux_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
@@ -240,7 +240,7 @@ SUITE(mass_flux_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_region)
@@ -253,10 +253,10 @@ SUITE(mass_flux_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
     foo.set("regions", 0.0);  // wrong -- type should be Array<string>
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_function)
@@ -269,14 +269,14 @@ SUITE(mass_flux_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
     foo.set("boundary pressure", 0);  // wrong - not a sublist
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
 
     foo.remove("boundary pressure");
     foo.sublist("boundary pressure").sublist("function-constant");  // incomplete
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreatePressure(submodel), Errors::Message);
   }
 }
 
@@ -288,7 +288,7 @@ TEST_FIXTURE(bits_and_pieces, static_head_empty)
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<int> submodel(ncells);
-  BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, gravity, submodel);
+  Functions::BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, gravity, submodel);
 
   bc->Compute(0.0);
   CHECK(bc->end() == bc->begin());
@@ -308,15 +308,15 @@ TEST_FIXTURE(bits_and_pieces, static_head)
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   std::vector<int> submodel(ncells);
-  BoundaryFunction* bc0 = bc_fact.CreateStaticHead(0.0, 1.0, g2, submodel);
-  BoundaryFunction* bc1 = bc_fact.CreateStaticHead(1.0, 1.0, g2, submodel);
-  BoundaryFunction* bc2 = bc_fact.CreateStaticHead(0.0, 2.0, g1, submodel);
-  BoundaryFunction *bc3 = bc_fact.CreateStaticHead(0.0, 2.0, g2, submodel);
+  Functions::BoundaryFunction* bc0 = bc_fact.CreateStaticHead(0.0, 1.0, g2, submodel);
+  Functions::BoundaryFunction* bc1 = bc_fact.CreateStaticHead(1.0, 1.0, g2, submodel);
+  Functions::BoundaryFunction* bc2 = bc_fact.CreateStaticHead(0.0, 2.0, g1, submodel);
+  Functions::BoundaryFunction *bc3 = bc_fact.CreateStaticHead(0.0, 2.0, g2, submodel);
 
   bc0->Compute(0.0);
   CHECK_EQUAL(12, bc0->size());
 
-  Amanzi::Iterator i, j;
+  Amanzi::Functions::BoundaryFunction::Iterator i, j;
   bc1->Compute(0.0);
   for (i = bc0->begin(), j = bc1->begin(); i != bc0->end(); ++i, ++j) {
     CHECK_EQUAL(1+ i->second, j->second);
@@ -344,7 +344,7 @@ SUITE(static_head_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction*bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction*bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, spec_not_list)
@@ -356,7 +356,7 @@ SUITE(static_head_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_region)
@@ -370,10 +370,10 @@ SUITE(static_head_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
 
     foo.set("regions", 0.0);  // wrong -- type should be Array<string>
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
   }
 
   TEST_FIXTURE(bits_and_pieces, bad_function)
@@ -387,14 +387,14 @@ SUITE(static_head_bad_param) {
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     std::vector<int> submodel(ncells);
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
 
     foo.set("water table elevation", 0);  // wrong - not a sublist
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
 
     foo.remove("water table elevation");
     foo.sublist("water table elevation").sublist("function-constant");  // incomplete
-    CHECK_THROW(BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
+    CHECK_THROW(Functions::BoundaryFunction* bc = bc_fact.CreateStaticHead(1.0, 1.0, g, submodel), Errors::Message);
   }
 }
 

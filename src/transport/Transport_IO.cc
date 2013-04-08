@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "errors.hh"
-#include "TabularFunction.hh"
+#include "tabular-function.hh"
 #include "GMVMesh.hh"
 
 #include "Mesh.hh"
@@ -101,13 +101,15 @@ void Transport_PK::ProcessParameterList()
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(transport_list.sublist("source terms", true));
     TransportSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.CreateSource();
-
-    src_sink_distribution = src_sink->CollectActionsList();
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      Errors::Message msg;
-      msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
-      Exceptions::amanzi_throw(msg);  
-    }
+    
+    // commented out to make compile with new function code, need to fix
+    
+    // src_sink_distribution = src_sink->CollectActionsList();
+    // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    //   Errors::Message msg;
+    //   msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
+    //   Exceptions::amanzi_throw(msg);  
+    // }
   } else {
     src_sink = NULL;
     src_sink_distribution = 0;
@@ -153,11 +155,11 @@ void Transport_PK::CreateConcentration(Teuchos::ParameterList& bcs_list)
             forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
           }
 	  
-          Teuchos::RCP<Function> f;
-          f = Teuchos::rcp(new TabularFunction(times, values, forms));
+          Teuchos::RCP<TabularFunction> f;
+	  f = Teuchos::rcp(new TabularFunction(times, values, forms));
 	  
-          BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
-          bnd_fun->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
+	  Functions::BoundaryFunction* bnd_fun = new Functions::BoundaryFunction(mesh_);
+          bnd_fun->Define(regions, f); //, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);     // commented out to make compile with new function code, need to fix
           bcs.push_back(bnd_fun);
           bcs_tcc_index.push_back(i);
           break;

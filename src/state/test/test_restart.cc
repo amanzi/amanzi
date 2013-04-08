@@ -4,7 +4,7 @@
 #include "Teuchos_Array.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
-#include "State.hh"
+#include "State_Old.hh"
 #include "MeshFactory.hh"
 #include "Restart.hh"
 
@@ -170,7 +170,7 @@ SUITE(RESTART) {
     // create a state object with some data in it
     int number_of_components = 2;
     int number_of_minerals = 2;
-    State S0(number_of_components, number_of_minerals, Mesh);
+    State_Old S0(number_of_components, number_of_minerals, Mesh);
 
     S0.set_time(1.02);
 
@@ -240,7 +240,7 @@ SUITE(RESTART) {
 
     // now read the file into a new state object
 
-    State S1(number_of_components, number_of_minerals, Mesh);
+    State_Old S1(number_of_components, number_of_minerals, Mesh);
 
     std::string filename = "restart_dump0004.h5";
 

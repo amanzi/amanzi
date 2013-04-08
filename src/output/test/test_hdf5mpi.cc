@@ -1,5 +1,5 @@
 #include "UnitTest++.h"
-#include "../HDF5MPIMesh.hh"
+#include "../hdf5mpi_mesh.hh"
 #include "MeshFactory.hh"
 
 TEST(HDF5_MPI) {
@@ -74,17 +74,17 @@ TEST(HDF5_MPI) {
   // Write a file which contains both mesh and data.
   Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*comm);
   viz_output->setTrackXdmf(true);
-  viz_output->createMeshFile(*(Mesh.get()), hdf5_meshfile);
+  viz_output->createMeshFile(Teuchos::rcp((Mesh.get())), hdf5_meshfile);
   viz_output->createDataFile(hdf5_datafile1);
-  viz_output->writeMeshRegion(*(Mesh.get()), *mesh_region1, region_name1);
-  viz_output->writeMeshRegion(*(Mesh.get()), *mesh_region2, region_name2);
+  //viz_output->writeMeshRegion(*(Mesh.get()), *mesh_region1, region_name1);
+  //viz_output->writeMeshRegion(*(Mesh.get()), *mesh_region2, region_name2);
   
   // Create restart file
   Amanzi::HDF5_MPI *restart_output = new Amanzi::HDF5_MPI(*comm);
   restart_output->setTrackXdmf(false);
   restart_output->createDataFile(hdf5_datafile2);
   // You can add mesh data to restart file, but is not necessary for valid restart
-  restart_output->createMeshFile(*(Mesh.get()), hdf5_datafile2);
+  restart_output->createMeshFile(Teuchos::rcp((Mesh.get())), hdf5_datafile2);
 
   // write static data to viz file
   viz_output->writeDataReal(*cell_quantity,"cell_quantity_static");
@@ -102,7 +102,7 @@ TEST(HDF5_MPI) {
     viz_output->writeCellDataReal(*cell_quantity, "cell_quantity");
     viz_output->writeCellDataReal(*fake_pressure, "pressure");
     viz_output->writeNodeDataReal(*node_quantity, "node_quantity");
-    viz_output->addStaticViz("cell_quantity_static", "CELL");
+    //viz_output->addStaticViz("cell_quantity_static", "CELL");
 
     // advance time and values
     time += 2.0;

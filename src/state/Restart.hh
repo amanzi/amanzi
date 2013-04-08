@@ -4,8 +4,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_Comm.h"
-#include "State.hh"
-#include "HDF5MPIMesh.hh"
+#include "State_Old.hh"
+#include "hdf5mpi_mesh.hh"
 
 namespace Amanzi {
 
@@ -17,8 +17,8 @@ namespace Amanzi {
     Restart(Epetra_MpiComm *comm); // this object will not create any output 
     ~Restart();
    
-    void dump_state (State& S, bool force = false);
-    void read_state (State& S, std::string& filename);
+    void dump_state (State_Old& S, bool force = false);
+    void read_state (State_Old& S, std::string& filename);
     void create_files ();
     void read_parameters(Teuchos::ParameterList& plist);
     bool dump_requested(int cycle);

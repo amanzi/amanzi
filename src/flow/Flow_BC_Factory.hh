@@ -99,7 +99,7 @@ The gravitational acceleration is assumed to be directed in the negative z-direc
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "BoundaryFunction.hh"
+#include "boundary_function.hh"
 
 
 namespace Amanzi {
@@ -112,34 +112,34 @@ class FlowBCFactory {
      : mesh_(mesh), params_(params) {}
   ~FlowBCFactory() {};
   
-  BoundaryFunction* CreatePressure(std::vector<int>& submodel) const;
-  BoundaryFunction* CreateMassFlux(std::vector<int>& submodel) const;
-  BoundaryFunction* CreateStaticHead(
+  Functions::BoundaryFunction* CreatePressure(std::vector<int>& submodel) const;
+  Functions::BoundaryFunction* CreateMassFlux(std::vector<int>& submodel) const;
+  Functions::BoundaryFunction* CreateStaticHead(
       double p0, double rho, const AmanziGeometry::Point& gravity, std::vector<int>& submodel) const;
-  BoundaryFunction* CreateSeepageFace(std::vector<int>& submodel) const;
+  Functions::BoundaryFunction* CreateSeepageFace(std::vector<int>& submodel) const;
 
  private:
   void ProcessPressureList(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
   void ProcessPressureSpec(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
 
   void ProcessMassFluxList(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
   void ProcessMassFluxSpec(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
 
   void ProcessSeepageFaceList(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
   void ProcessSeepageFaceSpec(
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
 
   void ProcessStaticHeadList(
       double p0, double rho, const AmanziGeometry::Point& gravity, 
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
   void ProcessStaticHeadSpec(
       double p0, double rho, const AmanziGeometry::Point& gravity,
-      Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const;
+      Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::BoundaryFunction* bc) const;
      
   void PopulateSubmodelFlag(
       const std::vector<std::string>& regions, int flag, std::vector<int>& submodel) const;

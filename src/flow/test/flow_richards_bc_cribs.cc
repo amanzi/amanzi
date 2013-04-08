@@ -25,7 +25,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Flow_State.hh"
 #include "Richards_PK.hh"
 
@@ -60,7 +60,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
-  State S(state_list, mesh);
+  State_Old S(state_list, mesh);
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
 
   // create Richards process kernel

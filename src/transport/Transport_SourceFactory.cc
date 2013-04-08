@@ -12,7 +12,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <string>
 #include <vector>
 
-#include "FunctionFactory.hh"
+#include "function-factory.hh"
 #include "errors.hh"
 
 #include "Transport_SourceFactory.hh"
@@ -54,7 +54,7 @@ DomainFunction* TransportSourceFactory::CreateSource()
 * Process source, step 2.
 ****************************************************************** */
 void TransportSourceFactory::ProcessSourceSpec(
-    Teuchos::ParameterList& list, const std::string& name, DomainFunction* src) const
+    Teuchos::ParameterList& list, const std::string& name, UniqueMeshFunction* src) const
 {
   Errors::Message m;
   std::vector<std::string> regions;

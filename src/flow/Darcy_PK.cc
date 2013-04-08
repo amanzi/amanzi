@@ -194,8 +194,9 @@ void Darcy_PK::InitPK()
   bc_seepage->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  else
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+  // commented out to make compile with new function code, need to fix
+  // else
+  //  bc_head->ComputeShift(time, shift_water_table_->Values());
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,
@@ -214,10 +215,12 @@ void Darcy_PK::InitPK()
   Krel_cells->PutScalar(1.0);
   Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
 
+  
+  // commented out to make compile with new function code, need to fix
   // Allocate memory for wells
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  }
+  // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  //   Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  // }
 
   flow_status_ = FLOW_STATUS_INIT;
 };
@@ -350,18 +353,20 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     std::printf("***********************************************************\n");
   }
 
-  // Well modeling (one-time call)
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell(K, *Kxy);
-  }
+  // commented out to make compile with new function code, need to fix
 
-  // Initialize source
-  if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-      src_sink->ComputeDistribute(T0, Kxy->Values()); 
-    else
-      src_sink->ComputeDistribute(T0, NULL);
-  }
+  // // Well modeling (one-time call)
+  // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  //   CalculatePermeabilityFactorInWell(K, *Kxy);
+  // }
+
+  // // Initialize source
+  // if (src_sink != NULL) {
+  //   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+  //     src_sink->ComputeDistribute(T0, Kxy->Values()); 
+  //   else
+  //     src_sink->ComputeDistribute(T0, NULL);
+  // }
 
   // make initial guess consistent with boundary conditions
   if (ti_specs.initialize_with_darcy) {
@@ -404,15 +409,16 @@ int Darcy_PK::Advance(double dT_MPC)
   bc_seepage->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  else
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+  // // commented out to make compile with new function code, need to fix 
+  // else
+  //   bc_head->ComputeShift(time, shift_water_table_->Values());
 
-  if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-        src_sink->ComputeDistribute(time, Kxy->Values()); 
-    else
-        src_sink->ComputeDistribute(time, NULL);
-  }
+  // if (src_sink != NULL) {
+  //   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+  //       src_sink->ComputeDistribute(time, Kxy->Values()); 
+  //   else
+  //       src_sink->ComputeDistribute(time, NULL);
+  // }
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage, 

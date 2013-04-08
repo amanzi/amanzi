@@ -11,7 +11,7 @@ Authors:  Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include <vector>
 
-#include "FunctionFactory.hh"
+#include "function-factory.hh"
 #include "errors.hh"
 
 #include "Transport_BC_Factory.hh"
@@ -24,10 +24,10 @@ namespace AmanziTransport {
 * Process Dirichet BC (concentration), step 1.
 ****************************************************************** */
 void TransportBCFactory::CreateConcentration(
-    std::vector<BoundaryFunction*>& bcs, std::vector<std::string> bcs_tcc_name) const
+    std::vector<Functions::BoundaryFunction*>& bcs, std::vector<std::string> bcs_tcc_name) const
 {
   Errors::Message msg;
-  BoundaryFunction* bc;
+  Functions::BoundaryFunction* bc;
 
   if (list_->isSublist("concentration")) {
     Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("concentration");
@@ -60,7 +60,7 @@ void TransportBCFactory::CreateConcentration(
 * Process Dirichet BC (concentration), step 3.
 ****************************************************************** */
 void TransportBCFactory::ProcessConcentrationSpec(
-    Teuchos::ParameterList& spec, BoundaryFunction* bc) const
+    Teuchos::ParameterList& spec, Functions::BoundaryFunction* bc) const
 {
   Errors::Message msg;
   std::vector<std::string> regions;

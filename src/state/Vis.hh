@@ -7,7 +7,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Comm.h"
 #include "Mesh.hh"
-#include "HDF5MPIMesh.hh"
+#include "hdf5mpi_mesh.hh"
 #include "TimeStepManager.hh"
 
 namespace Amanzi {

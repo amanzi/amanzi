@@ -18,7 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Point.hh"
 #include "errors.hh"
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Transport_State.hh"
 
 namespace Amanzi {
@@ -27,7 +27,7 @@ namespace AmanziTransport {
 /* *******************************************************************
 * Create Flow state from a state.                     
 ******************************************************************* */
-Transport_State::Transport_State(State& S)
+Transport_State::Transport_State(State_Old& S)
 {
   total_component_concentration_ = S.get_total_component_concentration();
   porosity_ = S.get_porosity();

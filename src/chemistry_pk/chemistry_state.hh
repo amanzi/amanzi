@@ -2,7 +2,7 @@
 #ifndef AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_
 #define AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Mesh.hh"
 
 #include "Teuchos_RCP.hpp"
@@ -22,7 +22,7 @@ using Amanzi::AmanziMesh::Mesh;
 
 class Chemistry_State {
  public:
-  explicit Chemistry_State(Teuchos::RCP<State> S);
+  explicit Chemistry_State(Teuchos::RCP<State_Old> S);
 
   virtual ~Chemistry_State();
 
@@ -130,7 +130,7 @@ class Chemistry_State {
   }
 
  private:
-  Teuchos::RCP<State> simulation_state_;
+  Teuchos::RCP<State_Old> simulation_state_;
 
 };
 

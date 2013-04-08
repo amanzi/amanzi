@@ -19,7 +19,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshAudit.hh"
 #include "GMVMesh.hh"
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Transport_PK.hh"
 
 
@@ -67,7 +67,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   
   /* create a MPC state with one component */
   int num_components = 1;
-  State mpc_state(num_components, 0, mesh);
+  State_Old mpc_state(num_components, 0, mesh);
  
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));

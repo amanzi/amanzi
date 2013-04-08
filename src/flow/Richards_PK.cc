@@ -24,7 +24,6 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 
 #include "dbc.hh"
 #include "exceptions.hh"
-#include "BoundaryFunction.hh"
 
 #include "Mesh.hh"
 #include "Point.hh"
@@ -231,10 +230,12 @@ void Richards_PK::InitPK()
     CalculateKVectorUnit(gravity_, Kgravity_unit);
   }
 
-  // Allocate memory for wells
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  }
+  // commented out to make compile with new function code, need to fix
+
+  // // Allocate memory for wells
+  // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  //   Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  // }
 
   // injected water mass
   mass_bc = 0.0;
@@ -451,10 +452,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     }
   }
 
-  // Well modeling
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    CalculatePermeabilityFactorInWell(K, *Kxy);
-  }
+  // commented out to make compile with new function code, need to fix
+
+  // // Well modeling
+  // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  //   CalculatePermeabilityFactorInWell(K, *Kxy);
+  // }
 
   // linear solver control options
   max_itrs_linear = ti_specs.ls_specs.max_itrs;

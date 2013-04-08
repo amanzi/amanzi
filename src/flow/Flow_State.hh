@@ -19,7 +19,7 @@ Usage:
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "State.hh"
+#include "State_Old.hh"
 #include "Flow_constants.hh"
 
 
@@ -29,8 +29,8 @@ namespace AmanziFlow {
 class Flow_State {
  public:
   explicit Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
-  explicit Flow_State(Teuchos::RCP<State> S);
-  explicit Flow_State(State& S);
+  explicit Flow_State(Teuchos::RCP<State_Old> S);
+  explicit Flow_State(State_Old& S);
   Flow_State(Flow_State& S, int mode = AmanziFlow::FLOW_STATE_VIEW);
   ~Flow_State() {};
 
@@ -65,7 +65,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> specific_yield() { return specific_yield_; }
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
 
-  State* state() { return S_; }
+  State_Old* state() { return S_; }
 
   double ref_fluid_density() { return *fluid_density_; }  // references
   double ref_fluid_viscosity() { return *fluid_viscosity_; }
@@ -100,7 +100,7 @@ class Flow_State {
   void set_specific_storage(double ss);
 
  private:
-  State* S_;  
+  State_Old* S_;  
 
   Teuchos::RCP<AmanziGeometry::Point> gravity_;
 

@@ -15,7 +15,7 @@
 #include "InputParserIS.hh"
 #include "MeshFactory.hh"
 #include "GenerationSpec.hh"
-#include "State.hh"
+#include "State_Old.hh"
 
 #include "chemistry_pk.hh"
 #include "chemistry_state.hh"
@@ -58,7 +58,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Epetra_SerialComm* comm_;
     ag::GeometricModelPtr gm_;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
-    Teuchos::RCP<State> state_;
+    Teuchos::RCP<State_Old> state_;
   };  // end class SpeciationTest
 
   ChemistryPKTest::ChemistryPKTest() {
@@ -100,7 +100,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
-    state_ = Teuchos::rcp(new State(state_parameter_list, mesh_));
+    state_ = Teuchos::rcp(new State_Old(state_parameter_list, mesh_));
  
     // create the chemistry state object from the state
     chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(state_));

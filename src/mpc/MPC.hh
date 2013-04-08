@@ -6,7 +6,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
-#include "State.hh"
+#include "State_Old.hh"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"
 #include "Transport_State.hh"
@@ -39,7 +39,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   double time_step_limiter (double T, double dT, double T_end);
 
   // states
-  Teuchos::RCP<State> S;
+  Teuchos::RCP<State_Old> S;
   Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
   Teuchos::RCP<AmanziTransport::Transport_State> TS; 
   Teuchos::RCP<AmanziFlow::Flow_State> FS;

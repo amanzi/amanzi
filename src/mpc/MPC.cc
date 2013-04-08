@@ -7,7 +7,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 #include "MPC.hh"
-#include "State.hh"
+#include "State_Old.hh"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"
 #include "Flow_State.hh"
@@ -93,7 +93,7 @@ void MPC::mpc_init() {
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
-    S = Teuchos::rcp(new State(state_parameter_list, mesh_maps));
+    S = Teuchos::rcp(new State_Old(state_parameter_list, mesh_maps));
   }
 
   //

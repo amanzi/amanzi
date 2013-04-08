@@ -3,7 +3,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
-#include "State.hh"
+#include "State_Old.hh"
 #include "MeshFactory.hh"
 #include "Vis.hh"
 
@@ -99,7 +99,7 @@ SUITE(VISUALIZATION) {
 
     V.create_files(*Mesh);
     
-    State S(1, 2, Mesh);
+    State_Old S(1, 2, Mesh);
     std::vector<std::string> names(2);
     names.at(0) = "Aoeui";
     names.at(1) = "Snthd";

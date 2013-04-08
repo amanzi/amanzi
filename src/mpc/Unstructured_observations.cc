@@ -76,7 +76,7 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
 }
 
 
-void Unstructured_observations::make_observations(State& state)
+void Unstructured_observations::make_observations(State_Old& state)
 {
   // loop over all observables
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {

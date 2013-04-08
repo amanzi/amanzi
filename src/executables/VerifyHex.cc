@@ -36,7 +36,7 @@ namespace po = boost::program_options;
 #include "MeshAudit.hh"
 #include "MeshException.hh"
 
-#include "HDF5MPIMesh.hh"
+#include "hdf5mpi_mesh.hh"
 
 // -------------------------------------------------------------
 // grab_filename
@@ -77,7 +77,7 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& fi
 {
   Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*mesh.get_comm());
   viz_output->setTrackXdmf(true);
-  viz_output->createMeshFile(mesh, filenameout);
+  viz_output->createMeshFile(Teuchos::rcp(&mesh), filenameout);
   viz_output->createDataFile(filenameout);
 
   const Epetra_Map& cmap(mesh.cell_epetra_map(false));

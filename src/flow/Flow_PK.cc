@@ -98,8 +98,8 @@ void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
 * should be always owned. 
 ****************************************************************** */
 void Flow_PK::ProcessBoundaryConditions(
-    BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
-    BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+    Functions::BoundaryFunction* bc_pressure, Functions::BoundaryFunction* bc_head,
+    Functions::BoundaryFunction* bc_flux, Functions::BoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_cells, 
     const Epetra_Vector& pressure_faces, const double atm_pressure,
     const std::vector<double>& rainfall_factor,
@@ -113,7 +113,7 @@ void Flow_PK::ProcessBoundaryConditions(
     bc_values[n] = zero;
   }
 
-  Amanzi::Iterator bc;
+  Functions::BoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = FLOW_BC_FACE_PRESSURE;
@@ -271,13 +271,13 @@ void Flow_PK::CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Ten
 * Add source and sink terms. We use a simplified algorithms than for
 * boundary conditions.                                          
 ****************************************************************** */
-void Flow_PK::AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
+void Flow_PK::AddSourceTerms(Functions::UniqueMeshFunction* src_sink, Epetra_Vector& rhs)
 {
-  Amanzi::Iterator src;
-  for (src = src_sink->begin(); src != src_sink->end(); ++src) {
-    int c = src->first;
-    rhs[c] += mesh_->cell_volume(c) * src->second;
-  }
+  // Functions::UniqueMeshFunction::Iterator src;
+  // for (src = src_sink->begin(); src != src_sink->end(); ++src) {
+  //   int c = src->first;
+  //   rhs[c] += mesh_->cell_volume(c) * src->second;
+  // }
 }
 
 

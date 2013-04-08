@@ -101,7 +101,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   // BOUNDARY CONDITIONS for ADVECTION
   for (int n = 0; n < bcs.size(); n++) {
     if (current_component_ == bcs_tcc_index[n]) {
-      for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+      for (Amanzi::Functions::BoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
         f = bc->first;
         c2 = (*downwind_cell_)[f];
 

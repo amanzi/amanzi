@@ -27,7 +27,7 @@ namespace AmanziFlow {
 * Process parameter for special treatment of static head b.c.                                           
 ****************************************************************** */
 void Flow_PK::ProcessShiftWaterTableList(
-    const Teuchos::ParameterList& list, BoundaryFunction* bc_head,
+    const Teuchos::ParameterList& list, Functions::BoundaryFunction* bc_head,
     Teuchos::RCP<Epetra_Vector>& shift_water_table_)
 {
   std::string name("relative position of water table");
@@ -38,19 +38,21 @@ void Flow_PK::ProcessShiftWaterTableList(
     Exceptions::amanzi_throw(msg);
   }
 
-  const std::vector<Amanzi::Action>& actions = bc_head->actions();
-  int nactions = actions.size();
-  if (nactions > 0) { 
-    const Epetra_BlockMap& fmap = mesh_->face_map(false);
-    shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
-  }
+  // commented this out to make things compile with new boundary function
 
-  for (int i = 0; i < nactions; i++) {
-    int method = actions[i].second;
+  // const std::vector<Amanzi::Action>& actions = bc_head->actions();
+  // int nactions = actions.size();
+  // if (nactions > 0) { 
+  //   const Epetra_BlockMap& fmap = mesh_->face_map(false);
+  //   shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  // }
 
-    if (method == Amanzi::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
-        CalculateShiftWaterTable(actions[i].first, shift_water_table_);
-  }
+  // for (int i = 0; i < nactions; i++) {
+  //   int method = actions[i].second;
+
+  //   if (method == Amanzi::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
+  //       CalculateShiftWaterTable(actions[i].first, shift_water_table_);
+  // }
 }
 
 

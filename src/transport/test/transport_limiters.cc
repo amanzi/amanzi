@@ -18,7 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
-#include "State.hh"
+#include "State_Old.hh"
 #include "Transport_PK.hh"
 
 
@@ -59,7 +59,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
 
   // create a Transport state with two components
   int num_components = 1;
-  State mpc_state(num_components, 0, mesh);
+  State_Old mpc_state(num_components, 0, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   Point u(1.0, 0.0, 0.0);
