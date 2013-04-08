@@ -1,7 +1,8 @@
 #include "UnitTest++.h"
 #include "../hdf5mpi_mesh.hh"
-#include "MeshFactory.hh"
-
+#if HAVE_STK_MESH
+#include "Mesh_STK.hh"
+#endif
 TEST(HDF5_MPI) {
   
 #ifdef HAVE_MPI
@@ -17,13 +18,8 @@ TEST(HDF5_MPI) {
   //Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
   //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1,
   //                                        1, comm));
- Amanzi::AmanziMesh::FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::STKMESH);
-
-  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 16, 1, 1);
+  
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE, 
                                                 Amanzi::AmanziMesh::OWNED);
@@ -57,37 +53,17 @@ TEST(HDF5_MPI) {
   fake_pressure = Teuchos::rcp(new Epetra_Vector(Mesh->cell_map(false)));
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
 
-  // Setup up mesh region
-  Epetra_Map regMap (6, 0, *comm);
-  double region_cells[] = {0,1,2,4,5,6};
-  double region_cells2[] = {6,10,11,12,13,14};
-  int region_index_list[] = {0,1,2,3,4,5};
-  Teuchos::RCP<Epetra_Vector> mesh_region1, mesh_region2;
-  mesh_region1 = Teuchos::rcp(new Epetra_Vector(regMap,false));
-  mesh_region1->ReplaceGlobalValues(6, region_cells, region_index_list);
-  std::string region_name1, region_name2;
-  region_name1 = "Region1";
-  mesh_region2 = Teuchos::rcp(new Epetra_Vector(regMap,false));
-  mesh_region2->ReplaceGlobalValues(6, region_cells2, region_index_list);
-  region_name2 = "Region2";
-
   // Write a file which contains both mesh and data.
   Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*comm);
   viz_output->setTrackXdmf(true);
-  viz_output->createMeshFile(Teuchos::rcp((Mesh.get())), hdf5_meshfile);
+  viz_output->createMeshFile(Mesh, hdf5_meshfile);
   viz_output->createDataFile(hdf5_datafile1);
-  //viz_output->writeMeshRegion(*(Mesh.get()), *mesh_region1, region_name1);
-  //viz_output->writeMeshRegion(*(Mesh.get()), *mesh_region2, region_name2);
   
-  // Create restart file
   Amanzi::HDF5_MPI *restart_output = new Amanzi::HDF5_MPI(*comm);
   restart_output->setTrackXdmf(false);
   restart_output->createDataFile(hdf5_datafile2);
   // You can add mesh data to restart file, but is not necessary for valid restart
-  restart_output->createMeshFile(Teuchos::rcp((Mesh.get())), hdf5_datafile2);
-
-  // write static data to viz file
-  viz_output->writeDataReal(*cell_quantity,"cell_quantity_static");
+  restart_output->createMeshFile(Mesh, hdf5_datafile2);
 
   double time = 0.0;
   int cycle = 0;
@@ -102,7 +78,6 @@ TEST(HDF5_MPI) {
     viz_output->writeCellDataReal(*cell_quantity, "cell_quantity");
     viz_output->writeCellDataReal(*fake_pressure, "pressure");
     viz_output->writeNodeDataReal(*node_quantity, "node_quantity");
-    //viz_output->addStaticViz("cell_quantity_static", "CELL");
 
     // advance time and values
     time += 2.0;
@@ -130,6 +105,7 @@ TEST(HDF5_MPI) {
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
   
   // write out string dataset
+  /*
   int num_wstrs = 5;
   char **strArray;
   strArray = (char**) malloc(5*sizeof(char*));
@@ -141,7 +117,9 @@ TEST(HDF5_MPI) {
   sprintf(strArray[2], "Uranium");
   sprintf(strArray[3], "Unobtainium");
   sprintf(strArray[4], "My Favorite Mineral in the Whole World");
+    
   restart_output->writeDataString(strArray,num_wstrs,"string_dataset");
+  */
   
   delete viz_output;
   delete restart_output;
@@ -169,6 +147,7 @@ TEST(HDF5_MPI) {
   cout << "E>> cell map:" << endl << Mesh->cell_map(false);
 
   // reading back string dataset
+  /*
   char **strBack;
   int num_rstrs = 0;
   restart_input->readDataString(&strBack, &num_rstrs, "string_dataset");
@@ -176,6 +155,7 @@ TEST(HDF5_MPI) {
   for (int i=0 ; i<num_rstrs; i++) {
     cout << "    " << strBack[i] << endl;
   }
+  */
   
   delete restart_input;
 
