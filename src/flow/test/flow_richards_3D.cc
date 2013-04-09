@@ -47,7 +47,7 @@ TEST(FLOW_3D_RICHARDS) {
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_3D.xml";
   // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
-  
+
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
 
@@ -65,6 +65,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+  FS->Initialize();
   FS->set_permeability(0.1, 2.0, "Material 1");
   FS->set_permeability(0.5, 0.5, "Material 2");
   FS->set_porosity(0.2);

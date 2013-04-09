@@ -65,6 +65,7 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+  FS->Initialize();
   FS->set_permeability(0.1, 2.0, "Computational domain");
   FS->set_porosity(0.2);
   FS->set_specific_storage(1e-1);
