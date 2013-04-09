@@ -13,8 +13,9 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
 #include <vector>
 #include <string>
 
+#include "function-factory.hh"
 #include "vector_function.hh"
-#include "vector_function_factory.hh"
+#include "composite_function.hh"
 #include "errors.hh"
 
 #include "Flow_BC_Factory.hh"
@@ -170,18 +171,21 @@ void FlowBCFactory::ProcessPressureSpec(
   }
 
   // Make the boundary pressure function.
-  Teuchos::RCP<Amanzi::VectorFunction> f;
-  Amanzi::VectorFunctionFactory f_fact;
+  Teuchos::RCP<Function> f;
+  FunctionFactory f_fact;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(f_fact.Create(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"boundary pressure\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
 
+  // Flow_BCs are scalar-valued.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_NONE);
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 }
 
 
@@ -244,18 +248,21 @@ void FlowBCFactory::ProcessMassFluxSpec(
   }
 
   // Make the outward mass flux function.
-  Teuchos::RCP<Amanzi::VectorFunction> f;
-  Amanzi::VectorFunctionFactory f_fact;
+  Teuchos::RCP<Function> f;
+  FunctionFactory f_fact;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(f_fact.Create(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
 
+  // Flow_BCs are scalar-valued.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 
   // Populate submodel flags.
   if (list.get<bool>("rainfall", false))
@@ -265,8 +272,8 @@ void FlowBCFactory::ProcessMassFluxSpec(
 
 /* ******************************************************************
 * Process Dirichet BC (static head), step 2.
-* Iterate through the BC specification sublists with typical names 
-* "BC 0", "BC 1", etc. All are expected to be sublists of identical 
+* Iterate through the BC specification sublists with typical names
+* "BC 0", "BC 1", etc. All are expected to be sublists of identical
 * structure.
 ****************************************************************** */
 void FlowBCFactory::ProcessStaticHeadList(
@@ -335,10 +342,10 @@ void FlowBCFactory::ProcessStaticHeadSpec(
   static_head_list.set("space dimension", dim);
   static_head_list.set("water table elevation", *water_table_list);
 
-  Teuchos::RCP<Amanzi::VectorFunction> f;  // Make the static head function.
-  Amanzi::VectorFunctionFactory f_fact;
+  Teuchos::RCP<Function> f;
+  FunctionFactory f_fact;
   try {
-    f = f_fact.Create(f_list);
+    f = Teuchos::rcp(f_fact.Create(f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"water table elevation\": " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -351,9 +358,12 @@ void FlowBCFactory::ProcessStaticHeadSpec(
   //   method = Amanzi::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE;
   // }
 
+  // Flow_BCs are scalar-valued.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, method);
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 
 }
 
@@ -416,18 +426,21 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
   }
 
   // Make the seepage face function.
-  Teuchos::RCP<Amanzi::VectorFunction> f;
-  Amanzi::VectorFunctionFactory f_fact;
+  Teuchos::RCP<Function> f;
+  FunctionFactory f_fact;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(f_fact.Create(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
 
+  // Flow_BCs are scalar-valued.
+  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
-  bc->Define(regions, f);
+  bc->Define(regions, func);
 
   // Populate submodel flags.
   if (list.get<bool>("rainfall", false))
