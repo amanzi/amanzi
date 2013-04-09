@@ -27,7 +27,7 @@ public:
   explicit Flow_State(State& S);
   Flow_State(Flow_State& other, PKStateConstructMode mode);
 
-  void Initialize();
+  virtual void Initialize();
 
   // access methods
   Teuchos::RCP<AmanziGeometry::Point> gravity();

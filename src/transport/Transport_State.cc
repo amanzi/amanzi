@@ -76,12 +76,16 @@ void Transport_State::Construct_() {
 }
 
 void Transport_State::Initialize() {
+  if (standalone_mode_) S_->Setup();
+
   S_->GetField("total_component_concentration",name_)->set_initialized();
   S_->GetField("fluid_density",name_)->set_initialized();
   S_->GetField("porosity",name_)->set_initialized();
   S_->GetField("water_saturation",name_)->set_initialized();
   S_->GetField("prev_water_saturation",name_)->set_initialized();
   S_->GetField("darcy_flux",name_)->set_initialized();
+
+  if (standalone_mode_) S_->Initialize();
 }
 
 

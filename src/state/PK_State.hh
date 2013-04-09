@@ -66,6 +66,8 @@ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::string name_;
   bool ghosted_;
+  bool standalone_mode_;
+
 };
 
 

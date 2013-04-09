@@ -5,18 +5,18 @@
 namespace Amanzi {
 
 PK_State::PK_State(std::string name, Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-    name_(name), mesh_(mesh), ghosted_(false) {
+    name_(name), mesh_(mesh), ghosted_(false), standalone_mode_(true) {
   S_ = Teuchos::rcp(new State());
   S_->RegisterDomainMesh(mesh);
 }
 
 PK_State::PK_State(std::string name, Teuchos::RCP<State> S) :
-    name_(name), S_(S), ghosted_(false) {
+    name_(name), S_(S), ghosted_(false), standalone_mode_(false) {
   mesh_ = S_->GetMesh();
 }
 
 PK_State::PK_State(std::string name, State& S) :
-    name_(name), ghosted_(false) {
+    name_(name), ghosted_(false), standalone_mode_(false) {
   S_ = Teuchos::rcpFromRef(S);
   mesh_ = S_->GetMesh();
 }
@@ -24,7 +24,8 @@ PK_State::PK_State(std::string name, State& S) :
 PK_State::PK_State(PK_State& other, StateConstructMode mode) :
     name_(other.name_),
     mesh_(other.mesh_),
-    ghosted_(other.ghosted_) {
+    ghosted_(other.ghosted_),
+    standalone_mode_(other.standalone_mode_) {
   S_ = Teuchos::rcp(new State(*other.S_, mode));
 }
 
