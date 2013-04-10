@@ -3430,7 +3430,7 @@ void Mesh_MSTK::init_set_info() {
       mset = MESH_MSetByName(mesh,internal_name);
    
       if (!mset) {
-	Errors::Message mesg("Missing labeled set or error in input");
+	Errors::Message mesg("Missing labeled set \"" + label + "\" or error in input");
 	amanzi_throw(mesg);
       }
 
