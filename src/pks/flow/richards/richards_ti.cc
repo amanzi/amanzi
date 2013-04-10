@@ -201,6 +201,10 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
           << (*Pu->data())("face",fnums1[1]) << std::endl;
   }
 #endif
+
+  if (precon_wc_) {
+    PreconWC_(u, Pu);
+  }
 };
 
 
@@ -431,6 +435,53 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   return enorm_val;
 };
 
+
+void Richards::PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  // get old p, sat
+  const Epetra_MultiVector& pres_prev =
+    S_next_->GetFieldData("pressure")->ViewComponent("cell",false);
+  const Epetra_MultiVector& sat_prev =
+    S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+
+  // calculate ds/dt
+  S_next_->GetFieldEvaluator("saturation_liquid")
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+
+  const Epetra_MultiVector& dsdp =
+    S_next_->GetFieldData("dsaturation_liquid_dpressure")->ViewComponent("cell",false);
+  Epetra_MultiVector& dp = Pu->data()->ViewComponent("cell",false);
+
+  Epetra_MultiVector ds(dp);
+  ds->Multiply(1., dp, dsdp, 0.);
+
+  ds->Update(1., sat_prev, -1.); // ds <-- s - ds
+
+  AmanziMesh::Entity_ID ncells = ds.MyLength();
+  for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+
+    double p_prev = pres_prev[0][c];
+    double p_standard = p_prev - dp[0][c];
+
+    // cannot use if saturated, likely not useful if decreasing in saturation
+    if (p_standard > p_prev && p_prev < patm) {
+      double p_wc(0.);
+      if (ds[0][c] < patm) {
+        double pc = wrms_->second[(*wrms_->first)[c]]->capillaryPressure(ds[0][c]);
+        p_wc = patm - pc;
+      } else {
+        p_wc = patm;
+      }
+
+      // only use if it results in decreased change
+      if (p_wc < p_standard) {
+        dp[0][c] = p_prev - p_wc;
+      }
+    }
+  }
+
+  // Now that we have monkeyed with cells, fix faces
+  mfd_preconditioner_->UpdateConsistentFaceCorrection(*u->data(), Pu->data().ptr());
+}
 
 }  // namespace Flow
 }  // namespace Amanzi
