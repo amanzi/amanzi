@@ -192,7 +192,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
 	Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
 	Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
 	Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
-	double matsum = 0.0;
 
 	for (int n=0; n!=nfaces; ++n) {
 	  for (int m=0; m!=nfaces; ++m) {
@@ -200,15 +199,21 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
 	  }
 	}
 
+	double matsum = 0.0;
 	for (int n=0; n!=nfaces; ++n) {
 	  double rowsum = 0.0, colsum = 0.0;
 	  for (int m=0; m!=nfaces; ++m) {
-		colsum += Bff(m, n);
+		if (Krel_face == Teuchos::null) {
+		  colsum += Bff(m, n);
+		} else {
+		  colsum += Bff(m,n) * (*Krel_face)[0][faces[n]];
+		}
 		rowsum += Bff(n, m);
 	  }
-	  Bcf(n) = -colsum * ( Krel_face == Teuchos::null ? 1. : (*Krel_face)[0][faces[n]] );
+
+	  Bcf(n) = -colsum;
 	  Bfc(n) = -rowsum;
-	  matsum += colsum;
+	  matsum += -colsum;
 	}
 
     Aff_cells_.push_back(Bff);
