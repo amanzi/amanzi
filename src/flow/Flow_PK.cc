@@ -311,6 +311,9 @@ void Flow_PK::AddGravityFluxes_MFD(
       double outward_flux = ((K[c] * gravity) * normal) * dirs[n]; 
       if (method == FLOW_RELATIVE_PERM_CENTERED) {
         outward_flux *= Krel_cells[c];
+      } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+        double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+        outward_flux *= (Krel_cells[c] + t * t); 
       } else {
         outward_flux *= Krel_faces[f];
       }
@@ -408,6 +411,9 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(
            darcy_mass_flux[f] += ((K[c] * gravity) * normal);
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c];
+        } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+          double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * (Krel_cells[c] + t * t); 
         } else {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
         }

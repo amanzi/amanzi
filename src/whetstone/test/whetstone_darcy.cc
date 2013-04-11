@@ -15,6 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -47,7 +48,7 @@ TEST(DARCY_MASS) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
+  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
  
   MFD3D mfd(mesh);
 
@@ -55,21 +56,40 @@ TEST(DARCY_MASS) {
   Tensor T(3, 1);
   T(0, 0) = 1;
 
-  Teuchos::SerialDenseMatrix<int, double> N(nfaces, 3);
-  Teuchos::SerialDenseMatrix<int, double> Mc(nfaces, nfaces);
   Teuchos::SerialDenseMatrix<int, double> M(nfaces, nfaces);
+  for (int method = 0; method < 1; method++) {
+    mfd.DarcyMass(cell, T, M);
 
-  int ok = mfd.L2consistency(cell, T, N, Mc);
-  mfd.StabilityScalar(cell, N, Mc, M);
+    printf("Mass matrix for cell %3d\n", cell);
+    for (int i=0; i<nfaces; i++) {
+      for (int j=0; j<nfaces; j++ ) printf("%8.4f ", M(i, j)); 
+      printf("\n");
+    }
 
-  printf("Mass matrix for cell %3d\n", cell);
-  for (int i=0; i<6; i++) {
-    for (int j=0; j<6; j++ ) printf("%8.4f ", M(i, j)); 
-    printf("\n");
+    // verify SPD propery
+    for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
+
+    // verify exact integration property
+    Entity_ID_List faces;
+    std::vector<int> dirs;
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    
+    double xi, yi, xj;
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      xi = mesh->face_normal(f)[0] * dirs[i];
+      yi = mesh->face_normal(f)[1] * dirs[i];
+      for (int j = 0; j < nfaces; j++) {
+        f = faces[j];
+        xj = mesh->face_normal(f)[0] * dirs[j];
+        vxx += M(i, j) * xi * xj;
+        vxy += M(i, j) * yi * xj;
+      }
+    }
+    CHECK_CLOSE(vxx, volume, 1e-10);
+    CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-  // verify mass matrix
-  for (int i=0; i<6; i++) CHECK(M(i, i) > 0.0);
 
   delete comm;
 }
@@ -81,7 +101,7 @@ TEST(DARCY_INVERSE_MASS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Inverse mass matrix for Darcy" << endl;
+  std::cout << "\nTest: Inverse mass matrix for Darcy" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -100,25 +120,55 @@ TEST(DARCY_INVERSE_MASS) {
   MFD3D mfd(mesh);
 
   int nfaces = 6, cell = 0;
-  Tensor T(3, 1);
+  Tensor T(3, 1);  // tensor of rank 1
   T(0, 0) = 1;
 
-  Teuchos::SerialDenseMatrix<int, double> R(nfaces, 3);
-  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
   Teuchos::SerialDenseMatrix<int, double> W(nfaces, nfaces);
+  for (int method = 0; method < 3; method++) {
+    if (method == 0) 
+      mfd.DarcyMassInverse(cell, T, W);
+    else if (method == 1)
+      mfd.DarcyMassInverseScaled(cell, T, W);
+    else if (method == 2)
+      mfd.DarcyMassInverseOptimizedScaled(cell, T, W);
 
-  int ok = mfd.L2consistencyInverse(cell, T, R, Wc);
-  mfd.StabilityScalar(cell, R, Wc, W);
+    printf("Inverse of mass matrix for method=%d\n", method);
+    for (int i=0; i<6; i++) {
+      for (int j=0; j<6; j++ ) printf("%8.4f ", W(i, j)); 
+      printf("\n");
+    }
 
-  printf("Inverse of mass matrix for cell %3d\n", cell);
-  for (int i=0; i<6; i++) {
-    for (int j=0; j<6; j++ ) printf("%8.4f ", W(i, j)); 
-    printf("\n");
+    // verify SPD propery
+    for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
+
+    // verify exact integration property
+    Teuchos::LAPACK<int, double> lapack;
+    int info, ipiv[nfaces];
+    double work[nfaces];
+
+    lapack.GETRF(nfaces, nfaces, W.values(), nfaces, ipiv, &info);
+    lapack.GETRI(nfaces, W.values(), nfaces, ipiv, work, nfaces, &info);
+
+    Entity_ID_List faces;
+    std::vector<int> dirs;
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    
+    double xi, yi, xj;
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      xi = mesh->face_normal(f)[0] * dirs[i];
+      yi = mesh->face_normal(f)[1] * dirs[i];
+      for (int j = 0; j < nfaces; j++) {
+        f = faces[j];
+        xj = mesh->face_normal(f)[0] * dirs[j];
+        vxx += W(i, j) * xi * xj;
+        vxy += W(i, j) * yi * xj;
+      }
+    }
+    CHECK_CLOSE(vxx, volume, 1e-10);
+    CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-  // verify inverse mass matrix
-  for (int i=0; i<6; i++) CHECK(W(i, i) > 0.0);
-
 
   delete comm;
 }

@@ -74,6 +74,28 @@ int MFD3D::DarcyMassInverse(int cell, const Tensor& permeability,
 
 
 /* ******************************************************************
+* Darcy inverse mass matrix via optimization, experimental.
+****************************************************************** */
+int MFD3D::DarcyMassInverseScaled(int cell, const Tensor& permeability,
+                                   Teuchos::SerialDenseMatrix<int, double>& W)
+{
+  int d = mesh_->space_dimension();
+  int nfaces = W.numRows();
+
+  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
+  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+
+  int ok = L2consistencyInverseScaled(cell, permeability, R, Wc);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+ 
+  StabilityScalar(cell, R, Wc, W);
+  RescaleDarcyMassInverse_(cell, W);
+
+  return ok;
+}
+
+
+/* ******************************************************************
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
 int MFD3D::DarcyMassInverseHex(int cell, const Tensor& permeability,
@@ -269,11 +291,11 @@ int MFD3D::L2consistency(int cell, const Tensor& T,
                          Teuchos::SerialDenseMatrix<int, double>& Mc)
 {
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
-  int num_faces = faces.size();
-  if (num_faces != N.numRows()) return num_faces;  // matrix was not reshaped
+  int nfaces = faces.size();
+  if (nfaces != N.numRows()) return nfaces;  // matrix was not reshaped
 
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
@@ -284,12 +306,12 @@ int MFD3D::L2consistency(int cell, const Tensor& T,
   Tensor Tinv(T);
   Tinv.inverse();
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     v2 = Tinv * (fm - cm);
 
-    for (int j = i; j < num_faces; j++) {
+    for (int j = i; j < nfaces; j++) {
       f = faces[j];
       const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
       v1 = fm - cm;
@@ -297,10 +319,10 @@ int MFD3D::L2consistency(int cell, const Tensor& T,
     }
   }
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    for (int k = 0; k < d; k++) N(i, k) = normal[k];
+    for (int k = 0; k < d; k++) N(i, k) = normal[k] * dirs[i];
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

@@ -55,26 +55,56 @@ class MFD3D {
   explicit MFD3D(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
   ~MFD3D() {};
 
-  // primary methods
+  // primary methods for diffusion
   int DarcyMass(int cell, const Tensor& permeability,
                Teuchos::SerialDenseMatrix<int, double>& M);
   int DarcyMassInverse(int cell, const Tensor& permeability,
                        Teuchos::SerialDenseMatrix<int, double>& W);
-  int DarcyMassInverseSO(int cell, const Tensor& permeability,
-                         Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseScaled(int cell, const Tensor& permeability,
+                              Teuchos::SerialDenseMatrix<int, double>& W);
+
+  // primary methods for diffusion (optimized)
   int DarcyMassInverseHex(int cell, const Tensor& permeability,
                           Teuchos::SerialDenseMatrix<int, double>& W);
-  int DarcyMassInverseDiagonal(int cell, const Tensor& permeability,
-                               Teuchos::SerialDenseMatrix<int, double>& W);
   int DarcyMassInverseOptimized(int cell, const Tensor& permeability,
                                 Teuchos::SerialDenseMatrix<int, double>& W);
   int DarcyMassInverseOptimizedScaled(int cell, const Tensor& permeability,
                                       Teuchos::SerialDenseMatrix<int, double>& W);
 
+  // primary related discetization methods
+  int DarcyMassInverseSO(int cell, const Tensor& permeability,
+                         Teuchos::SerialDenseMatrix<int, double>& W);
+  int DarcyMassInverseDiagonal(int cell, const Tensor& permeability,
+                               Teuchos::SerialDenseMatrix<int, double>& W);
+
+  // primary methods for elastisity and Stokes
   int ElasticityStiffness(int cell, const Tensor& deformation,
                           Teuchos::SerialDenseMatrix<int, double>& A); 
 
-  // suppporting primary methods
+  // primary MFD extension of VAG scheme (must be relocated)
+  void CalculateHarmonicPoints(int face, std::vector<Tensor>& T, 
+                               AmanziGeometry::Point& harmonic_point,
+                               double& harmonic_point_weight);
+
+  int DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
+                             std::vector<AmanziGeometry::Point>& corner_points,
+                             double cell_value,
+                             std::vector<double>& corner_values,
+                             std::vector<double>& corner_fluxes);
+
+  // access members
+  double scaling_factor() { return scaling_factor_; }
+  double scalar_stability() { return scalar_stability_; }
+  Teuchos::SerialDenseMatrix<int, double>& matrix_stability() { return matrix_stability_; }
+
+  // extension of mesh API (must be relocated)
+  int cell_get_face_adj_cell(const int cell, const int face);
+
+  // experimental methods (for stability region analysis; unit test)
+  void ModifyStabilityScalingFactor(double factor);
+
+ private:  
+  // supporting consistency methods (calculate matrix Mc in M = Mc + Ms)
   int L2consistency(int cell, const Tensor& T,
                     Teuchos::SerialDenseMatrix<int, double>& N,
                     Teuchos::SerialDenseMatrix<int, double>& Mc);
@@ -84,18 +114,16 @@ class MFD3D {
   int L2consistencyInverseScaled(int cell, const Tensor& permeability,
                                  Teuchos::SerialDenseMatrix<int, double>& R,
                                  Teuchos::SerialDenseMatrix<int, double>& Wc);
+
   int H1consistency(int cell, const Tensor& T,
                     Teuchos::SerialDenseMatrix<int, double>& N,
                     Teuchos::SerialDenseMatrix<int, double>& Mc);
+
   int H1consistencyElasticity(int cell, const Tensor& T,
                               Teuchos::SerialDenseMatrix<int, double>& N,
                               Teuchos::SerialDenseMatrix<int, double>& Ac);
 
-  void GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N);
-
-  double CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc);
-  void ModifyStabilityScalingFactor(double factor);
-
+  // supporting stability methods (add matrix Ms in M = Mc + Ms)
   void StabilityScalar(int cell,
                        Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, and W for the inverse matrix
                        Teuchos::SerialDenseMatrix<int, double>& Mc,
@@ -108,24 +136,10 @@ class MFD3D {
                          Teuchos::SerialDenseMatrix<int, double>& Mc,
                          Teuchos::SerialDenseMatrix<int, double>& M);
 
-  // MFD extension of VAG scheme
-  void CalculateHarmonicPoints(int face, std::vector<Tensor>& T, 
-                               AmanziGeometry::Point& harmonic_point,
-                               double& harmonic_point_weight);
+  // other suppporting methods
+  void GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N);
 
-  int DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
-                             std::vector<AmanziGeometry::Point>& corner_points,
-                             double cell_value,
-                             std::vector<double>& corner_values,
-                             std::vector<double>& corner_fluxes);
-
-  // extension of mesh API
-  int cell_get_face_adj_cell(const int cell, const int face);
-
-  // access members
-  double scaling_factor() { return scaling_factor_; }
-  double scalar_stability() { return scalar_stability_; }
-  Teuchos::SerialDenseMatrix<int, double>& matrix_stability() { return matrix_stability_; }
+  double CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc);
 
  private:
   int FindPosition_(int v, AmanziMesh::Entity_ID_List nodes);

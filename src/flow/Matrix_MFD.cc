@@ -67,7 +67,15 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
     Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
 
-    if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+    if (mfd3d_method == AmanziFlow::FLOW_MFD3D_POLYHEDRA_SCALED) {
+      ok = mfd.DarcyMassInverseScaled(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_POLYHEDRA) {
+      ok = mfd.DarcyMassInverse(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED_SCALED) {
+      ok = mfd.DarcyMassInverseOptimizedScaled(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
+      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
+    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
         ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
       else
@@ -76,18 +84,15 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
       ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
       ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
-      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED_EXPERIMENTAL) {
-      ok = mfd.DarcyMassInverseOptimizedScaled(c, K[c], Mff);
     } else {
-      ok = mfd.DarcyMassInverse(c, K[c], Mff);
+      Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
+      Exceptions::amanzi_throw(msg);
     }
 
     Mff_cells_.push_back(Mff);
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
-      Errors::Message msg("Matrix_MFD: unexpected failure of LAPACK in WhetStone.");
+      Errors::Message msg("Flow PK: unexpected failure of LAPACK in WhetStone.");
       Exceptions::amanzi_throw(msg);
     }
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) nokay_++;
@@ -200,7 +205,8 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
       // add upwind correction
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        Bff(n, n) += Mff(n, n) * std::max(0.0, Krel_faces[f] - Krel_cells[c]); 
+        double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+        Bff(n, n) += Mff(n, n) * t * t; 
       }
     } else {
       for (int n = 0; n < nfaces; n++)
