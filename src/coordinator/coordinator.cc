@@ -17,10 +17,12 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "global_verbosity.hh"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "TimeStepManager.hh"
 #include "visualization.hh"
 #include "checkpoint.hh"
+#include "UnstructuredObservations.hh"
 #include "State.hh"
 #include "PK.hh"
 #include "tree_vector.hh"
@@ -76,9 +78,10 @@ void Coordinator::coordinator_init() {
   pk_->setup(S_.ptr());
 
   // // create the observations
-  // Teuchos::ParameterList observation_plist = parameter_list_.sublist("Observation");
-  // observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
-  //         output_observations_));
+  Teuchos::ParameterList observation_plist = parameter_list_.sublist("observations");
+  Teuchos::writeParameterListToXmlOStream(observation_plist, std::cout);
+  observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
+          Teuchos::null, comm_));
 }
 
 void Coordinator::initialize() {
@@ -248,7 +251,8 @@ void Coordinator::cycle_driver() {
   }
 
   // -- register observation times
-  //if (observations_) observations_->register_with_time_step_manager(TSM);
+  if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_.ptr());
+
   // -- register the final time
   tsm_->RegisterTimeEvent(t1_);
 
@@ -267,7 +271,7 @@ void Coordinator::cycle_driver() {
   double dt = get_dt();
 
   // make observations
-  //  observations_->MakeObservations(*S_);
+  observations_->MakeObservations(*S_);
 
   // write visualization if requested at IC
   pk_->calculate_diagnostics(S_);
@@ -303,7 +307,7 @@ void Coordinator::cycle_driver() {
 
       if (!fail) {
         // make observations
-        //      observations_->MakeObservations(*S_next_);
+        observations_->MakeObservations(*S_next_);
 
         // write visualization if requested
         // this needs to be fixed...
@@ -374,8 +378,6 @@ void Coordinator::cycle_driver() {
     WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
   }
 
-  // dump observations
-  //  output_observations_.print(std::cout);
 } // cycle driver
 
 } // close namespace Amanzi
