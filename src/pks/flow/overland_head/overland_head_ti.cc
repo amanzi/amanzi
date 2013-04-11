@@ -89,23 +89,15 @@ void OverlandHeadFlow::fun( double t_old,
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
-  // update the rel perm according to the scheme of choice.
-  UpdatePermeabilityData_(S_next_.ptr());
-
-  // update the stiffness matrix
-  Teuchos::RCP<const CompositeVector> cond =
-    S_next_->GetFieldData("upwind_overland_conductivity", name_);
-  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
-
-  // Patch up BCs in the case of zero conductivity
-  FixBCsForOperator_(S_next_.ptr());
-
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
       c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
+    Teuchos::RCP<const CompositeVector> cond =
+      S_next_->GetFieldData("upwind_overland_conductivity", name_);
+
     AmanziMesh::Entity_ID_List faces0, faces1;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
@@ -254,9 +246,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
   mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
-
-  // Patch up BCs in the case of zero conductivity
-  FixBCsForPrecon_(S_next_.ptr());
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true) &&
