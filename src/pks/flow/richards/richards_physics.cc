@@ -180,9 +180,9 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
         const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
 
         double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-            * krel_faces[0][f] * rho_v[0][c];
+            * rho_v[0][c];
         Ff[n] += outward_flux;
-        Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
+        Fc -= outward_flux * krel_faces[0][f] ;  // Nonzero-sum contribution when not upwinding
       }
     }
 
@@ -205,9 +205,9 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
           std::cout << "On cell " << c0_ << ", Ff_pre-g = " << Ff[n];
 
         double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
-            * krel_faces[0][f] * krel_cells[0][c] * rho_v[0][c];
+            * krel_cells[0][c] * rho_v[0][c];
         Ff[n] += outward_flux;
-        Fc -= outward_flux;  // Nonzero-sum contribution when not upwinding
+        Fc -= outward_flux * krel_faces[0][f];  // Nonzero-sum contribution when not upwinding
 
         if (c == c0_)
           std::cout << " Ff_post-g = " << Ff[n] << std::endl;

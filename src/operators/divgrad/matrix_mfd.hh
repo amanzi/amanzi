@@ -41,13 +41,14 @@ namespace Amanzi {
 namespace Operators {
 
 enum MFD_method {
-  MFD_NULL = 0,
-  MFD_POLYHEDRA = 1,
-  MFD_POLYHEDRA_MONOTONE = 2,  // under development
-  MFD_HEXAHEDRA_MONOTONE = 3,
-  MFD_TWO_POINT_FLUX = 4, // without consistency
-  MFD_SUPPORT_OPERATOR = 5, // rc1 compatibility
-  MFD_OPTIMIZED = 6
+  MFD3D_NULL = 0,
+  MFD3D_POLYHEDRA,
+  MFD3D_POLYHEDRA_SCALED,
+  MFD3D_OPTIMIZED,
+  MFD3D_OPTIMIZED_SCALED,
+  MFD3D_HEXAHEDRA_MONOTONE,
+  MFD3D_TWO_POINT_FLUX,
+  MFD3D_SUPPORT_OPERATOR
 };
 
 const int MFD_HEX_FACES = 6;  // Hexahedron is the common element
@@ -117,8 +118,7 @@ class MatrixMFD : public Matrix {
 
   // main computational methods
   void SetSymmetryProperty(bool flag_symmetry) {
-    //    flag_symmetry_ = flag_symmetry;
-    flag_symmetry_ = false;
+    flag_symmetry_ = flag_symmetry;
   }
 
   void CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K);

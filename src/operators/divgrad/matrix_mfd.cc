@@ -31,21 +31,26 @@ MatrixMFD::MatrixMFD(const MatrixMFD& other) :
 
 void MatrixMFD::InitializeFromPList_() {
   std::string methodstring = plist_.get<string>("MFD method");
-  method_ = MFD_NULL;
+  method_ = MFD3D_NULL;
 
   // standard MFD
   if (methodstring == "polyhedra") {
-    method_ = MFD_POLYHEDRA;
-  } else if (methodstring == "polyhedra monotone") {
-    method_ = MFD_POLYHEDRA_MONOTONE;
-  } else if (methodstring == "hexahedra monotone") {
-    method_ = MFD_HEXAHEDRA_MONOTONE;
-  } else if (methodstring == "two point flux") {
-    method_ = MFD_TWO_POINT_FLUX;
-  } else if (methodstring == "support operator") {
-    method_ = MFD_SUPPORT_OPERATOR;
+    method_ = MFD3D_POLYHEDRA;
+  } else if (methodstring == "polyhedra scaled") {
+    method_ = MFD3D_POLYHEDRA_SCALED;
   } else if (methodstring == "optimized") {
-    method_ = MFD_OPTIMIZED;
+    method_ = MFD3D_OPTIMIZED;
+  } else if (methodstring == "optimized scaled") {
+    method_ = MFD3D_OPTIMIZED_SCALED;
+  } else if (methodstring == "hexahedra monotone") {
+    method_ = MFD3D_HEXAHEDRA_MONOTONE;
+  } else if (methodstring == "two point flux") {
+    method_ = MFD3D_TWO_POINT_FLUX;
+  } else if (methodstring == "support operator") {
+    method_ = MFD3D_SUPPORT_OPERATOR;
+  } else {
+	Errors::Message msg("MatrixMFD: unexpected discretization methods");
+	Exceptions::amanzi_throw(msg);
   }
 
   // method for inversion
@@ -85,9 +90,7 @@ void MatrixMFD::InitializeFromPList_() {
 void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K) {
   int dim = mesh_->space_dimension();
 
-  // TODO: fix -- MFD3D should NOT need a non-const mesh
-  Teuchos::RCP<AmanziMesh::Mesh> nc_mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh_);
-  WhetStone::MFD3D mfd(nc_mesh);
+  WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -113,20 +116,26 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
       Kc = (*K)[c];
     }
 
-    if (method_ == MFD_HEXAHEDRA_MONOTONE) {
-      if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) {
-        ok = mfd.darcy_mass_inverse_hex(c, Kc, Mff);
-      } else {
-        ok = mfd.darcy_mass_inverse(c, Kc, Mff);
-      }
-    } else if (method_ == MFD_TWO_POINT_FLUX) {
-      ok = mfd.darcy_mass_inverse_diagonal(c, Kc, Mff);
-    } else if (method_ == MFD_SUPPORT_OPERATOR) {
-      ok = mfd.darcy_mass_inverse_SO(c, Kc, Mff);
-    } else if (method_ == MFD_OPTIMIZED) {
-      ok = mfd.darcy_mass_inverse_optimized(c, Kc, Mff);
+    if (method_ == MFD3D_POLYHEDRA_SCALED) {
+      ok = mfd.DarcyMassInverseScaled(c, K[c], Mff);
+    } else if (method_ == MFD3D_POLYHEDRA) {
+      ok = mfd.DarcyMassInverse(c, K[c], Mff);
+    } else if (method_ == MFD3D_OPTIMIZED_SCALED) {
+      ok = mfd.DarcyMassInverseOptimizedScaled(c, K[c], Mff);
+    } else if (method_ == MFD3D_OPTIMIZED) {
+      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
+    } else if (method_ == MFD3D_HEXAHEDRA_MONOTONE) {
+      if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
+        ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
+      else
+        ok = mfd.DarcyMassInverse(c, K[c], Mff);
+    } else if (method_ == MFD3D_TWO_POINT_FLUX) {
+      ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
+    } else if (method_ == MFD3D_SUPPORT_OPERATOR) {
+      ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
     } else {
-      ok = mfd.darcy_mass_inverse(c, Kc, Mff);
+      Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
+      Exceptions::amanzi_throw(msg);
     }
 
     Mff_cells_.push_back(Mff);
@@ -177,63 +186,37 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+	mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+	int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
-    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
-    Teuchos::SerialDenseMatrix<int, double> Bff_Kr(nfaces,nfaces);
-    Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
+	Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+	Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
+	Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
+	double matsum = 0.0;
 
-    if (Krel == Teuchos::null) {
-      for (int n=0; n!=nfaces; ++n) {
-        for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n);
-          Bff_Kr(m, n) = Mff(m,n);
-        }
-      }
-    } else if (Krel_face == Teuchos::null) {
-      for (int n=0; n!=nfaces; ++n) {
-        for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c];
-          Bff_Kr(m, n) = Mff(m,n) * (*Krel_cell)[0][c];
-        }
-      }
-    } else if (Krel_cell == Teuchos::null) {
-      for (int n=0; n!=nfaces; ++n) {
-        for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n);
-          Bff_Kr(m, n) = Mff(m,n) * (*Krel_face)[0][faces[m]];
-        }
-      }
-    } else {
-      for (int n=0; n!=nfaces; ++n) {
-        for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c];
-          Bff_Kr(m, n) = Mff(m,n) * (*Krel_cell)[0][c] * (*Krel_face)[0][faces[m]];
-        }
-      }
-    }
+	for (int n=0; n!=nfaces; ++n) {
+	  for (int m=0; m!=nfaces; ++m) {
+		Bff(m, n) = Mff(m,n) * ( Krel_cell == Teuchos::null ? 1. : (*Krel_cell)[0][c] );
+	  }
+	}
 
-    double matsum = 0.0;  // elimination of mass matrix
-    for (int n=0; n!=nfaces; ++n) {
-      double rowsum = 0.0, colsum = 0.0;
-      for (int m=0; m!=nfaces; ++m) {
-        colsum += Bff_Kr(m, n);
-        rowsum += Bff(n, m);
-      }
-      Bcf(n) = -colsum;
-      Bfc(n) = -rowsum;
-      matsum += colsum;
-    }
+	for (int n=0; n!=nfaces; ++n) {
+	  double rowsum = 0.0, colsum = 0.0;
+	  for (int m=0; m!=nfaces; ++m) {
+		colsum += Bff(m, n);
+		rowsum += Bff(n, m);
+	  }
+	  Bcf(n) = -colsum * ( Krel_face == Teuchos::null ? 1. : (*Krel_face)[0][faces[m]] );
+	  Bfc(n) = -rowsum;
+	  matsum += colsum;
+	}
 
-    Aff_cells_.push_back(Bff);  // This the only place where memory can be allocated.
+    Aff_cells_.push_back(Bff);
     Afc_cells_.push_back(Bfc);
     Acf_cells_.push_back(Bcf);
     Acc_cells_.push_back(matsum);
   }
 }
-
 
 
 /* ******************************************************************
@@ -306,9 +289,8 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
-        double Krel = (*Krel_)[f];
         if (std::abs(bc_values[f] > 0.)) {
-          Ff[n] -= bc_values[f] * mesh_->face_area(f) / Krel;
+          Ff[n] -= bc_values[f] * mesh_->face_area(f) / (*Krel_)[f];
         }
       }
     }
