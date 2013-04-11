@@ -213,7 +213,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
 
 	  Bcf(n) = -colsum;
 	  Bfc(n) = -rowsum;
-	  matsum += -colsum;
+	  matsum += colsum;
 	}
 
     Aff_cells_.push_back(Bff);
