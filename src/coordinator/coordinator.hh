@@ -28,6 +28,7 @@ class Checkpoint;
 class State;
 class TreeVector;
 class PK;
+class UnstructuredObservations;
 
 class Coordinator : public Teuchos::VerboseObject<Coordinator> {
 
@@ -78,6 +79,9 @@ private:
   Teuchos::RCP<Checkpoint> checkpoint_;
   bool restart_;
   std::string restart_filename_;
+
+  // observations
+  Teuchos::RCP<UnstructuredObservations> observations_;
 
   // fancy OS
   Teuchos::RCP<Teuchos::FancyOStream> out_;
