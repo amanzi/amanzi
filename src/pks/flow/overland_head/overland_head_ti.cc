@@ -95,14 +95,13 @@ void OverlandHeadFlow::fun( double t_old,
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
       c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
-    Teuchos::RCP<const CompositeVector> cond =
-      S_next_->GetFieldData("upwind_overland_conductivity", name_);
-
     AmanziMesh::Entity_ID_List faces0, faces1;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
     mesh_->cell_get_faces_and_dirs(c1_, &faces1, &dirs);
 
+    Teuchos::RCP<const CompositeVector> cond =
+      S_next_->GetFieldData("upwind_overland_conductivity", name_);
     *out_ << "  cond0 (diff): " << (*cond)("cell",c0_);
     for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*cond)("face",faces0[n]);
     *out_ << std::endl;
@@ -245,7 +244,14 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
+
+  // calculating the operator is done in 3 steps:
+  // 1. Create all local matrices.
   mfd_preconditioner_->CreateMFDstiffnessMatrices(cond.ptr());
+  mfd_preconditioner_->CreateMFDrhsVectors();
+
+  // Patch up BCs in the case of zero conductivity
+  FixBCsForPrecon_(S_next_.ptr());
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true) &&
@@ -256,10 +262,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     *out_ << "    0: " << bc_markers_[0] << ", " << bc_values_[0] <<std::endl;
   }
 #endif
-
-  // calculating the operator is done in 3 steps:
-  // 1. Create all local matrices.
-  mfd_preconditioner_->CreateMFDrhsVectors();
 
   // 2.a: scale the cell by dh_dp
   S_next_->GetFieldEvaluator("ponded_depth")
