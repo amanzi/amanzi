@@ -33,7 +33,7 @@ Authors: Neil Carlson (version 1)
 
 #include "richards.hh"
 
-#define DEBUG_RES_FLAG 0
+#define DEBUG_RES_FLAG 1
 
 
 namespace Amanzi {
@@ -478,8 +478,13 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
 
+  // place n/mu on cells
   update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
+  const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
+    ->ViewComponent("cell",false);
+  const Epetra_MultiVector& visc = *S->GetFieldData("viscosity_liquid")
+    ->ViewComponent("cell",false);
 
   // requirements due to the upwinding method
   if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
@@ -487,13 +492,18 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         ->HasFieldChanged(S, name_);
     update_dir |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
 
-    if (update_dir && !upwind_from_prev_flux_) {
+    for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
+      (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c];
+    }
+
+    if (update_dir) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData("darcy_flux_direction", name_);
 
-      // Create the stiffness matrix without a rel perm (rel perm = 1)
-      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
+      // Create the stiffness matrix without a rel perm (just n/mu)
+      uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
+      matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
 
       // Derive the pressure fluxes
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
@@ -535,8 +545,9 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           AmanziMesh::Entity_ID f =
               surface->entity_get_parent(AmanziMesh::CELL, c);
 
-          // -- set that value to the unfrozen fraction to ensure we don't advect ice
-          uw_rel_perm_f[0][f] = std::max(uf[0][c], 1.e-30);
+          // -- set that value to the unfrozen fraction to ensure we
+          // -- don't advect ice
+          uw_rel_perm_f[0][f] = uf[0][c];
         }
       } else {
         for (int c=0; c!=ncells_surface; ++c) {
@@ -551,21 +562,14 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     }
   }
 
-  // Scale cells by n/visc if needed.
+  // Scale cells by n/mu
   if (update_perm) {
-    const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
-        ->ViewComponent("cell",false);
-    const Epetra_MultiVector& visc = *S->GetFieldData("viscosity_liquid")
-        ->ViewComponent("cell",false);
-
     for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
       (*uw_rel_perm)("cell",c) *= n_liq[0][c] / visc[0][c];
     }
-
-    // communicate
-    //    uw_rel_perm->ScatterMasterToGhosted();
   }
 
+  // debugging
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << " " << update_perm << std::endl;
   }
