@@ -18,7 +18,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "function.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
