@@ -19,8 +19,9 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 class Transport_State : public PK_State {
-
-  explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
+ public:
+  
+  Explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   explicit Transport_State(Teuchos::RCP<State> S);
   explicit Transport_State(State& S);
   Transport_State(Transport_State& other, PKStateConstructMode mode);
