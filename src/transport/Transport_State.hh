@@ -21,7 +21,7 @@ namespace AmanziTransport {
 class Transport_State : public PK_State {
  public:
   
-  Explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
+  explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   explicit Transport_State(Teuchos::RCP<State> S);
   explicit Transport_State(State& S);
   Transport_State(Transport_State& other, PKStateConstructMode mode);
@@ -55,6 +55,9 @@ class Transport_State : public PK_State {
   int get_component_number(const std::string component_name);
   std::string get_component_name(const int component_number);
 
+  // time
+  double initial_time() const { return S_->time(); }
+ 
 protected:
   void Construct_();
 
