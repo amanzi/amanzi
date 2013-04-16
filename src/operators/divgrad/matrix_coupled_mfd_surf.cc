@@ -1,3 +1,4 @@
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "matrix_coupled_mfd_surf.hh"
 
@@ -48,6 +49,13 @@ void MatrixCoupledMFDSurf::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
 
   Epetra_SerialDenseMatrix block(2,2);
 
+  // DEBUG dump
+  std::stringstream filename_sp;
+  filename_sp << "coupled_schur_pre_" << 0 << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_sp.str().c_str(), *P2f2f_);
+
+
+
   // Loop over surface cells (subsurface faces)
   int ierr(0);
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -81,6 +89,12 @@ void MatrixCoupledMFDSurf::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
     ASSERT(!ierr);
 
     for (int m=0; m!=entriesA; ++m) {
+      if (indicesA[m] == 500) {
+        std::cout << "Adding Value from TPFA on surface to subsurface." << std::endl;
+        std::cout << "  val from A = " << valuesA[m] << std::endl;
+        std::cout << "  val from B = " << valuesB[m] << std::endl;
+      }
+
       block(0,0) = valuesA[m];
       block(1,1) = valuesB[m];
 
@@ -99,6 +113,11 @@ void MatrixCoupledMFDSurf::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
 
   ierr = P2f2f_->GlobalAssemble();
   ASSERT(!ierr);
+
+  // DEBUG dump
+  std::stringstream filename_s;
+  filename_s << "coupled_schur_" << 0 << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
 
   delete[] indicesA;
   delete[] indicesB;

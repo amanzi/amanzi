@@ -274,7 +274,8 @@ bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor(double h,
     *out_ << "Modifying predictor" << std::endl;
 
   bool changed(false);
-  if (modify_predictor_flux_bc_) {
+  if (modify_predictor_flux_bc_ ||
+      (S_next_->cycle() == 0 && modify_predictor_first_flux_bc_)) {
     changed = modify_predictor_for_flux_bc_(h, up);
   } else {
     changed = MPCSurfaceSubsurfaceCoupler::modify_predictor(h, up);

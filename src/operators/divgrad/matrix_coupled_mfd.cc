@@ -285,6 +285,12 @@ void MatrixCoupledMFD::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
     int cell_GID = cmap.GID(c);
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
+    int nentries = nfaces;
+    for (int i=0; i!=nfaces; ++i) {
+      faces_LID[i] = faces[i];
+      faces_GID[i] = fmap_wghost.GID(faces_LID[i]);
+    }
+
     // Invert the cell block
     double det_cell = Acc[c] * Bcc[c] - Ccc[0][c] * Dcc[0][c];
     if (det_cell != 0.) {
@@ -302,6 +308,11 @@ void MatrixCoupledMFD::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
     for (int i=0; i!=nfaces; ++i) {
       for (int j=0; j!=nfaces; ++j) {
         S2f2f(i, j) = Aff[c](i, j) - Afc[c](i)*cell_inv(0, 0)*Acf[c](j);
+        if ((i == j) && std::abs(S2f2f(i,j)) < 1.e-40) {
+          Errors::Message m("Cut time step");
+          Exceptions::amanzi_throw(m);
+        }
+
       }
     }
 
@@ -329,13 +340,6 @@ void MatrixCoupledMFD::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
       A2c2f(0,i + nfaces)  = 0;
       A2c2f(1,i) =           0;
       A2c2f(1,i + nfaces)  = Bfc[c](i);
-    }
-
-    // Assemble
-    int nentries = nfaces;
-    for (int i=0; i!=nfaces; ++i) {
-      faces_LID[i] = faces[i];
-      faces_GID[i] = fmap_wghost.GID(faces_LID[i]);
     }
 
     // -- Assemble Schur complement

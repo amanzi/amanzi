@@ -207,6 +207,10 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
       }
     }
 
+    if (c == 101) {
+      std::cout << "Krel(507) = " << (*Krel_face)[0][507] << std::endl;
+    }
+
     double matsum = 0.0;  // elimination of mass matrix
     for (int n=0; n!=nfaces; ++n) {
       double rowsum = 0.0, colsum = 0.0;
@@ -320,7 +324,11 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
+        if (c == 101)
+          std::cout << "On cell " << 101 << ", Ff_pre-BC = " << Ff[n];
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
+        if (c == 101)
+          std::cout << "On cell " << 101 << ", Ff_post-BC = " << Ff[n] << std::endl;
       }
 
 //      if (f == 11) {

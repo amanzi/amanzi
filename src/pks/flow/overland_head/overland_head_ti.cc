@@ -369,7 +369,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     Epetra_Vector dh_dp0(*dh_dp(0));
     for (int c=0; c!=ncells; ++c) {
       dh_dp0[c] = head[0][c] >= p_atm ? dh_dp[0][c] : 0.;
-      //      *out_ << " scaling by = " << dh_dp0[c] << std::endl;
+      *out_ << " scaling by = " << dh_dp0[c] << std::endl;
     }
     int ierr = Spp->RightScale(dh_dp0);
     ASSERT(!ierr);
@@ -425,6 +425,10 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
       ->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& wc = *S_next_->GetFieldData("surface_water_content")
       ->ViewComponent("cell",false);
+  const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_flux")
+      ->ViewComponent("face",false);
+  double flux_max(0.);
+  flux.NormInf(&flux_max);
 
   Teuchos::RCP<const CompositeVector> res = du->data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
@@ -443,11 +447,11 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
-  // Face error give by heights?  Loose tolerance
+  // Face error given by mismatch of flux, so relative to flux.
   double enorm_face(0.);
   int nfaces = res_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    double tmp = std::abs(res_f[0][f]) / (atol_ + rtol_*(height_f[0][f]));
+    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 

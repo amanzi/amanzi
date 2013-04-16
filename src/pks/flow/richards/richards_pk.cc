@@ -224,6 +224,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // predictors for time integration
   modify_predictor_bc_flux_ = plist_.get<bool>("modify predictor for flux BCs", false);
+  modify_predictor_first_bc_flux_ = plist_.get<bool>("modify predictor for initial flux BCs", false);
 }
 
 
@@ -309,7 +310,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   // check whether this is a dynamic mesh problem
   if (S->HasField("vertex coordinate")) dynamic_mesh_ = true;
-
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -509,6 +509,9 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
     uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
 
+    // upwind
+    upwinding_->Update(S);
+
     // patch up the surface, use 1
     //    if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
     if (S->HasMesh("surface")) {
@@ -538,9 +541,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         }
       }
     }
-
-    // upwind
-    upwinding_->Update(S);
   }
 
   // Scale cells by n/visc if needed.
@@ -558,9 +558,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     //    uw_rel_perm->ScatterMasterToGhosted();
   }
 
-  if (update_perm && out_.get() &&
-      includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << " TRUE." << std::endl;
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    *out_ << " " << update_perm << std::endl;
   }
   return update_perm;
 };
@@ -657,6 +656,7 @@ void Richards::UpdateBoundaryConditions_() {
       // -- set that value to Neumann
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+      //      std::cout << " setting BC from surface mass flux = " << flux[0][c] << std::endl;
     }
   }
 };
@@ -683,32 +683,10 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
     *out_ << "Modifying predictor:" << std::endl;
 
   bool changed(false);
-  if (modify_predictor_bc_flux_) {
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-      *out_ << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
-
-
-    if (flux_predictor_ == Teuchos::null) {
-      flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
-              wrms_, &bc_markers_, &bc_values_));
-    }
-
-    // update boundary conditions
-    bc_pressure_->Compute(S_next_->time());
-    bc_flux_->Compute(S_next_->time());
-    UpdateBoundaryConditions_();
-
-    bool update = UpdatePermeabilityData_(S_next_.ptr());
-    Teuchos::RCP<const CompositeVector> rel_perm =
-        S_next_->GetFieldData("numerical_rel_perm");
-    matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
-    matrix_->CreateMFDrhsVectors();
-    Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
-    Teuchos::RCP<const Epetra_Vector> gvec = S_next_->GetConstantVectorData("gravity");
-    AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
-    matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-
-    changed |= flux_predictor_->modify_predictor(h, u);
+  if (modify_predictor_bc_flux_ ||
+      (modify_predictor_first_bc_flux_ && S_next_->cycle() == 0)) {
+    CalculateConsistentFacesForInfiltration_(u->data().ptr());
+    changed = true;
     changed_solution(); // mark the solution as changed, as modifying with
                         // consistent faces will then get the updated boundary
                         // conditions
@@ -716,20 +694,48 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
 
   if (modify_predictor_with_consistent_faces_) {
     std::cout << std::setprecision(15);
-    std::cout << " old pressure top face = " << (*u->data())("face",500) << std::endl;
+    std::cout << " old pressure top face = " << (*u->data())("face",507) << std::endl;
 
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
       *out_ << "  modifications for consistent face pressures." << std::endl;
     CalculateConsistentFaces(u->data().ptr());
     changed = true;
 
-    std::cout << " new pressure top face = " << (*u->data())("face",500) << std::endl;
+    std::cout << " new pressure top face = " << (*u->data())("face",507) << std::endl;
 
   }
 
   return changed;
 }
 
+
+void Richards::CalculateConsistentFacesForInfiltration_(
+    const Teuchos::Ptr<CompositeVector>& u) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
+
+  if (flux_predictor_ == Teuchos::null) {
+    flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
+            wrms_, &bc_markers_, &bc_values_));
+  }
+
+  // update boundary conditions
+  bc_pressure_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_();
+
+  bool update = UpdatePermeabilityData_(S_next_.ptr());
+  Teuchos::RCP<const CompositeVector> rel_perm =
+      S_next_->GetFieldData("numerical_rel_perm");
+  matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  matrix_->CreateMFDrhsVectors();
+  Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+  Teuchos::RCP<const Epetra_Vector> gvec = S_next_->GetConstantVectorData("gravity");
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
+  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+
+  flux_predictor_->modify_predictor(u);
+}
 
 void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
@@ -752,8 +758,8 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
 
-  std::cout << " Krel face 500 = " << (*rel_perm)("face",500) << std::endl;
-  std::cout << " Pres cell 99 = " << (*u)("cell",99) << std::endl;
+  std::cout << " Krel face 507 = " << (*rel_perm)("face",507) << std::endl;
+  std::cout << " Pres cell 101 = " << (*u)("cell",101) << std::endl;
 
 
   // Update the preconditioner with darcy and gravity fluxes
