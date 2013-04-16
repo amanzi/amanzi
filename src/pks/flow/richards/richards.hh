@@ -110,6 +110,10 @@ protected:
           const Teuchos::Ptr<const CompositeVector>& rho,
           const Teuchos::Ptr<CompositeVector>& darcy_flux);
 
+  // Nonlinear version of CalculateConsistentFaces()
+  virtual void CalculateConsistentFacesForInfiltration_(
+      const Teuchos::Ptr<CompositeVector>& u);
+
 
 protected:
   enum FluxUpdateMode {
@@ -159,6 +163,7 @@ protected:
 
   // delegates
   bool modify_predictor_bc_flux_;
+  bool modify_predictor_first_bc_flux_;
   Teuchos::RCP<PredictorDelegateBCFlux> flux_predictor_;
 
  private:

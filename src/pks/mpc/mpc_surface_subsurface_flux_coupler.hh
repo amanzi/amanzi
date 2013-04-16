@@ -30,6 +30,8 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
       MPCSurfaceSubsurfaceCoupler(plist, soln) {
     modify_predictor_flux_bc_ =
       plist_.get<bool>("modify predictor for flux BCs", false);
+    modify_predictor_first_flux_bc_ =
+      plist_.get<bool>("modify predictor for initial flux BCs", false);
   }
 
   // -- Setup data.
@@ -69,6 +71,7 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
  protected:
   Key flux_key_;
   bool modify_predictor_flux_bc_;
+  bool modify_predictor_first_flux_bc_;
 
  private:
   // factory registration

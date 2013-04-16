@@ -227,33 +227,40 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     Teuchos::RCP<const CompositeVector> T_old = S_inter_->GetFieldData("temperature");
     Teuchos::RCP<const CompositeVector> T_new = S_next_->GetFieldData("temperature");
 
+    *out_ << " c0=" << c0_ <<", faces = ";
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << fnums0[n];
+    *out_ << std::endl;
+    *out_ << " c1=" << c1_ <<", faces = ";
+    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << fnums1[n];
+    *out_ << std::endl;
+
     *out_ << std::setprecision(15);
     *out_ << "  p_old(" << c0_ << "): " << (*u_old)("cell",c0_);
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
     *out_ << std::endl;
     *out_ << "  T_old(" << c0_ << "): " << (*T_old)("cell",c0_);
-    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums0[n]);
+    //    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums0[n]);
     *out_ << std::endl;
 
     *out_ << "  p_old(" << c1_ << "): " << (*u_old)("cell",c1_);
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums1[n]);
     *out_ << std::endl;
     *out_ << "  T_old(" << c1_ << "): " << (*T_old)("cell",c1_);
-    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums1[n]);
+    //    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_old)("face",fnums1[n]);
     *out_ << std::endl;
 
     *out_ << "  p_new(" << c0_ << "): " << (*u)("cell",c0_);
     for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
     *out_ << std::endl;
     *out_ << "  T_new(" << c0_ << "): " << (*T_new)("cell",c0_);
-    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums0[n]);
+    //    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums0[n]);
     *out_ << std::endl;
 
     *out_ << "  p_new(" << c1_ << "): " << (*u)("cell",c1_);
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*u)("face",fnums1[n]);
     *out_ << std::endl;
     *out_ << "  T_new(" << c1_ << "): " << (*T_new)("cell",c1_);
-    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums1[n]);
+    //    for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*T_new)("face",fnums1[n]);
     *out_ << std::endl;
   }
 #endif
@@ -299,6 +306,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     *out_ << "    k_rel(" << c1_ << "): " << (*rel_perm)("cell",c1_);
     for (int n=0; n!=fnums1.size(); ++n) *out_ << ",  " << (*rel_perm)("face",fnums1[n]);
     *out_ << std::endl;
+    *out_ << "   KREL[500] = " << (*rel_perm)("face",500) << std::endl;
   }
 #endif
 
@@ -321,11 +329,20 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   // -- update the cell-cell block
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
+
+  std::cout << "Adding accumulation to precon:" << std::endl;
+  std::cout << " Acc_cells before = " << Acc_cells[99] << std::endl;
+
+
   int ncells = dwc_dp.MyLength();
   for (int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / h;
     Fc_cells[c] += pres[0][c] * dwc_dp[0][c] / h;
   }
+
+  std::cout << "  dwc_dp = " << dwc_dp[0][99] << std::endl;
+  std::cout << " Acc_cells after = " << Acc_cells[99] << std::endl;
+
 
   // Assemble and precompute the Schur complement for inversion.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

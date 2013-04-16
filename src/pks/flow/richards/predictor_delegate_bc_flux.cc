@@ -15,16 +15,14 @@ namespace Flow {
 
 #define DEBUG_FLAG 1
 
-bool PredictorDelegateBCFlux::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  Teuchos::RCP<CompositeVector> pres = u->data();
-
+bool PredictorDelegateBCFlux::modify_predictor(const Teuchos::Ptr<CompositeVector>& u) {
   int nfaces = bc_values_->size();
   for (int f=0; f!=nfaces; ++f) {
     if ((*bc_markers_)[f] == Operators::MATRIX_BC_FLUX) {
-      double lambda = (*pres)("face",f);
-      int ierr = CalculateLambdaToms_(f, pres.ptr(), lambda);
+      double lambda = (*u)("face",f);
+      int ierr = CalculateLambdaToms_(f, u, lambda);
       ASSERT(!ierr);
-      if (!ierr) (*pres)("face",f) = lambda;
+      if (!ierr) (*u)("face",f) = lambda;
     }
   }
   return true;
@@ -68,13 +66,13 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   double gflux = (matrix_->Ff_cells()[c][n] + bc_flux) / Krel;
 
 #if DEBUG_FLAG
-  // std::cout << "   Aff = ";
-  // for (int i=0; i!=faces.size(); ++i) std::cout << (*Aff)[i] << ", ";
-  // std::cout << std::endl << "   lambda = ";
-  // for (int i=0; i!=faces.size(); ++i) std::cout << (*lambda)[i] << ", ";
-  // std::cout << std::endl << "   p_cell = " << (*pres)("cell",c) << std::endl;
-  // std::cout << "    and init K_rel = " << wrms_->second[(*wrms_->first)[c]]->k_relative(101325. - (*lambda)[n]) << std::endl;
-  // std::cout << "    to match fluxes: bc = " << bc_flux << " and grav = " << gflux << std::endl;
+  std::cout << "   Aff = ";
+  for (int i=0; i!=faces.size(); ++i) std::cout << (*Aff)[i] << ", ";
+  std::cout << std::endl << "   lambda = ";
+  for (int i=0; i!=faces.size(); ++i) std::cout << (*lambda)[i] << ", ";
+  std::cout << std::endl << "   p_cell = " << (*pres)("cell",c) << std::endl;
+  std::cout << "    and init K_rel = " << wrms_->second[(*wrms_->first)[c]]->k_relative(101325. - (*lambda)[n]) << std::endl;
+  std::cout << "    to match fluxes: bc = " << bc_flux << " and grav = " << gflux << std::endl;
 #endif
 
   // create and return
