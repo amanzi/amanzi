@@ -133,12 +133,18 @@ void  WRMVanGenuchten::set_smoothing_interval_width(double pc_transition) {
 
 
 void WRMVanGenuchten::InitializeFromPlist_() {
-  m_ = plist_.get<double>("van Genuchten m");
+  if (plist_.isParameter("van Genuchten m")) {
+    m_ = plist_.get<double>("van Genuchten m");
+    n_ = 1.0 / (1.0 - m_);
+  } else {
+    n_ = plist_.get<double>("van Genuchten n");
+    m_ = 1.0 - 1.0/n_;
+  }
+
   alpha_ = plist_.get<double>("van Genuchten alpha");
   sr_ = plist_.get<double>("van Genuchten residual saturation", 0.0);
   pc_transition_ = plist_.get<double>("van Genuchten smoothing interval width", 0.0);
 
-  n_ = 1.0 / (1.0 - m_);
 };
 
 }  // namespace
