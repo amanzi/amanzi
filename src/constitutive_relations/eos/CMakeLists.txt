@@ -18,6 +18,7 @@ add_library(relations_eos
   eos_constant.cc eos_ideal_gas.cc eos_water.cc eos_ice.cc eos_vapor_in_gas.cc
   viscosity_evaluator.cc
   viscosity_relation_factory.cc
+  viscosity_constant.cc
   viscosity_water.cc
   molar_fraction_gas_evaluator.cc
   vapor_pressure_relation_factory.cc
