@@ -453,6 +453,18 @@ void Richards_PK::PrintStatistics() const
   }
 }
 
+
+/* ****************************************************************
+* Prints information about CPU spend by this PK. 
+**************************************************************** */
+void Richards_PK::PrintStatisticsCPU()
+{
+  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+    timer.parSync(MPI_COMM_WORLD);
+    if (MyPID == 0) cout << timer << endl;
+  }
+}
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

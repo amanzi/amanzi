@@ -154,7 +154,7 @@ class Matrix_MFD : public Epetra_Operator {
 #ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
   double hypre_tol, hypre_strong_threshold;
-  int hypre_nsmooth, hypre_ncycles;
+  int hypre_nsmooth, hypre_ncycles, hypre_verbosity;
 #endif
 
  private:
