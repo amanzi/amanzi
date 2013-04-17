@@ -40,6 +40,7 @@ public:
   void    stop(std::string);
   Timer&  operator()(std::string name);
   void    parSync(MPI_Comm comm);
+  void    print();
 
 protected:
   std::map<std::string, boost::shared_ptr<Timer> > _timer;

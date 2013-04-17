@@ -461,7 +461,7 @@ void Richards_PK::PrintStatisticsCPU()
 {
   if (verbosity >= FLOW_VERBOSITY_HIGH) {
     timer.parSync(MPI_COMM_WORLD);
-    if (MyPID == 0) cout << timer << endl;
+    if (MyPID == 0) timer.print();
   }
 }
 
