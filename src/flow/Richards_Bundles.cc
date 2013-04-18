@@ -25,32 +25,6 @@ namespace AmanziFlow {
 ****************************************************************** */
 
 /* ******************************************************************
-* A wrapper for updating relative permeabilities.
-****************************************************************** */
-void Richards_PK::CalculateRelativePermeability(const Epetra_Vector& u)
-{
-  Epetra_Vector* u_cells = FS->CreateCellView(u);
-  Epetra_Vector* u_faces = FS->CreateFaceView(u);
-
-  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
-      Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-      Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
-    CalculateRelativePermeabilityFace(*u_cells);
-    Krel_cells->PutScalar(1.0);
-    if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
-        experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-      CalculateDerivativePermeabilityFace(*u_cells);
-    }
-  } else if (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-    CalculateRelativePermeabilityFace(*u_cells);
-  } else {
-    CalculateRelativePermeabilityCell(*u_cells);
-    Krel_faces->PutScalar(1.0);
-  }
-}
-
- 
-/* ******************************************************************
 * A wrapper for updating boundary conditions.
 ****************************************************************** */
 void Richards_PK::UpdateSourceBoundaryData(
@@ -84,9 +58,9 @@ void Richards_PK::UpdateSourceBoundaryData(
 ****************************************************************** */
 void Richards_PK::AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix)
 { 
-  matrix->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+  matrix->CreateMFDstiffnessMatrices(*rel_perm);
   matrix->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix);
+  AddGravityFluxes_MFD(K, matrix, *rel_perm);
   matrix->ApplyBoundaryConditions(bc_model, bc_values);
   matrix->AssembleGlobalMatrices();
 }
@@ -98,7 +72,7 @@ void Richards_PK::AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix)
 ****************************************************************** */
 void Richards_PK::AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* preconditioner)
 { 
-  preconditioner->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+  preconditioner->CreateMFDstiffnessMatrices(*rel_perm);
   preconditioner->CreateMFDrhsVectors();
   preconditioner->ApplyBoundaryConditions(bc_model, bc_values);
   preconditioner->AssembleSchurComplement(bc_model, bc_values);
@@ -117,13 +91,13 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
-  CalculateRelativePermeability(u);
+  rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // setup a new algebraic problem
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+  matrix_->CreateMFDstiffnessMatrices(*rel_perm);
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
+  AddGravityFluxes_MFD(K, matrix_, *rel_perm);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
  
@@ -142,19 +116,20 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
   // update all coefficients, boundary data, and source/sink terms
-  CalculateRelativePermeability(u);
+  rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // setup a new algebraic problem
-  preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+  preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
   preconditioner_->CreateMFDrhsVectors();
   AddTimeDerivative_MFD(*u_cells, dTp, preconditioner_);
 
   if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
     Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
     Epetra_Vector& flux = FS->ref_darcy_flux();
+    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
     rhs = preconditioner_->rhs();
-    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
+    AddNewtonFluxes_MFD(*dKdP_faces, Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
@@ -168,9 +143,11 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
       Exceptions::amanzi_throw(msg);
     }
 
+    Epetra_Vector& Krel_cells = rel_perm->Krel_cells();
+    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model, bc_values,
-                                  *Krel_cells, *dKdP_cells,
-                                  *Krel_faces, *dKdP_faces);
+                                  Krel_cells, *dKdP_cells,
+                                  Krel_faces, *dKdP_faces);
   }
 
   preconditioner_->UpdatePreconditioner();

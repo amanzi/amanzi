@@ -84,15 +84,6 @@ class Richards_PK : public Flow_PK {
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-  void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
-
-  void CalculateRelativePermeability(const Epetra_Vector& u);
-  void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
-  void CalculateRelativePermeabilityFace(const Epetra_Vector& p);
-  void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
-  void CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
-  void CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
-  void AverageRelativePermeability();
 
   void CalculateDerivativePermeabilityFace(const Epetra_Vector& p);
   void CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vector& p);
@@ -120,7 +111,6 @@ class Richards_PK : public Flow_PK {
   void ProcessParameterList();
   void ProcessStringLinearSolver(const std::string name, LinearSolver_Specs* ls_specs);
   void ProcessStringExperimentalSolver(const std::string name, int* method);
-  void ProcessStringRelativePermeability(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
   void CalculateWRMcurves(Teuchos::ParameterList& list);
 
@@ -132,7 +122,6 @@ class Richards_PK : public Flow_PK {
   void DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
-  void PopulateMapC2MB();
 
   // initization members
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
@@ -215,13 +204,10 @@ class Richards_PK : public Flow_PK {
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
-  std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
 
   Teuchos::RCP<RelativePermeability> rel_perm;
 
   int Krel_method;  // method for calculating relative permeability
-  Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
-  Teuchos::RCP<Epetra_Vector> Krel_faces;
   Teuchos::RCP<Epetra_Vector> dKdP_cells;  // derivative of realitive permeability 
   Teuchos::RCP<Epetra_Vector> dKdP_faces;
 
@@ -231,9 +217,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 
   double mass_bc, mass_amanzi;
-
-  // Miscallenous maps
-  Teuchos::RCP<Epetra_Vector> map_c2mb;
 
   // CPU statistics
   TimerManager timer;

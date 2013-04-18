@@ -30,8 +30,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // set fully saturated media
-  Krel_cells->PutScalar(1.0);
-  Krel_faces->PutScalar(1.0);
+  rel_perm->SetFullySaturated();
 
   // calculate and assemble elemental stiffness matrices
   AssembleSteadyStateMatrix_MFD(matrix_);
@@ -84,7 +83,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // calculate and assemble elemental stiffness matrix
-  CalculateRelativePermeability(u);
+  rel_perm->Compute(u, bc_model, bc_values);
   AssembleSteadyStateMatrix_MFD(matrix_);
   matrix_->ReduceGlobalSystem2LambdaSystem(u);
 

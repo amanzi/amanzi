@@ -37,6 +37,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Flow_State.hh"
 #include "Flow_typedefs.hh"
+#include "RelativePermeability.hh"
 
 
 namespace Amanzi {
@@ -52,7 +53,8 @@ class Matrix_MFD : public Epetra_Operator {
   void CreateMFDrhsVectors();
   void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  virtual void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces, int method);
+  void CreateMFDstiffnessMatrices();
+  virtual void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
   virtual void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   virtual void AssembleGlobalMatrices();
   virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);

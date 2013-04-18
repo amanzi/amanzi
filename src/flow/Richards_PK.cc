@@ -216,20 +216,11 @@ void Richards_PK::InitPK()
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
-  Krel_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-  Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-
   dKdP_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));  // for P-N and Newton
   dKdP_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
 
-  Krel_cells->PutScalar(1.0);  // we start with fully saturated media
-  Krel_faces->PutScalar(1.0);
-
-  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY || 
-      Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-    SetAbsolutePermeabilityTensor(K);
-    CalculateKVectorUnit(gravity_, Kgravity_unit);
-  }
+  SetAbsolutePermeabilityTensor(K);
+  rel_perm->CalculateKVectorUnit(K, gravity_);  // move to Init() (lipnikov@lanl.gov)
 
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
@@ -238,10 +229,6 @@ void Richards_PK::InitPK()
 
   // injected water mass
   mass_bc = 0.0;
-
-  // miscalleneous maps 
-  map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
-  PopulateMapC2MB();
 
   // CPU statistcs
   if (verbosity >= FLOW_VERBOSITY_HIGH) {
@@ -627,9 +614,9 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // calculate Darcy flux as diffusive part + advective part.
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);  // We remove dT from mass matrices.
+  matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux);
+  AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho;
 
   // update time derivative

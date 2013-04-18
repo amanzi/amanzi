@@ -47,7 +47,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   double L2error = 1.0;
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     // update permeabilities
-    CalculateRelativePermeability(*solution);
+    rel_perm->Compute(*solution, bc_model, bc_values);
  
     // update boundary conditions
     double time = T_physics + dT;
@@ -65,15 +65,15 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
         rainfall_factor, bc_submodel, bc_model, bc_values);
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
+    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
     AddTimeDerivative_MFDfake(*solution_cells, dT, matrix_);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
     AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);

@@ -25,6 +25,7 @@ Usage:
 #include "Flow_State.hh"
 #include "Flow_constants.hh"
 #include "Flow_typedefs.hh"
+#include "RelativePermeability.hh"
 #include "Matrix_MFD.hh"
 #include "Matrix_MFD_PLambda.hh"
 #include "TI_Specs.hh"
@@ -79,14 +80,13 @@ class Flow_PK : public BDF2::fnBase {
   double WaterVolumeChangePerSecond(std::vector<int>& bc_model, Epetra_Vector& darcy_flux);
 
   // gravity members
-  void AddGravityFluxes_MFD(
-      std::vector<WhetStone::Tensor>& K,
-      const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
-      Matrix_MFD* matrix);
-  void AddGravityFluxes_DarcyFlux(
-      std::vector<WhetStone::Tensor>& K,
-      const Epetra_Vector& Krel_cells, const Epetra_Vector& Krel_faces, int method,
-      Epetra_Vector& darcy_mass_flux);
+  void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, Matrix_MFD* matrix);
+  void AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, Matrix_MFD* matrix,
+                             RelativePermeability& rel_perm);
+
+  void AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, Epetra_Vector& darcy_mass_flux);
+  void AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, Epetra_Vector& darcy_mass_flux,
+                                   RelativePermeability& rel_perm);
 
   // Picard-Newton members
   void AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,

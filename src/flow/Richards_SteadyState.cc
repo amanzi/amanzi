@@ -201,19 +201,19 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
         rainfall_factor, bc_submodel, bc_model, bc_values);
 
     // update permeabilities
-    CalculateRelativePermeability(*solution);
+    rel_perm->Compute(*solution, bc_model, bc_values);
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
+    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();  // export RHS from the matrix class
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
@@ -311,21 +311,24 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
         rainfall_factor, bc_submodel, bc_model, bc_values);
 
     // update permeabilities
-    CalculateRelativePermeability(*solution);
+    rel_perm->Compute(*solution, bc_model, bc_values);
 
     // create algebraic problem
     rhs = matrix_->rhs();  // export RHS from the matrix class
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
+    matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
-    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_cells, flux, *rhs, static_cast<Matrix_MFD_PLambda*>(matrix_));
+    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
+    AddNewtonFluxes_MFD(*dKdP_faces, Krel_faces, *solution_cells, 
+                        flux, *rhs, static_cast<Matrix_MFD_PLambda*>(matrix_));
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
-    AddNewtonFluxes_MFD(*dKdP_faces, *Krel_faces, *solution_cells, flux, residual, static_cast<Matrix_MFD_PLambda*>(preconditioner_));
+    AddNewtonFluxes_MFD(*dKdP_faces, Krel_faces, *solution_cells, 
+                        flux, residual, static_cast<Matrix_MFD_PLambda*>(preconditioner_));
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
@@ -355,7 +358,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     }
 
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux_new);
-    AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, Krel_method, flux_new);
+    AddGravityFluxes_DarcyFlux(K, flux_new, *rel_perm);
 
     int ndof = ncells_owned + nfaces_owned;
     for (int c = 0; c < ndof; c++) {

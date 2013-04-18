@@ -43,9 +43,6 @@ void Richards_PK::ProcessParameterList()
   ProcessStringVerbosity(verbosity_name, &verbosity);
 
   // Process main one-line options (not sublists)
-  std::string krel_method_name = rp_list_.get<string>("relative permeability");
-  ProcessStringRelativePermeability(krel_method_name, &Krel_method);
- 
   atm_pressure = rp_list_.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
   string mfd3d_method_name = rp_list_.get<string>("discretization method", "optimized mfd");
@@ -82,7 +79,13 @@ void Richards_PK::ProcessParameterList()
   }
   Teuchos::ParameterList& wrm_list = rp_list_.sublist("Water retention models");
   rel_perm = Teuchos::rcp(new RelativePermeability(mesh_, wrm_list));
-  rel_perm->Init();
+  rel_perm->Init(atm_pressure, FS_aux);
+  rel_perm->ProcessParameterList();
+  rel_perm->PopulateMapC2MB();
+
+  std::string krel_method_name = rp_list_.get<string>("relative permeability");
+  rel_perm->ProcessStringRelativePermeability(krel_method_name);
+ 
 
   // Time integrator for period I, temporary called initial guess initialization
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {
@@ -186,29 +189,6 @@ void Richards_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int* c
         Exceptions::amanzi_throw(msg);
       }
     }
-  }
-}
-
-
-/* ****************************************************************
-* Process string for the relative permeability
-**************************************************************** */
-void Richards_PK::ProcessStringRelativePermeability(const std::string name, int* method)
-{
-  Errors::Message msg;
-  if (name == "upwind with gravity") {
-    *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (name == "cell centered") {
-    *method = AmanziFlow::FLOW_RELATIVE_PERM_CENTERED;
-  } else if (name == "upwind with Darcy flux") {
-    *method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (name == "arithmetic mean") {
-    *method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
-  } else if (name == "upwind experimental") {
-    *method = AmanziFlow::FLOW_RELATIVE_PERM_EXPERIMENTAL;
-  } else {
-    msg << "Flow PK: unknown relative permeability method has been specified.";
-    Exceptions::amanzi_throw(msg);
   }
 }
 

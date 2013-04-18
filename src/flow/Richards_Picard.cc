@@ -39,22 +39,22 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
   double error0;
   int itrs;
   for (itrs = 0; itrs < 20; itrs++) {
-    CalculateRelativePermeability(solution_old);
+    rel_perm->Compute(solution_old, bc_model, bc_values);
 
     double time = Tp + dTp;
     UpdateSourceBoundaryData(time, *solution_old_cells, *solution_old_faces);
 
     // create algebraic problem
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
+    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix_);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
