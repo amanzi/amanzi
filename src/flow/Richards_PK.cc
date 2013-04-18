@@ -243,6 +243,12 @@ void Richards_PK::InitPK()
   map_c2mb = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   PopulateMapC2MB();
 
+  // CPU statistcs
+  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+    timer.add("Mass matrix generation", Amanzi::Timer::ACCUMULATE);
+    timer.add("AztecOO solver", Amanzi::Timer::ACCUMULATE);
+  }
+
   flow_status_ = FLOW_STATUS_INIT;
 }
 
@@ -310,6 +316,8 @@ void Richards_PK::InitPicard(double T0)
   ws_prev = ws;
 
   flow_status_ = FLOW_STATUS_INITIAL_GUESS;
+
+  PrintStatisticsCPU();
 }
 
 
@@ -433,7 +441,10 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < ncells_wghost; c++) K[c] *= rho / mu;
+
+  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("Mass matrix generation");  
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
+  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("Mass matrix generation");  
   preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
 
   if (verbosity >= FLOW_VERBOSITY_MEDIUM) {
@@ -588,6 +599,8 @@ int Richards_PK::Advance(double dT_MPC)
   ti_specs->dT_history.push_back(times);
 
   ti_specs->num_itrs++;
+  if (ti_specs->num_itrs % 10 == 0) PrintStatisticsCPU();
+
   return 0;
 }
 
