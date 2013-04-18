@@ -1,0 +1,3 @@
+
+
+class SteadyLinear(object):
