@@ -16,12 +16,8 @@ Authors: Neil Carlson (nnc@lanl.gov),
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "WRM_vanGenuchten.hh"
-#include "WRM_BrooksCorey.hh"
-#include "WRM_fake.hh"
-#include "Richards_PK.hh"
 #include "Flow_constants.hh"
-
+#include "Richards_PK.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -84,69 +80,9 @@ void Richards_PK::ProcessParameterList()
     msg << "Flow PK: there is no \"Water retention models\" list";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList& vG_list = rp_list_.sublist("Water retention models");
-
-  int nblocks = 0;  // Find out how many WRM entries there are.
-  for (Teuchos::ParameterList::ConstIterator i = vG_list.begin(); i != vG_list.end(); i++) {
-    if (vG_list.isSublist(vG_list.name(i))) {
-      nblocks++;
-    } else {
-      msg << "Flow PK: WRM contains an entry that is not a sublist.";
-      Exceptions::amanzi_throw(msg);
-    }
-  }
-
-  WRM.resize(nblocks);
-
-  int iblock = 0;
-  for (Teuchos::ParameterList::ConstIterator i = vG_list.begin(); i != vG_list.end(); i++) {
-    if (vG_list.isSublist(vG_list.name(i))) {
-      Teuchos::ParameterList& wrm_list = vG_list.sublist(vG_list.name(i));
-
-      std::string region;
-      if (wrm_list.isParameter("region")) {
-        region = wrm_list.get<std::string>("region");  // associated mesh block
-      } else {
-        msg << "Flow PK: WMR sublist \"" << vG_list.name(i).c_str() << "\" has no parameter \"region\".\n";
-        Exceptions::amanzi_throw(msg);
-      }
-
-      if (wrm_list.get<string>("water retention model") == "van Genuchten") {
-        double m = wrm_list.get<double>("van Genuchten m", FLOW_WRM_EXCEPTION);
-        double alpha = wrm_list.get<double>("van Genuchten alpha", FLOW_WRM_EXCEPTION);
-        double l = wrm_list.get<double>("van Genuchten l", FLOW_WRM_VANGENUCHTEN_L);
-        double sr = wrm_list.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
-        double pc0 = wrm_list.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
-        std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
-
-        VerifyWRMparameters(m, alpha, sr, pc0);
-        VerifyStringMualemBurdine(krel_function);
-
-        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, m, l, alpha, sr, krel_function, pc0));
-
-      } else if (wrm_list.get<string>("water retention model") == "Brooks Corey") {
-        double lambda = wrm_list.get<double>("Brooks Corey lambda", FLOW_WRM_EXCEPTION);
-        double alpha = wrm_list.get<double>("Brooks Corey alpha", FLOW_WRM_EXCEPTION);
-        double l = wrm_list.get<double>("Brooks Corey l", FLOW_WRM_BROOKS_COREY_L);
-        double sr = wrm_list.get<double>("residual saturation", FLOW_WRM_EXCEPTION);
-        double pc0 = wrm_list.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
-        std::string krel_function = wrm_list.get<std::string>("relative permeability model", "Mualem");
-
-        VerifyWRMparameters(lambda, alpha, sr, pc0);
-        VerifyStringMualemBurdine(krel_function);
-
-        WRM[iblock] = Teuchos::rcp(new WRM_BrooksCorey(region, lambda, l, alpha, sr, krel_function, pc0));
-
-      } else if (wrm_list.get<string>("water retention model") == "fake") {
-        WRM[iblock] = Teuchos::rcp(new WRM_fake(region));
-
-      } else {
-        msg << "Flow PK: unknown water retention model.";
-        Exceptions::amanzi_throw(msg);
-      }
-      iblock++;
-    }
-  }
+  Teuchos::ParameterList& wrm_list = rp_list_.sublist("Water retention models");
+  rel_perm = Teuchos::rcp(new RelativePermeability(mesh_, wrm_list));
+  rel_perm->Init();
 
   // Time integrator for period I, temporary called initial guess initialization
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {
@@ -246,7 +182,7 @@ void Richards_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int* c
         *control += FLOW_TI_ERROR_CONTROL_RESIDUAL;
       } else {
         Errors::Message msg;
-        msg << "Richards Problem: unknown error control option has been specified.";
+        msg << "Flow PK: unknown error control option has been specified.";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -273,36 +209,6 @@ void Richards_PK::ProcessStringRelativePermeability(const std::string name, int*
   } else {
     msg << "Flow PK: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-/* ****************************************************************
-* Verify string for the relative permeability model.
-**************************************************************** */
-void Richards_PK::VerifyStringMualemBurdine(const std::string name)
-{
-  Errors::Message msg;
-  if (name != "Mualem" && name != "Burdine") {
-    msg << "Flow PK: supported relative permeability models are Mualem and Burdine.";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-/* ****************************************************************
-* Verify string for the relative permeability model.
-**************************************************************** */
-void Richards_PK::VerifyWRMparameters(double m, double alpha, double sr, double pc0)
-{
-  Errors::Message msg;
-  if (m < 0.0 || alpha < 0.0 || sr < 0.0 || pc0 < 0.0) {
-    msg << "Flow PK: Negative/undefined parameter in a water retention model.";
-    Exceptions::amanzi_throw(msg);    
-  }
-  if (sr > 1.0) {
-    msg << "Flow PK: residual saturation is greater than 1.";
-    Exceptions::amanzi_throw(msg);    
   }
 }
 
@@ -376,6 +282,8 @@ std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& 
 **************************************************************** */
 void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();
+  
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     if (list.isParameter("calculate krel-pc curves")) {
       std::printf("Flow PK: saving krel-pc curves in file flow_krel_pc.txt...\n");

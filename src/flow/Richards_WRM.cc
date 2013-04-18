@@ -24,6 +24,8 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Richards_PK::CalculateRelativePermeabilityCell(const Epetra_Vector& p)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
 
@@ -72,6 +74,8 @@ void Richards_PK::CalculateRelativePermeabilityFace(const Epetra_Vector& p)
 ****************************************************************** */
 void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -112,6 +116,8 @@ void Richards_PK::CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector
 void Richards_PK::CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p,
                                                           const Epetra_Vector& flux)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -167,26 +173,6 @@ void Richards_PK::CalculateRelativePermeabilityArithmeticMean(const Epetra_Vecto
 
 
 /* ******************************************************************
-* Defines upwinded relative permeabilities for faces using gravity.
-* Routine is OBSOLETE. 
-****************************************************************** */
-void Richards_PK::AverageRelativePermeability()
-{
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    double factor = 0.0;
-    for (int n = 0; n < nfaces; n++) factor += (*Krel_faces)[faces[n]];
-    (*Krel_cells)[c] = factor / nfaces;
-  } 
-}
-
-
-/* ******************************************************************
 * Wrapper for various ways to define dKdP on faces.
 ****************************************************************** */
 void Richards_PK::CalculateDerivativePermeabilityFace(const Epetra_Vector& p)
@@ -208,6 +194,8 @@ void Richards_PK::CalculateDerivativePermeabilityFace(const Epetra_Vector& p)
 ****************************************************************** */
 void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vector& p)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -250,6 +238,8 @@ void Richards_PK::CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vect
 void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(
     const Epetra_Vector& p, const Epetra_Vector& flux)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -292,6 +282,8 @@ void Richards_PK::CalculateDerivativeRelativePermeabilityUpwindFlux(
 ****************************************************************** */
 void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -311,6 +303,8 @@ void Richards_PK::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 ****************************************************************** */
 void Richards_PK::DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -330,6 +324,8 @@ void Richards_PK::DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk)
 ****************************************************************** */
 void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -349,6 +345,8 @@ void Richards_PK::DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
 ****************************************************************** */
 void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -368,6 +366,8 @@ void Richards_PK::DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Ve
 ****************************************************************** */
 void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -389,6 +389,8 @@ void Richards_PK::ClipHydrostaticPressure(const double pmin, Epetra_Vector& p)
 ****************************************************************** */
 void Richards_PK::ClipHydrostaticPressure(const double pmin, const double s0, Epetra_Vector& p)
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -441,6 +443,8 @@ void Richards_PK::CalculateKVectorUnit(const AmanziGeometry::Point& g,
 ****************************************************************** */
 void Richards_PK::PopulateMapC2MB()
 {
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
+
   map_c2mb->PutScalar(-1);
 
   for (int mb = 0; mb < WRM.size(); mb++) {

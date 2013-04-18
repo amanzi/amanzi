@@ -29,6 +29,7 @@ Authors: Neil Carlson (version 1)
 #include "Flow_SourceFactory.hh"
 #include "Matrix_MFD.hh"
 #include "WaterRetentionModel.hh"
+#include "RelativePermeability.hh"
 #include "TI_Specs.hh"
 
 
@@ -119,8 +120,6 @@ class Richards_PK : public Flow_PK {
   void ProcessStringExperimentalSolver(const std::string name, int* method);
   void ProcessStringRelativePermeability(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-  void VerifyStringMualemBurdine(const std::string name);
-  void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
   void CalculateWRMcurves(Teuchos::ParameterList& list);
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
@@ -199,8 +198,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
-
   BoundaryFunction* bc_pressure;  // Pressure BC.
   BoundaryFunction* bc_head;  // Static pressure head BC.
   BoundaryFunction* bc_flux;  // Outward mass flux BC.
@@ -216,6 +213,8 @@ class Richards_PK : public Flow_PK {
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
   std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
+
+  Teuchos::RCP<RelativePermeability> rel_perm;
 
   int Krel_method;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 

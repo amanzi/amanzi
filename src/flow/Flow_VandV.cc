@@ -47,7 +47,7 @@ void Flow_PK::ValidateBoundaryConditions(
     Errors::Message msg;
     std::stringstream s;
     s << global_overlap;
-    msg << "DarcyProblem: static head BC overlap Dirichlet BC on "
+    msg << "Flow PK: static head BC overlap Dirichlet BC on "
         << s.str().c_str() << " faces\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -64,7 +64,7 @@ void Flow_PK::ValidateBoundaryConditions(
     Errors::Message msg;
     std::stringstream s;
     s << global_overlap;
-    msg << "DarcyProblem: flux BC overlap Dirichlet BC on "
+    msg << "Flow PK: flux BC overlap Dirichlet BC on "
         << s.str().c_str() << " faces\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -81,7 +81,7 @@ void Flow_PK::ValidateBoundaryConditions(
     Errors::Message msg;
     std::stringstream s;
     s << global_overlap;
-    msg << "DarcyProblem: flux BC overlap static head BC on "
+    msg << "Flow PK: flux BC overlap static head BC on "
         << s.str().c_str() << " faces\n";
     Exceptions::amanzi_throw(msg);
   }

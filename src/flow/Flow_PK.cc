@@ -408,7 +408,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(
 
       if (f < nfaces_owned && !flag[f]) {
         if (method == FLOW_RELATIVE_PERM_NONE) {
-           darcy_mass_flux[f] += ((K[c] * gravity) * normal);
+          darcy_mass_flux[f] += ((K[c] * gravity) * normal);
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c];
         } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
