@@ -471,7 +471,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   DeriveSaturationFromPressure(pressure, ws);
  
   // re-initialize lambda (experimental)
-  if (ti_specs.pressure_lambda_constraints) {
+  if (ti_specs.pressure_lambda_constraints && experimental_solver_ == FLOW_SOLVER_NKA) {
     double Tp = T0 + dT0;
     EnforceConstraints_MFD(Tp, *solution);
   }
