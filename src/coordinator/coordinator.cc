@@ -28,7 +28,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "coordinator.hh"
 
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 namespace Amanzi {
 
@@ -115,7 +115,7 @@ void Coordinator::initialize() {
     ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
-    
+
     DeformCheckpointMesh(S_.ptr());
   }
 
@@ -348,6 +348,13 @@ void Coordinator::cycle_driver() {
   }
 
   catch (Exceptions::Amanzi_exception &e) {
+    // write one more vis for help debugging
+    S_next_->advance_cycle();
+    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+         vis!=visualization_.end(); ++vis) {
+      WriteVis((*vis).ptr(), S_next_.ptr());
+    }
+
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("last_good_checkpoint");

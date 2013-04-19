@@ -154,7 +154,7 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Xf = " << Xf[0][0] << ", " << Xf[0][1] << std::endl;
+  std::cout << "Xf = " << Xf[0][1649*2] << ", " << Xf[0][1649*2+1] << std::endl;
 
   if (prec_method_ == TRILINOS_ML) {
     ierr = ml_prec_->ApplyInverse(Xf, Yf);
@@ -173,7 +173,7 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
 
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Yf = " << Yf[0][0] << ", " << Yf[0][1] << std::endl;
+  std::cout << "Yf = " << Yf[0][1649*2] << ", " << Yf[0][1649*2+1] << std::endl;
 
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
   // Yc <-- A2f2c * Yf
@@ -182,7 +182,7 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
 
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Yc = " << Yc[0][0] << ", " << Yc[0][1] << std::endl;
+  std::cout << "Yc = " << Yc[0][399*2] << ", " << Yc[0][399*2+1] << std::endl;
 
 
   // Yc -= (x_Ac,x_Bc)^T
@@ -198,7 +198,7 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
 
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Yc = " << Yc[0][0] << ", " << Yc[0][1] << std::endl;
+  std::cout << "Yc = " << Yc[0][399*2] << ", " << Yc[0][399*2+1] << std::endl;
 
   // pull Y data
   Teuchos::RCP<CompositeVector> YA = Y->SubVector(0)->data();
@@ -218,8 +218,8 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "YA_c = " << YA_c[0][0] << ", " << YA_c[0][99] << std::endl;
-  std::cout << "YB_c = " << YB_c[0][0] << ", " << YB_c[0][99] << std::endl;
+  std::cout << "YA_c = " << YA_c[0][399] << std::endl;
+  std::cout << "YB_c = " << YB_c[0][399] << std::endl;
 
 
   for (int f=0; f!=nfaces; ++f){
@@ -228,8 +228,8 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "YA_f = " << YA_f[0][0] << ", " << YA_f[0][500] << std::endl;
-  std::cout << "YB_f = " << YB_f[0][0] << ", " << YB_f[0][500] << std::endl;
+  std::cout << "YA_f = " << YA_f[0][1649] << std::endl;
+  std::cout << "YB_f = " << YB_f[0][1649] << std::endl;
 
 
 }

@@ -13,6 +13,9 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
+const int FLOW_WRM_MUALEM = 1;
+const int FLOW_WRM_BURDINE = 2;
+
 Utils::RegisteredFactory<WRM,WRMVanGenuchten> WRMVanGenuchten::factory_("van Genuchten");
 
 /* ******************************************************************
@@ -23,27 +26,26 @@ WRMVanGenuchten::WRMVanGenuchten(Teuchos::ParameterList& plist) :
   InitializeFromPlist_();
 };
 
+
 /* ******************************************************************
- * Relative permeability formula: input is capillary pressure pc.
- ****************************************************************** */
+* Relative permeability formula: input is capillary pressure pc.
+* The original curve is regulized on interval (0, pc0) using the
+* Hermite interpolant of order 3. Formulas (3.11)-(3.12).
+****************************************************************** */
 double WRMVanGenuchten::k_relative(double pc) {
-  if (pc > pc_transition_) {
-    double se(std::pow(1.0 + std::pow(alpha_*pc,n_),-m_));
-    return sqrt(se) * std::pow( 1.0 - std::pow( 1.0 - std::pow(se,1.0/m_),m_), 2);
+  if (pc >= pc0_) {
+    double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
+    if (function_ == FLOW_WRM_MUALEM) {
+      return pow(se, l_) * pow(1.0 - pow(1.0 - pow(se, 1.0/m_), m_), 2.0);
+    } else {
+      return se * se * (1.0 - pow(1.0 - pow(se, 1.0/m_), m_));
+    }
   } else if (pc <= 0.0) {
     return 1.0;
   } else {
-    double se_pct  (std::pow(1.0 + std::pow(alpha_*pc_transition_,n_),-m_));
-    double f_pct   (sqrt(se_pct) * std::pow( 1.0 - std::pow( 1.0 - std::pow(se_pct,1.0/m_),m_), 2));
-
-    double fab     ((f_pct - 1.0)/pc_transition_);
-
-    double se_pct1 (std::pow(1.0 + std::pow(alpha_*(pc_transition_+1.0),n_),-m_));
-    double f_pct1  (sqrt(se_pct1) * std::pow( 1.0 - std::pow( 1.0 - std::pow(se_pct1,1.0/m_),m_), 2));
-
-
-    return 1.0 + pc*pc*fab/pc_transition_
-      + pc*pc*(pc-pc_transition_)*(f_pct1-f_pct-2.0*fab)/(pc_transition_*pc_transition_);
+    double pc_2 = pc * pc;
+    double pc_3 = pc_2 * pc;
+    return 1.0 + a_ * pc_2 + b_ * pc_3;
   }
 }
 
@@ -52,14 +54,20 @@ double WRMVanGenuchten::k_relative(double pc) {
  * D Relative permeability / D capillary pressure pc.
  ****************************************************************** */
 double WRMVanGenuchten::d_k_relative(double pc) {
-  if (pc > 0.) {
-    double se = std::pow(1.0 + std::pow(alpha_*pc,n_),-m_);
+  if (pc > 0.0) {
+    double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     double dsdp = d_saturation(pc);
-    double x = pow(se, 1./m_);
-    double y = pow(1. - x, m_);
 
-    double dkdse = (1.0 - y) * (0.5 * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, 0.5 - 1.0);
+    double x = pow(se, 1.0 / m_);
+    double y = pow(1.0 - x, m_);
+    double dkdse;
+    if (function_ == FLOW_WRM_MUALEM)
+      dkdse = (1.0 - y) * (l_ * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, l_ - 1.0);
+    else
+      dkdse = (2 * (1.0 - y) + x / (1.0 - x)) * se;
+
     return dkdse * dsdp / (1 - sr_);
+
   } else {
     return 0.0;
   }
@@ -109,7 +117,7 @@ double WRMVanGenuchten::capillaryPressure(double s) {
 double WRMVanGenuchten::d_capillaryPressure(double s) {
   double se = (s - sr_) / (1.0 - sr_);
   se = std::min<double>(se, 1.0);
-  se = std::max<double>(se, 1.e-10);
+  se = std::max<double>(se, 1.e-40);
 
   if (se < 1.e-8) {
     return -1.0/(m_*n_*alpha_) * std::pow(se, -1.0/(m_*n_) - 1.)  / (1.0 - sr_);
@@ -120,30 +128,47 @@ double WRMVanGenuchten::d_capillaryPressure(double s) {
 }
 
 
-
-
-// set the width of the smoothing interval for the relative permeability 
-// function, setting the width to 0.0 will result in the use of the 
-// nonsmooth k_rel function
-
-void  WRMVanGenuchten::set_smoothing_interval_width(double pc_transition) {
-  ASSERT(pc_transition_ >= 0.0);
-  pc_transition_ = pc_transition;
-}
-
-
 void WRMVanGenuchten::InitializeFromPlist_() {
-  if (plist_.isParameter("van Genuchten m")) {
-    m_ = plist_.get<double>("van Genuchten m");
-    n_ = 1.0 / (1.0 - m_);
+  std::string fname = plist_.get<std::string>("Krel function name", "Mualem");
+  if (fname == std::string("Mualem")) {
+    function_ = FLOW_WRM_MUALEM;
+  } else if (fname == std::string("Burdine")) {
+    function_ = FLOW_WRM_BURDINE;
   } else {
-    n_ = plist_.get<double>("van Genuchten n");
-    m_ = 1.0 - 1.0/n_;
+    ASSERT(0);
   }
 
   alpha_ = plist_.get<double>("van Genuchten alpha");
   sr_ = plist_.get<double>("van Genuchten residual saturation", 0.0);
-  pc_transition_ = plist_.get<double>("van Genuchten smoothing interval width", 0.0);
+  l_ = plist_.get<double>("Mualem exponent l", 0.5);
+  pc0_ = plist_.get<double>("van Genuchten smoothing interval width", 0.0);
+
+  if (plist_.isParameter("van Genuchten m")) {
+    m_ = plist_.get<double>("van Genuchten m");
+    if (function_ == FLOW_WRM_MUALEM) {
+      n_ = 1.0 / (1.0 - m_);
+    } else {
+      n_ = 2.0 / (1.0 - m_);
+    }
+  } else {
+    n_ = plist_.get<double>("van Genuchten n");
+    if (function_ == FLOW_WRM_MUALEM) {
+      m_ = 1.0 - 1.0/n_;
+    } else {
+      m_ = 1.0 - 2.0/n_;
+    }
+  }
+
+  a_ = b_ = 0.;
+  if (pc0_ > 0) {
+    double k0 = k_relative(pc0_) - 1.0;
+    double k0p = d_k_relative(pc0_);
+    double pc0_2 = pc0_ * pc0_;
+    double pc0_3 = pc0_2 * pc0_;
+
+    a_ = (3 * k0 - k0p * pc0_) / pc0_2;
+    b_ = (k0p * pc0_ - 2 * k0) / pc0_3;
+  }
 
 };
 

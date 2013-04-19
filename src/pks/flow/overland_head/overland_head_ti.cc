@@ -47,10 +47,10 @@ void OverlandHeadFlow::fun( double t_old,
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
       c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
-    AmanziMesh::Entity_ID_List faces, faces0;
+    AmanziMesh::Entity_ID_List faces0, faces1;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-    mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c1_, &faces1, &dirs);
 
     S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
     Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
@@ -63,20 +63,20 @@ void OverlandHeadFlow::fun( double t_old,
           << " T1 = " << t_new << " H = " << h << std::endl;
     *out_ << std::setprecision(15);
     *out_ << "  p0: " << (*u)("cell",0,c0_) << std::endl;
-    *out_ << "  h0: " << (*depth)("cell",0,c0_) << " "
-          << (*depth)("face",0,faces0[0]) << " " << (*depth)("face",0,faces0[1]) << " "
-          << (*depth)("face",0,faces0[2]) << " " << (*depth)("face",0,faces0[3]) << std::endl;
-    *out_ << "  hz0: " << (*preselev)("cell",0,c0_) << " "
-          << (*preselev)("face",0,faces0[0]) << " " << (*preselev)("face",0,faces0[1]) << " "
-          << (*preselev)("face",0,faces0[2]) << " " << (*preselev)("face",0,faces0[3]) << std::endl;
+    *out_ << "  h0: " << (*depth)("cell",0,c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*depth)("face",faces0[n]);
+    *out_ << std::endl;
+    *out_ << "  hz0: " << (*preselev)("cell",0,c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*preselev)("face",faces0[n]);
+    *out_ << std::endl;
     *out_ << " --" << std::endl;
     *out_ << "  p1: " << (*u)("cell",c1_) << std::endl;
-    *out_ << "  h1: " << (*depth)("cell",c1_) << " "
-          << (*depth)("face",faces[0]) << " " << (*depth)("face",faces[1]) << " "
-          << (*depth)("face",faces[2]) << " " << (*depth)("face",faces[3]) << std::endl;
-    *out_ << "  hz1: " << (*preselev)("cell",c1_) << " "
-          << (*preselev)("face",faces[0]) << " " << (*preselev)("face",faces[1]) << " "
-          << (*preselev)("face",faces[2]) << " " << (*preselev)("face",faces[3]) << std::endl;
+    *out_ << "  h1: " << (*depth)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*depth)("face",faces1[n]);
+    *out_ << std::endl;
+    *out_ << "  hz1: " << (*preselev)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*preselev)("face",faces1[n]);
+    *out_ << std::endl;
   }
 #endif
 
@@ -106,23 +106,24 @@ void OverlandHeadFlow::fun( double t_old,
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true) &&
       c0_ < res->size("cell",false) && c1_ < res->size("cell",false)) {
-    AmanziMesh::Entity_ID_List faces, faces0;
+    AmanziMesh::Entity_ID_List faces0, faces1;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-    mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c1_, &faces1, &dirs);
 
-    *out_ << "  cond0 (diff): " << (*cond)("cell",c0_) << " "
-          << (*cond)("face",faces0[0]) << " " << (*cond)("face",faces0[1]) << " "
-          << (*cond)("face",faces0[2]) << " " << (*cond)("face",faces0[3]) << std::endl;
-    *out_ << "  cond1 (diff): " << (*cond)("cell",c1_) << " "
-          << (*cond)("face",faces[0]) << " " << (*cond)("face",faces[1]) << " "
-          << (*cond)("face",faces[2]) << " " << (*cond)("face",faces[3]) << std::endl;
-    *out_ << "  res0 (diff): " << (*res)("cell",c0_) << " "
-             << (*res)("face",faces0[0]) << " " << (*res)("face",faces0[1]) << " "
-             << (*res)("face",faces0[2]) << " " << (*res)("face",faces0[3]) << std::endl;
-    *out_ << "  res1 (diff): " << (*res)("cell",c1_) << " "
-             << (*res)("face",faces[0]) << " " << (*res)("face",faces[1]) << " "
-             << (*res)("face",faces[2]) << " " << (*res)("face",faces[3]) << std::endl;
+    *out_ << "  cond0 (diff): " << (*cond)("cell",c0_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*cond)("face",faces0[n]);
+    *out_ << std::endl;
+    *out_ << "  cond1 (diff): " << (*cond)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*cond)("face",faces1[n]);
+    *out_ << std::endl;
+    *out_ << "  res0 (diff): " << (*res)("cell",c0_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
+    *out_ << std::endl;
+    *out_ << "  res1 (diff): " << (*res)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
+    *out_ << std::endl;
+
   }
 
 #endif
@@ -468,8 +469,8 @@ double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
-    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
+    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
+    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
   }
 
   double enorm_val(std::max<double>(enorm_face, enorm_cell));

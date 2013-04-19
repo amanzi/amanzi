@@ -6,6 +6,7 @@
 
 #include "errors.hh"
 #include "Epetra_FECrsGraph.h"
+#include "EpetraExt_RowMatrixOut.h"
 #include "matrix_mfd.hh"
 #include "matrix_mfd_tpfa.hh"
 
@@ -207,10 +208,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
       }
     }
 
-    if (c == 101) {
-      std::cout << "Krel(507) = " << (*Krel_face)[0][507] << std::endl;
-    }
-
     double matsum = 0.0;  // elimination of mass matrix
     for (int n=0; n!=nfaces; ++n) {
       double rowsum = 0.0, colsum = 0.0;
@@ -325,7 +322,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
         if (c == 101)
-          std::cout << "On cell " << 101 << ", Ff_pre-BC = " << Ff[n];
+          std::cout << "On cell " << 101 << ", Ff_pre-BC = " << Ff[n] << std::endl;
         Ff[n] -= bc_values[f] * mesh_->face_area(f);
         if (c == 101)
           std::cout << "On cell " << 101 << ", Ff_post-BC = " << Ff[n] << std::endl;
@@ -520,7 +517,6 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
     (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
   }
   (*Sff_).GlobalAssemble();
-
 }
 
 /* ******************************************************************
@@ -797,19 +793,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
         }
 
         flux_v[0][f] = s * dirs[n];
-        if (!(std::abs(flux_v[0][f]) >= 0.)) {
-          std::cout << "DEAD FLUX!" << std::endl;
-          for (int m=0; m!=nfaces; ++m) {
-            std::cout << "  dp = " << dp[m] << ", Aff = ";
-            for (int n=0; n!=nfaces; ++n) std::cout << Aff_cells_[c](m,n) << ", ";
-            std::cout << std::endl;
-          }
-
-          ASSERT(0);
-        }
-
         done[f] = true;
-
       }
     }
   }

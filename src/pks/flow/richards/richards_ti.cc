@@ -51,6 +51,10 @@ void Richards::fun(double t_old,
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
+    AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(c0_);
+    *out_ << "Cell c(" << c0_ << ") centroid = " << c0_centroid << std::endl;
+    AmanziGeometry::Point c1_centroid = mesh_->cell_centroid(c1_);
+    *out_ << "Cell c(" << c1_ << ") centroid = " << c1_centroid << std::endl;
 
     *out_ << std::setprecision(15);
     *out_ << "----------------------------------------------------------------" << std::endl;
@@ -201,6 +205,10 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
           << (*Pu->data())("face",fnums1[1]) << std::endl;
   }
 #endif
+
+  if (precon_wc_) {
+    PreconWC_(u, Pu);
+  }
 };
 
 
@@ -352,16 +360,18 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
       *out_ << "  assembling..." << std::endl;
     mfd_preconditioner_->AssembleGlobalMatrices();
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
+
+    // dump the schur complement
+    // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
+    // std::stringstream filename_s;
+    // filename_s << "schur_" << S_next_->cycle() << ".txt";
+    // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+    // *out_ << "updated precon " << S_next_->cycle() << std::endl;
+
     mfd_preconditioner_->UpdatePreconditioner();
   }
 
   /*
-  // dump the schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
-  std::stringstream filename_s;
-  filename_s << "schur_" << S_next_->cycle() << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-  *out_ << "updated precon " << S_next_->cycle() << std::endl;
 
   // print the rel perm
   Teuchos::RCP<const CompositeVector> cell_rel_perm =
@@ -436,8 +446,8 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
-    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
+    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
+    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
   }
 
   double enorm_val(std::max<double>(enorm_face, enorm_cell));
@@ -448,6 +458,53 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   return enorm_val;
 };
 
+
+void Richards::PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Apply precon variable switching to Liquid Saturation" << std::endl;
+
+    // get old p, sat
+  const Epetra_MultiVector& pres_prev =
+      *S_next_->GetFieldData("pressure")->ViewComponent("cell",false);
+  const Epetra_MultiVector& sat_prev =
+      *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+  // calculate ds/dt
+  S_next_->GetFieldEvaluator("saturation_liquid")
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+
+  const Epetra_MultiVector& dsdp =
+      *S_next_->GetFieldData("dsaturation_liquid_dpressure")->ViewComponent("cell",false);
+  Epetra_MultiVector& dp = *Pu->data()->ViewComponent("cell",false);
+
+  Epetra_MultiVector s_new(dp);
+  s_new.Multiply(1., dp, dsdp, 0.);
+  s_new.Update(1., sat_prev, -1.); // s_new <-- s - ds
+
+  AmanziMesh::Entity_ID ncells = s_new.MyLength();
+  for (AmanziMesh::Entity_ID c=0; c!=ncells; ++c) {
+
+    double p_prev = pres_prev[0][c];
+    double p_standard = p_prev - dp[0][c];
+
+    // cannot use if saturated, likely not useful if decreasing in saturation
+    if (p_standard > p_prev && s_new[0][c] < 0.99) {
+      double pc = wrms_->second[(*wrms_->first)[c]]->capillaryPressure(s_new[0][c]);
+      double p_wc = patm - pc;
+      std::cout << "preconWC on cell " << c << ":" << std::endl;
+      std::cout << "  s_new = " << s_new[0][c] << std::endl;
+      std::cout << "  p_old = " << p_prev << std::endl;
+      std::cout << "  p_corrected = " << p_standard << std::endl;
+      std::cout << "  p_wc = " << p_wc << std::endl;
+      dp[0][c] = p_prev - p_wc;
+    }
+  }
+
+  // Now that we have monkeyed with cells, fix faces
+  mfd_preconditioner_->UpdateConsistentFaceCorrection(*u->data(), Pu->data().ptr());
+}
 
 }  // namespace Flow
 }  // namespace Amanzi

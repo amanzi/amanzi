@@ -113,7 +113,11 @@ protected:
   // Nonlinear version of CalculateConsistentFaces()
   virtual void CalculateConsistentFacesForInfiltration_(
       const Teuchos::Ptr<CompositeVector>& u);
+  virtual bool ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u);
+  virtual bool ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u);
+  virtual bool ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u);
 
+  virtual void PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
 protected:
   enum FluxUpdateMode {
@@ -129,7 +133,9 @@ protected:
   int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
+  bool modify_predictor_wc_;
   bool symmetric_;
+  bool precon_wc_;
 
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler

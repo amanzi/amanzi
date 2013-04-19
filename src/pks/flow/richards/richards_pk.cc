@@ -52,8 +52,10 @@ Richards::Richards(Teuchos::ParameterList& plist,
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),
     modify_predictor_with_consistent_faces_(false),
+    modify_predictor_wc_(false),
     modify_predictor_bc_flux_(false),
     upwind_from_prev_flux_(false),
+    precon_wc_(false),
     niter_(0),
     dynamic_mesh_(false)
 {
@@ -186,7 +188,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     symmetric_ = true;
     Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
-    upwind_from_prev_flux_ = plist_.get<bool>("upwind flux from previous iteration", true);
+    upwind_from_prev_flux_ = plist_.get<bool>("upwind flux from previous iteration", false);
     if (upwind_from_prev_flux_) {
       upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               "relative_permeability", "numerical_rel_perm", "darcy_flux"));
@@ -219,12 +221,18 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
   set_preconditioner(precon);
 
-  modify_predictor_with_consistent_faces_ =
-    plist_.get<bool>("modify predictor with consistent faces", false);
+  // wc preconditioner
+  precon_wc_ = plist_.get<bool>("precondition using WC", false);
 
   // predictors for time integration
-  modify_predictor_bc_flux_ = plist_.get<bool>("modify predictor for flux BCs", false);
-  modify_predictor_first_bc_flux_ = plist_.get<bool>("modify predictor for initial flux BCs", false);
+  modify_predictor_with_consistent_faces_ =
+    plist_.get<bool>("modify predictor with consistent faces", false);
+  modify_predictor_bc_flux_ = 
+    plist_.get<bool>("modify predictor for flux BCs", false);
+  modify_predictor_first_bc_flux_ = 
+    plist_.get<bool>("modify predictor for initial flux BCs", false);
+  modify_predictor_wc_ = 
+    plist_.get<bool>("modify predictor via water content", false);
 }
 
 
@@ -685,27 +693,101 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   bool changed(false);
   if (modify_predictor_bc_flux_ ||
       (modify_predictor_first_bc_flux_ && S_next_->cycle() == 0)) {
-    CalculateConsistentFacesForInfiltration_(u->data().ptr());
-    changed = true;
-    changed_solution(); // mark the solution as changed, as modifying with
-                        // consistent faces will then get the updated boundary
-                        // conditions
+    changed |= ModifyPredictorFluxBCs_(h,u);
+  }
+
+
+  if (modify_predictor_wc_) {
+    changed |= ModifyPredictorWC_(h,u);
   }
 
   if (modify_predictor_with_consistent_faces_) {
-    std::cout << std::setprecision(15);
-    std::cout << " old pressure top face = " << (*u->data())("face",507) << std::endl;
+    changed |= ModifyPredictorConsistentFaces_(h,u);
+  }
+  return changed;
+}
 
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-      *out_ << "  modifications for consistent face pressures." << std::endl;
-    CalculateConsistentFaces(u->data().ptr());
-    changed = true;
+bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
 
-    std::cout << " new pressure top face = " << (*u->data())("face",507) << std::endl;
-
+  if (flux_predictor_ == Teuchos::null) {
+    flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
+            wrms_, &bc_markers_, &bc_values_));
   }
 
-  return changed;
+  // update boundary conditions
+  bc_pressure_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  UpdateBoundaryConditions_();
+
+  UpdatePermeabilityData_(S_next_.ptr());
+  Teuchos::RCP<const CompositeVector> rel_perm =
+    S_next_->GetFieldData("numerical_rel_perm");
+  matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  matrix_->CreateMFDrhsVectors();
+  Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData("mass_density_liquid");
+  Teuchos::RCP<const Epetra_Vector> gvec = S_next_->GetConstantVectorData("gravity");
+  AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
+  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+
+  flux_predictor_->modify_predictor(h, u);
+  changed_solution(); // mark the solution as changed, as modifying with
+                      // consistent faces will then get the updated boundary
+                      // conditions
+  return true;
+}
+
+bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = getOSTab();
+  std::cout << std::setprecision(15);
+  std::cout << " old pressure top face = " << (*u->data())("face",500) << std::endl;
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  modifications for consistent face pressures." << std::endl;
+  CalculateConsistentFaces(u->data().ptr());
+  std::cout << " new pressure top face = " << (*u->data())("face",500) << std::endl;
+  return true;
+}
+
+bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
+  ASSERT(0);
+  return false;
+
+  // Teuchos::OSTab tab = getOSTab();
+  // if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+  //   *out_ << "  modifications for consistent face pressures." << std::endl;
+
+  // // assumes mostly incompressible liquid, and uses just ds/dt
+  // Epetra_MultiVector& u_c = u->data()->ViewComponent("cell",false);
+
+  // // pres at previous step
+  // const Epetra_MultiVector& p1 = *S_inter_->GetFieldData("saturation_liquid")
+  //   ->ViewComponent("cell",false);
+
+  // // project saturation
+  // double dt_next = S_next_->time() - S_inter_->time();
+  // double dt_prev = S_inter_->time() - time_prev2_;
+
+  // // -- get sat data
+  // const Epetra_MultiVector& sat0 = *sat_prev2_;
+  // const Epetra_MultiVector& sat1 = *S_inter_->GetFieldData("saturation_liquid")
+  //     ->ViewComponent("cell",false);
+  // Epetra_MultiVector& sat2 = *S_next_->GetFieldData("saturation_liquid",
+  //         "saturation_liquid")->ViewComponent("cell",false);
+
+  // // -- project
+  // sat2 = sat0;
+  // double dt_ratio = (dt_next + dt_prev) / dt_prev;
+  // sat2.Update(dt_ratio, sat1, 1. - dt_ratio);
+
+  // // determine pressure at new step
+  // Epetra_MultiVector pres_wc(u_c);
+  // int ncells = pres_wc.MyLength();
+  // for (int c=0; c!=ncells; ++c) {
+  //   // Query the WRM somehow?
+  // }
 }
 
 

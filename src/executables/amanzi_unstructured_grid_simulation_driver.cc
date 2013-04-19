@@ -29,6 +29,7 @@ Effectively stolen from Amanzi, with few modifications.
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "MeshAudit.hh"
 #include "MeshFactory.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
@@ -59,6 +60,8 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
 
   int rank;
   MPI_Comm_rank(mpi_comm,&rank);
+  int size;
+  MPI_Comm_size(mpi_comm,&size);
 
   ParameterList params_copy;
   bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
@@ -129,7 +132,7 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
     // do nothing, this means that the "Framework" parameter was not in the input
   } catch (const std::exception& e) {
-    std::cerr << rank << ": error: " << e.what() << std::endl;
+    std::cout << rank << ": error: " << e.what() << std::endl;
     ierr++;
   }
 
@@ -200,8 +203,51 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
               << "Neither Read nor Generate options specified for mesh" << std::endl;
     throw std::exception();
   }
-
   ASSERT(!mesh.is_null());
+
+  // mesh verification
+  bool expert_params_specified = mesh_plist.isSublist("Expert");
+  if (expert_params_specified) {
+    Teuchos::ParameterList expert_mesh_params = mesh_plist.sublist("Expert");
+
+    bool verify_mesh_param = expert_mesh_params.isParameter("Verify Mesh");
+    if (verify_mesh_param) {
+      bool verify = expert_mesh_params.get<bool>("Verify Mesh");
+      if (verify) {
+        std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
+        if (size == 1) {
+          Amanzi::MeshAudit mesh_auditor(mesh);
+          int status = mesh_auditor.Verify();
+          if (status == 0) {
+            std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
+          } else {
+            std::cout << "Mesh Audit could not verify correctness of mesh" << std::endl;
+            return Amanzi::Simulator::FAIL;
+          }
+        } else {
+          std::ostringstream ofile;
+          ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
+          std::ofstream ofs(ofile.str().c_str());
+          if (rank == 0)
+            std::cerr << "Writing Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
+
+          ierr = 0;
+          Amanzi::MeshAudit mesh_auditor(mesh, ofs);
+          int status = mesh_auditor.Verify();        // check the mesh
+          if (status != 0) ierr++;
+
+          comm->SumAll(&ierr, &aerr, 1);
+          if (aerr == 0) {
+            std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
+          } else {
+            if (rank == 0)
+              std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
+            return Amanzi::Simulator::FAIL;
+          }
+        }
+      }  // if verify
+    }  // if verify_mesh_param
+  }  // If expert_params_specified
 
   // Create the surface mesh if needed
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
