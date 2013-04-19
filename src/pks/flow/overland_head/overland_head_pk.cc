@@ -559,7 +559,7 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   }
 
   // zero gradient: grad h = 0 implies that q = -k grad z
-  const Epetra_MultiVector& height = *S->GetFieldData("")
+  const Epetra_MultiVector& height = *S->GetFieldData("ponded_depth")
       ->ViewComponent("cell",false);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
