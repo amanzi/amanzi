@@ -117,21 +117,21 @@ int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
     Epetra_Vector* solution_new_faces = FS->CreateFaceView(*solution_new);
 
     // create algebraic problem
-    CalculateRelativePermeability(*solution_new);
+    rel_perm->Compute(*solution_new, bc_model, bc_values);
 
     double time = Tp + dTp;
     UpdateSourceBoundaryData(time, *solution_new_cells, *solution_new_faces);
 
-    matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, Krel_method, matrix_);
+    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix_);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();
 
     // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, Krel_method);
+    preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
     AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);

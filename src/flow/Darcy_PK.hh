@@ -148,8 +148,6 @@ class Darcy_PK : public Flow_PK {
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
-  Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
-  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
   int mfd3d_method_;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;

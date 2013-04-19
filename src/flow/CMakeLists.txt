@@ -49,7 +49,8 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Richards_SteadyState.cc Richards_Picard.cc Richards_AztecOO.cc
                    Richards_Bundles.cc Richards_Devel.cc Richards_AndersonMixing.cc
                    Matrix_MFD.cc Matrix_MFD_TPFA.cc Matrix_MFD_PLambda.cc Matrix_VAG.cc 
-                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc)
+                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
+                   RelativePermeability.cc RelativePermeability_IO.cc)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})

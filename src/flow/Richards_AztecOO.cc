@@ -30,8 +30,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // set fully saturated media
-  Krel_cells->PutScalar(1.0);
-  Krel_faces->PutScalar(1.0);
+  rel_perm->SetFullySaturated();
 
   // calculate and assemble elemental stiffness matrices
   AssembleSteadyStateMatrix_MFD(matrix_);
@@ -49,9 +48,11 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 
   Epetra_Vector b(*(matrix_->rhs()));
   solver_tmp->SetRHS(&b);
-
   solver_tmp->SetLHS(&u);
+
+  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
   solver_tmp->Iterate((long long)max_itrs_linear, convergence_tol_linear);
+  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
   // Matrix_Audit audit(mesh_, matrix_);
   // audit.InitAudit();
@@ -61,6 +62,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->ScaledResidual();
     std::printf("Flow PK: saturated solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
+    PrintStatisticsCPU();
   }
 
   delete solver_tmp;
@@ -81,7 +83,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   // calculate and assemble elemental stiffness matrix
-  CalculateRelativePermeability(u);
+  rel_perm->Compute(u, bc_model, bc_values);
   AssembleSteadyStateMatrix_MFD(matrix_);
   matrix_->ReduceGlobalSystem2LambdaSystem(u);
 

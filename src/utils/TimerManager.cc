@@ -112,8 +112,6 @@ Timer& TimerManager::operator()(std::string timerName) {
  * \author     Nathan Barnett
  */
 std::ostream& operator <<(std::ostream& os, TimerManager& tm) {
-
-  // Print the heading to the Timing Summary section
   os << "**********************************************************\n"; 
   os << "***                   Timing Summary                   ***\n";
   os << "**********************************************************\n\n";
@@ -129,10 +127,27 @@ std::ostream& operator <<(std::ostream& os, TimerManager& tm) {
 }
 
 
+/**
+ * \fn         print
+ * \brief      print times to cout
+ * \param[in]  std::ostream&
+ */
+void TimerManager::print() {
+  for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it) {
+    std::cout << "   ";
+    std::cout.width(30);
+    std::cout.fill('.');
+    std::cout << *(it->second) << std::endl;
+  }
+}
+
+
+/**
+ * \fn         to be written
+ */
 void TimerManager::parSync(MPI_Comm comm) {
  for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
    (it->second)->parSync(comm);
- 
 }
 
 

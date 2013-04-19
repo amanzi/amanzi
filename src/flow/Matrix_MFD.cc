@@ -164,11 +164,9 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
 
 
 /* ******************************************************************
-* Calculate elemental stiffness matrices.                                            
+* Calculate elemental stiffness matrices (fully saturated flow)                                          
 ****************************************************************** */
-void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
-                                            Epetra_Vector& Krel_faces,
-                                            int method)
+void Matrix_MFD::CreateMFDstiffnessMatrices()
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
@@ -179,6 +177,55 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
   Afc_cells_.clear();
   Acf_cells_.clear();
   Acc_cells_.clear();
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
+    Epetra_SerialDenseVector Bcf(nfaces);
+
+    double* braw = Bff.values();
+    double* mraw = Mff.values();
+    for (int n = 0; n < nfaces * nfaces; n++) braw[n] = mraw[n];
+
+    double matsum = 0.0;  // elimination of mass matrix
+    for (int n = 0; n < nfaces; n++) {
+      double rowsum = 0.0;
+      for (int m = 0; m < nfaces; m++) rowsum += Bff(n, m);
+
+      Bcf(n) = -rowsum;
+      matsum += rowsum;
+    }
+
+    Aff_cells_.push_back(Bff);  // This the only place where memory can be allocated.
+    Afc_cells_.push_back(Bcf);
+    Acf_cells_.push_back(Bcf);
+    Acc_cells_.push_back(matsum);
+  }
+}
+
+
+/* ******************************************************************
+* Calculate elemental stiffness matrices.                                            
+****************************************************************** */
+void Matrix_MFD::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
+{
+  int dim = mesh_->space_dimension();
+  WhetStone::MFD3D mfd(mesh_);
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  Aff_cells_.clear();
+  Afc_cells_.clear();
+  Acf_cells_.clear();
+  Acc_cells_.clear();
+
+  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
+  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
+  int method = rel_perm.method();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
@@ -549,6 +596,7 @@ void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_lis
     hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
     hypre_tol = prec_list.get<double>("tolerance", 0.0);
     hypre_strong_threshold = prec_list.get<double>("strong threshold", 0.0);
+    hypre_verbosity = prec_list.get<int>("verbosity", 0);
 #endif
   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
     ifp_plist_ = prec_list;
@@ -571,7 +619,7 @@ void Matrix_MFD::UpdatePreconditioner()
 
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0)); 
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, hypre_verbosity)); 
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
     functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
     functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 

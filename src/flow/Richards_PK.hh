@@ -29,7 +29,10 @@ Authors: Neil Carlson (version 1)
 #include "Flow_SourceFactory.hh"
 #include "Matrix_MFD.hh"
 #include "WaterRetentionModel.hh"
+#include "RelativePermeability.hh"
 #include "TI_Specs.hh"
+
+#include "TimerManager.hh"
 
 
 namespace Amanzi {
@@ -81,15 +84,6 @@ class Richards_PK : public Flow_PK {
 
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-  void CalculateKVectorUnit(const AmanziGeometry::Point& g, std::vector<AmanziGeometry::Point>& Kg_unit);
-
-  void CalculateRelativePermeability(const Epetra_Vector& u);
-  void CalculateRelativePermeabilityCell(const Epetra_Vector& p);
-  void CalculateRelativePermeabilityFace(const Epetra_Vector& p);
-  void CalculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
-  void CalculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
-  void CalculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
-  void AverageRelativePermeability();
 
   void CalculateDerivativePermeabilityFace(const Epetra_Vector& p);
   void CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vector& p);
@@ -117,10 +111,7 @@ class Richards_PK : public Flow_PK {
   void ProcessParameterList();
   void ProcessStringLinearSolver(const std::string name, LinearSolver_Specs* ls_specs);
   void ProcessStringExperimentalSolver(const std::string name, int* method);
-  void ProcessStringRelativePermeability(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-  void VerifyStringMualemBurdine(const std::string name);
-  void VerifyWRMparameters(double m, double alpha, double sr, double pc0);
   void CalculateWRMcurves(Teuchos::ParameterList& list);
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
@@ -131,7 +122,6 @@ class Richards_PK : public Flow_PK {
   void DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
-  void PopulateMapC2MB();
 
   // initization members
   void ClipHydrostaticPressure(const double pmin, Epetra_Vector& pressure_cells);
@@ -143,6 +133,7 @@ class Richards_PK : public Flow_PK {
   void ResetErrorControl(int error) { error_control_ = error; }
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
   void PrintStatistics() const;
+  void PrintStatisticsCPU();
   
   // access methods
   const Epetra_Map& super_map() { return *super_map_; }
@@ -199,8 +190,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
-  std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
-
   BoundaryFunction* bc_pressure;  // Pressure BC.
   BoundaryFunction* bc_head;  // Static pressure head BC.
   BoundaryFunction* bc_flux;  // Outward mass flux BC.
@@ -215,11 +204,10 @@ class Richards_PK : public Flow_PK {
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
-  std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
+
+  Teuchos::RCP<RelativePermeability> rel_perm;
 
   int Krel_method;  // method for calculating relative permeability
-  Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
-  Teuchos::RCP<Epetra_Vector> Krel_faces;
   Teuchos::RCP<Epetra_Vector> dKdP_cells;  // derivative of realitive permeability 
   Teuchos::RCP<Epetra_Vector> dKdP_faces;
 
@@ -230,8 +218,8 @@ class Richards_PK : public Flow_PK {
 
   double mass_bc, mass_amanzi;
 
-  // Miscallenous maps
-  Teuchos::RCP<Epetra_Vector> map_c2mb;
+  // CPU statistics
+  TimerManager timer;
 
  private:
   void operator=(const Richards_PK& RPK);

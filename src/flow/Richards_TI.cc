@@ -37,6 +37,7 @@ void Richards_PK::fun(
   functional_max_norm = 0.0;
   functional_max_cell = 0;
 
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();  
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
@@ -154,8 +155,8 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
       printf("   pressure error = %9.3g at point", error_p);
       for (int i = 0; i < dim; i++) printf(" %8.3g", yp[i]);
 
-      int mb = (*map_c2mb)[c];
-      double s = WRM[mb]->saturation(atm_pressure - u[c]);
+      int mb = (rel_perm->map_c2mb())[c];
+      double s = (rel_perm->WRM())[mb]->saturation(atm_pressure - u[c]);
       printf(",  saturation = %5.3g,  pressure = %9.3g\n", s, u[c]);
     }
   }
@@ -197,9 +198,11 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
   bool ret_val = false;
 
   int ncells_clipped(0);
+  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 
+ 
   for (int c = 0; c < ncells_owned; c++) {
-    int mb = (*map_c2mb)[c];
-    double pc =  atm_pressure - u[c];
+    int mb = (rel_perm->map_c2mb())[c];
+    double pc = atm_pressure - u[c];
     double sat = WRM[mb]->saturation(pc);
     double sat_pert;
     if (sat >= 0.5) sat_pert = sat - max_sat_pert;

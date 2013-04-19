@@ -207,13 +207,6 @@ void Darcy_PK::InitPK()
   matrix_->SetSymmetryProperty(true);
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
 
-  // Allocate data for relative permeability (for consistency).
-  Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  Krel_faces = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
-
-  Krel_cells->PutScalar(1.0);
-  Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov)
-
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
@@ -420,9 +413,9 @@ int Darcy_PK::Advance(double dT_MPC)
       rainfall_factor, bc_submodel, bc_model, bc_values);
 
   // calculate and assemble elemental stifness matrices
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
+  matrix_->CreateMFDstiffnessMatrices();
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, matrix_);
+  AddGravityFluxes_MFD(K, matrix_);
   AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix_);
   AddTimeDerivativeSpecificYield(*solution_cells, dT, matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
@@ -487,9 +480,9 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // calculate darcy mass flux
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix_->CreateMFDstiffnessMatrices(*Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE);
+  matrix_->CreateMFDstiffnessMatrices();
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-  AddGravityFluxes_DarcyFlux(K, *Krel_cells, *Krel_faces, FLOW_RELATIVE_PERM_NONE, flux);
+  AddGravityFluxes_DarcyFlux(K, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 
   // update time derivative
