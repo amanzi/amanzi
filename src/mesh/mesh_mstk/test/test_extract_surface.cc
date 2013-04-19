@@ -99,7 +99,7 @@ TEST(Extract_Surface_MSTK1)
   
   for (int k = 0; k < ncells_surf; k++)
     CHECK_EQUAL(1,found[k]);
-
+  delete [] found;
 
   // Once we can make RegionFactory work with reference counted pointers 
   // we can get rid of this code
@@ -208,7 +208,7 @@ TEST(Extract_Surface_MSTK2)
   
   for (int k = 0; k < ncells_surf; k++)
     CHECK_EQUAL(1,found[k]);
-
+  delete [] found;
 
   // Once we can make RegionFactory work with reference counted pointers 
   // we can get rid of this code
@@ -307,7 +307,7 @@ TEST(Extract_Surface_MSTK3)
   
   for (int k = 0; k < ncells_surf; k++)
     CHECK_EQUAL(1,found[k]);
-
+  delete [] found;
 
   // Test if the labeled set was inherited correctly and if we get the
   // right entities for this set
@@ -459,7 +459,7 @@ TEST(Extract_Surface_MSTK4)
   
   for (int k = 0; k < ncells_surf2D; k++)
     CHECK_EQUAL(1,found[k]);
-
+  delete [] found;
 
   Amanzi::AmanziMesh::Entity_ID_List setents;  
   surfmesh2D.get_set_entities("Top Surface 2D",Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
