@@ -58,10 +58,12 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   // audit.InitAudit();
   // audit.RunAudit();
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-    int num_itrs = solver_tmp->NumIters();
-    double linear_residual = solver_tmp->ScaledResidual();
-    std::printf("Flow PK: saturated solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
+  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+    if (MyPID == 0) {
+      int num_itrs = solver_tmp->NumIters();
+      double linear_residual = solver_tmp->ScaledResidual();
+      std::printf("Flow PK: saturated solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
+    }
     PrintStatisticsCPU();
   }
 

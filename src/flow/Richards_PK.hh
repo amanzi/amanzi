@@ -152,8 +152,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::ParameterList solver_list_;
   Teuchos::ParameterList preconditioner_list_;
 
-  AmanziGeometry::Point gravity_;
-  double rho, mu;
   double atm_pressure;
 
   Epetra_Map* super_map_;
@@ -207,7 +205,6 @@ class Richards_PK : public Flow_PK {
 
   Teuchos::RCP<RelativePermeability> rel_perm;
 
-  int Krel_method;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> dKdP_cells;  // derivative of realitive permeability 
   Teuchos::RCP<Epetra_Vector> dKdP_faces;
 

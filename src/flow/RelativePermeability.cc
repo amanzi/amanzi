@@ -54,10 +54,10 @@ void RelativePermeability::Compute(const Epetra_Vector& p,
       method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     ComputeOnFaces(p, bc_model, bc_values);
     Krel_cells_->PutScalar(1.0);
-    // if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
-    //     experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    //  CalculateDerivativePermeabilityFace(*u_cells);
-    // }
+    if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
+        experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+      ComputeOnFaces(p, bc_model, bc_values);
+    }
   } else if (method_ == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
     ComputeOnFaces(p, bc_model, bc_values);
   } else {

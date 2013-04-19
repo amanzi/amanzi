@@ -102,8 +102,6 @@ class Darcy_PK : public Flow_PK {
   Teuchos::ParameterList preconditioner_list_;
   Teuchos::ParameterList solver_list_;
 
-  AmanziGeometry::Point gravity_;
-  double rho_, mu_;
   double atm_pressure;
 
   Epetra_Map* super_map_;

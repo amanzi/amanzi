@@ -50,6 +50,12 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 
   nseepage_prev = 0;
   ti_phase_counter = 0;
+
+  // Fundamental physical quantities
+  rho_ = *(FS_MPC->fluid_density());
+  mu_ = *(FS_MPC->fluid_viscosity());
+  gravity_.init(dim);
+  for (int k = 0; k < dim; k++) gravity_[k] = (*(FS_MPC->gravity()))[k];
 }
 
 
@@ -289,9 +295,8 @@ void Flow_PK::AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs)
 void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,                                    
                                     Matrix_MFD* matrix_operator)
 {
-  double rho = FS->ref_fluid_density();
-  AmanziGeometry::Point gravity(dim);
-  for (int k = 0; k < dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
+  AmanziGeometry::Point rho_gravity(gravity_);
+  rho_gravity *= rho_;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -307,7 +312,7 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * gravity) * normal) * dirs[n]; 
+      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
     }
@@ -323,9 +328,8 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
                                     Matrix_MFD* matrix_operator,
                                     RelativePermeability& rel_perm) 
 {
-  double rho = FS->ref_fluid_density();
-  AmanziGeometry::Point gravity(dim);
-  for (int k = 0; k < dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
+  AmanziGeometry::Point rho_gravity(gravity_);
+  rho_gravity *= rho_;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -345,7 +349,7 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * gravity) * normal) * dirs[n]; 
+      double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
       if (method == FLOW_RELATIVE_PERM_CENTERED) {
         outward_flux *= Krel_cells[c];
       } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {

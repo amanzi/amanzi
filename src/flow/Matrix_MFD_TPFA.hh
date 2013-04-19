@@ -34,7 +34,7 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   ~Matrix_MFD_TPFA() {};
 
   // override main methods of the base class
-  void CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells, Epetra_Vector& Krel_faces);
+  void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
   void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
   void AssembleGlobalMatrices();
   void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);

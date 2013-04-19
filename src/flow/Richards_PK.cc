@@ -98,12 +98,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   // Create the combined cell/face DoF map.
   super_map_ = CreateSuperMap();
 
-  // Other fundamental physical quantaties
-  rho = *(FS->fluid_density());
-  mu = *(FS->fluid_viscosity());
-  gravity_.init(dim);
-  for (int k = 0; k < dim; k++) gravity_[k] = (*(FS->gravity()))[k];
-
 #ifdef HAVE_MPI
   const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
   MyPID = comm.MyPID();
@@ -126,8 +120,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 
   mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
   mfd3d_method_preconditioner_ = FLOW_MFD3D_OPTIMIZED;
-
-  Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
 
   verbosity = FLOW_VERBOSITY_NONE;
   src_sink = NULL;
@@ -427,7 +419,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   // initialize mass matrices
   SetAbsolutePermeabilityTensor(K);
-  for (int c = 0; c < ncells_wghost; c++) K[c] *= rho / mu;
+  for (int c = 0; c < ncells_wghost; c++) K[c] *= rho_ / mu_;
 
   if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("Mass matrix generation");  
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
@@ -586,7 +578,7 @@ int Richards_PK::Advance(double dT_MPC)
   ti_specs->dT_history.push_back(times);
 
   ti_specs->num_itrs++;
-  if (ti_specs->num_itrs % 10 == 0) PrintStatisticsCPU();
+  if (ti_specs->num_itrs % 100 == 0) PrintStatisticsCPU();
 
   return 0;
 }
@@ -617,7 +609,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
   matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
   AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
-  for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho;
+  for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
@@ -627,11 +619,11 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && flow_status_ >= FLOW_STATUS_TRANSIENT_STATE) {
     Epetra_Vector& phi = FS_MPC->ref_porosity();
-    double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho * dT;
+    double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
 
     mass_amanzi = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
-      mass_amanzi += ws[c] * rho * phi[c] * mesh_->cell_volume(c);
+      mass_amanzi += ws[c] * rho_ * phi[c] * mesh_->cell_volume(c);
     }
 
     double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
@@ -662,7 +654,7 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
  
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    if (dSdP[c] > 0.0) (*udot_cells)[c] /= volume * dSdP[c] * phi[c] * rho;
+    if (dSdP[c] > 0.0) (*udot_cells)[c] /= volume * dSdP[c] * phi[c] * rho_;
   }
 
   Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
@@ -718,7 +710,7 @@ void Richards_PK::AddTimeDerivative_MFD(
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = rho * phi[c] * dSdP[c] * volume / dT_prec;
+    double factor = rho_ * phi[c] * dSdP[c] * volume / dT_prec;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
@@ -766,9 +758,10 @@ double Richards_PK::AdaptiveTimeStepEstimate(double* dTfactor)
 ****************************************************************** */
 bool Richards_PK::SetSymmetryProperty()
 {
+  int method = rel_perm->method();
   bool sym = false;
-  if ((Krel_method == FLOW_RELATIVE_PERM_CENTERED) ||
-      (Krel_method == FLOW_RELATIVE_PERM_EXPERIMENTAL)) sym = true;
+  if ((method == FLOW_RELATIVE_PERM_CENTERED) ||
+      (method == FLOW_RELATIVE_PERM_EXPERIMENTAL)) sym = true;
   if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
       experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) sym = false;
 

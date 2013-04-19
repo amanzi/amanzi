@@ -27,9 +27,10 @@ void Richards_PK::CalculateDerivativePermeabilityFace(const Epetra_Vector& p)
   DerivedKdP(p, *dKdP_cells);  // populates cell-based permeabilities
   FS->CopyMasterCell2GhostCell(*dKdP_cells);
 
-  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
+  int method = rel_perm->method();
+  if (method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
     CalculateDerivativePermeabilityUpwindGravity(p);
-  } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+  } else if (method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     Epetra_Vector& flux = FS_aux->ref_darcy_flux();
     CalculateDerivativeRelativePermeabilityUpwindFlux(p, flux);
   }

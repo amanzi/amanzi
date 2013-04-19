@@ -87,12 +87,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // Create the combined cell/face DoF map.
   super_map_ = CreateSuperMap();
 
-  // Other fundamental physical quantities
-  rho_ = *(FS->fluid_density());
-  mu_ = *(FS->fluid_viscosity());
-  gravity_.init(dim);
-  for (int k = 0; k < dim; k++) gravity_[k] = (*(FS->gravity()))[k];
-
 #ifdef HAVE_MPI
   const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
   MyPID = comm.MyPID();

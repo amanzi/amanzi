@@ -146,11 +146,14 @@ public:
   int flow_status_;
   int dim;
 
- private:
-  int nseepage_prev;
-
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  AmanziGeometry::Point gravity_;
+  double rho_, mu_;
+
+ private:
+  int nseepage_prev;
 };
 
 }  // namespace AmanziFlow

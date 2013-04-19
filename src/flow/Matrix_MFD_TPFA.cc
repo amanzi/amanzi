@@ -32,8 +32,7 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
-void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
-                                                 Epetra_Vector& Krel_faces)
+void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
 {
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
@@ -44,6 +43,9 @@ void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(Epetra_Vector& Krel_cells,
   Afc_cells_.clear();
   Acf_cells_.clear();
   Acc_cells_.clear();
+
+  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
+  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells; c++) {
@@ -407,11 +409,6 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
   Jpp(1, 0) = -Jpp(0, 0);
   Jpp(1, 1) = -Jpp(0, 1);
 
-  // cout<<"Jpp_local"<<endl;
-  // for (int i=0;i<2;i++){
-  //   for (int j=0;j<2;j++) cout<<Jpp(i,j)<<" ";
-  //   cout<<endl;
-  // }
   } else if (mcells == 1) {
     if (bc_models[face_id] == FLOW_BC_FACE_PRESSURE) {                   
 		  pres[1] = bc_values[face_id][0];

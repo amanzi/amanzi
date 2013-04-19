@@ -120,7 +120,7 @@ void Richards_PK::AddTimeDerivative_MFDpicard(
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = rho * phi[c] * dSdP[c] * volume / dT_prec;
+    double factor = rho_ * phi[c] * dSdP[c] * volume / dT_prec;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }

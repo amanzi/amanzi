@@ -145,7 +145,8 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
 
     Epetra_Vector& Krel_cells = rel_perm->Krel_cells();
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    matrix_tpfa->AnalyticJacobian(*u_cells, dim, Krel_method, bc_model, bc_values,
+    int method = rel_perm->method();
+    matrix_tpfa->AnalyticJacobian(*u_cells, dim, method, bc_model, bc_values,
                                   Krel_cells, *dKdP_cells,
                                   Krel_faces, *dKdP_faces);
   }

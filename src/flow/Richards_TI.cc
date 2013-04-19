@@ -50,7 +50,7 @@ void Richards_PK::fun(
       s1 = WRM[mb]->saturation(atm_pressure - u[c]);
       s2 = WRM[mb]->saturation(atm_pressure - v);
 
-      double factor = rho * phi[c] * mesh_->cell_volume(c) / dTp;
+      double factor = rho_ * phi[c] * mesh_->cell_volume(c) / dTp;
       f[c] += (s1 - s2) * factor;
 
       double tmp = fabs(f[c]) / factor;  // calculate errors

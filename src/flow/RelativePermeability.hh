@@ -60,6 +60,7 @@ class RelativePermeability {
   Epetra_Vector& Krel_faces() { return *Krel_faces_; }
   int method() { return method_; }
   Epetra_Vector& map_c2mb() { return *map_c2mb_; }
+  void set_experimental_solver(int solver) { experimental_solver_ = solver; }
 
  private:
   void FaceArithmeticMean_(const Epetra_Vector& p);
@@ -87,6 +88,7 @@ class RelativePermeability {
   Teuchos::RCP<Epetra_Vector> map_c2mb_;
 
   // obsolete, must go away (lipnikov@lanl.gov)
+  int experimental_solver_; 
   Teuchos::RCP<Flow_State> FS_;
 };
 

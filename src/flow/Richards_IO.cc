@@ -54,7 +54,7 @@ void Richards_PK::ProcessParameterList()
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.CreatePressure(bc_submodel);
-  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho, gravity_, bc_submodel);
+  bc_head = bc_factory.CreateStaticHead(atm_pressure, rho_, gravity_, bc_submodel);
   bc_flux = bc_factory.CreateMassFlux(bc_submodel);
   bc_seepage = bc_factory.CreateSeepageFace(bc_submodel);
 
@@ -72,6 +72,10 @@ void Richards_PK::ProcessParameterList()
     src_sink_distribution = src_sink->CollectActionsList();
   }  
 
+  // experimental solver (NKA is default)
+  string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");
+  ProcessStringExperimentalSolver(experimental_solver_name, &experimental_solver_);
+
   // Create water retention models
   if (! rp_list_.isSublist("Water retention models")) {
     msg << "Flow PK: there is no \"Water retention models\" list";
@@ -82,6 +86,7 @@ void Richards_PK::ProcessParameterList()
   rel_perm->Init(atm_pressure, FS_aux);
   rel_perm->ProcessParameterList();
   rel_perm->PopulateMapC2MB();
+  rel_perm->set_experimental_solver(experimental_solver_);
 
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
@@ -152,10 +157,6 @@ void Richards_PK::ProcessParameterList()
 
   // allowing developer to use non-standard simulation modes
   if (! rp_list_.isParameter("developer access granted")) AnalysisTI_Specs();
-
-  // experimental solver (NKA is default)
-  string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");
-  ProcessStringExperimentalSolver(experimental_solver_name, &experimental_solver_);
 
   // optional debug output
   CalculateWRMcurves(rp_list_);
@@ -334,10 +335,11 @@ void Richards_PK::AnalysisTI_Specs()
 **************************************************************** */
 void Richards_PK::PrintStatistics() const
 {
+  int method = rel_perm->method();
   if (MyPID == 0) {
     cout << "Flow PK:" << endl;
     cout << "  Verbosity level = " << verbosity << endl;
-    cout << "  Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
+    cout << "  Upwind = " << ((method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
   }
 }
 
