@@ -268,6 +268,8 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }
+  Teuchos::RCP<CompositeVector> head_cv = S->GetFieldData(key_, name_);
+  head_cv->PutScalar(0.);
 
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
@@ -275,7 +277,6 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   // -- set the cell initial condition if it is taken from the subsurface
   Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
   if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
-    Teuchos::RCP<CompositeVector> head_cv = S->GetFieldData(key_, name_);
     Epetra_MultiVector& head = *head_cv->ViewComponent("cell",false);
     const Epetra_MultiVector& pres = *S->GetFieldData("pressure")
         ->ViewComponent("face",false);
@@ -286,11 +287,6 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
       AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
       head[0][c] = pres[0][f];
-    }
-
-    // -- Update faces from cells if needed.
-    if (ic_plist.get<bool>("initialize faces from cells", false)) {
-      DeriveFaceValuesFromCellValues_(head_cv.ptr());
     }
 
     // mark as initialized
@@ -563,13 +559,19 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   }
 
   // zero gradient: grad h = 0 implies that q = -k grad z
+  const Epetra_MultiVector& height = *S->GetFieldData("")
+      ->ViewComponent("cell",false);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
-    bc_values_[f] = 0.;
-  }
+    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    //    bc_values_[f] = 0.;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
 
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT( cells.size()==1 ) ;
+    bc_values_[f] = height[0][cells[0]] + elevation[0][f];
+  }
 }
 
 
@@ -612,7 +614,8 @@ void OverlandHeadFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
   }
 }
 
@@ -642,6 +645,7 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     }
   }
 
+  /*
   // Now we can safely calculate q = -k grad z for zero-gradient problems
   AmanziMesh::Entity_ID_List cells;
   AmanziMesh::Entity_ID_List faces;
@@ -673,11 +677,11 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
       bc_values_[f] = 0.;
       for (int m=0; m!=faces.size(); ++m) {
-        bc_values_[f] -= Aff_cells[c](my_n,m) * dp[m];
+        bc_values_[f] -= Aff_cells[c](my_n,m) * dp[m] / mesh_->face_area(f);
       }
     }
   }
-
+  */
 };
 
 
@@ -726,6 +730,8 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
     }
   }
 
+  /*
+
   // Now we can safely calculate q = -k grad z for zero-gradient problems
   AmanziMesh::Entity_ID_List cells;
   AmanziMesh::Entity_ID_List faces;
@@ -756,10 +762,12 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
 
       bc_values_[f] = 0.;
       for (int m=0; m!=faces.size(); ++m) {
-        bc_values_[f] -= Aff_cells[c](my_n,m) * dp[m];
+        bc_values_[f] -= Aff_cells[c](my_n,m) * dp[m] / mesh_->face_area(f);
       }
     }
   }
+
+  */
 };
 
 

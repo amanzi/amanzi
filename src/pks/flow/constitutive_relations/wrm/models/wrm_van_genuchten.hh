@@ -32,8 +32,6 @@ public:
   double d_capillaryPressure(double saturation);
   double residualSaturation() { return sr_; }
 
-  void set_smoothing_interval_width(double width);
-
  private:
   void InitializeFromPlist_();
 
@@ -41,11 +39,13 @@ public:
 
   double m_;  // van Genuchten parameters: m, n, alpha
   double n_;
+  double l_;
   double alpha_;
   double sr_;  // van Genuchten residual saturation
 
-  // the following is for smoothing the saturation and k_relative curves
-  double pc_transition_; // we smooth curves in the interval [0, pc_transition]
+  int function_;
+  double pc0_;  // regularization threshold (usually 0 to 500 Pa)
+  double a_, b_, factor_dSdPc_;  // frequently used constant
 
   static Utils::RegisteredFactory<WRM,WRMVanGenuchten> factory_;
 };

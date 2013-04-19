@@ -39,10 +39,10 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
 #if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List faces, faces0;
+  AmanziMesh::Entity_ID_List faces1, faces0;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c1_, &faces1, &dirs);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
@@ -51,10 +51,21 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
     *out_ << "Residual calculation: t0 = " << t_old
           << " t1 = " << t_new << " h = " << h << std::endl;
-    *out_ << "  T_old(" << c0_ << "): " << (*u_old)("cell",c0_) << " " << (*u_old)("face",faces0[0]) << std::endl;
-    *out_ << "  T_old(" << c1_ << "): " << (*u_old)("cell",c1_) << " " << (*u_old)("face",faces[1]) << std::endl;
-    *out_ << "  T_new(" << c0_ << "): " << (*u)("cell",c0_) << " " << (*u)("face",faces0[0]) << std::endl;
-    *out_ << "  T_new(" << c1_ << "): " << (*u)("cell",c1_) << " " << (*u)("face",faces[1]) << std::endl;
+    *out_ << "  T_old(" << c0_ << "): " << (*u_old)("cell",c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*u_old)("face",faces0[n]);
+    *out_ << std::endl;
+
+    *out_ << "  T_old(" << c1_ << "): " << (*u_old)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*u_old)("face",faces1[n]);
+    *out_ << std::endl;
+
+    *out_ << "  T_new(" << c0_ << "): " << (*u)("cell",c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*u)("face",faces0[n]);
+    *out_ << std::endl;
+
+    *out_ << "  T_new(" << c1_ << "): " << (*u)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*u)("face",faces1[n]);
+    *out_ << std::endl;
   }
 #endif
 
@@ -71,8 +82,12 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after diffusion): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after diffusion): " << (*res)("cell",c1_) << " " << (*res)("face",faces[1]) << std::endl;
+    *out_ << "  res(" << c0_ << ") (after diffusion): " << (*res)("cell",c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
+    *out_ << std::endl;
+    *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
+    *out_ << std::endl;
   }
 #endif
 
@@ -80,8 +95,12 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after accumulation): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after accumulation): " << (*res)("cell",c1_) << " " << (*res)("face",faces[1]) << std::endl;
+    *out_ << "  res(" << c0_ << ") (after accumulation): " << (*res)("cell",c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
+    *out_ << std::endl;
+    *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
+    *out_ << std::endl;
   }
 #endif
 
@@ -89,8 +108,12 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAdvection_(S_next_.ptr(), res.ptr(), true);
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after advection): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after advection): " << (*res)("cell",c1_) << " " << (*res)("face",faces[1]) << std::endl;
+    *out_ << "  res(" << c0_ << ") (after advection): " << (*res)("cell",c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
+    *out_ << std::endl;
+    *out_ << "  res(" << c1_ << ") (after advection): " << (*res)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
+    *out_ << std::endl;
   }
 #endif
 
@@ -98,8 +121,12 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddSources_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res0 (after sources): " << (*res)("cell",c0_) << " " << (*res)("face",faces0[0]) << std::endl;
-    *out_ << "  res1 (after sources): " << (*res)("cell",c1_) << " " << (*res)("face",faces[1]) << std::endl;
+    *out_ << "  res(" << c0_ << ") (after source): " << (*res)("cell",c0_);
+    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
+    *out_ << std::endl;
+    *out_ << "  res(" << c1_ << ") (after source): " << (*res)("cell",c1_);
+    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
+    *out_ << std::endl;
   }
 #endif
 
@@ -291,8 +318,8 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")  " << std::endl;
-    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")  " << std::endl;
+    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
+    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
   }
 
   // Communicate and take the max.

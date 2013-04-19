@@ -214,10 +214,10 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, indices);
     ASSERT(!ierr);
 
-    std::cout << "Adding vals to surf cell " << sc << ":" << std::endl;
-    for (int m=0; m!=entries; ++m) {
-      std::cout << "  ind(" << indices[m] << ") = " << values[m] << std::endl;
-    }
+    // std::cout << "Adding vals to surf cell " << sc << ":" << std::endl;
+    // for (int m=0; m!=entries; ++m) {
+    //   std::cout << "  ind(" << indices[m] << ") = " << values[m] << std::endl;
+    // }
 
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
