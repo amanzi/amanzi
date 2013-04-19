@@ -936,16 +936,15 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
 
 
-  // Do all the processing required for setting up the mesh for Amanzi 
-  
-  post_create_steps_();
-
   // For this constructor, we have to do an extra step to build new
   // labeled sets based on the base mesh
 
   inherit_labeled_sets(copyatt);
 
 
+  // Do all the processing required for setting up the mesh for Amanzi 
+  
+  post_create_steps_();
 
 
   // Clean up
@@ -1067,6 +1066,8 @@ Mesh_MSTK::~Mesh_MSTK() {
   delete face_map_w_ghosts_;
   delete node_map_wo_ghosts_;
   delete node_map_w_ghosts_;
+  delete extface_map_wo_ghosts_;
+  delete owned_to_extface_importer_;
   delete [] faceflip;
 
   if (AllVerts) MSet_Delete(AllVerts);
@@ -3435,7 +3436,7 @@ void Mesh_MSTK::init_set_info() {
       }
 
       entdim = MSet_EntDim(mset);
-      if (Mesh::space_dimension() == 3) {
+      if (Mesh::cell_dimension() == 3) {
 
         if ((lsrgn->entity_str() == "CELL" && entdim != MREGION) ||
             (lsrgn->entity_str() == "FACE" && entdim != MFACE) ||
@@ -3444,7 +3445,7 @@ void Mesh_MSTK::init_set_info() {
           amanzi_throw(mesg);
         }
       }
-      else if (Mesh::space_dimension() == 2) {
+      else if (Mesh::cell_dimension() == 2) {
         if ((lsrgn->entity_str() == "CELL" && entdim != MFACE) ||
             (lsrgn->entity_str() == "FACE" && entdim != MEDGE) ||
             (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
@@ -4354,6 +4355,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
                 MEnt_Mark(copyent,mkid);
               }
             }
+            List_Delete(fedges);
           }
         }
 
