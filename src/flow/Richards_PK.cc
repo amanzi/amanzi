@@ -205,18 +205,13 @@ void Richards_PK::InitPK()
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
 
   // Allocate data for relative permeability
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-
-  dKdP_cells = Teuchos::rcp(new Epetra_Vector(cmap_wghost));  // for P-N and Newton
-  dKdP_faces = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
-
   SetAbsolutePermeabilityTensor(K);
   rel_perm->CalculateKVectorUnit(K, gravity_);  // move to Init() (lipnikov@lanl.gov)
 
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+    const Epetra_Map& cmap_owned = mesh_->cell_map(false);
+    Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
 
   // injected water mass
@@ -650,7 +645,7 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
   Epetra_Vector* udot_cells = FS->CreateCellView(udot);
   const Epetra_Vector& phi = FS->ref_porosity();
   Epetra_Vector dSdP(mesh_->cell_map(false));
-  DerivedSdP(u, dSdP);
+  rel_perm->DerivedSdP(u, dSdP);
  
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
@@ -700,7 +695,7 @@ void Richards_PK::AddTimeDerivative_MFD(
     Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix_operator)
 {
   Epetra_Vector dSdP(mesh_->cell_map(false));
-  DerivedSdP(pressure_cells, dSdP);
+  rel_perm->DerivedSdP(pressure_cells, dSdP);
 
   const Epetra_Vector& phi = FS->ref_porosity();
   std::vector<double>& Acc_cells = matrix_operator->Acc_cells();

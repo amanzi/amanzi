@@ -228,15 +228,10 @@ void Matrix_MFD_TPFA::AssembleSchurComplement(
 * Computation of the part of the jacobian which depends on
 * analytical derivatives of relative permeabilities
 ****************************************************************** */
-void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
-                                       int dim,
-                                       int Krel_method,
-                                       std::vector<int>& bc_models,
-                                       std::vector<bc_tuple>& bc_values,
-                                       Epetra_Vector& Krel_cells,
-                                       Epetra_Vector& dK_dP_cells,
-                                       Epetra_Vector& Krel_faces,
-                                       Epetra_Vector& dK_dP_faces)
+void Matrix_MFD_TPFA::AnalyticJacobian(
+   const Epetra_Vector& solution, int dim,
+   std::vector<int>& bc_models, std::vector<bc_tuple>& bc_values,
+   RelativePermeability& rel_perm)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -255,9 +250,6 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
   AmanziGeometry::Point cntr_cell[2];
   double dist;
 
-  // cout<<"Before Analytic\n";
-  // std::cout<<(*Spp_)<<endl;
-
   Epetra_Vector pres_gh(cmap_wghost);
 
   // Epetra_Vector pressure_vec(solution);
@@ -271,6 +263,12 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
   Epetra_Vector& perm_horz_vec = FS_->ref_horizontal_permeability();
   FS_->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
 
+  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
+  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
+  const Epetra_Vector& dKdP_cells = rel_perm.dKdP_cells();
+  const Epetra_Vector& dKdP_faces = rel_perm.dKdP_faces();
+  int method = rel_perm.method();
+
   for (int f = 0; f < nfaces_owned; f++){
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int mcells = cells.size();
@@ -283,10 +281,8 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
       perm_abs_vert[n] = perm_vert_gh[cells_LID[n]];
       perm_abs_horz[n] = perm_horz_gh[cells_LID[n]];
       pres[n] = pres_gh[cells_LID[n]];
-      // k_rel[n] = Krel_gh[cells_LID[n]];
       k_rel[n] = Krel_cells[cells_LID[n]];
-      // dk_dp[n] = dK_dP_gh[cells_LID[n]];
-      dk_dp[n] = dK_dP_cells[cells_LID[n]];
+      dk_dp[n] = dKdP_cells[cells_LID[n]];
       cntr_cell[n] = mesh_->cell_centroid(cells_LID[n]);
     }
     if (mcells == 2) {
@@ -294,13 +290,13 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
     } else if (mcells == 1) {
       dist = norm(cntr_cell[0] - face_cntr);
       k_rel[0] = Krel_faces[f];
-      dk_dp[0] = dK_dP_faces[f];
+      dk_dp[0] = dKdP_faces[f];
     }
 
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
     normal *= 1./ mesh_->face_area(f);
 
-    ComputeJacobianLocal(mcells, f, dim, Krel_method, bc_models, bc_values, dist, pres,
+    ComputeJacobianLocal(mcells, f, dim, method, bc_models, bc_values, dist, pres,
                          perm_abs_vert, perm_abs_horz, k_rel, dk_dp, normal, Jpp);
 
     // if (((cells_GID[0]>5)||(cells_GID[1]>5))&& (mcells > 1)){
@@ -319,10 +315,6 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
   }
 
   Spp_->GlobalAssemble();
-  // cout << "AnalyticJacobian Spp\n";
-  // std::cout<<(*Spp_)<<endl;
-  // cout << "Matrix_MFD_TPFA:: ComputeJacobian\n";
-	// exit(0);
 }
 
 

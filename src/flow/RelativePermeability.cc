@@ -35,6 +35,9 @@ void RelativePermeability::Init(double p0, const Teuchos::RCP<Flow_State> FS)
 
   Krel_cells_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   Krel_faces_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+  dKdP_cells_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
+  dKdP_faces_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+
   method_ = FLOW_RELATIVE_PERM_NONE;
   SetFullySaturated();
 
@@ -108,8 +111,7 @@ void RelativePermeability::ComputeOnFaces(
     FaceArithmeticMean_(p);
 
   } else if (method_ == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-    FaceUpwindGravity_(p, bc_model, bc_values);
-    // AverageRelativePermeability();
+    FaceUpwindGravityInSoil_(p, bc_model, bc_values);
   }
 }
 
@@ -118,6 +120,48 @@ void RelativePermeability::ComputeOnFaces(
 * Defines upwinded relative permeabilities for faces using gravity. 
 ****************************************************************** */
 void RelativePermeability::FaceUpwindGravity_(
+    const Epetra_Vector& p,
+    const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  Krel_faces_->PutScalar(0.0);
+
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+
+      if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
+          double pc = atm_pressure - bc_values[f][0];
+          (*Krel_faces_)[f] = WRM_[(*map_c2mb_)[c]]->k_relative(pc);
+        } else {
+          (*Krel_faces_)[f] = (*Krel_cells_)[c];
+        }
+      } else {
+        if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
+          (*Krel_faces_)[f] = (*Krel_cells_)[c]; // The upwind face.
+        } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
+          (*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  //Almost vertical face.
+        } 
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Defines upwinded relative permeabilities for faces using gravity.
+* The unwind is restricted to each soil. 
+****************************************************************** */
+void RelativePermeability::FaceUpwindGravityInSoil_(
     const Epetra_Vector& p,
     const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
 {
@@ -218,6 +262,183 @@ void RelativePermeability::FaceArithmeticMean_(const Epetra_Vector& p)
     (*Krel_faces_)[f] /= ncells;
   }
 }
+
+
+/* ******************************************************************
+* Wrapper for various ways to define dKdP on faces.
+****************************************************************** */
+void RelativePermeability::ComputeDerivativeOnFaces(
+    const Epetra_Vector& p,
+    const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
+{
+  DerivedKdP(p, *dKdP_cells_);  // populates cell-based permeabilities
+  FS_->CopyMasterCell2GhostCell(*dKdP_cells_);
+
+  if (method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
+    DerivativeFaceUpwindGravity_(p, bc_model, bc_values);
+  } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+    Epetra_Vector& flux = FS_->ref_darcy_flux();
+    DerivativeFaceUpwindFlux_(p, flux, bc_model, bc_values);
+  }
+}
+
+
+/* ******************************************************************
+* Defines upwind value of dKdP on faces using gravity. 
+****************************************************************** */
+void RelativePermeability::DerivativeFaceUpwindGravity_(
+   const Epetra_Vector& p,
+   const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  dKdP_faces_->PutScalar(0.0);
+
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+      
+      if (bc_model[f] != FLOW_BC_FACE_NULL){
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && 
+            cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
+          int mb = (*map_c2mb_)[c];
+          double pc = atm_pressure - bc_values[f][0];
+          (*dKdP_faces_)[f] = WRM_[mb]->dKdPc(pc);
+        } else {
+          (*dKdP_faces_)[f] = (*dKdP_cells_)[c];
+        }
+      } else {
+        if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
+          (*dKdP_faces_)[f] = (*dKdP_cells_)[c];  // The upwind face.
+        } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
+          (*dKdP_faces_)[f] += (*dKdP_cells_)[c] / 2;  // Almost vertical face.
+        }
+      }
+    }
+  }
+}
+
+/* ******************************************************************
+* Defines upwind derivative of relative permeability on mesh faces 
+* using a given flux.
+* WARNING: This is a part of the experimental solver. 
+****************************************************************** */
+void RelativePermeability::DerivativeFaceUpwindFlux_(
+    const Epetra_Vector& p, const Epetra_Vector& flux,
+    const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  dKdP_faces_->PutScalar(0.0);
+
+  double max_flux;
+  flux.MaxValue(&max_flux);
+  double tol = FLOW_RELATIVE_PERM_TOLERANCE * max_flux;
+
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+
+      if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
+        if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
+            (flux[f] * dirs[n] < -tol)) {
+          int mb = (*map_c2mb_)[c];
+          double pc = atm_pressure - bc_values[f][0];
+          (*dKdP_faces_)[f] = WRM_[mb]->dKdPc(pc);
+        } else {
+          (*dKdP_faces_)[f] = (*dKdP_cells_)[c];
+        }
+      } else {
+        if (flux[f] * dirs[n] > tol) {
+          (*dKdP_faces_)[f] = (*dKdP_cells_)[c];  // The upwind face.
+        } else if (fabs(flux[f]) <= tol) { 
+          (*dKdP_faces_)[f] += (*dKdP_cells_)[c] / 2; // Zero flux face.
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Use analytical formula for derivative dS/dP.                                               
+****************************************************************** */
+void RelativePermeability::DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
+{
+  for (int mb = 0; mb < WRM_.size(); mb++) {
+    std::string region = WRM_[mb]->region();
+    AmanziMesh::Entity_ID_List block;
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+
+    AmanziMesh::Entity_ID_List::iterator i;
+    for (i = block.begin(); i != block.end(); i++) {
+      double pc = atm_pressure - p[*i];
+      ds[*i] = -WRM_[mb]->dSdPc(pc);  // Negative sign indicates that dSdP = -dSdPc.
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Use analytical formula for derivative dK/dP.                                               
+****************************************************************** */
+void RelativePermeability::DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk)
+{
+  for (int mb = 0; mb < WRM_.size(); mb++) {
+    std::string region = WRM_[mb]->region();
+    AmanziMesh::Entity_ID_List block;
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+
+    AmanziMesh::Entity_ID_List::iterator i;
+    for (i = block.begin(); i != block.end(); i++) {
+      double pc = atm_pressure - p[*i];
+      dk[*i] = -WRM_[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
+    }
+  }
+}
+
+
+/* *******************************************************************
+* Identify flux direction based on orientation of the face normal 
+* and sign of the Darcy velocity.                        
+******************************************************************* */
+/*
+void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
+{
+  for (int f = 0; f < nfaces_owned; f++) {
+    upwind_cell[f] = -1;
+    downwind_cell[f] = -1;
+  }
+
+  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> fdirs;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+
+    for (int i = 0; i < faces.size(); i++) {
+      int f = faces[i];
+      if (darcy_flux[f] * fdirs[i] >= 0)
+        upwind_cell[f] = c;
+      else
+        downwind_cell[f] = c;
+    }
+  }
+}
+*/
 
 
 /* ******************************************************************

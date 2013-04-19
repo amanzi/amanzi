@@ -369,7 +369,7 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 *                                             
 ****************************************************************** */
 void Flow_PK::AddNewtonFluxes_MFD(
-    const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,
+    RelativePermeability& rel_perm,
     const Epetra_Vector& pressure_cells, const Epetra_Vector& flux,
     Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix_operator)
 {
@@ -383,6 +383,9 @@ void Flow_PK::AddNewtonFluxes_MFD(
 
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
+
+  const Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
+  const Epetra_Vector& dKdP_faces = rel_perm.dKdP_faces();
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -520,36 +523,6 @@ void Flow_PK::DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra
     double face_value = 0.0;
     for (int n = 0; n < ncells; n++) face_value += ucells[cells[n]];
     ufaces[f] = face_value / ncells;
-  }
-}
-
-
-/* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the Darcy velocity. 
-* WARNING: It is *not* used now.                              
-******************************************************************* */
-void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
-{
-  for (int f = 0; f < nfaces_owned; f++) {
-    upwind_cell[f] = -1;  // negative value is indicator of a boundary
-    downwind_cell[f] = -1;
-  }
-
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-
-    for (int i = 0; i < faces.size(); i++) {
-      int f = faces[i];
-      if (darcy_flux[f] * fdirs[i] >= 0)
-        upwind_cell[f] = c;
-      else
-        downwind_cell[f] = c;
-    }
   }
 }
 

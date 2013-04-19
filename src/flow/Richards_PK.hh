@@ -85,10 +85,6 @@ class Richards_PK : public Flow_PK {
   // other main methods
   void SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
 
-  void CalculateDerivativePermeabilityFace(const Epetra_Vector& p);
-  void CalculateDerivativePermeabilityUpwindGravity(const Epetra_Vector& p);
-  void CalculateDerivativeRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
-
   void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDpicard(Epetra_Vector& pressure_cells, 
@@ -118,8 +114,6 @@ class Richards_PK : public Flow_PK {
   void AnalysisTI_Specs();
 
   // water retention models
-  void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds);
-  void DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk);
   void DeriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
   void DerivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
 
@@ -205,13 +199,9 @@ class Richards_PK : public Flow_PK {
 
   Teuchos::RCP<RelativePermeability> rel_perm;
 
-  Teuchos::RCP<Epetra_Vector> dKdP_cells;  // derivative of realitive permeability 
-  Teuchos::RCP<Epetra_Vector> dKdP_faces;
-
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
   int experimental_solver_; 
-  Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 
   double mass_bc, mass_amanzi;
 

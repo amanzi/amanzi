@@ -110,7 +110,7 @@ void Richards_PK::AddTimeDerivative_MFDpicard(
     double dT_prec, Matrix_MFD* matrix)
 {
   Epetra_Vector dSdP(mesh_->cell_map(false));
-  DerivedSdP(pressure_cells_dSdP, dSdP);
+  rel_perm->DerivedSdP(pressure_cells_dSdP, dSdP);
 
   const Epetra_Vector& phi = FS->ref_porosity();
   std::vector<double>& Acc_cells = matrix->Acc_cells();

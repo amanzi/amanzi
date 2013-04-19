@@ -44,7 +44,13 @@ class RelativePermeability {
                 const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
   void ComputeInCells(const Epetra_Vector& p);
   void ComputeOnFaces(const Epetra_Vector& p,
-                       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+                      const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+  void ComputeDerivativeOnFaces(
+      const Epetra_Vector& p,
+      const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+
+  void DerivedSdP(const Epetra_Vector& p, Epetra_Vector& ds);
+  void DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk);
 
   void CalculateKVectorUnit(const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& g);
   void SetFullySaturated();
@@ -56,18 +62,35 @@ class RelativePermeability {
 
   // access methods
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM() { return WRM_; }
+
   Epetra_Vector& Krel_cells() { return *Krel_cells_; }
   Epetra_Vector& Krel_faces() { return *Krel_faces_; }
+  const Epetra_Vector& dKdP_cells() { return *dKdP_cells_; }
+  const Epetra_Vector& dKdP_faces() { return *dKdP_faces_; }
+
   int method() { return method_; }
   Epetra_Vector& map_c2mb() { return *map_c2mb_; }
   void set_experimental_solver(int solver) { experimental_solver_ = solver; }
 
  private:
   void FaceArithmeticMean_(const Epetra_Vector& p);
-  void FaceUpwindGravity_(const Epetra_Vector& p,
-                           const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
-  void FaceUpwindFlux_(const Epetra_Vector& p, const Epetra_Vector& flux,
-                        const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+  void FaceUpwindGravityInit_();
+  void FaceUpwindGravity_(
+      const Epetra_Vector& p,
+      const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+  void FaceUpwindGravityInSoil_(
+      const Epetra_Vector& p,
+      const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+  void FaceUpwindFlux_(
+      const Epetra_Vector& p, const Epetra_Vector& flux,
+      const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+
+  void DerivativeFaceUpwindGravity_(
+      const Epetra_Vector& p,
+      const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+  void DerivativeFaceUpwindFlux_(
+      const Epetra_Vector& p, const Epetra_Vector& flux,
+      const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -79,8 +102,8 @@ class RelativePermeability {
   int method_;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells_;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces_;
-  Teuchos::RCP<Epetra_Vector> dKdP_cells;  // derivative of realitive permeability 
-  Teuchos::RCP<Epetra_Vector> dKdP_faces;
+  Teuchos::RCP<Epetra_Vector> dKdP_cells_;  // derivative of realitive permeability 
+  Teuchos::RCP<Epetra_Vector> dKdP_faces_;
 
   std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
 

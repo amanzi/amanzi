@@ -129,7 +129,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     Epetra_Vector& flux = FS->ref_darcy_flux();
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
     rhs = preconditioner_->rhs();
-    AddNewtonFluxes_MFD(*dKdP_faces, Krel_faces, *u_cells, flux, *rhs, matrix_plambda);
+    AddNewtonFluxes_MFD(*rel_perm, *u_cells, flux, *rhs, matrix_plambda);
   }
 
   preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
@@ -143,12 +143,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
       Exceptions::amanzi_throw(msg);
     }
 
-    Epetra_Vector& Krel_cells = rel_perm->Krel_cells();
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    int method = rel_perm->method();
-    matrix_tpfa->AnalyticJacobian(*u_cells, dim, method, bc_model, bc_values,
-                                  Krel_cells, *dKdP_cells,
-                                  Krel_faces, *dKdP_faces);
+    matrix_tpfa->AnalyticJacobian(*u_cells, dim, bc_model, bc_values, *rel_perm);
   }
 
   preconditioner_->UpdatePreconditioner();

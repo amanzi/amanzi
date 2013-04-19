@@ -89,7 +89,7 @@ class Flow_PK : public BDF2::fnBase {
                                    RelativePermeability& rel_perm);
 
   // Picard-Newton members
-  void AddNewtonFluxes_MFD(const Epetra_Vector& dKdP_faces, const Epetra_Vector& Krel_faces,
+  void AddNewtonFluxes_MFD(RelativePermeability& rel_perm,
                            const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,
                            Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix);
 
@@ -107,7 +107,6 @@ class Flow_PK : public BDF2::fnBase {
   // miscallenous members
   Epetra_Map* CreateSuperMap();
   void DeriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
-  void IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // io members

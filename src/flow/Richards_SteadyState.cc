@@ -315,20 +315,19 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
 
     // create algebraic problem
     rhs = matrix_->rhs();  // export RHS from the matrix class
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, matrix_, *rel_perm);
-    AddNewtonFluxes_MFD(*dKdP_faces, Krel_faces, *solution_cells, 
-                        flux, *rhs, static_cast<Matrix_MFD_PLambda*>(matrix_));
+    AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, *rhs,
+                        static_cast<Matrix_MFD_PLambda*>(matrix_));
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
-    AddNewtonFluxes_MFD(*dKdP_faces, Krel_faces, *solution_cells, 
-                        flux, residual, static_cast<Matrix_MFD_PLambda*>(preconditioner_));
+    AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, residual,
+                        static_cast<Matrix_MFD_PLambda*>(preconditioner_));
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
@@ -391,7 +390,7 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const E
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     Epetra_Vector dSdP(mesh_->cell_map(false));
-    DerivedSdP(uold, dSdP);
+    rel_perm->DerivedSdP(uold, dSdP);
 
     for (int c = 0; c < ncells_owned; c++) {
       double diff = dSdP[c] * fabs(unew[c] - uold[c]);

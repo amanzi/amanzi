@@ -39,15 +39,9 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   void AssembleGlobalMatrices();
   void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
   
-   void AnalyticJacobian(const Epetra_Vector& solution,
-                        int dim,
-                        int Krel_method,
-                        std::vector<int>& bc_markers, 
-                        std::vector<bc_tuple>& bc_values,
-                        Epetra_Vector& Krel_cells, 
-                        Epetra_Vector& dK_dP_cells,
-                        Epetra_Vector& Krel_faces, 
-                        Epetra_Vector& dK_dP_faces);
+  void AnalyticJacobian(const Epetra_Vector& solution, int dim,
+                        std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values,
+                        RelativePermeability& rel_perm); 
 
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
