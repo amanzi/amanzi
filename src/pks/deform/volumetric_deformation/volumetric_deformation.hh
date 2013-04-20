@@ -66,6 +66,13 @@ class VolumetricDeformation : public PKPhysicalBase {
   // function describing d(cv)/dT
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;
 
+  // meshes
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> surf3d_mesh_;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_nc_;
+  Teuchos::RCP<AmanziMesh::Mesh> surf_mesh_nc_;
+  Teuchos::RCP<AmanziMesh::Mesh> surf3d_mesh_nc_;
+
   // factory registration
   static RegisteredPKFactory<VolumetricDeformation> reg_;
 };
