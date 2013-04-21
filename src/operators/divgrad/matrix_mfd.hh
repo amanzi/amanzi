@@ -117,7 +117,8 @@ class MatrixMFD : public Matrix {
 
   // main computational methods
   void SetSymmetryProperty(bool flag_symmetry) {
-    flag_symmetry_ = flag_symmetry;
+    //    flag_symmetry_ = flag_symmetry;
+    flag_symmetry_ = false;
   }
 
   void CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K);
@@ -225,6 +226,7 @@ class MatrixMFD : public Matrix {
   std::vector<Epetra_SerialDenseVector> Ff_cells_;
   std::vector<double> Fc_cells_;
 
+  Teuchos::RCP<Epetra_Vector> Krel_;
   Teuchos::RCP<Epetra_Vector> Acc_;
   Teuchos::RCP<Epetra_CrsMatrix> Acf_;
   Teuchos::RCP<Epetra_CrsMatrix> Afc_;  // We generate transpose of this matrix block.

@@ -16,7 +16,8 @@ namespace Operators {
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     plist_(plist),
-    mesh_(mesh) {
+    mesh_(mesh),
+    flag_symmetry_(false) {
   InitializeFromPList_();
 }
 
@@ -170,6 +171,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
     }
     if (Krel->has_component("face")) {
       Krel_face = Krel->ViewComponent("face",true);
+      *Krel_ = *(*Krel_face)(0);
     }
   }
 
@@ -180,30 +182,35 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
 
     Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
+    Teuchos::SerialDenseMatrix<int, double> Bff_Kr(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
     if (Krel == Teuchos::null) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n);
+          Bff_Kr(m, n) = Mff(m,n);
         }
       }
     } else if (Krel_face == Teuchos::null) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c];
+          Bff_Kr(m, n) = Mff(m,n) * (*Krel_cell)[0][c];
         }
       }
     } else if (Krel_cell == Teuchos::null) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * (*Krel_face)[0][faces[m]];
+          Bff(m, n) = Mff(m,n);
+          Bff_Kr(m, n) = Mff(m,n) * (*Krel_face)[0][faces[m]];
         }
       }
     } else {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
-          Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c] * (*Krel_face)[0][faces[m]];
+          Bff(m, n) = Mff(m,n) * (*Krel_cell)[0][c];
+          Bff_Kr(m, n) = Mff(m,n) * (*Krel_cell)[0][c] * (*Krel_face)[0][faces[m]];
         }
       }
     }
@@ -212,7 +219,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
     for (int n=0; n!=nfaces; ++n) {
       double rowsum = 0.0, colsum = 0.0;
       for (int m=0; m!=nfaces; ++m) {
-        colsum += Bff(m, n);
+        colsum += Bff_Kr(m, n);
         rowsum += Bff(n, m);
       }
       Bcf(n) = -colsum;
@@ -227,28 +234,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
   }
 }
 
-
-/* ******************************************************************
- * May be used in the future.
- ****************************************************************** */
-void MatrixMFD::RescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
-        const Epetra_Vector& new_scale) {
-
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c!=ncells; ++c) {
-    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells_[c];
-    Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
-
-    int n = Bff.numRows();
-    double scale = old_scale[c] / new_scale[c];
-
-    for (int i=0; i<n; i++) {
-      for (int j=0; j<n; j++) Bff(i, j) *= scale;
-      Bcf(i) *= scale;
-    }
-    Acc_cells_[c] *= scale;
-  }
-}
 
 
 /* ******************************************************************
@@ -321,17 +306,11 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
-        if (c == 101)
-          std::cout << "On cell " << 101 << ", Ff_pre-BC = " << Ff[n] << std::endl;
-        Ff[n] -= bc_values[f] * mesh_->face_area(f);
-        if (c == 101)
-          std::cout << "On cell " << 101 << ", Ff_post-BC = " << Ff[n] << std::endl;
+        double Krel = (*Krel_)[f];
+        if (std::abs(bc_values[f] > 0.)) {
+          Ff[n] -= bc_values[f] * mesh_->face_area(f) / Krel;
+        }
       }
-
-//      if (f == 11) {
-//        std::cout << "Face 11 (BC,val) = " << bc_markers[f] << ", "
-//                  << bc_values[f] << std::endl;
-//      }
     }
   }
 }
@@ -424,6 +403,11 @@ void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
   std::vector<int> num_dofs(2,1);
   rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
   rhs_->CreateData();
+
+  // Krel
+  const Epetra_Map& fmap = mesh_->face_map(false);
+  Krel_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  Krel_->PutScalar(1.);
 }
 
 
@@ -792,7 +776,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
           s += Aff_cells_[c](n, m) * dp[m];
         }
 
-        flux_v[0][f] = s * dirs[n];
+        flux_v[0][f] = s * dirs[n] * (*Krel_)[f];
         done[f] = true;
       }
     }
