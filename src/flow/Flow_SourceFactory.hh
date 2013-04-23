@@ -6,7 +6,7 @@
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "domain-function.hh"
+#include "flow-domain-function.hh"
 
 
 namespace Amanzi {
@@ -19,10 +19,10 @@ class FlowSourceFactory {
      : mesh_(mesh), params_(params) {};
   ~FlowSourceFactory() {};
   
-  Functions::DomainFunction* createSource() const;
+  Functions::FlowDomainFunction* createSource() const;
 
  private:
-  void ProcessSourceSpec(Teuchos::ParameterList& list, Functions::DomainFunction* src) const;
+  void ProcessSourceSpec(Teuchos::ParameterList& list, Functions::FlowDomainFunction* src) const;
   void ProcessStringActions(const std::string& name, int* method) const;
      
  private:

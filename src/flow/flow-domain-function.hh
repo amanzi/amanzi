@@ -9,8 +9,8 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __AMANZI_DOMAIN_FUNCTION_HH__
-#define __AMANZI_DOMAIN_FUNCTION_HH__
+#ifndef __AMANZI_FLOW_DOMAIN_FUNCTION_HH__
+#define __AMANZI_FLOW_DOMAIN_FUNCTION_HH__
 
 #include <vector>
 #include <string>
@@ -23,19 +23,28 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace Functions {
 
-class DomainFunction : public UniqueMeshFunction {
+const int DOMAIN_FUNCTION_ACTION_NONE = 0;
+const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME = 1;
+const int DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY = 2;
+
+class FlowDomainFunction : public UniqueMeshFunction {
  public:
-  explicit DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
+  explicit FlowDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
       UniqueMeshFunction(mesh),
       finalized_(false) {}
 
   void Define(const std::vector<std::string>& regions,
-              const Teuchos::RCP<const VectorFunction>& f);
+              const Teuchos::RCP<const VectorFunction>& f,
+	      int action);
+
   void Define(std::string region,
-              const Teuchos::RCP<const VectorFunction> &f);
+              const Teuchos::RCP<const VectorFunction> &f,
+	      int action);
 
   void Compute(double time);
-
+  void ComputeDistribute(double T);
+  void ComputeDistribute(double T, double* weight);
+  
   void Finalize() {};
  
   // iterator methods
@@ -44,11 +53,13 @@ class DomainFunction : public UniqueMeshFunction {
   Iterator end() const  { return value_.end(); }
   Iterator find(const int j) const { return value_.find(j); }
   std::map<int,double>::size_type size() { return value_.size(); }
+
+  // extract internal information
+  int CollectActionsList();
  
 
  private:
   std::vector<int> actions_;
-
 
  protected:
   std::map<int,double> value_;
