@@ -31,6 +31,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -55,6 +56,8 @@ add_amanzi_library(state
                           PK_State.cc
                           checkpoint.cc Restart.cc
                           visualization.cc Vis.cc
+                          Observable.cc
+                          UnstructuredObservations.cc
                           chemistry_data.cc
                           cell_volume_evaluator.cc
                           Field.cc
