@@ -81,8 +81,12 @@ class DarcyProblem {
     S = new State(state_list);
     S->RegisterDomainMesh(mesh);
     S->set_time(0.0);
-    
+
+
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
+    S->Setup();
+    S->Initialize();
+    FS->Initialize();
 
     DPK = new Darcy_PK(parameter_list, FS);
    
