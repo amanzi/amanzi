@@ -89,22 +89,22 @@ void Flow_State::Construct_() {
 };
 
 void Flow_State::Initialize() {
-  if (standalone_mode_) S_->Setup();
-
-  S_->GetField("fluid_density",name_)->set_initialized();
-  S_->GetField("fluid_viscosity",name_)->set_initialized();
-  S_->GetField("gravity",name_)->set_initialized();
-  S_->GetField("pressure",name_)->set_initialized();
-  S_->GetField("permeability",name_)->set_initialized();
-  S_->GetField("porosity",name_)->set_initialized();
-  S_->GetField("water_saturation",name_)->set_initialized();
-  S_->GetField("prev_water_saturation",name_)->set_initialized();
-  S_->GetField("specific_storage",name_)->set_initialized();
-  S_->GetField("specific_yield",name_)->set_initialized();
-  S_->GetField("darcy_flux",name_)->set_initialized();
-  S_->GetField("darcy_velocity",name_)->set_initialized();
-
-  if (standalone_mode_) S_->Initialize();
+  if (standalone_mode_) {
+    S_->Setup();
+    S_->GetField("fluid_density",name_)->set_initialized();
+    S_->GetField("fluid_viscosity",name_)->set_initialized();
+    S_->GetField("gravity",name_)->set_initialized();
+    S_->GetField("pressure",name_)->set_initialized();
+    S_->GetField("permeability",name_)->set_initialized();
+    S_->GetField("porosity",name_)->set_initialized();
+    S_->GetField("water_saturation",name_)->set_initialized();
+    S_->GetField("prev_water_saturation",name_)->set_initialized();
+    S_->GetField("specific_storage",name_)->set_initialized();
+    S_->GetField("specific_yield",name_)->set_initialized();
+    S_->GetField("darcy_flux",name_)->set_initialized();
+    S_->GetField("darcy_velocity",name_)->set_initialized();
+    S_->Initialize();
+  }
 }
 
 Teuchos::RCP<AmanziGeometry::Point>
