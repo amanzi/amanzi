@@ -26,6 +26,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "MeshAudit.hh"
 #include "Darcy_PK.hh"
 
+#include "exceptions.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -53,6 +54,7 @@ class DarcyProblem {
   }
 
   void Init(const string xmlFileName, const char* meshExodus) {
+
     Teuchos::ParameterList parameter_list;
 
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -79,13 +81,15 @@ class DarcyProblem {
     S = new State(state_list);
     S->RegisterDomainMesh(mesh);
     S->set_time(0.0);
-
+    
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
-    DPK = new Darcy_PK(parameter_list, FS);
 
+    DPK = new Darcy_PK(parameter_list, FS);
+   
     Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
-  }
+
+ }
 
   void createBClist(const char* type, const char* bc_x, 
                     Teuchos::Array<std::string>& regions, double value) {
@@ -186,7 +190,9 @@ SUITE(Darcy_PK) {
 * Testing the mesh of hexahedra.
 ****************************************************************** */
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
+
     Init("test/flow_darcy_misc.xml", "test/hexes.exo");
+    
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: Dirichlet-Dirichlet" << std::endl;
 
     double p0 = 1.0;
@@ -200,8 +206,9 @@ SUITE(Darcy_PK) {
 
     regions[0] = string("Bottom side");
     createBClist("pressure", "BC 2", regions, 1.0);
-    DPK->ResetParameterList(dp_list);
 
+    DPK->ResetParameterList(dp_list);
+    
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);

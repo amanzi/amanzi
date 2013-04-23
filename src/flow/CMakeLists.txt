@@ -51,7 +51,8 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Richards_SteadyState.cc Richards_Picard.cc Richards_AztecOO.cc
                    Richards_Bundles.cc Richards_Devel.cc Richards_AndersonMixing.cc
                    Matrix_MFD.cc Matrix_MFD_TPFA.cc Matrix_MFD_PLambda.cc Matrix_VAG.cc 
-                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc)
+                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
+		   flow-domain-function.cc)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
@@ -94,9 +95,11 @@ if (BUILD_TESTS)
         set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
  
         # Test: miscaleneous Darcy flow routines
-        add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cc)
-        target_link_libraries(flow_darcy_misc ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
+        add_amanzi_test(flow_darcy_misc flow_darcy_misc 
+	                KIND int
+	                SOURCE test/Main.cc test/flow_darcy_misc.cc
+			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
         add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
         add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
 

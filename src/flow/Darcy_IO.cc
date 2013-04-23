@@ -62,9 +62,7 @@ void Darcy_PK::ProcessParameterList()
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(dp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
-    
-    // // commented out to make compile with new function code, need to fix
-    // src_sink_distribution = src_sink->CollectActionsList();
+    src_sink_distribution = src_sink->CollectActionsList();
   }
 
   // discretization method

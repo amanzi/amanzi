@@ -18,9 +18,9 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-Functions::DomainFunction* FlowSourceFactory::createSource() const
+Functions::FlowDomainFunction* FlowSourceFactory::createSource() const
 {
-  Functions::DomainFunction* src = new Functions::DomainFunction(mesh_);
+  Functions::FlowDomainFunction* src = new Functions::FlowDomainFunction(mesh_);
 
   // Iterate through the source specification sublists in the params_.
   // All are expected to be sublists of identical structure.
@@ -48,7 +48,7 @@ Functions::DomainFunction* FlowSourceFactory::createSource() const
 /* ******************************************************************
 * Process source, step 2.
 ****************************************************************** */
-void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Functions::DomainFunction* src) const
+void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Functions::FlowDomainFunction* src) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -83,14 +83,12 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Function
     Exceptions::amanzi_throw(m);
   }
 
-  // // Add this source specification to the domain function.
-  // int method;
-  // std::string action_name = list.get<std::string>("spatial distribution method", "none");
-  // ProcessStringActions(action_name, &method);
+  // Add this source specification to the domain function.
+  int method;
+  std::string action_name = list.get<std::string>("spatial distribution method", "none");
+  ProcessStringActions(action_name, &method);
   
-  // src->Define(regions, f, method);
-
-  src->Define(regions, f);
+  src->Define(regions, f, method);
 }
 
 
@@ -100,19 +98,17 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Function
 void FlowSourceFactory::ProcessStringActions(const std::string& name, int* method) const
 {
 
-  // commented out to make it compile with new function code, need to fix
-
-  // Errors::Message msg;
-  // if (name == "none") {
-  //   *method = Amanzi::DOMAIN_FUNCTION_ACTION_NONE;
-  // } else if (name == "volume") {
-  //   *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
-  // } else if (name == "permeability") {
-  //   *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
-  // } else {
-  //   msg << "Flow PK: unknown source distribution method has been specified.";
-  //   Exceptions::amanzi_throw(msg);
-  // }
+  Errors::Message msg;
+  if (name == "none") {
+    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_NONE;
+  } else if (name == "volume") {
+    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+  } else if (name == "permeability") {
+    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+  } else {
+    msg << "Flow PK: unknown source distribution method has been specified.";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 }  // namespace AmanziFlow
