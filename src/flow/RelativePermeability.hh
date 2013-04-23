@@ -15,6 +15,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <string>
 #include <vector>
 
+#include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -65,6 +66,7 @@ class RelativePermeability {
 
   Epetra_Vector& Krel_cells() { return *Krel_cells_; }
   Epetra_Vector& Krel_faces() { return *Krel_faces_; }
+  std::vector<std::vector<double> >& Krel_amanzi() { return Krel_amanzi_; }
   const Epetra_Vector& dKdP_cells() { return *dKdP_cells_; }
   const Epetra_Vector& dKdP_faces() { return *dKdP_faces_; }
 
@@ -75,6 +77,7 @@ class RelativePermeability {
  private:
   void FaceArithmeticMean_(const Epetra_Vector& p);
   void FaceUpwindGravityInit_();
+  void FaceUpwindGravityInit_(const AmanziGeometry::Point& g);
   void FaceUpwindGravity_(
       const Epetra_Vector& p,
       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
@@ -99,11 +102,19 @@ class RelativePermeability {
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM_;
   double atm_pressure;
 
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
+
   int method_;  // method for calculating relative permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells_;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces_;
   Teuchos::RCP<Epetra_Vector> dKdP_cells_;  // derivative of realitive permeability 
   Teuchos::RCP<Epetra_Vector> dKdP_faces_;
+
+  Teuchos::RCP<Epetra_IntVector> upwind_cell;
+  Teuchos::RCP<Epetra_IntVector> downwind_cell;
+  Teuchos::RCP<Epetra_IntVector> face_flag;
+  std::vector<std::vector<double> > Krel_amanzi_;
 
   std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
 

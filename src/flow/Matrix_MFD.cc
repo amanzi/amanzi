@@ -245,14 +245,16 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
       for (int n = 0; n < nfaces; n++)
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
 
-    } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+    } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
+      std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
+
       for (int n = 0; n < nfaces; n++)
         for (int m = 0; m < nfaces; m++) Bff(m, n) = Mff(m, n) * Krel_cells[c];
 
       // add upwind correction
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+        double t = std::max(0.0, krel[n] - Krel_cells[c]);
         Bff(n, n) += Mff(n, n) * t * t; 
       }
     } else {

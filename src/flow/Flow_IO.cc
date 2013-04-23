@@ -98,7 +98,7 @@ void Flow_PK::ProcessStringTimeIntegration(const std::string name, int* method)
 
 
 /* ****************************************************************
-* Process string for the discretization method.
+* Process verbosity string.
 **************************************************************** */
 void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
 {

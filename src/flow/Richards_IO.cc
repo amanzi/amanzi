@@ -90,7 +90,6 @@ void Richards_PK::ProcessParameterList()
 
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
- 
 
   // Time integrator for period I, temporary called initial guess initialization
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {

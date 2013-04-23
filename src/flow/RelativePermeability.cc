@@ -30,6 +30,12 @@ void RelativePermeability::Init(double p0, const Teuchos::RCP<Flow_State> FS)
   atm_pressure = p0;
   FS_ = FS;
 
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
@@ -37,6 +43,10 @@ void RelativePermeability::Init(double p0, const Teuchos::RCP<Flow_State> FS)
   Krel_faces_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
   dKdP_cells_ = Teuchos::rcp(new Epetra_Vector(cmap_wghost));
   dKdP_faces_ = Teuchos::rcp(new Epetra_Vector(fmap_wghost));
+
+  upwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
+  downwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
+  face_flag = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
 
   method_ = FLOW_RELATIVE_PERM_NONE;
   SetFullySaturated();
@@ -61,7 +71,7 @@ void RelativePermeability::Compute(const Epetra_Vector& p,
         experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
       ComputeOnFaces(p, bc_model, bc_values);
     }
-  } else if (method_ == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+  } else if (method_ == FLOW_RELATIVE_PERM_AMANZI) {
     ComputeOnFaces(p, bc_model, bc_values);
   } else {
     ComputeInCells(p);
@@ -110,7 +120,7 @@ void RelativePermeability::ComputeOnFaces(
   } else if (method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
     FaceArithmeticMean_(p);
 
-  } else if (method_ == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
+  } else if (method_ == FLOW_RELATIVE_PERM_AMANZI) {
     FaceUpwindGravityInSoil_(p, bc_model, bc_values);
   }
 }
@@ -128,7 +138,6 @@ void RelativePermeability::FaceUpwindGravity_(
 
   Krel_faces_->PutScalar(0.0);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -158,8 +167,7 @@ void RelativePermeability::FaceUpwindGravity_(
 
 
 /* ******************************************************************
-* Defines upwinded relative permeabilities for faces using gravity.
-* The unwind is restricted to each soil. 
+* Defines upwinded relative permeabilities for faces using gravity. 
 ****************************************************************** */
 void RelativePermeability::FaceUpwindGravityInSoil_(
     const Epetra_Vector& p,
@@ -168,33 +176,34 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Krel_faces_->PutScalar(0.0);
+  Krel_amanzi_.clear();
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    std::vector<double> krel(nfaces);
+
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+      int c1 = (*upwind_cell)[f];
+      int c2 = (*downwind_cell)[f];
 
-      if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
-        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
+      int flag = (*face_flag)[f];
+      if (flag == FLOW_PERMFLAG_AVERAGE) {
+        krel[n] = ((*Krel_cells_)[c1] + (*Krel_cells_)[c2]) / 2;
+      } else if (flag == FLOW_PERMFLAG_INTERFACE) {
+        krel[n] = (*Krel_cells_)[c];
+      } else if (flag == FLOW_PERMFLAG_UPWIND) {
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && c1 < 0) {
           double pc = atm_pressure - bc_values[f][0];
-          (*Krel_faces_)[f] = WRM_[(*map_c2mb_)[c]]->k_relative(pc);
+          krel[n] = WRM_[(*map_c2mb_)[c]]->k_relative(pc);
         } else {
-          (*Krel_faces_)[f] = (*Krel_cells_)[c];
+          krel[n] = (*Krel_cells_)[c];
         }
-      } else {
-        if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
-          (*Krel_faces_)[f] = (*Krel_cells_)[c]; // The upwind face.
-        } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
-          (*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  //Almost vertical face.
-        } 
       }
     }
+    Krel_amanzi_.push_back(krel);
   }
 }
 
@@ -217,7 +226,6 @@ void RelativePermeability::FaceUpwindFlux_(
   flux.MinValue(&min_flux);
   double tol = FLOW_RELATIVE_PERM_TOLERANCE * std::max(fabs(max_flux), fabs(min_flux));
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -253,7 +261,6 @@ void RelativePermeability::FaceArithmeticMean_(const Epetra_Vector& p)
 
   Krel_faces_->PutScalar(0.0);
 
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
@@ -295,7 +302,6 @@ void RelativePermeability::DerivativeFaceUpwindGravity_(
 
   dKdP_faces_->PutScalar(0.0);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -343,7 +349,6 @@ void RelativePermeability::DerivativeFaceUpwindFlux_(
   flux.MaxValue(&max_flux);
   double tol = FLOW_RELATIVE_PERM_TOLERANCE * max_flux;
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -410,19 +415,79 @@ void RelativePermeability::DerivedKdP(const Epetra_Vector& p, Epetra_Vector& dk)
 }
 
 
-/* *******************************************************************
-* Identify flux direction based on orientation of the face normal 
-* and sign of the Darcy velocity.                        
-******************************************************************* */
-/*
-void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
+/* ******************************************************************
+* Defines upwinded relative permeabilities for faces using gravity.
+* The unwind is restricted to each soil. 
+****************************************************************** */
+void RelativePermeability::FaceUpwindGravityInit_()
 {
-  for (int f = 0; f < nfaces_owned; f++) {
-    upwind_cell[f] = -1;
-    downwind_cell[f] = -1;
+  for (int f = 0; f < nfaces_wghost; f++) {
+    (*upwind_cell)[f] = -1;
+    (*downwind_cell)[f] = -1;
+    (*face_flag)[f] = FLOW_PERMFLAG_NONE;
   }
 
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
+  // populate internal faces
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+
+      if (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
+        (*face_flag)[f] = FLOW_PERMFLAG_UPWIND;
+        (*downwind_cell)[f] = c;  
+      } if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
+        (*face_flag)[f] = FLOW_PERMFLAG_UPWIND;
+        (*upwind_cell)[f] = c;
+      } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
+        (*face_flag)[f] = FLOW_PERMFLAG_AVERAGE;  // Almost vertical face.
+        if ((*upwind_cell)[f] < 0) 
+          (*upwind_cell)[f] = c;  
+        else
+          (*downwind_cell)[f] = c; 
+      }
+    }
+  }
+
+  // update boundary faces
+  for (int f = 0; f < nfaces_wghost; f++) {
+    if ((*upwind_cell)[f] < 0 && (*face_flag)[f] == FLOW_PERMFLAG_AVERAGE)
+       (*upwind_cell)[f] = (*downwind_cell)[f]; 
+  }
+
+  // update internal interface faces
+  for (int f = 0; f < nfaces_wghost; f++) {
+    int c1 = (*upwind_cell)[f];
+    int c2 = (*downwind_cell)[f];
+
+    if (c1 >= 0 && c2 >= 0) {
+      int mb1 = (*map_c2mb_)[c1];
+      int mb2 = (*map_c2mb_)[c2];
+      if (mb1 != mb2) (*face_flag)[f] = FLOW_PERMFLAG_INTERFACE;
+    }
+  }
+}
+
+
+/* *******************************************************************
+* Identify flux direction based on the mutual orientation of the 
+* face normal and gravity vector.  
+* This is the obsolete routine.                      
+******************************************************************* */
+void RelativePermeability::FaceUpwindGravityInit_(const AmanziGeometry::Point& g)
+{
+  for (int f = 0; f < nfaces_owned; f++) {
+    (*upwind_cell)[f] = -1;
+    (*downwind_cell)[f] = -1;
+  }
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
@@ -431,14 +496,14 @@ void Flow_PK::IdentifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if (darcy_flux[f] * fdirs[i] >= 0)
-        upwind_cell[f] = c;
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      if ((normal * g) * fdirs[i] >= 0)
+        (*upwind_cell)[f] = c;
       else
-        downwind_cell[f] = c;
+        (*downwind_cell)[f] = c;
     }
   }
 }
-*/
 
 
 /* ******************************************************************
@@ -473,6 +538,8 @@ void RelativePermeability::CalculateKVectorUnit(const std::vector<WhetStone::Ten
     for (int i = 0; i < dim; i++) Kg[i] = Kg_copy[i][c];
     Kgravity_unit.push_back(Kg);
   }
+
+  FaceUpwindGravityInit_();
 } 
 
 

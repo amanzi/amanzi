@@ -68,7 +68,7 @@
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
       <Parameter name="relative permeability" type="string" value="cell centered"/>
-      <Parameter name="atmospheric pressure" type="double" value="0.0"/>
+      <Parameter name="atmospheric pressure" type="double" value="1e-20"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="none"/>

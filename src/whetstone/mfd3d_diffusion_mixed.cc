@@ -420,7 +420,7 @@ int MFD3D::L2consistencyInverseScaled(int cell, const Tensor& T,
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    for (int k = 0; k < d; k++) R(i, k) = (fm[k] - cm[k]) * mesh_->face_area(f);
+    for (int k = 0; k < d; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

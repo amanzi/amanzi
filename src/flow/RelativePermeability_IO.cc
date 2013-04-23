@@ -137,8 +137,8 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
     method_ = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
   } else if (name == "arithmetic mean") {
     method_ = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
-  } else if (name == "upwind experimental") {
-    method_ = AmanziFlow::FLOW_RELATIVE_PERM_EXPERIMENTAL;
+  } else if (name == "upwind amanzi") {
+    method_ = AmanziFlow::FLOW_RELATIVE_PERM_AMANZI;
   } else {
     msg << "Flow PK: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);

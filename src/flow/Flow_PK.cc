@@ -344,6 +344,7 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 
     Epetra_SerialDenseVector& Ff = matrix_operator->Ff_cells()[c];
     double& Fc = matrix_operator->Fc_cells()[c];
+    std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -352,8 +353,8 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       double outward_flux = ((K[c] * rho_gravity) * normal) * dirs[n]; 
       if (method == FLOW_RELATIVE_PERM_CENTERED) {
         outward_flux *= Krel_cells[c];
-      } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-        double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+      } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
+        double t = std::max(0.0, krel[n] - Krel_cells[c]);
         outward_flux *= (Krel_cells[c] + t * t); 
       } else {
         outward_flux *= Krel_faces[f];
@@ -485,14 +486,15 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      std::vector<double>& krel = rel_perm.Krel_amanzi()[c];
 
       if (f < nfaces_owned && !flag[f]) {
         if (method == FLOW_RELATIVE_PERM_NONE) {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal);
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c];
-        } else if (method == FLOW_RELATIVE_PERM_EXPERIMENTAL) {
-          double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+        } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
+          double t = std::max(0.0, krel[n] - Krel_cells[c]);
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * (Krel_cells[c] + t * t); 
         } else {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];

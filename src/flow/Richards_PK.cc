@@ -360,7 +360,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
       if (ti_specs.clip_saturation > 0.0) {
         std::printf("%7s clipping saturation value: %9.4g [-]\n", "", ti_specs.clip_saturation);
-      } else if (ti_specs.clip_pressure > -5 * atm_pressure) {
+      } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
         std::printf("%7s clipping pressure value: %9.4g [Pa]\n", "", ti_specs.clip_pressure);
       }
     }
@@ -456,10 +456,10 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     SolveFullySaturatedProblem(T0, *solution);  // It gives consistent hydrostatic solution.
 
     if (ti_specs.clip_saturation > 0.0) {
-      double pmin = atm_pressure;
+      double pmin = FLOW_PRESSURE_ATMOSPHERIC;
       ClipHydrostaticPressure(pmin, ti_specs.clip_saturation, *solution_cells);
       DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-    } else if (ti_specs.clip_pressure > -5 * atm_pressure) {
+    } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
       ClipHydrostaticPressure(ti_specs.clip_pressure, *solution_cells);
       DeriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
     }
@@ -756,7 +756,7 @@ bool Richards_PK::SetSymmetryProperty()
   int method = rel_perm->method();
   bool sym = false;
   if ((method == FLOW_RELATIVE_PERM_CENTERED) ||
-      (method == FLOW_RELATIVE_PERM_EXPERIMENTAL)) sym = true;
+      (method == FLOW_RELATIVE_PERM_AMANZI)) sym = true;
   if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
       experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) sym = false;
 
