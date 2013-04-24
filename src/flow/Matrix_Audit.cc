@@ -15,10 +15,10 @@ namespace Amanzi {
 /* ******************************************************************
 * Constructor.                                      
 ****************************************************************** */
-Matrix_Audit::Matrix_Audit(Teuchos::RCP<AmanziMesh::Mesh> mesh, AmanziFlow::Matrix_MFD* matrix)
+Matrix_Audit::Matrix_Audit(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziFlow::Matrix_MFD* matrix)
+   : mesh_(mesh)
 { 
   matrix_type = MATRIX_AUDIT_MFD; 
-  mesh_ = mesh;
   matrix_ = matrix;
 }
 
@@ -39,7 +39,6 @@ Matrix_Audit::~Matrix_Audit()
 ****************************************************************** */
 void Matrix_Audit::InitAudit()
 {
-  printf("Matrix_Audit: initializing for matrix id =%2d\n", matrix_type); 
   MyPID = mesh_->cell_map(false).Comm().MyPID();
 
   if (matrix_type == MATRIX_AUDIT_MFD) {
@@ -58,7 +57,10 @@ void Matrix_Audit::InitAudit()
 
   lwork1 = 10 * (lda + 1);
   dwork1 = new double[lwork1];
-  printf("Matrix_Audit: maximum matrix size =%3d\n", lda); 
+  if (MyPID == 0) {
+    printf("Matrix_Audit: initializing for matrix id =%2d\n", matrix_type);
+    printf("Matrix_Audit: maximum matrix size =%3d\n", lda); 
+  }
 }
 
 
@@ -71,6 +73,7 @@ int Matrix_Audit::RunAudit()
   ierr = CheckSpectralBounds();
   ierr |= CheckSpectralBoundsExtended();
   ierr |= CheckSpectralBoundsSchurComplement();
+  if (matrix_type == MATRIX_AUDIT_MFD) CheckMatrixSymmetry();
   return ierr;
 }
 
@@ -222,7 +225,7 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
     OrderByIncrease(n, dmem1);
 
     double e, a = dmem1[1], b = dmem1[1];  // skipping the first eigenvalue
-    for (int k=2; k<n; k++) {
+    for (int k = 2; k < n; k++) {
       e = dmem1[k];
       a = std::min(a, e);
       b = std::max(b, e);
@@ -244,6 +247,36 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
     printf("   conditioning (min,max,avg) = %8.2g %8.2g %8.2g\n", cndmin, cndmax, cndavg);
   }
   return 0;
+}
+
+
+/* ******************************************************************
+* AAA.                                      
+****************************************************************** */
+int Matrix_Audit::CheckMatrixSymmetry()
+{
+  const Epetra_Map& fmap_owned = mesh_->face_map(false);
+  Epetra_Vector x(fmap_owned);
+  Epetra_Vector y(fmap_owned);
+  Epetra_Vector z(fmap_owned);
+
+  double axx, ayy;
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  for (int n = 0; n < 10; n++) {
+    for (int f = 0; f < nfaces_owned; f++) {
+      x[f] = double(random()) / RAND_MAX;
+      y[f] = double(random()) / RAND_MAX;
+    }
+    matrix_->Aff()->Multiply(false, x, z);
+    z.Dot(x, &axx);
+
+    matrix_->Aff()->Multiply(false, y, z);
+    z.Dot(y, &ayy);
+    if (MyPID == 0) {	
+      cout << axx << " " << ayy << endl;
+    }
+  }
 }
 
 

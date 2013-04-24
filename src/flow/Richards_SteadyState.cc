@@ -212,6 +212,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     rhs = matrix_->rhs();  // export RHS from the matrix class
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
+    // Matrix_Audit audit(mesh_, matrix_);
+    // audit.InitAudit();
+    // audit.RunAudit();
+
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();

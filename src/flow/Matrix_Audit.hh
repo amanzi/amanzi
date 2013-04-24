@@ -18,7 +18,7 @@ int const MATRIX_AUDIT_MFD = 1;
 
 class Matrix_Audit {
  public:
-  Matrix_Audit(Teuchos::RCP<AmanziMesh::Mesh> mesh, AmanziFlow::Matrix_MFD* matrix);
+  Matrix_Audit(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziFlow::Matrix_MFD* matrix);
   ~Matrix_Audit();
 
   // main members
@@ -27,13 +27,14 @@ class Matrix_Audit {
   int CheckSpectralBounds();
   int CheckSpectralBoundsExtended();
   int CheckSpectralBoundsSchurComplement();
+  int CheckMatrixSymmetry();
 
  private:
   void OrderByIncrease(int n, double* mem);
 
   int MyPID;
   int matrix_type;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   AmanziFlow::Matrix_MFD* matrix_;
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >* A;  // local matrices

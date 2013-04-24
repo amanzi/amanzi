@@ -69,7 +69,7 @@ void RelativePermeability::Compute(const Epetra_Vector& p,
     Krel_cells_->PutScalar(1.0);
     if (experimental_solver_ == FLOW_SOLVER_NEWTON || 
         experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-      ComputeOnFaces(p, bc_model, bc_values);
+      ComputeDerivativeOnFaces(p, bc_model, bc_values);
     }
   } else if (method_ == FLOW_RELATIVE_PERM_AMANZI) {
     ComputeOnFaces(p, bc_model, bc_values);
@@ -198,6 +198,8 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && c1 < 0) {
           double pc = atm_pressure - bc_values[f][0];
           krel[n] = WRM_[(*map_c2mb_)[c]]->k_relative(pc);
+        } else if (c1 >= 0) {
+          krel[n] = (*Krel_cells_)[c1];
         } else {
           krel[n] = (*Krel_cells_)[c];
         }
@@ -577,6 +579,18 @@ void RelativePermeability::SetFullySaturated()
 {
   Krel_cells_->PutScalar(1.0);
   Krel_faces_->PutScalar(1.0);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  Krel_amanzi_.clear();
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    std::vector<double> krel(nfaces, 1.0);
+    Krel_amanzi_.push_back(krel);
+  }
 }
 
 }  // namespace AmanziFlow

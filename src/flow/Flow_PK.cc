@@ -354,8 +354,7 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       if (method == FLOW_RELATIVE_PERM_CENTERED) {
         outward_flux *= Krel_cells[c];
       } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-        double t = std::max(0.0, krel[n] - Krel_cells[c]);
-        outward_flux *= (Krel_cells[c] + t * t); 
+        outward_flux *= krel[n]; 
       } else {
         outward_flux *= Krel_faces[f];
       }
@@ -494,8 +493,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c];
         } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-          double t = std::max(0.0, krel[n] - Krel_cells[c]);
-          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * (Krel_cells[c] + t * t); 
+          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * krel[n]; 
         } else {
           darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
         }
