@@ -9,7 +9,7 @@
   Ethan Coon (ATS version) (ecoon@lanl.gov)
 ------------------------------------------------------------------------- */
 
-#include "field_evaluator.hh"
+#include "FieldEvaluator.hh"
 #include "richards.hh"
 
 namespace Amanzi {

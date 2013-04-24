@@ -12,7 +12,7 @@
 
 #include "Mesh.hh"
 #include "composite_vector.hh"
-#include "state.hh"
+#include "State.hh"
 #include "upwind_total_flux.hh"
 #include "Epetra_IntVector.h"
 

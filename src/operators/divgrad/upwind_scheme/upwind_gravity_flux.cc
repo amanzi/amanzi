@@ -10,9 +10,9 @@
 // faces.
 // -----------------------------------------------------------------------------
 
-#include "tensor.hpp"
+#include "tensor.hh"
 #include "composite_vector.hh"
-#include "state.hh"
+#include "State.hh"
 #include "upwind_gravity_flux.hh"
 
 namespace Amanzi {

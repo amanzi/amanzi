@@ -32,7 +32,7 @@
 #include "Point.hh"
 #include "tree_vector.hh"
 #include "composite_vector.hh"
-#include "mfd3d.hpp"
+#include "mfd3d.hh"
 
 #include "matrix.hh"
 

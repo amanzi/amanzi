@@ -14,7 +14,7 @@
 
 #include "field.hh"
 #include "field_composite_vector.hh"
-#include "state.hh"
+#include "State.hh"
 #include "constant_temperature.hh"
 
 using namespace Amanzi;

@@ -34,7 +34,7 @@
 #include <fstream>
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "field_evaluator.hh"
+#include "FieldEvaluator.hh"
 #include "matrix_mfd.hh"
 #include "matrix_coupled_mfd.hh"
 #include "mpc_coupled_cells.hh"

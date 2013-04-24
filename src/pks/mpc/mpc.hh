@@ -27,7 +27,7 @@ respective methods.
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MpiComm.h"
 
-#include "state.hh"
+#include "State.hh"
 #include "tree_vector.hh"
 
 #include "pk_default_base.hh"

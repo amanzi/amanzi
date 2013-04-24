@@ -10,7 +10,7 @@
 #ifndef AMANZI_RELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
 #define AMANZI_RELATIONS_OVERLAND_SOURCE_FROM_SUBSURFACE_FLUX_EVALUATOR_HH_
 
-#include "field_evaluator_factory.hh"
+#include "FieldEvaluator_Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {

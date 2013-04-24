@@ -24,7 +24,7 @@ MPCSurfaceSubsurfaceFluxCoupler.
 #include "composite_vector.hh"
 #include "pk_factory.hh"
 #include "pk_default_base.hh"
-#include "field_evaluator.hh"
+#include "FieldEvaluator.hh"
 
 
 namespace Amanzi {

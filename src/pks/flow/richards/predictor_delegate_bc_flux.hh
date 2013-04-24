@@ -11,7 +11,7 @@
 #define PREDICTOR_DELEGATE_BC_FLUX_
 
 #include "Mesh.hh"
-#include "state.hh"
+#include "State.hh"
 
 #include "matrix_mfd.hh"
 #include "wrm_partition.hh"

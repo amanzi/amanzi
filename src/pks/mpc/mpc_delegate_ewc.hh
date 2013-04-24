@@ -12,8 +12,8 @@ energy/water-content space instead of temperature/pressure space.
 #ifndef MPC_DELEGATE_EWC_HH_
 #define MPC_DELEGATE_EWC_HH_
 
-#include "tensor.hpp"
-#include "state.hh"
+#include "tensor.hh"
+#include "State.hh"
 #include "tree_vector.hh"
 #include "pk_default_base.hh"
 

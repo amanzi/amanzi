@@ -20,7 +20,7 @@ subtree:
   permafrost  icy_overland    threephase    surface_ice
 
 ------------------------------------------------------------------------- */
-#include "field_evaluator.hh"
+#include "FieldEvaluator.hh"
 
 #include "permafrost_model.hh"
 #include "matrix_coupled_mfd_surf.hh"

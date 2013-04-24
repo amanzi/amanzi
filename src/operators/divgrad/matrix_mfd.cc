@@ -117,22 +117,22 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
     }
 
     if (method_ == MFD3D_POLYHEDRA_SCALED) {
-      ok = mfd.DarcyMassInverseScaled(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseScaled(c, Kc, Mff);
     } else if (method_ == MFD3D_POLYHEDRA) {
-      ok = mfd.DarcyMassInverse(c, K[c], Mff);
+      ok = mfd.DarcyMassInverse(c, Kc, Mff);
     } else if (method_ == MFD3D_OPTIMIZED_SCALED) {
-      ok = mfd.DarcyMassInverseOptimizedScaled(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseOptimizedScaled(c, Kc, Mff);
     } else if (method_ == MFD3D_OPTIMIZED) {
-      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseOptimized(c, Kc, Mff);
     } else if (method_ == MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
+        ok = mfd.DarcyMassInverseHex(c, Kc, Mff);
       else
-        ok = mfd.DarcyMassInverse(c, K[c], Mff);
+        ok = mfd.DarcyMassInverse(c, Kc, Mff);
     } else if (method_ == MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseDiagonal(c, Kc, Mff);
     } else if (method_ == MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
+      ok = mfd.DarcyMassInverseSO(c, Kc, Mff);
     } else {
       Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
       Exceptions::amanzi_throw(msg);
@@ -206,7 +206,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
 		colsum += Bff(m, n);
 		rowsum += Bff(n, m);
 	  }
-	  Bcf(n) = -colsum * ( Krel_face == Teuchos::null ? 1. : (*Krel_face)[0][faces[m]] );
+	  Bcf(n) = -colsum * ( Krel_face == Teuchos::null ? 1. : (*Krel_face)[0][faces[n]] );
 	  Bfc(n) = -rowsum;
 	  matsum += colsum;
 	}

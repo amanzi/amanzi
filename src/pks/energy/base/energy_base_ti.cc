@@ -11,7 +11,7 @@ Author: Ethan Coon
 #include <boost/test/floating_point_comparison.hpp>
 
 #include "boundary_function.hh"
-#include "field_evaluator.hh"
+#include "FieldEvaluator.hh"
 #include "energy_base.hh"
 
 namespace Amanzi {

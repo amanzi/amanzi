@@ -5,7 +5,7 @@
 #include "Teuchos_Array.hpp"
 
 #include "ObservationData.H"
-#include "state.hh"
+#include "State.hh"
 
 namespace Amanzi {
 

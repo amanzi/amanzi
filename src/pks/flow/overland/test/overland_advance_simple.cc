@@ -8,7 +8,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Mesh_MSTK.hh"
-#include "state.hh"
+#include "State.hh"
 
 #include "overland.hh"
 

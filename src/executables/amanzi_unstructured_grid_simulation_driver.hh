@@ -10,7 +10,7 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Simulator.H"
+#include "Simulator.hh"
 
 struct AmanziUnstructuredGridSimulationDriver
   : public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>

@@ -15,7 +15,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "state.hh"
+#include "State.hh"
 #include "two_phase.hh"
 
 using namespace Amanzi;

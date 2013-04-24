@@ -13,7 +13,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "tensor.hpp"
+#include "tensor.hh"
 #include "Point.hh"
 
 #include "ewc_model.hh"

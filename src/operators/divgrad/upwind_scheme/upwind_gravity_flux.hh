@@ -14,7 +14,7 @@
 #define AMANZI_UPWINDING_GRAVITYFLUX_SCHEME_
 
 #include "Epetra_Vector.h"
-#include "tensor.hpp"
+#include "tensor.hh"
 
 #include "upwinding.hh"
 
