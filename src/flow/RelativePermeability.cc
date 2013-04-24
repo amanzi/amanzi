@@ -314,8 +314,7 @@ void RelativePermeability::DerivativeFaceUpwindGravity_(
       double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
       
       if (bc_model[f] != FLOW_BC_FACE_NULL){
-        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && 
-            cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           int mb = (*map_c2mb_)[c];
           double pc = atm_pressure - bc_values[f][0];
           (*dKdP_faces_)[f] = WRM_[mb]->dKdPc(pc);
@@ -359,8 +358,7 @@ void RelativePermeability::DerivativeFaceUpwindFlux_(
       int f = faces[n];
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
-        if ((bc_model[f] == FLOW_BC_FACE_PRESSURE) &&
-            (flux[f] * dirs[n] < -tol)) {
+        if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[f] * dirs[n] < -tol) {
           int mb = (*map_c2mb_)[c];
           double pc = atm_pressure - bc_values[f][0];
           (*dKdP_faces_)[f] = WRM_[mb]->dKdPc(pc);
@@ -560,7 +558,12 @@ void RelativePermeability::PopulateMapC2MB()
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) (*map_c2mb_)[*i] = mb;
   }
+  
+#ifdef HAVE_MPI
+  FS_->CopyMasterFace2GhostFace(*map_c2mb_);
+#endif
 
+  // internal check
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     if ((*map_c2mb_)[c] < 0) {

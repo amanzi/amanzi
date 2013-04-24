@@ -255,7 +255,7 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         double t = std::max(0.0, krel[n] - Krel_cells[c]);
-        Bff(n, n) += Mff(n, n) * t * t; 
+        Bff(n, n) += Mff(n, n) * t; 
       }
     } else {
       for (int n = 0; n < nfaces; n++)
