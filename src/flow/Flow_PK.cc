@@ -34,7 +34,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   flow_status_ = FLOW_STATUS_NULL;
 
   FS = Teuchos::rcp(new Flow_State(*FS_MPC));
-  FS_aux = Teuchos::rcp(new Flow_State(*FS_MPC), AmanziFlow::FLOW_STATE_COPY);
+  FS_aux = Teuchos::rcp(new Flow_State(*FS_MPC, AmanziFlow::FLOW_STATE_COPY));
 
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
@@ -432,16 +432,12 @@ void Flow_PK::AddNewtonFluxes_MFD(
 void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
                                           Epetra_Vector& darcy_mass_flux)
 {
-  double rho = FS->ref_fluid_density();
-  AmanziGeometry::Point gravity(dim);
-  for (int k = 0; k < dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
-
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    // AmanziGeometry::Point Kg = K[c] * gravity;
+    AmanziGeometry::Point Kg = K[c] * gravity_;
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -450,7 +446,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       if (f < nfaces_owned && !flag[f]) {
-        darcy_mass_flux[f] += ((K[c] * gravity) * normal);
+        darcy_mass_flux[f] += rho_ * (Kg * normal);
         flag[f] = 1;
       }
     }
@@ -465,10 +461,6 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
                                           Epetra_Vector& darcy_mass_flux,
                                           RelativePermeability& rel_perm) 
 {
-  double rho = FS->ref_fluid_density();
-  AmanziGeometry::Point gravity(dim);
-  for (int k = 0; k < dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
-
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
@@ -478,7 +470,7 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
   int method = rel_perm.method();
 
   for (int c = 0; c < ncells_owned; c++) {
-    // AmanziGeometry::Point Kg = K[c] * gravity;
+    AmanziGeometry::Point Kg = K[c] * gravity_;
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -489,13 +481,13 @@ void Flow_PK::AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 
       if (f < nfaces_owned && !flag[f]) {
         if (method == FLOW_RELATIVE_PERM_NONE) {
-          darcy_mass_flux[f] += ((K[c] * gravity) * normal);
+          darcy_mass_flux[f] += rho_ * (Kg * normal);
         } else if (method == FLOW_RELATIVE_PERM_CENTERED) {
-          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_cells[c];
+          darcy_mass_flux[f] += rho_ * (Kg * normal) * Krel_cells[c];
         } else if (method == FLOW_RELATIVE_PERM_AMANZI) {
-          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * krel[n]; 
+          darcy_mass_flux[f] += rho_ * (Kg * normal) * krel[n];
         } else {
-          darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
+          darcy_mass_flux[f] += rho_ * (Kg * normal) * Krel_faces[f];
         }
         flag[f] = 1;
       }
