@@ -19,7 +19,7 @@ simple passive tracer transport
 
 #include "composite_vector.hh"
 #include "tree_vector.hh"
-#include "state.hh"
+#include "State.hh"
 #include "advection.hh"
 #include "boundary_function.hh"
 

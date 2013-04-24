@@ -17,7 +17,7 @@ calculations by a standard MPC.
 #ifndef AMANZI_EWC_MODEL_HH_
 #define AMANZI_EWC_MODEL_HH_
 
-#include "state.hh"
+#include "State.hh"
 
 namespace Amanzi {
 

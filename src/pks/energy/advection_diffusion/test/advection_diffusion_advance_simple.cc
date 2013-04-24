@@ -8,7 +8,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Mesh_simple.hh"
-#include "state.hh"
+#include "State.hh"
 
 #include "advection_diffusion.hh"
 

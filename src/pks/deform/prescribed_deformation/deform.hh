@@ -15,7 +15,7 @@ using namespace std;
 
 #include "composite_vector.hh"
 #include "tree_vector.hh"
-#include "state.hh"
+#include "State.hh"
 
 #include "PK.hh"
 #include "pk_factory.hh"

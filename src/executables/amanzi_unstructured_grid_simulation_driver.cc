@@ -34,13 +34,13 @@ Effectively stolen from Amanzi, with few modifications.
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
-#include "state.hh"
+#include "State.hh"
 
 #include "errors.hh"
 #include "exceptions.hh"
 
 #include "amanzi_unstructured_grid_simulation_driver.hh"
-#include "InputParser.H"
+#include "InputParserIS.hh"
 #include "global_verbosity.hh"
 
 Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
@@ -63,13 +63,10 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   int size;
   MPI_Comm_size(mpi_comm,&size);
 
-  ParameterList params_copy;
+  Teuchos::ParameterList params_copy;
   bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
-  if (! native) {
-    params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
-  } else {
-    params_copy = input_parameter_list;
-  }
+  ASSERT(native);
+  params_copy = input_parameter_list;
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     // print parameter list

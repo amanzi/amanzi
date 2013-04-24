@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 
 #include "composite_vector.hh"
-#include "state.hh"
+#include "State.hh"
 #include "upwind_arithmetic_mean.hh"
 
 namespace Amanzi {

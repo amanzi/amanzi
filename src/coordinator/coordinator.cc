@@ -18,17 +18,17 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "global_verbosity.hh"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-#include "time_step_manager.hh"
+#include "TimeStepManager.hh"
 #include "visualization.hh"
 #include "checkpoint.hh"
-#include "state.hh"
+#include "State.hh"
 #include "PK.hh"
 #include "tree_vector.hh"
 #include "pk_factory.hh"
 
 #include "coordinator.hh"
 
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 namespace Amanzi {
 

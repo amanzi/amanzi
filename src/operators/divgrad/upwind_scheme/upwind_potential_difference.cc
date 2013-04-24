@@ -12,7 +12,7 @@
 // -----------------------------------------------------------------------------
 
 #include "composite_vector.hh"
-#include "state.hh"
+#include "State.hh"
 #include "upwind_potential_difference.hh"
 
 namespace Amanzi {

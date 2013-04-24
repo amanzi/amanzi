@@ -11,7 +11,7 @@
 */
 
 #include "exceptions.hh"
-#include "state.hh"
+#include "State.hh"
 
 #include "eos_evaluator.hh"
 #include "eos.hh"
