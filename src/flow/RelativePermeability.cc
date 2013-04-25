@@ -192,8 +192,10 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
       int flag = (*face_flag)[f];
       if (flag == FLOW_PERMFLAG_AVERAGE) {
         krel[n] = ((*Krel_cells_)[c1] + (*Krel_cells_)[c2]) / 2;
+        (*Krel_faces_)[f] = krel[n];
       } else if (flag == FLOW_PERMFLAG_INTERFACE) {
         krel[n] = (*Krel_cells_)[c];
+        (*Krel_faces_)[f] = (*Krel_cells_)[c1];
       } else if (flag == FLOW_PERMFLAG_UPWIND) {
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && c1 < 0) {
           double pc = atm_pressure - bc_values[f][0];
@@ -203,6 +205,7 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
         } else {
           krel[n] = (*Krel_cells_)[c];
         }
+        (*Krel_faces_)[f] = krel[n];
       }
     }
     Krel_amanzi_.push_back(krel);

@@ -76,7 +76,12 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
     }
 
     double dTnext;
-    bdf1_dae->bdf1_step(dT, *solution, dTnext);
+    try { 
+      bdf1_dae->bdf1_step(dT, *solution, dTnext);
+    } catch (int i) {
+      dT /= 2;
+      continue;
+    }
     bdf1_dae->commit_solution(dT, *solution);
     bdf1_dae->write_bdf1_stepping_statistics();
 

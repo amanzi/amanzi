@@ -48,7 +48,7 @@ void Flow_PK::ProcessSublistTimeIntegration(
     ti_specs.max_itrs = tmp_list.get<int>("maximum number of iterations", FLOW_TI_MAX_ITERATIONS);
 
     ti_specs.T0 = tmp_list.get<double>("start time", 0.0);
-    ti_specs.T1 = tmp_list.get<double>("end time", 0.0);
+    ti_specs.T1 = tmp_list.get<double>("end time", 100 * AmanziFlow::FLOW_YEAR);
     ti_specs.dTfactor = tmp_list.get<double>("time step increase factor", 1.0);
     ti_specs.dT0 = tmp_list.get<double>("initial time step", AmanziFlow::FLOW_INITIAL_DT);
     ti_specs.dTmax = tmp_list.get<double>("maximum time step", AmanziFlow::FLOW_MAXIMUM_DT);

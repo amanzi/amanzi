@@ -42,7 +42,7 @@ TEST(NEWTON_RICHARD_STEADY) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: orthogonal newton solver, 2-layer model"<<endl;
+  if (MyPID == 0) cout << "Test: orthogonal newton solver, 2-layer model" << endl;
    /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_newton_TPFA.xml";
@@ -67,13 +67,11 @@ TEST(NEWTON_RICHARD_STEADY) {
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
-  RPK->ProcessParameterList();
   RPK->InitSteadyState(0.0, 1e+4);
-  RPK->PrintStatistics();
 
   // solve the problem
   S.set_time(0.0);
-  RPK->AdvanceToSteadyState(0, 1000);
+  RPK->AdvanceToSteadyState(0.0, 1000.0);
   RPK->CommitState(FS);
 
   // derive dependent variable
