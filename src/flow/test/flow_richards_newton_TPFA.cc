@@ -87,18 +87,16 @@ TEST(NEWTON_RICHARD_STEADY) {
   GMV::close_data_file();
 
   // check the number of iteration
-  //  int numiter = RPK->bdf1_dae->total_non_iter;
+  // int numiter = RPK->bdf1_dae->total_non_iter;
 
-  //BDF1Dae* bdf1 = RPK->time_intergrator();
-  //cout<<"nonlinear numiter "<<bdf1->total_nonlinear_iter()<<endl;
-  //  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  //for (int c = 0; c < ncells; c++) cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
-  //  for (int c = 0; c < ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
-
-  //CHECK(false);
+  // BDF1Dae* bdf1 = RPK->time_intergrator();
+  // cout << "nonlinear numiter " << bdf1->total_nonlinear_iter() << endl;
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells; c++) {
+    // cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
+    CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
+  }
 
   delete RPK;
-
-  
 }
 
