@@ -62,10 +62,6 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
     mfd_preconditioner_->UpdatePreconditioner();
   }
 
-
-  Teuchos::RCP<const Epetra_Vector> Acc = mfd_preconditioner_->Acc();
-  Acc->Print(std::cout);
-
   /*
   // dump the schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
