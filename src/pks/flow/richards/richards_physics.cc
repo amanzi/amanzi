@@ -201,17 +201,10 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
         int f = faces[n];
         const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
 
-        if (c == c0_)
-          std::cout << "On cell " << c0_ << ", Ff_pre-g = " << Ff[n];
-
         double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
             * krel_cells[0][c] * rho_v[0][c];
         Ff[n] += outward_flux;
         Fc -= outward_flux * krel_faces[0][f];  // Nonzero-sum contribution when not upwinding
-
-        if (c == c0_)
-          std::cout << " Ff_post-g = " << Ff[n] << std::endl;
-
       }
     }
   }
