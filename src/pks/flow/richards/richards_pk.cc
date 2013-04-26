@@ -33,7 +33,7 @@ Authors: Neil Carlson (version 1)
 
 #include "richards.hh"
 
-#define DEBUG_RES_FLAG 1
+#define DEBUG_RES_FLAG 0
 
 
 namespace Amanzi {
@@ -482,9 +482,9 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
   const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
-    ->ViewComponent("cell",false);
+      ->ViewComponent("cell",false);
   const Epetra_MultiVector& visc = *S->GetFieldData("viscosity_liquid")
-    ->ViewComponent("cell",false);
+      ->ViewComponent("cell",false);
 
   // requirements due to the upwinding method
   if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
@@ -492,16 +492,15 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         ->HasFieldChanged(S, name_);
     update_dir |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
 
-    for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-      (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c];
-    }
-
     if (update_dir) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData("darcy_flux_direction", name_);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
+      for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
+        (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c];
+      }
       uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
       matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
 
@@ -512,7 +511,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       // Add in the gravity fluxes
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
-      AddGravityFluxesToVector_(gvec.ptr(), Teuchos::null, rho.ptr(), flux_dir.ptr());
+      AddGravityFluxesToVector_(gvec.ptr(), uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
       flux_dir->ScatterMasterToGhosted();
     }
 

@@ -338,19 +338,11 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
 
-  std::cout << "Adding accumulation to precon:" << std::endl;
-  std::cout << " Acc_cells before = " << Acc_cells[99] << std::endl;
-
-
   int ncells = dwc_dp.MyLength();
   for (int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / h;
     Fc_cells[c] += pres[0][c] * dwc_dp[0][c] / h;
   }
-
-  std::cout << "  dwc_dp = " << dwc_dp[0][99] << std::endl;
-  std::cout << " Acc_cells after = " << Acc_cells[99] << std::endl;
-
 
   // Assemble and precompute the Schur complement for inversion.
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);

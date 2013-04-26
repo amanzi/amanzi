@@ -172,6 +172,9 @@ protected:
   bool modify_predictor_first_bc_flux_;
   Teuchos::RCP<PredictorDelegateBCFlux> flux_predictor_;
 
+  // is this a dynamic mesh problem
+  bool dynamic_mesh_;
+
  private:
   // factory registration
   static RegisteredPKFactory<Richards> reg_;
@@ -180,9 +183,6 @@ protected:
   friend class Amanzi::MPCCoupledFlowEnergy;
   friend class Amanzi::MPCDiagonalFlowEnergy;
   friend class Amanzi::MPCSurfaceSubsurfaceDirichletCoupler;
-
-  // is this a dynamic mesh problem
-  bool dynamic_mesh_;
 
 };
 
