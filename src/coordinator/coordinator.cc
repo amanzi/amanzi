@@ -359,6 +359,9 @@ void Coordinator::cycle_driver() {
       WriteVis((*vis).ptr(), S_next_.ptr());
     }
 
+    // flush observations to make sure they are saved
+    observations_->Flush();
+
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("last_good_checkpoint");
@@ -377,6 +380,9 @@ void Coordinator::cycle_driver() {
     pk_->calculate_diagnostics(S_next_);
     WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), dt);
   }
+
+  // flush observations to make sure they are saved
+  observations_->Flush();
 
 } // cycle driver
 
