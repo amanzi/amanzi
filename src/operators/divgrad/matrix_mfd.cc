@@ -159,9 +159,10 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
 /* ******************************************************************
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
-void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel) {
-  int dim = mesh_->space_dimension();
+void MatrixMFD::CreateMFDstiffnessMatrices(
+    const Teuchos::Ptr<const CompositeVector>& Krel) {
 
+  int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -170,7 +171,6 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
   Afc_cells_.clear();
   Acf_cells_.clear();
   Acc_cells_.clear();
-
 
   Teuchos::RCP<const Epetra_MultiVector> Krel_cell;
   Teuchos::RCP<const Epetra_MultiVector> Krel_face;
@@ -206,7 +206,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVec
 		if (Krel_face == Teuchos::null) {
 		  colsum += Bff(m, n);
 		} else {
-		  colsum += Bff(m,n) * (*Krel_face)[0][faces[n]];
+		  colsum += Bff(m,n) * (*Krel_face)[0][faces[m]];
 		}
 		rowsum += Bff(n, m);
 	  }
@@ -294,7 +294,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
-        if (std::abs(bc_values[f] > 0.)) {
+        if (std::abs(bc_values[f]) > 0.) {
           Ff[n] -= bc_values[f] * mesh_->face_area(f) / (*Krel_)[f];
         }
       }
