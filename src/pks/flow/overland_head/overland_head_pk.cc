@@ -663,7 +663,7 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     for (int m=0; m!=faces.size(); ++m) {
       bc_val -= Aff_cells[c](my_n,m) * dp[m];
     }
-    bc_val /= mesh_->face_area(f);
+
     std::cout << "BC_VAL (" << f << ") = " << bc_val << std::endl;
     std::cout << "  cond = " << cond_f[0][f] << std::endl;
     std::cout << "  my_n = " << my_n << std::endl;
