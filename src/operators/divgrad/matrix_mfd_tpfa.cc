@@ -47,14 +47,15 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   Acf_cells_.clear();
   Acc_cells_.clear();
 
-  Teuchos::RCP<const Epetra_MultiVector> Krel_cells;
-  Teuchos::RCP<const Epetra_MultiVector> Krel_faces;
+  Teuchos::RCP<const Epetra_MultiVector> Krel_cell;
+  Teuchos::RCP<const Epetra_MultiVector> Krel_face;
   if (Krel != Teuchos::null) {
     if (Krel->has_component("cell")) {
-      Krel_cells = Krel->ViewComponent("cell",false);
+      Krel_cell = Krel->ViewComponent("cell",false);
     }
     if (Krel->has_component("face")) {
-      Krel_faces = Krel->ViewComponent("face",true);
+      Krel_face = Krel->ViewComponent("face",true);
+      *Krel_ = *(*Krel_face)(0);
     }
   }
 
@@ -68,25 +69,27 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
     if (Krel == Teuchos::null) {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n);
-    } else if (Krel_faces == Teuchos::null) {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * (*Krel_cells)[0][c];
-    } else if (Krel_cells == Teuchos::null) {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * (*Krel_faces)[0][faces[n]];
+      for (int n=0; n!=nfaces; ++n) Bff(n, n) = Mff(n, n);
     } else {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n)
-                                           * (*Krel_faces)[0][faces[n]] * (*Krel_cells)[0][c];
+      for (int n=0; n!=nfaces; ++n) Bff(n, n) = Mff(n, n) * (*Krel_cell)[0][c];
     }
 
     double matsum = 0.0;  // elimination of mass matrix
     for (int n = 0; n < nfaces; n++) {
-      double rowsum = Bff(n, n), colsum = Bff(n, n);
+      double rowsum = Bff(n, n);
+      double colsum = 0.;
+      if (Krel_face == Teuchos::null) {
+        colsum = Bff(n, n);
+      } else {
+        colsum = Bff(n, n) * (*Krel_face)[0][faces[n]];
+      }
+
       Bcf(n) = -colsum;
       Bfc(n) = -rowsum;
       matsum += colsum;
     }
 
-    Aff_cells_.push_back(Bff);  // This the only place where memory can be allocated.
+    Aff_cells_.push_back(Bff);
     Afc_cells_.push_back(Bfc);
     Acf_cells_.push_back(Bcf);
     Acc_cells_.push_back(matsum);
@@ -198,14 +201,20 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];
   double Acf_copy[2];
+  double Afc_copy[2];
 
   // create auxiliaty with-ghost copy of Acf_cells
   CompositeVector Acf_parallel(mesh_,names_f,locations_f,ndofs,true);
   Acf_parallel.CreateData();
+  CompositeVector Afc_parallel(mesh_,names_f,locations_f,ndofs,true);
+  Afc_parallel.CreateData();
+
   Epetra_MultiVector& Acf_parallel_f = *Acf_parallel.ViewComponent("face",true);
+  Epetra_MultiVector& Afc_parallel_f = *Afc_parallel.ViewComponent("face",true);
   // note the PutScalar is called on MultiVector to ensure ghost entries are
   // initialized
   Acf_parallel_f.PutScalar(0.);
+  Afc_parallel_f.PutScalar(0.);
 
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -214,10 +223,12 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
     for (int i=0; i!=mfaces; ++i) {
       int f = faces[i];
       if (f >= nfaces_owned) Acf_parallel_f[0][f] = Acf_cells_[c][i];
+      if (f >= nfaces_owned) Afc_parallel_f[0][f] = Afc_cells_[c][i];
     }
   }
 
   Acf_parallel.GatherGhostedToMaster();
+  Afc_parallel.GatherGhostedToMaster();
 
   // populate the global matrix
   Spp_->PutScalar(0.0);
@@ -227,7 +238,7 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
     // populate face-based matrix.
     Teuchos::SerialDenseMatrix<int, double> Bpp(mcells, mcells);
-    for (int n = 0; n < mcells; n++) {
+    for (int n=0; n!=mcells; ++n) {
       int c = cells[n];
       cells_GID[n] = cmap_wghost.GID(c);
 
@@ -237,15 +248,16 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
         ASSERT(i>=0);
         Acf_copy[n] = Acf_cells_[c][i];
+        Afc_copy[n] = Afc_cells_[c][i];
       } else {
         Acf_copy[n] = Acf_parallel_f[0][f];
+        Afc_copy[n] = Afc_parallel_f[0][f];
       }
     }
 
     for (int n = 0; n < mcells; n++) {
-      for (int m = n; m < mcells; m++) {
-        Bpp(n, m) -= Acf_copy[n] * Acf_copy[m] / Dff_f[0][f];
-        Bpp(m, n) = Bpp(n, m);
+      for (int m = 0; m < mcells; m++) {
+        Bpp(n, m) -= Acf_copy[n] / Dff_f[0][f] * Afc_copy[m];
       }
     }
 

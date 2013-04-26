@@ -115,28 +115,15 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
       surfindices[m] = surf_cmap_wghost.LID(gsurfindices[m]);
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,surfindices[m]);
       indices_global[m] = fmap_wghost.GID(indices[m]);
+
+      // additionally divide by rel perm to keep constraint equation consistent
+      if (std::abs(values[m]) > 0.) {
+        ASSERT( (*Krel_)[frow] > 0.);
+        values[m] /= (*Krel_)[frow];
+      }
     }
 
     ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
-    // if (sc_global == 25 || sc_global == 71) {
-    //   std::cout << "ERROR: " << std::endl;
-    //   std::cout << "  face = " << sc << ", " << sc_global << ", "
-    //             << frow << ", " << frow_global << std::endl;
-    //   AmanziGeometry::Point cc = surface_mesh_->cell_centroid(sc);
-    //   std::cout << "  location = " << cc << std::endl;
-    //   std::cout << "  surf cL = ";
-    //   for (int m=0; m!=entries; ++m) std::cout << surfindices[m] << ", ";
-
-    //   std::cout << std::endl << "  surf cG = ";
-    //   for (int m=0; m!=entries; ++m) surfindices[m] = surf_cmap_wghost.GID(surfindices[m]);
-    //   for (int m=0; m!=entries; ++m) std::cout << surfindices[m] << ", ";
-    //   std::cout << std::endl << "  sub fL = ";
-    //   for (int m=0; m!=entries; ++m) std::cout << indices[m] << ", ";
-    //   std::cout << std::endl << "  sub fG = ";
-    //   for (int m=0; m!=entries; ++m) std::cout << indices_global[m] << ", ";
-    //   std::cout << std::endl;
-    //   ASSERT(0);
-    // }
     ASSERT(!ierr);
   }
 
@@ -158,7 +145,10 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
       *rhs_->ViewComponent("face",false);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    rhs_faces[0][f] += rhs_surf_cells[0][sc];
+    if (std::abs(rhs_surf_cells[0][sc]) > 0.) {
+      ASSERT( (*Krel_)[f] > 0. );
+      rhs_faces[0][f] += rhs_surf_cells[0][sc] / (*Krel_)[f];
+    }
   }
 }
 
@@ -206,6 +196,8 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   values = new double[9];
   int *indices;
   indices = new int[9];
+  int *indices_global;
+  indices_global = new int[9];
 
   // Loop over surface cells (subsurface faces)
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
@@ -214,21 +206,31 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, indices);
     ASSERT(!ierr);
 
-    // std::cout << "Adding vals to surf cell " << sc << ":" << std::endl;
-    // for (int m=0; m!=entries; ++m) {
-    //   std::cout << "  ind(" << indices[m] << ") = " << values[m] << std::endl;
-    // }
-
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     AmanziMesh::Entity_ID frow_global = fmap_wghost.GID(frow);
+
+    // std::cout << "Adding vals to surf cell " << sc << "(face: " << frow << "):" << std::endl;
+    // for (int m=0; m!=entries; ++m) std::cout << "  ind(" << indices[m] << ") = " << values[m];
+    // std::cout << std::endl;
+
     for (int m=0; m!=entries; ++m) {
       indices[m] = surf_cmap_wghost.LID(indices[m]);
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
-      indices[m] = fmap_wghost.GID(indices[m]);
+      indices_global[m] = fmap_wghost.GID(indices[m]);
+
+      // additionally divide by rel perm to keep constraint equation
+      // consistent
+      if (std::abs(values[m]) > 0.) {
+        ASSERT( (*Krel_)[frow] > 0.);
+        values[m] /= (*Krel_)[frow];
+      }
     }
 
-    ierr = Sff_->SumIntoGlobalValues(frow_global, entries, values, indices);
+    // for (int m=0; m!=entries; ++m) std::cout << "  ind(" << indices[m] << ") = " << values[m];
+    // std::cout << std::endl;
+
+    ierr = Sff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
     ASSERT(!ierr);
 
   }
@@ -237,12 +239,13 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   ASSERT(!ierr);
 
   delete[] indices;
+  delete[] indices_global;
   delete[] values;
 
   // dump the schur complement
-  std::stringstream filename_s;
-  filename_s << "schur_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
+  // std::stringstream filename_s;
+  // filename_s << "schur_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
 }
 
 } // namespace
