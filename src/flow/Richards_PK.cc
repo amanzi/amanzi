@@ -164,6 +164,17 @@ void Richards_PK::InitPK()
   // Read flow list and populate various structures. 
   ProcessParameterList();
 
+  // Create water retention models
+  Teuchos::ParameterList& wrm_list = rp_list_.sublist("Water retention models");
+  rel_perm = Teuchos::rcp(new RelativePermeability(mesh_, wrm_list));
+  rel_perm->Init(atm_pressure, FS_aux);
+  rel_perm->ProcessParameterList();
+  rel_perm->PopulateMapC2MB();
+  rel_perm->set_experimental_solver(experimental_solver_);
+
+  std::string krel_method_name = rp_list_.get<string>("relative permeability");
+  rel_perm->ProcessStringRelativePermeability(krel_method_name);
+
   // Select a proper matrix class
   if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
     matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
@@ -200,13 +211,12 @@ void Richards_PK::InitPK()
 
   // Process other fundamental structures.
   K.resize(ncells_wghost);
+  SetAbsolutePermeabilityTensor(K);
+  rel_perm->CalculateKVectorUnit(K, gravity_);
+
   is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
-
-  // Allocate data for relative permeability
-  SetAbsolutePermeabilityTensor(K);
-  rel_perm->CalculateKVectorUnit(K, gravity_);  // move to Init() (lipnikov@lanl.gov)
 
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {

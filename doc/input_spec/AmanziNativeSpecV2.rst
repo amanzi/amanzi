@@ -276,7 +276,8 @@ Structure of both sublists is quite similar. We make necessary comments on diffe
 Water retention models
 -----------------------
 
-User defines water retention models in sublist `"Water retention models`". It contains as many sublists, 
+User defines water retention models in sublist `"Water retention models`". 
+It contains as many sublists, 
 e.g. `"Soil 1`", `"Soil 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
 inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
@@ -311,18 +312,17 @@ An example of the van Genuchten model specification is:
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
 The relative permeability curves can be calculated and saved in the file krel_pc.txt
-and krel_sat.txt using the following optional commands (that go to `"Richards Problem`" list):
+and krel_sat.txt using the following optional commands (that go to `"Water Retention Models`" list):
 
 .. code-block:: xml
 
-    <Parameter name="calculate krel-pc curves" type="Array(double)" value="{0.0, 0.1, 3000.0}"/>
-    <Parameter name="calculate krel-sat curves" type="Array(double)" value="{0.0001, 0.01, 1.0}"/>
+    <Parameter name="plot krel-pc curves" type="Array(double)" value="{0.0, 0.1, 3000.0}"/>
+    <Parameter name="plot krel-sat curves" type="Array(double)" value="{0.0001, 0.01, 1.0}"/>
 
 The triple of doubles means the starting capillary pressure (resp., saturation), the period, and 
 the final capillary pressure (resp., saturation).
 Each line in the output file will contain the capilalry pressure (resp., saturation) and relative 
 permeability values for all water retention models in the order they appear in the input spec.
-This output requires verbosity level `"medium`" or higher. 
 
 
 Boundary conditions

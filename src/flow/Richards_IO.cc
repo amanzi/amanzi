@@ -42,6 +42,12 @@ void Richards_PK::ProcessParameterList()
   std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
   ProcessStringVerbosity(verbosity_name, &verbosity);
 
+  // check for mandatory sublists
+  if (! rp_list_.isSublist("Water retention models")) {
+    msg << "Flow PK: there is no \"Water retention models\" list";
+    Exceptions::amanzi_throw(msg);
+  }
+
   // Process main one-line options (not sublists)
   atm_pressure = rp_list_.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
@@ -75,21 +81,6 @@ void Richards_PK::ProcessParameterList()
   // experimental solver (NKA is default)
   string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");
   ProcessStringExperimentalSolver(experimental_solver_name, &experimental_solver_);
-
-  // Create water retention models
-  if (! rp_list_.isSublist("Water retention models")) {
-    msg << "Flow PK: there is no \"Water retention models\" list";
-    Exceptions::amanzi_throw(msg);
-  }
-  Teuchos::ParameterList& wrm_list = rp_list_.sublist("Water retention models");
-  rel_perm = Teuchos::rcp(new RelativePermeability(mesh_, wrm_list));
-  rel_perm->Init(atm_pressure, FS_aux);
-  rel_perm->ProcessParameterList();
-  rel_perm->PopulateMapC2MB();
-  rel_perm->set_experimental_solver(experimental_solver_);
-
-  std::string krel_method_name = rp_list_.get<string>("relative permeability");
-  rel_perm->ProcessStringRelativePermeability(krel_method_name);
 
   // Time integrator for period I, temporary called initial guess initialization
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {
@@ -156,9 +147,6 @@ void Richards_PK::ProcessParameterList()
 
   // allowing developer to use non-standard simulation modes
   if (! rp_list_.isParameter("developer access granted")) AnalysisTI_Specs();
-
-  // optional debug output
-  CalculateWRMcurves(rp_list_);
 
   if (verbosity >= FLOW_VERBOSITY_EXTREME) {
     if (MyPID == 0) rp_list_.unused(std::cout);
@@ -254,57 +242,6 @@ std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& 
     Exceptions::amanzi_throw(msg);
   }
   return name;
-}
-
-
-/* ****************************************************************
-* Find string for the preconditoner.
-**************************************************************** */
-void Richards_PK::CalculateWRMcurves(Teuchos::ParameterList& list)
-{
-  std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM();
-  
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    if (list.isParameter("calculate krel-pc curves")) {
-      std::printf("Flow PK: saving krel-pc curves in file flow_krel_pc.txt...\n");
-      ofstream ofile;
-      ofile.open("flow_krel_pc.txt");
-
-      std::vector<double> spe;
-      spe = list.get<Teuchos::Array<double> >("calculate krel-pc curves").toVector();
-
-      for (double pc = spe[0]; pc < spe[2]; pc += spe[1]) {
-        ofile << pc << " ";
-        for (int mb = 0; mb < WRM.size(); mb++) {
-          double krel = WRM[mb]->k_relative(pc);
-          ofile << krel << " ";
-        }
-        ofile << endl;
-      }
-      ofile.close();
-    }
-
-    if (list.isParameter("calculate krel-sat curves")) {
-      std::printf("Flow PK: saving krel-sat curves in file flow_krel_sat.txt...\n");
-      ofstream ofile;
-      ofile.open("flow_krel_sat.txt");
-
-      std::vector<double> spe;
-      spe = list.get<Teuchos::Array<double> >("calculate krel-sat curves").toVector();
-
-      for (double s = spe[0]; s < spe[2]; s += spe[1]) {
-        ofile << s << " ";
-        for (int mb = 0; mb < WRM.size(); mb++) {
-          double ss = std::max(s, WRM[mb]->residualSaturation());
-          double pc = WRM[mb]->capillaryPressure(ss);
-          double krel = WRM[mb]->k_relative(pc);
-          ofile << krel << " ";
-        }
-        ofile << endl;
-      }
-      ofile.close();
-    }
-  }
 }
 
 

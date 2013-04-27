@@ -31,12 +31,7 @@ void RelativePermeability::ProcessParameterList()
 
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = list_.begin(); i != list_.end(); i++) {
-    if (list_.isSublist(list_.name(i))) {
-      nblocks++;
-    } else {
-      msg << "Flow PK: WRM contains an entry that is not a sublist.\n";
-      Exceptions::amanzi_throw(msg);
-    }
+    if (list_.isSublist(list_.name(i))) nblocks++;
   }
 
   WRM_.resize(nblocks);
@@ -90,6 +85,9 @@ void RelativePermeability::ProcessParameterList()
       iblock++;
     }
   }
+
+  // optional debug output
+  PlotWRMcurves();
 }
 
 
@@ -142,6 +140,57 @@ void RelativePermeability::ProcessStringRelativePermeability(const std::string n
   } else {
     msg << "Flow PK: unknown relative permeability method has been specified.";
     Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ****************************************************************
+* Plot water retention curves.
+**************************************************************** */
+void RelativePermeability::PlotWRMcurves()
+{
+  int MyPID = mesh_->cell_map(false).Comm().MyPID();
+
+  if (MyPID == 0) {
+    if (list_.isParameter("plot krel-pc curves")) {
+      std::printf("Flow PK: saving krel-pc curves in file flow_krel_pc.txt...\n");
+      std::ofstream ofile;
+      ofile.open("flow_krel_pc.txt");
+
+      std::vector<double> spe;
+      spe = list_.get<Teuchos::Array<double> >("plot krel-pc curves").toVector();
+
+      for (double pc = spe[0]; pc < spe[2]; pc += spe[1]) {
+        ofile << pc << " ";
+        for (int mb = 0; mb < WRM_.size(); mb++) {
+          double krel = WRM_[mb]->k_relative(pc);
+          ofile << krel << " ";
+        }
+        ofile << endl;
+      }
+      ofile.close();
+    }
+
+    if (list_.isParameter("plot krel-sat curves")) {
+      std::printf("Flow PK: saving krel-sat curves in file flow_krel_sat.txt...\n");
+      std::ofstream ofile;
+      ofile.open("flow_krel_sat.txt");
+
+      std::vector<double> spe;
+      spe = list_.get<Teuchos::Array<double> >("plot krel-sat curves").toVector();
+
+      for (double s = spe[0]; s < spe[2]; s += spe[1]) {
+        ofile << s << " ";
+        for (int mb = 0; mb < WRM_.size(); mb++) {
+          double ss = std::max(s, WRM_[mb]->residualSaturation());
+          double pc = WRM_[mb]->capillaryPressure(ss);
+          double krel = WRM_[mb]->k_relative(pc);
+          ofile << krel << " ";
+        }
+        ofile << endl;
+      }
+      ofile.close();
+    }
   }
 }
 

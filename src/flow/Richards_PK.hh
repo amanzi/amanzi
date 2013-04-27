@@ -108,7 +108,6 @@ class Richards_PK : public Flow_PK {
   void ProcessStringLinearSolver(const std::string name, LinearSolver_Specs* ls_specs);
   void ProcessStringExperimentalSolver(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-  void CalculateWRMcurves(Teuchos::ParameterList& list);
 
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   void AnalysisTI_Specs();
