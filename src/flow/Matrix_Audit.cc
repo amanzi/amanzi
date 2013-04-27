@@ -73,7 +73,10 @@ int Matrix_Audit::RunAudit()
   ierr = CheckSpectralBounds();
   ierr |= CheckSpectralBoundsExtended();
   ierr |= CheckSpectralBoundsSchurComplement();
-  if (matrix_type == MATRIX_AUDIT_MFD) CheckMatrixSymmetry();
+  if (matrix_type == MATRIX_AUDIT_MFD) { 
+    CheckMatrixSymmetry();
+    CheckMatrixCoercivity();
+  }
   return ierr;
 }
 
@@ -251,7 +254,7 @@ int Matrix_Audit::CheckSpectralBoundsSchurComplement()
 
 
 /* ******************************************************************
-* AAA.                                      
+* Verify symmetry of the matrix.                                      
 ****************************************************************** */
 int Matrix_Audit::CheckMatrixSymmetry()
 {
@@ -260,7 +263,7 @@ int Matrix_Audit::CheckMatrixSymmetry()
   Epetra_Vector y(fmap_owned);
   Epetra_Vector z(fmap_owned);
 
-  double axx, ayy;
+  double axy, ayx;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   for (int n = 0; n < 10; n++) {
@@ -269,12 +272,40 @@ int Matrix_Audit::CheckMatrixSymmetry()
       y[f] = double(random()) / RAND_MAX;
     }
     matrix_->Aff()->Multiply(false, x, z);
-    z.Dot(x, &axx);
+    z.Dot(y, &axy);
 
     matrix_->Aff()->Multiply(false, y, z);
-    z.Dot(y, &ayy);
-    if (MyPID == 0) {	
-      cout << axx << " " << ayy << endl;
+    z.Dot(x, &ayx);
+    double err = fabs(axy - ayx) / (fabs(axy) + fabs(ayx) + 1e-10);
+    if (MyPID == 0 && err > 1e-10) {	
+      printf("   Summetry violation: (Ax,y)=%12.7g (Ay,x)=%12.7g\n", axy, ayx);
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Verify coercivity of the matrix.                                      
+****************************************************************** */
+int Matrix_Audit::CheckMatrixCoercivity()
+{
+  const Epetra_Map& fmap_owned = mesh_->face_map(false);
+  Epetra_Vector x(fmap_owned);
+  Epetra_Vector y(fmap_owned);
+
+  double axx;
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  for (int n = 0; n < 10; n++) {
+    for (int f = 0; f < nfaces_owned; f++) {
+      x[f] = double(random()) / RAND_MAX;
+      y[f] = double(random()) / RAND_MAX;
+    }
+    matrix_->Aff()->Multiply(false, x, y);
+    y.Dot(x, &axx);
+
+    if (MyPID == 0 && axx <= 1e-12) {	
+      printf("   Coercivity violation: (Ax,x)=%12.7g\n", axx);
     }
   }
 }

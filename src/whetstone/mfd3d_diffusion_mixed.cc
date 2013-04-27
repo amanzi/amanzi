@@ -369,6 +369,7 @@ int MFD3D::L2consistencyInverse(int cell, const Tensor& T,
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     for (int k = 0; k < d; k++) R(i, k) = fm[k] - cm[k];
   }
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -422,6 +423,20 @@ int MFD3D::L2consistencyInverseScaled(int cell, const Tensor& T,
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     for (int k = 0; k < d; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
   }
+
+  /* Internal verification 
+  Teuchos::SerialDenseMatrix<int, double> NtR(d, d);
+  for (int i = 0; i < d; i++) {
+    for (int j = 0; j < d; j++) {
+      NtR(i, j) = 0.0;
+      for (int k = 0; k < num_faces; k++) {
+        const AmanziGeometry::Point& v1 = mesh_->face_normal(faces[k]);
+        NtR(i, j) += v1[i] * R(k, j) / areas[k] * dirs[k];
+      }
+    }
+  }
+  cout << cell << " " << NtR << endl;
+  */
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

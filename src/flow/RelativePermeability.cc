@@ -463,6 +463,8 @@ void RelativePermeability::FaceUpwindGravityInit_()
   for (int f = 0; f < nfaces_wghost; f++) {
     if ((*upwind_cell)[f] < 0 && (*face_flag)[f] == FLOW_PERMFLAG_AVERAGE)
        (*upwind_cell)[f] = (*downwind_cell)[f]; 
+    if ((*downwind_cell)[f] < 0 && (*face_flag)[f] == FLOW_PERMFLAG_AVERAGE)
+       (*downwind_cell)[f] = (*upwind_cell)[f]; 
   }
 
   // update internal interface faces

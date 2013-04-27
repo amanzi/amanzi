@@ -65,6 +65,7 @@
 
       <ParameterList name="steady state time integrator">
         <ParameterList name="BDF1">
+          <Parameter name="end time" type="double" value="1.0e+08"/>
           <ParameterList name="BDF1 parameters">
             <Parameter name="error abs tol" type="double" value="1.00e+00"/>
             <Parameter name="error rel tol" type="double" value="0.00e+00"/>

@@ -28,6 +28,7 @@ class Matrix_Audit {
   int CheckSpectralBoundsExtended();
   int CheckSpectralBoundsSchurComplement();
   int CheckMatrixSymmetry();
+  int CheckMatrixCoercivity();
 
  private:
   void OrderByIncrease(int n, double* mem);

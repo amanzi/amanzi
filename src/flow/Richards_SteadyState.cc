@@ -240,8 +240,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetLHS(&*solution);  // initial solution guess
 
     if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
-    double tol_dynamic = std::max(convergence_tol_linear, L2error * 1e-18);
-    solver->Iterate((long long)max_itrs_linear, tol_dynamic);
+    double tol_dynamic = std::max(convergence_tol_linear, L2error * 1e-8);
+    solver->Iterate(max_itrs_linear, tol_dynamic);
     if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
     int num_itrs_linear = solver->NumIters();
