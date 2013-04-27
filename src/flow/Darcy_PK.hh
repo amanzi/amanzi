@@ -107,7 +107,6 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;
 
-  AztecOO* solver;
   Matrix_MFD* matrix_;
   Matrix_MFD* preconditioner_;
 

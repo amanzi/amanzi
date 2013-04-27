@@ -38,6 +38,11 @@ void Darcy_PK::AssembleMatrixMFD()
 ****************************************************************** */
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 {
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
+
+  solver->SetAztecOption(AZ_solver, AZ_cg);
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -66,6 +71,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
     std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
+
+  delete solver;
 }
 
 
@@ -75,6 +82,10 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 ****************************************************************** */
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, Epetra_Vector& u)
 {
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
+
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -93,6 +104,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, E
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
     std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
+
+  delete solver;
 }
 
 }  // namespace AmanziFlow

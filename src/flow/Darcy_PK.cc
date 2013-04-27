@@ -44,7 +44,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   src_sink = NULL;
 
   super_map_ = NULL; 
-  solver = NULL; 
   matrix_ = NULL; 
   preconditioner_ = NULL;
 
@@ -107,7 +106,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 Darcy_PK::~Darcy_PK()
 {
   delete super_map_;
-  delete solver;
   if (matrix_ == preconditioner_) {
     delete matrix_;
   } else {
@@ -155,12 +153,6 @@ void Darcy_PK::InitPK()
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
-  // Create algebraic solver
-  solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
-  solver->SetAztecOption(AZ_solver, AZ_cg);
-
   // Initialize times.
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
@@ -367,6 +359,12 @@ int Darcy_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
+  // Create algebraic solver
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
+
+  solver->SetAztecOption(AZ_solver, AZ_cg);
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -445,6 +443,7 @@ int Darcy_PK::Advance(double dT_MPC)
   dt_tuple times(time, dT_MPC);
   ti_specs->dT_history.push_back(times);
 
+  delete solver;
   return 0;
 }
 
