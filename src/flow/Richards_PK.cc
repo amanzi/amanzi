@@ -52,7 +52,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   bc_seepage = NULL;
 
   super_map_ = NULL;
-  solver = NULL;
   matrix_ = NULL;
   preconditioner_ = NULL;
 
@@ -120,7 +119,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 Richards_PK::~Richards_PK()
 {
   delete super_map_;
-  if (solver) delete solver;
   delete matrix_;
   delete preconditioner_;
 
@@ -209,6 +207,11 @@ void Richards_PK::InitPK()
     const Epetra_Map& cmap_owned = mesh_->cell_map(false);
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
+
+  // initialize boundary and source data 
+  Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& lambda = FS->ref_lambda();
+  UpdateSourceBoundaryData(time, pressure, lambda);
 
   // injected water mass
   mass_bc = 0.0;
@@ -407,11 +410,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
-  } else if (solver == NULL) {
-    solver = new AztecOO;
-    solver->SetUserOperator(matrix_);
-    solver->SetPrecOperator(preconditioner_);
-    solver->SetAztecOption(AZ_solver, AZ_gmres);
   }
 
   // initialize mass matrices
@@ -425,7 +423,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   if (verbosity >= FLOW_VERBOSITY_MEDIUM) {
     int missed_tmp = missed_bc_faces_;
+#ifdef HAVE_MPI
     mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
+#endif
 
     if (MyPID == 0) {
       int nokay = matrix_->nokay();

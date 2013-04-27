@@ -32,6 +32,10 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   Teuchos::RCP<Epetra_Vector> solution_old_cells = Teuchos::rcp(FS->CreateCellView(solution_old));
   Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->CreateCellView(solution_new));
 
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
+
   if (is_matrix_symmetric) 
       solver->SetAztecOption(AZ_solver, AZ_cg);
   else 
@@ -123,6 +127,8 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   }
 
   ti_specs_sss_.num_itrs = itrs;
+
+  delete solver;
   return 0;
 }
 

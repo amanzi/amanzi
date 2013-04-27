@@ -129,7 +129,12 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
     }
 
     double dTnext;
-    bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
+    try {
+      bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
+    } catch (int i) {
+      dT /= 2;
+      continue;
+    }
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
@@ -163,6 +168,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
   Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
+
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
 
   if (is_matrix_symmetric)
     solver->SetAztecOption(AZ_solver, AZ_cg);
@@ -267,6 +276,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
+
+  delete solver;
   return 0;
 }
 
@@ -285,6 +296,10 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
 
   Epetra_Vector& flux = FS->ref_darcy_flux();
   Epetra_Vector  flux_new(flux);
+
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
 
   if (is_matrix_symmetric)
       solver->SetAztecOption(AZ_solver, AZ_cg);
@@ -386,6 +401,8 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
+
+  delete solver;
   return 0;
 }
 

@@ -29,6 +29,10 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
   Epetra_Vector* solution_old_faces = FS->CreateFaceView(solution_old);
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
+
   if (is_matrix_symmetric) 
       solver->SetAztecOption(AZ_solver, AZ_cg);
   else 
@@ -98,6 +102,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     throw itrs;
   }
 
+  delete solver;
   return itrs;
 }
 

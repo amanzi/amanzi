@@ -89,6 +89,10 @@ int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
   Teuchos::SerialDenseMatrix<int, double> A(mmax + 1, mmax + 1);
 
   // create solver
+  AztecOO* solver = new AztecOO;
+  solver->SetUserOperator(matrix_);
+  solver->SetPrecOperator(preconditioner_);
+
   if (is_matrix_symmetric) 
       solver->SetAztecOption(AZ_solver, AZ_cg);
   else
@@ -178,6 +182,7 @@ int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
     throw itrs;
   }
 
+  delete solver;
   return itrs;
 }
 

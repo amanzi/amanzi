@@ -57,6 +57,7 @@
     <ParameterList name="Richards Problem">
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
       <Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
+      <Parameter name="discretization method" type="string" value="optimized mfd"/>
 
       <ParameterList name="VerboseObject">
         <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -166,6 +167,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="Preconditioners">
     <ParameterList name="Trilinos ML">
+      <Parameter name="discretization method" type="string" value="optimized mfd"/>
       <ParameterList name="ML Parameters">
         <Parameter name="ML output" type="int" value="0"/>
         <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
