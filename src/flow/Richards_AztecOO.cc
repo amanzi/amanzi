@@ -51,7 +51,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver_tmp->SetLHS(&u);
 
   if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
-  solver_tmp->Iterate((long long)max_itrs_linear, convergence_tol_linear);
+  solver_tmp->Iterate(max_itrs_linear, convergence_tol_linear);
   if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
   // Matrix_Audit audit(mesh_, matrix_);

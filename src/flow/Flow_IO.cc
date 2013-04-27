@@ -62,11 +62,17 @@ void Flow_PK::ProcessSublistTimeIntegration(
       ti_specs.initialize_with_darcy = ini_list.get<bool>("initialize with darcy", false);
       ti_specs.clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       ti_specs.clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
+
+      std::string linear_solver_name = FindStringLinearSolver(ini_list, solver_list_);
+      ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_ini);
     }
 
     if (list.isSublist("pressure-lambda constraints")) {
       Teuchos::ParameterList& pl_list = list.sublist("pressure-lambda constraints");
       ti_specs.pressure_lambda_constraints = true;
+
+      std::string linear_solver_name = FindStringLinearSolver(pl_list, solver_list_);
+      ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_constraints);
     }
 
   } else if (name != "none") {
@@ -158,9 +164,62 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
 
 
 /* ****************************************************************
+* Process string for the linear solver.
+**************************************************************** */
+void Flow_PK::ProcessStringLinearSolver(const std::string& name, LinearSolver_Specs* ls_specs)
+{
+  Errors::Message msg;
+
+  if (! solver_list_.isSublist(name)) {
+    msg << "Flow PK: linear solver does not exist for a time integrator.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
+  ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
+  ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);
+
+  string method_name = tmp_list.get<string>("iterative method", "gmres");
+  if (method_name == "gmres") {
+    ls_specs->method = AZ_gmres;
+  } else if (method_name == "cg") {
+    ls_specs->method = AZ_cg;
+  } else if (method_name == "cgs") {
+    ls_specs->method = AZ_cgs;
+  }
+
+  ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
+  ProcessStringPreconditioner(ls_specs->preconditioner_name, &ls_specs->preconditioner_method);
+}
+
+
+/* ****************************************************************
+* Find string for the preconditoner.
+**************************************************************** */
+std::string Flow_PK::FindStringPreconditioner(const Teuchos::ParameterList& list)
+{   
+  Errors::Message msg;
+  std::string name; 
+
+  if (list.isParameter("preconditioner")) {
+    name = list.get<string>("preconditioner");
+  } else {
+    msg << "Flow PK: parameter <preconditioner> is missing either in TI or LS list.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (! preconditioner_list_.isSublist(name)) {
+    msg << "Flow PK: preconditioner \"" << name.c_str() << "\" does not exist.";
+    Exceptions::amanzi_throw(msg);
+  }
+  return name;
+}
+
+
+/* ****************************************************************
 * Process string for the preconitioner.
 **************************************************************** */
-void Flow_PK::ProcessStringPreconditioner(const std::string name, int* preconditioner)
+void Flow_PK::ProcessStringPreconditioner(const std::string& name, int* preconditioner)
 {
   Errors::Message msg;
 

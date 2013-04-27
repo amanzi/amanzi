@@ -48,7 +48,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   matrix_ = NULL; 
   preconditioner_ = NULL;
 
-  Flow_PK::Init(FS_MPC);  // sets up default parameters
+  Flow_PK::Init(global_list, FS_MPC);  // sets up default parameters
   FS = FS_MPC;
 
   // extract important sublists
@@ -64,20 +64,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
     dp_list_ = flow_list.sublist("Darcy Problem");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Darcy Problem> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (global_list.isSublist("Preconditioners")) {
-    preconditioner_list_ = global_list.sublist("Preconditioners");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (global_list.isSublist("Solvers")) {
-    solver_list_ = global_list.sublist("Solvers");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 

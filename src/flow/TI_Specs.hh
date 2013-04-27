@@ -25,13 +25,14 @@ class LinearSolver_Specs {
     num_itrs = 0;
     max_itrs = 99;
     convergence_tol = 1e-14;
+    method = 1;  // Must be equal to Aztec_cg
     preconditioner_name = "undefined";
-    preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must equal to ST_PRECOND
+    preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must be equal to ST_PRECOND
   }
   ~LinearSolver_Specs() {};
 
  public:
-  int num_itrs, max_itrs;
+  int num_itrs, max_itrs, method;
   std::string preconditioner_name;
   int preconditioner_method;
   double convergence_tol; 
@@ -71,9 +72,12 @@ class TI_Specs {
   double T0, T1, dT0, dTmax, dTfactor;
   double atol, rtol, residual_tol; 
 
-  bool initialize_with_darcy;  // initialization options
+  LinearSolver_Specs ls_specs_ini;  // initialization options
+  bool initialize_with_darcy;
   double clip_saturation, clip_pressure;
+
   bool pressure_lambda_constraints;
+  LinearSolver_Specs ls_specs_constraints;
 
   std::vector<std::pair<double, double> > dT_history;  // statistics (relocate to debug?)
 };

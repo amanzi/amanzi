@@ -29,7 +29,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
+void Flow_PK::Init(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   flow_status_ = FLOW_STATUS_NULL;
 
@@ -56,6 +56,22 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   mu_ = *(FS_MPC->fluid_viscosity());
   gravity_.init(dim);
   for (int k = 0; k < dim; k++) gravity_[k] = (*(FS_MPC->gravity()))[k];
+
+  // Fundamental global sublists
+  if (global_list.isSublist("Preconditioners")) {
+    preconditioner_list_ = global_list.sublist("Preconditioners");
+  } else {
+    Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (global_list.isSublist("Solvers")) {
+    solver_list_ = global_list.sublist("Solvers");
+  } else {
+    Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
+    Exceptions::amanzi_throw(msg);
+  }
+
 }
 
 

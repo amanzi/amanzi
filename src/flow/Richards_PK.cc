@@ -59,7 +59,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   bdf2_dae = NULL;
   bdf1_dae = NULL;
 
-  Flow_PK::Init(FS_MPC);
+  Flow_PK::Init(global_list, FS_MPC);
   FS = FS_MPC;
 
   // extract two critical sublists
@@ -75,20 +75,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
     rp_list_ = flow_list.sublist("Richards Problem");
   } else {
     Errors::Message msg("Flow PK: input parameter list does not have <Richards Problem> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (global_list.isSublist("Preconditioners")) {
-    preconditioner_list_ = global_list.sublist("Preconditioners");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Preconditioners> sublist.");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (global_list.isSublist("Solvers")) {
-    solver_list_ = global_list.sublist("Solvers");
-  } else {
-    Errors::Message msg("Flow PK: input parameter list does not have <Solvers> sublist.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -356,18 +342,25 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   bool ini_with_darcy = ti_specs.initialize_with_darcy;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    std::printf("***********************************************************\n");
+    LinearSolver_Specs& ls = ti_specs.ls_specs;
+    std::printf("*************************************************************\n");
     std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
     std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
     std::printf("%5s time stepping strategy id %2d\n", "", ti_specs.dT_method);
     std::printf("%5s source/sink distribution method id %2d\n", "", src_sink_distribution);
     std::printf("%5s error control options: %X\n", "", error_control_);
-    std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n", "", 
-        ti_specs.ls_specs.convergence_tol, ti_specs.ls_specs.max_itrs);
+    std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
+        "", ls.convergence_tol, ls.max_itrs);
+    std::printf("%7s iterative method AztecOO id %d (cg=1)\n", "", ls.method);
     std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
 
     if (ini_with_darcy) {
-      std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
+      LinearSolver_Specs& ls_ini = ti_specs.ls_specs_ini;
+      std::printf("%5s pressure re-initialization (saturated solution)\n", "");
+      std::printf("%7s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
+          "", ls_ini.convergence_tol, ls_ini.max_itrs);
+      std::printf("%7s iterative method AztecOO id %d (cg=1)\n", "", ls_ini.method);
+      std::printf("%7s preconditioner: \"%s\"\n", " ", ls_ini.preconditioner_name.c_str());
       if (ti_specs.clip_saturation > 0.0) {
         std::printf("%7s clipping saturation value: %9.4g [-]\n", "", ti_specs.clip_saturation);
       } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
@@ -414,7 +407,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     Teuchos::RCP<Teuchos::ParameterList> bdf1_list(new Teuchos::ParameterList(tmp_list));
     if (bdf1_dae == NULL) bdf1_dae = new BDF1Dae(*this, *super_map_);
     bdf1_dae->setParameterList(bdf1_list);
-
   } else if (solver == NULL) {
     solver = new AztecOO;
     solver->SetUserOperator(matrix_);
@@ -442,7 +434,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       std::printf("%5s discretization method: \"%s\"\n", "", mfd3d_method_name.c_str());
       std::printf("%7s assign default zero flux BC to %d faces\n", "", missed_bc_faces_);
       std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
-      std::printf("***********************************************************\n");
+      std::printf("*************************************************************\n");
     }
   }
 

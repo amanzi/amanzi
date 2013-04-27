@@ -42,7 +42,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual ~Flow_PK() {};
 
   // main methods
-  void Init(Teuchos::RCP<Flow_State> FS_MPC);
+  void Init(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
   virtual void InitPK() = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
@@ -115,8 +115,11 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStringMFD3D(const std::string name, int* method);
   void ProcessStringTimeIntegration(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
-  void ProcessStringPreconditioner(const std::string name, int* preconditioner);
+  void ProcessStringLinearSolver(const std::string& name, LinearSolver_Specs* ls_specs);
+  void ProcessStringPreconditioner(const std::string& name, int* preconditioner);
+
   std::string FindStringLinearSolver(const Teuchos::ParameterList& list, const Teuchos::ParameterList& solver_list);
+  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   void OutputTimeHistory(std::vector<dt_tuple>& dT_history);
 
   // extension of mesh API
@@ -147,6 +150,9 @@ public:
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  Teuchos::ParameterList solver_list_;
+  Teuchos::ParameterList preconditioner_list_;
 
   AmanziGeometry::Point gravity_;
   double rho_, mu_;

@@ -105,11 +105,8 @@ class Richards_PK : public Flow_PK {
 
   // io members
   void ProcessParameterList();
-  void ProcessStringLinearSolver(const std::string name, LinearSolver_Specs* ls_specs);
   void ProcessStringExperimentalSolver(const std::string name, int* method);
   void ProcessStringErrorOptions(Teuchos::ParameterList& list, int* control);
-
-  std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
   void AnalysisTI_Specs();
 
   // water retention models
@@ -142,11 +139,8 @@ class Richards_PK : public Flow_PK {
 
  private:
   Teuchos::ParameterList rp_list_;
-  Teuchos::ParameterList solver_list_;
-  Teuchos::ParameterList preconditioner_list_;
 
   double atm_pressure;
-
   Epetra_Map* super_map_;
 
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators

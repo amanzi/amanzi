@@ -51,7 +51,7 @@ void Richards_PK::ProcessParameterList()
   // Process main one-line options (not sublists)
   atm_pressure = rp_list_.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
  
-  string mfd3d_method_name = rp_list_.get<string>("discretization method", "optimized mfd");
+  string mfd3d_method_name = rp_list_.get<string>("discretization method", "mfd scaled");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_); 
 
   // Create the BC objects.
@@ -182,32 +182,6 @@ void Richards_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int* c
 
 
 /* ****************************************************************
-* Process string for the linear solver.
-**************************************************************** */
-void Richards_PK::ProcessStringLinearSolver(const std::string name, LinearSolver_Specs* ls_specs)
-{
-  Errors::Message msg;
-
-  if (! solver_list_.isSublist(name)) {
-    msg << "Flow PK: linear solver does not exist for a time integrator.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Teuchos::ParameterList& tmp_list = solver_list_.sublist(name);
-  ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
-  ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);
-
-  ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
-  ProcessStringPreconditioner(ls_specs->preconditioner_name, &ls_specs->preconditioner_method);
-
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_LOW) {
-    std::printf("Flow PK: LS preconditioner \"%s\" will be replaced by TI preconditioner.\n", 
-        ls_specs->preconditioner_name.c_str());
-  }
-}
-
-
-/* ****************************************************************
 * Process string for the relative permeability
 **************************************************************** */
 void Richards_PK::ProcessStringExperimentalSolver(const std::string name, int* method)
@@ -219,29 +193,6 @@ void Richards_PK::ProcessStringExperimentalSolver(const std::string name, int* m
   } else {
     *method = AmanziFlow::FLOW_SOLVER_NKA;
   }
-}
-
-
-/* ****************************************************************
-* Find string for the preconditoner.
-**************************************************************** */
-std::string Richards_PK::FindStringPreconditioner(const Teuchos::ParameterList& list)
-{   
-  Errors::Message msg;
-  std::string name; 
-
-  if (list.isParameter("preconditioner")) {
-    name = list.get<string>("preconditioner");
-  } else {
-    msg << "Flow PK: parameter <preconditioner> is missing either in TI or LS list.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  if (! preconditioner_list_.isSublist(name)) {
-    msg << "Flow PK: preconditioner \"" << name.c_str() << "\" does not exist.";
-    Exceptions::amanzi_throw(msg);
-  }
-  return name;
 }
 
 

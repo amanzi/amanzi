@@ -99,11 +99,8 @@ class Darcy_PK : public Flow_PK {
 
  private:
   Teuchos::ParameterList dp_list_;
-  Teuchos::ParameterList preconditioner_list_;
-  Teuchos::ParameterList solver_list_;
 
   double atm_pressure;
-
   Epetra_Map* super_map_;
   int dim;
 
