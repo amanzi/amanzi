@@ -100,7 +100,7 @@ class Richards_PK : public Flow_PK {
   // linear problems and solvers
   void AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix);
   void AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* preconditioner);
-  void SolveFullySaturatedProblem(double T, Epetra_Vector& u);
+  void SolveFullySaturatedProblem(double T, Epetra_Vector& u, LinearSolver_Specs& ls_specs);
   void EnforceConstraints_MFD(double Tp, Epetra_Vector& u);
 
   // io members
@@ -161,9 +161,6 @@ class Richards_PK : public Flow_PK {
   TI_Specs ti_specs_sss_;
   TI_Specs ti_specs_trs_;
   TI_Specs* ti_specs;
-
-  int max_itrs_linear;  // Generic parameters (igs, sss or trs)
-  double convergence_tol_linear;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

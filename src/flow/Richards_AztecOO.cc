@@ -23,7 +23,7 @@ namespace AmanziFlow {
 * at time Tp.
 * WARNING: data in vectors Krel and rhs are destroyed.
 ****************************************************************** */
-void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
+void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, LinearSolver_Specs& ls_specs)
 {
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
@@ -42,7 +42,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 
   solver_tmp->SetUserOperator(matrix_);
   solver_tmp->SetPrecOperator(preconditioner_);
-  solver_tmp->SetAztecOption(AZ_solver, AZ_cg);
+  solver_tmp->SetAztecOption(AZ_solver, ls_specs.method);  // Must be AZ_xxx method.
   solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -51,7 +51,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver_tmp->SetLHS(&u);
 
   if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
-  solver_tmp->Iterate(max_itrs_linear, convergence_tol_linear);
+  solver_tmp->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
   if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
   // Matrix_Audit audit(mesh_, matrix_);
@@ -93,12 +93,14 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   preconditioner_->PopulatePreconditioner(*matrix_);
   preconditioner_->UpdatePreconditioner();
 
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs_constraints;
+
   // solve non-symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
   solver_tmp->SetUserOperator(matrix_);
   solver_tmp->SetPrecOperator(preconditioner_);
-  solver_tmp->SetAztecOption(AZ_solver, AZ_gmres);
+  solver_tmp->SetAztecOption(AZ_solver, ls_specs.method);  // Must be AZ_xxx method. 
   solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -106,7 +108,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   solver_tmp->SetRHS(&b);
 
   solver_tmp->SetLHS(&utmp);
-  solver_tmp->Iterate((long long)max_itrs_linear, convergence_tol_linear);
+  solver_tmp->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
   *u_faces = *utmp_faces;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {

@@ -260,7 +260,7 @@ void Richards_PK::InitializeSteadySaturated()
     std::printf("Flow PK: initializing with a saturated steady state...\n");
   }
   double T = FS->get_time();
-  SolveFullySaturatedProblem(T, *solution);
+  SolveFullySaturatedProblem(T, *solution, ti_specs->ls_specs_ini);
 }
 
 
@@ -342,7 +342,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
 void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   ResetPKtimes(T0, dT0);
-  bool ini_with_darcy = ti_specs.initialize_with_darcy;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
     LinearSolver_Specs& ls = ti_specs.ls_specs;
@@ -354,15 +353,15 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     std::printf("%5s error control options: %X\n", "", error_control_);
     std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
         "", ls.convergence_tol, ls.max_itrs);
-    std::printf("%7s iterative method AztecOO id %d (cg=1)\n", "", ls.method);
+    std::printf("%7s iterative method AztecOO id %d (gmres=1)\n", "", ls.method);
     std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
 
-    if (ini_with_darcy) {
+    if (ti_specs.initialize_with_darcy) {
       LinearSolver_Specs& ls_ini = ti_specs.ls_specs_ini;
       std::printf("%5s pressure re-initialization (saturated solution)\n", "");
       std::printf("%7s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
           "", ls_ini.convergence_tol, ls_ini.max_itrs);
-      std::printf("%7s iterative method AztecOO id %d (cg=1)\n", "", ls_ini.method);
+      std::printf("%7s iterative method AztecOO id %d (cg=0)\n", "", ls_ini.method);
       std::printf("%7s preconditioner: \"%s\"\n", " ", ls_ini.preconditioner_name.c_str());
       if (ti_specs.clip_saturation > 0.0) {
         std::printf("%7s clipping saturation value: %9.4g [-]\n", "", ti_specs.clip_saturation);
@@ -375,13 +374,13 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // set up new preconditioner
   int method = ti_specs.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
-  Teuchos::ParameterList ML_list;
+  Teuchos::ParameterList prec_list;
   if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    ML_list = tmp_list.sublist("ML Parameters"); 
+    prec_list = tmp_list.sublist("ML Parameters"); 
   } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+    prec_list = tmp_list.sublist("BoomerAMG Parameters"); 
   } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ML_list = tmp_list.sublist("Block ILU Parameters");
+    prec_list = tmp_list.sublist("Block ILU Parameters");
   }
 
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
@@ -389,7 +388,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(method, ML_list);
+  preconditioner_->InitPreconditioner(method, prec_list);
 
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);
@@ -443,10 +442,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     CalculatePermeabilityFactorInWell(K, *Kxy);
   }
 
-  // linear solver control options
-  max_itrs_linear = ti_specs.ls_specs.max_itrs;
-  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
-
   // initialize pressure and lambda
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
@@ -454,8 +449,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   *solution_cells = pressure;
   *solution_faces = lambda;
 
-  if (ini_with_darcy) {
-    SolveFullySaturatedProblem(T0, *solution);  // It gives consistent hydrostatic solution.
+  if (ti_specs.initialize_with_darcy) {
+    // Get a hydrostatic solution consistent with b.c.
+    SolveFullySaturatedProblem(T0, *solution, ti_specs.ls_specs_ini);
 
     if (ti_specs.clip_saturation > 0.0) {
       double pmin = FLOW_PRESSURE_ATMOSPHERIC;

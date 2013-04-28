@@ -114,9 +114,6 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
   double T1 = ti_specs.T1;
   double dT0 = ti_specs.dT0;
 
-  max_itrs_linear = ti_specs.ls_specs.max_itrs;
-  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
-
   int itrs = 0;
   while (itrs < max_itrs_nonlinear && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF2
@@ -199,9 +196,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
   int max_itrs_nonlinear = ti_specs.max_itrs;
   double residual_tol_nonlinear = ti_specs.residual_tol;
-
-  max_itrs_linear = ti_specs.ls_specs.max_itrs;
-  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
+  LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
@@ -249,8 +244,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetLHS(&*solution);  // initial solution guess
 
     if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
-    double tol_dynamic = std::max(convergence_tol_linear, L2error * 1e-8);
-    solver->Iterate(max_itrs_linear, tol_dynamic);
+    double tol_dynamic = std::max(ls_specs.convergence_tol, L2error * 1e-8);
+    solver->Iterate(ls_specs.max_itrs, tol_dynamic);
     if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
     int num_itrs_linear = solver->NumIters();
@@ -317,11 +312,10 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
   else
     bc_head->ComputeShift(time, shift_water_table_->Values());
 
+  // convergence criteria
   int max_itrs_nonlinear = ti_specs.max_itrs;
   double residual_tol_nonlinear = ti_specs.residual_tol;
-
-  max_itrs_linear = ti_specs.ls_specs.max_itrs;
-  convergence_tol_linear = ti_specs.ls_specs.convergence_tol;
+  LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
@@ -367,7 +361,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    solver->Iterate(max_itrs_linear, convergence_tol_linear);
+    solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
     int num_itrs_linear = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
 

@@ -73,6 +73,8 @@ void Flow_PK::ProcessSublistTimeIntegration(
 
       std::string linear_solver_name = FindStringLinearSolver(pl_list, solver_list_);
       ProcessStringLinearSolver(linear_solver_name, &ti_specs.ls_specs_constraints);
+    } else {
+      ti_specs.ls_specs_constraints = ti_specs.ls_specs;
     }
 
   } else if (name != "none") {

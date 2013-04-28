@@ -38,11 +38,13 @@ void Darcy_PK::AssembleMatrixMFD()
 ****************************************************************** */
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 {
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
+
   AztecOO* solver = new AztecOO;
   solver->SetUserOperator(matrix_);
   solver->SetPrecOperator(preconditioner_);
 
-  solver->SetAztecOption(AZ_solver, AZ_cg);
+  solver->SetAztecOption(AZ_solver, ls_specs.method);  // Must be an AZ_xxx method.
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -60,10 +62,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&u);  // initial solution guess
 
-  int max_itrs = ti_specs->ls_specs.max_itrs;
-  double convergence_tol = ti_specs->ls_specs.convergence_tol;
-
-  solver->Iterate(max_itrs, convergence_tol);
+  solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
 
   int num_itrs = solver->NumIters();
   double linear_residual = solver->ScaledResidual();
@@ -82,10 +81,13 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 ****************************************************************** */
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, Epetra_Vector& u)
 {
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
+
   AztecOO* solver = new AztecOO;
   solver->SetUserOperator(matrix_);
   solver->SetPrecOperator(preconditioner_);
 
+  solver->SetAztecOption(AZ_solver, ls_specs.method);  // Must be an AZ_xxx method.
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -93,15 +95,11 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, E
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&u);  // initial solution guess
 
-  int max_itrs = ti_specs->ls_specs.max_itrs;
-  double convergence_tol = ti_specs->ls_specs.convergence_tol;
-
-  solver->Iterate(max_itrs, convergence_tol);
-
-  int num_itrs = solver->NumIters();
-  double linear_residual = solver->ScaledResidual();
+  solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
+    int num_itrs = solver->NumIters();
+    double linear_residual = solver->ScaledResidual();
     std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
   }
 

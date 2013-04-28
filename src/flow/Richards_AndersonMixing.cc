@@ -100,6 +100,8 @@ int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
+
   // initialize solver
   Epetra_Vector* solution_new = krylov(mmax - 1);
   Epetra_Vector* solution_old = krylov(0);
@@ -146,7 +148,7 @@ int Richards_PK::AndersonMixingTimeStep(double Tp, double dTp, double& dTnext)
     solver->SetRHS(&*rhs);
     solver->SetLHS(&*solution_new);
 
-    solver->Iterate(max_itrs_linear, convergence_tol_linear);
+    solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
     int num_itrs = solver->NumIters();
 
     // update d_krylov history

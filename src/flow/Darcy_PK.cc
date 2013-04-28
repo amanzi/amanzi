@@ -283,17 +283,17 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   // set up new preconditioner (preconditioner_ = matrix_)
   int method = ti_specs.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
-  Teuchos::ParameterList ML_list;
+  Teuchos::ParameterList prec_list;
   if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    ML_list = tmp_list.sublist("ML Parameters"); 
+    prec_list = tmp_list.sublist("ML Parameters"); 
   } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    ML_list = tmp_list.sublist("BoomerAMG Parameters"); 
+    prec_list = tmp_list.sublist("BoomerAMG Parameters"); 
   } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ML_list = tmp_list.sublist("Block ILU Parameters");
+    prec_list = tmp_list.sublist("Block ILU Parameters");
   }
 
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(method, ML_list);
+  preconditioner_->InitPreconditioner(method, prec_list);
 
   // set up initial guess for solution
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -359,12 +359,14 @@ int Darcy_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
+
   // Create algebraic solver
   AztecOO* solver = new AztecOO;
   solver->SetUserOperator(matrix_);
   solver->SetPrecOperator(preconditioner_);
 
-  solver->SetAztecOption(AZ_solver, AZ_cg);
+  solver->SetAztecOption(AZ_solver, ls_specs.method);
   solver->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
@@ -408,10 +410,7 @@ int Darcy_PK::Advance(double dT_MPC)
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess
 
-  int max_itrs = ti_specs->ls_specs.max_itrs;
-  double convergence_tol = ti_specs->ls_specs.convergence_tol;
-
-  solver->Iterate(max_itrs, convergence_tol);
+  solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
   ti_specs->num_itrs++;
 
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {

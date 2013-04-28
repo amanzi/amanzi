@@ -47,6 +47,8 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   double dTmax = ti_specs_sss_.dTmax;
   double residual_tol_nonlinear = ti_specs_sss_.residual_tol;
 
+  LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
+
   int itrs = 0, ifail = 0;
   double L2error = 1.0;
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
@@ -90,7 +92,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    solver->Iterate(max_itrs_linear, convergence_tol_linear);
+    solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
     int num_itrs = solver->NumIters();
 
     // error estimates

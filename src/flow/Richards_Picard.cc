@@ -40,6 +40,9 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
   solver->SetAztecOption(AZ_output, AZ_none);
   solver->SetAztecOption(AZ_conv, AZ_rhs);
 
+  //convergence criteria
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
+
   double error0;
   int itrs;
   for (itrs = 0; itrs < 20; itrs++) {
@@ -70,8 +73,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     solution_new = solution_old;  // initial solution guess
     solver->SetLHS(&solution_new);
 
-    solver->Iterate(max_itrs_linear, convergence_tol_linear);
-    int num_itrs = solver->NumIters();
+    solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
 
     // error analysis
     Epetra_Vector solution_diff(*solution_old_cells);
@@ -79,6 +81,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     double error = ErrorNormPicardExperimental(*solution_old_cells, solution_diff);
 
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+      int num_itrs = solver->NumIters();
       double linear_residual = solver->ScaledResidual();
       std::printf("Picard:%4d   Pressure(error=%9.4e)  solver(%8.3e, %4d)\n",
           itrs, error, linear_residual, num_itrs);
