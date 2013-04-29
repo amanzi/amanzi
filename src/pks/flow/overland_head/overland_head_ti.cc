@@ -357,7 +357,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     //       equation being K/dz ( p - lambda ) = q = dwc/dt - div q_surf - Q,
     //     ---> K/dz * (p - lambda) - (dwc/dt - div q_surf - Q) = 0,
     //                              ^^ this sign is critical!
-    //    EpetraExt::RowMatrixToMatlabFile("TPFAbefore.txt", *Spp);
+    EpetraExt::RowMatrixToMatlabFile("TPFAbefore.txt", *Spp);
     Epetra_Vector dh_dp0(*dh_dp(0));
     for (int c=0; c!=ncells; ++c) {
       dh_dp0[c] = head[0][c] >= p_atm ? dh_dp[0][c] : 0.;
@@ -365,7 +365,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     }
     int ierr = Spp->RightScale(dh_dp0);
     ASSERT(!ierr);
-    //    EpetraExt::RowMatrixToMatlabFile("TPFAafter.txt", *Spp);
+    EpetraExt::RowMatrixToMatlabFile("TPFAafter.txt", *Spp);
 
   } else if (assemble_preconditioner_) {
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))

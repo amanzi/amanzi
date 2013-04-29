@@ -75,7 +75,7 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
     }
 
     double matsum = 0.0;  // elimination of mass matrix
-    for (int n = 0; n < nfaces; n++) {
+    for (int n=0; n!=nfaces; ++n) {
       double rowsum = Bff(n, n);
       double colsum = 0.;
       if (Krel_face == Teuchos::null) {

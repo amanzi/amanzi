@@ -184,6 +184,11 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   // Call base Schur
   MatrixMFD::ComputeSchurComplement(new_markers, bc_values);
 
+  // dump the schur complement
+  std::stringstream filename_s;
+  filename_s << "schur_pre_surf_" << 0 << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
+
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -243,10 +248,12 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   delete[] values;
 
   // dump the schur complement
-  // std::stringstream filename_s;
-  // filename_s << "schur_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
+  std::stringstream filename_s2;
+  filename_s2 << "schur_" << 0 << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Sff_);
 }
+
+
 
 } // namespace
 } // namespace
