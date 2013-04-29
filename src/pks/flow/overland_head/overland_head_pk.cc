@@ -642,7 +642,6 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   std::vector<Epetra_SerialDenseVector>& Ff_cells =
       matrix_->Ff_cells();
 
-  int nfaces_owned = elevation_f.MyLength();
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
 
@@ -743,7 +742,6 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
   std::vector<Epetra_SerialDenseVector>& Ff_cells =
       matrix_->Ff_cells();
 
-  int nfaces_owned = elevation_f.MyLength();
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
@@ -763,7 +761,6 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
     for (int m=0; m!=faces.size(); ++m) {
       bc_val -= Aff_cells[c](my_n,m) * dp[m];
     }
-    bc_val /= mesh_->face_area(f);
 
     // Apply the BC to the matrix
     Ff_cells[c][my_n] -= bc_val;

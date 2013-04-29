@@ -482,7 +482,7 @@ void Richards::PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVect
     double p_standard = p_prev - dp[0][c];
 
     // cannot use if saturated, likely not useful if decreasing in saturation
-    if (p_standard > p_prev && s_new[0][c] < 0.99) {
+    if (p_standard > p_prev && p_prev < patm && s_new[0][c] < 0.99) {
       double pc = wrms_->second[(*wrms_->first)[c]]->capillaryPressure(s_new[0][c]);
       double p_wc = patm - pc;
       std::cout << "preconWC on cell " << c << ":" << std::endl;

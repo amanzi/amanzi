@@ -80,10 +80,6 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
   // Damp, kluge, hack, etc.
   PreconPostprocess_(u,Pu);
 
-  // Update surface values.
-  PreconUpdateSurfaceCells_(u,Pu);
-  PreconUpdateSurfaceFaces_(u,Pu);
-
 #if DEBUG_FLAG
   Teuchos::OSTab tab = getOSTab();
   Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->data();
@@ -120,15 +116,28 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
      surf_mesh_->cell_get_faces_and_dirs(surf_c0_, &fnums0, &dirs);
      surf_mesh_->cell_get_faces_and_dirs(surf_c1_, &fnums1, &dirs);
 
-    *out_ << " Surface precon:" << std::endl;
-    *out_ << "  u0: " << (*surf_u)("cell",surf_c0_) << ", "
-          << (*surf_u)("face",fnums0[0]) << std::endl;
-    *out_ << "  u1: " << (*surf_u)("cell",surf_c1_) << ", "
-          << (*surf_u)("face",fnums1[0]) << std::endl;
-    *out_ << "  PC*u0: " << (*surf_Pu)("cell",surf_c0_) << ", "
-          << (*surf_Pu)("face",fnums0[0]) << std::endl;
-    *out_ << "  PC*u1: " << (*surf_Pu)("cell",surf_c1_) << ", "
-          << (*surf_Pu)("face",fnums1[0]) << std::endl;
+     *out_ << " Surface precon:" << std::endl;
+     *out_ << "  u0: " << (*surf_u)("cell",surf_c0_) << ", "
+           << (*surf_u)("face",fnums0[0]) << std::endl;
+     *out_ << "  u1: " << (*surf_u)("cell",surf_c1_) << ", "
+           << (*surf_u)("face",fnums1[0]) << std::endl;
+     *out_ << "  PC*u0 cell: " << (*surf_Pu)("cell",surf_c0_) << std::endl;
+     *out_ << "  PC*u1 cell: " << (*surf_Pu)("cell",surf_c1_) << std::endl;
+  }
+
+  // Update surface values.
+  PreconUpdateSurfaceCells_(u,Pu);
+  PreconUpdateSurfaceFaces_(u,Pu);
+
+  if (surf_c0_ < surf_u->size("cell",false) && surf_c1_ < surf_u->size("cell",false)) {
+    //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+     AmanziMesh::Entity_ID_List fnums1,fnums0;
+     std::vector<int> dirs;
+     surf_mesh_->cell_get_faces_and_dirs(surf_c0_, &fnums0, &dirs);
+     surf_mesh_->cell_get_faces_and_dirs(surf_c1_, &fnums1, &dirs);
+
+     *out_ << "  PC*u0 face: " << (*surf_Pu)("face",fnums0[0]) << std::endl;
+     *out_ << "  PC*u1 face: " << (*surf_Pu)("face",fnums1[0]) << std::endl;
 
   }
 #endif

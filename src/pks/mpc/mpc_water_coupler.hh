@@ -50,6 +50,8 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
  protected:
 
   bool cap_the_spurt_;
+  bool damp_the_spurt_;
+  double damp_the_spurt_coef_;
   double face_limiter_;
   double damping_coef_;
   double damping_cutoff_;
@@ -79,6 +81,10 @@ MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
       plist.get<bool>("modify predictor with heuristic", false);
   face_limiter_ = plist.get<double>("global face limiter", -1);
   cap_the_spurt_ = plist.get<bool>("cap the spurt", false);
+  damp_the_spurt_ = plist.isParameter("spurt damping");
+  if (damp_the_spurt_) {
+    damp_the_spurt_coef_ = plist.get<double>("spurt damping");
+  }
 }
 
 
@@ -136,6 +142,31 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     }
   }
 
+
+  if (damp_the_spurt_) {
+    int ncells_surf =
+        this->surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int damp = 0;
+
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f =
+          this->surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
+      double p_old = domain_p_f[0][f];
+      double p_new = p_old - domain_Pu_f[0][f];
+      if ((p_new > patm) && (p_old < patm - 0.002) && (std::abs(domain_Pu_f[0][f]) > 10000.)) {
+        damp = 1;
+      }
+    }
+
+    int damp_my = damp;
+    this->surf_mesh_->get_comm()->MaxAll(&damp_my, &damp, 1);
+    if (damp) {
+      std::cout << "  DAMPING THE SPURT!" << std::endl;
+      domain_Pu->Scale(damp_the_spurt_coef_);
+    }
+  }
+
+
   // Damp surface corrections
   if (damping_coef_ > 0.) {
     int ncells_surf =
@@ -189,6 +220,20 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
   // update delta faces
   this->surf_preconditioner_->UpdateConsistentFaceCorrection(*surf_u, surf_Ph.ptr());
   *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
+
+  if (this->surf_c0_ < surf_u->size("cell",false) && this->surf_c1_ < surf_u->size("cell",false)) {
+    //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+     AmanziMesh::Entity_ID_List fnums1,fnums0;
+     std::vector<int> dirs;
+     this->surf_mesh_->cell_get_faces_and_dirs(this->surf_c0_, &fnums0, &dirs);
+     this->surf_mesh_->cell_get_faces_and_dirs(this->surf_c1_, &fnums1, &dirs);
+
+     *this->out_ << "  PC*u0 in h cell/face: " << (*surf_Ph)("cell",this->surf_c0_) << ", "
+           << (*surf_Pu)("face",fnums0[0]) << std::endl;
+     *this->out_ << "  PC*u1 in h cell/face: " << (*surf_Ph)("cell",this->surf_c1_) << ", "
+           << (*surf_Pu)("face",fnums1[0]) << std::endl;
+
+  }
 
   // revert solution so we don't break things
   S_next_->GetFieldData("surface_pressure",this->surf_pk_name_)
