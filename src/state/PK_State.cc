@@ -21,7 +21,7 @@ PK_State::PK_State(std::string name, State& S) :
   mesh_ = S_->GetMesh();
 }
 
-PK_State::PK_State(PK_State& other, StateConstructMode mode) :
+PK_State::PK_State(const PK_State& other, StateConstructMode mode) :
     name_(other.name_),
     mesh_(other.mesh_),
     ghosted_(other.ghosted_),

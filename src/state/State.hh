@@ -66,7 +66,7 @@ class State {
   explicit State(Teuchos::ParameterList& state_plist);
 
   // Copy constructor, copies memory not pointers.
-  State(const State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_DATA);
+  State(const State& other, StateConstructMode mode);
 
   // Assignment operator, copies memory not pointers.  Note this
   // implementation requires the State being copied has the same structure (in
@@ -259,6 +259,11 @@ private:
 
   // parameter list
   Teuchos::ParameterList state_plist_;
+
+ private:
+  // un-defined!
+  State(const State& other);
+
 };
 
 

@@ -35,7 +35,7 @@ public:
   PK_State(std::string name, Teuchos::RCP<AmanziMesh::Mesh> mesh);
   PK_State(std::string name, Teuchos::RCP<State> S);
   PK_State(std::string name, State& S);
-  PK_State(PK_State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_POINTERS);
+  PK_State(const PK_State& other, StateConstructMode mode);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
 
@@ -60,13 +60,17 @@ public:
   void MinValueMasterCells(Epetra_MultiVector& v, double* vmin);
   void MaxValueMasterCells(Epetra_MultiVector& v, double* vmax);
 
-protected:
+ protected:
 
   Teuchos::RCP<State> S_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::string name_;
   bool ghosted_;
   bool standalone_mode_;
+
+ private:
+  // un-defined!
+  PK_State(const PK_State& other);
 
 };
 
