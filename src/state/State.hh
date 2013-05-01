@@ -225,6 +225,13 @@ class State {
   void set_time(double new_time);  // note this also evaluates state-owned functions
   void advance_time(double dT) { set_time(time() + dT); }
 
+  double final_time() const { return final_time_; }
+  void set_final_time(double new_time) { final_time_ = new_time; }
+  double intermediate_time() const { return intermediate_time_; }
+  void set_intermediate_time(double new_time) { intermediate_time_ = new_time; }
+
+
+
   // Cycle accessor and mutators.
   int cycle() const { return cycle_; }
   void set_cycle(int cycle) { cycle_ = cycle; }
@@ -255,6 +262,8 @@ private:
 
   // meta-data
   double time_;
+  double final_time_;
+  double intermediate_time_;
   int cycle_;
 
   // parameter list
