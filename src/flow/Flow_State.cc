@@ -34,16 +34,15 @@ Flow_State::Flow_State(State& S) :
 Flow_State::Flow_State(const Flow_State& other,
         PKStateConstructMode mode) :
     PK_State(other, STATE_CONSTRUCT_MODE_COPY_POINTERS) {
-  if (mode == PK_STATE_CONSTRUCT_MODE_VIEW_DATA) {
-    // This is pointer-copying, and is the default behavior.
-    // pass
-  } else if (mode == PK_STATE_CONSTRUCT_MODE_VIEW_DATA_GHOSTED) {
-    // ?
-    ASSERT(0);
-  } else if (mode == PK_STATE_CONSTRUCT_MODE_COPY_DATA) {
+  if (mode == CONSTRUCT_MODE_VIEW_DATA) {
+    ghosted_ = false; // non-ghosted views
+  } else if (mode == CONSTRUCT_MODE_VIEW_DATA_GHOSTED) {
+    ghosted_ = true; // no guarantees -- if other is not ghosted, this is not
+                     // ghosted either!
+  } else if (mode == CONSTRUCT_MODE_COPY_DATA) {
     // Not currently needed by Flow?
     ASSERT(0);
-  } else if (mode == PK_STATE_CONSTRUCT_MODE_COPY_DATA_GHOSTED) {
+  } else if (mode == CONSTRUCT_MODE_COPY_DATA_GHOSTED) {
     // Copy data, making new vector for Darcy flux with ghosted entries.
     ghosted_ = true;
 
@@ -52,7 +51,6 @@ Flow_State::Flow_State(const Flow_State& other,
     fac.SetComponent("face", AmanziMesh::FACE, 1);
     Teuchos::RCP<CompositeVector> flux = fac.CreateVector(true);
     flux->CreateData();
-    flux->PutScalar(0.);
     *flux->ViewComponent("face",false) = *other.darcy_flux();
     flux->ScatterMasterToGhosted();
     S_->SetData("darcy_flux", name_, flux);

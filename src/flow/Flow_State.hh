@@ -20,14 +20,14 @@ namespace AmanziFlow {
 
 class Flow_State : public PK_State {
 
-public:
+ public:
 
   explicit Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   explicit Flow_State(Teuchos::RCP<State> S);
   explicit Flow_State(State& S);
   Flow_State(const Flow_State& other, PKStateConstructMode mode);
 
-  virtual void Initialize();
+  void Initialize();
 
   // access methods
   Teuchos::RCP<AmanziGeometry::Point> gravity();
@@ -45,6 +45,7 @@ public:
   Teuchos::RCP<const Epetra_MultiVector> darcy_velocity() const {
     return S_->GetFieldData("darcy_velocity")->ViewComponent("face", ghosted_); }
 
+  // non const access methods
   Teuchos::RCP<const Epetra_Vector> vertical_permeability() const {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability")->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<const Epetra_Vector> horizontal_permeability() const {
@@ -123,6 +124,7 @@ public:
   void Construct_();
 
  private:
+  // not implemented
   Flow_State(const Flow_State& other);
 
 };

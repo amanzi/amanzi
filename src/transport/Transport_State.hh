@@ -19,8 +19,9 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 class Transport_State : public PK_State {
+
  public:
-  
+
   explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   explicit Transport_State(Teuchos::RCP<State> S);
   explicit Transport_State(State& S);
@@ -29,6 +30,22 @@ class Transport_State : public PK_State {
   void Initialize();
 
   // access methods for state variables
+  // const methods
+  Teuchos::RCP<const Epetra_MultiVector> total_component_concentration() const {
+    return S_->GetFieldData("total_component_concentration", name_)->ViewComponent("cell", true); }
+
+  Teuchos::RCP<const Epetra_Vector> porosity() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("porosity", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> water_saturation() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("water_saturation", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> prev_water_saturation() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("prev_water_saturation", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> darcy_flux() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("darcy_flux", name_)->ViewComponent("face", ghosted_))(0)); }
+  Teuchos::RCP<const double> water_density() const {
+    return S_->GetScalarData("fluid_density", name_); }
+
+  // non const access methods
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration() {
     return S_->GetFieldData("total_component_concentration", name_)->ViewComponent("cell", true); }
 
@@ -40,7 +57,7 @@ class Transport_State : public PK_State {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("prev_water_saturation", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> darcy_flux() {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("darcy_flux", name_)->ViewComponent("face", ghosted_))(0)); }
-  Teuchos::RCP<Epetra_Vector> water_density() {
+  Teuchos::RCP<double> water_density() {
     return S_->GetScalarData("fluid_density", name_); }
 
   Epetra_MultiVector& ref_total_component_concentration() { return *total_component_concentration(); }
@@ -48,7 +65,7 @@ class Transport_State : public PK_State {
   Epetra_Vector& ref_water_saturation() { return *water_saturation(); }
   Epetra_Vector& ref_prev_water_saturation() { return *prev_water_saturation(); }
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux(); }
-  Epetra_Vector& ref_water_density() { return *water_density(); }
+  double& ref_water_density() { return *water_density(); }
 
 
   // component name and number accessors
@@ -57,11 +74,24 @@ class Transport_State : public PK_State {
 
   // time
   double initial_time() const { return S_->time(); }
- 
-protected:
+  double intermediate_time() const { return S_->intermediate_time(); }
+  double final_time() const { return S_->final_time(); }
+
+  // routines that may not belong in state
+  void InterpolateCellVector(const Epetra_Vector& v0,
+                             const Epetra_Vector& v1,
+                             double dT_int, double dT,
+                             Epetra_Vector& v_int);
+
+
+ protected:
   void Construct_();
 
-protected:
+ private:
+  // not implemented
+  Transport_State(const Transport_State& other);
+
+ protected:
   std::map<std::string,int> comp_numbers_;
   std::vector<std::string> comp_names_;
 

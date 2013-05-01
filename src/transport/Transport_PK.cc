@@ -43,7 +43,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   parameter_list = parameter_list_MPC;
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
-  TS = Teuchos::rcp(new Transport_State(*TS_MPC));
+  TS = Teuchos::rcp(new Transport_State(*TS_MPC, Transport_State::CONSTRUCT_MODE_COPY_POINTERS));
 
   dT = dT_debug = T_physics = 0.0;
   double time = TS->initial_time();
@@ -70,8 +70,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 ****************************************************************** */
 int Transport_PK::InitPK()
 {
-  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory));
-  TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, ViewMemory));
+  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, Transport_State::CONSTRUCT_MODE_COPY_DATA_GHOSTED));
+  TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, Transport_State::CONSTRUCT_MODE_VIEW_DATA));
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
