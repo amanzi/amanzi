@@ -267,22 +267,22 @@
     <ParameterList name="Output">
       <ParameterList name="Time Macros">
         <ParameterList name="Every_0.01_year">
-	  <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.17266656e+10, 315576, -1}"/>
-	</ParameterList>
+	       <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.17266656e+10, 315576, -1}"/>
+      	</ParameterList>
 	<ParameterList name="Every_1000_year">
 	  <Parameter name="Start_Period_Stop" type="Array(double)" value="{0, 315576e+5, -1}"/>
 	</ParameterList>
+         <ParameterList name="Every 100 years">
+            <Parameter name="Start_Period_Stop" type="Array(double)" value="{0, 3155760000.,-1}"/>
+         </ParameterList>
       </ParameterList>
       <ParameterList name="Cycle Macros">
         <ParameterList name="Every_1.0_1000.0_-1">
           <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
         </ParameterList>
       </ParameterList> 
-      <ParameterList name="Time Macros">
-         <ParameterList name="Every 100 years">
-            <Parameter name="Start_Period_Stop" type="Array(double)" value="{0, 3155760000.,-1}"/>
-         </ParameterList>
-      </ParameterList>
+
+
       <ParameterList name="Variable Macros"/>
       <ParameterList name="Observation Data"/>
       <ParameterList name="Visualization Data">
