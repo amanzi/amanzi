@@ -31,22 +31,27 @@ Flow_State::Flow_State(State& S) :
   Construct_();
 }
 
-Flow_State::Flow_State(Flow_State& other,
+Flow_State::Flow_State(const Flow_State& other,
         PKStateConstructMode mode) :
-      PK_State(other) {
+    PK_State(other, STATE_CONSTRUCT_MODE_COPY_POINTERS) {
   if (mode == PK_STATE_CONSTRUCT_MODE_VIEW_DATA) {
-    ASSERT(0);
+    // This is pointer-copying, and is the default behavior.
+    // pass
   } else if (mode == PK_STATE_CONSTRUCT_MODE_VIEW_DATA_GHOSTED) {
+    // ?
     ASSERT(0);
   } else if (mode == PK_STATE_CONSTRUCT_MODE_COPY_DATA) {
+    // Not currently needed by Flow?
     ASSERT(0);
   } else if (mode == PK_STATE_CONSTRUCT_MODE_COPY_DATA_GHOSTED) {
+    // Copy data, making new vector for Darcy flux with ghosted entries.
     ghosted_ = true;
 
     CompositeVectorFactory fac;
     fac.SetMesh(mesh_);
     fac.SetComponent("face", AmanziMesh::FACE, 1);
     Teuchos::RCP<CompositeVector> flux = fac.CreateVector(true);
+    flux->CreateData();
     flux->PutScalar(0.);
     *flux->ViewComponent("face",false) = *other.darcy_flux();
     flux->ScatterMasterToGhosted();
@@ -104,6 +109,28 @@ void Flow_State::Initialize() {
     S_->GetField("darcy_flux",name_)->set_initialized();
     S_->GetField("darcy_velocity",name_)->set_initialized();
     S_->Initialize();
+  } else {
+    // BEGIN REMOVE ME once flow tests pass --etc
+    S_->GetFieldData("pressure",name_)->PutScalar(-1.);
+    S_->GetFieldData("water_saturation",name_)->PutScalar(-1.);
+    S_->GetFieldData("prev_water_saturation",name_)->PutScalar(-1.);
+    S_->GetFieldData("darcy_flux",name_)->PutScalar(-1.);
+    S_->GetFieldData("darcy_velocity",name_)->PutScalar(-1.);
+    S_->GetFieldData("specific_storage",name_)->PutScalar(-1.);
+    S_->GetFieldData("specific_yield",name_)->PutScalar(-1.);
+    // END REMOVE ME
+
+    // secondary variables, will be initialized by the PK
+    S_->GetField("water_saturation",name_)->set_initialized();
+    S_->GetField("prev_water_saturation",name_)->set_initialized();
+
+    S_->GetField("darcy_flux",name_)->set_initialized();
+    S_->GetField("darcy_velocity",name_)->set_initialized();
+
+    // no clue how these work or where they are initialized, but it seems not
+    // in the state.
+    S_->GetField("specific_storage",name_)->set_initialized();
+    S_->GetField("specific_yield",name_)->set_initialized();
   }
 }
 

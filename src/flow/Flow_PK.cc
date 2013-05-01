@@ -33,8 +33,8 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 {
   flow_status_ = FLOW_STATUS_NULL;
 
-  FS = Teuchos::rcp(new Flow_State(*FS_MPC));
-  FS_aux = Teuchos::rcp(new Flow_State(*FS_MPC), AmanziFlow::FLOW_STATE_COPY);
+  FS = Teuchos::rcp(new Flow_State(*FS_MPC, Flow_State::PK_STATE_CONSTRUCT_MODE_VIEW_DATA));
+  FS_aux = Teuchos::rcp(new Flow_State(*FS_MPC, Flow_State::PK_STATE_CONSTRUCT_MODE_COPY_DATA_GHOSTED));
 
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
