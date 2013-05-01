@@ -41,6 +41,7 @@ class DarcyProblem {
   Teuchos::ParameterList dp_list;
   AmanziFlow::Darcy_PK* DPK;
   int MyPID;
+  Teuchos::RCP<Flow_State> FS;
 
   DarcyProblem() {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -67,7 +68,7 @@ class DarcyProblem {
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(MSTK);
-    
+
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);
 
@@ -77,19 +78,18 @@ class DarcyProblem {
     // audit.Verify();
 
     // create Darcy process kernel
-    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = parameter_list.sublist("State");
     S = new State(state_list);
     S->RegisterDomainMesh(mesh);
     S->set_time(0.0);
 
-
-    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
+    FS = Teuchos::rcp(new Flow_State(*S));
     S->Setup();
-    S->Initialize();
     FS->Initialize();
+    S->Initialize();
 
     DPK = new Darcy_PK(parameter_list, FS);
-   
+
     Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
 
@@ -124,7 +124,7 @@ class DarcyProblem {
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-      // if (MyPID==0) cout << c << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
+      //      if (MyPID==0) cout << c << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(pressure[c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -138,7 +138,7 @@ class DarcyProblem {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
-      // cout << f << " " << solution_faces[f] << " exact=" << pressure_exact << endl;
+      //      cout << f << " " << solution_faces[f] << " exact=" << pressure_exact << endl;
       error_L2 += std::pow(solution_faces[f] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -196,7 +196,7 @@ SUITE(Darcy_PK) {
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
 
     Init("test/flow_darcy_misc.xml", "test/hexes.exo");
-    
+
     if (MyPID == 0) std::cout <<"Darcy PK on hexes: Dirichlet-Dirichlet" << std::endl;
 
     double p0 = 1.0;
@@ -212,7 +212,7 @@ SUITE(Darcy_PK) {
     createBClist("pressure", "BC 2", regions, 1.0);
 
     DPK->ResetParameterList(dp_list);
-    
+
     DPK->InitPK();  // setup the problem
     DPK->InitSteadyState(0.0, 1.0);
     DPK->AdvanceToSteadyState(0.0, 1.0);

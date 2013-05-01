@@ -62,8 +62,8 @@ TEST(FLOW_3D_RICHARDS) {
   ParameterList state_list = parameter_list.get<ParameterList>("State");
   State S(state_list);
   S.RegisterDomainMesh(mesh);
-  S.Setup();
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  S.Setup();
   FS->Initialize();
   S.Initialize();
 

@@ -140,6 +140,10 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     S->set_time(0.0);
 
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
+    S->Setup();
+    FS->Initialize();
+    S->Initialize();
+
     Richards_PK* RPK = new Richards_PK(parameter_list, FS);
 
     RPK->InitPK();  // setup the problem
