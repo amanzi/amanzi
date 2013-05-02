@@ -27,7 +27,7 @@ namespace AmanziFlow {
 * Process parameter for special treatment of static head b.c.                                           
 ****************************************************************** */
 void Flow_PK::ProcessShiftWaterTableList(
-    const Teuchos::ParameterList& list, Functions::BoundaryFunction* bc_head,
+    const Teuchos::ParameterList& list, Functions::FlowBoundaryFunction* bc_head,
     Teuchos::RCP<Epetra_Vector>& shift_water_table_)
 {
   std::string name("relative position of water table");

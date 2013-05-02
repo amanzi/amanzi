@@ -196,9 +196,8 @@ void Darcy_PK::InitPK()
   bc_seepage->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  // commented out to make compile with new function code, need to fix
-  // else
-  //  bc_head->ComputeShift(time, shift_water_table_->Values());
+  else
+    bc_head->ComputeShift(time, shift_water_table_->Values());
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,

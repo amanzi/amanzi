@@ -21,7 +21,7 @@ Authors: Neil Carlson (version 1)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "boundary_function.hh"
+#include "flow-boundary-function.hh"
 #include "flow-domain-function.hh"
 
 #include "BDF2_TI.hh"
@@ -204,10 +204,10 @@ class Richards_PK : public Flow_PK {
 
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
 
-  Functions::BoundaryFunction* bc_pressure;  // Pressure BC.
-  Functions::BoundaryFunction* bc_head;  // Static pressure head BC.
-  Functions::BoundaryFunction* bc_flux;  // Outward mass flux BC.
-  Functions::BoundaryFunction* bc_seepage;  // Seepage face BC.
+  Functions::FlowBoundaryFunction* bc_pressure;  // Pressure BC.
+  Functions::FlowBoundaryFunction* bc_head;  // Static pressure head BC.
+  Functions::FlowBoundaryFunction* bc_flux;  // Outward mass flux BC.
+  Functions::FlowBoundaryFunction* bc_seepage;  // Seepage face BC.
   std::vector<int> bc_model, bc_submodel; 
   std::vector<bc_tuple> bc_values;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;

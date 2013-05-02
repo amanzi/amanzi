@@ -98,8 +98,8 @@ void Flow_PK::ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
 * should be always owned. 
 ****************************************************************** */
 void Flow_PK::ProcessBoundaryConditions(
-    Functions::BoundaryFunction* bc_pressure, Functions::BoundaryFunction* bc_head,
-    Functions::BoundaryFunction* bc_flux, Functions::BoundaryFunction* bc_seepage,
+    Functions::FlowBoundaryFunction* bc_pressure, Functions::FlowBoundaryFunction* bc_head,
+    Functions::FlowBoundaryFunction* bc_flux, Functions::FlowBoundaryFunction* bc_seepage,
     const Epetra_Vector& pressure_cells, 
     const Epetra_Vector& pressure_faces, const double atm_pressure,
     const std::vector<double>& rainfall_factor,
@@ -113,7 +113,7 @@ void Flow_PK::ProcessBoundaryConditions(
     bc_values[n] = zero;
   }
 
-  Functions::BoundaryFunction::Iterator bc;
+  Functions::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = FLOW_BC_FACE_PRESSURE;
