@@ -20,7 +20,7 @@ Authors: Neil Carlson (version 1)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "boundary_function.hh"
+#include "flow-boundary-function.hh"
 #include "flow-domain-function.hh"
 #include "tensor.hh"
 
@@ -133,10 +133,10 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
  
-  Functions::BoundaryFunction* bc_pressure;  // Boundary conditions. 
-  Functions::BoundaryFunction* bc_head;
-  Functions::BoundaryFunction* bc_flux;
-  Functions::BoundaryFunction* bc_seepage;
+  Functions::FlowBoundaryFunction* bc_pressure;  // Boundary conditions. 
+  Functions::FlowBoundaryFunction* bc_head;
+  Functions::FlowBoundaryFunction* bc_flux;
+  Functions::FlowBoundaryFunction* bc_seepage;
 
   std::vector<int> bc_model, bc_submodel;  // Support of boundary conditions.
   std::vector<bc_tuple> bc_values;
