@@ -14,8 +14,7 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
 #include <string>
 
 #include "function-factory.hh"
-#include "vector_function.hh"
-#include "composite_function.hh"
+#include "MultiFunction.hh"
 #include "errors.hh"
 
 #include "Flow_BC_Factory.hh"
@@ -181,7 +180,7 @@ void FlowBCFactory::ProcessPressureSpec(
   }
 
   // Flow_BCs are scalar-valued.
-  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+  Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_NONE);
@@ -258,7 +257,7 @@ void FlowBCFactory::ProcessMassFluxSpec(
   }
 
   // Flow_BCs are scalar-valued.
-  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+  Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
@@ -359,7 +358,7 @@ void FlowBCFactory::ProcessStaticHeadSpec(
   // }
 
   // Flow_BCs are scalar-valued.
-  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+  Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, method);
@@ -436,7 +435,7 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
   }
 
   // Flow_BCs are scalar-valued.
-  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+  Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
   // Add this BC specification to the boundary function.
   //bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);

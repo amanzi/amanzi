@@ -9,7 +9,7 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "composite_function.hh"
+#include "MultiFunction.hh"
 #include "constant-function.hh"
 #include "composite_vector_function.hh"
 #include "errors.hh"
@@ -88,8 +88,8 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   // make the mesh function
   Teuchos::RCP<const Function> constant_func = Teuchos::rcp(new ConstantFunction(1.0));
   std::vector<Teuchos::RCP<const Function> > constant_funcs(1,constant_func);
-  Teuchos::RCP<VectorFunction> vector_func =
-    Teuchos::rcp(new CompositeFunction(constant_funcs));
+  Teuchos::RCP<MultiFunction> vector_func =
+    Teuchos::rcp(new MultiFunction(constant_funcs));
 
   std::vector<std::string> regions(1, "DOMAIN");
   Teuchos::RCP<MeshFunction::Domain> domainC =

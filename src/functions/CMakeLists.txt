@@ -63,6 +63,7 @@ if (BUILD_TESTS)
         copy_directory ${FUNCS_SOURCE_DIR}/test ${FUNCS_BINARY_DIR}/test) 
   endif()
 
+
   add_amanzi_test(concrete-functions all-function-test
                   KIND unit
   SOURCE test/all-function-test.cc

@@ -33,49 +33,24 @@ function-factory Create() method (see ./function-factory.hh).
 
 ------------------------------------------------------------------------- */
 
-#include "composite_function.hh"
+#include "dbc.hh"
+#include "MultiFunction.hh"
 
 namespace Amanzi {
 
-// Register the factory
-RegisteredVectorFunctionFactory CompositeFunction::reg_("composite function", &CreateCompositeFunction);
-
-CompositeFunction::CompositeFunction(
+MultiFunction::MultiFunction(
         const std::vector<Teuchos::RCP<const Function> >& functions) :
     functions_(functions) {
-  values_ = new double[functions.size()];
+  values_ = new double[functions_.size()];
 };
 
-CompositeFunction::CompositeFunction(const Teuchos::RCP<const Function>& function) :
+MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) :
     functions_(1, function)  {
-values_ = new double[1];
-};
-
-CompositeFunction::~CompositeFunction() {
-  delete [] values_;
-};
-
-VectorFunction* CompositeFunction::Clone() const {
-  return new CompositeFunction(functions_);
+  values_ = new double[1];
 };
 
 
-int CompositeFunction::size() const {
-  return functions_.size();
-};
-
-
-double* CompositeFunction::operator() (const double* xt) const {
-  for (int i=0; i!=size(); ++i) {
-    values_[i] = (*functions_[i])(xt);
-  }
-  return values_;
-};
-
-
-Teuchos::RCP<VectorFunction>
-CreateCompositeFunction(Teuchos::ParameterList& plist) {
-  std::vector<Teuchos::RCP<const Function> > functions;
+MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
   FunctionFactory factory;
 
   if (plist.isParameter("Number of DoFs")) {
@@ -84,22 +59,44 @@ CreateCompositeFunction(Teuchos::ParameterList& plist) {
 
       if (ndofs < 1) {
         // ERROR -- invalid number of dofs
+        ASSERT(0);
       }
 
       for (int lcv=1; lcv!=(ndofs+1); ++lcv) {
         std::stringstream sublist_name;
         sublist_name << "DoF " << lcv << " Function";
-        functions.push_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
+        functions_.push_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
       }
     } else {
       // ERROR -- invalid number of dofs
+      ASSERT(0);
     }
   } else {
     // assume it is a single dof function
-    functions.push_back(Teuchos::rcp(factory.Create(plist)));
+    functions_.push_back(Teuchos::rcp(factory.Create(plist)));
   };
-  return Teuchos::rcp(new CompositeFunction(functions));
+
+  values_ = new double[functions_.size()];
 }
+
+
+MultiFunction::~MultiFunction() {
+  delete [] values_;
+};
+
+
+int MultiFunction::size() const {
+  return functions_.size();
+};
+
+
+double* MultiFunction::operator() (const double* xt) const {
+  for (int i=0; i!=size(); ++i) {
+    values_[i] = (*functions_[i])(xt);
+  }
+  return values_;
+};
+
 
 
 } // namespace

@@ -9,7 +9,7 @@ Factory for a CV function on a mesh.
 ------------------------------------------------------------------------- */
 
 #include "mesh_function.hh"
-#include "vector_function_factory.hh"
+#include "MultiFunction.hh"
 
 #include "composite_vector_function_factory.hh"
 
@@ -24,7 +24,6 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   Teuchos::RCP<MeshFunction> mesh_func =
     Teuchos::rcp(new MeshFunction(sample.mesh()));
   std::vector<std::string> componentname_list;
-  VectorFunctionFactory vfunc_factory;
 
   // top level plist contains sublists containing the entry
   for (Teuchos::ParameterList::ConstIterator lcv=plist.begin();
@@ -76,10 +75,10 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
       }
 
       // get the function
-      Teuchos::RCP<VectorFunction> func;
+      Teuchos::RCP<MultiFunction> func;
       if (sublist.isSublist("function")) {
         Teuchos::ParameterList& func_plist = sublist.sublist("function");
-        func = vfunc_factory.Create(func_plist);
+        func = Teuchos::rcp(new MultiFunction(func_plist));
       } else {
         // ERROR -- missing function plist
         ASSERT(0);

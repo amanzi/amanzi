@@ -2,9 +2,7 @@
 #include "TestReporterStdout.h"
 
 #include "constant-function.hh"
-#include "vector_function_factory.hh"
-#include "vector_function.hh"
-#include "composite_function.hh"
+#include "MultiFunction.hh"
 #include "errors.hh"
 
 #include <iostream>
@@ -23,7 +21,7 @@ TEST(basic_test) {
   functions.push_back(f1);
   functions.push_back(f2);
 
-  Teuchos::RCP<VectorFunction> fc = Teuchos::rcp(new CompositeFunction(functions));
+  Teuchos::RCP<MultiFunction> fc = Teuchos::rcp(new MultiFunction(functions));
   double x = 3.0;
   CHECK_EQUAL((*fc)(&x)[0], 1.0);
   CHECK_EQUAL((*fc)(&x)[1], 2.0);
@@ -33,7 +31,6 @@ TEST(factory_test) {
   Teuchos::ParameterList list;
 
   list.set("Number of DoFs", 2);
-  list.set("Function type", "composite function");
 
   Teuchos::ParameterList &sublist1 = list.sublist("DoF 1 Function");
   Teuchos::ParameterList &sublist1A = sublist1.sublist("function-constant");
@@ -43,8 +40,7 @@ TEST(factory_test) {
   Teuchos::ParameterList &sublist2A = sublist2.sublist("function-constant");
   sublist2A.set("value", 2.0);
 
-  VectorFunctionFactory factory;
-  Teuchos::RCP<VectorFunction> f = factory.Create(list);
+  Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(list));
 
   double x = 3.0;
   CHECK_EQUAL((*f)(&x)[0], 1.0);

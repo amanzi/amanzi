@@ -10,7 +10,7 @@ namespace Functions {
 * Calculate pairs <list of cells, function>
 ****************************************************************** */
 void DomainFunction::Define(const std::vector<std::string>& regions,
-                            const Teuchos::RCP<const VectorFunction>& f) 
+                            const Teuchos::RCP<const MultiFunction>& f) 
 {
  
   // Create the domain
@@ -23,7 +23,7 @@ void DomainFunction::Define(const std::vector<std::string>& regions,
 
 
 void DomainFunction::Define(std::string region,
-                            const Teuchos::RCP<const VectorFunction>& f) 
+                            const Teuchos::RCP<const MultiFunction>& f) 
 {
   RegionList regions(1,region);
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));

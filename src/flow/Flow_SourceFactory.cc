@@ -7,7 +7,7 @@ Authors: Konstantin Lipnikov (version 2)  (lipnikov@lanl.gov)
 #include <string>
 #include <vector>
 
-#include "vector_function_factory.hh"
+#include "MultiFunction.hh"
 #include "errors.hh"
 
 #include "Flow_SourceFactory.hh"
@@ -74,10 +74,9 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Function
   }
 
   // Make the source function.
-  Teuchos::RCP<Amanzi::VectorFunction> f;
-  Amanzi::VectorFunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(new MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in source sublist : " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -87,7 +86,7 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Function
   int method;
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
-  
+
   src->Define(regions, f, method);
 }
 

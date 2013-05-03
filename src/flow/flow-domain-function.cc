@@ -11,7 +11,7 @@ namespace Functions {
 * Calculate pairs <list of cells, function>
 ****************************************************************** */
 void FlowDomainFunction::Define(const std::vector<std::string>& regions,
-				const Teuchos::RCP<const VectorFunction>& f,
+				const Teuchos::RCP<const MultiFunction>& f,
 				int action) 
 {
  
@@ -26,7 +26,7 @@ void FlowDomainFunction::Define(const std::vector<std::string>& regions,
 
 
 void FlowDomainFunction::Define(std::string region,
-				const Teuchos::RCP<const VectorFunction>& f,
+				const Teuchos::RCP<const MultiFunction>& f,
 				int action) 
 {
   RegionList regions(1,region);
