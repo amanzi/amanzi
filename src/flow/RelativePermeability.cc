@@ -206,7 +206,7 @@ void RelativePermeability::FaceUpwindGravityInSoil_(
           krel[n] = (*Krel_cells_)[c];
         }
         (*Krel_faces_)[f] = krel[n];
-      }
+      } 
     }
     Krel_amanzi_.push_back(krel);
   }
@@ -446,10 +446,10 @@ void RelativePermeability::FaceUpwindGravityInit_()
       if (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
         (*face_flag)[f] = FLOW_PERMFLAG_UPWIND;
         (*downwind_cell)[f] = c;  
-      } if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
+      } else if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
         (*face_flag)[f] = FLOW_PERMFLAG_UPWIND;
         (*upwind_cell)[f] = c;
-      } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
+      } else { 
         (*face_flag)[f] = FLOW_PERMFLAG_AVERAGE;  // Almost vertical face.
         if ((*upwind_cell)[f] < 0) 
           (*upwind_cell)[f] = c;  

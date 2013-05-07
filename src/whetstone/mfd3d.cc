@@ -145,7 +145,7 @@ int MFD3D::StabilityOptimized(const Tensor& T,
 
   int m, n = 0;
   for (int k = ncols; k < nrows; k++) {
-    m = 0;  // calculate off-diagonal entries of M_kk = U_k * U_k^T
+    m = 0;  // calculate diagonal entries of M_kk = U_k * U_k^T
     for (int i = 0; i < nrows; i++) 
       for (int j = i+1; j < nrows; j++) C(m++, n) = U(i, k) * U(j, k);
     n++; 

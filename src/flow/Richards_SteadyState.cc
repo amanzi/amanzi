@@ -13,8 +13,6 @@ Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Richards_PK.hh"
-#include "Matrix_Audit.hh"
-
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -221,10 +219,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     rhs = matrix_->rhs();  // export RHS from the matrix class
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
-    // Matrix_Audit audit(mesh_, matrix_);
-    // audit.InitAudit();
-    // audit.RunAudit();
-
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
@@ -244,7 +238,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetLHS(&*solution);  // initial solution guess
 
     if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
-    double tol_dynamic = std::max(ls_specs.convergence_tol, L2error * 1e-8);
+    double tol_dynamic = std::max(ls_specs.convergence_tol, L2error * 1e-18);
     solver->Iterate(ls_specs.max_itrs, tol_dynamic);
     if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
@@ -260,6 +254,9 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
           "", itrs, L2error, relaxation, linear_residual, num_itrs_linear);
     }
 
+// Epetra_Vector& pressure = FS->ref_pressure();
+// for (int c = 0; c < ncells_owned; c++) pressure[c] = solution_old[c] - solution_new[c];
+// WriteGMVfile(FS); 
     int ndof = ncells_owned + nfaces_owned;
     for (int c = 0; c < ndof; c++) {
       solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
