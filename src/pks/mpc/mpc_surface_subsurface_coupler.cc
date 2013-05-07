@@ -28,9 +28,17 @@ MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList&
   surf_pk_name_ = plist.get<std::string>("surface PK name");
   domain_pk_name_ = plist.get<std::string>("subsurface PK name");
 
-  surf_c0_ = plist_.get<int>("surface debug cell 0", 0);
-  surf_c1_ = plist_.get<int>("surface debug cell 1", 1);
-
+  // cells to debug
+  if (plist_.isParameter("debug cells")) {
+    Teuchos::Array<int> surf_dc = plist_.get<Teuchos::Array<int> >("surface debug cells");
+    for (Teuchos::Array<int>::const_iterator lcv=surf_dc.begin();
+         lcv!=surf_dc.end(); ++lcv) {
+      surf_dc_.push_back(*lcv);
+    }
+  } else {
+    surf_dc_.push_back(plist_.get<int>("surface debug cell 0",0));
+    surf_dc_.push_back(plist_.get<int>("surface debug cell 1",0));
+  }
 };
 
 void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
@@ -56,6 +64,25 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
   } else {
     ASSERT(0);
   }
+
+  // debugging cells
+  if (plist_.get<bool>("debug all surface cells", false)) {
+    dc_.clear();
+    surf_dc_.clear();
+
+    int ncells = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    dc_.resize(ncells);
+    surf_dc_.resize(ncells);
+    for (int c=0; c!=ncells; ++c) {
+      surf_dc_[c] = c;
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      AmanziMesh::Entity_ID_List cells;
+      domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      dc_[c] = cells[0];
+    }
+  }
+
 
   // Get the domain's preconditioner and replace it with a MatrixMFD_Surf.
   Teuchos::RCP<Operators::Matrix> precon = domain_pk_->preconditioner();

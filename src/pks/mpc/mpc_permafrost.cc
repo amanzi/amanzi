@@ -150,21 +150,19 @@ void MPCPermafrost::commit_state(double dt, const Teuchos::RCP<State>& S) {
 bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   Teuchos::OSTab tab = getOSTab();
 
-  AmanziMesh::Entity_ID_List fnums1,fnums0;
-  std::vector<int> dirs;
-  up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-  up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
-
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Modifying predictor." << std::endl;
-    *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c0_)
-          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c0_)
-          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c1_)
-          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
-    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c1_)
-          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
+
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",*c0)
+            << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+      *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",*c0)
+            << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+    }
   }
 
 
@@ -181,14 +179,16 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   changed |= StrongMPC::modify_predictor(h, up);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c0_)
-          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c0_)
-          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",c1_)
-          << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
-    *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",c1_)
-          << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums1[1]) << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->data())("cell",*c0)
+            << ", " << (*up->SubVector(0)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+      *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->data())("cell",*c0)
+            << ", " << (*up->SubVector(1)->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+    }
   }
 
   return changed;
@@ -280,108 +280,75 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const CompositeVector> domain_PT = Pu->SubVector(1)->SubVector(0)->data();
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    AmanziMesh::Entity_ID_List fnums1,fnums0;
-    std::vector<int> dirs;
-    domain_p->mesh()->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-    domain_p->mesh()->cell_get_faces_and_dirs(c1_, &fnums1, &dirs);
-
     *out_ << "Preconditioner application" << std::endl;
     *out_ << " SubSurface precon:" << std::endl;
-    *out_ << "  p0: " << (*domain_p)("cell",c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*domain_p)("face", fnums0[n]);
-    *out_ << std::endl;
 
-    *out_ << "  p1: " << (*domain_p)("cell",c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*domain_p)("face", fnums1[n]);
-    *out_ << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      domain_p->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-    *out_ << "  PC*p0: " << (*domain_Pp)("cell",c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*domain_Pp)("face", fnums0[n]);
-    *out_ << std::endl;
+      *out_ << "  p(" << *c0 << "): " << (*domain_p)("cell",*c0);
+      for (int n=0;n!=fnums0.size();++n)
+        *out_ << ", " << (*domain_p)("face", fnums0[n]);
+      *out_ << std::endl;
 
-    *out_ << "  PC*p1: " << (*domain_Pp)("cell",c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*domain_Pp)("face", fnums1[n]);
-    *out_ << std::endl;
+      *out_ << "  PC*p(" << *c0 << "): " << (*domain_Pp)("cell",*c0);
+      for (int n=0;n!=fnums0.size();++n)
+        *out_ << ", " << (*domain_Pp)("face", fnums0[n]);
+      *out_ << std::endl;
 
-    *out_ << "  ---" << std::endl;
+      *out_ << "  ---" << std::endl;
 
-    *out_ << "  T0: " << (*domain_T)("cell",c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*domain_T)("face", fnums0[n]);
-    *out_ << std::endl;
+      *out_ << "  T(" << *c0 << "): " << (*domain_T)("cell",*c0);
+      for (int n=0;n!=fnums0.size();++n)
+        *out_ << ", " << (*domain_T)("face", fnums0[n]);
+      *out_ << std::endl;
 
-    *out_ << "  T1: " << (*domain_T)("cell",c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*domain_T)("face", fnums1[n]);
-    *out_ << std::endl;
+      *out_ << "  PC*T(" << *c0 << "): " << (*domain_PT)("cell",*c0);
+      for (int n=0;n!=fnums0.size();++n)
+        *out_ << ", " << (*domain_PT)("face", fnums0[n]);
+      *out_ << std::endl;
 
-    *out_ << "  PC*T0: " << (*domain_PT)("cell",c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*domain_PT)("face", fnums0[n]);
-    *out_ << std::endl;
-
-    *out_ << "  PC*T1: " << (*domain_PT)("cell",c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*domain_PT)("face", fnums1[n]);
-    *out_ << std::endl;
-    *out_ << "  ---" << std::endl;
-
+      *out_ << "  ---" << std::endl;
+    }
   }
 
-  if (coupled_flow_pk_->surf_c0_ < surf_p->size("cell",false) && coupled_flow_pk_->surf_c1_ < surf_p->size("cell",false)) {
-    //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-     AmanziMesh::Entity_ID_List fnums1,fnums0;
-     std::vector<int> dirs;
-     surf_p->mesh()->cell_get_faces_and_dirs(coupled_flow_pk_->surf_c0_, &fnums0, &dirs);
-     surf_p->mesh()->cell_get_faces_and_dirs(coupled_flow_pk_->surf_c1_, &fnums1, &dirs);
-
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << " Surface precon:" << std::endl;
-    *out_ << "  p0: " << (*surf_p)("cell",coupled_flow_pk_->surf_c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*surf_p)("face", fnums0[n]);
-    *out_ << std::endl;
 
-    *out_ << "  p1: " << (*surf_p)("cell",coupled_flow_pk_->surf_c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*surf_p)("face", fnums1[n]);
-    *out_ << std::endl;
+    for (std::vector<int>::const_iterator c0=coupled_flow_pk_->surf_dc_.begin();
+         c0!=coupled_flow_pk_->surf_dc_.end(); ++c0) {
+      if (*c0 < surf_p->size("cell",false)) {
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        surf_p->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-    *out_ << "  PC*p0: " << (*surf_Pp)("cell",coupled_flow_pk_->surf_c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*surf_Pp)("face", fnums0[n]);
-    *out_ << std::endl;
+        *out_ << "  p(" << *c0 << "): " << (*surf_p)("cell",*c0);
+        for (int n=0;n!=fnums0.size();++n)
+          *out_ << ", " << (*surf_p)("face", fnums0[n]);
+        *out_ << std::endl;
 
-    *out_ << "  PC*p1: " << (*surf_Pp)("cell",coupled_flow_pk_->surf_c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*surf_Pp)("face", fnums1[n]);
-    *out_ << std::endl;
+        *out_ << "  PC*p(" << *c0 << "): " << (*surf_Pp)("cell",*c0);
+        for (int n=0;n!=fnums0.size();++n)
+          *out_ << ", " << (*surf_Pp)("face", fnums0[n]);
+        *out_ << std::endl;
 
-    *out_ << "  ---" << std::endl;
+        *out_ << "  ---" << std::endl;
 
-    *out_ << "  T0: " << (*surf_T)("cell",coupled_flow_pk_->surf_c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*surf_T)("face", fnums0[n]);
-    *out_ << std::endl;
+        *out_ << "  T(" << *c0 << "): " << (*surf_T)("cell",*c0);
+        for (int n=0;n!=fnums0.size();++n)
+          *out_ << ", " << (*surf_T)("face", fnums0[n]);
+        *out_ << std::endl;
 
-    *out_ << "  T1: " << (*surf_T)("cell",coupled_flow_pk_->surf_c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*surf_T)("face", fnums1[n]);
-    *out_ << std::endl;
+        *out_ << "  PC*T(" << *c0 << "): " << (*surf_PT)("cell",*c0);
+        for (int n=0;n!=fnums0.size();++n)
+          *out_ << ", " << (*surf_PT)("face", fnums0[n]);
+        *out_ << std::endl;
 
-    *out_ << "  PC*T0: " << (*surf_PT)("cell",coupled_flow_pk_->surf_c0_);
-    for (int n=0;n!=fnums0.size();++n)
-      *out_ << ", " << (*surf_PT)("face", fnums0[n]);
-    *out_ << std::endl;
-
-    *out_ << "  PC*T1: " << (*surf_PT)("cell",coupled_flow_pk_->surf_c1_);
-    for (int n=0;n!=fnums1.size();++n)
-      *out_ << ", " << (*surf_PT)("face", fnums1[n]);
-    *out_ << std::endl;
-    *out_ << "  ---" << std::endl;
+        *out_ << "  ---" << std::endl;
+      }
+    }
   }
 #endif
 

@@ -41,6 +41,13 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   // get the mesh
   mesh_ = S->GetMesh(domain_);
 
+  // debug cells
+  if (plist_.get<bool>("debug all cells", false)) {
+    dc_.clear();
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (int c=0; c!=ncells; ++c) dc_.push_back(c);
+  }
+
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList pv_sublist = plist_.sublist("primary variable evaluator");
   pv_sublist.set("evaluator name", key_);

@@ -52,60 +52,35 @@ void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector>
   Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    AmanziMesh::Entity_ID_List fnums,fnums0;
-    std::vector<int> dirs;
-    domain_mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-    domain_mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
-
     *out_ << "Preconditioner application" << std::endl;
     *out_ << " SubSurface precon:" << std::endl;
-    *out_ << "  p0: " << (*domain_u)("cell",c0_) << " "
-        //          << (*domain_u)("face",fnums0[0])
-          << (*domain_u)("face",fnums0[0]) << ", "
-          << (*domain_u)("face",fnums0[1]) << ", "
-          << (*domain_u)("face",fnums0[2]) << ", "
-          << (*domain_u)("face",fnums0[3])
-          << std::endl;
-    *out_ << "  p1: " << (*domain_u)("cell",c1_) << " "
-        //          << (*domain_u)("face",fnums[0])
-          << (*domain_u)("face",fnums[0]) << ", "
-          << (*domain_u)("face",fnums[1]) << ", "
-          << (*domain_u)("face",fnums[2]) << ", "
-          << (*domain_u)("face",fnums[3])
-          << std::endl;
-    *out_ << "  PC*p0: " << (*domain_Pu)("cell",c0_) << " "
-        //          << (*domain_Pu)("face",fnums0[0])
-          << (*domain_Pu)("face",fnums0[0]) << ", "
-          << (*domain_Pu)("face",fnums0[1]) << ", "
-          << (*domain_Pu)("face",fnums0[2]) << ", "
-          << (*domain_Pu)("face",fnums0[3])
-          << std::endl;
-    *out_ << "  PC*p1: " << (*domain_Pu)("cell",c1_) << " "
-        //          << (*domain_Pu)("face",fnums[0])
-          << (*domain_Pu)("face",fnums[0]) << ", "
-          << (*domain_Pu)("face",fnums[1]) << ", "
-          << (*domain_Pu)("face",fnums[2]) << ", "
-          << (*domain_Pu)("face",fnums[3])
-          << std::endl;
-  }
 
-  if (surf_c0_ < surf_u->size("cell",false) && surf_c1_ < surf_u->size("cell",false)) {
-    //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-     AmanziMesh::Entity_ID_List fnums,fnums0;
-     std::vector<int> dirs;
-     surf_mesh_->cell_get_faces_and_dirs(surf_c0_, &fnums0, &dirs);
-     surf_mesh_->cell_get_faces_and_dirs(surf_c1_, &fnums, &dirs);
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      domain_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  u(" << *c0 << "): " << (*domain_u)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*domain_u)("face",fnums0[n]);
+      *out_ << std::endl;
+      *out_ << "  PC*u(" << *c0 << "): " << (*domain_u)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*domain_u)("face",fnums0[n]);
+      *out_ << std::endl;
+    }
 
     *out_ << " Surface precon:" << std::endl;
-    *out_ << "  u0: " << (*surf_u)("cell",surf_c0_) << ", "
-          << (*surf_u)("face",fnums0[0]) << std::endl;
-    *out_ << "  u1: " << (*surf_u)("cell",surf_c1_) << ", "
-          << (*surf_u)("face",fnums[0]) << std::endl;
-    *out_ << "  PC*u0: " << (*surf_Pu)("cell",surf_c0_) << ", "
-          << (*surf_Pu)("face",fnums0[0]) << std::endl;
-    *out_ << "  PC*u1: " << (*surf_Pu)("cell",surf_c1_) << ", "
-          << (*surf_Pu)("face",fnums[0]) << std::endl;
+    for (std::vector<int>::const_iterator c0=surf_dc_.begin(); c0!=surf_dc_.end(); ++c0) {
+      if (*c0 < surf_u->size("cell",false)) {
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
+        *out_ << "  u(" << *c0 << "): " << (*surf_u)("cell",*c0) << ", "
+              << (*surf_u)("face",fnums0[0]) << std::endl;
+        *out_ << "  PC*u(" << *c0 << "): " << (*surf_Pu)("cell",*c0) << ", "
+              << (*surf_Pu)("face",fnums0[0]) << std::endl;
+      }
+    }
   }
 #endif
 }

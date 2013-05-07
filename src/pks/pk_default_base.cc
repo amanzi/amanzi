@@ -29,8 +29,16 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
   out_ = getOStream();
 
   // cells to debug
-  c0_ = plist_.get<int>("debug cell 0",0);
-  c1_ = plist_.get<int>("debug cell 1",1);
+  if (plist_.isParameter("debug cells")) {
+    Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
+    for (Teuchos::Array<int>::const_iterator lcv=dc.begin();
+         lcv!=dc.end(); ++lcv) {
+      dc_.push_back(*lcv);
+    }
+  } else {
+    dc_.push_back(plist_.get<int>("debug cell 0",0));
+    dc_.push_back(plist_.get<int>("debug cell 1",0));
+  }
 }
 
 

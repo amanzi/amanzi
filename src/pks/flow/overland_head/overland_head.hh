@@ -150,6 +150,8 @@ protected:
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+
+  bool tpfa_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
 
   // boundary condition data

@@ -128,24 +128,21 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 
 // applies preconditioner to u and returns the result in Pu
 void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  if (decoupled_) return StrongMPC::precon(u,Pu);
+  Teuchos::OSTab tab = getOSTab();
 
+  if (decoupled_) return StrongMPC::precon(u,Pu);
   preconditioner_->ApplyInverse(*u, Pu.ptr());
 
-  // Pu->Print(file);
-
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    AmanziMesh::Entity_ID_List fnums,fnums0;
-    std::vector<int> dirs;
-    mesh_->cell_get_faces_and_dirs(c0_, &fnums0, &dirs);
-    mesh_->cell_get_faces_and_dirs(c1_, &fnums, &dirs);
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-    Teuchos::OSTab tab = getOSTab();
-    *out_ << "Preconditioned Updates:" << std::endl;
-    *out_ << "  Pp(" << c0_ << "): " << (*Pu->SubVector(0)->data())("cell",c0_) << " " << (*Pu->SubVector(0)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  Pp(" << c1_ << "): " << (*Pu->SubVector(0)->data())("cell",c1_) << " " << (*Pu->SubVector(0)->data())("face",fnums[1]) << std::endl;
-    *out_ << "  PT(" << c0_ << "): " << (*Pu->SubVector(1)->data())("cell",c0_) << " " << (*Pu->SubVector(1)->data())("face",fnums0[0]) << std::endl;
-    *out_ << "  PT(" << c1_ << "): " << (*Pu->SubVector(1)->data())("cell",c1_) << " " << (*Pu->SubVector(1)->data())("face",fnums[1]) << std::endl;
+      *out_ << "Preconditioned Updates:" << std::endl;
+      *out_ << "  Pp(" << *c0 << "): " << (*Pu->SubVector(0)->data())("cell",*c0) << " " << (*Pu->SubVector(0)->data())("face",fnums0[0]) << std::endl;
+      *out_ << "  PT(" << *c0 << "): " << (*Pu->SubVector(1)->data())("cell",*c0) << " " << (*Pu->SubVector(1)->data())("face",fnums0[0]) << std::endl;
+    }
   }
 }
 
