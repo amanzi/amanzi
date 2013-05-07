@@ -690,6 +690,40 @@ void Transport_PK::IdentifyUpwindCells()
   }
 }
 
+
+
+
+void Transport_State::set_porosity(const double phi) {
+  porosity()->PutScalar(phi);
+}
+
+void Transport_State::set_water_saturation(const double ws) {
+  water_saturation()->PutScalar(ws);
+}
+
+void Transport_State::set_prev_water_saturation(const double ws) {
+  prev_water_saturation()->PutScalar(ws);
+}
+
+void Transport_State::set_water_density(const double rho) {
+  ref_water_density() = rho;
+}
+
+void Transport_State::set_darcy_flux(f_flux_t func, const double t) {
+  const Epetra_BlockMap& fmap = darcy_flux()->Map();
+
+  for (int f = fmap.MinLID(); f <= fmap.MaxLID(); f++) {
+    const AmanziGeometry::Point& normal = mesh()->face_normal(f);
+    const AmanziGeometry::Point& fc = mesh()->face_centroid(f);
+    ref_darcy_flux()[f] = func(fc, t) * normal;
+  }
+}
+
+
+
+
+
+
 }  // namespace AmanziTransport
 }  // namespace Amanzi
 

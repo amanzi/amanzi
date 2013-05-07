@@ -19,7 +19,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshAudit.hh"
 #include "GMVMesh.hh"
 
-#include "State_Old.hh"
+#include "Transport_State.hh"
 #include "Transport_PK.hh"
 
 
@@ -62,18 +62,26 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
-  
-  /* create a MPC state with two component */
-  int num_components = 2;
-  State_Old mpc_state(num_components, 0, mesh);
- 
+  std::cout << "HERE0\n";  
   /* create a transport state from the MPC state and populate it */
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh));
+  std::cout << "HERE1\n";
+  try{
+    TS->Initialize();
+  }
+  catch (...) {
+    std::cout << "CRAP\n";
+  }
 
-  TS->AnalyticDarcyFlux(f_velocity);
-  TS->AnalyticPorosity();
-  TS->AnalyticWaterSaturation();
-  TS->AnalyticWaterDensity();
+
+  std::cout << "HERE2\n";  
+  TS->set_darcy_flux(f_velocity, 0.0);
+  TS->set_porosity(0.2);
+  TS->set_water_saturation(1.0);
+  TS->set_water_density(1000.0);
+
+  std::cout << "HERE1\n";
+
 
   /* initialize a transport process kernel from a transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");

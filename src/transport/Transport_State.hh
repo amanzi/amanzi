@@ -20,6 +20,10 @@ namespace AmanziTransport {
 
 class Transport_State : public PK_State {
 
+  typedef AmanziGeometry::Point f_flux_t(const AmanziGeometry::Point&, const double);
+  typedef double f_conc_t(const AmanziGeometry::Point&, const double);
+
+
  public:
 
   explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
@@ -83,6 +87,15 @@ class Transport_State : public PK_State {
                              double dT_int, double dT,
                              Epetra_Vector& v_int);
 
+  // debug routines
+  void set_porosity(const double p = 0.2);
+  void set_water_saturation(const double ws = 1.0);
+  void set_prev_water_saturation(const double ws = 0.0);
+  void set_water_density(const double wd = 1000.0);
+  void set_total_component_concentration(f_conc_t f, const double t=0.0);
+  void set_total_component_concentration(const double tcc);  
+  void set_darcy_flux(f_flux_t f, const double t=0.0);
+  void set_darcy_flux(const AmanziGeometry::Point& u);  
 
  protected:
   void Construct_();
