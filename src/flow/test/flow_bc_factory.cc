@@ -18,14 +18,12 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 #include "Teuchos_ParameterList.hpp"
 
 #include "flow-boundary-function.hh"
-#include "vector_function_factory.hh"
 #include "errors.hh"
 
 #include "MeshFactory.hh"
 #include "Flow_BC_Factory.hh"
 
-#include "composite_function.hh"
-
+#include "MultiFunction.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;

@@ -15,7 +15,7 @@ namespace Amanzi {
 namespace Functions {
 
 void FlowBoundaryFunction::Define(const std::vector<std::string> &regions,
-                                  const Teuchos::RCP<const VectorFunction> &f, 
+                                  const Teuchos::RCP<const MultiFunction> &f, 
                                   int method) {
 
   // Create the domain
@@ -35,7 +35,7 @@ void FlowBoundaryFunction::Define(const std::vector<std::string> &regions,
 
 
 void FlowBoundaryFunction::Define(std::string region,
-                                  const Teuchos::RCP<const VectorFunction> &f,
+                                  const Teuchos::RCP<const MultiFunction> &f,
                                   int method) {
 
   RegionList regions(1,region);

@@ -13,9 +13,7 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
 #include <vector>
 #include <string>
 
-#include "vector_function_factory.hh"
-//#include "vector_function.hh"
-#include "composite_function.hh"
+#include "MultiFunction.hh"
 #include "errors.hh"
 
 #include "Flow_BC_Factory.hh"
@@ -171,10 +169,9 @@ void FlowBCFactory::ProcessPressureSpec(
   }
 
   // Make the boundary pressure function.
-  Teuchos::RCP<Amanzi::VectorFunction> f;
-  Amanzi::VectorFunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"boundary pressure\": " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -244,10 +241,9 @@ void FlowBCFactory::ProcessMassFluxSpec(
   }
 
   // Make the outward mass flux function.
-  Teuchos::RCP<VectorFunction> f;
-  VectorFunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -334,10 +330,9 @@ void FlowBCFactory::ProcessStaticHeadSpec(
   static_head_list.set("space dimension", dim);
   static_head_list.set("water table elevation", *water_table_list);
 
-  Teuchos::RCP<VectorFunction> f;
-  VectorFunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = f_fact.Create(f_list);
+    f = Teuchos::rcp(new Amanzi::MultiFunction(f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"water table elevation\": " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -413,10 +408,9 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
   }
 
   // Make the seepage face function.
-  Teuchos::RCP<VectorFunction> f;
-  VectorFunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);

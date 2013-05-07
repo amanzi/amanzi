@@ -22,7 +22,7 @@ entity.
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "vector_function.hh"
+#include "MultiFunction.hh"
 #include "unique_mesh_function.hh"
 
 namespace Amanzi {
@@ -41,11 +41,11 @@ public:
       finalized_(false) {}
   
   void Define(const std::vector<std::string> &regions,
-              const Teuchos::RCP<const VectorFunction> &f, 
+              const Teuchos::RCP<const MultiFunction> &f, 
               int method);
 
   void Define(std::string region,
-              const Teuchos::RCP<const VectorFunction> &f,
+              const Teuchos::RCP<const MultiFunction> &f,
               int method);
 
   void Compute(double time);
