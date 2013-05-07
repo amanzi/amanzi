@@ -16,7 +16,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Mesh.hh"
-#include "boundary_function.hh"
+#include "transport-boundary-function.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -28,9 +28,9 @@ class TransportBCFactory {
      : mesh_(mesh), list_(list) {};
   ~TransportBCFactory() {};
   
-  void CreateConcentration(std::vector<Functions::BoundaryFunction*>& bcs, 
+  void CreateConcentration(std::vector<Functions::TransportBoundaryFunction*>& bcs, 
                            std::vector<std::string> bcs_tcc_name) const;
-  void ProcessConcentrationSpec(Teuchos::ParameterList& spec, Functions::BoundaryFunction* bc) const;
+  void ProcessConcentrationSpec(Teuchos::ParameterList& spec, Functions::TransportBoundaryFunction* bc) const;
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;

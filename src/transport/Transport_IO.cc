@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "errors.hh"
-#include "tabular-function.hh"
+#include "MultiFunction.hh"
 #include "GMVMesh.hh"
 
 #include "Mesh.hh"
@@ -78,10 +78,7 @@ void Transport_PK::ProcessParameterList()
   bcs.clear();
   bcs_tcc_index.clear();
 
-  if (transport_list.isSublist("Transport BCs")) {  // Obsolete format.
-    Teuchos::ParameterList& bcs_list = transport_list.get<Teuchos::ParameterList>("Transport BCs");
-    CreateConcentration(bcs_list);
-  } else if (transport_list.isSublist("boundary conditions")) {  // New flexible format.
+  if (transport_list.isSublist("boundary conditions")) {  // New flexible format.
     std::vector<std::string> bcs_tcc_name;
     Teuchos::RCP<Teuchos::ParameterList>
        bcs_list = Teuchos::rcp(new Teuchos::ParameterList(transport_list.get<Teuchos::ParameterList>("boundary conditions")));
@@ -117,62 +114,62 @@ void Transport_PK::ProcessParameterList()
 }
 
 
-/* ******************************************************************
-* Process Dirichet BC (concentration).
-* Warning: the routine is marked as obsolete.
-****************************************************************** */
-void Transport_PK::CreateConcentration(Teuchos::ParameterList& bcs_list)
-{
-  for (Teuchos::ParameterList::ConstIterator it = bcs_list.begin(); it != bcs_list.end(); ++it) {
-    if (bcs_list.isSublist(it->first)) {
-      Teuchos::ParameterList bc_list = bcs_list.sublist(it->first); 
+// /* ******************************************************************
+// * Process Dirichet BC (concentration).
+// * Warning: the routine is marked as obsolete.
+// ****************************************************************** */
+// void Transport_PK::CreateConcentration(Teuchos::ParameterList& bcs_list)
+// {
+//   for (Teuchos::ParameterList::ConstIterator it = bcs_list.begin(); it != bcs_list.end(); ++it) {
+//     if (bcs_list.isSublist(it->first)) {
+//       Teuchos::ParameterList bc_list = bcs_list.sublist(it->first); 
       
-      bool flag_BCX = false;
-      for (int i = 0; i < number_components; i++) {
-        char tcc_char_name[20];
+//       bool flag_BCX = false;
+//       for (int i = 0; i < number_components; i++) {
+//         char tcc_char_name[20];
 	
-        sprintf(tcc_char_name, "Component %d", i);
-        string tcc_name(tcc_char_name);
-	      string tcc_name_alt(TS->get_component_name(i));
+//         sprintf(tcc_char_name, "Component %d", i);
+//         string tcc_name(tcc_char_name);
+//   	      string tcc_name_alt(TS->get_component_name(i));
 		
-        if (bc_list.isParameter(tcc_name) || bc_list.isParameter(tcc_name_alt)) {
-          flag_BCX = true;
-          std::vector<std::string> regions, functions;
-          std::vector<double> times, values;
+//         if (bc_list.isParameter(tcc_name) || bc_list.isParameter(tcc_name_alt)) {
+//           flag_BCX = true;
+//           std::vector<std::string> regions, functions;
+//           std::vector<double> times, values;
 	  
-          regions = bc_list.get<Teuchos::Array<std::string> >("Regions").toVector();
-          times = bc_list.get<Teuchos::Array<double> >("Times").toVector();
-          if (bc_list.isParameter(tcc_name)) {
-            values = bc_list.get<Teuchos::Array<double> >(tcc_name).toVector();
-          } else if (bc_list.isParameter(tcc_name_alt)) {
-            values = bc_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
-          }
-          functions = bc_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
+//           regions = bc_list.get<Teuchos::Array<std::string> >("Regions").toVector();
+//           times = bc_list.get<Teuchos::Array<double> >("Times").toVector();
+//           if (bc_list.isParameter(tcc_name)) {
+//             values = bc_list.get<Teuchos::Array<double> >(tcc_name).toVector();
+//           } else if (bc_list.isParameter(tcc_name_alt)) {
+//             values = bc_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
+//           }
+//           functions = bc_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
 	  
-          int nfunctions = functions.size();  // convert strings to forms
-          std::vector<TabularFunction::Form> forms(functions.size());
-          for (int k = 0; k < nfunctions; k++) {
-            forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
-          }
+//           int nfunctions = functions.size();  // convert strings to forms
+//           std::vector<MultiFunction::Form> forms(functions.size());
+//           for (int k = 0; k < nfunctions; k++) {
+//             forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
+//           }
 	  
-          Teuchos::RCP<TabularFunction> f;
-	  f = Teuchos::rcp(new TabularFunction(times, values, forms));
+//           Teuchos::RCP<TabularFunction> f;
+//   	  f = Teuchos::rcp(new TabularFunction(times, values, forms));
 	  
-	  Functions::BoundaryFunction* bnd_fun = new Functions::BoundaryFunction(mesh_);
-          bnd_fun->Define(regions, f); //, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);     // commented out to make compile with new function code, need to fix
-          bcs.push_back(bnd_fun);
-          bcs_tcc_index.push_back(i);
-          break;
-        }
-      }
-      if (! flag_BCX) {
-        Errors::Message msg;
-        msg << "Transport PK: sublist BC X was not found.\n";
-        Exceptions::amanzi_throw(msg);
-      }
-    }
-  }
-}
+//   	  Functions::TransportBoundaryFunction* bnd_fun = new Functions::TransportBoundaryFunction(mesh_);
+//           bnd_fun->Define(regions, f); //, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);     // commented out to make compile with new function code, need to fix
+//           bcs.push_back(bnd_fun);
+//           bcs_tcc_index.push_back(i);
+//           break;
+//         }
+//       }
+//       if (! flag_BCX) {
+//         Errors::Message msg;
+//         msg << "Transport PK: sublist BC X was not found.\n";
+//         Exceptions::amanzi_throw(msg);
+//       }
+//     }
+//   }
+// }
 
 
 /* ****************************************************************

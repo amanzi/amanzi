@@ -11,7 +11,6 @@ Authors:  Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include <vector>
 
-#include "vector_function_factory.hh"
 #include "errors.hh"
 
 #include "Transport_BC_Factory.hh"
@@ -24,10 +23,10 @@ namespace AmanziTransport {
 * Process Dirichet BC (concentration), step 1.
 ****************************************************************** */
 void TransportBCFactory::CreateConcentration(
-    std::vector<Functions::BoundaryFunction*>& bcs, std::vector<std::string> bcs_tcc_name) const
+    std::vector<Functions::TransportBoundaryFunction*>& bcs, std::vector<std::string> bcs_tcc_name) const
 {
   Errors::Message msg;
-  Functions::BoundaryFunction* bc;
+  Functions::TransportBoundaryFunction* bc;
 
   if (list_->isSublist("concentration")) {
     Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("concentration");
@@ -60,7 +59,7 @@ void TransportBCFactory::CreateConcentration(
 * Process Dirichet BC (concentration), step 3.
 ****************************************************************** */
 void TransportBCFactory::ProcessConcentrationSpec(
-    Teuchos::ParameterList& spec, Functions::BoundaryFunction* bc) const
+    Teuchos::ParameterList& spec, Functions::TransportBoundaryFunction* bc) const
 {
   Errors::Message msg;
   std::vector<std::string> regions;
@@ -86,10 +85,9 @@ void TransportBCFactory::ProcessConcentrationSpec(
   }
 
   // Make the boundary pressure function.
-  Teuchos::RCP<VectorFunction> f;
-  VectorFunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = f_fact.Create(*f_list);
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& m) {
     msg << "error in sublist \"boundary pressure\": " << m.what();
     Exceptions::amanzi_throw(msg);

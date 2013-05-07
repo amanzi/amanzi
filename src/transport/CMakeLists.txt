@@ -48,7 +48,8 @@ set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc
                         Transport_Limiters.cc Transport_Dispersion.cc 
                         Transport_VandV.cc Transport_IO.cc 
                         Transport_BC_Factory.cc Transport_SourceFactory.cc
-                        Reconstruction.cc)
+                        Reconstruction.cc transport-boundary-function.cc 
+			transport-domain-function.cc)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures time_integration ${Epetra_LIBRARIES})

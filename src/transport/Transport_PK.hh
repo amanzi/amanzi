@@ -23,7 +23,7 @@ Usage:
 
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
-#include "boundary_function.hh"
+#include "transport-boundary-function.hh"
 
 #include "State_Old.hh"
 #include "Transport_State.hh"
@@ -146,7 +146,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   void ProcessStringVerbosity(const std::string name, int* verbosity);
 
   // obsolete methods
-  void CreateConcentration(Teuchos::ParameterList& bcs_list);
+  //void CreateConcentration(Teuchos::ParameterList& bcs_list);
 
   // miscaleneous methods
   double TracerVolumeChangePerSecond(int idx_tracer);
@@ -201,7 +201,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   int status;
   int flow_mode;  // steady-sate or transient
 
-  std::vector<Functions::BoundaryFunction*> bcs;  // influx BCs for each components
+  std::vector<Functions::TransportBoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 
