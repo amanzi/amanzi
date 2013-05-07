@@ -71,6 +71,22 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
+
+  // debug cells
+  if (coupled_to_surface_via_flux_ || coupled_to_surface_via_head_) {
+    if (plist_.get<bool>("debug all surface cells", false)) {
+      dc_.clear();
+      Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh("surface");
+      int ncells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      for (int c=0; c!=ncells; ++c) {
+        AmanziMesh::Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
+        AmanziMesh::Entity_ID_List cells;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        ASSERT(cells.size() == 1);
+        dc_.push_back(cells[0]);
+      }
+    }
+  }
 };
 
 
@@ -667,7 +683,10 @@ void Richards::UpdateBoundaryConditions_() {
       // -- set that value to Neumann
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
-      //      std::cout << " setting BC from surface mass flux = " << flux[0][c] << std::endl;
+      // NOTE: flux[0][c] is in units of mols / s, where as Neumann BCs are in
+      //       units of mols / s / A.  The right A must be chosen, as it is
+      //       the subsurface mesh's face area, not the surface mesh's cell
+      //       area.
     }
   }
 };

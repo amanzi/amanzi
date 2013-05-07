@@ -116,7 +116,7 @@ void MatrixMFD_Surf::AssembleGlobalMatrices() {
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,surfindices[m]);
       indices_global[m] = fmap_wghost.GID(indices[m]);
 
-      // additionally divide by rel perm to keep constraint equation consistent
+      // SCALING: -- divide by rel perm to keep constraint equation consistent
       if (std::abs(values[m]) > 0.) {
         ASSERT( (*Krel_)[frow] > 0.);
         values[m] /= (*Krel_)[frow];
@@ -185,9 +185,9 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   MatrixMFD::ComputeSchurComplement(new_markers, bc_values);
 
   // dump the schur complement
-  std::stringstream filename_s;
-  filename_s << "schur_pre_surf_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
+  // std::stringstream filename_s;
+  // filename_s << "schur_pre_surf_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
 
   // Add the TPFA on the surface parts from surface_A.
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
@@ -248,11 +248,10 @@ void MatrixMFD_Surf::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_mar
   delete[] values;
 
   // dump the schur complement
-  std::stringstream filename_s2;
-  filename_s2 << "schur_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Sff_);
+  // std::stringstream filename_s2;
+  // filename_s2 << "schur_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Sff_);
 }
-
 
 
 } // namespace

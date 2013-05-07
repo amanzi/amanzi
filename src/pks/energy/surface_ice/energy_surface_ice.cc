@@ -259,16 +259,9 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
 // -------------------------------------------------------------
 void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
-  Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
-
-#if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List faces, faces0;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
   Teuchos::OSTab tab = getOSTab();
-#endif
 
+  Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
   // Note that energy sources are based upon face areas, which are not cell volumes.
   Teuchos::RCP<const Epetra_MultiVector> fa0;
@@ -303,7 +296,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "  res_source: Q_E: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+        *out_ << "  res_source Q_E(" << *c0 << "): " << g_c[0][*c0] << std::endl;
+      }
     }
 #endif
 
@@ -370,7 +365,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "  res_source: E*Q_m: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+        *out_ << "  res_source E*Q_m(" << *c0 << "): " << g_c[0][*c0] << std::endl;
+      }
     }
 #endif
   }
@@ -388,7 +385,10 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "  res_source: K(" << T_air1 << "-T): " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+        *out_ << "  res_source K(" << *c0 << "): (" << T_air1 << "-T): "
+              << g_c[0][*c0] << std::endl;
+      }
     }
 #endif
 
@@ -430,7 +430,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "  res_source: E*q^m_ss: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+        *out_ << "  res_source E*q_m_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
+      }
     }
 #endif
   }
@@ -450,7 +452,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "  res_source: q^E_ss: " << g_c[0][c0_] << ", " << g_c[0][c1_] << std::endl;
+      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+        *out_ << "  res_source q^E_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
+      }
     }
 #endif
 

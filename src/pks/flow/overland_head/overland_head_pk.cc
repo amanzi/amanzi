@@ -102,10 +102,6 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
-    full_jacobian_ = plist_.get<bool>("TPFA use full Jacobian", false);
-  }
-
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
@@ -135,6 +131,16 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
   Teuchos::RCP<Operators::Matrix> precon;
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
+    mfd_pc_plist.set("TPFA", true);
+  }
+
+  tpfa_ = mfd_pc_plist.get<bool>("TPFA", false);
+  full_jacobian_ = false;
+  if (tpfa_) {
+    full_jacobian_ = mfd_pc_plist.get<bool>("TPFA use full Jacobian", false);
+  }
+
+  if (tpfa_) {
     tpfa_preconditioner_ =
         Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
     precon = tpfa_preconditioner_;
@@ -826,10 +832,11 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
   Teuchos::RCP<CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev","pres_elev");
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Consistent faces:" << std::endl;
-    *out_ << "  u_c = " << (*u)("cell",c0_) << ",  pres_e_c = " << (*pres_elev)("cell",c0_) << std::endl;
-    *out_ << "  u_c = " << (*u)("cell",c1_) << ",  pres_e_c = " << (*pres_elev)("cell",c1_) << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      *out_ << "  u_c = " << (*u)("cell",*c0) << ",  pres_elev_c = " << (*pres_elev)("cell",*c0) << std::endl;
+    }
   }
 #endif
 
@@ -850,17 +857,15 @@ void OverlandHeadFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVect
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    AmanziMesh::Entity_ID_List faces, faces0;
-    std::vector<int> dirs;
-    mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-    mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-    *out_ << "  cond = " << (*cond)("face",faces0[0]) << std::endl;
-    *out_ << "  pres_e_f = " << (*pres_elev)("face",faces0[0]) << std::endl;
-    *out_ << "  u_f = " << (*u)("face",faces0[0]) << std::endl;
-    *out_ << "  cond = " << (*cond)("face",faces[0]) << std::endl;
-    *out_ << "  pres_e_f = " << (*pres_elev)("face",faces[0]) << std::endl;
-    *out_ << "  u_f = " << (*u)("face",faces[0]) << std::endl;
+      *out_ << "  cond = " << (*cond)("face",fnums0[0]) << std::endl;
+      *out_ << "  pres_e_f = " << (*pres_elev)("face",fnums0[0]) << std::endl;
+      *out_ << "  u_f = " << (*u)("face",fnums0[0]) << std::endl;
+    }
   }
 #endif
 }

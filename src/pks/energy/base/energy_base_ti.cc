@@ -39,33 +39,30 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   Teuchos::RCP<CompositeVector> u = u_new->data();
 
 #if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List faces1, faces0;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &faces1, &dirs);
-
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
-
+    *out_ << std::setprecision(15);
     *out_ << "----------------------------------------------------------------" << std::endl;
-
     *out_ << "Residual calculation: t0 = " << t_old
           << " t1 = " << t_new << " h = " << h << std::endl;
-    *out_ << "  T_old(" << c0_ << "): " << (*u_old)("cell",c0_);
-    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*u_old)("face",faces0[n]);
-    *out_ << std::endl;
 
-    *out_ << "  T_old(" << c1_ << "): " << (*u_old)("cell",c1_);
-    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*u_old)("face",faces1[n]);
-    *out_ << std::endl;
+    Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
 
-    *out_ << "  T_new(" << c0_ << "): " << (*u)("cell",c0_);
-    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*u)("face",faces0[n]);
-    *out_ << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(*c0);
+      *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << std::endl;
 
-    *out_ << "  T_new(" << c1_ << "): " << (*u)("cell",c1_);
-    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*u)("face",faces1[n]);
-    *out_ << std::endl;
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  T_old(" << *c0 << "): " << (*u_old)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
+      *out_ << std::endl;
+
+      *out_ << "  T_new(" << *c0 << "): " << (*u)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
+      *out_ << std::endl;
+    }
   }
 #endif
 
@@ -82,12 +79,15 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res(" << c0_ << ") (after diffusion): " << (*res)("cell",c0_);
-    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
-    *out_ << std::endl;
-    *out_ << "  res(" << c1_ << ") (after diffusion): " << (*res)("cell",c1_);
-    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
-    *out_ << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  res(" << *c0 << ") (after diffusion): " << (*res)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      *out_ << std::endl;
+    }
   }
 #endif
 
@@ -95,12 +95,15 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res(" << c0_ << ") (after accumulation): " << (*res)("cell",c0_);
-    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
-    *out_ << std::endl;
-    *out_ << "  res(" << c1_ << ") (after accumulation): " << (*res)("cell",c1_);
-    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
-    *out_ << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  res(" << *c0 << ") (after accumulation): " << (*res)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      *out_ << std::endl;
+    }
   }
 #endif
 
@@ -108,12 +111,15 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAdvection_(S_next_.ptr(), res.ptr(), true);
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res(" << c0_ << ") (after advection): " << (*res)("cell",c0_);
-    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
-    *out_ << std::endl;
-    *out_ << "  res(" << c1_ << ") (after advection): " << (*res)("cell",c1_);
-    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
-    *out_ << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  res(" << *c0 << ") (after advection): " << (*res)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      *out_ << std::endl;
+    }
   }
 #endif
 
@@ -121,12 +127,15 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddSources_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  res(" << c0_ << ") (after source): " << (*res)("cell",c0_);
-    for (int n=0; n!=faces0.size(); ++n) *out_ << ",  " << (*res)("face",faces0[n]);
-    *out_ << std::endl;
-    *out_ << "  res(" << c1_ << ") (after source): " << (*res)("cell",c1_);
-    for (int n=0; n!=faces1.size(); ++n) *out_ << ",  " << (*res)("face",faces1[n]);
-    *out_ << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  res(" << *c0 << ") (after source): " << (*res)("cell",*c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      *out_ << std::endl;
+    }
   }
 #endif
 
@@ -151,16 +160,17 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 // -----------------------------------------------------------------------------
 void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
 #if DEBUG_FLAG
-  AmanziMesh::Entity_ID_List faces, faces0;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c0_, &faces0, &dirs);
-  mesh_->cell_get_faces_and_dirs(c1_, &faces, &dirs);
-
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    *out_ << "  T(" << c0_ << "): " << (*u->data())("cell",c0_) << " " << (*u->data())("face",faces0[0]) << std::endl;
-    *out_ << "  T(" << c1_ << "): " << (*u->data())("cell",c1_) << " " << (*u->data())("face",faces[1]) << std::endl;
+
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  T(" << *c0 << "): " << (*u->data())("cell",*c0) << " " << (*u->data())("face",fnums0[0]) << std::endl;
+    }
   }
 #endif
 
@@ -169,8 +179,13 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "  PC*T(" << c0_ << "): " << (*Pu->data())("cell",c0_) << " " << (*Pu->data())("face",faces0[0]) << std::endl;
-    *out_ << "  PC*T(" << c1_ << "): " << (*Pu->data())("cell",c1_) << " " << (*Pu->data())("face",faces[1]) << std::endl;
+    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  PC*T(" << *c0 << "): " << (*Pu->data())("cell",*c0) << " " << (*Pu->data())("face",fnums0[0]) << std::endl;
+    }
   }
 #endif
 };

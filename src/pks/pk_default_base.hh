@@ -62,9 +62,7 @@ class PKDefaultBase : public PK, public Teuchos::VerboseObject<PKDefaultBase> {
   Teuchos::EVerbosityLevel verbosity_;
 
   // cruft for easier global debugging
-  AmanziMesh::Entity_ID c0_;
-  AmanziMesh::Entity_ID c1_;
-
+  std::vector<int> dc_;
 };
 
 } // namespace

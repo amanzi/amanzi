@@ -892,5 +892,23 @@ void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
 }
 
 
+void MatrixMFD::UpdateConsistentCellCorrection(const CompositeVector& u,
+        const Teuchos::Ptr<CompositeVector>& Pu) {
+  int ierr(0);
+  Epetra_MultiVector Tc(*Pu->ViewComponent("cell", false));
+
+  // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
+  ierr |= (*Acf_).Multiply(false, *Pu->ViewComponent("face", false), Tc);
+  Tc.Update(1.0, *u.ViewComponent("cell", false), -1.0);
+
+  ierr |= Pu->ViewComponent("cell", false)->ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
+
+  if (ierr) {
+    Errors::Message msg("MatrixMFD::ApplyInverse has failed in calculating y = A*x.");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi

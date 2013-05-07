@@ -205,6 +205,9 @@ class MatrixMFD : public Matrix {
   virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
   virtual void UpdateConsistentFaceCorrection(const CompositeVector& u,
           const Teuchos::Ptr<CompositeVector>& Pu);
+  virtual void UpdateConsistentCellCorrection(const CompositeVector& u,
+          const Teuchos::Ptr<CompositeVector>& Pu);
+
 
  protected:
   virtual void FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,

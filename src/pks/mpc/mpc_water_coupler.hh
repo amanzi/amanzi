@@ -25,7 +25,7 @@ MPCSurfaceSubsurfaceFluxCoupler.
 #include "pk_factory.hh"
 #include "pk_default_base.hh"
 #include "FieldEvaluator.hh"
-
+#include "matrix_mfd_surf.hh"
 
 namespace Amanzi {
 
@@ -51,10 +51,9 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
 
   bool cap_the_spurt_;
   bool damp_the_spurt_;
-  double damp_the_spurt_coef_;
+  bool damp_and_cap_the_spurt_;
+  bool make_cells_consistent_;
   double face_limiter_;
-  double damping_coef_;
-  double damping_cutoff_;
   bool modify_predictor_heuristic_;
 
  private:
@@ -72,18 +71,22 @@ MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
     PKDefaultBase(plist, soln),
     BaseCoupler(plist,soln) {
 
-  damping_coef_ = plist.get<double>("damping coefficient", -1.);
-  if (damping_coef_ > 0.) {
-    damping_cutoff_ = plist.get<double>("damping cutoff", 0.1);
-  }
-
+  // predictor modifications
   modify_predictor_heuristic_ =
       plist.get<bool>("modify predictor with heuristic", false);
+
+  // preconditioner modifications
   face_limiter_ = plist.get<double>("global face limiter", -1);
   cap_the_spurt_ = plist.get<bool>("cap the spurt", false);
-  damp_the_spurt_ = plist.isParameter("spurt damping");
-  if (damp_the_spurt_) {
-    damp_the_spurt_coef_ = plist.get<double>("spurt damping");
+  damp_the_spurt_ = plist.get<bool>("damp the spurt", false);
+  damp_and_cap_the_spurt_ = plist.get<bool>("damp and cap the spurt", false);
+  if (damp_and_cap_the_spurt_) {
+    damp_the_spurt_ = true;
+    cap_the_spurt_ = true;
+  }
+
+  if (face_limiter_ > 0 || cap_the_spurt_ || damp_the_spurt_) {
+    make_cells_consistent_ = plist.get<bool>("ensure consistent cells after face updates", false);
   }
 }
 
@@ -99,13 +102,19 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
   const Epetra_MultiVector& domain_p_f = *S_next_->GetFieldData("pressure")
       ->ViewComponent("face",false);
 
-  // Alterations to PC'd value from limiting and damping
+  // As surface face saturates, its preconditioner is discontinuous at h = 0.
+  // Preconditioned updates calculated to go over-saturated using a
+  // preconditioner calculated at an under-saturated value overshoot, spurting
+  // way too much water onto the surface.  These are assorted methods of
+  // dealing with this phenomenon, called "the spurt".
+
+  // Necessary info
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
   Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
   const Epetra_MultiVector& surf_p_c = *S_next_->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
 
-  // global face limiter
+  // Approach 1: global face limiter on the correction size
   if (face_limiter_ > 0.) {
     int nfaces = domain_Pu_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
@@ -118,14 +127,36 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     }
   }
 
-  // Cap surface corrections
-  //   In the case that we are starting to infiltrate on dry ground, the low
-  //   initial surface rel perm means that to turn on this source, we would
-  //   require a huge pressure gradient (to fight the small rel perm).  The
-  //   changing rel perm is not represented in the preconditioner, so the
-  //   preconditioner tries match the flux by applying a huge gradient,
-  //   resulting in a huge update to the surface pressure.  This phenomenon,
-  //   known as the spurt, is capped.
+  double damp = 1.;
+
+  // Approach 3: damping of the spurt -- limit the max oversaturated pressure
+  //  using a global damping term.
+  if (damp_the_spurt_) {
+    int ncells_surf =
+        this->surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f =
+          this->surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
+      double p_old = domain_p_f[0][f];
+      double p_new = p_old - domain_Pu_f[0][f];
+      if ((p_new > patm + 100.) && (p_old < patm)) {
+        double my_damp = ((patm + 100) - p_old) / (p_new - p_old);
+        damp = std::min(damp, my_damp);
+      }
+    }
+
+    double proc_damp = damp;
+    this->surf_mesh_->get_comm()->MinAll(&proc_damp, &damp, 1);
+    if (damp < 1.0) {
+      std::cout << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
+      domain_Pu->Scale(damp);
+    }
+  }
+
+
+  // Approach 2: capping of the spurt -- limit the max oversaturated pressure
+  //  if coming from undersaturated.
   if (cap_the_spurt_) {
     int ncells_surf =
         this->surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -134,54 +165,21 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
           this->surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
 
       double p_old = domain_p_f[0][f];
-      double p_new = p_old - domain_Pu_f[0][f];
-      if ((p_new > patm) && (p_old < patm - 0.002) && (std::abs(domain_Pu_f[0][f]) > 10000.)) {
-        domain_Pu_f[0][f] = p_old - (patm - 0.001);
+      double p_new = p_old - domain_Pu_f[0][f] / damp;
+      if ((p_new > patm + 100.) && (p_old < patm)) {
+        domain_Pu_f[0][f] = p_old - (patm + 100.);
         std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
       }
     }
   }
 
 
-  if (damp_the_spurt_) {
-    int ncells_surf =
-        this->surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    int damp = 0;
-
-    for (int cs=0; cs!=ncells_surf; ++cs) {
-      AmanziMesh::Entity_ID f =
-          this->surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
-      double p_old = domain_p_f[0][f];
-      double p_new = p_old - domain_Pu_f[0][f];
-      if ((p_new > patm) && (p_old < patm - 0.002) && (std::abs(domain_Pu_f[0][f]) > 10000.)) {
-        damp = 1;
-      }
-    }
-
-    int damp_my = damp;
-    this->surf_mesh_->get_comm()->MaxAll(&damp_my, &damp, 1);
-    if (damp) {
-      std::cout << "  DAMPING THE SPURT!" << std::endl;
-      domain_Pu->Scale(damp_the_spurt_coef_);
-    }
-  }
-
-
-  // Damp surface corrections
-  if (damping_coef_ > 0.) {
-    int ncells_surf =
-        this->surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (int cs=0; cs!=ncells_surf; ++cs) {
-      AmanziMesh::Entity_ID f =
-          this->surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
-
-      double p_old = domain_p_f[0][f];
-      double p_new = p_old - domain_Pu_f[0][f];
-      if ((p_new > patm) && (std::abs(domain_Pu_f[0][f]) > damping_cutoff_)) {
-        domain_Pu_f[0][f] *= damping_coef_;
-        std::cout << "  DAMPING: p_old = " << p_old << ", p_new = " << p_new << ", p_damped = " << p_old - domain_Pu_f[0][f] << std::endl;
-      }
-    }
+  // All 3 approaches modify faces.  Cells can be re-back-substituted with
+  // these face corrections to get improved cell corrections.
+  if (make_cells_consistent_) {
+    this->mfd_preconditioner_->UpdateConsistentCellCorrection(
+        *u->SubVector(this->domain_pk_name_)->data(),
+        Pu->SubVector(this->domain_pk_name_)->data().ptr());
   }
 }
 
@@ -221,18 +219,20 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
   this->surf_preconditioner_->UpdateConsistentFaceCorrection(*surf_u, surf_Ph.ptr());
   *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
 
-  if (this->surf_c0_ < surf_u->size("cell",false) && this->surf_c1_ < surf_u->size("cell",false)) {
-    //  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-     AmanziMesh::Entity_ID_List fnums1,fnums0;
-     std::vector<int> dirs;
-     this->surf_mesh_->cell_get_faces_and_dirs(this->surf_c0_, &fnums0, &dirs);
-     this->surf_mesh_->cell_get_faces_and_dirs(this->surf_c1_, &fnums1, &dirs);
+  if (this->out_.get() && includesVerbLevel(this->verbosity_, Teuchos::VERB_HIGH, true)) {
 
-     *this->out_ << "  PC*u0 in h cell/face: " << (*surf_Ph)("cell",this->surf_c0_) << ", "
-           << (*surf_Pu)("face",fnums0[0]) << std::endl;
-     *this->out_ << "  PC*u1 in h cell/face: " << (*surf_Ph)("cell",this->surf_c1_) << ", "
-           << (*surf_Pu)("face",fnums1[0]) << std::endl;
+    for (std::vector<int>::const_iterator c0=this->surf_dc_.begin();
+         c0!=this->surf_dc_.end(); ++c0) {
+      if (*c0 < surf_u->size("cell",false)) {
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        this->surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
+        *this->out_ << "  PC*u(" << *c0 << ") in h cell/face: "
+                    << (*surf_Ph)("cell",*c0) << ", "
+                    << (*surf_Pu)("face",fnums0[0]) << std::endl;
+      }
+    }
   }
 
   // revert solution so we don't break things
