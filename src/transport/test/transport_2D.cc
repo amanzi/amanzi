@@ -66,13 +66,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mesh));
   std::cout << "HERE1\n";
-  try{
-    TS->Initialize();
-  }
-  catch (...) {
-    std::cout << "CRAP\n";
-  }
-
+  TS->Initialize();
 
   std::cout << "HERE2\n";  
   TS->set_darcy_flux(f_velocity, 0.0);

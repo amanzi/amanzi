@@ -37,6 +37,12 @@ BlockVector::BlockVector(const Epetra_MpiComm* comm,
   // Check consistency of input args.
   ASSERT(names_.size() == num_components_);
   ASSERT(num_dofs_.size() == num_components_);
+  for (int i=0; i!=num_components_; ++i) {
+    if (num_dofs_[i] < 1) {
+      Errors::Message message("Attempted creation of CompositeVector with num_dofs < 1");
+      Exceptions::amanzi_throw(message);
+    }
+  }
 
   data_.resize(num_components_);
 
