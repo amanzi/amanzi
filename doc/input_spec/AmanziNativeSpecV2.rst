@@ -715,30 +715,9 @@ Here is an example:
 Boundary Conditions
 -------------------
 
-The boundary conditions sublist differs from a similar specification of the boundary conditions 
-in `"Flow`". Its structure will be changed in the nearest future. 
 For the advective transport, the boundary conditions must be specified on inflow parts of the
 boundary. If no value is prescribed through the XML input, the zero inlux boundary condition
-is used. Note that the boundary condition is set up separately for each component:
-
-.. code-block:: xml
-
-   <ParameterList name="Transport BCs">
-     <ParameterList name="West Boundary for H+">
-       <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
-       <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
-       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-     </ParameterList>  
-
-     <ParameterList name="East Boundary for TC-99">
-       <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
-       <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
-       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-     </ParameterList>  
-   </ParameterList>  
-
+is used. Note that the boundary condition is set up separately for each component.
 
 The new structure of boundary conditions is aligned with that used for Flow.
 It allows the use to define spatially variable boundary conditions. 
@@ -748,16 +727,26 @@ Temporary, both approaches to specifying boundary condtions are supported.
 
    <ParameterList name="boundary conditions">
      <ParameterList name="concentration">
-       <ParameterList name="H+"> 
-         <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
+       <ParameterList name="H+">
+         <ParameterList name="descriptive name for first boundary condition">
+           <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
            <ParameterList name="boundary concentration">
              <ParameterList name="function-constant">  <!-- any time function -->
                <Parameter name="value" type="double" value="0.0"/>
              </ParameterList>
            </ParameterList>
-         </ParameterList>
+	 </ParameterList>
+         <ParameterList name="descriptive name for next boundary condition">
+           <Parameter name="regions" type="Array(string)" value="{Left, Right}"/>
+           <ParameterList name="boundary concentration">
+             <ParameterList name="function-tabular">  <!-- any time function -->
+	       <Parameter name="forms" type="Array(string)" value="{constan}"/> 
+               <Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
+	       <Parameter name="y values" type="Array(double)" value="{1.0, 0.5}"/>
+             </ParameterList>
+           </ParameterList>
+	 </ParameterList>	 
        </ParameterList>
-
        <ParameterList name="Tc-99"> <!-- Next component --> 
        ...
        </ParameteList>
@@ -765,6 +754,7 @@ Temporary, both approaches to specifying boundary condtions are supported.
 
      <ParameterList name="outward flux">  <!-- Future boundary conditions -->
      </ParameteList>
+
    </ParameterList>
 
 Sources and Sinks
