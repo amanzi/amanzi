@@ -72,16 +72,14 @@ TEST(ADVANCE_WITH_SIMPLE) {
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 20, 2, gm); 
   
-  // create a transport state with one component 
-  int num_components = 1;
-  State_Old mpc_state(num_components, 0, mesh);
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh, 1));
  
   Point u(1.0, 0.0, 0.0);
-  TS->AnalyticDarcyFlux(u);
-  TS->AnalyticPorosity();
-  TS->AnalyticWaterSaturation();
-  TS->AnalyticWaterDensity();
+  TS->set_darcy_flux(u);
+  TS->set_porosity(0.2);
+  TS->set_water_saturation(1.0);
+  TS->set_prev_water_saturation(1.0);
+  TS->set_water_density(1000.0);
 
   ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);

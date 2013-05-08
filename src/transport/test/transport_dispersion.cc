@@ -67,17 +67,17 @@ TEST(DISPERSION) {
   int nx = 20;
   RCP<Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 1, 1, gm); 
 
-  // create a transport states with one component
-  int num_components = 1;
-  State_Old mpc_state(num_components, 0, mesh);
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh,1));
 
   Point u(1.0, 0.0, 0.0);
-  TS->AnalyticDarcyFlux(u);
-  TS->AnalyticTotalComponentConcentration(f_step);
-  TS->AnalyticPorosity(1.0);
-  TS->AnalyticWaterSaturation(1.0);
-  TS->AnalyticWaterDensity(1.0);
+  TS->Initialize();
+  TS->set_darcy_flux(u);
+  TS->set_total_component_concentration(f_step, 0.0);
+  TS->set_porosity(1.0);
+  TS->set_water_saturation(1.0);
+  TS->set_prev_water_saturation(1.0);
+  TS->set_water_density(1.0);
 
   // create transport PK  
   ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");

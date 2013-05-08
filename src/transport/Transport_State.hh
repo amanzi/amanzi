@@ -96,6 +96,7 @@ class Transport_State : public PK_State {
   void set_total_component_concentration(const double tcc);  
   void set_darcy_flux(f_flux_t f, const double t=0.0);
   void set_darcy_flux(const AmanziGeometry::Point& u);  
+  void error_total_component_concentration(f_conc_t f, double t, double* L1, double* L2);
 
  protected:
   void Construct_();

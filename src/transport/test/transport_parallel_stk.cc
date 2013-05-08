@@ -58,16 +58,17 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();
    
-  // create a transport state with two component 
-  int num_components = 2;
-  State_Old mpc_state(num_components, 0, mesh);
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh, 2));
 
   Point u(1.0, 0.0, 0.0);
-  TS->AnalyticTotalComponentConcentration(f_step);
-  TS->AnalyticPorosity();
-  TS->AnalyticDarcyFlux(u);
-  TS->AnalyticWaterSaturation();
+  TS->Initialize();
+  TS->set_darcy_flux(u);
+  TS->set_porosity(0.2);
+  TS->set_water_saturation(1.0);
+  TS->set_prev_water_saturation(1.0);
+  TS->set_water_density(1000.0);
+  TS->set_total_component_concentration(f_step,0.0);
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
