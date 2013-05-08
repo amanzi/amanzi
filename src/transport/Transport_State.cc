@@ -4,8 +4,17 @@
 namespace Amanzi {
 namespace AmanziTransport {
 
-Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int ncomp) :
     PK_State(std::string("state"), mesh) {
+
+  // create dummy component names
+  for (int i=0; i<ncomp; ++i) {
+    std::stringstream ss;
+    ss << "Component " << i; 
+    comp_names_.push_back(ss.str());
+    comp_numbers_[ss.str()] = i;
+  }
+
   Construct_();
 }
 

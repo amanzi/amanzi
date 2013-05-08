@@ -22,7 +22,6 @@ void TransportBoundaryFunction::Define(const std::vector<std::string> &regions,
 
   // add the spec
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
-
 };
 
 
@@ -32,7 +31,6 @@ void TransportBoundaryFunction::Define(std::string region,
   RegionList regions(1,region);
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
-
 };
 
 // Evaluate values at time.

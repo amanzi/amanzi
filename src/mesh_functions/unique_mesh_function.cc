@@ -21,6 +21,7 @@ namespace Functions {
 void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
   // Ensure uniqueness of the spec and create the set of IDs contained in the
   // Domain of the spec.
+  
   Teuchos::RCP<Domain> domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
 

@@ -23,10 +23,9 @@ namespace AmanziTransport {
 * Process Dirichet BC (concentration), step 1.
 ****************************************************************** */
 void TransportBCFactory::CreateConcentration(
-    std::vector<Functions::TransportBoundaryFunction*>& bcs, std::vector<std::string> bcs_tcc_name) const
+    std::vector<Functions::TransportBoundaryFunction*>& bcs, std::vector<std::string>& bcs_tcc_name) const
 {
   Errors::Message msg;
-  Functions::TransportBoundaryFunction* bc;
 
   if (list_->isSublist("concentration")) {
     Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("concentration");
@@ -36,6 +35,7 @@ void TransportBCFactory::CreateConcentration(
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& spec = clist.sublist(name);
         try {
+	  Functions::TransportBoundaryFunction* bc = new Functions::TransportBoundaryFunction(mesh_);
           ProcessConcentrationSpec(spec, bc);
           bcs.push_back(bc);
           bcs_tcc_name.push_back(name);
@@ -78,9 +78,9 @@ void TransportBCFactory::ProcessConcentrationSpec(
 
   Teuchos::ParameterList* f_list;
   if (spec.isSublist("boundary concentration")) {
-    f_list = &spec.sublist("boundary concetration");
-  } else {  // "boundary pressure" is not a sublist
-    msg << "parameter \"boundary concetration\" is not a sublist";
+    f_list = &spec.sublist("boundary concentration");
+  } else {  // "boundary concentration" is not a sublist
+    msg << "parameter \"boundary concentration\" is not a sublist";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -89,10 +89,10 @@ void TransportBCFactory::ProcessConcentrationSpec(
   try {
     f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& m) {
-    msg << "error in sublist \"boundary pressure\": " << m.what();
+    msg << "error in sublist \"boundary concentration\": " << m.what();
     Exceptions::amanzi_throw(msg);
   }
-
+  
   // Add this BC specification to the boundary function.
   bc->Define(regions, f); // , Amanzi::BOUNDARY_FUNCTION_ACTION_NONE); // needs to be fixed
 }

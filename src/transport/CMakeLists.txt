@@ -66,7 +66,7 @@ if ( BUILD_TESTS )
     include_directories(${TRANSPORT_SOURCE_DIR})
     include_directories(${Boost_INCLUDE_DIRS})
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions data_structures)
+    set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions functions data_structures)
 
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics
@@ -95,7 +95,7 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions data_structures)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions functions data_structures)
 
         add_amanzi_test(transport_advance_mstk transport_advance_mstk
 	                KIND unit

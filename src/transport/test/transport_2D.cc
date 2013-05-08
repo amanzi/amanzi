@@ -62,26 +62,22 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
-  std::cout << "HERE0\n";  
-  /* create a transport state from the MPC state and populate it */
-  RCP<Transport_State> TS = rcp(new Transport_State(mesh));
-  std::cout << "HERE1\n";
-  TS->Initialize();
 
-  std::cout << "HERE2\n";  
+  /* create a transport state from the MPC state and populate it */
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh,1));
+  TS->Initialize();
   TS->set_darcy_flux(f_velocity, 0.0);
   TS->set_porosity(0.2);
   TS->set_water_saturation(1.0);
   TS->set_water_density(1000.0);
-
-  std::cout << "HERE1\n";
-
 
   /* initialize a transport process kernel from a transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
+
+  std::cout << "HERE\n";
 
   /* advance the state */
   int iter, k;

@@ -40,7 +40,8 @@ public:
 
   // add a spec -- others may inherit this and overload to do some checking?
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec) {
-    spec_list_.push_back(spec); }
+    spec_list_.push_back(spec); 
+  }
 
   // access specs
   typedef SpecList::const_iterator spec_iterator;

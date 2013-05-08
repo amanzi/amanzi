@@ -135,7 +135,9 @@ int Transport_PK::InitPK()
 
   // boundary conditions initialization
   double time = T_physics;
-  for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
+  for (int i = 0; i < bcs.size(); i++) {
+    bcs[i]->Compute(time);
+  }
 
   CheckInfluxBC();
 

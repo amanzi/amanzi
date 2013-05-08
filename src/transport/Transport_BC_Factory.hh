@@ -29,7 +29,7 @@ class TransportBCFactory {
   ~TransportBCFactory() {};
   
   void CreateConcentration(std::vector<Functions::TransportBoundaryFunction*>& bcs, 
-                           std::vector<std::string> bcs_tcc_name) const;
+                           std::vector<std::string>& bcs_tcc_name) const;
   void ProcessConcentrationSpec(Teuchos::ParameterList& spec, Functions::TransportBoundaryFunction* bc) const;
 
  private:

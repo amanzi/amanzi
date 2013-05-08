@@ -82,11 +82,11 @@ void Transport_PK::ProcessParameterList()
     std::vector<std::string> bcs_tcc_name;
     Teuchos::RCP<Teuchos::ParameterList>
        bcs_list = Teuchos::rcp(new Teuchos::ParameterList(transport_list.get<Teuchos::ParameterList>("boundary conditions")));
-
     TransportBCFactory bc_factory(mesh_, bcs_list);
     bc_factory.CreateConcentration(bcs, bcs_tcc_name);
-    for (int i = 0; i < bcs_tcc_name.size(); i++)
-        bcs_tcc_index.push_back(TS->get_component_number(bcs_tcc_name[i]));
+    for (int i = 0; i < bcs_tcc_name.size(); i++) {
+      bcs_tcc_index.push_back(TS->get_component_number(bcs_tcc_name[i]));
+    }
   } else {
     Errors::Message msg;
     msg << "Transport PK: does not have boundary conditions.\n";
