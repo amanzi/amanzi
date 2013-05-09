@@ -11,7 +11,10 @@ include_directories(upwind_scheme)
 
 add_library(divgrad matrix_mfd.cc
                     matrix_mfd_tpfa.cc
+                    matrix_mfd_scaled_constraint.cc
+                    matrix_mfd_tpfa_scaled_constraint.cc
                     matrix_mfd_surf.cc
+                    matrix_mfd_surf_scaled_constraint.cc
                     matrix_coupled_mfd.cc
                     matrix_coupled_mfd_surf.cc
                     upwind_scheme/upwind_cell_centered.cc

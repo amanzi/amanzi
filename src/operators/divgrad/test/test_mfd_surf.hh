@@ -40,12 +40,12 @@ struct test_mfd {
 
     // -- Boundary conditions
     int nfaces_surf = surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-    std::vector<Operators::Matrix_bc> bc_surf_markers(nfaces_surf,
-            Operators::MATRIX_BC_NULL);
+    std::vector<Operators::Matrix::MatrixBC> bc_surf_markers(nfaces_surf,
+            Operators::Matrix::MATRIX_BC_NULL);
     std::vector<double> bc_surf_values(nfaces_surf, 0.);
 
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-    std::vector<Operators::Matrix_bc> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
+    std::vector<Operators::Matrix::MatrixBC> bc_markers(nfaces, Operators::Matrix::MATRIX_BC_NULL);
     std::vector<double> bc_values(nfaces, 0.);
 
     // create the matrices
@@ -54,16 +54,16 @@ struct test_mfd {
 
     // set a subsurface face to Dirichlet -- this is the bottom and should be
     // trivially handled.
-    bc_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+    bc_markers[0] = Operators::Matrix::MATRIX_BC_DIRICHLET;
     bc_values[0] = 1.;
 
     // set a surface BC edge to Dirichlet
-    bc_surf_markers[0] = Operators::MATRIX_BC_DIRICHLET;
+    bc_surf_markers[0] = Operators::Matrix::MATRIX_BC_DIRICHLET;
     bc_surf_values[0] = 100.;
 
     // -- TPF on surface
     Atpf = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_plist, surf_mesh));
-    Atpf->SetSymmetryProperty(false);
+    Atpf->set_symmetric(false);
     Atpf->SymbolicAssembleGlobalMatrices();
     Atpf->CreateMFDmassMatrices(Teuchos::null);
     Atpf->CreateMFDstiffnessMatrices(Teuchos::null);
@@ -74,7 +74,7 @@ struct test_mfd {
     // -- combined on domain
     As = Teuchos::rcp(new Operators::MatrixMFD_Surf(mfd_plist, mesh, surf_mesh));
     As->SetSurfaceOperator(Atpf);
-    As->SetSymmetryProperty(false);
+    As->set_symmetric(false);
     As->SymbolicAssembleGlobalMatrices();
     As->CreateMFDmassMatrices(Teuchos::null);
     As->CreateMFDstiffnessMatrices(Teuchos::null);

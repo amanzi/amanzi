@@ -8,27 +8,42 @@
 #include "Epetra_FECrsGraph.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "matrix_mfd.hh"
-#include "matrix_mfd_tpfa.hh"
 
 namespace Amanzi {
 namespace Operators {
 
+/* ******************************************************************
+ * Constructor
+ ****************************************************************** */
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
                      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     plist_(plist),
     mesh_(mesh),
-    flag_symmetry_(false) {
+    flag_symmetry_(false),
+    assembled_operator_(false),
+    assembled_schur_(false),
+    method_(MFD3D_NULL) {
   InitializeFromPList_();
 }
 
 
+/* ******************************************************************
+ * Copy constructor
+ ****************************************************************** */
 MatrixMFD::MatrixMFD(const MatrixMFD& other) :
     plist_(other.plist_),
-    mesh_(other.mesh_) {
+    mesh_(other.mesh_),
+    flag_symmetry_(other.flag_symmetry_),
+    assembled_operator_(false),
+    assembled_schur_(false),
+    method_(other.method_) {
   InitializeFromPList_();
 }
 
 
+/* ******************************************************************
+ * Initialization of method, solver, etc.
+ ****************************************************************** */
 void MatrixMFD::InitializeFromPList_() {
   std::string methodstring = plist_.get<string>("MFD method");
   method_ = MFD3D_NULL;
@@ -82,14 +97,18 @@ void MatrixMFD::InitializeFromPList_() {
   }
 }
 
+
 // main computational methods
 /* ******************************************************************
  * Calculate elemental inverse mass matrices.
- * WARNING: The original Aff_ matrices are destroyed.
  ****************************************************************** */
-void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K) {
-  int dim = mesh_->space_dimension();
+void MatrixMFD::CreateMFDmassMatrices(
+    const Teuchos::Ptr<std::vector<WhetStone::Tensor> >& K) {
+  // tag global matrices as invalid
+  assembled_schur_ = false;
+  assembled_operator_ = false;
 
+  int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -161,6 +180,9 @@ void MatrixMFD::CreateMFDmassMatrices(const Teuchos::Ptr<std::vector<WhetStone::
  ****************************************************************** */
 void MatrixMFD::CreateMFDstiffnessMatrices(
     const Teuchos::Ptr<const CompositeVector>& Krel) {
+  // tag global matrices as invalid
+  assembled_schur_ = false;
+  assembled_operator_ = false;
 
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
@@ -172,42 +194,56 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
   Acf_cells_.clear();
   Acc_cells_.clear();
 
-  Teuchos::RCP<const Epetra_MultiVector> Krel_cell;
-  Teuchos::RCP<const Epetra_MultiVector> Krel_face;
-  if (Krel != Teuchos::null) {
-    if (Krel->has_component("cell")) {
-      Krel_cell = Krel->ViewComponent("cell",false);
-    }
-    if (Krel->has_component("face")) {
-      Krel_face = Krel->ViewComponent("face",true);
-      *Krel_ = *(*Krel_face)(0);
-    }
-  }
-
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
-	mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-	int nfaces = faces.size();
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
 
-	Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
-	Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
-	Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
+    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
+    Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-	for (int n=0; n!=nfaces; ++n) {
-	  for (int m=0; m!=nfaces; ++m) {
-		Bff(m, n) = Mff(m,n) * ( Krel_cell == Teuchos::null ? 1. : (*Krel_cell)[0][c] );
-	  }
-	}
+    if (Krel == Teuchos::null ||
+        (!Krel->has_component("cell") && !Krel->has_component("face"))) {
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n);
+        }
+      }
+    } else if (Krel->has_component("cell") && !Krel->has_component("face")) {
+      const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
+
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * Krel_c[0][c];
+        }
+      }
+    } else if (!Krel->has_component("cell") && Krel->has_component("face")) {
+      const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
+
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * Krel_f[0][faces[m]];
+        }
+      }
+    } else if (Krel->has_component("cell") && Krel->has_component("face")) {
+      const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
+      const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
+
+      for (int n=0; n!=nfaces; ++n) {
+        for (int m=0; m!=nfaces; ++m) {
+          Bff(m, n) = Mff(m,n) * Krel_c[0][c] * Krel_f[0][faces[m]];
+        }
+      }
+    }
 
 	double matsum = 0.0;
 	for (int n=0; n!=nfaces; ++n) {
-	  double rowsum = 0.0, colsum = 0.0;
+	  double rowsum = 0.0;
+      double colsum = 0.0;
+
 	  for (int m=0; m!=nfaces; ++m) {
-		if (Krel_face == Teuchos::null) {
-		  colsum += Bff(m, n);
-		} else {
-		  colsum += Bff(m,n) * (*Krel_face)[0][faces[m]];
-		}
+        colsum += Bff(m, n);
 		rowsum += Bff(n, m);
 	  }
 
@@ -225,7 +261,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
 
 
 /* ******************************************************************
- * Simply allocates memory.
+ * Create elemental rhs vectors.
  ****************************************************************** */
 void MatrixMFD::CreateMFDrhsVectors() {
   Ff_cells_.clear();
@@ -247,23 +283,17 @@ void MatrixMFD::CreateMFDrhsVectors() {
   }
 }
 
-/* ******************************************************************
- *  Create work vectors for Apply-ing the operator from/to Epetra_Vectors
- * (Supervectors) instead of CompositeVectors -- for use with AztecOO.
- * This should likely only be called with a non-ghosted sample vector.
- ****************************************************************** */
-// void MatrixMFD::InitializeSuperVecs(const CompositeVector& sample) {
-//   vector_x_ = Teuchos::rcp(new CompositeVector(sample));
-//   vector_y_ = Teuchos::rcp(new CompositeVector(sample));
-//   supermap_ = vector_x_->supermap();
-// }
 
 /* ******************************************************************
  * Applies boundary conditions to elemental stiffness matrices and
- * creates elemental rigth-hand-sides.
+ * adds contributions to elemental rigth-hand-sides.
  ****************************************************************** */
-void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers,
+void MatrixMFD::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
         const std::vector<double>& bc_values) {
+  // tag global matrices as invalid
+  assembled_schur_ = false;
+  assembled_operator_ = false;
+
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
@@ -274,7 +304,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells_[c];  // B means elemental.
+    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells_[c];
     Epetra_SerialDenseVector& Bfc = Afc_cells_[c];
     Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
 
@@ -294,9 +324,7 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
-        if (std::abs(bc_values[f]) > 0.) {
-          Ff[n] -= bc_values[f] * mesh_->face_area(f) / (*Krel_)[f];
-        }
+        Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
     }
   }
@@ -304,7 +332,9 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<Matrix_bc>& bc_markers
 
 
 /* ******************************************************************
- * Initialize Trilinos matrices. It must be called only once.
+ * Initialize global matrices.
+ *
+ * This likely should only be called once.
  * If matrix is non-symmetric, we generate transpose of the matrix
  * block Afc_ to reuse cf_graph; otherwise, pointer Afc_ = Acf_.
  ****************************************************************** */
@@ -324,6 +354,7 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
   // fill the graphs
   FillMatrixGraphs_(cf_graph.ptr(), ff_graph.ptr());
 
+  // assemble the graphs
   int ierr = cf_graph->FillComplete(fmap, cmap);
   ASSERT(!ierr);
   ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
@@ -334,6 +365,9 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
 }
 
 
+/* ******************************************************************
+ * Fill sparsity structure graphs of global matrices (only done once)
+ ****************************************************************** */
 void MatrixMFD::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
           const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph) {
   const Epetra_Map& cmap = mesh_->cell_map(false);
@@ -360,6 +394,10 @@ void MatrixMFD::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
   }
 }
 
+
+/* ******************************************************************
+ * Allocate global matrices
+ ****************************************************************** */
 void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
         const Epetra_FECrsGraph& ff_graph) {
   // create global matrices
@@ -372,7 +410,7 @@ void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
   Aff_->GlobalAssemble();
   Sff_->GlobalAssemble();
 
-  if (flag_symmetry_) {
+  if (symmetric()) {
     Afc_ = Acf_;
   } else {
     Afc_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
@@ -390,22 +428,29 @@ void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
   std::vector<int> num_dofs(2,1);
   rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
   rhs_->CreateData();
-
-  // Krel
-  const Epetra_Map& fmap = mesh_->face_map(false);
-  Krel_ = Teuchos::rcp(new Epetra_Vector(fmap));
-  Krel_->PutScalar(1.);
 }
 
 
 /* ******************************************************************
+ * Assemble global matrices from local matrices.
+ *
  * Convert elemental mass matrices into stiffness matrices and
  * assemble them into four global matrices.
  * We need an auxiliary GHOST-based vector to assemble the RHS.
+ *
+ * Precondition: SymbolicAssembleGlobalMatrices() has been called.
  ****************************************************************** */
 void MatrixMFD::AssembleGlobalMatrices() {
+  ASSERT(Aff_.get()); // precondition: matrices have been created
+
+  // reinitialize to zero if adding
   Aff_->PutScalar(0.0);
 
+  rhs_->ViewComponent("face", true)->PutScalar(0.0);
+  Epetra_MultiVector& rhs_c = *rhs_->ViewComponent("cell", false);
+  Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", true);
+
+  // loop over cells and fill
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -421,42 +466,40 @@ void MatrixMFD::AssembleGlobalMatrices() {
       faces_LID[n] = faces[n];
       faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
+
+    // assemble matrices
     (*Acc_)[c] = Acc_cells_[c];
     (*Acf_).ReplaceMyValues(c, nfaces, Acf_cells_[c].Values(), faces_LID);
+    if (!symmetric()) {
+      (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
+    }
     (*Aff_).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells_[c].values());
 
-    if (!flag_symmetry_)
-      (*Afc_).ReplaceMyValues(c, nfaces, Afc_cells_[c].Values(), faces_LID);
-  }
-  (*Aff_).GlobalAssemble();
-
-  // We repeat some of the loops for code clarity.
-  rhs_->ViewComponent("face", true)->PutScalar(0.0);
-  for (int c=0; c!=ncells; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    (*rhs_)("cell",c) = Fc_cells_[c];
-
+    // assemble rhs
+    rhs_c[0][c] = Fc_cells_[c];
     for (int n=0; n!=nfaces; ++n) {
-      int f = faces[n];
-      (*rhs_)("face",f) += Ff_cells_[c][n];
+      rhs_f[0][faces[n]] += Ff_cells_[c][n];
     }
   }
+
+  // communicate
+  (*Aff_).GlobalAssemble();
   rhs_->GatherGhostedToMaster("face");
 
-  //   exit(0);
-
+  // tag matrices as assembled
+  assembled_operator_ = true;
 }
 
 
 /* ******************************************************************
  * Compute the face Schur complement of 2x2 block matrix.
  ****************************************************************** */
-void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
+void MatrixMFD::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
         const std::vector<double>& bc_values) {
+  // initialize to zero
   Sff_->PutScalar(0.0);
 
+  // loop over cells and assemble
   AmanziMesh::Entity_ID_List faces_LID;
   std::vector<int> dirs;
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -464,52 +507,39 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces_LID, &dirs);
     int nfaces = faces_LID.size();
-    Epetra_SerialDenseMatrix Schur(nfaces, nfaces);
-
+    Epetra_SerialDenseMatrix Tff(nfaces, nfaces); // T implies local S
     Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
     Epetra_SerialDenseVector& Bfc = Afc_cells_[c];
 
     for (int n=0; n!=nfaces; ++n) {
       for (int m=0; m!=nfaces; ++m) {
-        Schur(n, m) = Aff_cells_[c](n, m) - Bfc[n] * Bcf[m] / (*Acc_)[c];
+        Tff(n, m) = Aff_cells_[c](n, m) - Bfc[n] * Bcf[m] / (*Acc_)[c];
       }
     }
 
-    for (int n=0; n!=nfaces; ++n) {  // Symbolic boundary conditions
+    for (int n=0; n!=nfaces; ++n) {  // boundary conditions
       int f=faces_LID[n];
       if (bc_markers[f] == MATRIX_BC_DIRICHLET) {
-        for (int m=0; m!=nfaces; ++m) Schur(n, m) = Schur(m, n) = 0.0;
-        Schur(n, n) = 1.0;
+        for (int m=0; m!=nfaces; ++m) Tff(n, m) = Tff(m, n) = 0.0;
+        Tff(n, n) = 1.0;
       }
     }
 
     Epetra_IntSerialDenseVector faces_GID(nfaces);
     for (int n=0; n!=nfaces; ++n) faces_GID[n] = (*Acf_).ColMap().GID(faces_LID[n]);
-    (*Sff_).SumIntoGlobalValues(faces_GID, Schur);
+    (*Sff_).SumIntoGlobalValues(faces_GID, Tff);
   }
   (*Sff_).GlobalAssemble();
 }
 
-/* ******************************************************************
- * Parallel matvec product A * X.
- ****************************************************************** */
-// int MatrixMFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-//   vector_x_->DataFromSuperVector(*X(0));
-//   vector_y_->DataFromSuperVector(*Y(0));
-//   Apply(*vector_x_, vector_y_);
-// }
-
-// int MatrixMFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-//   vector_x_->DataFromSuperVector(*X(0));
-//   vector_y_->DataFromSuperVector(*Y(0));
-//   ApplyInverse(*vector_x_, vector_y_);
-// }
 
 /* ******************************************************************
- * Parallel matvec product A * X.
+ * Parallel matvec product Y <-- A * X.
  ****************************************************************** */
 void MatrixMFD::Apply(const CompositeVector& X,
                       const Teuchos::Ptr<CompositeVector>& Y) const {
+  AssertAssembledOperator_or_die_();
+
   int ierr;
 
   // Face unknowns:  Yf = Aff_ * Xf + Afc_ * Xc
@@ -517,13 +547,14 @@ void MatrixMFD::Apply(const CompositeVector& X,
                           *Y->ViewComponent("face", false));
 
   Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
-  ierr |= (*Afc_).Multiply(true, *X.ViewComponent("cell",false), Tf);  // Afc_ is kept in transpose form
+  ierr |= (*Afc_).Multiply(true, *X.ViewComponent("cell",false), Tf);
   Y->ViewComponent("face",false)->Update(1.0, Tf, 1.0);
 
   // Cell unknowns:  Yc = Acf_ * Xf + Acc_ * Xc
   ierr |= (*Acf_).Multiply(false, *X.ViewComponent("face", false),
-                           *Y->ViewComponent("cell", false));  // It performs the required parallel communications.
-  ierr |= Y->ViewComponent("cell", false)->Multiply(1.0, *Acc_, *X.ViewComponent("cell", false), 1.0);
+                           *Y->ViewComponent("cell", false));
+  ierr |= Y->ViewComponent("cell", false)->Multiply(1.0, *Acc_,
+          *X.ViewComponent("cell", false), 1.0);
 
   if (ierr) {
     Errors::Message msg("MatrixMFD::Apply has failed to calculate Y = inv(A) * X.");
@@ -533,19 +564,13 @@ void MatrixMFD::Apply(const CompositeVector& X,
 
 
 /* ******************************************************************
- * The OWNED cell-based and face-based d.o.f. are packed together into
- * the X and Y Epetra vectors, with the cell-based in the first part.
- *
- * WARNING: When invoked by AztecOO the arguments X and Y may be
- * aliased: possibly the same object or different views of the same
- * underlying data. Thus, we do not assign to Y until the end.
- *
- * NOTE however that this is broken for AztecOO since we use CompositeVectors,
- * not Epetra_MultiVectors.
- *
+ * Parallel solve, Y <-- A^-1 X
  ****************************************************************** */
 void MatrixMFD::ApplyInverse(const CompositeVector& X,
                              const Teuchos::Ptr<CompositeVector>& Y) const {
+  AssertAssembledOperator_or_die_();
+  AssertAssembledSchur_or_die_();
+
   if (prec_method_ == PREC_METHOD_NULL) {
     Errors::Message msg("MatrixMFD::ApplyInverse requires a specified preconditioner method");
     Exceptions::amanzi_throw(msg);
@@ -558,7 +583,11 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   // FORWARD ELIMINATION:  Tf = Xf - Afc_ inv(Acc_) Xc
   int ierr;
   ierr  = Tc.ReciprocalMultiply(1.0, *Acc_, *X.ViewComponent("cell", false), 0.0);
+  ASSERT(!ierr);
+
   ierr |= (*Afc_).Multiply(true, Tc, Tf);  // Afc_ is kept in transpose form
+  ASSERT(!ierr);
+
   Tf.Update(1.0, *X.ViewComponent("face", false), -1.0);
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
@@ -570,17 +599,18 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
     ierr |= ifp_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
-    ierr != IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+    ierr |= IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
 #endif
   } else {
     ASSERT(0);
   }
+  ASSERT(!ierr);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
+  ASSERT(!ierr);
 
   Tc.Update(1.0, *X.ViewComponent("cell", false), -1.0);
-
   ierr |= Y->ViewComponent("cell", false)->ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
 
   if (ierr) {
@@ -607,10 +637,6 @@ void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
   Apply(solution, residual);
   residual->Update(-1.0, *rhs_, 1.0);
-
-//  std::cout << "  soln = " << (solution)("cell",0) << ", " << (solution)("face",0) << std::endl;
-//  std::cout << "  rhs = " << (*rhs_)("cell",0) << ", " << (*rhs_)("face",0) << std::endl;
-//  std::cout << "  res = " << (*residual)("cell",0) << ", " << (*residual)("face",0) << std::endl;
 }
 
 
@@ -716,7 +742,6 @@ void MatrixMFD::UpdatePreconditioner() {
 }
 
 
-
 /* ******************************************************************
  * WARNING: Routines requires original mass matrices (Aff_cells_), i.e.
  * before boundary conditions were imposed.
@@ -763,7 +788,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
           s += Aff_cells_[c](n, m) * dp[m];
         }
 
-        flux_v[0][f] = s * dirs[n] * (*Krel_)[f];
+        flux_v[0][f] = s * dirs[n];
         done[f] = true;
       }
     }
@@ -780,16 +805,18 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 /* ******************************************************************
  * Derive Darcy velocity in cells.
  * WARNING: It cannot be consistent with the Darcy flux.
+ * WARNING: It is assumed that flux faces have been communicated.
  ****************************************************************** */
 void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
         const Teuchos::Ptr<CompositeVector>& velocity) const {
 
-  Teuchos::LAPACK<int, double> lapack;
+  const Epetra_MultiVector& flux_f = *flux.ViewComponent("face",true);
+  Epetra_MultiVector& velocity_c = *velocity->ViewComponent("cell",false);
 
+  Teuchos::LAPACK<int, double> lapack;
   int dim = mesh_->space_dimension();
   Teuchos::SerialDenseMatrix<int, double> matrix(dim, dim);
   double rhs_cell[dim];
-
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -807,7 +834,7 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
       double area = mesh_->face_area(f);
 
       for (int i=0; i!=dim; ++i) {
-        rhs_cell[i] += normal[i] * flux("face",0,f);
+        rhs_cell[i] += normal[i] * flux_f[0][f];
         matrix(i,i) += normal[i] * normal[i];
         for (int j=i+1; j!=dim; ++j) {
           matrix(j,i) = matrix(i,j) += normal[i] * normal[j];
@@ -818,27 +845,28 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
     int info;
     lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
 
-    for (int i=0; i!=dim; ++i) (*velocity)("cell",i,c) = rhs_cell[i];
+    for (int i=0; i!=dim; ++i) velocity_c[i][c] = rhs_cell[i];
   }
 }
 
 
-// development methods
 /* ******************************************************************
- * Reduce the pressure-lambda-system to lambda-system via ellimination
- * of the known pressure. Structure of the global system is preserved
- * but off-diagola blocks are zeroed-out.
+ * Solve the bottom row of the block system for lambda, given p.
  ****************************************************************** */
 void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u) {
+  AssertAssembledOperator_or_die_();
+
   Teuchos::RCP<Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> rhs_f = rhs_->ViewComponent("face", false);
+  Teuchos::RCP<Epetra_MultiVector> update_f =
+      Teuchos::rcp(new Epetra_MultiVector(*rhs_f));
 
-  Teuchos::RCP<Epetra_MultiVector> update_f = Teuchos::rcp(new Epetra_MultiVector(*rhs_f));
   Afc_->Multiply(true, *uc, *update_f);  // Afc is kept in the transpose form.
   rhs_f->Update(-1.0, *update_f, 1.0);
 
   // Replace the schur complement so it can be used as a face-only system
-  *Sff_ = *Aff_;
+  Teuchos::RCP<Epetra_FECrsMatrix> Sff_tmp = Sff_;
+  Sff_ = Aff_;
 
   // Update the preconditioner with a solver
   UpdatePreconditioner();
@@ -858,20 +886,30 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
   } else {
     ASSERT(0);
   }
+
+  // revert schur complement
+  Sff_ = Sff_tmp;
 }
 
 
+/* ******************************************************************
+ * Solve the bottom row of the block system for lambda, given p.
+ ****************************************************************** */
 void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
         const Teuchos::Ptr<CompositeVector>& Pu) {
+  AssertAssembledOperator_or_die_();
+
   Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
   Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);
   const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
   Epetra_MultiVector update_f(u_f);
+
   Afc_->Multiply(true, *Pu_c, update_f);  // Afc is kept in the transpose form.
   update_f.Update(1., u_f, -1.);
 
   // Replace the schur complement so it can be used as a face-only system
-  *Sff_ = *Aff_;
+  Teuchos::RCP<Epetra_FECrsMatrix> Sff_tmp = Sff_;
+  Sff_ = Aff_;
 
   // Update the preconditioner with a solver
   UpdatePreconditioner();
@@ -889,11 +927,19 @@ void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
     ierr = IfpHypre_Sff_->ApplyInverse(update_f, Pu_f);
 #endif
   }
+
+  // revert schur complement
+  Sff_ = Sff_tmp;
 }
 
 
+/* ******************************************************************
+ * Solve the top row of the block system for p, given lambda.
+ ****************************************************************** */
 void MatrixMFD::UpdateConsistentCellCorrection(const CompositeVector& u,
         const Teuchos::Ptr<CompositeVector>& Pu) {
+  AssertAssembledOperator_or_die_();
+
   int ierr(0);
   Epetra_MultiVector Tc(*Pu->ViewComponent("cell", false));
 
@@ -910,5 +956,26 @@ void MatrixMFD::UpdateConsistentCellCorrection(const CompositeVector& u,
 }
 
 
-}  // namespace AmanziFlow
+/* ******************************************************************
+ * Checks that the global matrices have been assembled.
+ ****************************************************************** */
+void MatrixMFD::AssertAssembledOperator_or_die_() const {
+  if (!assembled_operator_) {
+    Errors::Message msg("MatrixMFD: Operator has not been assembled.");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* ******************************************************************
+ * Checks that the Schur complement have been assembled.
+ ****************************************************************** */
+void MatrixMFD::AssertAssembledSchur_or_die_() const {
+  if (!assembled_schur_) {
+    Errors::Message msg("MatrixMFD: Schur complement has not been assembled.");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+}  // namespace Operators
 }  // namespace Amanzi

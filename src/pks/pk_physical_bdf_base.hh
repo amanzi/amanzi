@@ -54,7 +54,7 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   virtual void changed_solution();
 
   // BC access
-  std::vector<Operators::Matrix_bc>& bc_markers() { return bc_markers_; }
+  std::vector<Operators::Matrix::MatrixBC>& bc_markers() { return bc_markers_; }
   std::vector<double>& bc_values() { return bc_values_; }
 
   // evaluating consistent faces for given BCs and cell values
@@ -66,7 +66,7 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
  protected:
   // BCs
-  std::vector<Operators::Matrix_bc> bc_markers_;
+  std::vector<Operators::Matrix::MatrixBC> bc_markers_;
   std::vector<double> bc_values_;
 
   // error criteria

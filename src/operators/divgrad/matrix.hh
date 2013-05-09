@@ -17,17 +17,16 @@ class TreeVector;
 
 namespace Operators {
 
-
-enum Matrix_bc {
-  MATRIX_BC_NULL = 0,
-  MATRIX_BC_DIRICHLET,
-  MATRIX_BC_FLUX
-};
-
-
 class Matrix {
 
 public:
+
+  enum MatrixBC {
+    MATRIX_BC_NULL = 0,
+    MATRIX_BC_DIRICHLET,
+    MATRIX_BC_FLUX
+  };
+
   virtual void Apply(const TreeVector& X,
                      const Teuchos::Ptr<TreeVector>& Y) const = 0;
   virtual void ApplyInverse(const TreeVector& X,

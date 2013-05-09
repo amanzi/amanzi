@@ -26,7 +26,7 @@ class PredictorDelegateBCFlux {
                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::RCP<Operators::MatrixMFD>& matrix,
                           const Teuchos::RCP<FlowRelations::WRMPartition>& wrms,
-                          std::vector<Operators::Matrix_bc>* bc_markers,
+                          std::vector<Operators::Matrix::MatrixBC>* bc_markers,
                           std::vector<double>* bc_values) :
       S_next_(S_next),
       mesh_(mesh),
@@ -111,7 +111,7 @@ class PredictorDelegateBCFlux {
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
 
-  std::vector<Operators::Matrix_bc>* bc_markers_;
+  std::vector<Operators::Matrix::MatrixBC>* bc_markers_;
   std::vector<double>* bc_values_;
 
 };

@@ -113,26 +113,14 @@ void Coordinator::initialize() {
     DeformCheckpointMesh(S_.ptr());
   }
 
-  std::cout << "Pres after Restart = " << (*S_->GetFieldData("pressure"))("cell",4079) << std::endl;
-  std::cout << "SurfPres after Restart = " << (*S_->GetFieldData("surface_pressure"))("cell",39) << std::endl;
-
   // Initialize the process kernels (initializes all independent variables)
   pk_->initialize(S_.ptr());
-
-  std::cout << "Pres after PK init = " << (*S_->GetFieldData("pressure"))("cell",4079) << std::endl;
-  std::cout << "SurfPres after PK init = " << (*S_->GetFieldData("surface_pressure"))("cell",39) << std::endl;
 
   // Initialize the state (initializes all dependent variables).
   S_->Initialize();
 
-  std::cout << "Pres after State init = " << (*S_->GetFieldData("pressure"))("cell",4079) << std::endl;
-  std::cout << "SurfPres after State init = " << (*S_->GetFieldData("surface_pressure"))("cell",39) << std::endl;
-
   // commit the initial conditions.
   pk_->commit_state(0., S_);
-
-  std::cout << "Pres after commit_state = " << (*S_->GetFieldData("pressure"))("cell",4079) << std::endl;
-  std::cout << "SurfPres after commit_state = " << (*S_->GetFieldData("surface_pressure"))("cell",39) << std::endl;
 
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
@@ -309,11 +297,6 @@ void Coordinator::cycle_driver() {
         *out_ << "----------------------------------------------------------------------"
                   << std::endl;
       }
-
-  std::cout << "Pres pre-run (S) = " << (*S_->GetFieldData("pressure"))("cell",4079) << std::endl;
-  std::cout << "SurfPres pre-run (S) = " << (*S_->GetFieldData("surface_pressure"))("cell",39) << std::endl;
-  std::cout << "Pres pre-run (S_next) = " << (*S_next_->GetFieldData("pressure"))("cell",4079) << std::endl;
-  std::cout << "SurfPres pre-run (S_next) = " << (*S_next_->GetFieldData("surface_pressure"))("cell",39) << std::endl;
 
       S_next_->advance_time(dt);
       fail = pk_->advance(dt);

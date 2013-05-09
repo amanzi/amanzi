@@ -67,7 +67,7 @@ protected:
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_dirichlet_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_neumann_;
-  std::vector<Operators::Matrix_bc> bc_markers_;
+  std::vector<Operators::Matrix::MatrixBC> bc_markers_;
   std::vector<double> bc_values_;
 
  private:

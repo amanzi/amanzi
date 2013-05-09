@@ -36,6 +36,7 @@ void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
   // get the flux key
   flux_key_ = plist_.get<std::string>("flux key");
 
+  niter_ = 0;
 }
 
 
@@ -197,6 +198,9 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceFaces_(
 void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   Teuchos::OSTab tab = getOSTab();
+
+  niter_++;
+
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
     *out_ << "Precon update at t = " << t << std::endl;
 
@@ -207,14 +211,52 @@ void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
     mfd_preconditioner_->ComputeSchurComplement(domain_pk_->bc_markers(),
             domain_pk_->bc_values());
 
-    // Dump the Schur complement
-    // Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
-    // std::stringstream filename_s;
-    // filename_s << "schur_" << S_next_->cycle() << ".txt";
-    // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-
     mfd_preconditioner_->UpdatePreconditioner();
   }
+
+  /*
+  // TEST
+  if (S_next_->cycle() == 151) {
+    // Dump the Schur complement
+    Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
+    std::stringstream filename_s;
+    filename_s << "schur_" << S_next_->cycle() << ".txt";
+    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+
+    std::cout << "CYCLE 176, ITER " << niter_ << "!!!!!!!!" << std::endl;
+
+    changed_solution();
+    Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
+    Teuchos::RCP<TreeVector> up2 = Teuchos::rcp(new TreeVector(*up));
+    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
+    Teuchos::RCP<TreeVector> f2 = Teuchos::rcp(new TreeVector(*up));
+    fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f1);
+
+    *up2 = *up;
+    int c = 4;
+    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    (*up_nc->SubVector(domain_pk_name_)->data())("face",f) =
+        (*up_nc->SubVector(domain_pk_name_)->data())("face",f) + .001;
+    (*up_nc->SubVector(surf_pk_name_)->data())("cell",c) =
+        (*up_nc->SubVector(surf_pk_name_)->data())("cell",c) + .001;
+    changed_solution();
+    fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
+
+    std::cout << "DFDP: " << std::endl;
+    std::cout << "  p0 = " << (*up2->SubVector(domain_pk_name_)->data())("face",f);
+    std::cout << "  sp0 = " << (*up2->SubVector(surf_pk_name_)->data())("cell",c) << std::endl;
+    std::cout << "  p1 = " << (*up_nc->SubVector(domain_pk_name_)->data())("face",f);
+    std::cout << "  sp1 = " << (*up_nc->SubVector(surf_pk_name_)->data())("cell",c) << std::endl;
+    std::cout << "  f0 = " << (*f1->SubVector(domain_pk_name_)->data())("face",f) << std::endl;
+    std::cout << "  f1 = " << (*f2->SubVector(domain_pk_name_)->data())("face",f) << std::endl;
+
+
+
+    double df_dp = ((*f2->SubVector(domain_pk_name_)->data())("face",f)
+                    -(*f1->SubVector(domain_pk_name_)->data())("face",f)) / .001;
+    std::cout << "DFDP = " << df_dp << std::endl;
+  }
+  */
 }
 
 
