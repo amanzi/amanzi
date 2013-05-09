@@ -35,8 +35,8 @@
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "FieldEvaluator.hh"
-#include "matrix_mfd.hh"
-#include "matrix_coupled_mfd.hh"
+#include "MatrixMFD.hh"
+#include "MatrixMFD_Coupled.hh"
 #include "mpc_coupled_cells.hh"
 
 namespace Amanzi {
@@ -66,7 +66,7 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   // Create the precon
   Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
   mfd_preconditioner_ =
-      Teuchos::rcp(new Operators::MatrixCoupledMFD(pc_sublist, mesh_));
+      Teuchos::rcp(new Operators::MatrixMFD_Coupled(pc_sublist, mesh_));
 
   // Set the sub-blocks from the sub-PK's preconditioners.
   Teuchos::RCP<Operators::Matrix> pcA = sub_pks_[0]->preconditioner();

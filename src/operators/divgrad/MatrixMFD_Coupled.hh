@@ -2,7 +2,7 @@
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  MatrixCoupledMFD takes two MatrixMFD objects, along with the cell coupling
+  MatrixMFD_Coupled takes two MatrixMFD objects, along with the cell coupling
   terms, and forms a coupled system that is 2x cell + 2x face sqare.
 
   MatrixMFD provides for a system:
@@ -56,18 +56,18 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include "tree_vector.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class MatrixCoupledMFD : public Matrix {
+class MatrixMFD_Coupled : public Matrix {
 
  public:
-  MatrixCoupledMFD(Teuchos::ParameterList& plist,
+  MatrixMFD_Coupled(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  MatrixCoupledMFD(const MatrixCoupledMFD& other);
+  MatrixMFD_Coupled(const MatrixMFD_Coupled& other);
 
   void InitializeFromPList_();
 

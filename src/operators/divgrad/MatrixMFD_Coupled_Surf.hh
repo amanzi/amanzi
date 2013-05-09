@@ -11,20 +11,20 @@
 #define OPERATORS_MATRIX_COUPLED_MFD_SURF_HH_
 
 
-#include "matrix_mfd_tpfa.hh"
-#include "matrix_coupled_mfd.hh"
+#include "MatrixMFD_TPFA.hh"
+#include "MatrixMFD_Coupled.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class MatrixCoupledMFDSurf : public MatrixCoupledMFD {
+class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
 
  public:
-  MatrixCoupledMFDSurf(Teuchos::ParameterList& plist,
+  MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
 
-  MatrixCoupledMFDSurf(const MatrixCoupledMFDSurf& other);
+  MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other);
 
   virtual void ComputeSchurComplement(const Epetra_MultiVector& Ccc,
           const Epetra_MultiVector& Dcc,

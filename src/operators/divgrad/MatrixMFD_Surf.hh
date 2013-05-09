@@ -10,8 +10,8 @@
 #ifndef OPERATORS_MATRIX_MFD_SURF_HH_
 #define OPERATORS_MATRIX_MFD_SURF_HH_
 
-#include "matrix_mfd_tpfa.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD_TPFA.hh"
+#include "MatrixMFD.hh"
 
 namespace Amanzi {
 namespace Operators {

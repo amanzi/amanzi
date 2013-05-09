@@ -9,7 +9,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "boost/math/special_functions/fpclassify.hpp"
-#include "matrix_mfd_tpfa.hh"
+#include "MatrixMFD_TPFA.hh"
 
 #include "overland_head.hh"
 
@@ -390,7 +390,7 @@ void OverlandHeadFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> 
   preconditioner_ = precon;
   mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
   ASSERT(mfd_preconditioner_ != Teuchos::null);
-  mfd_preconditioner_->SetSymmetryProperty(symmetric_);
+  mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   mfd_preconditioner_->InitPreconditioner();

@@ -16,7 +16,6 @@ Authors: Neil Carlson (version 1)
 
 #include "upwinding.hh"
 #include "Point.hh"
-#include "matrix_mfd.cc"
 
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
@@ -26,6 +25,7 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
+#include "MatrixMFD_ScaledConstraint.hh"
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
 #include "rel_perm_evaluator.hh"
@@ -226,8 +226,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
-  matrix_->SetSymmetryProperty(symmetric_);
+  scaled_constraint_ = mfd_plist.get<bool>("scaled constraint equation", false);
+  if (scaled_constraint_) {
+    matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
+  } else {
+    matrix_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_plist, mesh_));
+    symmetric_ = false;
+  }
+  matrix_->set_symmetric(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->InitPreconditioner();
 
@@ -243,11 +249,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // predictors for time integration
   modify_predictor_with_consistent_faces_ =
     plist_.get<bool>("modify predictor with consistent faces", false);
-  modify_predictor_bc_flux_ = 
+  modify_predictor_bc_flux_ =
     plist_.get<bool>("modify predictor for flux BCs", false);
-  modify_predictor_first_bc_flux_ = 
+  modify_predictor_first_bc_flux_ =
     plist_.get<bool>("modify predictor for initial flux BCs", false);
-  modify_predictor_wc_ = 
+  modify_predictor_wc_ =
     plist_.get<bool>("modify predictor via water content", false);
 }
 
@@ -337,7 +343,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::Matrix::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   // Set extra fields as initialized -- these don't currently have evaluators,
@@ -601,7 +607,7 @@ void Richards::UpdateBoundaryConditions_() {
     *out_ << "  Updating BCs." << std::endl;
 
   for (int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -609,7 +615,7 @@ void Richards::UpdateBoundaryConditions_() {
   Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
@@ -617,7 +623,7 @@ void Richards::UpdateBoundaryConditions_() {
     // Standard Neuman boundary conditions
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     }
   } else {
@@ -625,7 +631,7 @@ void Richards::UpdateBoundaryConditions_() {
     const Epetra_MultiVector& temp = *S_next_->GetFieldData("temperature")->ViewComponent("face");
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
       if (temp[0][f] > 273.15) {
         bc_values_[f] = bc->second;
       } else {
@@ -640,10 +646,10 @@ void Richards::UpdateBoundaryConditions_() {
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
     if (pressure[0][f] < p_atm) {
-      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     } else {
-      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+      bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
       bc_values_[f] = p_atm;
     }
   }
@@ -662,7 +668,7 @@ void Richards::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to dirichlet
-      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
+      bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
       bc_values_[f] = head[0][c];
     }
   }
@@ -681,7 +687,7 @@ void Richards::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to Neumann
-      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
       // NOTE: flux[0][c] is in units of mols / s, where as Neumann BCs are in
       //       units of mols / s / A.  The right A must be chosen, as it is
@@ -700,7 +706,7 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
   Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
   int nfaces = pres_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
       pres_f[0][f] = bc_values_[f];
     }
   }

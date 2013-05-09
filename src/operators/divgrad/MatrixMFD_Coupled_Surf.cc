@@ -1,29 +1,29 @@
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "matrix_coupled_mfd_surf.hh"
+#include "MatrixMFD_Coupled_Surf.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-MatrixCoupledMFDSurf::MatrixCoupledMFDSurf(Teuchos::ParameterList& plist,
+MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
         const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
-    MatrixCoupledMFD(plist,mesh),
+    MatrixMFD_Coupled(plist,mesh),
     surface_mesh_(surface_mesh) {}
 
-MatrixCoupledMFDSurf::MatrixCoupledMFDSurf(const MatrixCoupledMFDSurf& other) :
-    MatrixCoupledMFD(other),
+MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other) :
+    MatrixMFD_Coupled(other),
     surface_mesh_(other.surface_mesh_),
     surface_A_(other.surface_A_),
     surface_B_(other.surface_B_) {}
 
-void MatrixCoupledMFDSurf::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
+void MatrixMFD_Coupled_Surf::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
         const Epetra_MultiVector& Dcc,
         const Teuchos::Ptr<const Epetra_MultiVector>& Ccc_surf,
         const Teuchos::Ptr<const Epetra_MultiVector>& Dcc_surf) {
 
   // Base ComputeSchurComplement() gets the standard face parts
-  MatrixCoupledMFD::ComputeSchurComplement(Ccc, Dcc);
+  MatrixMFD_Coupled::ComputeSchurComplement(Ccc, Dcc);
 
   // now need to add in the surf parts, this code mimics that in
   // MatrixMFD_Surf::ComputeSchurComplement().

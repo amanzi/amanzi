@@ -237,10 +237,6 @@ bool StrongMPC::is_admissible(Teuchos::RCP<const TreeVector> u) {
 // Modify predictor from each sub pk.
 // -----------------------------------------------------------------------------
 bool StrongMPC::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  // First call the PKBDFBase's modify_predictor, as that deals with potential
-  // backtracking.
-  PKBDFBase::modify_predictor(h,u);
-
   // loop over sub-PKs
   bool modified = false;
   for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
@@ -254,6 +250,31 @@ bool StrongMPC::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
     }
 
     modified |= (*pk)->modify_predictor(h,pk_u);
+  }
+  return modified;
+};
+
+
+// -----------------------------------------------------------------------------
+// Modify correction from each sub pk.
+// -----------------------------------------------------------------------------
+bool StrongMPC::modify_correction(double h, Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> du) {
+  // loop over sub-PKs
+  bool modified = false;
+  for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+
+    // pull out the u sub-vector
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
+    Teuchos::RCP<TreeVector> pk_du = du->SubVector((*pk)->name());
+
+    if (pk_u == Teuchos::null || pk_du == Teuchos::null) {
+      Errors::Message message("MPC: vector structure does not match PK structure");
+      Exceptions::amanzi_throw(message);
+    }
+
+    modified |= (*pk)->modify_correction(h, pk_u, pk_du);
   }
   return modified;
 };

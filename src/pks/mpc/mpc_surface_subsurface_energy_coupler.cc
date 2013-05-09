@@ -15,8 +15,8 @@ subsurface-face-only Schur complement that captures all terms.
 ------------------------------------------------------------------------- */
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "matrix_mfd_surf.hh"
-#include "matrix_mfd_tpfa.hh"
+#include "MatrixMFD_Surf.hh"
+#include "MatrixMFD_TPFA.hh"
 #include "pk_physical_bdf_base.hh"
 
 #include "mpc_surface_subsurface_energy_coupler.hh"

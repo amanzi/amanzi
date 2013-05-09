@@ -34,7 +34,7 @@
 #include "composite_vector.hh"
 #include "mfd3d.hh"
 
-#include "matrix.hh"
+#include "Matrix.hh"
 
 
 namespace Amanzi {
@@ -247,7 +247,7 @@ class MatrixMFD : public Matrix {
   Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
   Teuchos::ParameterList ifp_plist_;
 
-  friend class MatrixCoupledMFD;
+  friend class MatrixMFD_Coupled;
 };
 
 

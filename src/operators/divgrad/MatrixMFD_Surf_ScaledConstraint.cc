@@ -10,7 +10,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
-#include "matrix_mfd_surf_scaled_constraint.hh"
+#include "MatrixMFD_Surf_ScaledConstraint.hh"
 
 #define DEBUG_FLAG 0
 

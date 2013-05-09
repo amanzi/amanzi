@@ -6,8 +6,8 @@
 #include "MeshFactory.hh"
 #include "Mesh.hh"
 
-#include "matrix_mfd_tpfa.hh"
-#include "matrix_mfd_surf.hh"
+#include "MatrixMFD_TPFA.hh"
+#include "MatrixMFD_Surf.hh"
 
 using namespace Amanzi;
 

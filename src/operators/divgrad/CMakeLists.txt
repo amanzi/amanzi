@@ -9,14 +9,14 @@
 include_directories(${ATS_SOURCE_DIR}/src/)
 include_directories(upwind_scheme)
 
-add_library(divgrad matrix_mfd.cc
-                    matrix_mfd_tpfa.cc
-                    matrix_mfd_scaled_constraint.cc
-                    matrix_mfd_tpfa_scaled_constraint.cc
-                    matrix_mfd_surf.cc
-                    matrix_mfd_surf_scaled_constraint.cc
-                    matrix_coupled_mfd.cc
-                    matrix_coupled_mfd_surf.cc
+add_library(divgrad MatrixMFD.cc
+                    MatrixMFD_TPFA.cc
+                    MatrixMFD_ScaledConstraint.cc
+                    MatrixMFD_TPFA_ScaledConstraint.cc
+                    MatrixMFD_Surf.cc
+                    MatrixMFD_Surf_ScaledConstraint.cc
+                    MatrixMFD_Coupled.cc
+                    MatrixMFD_Coupled_Surf.cc
                     upwind_scheme/upwind_cell_centered.cc
                     upwind_scheme/upwind_arithmetic_mean.cc
                     upwind_scheme/upwind_total_flux.cc

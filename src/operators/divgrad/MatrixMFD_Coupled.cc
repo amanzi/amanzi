@@ -2,7 +2,7 @@
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
 
-  MatrixCoupledMFD takes two MatrixMFD objects, along with the cell coupling
+  MatrixMFD_Coupled takes two MatrixMFD objects, along with the cell coupling
   terms, and forms a coupled system that is 2x cell + 2x face sqare.
 
   MatrixMFD provides for a system:
@@ -44,14 +44,14 @@
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 
-#include "matrix_coupled_mfd.hh"
+#include "MatrixMFD_Coupled.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-MatrixCoupledMFD::MatrixCoupledMFD(Teuchos::ParameterList& plist,
+MatrixMFD_Coupled::MatrixMFD_Coupled(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     plist_(plist),
     mesh_(mesh),
@@ -60,7 +60,7 @@ MatrixCoupledMFD::MatrixCoupledMFD(Teuchos::ParameterList& plist,
 }
 
 
-MatrixCoupledMFD::MatrixCoupledMFD(const MatrixCoupledMFD& other) :
+MatrixMFD_Coupled::MatrixMFD_Coupled(const MatrixMFD_Coupled& other) :
     plist_(other.plist_),
     mesh_(other.mesh_),
     is_matrix_constructed_(false) {
@@ -68,7 +68,7 @@ MatrixCoupledMFD::MatrixCoupledMFD(const MatrixCoupledMFD& other) :
 }
 
 
-void MatrixCoupledMFD::InitializeFromPList_() {
+void MatrixMFD_Coupled::InitializeFromPList_() {
   prec_method_ = PREC_METHOD_NULL;
   if (plist_.isParameter("preconditioner")) {
     std::string precmethodstring = plist_.get<string>("preconditioner");
@@ -98,7 +98,7 @@ void MatrixCoupledMFD::InitializeFromPList_() {
 }
 
 
-void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
+void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
         const Teuchos::Ptr<TreeVector>& Y) const {
   if (prec_method_ == PREC_METHOD_NULL) {
     Errors::Message msg("MatrixMFD::ApplyInverse requires a specified preconditioner method");
@@ -235,13 +235,13 @@ void MatrixCoupledMFD::ApplyInverse(const TreeVector& X,
 }
 
 
-void MatrixCoupledMFD::Apply(const TreeVector& X,
+void MatrixMFD_Coupled::Apply(const TreeVector& X,
         const Teuchos::Ptr<TreeVector>& Y) const {
   ASSERT(0);
 }
 
 
-void MatrixCoupledMFD::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
+void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
                                               const Epetra_MultiVector& Dcc) {
   int ierr(0);
 
@@ -396,7 +396,7 @@ void MatrixCoupledMFD::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
 }
 
 
-void MatrixCoupledMFD::SymbolicAssembleGlobalMatrices() {
+void MatrixMFD_Coupled::SymbolicAssembleGlobalMatrices() {
   int ierr(0);
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   const Epetra_BlockMap& fmap = mesh_->face_map(false);
@@ -449,7 +449,7 @@ void MatrixCoupledMFD::SymbolicAssembleGlobalMatrices() {
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-void MatrixCoupledMFD::InitPreconditioner() {
+void MatrixMFD_Coupled::InitPreconditioner() {
   if (prec_method_ == TRILINOS_ML) {
     ml_plist_ =  plist_.sublist("ML Parameters");
     ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*P2f2f_, ml_plist_, false));
@@ -476,7 +476,7 @@ void MatrixCoupledMFD::InitPreconditioner() {
 /* ******************************************************************
  * Rebuild preconditioner.
  ****************************************************************** */
-void MatrixCoupledMFD::UpdatePreconditioner() {
+void MatrixMFD_Coupled::UpdatePreconditioner() {
   ASSERT(is_matrix_constructed_);
 
   if (prec_method_ == TRILINOS_ML) {

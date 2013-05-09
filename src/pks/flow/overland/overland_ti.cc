@@ -209,7 +209,7 @@ void OverlandFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> prec
   preconditioner_ = precon;
   mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
   ASSERT(mfd_preconditioner_ != Teuchos::null);
-  mfd_preconditioner_->SetSymmetryProperty(symmetric_);
+  mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   mfd_preconditioner_->InitPreconditioner();

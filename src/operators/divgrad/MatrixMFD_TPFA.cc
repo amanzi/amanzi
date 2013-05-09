@@ -16,7 +16,7 @@
 #include "Epetra_FECrsGraph.h"
 
 #include "errors.hh"
-#include "matrix_mfd_tpfa.hh"
+#include "MatrixMFD_TPFA.hh"
 
 
 namespace Amanzi {

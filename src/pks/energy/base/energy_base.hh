@@ -16,7 +16,7 @@ This provides the base of an advection-diffusion equation for energy.
 #define PKS_ENERGY_BASE_HH_
 
 #include "pk_factory.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {

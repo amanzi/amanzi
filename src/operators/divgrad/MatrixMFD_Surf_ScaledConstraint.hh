@@ -10,9 +10,9 @@
 #ifndef OPERATORS_MATRIX_MFD_SURF_SCALED_CONSTRAINT_HH_
 #define OPERATORS_MATRIX_MFD_SURF_SCALED_CONSTRAINT_HH_
 
-#include "matrix_mfd_tpfa.hh"
-#include "matrix_mfd_surf.hh"
-#include "matrix_mfd_scaled_constraint.hh"
+#include "MatrixMFD_TPFA.hh"
+#include "MatrixMFD_Surf.hh"
+#include "MatrixMFD_ScaledConstraint.hh"
 
 namespace Amanzi {
 namespace Operators {
