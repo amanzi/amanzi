@@ -30,12 +30,14 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 }
 
 
-
 /* ******************************************************************
  * Calculate elemental stiffness matrices.
  ****************************************************************** */
 void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
     const Teuchos::Ptr<const CompositeVector>& Krel) {
+  // tag global matrices as invalid
+  assembled_schur_ = false;
+  assembled_operator_ = false;
 
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
@@ -47,42 +49,45 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   Acf_cells_.clear();
   Acc_cells_.clear();
 
-  Teuchos::RCP<const Epetra_MultiVector> Krel_cell;
-  Teuchos::RCP<const Epetra_MultiVector> Krel_face;
-  if (Krel != Teuchos::null) {
-    if (Krel->has_component("cell")) {
-      Krel_cell = Krel->ViewComponent("cell",false);
-    }
-    if (Krel->has_component("face")) {
-      Krel_face = Krel->ViewComponent("face",true);
-      *Krel_ = *(*Krel_face)(0);
-    }
-  }
-
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells; c++) {
+  for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
-    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
+    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (Krel == Teuchos::null) {
-      for (int n=0; n!=nfaces; ++n) Bff(n, n) = Mff(n, n);
-    } else {
-      for (int n=0; n!=nfaces; ++n) Bff(n, n) = Mff(n, n) * (*Krel_cell)[0][c];
+    if (Krel == Teuchos::null ||
+        (!Krel->has_component("cell") && !Krel->has_component("face"))) {
+      for (int n=0; n!=nfaces; ++n) {
+        Bff(n, n) = Mff(n, n);
+      }
+    } else if (Krel->has_component("cell") && !Krel->has_component("face")) {
+      const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
+
+      for (int n=0; n!=nfaces; ++n) {
+        Bff(n, n) = Mff(n,n) * Krel_c[0][c];
+      }
+    } else if (!Krel->has_component("cell") && Krel->has_component("face")) {
+      const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
+
+      for (int n=0; n!=nfaces; ++n) {
+        Bff(n, n) = Mff(n,n) * Krel_f[0][faces[n]];
+      }
+    } else if (Krel->has_component("cell") && Krel->has_component("face")) {
+      const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
+      const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
+
+      for (int n=0; n!=nfaces; ++n) {
+        Bff(n, n) = Mff(n,n) * Krel_c[0][c] * Krel_f[0][faces[n]];
+      }
     }
 
     double matsum = 0.0;  // elimination of mass matrix
     for (int n=0; n!=nfaces; ++n) {
       double rowsum = Bff(n, n);
-      double colsum = 0.;
-      if (Krel_face == Teuchos::null) {
-        colsum = Bff(n, n);
-      } else {
-        colsum = Bff(n, n) * (*Krel_face)[0][faces[n]];
-      }
+      double colsum = Bff(n, n);
 
       Bcf(n) = -colsum;
       Bfc(n) = -rowsum;
@@ -147,13 +152,13 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
  * We need an auxiliary GHOST-based vector to assemble the RHS.
  ****************************************************************** */
 void MatrixMFD_TPFA::AssembleGlobalMatrices() {
+  MatrixMFD::AssembleGlobalMatrices();
+
   std::vector<std::string> names_c(1,"cell");
   std::vector<AmanziMesh::Entity_kind> locations_c(1,AmanziMesh::CELL);
   std::vector<std::string> names_f(1,"face");
   std::vector<AmanziMesh::Entity_kind> locations_f(1,AmanziMesh::FACE);
   std::vector<int> ndofs(1,1);
-
-  MatrixMFD::AssembleGlobalMatrices();
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -269,109 +274,6 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 
 
 /* ******************************************************************
- * Initialization of the preconditioner
- ****************************************************************** */
-void MatrixMFD_TPFA::InitPreconditioner(Teuchos::ParameterList& prec_plist) {
-  if (prec_method_ == TRILINOS_ML) {
-    ml_plist_ =  prec_plist.sublist("ML Parameters");
-    ml_prec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Spp_, ml_plist_, false));
-  } else if (prec_method_ == TRILINOS_ILU) {
-    ilu_plist_ = prec_plist.sublist("ILU Parameters");
-  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    ifp_plist_ = prec_plist.sublist("Block ILU Parameters");
-#ifdef HAVE_HYPRE
-  } else if (prec_method_ == HYPRE_AMG) {
-    // read some boomer amg parameters
-    hypre_plist_ = prec_plist.sublist("HYPRE AMG Parameters");
-    hypre_ncycles_ = hypre_plist_.get<int>("number of cycles",5);
-    hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
-    hypre_tol_ = hypre_plist_.get<double>("tolerance",0.0);
-    hypre_strong_threshold_ = hypre_plist_.get<double>("strong threshold",0.25);
-  } else if (prec_method_ == HYPRE_EUCLID) {
-    hypre_plist_ = prec_plist.sublist("HYPRE Euclid Parameters");
-  } else if (prec_method_ == HYPRE_PARASAILS) {
-    hypre_plist_ = prec_plist.sublist("HYPRE ParaSails Parameters");
-#endif
-  }
-}
-
-
-/* ******************************************************************
- * Rebuild the preconditioner.
- ****************************************************************** */
-void MatrixMFD_TPFA::UpdatePreconditioner() {
-  if (prec_method_ == TRILINOS_ML) {
-    if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
-    ml_prec_->SetParameterList(ml_plist_);
-    ml_prec_->ComputePreconditioner();
-  } else if (prec_method_ == TRILINOS_ILU) {
-    ilu_prec_ = Teuchos::rcp(new Ifpack_ILU(&*Spp_));
-    ilu_prec_->SetParameters(ilu_plist_);
-    ilu_prec_->Initialize();
-    ilu_prec_->Compute();
-  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    Ifpack factory;
-    std::string prectype("ILU");
-    int ovl = ifp_plist_.get<int>("overlap",0);
-    ifp_plist_.set<std::string>("schwarz: combine mode","Add");
-    ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*Spp_, ovl));
-    ifp_prec_->SetParameters(ifp_plist_);
-    ifp_prec_->Initialize();
-    ifp_prec_->Compute();
-#ifdef HAVE_HYPRE
-  } else if (prec_method_ == HYPRE_AMG) {
-    IfpHypre_Spp_ = Teuchos::rcp(new Ifpack_Hypre(&*Spp_));
-    Teuchos::RCP<FunctionParameter> functs[8];
-    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
-    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
-    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_));
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
-
-    Teuchos::ParameterList hypre_list;
-    hypre_list.set("Preconditioner", BoomerAMG);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 8);
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
-
-    IfpHypre_Spp_->SetParameters(hypre_list);
-    IfpHypre_Spp_->Initialize();
-    IfpHypre_Spp_->Compute();
-  } else if (prec_method_ == HYPRE_EUCLID) {
-    IfpHypre_Spp_ = Teuchos::rcp(new Ifpack_Hypre(&*Spp_));
-
-    Teuchos::ParameterList hypre_list;
-    hypre_list.set("Preconditioner", Euclid);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 0);
-
-    IfpHypre_Spp_->SetParameters(hypre_list);
-    IfpHypre_Spp_->Initialize();
-    IfpHypre_Spp_->Compute();
-  } else if (prec_method_ == HYPRE_PARASAILS) {
-    IfpHypre_Spp_ = Teuchos::rcp(new Ifpack_Hypre(&*Spp_));
-
-    Teuchos::ParameterList hypre_list;
-    hypre_list.set("Preconditioner", ParaSails);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 0);
-
-    IfpHypre_Spp_->SetParameters(hypre_list);
-    IfpHypre_Spp_->Initialize();
-    IfpHypre_Spp_->Compute();
-#endif
-  }
-}
-
-
-
-/* ******************************************************************
  * Parallel matvec product Spp * Xc.
  ****************************************************************** */
 void MatrixMFD_TPFA::Apply(const CompositeVector& X,
@@ -393,8 +295,7 @@ void MatrixMFD_TPFA::Apply(const CompositeVector& X,
 
 void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
         const Teuchos::Ptr<CompositeVector>& Y) const {
-  // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
-  // use the same memory for X and Y, we introduce auxiliaty vector Tc.
+  // Solve the Schur complement system Spp * Yc = Xc.
   int ierr = 0;
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell",false);
   Epetra_MultiVector Tc(Xc);
@@ -443,7 +344,6 @@ void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
   Epetra_MultiVector& rhs_f = *rhs_->ViewComponent("face", false);
   Epetra_MultiVector update_f(rhs_f);
 
-
   Afc_->Multiply(true,*uc, update_f);  // Afc is kept in the transpose form.
   rhs_f.Update(-1.0, update_f, 1.0);
 
@@ -470,6 +370,7 @@ void MatrixMFD_TPFA::UpdateConsistentFaceCorrection(const CompositeVector& u,
     Pu_f[0][f] /= Dff_f[0][f];
   }
 }
+
 
 // MANY ASSUMPTIONS!  THIS IS NOT GENERAL!
 // -- K_abs = 1
@@ -552,7 +453,6 @@ void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
 }
 
 
-
 /* ******************************************************************
 * Computation of a local submatrix of 
 * Analytical Jacobian (nonlinear part) on a particular face.
@@ -633,8 +533,6 @@ void MatrixMFD_TPFA::ComputeJacobianLocal(int mcells,
 
     Jpp(1, 0) = -Jpp(0, 0);
     Jpp(1, 1) = -Jpp(0, 1);
-
-
   }
 }
 

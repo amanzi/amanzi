@@ -1,6 +1,4 @@
 /*
-  This is the flow component of the Amanzi code.
-
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
@@ -25,39 +23,26 @@
 
 #include "matrix_mfd.hh"
 
-
 namespace Amanzi {
 namespace Operators {
 
-class MatrixMFD_Surf;
-
-
-class MatrixMFD_TPFA : public MatrixMFD {
+class MatrixMFD_TPFA : virtual public MatrixMFD {
  public:
   MatrixMFD_TPFA(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       MatrixMFD(plist,mesh) {}
 
-  MatrixMFD_TPFA(const MatrixMFD& other) :
-    MatrixMFD(other) {}
-
-  virtual ~MatrixMFD_TPFA() {};
-
   // override main methods of the base class
   virtual void CreateMFDstiffnessMatrices(const Teuchos::Ptr<const CompositeVector>& Krel);
   virtual void SymbolicAssembleGlobalMatrices();
   virtual void AssembleGlobalMatrices();
-  virtual void ComputeSchurComplement(const std::vector<Matrix_bc>& bc_markers,
-          const std::vector<double>& bc_values) {}
-
+  virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
+          const std::vector<double>& bc_values) { Sff_ = Spp_; }
 
   virtual void Apply(const CompositeVector& X,
              const Teuchos::Ptr<CompositeVector>& Y) const;
   virtual void ApplyInverse(const CompositeVector& X,
                     const Teuchos::Ptr<CompositeVector>& Y) const;
-
-  virtual void InitPreconditioner(Teuchos::ParameterList& prec_list);
-  virtual void UpdatePreconditioner();
 
   void AnalyticJacobian(const CompositeVector& height,
                         const CompositeVector& potential,
@@ -66,22 +51,13 @@ class MatrixMFD_TPFA : public MatrixMFD {
                         const CompositeVector& Krel_cell,
                         const CompositeVector& dKrel_cell_dp);
 
-  
-  const char* Label() const {
-    return strdup("Matrix MFD_TPFA");
-  }
+  Teuchos::RCP<const Epetra_FECrsMatrix> TPFA() { return Spp_; }
 
-  Teuchos::RCP<Epetra_FECrsMatrix> TPFA() {
-    return Spp_;
-  }
-
-  // development methods
   virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
   virtual void UpdateConsistentFaceCorrection(const CompositeVector& u,
           const Teuchos::Ptr<CompositeVector>& Pu);
 
  protected:
-
   void ComputeJacobianLocal(int mcells,
                             int face_id,
                             double dist,
@@ -93,22 +69,18 @@ class MatrixMFD_TPFA : public MatrixMFD {
                             double *dk_rel_cell_dp,
                             Teuchos::SerialDenseMatrix<int, double>& Jpp);
 
-  
+ protected:
   Teuchos::RCP<CompositeVector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
-  Teuchos::RCP<Epetra_FECrsMatrix> NumJac_;  // Numerical Jacobian
-
-#ifdef HAVE_HYPRE
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Spp_;
-#endif
 
  private:
+  MatrixMFD_TPFA(const MatrixMFD& other);
   void operator=(const MatrixMFD_TPFA& matrix);
 
   friend class MatrixMFD_Surf;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Operators
 }  // namespace Amanzi
 
 #endif

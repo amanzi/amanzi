@@ -72,6 +72,8 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
   Key flux_key_;
   bool modify_predictor_flux_bc_;
   bool modify_predictor_first_flux_bc_;
+  int niter_;
+
 
  private:
   // factory registration

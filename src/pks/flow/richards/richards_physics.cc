@@ -27,11 +27,13 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData("numerical_rel_perm");
   matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());
+  matrix_->CreateMFDrhsVectors();
 
   // derive fluxes
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData("pressure");
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
+
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     // update the flux
     Teuchos::RCP<CompositeVector> flux =
@@ -43,7 +45,6 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   }
 
   // assemble the stiffness matrix
-  matrix_->CreateMFDrhsVectors();
   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
   matrix_->AssembleGlobalMatrices();

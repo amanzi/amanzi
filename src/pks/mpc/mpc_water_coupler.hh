@@ -47,14 +47,18 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
+
  protected:
 
   bool cap_the_spurt_;
   bool damp_the_spurt_;
   bool damp_and_cap_the_spurt_;
+  bool cap_the_cell_spurt_;
   bool make_cells_consistent_;
   double face_limiter_;
   bool modify_predictor_heuristic_;
+
+  Teuchos::RCP<Epetra_MultiVector> surf_pres_prev_;
 
  private:
   static RegisteredPKFactory< MPCWaterCoupler<BaseCoupler> > reg_;
@@ -77,6 +81,7 @@ MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
 
   // preconditioner modifications
   face_limiter_ = plist.get<double>("global face limiter", -1);
+  cap_the_cell_spurt_ = plist.get<bool>("cap the spurt using cells", false);
   cap_the_spurt_ = plist.get<bool>("cap the spurt", false);
   damp_the_spurt_ = plist.get<bool>("damp the spurt", false);
   damp_and_cap_the_spurt_ = plist.get<bool>("damp and cap the spurt", false);
@@ -114,6 +119,12 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
   const Epetra_MultiVector& surf_p_c = *S_next_->GetFieldData("surface_pressure")
       ->ViewComponent("cell",false);
 
+  if (surf_pres_prev_ == Teuchos::null)
+    surf_pres_prev_ = Teuchos::rcp(new Epetra_MultiVector(surf_p_c));
+  *surf_pres_prev_ = *S_next_->GetFieldData("surface_pressure")
+      ->ViewComponent("cell",false);
+
+
   // Approach 1: global face limiter on the correction size
   if (face_limiter_ > 0.) {
     int nfaces = domain_Pu_f.MyLength();
@@ -122,7 +133,6 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
         std::cout << "  LIMITING: dp_old = " << domain_Pu_f[0][f];
         domain_Pu_f[0][f] = domain_Pu_f[0][f] > 0. ? face_limiter_ : -face_limiter_;
         std::cout << ", dp_new = " << domain_Pu_f[0][f] << std::endl;
-
       }
     }
   }
@@ -180,6 +190,38 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     this->mfd_preconditioner_->UpdateConsistentCellCorrection(
         *u->SubVector(this->domain_pk_name_)->data(),
         Pu->SubVector(this->domain_pk_name_)->data().ptr());
+  }
+
+  // Approach 4 works on cells
+  if (cap_the_cell_spurt_) {
+    int ncapped_l = 0;
+
+    Epetra_MultiVector& domain_Pu_c = *domain_Pu->ViewComponent("cell",false);
+    int ncells_surf =
+        this->surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List cells;
+    for (int cs=0; cs!=ncells_surf; ++cs) {
+      AmanziMesh::Entity_ID f =
+          this->surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
+      this->domain_mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      ASSERT(cells.size() == 1);
+
+      double p_old = domain_p_f[0][f];
+      double p_new = p_old - domain_Pu_f[0][f];
+      if ((p_new > patm + 100.) && (p_old < patm)) {
+        ncapped_l++;
+        double my_damp = ((patm + 100) - p_old) / (p_new - p_old);
+        domain_Pu_c[0][cells[0]] *= my_damp;
+        std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", dp_cell = " << domain_Pu_c[0][cells[0]] << std::endl;
+      }
+    }
+
+    int ncapped = ncapped_l;
+    this->domain_mesh_->get_comm()->SumAll(&ncapped_l, &ncapped, 1);
+    if (ncapped > 0) {
+      Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(this->domain_pk_name_)->data();
+      this->mfd_preconditioner_->UpdateConsistentFaceCorrection(*domain_u, domain_Pu.ptr());
+    }
   }
 }
 
@@ -301,6 +343,7 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
 
 
 } // namespace
+
 
 
 #endif
