@@ -73,6 +73,10 @@ public:
   // -- Modify the predictor.
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
+  // -- Modify the correction.
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> u,
+           Teuchos::RCP<TreeVector> du);
+
 private:
   // factory registration
   static RegisteredPKFactory<StrongMPC> reg_;

@@ -12,7 +12,7 @@
 
 #include "wrm_partition.hh"
 #include "boundary_function.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -174,6 +174,9 @@ protected:
 
   // is this a dynamic mesh problem
   bool dynamic_mesh_;
+
+  // using constraint equations scaled by rel perm?
+  bool scaled_constraint_;
 
  private:
   // factory registration

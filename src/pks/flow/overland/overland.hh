@@ -11,7 +11,7 @@ Authors: Gianmarco Manzini
 #define PK_FLOW_OVERLAND_HH_
 
 #include "boundary_function.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"

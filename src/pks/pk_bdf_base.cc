@@ -174,13 +174,4 @@ bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   */
 }
 
-
-// -----------------------------------------------------------------------------
-// Allows a PK to modify the initial guess.
-// -----------------------------------------------------------------------------
-bool PKBDFBase::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
-  return false;
-}
-
-
 } // namespace

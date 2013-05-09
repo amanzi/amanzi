@@ -28,7 +28,7 @@ subtree:
 
 namespace Amanzi {
 
-namespace Operators { class MatrixCoupledMFDSurf; }
+namespace Operators { class MatrixMFD_Coupled_Surf; }
 
 class MPCDelegateEWC;
 
@@ -82,7 +82,7 @@ class MPCPermafrost : public StrongMPC {
   Teuchos::RCP<MPCSurfaceSubsurfaceFluxCoupler> coupled_flow_pk_;
   Teuchos::RCP<MPCSurfaceSubsurfaceFluxCoupler> coupled_energy_pk_;
 
-  Teuchos::RCP<Operators::MatrixCoupledMFDSurf> mfd_surf_preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_Coupled_Surf> mfd_surf_preconditioner_;
 
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWC> ewc_;

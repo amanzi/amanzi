@@ -18,7 +18,7 @@ us to the air-water system.
 #include "bdf_time_integrator.hh"
 
 #include "advection.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 
 #include "pk_physical_bdf_base.hh"
 

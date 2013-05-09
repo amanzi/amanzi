@@ -11,8 +11,8 @@ multiple coupler types.
 
 #include "pk_physical_bdf_base.hh"
 
-#include "matrix_mfd_surf.hh"
-#include "matrix_mfd_tpfa.hh"
+#include "MatrixMFD_Surf.hh"
+#include "MatrixMFD_TPFA.hh"
 #include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {

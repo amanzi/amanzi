@@ -13,7 +13,7 @@
 #include "Mesh.hh"
 #include "State.hh"
 
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 #include "wrm_partition.hh"
 
 namespace Amanzi {

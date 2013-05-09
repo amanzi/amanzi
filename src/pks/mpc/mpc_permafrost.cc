@@ -23,8 +23,8 @@ subtree:
 #include "FieldEvaluator.hh"
 
 #include "permafrost_model.hh"
-#include "matrix_coupled_mfd_surf.hh"
-#include "matrix_mfd_surf.hh"
+#include "MatrixMFD_Coupled_Surf.hh"
+#include "MatrixMFD_Surf.hh"
 #include "mpc_delegate_ewc.hh"
 #include "mpc_surface_subsurface_flux_coupler.hh"
 #include "mpc_permafrost.hh"
@@ -59,7 +59,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key);
 
   Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
-  mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixCoupledMFDSurf(
+  mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(
       pc_sublist, mesh, surf_mesh));
   preconditioner_ = mfd_surf_preconditioner_;
 

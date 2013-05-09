@@ -22,9 +22,9 @@
 
 #include <strings.h>
 
-#include "matrix_mfd.hh"
-#include "matrix_mfd_scaled_constraint.hh"
-#include "matrix_mfd_tpfa.hh"
+#include "MatrixMFD.hh"
+#include "MatrixMFD_ScaledConstraint.hh"
+#include "MatrixMFD_TPFA.hh"
 
 namespace Amanzi {
 namespace Operators {

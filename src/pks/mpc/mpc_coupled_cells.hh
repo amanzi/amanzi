@@ -38,7 +38,7 @@ d_temperature and d_energy / d_pressure.
 
 namespace Amanzi {
 
-namespace Operators { class MatrixCoupledMFD; }
+namespace Operators { class MatrixMFD_Coupled; }
 
 class MPCCoupledCells : public StrongMPC {
  public:
@@ -60,7 +60,7 @@ class MPCCoupledCells : public StrongMPC {
   Key y2_key_;
   Key B_key_;
   Key y1_key_;
-  Teuchos::RCP<Operators::MatrixCoupledMFD> mfd_preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_Coupled> mfd_preconditioner_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   bool decoupled_;

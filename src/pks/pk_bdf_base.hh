@@ -17,7 +17,7 @@ BDF.
 
 #include "bdf_fn_base.hh"
 #include "bdf_time_integrator.hh"
-#include "matrix.hh"
+#include "Matrix.hh"
 #include "pk_default_base.hh"
 
 namespace Amanzi {
@@ -58,7 +58,9 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
 
   // -- Possibly modify the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator.
-  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+  virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up) { return false; }
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> u,
+                                 Teuchos::RCP<TreeVector> du) { return false; }
 
  protected: // data
   // timestep control

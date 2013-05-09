@@ -25,7 +25,7 @@ MPCSurfaceSubsurfaceFluxCoupler.
 #include "pk_factory.hh"
 #include "pk_default_base.hh"
 #include "FieldEvaluator.hh"
-#include "matrix_mfd_surf.hh"
+#include "MatrixMFD_Surf.hh"
 
 namespace Amanzi {
 

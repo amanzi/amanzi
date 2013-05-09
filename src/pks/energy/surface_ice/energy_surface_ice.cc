@@ -15,7 +15,7 @@ Process kernel for energy equation for overland flow.
 #include "surface_ice_energy_evaluator.hh"
 #include "enthalpy_evaluator.hh"
 #include "energy_bc_factory.hh"
-#include "matrix_mfd_tpfa.hh"
+#include "MatrixMFD_TPFA.hh"
 #include "function.hh"
 #include "function-factory.hh"
 #include "independent_variable_field_evaluator.hh"
@@ -241,7 +241,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   for (int f=0; f!=nfaces; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (cells.size() == 1) {
-      double T = bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET ?
+      double T = bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET ?
           bc_values_[f] : temp_f[0][f];
       double p = pres_c[0][cells[0]];
       double dens = eos_liquid_->MolarDensity(T,p);

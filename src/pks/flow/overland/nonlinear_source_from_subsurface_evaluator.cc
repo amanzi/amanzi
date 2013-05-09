@@ -8,7 +8,7 @@
 */
 
 #include "Mesh_MSTK.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 #include "nonlinear_source_from_subsurface_evaluator.hh"
 
 namespace Amanzi {

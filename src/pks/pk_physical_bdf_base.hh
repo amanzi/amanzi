@@ -18,7 +18,7 @@ PKPhysicalBase and BDF methods of PKBDFBase.
 #include "pk_bdf_base.hh"
 #include "pk_physical_base.hh"
 
-#include "matrix.hh"
+#include "Matrix.hh"
 
 namespace Amanzi {
 

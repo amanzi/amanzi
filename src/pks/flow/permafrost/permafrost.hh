@@ -22,7 +22,7 @@
 #include "composite_vector.hh"
 #include "tree_vector.hh"
 #include "State.hh"
-#include "matrix_mfd.hh"
+#include "MatrixMFD.hh"
 #include "upwinding.hh"
 #include "boundary_function.hh"
 

@@ -7,8 +7,8 @@
 #include "errors.hh"
 #include "Epetra_FECrsGraph.h"
 #include "EpetraExt_RowMatrixOut.h"
-#include "matrix_mfd.hh"
-#include "matrix_mfd_scaled_constraint.hh"
+#include "MatrixMFD.hh"
+#include "MatrixMFD_ScaledConstraint.hh"
 
 namespace Amanzi {
 namespace Operators {

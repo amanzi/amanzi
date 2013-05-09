@@ -279,7 +279,7 @@ void EnergyBase::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon
   preconditioner_ = precon;
   mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
   ASSERT(mfd_preconditioner_ != Teuchos::null);
-  mfd_preconditioner_->SetSymmetryProperty(true);
+  mfd_preconditioner_->set_symmetric(true);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
   mfd_preconditioner_->InitPreconditioner();

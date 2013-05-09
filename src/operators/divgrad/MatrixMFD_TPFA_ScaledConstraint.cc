@@ -11,7 +11,7 @@
   Ethan Coon (ATS version) (ecoon@lanl.gov)
 */
 
-#include "matrix_mfd_tpfa_scaled_constraint.hh"
+#include "MatrixMFD_TPFA_ScaledConstraint.hh"
 
 namespace Amanzi {
 namespace Operators {
