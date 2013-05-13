@@ -74,6 +74,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   TS->set_water_saturation(1.0);
   TS->set_prev_water_saturation(1.0);
   TS->set_water_density(1000.0);
+  TS->set_total_component_concentration(0.0,0);
 
   /* initialize a transport process kernel from the transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");

@@ -49,6 +49,7 @@ Transport_State::Transport_State(Transport_State& other,
     CompositeVectorFactory fac_tcc;
     fac_tcc.SetMesh(mesh_);
     fac_tcc.SetComponent("cell", AmanziMesh::CELL, comp_names_.size());
+
     Teuchos::RCP<CompositeVector> tcc = fac_tcc.CreateVector(true);
     tcc->CreateData();
     *tcc->ViewComponent("cell",false) = *other.total_component_concentration();
@@ -135,6 +136,92 @@ void Transport_State::InterpolateCellVector(const Epetra_Vector& v0,
   double b = 1.0 - a;
   v_int.Update(b, v0, a, v1, 0.);
 }
+
+
+
+
+//
+// debug methods ...
+//
+
+void Transport_State::set_porosity(const double phi) {
+  porosity()->PutScalar(phi);
+}
+
+void Transport_State::set_water_saturation(const double ws) {
+  water_saturation()->PutScalar(ws);
+}
+
+void Transport_State::set_prev_water_saturation(const double ws) {
+  prev_water_saturation()->PutScalar(ws);
+}
+
+void Transport_State::set_water_density(const double rho) {
+  ref_water_density() = rho;
+}
+
+void Transport_State::set_darcy_flux(f_flux_t func, const double t) {
+  const Epetra_BlockMap& fmap = darcy_flux()->Map();
+
+  for (int f = fmap.MinLID(); f <= fmap.MaxLID(); f++) {
+    const AmanziGeometry::Point& normal = mesh()->face_normal(f);
+    const AmanziGeometry::Point& fc = mesh()->face_centroid(f);
+    ref_darcy_flux()[f] = func(fc, t) * normal;
+  }
+}
+
+void Transport_State::set_darcy_flux(const AmanziGeometry::Point& u) {
+  const Epetra_BlockMap& fmap = darcy_flux()->Map();
+
+  for (int f = fmap.MinLID(); f <= fmap.MaxLID(); f++) {
+    const AmanziGeometry::Point& normal = mesh()->face_normal(f);
+    ref_darcy_flux()[f] = u * normal;
+  }
+}
+
+void Transport_State::set_total_component_concentration(f_conc_t func, const double t) {
+  const Epetra_BlockMap& cmap = total_component_concentration()->Map();
+
+  for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
+    const AmanziGeometry::Point& xc = mesh()->cell_centroid(c);
+    ref_total_component_concentration()[0][c] = func(xc, t);
+  }
+}
+
+  void Transport_State::set_total_component_concentration(const double val, const int i) {
+  const Epetra_BlockMap& cmap = total_component_concentration()->Map();
+
+  for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
+    const AmanziGeometry::Point& xc = mesh()->cell_centroid(c);
+    ref_total_component_concentration()[i][c] = val;
+  }
+}
+
+
+void Transport_State::error_total_component_concentration(f_conc_t f, double t, double* L1, double* L2)
+{
+  int i, j, c;
+  double d;
+  const Epetra_BlockMap& cmap = total_component_concentration()->Map();
+
+  *L1 = *L2 = 0.0;
+  for (c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
+    const AmanziGeometry::Point& xc = mesh()->cell_centroid(c);
+    d = (*total_component_concentration())[0][c] - f(xc, t);
+    
+    double volume = mesh()->cell_volume(c);
+    *L1 += fabs(d) * volume;
+    *L2 += d * d * volume;
+  }
+
+  *L2 = sqrt(*L2);
+}
+
+
+
+
+
+
 
 
 } // namspace

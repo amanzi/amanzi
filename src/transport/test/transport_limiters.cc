@@ -66,7 +66,8 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   TS->set_porosity(0.2);
   TS->set_water_saturation(1.0);
   TS->set_prev_water_saturation(1.0);
-  TS->set_water_density(1000.0); 
+  TS->set_water_density(1000.0);
+  TS->set_total_component_concentration(0.0,0);
 
   // create transport PK  
   ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
