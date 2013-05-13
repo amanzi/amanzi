@@ -92,7 +92,7 @@ class Transport_State : public PK_State {
   void set_water_saturation(const double ws = 1.0);
   void set_prev_water_saturation(const double ws = 0.0);
   void set_water_density(const double wd = 1000.0);
-  void set_total_component_concentration(f_conc_t f, const double t=0.0);
+  void set_total_component_concentration(f_conc_t f, const double t=0.0, const int ind=0);
   void set_total_component_concentration(const double val, const int ind);  
   void set_darcy_flux(f_flux_t f, const double t=0.0);
   void set_darcy_flux(const AmanziGeometry::Point& u);  

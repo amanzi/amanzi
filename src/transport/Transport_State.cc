@@ -179,12 +179,12 @@ void Transport_State::set_darcy_flux(const AmanziGeometry::Point& u) {
   }
 }
 
-void Transport_State::set_total_component_concentration(f_conc_t func, const double t) {
+void Transport_State::set_total_component_concentration(f_conc_t func, const double t, const int ind) {
   const Epetra_BlockMap& cmap = total_component_concentration()->Map();
 
   for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
     const AmanziGeometry::Point& xc = mesh()->cell_centroid(c);
-    ref_total_component_concentration()[0][c] = func(xc, t);
+    ref_total_component_concentration()[ind][c] = func(xc, t);
   }
 }
 
