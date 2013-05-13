@@ -30,11 +30,17 @@ initialized (as independent variables are owned by state, not by any PK).
 
 namespace Amanzi {
 
-State::State() {};
+State::State() :
+    time_(0.0),
+    final_time_(0.0),
+    intermediate_time_(0.0),
+    cycle_(0) {};
 
 State::State(Teuchos::ParameterList& state_plist) :
     state_plist_(state_plist),
     time_(0.0),
+    final_time_(0.0),
+    intermediate_time_(0.0),
     cycle_(0) {};
 
 // copy constructor:
@@ -47,6 +53,8 @@ State::State(const State& other, StateConstructMode mode) :
     meshes_(other.meshes_),
     field_factories_(other.field_factories_),
     time_(other.time_),
+    final_time_(other.final_time_),
+    intermediate_time_(other.intermediate_time_),
     cycle_(other.cycle_) {
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
@@ -535,7 +543,7 @@ void State::Setup() {
   // -- First use factories to instantiate composite vectors.
   for (FieldFactoryMap::iterator fac_it=field_factories_.begin();
        fac_it!=field_factories_.end(); ++fac_it) {
-    GetField_(fac_it->first)->SetData(fac_it->second->CreateVector(true));
+    GetField_(fac_it->first)->SetData(fac_it->second->CreateVector());
   }
 
   // -- Now create the data for all fields.

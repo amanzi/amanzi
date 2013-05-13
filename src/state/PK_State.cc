@@ -31,8 +31,8 @@ PK_State::PK_State(const PK_State& other, StateConstructMode mode) :
 
 
 /* *******************************************************************
-* Copy cell-based data from master to ghost positions.              
-* WARNING: vector v must contain ghost cells.              
+* Copy cell-based data from master to ghost positions.
+* WARNING: vector v must contain ghost cells.
 ******************************************************************* */
 void PK_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 {
@@ -52,8 +52,8 @@ void PK_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
 
 
 /* *******************************************************************
-* Copy cell-based data from master to ghost positions.              
-* WARNING: MultiVector v must contain ghost cells.              
+* Copy cell-based data from master to ghost positions.
+* WARNING: MultiVector v must contain ghost cells.
 ******************************************************************* */
 void PK_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 {

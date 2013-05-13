@@ -27,6 +27,9 @@ public:
   CompositeVectorFactory(const CompositeVectorFactory& other);
 
   // Create the final product, a CompositeVector.
+  Teuchos::RCP<CompositeVector> CreateVector() const {
+    return CreateVector(ghosted_);
+  }
   Teuchos::RCP<CompositeVector> CreateVector(bool ghosted) const;
 
   // Is this factory and the resulting CV owned by a PK?
