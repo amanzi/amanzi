@@ -595,7 +595,7 @@ Example:
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
 
-For unstructured Amanzi, this parameter must currently equal 2 or 3.
+For unstructured Amanzi, this parameter must currently equal 3.
 
 Mesh
 ====
@@ -687,24 +687,18 @@ Example of `"Unstructured`" mesh read from an external file:
 Regions
 =======================================
 
-Regions are geometrical constructs used in Amanzi to define subsets of
-the computational domain in order to specify the problem to be solved,
-and the output desired.  Regions may represents zero-, one-, two- or
-three-dimensional subsets of physical space.  for a three-dimensional
-problem, the simulation domain will be a three-dimensional region
-bounded by a set of two-dimensional regions.  If the simulation domain
-is N-dimensional, the boundary conditions must be specified over a set
-of regions are (N-1)-dimensional.
+Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem
+to be solved, and the output desired.  Regions may represents zero-, one-, two- or three-dimensional subsets of physical space.
+for a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional 
+regions.  If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
 Amanzi automatically defines the special region labeled `"All`", which is the 
 entire simulation domain. Currently, the unstructured framework does
 not support the `"All`" region, but it is expected to do so in the
 near future.
 
-Under the `"Structured`" option, Amanzi also automatically defines
-regions for the coordinat-aligned planes that bound the domain, using
-the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`",
-`"ZLOBC`", `"ZHIBC`"
+Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinat-aligned planes that bound the domain,
+using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`"
 
 User-defined regions are constructed using the following syntax
 
@@ -712,9 +706,7 @@ User-defined regions are constructed using the following syntax
 
    * Shape [list] Geometric model primitive, choose exactly one of the following [see table below]: `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", `"Region: Layer`", `"Region: Surface`"
 
-Amanzi supports parameterized forms for a number of analytic shapes,
-as well as more complex definitions based on triangulated surface
-files or on booleans of previously defined regions.
+Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 |  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
@@ -733,8 +725,6 @@ files or on booleans of previously defined regions.
 | `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Surface"`            | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Boolean"`            | `"Operation`" `"Region1`" `"Region2`"   | string, string, string       | Region formed from boolean operation on two regions                    |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 Notes
@@ -794,13 +784,6 @@ Notes
   Examples of surface files are given in the `"Exodus II`" file 
   format here.
 
-* `"Region: Logical`" defines a region from one or two regions by
-  performing a logical operation on them. There is only operation
-  applicable to a single region, namely the `"NOT`"
-  operation. Operations on two regions include `"UNION`",
-  `"SUBTRACT`", `"INTERSECT`". `"Currently, multi-region booleans
-  are not supported in the same expression.`"
-
 * Region names must NOT be repeated
 
 Example:
@@ -846,21 +829,13 @@ Example:
         <Parameter name="Value" type="int" value="25"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Lower Layers">
-      <ParameterList name="Region: Logical">
-        <Parameter name="Operation" type="string" value="UNION"/>
-        <Parameter name="Region1" type="string" value="Middle Section"/>
-        <Parameter name="Region2" type="string" value="Bottom Section"/>
-      </ParameterList>
-    </ParameterList>  </ParameterList>
+  </ParameterList>
 
 In this example, "Top Section", "Middle Section" and "Bottom Section"
 are three box-shaped volumetric regions. "Inflow Surface" is a
 surface region defined in an Exodus II-formatted labeled set
 file and "Outflow plane" is a planar region. "Sand" is a volumetric
-region defined by the value 25 in color function file. The region
-"Lower Layers" is formed by the union of the bottom two
-regions.
+region defined by the value 25 in color function file.
 
 
 
