@@ -595,7 +595,7 @@ Example:
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
 
-For unstructured Amanzi, this parameter must currently equal 3.
+For unstructured Amanzi, this parameter can equal 2 or 3.
 
 Mesh
 ====
