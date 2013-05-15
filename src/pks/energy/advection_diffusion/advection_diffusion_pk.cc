@@ -7,7 +7,6 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include "bdf2_time_integrator.hh"
 #include "advection_factory.hh"
 #include "energy_bc_factory.hh"
 #include "composite_vector_factory.hh"

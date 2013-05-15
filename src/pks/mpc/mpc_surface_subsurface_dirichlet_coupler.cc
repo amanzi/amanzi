@@ -37,11 +37,8 @@ void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector>
   // Apply the combined preconditioner to the subsurface residual
   PreconApply_(u,Pu);
 
-  // Damp, kluge, hack, etc.
-  PreconPostprocess_(u,Pu);
-
   // Update surface values.
-  PreconUpdateSurfaceCells_(u,Pu);
+  PreconUpdateSurfaceCells_(Pu);
   PreconUpdateSurfaceFaces_(u,Pu);
 
 #if DEBUG_FLAG
@@ -125,6 +122,17 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconApply_(
 }
 
 
+bool MPCSurfaceSubsurfaceDirichletCoupler::modify_correction(double h,
+        Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> du) {
+  PreconPostprocess_(res, du);
+  PreconUpdateSurfaceCells_(du);
+  PreconUpdateSurfaceFaces_(res,du);
+  return true;
+}
+
+
 
 // ------------------------------------------------------------------------------
 // Correction applies to both the domain face and the surface cell.
@@ -132,7 +140,6 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconApply_(
 // corrected.
 // ------------------------------------------------------------------------------
 void MPCSurfaceSubsurfaceDirichletCoupler::PreconUpdateSurfaceCells_(
-    Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
 
 

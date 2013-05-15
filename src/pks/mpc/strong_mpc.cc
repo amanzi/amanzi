@@ -16,8 +16,6 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 ------------------------------------------------------------------------- */
 
 
-#include "bdf1_time_integrator.hh"
-
 #include "strong_mpc.hh"
 
 namespace Amanzi {
@@ -258,8 +256,8 @@ bool StrongMPC::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
 // -----------------------------------------------------------------------------
 // Modify correction from each sub pk.
 // -----------------------------------------------------------------------------
-bool StrongMPC::modify_correction(double h, Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<TreeVector> du) {
+bool StrongMPC::modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   // loop over sub-PKs
   bool modified = false;
   for (MPC<PKBDFBase>::SubPKList::iterator pk = sub_pks_.begin();
@@ -267,6 +265,7 @@ bool StrongMPC::modify_correction(double h, Teuchos::RCP<const TreeVector> u,
 
     // pull out the u sub-vector
     Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
+    Teuchos::RCP<const TreeVector> pk_res = res->SubVector((*pk)->name());
     Teuchos::RCP<TreeVector> pk_du = du->SubVector((*pk)->name());
 
     if (pk_u == Teuchos::null || pk_du == Teuchos::null) {
@@ -274,7 +273,7 @@ bool StrongMPC::modify_correction(double h, Teuchos::RCP<const TreeVector> u,
       Exceptions::amanzi_throw(message);
     }
 
-    modified |= (*pk)->modify_correction(h, pk_u, pk_du);
+    modified |= (*pk)->modify_correction(h, pk_res, pk_u, pk_du);
   }
   return modified;
 };

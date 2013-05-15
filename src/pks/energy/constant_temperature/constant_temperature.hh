@@ -23,7 +23,6 @@ Example usage:
 #define PKS_ENERGY_CONSTANT_TEMPERATURE_HH_
 
 #include "pk_factory.hh"
-#include "bdf_time_integrator.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -82,7 +81,6 @@ private:
   Teuchos::ParameterList energy_plist_;
 
   // time integration
-  Teuchos::RCP<Amanzi::BDFTimeIntegrator> time_stepper_;
   double atol_;
   double rtol_;
 

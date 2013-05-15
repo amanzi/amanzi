@@ -9,7 +9,6 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "EpetraExt_MultiVectorOut.h"
 #include "Epetra_MultiVector.h"
 
-#include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 #include "Mesh.hh"
 #include "Point.hh"
