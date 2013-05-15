@@ -11,7 +11,6 @@ Authors: Neil Carlson (version 1)
 
 #include "Epetra_Import.h"
 
-#include "bdf1_time_integrator.hh"
 #include "flow_bc_factory.hh"
 
 #include "upwinding.hh"
@@ -227,7 +226,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   scaled_constraint_ = mfd_plist.get<bool>("scaled constraint equation", false);
-  if (scaled_constraint_) {
+  if (!scaled_constraint_) {
     matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
   } else {
     matrix_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_plist, mesh_));
@@ -239,8 +238,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  Teuchos::RCP<Operators::MatrixMFD> precon =
-    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  Teuchos::RCP<Operators::MatrixMFD> precon;
+  if (!scaled_constraint_) {
+    precon = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  } else {
+    precon = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_pc_plist, mesh_));
+  }
   set_preconditioner(precon);
 
   // wc preconditioner
