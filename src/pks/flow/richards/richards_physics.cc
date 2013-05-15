@@ -182,7 +182,7 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
 
         double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
             * rho_v[0][c];
-        Ff[n] += outward_flux * scaled_constraint_ ? 1. : krel_faces[0][f];
+        Ff[n] += outward_flux * (scaled_constraint_ ? 1. : krel_faces[0][f]);
         Fc -= outward_flux * krel_faces[0][f] ;  // Nonzero-sum contribution when not upwinding
       }
     }
@@ -204,7 +204,7 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
 
         double outward_flux = ( ((*K_)[c] * gravity) * normal) * dirs[n]
             * krel_cells[0][c] * rho_v[0][c];
-        Ff[n] += outward_flux * scaled_constraint_ ? 1. : krel_faces[0][f];
+        Ff[n] += outward_flux * (scaled_constraint_ ? 1. : krel_faces[0][f]);
         Fc -= outward_flux * krel_faces[0][f];  // Nonzero-sum contribution when not upwinding
       }
     }

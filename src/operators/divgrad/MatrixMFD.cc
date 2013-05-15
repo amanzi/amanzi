@@ -530,6 +530,10 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
     (*Sff_).SumIntoGlobalValues(faces_GID, Tff);
   }
   (*Sff_).GlobalAssemble();
+
+  // tag matrices as assembled
+  assembled_schur_ = true;
+
 }
 
 
