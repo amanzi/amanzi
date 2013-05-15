@@ -2083,248 +2083,6 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 }
 
 
-void Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
-                          const Entity_kind kind) {
-
-  
-  // Create entity set based on the region defintion
-
-  switch (kind) 
-    {
-      
-      // cellsets
-      
-    case CELL:
-      
-      if (rgn->type() == AmanziGeometry::BOX ||
-          rgn->type() == AmanziGeometry::COLORFUNCTION) 
-        {
-          if (celldim == 3)
-            mset1 = MSet_New(mesh,setname.c_str(),MREGION);
-          else
-            mset1 = MSet_New(mesh,setname.c_str(),MFACE);
-
-          int ncell = num_entities(CELL, USED);
-              
-          for (int icell = 0; icell < ncell; icell++)
-            {
-              if (rgn->inside(cell_centroid(icell)))
-                {
-                  MSet_Add(mset1,cell_id_to_handle[icell]);
-                }
-            }
-        }
-      else if (rgn->type() == AmanziGeometry::POINT)
-        {
-          if (celldim == 3)
-            mset1 = MSet_New(mesh,setname.c_str(),MREGION);
-          else
-            mset1 = MSet_New(mesh,setname.c_str(),MFACE);
-
-          AmanziGeometry::Point vpnt(spacedim);
-          AmanziGeometry::Point rgnpnt(spacedim);
-
-          rgnpnt = ((AmanziGeometry::PointRegionPtr)rgn)->point();
-
-
-          int nnode = num_entities(NODE, USED);
-          double mindist2 = 1.e+16;
-          int minnode = -1;
-
-          int inode;
-          for (inode = 0; inode < nnode; inode++)
-            {
-                  
-              node_get_coordinates(inode, &vpnt);
-                  
-              double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
- 
-              if (dist2 < mindist2) 
-                {
-                  mindist2 = dist2;
-                  minnode = inode;
-                  if (mindist2 <= 1.0e-32)
-                    break;
-                }
-            }
-
-          Entity_ID_List cells, cells1;
-
-          node_get_cells(minnode,USED,&cells);
-
-          int ncells = cells.size();
-          for (int ic = 0; ic < ncells; ic++) 
-            {
-              Entity_ID icell = cells[ic];
-                  
-              // Check if point is contained in cell
-                  
-              if (point_in_cell(rgnpnt,icell))
-                {
-                  MSet_Add(mset1,cell_id_to_handle[icell]);
-                }
-            }
-
-        }
-      else if (rgn->type() == AmanziGeometry::PLANE) 
-        {
-          if (celldim == 2) {
-            mset1 = MSet_New(mesh,setname.c_str(),MFACE);
-              
-            int ncells = num_entities(CELL, USED);
-              
-            for (int ic = 0; ic < ncells; ic++)
-              {
-                std::vector<AmanziGeometry::Point> ccoords(spacedim);
-
-                cell_get_coordinates(ic, &ccoords);
-
-                bool on_plane = true;
-                for (int j = 0; j < ccoords.size(); j++)
-                  {
-                    if (!rgn->inside(ccoords[j]))
-                      {
-                        on_plane = false;
-                        break;
-                      }
-                  }
-                  
-                if (on_plane)
-                  {
-                    MSet_Add(mset1,cell_id_to_handle[ic]);
-                  }
-              }
-          }
-        }
-      else if (rgn->type() == AmanziGeometry::LOGICAL)
-        {
-          std::string region1_name, region2_name;
-          AmanziGeometry::RegionPtr region1=NULL, region2=NULL;
-
-          if (rgn->operation() == "NOT") {
-            region1_name = rgn->type();
-                
-          }
-        }
-      else
-        {
-          Errors::Message mesg("Region type not applicable/supported for cell sets");
-          amanzi_throw(mesg);
-        }
-      
-      break;
-      
-
-      // sidesets
-
-    case FACE:
-
-      //
-      // Commented out so that we can ask for a face set in a 3D box
-      //
-      //          if (rgn->dimension() != celldim-1) 
-      //            {
-      //              std::cerr << "No region of dimension " << celldim-1 << " defined in geometric model" << std::endl;
-      //              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
-      //            }
-
-      if (rgn->type() == AmanziGeometry::BOX) 
-        {
-          if (celldim == 3)   // 3D meshes, 2D sidesets
-            mset1 = MSet_New(mesh,setname.c_str(),MFACE);
-          else
-            mset1 = MSet_New(mesh,setname.c_str(),MEDGE);
-
-          int nface = num_entities(FACE, USED);
-              
-          for (int iface = 0; iface < nface; iface++)
-            {
-              if (rgn->inside(face_centroid(iface)))
-                {
-                  MSet_Add(mset1,face_id_to_handle[iface]);
-                }
-            }
-        }
-      else if (rgn->type() == AmanziGeometry::PLANE) 
-        {
-          if (celldim == 3)
-            mset1 = MSet_New(mesh,setname.c_str(),MFACE);
-          else
-            mset1 = MSet_New(mesh,setname.c_str(),MEDGE);
-
-              
-          int nface = num_entities(FACE, USED);
-              
-          for (int iface = 0; iface < nface; iface++)
-            {
-              std::vector<AmanziGeometry::Point> fcoords(spacedim);
-
-              face_get_coordinates(iface, &fcoords);
-
-              bool on_plane = true;
-              for (int j = 0; j < fcoords.size(); j++)
-                {
-                  if (!rgn->inside(fcoords[j]))
-                    {
-                      on_plane = false;
-                      break;
-                    }
-                }
-                  
-              if (on_plane)
-                {
-                  MSet_Add(mset1,face_id_to_handle[iface]);
-                }
-            }
-        }
-      else 
-        {
-          Errors::Message mesg("Region type not applicable/supported for face sets");
-          amanzi_throw(mesg);
-        }
-
-      break;
-
-
-      // Nodesets
-
-    case NODE:
-
-      if (rgn->type() == AmanziGeometry::BOX ||
-          rgn->type() == AmanziGeometry::PLANE ||
-          rgn->type() == AmanziGeometry::POINT) 
-        {
-          mset1 = MSet_New(mesh,setname.c_str(),MVERTEX);
-
-          int nnode = num_entities(NODE, USED);
-
-          for (int inode = 0; inode < nnode; inode++)
-            {
-              AmanziGeometry::Point vpnt(spacedim);
-
-              node_get_coordinates(inode, &vpnt);
-                  
-              if (rgn->inside(vpnt)) 
-                {
-                  MSet_Add(mset1,vtx_id_to_handle[inode]);
-
-                  // Only one node per point region
-
-                  if (rgn->type() == AmanziGeometry::POINT)
-                    break;      
-                }
-            }
-        }
-      else 
-        {
-          Errors::Message mesg("Region type not applicable/supported for node sets");
-          amanzi_throw(mesg);
-        }
-
-      break;
-    }
-
-}
 
 
 // Get list of entities of type 'category' in set specified by setname
@@ -2447,7 +2205,236 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
     }
 
   if (mset1 == NULL) 
-    build_set(rgn, kind);
+    {
+
+      // This mesh entity set did not exist in the input mesh file
+      // Create it based on the region defintion
+
+      switch (kind) 
+        {
+
+          // cellsets
+
+        case CELL:
+
+          if (rgn->type() == AmanziGeometry::BOX ||
+              rgn->type() == AmanziGeometry::COLORFUNCTION) 
+            {
+              if (celldim == 3)
+                mset1 = MSet_New(mesh,setname.c_str(),MREGION);
+              else
+                mset1 = MSet_New(mesh,setname.c_str(),MFACE);
+
+              int ncell = num_entities(CELL, USED);
+              
+              for (int icell = 0; icell < ncell; icell++)
+                {
+                  if (rgn->inside(cell_centroid(icell)))
+                    {
+                      MSet_Add(mset1,cell_id_to_handle[icell]);
+                    }
+                }
+            }
+          else if (rgn->type() == AmanziGeometry::POINT)
+            {
+              if (celldim == 3)
+                mset1 = MSet_New(mesh,setname.c_str(),MREGION);
+              else
+                mset1 = MSet_New(mesh,setname.c_str(),MFACE);
+
+              AmanziGeometry::Point vpnt(spacedim);
+              AmanziGeometry::Point rgnpnt(spacedim);
+
+              rgnpnt = ((AmanziGeometry::PointRegionPtr)rgn)->point();
+
+
+              int nnode = num_entities(NODE, USED);
+              double mindist2 = 1.e+16;
+              int minnode = -1;
+
+              int inode;
+              for (inode = 0; inode < nnode; inode++)
+                {
+                  
+                  node_get_coordinates(inode, &vpnt);
+                  
+                  double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
+ 
+                  if (dist2 < mindist2) 
+                    {
+                      mindist2 = dist2;
+                      minnode = inode;
+                      if (mindist2 <= 1.0e-32)
+                        break;
+                    }
+                }
+
+              Entity_ID_List cells, cells1;
+
+              node_get_cells(minnode,USED,&cells);
+
+              int ncells = cells.size();
+              for (int ic = 0; ic < ncells; ic++) 
+                {
+                  Entity_ID icell = cells[ic];
+                  
+                  // Check if point is contained in cell
+                  
+                  if (point_in_cell(rgnpnt,icell))
+                    {
+                      MSet_Add(mset1,cell_id_to_handle[icell]);
+                    }
+                }
+
+            }
+          else if (rgn->type() == AmanziGeometry::PLANE) 
+            {
+              if (celldim == 2) {
+                mset1 = MSet_New(mesh,setname.c_str(),MFACE);
+              
+                int ncells = num_entities(CELL, USED);
+              
+                for (int ic = 0; ic < ncells; ic++)
+                {
+                  std::vector<AmanziGeometry::Point> ccoords(spacedim);
+
+                  cell_get_coordinates(ic, &ccoords);
+
+                  bool on_plane = true;
+                  for (int j = 0; j < ccoords.size(); j++)
+                    {
+                      if (!rgn->inside(ccoords[j]))
+                          {
+                            on_plane = false;
+                            break;
+                          }
+                    }
+                  
+                  if (on_plane)
+                    {
+                      MSet_Add(mset1,cell_id_to_handle[ic]);
+                    }
+                }
+              }
+            }
+          else
+            {
+              Errors::Message mesg("Region type not applicable/supported for cell sets");
+              amanzi_throw(mesg);
+            }
+      
+          break;
+      
+
+          // sidesets
+
+        case FACE:
+
+          //
+          // Commented out so that we can ask for a face set in a 3D box
+          //
+          //          if (rgn->dimension() != celldim-1) 
+          //            {
+          //              std::cerr << "No region of dimension " << celldim-1 << " defined in geometric model" << std::endl;
+          //              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
+          //            }
+
+          if (rgn->type() == AmanziGeometry::BOX) 
+            {
+              if (celldim == 3)   // 3D meshes, 2D sidesets
+                mset1 = MSet_New(mesh,setname.c_str(),MFACE);
+              else
+                mset1 = MSet_New(mesh,setname.c_str(),MEDGE);
+
+              int nface = num_entities(FACE, USED);
+              
+              for (int iface = 0; iface < nface; iface++)
+                {
+                  if (rgn->inside(face_centroid(iface)))
+                    {
+                      MSet_Add(mset1,face_id_to_handle[iface]);
+                    }
+                }
+            }
+          else if (rgn->type() == AmanziGeometry::PLANE) 
+            {
+              if (celldim == 3)
+                mset1 = MSet_New(mesh,setname.c_str(),MFACE);
+              else
+                mset1 = MSet_New(mesh,setname.c_str(),MEDGE);
+
+              
+              int nface = num_entities(FACE, USED);
+              
+              for (int iface = 0; iface < nface; iface++)
+                {
+                  std::vector<AmanziGeometry::Point> fcoords(spacedim);
+
+                  face_get_coordinates(iface, &fcoords);
+
+                  bool on_plane = true;
+                  for (int j = 0; j < fcoords.size(); j++)
+                    {
+                      if (!rgn->inside(fcoords[j]))
+                          {
+                            on_plane = false;
+                            break;
+                          }
+                    }
+                  
+                  if (on_plane)
+                    {
+                      MSet_Add(mset1,face_id_to_handle[iface]);
+                    }
+                }
+            }
+          else 
+            {
+              Errors::Message mesg("Region type not applicable/supported for face sets");
+              amanzi_throw(mesg);
+            }
+
+          break;
+
+
+          // Nodesets
+
+        case NODE:
+
+          if (rgn->type() == AmanziGeometry::BOX ||
+              rgn->type() == AmanziGeometry::PLANE ||
+              rgn->type() == AmanziGeometry::POINT) 
+            {
+              mset1 = MSet_New(mesh,setname.c_str(),MVERTEX);
+
+              int nnode = num_entities(NODE, USED);
+
+              for (int inode = 0; inode < nnode; inode++)
+                {
+                  AmanziGeometry::Point vpnt(spacedim);
+
+                  node_get_coordinates(inode, &vpnt);
+                  
+                  if (rgn->inside(vpnt)) 
+                    {
+                      MSet_Add(mset1,vtx_id_to_handle[inode]);
+
+                      // Only one node per point region
+
+                      if (rgn->type() == AmanziGeometry::POINT)
+                        break;      
+                    }
+                }
+            }
+          else 
+            {
+              Errors::Message mesg("Region type not applicable/supported for node sets");
+              amanzi_throw(mesg);
+            }
+
+          break;
+        }
+    }
 
 
   /* Check if no processor got any mesh entities */
