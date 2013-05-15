@@ -13,8 +13,6 @@ Author: Ethan Coon
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
-#include "bdf1_time_integrator.hh"
-
 #include "energy_base.hh"
 
 #define MORE_DEBUG_FLAG 0

@@ -42,12 +42,16 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual void precon(Teuchos::RCP<const TreeVector> res, Teuchos::RCP<TreeVector> du);
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
+
+  // modify correction post NKA
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
   bool modify_predictor_for_flux_bc_(double h, Teuchos::RCP<TreeVector> up);
@@ -57,11 +61,10 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
 
   // Hackery hook for inheriting MPCs.
   virtual void PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
-          Teuchos::RCP<TreeVector> Pu) {};
+                                  Teuchos::RCP<TreeVector> Pu) {};
 
   // Given updates to subsurface, calculate updates to surface cells.
-  virtual void PreconUpdateSurfaceCells_(Teuchos::RCP<const TreeVector> u,
-          Teuchos::RCP<TreeVector> Pu);
+  virtual void PreconUpdateSurfaceCells_(Teuchos::RCP<TreeVector> Pu);
 
   // Given updates to surface cells, calculate updates to surface faces.
   virtual void PreconUpdateSurfaceFaces_(Teuchos::RCP<const TreeVector> u,

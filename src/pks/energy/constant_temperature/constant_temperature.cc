@@ -21,7 +21,6 @@
 
 #include "composite_vector.hh"
 #include "composite_vector_factory.hh"
-#include "bdf2_time_integrator.hh"
 #include "constant_temperature.hh"
 
 namespace Amanzi {

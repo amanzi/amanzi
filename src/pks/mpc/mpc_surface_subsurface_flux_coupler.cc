@@ -78,8 +78,9 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
   // Apply the combined preconditioner to the subsurface residual
   PreconApply_(u,Pu);
 
-  // Damp, kluge, hack, etc.
-  PreconPostprocess_(u,Pu);
+  // Update surface values.
+  PreconUpdateSurfaceCells_(Pu);
+  PreconUpdateSurfaceFaces_(u,Pu);
 
 #if DEBUG_FLAG
   Teuchos::OSTab tab = getOSTab();
@@ -105,10 +106,6 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
       *out_ << std::endl;
     }
   }
-
-  // Update surface values.
-  PreconUpdateSurfaceCells_(u,Pu);
-  PreconUpdateSurfaceFaces_(u,Pu);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << " Surface precon:" << std::endl;
@@ -142,13 +139,23 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconApply_(
 };
 
 
+bool MPCSurfaceSubsurfaceFluxCoupler::modify_correction(double h,
+        Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> du) {
+  PreconPostprocess_(res, du);
+  PreconUpdateSurfaceCells_(du);
+  PreconUpdateSurfaceFaces_(res,du);
+  return true;
+}
+
+
 // -------------------------------------------------------------
 // Post-processing in the preconditioner takes the corrections from the
 // surface cell's parent faces and uses them for the surface cell, and then
 // calculates a correction for the surface faces.
 // -------------------------------------------------------------
 void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceCells_(
-    Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))

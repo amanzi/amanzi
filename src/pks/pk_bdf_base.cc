@@ -11,7 +11,7 @@ BDF.
 ------------------------------------------------------------------------- */
 
 #include "Teuchos_TimeMonitor.hpp"
-#include "bdf1_time_integrator.hh"
+#include "BDF1_TI.hh"
 #include "pk_bdf_base.hh"
 
 namespace Amanzi {
@@ -37,16 +37,16 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
   // set up the timestepping algorithm
   if (!plist_.get<bool>("strongly coupled PK", false)) {
-    // -- get the timestepper plist and grab what we need
-    Teuchos::RCP<Teuchos::ParameterList> bdf_plist_p =
-      Teuchos::rcp(new Teuchos::ParameterList(plist_.sublist("time integrator")));
+    // -- get the timestepper plist and grab backtracking control
+    Teuchos::ParameterList bdf_plist = plist_.sublist("time integrator");
 
-    backtracking_iterations_ = bdf_plist_p->get<int>("max backtrack count",0);
+    // NOT CURRENTLY USED, would need to be added to modify_corrector()
+    backtracking_iterations_ = bdf_plist.get<int>("max backtrack count",0);
     backtracking_ = (backtracking_iterations_ > 0);
-    bdf_plist_p->set("initial time", S->time());
 
     // -- instantiate time stepper
-    time_stepper_ = Teuchos::rcp(new BDF1TimeIntegrator(this, bdf_plist_p, solution_));
+    bdf_plist.set("initial time", S->time());
+    time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector>(*this, bdf_plist, solution_));
 
     // -- initialize time derivative
     Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
@@ -120,58 +120,5 @@ bool PKBDFBase::advance(double dt) {
   return fail;
 };
 
-
-// -----------------------------------------------------------------------------
-// Allows a PK to reject solutions, which forces a timestep cut, or invokes
-// backtracking.
-// -----------------------------------------------------------------------------
-bool PKBDFBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
-  return true;
-
-  /*
-  //  if (!backtracking_) return true;
-
-  // const issues with BDF1 need cleaned up...
-  Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
-
-  // update the preconditioner
-  update_precon(S_next_->time(), up, S_next_->time() - S_inter_->time());
-
-  // evaluate the residual
-  Teuchos::RCP<TreeVector> g = Teuchos::rcp(new TreeVector(*up));
-  Teuchos::RCP<TreeVector> Pg = Teuchos::rcp(new TreeVector(*up));
-  fun(S_inter_->time(), S_next_->time(), Teuchos::null, up_nc, g);
-
-  // apply the preconditioner
-  precon(g, Pg);
-
-  // ensure the new preconditioned residual is smaller than the old preconditioned residual
-  double norm(0.);
-  int ierr = Pg->Norm2(&norm);
-
-  if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
-    Teuchos::OSTab tab = getOSTab();
-    *out_ << "Checking admissibility with backtracking: res: "
-          << norm << " old res: " << residual_norm_ << std::endl;
-  }
-
-  if (ierr) {
-    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
-      Teuchos::OSTab tab = getOSTab();
-      *out_ << "Inadmissible -- error in norm evaluation." << std::endl;
-    }
-    return false;
-  } else if (norm > residual_norm_) {
-    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
-      Teuchos::OSTab tab = getOSTab();
-      *out_ << "Inadmissible -- increasing PC'd residual." << std::endl;
-    }
-    return false;
-  }
-
-  residual_norm_ = norm;
-  return true;
-  */
-}
 
 } // namespace

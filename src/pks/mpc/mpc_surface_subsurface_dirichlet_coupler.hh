@@ -35,22 +35,26 @@ class MPCSurfaceSubsurfaceDirichletCoupler : public MPCSurfaceSubsurfaceCoupler 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  // modify correction post NKA
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+
  protected:
   // Apply the preconditioner matrix.
   virtual void PreconApply_(Teuchos::RCP<const TreeVector> u,
                             Teuchos::RCP<TreeVector> Pu);
 
-  // Hackery hook for inheriting MPCs.
-  virtual void PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
-          Teuchos::RCP<TreeVector> Pu) {};
-
   // Given updates to subsurface, calculate updates to surface cells.
-  virtual void PreconUpdateSurfaceCells_(Teuchos::RCP<const TreeVector> u,
-          Teuchos::RCP<TreeVector> Pu);
+  virtual void PreconUpdateSurfaceCells_(Teuchos::RCP<TreeVector> Pu);
 
   // Given updates to surface cells, calculate updates to surface faces.
   virtual void PreconUpdateSurfaceFaces_(Teuchos::RCP<const TreeVector> u,
           Teuchos::RCP<TreeVector> Pu);
+
+  // Hackery hook for inheriting MPCs.
+  virtual void PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
+                                  Teuchos::RCP<TreeVector> Pu) {};
+
 
  private:
   // factory registration

@@ -258,13 +258,9 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
     *out_ << "  Precon applying coupled subsurface operator." << std::endl;
   mfd_surf_preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
 
-  // Now post-process
-  coupled_flow_pk_->PreconPostprocess_(u->SubVector(0), Pu->SubVector(0));
-  coupled_energy_pk_->PreconPostprocess_(u->SubVector(1), Pu->SubVector(1));
-
   // Update surface cells and faces on both
-  coupled_flow_pk_->PreconUpdateSurfaceCells_(u->SubVector(0), Pu->SubVector(0));
-  coupled_energy_pk_->PreconUpdateSurfaceCells_(u->SubVector(1), Pu->SubVector(1));
+  coupled_flow_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(0));
+  coupled_energy_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(1));
   coupled_flow_pk_->PreconUpdateSurfaceFaces_(u->SubVector(0), Pu->SubVector(0));
   coupled_energy_pk_->PreconUpdateSurfaceFaces_(u->SubVector(1), Pu->SubVector(1));
 
@@ -354,4 +350,19 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
 
 }
 
+bool MPCPermafrost::modify_correction(double h,
+        Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> Pu) {
+  // Now post-process
+  coupled_flow_pk_->PreconPostprocess_(res->SubVector(0), Pu->SubVector(0));
+  coupled_energy_pk_->PreconPostprocess_(res->SubVector(1), Pu->SubVector(1));
+
+  // Update surface cells and faces on both
+  coupled_flow_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(0));
+  coupled_energy_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(1));
+  coupled_flow_pk_->PreconUpdateSurfaceFaces_(res->SubVector(0), Pu->SubVector(0));
+  coupled_energy_pk_->PreconUpdateSurfaceFaces_(res->SubVector(1), Pu->SubVector(1));
+  return true;
+}
 } // namespace
