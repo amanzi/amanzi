@@ -81,7 +81,6 @@ target_link_libraries(ats
                       advection
                       divgrad
                       amanzi_whetstone
-                      amanzi_solvers
                       amanzi_time_integration
                       amanzi_mesh
                       amanzi_mesh_audit

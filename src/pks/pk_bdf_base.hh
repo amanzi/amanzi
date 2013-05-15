@@ -15,14 +15,15 @@ BDF.
 
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "bdf_fn_base.hh"
-#include "bdf_time_integrator.hh"
+#include "BDFFnBase.hh"
+#include "BDF1_TI.hh"
 #include "Matrix.hh"
 #include "pk_default_base.hh"
 
 namespace Amanzi {
 
-class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
+class PKBDFBase : public virtual PKDefaultBase,
+                  public BDFFnBase<TreeVector> {
 
  public:
 
@@ -54,18 +55,21 @@ class PKBDFBase : public virtual PKDefaultBase, public BDFFnBase {
   virtual bool advance(double dt);
 
   // -- Check the admissibility of a solution.
-  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
+  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
   // -- Possibly modify the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator.
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up) { return false; }
-  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> u,
-                                 Teuchos::RCP<TreeVector> du) { return false; }
+
+  // -- Possibly modify the correction before it is applied
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
+    return false; }
 
  protected: // data
   // timestep control
   double dt_;
-  Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
+  Teuchos::RCP<BDF1_TI<TreeVector> > time_stepper_;
   bool backtracking_;
   int backtracking_count_;
   int backtracking_iterations_;

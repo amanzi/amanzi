@@ -20,7 +20,6 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 
 #include <vector>
 
-#include "bdf_fn_base.hh"
 #include "mpc.hh"
 #include "pk_bdf_base.hh"
 
@@ -29,7 +28,8 @@ namespace Amanzi {
 // note this looks odd, but StrongMPC is both a MPC within a hierarchy of BDF
 // PKs, but it also IS a BDF PK itself, in that it implements the BDF
 // interface.
-class StrongMPC : public MPC<PKBDFBase>, public PKBDFBase {
+class StrongMPC : public MPC<PKBDFBase>,
+                  public PKBDFBase {
 
 public:
   StrongMPC(Teuchos::ParameterList& plist,
@@ -74,8 +74,8 @@ public:
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
   // -- Modify the correction.
-  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> u,
-           Teuchos::RCP<TreeVector> du);
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
 private:
   // factory registration

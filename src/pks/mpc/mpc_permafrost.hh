@@ -54,12 +54,15 @@ class MPCPermafrost : public StrongMPC {
   // update the predictor to be physically consistent
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
+  // modify correction post NKA
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-
 
  protected:
   Key dA_dy2_key_;

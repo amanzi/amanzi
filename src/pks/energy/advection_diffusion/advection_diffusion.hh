@@ -15,11 +15,8 @@ us to the air-water system.
 #define PKS_ENERGY_DIFFUSION_HH_
 
 #include "pk_factory.hh"
-#include "bdf_time_integrator.hh"
-
 #include "advection.hh"
 #include "MatrixMFD.hh"
-
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -89,7 +86,6 @@ private:
   Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // time integration
-  Teuchos::RCP<BDFTimeIntegrator> time_stepper_;
   double atol_;
   double rtol_;
 
