@@ -21,7 +21,7 @@
 #include "LabeledSetRegion.hh"
 #include "ColorFunctionRegion.hh"
 #include "PointRegion.hh"
-#include "LogicalRegion.hh"
+//#include "LogicalRegion.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -202,25 +202,25 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         Exceptions::amanzi_throw(mesg);
       }
     }
-  else if (shape == "Region: Logical")
-    {
-      Teuchos::ParameterList logical_params = reg_params.sublist(shape);
-      std::string opstr = logical_params.get<std::string>("Operation");
-      std::string region1_name="", region2_name="";
+  // else if (shape == "Region: Logical")
+  //   {
+  //     Teuchos::ParameterList logical_params = reg_params.sublist(shape);
+  //     std::string opstr = logical_params.get<std::string>("Operation");
+  //     std::string region1_name="", region2_name="";
 
-      region1_name = logical_params.get<std::string>("Region1");
-      if (opstr != "NOT")
-        region2_name = logical_params.get<std::string>("Region1");
+  //     region1_name = logical_params.get<std::string>("Region1");
+  //     if (opstr != "NOT")
+  //       region2_name = logical_params.get<std::string>("Region1");
 
-      try {
-        RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region1_name, region2_name);
-        return regptr;
-      }
-      catch (Errors::Message mesg) {
-        mesg << "\n" << "Cannot create region of type Logical";
-        Exceptions::amanzi_throw(mesg);
-      }
-    }
+  //     try {
+  //       RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region1_name, region2_name);
+  //       return regptr;
+  //     }
+  //     catch (Errors::Message mesg) {
+  //       mesg << "\n" << "Cannot create region of type Logical";
+  //       Exceptions::amanzi_throw(mesg);
+  //     }
+  //   }
   else 
     {
       Errors::Message mesg("ERROR: Cannot process region with given shape ");
