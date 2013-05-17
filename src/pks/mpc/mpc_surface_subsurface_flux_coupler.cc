@@ -143,10 +143,12 @@ bool MPCSurfaceSubsurfaceFluxCoupler::modify_correction(double h,
         Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> du) {
-  PreconPostprocess_(res, du);
-  PreconUpdateSurfaceCells_(du);
-  PreconUpdateSurfaceFaces_(res,du);
-  return true;
+  bool modified = PreconPostprocess_(res, du);
+  if (modified) {
+    PreconUpdateSurfaceCells_(du);
+    PreconUpdateSurfaceFaces_(res,du);
+  }
+  return modified;
 }
 
 

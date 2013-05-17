@@ -52,8 +52,8 @@ class MPCSurfaceSubsurfaceDirichletCoupler : public MPCSurfaceSubsurfaceCoupler 
           Teuchos::RCP<TreeVector> Pu);
 
   // Hackery hook for inheriting MPCs.
-  virtual void PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<TreeVector> Pu) {};
+  virtual bool PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
+          Teuchos::RCP<TreeVector> Pu) { return false; }
 
 
  private:
