@@ -51,6 +51,7 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
  protected:
 
   bool cap_the_spurt_;
+  double cap_size_;
   bool damp_the_spurt_;
   bool damp_and_cap_the_spurt_;
   bool cap_the_cell_spurt_;
@@ -88,6 +89,10 @@ MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
   if (damp_and_cap_the_spurt_) {
     damp_the_spurt_ = true;
     cap_the_spurt_ = true;
+  }
+
+  if (cap_the_spurt_ || cap_the_cell_spurt_ || damp_the_spurt_) {
+    cap_size_ = plist.get<double>("cap over atmospheric", 100.0);
   }
 
   if (face_limiter_ > 0 || cap_the_spurt_ || damp_the_spurt_) {
@@ -153,8 +158,8 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
           this->surf_mesh_->entity_get_parent(AmanziMesh::CELL, cs);
       double p_old = domain_p_f[0][f];
       double p_new = p_old - domain_Pu_f[0][f];
-      if ((p_new > patm + 100.) && (p_old < patm)) {
-        double my_damp = ((patm + 100) - p_old) / (p_new - p_old);
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
+        double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
         damp = std::min(damp, my_damp);
       }
     }
@@ -180,8 +185,8 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
 
       double p_old = domain_p_f[0][f];
       double p_new = p_old - domain_Pu_f[0][f] / damp;
-      if ((p_new > patm + 100.) && (p_old < patm)) {
-        domain_Pu_f[0][f] = p_old - (patm + 100.);
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
+        domain_Pu_f[0][f] = p_old - (patm + cap_size_);
         std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
         n_modified++;
       }
@@ -218,9 +223,9 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
 
       double p_old = domain_p_f[0][f];
       double p_new = p_old - domain_Pu_f[0][f];
-      if ((p_new > patm + 100.) && (p_old < patm)) {
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
         ncapped_l++;
-        double my_damp = ((patm + 100) - p_old) / (p_new - p_old);
+        double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
         domain_Pu_c[0][cells[0]] *= my_damp;
         std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", dp_cell = " << domain_Pu_c[0][cells[0]] << std::endl;
       }
