@@ -16,5 +16,7 @@ include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 
 add_library(pk_flow_overland_head
         overland_head_pk.cc overland_head_ti.cc overland_head_physics.cc
-        height_evaluator.cc overland_head_water_content_evaluator.cc)
+        height_evaluator.cc
+        effective_height_evaluator.cc
+        overland_head_water_content_evaluator.cc)
 
