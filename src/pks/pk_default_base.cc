@@ -16,6 +16,7 @@ namespace Amanzi {
 
 
 void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
+  // THIS MAY BE CALLED MORE THAN ONCE!
   name_ = plist_.get<std::string>("PK name");
 
   // set up the VerboseObject
@@ -29,15 +30,17 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
   out_ = getOStream();
 
   // cells to debug
-  if (plist_.isParameter("debug cells")) {
-    Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
-    for (Teuchos::Array<int>::const_iterator lcv=dc.begin();
-         lcv!=dc.end(); ++lcv) {
-      dc_.push_back(*lcv);
+  if (dc_.size() == 0) {
+    if (plist_.isParameter("debug cells")) {
+      Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
+      for (Teuchos::Array<int>::const_iterator lcv=dc.begin();
+           lcv!=dc.end(); ++lcv) {
+        dc_.push_back(*lcv);
+      }
+    } else {
+      dc_.push_back(plist_.get<int>("debug cell 0",0));
+      dc_.push_back(plist_.get<int>("debug cell 1",0));
     }
-  } else {
-    dc_.push_back(plist_.get<int>("debug cell 0",0));
-    dc_.push_back(plist_.get<int>("debug cell 1",0));
   }
 }
 
