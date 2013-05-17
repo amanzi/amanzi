@@ -60,8 +60,8 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
                             Teuchos::RCP<TreeVector> Pu);
 
   // Hackery hook for inheriting MPCs.
-  virtual void PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<TreeVector> Pu) {};
+  virtual bool PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
+          Teuchos::RCP<TreeVector> Pu) { return false; }
 
   // Given updates to subsurface, calculate updates to surface cells.
   virtual void PreconUpdateSurfaceCells_(Teuchos::RCP<TreeVector> Pu);

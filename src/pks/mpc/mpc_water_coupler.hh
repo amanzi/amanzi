@@ -38,7 +38,7 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
 
 
   // Hackery hook for inheriting MPCs.
-  virtual void PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
+  virtual bool PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
           Teuchos::RCP<TreeVector> Pu);
 
   // Given updates to surface cells, calculate updates to surface faces.
@@ -100,8 +100,9 @@ MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
 // Assorted hacks to try to get water to work
 // -----------------------------------------------------------------------------
 template<class BaseCoupler>
-void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
+bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
+  bool modified = false;
 
   Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(this->domain_pk_name_)->data();
   const Epetra_MultiVector& domain_p_f = *S_next_->GetFieldData("pressure")
@@ -126,6 +127,7 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
 
 
   // Approach 1: global face limiter on the correction size
+  int n_modified = 0;
   if (face_limiter_ > 0.) {
     int nfaces = domain_Pu_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
@@ -133,6 +135,7 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
         std::cout << "  LIMITING: dp_old = " << domain_Pu_f[0][f];
         domain_Pu_f[0][f] = domain_Pu_f[0][f] > 0. ? face_limiter_ : -face_limiter_;
         std::cout << ", dp_new = " << domain_Pu_f[0][f] << std::endl;
+        n_modified++;
       }
     }
   }
@@ -161,6 +164,7 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     if (damp < 1.0) {
       std::cout << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
       domain_Pu->Scale(damp);
+      modified = true;
     }
   }
 
@@ -179,14 +183,21 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
       if ((p_new > patm + 100.) && (p_old < patm)) {
         domain_Pu_f[0][f] = p_old - (patm + 100.);
         std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
+        n_modified++;
       }
     }
   }
 
+  // tally globally if it was a local fix
+  if (cap_the_spurt_ || (face_limiter_ > 0.)) {
+    int n_modified_l = n_modified;
+    this->domain_mesh_->get_comm()->SumAll(&n_modified_l, &n_modified, 1);
+    if (n_modified > 0) modified = true;
+  }
 
   // All 3 approaches modify faces.  Cells can be re-back-substituted with
   // these face corrections to get improved cell corrections.
-  if (make_cells_consistent_) {
+  if (modified && make_cells_consistent_) {
     this->mfd_preconditioner_->UpdateConsistentCellCorrection(
         *u->SubVector(this->domain_pk_name_)->data(),
         Pu->SubVector(this->domain_pk_name_)->data().ptr());
@@ -195,7 +206,6 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
   // Approach 4 works on cells
   if (cap_the_cell_spurt_) {
     int ncapped_l = 0;
-
     Epetra_MultiVector& domain_Pu_c = *domain_Pu->ViewComponent("cell",false);
     int ncells_surf =
         this->surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -219,10 +229,13 @@ void MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     int ncapped = ncapped_l;
     this->domain_mesh_->get_comm()->SumAll(&ncapped_l, &ncapped, 1);
     if (ncapped > 0) {
+      modified = true;
       Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(this->domain_pk_name_)->data();
       this->mfd_preconditioner_->UpdateConsistentFaceCorrection(*domain_u, domain_Pu.ptr());
     }
   }
+
+  return modified;
 }
 
 
@@ -235,6 +248,9 @@ template<class BaseCoupler>
 void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
+    *out_ << "  Precon updating surface faces." << std::endl;
 
   Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(this->surf_pk_name_)->data();
   Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
@@ -245,6 +261,7 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
   surf_Ph->PutScalar(0.);
 
   // old ponded depth
+  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
   *surf_Ph->ViewComponent("cell",false) = *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false);
 
   // new ponded depth
@@ -252,6 +269,25 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
       ->ViewComponent("cell",false)->Update(-1., surf_Pu_c, 1.);
   this->surf_pk_->changed_solution();
   S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
+
+
+  if (this->out_.get() && includesVerbLevel(this->verbosity_, Teuchos::VERB_HIGH, true)) {
+    Teuchos::RCP<const CompositeVector> h_new = S_next_->GetFieldData("ponded_depth");
+    for (std::vector<int>::const_iterator c0=this->surf_dc_.begin();
+         c0!=this->surf_dc_.end(); ++c0) {
+      if (*c0 < surf_u->size("cell",false)) {
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        this->surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+        *this->out_ << "  h_old(" << *c0 << ") cell/face: "
+                    << (*surf_Ph)("cell",*c0) << ", "
+                    << (*surf_Pu)("face",fnums0[0]) << std::endl;
+        *this->out_ << "  h_new(" << *c0 << ") cell/face: "
+                    << (*h_new)("cell",*c0) << ", "
+                    << (*h_new)("face",fnums0[0]) << std::endl;
+      }
+    }
+  }
 
   // put delta ponded depth into surf_Ph_cell
   surf_Ph->ViewComponent("cell",false)
@@ -269,7 +305,6 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
         AmanziMesh::Entity_ID_List fnums0;
         std::vector<int> dirs;
         this->surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
         *this->out_ << "  PC*u(" << *c0 << ") in h cell/face: "
                     << (*surf_Ph)("cell",*c0) << ", "
                     << (*surf_Pu)("face",fnums0[0]) << std::endl;
@@ -292,10 +327,10 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
         Teuchos::RCP<TreeVector> up) {
   Teuchos::OSTab tab = getOSTab();
 
-  // call the BaseCoupler's modify_predictor(), which calls the sub-PKs modify
-  // and ensures the surface and subsurface match.
-  bool changed = BaseCoupler::modify_predictor(h, up);
+  // Make sure surface values match the subsurface values.
+  bool changed = BaseCoupler::modify_predictor_copy_subsurf_to_surf_(h, up);
 
+  // modify predictor via heuristic stops spurting in the surface flow
   if (modify_predictor_heuristic_) {
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
       *out_ << " Modifying predictor with water heuristic" << std::endl;
@@ -337,6 +372,10 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
     }
     changed = true;
   }
+
+  // call the base coupler's modify.
+  changed |= BaseCoupler::modify_predictor(h, up);
+
 
   return changed;
 }
