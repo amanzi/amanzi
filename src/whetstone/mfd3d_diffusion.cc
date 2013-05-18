@@ -271,6 +271,110 @@ int MFD3D_Diffusion::StiffnessMatrix(int cell, const Tensor& permeability,
 
 
 /* *****************************************************************
+*  Recover gradient from solution, which is either the edge-based 
+*  fluxes of node-based pressures. The algorithm is common if both
+*  N and R are used. Here we use simplified versions.
+***************************************************************** */
+int MFD3D_Diffusion::RecoverGradient_MassMatrix(int cell,
+                                                const std::vector<double>& solution, 
+                                                AmanziGeometry::Point& gradient)
+{
+  int d = mesh_->space_dimension();
+  const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  int num_faces = faces.size();
+
+  gradient.set(0.0);
+  for (int i = 0; i < num_faces; i++) {
+    int f = faces[i];
+    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+
+    for (int k = 0; k < d; k++) {
+      double Rik = fm[k] - cm[k];
+      gradient[k] += Rik * solution[i] * dirs[i];
+    }
+  }
+
+  gradient *= -1.0 / mesh_->cell_volume(cell);
+}
+
+
+/* *****************************************************************
+*  Recover gradient from solution, which is either the edge-based 
+*  fluxes of node-based pressures. The algorithm is common if both
+*  N and R are used. Here we use simplified versions.
+***************************************************************** */
+int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
+                                                     const std::vector<double>& solution, 
+                                                     AmanziGeometry::Point& gradient)
+{
+  AmanziMesh::Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_nodes(cell, &nodes);
+  int num_nodes = nodes.size();
+
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  int num_faces = faces.size();
+
+  // populate matrix R (should be a separate routine lipnikov@lanl.gv)
+  int d = mesh_->space_dimension();
+  Teuchos::SerialDenseMatrix<int, double> R(num_nodes, d);
+  AmanziGeometry::Point p(d), pnext(d), pprev(d), v1(d), v2(d), v3(d);
+
+  for (int i = 0; i < num_faces; i++) {
+    int f = faces[i];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    double area = mesh_->face_area(f);
+
+    AmanziMesh::Entity_ID_List face_nodes;
+    mesh_->face_get_nodes(f, &face_nodes);
+    int num_face_nodes = face_nodes.size();
+
+    for (int j = 0; j < num_face_nodes; j++) {
+      int v = face_nodes[j];
+      double u(0.5);
+
+      if (d == 2) {
+        u = 0.5 * dirs[i]; 
+      } else {
+        int jnext = (j + 1) % num_face_nodes;
+        int jprev = (j + num_face_nodes - 1) % num_face_nodes;
+
+        int vnext = face_nodes[jnext];
+        int vprev = face_nodes[jprev];
+
+        mesh_->node_get_coordinates(v, &p);
+        mesh_->node_get_coordinates(vnext, &pnext);
+        mesh_->node_get_coordinates(vprev, &pprev);
+
+        v1 = pprev - pnext;
+        v2 = p - fm;
+        v3 = v1^v2;
+        u = dirs[i] * norm(v3) / (4 * area);
+      }
+
+      int pos = FindPosition_(v, nodes);
+      for (int k = 0; k < d; k++) R(pos, k) += normal[k] * u;
+    }
+  }
+
+  gradient.set(0.0);
+  for (int i = 0; i < num_nodes; i++) {
+    for (int k = 0; k < d; k++) {
+      gradient[k] += R(i, k) * solution[i];
+    }
+  }
+  gradient *= 1.0 / mesh_->cell_volume(cell);
+}
+
+
+/* *****************************************************************
 *  OTHER ROUTINES
 ***************************************************************** */
 

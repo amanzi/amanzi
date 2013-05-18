@@ -6,7 +6,8 @@ Amanzi is released under the three-clause BSD License.
 The terms of use and "as is" disclaimer for this license are 
 provided Reconstruction.cppin the top-level COPYRIGHT file.
 
-Release name: aka-to.
+Version: 2.0
+Release name: naka-to.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
 */
@@ -15,7 +16,7 @@ Usage:
 #define __MFD3D_HH__
 
 /*
-This is the discretization package, release alpha.
+This is the discretization package.
 
 The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
 consistency condition (Mc N = R) and matrix Ms is build from a stability 
@@ -59,7 +60,7 @@ class MFD3D {
                             Teuchos::SerialDenseMatrix<int, double>& N,
                             Teuchos::SerialDenseMatrix<int, double>& Mc) = 0;
 
-  virtual int L2consistencyInverse(int cell, const Tensor& permeability,
+  virtual int L2consistencyInverse(int cell, const Tensor& T,
                                    Teuchos::SerialDenseMatrix<int, double>& R,
                                    Teuchos::SerialDenseMatrix<int, double>& Wc) = 0;
 
@@ -67,13 +68,13 @@ class MFD3D {
                             Teuchos::SerialDenseMatrix<int, double>& N,
                             Teuchos::SerialDenseMatrix<int, double>& Mc) = 0;
 
-  virtual int MassMatrix(int cell, const Tensor& deformation,
+  virtual int MassMatrix(int cell, const Tensor& T,
                          Teuchos::SerialDenseMatrix<int, double>& M) = 0; 
 
-  virtual int MassMatrixInverse(int cell, const Tensor& deformation,
+  virtual int MassMatrixInverse(int cell, const Tensor& T,
                                 Teuchos::SerialDenseMatrix<int, double>& W) = 0; 
 
-  virtual int StiffnessMatrix(int cell, const Tensor& deformation,
+  virtual int StiffnessMatrix(int cell, const Tensor& T,
                               Teuchos::SerialDenseMatrix<int, double>& A) = 0; 
 
   // experimental methods (for stability region analysis; unit test)

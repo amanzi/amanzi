@@ -77,7 +77,6 @@ if (BUILD_TESTS)
 #if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
-
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     # Copy test directory files if an out of source build

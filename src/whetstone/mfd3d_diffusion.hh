@@ -91,6 +91,16 @@ class MFD3D_Diffusion : public MFD3D {
   int MassMatrixInverseDiagonal(int cell, const Tensor& permeability,
                                 Teuchos::SerialDenseMatrix<int, double>& W);
 
+  // a posteriori error estimate
+  int RecoverGradient_MassMatrix(int cell,
+                                 const std::vector<double>& solution, 
+                                 AmanziGeometry::Point& gradient);
+
+  int RecoverGradient_StiffnessMatrix(int cell,
+                                      const std::vector<double>& solution, 
+                                      AmanziGeometry::Point& gradient);
+
+
  private:  
   // supporting stability methods (add matrix Ms in M = Mc + Ms)
   int StabilityMonotoneHex(int cell, const Tensor& T,

@@ -49,6 +49,12 @@ if ( BUILD_TESTS )
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
+    # Copy test directory files if an out of source build
+    if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}) )
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${WHETSTONE_SOURCE_DIR}/test ${WHETSTONE_BINARY_DIR}/test) 
+    endif()
+
     set(amanzi_libs geometry mesh mesh_audit mesh_factory state whetstone)
 
     # Test 1: inverse mass matrix in darcy flow

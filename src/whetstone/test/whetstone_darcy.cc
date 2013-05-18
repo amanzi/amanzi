@@ -178,7 +178,7 @@ TEST(DARCY_STIFFNESS_2D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Stiffness matrix for Darcy" << endl;
+  std::cout << "\nTest: Stiffness matrix for Darcy in 2D" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -248,7 +248,7 @@ TEST(DARCY_STIFFNESS_3D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Stiffness matrix for Darcy" << endl;
+  std::cout << "\nTest: Stiffness matrix for Darcy in 3D" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -307,6 +307,113 @@ TEST(DARCY_STIFFNESS_3D) {
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(RECOVER_GRADIENT_MIXED) {
+  using namespace Teuchos;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Recover gradient from Darcy fluxes" << endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  // create Darcy fluxes
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int nfaces = 6, cell = 0;
+  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+
+  Point flux(1.0, 2.0,3.0);
+  std::vector<double> solution(nfaces);
+
+  for (int n = 0; n < nfaces; n++) {
+    int f = faces[n];
+    const Point& normal = mesh->face_normal(f);
+    solution[n] = -normal * flux * dirs[n];
+  }
+  
+  // gradient recovery
+  Point gradient(3);
+  mfd.RecoverGradient_MassMatrix(cell, solution, gradient);
+
+  printf("Gradient %f %f %f\n", gradient[0], gradient[1], gradient[2]);
+
+  CHECK_CLOSE(gradient[0], 1.0, 1e-10);
+  CHECK_CLOSE(gradient[1], 2.0, 1e-10);
+  CHECK_CLOSE(gradient[2], 3.0, 1e-10);
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(RECOVER_GRADIENT_NODAL) {
+  using namespace Teuchos;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Recover gradient from nodal pressures" << endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  // create pressure solution
+  Entity_ID_List nodes;
+  int nnodes = 8, cell = 0;
+  mesh->cell_get_nodes(cell, &nodes);
+
+  Point slope(1.0, 2.0,3.0);
+  std::vector<double> solution(nnodes);
+  Point xv(3);
+
+  for (int n = 0; n < nnodes; n++) {
+    int v = nodes[n];
+    mesh->node_get_coordinates(v, &xv);
+    solution[n] = slope * xv;
+  }
+  
+  // gradient recovery
+  Point gradient(3);
+  mfd.RecoverGradient_StiffnessMatrix(cell, solution, gradient);
+
+  printf("Gradient %f %f %f\n", gradient[0], gradient[1], gradient[2]);
+
+  CHECK_CLOSE(gradient[0], 1.0, 1e-10);
+  CHECK_CLOSE(gradient[1], 2.0, 1e-10);
+  CHECK_CLOSE(gradient[2], 3.0, 1e-10);
 
   delete comm;
 }
