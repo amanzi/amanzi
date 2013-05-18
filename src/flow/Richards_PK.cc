@@ -28,6 +28,8 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "mfd3d_diffusion.hh"
+
 #include "Matrix_MFD_PLambda.hh"
 #include "Matrix_MFD_TPFA.hh"
 
@@ -780,7 +782,7 @@ void Richards_PK::ImproveAlgebraicConsistency(const Epetra_Vector& flux,
   for (int c = 0; c < ncells_owned; c++) ws_d[c] = ws[c];
   FS->CopyMasterCell2GhostCell(ws_d);
 
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   const Epetra_Vector& phi = FS->ref_porosity();
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

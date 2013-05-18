@@ -55,100 +55,65 @@ class MFD3D {
   explicit MFD3D(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
   ~MFD3D() {};
 
-  // primary methods for diffusion
-  int DarcyMass(int cell, const Tensor& permeability,
-               Teuchos::SerialDenseMatrix<int, double>& M);
-  int DarcyMassInverse(int cell, const Tensor& permeability,
-                       Teuchos::SerialDenseMatrix<int, double>& W);
-  int DarcyMassInverseScaled(int cell, const Tensor& permeability,
-                              Teuchos::SerialDenseMatrix<int, double>& W);
+  virtual int L2consistency(int cell, const Tensor& T,
+                            Teuchos::SerialDenseMatrix<int, double>& N,
+                            Teuchos::SerialDenseMatrix<int, double>& Mc) = 0;
 
-  // primary methods for diffusion (optimized)
-  int DarcyMassInverseHex(int cell, const Tensor& permeability,
-                          Teuchos::SerialDenseMatrix<int, double>& W);
-  int DarcyMassInverseOptimized(int cell, const Tensor& permeability,
-                                Teuchos::SerialDenseMatrix<int, double>& W);
-  int DarcyMassInverseOptimizedScaled(int cell, const Tensor& permeability,
-                                      Teuchos::SerialDenseMatrix<int, double>& W);
+  virtual int L2consistencyInverse(int cell, const Tensor& permeability,
+                                   Teuchos::SerialDenseMatrix<int, double>& R,
+                                   Teuchos::SerialDenseMatrix<int, double>& Wc) = 0;
 
-  // primary related discetization methods
-  int DarcyMassInverseSO(int cell, const Tensor& permeability,
-                         Teuchos::SerialDenseMatrix<int, double>& W);
-  int DarcyMassInverseDiagonal(int cell, const Tensor& permeability,
-                               Teuchos::SerialDenseMatrix<int, double>& W);
+  virtual int H1consistency(int cell, const Tensor& T,
+                            Teuchos::SerialDenseMatrix<int, double>& N,
+                            Teuchos::SerialDenseMatrix<int, double>& Mc) = 0;
 
-  // primary methods for elastisity and Stokes
-  int ElasticityStiffness(int cell, const Tensor& deformation,
-                          Teuchos::SerialDenseMatrix<int, double>& A); 
+  virtual int MassMatrix(int cell, const Tensor& deformation,
+                         Teuchos::SerialDenseMatrix<int, double>& M) = 0; 
 
-  // primary MFD extension of VAG scheme (must be relocated)
-  void CalculateHarmonicPoints(int face, std::vector<Tensor>& T, 
-                               AmanziGeometry::Point& harmonic_point,
-                               double& harmonic_point_weight);
+  virtual int MassMatrixInverse(int cell, const Tensor& deformation,
+                                Teuchos::SerialDenseMatrix<int, double>& W) = 0; 
 
-  int DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
-                             std::vector<AmanziGeometry::Point>& corner_points,
-                             double cell_value,
-                             std::vector<double>& corner_values,
-                             std::vector<double>& corner_fluxes);
+  virtual int StiffnessMatrix(int cell, const Tensor& deformation,
+                              Teuchos::SerialDenseMatrix<int, double>& A) = 0; 
+
+  // experimental methods (for stability region analysis; unit test)
+  double CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc);
+  void ModifyStabilityScalingFactor(double factor);
 
   // access members
   double scaling_factor() { return scaling_factor_; }
   double scalar_stability() { return scalar_stability_; }
   Teuchos::SerialDenseMatrix<int, double>& matrix_stability() { return matrix_stability_; }
 
-  // extension of mesh API (must be relocated)
+  // expension of mesh API (must be removed from this class lipnikov@lanl.gov)
   int cell_get_face_adj_cell(const int cell, const int face);
 
-  // experimental methods (for stability region analysis; unit test)
-  void ModifyStabilityScalingFactor(double factor);
-
- private:  
-  // supporting consistency methods (calculate matrix Mc in M = Mc + Ms)
-  int L2consistency(int cell, const Tensor& T,
-                    Teuchos::SerialDenseMatrix<int, double>& N,
-                    Teuchos::SerialDenseMatrix<int, double>& Mc);
-  int L2consistencyInverse(int cell, const Tensor& permeability,
-                           Teuchos::SerialDenseMatrix<int, double>& R,
-                           Teuchos::SerialDenseMatrix<int, double>& Wc);
-  int L2consistencyInverseScaled(int cell, const Tensor& permeability,
-                                 Teuchos::SerialDenseMatrix<int, double>& R,
-                                 Teuchos::SerialDenseMatrix<int, double>& Wc);
-
-  int H1consistency(int cell, const Tensor& T,
-                    Teuchos::SerialDenseMatrix<int, double>& N,
-                    Teuchos::SerialDenseMatrix<int, double>& Mc);
-
-  int H1consistencyElasticity(int cell, const Tensor& T,
-                              Teuchos::SerialDenseMatrix<int, double>& N,
-                              Teuchos::SerialDenseMatrix<int, double>& Ac);
-
+ protected:
   // supporting stability methods (add matrix Ms in M = Mc + Ms)
   void StabilityScalar(int cell,
-                       Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, and W for the inverse matrix
+                       Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, W for the inverse matrix
                        Teuchos::SerialDenseMatrix<int, double>& Mc,
                        Teuchos::SerialDenseMatrix<int, double>& M);
-  int StabilityMonotoneHex(int cell, const Tensor& T,
-                           Teuchos::SerialDenseMatrix<int, double>& Mc,
-                           Teuchos::SerialDenseMatrix<int, double>& M);
+
   int StabilityOptimized(const Tensor& T,
                          Teuchos::SerialDenseMatrix<int, double>& N,
                          Teuchos::SerialDenseMatrix<int, double>& Mc,
                          Teuchos::SerialDenseMatrix<int, double>& M);
 
-  // other suppporting methods
+  int StabilityMonotoneHex(int cell, const Tensor& T,
+                           Teuchos::SerialDenseMatrix<int, double>& Mc,
+                           Teuchos::SerialDenseMatrix<int, double>& M);
+
   void GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N);
 
-  double CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc);
-
- private:
+ protected:
   int FindPosition_(int v, AmanziMesh::Entity_ID_List nodes);
-  void RescaleDarcyMassInverse_(int cell, Teuchos::SerialDenseMatrix<int, double>& W);
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  int stability_method_;  
+  int stability_method_;  // stability parameters
   double scalar_stability_, scaling_factor_;
   Teuchos::SerialDenseMatrix<int, double> matrix_stability_;
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace WhetStone

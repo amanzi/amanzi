@@ -34,9 +34,9 @@ namespace WhetStone {
 * Consistency condition for stifness matrix in geomechanics. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
-int MFD3D::H1consistencyElasticity(int cell, const Tensor& T,
-                                   Teuchos::SerialDenseMatrix<int, double>& N,
-                                   Teuchos::SerialDenseMatrix<int, double>& Ac)
+int MFD3D::H1consistency(int cell, const Tensor& T,
+                         Teuchos::SerialDenseMatrix<int, double>& N,
+                         Teuchos::SerialDenseMatrix<int, double>& Ac)
 {
   return WHETSTONE_ELEMENTAL_MATRIX_OK;  // (lipnikov@lanl.gov)
 }

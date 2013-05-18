@@ -275,7 +275,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 
 
 /* ******************************************************************
-* Calculates steady-state solution using the Picard Newton method.                                                 
+* Calculates steady-state solution using the Picard Newton method.                                             
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
 {

@@ -14,6 +14,8 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Epetra_FECrsGraph.h"
 
+#include "mfd3d_diffusion.hh"
+
 #include "Flow_constants.hh"
 #include "Matrix_MFD_TPFA.hh"
 
@@ -35,7 +37,7 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
 {
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -420,7 +422,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 ****************************************************************** */
 void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r)
 {
-  WhetStone::MFD3D mfd3d(mesh_);
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

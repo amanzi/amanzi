@@ -13,7 +13,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "mfd3d.hh"
+#include "mfd3d_diffusion.hh"
+#include "mfd3d_vag.hh"
 #include "tensor.hh"
 
 #include "Transport_PK.hh"
@@ -111,12 +112,12 @@ void Transport_PK::PopulateHarmonicPointsValues(int component,
                                                 std::vector<int>& bc_face_id,
                                                 std::vector<double>& bc_face_values)
 {
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_VAG vag(mesh_);
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; f++) {
     double weight;
-    mfd.CalculateHarmonicPoints(f, dispersion_tensor, harmonic_points[f], weight);
+    vag.CalculateHarmonicPoints(f, dispersion_tensor, harmonic_points[f], weight);
     harmonic_points_weight[f] = weight;
 
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -143,7 +144,9 @@ void Transport_PK::AddDispersiveFluxes(int component,
                                        std::vector<double>& bc_face_values,
                                        Teuchos::RCP<Epetra_MultiVector> tcc_next)
 {
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_VAG vag(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
+
   AmanziMesh::Entity_ID_List nodes, faces;
   std::vector<AmanziGeometry::Point> corner_points;
   std::vector<double> corner_values, corner_fluxes;
@@ -166,7 +169,7 @@ void Transport_PK::AddDispersiveFluxes(int component,
         corner_values.push_back(harmonic_points_value[f]);
       }
 
-      mfd.DispersionCornerFluxes(v, c, dispersion_tensor[c], 
+      vag.DispersionCornerFluxes(v, c, dispersion_tensor[c], 
                                  corner_points, value, corner_values, corner_fluxes);
 
       for (int i = 0; i < nfaces; i++) {

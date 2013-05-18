@@ -13,6 +13,8 @@ Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Epetra_FECrsGraph.h"
 
+#include "mfd3d_diffusion.hh"
+
 #include "Flow_PK.hh"
 #include "Flow_constants.hh"
 #include "Matrix_MFD.hh"
@@ -51,7 +53,7 @@ Matrix_MFD::~Matrix_MFD()
 void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K)
 {
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -68,22 +70,22 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
     Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_POLYHEDRA_SCALED) {
-      ok = mfd.DarcyMassInverseScaled(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseScaled(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_POLYHEDRA) {
-      ok = mfd.DarcyMassInverse(c, K[c], Mff);
+      ok = mfd.MassMatrixInverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED_SCALED) {
-      ok = mfd.DarcyMassInverseOptimizedScaled(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseOptimizedScaled(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
-      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseOptimized(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseHex(c, K[c], Mff);
       else
-        ok = mfd.DarcyMassInverse(c, K[c], Mff);
+        ok = mfd.MassMatrixInverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseDiagonal(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseSO(c, K[c], Mff);
     } else {
       Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
       Exceptions::amanzi_throw(msg);
@@ -113,7 +115,7 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
     int mfd3d_method, double factor, std::vector<WhetStone::Tensor>& K)
 {
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -133,17 +135,17 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.DarcyMassInverseHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseHex(c, K[c], Mff);
       else
-        ok = mfd.DarcyMassInverse(c, K[c], Mff);
+        ok = mfd.MassMatrixInverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.DarcyMassInverseDiagonal(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseDiagonal(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.DarcyMassInverseSO(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseSO(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
-      ok = mfd.DarcyMassInverseOptimized(c, K[c], Mff);
+      ok = mfd.MassMatrixInverseOptimized(c, K[c], Mff);
     } else {
-      ok = mfd.DarcyMassInverse(c, K[c], Mff);
+      ok = mfd.MassMatrixInverse(c, K[c], Mff);
     }
 
     Mff_cells_.push_back(Mff);
@@ -169,7 +171,7 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
 void Matrix_MFD::CreateMFDstiffnessMatrices()
 {
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -214,7 +216,7 @@ void Matrix_MFD::CreateMFDstiffnessMatrices()
 void Matrix_MFD::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
 {
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 

@@ -18,7 +18,7 @@ Authors: Neil Carlson (version 1)
 #include "errors.hh"
 #include "exceptions.hh"
 
-#include "mfd3d.hh"
+#include "mfd3d_diffusion.hh"
 #include "tensor.hh"
 
 #include "Darcy_PK.hh"
@@ -529,7 +529,7 @@ void Darcy_PK::UpdateSpecificYield()
   Epetra_Vector& specific_yield_wghost = FS->ref_specific_yield();
 #endif
 
-  WhetStone::MFD3D mfd3d(mesh_);
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 

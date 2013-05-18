@@ -23,7 +23,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "mfd3d.hh"
+#include "mfd3d_diffusion.hh"
 #include "tensor.hh"
 
 
@@ -50,7 +50,7 @@ TEST(DARCY_MASS) {
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
  
-  MFD3D mfd(mesh);
+  MFD3D_Diffusion mfd(mesh);
 
   int nfaces = 6, cell = 0;
   Tensor T(3, 1);
@@ -58,7 +58,7 @@ TEST(DARCY_MASS) {
 
   Teuchos::SerialDenseMatrix<int, double> M(nfaces, nfaces);
   for (int method = 0; method < 1; method++) {
-    mfd.DarcyMass(cell, T, M);
+    mfd.MassMatrix(cell, T, M);
 
     printf("Mass matrix for cell %3d\n", cell);
     for (int i=0; i<nfaces; i++) {
@@ -117,7 +117,7 @@ TEST(DARCY_INVERSE_MASS) {
   factory.preference(pref);
   RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
  
-  MFD3D mfd(mesh);
+  MFD3D_Diffusion mfd(mesh);
 
   int nfaces = 6, cell = 0;
   Tensor T(3, 1);  // tensor of rank 1
@@ -126,11 +126,11 @@ TEST(DARCY_INVERSE_MASS) {
   Teuchos::SerialDenseMatrix<int, double> W(nfaces, nfaces);
   for (int method = 0; method < 3; method++) {
     if (method == 0) 
-      mfd.DarcyMassInverse(cell, T, W);
+      mfd.MassMatrixInverse(cell, T, W);
     else if (method == 1)
-      mfd.DarcyMassInverseScaled(cell, T, W);
+      mfd.MassMatrixInverseScaled(cell, T, W);
     else if (method == 2)
-      mfd.DarcyMassInverseOptimizedScaled(cell, T, W);
+      mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
 
     printf("Inverse of mass matrix for method=%d\n", method);
     for (int i=0; i<6; i++) {
