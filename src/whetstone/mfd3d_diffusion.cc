@@ -159,21 +159,27 @@ int MFD3D_Diffusion::H1consistency(int cell, const Tensor& T,
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
-      int jnext = (j + 1) % num_face_nodes;
-      int jprev = (j + num_face_nodes - 1) % num_face_nodes;
-
       int v = face_nodes[j];
-      int vnext = face_nodes[jnext];
-      int vprev = face_nodes[jprev];
+      double u(0.5);
 
-      mesh_->node_get_coordinates(v, &p);
-      mesh_->node_get_coordinates(vnext, &pnext);
-      mesh_->node_get_coordinates(vprev, &pprev);
+      if (d == 2) {
+        u = 0.5 * dirs[i]; 
+      } else {
+        int jnext = (j + 1) % num_face_nodes;
+        int jprev = (j + num_face_nodes - 1) % num_face_nodes;
 
-      v1 = pprev - pnext;
-      v2 = p - fm;
-      v3 = v1^v2;
-      double u = dirs[i] * norm(v3) / (4 * area);
+        int vnext = face_nodes[jnext];
+        int vprev = face_nodes[jprev];
+
+        mesh_->node_get_coordinates(v, &p);
+        mesh_->node_get_coordinates(vnext, &pnext);
+        mesh_->node_get_coordinates(vprev, &pprev);
+
+        v1 = pprev - pnext;
+        v2 = p - fm;
+        v3 = v1^v2;
+        u = dirs[i] * norm(v3) / (4 * area);
+      }
 
       int pos = FindPosition_(v, nodes);
       for (int k = 0; k < d; k++) N(pos, k) += normal[k] * u;

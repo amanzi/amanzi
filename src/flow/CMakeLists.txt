@@ -49,6 +49,7 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Richards_SteadyState.cc Richards_Picard.cc Richards_AztecOO.cc
                    Richards_Bundles.cc Richards_Devel.cc Richards_AndersonMixing.cc
                    Matrix_MFD.cc Matrix_MFD_TPFA.cc Matrix_MFD_PLambda.cc Matrix_VAG.cc 
+                   Stiffness_MFD.cc 
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    RelativePermeability.cc RelativePermeability_IO.cc)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
@@ -99,7 +100,7 @@ if (BUILD_TESTS)
         add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
         add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
 
-        # Test: steady-state Darcy full flow test
+        # Test: two steady-state Darcy flow tests
         add_amanzi_test(flow_darcy_source flow_darcy_source
 	                KIND int
                         SOURCE test/Main.cc test/flow_darcy_source.cc
