@@ -174,4 +174,76 @@ TEST(DARCY_INVERSE_MASS) {
 }
 
 
+/* **************************************************************** */
+TEST(DARCY_STIFFNESS) {
+  using namespace Teuchos;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: Stiffness matrix for Darcy" << endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  int num_components = 3;
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  int nnodes = 8, cell = 0;
+  Tensor T(3, 1);
+  T(0, 0) = 1;
+
+  Teuchos::SerialDenseMatrix<int, double> A(nnodes, nnodes);
+  mfd.StiffnessMatrix(cell, T, A);
+
+  printf("Stiffness matrix for cell %3d\n", cell);
+  for (int i=0; i<nnodes; i++) {
+    for (int j=0; j<nnodes; j++ ) printf("%8.4f ", A(i, j)); 
+    printf("\n");
+  }
+
+  // verify SPD propery
+  for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
+
+  // verify exact integration property
+  Entity_ID_List nodes;
+  std::vector<int> dirs;
+  mesh->cell_get_nodes(cell, &nodes);
+    
+  int d = mesh->space_dimension();
+  Point p(d);
+
+  double xi, yi, xj;
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  for (int i = 0; i < nnodes; i++) {
+    int v = nodes[i];
+    mesh->node_get_coordinates(v, &p);
+    xi = p[0];
+    yi = p[1];
+    for (int j = 0; j < nnodes; j++) {
+      v = nodes[j];
+      mesh->node_get_coordinates(v, &p);
+      xj = p[0];
+      vxx += A(i, j) * xi * xj;
+      vxy += A(i, j) * yi * xj;
+    }
+  }
+  CHECK_CLOSE(vxx, volume, 1e-10);
+  CHECK_CLOSE(vxy, 0.0, 1e-10);
+
+  delete comm;
+}
+
 

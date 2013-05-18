@@ -65,7 +65,7 @@ class MFD3D_Diffusion : public MFD3D {
                         Teuchos::SerialDenseMatrix<int, double>& W);
 
   int StiffnessMatrix(int cell, const Tensor& permeability,
-                      Teuchos::SerialDenseMatrix<int, double>& M) { return 0; }
+                      Teuchos::SerialDenseMatrix<int, double>& A);
 
   // experimental methods
   int L2consistencyInverseScaled(int cell, const Tensor& permeability,

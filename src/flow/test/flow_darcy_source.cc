@@ -189,8 +189,8 @@ TEST(FLOW_DARCY_SOURCE) {
   for (int n = 0; n < 300; n+=100) {
     // recalculate mass matrices
     double factor = pow(10.0, (double)(n - 50) / 100.0);
-     DPK->get_matrix()->CreateMFDmassMatrices_ScaledStability(
-      AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor, K);
+    DPK->get_matrix()->CreateMFDmassMatrices_ScaledStability(
+        AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor, K);
 
     // create a problem
     DPK->AssembleMatrixMFD();

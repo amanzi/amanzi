@@ -244,6 +244,26 @@ int MFD3D_Diffusion::MassMatrixInverse(int cell, const Tensor& permeability,
 }
 
 
+/* ******************************************************************
+* Darcy mass matrix: a wrapper for other low-level routines
+****************************************************************** */
+int MFD3D_Diffusion::StiffnessMatrix(int cell, const Tensor& permeability,
+                                     Teuchos::SerialDenseMatrix<int, double>& A)
+{
+  int d = mesh_->space_dimension();
+  int nnodes = A.numRows();
+
+  Teuchos::SerialDenseMatrix<int, double> N(nnodes, d + 1);
+  Teuchos::SerialDenseMatrix<int, double> Ac(nnodes, nnodes);
+
+  int ok = H1consistency(cell, permeability, N, Ac);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  StabilityScalar(cell, N, Ac, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
 /* *****************************************************************
 *  OTHER ROUTINES
 ***************************************************************** */
