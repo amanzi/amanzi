@@ -25,6 +25,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "tensor.hh"
+#include "mfd3d_diffusion.hh"
 
 #include "State.hh"
 #include "Flow_State.hh"
@@ -77,6 +78,28 @@ Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point
   Amanzi::AmanziGeometry::Point v(2);
   v[0] = -(t04 * px + t05 * py);
   v[1] = -(t05 * px + t06 * py);
+  return v;
+}
+Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double x = p[0];
+  double y = p[1];
+
+  double t01, t02, t03, t12, t13, t04, t05, t06; 
+  double px, py;
+
+  t01 = x*x*y;
+  t02 = sin(2*M_PI*x*y);
+  t03 = sin(2*M_PI*y);
+
+  t12 = cos(2*M_PI*x*y);
+  t13 = cos(2*M_PI*y);
+
+  px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
+  py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
+
+  Amanzi::AmanziGeometry::Point v(2);
+  v[0] = px;
+  v[1] = py;
   return v;
 }
 double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -189,7 +212,7 @@ TEST(FLOW_DARCY_SOURCE) {
     }
   }
 
-  for (int n = 0; n < 300; n+=100) {
+  for (int n = 0; n < 240; n+=50) {
     // recalculate mass matrices
     double factor = pow(10.0, (double)(n - 50) / 100.0);
     DPK->get_matrix()->CreateMFDmassMatrices_ScaledStability(
@@ -238,7 +261,7 @@ TEST(FLOW_DARCY_SOURCE) {
 
     p_error = pow(p_error / p_norm, 0.5);
     flux_error = pow(flux_error / flux_norm, 0.5);
-    printf("scale = %12.6g  Err(p) = %12.6f  Err(flux) = %12.6g\n", factor, p_error, flux_error); 
+    printf("scale = %10.6g  Err(p) = %10.6f  Err(flux) = %10.6g\n", factor, p_error, flux_error); 
     
     CHECK(p_error< 0.15 && flux_error < 0.15);
   }
@@ -267,7 +290,7 @@ TEST(FLOW_DARCY_NODAL) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: 2D steady-state elliptic solver, nodal discretization" << endl;
+  if (MyPID == 0) cout << "\nTest: 2D steady-state elliptic solver, nodal discretization" << endl;
 
   // read parameter list
   ParameterList parameter_list;
@@ -286,7 +309,7 @@ TEST(FLOW_DARCY_NODAL) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 80, 80, gm);
   RCP<Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // create and populate fake flow state
@@ -336,7 +359,7 @@ TEST(FLOW_DARCY_NODAL) {
   matrix.SymbolicAssembleGlobalMatrices();
   preconditioner.SymbolicAssembleGlobalMatrices();
 
-  for (int n = 0; n < 300; n+=100) {
+  for (int n = 0; n < 240; n+=50) {
     double factor = pow(10.0, (double)(n - 50) / 100.0);
 
     // populate matrix
@@ -386,28 +409,42 @@ TEST(FLOW_DARCY_NODAL) {
     delete solver;
 
     // calculate errors
+    WhetStone::MFD3D_Diffusion mfd(mesh);
+    AmanziGeometry::Point grad(2);
+
     double p_norm(0.0), p_error(0.0);
+    double grad_norm(0.0), grad_error(0.0);
 
     for (int c = 0; c < ncells; c++) {
       double volume = mesh->cell_volume(c);
 
       mesh->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
+      std::vector<double> cell_solution(nnodes);
 
       for (int k = 0; k < nnodes; k++) {
         int v = nodes[k];
+        cell_solution[k] = solution[v];
+
         mesh->node_get_coordinates(v, &xv);
         double tmp = pressure_exact(xv, 0.0);
 
         p_error += std::pow(tmp - solution[v], 2.0) * volume / nnodes;
         p_norm += std::pow(tmp, 2.0) * volume / nnodes;
-// cout << xv << " " << tmp << " " << solution[v] << endl;
       }
+
+      const Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& grad_exact = gradient_exact(xc, 0.0);
+      mfd.RecoverGradient_StiffnessMatrix(c, cell_solution, grad);
+
+      grad_error += L22(grad - grad_exact) * volume;
+      grad_norm += L22(grad_exact) * volume;
     }
 
     p_error = pow(p_error / p_norm, 0.5);
-    printf("scale = %12.6g  Err(p) = %12.6f\n", factor, p_error); 
+    grad_error = pow(grad_error / grad_norm, 0.5);
+    printf("scale = %10.6g  Err(p) = %10.6f  Err(grad) = %10.6g\n", factor, p_error, grad_error); 
 
-    // CHECK(p_error < 0.15);
+    CHECK(p_error < 0.1 && grad_error < 0.15);
   }
 }
