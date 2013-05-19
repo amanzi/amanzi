@@ -113,6 +113,12 @@ if (BUILD_TESTS)
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
         # Test: transient Darcy flow 
+        add_executable(flow_darcy_3D test/Main.cc test/flow_darcy_3D.cc)
+        target_link_libraries(flow_darcy_3D ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_darcy_3D flow_darcy_3D KIND int)
+        add_amanzi_test(flow_darcy_3D_parallel flow_darcy_3D NPROCS 2 KIND unit)
+ 
+        # Test: transient Darcy flow 
         add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
 	                KIND int
                         SOURCE test/Main.cc test/flow_darcy_dual2D.cc
@@ -152,7 +158,6 @@ if (BUILD_TESTS)
                         KIND unit
                         SOURCE test/Main.cc test/flow_richards_newton_TPFA.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
     endif()    
  
     set(amanzi_libs geometry mesh mesh_factory state flow whetstone)
@@ -182,7 +187,6 @@ if (BUILD_TESTS)
 	                KIND unit
                         SOURCE test/Main.cc test/flow_richards_3D.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
     endif()
 endif()
 

@@ -35,8 +35,8 @@ void Flow_PK::CalculateVelocity(std::vector<AmanziGeometry::Point>& xyz,
   int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // set markers for boundary nodes and faces
-  std::vector<int> node_marker(nnodes_owned);  
-  std::vector<int> face_marker(nfaces_owned);  
+  std::vector<int> node_marker(nnodes_wghost);  
+  std::vector<int> face_marker(nfaces_wghost);  
 
   AmanziMesh::Entity_ID_List nodes, faces, cells;
   std::vector<int> dirs;

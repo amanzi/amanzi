@@ -30,7 +30,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 /* **************************************************************** */
-TEST(FLOW_2D_TRANSIENT_DARCY) {
+TEST(FLOW_3D_TRANSIENT_DARCY) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -40,11 +40,11 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) cout << "Test: 2D transient Darcy, 2-layer model" << endl;
+  if (MyPID == 0) cout << "Test: 3D transient Darcy, 3-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_darcy_2D.xml";
+  string xmlFileName = "test/flow_darcy_3D.xml";
   
   // DEPRECATED  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   ParameterXMLFileReader xmlreader(xmlFileName);
@@ -52,7 +52,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   FrameworkPreference pref;
   pref.clear();
@@ -60,7 +60,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
+  RCP<Mesh> mesh = meshfactory(0.0, 0.0, -2.0, 1.0, 2.0, 0.0, 18, 18, 18, gm);
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
@@ -70,24 +70,25 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   FS->set_fluid_viscosity(1.0);
   FS->set_fluid_density(1.0);
   FS->set_gravity(-1.0);
+  FS->set_specific_storage(1.0);
 
   // create Darcy process kernel
   Darcy_PK* DPK = new Darcy_PK(parameter_list, FS);
   DPK->InitPK();
 
-  // create the initial pressure function
+  // create new initial pressure function
   Epetra_Vector& p = FS->ref_pressure();
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    p[c] = xc[1] * (xc[1] + 2.0);
+    p[c] = xc[2] * (xc[2] + 2.0) * (xc[1] + 1.0) * (xc[0] - 1.0);
   }
-
+  
   DPK->InitSteadyState(0.0, 1e-8);
 
   // transient solution
   double dT = 0.1;
-  for (int n = 0; n < 10; n++) {
+  for (int n = 0; n < 5; n++) {
     DPK->Advance(dT);
     DPK->CommitState(FS);
 
@@ -111,4 +112,3 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   delete DPK;
 }
-
