@@ -51,7 +51,8 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Matrix_MFD.cc Matrix_MFD_TPFA.cc Matrix_MFD_PLambda.cc Matrix_VAG.cc 
                    Stiffness_MFD.cc 
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
-                   RelativePermeability.cc RelativePermeability_IO.cc)
+                   RelativePermeability.cc RelativePermeability_IO.cc
+                   Flow_Utilities.cc)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})

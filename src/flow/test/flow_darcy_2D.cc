@@ -98,5 +98,15 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     }
   }
 
+  // Testing recovery
+  std::vector<AmanziGeometry::Point> xyz;
+  std::vector<AmanziGeometry::Point> velocity;
+  DPK->CalculateVelocity(xyz, velocity);
+
+  int nvel = velocity.size();
+  for (int n = 0; n < nvel; n++) { 
+    // cout << xyz[n] << " " << velocity[n] << endl;
+  } 
+
   delete DPK;
 }
