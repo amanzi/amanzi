@@ -57,13 +57,19 @@ if ( BUILD_TESTS )
 
     set(amanzi_libs geometry mesh mesh_audit mesh_factory state whetstone)
 
-    # Test 1: inverse mass matrix in darcy flow
+    # Test: matrices for diffusion
     add_amanzi_test(whetstone_darcy whetstone_darcy
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_darcy.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # Test 2: various operations with tensors 
+    # Test: matrices for elasticity
+    add_amanzi_test(whetstone_elasticity whetstone_elasticity
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_elasticity.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: various operations with tensors 
     add_amanzi_test(whetstone_tensors whetstone_tensors
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc

@@ -16,9 +16,9 @@ Only symmetric tensors of rank 4 are considered here.
 namespace Amanzi {
 namespace WhetStone {
 
-const int WHETSTONE_TENSOR_SIZE[3][3] = {1, 1, 1, 
-                                         1, 2, 3,
-                                         1, 3, 6};
+const int WHETSTONE_TENSOR_SIZE[3][4] = {1, 1, 0, 1, 
+                                         1, 2, 0, 3,
+                                         1, 3, 0, 6};
 
 class Tensor {
  public:

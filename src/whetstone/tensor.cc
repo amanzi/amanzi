@@ -113,7 +113,7 @@ void Tensor::inverse()
     data_[1] /= -det;
     data_[2] /= -det;
 
-  } else if (rank_ <= 2) {
+  } else {
     Teuchos::LAPACK<int, double> lapack;
     int info;
     int ipiv[size_];
