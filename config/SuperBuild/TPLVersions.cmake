@@ -2,9 +2,27 @@
 
 #
 # TPLVersions
+#
 #    Define the versions, approved download locations for each TPL
 #
+
 #
+# TPL: Amanzi Collection of TPLs
+#
+#   Define a "version number" for the collection of TPLs listed here.
+#   It's not clear this is the best way to include this information, 
+#   but it's a reasonable place to start.
+#   
+#   Upgrade History:
+#
+#   0.90.6       - first version reference used in installations
+#   0.90.7       - updated MSTK to version 2.01
+#
+set (AMANZI_TPLS_VERSION_MAJOR 0)
+set (AMANZI_TPLS_VERSION_MINOR 90)
+set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
+#   Not sure how to create a meaningful has for the collection
 
 #
 # TPL: OpenMPI
@@ -149,11 +167,11 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 #
 set(MSTK_VERSION_MAJOR 2)
 set(MSTK_VERSION_MINOR 01)
-set(MSTK_VERSION_PATCH rc2)
+set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        ebe14d337a2d1e4a7d513f5904ed6ec2)
+set(MSTK_MD5_SUM        3d86118ccc71480dd1f6a9250fff96de)
 
 #
 # TPL: MOAB
