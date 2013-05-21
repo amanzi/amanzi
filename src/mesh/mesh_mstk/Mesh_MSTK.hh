@@ -13,6 +13,7 @@
 #include <GeometricModel.hh>
 #include <LabeledSetRegion.hh>
 #include <PointRegion.hh>
+#include <LogicalRegion.hh>
 #include <GenerationSpec.hh>
 #include <dbc.hh>
 #include <errors.hh>
@@ -143,6 +144,9 @@ private:
                          const Entity_kind setkind,
                          const bool flatten = false,
                          const bool extrude = false);
+
+  MSet_ptr build_set(const AmanziGeometry::RegionPtr region,
+                     const Entity_kind kind) const;
 
 public:
 
