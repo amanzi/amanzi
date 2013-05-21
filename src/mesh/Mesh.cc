@@ -538,7 +538,10 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
 {
 
-  if (!geometric_model_) return false;
+  if (!geometric_model_) {
+    Errors::Message mesg("Mesh sets not enabled because mesh was created without reference to a geometric model");
+    amanzi_throw(mesg);
+  }
 
   unsigned int gdim = geometric_model_->dimension();
 
