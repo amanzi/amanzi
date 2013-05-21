@@ -25,8 +25,10 @@ namespace Amanzi {
 class PointRegion : public Region {
 public:
 
-  PointRegion(const std::string name, const unsigned int id, const Point& p);
-  PointRegion(const char *name, const unsigned int id, const Point& p);
+  PointRegion(const std::string name, const unsigned int id, const Point& p,
+              const LifeCycleType lifecycle=PERMANENT);
+  PointRegion(const char *name, const unsigned int id, const Point& p,
+              const LifeCycleType lifecycle=PERMANENT);
 
   /// Protected copy constructor to avoid unwanted copies.
   PointRegion(const PointRegion& old);

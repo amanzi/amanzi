@@ -28,23 +28,24 @@ Region::Region()
 }
 
 Region::Region(const Region& old) :
-    topo_dimension_(old.dimension()), name_(old.name()), id_(old.id())
+  topo_dimension_(old.dimension()), name_(old.name()), id_(old.id()),
+  lifecycle_(old.lifecycle())
 {
   // empty
 }
 
 
-Region::Region(const std::string name, const unsigned int id, const unsigned int dim) :
-    name_(name), id_(id), topo_dimension_(dim)
+Region::Region(const std::string name, const unsigned int id, 
+               const unsigned int dim, const LifeCycleType lifecycle) :
+  name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle)
 {
-  // empty
 }
   
   
-Region::Region(const char *name, const unsigned int id, const unsigned int dim) :
-    name_(name), id_(id), topo_dimension_(dim)
+Region::Region(const char *name, const unsigned int id, const unsigned int dim,
+               const LifeCycleType lifecycle) :
+  name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle)
 {
-  // empty
 }
 
 Region::~Region(void)

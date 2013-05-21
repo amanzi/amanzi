@@ -28,8 +28,9 @@ LabeledSetRegion::LabeledSetRegion(const std::string name,
 				   const std::string entity_str,
                                    const std::string file,
                                    const std::string format,
-                                   const std::string label)
-  : Region(name,id,3),entity_str_(entity_str),
+                                   const std::string label,
+                                   const LifeCycleType lifecycle)
+  : Region(name,id,3,lifecycle),entity_str_(entity_str),
     file_(file), format_(format), label_(label)
 {
   // empty
@@ -42,8 +43,9 @@ LabeledSetRegion::LabeledSetRegion(const char *name,
 				   const std::string entity_str,
                                    const std::string file,
                                    const std::string format,
-                                   const std::string label)
-  : Region(name,id,3),entity_str_(entity_str),
+                                   const std::string label,
+                                   const LifeCycleType lifecycle)
+  : Region(name,id,3,lifecycle),entity_str_(entity_str),
     file_(file), format_(format), label_(label)
 {
   // empty
