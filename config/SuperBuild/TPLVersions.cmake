@@ -2,9 +2,27 @@
 
 #
 # TPLVersions
+#
 #    Define the versions, approved download locations for each TPL
 #
+
 #
+# TPL: Amanzi Collection of TPLs
+#
+#   Define a "version number" for the collection of TPLs listed here.
+#   It's not clear this is the best way to include this information, 
+#   but it's a reasonable place to start.
+#   
+#   Upgrade History:
+#
+#   0.90.6       - first version reference used in installations
+#   0.90.7       - updated MSTK to version 2.01
+#
+set (AMANZI_TPLS_VERSION_MAJOR 0)
+set (AMANZI_TPLS_VERSION_MINOR 90)
+set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
+#   Not sure how to create a meaningful has for the collection
 
 #
 # TPL: OpenMPI
@@ -55,12 +73,12 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 1)
-set(CCSE_VERSION_PATCH 3)
+set(CCSE_VERSION_PATCH 6)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        c524ea40dc0f04ae13607d7a2522fb7d)
+set(CCSE_MD5_SUM        48a5dfac4ce8026175234956c2deabd3)
 
 #
 # TPL: UnitTest
@@ -71,18 +89,6 @@ set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR})
 set(UnitTest_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.zip)
 set(UnitTest_MD5_SUM       bd373a53403ed51ea1bbb60b1952d7e3) 
-
-#
-# TPL: CGNS
-#
-set(CGNS_VERSION_MAJOR 2)
-set(CGNS_VERSION_MINOR 5)
-set(CGNS_VERSION_PATCH 4)
-set(CGNS_VERSION ${CGNS_VERSION_MAJOR}.${CGNS_VERSION_MINOR}-${CGNS_VERSION_PATCH})
-set(CGNS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(CGNS_ARCHIVE_FILE   cgnslib_${CGNS_VERSION}.tar.gz)
-set(CGNS_MD5_SUM        42063efdf726c81300a51c3495d3224e) 
-
 
 #
 # TPL: Boost
@@ -170,12 +176,12 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 00)
-set(MSTK_VERSION_PATCH)
+set(MSTK_VERSION_MINOR 01)
+set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        f80cc2fada6f27ea6b3b32437d65d449)
+set(MSTK_MD5_SUM        3d86118ccc71480dd1f6a9250fff96de)
 
 #
 # TPL: MOAB
