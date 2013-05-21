@@ -504,6 +504,11 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
+# NetCDF Fortran
+include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
 # ExodusII
 include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
