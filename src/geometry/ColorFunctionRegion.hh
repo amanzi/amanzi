@@ -41,13 +41,15 @@ public:
                       const unsigned int id, 
                       const std::string file,
                       const int value,
-                      const Epetra_MpiComm *comm);
+                      const Epetra_MpiComm *comm,
+                      const LifeCycleType lifecycle=PERMANENT);
 
   ColorFunctionRegion(const char *name, 
                       const unsigned int id, 
                       const char *file,
                       const int value,
-                      const Epetra_MpiComm *comm);
+                      const Epetra_MpiComm *comm,
+                      const LifeCycleType lifecycle=PERMANENT);
 
 
   /// Protected copy constructor to avoid unwanted copies.

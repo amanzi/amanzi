@@ -15,7 +15,7 @@
 #include "Region.hh"
 
 namespace Amanzi {
-  namespace AmanziGeometry {
+namespace AmanziGeometry {
 
 // -------------------------------------------------------------
 //  class BoxRegion
@@ -27,8 +27,10 @@ public:
 
   /// Default constructor uses two corner points (order not important).
 
-  BoxRegion(const std::string name, const unsigned int id, const Point& p0, const Point& p1);
-  BoxRegion(const char *name, const unsigned int id, const Point& p0, const Point& p1);
+  BoxRegion(const std::string name, const unsigned int id, const Point& p0, 
+            const Point& p1, const LifeCycleType lifecycle=PERMANENT);
+  BoxRegion(const char *name, const unsigned int id, const Point& p0, 
+            const Point& p1, const LifeCycleType lifecycle=PERMANENT);
 
   /// Protected copy constructor to avoid unwanted copies.
   BoxRegion(const BoxRegion& old);

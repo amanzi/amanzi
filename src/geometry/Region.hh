@@ -22,16 +22,29 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 
-enum RegionType {
+typedef enum {
   BOX=0,
   PLANE,
   LABELEDSET,
   LAYER,
   SURFACE,
   POINT,
-  COLORFUNCTION
-};
+  COLORFUNCTION,
+  LOGICAL
+} RegionType;
 
+typedef enum {
+  PERMANENT=0,
+  TEMPORARY
+} LifeCycleType;
+
+typedef enum {
+  NOBOOLEAN=-1,
+  COMPLEMENT,
+  UNION,
+  INTERSECT,
+  SUBTRACT
+} BoolOpType;
 
 // -------------------------------------------------------------
 //  class Region
@@ -57,8 +70,10 @@ public:
   Region(void);
 
   /// Constructor with name and ID
-  Region(const std::string name, const unsigned int id, const unsigned int dim=3);
-  Region(const char *name, const unsigned int id, const unsigned int dim=3);
+  Region(const std::string name, const unsigned int id, 
+         const unsigned int dim=3, const LifeCycleType lifecycle=PERMANENT);
+  Region(const char *name, const unsigned int id, const unsigned int dim=3, 
+         const LifeCycleType lifecycle=PERMANENT);
 
   /// Copy constructor 
   Region(const Region& old);
@@ -95,6 +110,16 @@ public:
     return topo_dimension_;
   }
 
+  // Get the Lifecycle of this region - Do mesh entity sets derived from
+  // it have to be kept around or are they temporary and can be destroyed
+  // as soon as they are used?
+  
+  inline
+  LifeCycleType lifecycle(void) const 
+  {
+    return lifecycle_;
+  }
+
 
   // Type of the region
   virtual RegionType type() const = 0;
@@ -103,10 +128,15 @@ public:
   /// Does being on the boundary count as inside or not?
   virtual bool inside(const Point& p) const = 0;
 
+
   /// Get the extents of the Region
   /// void extents(Point *pmin, Point *pmax) const;
 
 private:
+
+  // Lifecycle (Temporary or Permanent)
+
+  LifeCycleType lifecycle_;
   
   // Topological dimension of region (0, 1, 2, 3)
 

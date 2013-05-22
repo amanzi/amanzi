@@ -256,7 +256,8 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
       // add upwind correction
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+        // double t = std::max(0.0, Krel_faces[f] - Krel_cells[c]);
+        double t = fabs(Krel_faces[f] - Krel_cells[c]);
         Bff(n, n) += Mff(n, n) * t; 
       }
     } else {

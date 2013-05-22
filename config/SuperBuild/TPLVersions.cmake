@@ -136,6 +136,16 @@ set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
 set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc) 
 
 #
+# TPL: NetCDF Fortran
+#
+set(NetCDF_Fortran_VERSION_MAJOR 4)
+set(NetCDF_Fortran_VERSION_MINOR 2)
+set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR})
+set(NetCDF_Fortran_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(NetCDF_Fortran_ARCHIVE_FILE   netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
+set(NetCDF_Fortran_MD5_SUM        cc3bf530223e8f4aff93793b9f197bf3) 
+
+#
 # ASCEM-IO
 #
 set(ASCEMIO_VERSION_MAJOR 2)

@@ -21,7 +21,7 @@
 #include "LabeledSetRegion.hh"
 #include "ColorFunctionRegion.hh"
 #include "PointRegion.hh"
-//#include "LogicalRegion.hh"
+#include "LogicalRegion.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -50,6 +50,18 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
 
   std::string shape = reg_params.name(k);
 
+  LifeCycleType lifecycle=PERMANENT;
+  if (reg_params.isParameter("Lifecycle")) {
+
+    std::string lifecycle_str = reg_params.get<std::string>("Lifecycle");
+
+    if (lifecycle_str != "Permanent" || lifecycle_str != "Temporary") {
+      std::cerr << "Lifecycle can only be Temporary or Permanent. Reset to Permanent" << std::endl;
+      lifecycle = PERMANENT;
+    }
+
+  }
+
   if (shape == "Region: Box") 
     {
 
@@ -77,7 +89,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         }
 
       try {
-        RegionPtr regptr = new BoxRegion(reg_name, reg_id, p0, p1);        
+        RegionPtr regptr = new BoxRegion(reg_name, reg_id, p0, p1, lifecycle);        
 
         // Verify that we have a usable box
 
@@ -123,7 +135,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         }
 
       try {
-        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n);
+        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n, lifecycle);
         return regptr;
       }
       catch (Errors::Message mesg) {
@@ -148,7 +160,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         entity_str = "NODE";
 
       try {
-        RegionPtr regptr = new LabeledSetRegion(reg_name, reg_id, entity_str, file, format, name);
+        RegionPtr regptr = new LabeledSetRegion(reg_name, reg_id, entity_str, file, format, name, lifecycle);
         return regptr;
       }
       catch (Errors::Message mesg) {
@@ -165,7 +177,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       int value = colorfunc_params.get<int>("Value");
 
       try {
-        RegionPtr regptr = new ColorFunctionRegion(reg_name, reg_id, file, value, comm);
+        RegionPtr regptr = new ColorFunctionRegion(reg_name, reg_id, file, value, comm, lifecycle);
         return regptr;
       }
       catch (Errors::Message mesg) {
@@ -194,7 +206,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         }
 
       try {
-        RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt);
+        RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt, lifecycle);
         return regptr;
       }
       catch (Errors::Message mesg) {
@@ -202,25 +214,30 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         Exceptions::amanzi_throw(mesg);
       }
     }
-  // else if (shape == "Region: Logical")
-  //   {
-  //     Teuchos::ParameterList logical_params = reg_params.sublist(shape);
-  //     std::string opstr = logical_params.get<std::string>("Operation");
-  //     std::string region1_name="", region2_name="";
+  else if (shape == "Region: Logical")
+    {
+      Teuchos::ParameterList logical_params = reg_params.sublist(shape);
+      std::string opstr = logical_params.get<std::string>("Operation");
+      Teuchos::Array<std::string> region_names = 
+        logical_params.get< Teuchos::Array<std::string> >("Regions");
 
-  //     region1_name = logical_params.get<std::string>("Region1");
-  //     if (opstr != "NOT")
-  //       region2_name = logical_params.get<std::string>("Region1");
+      // No idea how to directly convert Teuchos::Array to std::vector
+      // do it element by element
 
-  //     try {
-  //       RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region1_name, region2_name);
-  //       return regptr;
-  //     }
-  //     catch (Errors::Message mesg) {
-  //       mesg << "\n" << "Cannot create region of type Logical";
-  //       Exceptions::amanzi_throw(mesg);
-  //     }
-  //   }
+      std::vector<std::string> region_names1;
+      int nelem = region_names.size();
+      for (int i = 0; i < nelem; i++)
+        region_names1.push_back(region_names[i]);      
+
+      try {
+        RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region_names1, lifecycle);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type Logical";
+        Exceptions::amanzi_throw(mesg);
+      }
+    }
   else 
     {
       Errors::Message mesg("ERROR: Cannot process region with given shape ");

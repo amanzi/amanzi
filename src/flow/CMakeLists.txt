@@ -130,10 +130,16 @@ if (BUILD_TESTS)
                         SOURCE test/Main.cc test/flow_darcy_well.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        # Test: miscaleneous Richards flow routines
+        # Test: convergence analysis
         add_amanzi_test(flow_richards_convergence flow_richards_convergence
 	                KIND int
                         SOURCE test/Main.cc test/flow_richards_convergence.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+        # Test: convergence analysis on random meshes
+        add_amanzi_test(flow_richards_random flow_richards_random
+	                KIND int
+                        SOURCE test/Main.cc test/flow_richards_random.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: 2D Richards

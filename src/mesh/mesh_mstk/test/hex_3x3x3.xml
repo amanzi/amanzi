@@ -53,6 +53,30 @@
       <Parameter name="Value" type="int" value="10"/>
     </ParameterList>
   </ParameterList>
+  <ParameterList name="BOTTOM_LS+MIDDLE_LS+TOP_LS">
+    <ParameterList name="Region: Logical">
+      <Parameter name="Operation" type="string" value="Union"/>
+      <Parameter name="Regions" type="Array(string)" value="{Bottom LS, Middle LS, Top LS}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="NOT_Bottom+Middle Box">
+    <ParameterList name="Region: Logical">
+      <Parameter name="Operation" type="string" value="Complement"/>
+      <Parameter name="Regions" type="Array(string)" value="{Bottom+Middle Box}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="BOTTOM_LS+MIDDLE_LS+TOP_LS - Top ColFunc - Middle ColFunc">
+    <ParameterList name="Region: Logical">
+      <Parameter name="Operation" type="string" value="Subtract"/>
+      <Parameter name="Regions" type="Array(string)" value="{BOTTOM_LS+MIDDLE_LS+TOP_LS, Top ColFunc, Middle ColFunc}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Bottom+Middle Box INT Middle ColFunc">
+    <ParameterList name="Region: Logical">
+      <Parameter name="Operation" type="string" value="Intersect"/>
+      <Parameter name="Regions" type="Array(string)" value="{Bottom+Middle Box, Middle ColFunc}"/>
+    </ParameterList>
+  </ParameterList>
 
   <!-- sidesets -->
   <ParameterList name="Face 101">
@@ -105,6 +129,19 @@
     <ParameterList name="Region: Box">
       <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
       <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0,1.0}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="BOX 102">
+    <ParameterList name="Region: Box">
+      <Parameter name="Low Coordinate" type="Array(double)" value="{0.3,0.0,0.3}"/>
+      <Parameter name="High Coordinate" type="Array(double)" value="{0.7,0.0,0.7}"/>
+      <Parameter name="Lifecycle" type="string" value="Temporary"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="FACE_102_MINUS_BOX102">
+    <ParameterList name="Region: Logical">
+      <Parameter name="Operation" type="string" value="Subtract"/>
+      <Parameter name="Regions" type="Array(string)" value="{Face 102, BOX 102}"/>
     </ParameterList>
   </ParameterList>
 

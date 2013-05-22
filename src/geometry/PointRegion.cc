@@ -24,14 +24,15 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 PointRegion::PointRegion(const std::string name, 
 			 const unsigned int id,
-			 const Point& p)
-  : Region(name,id,0), p_(p)
+			 const Point& p,
+                         const LifeCycleType lifecycle)
+  : Region(name,id,0,lifecycle), p_(p)
 {
 }
 
 PointRegion::PointRegion(const char *name, const unsigned int id,
-			 const Point& p)
-  : Region(name,id,0), p_(p)
+			 const Point& p, const LifeCycleType lifecycle)
+  : Region(name,id,0,lifecycle), p_(p)
 {
 }
 

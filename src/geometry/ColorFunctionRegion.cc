@@ -29,8 +29,9 @@ ColorFunctionRegion::ColorFunctionRegion(const std::string name,
                                          const unsigned int id,
                                          const std::string file,
                                          const int value,
-                                         const Epetra_MpiComm *comm)
-  : Region(name,id,3),
+                                         const Epetra_MpiComm *comm,
+                                         const LifeCycleType lifecycle)
+  : Region(name,id,3,lifecycle),
     file_(file), value_(value)
 {
   // Region dimension is set arbitrarily as 3 since the set of
@@ -50,8 +51,9 @@ ColorFunctionRegion::ColorFunctionRegion(const char *name,
                                          const unsigned int id,
                                          const char *file,
                                          const int value,
-                                         const Epetra_MpiComm *comm)
-  : Region(name,id,3),
+                                         const Epetra_MpiComm *comm,
+                                         const LifeCycleType lifecycle)
+  : Region(name,id,3,lifecycle),
     file_(file), value_(value)
 {
   // Region dimension is set arbitrarily as 3 since the set of

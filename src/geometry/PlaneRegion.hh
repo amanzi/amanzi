@@ -15,7 +15,7 @@
 #include "Region.hh"
 
 namespace Amanzi {
-  namespace AmanziGeometry {
+namespace AmanziGeometry {
 
 // -------------------------------------------------------------
 //  class PlaneRegion
@@ -27,8 +27,10 @@ public:
 
   /// Default constructor uses point and normal
 
-  PlaneRegion(const std::string name, const unsigned int id, const Point& p, const Point& normal);
-  PlaneRegion(const char *name, const unsigned int id, const Point& p, const Point& normal);
+  PlaneRegion(const std::string name, const unsigned int id, const Point& p, 
+              const Point& normal, const LifeCycleType lifecycle=PERMANENT);
+  PlaneRegion(const char *name, const unsigned int id, const Point& p, 
+              const Point& normal, const LifeCycleType lifecycle=PERMANENT);
 
   /// Protected copy constructor to avoid unwanted copies.
   PlaneRegion(const PlaneRegion& old);

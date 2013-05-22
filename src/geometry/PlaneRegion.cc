@@ -24,8 +24,9 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 PlaneRegion::PlaneRegion(const std::string name, 
 			 const unsigned int id,
-			 const Point& p, const Point& normal)
-  : Region(name,id,p.dim()-1), p_(p), n_(normal)
+			 const Point& p, const Point& normal,
+                         const LifeCycleType lifecycle)
+  : Region(name,id,p.dim()-1,lifecycle), p_(p), n_(normal)
 {
 
 #ifdef ENABLE_DBC
@@ -40,8 +41,9 @@ PlaneRegion::PlaneRegion(const std::string name,
 }
 
 PlaneRegion::PlaneRegion(const char *name, const unsigned int id,
-			 const Point& p, const Point& normal)
-  : Region(name,id,p.dim()-1), p_(p), n_(normal)
+			 const Point& p, const Point& normal,
+                         const LifeCycleType lifecycle)
+  : Region(name,id,p.dim()-1,lifecycle), p_(p), n_(normal)
 {
 
 #ifdef ENABLE_DBC
