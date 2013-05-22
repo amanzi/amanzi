@@ -209,21 +209,21 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
   }
   else {
-    Amanzi::timer_manager.start("AnalyticJacobian");
+    //Amanzi::timer_manager.start("AnalyticJacobian");
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(preconditioner_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    Amanzi::timer_manager.stop("AnalyticJacobian");
+    //Amanzi::timer_manager.stop("AnalyticJacobian");
 
     matrix_tpfa -> ApplyBoundaryConditions( bc_model, bc_values, *Transmis_faces, *Grav_term_faces);
     matrix_tpfa -> AssembleSchurComplement( *Transmis_faces );
 
-    Amanzi::timer_manager.start("AnalyticJacobian");
+    //Amanzi::timer_manager.start("AnalyticJacobian");
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, bc_model, bc_values, *rel_perm);
-    Amanzi::timer_manager.stop("AnalyticJacobian");
+    //Amanzi::timer_manager.stop("AnalyticJacobian");
   }
 
   preconditioner_->UpdatePreconditioner();
