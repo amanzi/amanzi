@@ -145,7 +145,7 @@ void RelativePermeability::FaceUpwindGravity_(
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+      double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
@@ -314,7 +314,7 @@ void RelativePermeability::DerivativeFaceUpwindGravity_(
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+      double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
       
       if (bc_model[f] != FLOW_BC_FACE_NULL){
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
@@ -441,7 +441,7 @@ void RelativePermeability::FaceUpwindGravityInit_()
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double cos_angle = (normal * Kgravity_unit[c]) * dirs[n] / mesh_->face_area(f);
+      double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
 
       if (cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
         (*face_flag)[f] = FLOW_PERMFLAG_UPWIND;
@@ -536,12 +536,12 @@ void RelativePermeability::CalculateKVectorUnit(const std::vector<WhetStone::Ten
 #endif
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  Kgravity_unit.clear();
+  Kgravity_unit_.clear();
 
   for (int c = 0; c < ncells_wghost; c++) {
     AmanziGeometry::Point Kg(dim); 
     for (int i = 0; i < dim; i++) Kg[i] = Kg_copy[i][c];
-    Kgravity_unit.push_back(Kg);
+    Kgravity_unit_.push_back(Kg);
   }
 
   FaceUpwindGravityInit_();

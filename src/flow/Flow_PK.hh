@@ -88,7 +88,7 @@ class Flow_PK : public BDF2::fnBase {
                                    RelativePermeability& rel_perm);
 
   // TPFA members
-  void AddGravityFluxes_TPFA( const Epetra_Vector& Grav_term, 
+  void AddGravityFluxes_TPFA( const Epetra_Vector& Krel_faces, const Epetra_Vector& Grav_term, 
 			      std::vector<int>& bc_model, Matrix_MFD* matrix_operator);
 
   // Picard-Newton members

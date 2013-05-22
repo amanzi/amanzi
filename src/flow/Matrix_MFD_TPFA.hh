@@ -36,21 +36,34 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   // override main methods of the base class
   void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
   void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
-  void AssembleGlobalMatrices(const Epetra_Vector& Trans_faces);
-  void AssembleSchurComplement(const Epetra_Vector& Trans_faces);
-  void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values, Epetra_Vector& Trans_faces, Epetra_Vector& grav_term_faces); 
+  void AssembleGlobalMatrices(const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces);
+  void AssembleSchurComplement(const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces);
+  void ApplyBoundaryConditions(std::vector<int>& bc_model,
+			       std::vector<bc_tuple>& bc_values,
+			       const Epetra_Vector& Krel_faces, 
+			       Epetra_Vector& Trans_faces, 
+			       Epetra_Vector& grav_term_faces); 
+
   void DeriveDarcyMassFlux(const Epetra_Vector& solution,
+			   const Epetra_Vector& Krel_faces,
 			   const Epetra_Vector& Trans_faces,
 			   const Epetra_Vector& Grav_term,
 			   std::vector<int>& bc_model, 
 			   std::vector<bc_tuple>& bc_values,
 			   Epetra_Vector& darcy_mass_flux);
 
+  double ComputeNegativeResidual(const Epetra_Vector& solution, 
+				 const Epetra_Vector& Krel_faces, 
+				 const Epetra_Vector& trans_faces, 
+				 Epetra_Vector& residual);
+
   // void AssembleGlobalMatrices();
   // void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
   
   void AnalyticJacobian(const Epetra_Vector& solution, int dim,
                         std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values,
+			const Epetra_Vector& trans_faces,
+			const Epetra_Vector& grav_term_faces,
                         RelativePermeability& rel_perm); 
 
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -67,17 +80,19 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
  private:
   void ComputeJacobianLocal(int mcells,
                             int face_id,
-                            int dim,
+                            //int dim,
                             int Krel_method,
                             std::vector<int>& bc_markers,
                             std::vector<bc_tuple>& bc_values,
-                            double dist,
+                            //double dist,
                             double *pres,
-                            double *perm_abs_vert,
-                            double *perm_abs_horz,
-                            double *k_rel,
+                            // double *perm_abs_vert,
+                            // double *perm_abs_horz,
+                            // double *k_rel,
                             double *dk_dp_cell,
-                            AmanziGeometry::Point& normal,
+                            //AmanziGeometry::Point& normal,
+			    const Epetra_Vector& trans_faces,
+			    const Epetra_Vector& grav_term_faces,
                             Teuchos::SerialDenseMatrix<int, double>& Jpp);
          
   Teuchos::RCP<Epetra_Vector> Dff_;

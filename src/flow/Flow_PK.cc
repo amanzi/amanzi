@@ -384,7 +384,7 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 * Add gravity fluxes to RHS of TPFA approximation                                            
 ****************************************************************** */
 
-void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Grav_term,
+void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetra_Vector& Grav_term,
     std::vector<int>& bc_model, Matrix_MFD* matrix_operator)
 {
 
@@ -399,7 +399,7 @@ void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Grav_term,
     for (int i = 0; i < ncells; i++){
       int c = cells[i];
       if (c >= ncells_owned) continue;
-      (*rhs_cells)[c] -= pow(-1, i)*Grav_term[f];  
+      (*rhs_cells)[c] -= pow(-1, i)*Grav_term[f]*Krel_faces[f];  
     }
   }
 

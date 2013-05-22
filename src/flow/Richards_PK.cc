@@ -210,6 +210,7 @@ void Richards_PK::InitPK()
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     Transmis_faces = Teuchos::rcp(new Epetra_Vector(fmap_ghost));
     Grav_term_faces = Teuchos::rcp(new Epetra_Vector(fmap_ghost));
+    ComputeTransmissibilities( *Transmis_faces, *Grav_term_faces);
   }
 
   // Allocate memory for wells
@@ -605,6 +606,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   Epetra_Vector& ws = FS_MPC->ref_water_saturation();
   Epetra_Vector& ws_prev = FS_MPC->ref_prev_water_saturation();
+  Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
   ws_prev = ws;
   DeriveSaturationFromPressure(pressure, ws);
@@ -624,7 +626,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    matrix_tpfa -> DeriveDarcyMassFlux(*solution, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa -> DeriveDarcyMassFlux(*solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;

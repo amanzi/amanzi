@@ -70,6 +70,7 @@ class RelativePermeability {
   std::vector<std::vector<double> >& Krel_amanzi() { return Krel_amanzi_; }
   const Epetra_Vector& dKdP_cells() { return *dKdP_cells_; }
   const Epetra_Vector& dKdP_faces() { return *dKdP_faces_; }
+  std::vector<AmanziGeometry::Point >& Kgravity_unit() {return Kgravity_unit_;}
 
   int method() { return method_; }
   Epetra_Vector& map_c2mb() { return *map_c2mb_; }
@@ -117,7 +118,7 @@ class RelativePermeability {
   Teuchos::RCP<Epetra_IntVector> face_flag;
   std::vector<std::vector<double> > Krel_amanzi_;
 
-  std::vector<AmanziGeometry::Point> Kgravity_unit;  // normalized vector Kg
+  std::vector<AmanziGeometry::Point> Kgravity_unit_;  // normalized vector Kg
 
   // Miscallenous maps
   Teuchos::RCP<Epetra_Vector> map_c2mb_;
