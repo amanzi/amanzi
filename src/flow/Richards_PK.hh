@@ -93,6 +93,7 @@ class Richards_PK : public Flow_PK {
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
   void AssembleMatrixMFD(const Epetra_Vector &u, double Tp);
   void AssemblePreconditionerMFD(const Epetra_Vector &u, double Tp, double dTp);
+  void ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
 
   void UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_cells, Epetra_Vector& p_faces);
   double AdaptiveTimeStepEstimate(double* dTfactor);
@@ -187,6 +188,9 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<RelativePermeability> rel_perm;
+
+  Teuchos::RCP<Epetra_Vector> Transmis_faces;
+  Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;

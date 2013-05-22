@@ -389,13 +389,14 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   // u[10] = 100288.85844005689 ;
   // u[11] = 100288.86263140998 ;
 
-  // u0 = u;
+  //u0 = u;
 
   // cout.precision(16);
   // cout<<"Initial Guess\n";
-  // for (int i=0;i<12;i++) cout<<u[i]<<" ";
+  // for (int i=0;i<12;i++) cout<<u[i]<<"\n";
   // cout<<endl;
   //*************************************************
+  //cout.precision(16);
 
   fpa->nka_restart();
 
@@ -447,9 +448,22 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
-    
+
+    //cout<<"Residual\n";
+    // for (int i=0;i<12;i++) cout<<du[i]<<" sol "<<u[i]<<"\n";
+    // cout<<endl;
+    // cout<<du<<endl;
+    //cout<<"Solution\n"<<u<<endl;
+    //exit(0);
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
+
+    //cout<<"Update\n";
+    // for (int i=0;i<12;i++) cout<<u_tmp[i]<<"\n";
+    // cout<<endl;
+    //cout<<u_tmp<<endl;
+
+    //exit(0);
 
     // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
@@ -532,6 +546,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // for (int i=0;i<12;i++) cout<<"test_sol   "<<u[i]<<"\n";
     // cout<<endl;
+    //cout<<"Update \n"<<du<<endl;
+    //cout<<"Solution \n"<<u<<endl;
+    int tmp;
+    //    cin >> tmp;
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;

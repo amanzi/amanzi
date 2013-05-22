@@ -29,6 +29,7 @@ namespace AmanziFlow {
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 { 
+  Amanzi::timer_manager.start("Function");
   AssembleMatrixMFD(u, Tp);
   matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
 
@@ -60,6 +61,7 @@ void Richards_PK::fun(
       }
     }
   }
+  Amanzi::timer_manager.stop("Function");
 }
 
 
@@ -68,7 +70,9 @@ void Richards_PK::fun(
 ****************************************************************** */
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
+  Amanzi::timer_manager.start("Apply precon");
   preconditioner_->ApplyInverse(X, Y);
+  Amanzi::timer_manager.stop("Apply precon");
 }
 
 
@@ -77,8 +81,10 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
+  Amanzi::timer_manager.start("Update precon");
   AssemblePreconditionerMFD(u, Tp, dTp);
   ierr = 0;
+  Amanzi::timer_manager.stop("Update precon");
 }
 
 

@@ -102,6 +102,7 @@ class Matrix_MFD : public Epetra_Operator {
   std::vector<double>& Fc_cells() { return Fc_cells_; }
   Teuchos::RCP<Epetra_Vector>& rhs() { return rhs_; }
   Teuchos::RCP<Epetra_Vector>& rhs_faces() { return rhs_faces_; }
+  Teuchos::RCP<Epetra_Vector>& rhs_cells() { return rhs_cells_; }
 
   Teuchos::RCP<Epetra_FECrsMatrix>& Aff() { return Aff_; }
   Teuchos::RCP<Epetra_FECrsMatrix>& Sff() { return Sff_; }

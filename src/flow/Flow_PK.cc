@@ -380,6 +380,36 @@ void Flow_PK::AddGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
   }
 }
 
+/* ******************************************************************
+* Add gravity fluxes to RHS of TPFA approximation                                            
+****************************************************************** */
+
+void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Grav_term,
+    std::vector<int>& bc_model, Matrix_MFD* matrix_operator)
+{
+
+  AmanziMesh::Entity_ID_List cells;
+  std::vector<int> dirs;
+  Teuchos::RCP<Epetra_Vector>& rhs_cells = matrix_operator->rhs_cells();
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    for (int i = 0; i < ncells; i++){
+      int c = cells[i];
+      if (c >= ncells_owned) continue;
+      (*rhs_cells)[c] -= pow(-1, i)*Grav_term[f];  
+    }
+  }
+
+  //std::cout<<(*rhs_cells)<<endl;
+  //cin >> tmp;
+  //exit(0);
+
+}
+
+
 
 /* ******************************************************************
 *                                             

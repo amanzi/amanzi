@@ -30,14 +30,24 @@ namespace AmanziFlow {
 
 class Matrix_MFD_TPFA : public Matrix_MFD {
  public:
-  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) : Matrix_MFD(FS, map) {};
+  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map);// : Matrix_MFD(FS, map) {};
   ~Matrix_MFD_TPFA() {};
 
   // override main methods of the base class
   void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
   void SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
-  void AssembleGlobalMatrices();
-  void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+  void AssembleGlobalMatrices(const Epetra_Vector& Trans_faces);
+  void AssembleSchurComplement(const Epetra_Vector& Trans_faces);
+  void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values, Epetra_Vector& Trans_faces, Epetra_Vector& grav_term_faces); 
+  void DeriveDarcyMassFlux(const Epetra_Vector& solution,
+			   const Epetra_Vector& Trans_faces,
+			   const Epetra_Vector& Grav_term,
+			   std::vector<int>& bc_model, 
+			   std::vector<bc_tuple>& bc_values,
+			   Epetra_Vector& darcy_mass_flux);
+
+  // void AssembleGlobalMatrices();
+  // void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
   
   void AnalyticJacobian(const Epetra_Vector& solution, int dim,
                         std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values,

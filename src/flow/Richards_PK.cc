@@ -185,6 +185,8 @@ void Richards_PK::InitPK()
   rhs = matrix_->rhs();  // import rhs from the matrix
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
+  const Epetra_BlockMap& fmap_ghost = mesh_->face_map(true);
+
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
 
@@ -203,6 +205,12 @@ void Richards_PK::InitPK()
   is_matrix_symmetric = SetSymmetryProperty();
   matrix_->SetSymmetryProperty(is_matrix_symmetric);
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+
+  /// Initialize Transmisibillities and Gravity terms contribution
+  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
+    Transmis_faces = Teuchos::rcp(new Epetra_Vector(fmap_ghost));
+    Grav_term_faces = Teuchos::rcp(new Epetra_Vector(fmap_ghost));
+  }
 
   // Allocate memory for wells
   if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
@@ -385,7 +393,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     prec_list = tmp_list.sublist("Block ILU Parameters");
   }
 
-  string mfd3d_method_name = tmp_list.get<string>("discretization method", "optimized mfd");
+  string mfd3d_method_name = tmp_list.get<string>("discretization method", "monotone mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
@@ -417,10 +425,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   SetAbsolutePermeabilityTensor(K);
   for (int c = 0; c < ncells_wghost; c++) K[c] *= rho_ / mu_;
 
-  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("Mass matrix generation");  
-  matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
-  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("Mass matrix generation");  
-  preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
+  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
+    if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("Mass matrix generation");  
+    matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
+    if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("Mass matrix generation");  
+    preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
+  }
 
   if (verbosity >= FLOW_VERBOSITY_MEDIUM) {
     int missed_tmp = missed_bc_faces_;
@@ -601,10 +611,24 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
   // calculate Darcy flux as diffusive part + advective part.
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
-  matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
-  matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-  AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
+  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
+    matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+
+    AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
+  }
+  else {
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    if (matrix_tpfa == 0) {
+      Errors::Message msg;
+      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
+      Exceptions::amanzi_throw(msg);
+    }
+    matrix_tpfa -> DeriveDarcyMassFlux(*solution, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+  }
+
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
+
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;

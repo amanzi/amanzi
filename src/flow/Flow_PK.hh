@@ -87,6 +87,10 @@ class Flow_PK : public BDF2::fnBase {
   void AddGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, Epetra_Vector& darcy_mass_flux,
                                    RelativePermeability& rel_perm);
 
+  // TPFA members
+  void AddGravityFluxes_TPFA( const Epetra_Vector& Grav_term, 
+			      std::vector<int>& bc_model, Matrix_MFD* matrix_operator);
+
   // Picard-Newton members
   void AddNewtonFluxes_MFD(RelativePermeability& rel_perm,
                            const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,

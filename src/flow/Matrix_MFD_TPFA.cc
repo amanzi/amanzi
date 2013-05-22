@@ -30,6 +30,14 @@ int FindPosition(const std::vector<T>& v, const T& value) {
   return -1;
 }
 
+  Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) 
+   :  Matrix_MFD(FS, map){
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
+  Acc_cells_.resize(ncells);
+  Fc_cells_.resize(ncells);
+  
+  };
 
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
@@ -123,106 +131,163 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
 * assemble them into four global matrices. 
 * We need an auxiliary GHOST-based vector to assemble the RHS.
 ****************************************************************** */
-void Matrix_MFD_TPFA::AssembleGlobalMatrices()
-{
-  Matrix_MFD::AssembleGlobalMatrices();
+// void Matrix_MFD_TPFA::AssembleGlobalMatrices()
+// {
+//   Matrix_MFD::AssembleGlobalMatrices();
 
+//   AmanziMesh::Entity_ID_List faces;
+//   std::vector<int> dirs;
+//   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+//   Dff_->PutScalar(0.0);
+//   for (int c = 0; c < ncells_owned; c++) {
+//     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+//     int mfaces = faces.size();
+
+//     for (int n = 0; n < mfaces; n++) {
+//       int f = faces[n];
+//       (*Dff_)[f] += Aff_cells_[c](n, n);
+//     }
+//   }
+//   FS_->CombineGhostFace2MasterFace(*Dff_, Add);
+
+//   // convert right-hand side to a cell-based vector
+//   const Epetra_Map& cmap = mesh_->cell_map(false);
+//   Epetra_Vector Tc(cmap);
+//   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+//   for (int f = 0; f < nfaces_owned; f++) (*rhs_faces_)[f] /= (*Dff_)[f];
+//   (*Acf_).Multiply(false, *rhs_faces_, Tc);
+//   for (int c = 0; c < ncells_owned; c++) (*rhs_cells_)[c] -= Tc[c];
+
+//   rhs_faces_->PutScalar(0.0);
+
+//   // create a with-ghost copy of Acc
+//   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+//   Epetra_Vector Dcc(cmap_wghost);
+
+//   for (int c = 0; c < ncells_owned; c++) Dcc[c] = (*Acc_)[c];
+//   FS_->CopyMasterCell2GhostCell(Dcc);
+
+//   AmanziMesh::Entity_ID_List cells;
+//   int cells_GID[2];
+//   double Acf_copy[2];
+
+//   // create auxiliaty with-ghost copy of Acf_cells
+//   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+//   Epetra_Vector Acf_parallel(fmap_wghost);
+
+//   for (int c = 0; c < ncells_owned; c++) {
+//     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+//     int mfaces = faces.size();
+
+//     for (int i = 0; i < mfaces; i++) {
+//       int f = faces[i];
+//       if (f >= nfaces_owned) Acf_parallel[f] = Acf_cells_[c][i];
+//     }
+//   }
+//   FS_->CombineGhostFace2MasterFace(Acf_parallel, Add);
+
+//   // populate the global matrix
+//   Spp_->PutScalar(0.0);
+//   for (AmanziMesh::Entity_ID f = 0; f < nfaces_owned; f++) {
+//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     int mcells = cells.size();
+
+//     // populate face-based matrix.
+//     Teuchos::SerialDenseMatrix<int, double> Bpp(mcells, mcells);
+//     for (int n = 0; n < mcells; n++) {
+//       int c = cells[n];
+//       cells_GID[n] = cmap_wghost.GID(c);
+
+//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+//       int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
+//       Bpp(n, n) = Dcc[c] / faces.size();
+//       if (c < ncells_owned) {
+//         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
+//         Acf_copy[n] = Acf_cells_[c][i];
+//       } else {
+//         Acf_copy[n] = Acf_parallel[f];
+//       }
+//     }
+
+//     for (int n = 0; n < mcells; n++) {
+//       for (int m = n; m < mcells; m++) {
+//         Bpp(n, m) -= Acf_copy[n] * Acf_copy[m] / (*Dff_)[f];
+//         Bpp(m, n) = Bpp(n, m);
+//       }
+//     }
+
+//     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
+//   }
+//   (*Spp_).GlobalAssemble();
+
+//   // std::cout<<(*Spp_)<<endl;
+//   // std::cout<<(*rhs_cells_)<<endl;
+//   // exit(0);
+
+//}
+
+void Matrix_MFD_TPFA::AssembleGlobalMatrices(const Epetra_Vector& Trans_faces)
+{
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  Dff_->PutScalar(0.0);
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int mfaces = faces.size();
-
-    for (int n = 0; n < mfaces; n++) {
-      int f = faces[n];
-      (*Dff_)[f] += Aff_cells_[c](n, n);
-    }
-  }
-  FS_->CombineGhostFace2MasterFace(*Dff_, Add);
-
-  // convert right-hand side to a cell-based vector
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  Epetra_Vector Tc(cmap);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int f = 0; f < nfaces_owned; f++) (*rhs_faces_)[f] /= (*Dff_)[f];
-  (*Acf_).Multiply(false, *rhs_faces_, Tc);
-  for (int c = 0; c < ncells_owned; c++) (*rhs_cells_)[c] -= Tc[c];
-
-  rhs_faces_->PutScalar(0.0);
-
-  // create a with-ghost copy of Acc
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  Epetra_Vector Dcc(cmap_wghost);
-
-  for (int c = 0; c < ncells_owned; c++) Dcc[c] = (*Acc_)[c];
-  FS_->CopyMasterCell2GhostCell(Dcc);
-
   AmanziMesh::Entity_ID_List cells;
-  int cells_GID[2];
-  double Acf_copy[2];
 
-  // create auxiliaty with-ghost copy of Acf_cells
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  Epetra_Vector Acf_parallel(fmap_wghost);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int mfaces = faces.size();
-
-    for (int i = 0; i < mfaces; i++) {
-      int f = faces[i];
-      if (f >= nfaces_owned) Acf_parallel[f] = Acf_cells_[c][i];
-    }
-  }
-  FS_->CombineGhostFace2MasterFace(Acf_parallel, Add);
-
-  // populate the global matrix
   Spp_->PutScalar(0.0);
-  for (AmanziMesh::Entity_ID f = 0; f < nfaces_owned; f++) {
+
+  int cells_LID[2], cells_GID[2];
+  Teuchos::SerialDenseMatrix<int, double> Spp_local(2, 2);
+
+  for (int f = 0; f < nfaces_owned; f++){
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int mcells = cells.size();
 
-    // populate face-based matrix.
-    Teuchos::SerialDenseMatrix<int, double> Bpp(mcells, mcells);
     for (int n = 0; n < mcells; n++) {
-      int c = cells[n];
-      cells_GID[n] = cmap_wghost.GID(c);
-
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
-      Bpp(n, n) = Dcc[c] / faces.size();
-      if (c < ncells_owned) {
-        int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
-        Acf_copy[n] = Acf_cells_[c][i];
-      } else {
-        Acf_copy[n] = Acf_parallel[f];
+      cells_LID[n] = cells[n];
+      cells_GID[n] = cmap_wghost.GID(cells_LID[n]);     
+    }
+    for (int i=0; i < mcells; i++){
+      for (int j=0; j < mcells; j++){
+	if (i==j) Spp_local(i,j) = Trans_faces[f]; 
+	else Spp_local(i,j) = -Trans_faces[f];
       }
     }
+   
+    (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
 
-    for (int n = 0; n < mcells; n++) {
-      for (int m = n; m < mcells; m++) {
-        Bpp(n, m) -= Acf_copy[n] * Acf_copy[m] / (*Dff_)[f];
-        Bpp(m, n) = Bpp(n, m);
-      }
-    }
-
-    (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
   }
-  (*Spp_).GlobalAssemble();
+
+  for (int c = 0; c <= ncells_owned; c++){
+    //cout<<"Acc_cells "<<Acc_cells_[c]<<" Fc_cells_ "<<Fc_cells_[c]<<endl;
+    cells_GID[0] = cmap_wghost.GID(c);
+    int mcells = 1;
+    Spp_local(0,0) = Acc_cells_[c];
+    (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
+
+    (*rhs_cells_)[c] += Fc_cells_[c];
+  }
+
+  Spp_->GlobalAssemble();
+  int tmp;
+  // std::cout<<(*Spp_)<<endl;
+  //std::cout<<(*rhs_cells_)<<endl;
+  //cin >> tmp;
+  //exit(0);
+    
 }
 
 
 /* ******************************************************************
 * Assembles preconditioner. It has same set of parameters as matrix.
 ****************************************************************** */
-void Matrix_MFD_TPFA::AssembleSchurComplement(
-    std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
+void Matrix_MFD_TPFA::AssembleSchurComplement(const Epetra_Vector& Trans_faces)
 {
-  AssembleGlobalMatrices();
+  AssembleGlobalMatrices(Trans_faces);
 }
 
  
@@ -287,6 +352,7 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
       dk_dp[n] = dKdP_cells[cells_LID[n]];
       cntr_cell[n] = mesh_->cell_centroid(cells_LID[n]);
     }
+
     if (mcells == 2) {
       dist = norm(cntr_cell[0] - cntr_cell[1]);
     } else if (mcells == 1) {
@@ -650,6 +716,172 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
 
   delete [] fvec_ptrs;
   return 0;
+}
+
+
+void  Matrix_MFD_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model, 
+					       std::vector<bc_tuple>& bc_values,
+					       Epetra_Vector& Trans_faces,
+					       Epetra_Vector& grav_term_faces){
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  //cout<<"rhs_cell\n"<<*rhs_cells_<<endl;
+
+  rhs_cells_ -> PutScalar(0.);
+
+  for (int c = 0; c < ncells; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    //Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells_[c];  // B means elemental.
+    //Epetra_SerialDenseVector& Bfc = Afc_cells_[c];
+    //Epetra_SerialDenseVector& Bcf = Acf_cells_[c];
+
+    //Epetra_SerialDenseVector& Ff = Ff_cells_[c];
+    //double& Fc = Fc_cells_[c];
+
+
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      double value = bc_values[f][0];
+
+      //cout<<f<<" bc model "<<bc_model[f]<<" "<<(*Trans_faces)[f]<<endl;
+
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
+	(*rhs_cells_)[c] += value*Trans_faces[f];
+	//cout<<"Boundary gravity *********** "<<(*grav_term_faces)[f]<<endl;
+      } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
+        (*rhs_cells_)[c] -= value * mesh_->face_area(f);
+	Trans_faces[f] = 0.0;
+	grav_term_faces[f] =0.0;
+      } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
+	Errors::Message msg;
+	msg << "Mixed boundary conditions are not supported in TPFA mode\n";
+	Exceptions::amanzi_throw(msg);
+      }
+
+      //cout<<f<<" bc model "<<bc_model[f]<<" "<<(*Trans_faces)[f]<<endl;
+      // If one wants to deposit infiltration in soil.
+      // if (bc_model[f] == FLOW_BC_FACE_PRESSURE_SEEPAGE) {
+      //   Fc -= bc_values[f][1] * mesh_->face_area(f);
+      // }
+    }
+
+  }
+
+  //cout<<"Trans_faces\n"<<*Trans_faces<<endl;
+  //cout<<"rhs_cell after ApplyBoundaryConditions\n"<<*rhs_cells_<<endl;
+  //exit(0);
+}
+
+
+// /* ******************************************************************
+// * Linear algebra operations with matrices: r = A * x - f                                                 
+// ****************************************************************** */
+// double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
+// {
+ 
+//   int loc_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+//   AmanziMesh::Entity_ID_List faces;
+//   AmanziMesh::Entity_ID_List cells;
+//   std::vector<int> dirs;
+
+//   residual.PutScalar(0.0);
+
+//   //cout<<(*rhs_cells_)<<endl;
+  
+//   for (int c = 0; c < loc_cells; c++){
+//     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+//     int nfaces = faces.size();
+//     for (int i = 0; i < nfaces; i++){
+//       int f = faces[i];
+//       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//       int ncells = cells.size();
+//       for (int cn = 0; cn < ncells; cn++){
+// 	//cout<<"ncells "<<ncells<<" :"<<cells[cn]<<" sol "<<solution[cells[cn]]<<" trans "<<(*Trans_faces)[f]<<endl;
+// 	if (cells[cn] == c){
+// 	  residual[c] += (*Trans_faces)[f]*solution[c];
+// 	  //cout << c<<" "<<i<<" res[c] "<< residual[c]<<" T "<<(*Trans_faces)[f]<<" sol "<<solution[c]<<endl;
+// 	}
+// 	else {
+// 	  residual[c] -= (*Trans_faces)[f]*solution[cells[cn]];
+// 	  //cout << c<<" "<<i<<" res[c] "<< residual[c]<<" T "<<(*Trans_faces)[f]<<" sol "<<solution[cells[cn]]<<endl;
+// 	}
+//       }
+//       //cout<<"grav "<<(*grav_term_faces)[f]<<" dirs "<<dirs[i]<<endl;
+//       residual[c] += (*grav_term_faces)[f]*dirs[i];    
+//     }
+//     residual[c] -= (*rhs_cells_)[c];
+    
+//     //cout<<"residual "<<c<<": "<< residual[c]<<endl;
+//     //if (c >1) break;
+//   }
+
+//   //exit(0);
+//   double norm_residual;
+//   residual.Norm2(&norm_residual);
+//   return norm_residual;
+// }
+
+void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
+					  const Epetra_Vector& Trans_faces,
+					  const Epetra_Vector& Grav_term,
+					  std::vector<int>& bc_model, 
+					  std::vector<bc_tuple>& bc_values,
+					  Epetra_Vector& darcy_mass_flux)
+{
+//   Teuchos::RCP<Epetra_Vector> solution_cell = Teuchos::rcp(FS_->CreateCellView(solution));
+// #ifdef HAVE_MPI
+//   Epetra_Vector solution_cell_wghost(mesh_->cell_map(true));
+//   solution_cell_wghost.Import(*solution_cell, cell_importer, Insert);
+// #else
+//   Epetra_Vector& solution_cell_wghost = *solution_cell;
+// #endif
+  
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<double> dp;
+  std::vector<int> dirs;
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  //  std::vector<int> flag(nfaces_wghost, 0);
+
+  AmanziMesh::Entity_ID_List cells;
+
+  darcy_mass_flux.PutScalar(0.);;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
+	double value = bc_values[f][0];
+	darcy_mass_flux[f] = dirs[n]*(Trans_faces[f]*(solution[c] - value) + Grav_term[f]);
+      }
+      else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
+	double value = bc_values[f][0];
+	darcy_mass_flux[f] = value;
+      }
+      else {
+	if (f < nfaces_owned) {
+	  mesh_->face_get_cells(f,  AmanziMesh::USED, &cells);
+	  double s = Trans_faces[f]*solution[c];
+	  darcy_mass_flux[f] += s * dirs[n];
+	  if (cells[0] == c) darcy_mass_flux[f] += dirs[n]*Grav_term[f]*0.5;
+	  else darcy_mass_flux[f] -= dirs[n]*Grav_term[f]*0.5;  
+	}
+      }
+    }
+  }
+
 }
 
 }  // namespace AmanziFlow
