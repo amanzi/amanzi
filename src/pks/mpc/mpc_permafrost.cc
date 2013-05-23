@@ -68,19 +68,19 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Operators::Matrix> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Matrix> pcB = sub_pks_[1]->preconditioner();
 
-#ifdef ENABLE_DBC
+// #ifdef ENABLE_DBC
   Teuchos::RCP<Operators::MatrixMFD_Surf> pcB_mfd =
       Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(pcB);
   ASSERT(pcB_mfd != Teuchos::null);
   Teuchos::RCP<Operators::MatrixMFD_Surf> pcA_mfd =
       Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(pcA);
   ASSERT(pcA_mfd != Teuchos::null);
-#else
-  Teuchos::RCP<Operators::MatrixMFD_Surf> pcA_mfd =
-      Teuchos::rcp_static_cast<Operators::MatrixMFD_Surf>(pcA);
-  Teuchos::RCP<Operators::MatrixMFD_Surf> pcB_mfd =
-      Teuchos::rcp_static_cast<Operators::MatrixMFD_Surf>(pcB);
-#endif
+// #else
+//   Teuchos::RCP<Operators::MatrixMFD_Surf> pcA_mfd =
+//       Teuchos::rcp_static_cast<Operators::MatrixMFD_Surf>(pcA);
+//   Teuchos::RCP<Operators::MatrixMFD_Surf> pcB_mfd =
+//       Teuchos::rcp_static_cast<Operators::MatrixMFD_Surf>(pcB);
+// #endif
 
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pcA_surf;
   pcA_mfd->GetSurfaceOperator(pcA_surf);
