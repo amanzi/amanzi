@@ -389,7 +389,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   // u[10] = 100288.85844005689 ;
   // u[11] = 100288.86263140998 ;
 
-  //u0 = u;
+  u = u0;
 
   // cout.precision(16);
   // cout<<"Initial Guess\n";
@@ -544,13 +544,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // norm provided in the model evaluator
     error = fn.enorm(u, du);
 
-    // for (int i=0;i<12;i++) cout<<"test_sol   "<<u[i]<<"\n";
-    // cout<<endl;
-    //cout<<"Update \n"<<du<<endl;
-    //cout<<"Solution \n"<<u<<endl;
-    int tmp;
-    //    cin >> tmp;
-    
+      
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;
