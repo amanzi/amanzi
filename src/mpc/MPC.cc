@@ -7,9 +7,9 @@
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 #include "MPC.hh"
-#include "State_Old.hh"
-#include "chemistry_state.hh"
-#include "chemistry_pk.hh"
+#include "State.hh"
+//#include "chemistry_state.hh"
+//#include "chemistry_pk.hh"
 #include "Flow_State.hh"
 #include "Darcy_PK.hh"
 #include "Richards_PK.hh"
@@ -31,9 +31,9 @@
 
 namespace Amanzi {
 
-using amanzi::chemistry::Chemistry_State;
-using amanzi::chemistry::Chemistry_PK;
-using amanzi::chemistry::ChemistryException;
+  //using amanzi::chemistry::Chemistry_State;
+  //using amanzi::chemistry::Chemistry_PK;
+  //using amanzi::chemistry::ChemistryException;
 
 
 /* *******************************************************************/
@@ -93,7 +93,7 @@ void MPC::mpc_init() {
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
-    S = Teuchos::rcp(new State_Old(state_parameter_list, mesh_maps));
+    S = Teuchos::rcp(new State(state_parameter_list));
   }
 
   //
@@ -101,27 +101,27 @@ void MPC::mpc_init() {
   //
 
   // chemistry...
-  if (chemistry_enabled) {
-    if (parameter_list.isSublist("Chemistry")) {
-      try {
-        CS = Teuchos::rcp( new Chemistry_State( S ) );
+  // if (chemistry_enabled) {
+  //   if (parameter_list.isSublist("Chemistry")) {
+  //     try {
+  //       CS = Teuchos::rcp( new Chemistry_State( S ) );
 
-        Teuchos::ParameterList chemistry_parameter_list =
-            parameter_list.sublist("Chemistry");
+  //       Teuchos::ParameterList chemistry_parameter_list =
+  //           parameter_list.sublist("Chemistry");
 
-        CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
-      } catch (const ChemistryException& chem_error) {
-        std::ostringstream error_message;
-        error_message << "MPC:mpc_init(): error... Chemistry_PK() returned an error status: ";
-        error_message << chem_error.what();
-        Errors::Message message(error_message.str());
-        Exceptions::amanzi_throw(message);
-      }
-    } else {
-      Errors::Message message("MPC::mpc_init() : XML input file must contain a \'Chemistry\' section if the chemistry process kernel is enabled.");
-      Exceptions::amanzi_throw(message);
-    }
-  }
+  //       CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+  //     } catch (const ChemistryException& chem_error) {
+  //       std::ostringstream error_message;
+  //       error_message << "MPC:mpc_init(): error... Chemistry_PK() returned an error status: ";
+  //       error_message << chem_error.what();
+  //       Errors::Message message(error_message.str());
+  //       Exceptions::amanzi_throw(message);
+  //     }
+  //   } else {
+  //     Errors::Message message("MPC::mpc_init() : XML input file must contain a \'Chemistry\' section if the chemistry process kernel is enabled.");
+  //     Exceptions::amanzi_throw(message);
+  //   }
+  // }
 
   // transport...
   if (transport_enabled) {
@@ -176,19 +176,19 @@ void MPC::mpc_init() {
   // create the visualization object
   if (parameter_list.isSublist("Visualization Data"))  {
     Teuchos::ParameterList vis_parameter_list = parameter_list.sublist("Visualization Data");
-    visualization = new Amanzi::Vis(vis_parameter_list, comm);
-    visualization->create_files(*mesh_maps);
+    visualization = new Amanzi::Visualization(vis_parameter_list, comm);
+    visualization->CreateFiles();
   } else {  // create a dummy vis object
-    visualization = new Amanzi::Vis();
+    visualization = new Amanzi::Visualization();
   }
 
 
   // create the restart object
   if (parameter_list.isSublist("Checkpoint Data")) {
     Teuchos::ParameterList checkpoint_parameter_list = parameter_list.sublist("Checkpoint Data");
-    restart = new Amanzi::Restart(checkpoint_parameter_list, comm);
+    restart = new Amanzi::Checkpoint(checkpoint_parameter_list, comm);
   } else {
-    restart = new Amanzi::Restart(comm);
+    restart = new Amanzi::Checkpoint();
   }
 
   // are we restarting from a file?
@@ -281,17 +281,17 @@ void MPC::cycle_driver() {
   Amanzi::timer_manager.add("I/O", Amanzi::Timer::ACCUMULATE);
 
   // create the time step manager
-  Amanzi::TimeStepManager TSM;
+  Teuchos::Ptr<Amanzi::TimeStepManager> TSM = Teuchos::ptr(new TimeStepManager());
   // register visualization times with the time step manager
-  visualization->register_with_time_step_manager(TSM);
+  visualization->RegisterWithTimeStepManager(TSM);
   // register observation times with the time step manager
-  if (observations) observations->register_with_time_step_manager(TSM);
+  if (observations) observations->register_with_time_step_manager(*TSM);
   // register reset_times
-  TSM.RegisterTimeEvent(reset_times_.toVector());
+  TSM->RegisterTimeEvent(reset_times_.toVector());
   // if this is an init to steady run, register the switchover time
-  if (ti_mode == INIT_TO_STEADY) TSM.RegisterTimeEvent(Tswitch);
+  if (ti_mode == INIT_TO_STEADY) TSM->RegisterTimeEvent(Tswitch);
   // register the final time
-  TSM.RegisterTimeEvent(T1);
+  TSM->RegisterTimeEvent(T1);
 
 
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
@@ -309,69 +309,69 @@ void MPC::cycle_driver() {
     S->set_intermediate_time(Tswitch);
   }
 
-  if (chemistry_enabled) {
-    Amanzi::timer_manager.start("Chemistry PK");
-    try {
-      // these are the vectors that chemistry will populate with
-      // the names for the auxillary output vectors and the
-      // names of components
-      std::vector<string> compnames;
+  // if (chemistry_enabled) {
+  //   Amanzi::timer_manager.start("Chemistry PK");
+  //   try {
+  //     // these are the vectors that chemistry will populate with
+  //     // the names for the auxillary output vectors and the
+  //     // names of components
+  //     std::vector<string> compnames;
 
-      // total view needs this to be outside the constructor
-      CPK->InitializeChemistry();
-      CPK->set_chemistry_output_names(&auxnames);
-      CPK->set_component_names(&compnames);
+  //     // total view needs this to be outside the constructor
+  //     CPK->InitializeChemistry();
+  //     CPK->set_chemistry_output_names(&auxnames);
+  //     CPK->set_component_names(&compnames);
 
-      // set the names in the visualization object
-      S->set_compnames(compnames);
+  //     // set the names in the visualization object
+  //     S->set_compnames(compnames);
 
-    } catch (const ChemistryException& chem_error) {
-      std::ostringstream error_message;
-      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
-      error_message << chem_error.what();
-      Errors::Message message(error_message.str());
-      Exceptions::amanzi_throw(message);
-    }
-    Amanzi::timer_manager.stop("Chemistry PK");
-  }
+  //   } catch (const ChemistryException& chem_error) {
+  //     std::ostringstream error_message;
+  //     error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+  //     error_message << chem_error.what();
+  //     Errors::Message message(error_message.str());
+  //     Exceptions::amanzi_throw(message);
+  //   }
+  //   Amanzi::timer_manager.stop("Chemistry PK");
+  // }
 
 
-  if (chemistry_enabled) {
-    // create stor for chemistry data
-    int number_of_secondaries(0);
-    if (S->secondary_activity_coeff() != Teuchos::null) {
-      number_of_secondaries = S->secondary_activity_coeff()->NumVectors();
-    }
-    chem_data_ = Teuchos::rcp( new chemistry_data (mesh_maps->cell_map(false),
-                                                   S->get_total_component_concentration()->NumVectors(),
-                                                   S->number_of_minerals(),
-                                                   number_of_secondaries,
-                                                   S->number_of_ion_exchange_sites(),
-                                                   S->number_of_sorption_sites(),
-                                                   S->using_sorption(),
-                                                   S->use_sorption_isotherms()) );
-  }
+  // if (chemistry_enabled) {
+  //   // create stor for chemistry data
+  //   int number_of_secondaries(0);
+  //   if (S->secondary_activity_coeff() != Teuchos::null) {
+  //     number_of_secondaries = S->secondary_activity_coeff()->NumVectors();
+  //   }
+  //   chem_data_ = Teuchos::rcp( new chemistry_data (mesh_maps->cell_map(false),
+  //                                                  S->get_total_component_concentration()->NumVectors(),
+  //                                                  S->number_of_minerals(),
+  //                                                  number_of_secondaries,
+  //                                                  S->number_of_ion_exchange_sites(),
+  //                                                  S->number_of_sorption_sites(),
+  //                                                  S->using_sorption(),
+  //                                                  S->use_sorption_isotherms()) );
+  // }
 
   int iter = 0;  // set the iteration counter to zero
   S->set_cycle(iter);
 
   // read the checkpoint file as requested
   if (restart_requested == true) {
-    // re-initialize the state object
-    restart->read_state(*S, restart_from_filename);
-    iter = S->get_cycle();
+    // // re-initialize the state object
+    // restart->read_state(*S, restart_from_filename);
+    // iter = S->get_cycle();
     
-    if (!reset_times_.empty()) {
-      while (reset_times_.front()<S->get_time()) {
-        reset_times_.erase(reset_times_.begin());
-        reset_times_dt_.erase(reset_times_dt_.begin());
-      }
-    }
+    // if (!reset_times_.empty()) {
+    //   while (reset_times_.front()<S->get_time()) {
+    //     reset_times_.erase(reset_times_.begin());
+    //     reset_times_dt_.erase(reset_times_dt_.begin());
+    //   }
+    // }
   } else { // no restart, we will call the PKs to allow them to init their auxilary data and massage initial conditions
     Amanzi::timer_manager.start("Flow PK");
     if (flow_enabled) FPK->InitializeAuxiliaryData();
     if (do_picard_) {
-      FPK->InitPicard(S->get_time());
+      FPK->InitPicard(S->time());
       FPK->CommitState(FS);
     }
     Amanzi::timer_manager.stop("Flow PK");
@@ -383,17 +383,18 @@ void MPC::cycle_driver() {
   Amanzi::timer_manager.start("I/O");
   if (chemistry_enabled) {
 
-    // get the auxillary data from chemistry
-    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-    // write visualization data for timestep
-    S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
+    // // get the auxillary data from chemistry
+    // Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+    // // write visualization data for timestep
+    // S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
   } else {
     // always write the initial visualization dump
-    S->write_vis(*visualization, chemistry_enabled, true);
+    
+    // S->write_vis(*visualization, chemistry_enabled, true);
   }
 
   // write a restart dump if requested (determined in dump_state)
-  restart->dump_state(*S);
+  // restart->dump_state(*S);
   Amanzi::timer_manager.stop("I/O");
 
   Amanzi::timer_manager.start("Flow PK");
@@ -402,9 +403,9 @@ void MPC::cycle_driver() {
       // this is the case Richards time stepped to steady state
       // we simply initialize the Flow PK accordingly and the 
       // time stepping loop below takes care of the rest
-      FPK->InitSteadyState(S->get_time(), dTsteady);
+      FPK->InitSteadyState(S->time(), dTsteady);
     } else if ( ti_mode == TRANSIENT && flow_model !=std::string("Steady State Richards")) {
-      FPK->InitTransient(S->get_time(), dTtransient);
+      FPK->InitTransient(S->time(), dTtransient);
     } else if ( (ti_mode == INIT_TO_STEADY || ti_mode == STEADY) && flow_model == std::string("Steady State Saturated")) {
       // this is the case where we need to solve the Darcy problem first
       // and then either stop (in the STEADY case), or move to the switch time
@@ -413,20 +414,20 @@ void MPC::cycle_driver() {
       // the checkpoint file we skip the linear Darcy solve and proceed with 
       // the initialization of the transient problem
       if (!restart_requested) {
-        FPK->InitSteadyState(S->get_time(), dTsteady);
+        FPK->InitSteadyState(S->time(), dTsteady);
         FPK->InitializeSteadySaturated();
         FPK->CommitState(FS);
 	if (ti_mode == INIT_TO_STEADY) S->advance_time(Tswitch-T0);
 	if (ti_mode == STEADY)         S->advance_time(T1-T0);
       } else {
-	FPK->InitTransient(S->get_time(), dTtransient);
+	FPK->InitTransient(S->time(), dTtransient);
       }
     } else if (ti_mode == INIT_TO_STEADY) {
-      if (S->get_time() < Tswitch) {
-        FPK->InitSteadyState(S->get_time(), dTsteady);
+      if (S->time() < Tswitch) {
+        FPK->InitSteadyState(S->time(), dTsteady);
       } else {
         if (flow_model !=std::string("Steady State Richards")) {
-          FPK->InitTransient(S->get_time(), dTtransient);
+          FPK->InitTransient(S->time(), dTtransient);
         }
       }
     }
@@ -438,18 +439,18 @@ void MPC::cycle_driver() {
 
     // we need to create an EpetraMulitVector that will store the
     // intermediate value for the total component concentration
-    if (S->get_number_of_components() > 0) {
+    if (chemistry_enabled || transport_enabled) {
       total_component_concentration_star =
-        Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
+        Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldData("total_component_concentration")->ViewComponent("cell", true)));
     }
     // then start time stepping
-    while ((S->get_time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
+    while ((S->time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
 
       // log that we are starting a time step
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);
         *out << "Cycle " << iter;
-        *out << ": starting time step at time(y) = "<< scientific << S->get_time() / (365.25*60*60*24);
+        *out << ": starting time step at time(y) = "<< scientific << S->time() / (365.25*60*60*24);
         *out << std::endl;
       }
 
@@ -459,7 +460,7 @@ void MPC::cycle_driver() {
 
       // Update our reset times (delete the next one if we just did it)
       if (!reset_times_.empty()) {
-        if (S->get_last_time()>=reset_times_.front()) {
+        if (S->last_time()>=reset_times_.front()) {
           reset_times_.erase(reset_times_.begin());
           reset_times_dt_.erase(reset_times_dt_.begin());
         }
@@ -468,13 +469,13 @@ void MPC::cycle_driver() {
       // catch the switchover time to transient
       Amanzi::timer_manager.start("Flow PK");
       if (flow_enabled) {
-        if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
+        if (ti_mode == INIT_TO_STEADY && S->last_time() < Tswitch && S->time() >= Tswitch) {
           if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
             *out << "Steady state computation complete... now running in transient mode." << std::endl;
           }
           // only init the transient problem if we need to
           if (flow_model != "Steady State Richards") { //  && flow_model != "Steady State Saturated" )  {
-            FPK->InitTransient(S->get_time(), dTtransient);
+            FPK->InitTransient(S->time(), dTtransient);
 	  }
         }
       }
@@ -486,33 +487,33 @@ void MPC::cycle_driver() {
         if ((ti_mode == STEADY) ||
             (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
             (ti_mode == INIT_TO_STEADY &&
-             ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
-               (flow_model == std::string("Steady State Saturated") && S->get_time() >= Tswitch) ||
+             ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
+               (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
 	       (flow_model == std::string("Richards") ) ) ) ) {
           flow_dT = FPK->CalculateFlowDt();
         }
       }
       Amanzi::timer_manager.stop("Flow PK");
 
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch)) {
+      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch)) {
         if (transport_enabled) {
           Amanzi::timer_manager.start("Transport PK");
           double transport_dT_tmp = TPK->EstimateTransportDt();
           if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
           Amanzi::timer_manager.stop("Transport PK");
         }
-        if (chemistry_enabled) {
-          Amanzi::timer_manager.start("Chemistry PK");
-          chemistry_dT = CPK->max_time_step();
-          Amanzi::timer_manager.stop("Chemistry PK");
-        }
+        // if (chemistry_enabled) {
+        //   Amanzi::timer_manager.start("Chemistry PK");
+        //   chemistry_dT = CPK->max_time_step();
+        //   Amanzi::timer_manager.stop("Chemistry PK");
+        // }
       }
 
       // take the mpc time step as the min of all suggested time steps
       mpc_dT = std::min(flow_dT, transport_dT);
 
       // take the mpc time step as the min of the last limiter and itself
-      mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
+      mpc_dT = TSM->TimeStep(S->time(), mpc_dT);
 
       // figure out who limits the time step
       if (mpc_dT == flow_dT) {
@@ -526,7 +527,7 @@ void MPC::cycle_driver() {
       }
 
       // make sure we reset the timestep at switchover time
-      if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
+      if (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch && S->last_time() < Tswitch) {
         mpc_dT = std::min( mpc_dT, dTtransient );
         tslimiter = MPC_LIMITS;
       }
@@ -535,15 +536,15 @@ void MPC::cycle_driver() {
       if (! ti_mode == STEADY) {
         if (!reset_times_.empty()) {
           // this is probably iffy...
-          if (S->get_time() == reset_times_.front()) {
+          if (S->time() == reset_times_.front()) {
             *out << setprecision(5) << "Resetting the time integrator at time(y) = "
-                 << std::fixed << S->get_time()/(365.25*24*60*60) << std::endl;
+                 << std::fixed << S->time()/(365.25*24*60*60) << std::endl;
             mpc_dT = reset_times_dt_.front();
-            mpc_dT = TSM.TimeStep(S->get_time(), mpc_dT);
+            mpc_dT = TSM->TimeStep(S->time(), mpc_dT);
             tslimiter = MPC_LIMITS;
             // now reset the flow time integrator..
             Amanzi::timer_manager.start("Flow PK");
-            if (flow_enabled) FPK->InitTransient(S->get_time(), mpc_dT);
+            if (flow_enabled) FPK->InitTransient(S->time(), mpc_dT);
             Amanzi::timer_manager.stop("Flow PK");
 	  }
         }
@@ -565,8 +566,8 @@ void MPC::cycle_driver() {
         if ((ti_mode == STEADY) ||
             (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
             (ti_mode == INIT_TO_STEADY &&
-	     ( (flow_model == std::string("Steady State Richards") && S->get_time() >= Tswitch) ||
-               (flow_model == std::string("Steady State Saturated") && S->get_time() >= Tswitch) || 
+	     ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
+               (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) || 
 	       (flow_model == std::string("Richards")) ) ) ) {
           bool redo(false);
           do {
@@ -617,7 +618,7 @@ void MPC::cycle_driver() {
       // ==============================================================
 
       // then advance transport and chemistry
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
+      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
         double tc_dT(mpc_dT);
         double c_dT(chemistry_dT);
         int ntc(1);
@@ -654,26 +655,26 @@ void MPC::cycle_driver() {
 
         // at this time we know the time step that we are going to use during subcycling: tc_dT
 
-        if (chemistry_enabled) {
-          // first store the chemistry state
-          chem_data_->store(S->free_ion_concentrations(),
-                            S->primary_activity_coeff(),
-                            S->secondary_activity_coeff(),
-                            S->mineral_volume_fractions(),
-                            S->mineral_specific_surface_area(),
-                            S->total_sorbed(),
-                            S->sorption_sites(),
-                            S->surface_complex_free_site_conc(),
-                            S->ion_exchange_sites(),
-                            S->ion_exchange_ref_cation_conc(),
-                            S->isotherm_kd(),
-                            S->isotherm_freundlich_n(),
-                            S->isotherm_langmuir_b());
-        }
+        // if (chemistry_enabled) {
+        //   // first store the chemistry state
+        //   chem_data_->store(S->free_ion_concentrations(),
+        //                     S->primary_activity_coeff(),
+        //                     S->secondary_activity_coeff(),
+        //                     S->mineral_volume_fractions(),
+        //                     S->mineral_specific_surface_area(),
+        //                     S->total_sorbed(),
+        //                     S->sorption_sites(),
+        //                     S->surface_complex_free_site_conc(),
+        //                     S->ion_exchange_sites(),
+        //                     S->ion_exchange_ref_cation_conc(),
+        //                     S->isotherm_kd(),
+        //                     S->isotherm_freundlich_n(),
+        //                     S->isotherm_langmuir_b());
+        // }
         // store the total component concentration, so that we
         // can restore it in the case of a chemistry failure
 	Teuchos::RCP<Epetra_MultiVector> tcc_stor;
-	if (S->get_number_of_components() > 0) {
+	if (chemistry_enabled || transport_enabled) {
 	  tcc_stor = Teuchos::rcp(new Epetra_MultiVector(*total_component_concentration_star));
 	}
         bool success(true);
@@ -681,7 +682,7 @@ void MPC::cycle_driver() {
 
         do {
           // try to subcycle with tc_dT, if that fails, we will cut that time step and try again
-          try {
+          // try {
 
             // subcycling loop
             for (int iss = 0; iss<ntc; ++iss) {
@@ -701,26 +702,25 @@ void MPC::cycle_driver() {
                 }
                 Amanzi::timer_manager.stop("Transport PK");
               } else { // if we're not advancing transport we still need to prepare for chemistry
-		if (S->get_number_of_components() > 0) {
-		  *total_component_concentration_star = *S->get_total_component_concentration();
-		}
-              }
+		*total_component_concentration_star = *S->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
+	      }
 
               // second we do a chemistry step, or if chemistry is off, we simply update 
               // total_component_concentration in state
               if (chemistry_enabled) {
 
-                if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-                  *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
-                }
-                Amanzi::timer_manager.start("Chemistry PK");
-                CPK->advance(tc_dT, total_component_concentration_star);
+                // if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+                //   *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
+                // }
+                // Amanzi::timer_manager.start("Chemistry PK");
+                // CPK->advance(tc_dT, total_component_concentration_star);
 
-                Amanzi::timer_manager.stop("Chemistry PK");
-                S->update_total_component_concentration(CPK->get_total_component_concentration());
+                // Amanzi::timer_manager.stop("Chemistry PK");
+                // S->update_total_component_concentration(CPK->get_total_component_concentration());
               } else {
-		if (S->get_number_of_components() > 0) {
-		  S->update_total_component_concentration(*total_component_concentration_star);
+		if (chemistry_enabled || transport_enabled) {
+		  *S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
+		    = *total_component_concentration_star;
 		}
 	      }
 
@@ -731,60 +731,62 @@ void MPC::cycle_driver() {
               if (transport_enabled) TPK->CommitState(TS);
               Amanzi::timer_manager.stop("Transport PK");
               Amanzi::timer_manager.start("Chemistry PK");
-              if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
+              // if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
               Amanzi::timer_manager.stop("Chemistry PK");
             }
             success = true;
-          } catch (const ChemistryException& chem_error) {
+	    // }  catch (const ChemistryException& chem_error) {
             
-            // if the chemistry step failed, we back up to the beginning of
-            // the chemistry subcycling loop, but to do that we must restore
-            // a few things, such as the chemistry state, total component
-            // concentration, and back up the intermediate time
+            // // if the chemistry step failed, we back up to the beginning of
+            // // the chemistry subcycling loop, but to do that we must restore
+            // // a few things, such as the chemistry state, total component
+            // // concentration, and back up the intermediate time
 
-            // decrease the chemistry subcycling timestep and adjust the
-            // number of subcycles we need to take accordingly
-            ntc = 2*ntc;
-            tc_dT = 0.5 * tc_dT;
+            // // decrease the chemistry subcycling timestep and adjust the
+            // // number of subcycles we need to take accordingly
+            // ntc = 2*ntc;
+            // tc_dT = 0.5 * tc_dT;
 
-            // increase the retry count
-            ++tries;
+            // // increase the retry count
+            // ++tries;
 
-            // bail if we've cut the subcycling timestep too many times
-            if (tries>=3) {
-              Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
-              Exceptions::amanzi_throw(message);
-            }
+            // // bail if we've cut the subcycling timestep too many times
+            // if (tries>=3) {
+            //   Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
+            //   Exceptions::amanzi_throw(message);
+            // }
 
-            // the the user know that we're backing up due to a chemistry failure
-            if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-              *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
-              *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
-            }
+            // // the the user know that we're backing up due to a chemistry failure
+            // if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+            //   *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
+            //   *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
+            // }
 
-            // restore chemistry data to the beginning of the subcycling
-            chem_data_->retrieve(S->free_ion_concentrations(),
-                                 S->primary_activity_coeff(),
-                                 S->secondary_activity_coeff(),
-                                 S->mineral_volume_fractions(),
-                                 S->mineral_specific_surface_area(),
-                                 S->total_sorbed(),
-                                 S->sorption_sites(),
-                                 S->surface_complex_free_site_conc(),
-                                 S->ion_exchange_sites(),
-                                 S->ion_exchange_ref_cation_conc(),
-                                 S->isotherm_kd(),
-                                 S->isotherm_freundlich_n(),
-                                 S->isotherm_langmuir_b());
+            // // restore chemistry data to the beginning of the subcycling
+            // chem_data_->retrieve(S->free_ion_concentrations(),
+            //                      S->primary_activity_coeff(),
+            //                      S->secondary_activity_coeff(),
+            //                      S->mineral_volume_fractions(),
+            //                      S->mineral_specific_surface_area(),
+            //                      S->total_sorbed(),
+            //                      S->sorption_sites(),
+            //                      S->surface_complex_free_site_conc(),
+            //                      S->ion_exchange_sites(),
+            //                      S->ion_exchange_ref_cation_conc(),
+            //                      S->isotherm_kd(),
+            //                      S->isotherm_freundlich_n(),
+            //                      S->isotherm_langmuir_b());
 
-            // restore the total component concentration to the beginning of chemistry subcycling
-            S->update_total_component_concentration(*tcc_stor);
+            // // restore the total component concentration to the beginning of chemistry subcycling
+            // S->update_total_component_concentration(*tcc_stor);
             
-            // reset the intermediate time to the beginning
-            S->set_intermediate_time(S->initial_time());
+            // // reset the intermediate time to the beginning
+            // S->set_intermediate_time(S->initial_time());
 
-            success = false;
-          }
+            // success = false;
+          //}
+	  
+	  
 
         } while (!success);
 
@@ -798,20 +800,20 @@ void MPC::cycle_driver() {
       // in the process kernels
 
       // if (flow_enabled) FPK->CommitState(FS);
-      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
+      if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
         Amanzi::timer_manager.start("Transport PK");
         if (transport_enabled) TPK->CommitState(TS);
         Amanzi::timer_manager.stop("Transport PK");
 
         Amanzi::timer_manager.start("Chemistry PK");
-        if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
+        // if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
         Amanzi::timer_manager.stop("Chemistry PK");
       }
 
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);
         *out << "Cycle " << iter;
-        *out << ": complete, new time = " << S->get_time() / (365.25*60*60*24);
+        *out << ": complete, new time = " << S->time() / (365.25*60*60*24);
         *out << std::endl;
       }
 
@@ -827,24 +829,24 @@ void MPC::cycle_driver() {
       // such as at the end of the simulation, and
       // at switch-over time
       bool force(false);
-      if (abs(S->get_time() - T1) < 1e-7) {
+      if (abs(S->time() - T1) < 1e-7) {
         force = true;
       }
 
       if (ti_mode == INIT_TO_STEADY)
-        if (abs(S->get_time() - Tswitch) < 1e-7) {
+        if (abs(S->time() - Tswitch) < 1e-7) {
           force = true;
         }
-
+      
       Amanzi::timer_manager.start("I/O");
       if (chemistry_enabled) {
         // get the auxillary data
-        Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+        // Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
 
         // write visualization data for timestep if requested
-        S->write_vis(*visualization, aux, auxnames, chemistry_enabled, force);
+        //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, force);
       } else {
-        S->write_vis(*visualization, chemistry_enabled, force);
+        //S->write_vis(*visualization, chemistry_enabled, force);
       }
 
       
@@ -854,11 +856,11 @@ void MPC::cycle_driver() {
       bool force_checkpoint(false);
       if (! ti_mode == STEADY) 
         if (!reset_times_.empty()) 
-	  if (S->get_time() == reset_times_.front())
+	  if (S->time() == reset_times_.front())
 	    force_checkpoint = true;
 
       // write restart dump if requested
-      restart->dump_state(*S, force || force_checkpoint);
+      //restart->dump_state(*S, force || force_checkpoint);
       Amanzi::timer_manager.stop("I/O");
     }
   }
@@ -869,9 +871,9 @@ void MPC::cycle_driver() {
     ++iter;
     S->set_cycle(iter);
     Amanzi::timer_manager.start("I/O");
-    S->write_vis(*visualization, false, true);
+    //S->write_vis(*visualization, false, true);
     
-    restart->dump_state(*S, true);    
+    //restart->dump_state(*S, true);    
     Amanzi::timer_manager.stop("I/O");
   }
 
@@ -884,7 +886,7 @@ void MPC::cycle_driver() {
   if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
   {
     *out << "Simulation complete at cycle " << iter;
-    *out << " and Time(y) = "<< S->get_time()/ (365.25*60*60*24);
+    *out << " and Time(y) = "<< S->time()/ (365.25*60*60*24);
     *out << std::endl;
   }
 

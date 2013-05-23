@@ -10,8 +10,8 @@ accessing the new state-dev from the old Flow PK.
 
  ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_FLOW_STATE_NEW_HH_
-#define AMANZI_FLOW_STATE_NEW_HH_
+#ifndef AMANZI_TRANSPORT_STATE_NEW_HH_
+#define AMANZI_TRANSPORT_STATE_NEW_HH_
 
 #include "PK_State.hh"
 

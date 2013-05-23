@@ -6,17 +6,17 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
-#include "State_Old.hh"
-#include "chemistry_state.hh"
-#include "chemistry_pk.hh"
+#include "State.hh"
+//#include "chemistry_state.hh"
+//#include "chemistry_pk.hh"
 #include "Transport_State.hh"
 #include "Transport_PK.hh"
 #include "Flow_State.hh"
 #include "Flow_PK.hh"
 #include "ObservationData.hh"
 #include "Unstructured_observations.hh"
-#include "Vis.hh"
-#include "Restart.hh"
+#include "visualization.hh"
+#include "checkpoint.hh"
 #include "chemistry_data.hh"
 
 namespace Amanzi {
@@ -39,8 +39,8 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   double time_step_limiter (double T, double dT, double T_end);
 
   // states
-  Teuchos::RCP<State_Old> S;
-  Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
+  Teuchos::RCP<State> S;
+  // Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
   Teuchos::RCP<AmanziTransport::Transport_State> TS; 
   Teuchos::RCP<AmanziFlow::Flow_State> FS;
     
@@ -52,7 +52,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
     
   // process kernels
-  Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
+  // Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
   Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
   Teuchos::RCP<AmanziFlow::Flow_PK> FPK; 
     
@@ -82,11 +82,11 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Amanzi::Unstructured_observations* observations;
     
   // visualization
-  Amanzi::Vis *visualization;
+  Amanzi::Visualization *visualization;
   std::vector<std::string> auxnames;
     
   // checkpoint/restart 
-  Amanzi::Restart *restart;
+  Amanzi::Checkpoint *restart;
  
   // time period control
   Teuchos::Array<double> reset_times_;

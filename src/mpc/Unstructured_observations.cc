@@ -76,7 +76,7 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
 }
 
 
-void Unstructured_observations::make_observations(State_Old& state)
+void Unstructured_observations::make_observations(State& state)
 {
   // loop over all observables
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
@@ -91,8 +91,8 @@ void Unstructured_observations::make_observations(State_Old& state)
     std::string label = i->first;
 
     // make sure that we need to make an observation now
-    if (observation_requested(state.get_time(), state.get_last_time(), (i->second).times, (i->second).sps) ||
-        observation_requested(state.get_cycle(), (i->second).cycles, (i->second).csps ) ) {
+    if (observation_requested(state.time(), state.last_time(), (i->second).times, (i->second).sps) ||
+        observation_requested(state.cycle(), (i->second).cycles, (i->second).csps ) ) {
       // we need to make an observation for each variable in the observable
       std::string var = (i->second).variable;
 
@@ -107,14 +107,16 @@ void Unstructured_observations::make_observations(State_Old& state)
 
       if ((i->second).functional == "Observation Data: Integral")  {
         if (var == "Water") {
-          data_triplet.value = state.water_mass();
+	  // // must upgrade state to make this work
+          // data_triplet.value = state.water_mass();
         }
       } else if ((i->second).functional == "Observation Data: Point") {
-        data_triplet.value = state.point_value((i->second).region, var);
+	// // must upgrade state to make this work
+	//        data_triplet.value = state.point_value((i->second).region, var);
       }
 
       data_triplet.is_valid = true;
-      data_triplet.time = state.get_time();
+      data_triplet.time = state.time();
 
       od.push_back(data_triplet);
     }

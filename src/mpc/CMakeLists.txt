@@ -26,6 +26,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
@@ -82,20 +83,14 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory state mpc flow transport chemistry whetstone)
+    set(amanzi_libs mpc flow transport state mesh_factory geometry whetstone mesh_functions functions)
     
     if ( ENABLE_MSTK_Mesh )
         # Test: mpc-mstk
 	add_amanzi_test(mpc-mstk test_mpc_mstk
 	                KIND      int
 			SOURCE    test/Main.cc test/test_driver.cc
-			LINK_LIBS mpc
-			          mesh
-				  mesh_factory
-				  chemistry_pk
-				  flow
-				  transport
-				  whetstone
+			LINK_LIBS ${amanzi_libs}
 				  ${UnitTest_LIBRARIES})
 
     

@@ -230,7 +230,10 @@ class State {
   double intermediate_time() const { return intermediate_time_; }
   void set_intermediate_time(double new_time) { intermediate_time_ = new_time; }
 
-
+  double last_time() const { return last_time_; }
+  void set_last_time( double last_time) { last_time_ = last_time; }
+  double initial_time() const { return initial_time_; }
+  void set_initial_time( double initial_time) { initial_time_ = initial_time; }
 
   // Cycle accessor and mutators.
   int cycle() const { return cycle_; }
@@ -264,6 +267,9 @@ private:
   double time_;
   double final_time_;
   double intermediate_time_;
+  double last_time_;
+  double initial_time_;
+
   int cycle_;
 
   // parameter list
