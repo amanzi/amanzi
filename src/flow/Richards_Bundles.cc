@@ -168,12 +168,12 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
 
   // update all coefficients, boundary data, and source/sink terms
-  Amanzi::timer_manager.stop("Update precon");
+  //Amanzi::timer_manager.stop("Update precon");
 
   rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
-  Amanzi::timer_manager.start("Update precon");
+  //Amanzi::timer_manager.start("Update precon");
 
   // setup a new algebraic problem
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
@@ -225,9 +225,9 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     matrix_tpfa -> ApplyBoundaryConditions( bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
     matrix_tpfa -> AssembleSchurComplement( Krel_faces, *Transmis_faces );
 
-    Amanzi::timer_manager.start("AnalyticJacobian");
+    //Amanzi::timer_manager.start("AnalyticJacobian");
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, bc_model, bc_values, *Transmis_faces, *Grav_term_faces, *rel_perm);
-    Amanzi::timer_manager.stop("AnalyticJacobian");
+    //Amanzi::timer_manager.stop("AnalyticJacobian");
   }
 
   preconditioner_->UpdatePreconditioner();
