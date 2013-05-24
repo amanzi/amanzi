@@ -32,7 +32,9 @@ public:
     return m;
   };
 
-  Region(std::string r_name, std::string r_purpose, std::string r_type);
+  Region(const std::string& r_name,
+         const std::string& r_purpose,
+         const std::string& r_type);
   virtual ~Region() {}
 
   void setVal(FArrayBox&         fab, 
@@ -48,8 +50,8 @@ public:
 	      const Real* dx, 
               int         ng) const;
 
-  virtual bool inregion (const Array<Real>& x) const = 0;
-  virtual std::ostream& operator<< (std::ostream& os) const;
+  virtual bool inRegion (const Array<Real>& x) const = 0;
+  virtual std::ostream& print (std::ostream& os) const;
 
   // Identifier for the region 
   std::string name;
@@ -62,57 +64,57 @@ public:
 
 std::ostream& operator<< (std::ostream& os, const Region& rhs);
 
-class pointRegion : public Region
+class PointRegion : public Region
 {
-
 public: 
   
-  pointRegion (std::string r_name, std::string r_purpose, std::string r_type, const Array<Real>& coor)
-      : Region(r_name,r_purpose,r_type), coor(coor) {} ;
-  virtual ~pointRegion() {}
+  PointRegion (const std::string& r_name,
+               const std::string& r_purpose,
+               const Array<Real>& coor)
+      : Region(r_name,r_purpose,"point"), coor(coor) {} ;
+  virtual ~PointRegion() {}
 
-  virtual bool inregion (const Array<Real>& x) const;
-  virtual std::ostream& operator<< (std::ostream& os) const;
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
 
   Array<Real> coor;
 };
 
-std::ostream& operator<< (std::ostream& os, const pointRegion& rhs);
+std::ostream& operator<< (std::ostream& os, const PointRegion& rhs);
 
-class boxRegion : public Region 
+class BoxRegion : public Region
 {
-
 public: 
   
-  boxRegion (std::string r_name, std::string r_purpose, std::string r_type,
-               const Array<Real>& lo, const Array<Real>& hi)
-      : Region(r_name,r_purpose,r_type), lo(lo), hi(hi) {} ;
-  virtual ~boxRegion() {}
+  BoxRegion (const std::string& r_name,
+             const std::string& r_purpose,
+             const Array<Real>& lo,
+             const Array<Real>& hi)
+      : Region(r_name,r_purpose,"box"), lo(lo), hi(hi) {} ;
+  virtual ~BoxRegion() {}
 
-  virtual bool inregion (const Array<Real>& x) const;
-  virtual std::ostream& operator<< (std::ostream& os) const;
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
 
   Array<Real> lo;
   Array<Real> hi;
 };
 
-std::ostream& operator<< (std::ostream& os, const boxRegion& rhs);
+std::ostream& operator<< (std::ostream& os, const BoxRegion& rhs);
 
-class colorFunctionRegion : public boxRegion 
+class ColorFunctionRegion : public BoxRegion
 {
-
 public: 
   
-  colorFunctionRegion (std::string r_name,
-                       std::string r_purpose,
-                       std::string r_type,
-		       std::string file_name,
-                       int         color_val);
-  virtual ~colorFunctionRegion() {delete m_color_map;}
+  ColorFunctionRegion (const std::string& r_name,
+                       const std::string& r_purpose,
+		       const std::string& file_name,
+                       int                color_val);
+  virtual ~ColorFunctionRegion() {delete m_color_map;}
 
   IntVect atIndex(Array<Real> x) const;
-  virtual bool inregion (const Array<Real>& x) const;
-  virtual std::ostream& operator<< (std::ostream& os) const;
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
 
   void set_color_map();
   BaseFab<int>* m_color_map;
@@ -121,37 +123,50 @@ public:
   std::string m_file;
 };
 
-std::ostream& operator<< (std::ostream& os, const colorFunctionRegion& rhs);
+std::ostream& operator<< (std::ostream& os, const ColorFunctionRegion& rhs);
 
-#if 1
-class allRegion : public boxRegion 
+
+class CompoundRegion : public Region
 {
+public:
+  enum Op {INIT, UNION, INTERSECT, SUBTRACT};
 
-public: 
-  
-  allRegion (const Array<Real>& lo,
-               const Array<Real>& hi)
-        : boxRegion("All","any","all",lo,hi) {};
-  virtual ~allRegion() {}
+  CompoundRegion (const std::string& r_name,
+                  const std::string& r_purpose,
+                  Region&            src_region);
+  virtual ~CompoundRegion() {}
 
-  virtual bool inregion (const Array<Real>& x) const;
+  CompoundRegion& Union(Region& src_region);
+  CompoundRegion& Intersect(Region& src_region);
+  CompoundRegion& Subtract(Region& src_region);
+
+  virtual bool inRegion (const Array<Real>& x) const;
+  virtual std::ostream& print (std::ostream& os) const;
+  Array<std::pair<Op,Region*> > regions;
 };
 
-class allBCRegion : public boxRegion 
+class AllRegion : public BoxRegion
+{
+public:
+  AllRegion ()
+    : BoxRegion("All","any",domlo,domhi) {type="all";};
+  virtual ~AllRegion() {}
+
+  virtual bool inRegion (const Array<Real>& x) const;
+};
+
+class AllBCRegion : public BoxRegion
 {
 
 public: 
   
-  allBCRegion (int dir, int lo_or_hi,
-                 const Array<Real>& lo,
-                 const Array<Real>& hi);
-  virtual ~allBCRegion() {}
+  AllBCRegion (int dir, int lo_or_hi);
+  virtual ~AllBCRegion() {}
 
-  virtual bool inregion (const Array<Real>& x) const;
+  virtual bool inRegion (const Array<Real>& x) const;
 
 protected:
   int p_dir, p_lohi;
 };
-#endif
 
 #endif /*_REGION_H_*/

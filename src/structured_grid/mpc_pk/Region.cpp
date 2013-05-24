@@ -7,9 +7,9 @@ Real Region::geometry_eps = -1;
 Array<Real> Region::domlo;
 Array<Real> Region::domhi;
 
-Region::Region (std::string r_name, 
-		std::string r_purpose, 
-		std::string r_type)
+Region::Region (const std::string& r_name,
+		const std::string& r_purpose,
+		const std::string& r_type)
   : name(r_name),
     purpose(r_purpose),
     type(r_type)
@@ -44,7 +44,7 @@ Region::setVal(FArrayBox&         fab,
       for (int d=0; d<BL_SPACEDIM; ++d) {
           x[d] = std::min(std::max(domlo[d],domlo[d]+dx[d]*(idx[d]+0.5)),domhi[d]);
       }
-      if (inregion(x))
+      if (inRegion(x))
       {
           for (int n=scomp; n<scomp+ncomp;n++) {
               fab(idx,n) = val[n-scomp];
@@ -65,7 +65,7 @@ Region::setVal(FArrayBox&  fab,
 }
 
 bool 
-pointRegion::inregion (const Array<Real>& x) const
+PointRegion::inRegion (const Array<Real>& x) const
 {
     bool inflag = true;
     for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -75,7 +75,7 @@ pointRegion::inregion (const Array<Real>& x) const
 }
 
 bool 
-boxRegion::inregion(const Array<Real>& x) const
+BoxRegion::inRegion(const Array<Real>& x) const
 {
     bool inflag = true;
     for (int d=0; d<BL_SPACEDIM; ++d) {
@@ -84,22 +84,22 @@ boxRegion::inregion(const Array<Real>& x) const
     return inflag;
 }
 
-colorFunctionRegion::colorFunctionRegion (std::string r_name,
-                                          std::string r_purpose,
-                                          std::string r_type,
-					  std::string file_name,
-                                          int         color_val)
-    : boxRegion(r_name,r_purpose,r_type,
-                Array<Real>(BL_SPACEDIM),Array<Real>(BL_SPACEDIM)), 
+ColorFunctionRegion::ColorFunctionRegion (const std::string& r_name,
+                                          const std::string& r_purpose,
+					  const std::string& file_name,
+                                          int                color_val)
+    : BoxRegion(r_name,r_purpose,
+                Array<Real>(BL_SPACEDIM),Array<Real>(BL_SPACEDIM)),
     dx(BL_SPACEDIM),
     m_color_val(color_val),
     m_file(file_name)
 {
-    set_color_map();
+  type = "color_function";
+  set_color_map();
 }
 
 void
-colorFunctionRegion::set_color_map()
+ColorFunctionRegion::set_color_map()
 {
   Array<char> fileCharPtr;
   ParallelDescriptor::ReadAndBcastFile(m_file, fileCharPtr);
@@ -205,7 +205,7 @@ colorFunctionRegion::set_color_map()
 }
 
 IntVect
-colorFunctionRegion::atIndex(const Array<Real> x) const
+ColorFunctionRegion::atIndex(const Array<Real> x) const
 {
     IntVect idx;
     for (int d=0; d<BL_SPACEDIM; ++d)
@@ -217,9 +217,9 @@ colorFunctionRegion::atIndex(const Array<Real> x) const
 
 
 bool
-colorFunctionRegion::inregion (const Array<Real>& x) const
+ColorFunctionRegion::inRegion (const Array<Real>& x) const
 {
-    if (! boxRegion::inregion(x)) {
+    if (! BoxRegion::inRegion(x)) {
         return false;
     }
     IntVect idx = atIndex(x);
@@ -237,12 +237,12 @@ colorFunctionRegion::inregion (const Array<Real>& x) const
 
 std::ostream& operator<< (std::ostream& os, const Region& rhs)
 {
-    rhs.operator<<(os);
+    rhs.print(os);
     return os;
 }
 
 std::ostream&
-Region::operator<< (std::ostream& os) const
+Region::print (std::ostream& os) const
 {
     os << "Region:\n";
     os << "  name:    " << name << '\n';
@@ -252,9 +252,9 @@ Region::operator<< (std::ostream& os) const
 }
 
 std::ostream&
-pointRegion::operator<< (std::ostream& os) const
+PointRegion::print (std::ostream& os) const
 {
-    Region::operator<<(os);
+    Region::print(os);
     os << "    coor: ";
     for (int i=0; i<coor.size(); ++i) {
         os << coor[i] << " ";
@@ -264,9 +264,9 @@ pointRegion::operator<< (std::ostream& os) const
 }
 
 std::ostream&
-boxRegion::operator<< (std::ostream& os) const
+BoxRegion::print (std::ostream& os) const
 {
-    Region::operator<<(os);
+    Region::print(os);
     os << "    lo: ";
     for (int i=0; i<lo.size(); ++i) {
         os << lo[i] << " ";
@@ -281,9 +281,9 @@ boxRegion::operator<< (std::ostream& os) const
 }
 
 std::ostream&
-colorFunctionRegion::operator<< (std::ostream& os) const
+ColorFunctionRegion::print (std::ostream& os) const
 {
-    boxRegion::operator<<(os);
+    BoxRegion::print(os);
     os << "    color_map from file: " << m_file << '\n';
     os << "    FAB data on " << m_color_map->box() << '\n';
     os << "    dx = ";
@@ -296,7 +296,7 @@ colorFunctionRegion::operator<< (std::ostream& os) const
 
 #if 1
 bool 
-allRegion::inregion(const Array<Real>& x) const
+AllRegion::inRegion(const Array<Real>& x) const
 {
   return true;
 }
@@ -346,10 +346,8 @@ pick_purpose(int dir, int lo_or_hi)
 }
 
 
-allBCRegion::allBCRegion (int dir, int lo_or_hi,
-                          const Array<Real>& lo_,
-                          const Array<Real>& hi_)
-    : boxRegion(pick_name(dir,lo_or_hi),pick_purpose(dir,lo_or_hi),"box",lo_,hi_)
+AllBCRegion::AllBCRegion (int dir, int lo_or_hi)
+    : BoxRegion(pick_name(dir,lo_or_hi),pick_purpose(dir,lo_or_hi),domlo,domhi)
 {
   p_dir  = dir;
   p_lohi = lo_or_hi;
@@ -361,9 +359,90 @@ allBCRegion::allBCRegion (int dir, int lo_or_hi,
 }
 
 bool 
-allBCRegion::inregion(const Array<Real>& x) const
+AllBCRegion::inRegion(const Array<Real>& x) const
 {
     return true;
 }
 #endif
 
+CompoundRegion::CompoundRegion (const std::string& r_name,
+                                const std::string& r_purpose,
+                                Region&            src_region)
+  : Region(r_name,r_purpose,"compound")
+{
+  regions.resize(1);
+  regions[0] = std::make_pair(INIT,&(src_region));
+};
+
+CompoundRegion&
+CompoundRegion::Union(Region& src_region)
+{
+  int rs = regions.size();
+  regions.resize(rs+1);
+  regions[rs] = std::make_pair(UNION,&(src_region));
+  return *this;
+}
+
+CompoundRegion&
+CompoundRegion::Intersect(Region& src_region)
+{
+  int rs = regions.size();
+  regions.resize(rs+1);
+  regions[rs] = std::make_pair(INTERSECT,&(src_region));
+  return *this;
+}
+
+CompoundRegion&
+CompoundRegion::Subtract(Region& src_region)
+{
+  int rs = regions.size();
+  regions.resize(rs+1);
+  regions[rs] = std::make_pair(SUBTRACT,&(src_region));
+  return *this;
+}
+
+bool
+CompoundRegion::inRegion (const Array<Real>& x) const
+{
+  bool inflag = true;
+  for (int i=0; i<regions.size(); ++i) {
+    const Op& op = regions[i].first;
+    const Region& r = *(regions[i].second);
+    if (i==0) {
+      inflag &= r.inRegion(x);
+    } else {
+      if (op == SUBTRACT) {
+        inflag &= !(r.inRegion(x));
+      }
+      else if (op == UNION) {
+        inflag |= r.inRegion(x);
+      }
+      else if (op == INTERSECT) {
+        inflag &= r.inRegion(x);
+      }
+    }
+  }
+  return inflag;
+}
+
+std::ostream&
+CompoundRegion::print (std::ostream& os) const {
+  Region::print(os);
+  os << "Compound region" << '\n';
+  for (int i=0; i<regions.size(); ++i) {
+    CompoundRegion::Op op = regions[i].first;
+    std::string opStr;
+    if (op == INIT) {
+      opStr = "INIT";
+    } else if (op == UNION) {
+      opStr = "UNION";
+    } else if (op == INTERSECT) {
+      opStr = "INTERSECT";
+    } else if (op == SUBTRACT) {
+      opStr = "SUBTRACT";
+    } else {
+      BoxLib::Abort("Unknown region operator");
+    }
+    os << "  " << opStr << " " << regions[i].second->name << std::endl;
+  }
+}

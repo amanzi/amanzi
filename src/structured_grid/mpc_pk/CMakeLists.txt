@@ -48,7 +48,47 @@ add_amanzi_library(pmamr
                    SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
                    HEADERS ${h_inc_files})
 
+add_amanzi_library(pmamr_sub
+                   SOURCE Region.cpp
+                   HEADERS ${h_inc_files})
+
 
 if (BUILD_TESTS)
+
+  if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
+    #message(">>>>>> using darwin ld flags")
+    set(ld_flag_prefix -force_load)
+    set(ld_flag_suffix)
+  elseif (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+    #message(">>>>>> using linux ld flags")
+    set(ld_flag_prefix -Wl,-whole-archive)
+    set(ld_flag_suffix -Wl,-no-whole-archive)
+  else()
+    message(FATAL_ERROR "Linking of structured grid is not supported on this system: '${CMAKE_SYSTEM_NAME}'")
+  endif()
+
+  include_directories(${CCSE_INCLUDE_DIRS})
+  link_directories(${CCSE_LIBRARY_DIR})
+  add_definitions("-DENABLE_Structured")
+
+  set(reqd_libs pmamr_sub structutils box_c)
+  set(structured_grid_libs)
+  foreach(lib ${reqd_libs})
+    list(APPEND structured_grid_libs ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
+  endforeach(lib)
+
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
+    if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+      list(APPEND structured_grid_libs gfortran)
+    endif()
+  endif()
+
+  set(tpl_libs ${Teuchos_LIBRARIES})
+
+  add_amanzi_test(tRegion tRegion
+                  KIND unit
+                  SOURCE tRegion.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
 endif()
 
