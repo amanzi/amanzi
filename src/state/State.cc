@@ -77,7 +77,7 @@ State::State(Teuchos::ParameterList &parameter_list_,
   // create the Eptera_Vector objects
   create_storage();
   initialize_from_parameter_list();
-  // initialize_from_file_list();
+  initialize_from_file_list();
   ExtractVolumeFromMesh();
 };
 

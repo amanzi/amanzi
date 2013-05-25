@@ -26,14 +26,23 @@ void State::initialize_from_file_list()
   if (! file_list.isSublist("absolute permeability")) return;
   Teuchos::ParameterList& sublist = file_list.sublist("absolute permeability");
 
-  std::string region = sublist.get<std::string>("region");
+  // std::string region = sublist.get<std::string>("region");
   std::string file_name = sublist.get<std::string>("file");
   std::string attribute_name = sublist.get<std::string>("attribute");
 
   // open ExodusII file
+  const Epetra_Comm& comm = mesh_maps->cell_map(false).Comm();
+
+  if (comm.NumProc() > 1) {
+    std::stringstream add_extension;
+    add_extension << "." << comm.NumProc() << "." << comm.MyPID();
+    file_name.append(add_extension.str());
+  } 
+
   int CPU_word_size(0), IO_word_size(0), ierr; 
   float version;
   int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
+  printf("Opening file: %s\n", file_name.c_str());
 
   // read database parameters
   int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
@@ -41,16 +50,33 @@ void State::initialize_from_file_list()
   ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
                      &num_elem_blk, &num_node_sets, &num_side_sets);
 
-  float attrib[1000];
   int* ids = (int*) calloc(num_elem_blk, sizeof(int));
   ierr = ex_get_elem_blk_ids(exoid, ids);
 
+  // read attributes block-by-block
+  int offset = 0;
+  char elem_type[MAX_LINE_LENGTH + 1];
   for (int i = 0; i < num_elem_blk; i++) {
+    int num_elem_this_blk, num_attr, num_nodes_elem;
+    ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk,
+                             &num_nodes_elem, &num_attr);
+
+    double* attrib = (double*) calloc(num_elem_this_blk * num_attr, sizeof(double));
     ierr = ex_get_elem_attr(exoid, ids[i], attrib);
-    cout << ierr << " " << ids[i] << endl;
+    // printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk);
+
+    // copy data permeability vector 
+    for (int n = 0; n < num_elem_this_blk; n++) {
+      int c = n + offset;
+      (*vertical_permeability)[c] = attrib[n];
+      (*horizontal_permeability)[c] = attrib[n];
+    }
+
+    offset += num_elem_this_blk;
+    free(attrib);
   }
 
   ierr = ex_close(exoid); 
-  cout << "Result of reading data: " << ierr << endl;
+  printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr);
 }
 

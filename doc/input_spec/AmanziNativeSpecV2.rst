@@ -282,12 +282,10 @@ Here is an example:
 
   <ParameterList name="File initialization">
     <ParameterList name="absolute permeability">  <!-- Amanzi's name of a state variable -->
-      <Parameter name="region" type="string" value="Sand"/>
       <Parameter name="file" type="string" value="mesh_with_data.exo"/>
       <Parameter name="attribute" type="string" value="perm"/>
     </ParameterList>
     <ParameterList name="porosity">
-      <Parameter name="region" type="string" value="Sand"/>
       <Parameter name="file" type="string" value="mesh_with_data.exo"/>
       <Parameter name="attribute" type="string" value="porosity"/>
     </ParameterList>
