@@ -126,7 +126,6 @@ class State : public Teuchos::VerboseObject<State> {
   void set_material_ids ( const Epetra_Vector& material_ids_ );
   void set_particle_density( const Epetra_Vector& particle_density_);
 
-
   void set_linear_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
   void set_uniform_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
   void set_file_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
@@ -350,7 +349,8 @@ class State : public Teuchos::VerboseObject<State> {
 
  private:
   void initialize_from_parameter_list();
-  void init_verbosity (Teuchos::ParameterList &parameter_list_);
+  void initialize_from_file_list();
+  void init_verbosity (Teuchos::ParameterList& parameter_list_);
   void create_default_compnames(int n);
   void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 				    int mesh_block_id);

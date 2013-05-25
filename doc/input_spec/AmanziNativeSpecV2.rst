@@ -236,9 +236,11 @@ The following is an example of a complete MPC list:
 
 
 
-State (tbw)
-===========
-Here is an example
+State (incomplete)
+==================
+
+State allows the user to initialize physical variables using a variety of 
+tools.
 
 .. code-block:: xml
 
@@ -251,12 +253,12 @@ Here is an example
     <Parameter name="Gravity z" type="double" value="-9.81"/>
     <Parameter name="Material Names" type="Array(string)" value="{Mesh block 1, Mesh block 2}"/>
 
-    <ParameterList name="Mesh block Gordon aquifer">
+    <ParameterList name="Mesh block sand">
+      <Parameter name="Region" type="string" value="Sand"/>
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
       <Parameter name="Constant horizontal permeability" type="double" value="1e-17"/>
       <Parameter name="Constant porosity" type="double" value="0.39"/>
       <Parameter name="Constant vertical permeability" type="double" value="1e-17"/>
-      <Parameter name="Region" type="string" value="Gordon aquifer"/>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
       <ParameterList name="linear pressure">
         <Parameter name="gradient" type="Array(double)" value="{0, -9793.52}"/>
@@ -264,8 +266,32 @@ Here is an example
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="Mesh block gravel">  <!-- next mesh block --> 
+      <Parameter name="Region" type="string" value="Gravel"/>
+      ...
+    </ParameterList>
   </ParameterList>
 
+Some data can be initialized from files. Additional sublist has to be added to
+the `"State`" list with the file name and names of attributes. 
+The provided data will override results of other initialization tools. 
+Here is an example:
+
+.. code-block:: xml
+
+  <ParameterList name="File initialization">
+    <ParameterList name="absolute permeability">  <!-- Amanzi's name of a state variable -->
+      <Parameter name="region" type="string" value="Sand"/>
+      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
+      <Parameter name="attribute" type="string" value="perm"/>
+    </ParameterList>
+    <ParameterList name="porosity">
+      <Parameter name="region" type="string" value="Sand"/>
+      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
+      <Parameter name="attribute" type="string" value="porosity"/>
+    </ParameterList>
+  </ParameterList>
 
 Flow
 ====
