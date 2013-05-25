@@ -32,6 +32,44 @@ namespace WhetStone {
 /* ******************************************************************
 * Consistency condition for stifness matrix in geomechanics. 
 * Only the upper triangular part of Ac is calculated.
+* Requires mesh_get_edges to complete implementation.
+****************************************************************** */
+int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
+                                    Teuchos::SerialDenseMatrix<int, double>& N,
+                                    Teuchos::SerialDenseMatrix<int, double>& Mc)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  int nfaces = faces.size();
+
+  int d = mesh_->space_dimension();
+  double volume = mesh_->cell_volume(cell);
+
+  AmanziGeometry::Point v1(d), v2(d);
+  const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
+
+  Tensor Tinv(T);
+  Tinv.inverse();
+
+  for (int i = 0; i < nfaces; i++) {
+    int f = faces[i];
+    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+    v1 = fm - cm;
+    double a = normal * v1;
+    for (int k = 0; k < d; k++) v1[k] = a - normal[k] * v1[k];
+  }
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Consistency condition for stifness matrix in geomechanics. 
+* Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
                                     Teuchos::SerialDenseMatrix<int, double>& N,
