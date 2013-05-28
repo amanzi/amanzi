@@ -39,10 +39,10 @@ void State::initialize_from_file_list()
     file_name.append(add_extension.str());
   } 
 
-  int CPU_word_size(0), IO_word_size(0), ierr; 
+  int CPU_word_size(8), IO_word_size(0), ierr; 
   float version;
   int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
-  printf("Opening file: %s\n", file_name.c_str());
+  printf("Opening file: %s ws=%d %d\n", file_name.c_str(), CPU_word_size, IO_word_size);
 
   // read database parameters
   int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
@@ -63,17 +63,16 @@ void State::initialize_from_file_list()
 
     double* attrib = (double*) calloc(num_elem_this_blk * num_attr, sizeof(double));
     ierr = ex_get_elem_attr(exoid, ids[i], attrib);
-    // printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk);
 
-    // copy data permeability vector 
     for (int n = 0; n < num_elem_this_blk; n++) {
       int c = n + offset;
       (*vertical_permeability)[c] = attrib[n];
       (*horizontal_permeability)[c] = attrib[n];
     }
+    free(attrib);
+    // printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk);
 
     offset += num_elem_this_blk;
-    free(attrib);
   }
 
   ierr = ex_close(exoid); 
