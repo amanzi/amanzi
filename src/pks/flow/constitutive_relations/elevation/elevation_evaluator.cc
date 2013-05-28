@@ -29,6 +29,7 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   if (slope->has_component("boundary_face")) {
     const Epetra_Map& vandelay_map = slope->mesh()->exterior_face_epetra_map();
+    const Epetra_Map& face_map = slope->mesh()->face_epetra_map(false);
     Epetra_MultiVector& slope_bf = *slope->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& slope_c = *slope->ViewComponent("cell",false);
 
@@ -37,7 +38,7 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     int nbfaces = slope_bf.MyLength();
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
-      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       slope->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
 

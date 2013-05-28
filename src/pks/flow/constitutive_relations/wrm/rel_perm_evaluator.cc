@@ -85,13 +85,14 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+    const Epetra_Map& face_map = mesh->face_epetra_map(false);
 
     // Evaluate the evaluator to calculate sat.
     AmanziMesh::Entity_ID_List cells;
     int nbfaces = res_v.MyLength();
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
-      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       mesh->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
 
@@ -136,13 +137,14 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+    const Epetra_Map& face_map = mesh->face_epetra_map(false);
 
     // Evaluate the evaluator to calculate sat.
     AmanziMesh::Entity_ID_List cells;
     int nbfaces = res_v.MyLength();
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
-      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       mesh->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
 
