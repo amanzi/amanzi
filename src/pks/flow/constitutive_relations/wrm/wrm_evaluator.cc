@@ -87,13 +87,14 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+    const Epetra_Map& face_map = mesh->face_epetra_map(false);
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values
     int nbfaces = sat_bf.MyLength();
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
-      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       mesh->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
 
@@ -149,13 +150,14 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
     // Need to get boundary face's inner cell to specify the WRM.
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
+    const Epetra_Map& face_map = mesh->face_epetra_map(false);
     AmanziMesh::Entity_ID_List cells;
 
     // calculate boundary face values
     int nbfaces = sat_bf.MyLength();
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
-      AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+      AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       mesh->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
 
