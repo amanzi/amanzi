@@ -100,7 +100,7 @@ SUITE(VISUALIZATION) {
 
     S0->RegisterMesh("domain",Mesh);
 
-    S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1)->;
+    S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
     S0->Setup();
     S0->Initialize();
