@@ -96,7 +96,6 @@ add_amanzi_executable(verify_mesh
                       SOURCE VerifyMesh.cc
                       LINK_LIBS mesh_factory mesh mesh_audit ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
 		    		    
-
 #
 # Binary: verify_hex
 # verify_hex uses deprecated boost::filesystem
@@ -124,6 +123,11 @@ if ( ENABLE_STK_Mesh )
                                   ${Teuchos_LIBRARIES})
 endif()                                
 
+#
+# Binary: concat
+#
+add_amanzi_executable(concat
+                      SOURCE concat.cc)
                                 
 #
 #
