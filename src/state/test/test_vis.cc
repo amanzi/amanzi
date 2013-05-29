@@ -1,11 +1,12 @@
 #include "UnitTest++.h"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
-#include "State_Old.hh"
+#include "State.hh"
 #include "MeshFactory.hh"
-#include "Vis.hh"
+#include "visualization.hh"
 
 
 SUITE(VISUALIZATION) {
@@ -14,22 +15,20 @@ SUITE(VISUALIZATION) {
     
     Teuchos::ParameterList plist;
 
-    plist.set<string>("File Name Base","visdump");
-    plist.set<int>("File Name Digits",5);
+    plist.set<string>("file name base","visdump");
+    plist.set<int>("file name digits",5);
 
-    Teuchos::ParameterList& clist = plist.sublist("cycle start period stop").sublist("some name");
     Teuchos::Array<int> csps(3);
     csps[0] = 0;
     csps[1] = 4;
     csps[2] = 10;
-    clist.set<Teuchos::Array<int> >("start period stop", csps);
+    plist.set<Teuchos::Array<int> >("cycles start period stop", csps);
     
-    Teuchos::ParameterList& tlist = plist.sublist("time start period stop").sublist("some name");
     Teuchos::Array<double> tsps(3);
     tsps[0] = 0.0;
     tsps[1] = 4.0;
     tsps[2] = 10.0;
-    tlist.set<Teuchos::Array<double> >("start period stop", tsps);    
+    plist.set<Teuchos::Array<double> >("times start period stop", tsps);    
 
     Teuchos::Array<double> times(2);
     times[0] = 1.0;
@@ -37,8 +36,8 @@ SUITE(VISUALIZATION) {
     plist.set<Teuchos::Array<double> >("times",times);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Vis V(plist, &comm);
-
+    Amanzi::Visualization V(plist, &comm);
+    
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -49,27 +48,24 @@ SUITE(VISUALIZATION) {
     int cycles [31];
     for (int ic = 0; ic<=30; ic++)
       {
-	cycles[ic] = V.dump_requested(ic);
+	cycles[ic] = V.DumpRequested(ic);
       }
     CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
 
     // test the time sps stuff
-    CHECK_EQUAL(true, V.dump_requested(0.0));
-    CHECK_EQUAL(true, V.dump_requested(1.0));
-    CHECK_EQUAL(true, V.dump_requested(3.0));
-    CHECK_EQUAL(true, V.dump_requested(4.0));
-    CHECK_EQUAL(true, V.dump_requested(8.0));
+    CHECK_EQUAL(true, V.DumpRequested(0.0));
+    CHECK_EQUAL(true, V.DumpRequested(1.0));
+    CHECK_EQUAL(true, V.DumpRequested(3.0));
+    CHECK_EQUAL(true, V.DumpRequested(4.0));
+    CHECK_EQUAL(true, V.DumpRequested(8.0));
     
-    CHECK_EQUAL(false, V.dump_requested(0.5));
-    CHECK_EQUAL(false, V.dump_requested(1.1));
-    CHECK_EQUAL(false, V.dump_requested(3.2));
-    CHECK_EQUAL(false, V.dump_requested(3.99));
-    CHECK_EQUAL(false, V.dump_requested(10.0));    
+    CHECK_EQUAL(false, V.DumpRequested(0.5));
+    CHECK_EQUAL(false, V.DumpRequested(1.1));
+    CHECK_EQUAL(false, V.DumpRequested(3.2));
+    CHECK_EQUAL(false, V.DumpRequested(3.99));
+    CHECK_EQUAL(false, V.DumpRequested(10.0));    
 
   }
-
-
-
 
 
 
@@ -78,47 +74,45 @@ SUITE(VISUALIZATION) {
     // here we just check that the code does not crash when 
     // the mesh and data files are written
 
-
     Teuchos::ParameterList plist;
-    plist.set<string>("File Name Base","visdump");
-    plist.set<bool>("Enable Gnuplot",true);
-    Teuchos::ParameterList& i1_ = plist.sublist("Cycle Data");
-    
-    i1_.set<int>("Start",0);
-    i1_.set<int>("End",10);
-    i1_.set<int>("Interval",1);
-
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Vis V(plist, &comm);   
 
-    // make a basic mesh
+    std::string xmlFileName = "test/test_vis.xml";
+    Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+    plist = xmlreader.getParameters();
+
+    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm);
+
+    Amanzi::AmanziMesh::FrameworkPreference pref;
+    pref.clear();
+    pref.push_back(Amanzi::AmanziMesh::MSTK);   
+    
     Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
+    meshfactory.preference(pref);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh
-      = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
+      = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
 
-    V.create_files(*Mesh);
+    Teuchos::ParameterList state_list =  plist.get<Teuchos::ParameterList>("state");
     
-    State_Old S(1, 2, Mesh);
-    std::vector<std::string> names(2);
-    names.at(0) = "Aoeui";
-    names.at(1) = "Snthd";
-    S.set_mineral_names(names);
-    S.set_cycle(3);
+    Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list) );
 
-    // create some auxillary data
-    Teuchos::RCP<Epetra_MultiVector> aux = S.get_total_component_concentration();
+    S0->RegisterMesh("domain",Mesh);
+
+    S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1)->;
+
+    S0->Setup();
+    S0->Initialize();
     
-    std::vector<string> compnames(1);
-    std::vector<string> auxnames(1);
+    S0->set_time(1.02);
 
-    compnames[0] = "comp test";
-    auxnames[0] = "aux test";
+    Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
+    Teuchos::Ptr<Amanzi::Visualization> V = Teuchos::ptr( new Amanzi::Visualization(visualization_list, &comm));
+    V->set_mesh(Mesh);
+    V->CreateFiles();
 
-    S.set_compnames(compnames);
-    
-    S.write_vis(V, aux, auxnames, false);
-
+    WriteVis(V, S0);
   }
 
 

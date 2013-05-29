@@ -104,7 +104,7 @@ if (BUILD_TESTS)
                       SOURCE
 	  	          test/Main.cc
 	 		  test/test_restart.cc
-	 		  #test/test_vis.cc
+	 		  test/test_vis.cc
                       LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
     endif()
 
