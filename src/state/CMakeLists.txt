@@ -98,14 +98,14 @@ if (BUILD_TESTS)
     
     #set(amanzi_libs geometry mesh state)
     
-#    if ( ENABLE_STK_Mesh )
-#      add_amanzi_test(state test_state
-#                      KIND int
-#                      SOURCE
-#	  	          test/Main.cc
-#	 		  test/test_restart.cc
-#	 		  test/test_vis.cc
-#                      LINK_LIBS state mesh_factory mesh data_structures ${UnitTest_LIBRARIES})
-#    endif()
+    if ( ENABLE_STK_Mesh )
+      add_amanzi_test(state test_state
+                      KIND int
+                      SOURCE
+	  	          test/Main.cc
+	 		  test/test_restart.cc
+	 		  #test/test_vis.cc
+                      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+    endif()
 
 endif()
