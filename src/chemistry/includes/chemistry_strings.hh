@@ -4,8 +4,8 @@
 
 #include <string>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 namespace strings {
 
 /*
@@ -98,6 +98,6 @@ const std::string kWeightedEuler = "Weighted Euler";
 
 
 }  // namespace strings
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif     /* AMANZI_CHEMISTRY_STRINGS_HH_ */

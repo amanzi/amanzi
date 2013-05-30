@@ -9,8 +9,8 @@
 #include "string_tokenizer.hh"
 
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class SorptionIsotherm;
 
@@ -42,6 +42,6 @@ class SorptionIsothermFactory {
   Verbosity verbosity_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SORP_ISOTHERM_FACTORY_HH_

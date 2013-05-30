@@ -25,15 +25,15 @@
 #include "chemistry_containers.hh"
 #include "chemistry_exception.hh"
 
-// create a global ChemistryOutput object in the amanzi::chemisry
+// create a global ChemistryOutput object in the Amanzi::chemisry
 // namespace that can be used by an other chemistry object
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 extern ChemistryOutput* chem_out;
-}  // end namespace chemistry
-}  // end namespace amanzi
+}  // end namespace AmanziChemistry
+}  // end namespace Amanzi
 
-namespace ac = amanzi::chemistry;
+namespace ac = Amanzi::AmanziChemistry;
 
 int main(int argc, char** argv) {
   ac::OutputOptions output_options;

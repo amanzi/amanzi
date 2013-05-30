@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 typedef std::string SpeciesName;
 typedef int SpeciesId;  // unsigned int?
@@ -133,6 +133,6 @@ class Species {
 
 typedef std::vector<Species> SpeciesArray;
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SPECIES_HH_

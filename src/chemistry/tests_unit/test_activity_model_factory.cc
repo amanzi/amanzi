@@ -17,7 +17,7 @@
 
 /*!
 
-  @namespace amanzi::chemistry::unit_tests::ActivityModelFactory
+  @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModelFactory
 
   @details Test that the activity model factory class returns the
   correct type of object. Use C++ RTTI to determine if the correct
@@ -34,7 +34,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
    **  Test for ActivityModelFactory.cpp
    **
    *****************************************************************************/
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
 
   class ActivityModelFactoryTest {
    public:
@@ -70,7 +70,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
   }
 
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelFactory::ActivityModelFactory_unit
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelFactory::ActivityModelFactory_unit
 
     @brief ActivityModelFactory_unit
 
@@ -87,7 +87,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
   }  // end TEST_FIXTURE()
 
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelFactory::ActivityModelFactory_debyehuckel
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelFactory::ActivityModelFactory_debyehuckel
 
     @brief ActivityModelFactory_debyehuckel
 
@@ -104,7 +104,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
   }  // end TEST_FIXTURE()
 
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelFactory::ActivityModelFactory_invalid
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelFactory::ActivityModelFactory_invalid
 
     @brief ActivityModelFactory_invalid
 

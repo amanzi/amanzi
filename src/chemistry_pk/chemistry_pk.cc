@@ -25,8 +25,8 @@
 
 #include "boost/mpi.hpp"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 /*******************************************************************************
  **
@@ -66,7 +66,7 @@ namespace chemistry {
  **
  ******************************************************************************/
 
-// global ChemistryOutput object in the amanzi::chemisry
+// global ChemistryOutput object in the Amanzi::chemisry
 // namespace that will be used by the chemistry library
 extern ChemistryOutput* chem_out;
 
@@ -841,5 +841,5 @@ void Chemistry_PK::set_component_names(std::vector<string>* names) {
   chem_->GetPrimaryNames(names);
 }  // end set_component_names()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

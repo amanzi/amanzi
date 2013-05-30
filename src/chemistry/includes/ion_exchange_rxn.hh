@@ -10,8 +10,8 @@
 #include "ion_exchange_site.hh"
 #include "species.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -70,6 +70,6 @@ class IonExchangeRxn {
 
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_IONEXCHANGERXN_HH_

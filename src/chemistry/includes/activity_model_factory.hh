@@ -6,8 +6,8 @@
 
 #include "activity_model.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class ActivityModelFactory {
  public:
@@ -28,6 +28,6 @@ class ActivityModelFactory {
  private:
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_

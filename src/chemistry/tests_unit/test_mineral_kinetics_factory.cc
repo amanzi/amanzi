@@ -14,7 +14,7 @@
 #include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsMineralKineticsFactory) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*****************************************************************************
    **
    **  Test for MineralKineticsFactory.cpp

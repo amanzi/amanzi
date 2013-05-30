@@ -31,8 +31,8 @@
 #include <string>
 #include <iostream>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 /*******************************************************************************
  **
@@ -159,5 +159,5 @@ ChemistryMemorySizeError::~ChemistryMemorySizeError() throw() {
   /* end ~ChemistryMemorySizeError() */
 }
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

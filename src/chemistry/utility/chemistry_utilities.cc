@@ -9,8 +9,8 @@
 
 #include "chemistry_output.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 namespace utilities {
 
 /*******************************************************************************
@@ -114,5 +114,5 @@ double ln_to_log(double ln_x) {
 }
 
 }  // namespace utilities
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

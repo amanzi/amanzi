@@ -24,17 +24,17 @@
 **  one function, etc.
 **
 **  Use:
-// create a global ChemistryOutput object in the amanzi::chemisry
+// create a global ChemistryOutput object in the Amanzi::chemisry
 // namespace that can be used by an other chemistry object
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 ChemistryOutput* chem_out;
-}  // end namespace chemistry
-}  // end namespace amanzi
+}  // end namespace AmanziChemistry
+}  // end namespace Amanzi
 
 int main ()
 {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
 
   ac::OutputOptions output_options;
   output_options.use_stdout = true;
@@ -51,11 +51,11 @@ int main ()
 }
 
 In other header files:
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 extern ChemistryOutput* chem_out;
-}  // end namespace chemistry
-}  // end namespace amanzi
+}  // end namespace AmanziChemistry
+}  // end namespace Amanzi
 
 **
 */
@@ -68,8 +68,8 @@ extern ChemistryOutput* chem_out;
 #include "chemistry_containers.hh"
 #include "chemistry_verbosity.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 void SetupDefaultChemistryOutput(void);
 
@@ -118,6 +118,6 @@ class ChemistryOutput {
 
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_CHEMISTRY_OUT_HH_

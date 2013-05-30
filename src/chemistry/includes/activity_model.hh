@@ -11,8 +11,8 @@
 #include "aqueous_equilibrium_complex.hh"
 #include "chemistry_verbosity.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class ActivityModel {
  public:
@@ -106,7 +106,7 @@ class ActivityModel {
   std::vector<double> gamma_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_

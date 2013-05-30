@@ -15,8 +15,8 @@ class Epetra_MultiVector;
 class Epetra_SerialDenseVector;
 class ParameterList;
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 using Amanzi::AmanziMesh::Mesh;
 
@@ -27,7 +27,7 @@ class Chemistry_State {
   virtual ~Chemistry_State();
 
   void AllocateAdditionalChemistryStorage(
-      const amanzi::chemistry::Beaker::BeakerComponents&);
+      const Amanzi::AmanziChemistry::Beaker::BeakerComponents&);
 
   // stuff chemistry can't/shouldn't change
   Teuchos::RCP<const Mesh> mesh_maps() const {
@@ -134,6 +134,6 @@ class Chemistry_State {
 
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_

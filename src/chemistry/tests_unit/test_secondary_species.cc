@@ -12,7 +12,7 @@
 #include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsSecondarySpecies) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*****************************************************************************
    **
    **  Test for SecondarySpecies.cpp

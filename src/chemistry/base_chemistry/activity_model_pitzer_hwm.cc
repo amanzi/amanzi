@@ -15,8 +15,8 @@
 #include "exceptions.hh"
 
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 const double ActivityModelPitzerHWM::bdh = 1.2;
 const double ActivityModelPitzerHWM::cwater = 55.50837;
 // -------------------------------------------------------------
@@ -1453,5 +1453,5 @@ int ActivityModelPitzerHWM::GetIndexSpeciesFromName(const std::string& name_spec
   return isp;
 }
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

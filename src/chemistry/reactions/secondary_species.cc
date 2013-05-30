@@ -10,8 +10,8 @@
 
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 SecondarySpecies::SecondarySpecies()
     : Species(),
@@ -136,5 +136,5 @@ void SecondarySpecies::Display(void) const {
             << std::endl;
 }  // end Display()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

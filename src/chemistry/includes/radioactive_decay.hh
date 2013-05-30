@@ -10,8 +10,8 @@
 
 #include "species.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -65,6 +65,6 @@ class RadioactiveDecay {
   double rate_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_RADIOACTIVE_DECAY_HH_

@@ -30,8 +30,8 @@
 
 #include "chemistry_strings.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 /*******************************************************************************
  **
@@ -481,6 +481,6 @@ struct CellPhysicalParameters {
 };
 
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_CHEMISTRY_CONTAINERS_HH_

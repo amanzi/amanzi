@@ -11,7 +11,7 @@
 #include "species.hh"
 
 SUITE(GeochemistryTestsSurfaceSite) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*
     Unit tests for the SurfaceSite object public interface
 

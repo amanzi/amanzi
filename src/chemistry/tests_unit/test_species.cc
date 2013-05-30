@@ -11,7 +11,7 @@
 #include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsSpecies) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*
     Unit tests for the Species object public interface
 

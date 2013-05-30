@@ -3,8 +3,8 @@
 #include <cmath>
 #include <iostream>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
 const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C
@@ -68,5 +68,5 @@ void ActivityModelDebyeHuckel::Display(void) const {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
 }  // end Display()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

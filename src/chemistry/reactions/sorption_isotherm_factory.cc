@@ -14,8 +14,8 @@
 #include "chemistry_verbosity.hh"
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 const std::string SorptionIsothermFactory::linear = "linear";
 const std::string SorptionIsothermFactory::langmuir = "langmuir";
@@ -112,5 +112,5 @@ SpeciesId SorptionIsothermFactory::VerifySpeciesName(
   return species_id;
 }  // end VerifyMineralName()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

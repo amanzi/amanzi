@@ -13,7 +13,7 @@
 #include "chemistry_verbosity.hh"
 
 SUITE(GeochemistryTestsMineral) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*****************************************************************************
    **
    **  Test for Mineral.cpp

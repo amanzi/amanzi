@@ -15,15 +15,15 @@
 #include "activity_model.hh"
 #include "chemistry_exception.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 namespace unit_tests {
 /*****************************************************************************
  **
  **  Common testing code
  **
  *****************************************************************************/
-namespace ac = amanzi::chemistry;
+namespace ac = Amanzi::AmanziChemistry;
 
 class ActivityModelTest {
  public:
@@ -116,9 +116,9 @@ void ActivityModelTest::RunTest(const std::string name, double * gamma) {
 
 /*!
 
-  @namespace amanzi::chemistry::unit_tests::ActivityModel
+  @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModel
 
-  @details Unit tests for the activity model base class, amanzi::chemistry::ActivityModel
+  @details Unit tests for the activity model base class, Amanzi::AmanziChemistry::ActivityModel
 
   @test ActivityModel
 
@@ -126,7 +126,7 @@ void ActivityModelTest::RunTest(const std::string name, double * gamma) {
 SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
   /*!
 
-    @class amanzi::chemistry::unit_tests::ActivityModel::ActivityModel_IonicStrength
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModel::ActivityModel_IonicStrength
 
     @brief ActivityModel_IonicStrength
 
@@ -149,7 +149,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
 
 /*!
 
-  @namespace amanzi::chemistry::unit_tests::ActivityModelUnit
+  @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit
 
   @details Unit tests for class ActivityModelUnit.
 
@@ -163,7 +163,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   /*!
     @brief ActivityModelUnit_H
 
-    @class amanzi::chemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_H
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_H
 
     @details Test calculation of unit activity coefficient for @f$ H^{+} @f$
 
@@ -180,7 +180,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   /*!
     @brief ActivityModelUnit_OH
 
-    @class amanzi::chemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_OH
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_OH
 
     @details Test calculation of unit activity coefficient for @f$ OH^{+} @f$
 
@@ -197,7 +197,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   /*!
     @brief ActivityModelUnit_Ca
 
-    @class amanzi::chemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_Ca
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_Ca
 
     @details Test calculation of unit activity coefficient for @f$ Ca^{+2} @f$
 
@@ -214,7 +214,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   /*!
     @brief ActivityModelUnit_SO4
 
-    @class amanzi::chemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_SO4
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_SO4
 
     @details Test calculation of unit activity coefficient for @f$ SO4^{-2} @f$
 
@@ -231,7 +231,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   /*!
     @brief ActivityModelUnit_Al
 
-    @class amanzi::chemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_Al
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_Al
 
     @details Test calculation of unit activity coefficient for @f$ Al^{+3} @f$
 
@@ -248,7 +248,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   /*!
     @brief ActivityModelUnit_PO4
 
-    @class amanzi::chemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_PO4
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit::ActivityModelUnit_PO4
 
     @details Test calculation of unit activity coefficient for @f$ PO4^{-3} @f$
 
@@ -266,7 +266,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
 
 /*!
 
-  @namespace amanzi::chemistry::unit_tests::ActivityModelDebyeHuckel
+  @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModelDebyeHuckel
 
   @details Test the calculation of the Debye-Huckel B-dot activity
   coefficients is correct.
@@ -296,7 +296,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
   /*!
     @brief ActivityModelDebyeHuckel_H
 
-    @class amanzi::chemistry::unit_tests::ActivityModelDebyeHuckel::ActivityModelDebyeHuckel_H
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelDebyeHuckel::ActivityModelDebyeHuckel_H
 
     @details Test calculation of Debye-Huckel activity coefficient for @f$ H^{+} @f$
 
@@ -312,7 +312,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
   /*!
     @brief ActivityModelDebyeHuckel_OH
 
-    @class amanzi::chemistry::unit_tests::ActivityModelDebyeHuckel::ActivityModelDebyeHuckel_OH
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelDebyeHuckel::ActivityModelDebyeHuckel_OH
 
     @details Test calculation of Debye-Huckel activity coefficient for @f$ OH^{-} @f$
 
@@ -355,5 +355,5 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
 }  // end SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel)
 
 }  // end namespace unit_tests
-}  // end namespace chemistry
-}  // end namespace amanzi
+}  // end namespace AmanziChemistry
+}  // end namespace Amanzi

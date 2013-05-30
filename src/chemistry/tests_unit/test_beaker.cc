@@ -14,13 +14,13 @@
 #include "chemistry_exception.hh"
 
 SUITE(BeakerTests) {
-  using amanzi::chemistry::Beaker;
-  using amanzi::chemistry::SimpleThermoDatabase;
-  using amanzi::chemistry::ActivityModelFactory;
-  using amanzi::chemistry::ChemistryException;
-  using amanzi::chemistry::ChemistryUnrecoverableError;
-  using amanzi::chemistry::ChemistryMemorySizeError;
-  using amanzi::chemistry::ChemistryInvalidInput;
+  using Amanzi::AmanziChemistry::Beaker;
+  using Amanzi::AmanziChemistry::SimpleThermoDatabase;
+  using Amanzi::AmanziChemistry::ActivityModelFactory;
+  using Amanzi::AmanziChemistry::ChemistryException;
+  using Amanzi::AmanziChemistry::ChemistryUnrecoverableError;
+  using Amanzi::AmanziChemistry::ChemistryMemorySizeError;
+  using Amanzi::AmanziChemistry::ChemistryInvalidInput;
 
   TEST(CheckBadComponentSizes) {
     SimpleThermoDatabase chem;

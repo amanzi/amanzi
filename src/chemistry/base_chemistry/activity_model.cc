@@ -9,8 +9,8 @@
 #include <vector>
 #include <iostream>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 ActivityModel::ActivityModel()
     : I_(0.0),
@@ -146,5 +146,5 @@ void ActivityModel::CalculateActivityCoefficients(
 
 }  // end CalculateActivityCoefficients()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

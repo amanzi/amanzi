@@ -19,8 +19,8 @@ class Epetra_MultiVector;
 class Epetra_Vector;
 class Epetra_SerialDenseVector;
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
 class Chemistry_PK {
@@ -131,6 +131,6 @@ class Chemistry_PK {
   void CopyBeakerStructuresToCellState(const int cell_id);
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_PK_HH_

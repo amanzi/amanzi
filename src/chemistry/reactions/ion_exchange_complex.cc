@@ -72,8 +72,8 @@
 
 #include "block.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 IonExchangeComplex::IonExchangeComplex() {
 }  // end IonExchangeComplex() constructor
@@ -137,5 +137,5 @@ void IonExchangeComplex::DisplayResults(void) const {
             << std::endl;
 }  // end DisplayResults()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

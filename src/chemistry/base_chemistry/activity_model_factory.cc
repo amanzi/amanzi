@@ -13,8 +13,8 @@
 #include "species.hh"
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
 const std::string ActivityModelFactory::pitzer_hwm = "pitzer-hwm";
@@ -68,5 +68,5 @@ ActivityModel* ActivityModelFactory::Create(
   return activity_model;
 }  // end Create()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

@@ -9,7 +9,7 @@
 #include "ion_exchange_site.hh"
 
 SUITE(GeochemistryTestsIonExchangeSite) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*
     Unit tests for the IonExchangeSite object public interface
 

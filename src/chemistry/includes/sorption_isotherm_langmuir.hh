@@ -8,8 +8,8 @@
 
 // Class for Langmuir isotherm
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class SorptionIsothermLangmuir : public SorptionIsotherm {
  public:
@@ -42,6 +42,6 @@ private:
 
 }; // SorptionIsothermLangmuir
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SORPTION_ISOTHERM_LANGMUIR_HH_

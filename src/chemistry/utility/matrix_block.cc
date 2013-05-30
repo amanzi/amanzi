@@ -9,8 +9,8 @@
 
 #include "chemistry_output.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 MatrixBlock::MatrixBlock() 
   : size_(0),
@@ -239,5 +239,5 @@ void MatrixBlock::Print_ij() const {
   chem_out->Write(kVerbose, message);
 }
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

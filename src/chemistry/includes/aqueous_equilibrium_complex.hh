@@ -10,8 +10,8 @@
 
 // forward declarations from outside chemistry
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -49,6 +49,6 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
  private:
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_

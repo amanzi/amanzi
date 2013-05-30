@@ -13,8 +13,8 @@
 #include "chemistry_output.hh"
 #include "chemistry_exception.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 extern ChemistryOutput* chem_out;
 
@@ -195,5 +195,5 @@ void RadioactiveDecay::Display(void) const {
   chem_out->Write(kVerbose, message);
 }  // end Display()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

@@ -6,8 +6,8 @@
 
 #include "sorption_isotherm.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 SorptionIsothermLinear::SorptionIsothermLinear()
     : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
@@ -60,5 +60,5 @@ void SorptionIsothermLinear::Display(void) const {
             << std::setw(15) << KD() << std::endl;
 }  // end Display()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

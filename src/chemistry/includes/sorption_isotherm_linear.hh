@@ -6,8 +6,8 @@
 
 // Class for linear isotherm
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class SorptionIsothermLinear : public SorptionIsotherm {
  public:
@@ -35,6 +35,6 @@ class SorptionIsothermLinear : public SorptionIsotherm {
 
 }; // SorptionIsothermLinear
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SORPTION_ISOTHERM_LINEAR_HH_

@@ -7,8 +7,8 @@
 #include <cmath>
 #include <math.h>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class VirialCoefficient {
  public:
@@ -74,7 +74,7 @@ class VirialCoefficient {
 
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 
 #endif  // AMANZI_CHEMISTRY_VIRIAL_COEFFICIENT_HH_

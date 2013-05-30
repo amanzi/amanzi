@@ -1,8 +1,8 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "newton.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 Newton::Newton(const int n) {
   size(n);
@@ -113,5 +113,5 @@ Newton::~Newton() {
   J_ = NULL;
 }  // end Newton destructor
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

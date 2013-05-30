@@ -11,7 +11,7 @@
 struct SimulationParameters {
   std::string description;
   std::vector<std::string> verbosity_names;
-  amanzi::chemistry::Verbosity verbosity;
+  Amanzi::AmanziChemistry::Verbosity verbosity;
   std::string text_output;
   std::string text_time_units;
   std::string comparison_model;
@@ -36,7 +36,7 @@ struct SimulationParameters {
   SimulationParameters()
       : description(""),
         verbosity_names(),
-        verbosity(amanzi::chemistry::kVerbose), 
+        verbosity(Amanzi::AmanziChemistry::kVerbose), 
         text_output(""),
         text_time_units("s"),
         comparison_model("pflotran"),
@@ -110,11 +110,11 @@ void WriteTextOutputHeader(std::fstream* text_output,
 
 void WriteTextOutput(std::fstream* text_output,
                      const double time,
-                     const amanzi::chemistry::Beaker::BeakerComponents& components);
+                     const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components);
 
 void ReadInputFile(const std::string& file_name,
                    SimulationParameters* simulation_params,
-                   amanzi::chemistry::Beaker::BeakerComponents* components);
+                   Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
 
 void ParseSimulationParameter(const std::string& raw_line,
                               SimulationParameters* params);
@@ -125,10 +125,10 @@ void ParseComponentValue(const std::string& raw_line,
                          double* component);
 
 void ModelSpecificParameters(const std::string model,
-                             amanzi::chemistry::Beaker::BeakerParameters* parameters);
+                             Amanzi::AmanziChemistry::Beaker::BeakerParameters* parameters);
 
 void PrintInput(const SimulationParameters& params,
-                const amanzi::chemistry::Beaker::BeakerComponents& components);
+                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components);
 void PrintSimulationParameters(const SimulationParameters& params);
 
 

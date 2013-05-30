@@ -13,8 +13,8 @@
 
 #include "species.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 typedef std::string IonxComplexName;
 typedef int IonxComplexId; 
@@ -68,6 +68,6 @@ class IonExchangeComplex {
   double X_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_

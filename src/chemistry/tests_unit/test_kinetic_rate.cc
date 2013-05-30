@@ -11,7 +11,7 @@
 #include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsKineticRate) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*****************************************************************************
    **
    **  Test for KineticRate.cpp

@@ -11,8 +11,8 @@
 // forward declarations from outside chemistry
 
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -97,6 +97,6 @@ class SecondarySpecies : public Species {
   };
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_

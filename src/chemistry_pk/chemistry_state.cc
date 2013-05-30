@@ -16,8 +16,8 @@
 #include "exceptions.hh"
 
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 Chemistry_State::Chemistry_State(Teuchos::RCP<State_Old> S)
     : simulation_state_(S) {
@@ -36,5 +36,5 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
   }
 }  // end AllocateAdditionalChemistryStorage()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

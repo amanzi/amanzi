@@ -1,8 +1,8 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "chemistry/includes/solver.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 Solver::Solver(void)
     : system_size_(0),
@@ -28,5 +28,5 @@ Solver::~Solver() {
   A_ = NULL;
 }  // end Solver destructor
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

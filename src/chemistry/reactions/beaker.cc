@@ -37,8 +37,8 @@
 
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 extern ChemistryOutput* chem_out;
 
@@ -1954,5 +1954,5 @@ void Beaker::print_linear_system(const std::string& s,
   chem_out->Write(kVerbose,message);
 }  // end print_linear_system()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

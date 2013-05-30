@@ -7,8 +7,8 @@
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // global chem_out object, new/delete should be called from the driver!
 ChemistryOutput* chem_out = NULL;
@@ -126,5 +126,5 @@ void ChemistryOutput::Write(const Verbosity level, const std::string& data) {
   }
 }  // end Write()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

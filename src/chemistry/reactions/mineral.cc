@@ -10,8 +10,8 @@
 #include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 extern ChemistryOutput* chem_out;
 
@@ -147,5 +147,5 @@ void Mineral::DisplayResults(void) const {
   chem_out->Write(kVerbose, message);
 }  // end DisplayResults()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
