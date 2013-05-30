@@ -11,7 +11,6 @@
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "chemistry_state.hh"
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "chemistry_output.hh"
@@ -19,7 +18,6 @@
 #include "chemistry_exception.hh"
 
 #include "Mesh.hh"
-#include "State_Old.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 

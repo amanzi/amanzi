@@ -26,6 +26,8 @@ class Field_CompositeVector : public Field {
 public:
   // constructors
   Field_CompositeVector(std::string fieldname, std::string owner);
+  Field_CompositeVector(std::string fieldname, std::string owner,
+                        const std::vector<std::vector<std::string> >& subfield_names);
   Field_CompositeVector(std::string fieldname, std::string owner, Teuchos::RCP<CompositeVector>& data);
 
   // copy constructors

@@ -28,6 +28,14 @@ Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string 
 };
 
 Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string owner,
+        const std::vector<std::vector<std::string> >& subfield_names) :
+    Field::Field(fieldname, owner),
+    data_(),
+    subfield_names_(subfield_names) {
+  type_ = COMPOSITE_VECTOR_FIELD;
+};
+
+Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string owner,
                                            Teuchos::RCP<CompositeVector>& data) :
     Field::Field(fieldname, owner), data_(data) {
   type_ = COMPOSITE_VECTOR_FIELD;

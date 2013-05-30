@@ -141,6 +141,10 @@ class State {
   Teuchos::RCP<CompositeVectorFactory>
   RequireField(Key fieldname, Key owner="state");
 
+  Teuchos::RCP<CompositeVectorFactory>
+  RequireField(Key fieldname, Key owner,
+               const std::vector<std::vector<std::string> >& subfield_names);
+
   // -- A few common, special cases, where we know some of the implied meta-data.
   void RequireGravity();
 

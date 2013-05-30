@@ -390,6 +390,27 @@ State::RequireField(Key fieldname, Key owner) {
 };
 
 
+// Vector Field requires
+Teuchos::RCP<CompositeVectorFactory>
+State::RequireField(Key fieldname, Key owner,
+                    const std::vector<std::vector<std::string> >& subfield_names) {
+  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
+          COMPOSITE_VECTOR_FIELD, owner);
+
+  if (field == Teuchos::null) {
+    // Create the field and CV factory.
+    Teuchos::RCP<Field_CompositeVector> field =
+        Teuchos::rcp(new Field_CompositeVector(fieldname, owner, subfield_names));
+    fields_[fieldname] = field;
+    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorFactory());
+  } else if (owner != Key("state")) {
+    field->set_owner(owner);
+  }
+
+  return field_factories_[fieldname];
+};
+
+
 void State::RequireGravity() {
   int dim = 3;
   Key fieldname("gravity");

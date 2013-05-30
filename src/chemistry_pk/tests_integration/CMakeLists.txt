@@ -37,8 +37,8 @@ add_amanzi_test(chemistry_pk chemistry_pk_tests
                 SOURCE 
 		      main.cc
                       test_chemistry_pk.cc
-                LINK_LIBS  chemistry_pk state 
-                      mesh mesh_factory error_handling 
+                LINK_LIBS  chemistry_pk state data_structures
+                      mesh_functions mesh mesh_factory error_handling 
 		      interface
                       ${UnitTest_LIBRARIES} 
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})

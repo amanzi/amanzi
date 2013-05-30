@@ -26,6 +26,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
@@ -40,7 +41,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 
 file(GLOB chem_inc_files "*hh")
 add_amanzi_library(chemistry_pk
-                   SOURCE chemistry_state.cc chemistry_pk.cc HEADERS ${chem_inc_files}
+                   SOURCE Chemistry_State.cc chemistry_pk.cc HEADERS ${chem_inc_files}
                    LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 
 

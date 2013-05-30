@@ -46,7 +46,7 @@ if (ENABLE_Unstructured)
 endif()
 
 if (ENABLE_Unstructured)
-#  add_subdirectory(chemistry_pk)
+  add_subdirectory(chemistry_pk)
 
   add_subdirectory(flow)
   add_subdirectory(transport)

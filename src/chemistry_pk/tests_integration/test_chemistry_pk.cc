@@ -15,10 +15,10 @@
 #include "InputParserIS.hh"
 #include "MeshFactory.hh"
 #include "GenerationSpec.hh"
-#include "State_Old.hh"
+#include "State.hh"
 
 #include "chemistry_pk.hh"
-#include "chemistry_state.hh"
+#include "Chemistry_State.hh"
 #include "species.hh"
 #include "chemistry_exception.hh"
 
@@ -33,7 +33,7 @@
  *****************************************************************************/
 
 SUITE(GeochemistryTestsChemistryPK) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   namespace ag = Amanzi::AmanziGeometry;
   namespace am = Amanzi::AmanziMesh;
 
@@ -58,7 +58,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Epetra_SerialComm* comm_;
     ag::GeometricModelPtr gm_;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
-    Teuchos::RCP<State_Old> state_;
+    Teuchos::RCP<Amanzi::State> state_;
   };  // end class SpeciationTest
 
   ChemistryPKTest::ChemistryPKTest() {
@@ -100,11 +100,15 @@ SUITE(GeochemistryTestsChemistryPK) {
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
-    state_ = Teuchos::rcp(new State_Old(state_parameter_list, mesh_));
- 
+    state_ = Teuchos::rcp(new Amanzi::State(state_parameter_list));
+    state_->RegisterDomainMesh(mesh_);
+
     // create the chemistry state object from the state
-    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(state_));
- 
+    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(state_parameter_list, state_));
+    state_->Setup();
+    chemistry_state_->Initialize();
+    state_->Initialize();
+
     // create the chemistry parameter list
     chemistry_parameter_list_ = parameter_list.sublist("Chemistry");
   }
@@ -142,7 +146,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // object correctly based on the xml input....
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-      amanzi::chemistry::chem_out->AddLevel("silent");
+      Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -155,7 +159,7 @@ SUITE(GeochemistryTestsChemistryPK) {
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
       cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-      amanzi::chemistry::chem_out->AddLevel("silent");
+      Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -168,7 +172,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_set_component_names) {
     cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-    amanzi::chemistry::chem_out->AddLevel("silent");
+    Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
     cpk_->InitializeChemistry();
     std::vector<std::string> names;
     cpk_->set_component_names(&names);

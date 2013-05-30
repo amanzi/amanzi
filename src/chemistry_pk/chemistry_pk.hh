@@ -12,7 +12,7 @@
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
 
-#include "chemistry_state.hh"
+#include "Chemistry_State.hh"
 
 // forward declarations
 class Epetra_MultiVector;
