@@ -389,7 +389,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   // u[10] = 100288.85844005689 ;
   // u[11] = 100288.86263140998 ;
 
-  u = u0;
+  //u = u0;
 
   // cout.precision(16);
   // cout<<"Initial Guess\n";
