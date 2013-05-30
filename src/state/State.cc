@@ -77,6 +77,7 @@ State::State(Teuchos::ParameterList &parameter_list_,
   // create the Eptera_Vector objects
   create_storage();
   initialize_from_parameter_list();
+  initialize_from_file_list();
   ExtractVolumeFromMesh();
 };
 
@@ -210,6 +211,7 @@ void State::initialize_from_parameter_list()
 
   for (Teuchos::ParameterList::ConstIterator it = parameter_list.begin(); it != parameter_list.end(); it++) {
     if (parameter_list.isSublist(it->first) && (it->first != "VerboseObject")) {
+      if (it->first == "File initialization") continue;
       Teuchos::ParameterList& sublist = parameter_list.sublist(it->first);
 
       std::string region = sublist.get<std::string>("Region");

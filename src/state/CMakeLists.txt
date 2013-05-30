@@ -47,7 +47,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 file(GLOB state_inc_files "*.hh")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
-                   SOURCE State.cc Restart.cc Vis.cc chemistry_data.cc HEADERS ${state_inc_files}
+                   SOURCE State.cc StateFromFile.cc Restart.cc Vis.cc chemistry_data.cc HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})

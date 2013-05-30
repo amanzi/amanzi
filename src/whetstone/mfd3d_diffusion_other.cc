@@ -6,7 +6,7 @@ Amanzi is released under the three-clause BSD License.
 The terms of use and "as is" disclaimer for this license are 
 provided Reconstruction.cppin the top-level COPYRIGHT file.
 
-Release name: ara-to.
+Release name: naka-to.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 Usage: 
 */

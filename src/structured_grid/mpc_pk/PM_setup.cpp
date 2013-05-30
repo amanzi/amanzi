@@ -1069,14 +1069,14 @@ void PorousMedia::read_geometry()
   if (generate_default_regions) {
       nregion_DEF = 1 + 2*BL_SPACEDIM;
       regions.resize(nregion_DEF,PArrayManage);
-      regions.set(0, new   allRegion(problo,probhi));
-      regions.set(1, new allBCRegion(0,0,problo,probhi));
-      regions.set(2, new allBCRegion(0,1,problo,probhi));
-      regions.set(3, new allBCRegion(1,0,problo,probhi));
-      regions.set(4, new allBCRegion(1,1,problo,probhi));
+      regions.set(0, new   AllRegion());
+      regions.set(1, new AllBCRegion(0,0));
+      regions.set(2, new AllBCRegion(0,1));
+      regions.set(3, new AllBCRegion(1,0));
+      regions.set(4, new AllBCRegion(1,1));
 #if BL_SPACEDIM == 3
-      regions.set(5, new allBCRegion(2,0,problo,probhi));
-      regions.set(6, new allBCRegion(2,1,problo,probhi));
+      regions.set(5, new AllBCRegion(2,0));
+      regions.set(6, new AllBCRegion(2,1));
 #endif
   }
 
@@ -1107,20 +1107,20 @@ void PorousMedia::read_geometry()
           {
 	      Array<Real> coor;
 	      ppr.getarr("coordinate",coor,0,BL_SPACEDIM);
-              regions.set(nregion_DEF+j, new pointRegion(r_name[j],r_purpose,r_type,coor));
+              regions.set(nregion_DEF+j, new PointRegion(r_name[j],r_purpose,coor));
 	    }
 	  else if (r_type == "box" || r_type == "surface")
 	    {
 	      Array<Real> lo_coor,hi_coor;
 	      ppr.getarr("lo_coordinate",lo_coor,0,BL_SPACEDIM);
 	      ppr.getarr("hi_coordinate",hi_coor,0,BL_SPACEDIM);
-              regions.set(nregion_DEF+j, new boxRegion(r_name[j],r_purpose,r_type,lo_coor,hi_coor));
+              regions.set(nregion_DEF+j, new BoxRegion(r_name[j],r_purpose,lo_coor,hi_coor));
 	    }
 	  else if (r_type == "color_function")
           {
               int color_value; ppr.get("color_value",color_value);
               std::string color_file; ppr.get("color_file",color_file);
-              colorFunctionRegion* cfr = new colorFunctionRegion(r_name[j],r_purpose,r_type,color_file,color_value);
+              ColorFunctionRegion* cfr = new ColorFunctionRegion(r_name[j],r_purpose,color_file,color_value);
 	      regions.set(nregion_DEF+j, cfr);
           }
           else {

@@ -45,132 +45,118 @@ build_region_PArray(const Array<std::string>& region_names)
 void SetRegionsTANK()
 {
   Array<Real> lo(2), hi(2);
-  std::string r_name, r_purpose, r_type;
+  std::string r_name, r_purpose;
   r_name = "SoilLower";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 0;
   hi[0] = 40;
   hi[1] = 10;
-  regions["SoilLower"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["SoilLower"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "SoilRight";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 12;
   lo[1] = 10;
   hi[0] = 40;
   hi[1] = 18;
-  regions["SoilRight"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["SoilRight"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "SoilUpper";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 18;
   hi[0] = 40;
   hi[1] = 24;
-  regions["SoilUpper"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["SoilUpper"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankConcFloor";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0.5;
   lo[1] = 10;
   hi[0] = 12;
   hi[1] = 10.3;
-  regions["TankConcFloor"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankConcFloor"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankConcRoof1";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 17.7;
   hi[0] = 11.67;
   hi[1] = 18;
-  regions["TankConcRoof1"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankConcRoof1"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankConcRoof2";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 11.69;
   lo[1] = 17.7;
   hi[0] = 12;
   hi[1] = 18;
-  regions["TankConcRoof2"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankConcRoof2"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankConcWall";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 11.7;
   lo[1] = 10.3;
   hi[0] = 12;
   hi[1] = 17.7;
-  regions["TankConcWall"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankConcWall"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankFFfloor";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 10;
   hi[0] = 0.5;
   hi[1] = 10.31;
-  regions["TankFFfloor"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankFFfloor"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankFFwall";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 11.67;
   lo[1] = 10.33;
   hi[0] = 11.69;
   hi[1] = 18;
-  regions["TankFFwall"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankFFwall"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankGrout";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 10.33;
   hi[0] = 11.67;
   hi[1] = 17.69;
-  regions["TankGrout"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankGrout"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankLinerFloor";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0.5;
   lo[1] = 10.3;
   hi[0] = 11.7;
   hi[1] = 10.31;
-  regions["TankLinerFloor"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankLinerFloor"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankLinerRoof";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 17.69;
   hi[0] = 11.67;
   hi[1] = 17.7;
-  regions["TankLinerRoof"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankLinerRoof"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankLinerWall";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 11.69;
   lo[1] = 10.31;
   hi[0] = 11.7;
   hi[1] = 17.7;
-  regions["TankLinerWall"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankLinerWall"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "TankWaste";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 10.31;
   hi[0] = 11.69;
   hi[1] = 10.33;
-  regions["TankWaste"] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions["TankWaste"] = new BoxRegion(r_name,r_purpose,lo,hi);
 }
 
 void
@@ -232,51 +218,46 @@ SetMaterialsTANK()
 void SetRegionsSMALL()
 {
   Array<Real> lo(2), hi(2);
-  std::string r_name, r_purpose, r_type;
+  std::string r_name, r_purpose;
   r_name = "Blue";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 5;
   lo[1] = 1;
   hi[0] = 7;
   hi[1] = 3;
-  regions[r_name] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "Red1";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 3;
   hi[0] = 8;
   hi[1] = 8;
-  regions[r_name] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "Red2";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 1;
   hi[0] = 5;
   hi[1] = 3;
-  regions[r_name] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "Red3";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 0;
   lo[1] = 0;
   hi[0] = 8;
   hi[1] = 1;
-  regions[r_name] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
 
   r_name = "Red4";
   r_purpose = "all";
-  r_type = "box";
   lo[0] = 7;
   lo[1] = 1;
   hi[0] = 8;
   hi[1] = 3;
-  regions[r_name] = new boxRegion(r_name,r_purpose,r_type,lo,hi);
+  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
 }
 
 void

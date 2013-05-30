@@ -139,7 +139,7 @@ Observation::process(Real t_old,
 }
 
 static IntVect
-Index (const pointRegion& region,
+Index (const PointRegion& region,
        int                lev,
        const Amr*         amr)
 {
@@ -169,7 +169,7 @@ Observation::point_sample (Real time)
 
 
   const Region* regPtr = &region;
-  const pointRegion* ptreg = dynamic_cast<const pointRegion*>(regPtr);
+  const PointRegion* ptreg = dynamic_cast<const PointRegion*>(regPtr);
   if (ptreg == 0) 
   {
       BoxLib::Abort("Point Sample observation requires a point region");
