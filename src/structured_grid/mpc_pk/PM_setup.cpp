@@ -366,7 +366,8 @@ static int scalar_bc[] =
 
 static int tracer_bc[] =
   {
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, SEEPAGE
+    //INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, SEEPAGE
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, SEEPAGE
   };
 
 static int press_bc[] =
@@ -1421,7 +1422,7 @@ PorousMedia::read_rock(int do_chem)
         static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
         static Property::RefineRule pc_refine = Property::PiecewiseConstant;
 
-        Property* phi_func;
+        Property* phi_func = 0;
         std::string phi_str = "porosity";
         Array<Real> rpvals(1), rptimes;
         Array<std::string> rpforms;
@@ -1445,7 +1446,7 @@ PorousMedia::read_rock(int do_chem)
         }
 
 
-        Property* kappa_func;
+        Property* kappa_func = 0;
         std::string kappa_str = "permeability";
         Array<Real> rvpvals(1), rhpvals(1), rvptimes(1), rhptimes(1);
         Array<std::string> rvpforms, rhpforms;
@@ -1568,6 +1569,8 @@ PorousMedia::read_rock(int do_chem)
         properties.push_back(phi_func);
         properties.push_back(kappa_func);
         materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
+        delete phi_func;
+        delete kappa_func;
     }
 
     // Read rock parameters associated with chemistry

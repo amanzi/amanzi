@@ -2799,7 +2799,7 @@ PorousMedia::multilevel_advance (Real  time,
     //
     // Timestep control:
     //   Time-explicit CFL, chemistry difficulty
-    std::cout << "AM I NOT HERE?\n";
+    //std::cout << "AM I NOT HERE?\n";
     // Initialize velocity field, set "new time" for state the same across levels, copy over saturation/pressure
     advance_flow_nochange(time,dt);
     advance_saturated_transport_dt(); // FIXME: If u is really time-dependent, this must be done through the subcycle
@@ -5179,7 +5179,7 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
 
     int op_lev=0;
     bool local = false;
-    std::cout << "NCOMP " << S.nComp() << " " << D.nComp() << " " << first_tracer+n << " " << n << std::endl;
+    //std::cout << "NCOMP " << S.nComp() << " " << D.nComp() << " " << first_tracer+n << " " << n << std::endl;
     tracOp.apply(D,S,op_lev,LinOp::Inhomogeneous_BC,local,first_tracer+n,n,1,n);
     MultiFab::Multiply(D,volInv,0,n,1,0);
 
@@ -12618,6 +12618,15 @@ PorousMedia::checkPoint (const std::string& dir,
                          VisMF::How     how,
                          bool           dump_old)
 {
+  for (int i=0; i<num_state_type; ++i) {
+    if (state[i].hasOldData()) {
+      get_old_data(i).setBndry(0);
+    }
+    if (state[i].hasNewData()) {
+      get_new_data(i).setBndry(0);
+    }
+  }
+
   AmrLevel::checkPoint(dir,os,how,dump_old);
   std::string Level = BoxLib::Concatenate("Level_", level, 1);
   std::string uxfile = "/umac_x";
