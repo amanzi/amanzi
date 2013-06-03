@@ -92,8 +92,9 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
-    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
+    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("state");
     S = Teuchos::rcp(new State(state_parameter_list));
+    S->RegisterDomainMesh(mesh_maps);
   }
 
   //
@@ -126,14 +127,29 @@ void MPC::mpc_init() {
   // transport...
   if (transport_enabled) {
     TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S));
+
+    S->Setup();
+
+    //TS->Initialize();
+
+    std::cout << "TRANSPORT STATE CREATED\n";
+
     Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
 
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
 
     TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
+
+    std::cout << "TRANSPORT PK CREATED\n";
+
     TPK->InitPK();
+
+    std::cout << "TRANSPORT INITIALIZATION DONE\n";
   }
+
+
+
 
   // transport and chemistry...
   chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
@@ -159,6 +175,7 @@ void MPC::mpc_init() {
       throw std::exception();
     }
     FPK->InitPK();
+    std::cout << "FLOW INITIALIZATION DONE\n";
   }
   if (flow_model == "Steady State Richards") {
     *out << "Flow will be off during the transient phase" << std::endl;
