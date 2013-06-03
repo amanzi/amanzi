@@ -69,26 +69,43 @@ void Flow_State::Construct_() {
   S_->RequireScalar("fluid_density", name_);
   S_->RequireScalar("fluid_viscosity", name_);
   S_->RequireConstantVector("gravity", name_, mesh_->space_dimension());
-
-  S_->RequireField("pressure", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponents(names, locations, ndofs);
-  S_->RequireField("permeability", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 2);
-  S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("specific_storage", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("specific_yield", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("face", AmanziMesh::FACE, 1);
-  S_->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
-
+  
+  if (!S_->HasField("pressure")) {
+    S_->RequireField("pressure", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponents(names, locations, ndofs);
+  }
+  if (!S_->HasField("permeability")) {
+    S_->RequireField("permeability", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
+  }
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("specific_storage")) {
+    S_->RequireField("specific_storage", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("specific_yield")) {
+    S_->RequireField("specific_yield", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasField("darcy_velocity")) {
+    S_->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
+  }
 };
 
 void Flow_State::Initialize() {

@@ -126,41 +126,36 @@ void MPC::mpc_init() {
 
   // transport...
   if (transport_enabled) {
-    TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S));
-
-    S->Setup();
-
-    //TS->Initialize();
-
-    std::cout << "TRANSPORT STATE CREATED\n";
-
-    Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
-
-    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
-    transport_subcycling = (subcycling) ? 1 : 0;
-
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
-
-    std::cout << "TRANSPORT PK CREATED\n";
-
-    TPK->InitPK();
-
-    std::cout << "TRANSPORT INITIALIZATION DONE\n";
+    TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S,1));
   }
-
-
-
 
   // transport and chemistry...
-  chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
-  if (transport_enabled && chemistry_enabled) {
-    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
-  }
+  // chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
+  // if (transport_enabled && chemistry_enabled) {
+  //   chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
+  // }
 
   // flow...
   if (flow_enabled) {
     FS = Teuchos::rcp(new AmanziFlow::Flow_State(S));
+  }
 
+  if (flow_model == "Steady State Richards") {
+    *out << "Flow will be off during the transient phase" << std::endl;
+  }
+  
+  S->Setup();
+
+  if (transport_enabled) {
+    Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
+    bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
+    transport_subcycling = (subcycling) ? 1 : 0;
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
+    TPK->InitPK();
+  }
+    
+  if (flow_enabled) {
+    
     flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
@@ -173,14 +168,43 @@ void MPC::mpc_init() {
     } else {
       cout << "MPC: unknown flow model: " << flow_model << endl;
       throw std::exception();
-    }
+    }   
+
     FPK->InitPK();
-    std::cout << "FLOW INITIALIZATION DONE\n";
   }
-  if (flow_model == "Steady State Richards") {
-    *out << "Flow will be off during the transient phase" << std::endl;
-  }
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
   // done creating auxilary state objects and  process models
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // create the observations
   if (parameter_list.isSublist("Observation Data")) {

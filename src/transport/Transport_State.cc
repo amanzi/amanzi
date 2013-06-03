@@ -15,17 +15,17 @@ Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int 
     comp_numbers_[ss.str()] = i;
   }
 
-  Construct_();
+  Construct_(ncomp);
 }
 
-Transport_State::Transport_State(Teuchos::RCP<State> S) :
+Transport_State::Transport_State(Teuchos::RCP<State> S, const int ncomp) :
     PK_State(std::string("state"), S) {
-  Construct_();
+  Construct_(ncomp);
 }
 
-Transport_State::Transport_State(State& S) :
+Transport_State::Transport_State(State& S, const int ncomp) :
     PK_State(std::string("state"), S) {
-  Construct_();
+  Construct_(ncomp);
 }
 
 Transport_State::Transport_State(Transport_State& other,
@@ -48,7 +48,7 @@ Transport_State::Transport_State(Transport_State& other,
 
     CompositeVectorFactory fac_tcc;
     fac_tcc.SetMesh(mesh_);
-    fac_tcc.SetComponent("cell", AmanziMesh::CELL, comp_names_.size());
+    fac_tcc.SetComponent("cell", AmanziMesh::CELL, other.total_component_concentration()->NumVectors()   );
 
     Teuchos::RCP<CompositeVector> tcc = fac_tcc.CreateVector(true);
     tcc->CreateData();
@@ -59,6 +59,7 @@ Transport_State::Transport_State(Transport_State& other,
     CompositeVectorFactory fac;
     fac.SetMesh(mesh_);
     fac.SetComponent("face", AmanziMesh::FACE, 1);
+
     Teuchos::RCP<CompositeVector> flux = fac.CreateVector(true);
     flux->CreateData();
     *flux->ViewComponent("face",false) = *other.darcy_flux();
@@ -68,23 +69,32 @@ Transport_State::Transport_State(Transport_State& other,
 }
 
 
-void Transport_State::Construct_() {
-  // Somehow much set up comp_names and comp_numbers!
-
+void Transport_State::Construct_(const int ncomp) {
+ 
   // Require data, all owned by "state" to cheat the system.
   S_->RequireScalar("fluid_density", name_);
-  S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(false)
-    ->SetComponent("face", AmanziMesh::FACE, 1);
-
-  S_->RequireField("total_component_concentration", name_)->SetMesh(mesh_)
-    ->SetGhosted(false)
-    ->SetComponent("cell", AmanziMesh::CELL, comp_names_.size());
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  
+  if (!S_->HasField("total_component_concentration")) {
+    S_->RequireField("total_component_concentration", name_)->SetMesh(mesh_)
+        ->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, ncomp);
+  }
 }
 
 

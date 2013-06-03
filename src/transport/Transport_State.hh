@@ -27,8 +27,8 @@ class Transport_State : public PK_State {
  public:
 
   explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int);
-  explicit Transport_State(Teuchos::RCP<State> S);
-  explicit Transport_State(State& S);
+  explicit Transport_State(Teuchos::RCP<State> S, const int);
+  explicit Transport_State(State& S, const int);
   Transport_State(Transport_State& other, PKStateConstructMode mode);
 
   void Initialize();
@@ -99,7 +99,7 @@ class Transport_State : public PK_State {
   void error_total_component_concentration(f_conc_t f, double t, double* L1, double* L2);
 
  protected:
-  void Construct_();
+  void Construct_(const int);
 
  private:
   // not implemented

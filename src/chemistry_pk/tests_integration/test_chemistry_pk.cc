@@ -77,7 +77,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     parameter_list = Amanzi::AmanziInput::translate(&input_spec, 1);
     
     //std::cout << input_spec << std::endl;
-    //std::cout << parameter_list << std::endl;
+    std::cout << parameter_list << std::endl;
 
     // create a test mesh
     comm_ = new Epetra_SerialComm();

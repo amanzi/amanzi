@@ -89,6 +89,7 @@
       </ParameterList>
     </ParameterList>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
+    <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Darcy"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
@@ -224,21 +225,32 @@
     <Parameter name="verbosity level" type="int" value="1"/>  
     <Parameter name="advection limiter" type="string" value="Tensorial"/>  
     
-    <ParameterList name="Transport BCs">
-      <Parameter name="number of BCs" type="int" value="1"/>
-      <ParameterList name="BC 0">
-	<Parameter name="Regions" type="Array(string)" value="{SS3}"/>
-	<Parameter name="Component 0" type="Array(double)" value="{1.0, 0.0}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-      </ParameterList>  
+    <ParameterList name="boundary conditions">
+      <ParameterList name="concentration">
+        <ParameterList name="Component 0">
+          <ParameterList name="BC for SS3">
+            <Parameter name="regions" type="Array(string)" value="{SS3}"/>
+            <ParameterList name="boundary concentration">
+              <ParameterList name="function-tabular">
+                <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                <Parameter name="y values" type="Array(double)" value="{1.0, 0.0}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>	
     </ParameterList>
-  </ParameterList> <!-- End Transport -->
+    
+  </ParameterList> 
 
+<!--
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="test/tracer.bgd" />
-  </ParameterList> <!-- End Chemistry -->
+  </ParameterList> 
+-->
+
 
   <ParameterList name="Flow">
     <ParameterList name="Darcy Problem">
@@ -290,14 +302,6 @@
 	  </ParameterList>  
        </ParameterList>
 
-<!--
-	  <ParameterList name="BC02">
-	    <Parameter name="Type" type="string" value="Darcy Constant"/>
-	    <Parameter name="BC value"  type="double" value="1.0"/>
-	    <Parameter name="Side set ID" type="int" value="2" />
-	  </ParameterList>  
--->
-
 	<ParameterList name="static head">
 	  <ParameterList name="BC04">
 	    <Parameter name="regions" type="Array(string)" value="{SS4}"/>
@@ -320,10 +324,10 @@
 	  </ParameterList>
 	</ParameterList>  
 
-      </ParameterList> <!-- End boundary conditions -->
+      </ParameterList>
 
-    </ParameterList> <!-- End Darcy Problem -->
+    </ParameterList> 
 
-  </ParameterList>  <!-- End Flow -->
-    
+  </ParameterList>     
+
 </ParameterList> <!-- End Main -->
