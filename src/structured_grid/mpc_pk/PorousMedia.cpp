@@ -4940,7 +4940,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     FArrayBox flux[BL_SPACEDIM];
     Array<int> state_bc;
     PArray<MultiFab> fluxes;
-    if (reflux_on_this_call && do_reflux && level < parent->finestLevel())
+    if (reflux_on_this_call && do_reflux)
     {
       fluxes.resize(BL_SPACEDIM,PArrayManage);
       for (int i = 0; i < BL_SPACEDIM; i++)
@@ -5078,7 +5078,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       }
     }
 
-    if (fluxes.size() > 0) 
+    if (fluxes.size() > 0 && level < parent->finestLevel())
     {
       for (int d = 0; d < BL_SPACEDIM; d++) {
         getAdvFluxReg(level+1).CrseInit(fluxes[d],d,0,first_tracer,ntracers,-dt); // CRSE = ( Fadv - (1-theta) . Area . D . Grad(C_old) )*(-dt_crse)
