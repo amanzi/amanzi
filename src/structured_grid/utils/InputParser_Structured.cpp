@@ -2599,7 +2599,8 @@ namespace Amanzi {
         typedef std::multimap<std::string,ParameterList> SolutePLMMap;
 
         SolutePLMMap
-        convert_solute_bcs(StateDef& stateDef)
+        convert_solute_bcs(ParameterList& struc_list,
+                           StateDef&      stateDef)
         {
             SolutePLMMap solute_to_BClabel;
             StateFuncMap& state_bcs = stateDef.BC();    
@@ -2665,6 +2666,39 @@ namespace Amanzi {
                     }
                 }
             }
+
+            ParameterList& geom_list = struc_list.sublist("geometry");
+            std::map<std::string,std::string> orient_type_map;
+            for (SolutePLMMap::const_iterator it = solute_to_BClabel.begin(),
+                   End=solute_to_BClabel.end(); it!=End; ++it) {
+
+              const std::string& trac_name = it->first;
+              const ParameterList& trac_bc_pl = it->second;
+              const std::string& trac_bc_type = trac_bc_pl.get<std::string>("type");
+
+              const Array<std::string>& trac_bc_regions = trac_bc_pl.get<Array<std::string> >("regions");
+              for (int j=0; j<trac_bc_regions.size(); ++j) {
+                const std::string& regionName = trac_bc_regions[j];
+                if (geom_list.isSublist(regionName)) {
+                  const std::string& purpose = geom_list.sublist(regionName).get<std::string>("purpose");
+                  std::map<std::string,std::string>::const_iterator it = orient_type_map.find(purpose);
+                  if (it!=orient_type_map.end()) {
+                    if (trac_bc_type != it->second) {
+                      std::cerr << "All solutes must have the same boundary condition type a side\n";
+                      throw std::exception();
+                    }
+                  }
+                  else {
+                    orient_type_map[purpose] = trac_bc_type;
+                  }
+                }
+                else {
+                  std::cerr << "Unknown region " << regionName << " in boundary condition for " << trac_name << " \n";
+                  throw std::exception();
+                }
+              }
+            }
+
             return solute_to_BClabel;
         }
 
@@ -2825,7 +2859,7 @@ namespace Amanzi {
             // Only do solute BCs if do_tracer_transport
             if (do_tracer_transport)
             {
-                SolutePLMMap solute_to_bctype = convert_solute_bcs(stateDef);
+              SolutePLMMap solute_to_bctype = convert_solute_bcs(struc_list,stateDef);
 
                 for (int i=0; i<arraysolute.size(); ++i) {
                     const std::string& soluteName = arraysolute[i];
