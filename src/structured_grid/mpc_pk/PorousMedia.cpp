@@ -2937,7 +2937,8 @@ PorousMedia::advance_richards_transport_dt(Real t)
       MultiFab::Copy(pml.u_macG_curr[d],pml.u_macG_trac[d],0,0,1,0); // FIXME: Should not be necessary
     }
     pml.predictDT(pml.u_macG_trac,t);
-    if (diffuse_tracers) {
+    bool diffuse_tracer = true;
+    if (diffuse_tracer) {
       pml.predictDT_diffusion_explicit(t);
     }
     dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
@@ -3006,7 +3007,8 @@ PorousMedia::advance_saturated_transport_dt()
     PorousMedia& pml = getLevel(lev); 
     Real curr_time = pml.get_state_data(State_Type).curTime();
     pml.predictDT(pml.u_macG_trac,curr_time);
-    if (diffuse_tracers) {
+    bool diffuse_tracer = true;
+    if (diffuse_tracer) {
       pml.predictDT_diffusion_explicit(curr_time);
     }
     dt_min = std::min(dt_min/parent->nCycle(lev),pml.dt_eig);
@@ -3037,7 +3039,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     Real t_eps = 1.e-6*dt_cfl;
     if (!do_subcycle && dt-dt_cfl > t_eps) {
       dt_new = dt_cfl;
-      std::cout<< "NOT HERE "<<  dt << " " << dt_cfl << " " << t_eps << std::endl;
+      //std::cout<< "NOT HERE "<<  dt << " " << dt_cfl << " " << t_eps << std::endl;
       return false;
     }
     Real t_subtr = t;
@@ -5014,10 +5016,13 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       }
     }
 
+    bool diffuse_tracer = true; 
+    //diffuse_tracer = false;
     Real be_cn_theta_trac = 0;
+
     int nGrowD = 1; // FIXME: Should have 1 grow cell if to be used in adv forcing
     MultiFab DTerms_old(grids,ntracers,nGrowD);
-    if (diffuse_tracers) {
+    if (diffuse_tracer) {
       calcDiffusivity(prev_time,first_tracer,ncomps+ntracers);
       getTracerViscTerms(DTerms_old,prev_time,nGrowD,fluxes);
     } else {
@@ -5080,7 +5085,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       get_new_data(State_Type)[i].copy(C_new_fpi(),Cidx,first_tracer,ntracers);
 
       if (fluxes.size()>0) {
-	if (diffuse_tracers) {
+	if (diffuse_tracer) {
 	  if (be_cn_theta_trac < 1) {
 	    if (be_cn_theta_trac != 0) {
 	      for (int d = 0; d < BL_SPACEDIM; d++) {
@@ -7639,10 +7644,8 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
           
           
           predictDT(u_mac,cur_time);
-          if (diffuse_tracers) {
-            predictDT_diffusion_explicit(cur_time);
-          }
- 
+	  predictDT_diffusion_explicit(cur_time);
+          
 	  estdt = (cfl > 0  ?  cfl  :  1) *dt_eig;
 
           if (making_new_umac)
@@ -7779,7 +7782,6 @@ void
 PorousMedia::predictDT_diffusion_explicit (Real t_eval)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::predictDT_diffusion_explicit()");
-  BL_ASSERT(diffuse_tracers);
 
   const Real* dx = geom.CellSize();
   Real dt_diff = 1.e20; // FIXME: Need more robust
@@ -8436,7 +8438,6 @@ PorousMedia::init_rock_properties ()
         crse.shift(cshift);
         const Box& cbox = crse.box();
         BL_ASSERT(fine.box().contains(Box(cbox).refine(rr))); 
-        //FORT_INITKAPPA3(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
         FORT_INITKAPPA3A(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
                         crse.dataPtr(),ARLIM(crse.loVect()),ARLIM(crse.hiVect()),
                         cbox.loVect(),cbox.hiVect(),rrvect);
@@ -8563,40 +8564,47 @@ PorousMedia::init_rock_properties ()
   geom.FillPeriodicBoundary(*rock_phi);
 
 
-#if 0
-  // FIXME: Leave commented out until final testing complete
+  // Test MatFiller here
   MatFiller* matFiller = PMParent()->GetMatFiller();
+  if (matFiller && matFiller->Initialized()) {
+    MultiFab matFiller_kappa(grids,BL_SPACEDIM,kappa->nGrow());
+    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,matFiller_kappa,
+                                      "permeability",0,kappa->nGrow());
+    if (!ret) BoxLib::Abort("Failed to build permeability");
 
-  std::string perm_str = "permeability";
-  int nComp_perm = matFiller->nComp(perm_str);
-  BL_ASSERT(nComp_perm == BL_SPACEDIM);
-  Real t_time = parent->cumTime();
-  void* myCtx = 0;
-  MultiFab tkappa(grids,nComp_perm,nGrowHYP);
-  matFiller->SetProperty(t_time,level,tkappa,perm_str,0,nGrowHYP,myCtx);
-
-  // Generate kpedge with no grow cells
-  for (MFIter mfi(tkappa); mfi.isValid(); ++mfi) {
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      const Box& cbox = mfi.validbox();
-      Box ebox = Box(cbox).surroundingNodes(d);
-      const FArrayBox& cdat = tkappa[mfi];
-      FArrayBox& edat = kpedge[d][mfi];
-      BL_ASSERT(edat.box().contains(ebox));
-      FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
-		     edat.dataPtr(), ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
-		     cbox.loVect(),cbox.hiVect(),&d);
+    MultiFab* matFiller_kpedge = new MultiFab[BL_SPACEDIM];
+    for (int dir = 0; dir < BL_SPACEDIM; dir++) {
+      BoxArray edge_gridskp(grids);
+      edge_gridskp.surroundingNodes(dir);
+      matFiller_kpedge[dir].define(edge_gridskp,1,1,Fab_allocate);
     }
+
+    for (MFIter mfi(matFiller_kappa); mfi.isValid(); ++mfi) {
+      const Box& cbox = mfi.validbox();
+      const FArrayBox& cdat = matFiller_kappa[mfi];
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        Box ebox = Box(cbox).surroundingNodes(d);
+        FArrayBox& edat = matFiller_kpedge[d][mfi];
+        BL_ASSERT(edat.box().contains(ebox));
+        FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
+                       edat.dataPtr(),ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
+                       cbox.loVect(),cbox.hiVect(),&d);
+      }
+    }
+
+    MultiFab matFiller_kappaAvg(grids,1,kappa->nGrow());
+    matFiller_kappaAvg.setVal(0.);
+    for (int d=0; d<BL_SPACEDIM; d++) {
+      MultiFab::Add(matFiller_kappaAvg,matFiller_kappa,d,0,1,kappa->nGrow());
+    }
+    matFiller_kappaAvg.mult(1.0/BL_SPACEDIM);
+
+    MultiFab matFiller_phi(grids,1,rock_phi->nGrow());
+    bool ret1 = matFiller->SetProperty(state[State_Type].curTime(),level,matFiller_phi,
+                                       "porosity",0,rock_phi->nGrow());
+    if (!ret1) BoxLib::Abort("Failed to build porosity");
   }
 
-  // Generate cc kappa avg
-  int nGrowCC = std::min(tkappa.nGrow(),kappa->nGrow());
-  MultiFab::Copy(*kappa,tkappa,0,0,1,nGrowCC);
-  for (int d=1; d<BL_SPACEDIM; d++) {
-    MultiFab::Add(*kappa,tkappa,d,0,1,nGrowCC);
-  }
-  kappa->mult(1.0/BL_SPACEDIM);
-#endif
 
   if (model != model_list["single-phase"] && 
       model != model_list["single-phase-solid"] &&
@@ -12026,6 +12034,7 @@ PorousMedia::derive (const std::string& name,
                      int                dcomp)
 {
     const DeriveRec* rec = derive_lst.get(name);
+    MatFiller* matFiller = PMParent()->GetMatFiller();
 
     bool not_found_yet = false;
 
@@ -12241,7 +12250,7 @@ PorousMedia::derive (const std::string& name,
           // FIXME: Input parameter?
           bool do_upwind = true;
 	  umac_edge_to_cen(u_mac_curr,tmf,do_upwind); 
-	  MultiFab::Copy(mf,tmf,dir,0,1,0);
+	  MultiFab::Copy(mf,tmf,dir,dcomp,1,0);
         }
         else {
 	  BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "+model).c_str());
@@ -12256,8 +12265,24 @@ PorousMedia::derive (const std::string& name,
         BL_ASSERT(rec->numDerive()==ncomp);
         BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
         MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
+    }
+    else if (matFiller && matFiller->Initialized() &&
+             (name=="Intrinsic_Permeability_X" ||
+              name=="Intrinsic_Permeability_Y" ||
+              name=="Intrinsic_Permeability_Z") ) {
 
-    } else {
+      int dir = ( name=="Intrinsic_Permeability_X"  ?  0  :
+                  name == "Intrinsic_Permeability_Y" ? 1 : 2);
+
+      MultiFab kappatmp(grids,BL_SPACEDIM,0);
+      bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,kappatmp,
+                                        "permeability",0,0);
+      if (!ret) BoxLib::Abort("Failed to build permeability");
+      MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
+      // Return values in mks
+      mf.mult(1/101325.,dcomp,1,0);
+    }
+    else {
 
         not_found_yet = true;
     }

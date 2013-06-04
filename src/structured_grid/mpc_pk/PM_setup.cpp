@@ -233,7 +233,6 @@ int  PorousMedia::variable_scal_diff;
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
 Array<Real> PorousMedia::diff_coef;
-bool        PorousMedia::diffuse_tracers;
 //
 // Transport flags
 //
@@ -680,7 +679,6 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::echo_inputs    = 0;
   PorousMedia::richard_solver = 0;
-  PorousMedia::diffuse_tracers = false;
 }
 
 std::pair<std::string,std::string>
@@ -821,9 +819,6 @@ PorousMedia::variableSetUp ()
   {
     Array<BCRec>       tbcs(ntracers);
     Array<std::string> tnames(ntracers);
-
-
-    std::cout << "Trac bc: " << trac_bc << std::endl;
 
     for (int i = 0; i < ntracers; i++) 
     {
@@ -2618,7 +2613,11 @@ void  PorousMedia::read_tracer(int do_chem)
       tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
       diff_coef.resize(ntracers,-1); // FIXME: read these 
-      diffuse_tracers = false;
+      variable_scal_diff = true;
+      for (int i=0; i<ntracers; ++i) {
+	diff_coef[i] = 1.e-10;
+      }
+      ndiff += ntracers;
 
       for (int i = 0; i<ntracers; i++)
       {
@@ -2667,17 +2666,17 @@ void  PorousMedia::read_tracer(int do_chem)
 
           if (setup_tracer_transport)
           {
+#if 0
 	      int nd = pp.countval("tracer_diffusion_coef");
 	      BL_ASSERT(nd==0 || nd==1 || nd>=ntracers);
 	      if (nd==1) {
 	        Real one_diff_coef;
 	        pp.get("tracer_diffusion_coef",one_diff_coef);
 	        diff_coef.resize(ntracers,one_diff_coef);
-                diffuse_tracers = true;
 	      } else if (nd>0) {
 	        pp.getarr("tracer_diffusion_coef",diff_coef,0,nd);
-                diffuse_tracers = true;
 	      }
+#endif
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
               if (n_tbc <= 0)
