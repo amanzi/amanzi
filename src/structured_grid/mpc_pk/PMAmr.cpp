@@ -31,7 +31,7 @@ PMAmr::PMAmr()
         regrid_on_restart        = 0;
         use_efficient_regrid     = 0;
         plotfile_on_restart      = 0;
-        compute_new_dt_on_regrid = 0;
+        compute_new_dt_on_regrid = 1;
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
 
@@ -320,7 +320,6 @@ PMAmr::pm_timeStep (int  level,
     else
     {
         int lev_top = std::min(finest_level, max_level-1);
-
         for (int i = level; i <= lev_top; i++)
         {
             const int old_finest = finest_level;
@@ -367,7 +366,6 @@ PMAmr::pm_timeStep (int  level,
                 lev_top = std::min(finest_level, max_level-1);
         }
     }
-
     //
     // Are we in a time period control section?  If so, fix time step
     //
