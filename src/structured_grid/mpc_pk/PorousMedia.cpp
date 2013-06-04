@@ -824,6 +824,7 @@ PorousMedia::restart (Amr&          papa,
       (*dlambda_cc).setVal(0.);
     }
 
+
   BL_ASSERT(lambda == 0);
   lambda = new MultiFab[BL_SPACEDIM];
   for (int dir = 0; dir < BL_SPACEDIM; dir++)
@@ -2207,6 +2208,9 @@ PorousMedia::init (AmrLevel& old)
       is_grid_changed_after_regrid = false;
     }
 
+  if (is_grid_changed_after_regrid && model == model_list["steady-saturated"]) {
+    set_vel_from_bcs(cur_time,u_mac_curr);
+      }
   /*  if (!is_grid_changed_after_regrid && model == model_list["richard"])
     {
       MultiFab P_tmp(grids      MultiFab::Copy(P_tmp,P_new,0,0,1,1);
@@ -2281,19 +2285,26 @@ PorousMedia::init ()
   //
   // Get best coarse state, pressure and velocity data.
   //
-  FillCoarsePatch(S_new,0,cur_time,State_Type,0,ncomps);
-  if (ntracers>0) {
-      if (transport_tracers>0) {
-          FillCoarsePatch(S_new,0,cur_time,State_Type,ncomps,ntracers);
-      }
-      else {
-          // FIXME
-          // If !setup_tracer_transport, we dont have the bc descriptors, so we punt
-          S_new.setVal(0.0,ncomps,ntracers);
-      }
-  }
+  FillCoarsePatch(S_new,0,cur_time,State_Type,0,S_new.nComp());
+  //if (ntracers>0) {
+  //    if (transport_tracers>0) {
+  //        FillCoarsePatch(S_new,0,cur_time,State_Type,ncomps,ntracers);
+  //    }
+  //    else {
+  //        // FIXME
+  //        // If !setup_tracer_transport, we dont have the bc descriptors, so we punt
+  //        S_new.setVal(0.0,ncomps,ntracers);
+  //    }
+  // }
+
   FillCoarsePatch(P_new,0,cur_time,Press_Type,0,1);
+
   U_cor.setVal(0.);
+
+  if (model == model_list["steady-saturated"]) {
+    set_vel_from_bcs(cur_time,u_mac_curr);
+  }  
+
 
 #ifdef AMANZI
   if (do_chem>0)
@@ -2444,7 +2455,10 @@ PorousMedia::advance_setup (Real time,
     if (model != model_list["richard"])
 #endif
       {
-	if (do_simple == 0 && (full_cycle == 1 || no_corrector == 1))
+	if (model_list["steady-saturated"]) {
+	  set_vel_from_bcs(time,u_mac_curr);
+	}
+	else if (do_simple == 0 && (full_cycle == 1 || no_corrector == 1))
 	  {
 	    if (n_pressure_interval == 0)
 	      mac_project(u_mac_curr,rhs_RhoD,time);
@@ -2540,8 +2554,10 @@ PorousMedia::ml_step_driver(Real  t,
       if (ntracers>0 && do_tracer_transport && execution_mode==INIT_TO_STEADY) {
 	transport_tracers = t >= switch_time;
       }
+      //if (level = 1 && model == model_list["steady-saturated"]) {
+      //	std::cout << u_mac_curr[0][0] << std::endl;
+      //}
       step_ok = multilevel_advance(t,dt_this_attempt,amr_iteration,amr_ncycle,dt_suggest);
-
       if (step_ok) {
 	dt_taken = dt_this_attempt;
       } else {
@@ -2799,8 +2815,8 @@ PorousMedia::multilevel_advance (Real  time,
     //
     // Timestep control:
     //   Time-explicit CFL, chemistry difficulty
-    //std::cout << "AM I NOT HERE?\n";
     // Initialize velocity field, set "new time" for state the same across levels, copy over saturation/pressure
+    
     advance_flow_nochange(time,dt);
     advance_saturated_transport_dt(); // FIXME: If u is really time-dependent, this must be done through the subcycle
     bool use_cached_sat = false;
@@ -3010,6 +3026,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     Real t_eps = 1.e-6*dt_cfl;
     if (!do_subcycle && dt-dt_cfl > t_eps) {
       dt_new = dt_cfl;
+      std::cout<< "NOT HERE "<<  dt << " " << dt_cfl << " " << t_eps << std::endl;
       return false;
     }
     Real t_subtr = t;
@@ -5179,7 +5196,6 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
 
     int op_lev=0;
     bool local = false;
-    //std::cout << "NCOMP " << S.nComp() << " " << D.nComp() << " " << first_tracer+n << " " << n << std::endl;
     tracOp.apply(D,S,op_lev,LinOp::Inhomogeneous_BC,local,first_tracer+n,n,1,n);
     MultiFab::Multiply(D,volInv,0,n,1,0);
 
@@ -7343,7 +7359,6 @@ PorousMedia::writePlotFile (const std::string& dir,
 			    VisMF::How     how)
 {
   if ( ! Amr::Plot_Files_Output() ) return;
-
   int i, n;
   //
   // The list of indices of State to write to plotfile.
@@ -7799,7 +7814,7 @@ PorousMedia::predictDT_diffusion_explicit (Real t_eval)
   diffusion->removeFluxBoxesLevel(diff_edge);
 
   ParallelDescriptor::ReduceRealMin(dt_diff);
-  
+
   dt_eig = std::min(dt_diff,dt_eig);
 
   if (verbose > 3)
@@ -8702,7 +8717,6 @@ void
 PorousMedia::post_init_state ()
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_init_state()");
-
   //
   // Richard initialization
   //
@@ -12659,7 +12673,8 @@ PorousMedia::checkPoint (const std::string& dir,
 #endif 
 
 #ifdef MG_USE_FBOXLIB
-  if (model != model_list["richard"])
+  if (model != model_list["richard"] &&
+      model != model_list["steady-saturated"])
     {
       std::string rxfile = "/rhs_RhoD_x";
       std::string ryfile = "/rhs_RhoD_y";
