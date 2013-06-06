@@ -5,7 +5,7 @@ Theis (1935) developed an analytical solution for transient (non steady state) d
 :math:`h = h_0` for 
 :math:`t = 0` and 
 :math:`h \Rightarrow h_0` as 
-:math:`r \Rightarrow \infty`.  The equation assumes an infinite and uniform confined aquifer.  When a well is pumped the water table declines toward the well and flow is induced toward the well from all directions. Theoretically, this flow can be idealized by purely radial symmetric flow and can be decribed by the equation below (this is analogous to heat flow by conduction developed by Fourier).
+:math:`r \Rightarrow \infty`.  The equation assumes an infinite and uniform confined aquifer.  When a well is pumped the water table declines toward the well and flow is induced toward the well from all directions. Theoretically, this flow can be idealized by purely radial symmetric flow and can be decribed by the equation below (this is analogous to heat flow by conduction developed by Fourier):
 
 .. math:: \frac{\partial^2 h}{\partial r^2} + \frac{1}{r} \frac{\partial h}{\partial r} = \frac{S}{T} \frac{\partial h}{\partial t}
 
