@@ -239,6 +239,7 @@ Array<Real> PorousMedia::diff_coef;
 bool PorousMedia::do_tracer_transport;
 bool PorousMedia::setup_tracer_transport;
 int  PorousMedia::transport_tracers;
+bool PorousMedia::diffuse_tracers;
 bool PorousMedia::solute_transport_limits_dt;
 
 //
@@ -594,7 +595,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_chem            = 0;
   PorousMedia::do_tracer_transport = false;
   PorousMedia::setup_tracer_transport = false;
-  PorousMedia::transport_tracers = 0;
+  PorousMedia::transport_tracers  = 0;
+  PorousMedia::diffuse_tracers    = false;
   PorousMedia::do_full_strang     = 0;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -868,7 +870,7 @@ PorousMedia::variableSetUp ()
       advectionType[ncomps+i] = NonConservative;
       diffusionType[ncomps+i] = Laplacian_S;
       is_diffusive[ncomps+i] = false;
-      if (diff_coef[i] > 0.0)
+      if (diffuse_tracers)
 	is_diffusive[ncomps+i] = true;
     }
 
@@ -1268,11 +1270,19 @@ PorousMedia::read_rock(int do_chem)
         const std::string prefix("rock." + rname);
         ParmParse ppr(prefix.c_str());
         
-        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
-
         static Property::CoarsenRule arith_crsn = Property::Arithmetic;
         static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
         static Property::RefineRule pc_refine = Property::PiecewiseConstant;
+
+        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
+
+        Real rDeff = -1;
+        if (ppr.countval("effective_diffusion_coefficient.val")) {
+          ppr.get("effective_diffusion_coefficient.val",rDeff);
+          diffuse_tracers = true;
+        }
+        std::string Deff_str = "Deff";
+        Property* Deff_func = new ConstantProperty(Deff_str,rDeff,harm_crsn,pc_refine);
 
         Property* phi_func = 0;
         std::string phi_str = "porosity";
@@ -1414,15 +1424,17 @@ PorousMedia::read_rock(int do_chem)
         }
         rocks.set(i, new Rock(rname,rdensity,rpvals[0],rporosity_dist_type,rporosity_dist_param,
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
-                              rkrType,rkrParam,rcplType,rcplParam,rregions));
+                              rkrType,rkrParam,rcplType,rcplParam,rDeff,rregions));
 
 
         std::vector<Property*> properties;
         properties.push_back(phi_func);
         properties.push_back(kappa_func);
+        properties.push_back(Deff_func);
         materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
         delete phi_func;
         delete kappa_func;
+        delete Deff_func;
     }
 
     // Read rock parameters associated with chemistry
@@ -2612,12 +2624,6 @@ void  PorousMedia::read_tracer(int do_chem)
       tic_array.resize(ntracers);
       tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
-      diff_coef.resize(ntracers,-1); // FIXME: read these 
-      variable_scal_diff = true;
-      for (int i=0; i<ntracers; ++i) {
-	diff_coef[i] = 1.e-10;
-      }
-      ndiff += ntracers;
 
       for (int i = 0; i<ntracers; i++)
       {
@@ -2666,17 +2672,6 @@ void  PorousMedia::read_tracer(int do_chem)
 
           if (setup_tracer_transport)
           {
-#if 0
-	      int nd = pp.countval("tracer_diffusion_coef");
-	      BL_ASSERT(nd==0 || nd==1 || nd>=ntracers);
-	      if (nd==1) {
-	        Real one_diff_coef;
-	        pp.get("tracer_diffusion_coef",one_diff_coef);
-	        diff_coef.resize(ntracers,one_diff_coef);
-	      } else if (nd>0) {
-	        pp.getarr("tracer_diffusion_coef",diff_coef,0,nd);
-	      }
-#endif
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
               if (n_tbc <= 0)
@@ -2779,6 +2774,9 @@ void  PorousMedia::read_tracer(int do_chem)
               }
               set_tracer_bc(trac_bc,phys_bc_trac);
           }
+      }
+      if (diffuse_tracers) {
+        ndiff += ntracers;
       }
   }
 }

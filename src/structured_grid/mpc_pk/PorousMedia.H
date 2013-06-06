@@ -325,7 +325,7 @@ public:
 
   void predictDT(MultiFab* u_mac, Real t_eval);
 
-  void predictDT_diffusion_explicit (Real t_eval);
+  Real predictDT_diffusion_explicit (Real t_eval);
 
   Real initialTimeStep (MultiFab* u_mac);
 
@@ -1308,6 +1308,7 @@ protected:
   static bool do_tracer_transport; // Does the user want to transport tracers
   static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized
   static int  transport_tracers; // Should the tracers be transported now
+  static bool diffuse_tracers;
   static int  do_full_strang;
   static int  n_chem_interval;
   static int  it_chem;

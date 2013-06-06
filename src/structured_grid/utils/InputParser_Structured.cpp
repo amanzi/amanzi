@@ -1283,6 +1283,24 @@ namespace Amanzi {
         }
       }
 
+      void convert_EffectiveDiffusionUniform(const ParameterList& fPLin,
+                                             ParameterList&       fPLout)
+      {
+        Array<std::string> nullList, reqP;
+        if (fPLin.isParameter("Value")) {
+          const std::string val_name="Value"; reqP.push_back(val_name);
+          PLoptions opt(fPLin,nullList,reqP,true,true);
+          double val = fPLin.get<double>(val_name);
+          fPLout.set<double>("val",val);
+        }
+        else {
+          std::string str = "Unrecognized effective diffusion coefficient parameters";
+          std::cout << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+        }
+      }
+
+
         //
         // convert material to structured format
         //
@@ -1314,6 +1332,7 @@ namespace Amanzi {
             const std::string perm_file_str = "Intrinsic Permeability: Input File";
             const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
             const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
+            const std::string diff_effective_uniform_str = "Effective Diffusion Coefficient: Uniform";
 
             std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
 	    std::string porosity_plotfile_in, porosity_plotfile_out;
@@ -1371,6 +1390,11 @@ namespace Amanzi {
                               rsublist.set("permeability",psublist);
                               rsublist.set("permeability_dist","uniform");
                               mtest["Intrinsic_Permeability"] = true;
+                            }
+                            else if (rlabel==diff_effective_uniform_str) {
+                              ParameterList dsublist;
+                              convert_EffectiveDiffusionUniform(rsslist,dsublist);
+                              rsublist.set("effective_diffusion_coefficient",dsublist);
                             }
                             else if (rlabel=="Capillary Pressure: van Genuchten") {
                                 int cpl_type = 3;
@@ -2928,6 +2952,7 @@ namespace Amanzi {
 #endif
 
 #if 0
+            user_derive_list.push_back(underscore("Effective Diffusion Coefficient"));
             user_derive_list.push_back(underscore("Intrinsic Permeability X"));
             user_derive_list.push_back(underscore("Intrinsic Permeability Y"));
 #if BL_SPACEDIM==3
