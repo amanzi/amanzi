@@ -46,29 +46,15 @@ void SetRegionsTANK()
 {
   Array<Real> lo(2), hi(2);
   std::string r_name, r_purpose;
-  r_name = "SoilLower";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 0;
-  hi[0] = 40;
-  hi[1] = 10;
-  regions["SoilLower"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
-  r_name = "SoilRight";
-  r_purpose = "all";
-  lo[0] = 12;
-  lo[1] = 10;
-  hi[0] = 40;
-  hi[1] = 18;
-  regions["SoilRight"] = new BoxRegion(r_name,r_purpose,lo,hi);
+  regions["All"] = new AllRegion();
 
-  r_name = "SoilUpper";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 18;
-  hi[0] = 40;
-  hi[1] = 24;
-  regions["SoilUpper"] = new BoxRegion(r_name,r_purpose,lo,hi);
+  lo[0] = 0; lo[1] = 10; hi[0] = 12; hi[1] = 18; 
+  regions["Tank"] = new BoxRegion("Tank","all",lo,hi);
+
+  CompoundRegion* cmpd = new CompoundRegion("Soil","all",*(regions["All"]));
+  cmpd->Subtract(*(regions["Tank"]));
+  regions["Soil"] = cmpd;
 
   r_name = "TankConcFloor";
   r_purpose = "all";
@@ -102,6 +88,12 @@ void SetRegionsTANK()
   hi[1] = 17.7;
   regions["TankConcWall"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
+  cmpd = new CompoundRegion("Concrete","all",*(regions["TankConcFloor"]));
+  cmpd->Union(*(regions["TankConcRoof1"]));
+  cmpd->Union(*(regions["TankConcRoof2"]));
+  cmpd->Union(*(regions["TankConcWall"]));
+  regions["Concrete"] = cmpd;
+
   r_name = "TankFFfloor";
   r_purpose = "all";
   lo[0] = 0;
@@ -118,6 +110,21 @@ void SetRegionsTANK()
   hi[1] = 18;
   regions["TankFFwall"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
+  r_name = "TankWaste";
+  r_purpose = "all";
+  lo[0] = 0;
+  lo[1] = 10.31;
+  hi[0] = 11.69;
+  hi[1] = 10.33;
+  regions["TankWaste"] = new BoxRegion(r_name,r_purpose,lo,hi);
+
+  cmpd = new CompoundRegion("FastFlow","all",*(regions["TankFFfloor"]));
+  cmpd->Union(*(regions["TankFFwall"]));
+  cmpd->Union(*(regions["TankWaste"]));
+  regions["FastFlow"] = cmpd;
+
+
+
   r_name = "TankGrout";
   r_purpose = "all";
   lo[0] = 0;
@@ -126,37 +133,21 @@ void SetRegionsTANK()
   hi[1] = 17.69;
   regions["TankGrout"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
-  r_name = "TankLinerFloor";
-  r_purpose = "all";
-  lo[0] = 0.5;
-  lo[1] = 10.3;
-  hi[0] = 11.7;
-  hi[1] = 10.31;
-  regions["TankLinerFloor"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
-  r_name = "TankLinerRoof";
+  r_name = "LinerBox";
   r_purpose = "all";
   lo[0] = 0;
-  lo[1] = 17.69;
-  hi[0] = 11.67;
-  hi[1] = 17.7;
-  regions["TankLinerRoof"] = new BoxRegion(r_name,r_purpose,lo,hi);
+  lo[1] = 10.30;
+  hi[0] = 11.70;
+  hi[1] = 17.70;
+  regions["LinerBox"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
-  r_name = "TankLinerWall";
-  r_purpose = "all";
-  lo[0] = 11.69;
-  lo[1] = 10.31;
-  hi[0] = 11.7;
-  hi[1] = 17.7;
-  regions["TankLinerWall"] = new BoxRegion(r_name,r_purpose,lo,hi);
 
-  r_name = "TankWaste";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 10.31;
-  hi[0] = 11.69;
-  hi[1] = 10.33;
-  regions["TankWaste"] = new BoxRegion(r_name,r_purpose,lo,hi);
+  cmpd = new CompoundRegion("Liner","all",*(regions["LinerBox"]));
+  cmpd->Subtract(*(regions["FastFlow"]));
+  cmpd->Subtract(*(regions["TankGrout"]));
+  regions["Liner"] = cmpd;
+
 }
 
 void
@@ -167,26 +158,20 @@ SetMaterialsTANK()
   materials.resize(5, PArrayManage);
   Array<std::string> region_names;
   PArray<Region> regionset;
-  region_names.push_back("SoilLower");
-  region_names.push_back("SoilRight");
-  region_names.push_back("SoilUpper");
+
+  region_names.push_back("Soil");
   regionset = build_region_PArray(region_names);
   delete properties[0]; properties[0] = new ConstantProperty(phi_str,1);
   materials.set(0,new Material("Soil",regionset,properties));
 
   region_names.clear();
-  region_names.push_back("TankConcFloor");
-  region_names.push_back("TankConcRoof1");
-  region_names.push_back("TankConcRoof2");
-  region_names.push_back("TankConcWall");
+  region_names.push_back("Concrete");
   regionset = build_region_PArray(region_names);
   delete properties[0]; properties[0] = new ConstantProperty(phi_str,2);
   materials.set(1,new Material("TankConc",regionset,properties));
 
   region_names.clear();
-  region_names.push_back("TankFFfloor");
-  region_names.push_back("TankFFwall");
-  region_names.push_back("TankWaste");
+  region_names.push_back("FastFlow");
   regionset = build_region_PArray(region_names);
   delete properties[0]; properties[0] = new ConstantProperty(phi_str,3);
   materials.set(2,new Material("TankFF",regionset,properties));
@@ -198,9 +183,7 @@ SetMaterialsTANK()
   materials.set(3,new Material("TankGrout",regionset,properties));
 
   region_names.clear();
-  region_names.push_back("TankLinerFloor");
-  region_names.push_back("TankLinerRoof");
-  region_names.push_back("TankLinerWall");
+  region_names.push_back("Liner");
   regionset = build_region_PArray(region_names);
   //delete properties[0]; properties[0] = new ConstantProperty(phi_str,5);
   int nvals = 2;
@@ -211,76 +194,6 @@ SetMaterialsTANK()
   delete properties[0]; properties[0] = new TabularInTimeProperty(phi_str,pft);
 
   materials.set(4,new Material("TankLiner",regionset,properties));
-
-  region_names.clear();
-}
-
-void SetRegionsSMALL()
-{
-  Array<Real> lo(2), hi(2);
-  std::string r_name, r_purpose;
-  r_name = "Blue";
-  r_purpose = "all";
-  lo[0] = 5;
-  lo[1] = 1;
-  hi[0] = 7;
-  hi[1] = 3;
-  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "Red1";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 3;
-  hi[0] = 8;
-  hi[1] = 8;
-  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "Red2";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 1;
-  hi[0] = 5;
-  hi[1] = 3;
-  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "Red3";
-  r_purpose = "all";
-  lo[0] = 0;
-  lo[1] = 0;
-  hi[0] = 8;
-  hi[1] = 1;
-  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
-
-  r_name = "Red4";
-  r_purpose = "all";
-  lo[0] = 7;
-  lo[1] = 1;
-  hi[0] = 8;
-  hi[1] = 3;
-  regions[r_name] = new BoxRegion(r_name,r_purpose,lo,hi);
-}
-
-void
-SetMaterialsSMALL()
-{
-  std::string phi_str = "porosity";
-  std::vector<Property*> properties(1,(Property*)0);
-  materials.resize(2, PArrayManage);
-  Array<std::string> region_names;
-  PArray<Region> regionset;
-  region_names.push_back("Blue");
-  regionset = build_region_PArray(region_names);
-  delete properties[0]; properties[0] = new ConstantProperty(phi_str,1);
-  materials.set(0,new Material("Blue",regionset,properties));
-
-  region_names.clear();
-  region_names.push_back("Red1");
-  region_names.push_back("Red2");
-  region_names.push_back("Red3");
-  region_names.push_back("Red4");
-  regionset = build_region_PArray(region_names);
-  delete properties[0]; properties[0] = new ConstantProperty(phi_str,2);
-  materials.set(1,new Material("Red",regionset,properties));
 
   region_names.clear();
 }
@@ -332,26 +245,18 @@ main (int   argc,
   Array<int> is_per(BL_SPACEDIM,0);
   Array<Real> prob_lo(BL_SPACEDIM,0);
   Array<Real> prob_hi(BL_SPACEDIM);
-  if (case_size=="small") {
-    nLevs = 2;
-    D_EXPR(n_cells[0] = 2, n_cells[1] = 2, n_cells[2] = 1);
-    D_EXPR(prob_hi[0] = 8, prob_hi[1] = 8, prob_hi[2] = 8);
+  if (case_size=="medium") {
+    nLevs = 3;
+  } else if (case_size=="large"){
+    nLevs = 4;
+  } else if (case_size=="xlarge"){
+    nLevs = 5;
+  } else {
+    BoxLib::Abort("bad case_size");
   }
-  else {
-    if (case_size=="medium") {
-      nLevs = 3;
-    } else if (case_size=="large"){
-      nLevs = 4;
-    } else if (case_size=="xlarge"){
-      nLevs = 5;
-    }
-    else {
-      nLevs = 2;
-    }
-    pp.query("nLevs",nLevs);
-    D_EXPR(n_cells[0] = 40, n_cells[1] = 24, n_cells[2] = 1);
-    D_EXPR(prob_hi[0] = 40, prob_hi[1] = 24, prob_hi[2] = 1);
-  }
+  pp.query("nLevs",nLevs);
+  D_EXPR(n_cells[0] = 40, n_cells[1] = 24, n_cells[2] = 1);
+  D_EXPR(prob_hi[0] = 40, prob_hi[1] = 24, prob_hi[2] = 1);
 
   Array<int> rRatio(nLevs-1,4);
   Array<IntVect> refRatio(nLevs-1);
@@ -385,14 +290,8 @@ main (int   argc,
     Region::domhi[d] = Geometry::ProbHi()[d];
   }
 
-  if (case_size=="small") {
-    SetRegionsSMALL();
-    SetMaterialsSMALL();
-  }
-  else {
-    SetRegionsTANK();
-    SetMaterialsTANK();
-  }
+  SetRegionsTANK();
+  SetMaterialsTANK();
 
   int verbose = 0; pp.query("verbose",verbose);
   if (verbose>1) {
@@ -418,8 +317,7 @@ main (int   argc,
 
   Real t = 1.5;
   PArray<MultiFab> data(nLevs,PArrayManage);
-  
-  for (int lev=nLevs-1; lev>=0 && !fail; --lev) {
+  for (int lev=nLevs-1; lev>=0; --lev) {
     BoxArray ba;
     if (case_size=="large" || case_size=="xlarge") {
       ba = BoxArray(geomArray[lev].Domain());
@@ -430,8 +328,7 @@ main (int   argc,
     ba.maxSize(64);
     data.set(lev, new MultiFab(ba,nout,0));
     for (int n=0; n<nout; ++n) {
-      bool ret = matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
-      fail |= !ret;
+      matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
     }
   }
 
@@ -455,155 +352,101 @@ main (int   argc,
 
   ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
 
-  if (case_size=="small") {
-    Real trueRes[2] = {4, 30};
-      bool success1 = true;
-      for (int i=0; i<bins.size(); ++i) {
-        success1 &= (bins[i] == trueRes[i]);
-      }
-      fail = !success1;
+  Real trueRes_medium[5] = {1374, 1220, 30, 8584, 0};
+  Real trueRes_large[5] = {3774776, 79086, 5757, 1499236, 9685};
+  Real trueRes_xlarge[5] = {60397711,1295428,110442,24028012,77470};
+
+
+  Real* trueRes;
+  if (case_size=="large") {
+    trueRes = trueRes_large;
+  } else if (case_size=="xlarge") {
+    trueRes = trueRes_xlarge;
+  } else if (case_size=="medium") {
+    trueRes = trueRes_medium;
   }
-  else {
-    if (case_size=="large") {
-      Real trueRes[5] = {3774776, 79086, 5757, 1499236, 9685};
-      bool success1 = true;
-      for (int i=0; i<bins.size(); ++i) {
-        success1 &= (bins[i] == trueRes[i]);
-      }
-      fail = !success1;
-    }
-    else {
-      fail = true;
-    }
+
+  bool success1 = true;
+  for (int i=0; i<bins.size(); ++i) {
+    success1 &= (bins[i] == trueRes[i]);
   }
+  fail = !success1;
 
   for (int i=0; i<bins.size(); ++i) {
     bins[i]  = 0;
   }
 
-  t = 2.5;
+  t = 2.5; pp.query("t",t);
 
-  for (int lev=nLevs-1; lev>=0 && !fail; --lev) {
+  for (int lev=nLevs-1; lev>=0; --lev) {
     for (int n=0; n<nout; ++n) {
-      bool ret = matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
-      fail |= !ret;
+      matFiller.SetProperty(t,lev,data[lev],propNames[n],n,0);
     }
   }
 
-  if (!fail) {
-    for (int lev=0; lev<nLevs; ++lev) {
-      MultiFab mat(data[lev].boxArray(),1,0);
-      matFiller.SetMaterialID(lev,mat,0);
+  for (int lev=0; lev<nLevs; ++lev) {
+    MultiFab mat(data[lev].boxArray(),1,0);
+    matFiller.SetMaterialID(lev,mat,0);
 
-      for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
-        const Box& vbox = mfi.validbox();
-        const FArrayBox& fab = data[lev][mfi];
-        const FArrayBox& id = mat[mfi];
-        for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
-          int bin = (int) id(iv,0);
-          int val = fab(iv,0);
-          if (bin>=0) {
-            bins[bin] += val;
-          }
+    for (MFIter mfi(data[lev]); mfi.isValid(); ++mfi) {
+      const Box& vbox = mfi.validbox();
+      const FArrayBox& fab = data[lev][mfi];
+      const FArrayBox& id = mat[mfi];
+      for (IntVect iv=vbox.smallEnd(), BIG=vbox.bigEnd(); iv<=BIG; vbox.next(iv)) {
+	int bin = (int) id(iv,0);
+	int val = fab(iv,0);
+	if (bin>=0) {
+	  bins[bin] += val;
         }
       }
     }
+  }
 
-    ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
+  ParallelDescriptor::ReduceRealSum(bins.dataPtr(),bins.size());
 
-    if (case_size=="small") {
-      Real trueRes[2] = {4, 30};
-      bool success1 = true;
-      for (int i=0; i<bins.size(); ++i) {
-        success1 &= (bins[i] == trueRes[i]);
+  Real trueRes1_medium[5] = {1374, 1220, 30, 8584, 0};
+  Real trueRes1_large[5] = {3774776, 79086, 5757, 1499236, 11622};
+  Real trueRes1_xlarge[5] = {60397711,1295428,110442,24028012,92964};
+
+  Real* trueRes1;
+  if (case_size=="large") {
+    trueRes1 = trueRes1_large;
+  } else if (case_size=="xlarge") {
+    trueRes1 = trueRes1_xlarge;
+  } else if (case_size=="medium") {
+    trueRes1 = trueRes1_medium;
+  }
+
+  success1 = true;
+  for (int i=0; i<bins.size(); ++i) {
+    success1 &= (bins[i] == trueRes1[i]);
+  }
+  fail |= !success1;
+
+
+  if (verbose) {
+    // Write out result to pltfile
+    std::string pfversion = "MaterialData-0.2";
+    Array<Box> pDomain(nLevs);
+    Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
+    for (int i=0; i<nLevs; ++i) {
+      pDomain[i] = geomArray[i].Domain();
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        dxLevel[i][d] = geomArray[i].CellSize()[d];
       }
-      fail = !success1;
     }
-    else {
-      if (case_size=="large") {
-        Real trueRes[5] = {3774776, 79086, 5757, 1499236, 11622};
-        bool success1 = true;
-        for (int i=0; i<bins.size(); ++i) {
-          success1 &= (bins[i] == trueRes[i]);
-        }
-        fail = !success1;
-      }
-      else {
-        fail = true;
-      }
-    }
-
-    if (verbose) {
-      // Write out result to pltfile
-      std::string pfversion = "MaterialData-0.2";
-      Array<Box> pDomain(nLevs);
-      Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
-      for (int i=0; i<nLevs; ++i) {
-        pDomain[i] = geomArray[i].Domain();
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-          dxLevel[i][d] = geomArray[i].CellSize()[d];
-        }
-      }
-      int coordSys = (int)CoordSys::Coord();
-      std::string outFileName = "pltfile";
-      bool pl_verbose = false;
-      bool isCartGrid = false;
-      Array<Real> vfeps(nLevs,1.e-10);
-      Array<int> levelSteps(nLevs,0);
+    int coordSys = (int)CoordSys::Coord();
+    std::string outFileName = "pltfile";
+    bool pl_verbose = false;
+    bool isCartGrid = false;
+    Array<Real> vfeps(nLevs,1.e-10);
+    Array<int> levelSteps(nLevs,0);
     
-      WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
-                    rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
-                    pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
-    }
-    ParallelDescriptor::Barrier();
+    WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
+                  rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
+                  pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
   }
-  else {
-    if (case_size=="large") {
-      Real trueRes[5] = {3774776, 79086, 5757, 1499236, 11622};
-      bool success1 = true;
-      for (int i=0; i<bins.size(); ++i) {
-        success1 &= (bins[i] == trueRes[i]);
-      }
-      fail = !success1;
-    }
-    else {
-      if (case_size=="large") {
-        Real trueRes[5] = {3774776, 79086, 5757, 1499236, 11622};
-        bool success1 = true;
-        for (int i=0; i<bins.size(); ++i) {
-          success1 &= (bins[i] == trueRes[i]);
-        }
-        fail = !success1;
-      }
-      else {
-        fail = true;
-      }
-    }
-
-    if (verbose) {
-      // Write out result to pltfile
-      std::string pfversion = "MaterialData-0.2";
-      Array<Box> pDomain(nLevs);
-      Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
-      for (int i=0; i<nLevs; ++i) {
-        pDomain[i] = geomArray[i].Domain();
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-          dxLevel[i][d] = geomArray[i].CellSize()[d];
-        }
-      }
-      int coordSys = (int)CoordSys::Coord();
-      std::string outFileName = "pltfile";
-      bool pl_verbose = false;
-      bool isCartGrid = false;
-      Array<Real> vfeps(nLevs,1.e-10);
-      Array<int> levelSteps(nLevs,0);
-    
-      WritePlotfile(pfversion,data,t,Geometry::ProbLo(),Geometry::ProbHi(),
-                    rRatio,pDomain,dxLevel,coordSys,outFileName,propNames,
-                    pl_verbose,isCartGrid,vfeps.dataPtr(),levelSteps.dataPtr());
-    }
-    ParallelDescriptor::Barrier();
-  }
+  ParallelDescriptor::Barrier();
 
   DestroyMaterials();
   DestroyRegions();

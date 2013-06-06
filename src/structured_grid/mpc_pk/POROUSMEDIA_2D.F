@@ -541,7 +541,34 @@ c ::: ----------------------------------------------------------------
             enddo
          enddo
       endif
+      end
 
+      subroutine FORT_MAX_TRACDIFF_DT(lo, hi, psv, DIMS(psv),
+     &     psadx, DIMS(psadx), psady, DIMS(psady),
+     &     delta, max_dt)
+      implicit none
+      integer lo(SDIM), hi(SDIM)
+      integer DIMDEC(psv)
+      integer DIMDEC(psadx)
+      integer DIMDEC(psady)
+      REAL_T  delta(SDIM), max_dt
+      REAL_T    psv(DIMV(psv))
+      REAL_T  psadx(DIMV(psadx))
+      REAL_T  psady(DIMV(psady))
+      REAL_T  denom, vol, dx, dy
+      integer i, j
+
+      dx = delta(1)
+      dy = delta(2)
+      vol = dx * dy
+
+      do j=lo(2),hi(2)
+         do i=lo(1),hi(1)
+            denom = (psadx(i,j) + psadx(i+1,j)) * dy
+     &           +  (psady(i,j) + psady(i,j+1)) * dx
+            max_dt = MIN(max_dt, vol*psv(i,j)/denom)
+         enddo
+      enddo
       end
 
 c ::: ----------------------------------------------------------

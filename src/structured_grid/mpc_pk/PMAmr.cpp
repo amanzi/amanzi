@@ -31,7 +31,7 @@ PMAmr::PMAmr()
         regrid_on_restart        = 0;
         use_efficient_regrid     = 0;
         plotfile_on_restart      = 0;
-        compute_new_dt_on_regrid = 0;
+        compute_new_dt_on_regrid = 1;
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
 
@@ -320,7 +320,6 @@ PMAmr::pm_timeStep (int  level,
     else
     {
         int lev_top = std::min(finest_level, max_level-1);
-
         for (int i = level; i <= lev_top; i++)
         {
             const int old_finest = finest_level;
@@ -367,7 +366,6 @@ PMAmr::pm_timeStep (int  level,
                 lev_top = std::min(finest_level, max_level-1);
         }
     }
-
     //
     // Are we in a time period control section?  If so, fix time step
     //
@@ -387,8 +385,14 @@ PMAmr::pm_timeStep (int  level,
           tpc_active = true;
           dt_tpc = tpc_initial_time_steps[tpc_interval];
         }
-        if (tpc_active && tpc_maximum_time_steps.size()>tpc_interval
+        if (tpc_initial_time_step_multipliers.size()>tpc_interval
+            && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
+          tpc_active = true;
+          dt_tpc *= tpc_initial_time_step_multipliers[tpc_interval];
+        }
+        if (tpc_maximum_time_steps.size()>tpc_interval
             && tpc_maximum_time_steps[tpc_interval] > 0) {
+          tpc_active = true;
           dt_tpc = std::min(dt_tpc,tpc_maximum_time_steps[tpc_interval]);
         }
       }
@@ -959,6 +963,13 @@ void PMAmr::InitializeControlEvents()
       tpc_initial_time_steps.resize(ndt,-1);
       if (ndt>0) {
           pb.getarr("TPC_Initial_Time_Step",tpc_initial_time_steps,0,ndt);
+      }
+
+      int ndtm = pb.countval("TPC_Initial_Time_Step_Multiplier");
+      BL_ASSERT(ndtm==0 || ndtm==ntps);
+      tpc_initial_time_step_multipliers.resize(ndt,-1);
+      if (ndtm>0) {
+          pb.getarr("TPC_Initial_Time_Step_Multiplier",tpc_initial_time_step_multipliers,0,ndtm);
       }
 
       int ndtmax = pb.countval("TPC_Maximum_Time_Step");

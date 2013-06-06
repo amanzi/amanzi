@@ -41,6 +41,7 @@
 #    define FORT_STEADYSTATE       steadystate
 #    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
+#    define FORT_MAX_TRACDIFF_DT   maxtracdiff
 #else
 #  if defined(BL_FORT_USE_UPPERCASE)
 #    define FORT_FILCC             FILCC
@@ -82,6 +83,7 @@
 #    define FORT_STEADYSTATE       STEADYSTATE
 #    define FORT_STEADYSTATE_FAB   STEADYSTATEFAB
 #    define FORT_PATCH_GHOST       PATCH_GHOST
+#    define FORT_MAX_TRACDIFF_DT   MAXTRACDIFF
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_FILCC             filcc
 #    define FORT_AVGDOWN           avgdown
@@ -122,6 +124,7 @@
 #    define FORT_STEADYSTATE       steadystate
 #    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
+#    define FORT_MAX_TRACDIFF_DT   maxtracdiff
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_FILCC             filcc_
 #    define FORT_AVGDOWN           avgdown_
@@ -162,6 +165,7 @@
 #    define FORT_STEADYSTATE       steadystate_
 #    define FORT_STEADYSTATE_FAB   steadystatefab_
 #    define FORT_PATCH_GHOST       patch_ghost_
+#    define FORT_MAX_TRACDIFF_DT   maxtracdiff_
 #  endif
 
 #include <ArrayLim.H>
@@ -228,6 +232,14 @@ extern "C" {
 			   const Real* P, ARLIM_P(plo), ARLIM_P(phi),
 			   const Real* visc_coef, const int* ncomp);
 
+    void FORT_MAX_TRACDIFF_DT(const int* lo, const int* hi, 
+                              const Real* psv,  ARLIM_P(psv),   ARLIM_P(psv),
+                              const Real* psadx,ARLIM_P(psadx), ARLIM_P(psadx),
+                              const Real* psady,ARLIM_P(psady), ARLIM_P(psady),
+#if (BL_SPACEDIM==3)
+                              const Real* psadz,ARLIM_P(psadz), ARLIM_P(psadz),
+#endif
+                              const Real* delta, Real* max_dt);
     //
     // subroutines related to parabolic pressure solve
     //
