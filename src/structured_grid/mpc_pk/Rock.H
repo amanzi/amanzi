@@ -31,6 +31,7 @@ public:
          const Array<Real>& krParam,
          int                cplType,
          const Array<Real>& cplParam,
+         Real               Deff,
          const PArray<Region>& regions);
 
   std::ostream& operator<< (std::ostream& os) const;
@@ -49,6 +50,7 @@ public:
   static std::map<std::string,int> rock_dist_map;
 
   std::string name;
+  Real Deff;
   Real density;
   Real porosity;
   Array<Real> permeability;
@@ -152,6 +154,10 @@ public:
   //
   void set_constant_cplval(FArrayBox&            fab, 
 			   const Real*           dx) const;
+
+
+  void set_constant_Deff(FArrayBox&            fab,
+                         const Real*           dx) const;
 
   static BoxArray ba_for_finest_data(int         max_level, 
                                      Array<int>& n_cell,

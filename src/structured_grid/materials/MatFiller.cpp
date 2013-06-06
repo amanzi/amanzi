@@ -223,7 +223,7 @@ MatFiller::FindMixedCells()
   return ba_array;
 }
 
-void 
+bool 
 MatFiller::SetProperty(Real               t,
                        int                level,
                        MultiFab&          mf,
@@ -238,7 +238,7 @@ MatFiller::SetProperty(Real               t,
 
   BoxArray unfilled(mf.boxArray()); 
   if (unfilled.size()==0) {
-    return;
+    return true;
   }
   unfilled.grow(nGrow);
 
@@ -246,7 +246,7 @@ MatFiller::SetProperty(Real               t,
   std::vector<const Property*> props(materials.size());
   for (int i=0; i<materials.size(); ++i) {
     const Property* p = materials[i].Prop(pname);
-    BL_ASSERT(p!=0);
+    if (p==0) return false;
     props[i] = p;
   }
 
@@ -262,7 +262,8 @@ MatFiller::SetProperty(Real               t,
     if (baM.size()>0) {
       baM.removeOverlap();
       MultiFab mixed(baM,nComp,0);
-      FillCoarseCells(t,level,mixed,pname,0,nComp,ctx);
+      bool ret = FillCoarseCells(t,level,mixed,pname,0,nComp,ctx);
+      if (!ret) return false;
       tmf.copy(mixed);
       BoxList bl_remaining;
       for (int i=0, N=unfilled.size(); i<N; ++i) {
@@ -336,7 +337,8 @@ MatFiller::SetProperty(Real               t,
 
           if (bac_interp.size()>0) {
             MultiFab mfc_interp(bac_interp,nComp,0);
-            SetProperty(t,lev,mfc_interp,pname,0,0,ctx);
+            bool ret = SetProperty(t,lev,mfc_interp,pname,0,0,ctx);
+            if (!ret) return false;
             
             BoxArray baf_interp(bac_interp); baf_interp.refine(cumRatio);
             MultiFab mff_interp(baf_interp,nComp,0);
@@ -370,7 +372,12 @@ MatFiller::SetProperty(Real               t,
     mf[mfi].copy(tmf[mfi],0,dComp,nComp);
   }
 
-  FillCellsOutsideDomain(t,level,mf,pname,dComp,nComp,nGrow);
+  if (nGrow>0) {
+    FillCellsOutsideDomain(t,level,mf,pname,dComp,nComp,nGrow);
+    mf.FillBoundary(dComp,nComp);
+  }
+
+  return true;
 }
 
 void
@@ -386,16 +393,18 @@ MatFiller::FillCellsOutsideDomain(Real               t,
   const Geometry& geom = geomArray[level];
   const Box& domain = geom.Domain();
   const Real* dx = geom.CellSize();
+  const Real* plo = geom.ProbLo();
+
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     FArrayBox& fab = mf[mfi];
     for (int n=0; n<nComp; ++n) {
       FORT_FILCC(fab.dataPtr(dComp+n), ARLIM(fab.loVect()), ARLIM(fab.hiVect()),
-                 domain.loVect(), domain.hiVect(),dx,dx,bc.dataPtr());
+                 domain.loVect(), domain.hiVect(),dx,plo,bc.dataPtr());
     }
   }
 }
 
-void
+bool
 MatFiller::FillCoarseCells(Real               t,
                            int                level,
                            MultiFab&          mfc,
@@ -410,12 +419,14 @@ MatFiller::FillCoarseCells(Real               t,
     const IntVect& ref = RefRatio(level);
     BoxArray baf = BoxArray(bac).refine(ref);
     MultiFab mff(baf,nComp,0);
-    SetProperty(t,level+1,mff,pname,0,0,ctx);
+    bool ret = SetProperty(t,level+1,mff,pname,0,0,ctx);
+    if (!ret) return false;
     for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
       const Box& cbox = mfi.validbox();
       CoarsenData(mff[mfi],0,mfc[mfi],cbox,dComp,nComp,ref,pname);
     }
   }
+  return true;
 }
 
 Property::CoarsenRule

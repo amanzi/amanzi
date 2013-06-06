@@ -572,6 +572,43 @@ c ::: ----------------------------------------------------------------
 
       end
 
+      subroutine FORT_MAX_TRACDIFF_DT(lo, hi, psv, DIMS(psv),
+     &     psadx, DIMS(psadx), psady, DIMS(psady), psadz, DIMS(psadz),
+     &     delta, max_dt)
+      implicit none
+      integer lo(SDIM), hi(SDIM)
+      integer DIMDEC(psv)
+      integer DIMDEC(psadx)
+      integer DIMDEC(psady)
+      integer DIMDEC(psadz)
+      REAL_T  delta(SDIM), max_dt
+      REAL_T    psv(DIMV(psv))
+      REAL_T  psadx(DIMV(psadx))
+      REAL_T  psady(DIMV(psady))
+      REAL_T  psady(DIMV(psadz))
+      REAL_T  denom, vol, dx, dy, dz, dyz, dxz, dxy
+      integer i, j, k
+
+      dx = delta(1)
+      dy = delta(2)
+      dz = delta(3)
+      dyz = dy * dz
+      dxz = dx * dz
+      dxy = dx * dy
+      vol = dxy * dz
+
+      do k=lo(3),hi(3)
+         do j=lo(2),hi(2)
+            do i=lo(1),hi(1)
+               denom = (psadx(i,j,k) + psadx(i+1,j,k)) * dyz
+     &              +  (psady(i,j,k) + psady(i,j+1,k)) * dxz
+     &              +  (psadz(i,j,k) + psadz(i,j,k+1)) * dxy
+               max_dt = MIN(max_dt, vol*psv(i,j,k)/denom)
+            enddo
+         enddo
+      enddo
+      end
+
 c ::: ----------------------------------------------------------
 c ::: SPECTEMPVISC
 c :::    compute variable diffusivity constant

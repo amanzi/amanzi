@@ -91,6 +91,11 @@ if (BUILD_TESTS)
                   SOURCE tMatFiller.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
+  add_amanzi_test(MaterialPropertyFillerC tMatFillerC
+                  KIND unit
+                  SOURCE tMatFillerC.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
   add_amanzi_test(MaterialPropertyFiller4 "./tMatFiller_parallel" "case_size=large"
                   KIND unit
 	          NPROCS 4
