@@ -57,8 +57,10 @@ public:
   /* Fill a MultiFab with the value of a property, given a time, 
      and refinement level (as defined in the ctr), including
      nGrow cells.  ctx is a user-defined context which is passed
-     through to the Property "eval" function. */
-  void SetProperty(Real               time,
+     through to the Property "eval" function. Return is false if
+     requested property not registered.
+  */
+  bool SetProperty(Real               time,
                    int                level,
                    MultiFab&          mf,
                    const std::string& pname,
@@ -107,10 +109,10 @@ public:
   /* The number of AMR levels used to uniquely determine the material ID of the cells. */
   const int NumLevels() const {return nLevs;}
 
-protected:
-
   /* Currently, not really critical, since there is no default constructor */
   bool Initialized() const {return initialized;}
+
+protected:
 
   /* Manage all actions necessary to define this structure */
   void Initialize();
@@ -147,7 +149,7 @@ protected:
      order of evaluation and averaging.  The default implementation
      evaluates the property at the finer level, then calls 
      CoarsenData to generate coarsened values. */
-  virtual void FillCoarseCells(Real               t,
+  virtual bool FillCoarseCells(Real               t,
 			       int                level,
 			       MultiFab&          mfc,
 			       const std::string& pname,

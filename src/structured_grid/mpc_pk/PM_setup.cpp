@@ -233,13 +233,13 @@ int  PorousMedia::variable_scal_diff;
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
 Array<Real> PorousMedia::diff_coef;
-bool        PorousMedia::diffuse_tracers;
 //
 // Transport flags
 //
 bool PorousMedia::do_tracer_transport;
 bool PorousMedia::setup_tracer_transport;
 int  PorousMedia::transport_tracers;
+bool PorousMedia::diffuse_tracers;
 bool PorousMedia::solute_transport_limits_dt;
 
 //
@@ -370,7 +370,8 @@ static int scalar_bc[] =
 
 static int tracer_bc[] =
   {
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, SEEPAGE
+    //INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, SEEPAGE
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, SEEPAGE
   };
 
 static int press_bc[] =
@@ -387,6 +388,8 @@ static int tang_vel_bc[] =
   {
     INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, HOEXTRAP, EXT_DIR
   };
+
+static BCRec trac_bc; // Set in read_trac, used in variableSetUp
 
 static
 void
@@ -592,7 +595,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_chem            = 0;
   PorousMedia::do_tracer_transport = false;
   PorousMedia::setup_tracer_transport = false;
-  PorousMedia::transport_tracers = 0;
+  PorousMedia::transport_tracers  = 0;
+  PorousMedia::diffuse_tracers    = false;
   PorousMedia::do_full_strang     = 0;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -677,7 +681,6 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::echo_inputs    = 0;
   PorousMedia::richard_solver = 0;
-  PorousMedia::diffuse_tracers = false;
 }
 
 std::pair<std::string,std::string>
@@ -819,10 +822,9 @@ PorousMedia::variableSetUp ()
     Array<BCRec>       tbcs(ntracers);
     Array<std::string> tnames(ntracers);
 
-    set_tracer_bc(bc,phys_bc);
     for (int i = 0; i < ntracers; i++) 
     {
-      tbcs[i]   = bc;
+      tbcs[i]   = trac_bc;
       tnames[i] = tNames[i];
     }
 
@@ -868,7 +870,7 @@ PorousMedia::variableSetUp ()
       advectionType[ncomps+i] = NonConservative;
       diffusionType[ncomps+i] = Laplacian_S;
       is_diffusive[ncomps+i] = false;
-      if (diff_coef[i] > 0.0)
+      if (diffuse_tracers)
 	is_diffusive[ncomps+i] = true;
     }
 
@@ -1268,13 +1270,21 @@ PorousMedia::read_rock(int do_chem)
         const std::string prefix("rock." + rname);
         ParmParse ppr(prefix.c_str());
         
-        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
-
         static Property::CoarsenRule arith_crsn = Property::Arithmetic;
         static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
         static Property::RefineRule pc_refine = Property::PiecewiseConstant;
 
-        Property* phi_func;
+        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
+
+        Real rDeff = -1;
+        if (ppr.countval("effective_diffusion_coefficient.val")) {
+          ppr.get("effective_diffusion_coefficient.val",rDeff);
+          diffuse_tracers = true;
+        }
+        std::string Deff_str = "Deff";
+        Property* Deff_func = new ConstantProperty(Deff_str,rDeff,harm_crsn,pc_refine);
+
+        Property* phi_func = 0;
         std::string phi_str = "porosity";
         Array<Real> rpvals(1), rptimes;
         Array<std::string> rpforms;
@@ -1298,7 +1308,7 @@ PorousMedia::read_rock(int do_chem)
         }
 
 
-        Property* kappa_func;
+        Property* kappa_func = 0;
         std::string kappa_str = "permeability";
         Array<Real> rvpvals(1), rhpvals(1), rvptimes(1), rhptimes(1);
         Array<std::string> rvpforms, rhpforms;
@@ -1414,13 +1424,17 @@ PorousMedia::read_rock(int do_chem)
         }
         rocks.set(i, new Rock(rname,rdensity,rpvals[0],rporosity_dist_type,rporosity_dist_param,
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
-                              rkrType,rkrParam,rcplType,rcplParam,rregions));
+                              rkrType,rkrParam,rcplType,rcplParam,rDeff,rregions));
 
 
         std::vector<Property*> properties;
         properties.push_back(phi_func);
         properties.push_back(kappa_func);
+        properties.push_back(Deff_func);
         materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
+        delete phi_func;
+        delete kappa_func;
+        delete Deff_func;
     }
 
     // Read rock parameters associated with chemistry
@@ -2258,7 +2272,7 @@ void  PorousMedia::read_comp()
       phys_bc.setLo(i,lo_bc[i]);
       phys_bc.setHi(i,hi_bc[i]);
     }
-    
+
   // Check phys_bc against possible periodic geometry: 
   //  if periodic, that boundary must be internal BC.
   if (Geometry::isAnyPeriodic())
@@ -2610,8 +2624,6 @@ void  PorousMedia::read_tracer(int do_chem)
       tic_array.resize(ntracers);
       tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
-      diff_coef.resize(ntracers,-1); // FIXME: read these 
-      diffuse_tracers = false;
 
       for (int i = 0; i<ntracers; i++)
       {
@@ -2660,17 +2672,6 @@ void  PorousMedia::read_tracer(int do_chem)
 
           if (setup_tracer_transport)
           {
-	      int nd = pp.countval("tracer_diffusion_coef");
-	      BL_ASSERT(nd==0 || nd==1 || nd>=ntracers);
-	      if (nd==1) {
-	        Real one_diff_coef;
-	        pp.get("tracer_diffusion_coef",one_diff_coef);
-	        diff_coef.resize(ntracers,one_diff_coef);
-                diffuse_tracers = true;
-	      } else if (nd>0) {
-	        pp.getarr("tracer_diffusion_coef",diff_coef,0,nd);
-                diffuse_tracers = true;
-	      }
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
               if (n_tbc <= 0)
@@ -2680,6 +2681,8 @@ void  PorousMedia::read_tracer(int do_chem)
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
               tbc_array[i].resize(n_tbc,PArrayManage);
               
+
+              Array<int> orient_types(6,-1);
               for (int n = 0; n<n_tbc; n++)
               {
                   const std::string prefixTBC(prefix + "." + tbc_names[n]);
@@ -2688,9 +2691,13 @@ void  PorousMedia::read_tracer(int do_chem)
                   int n_tbc_region = ppri.countval("regions");
                   Array<std::string> tbc_region_names;
                   ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
+
                   const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
                   std::string tbc_type; ppri.get("type",tbc_type);
-                  
+
+                  // When we get the BCs, we need to translate to AMR-standardized type id.  By
+                  // convention, components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.
+                  int AMR_BC_tID = -1;
                   if (tbc_type == "concentration")
                   {
                       Array<Real> times, vals;
@@ -2713,19 +2720,63 @@ void  PorousMedia::read_tracer(int do_chem)
                       }
                       int nComp = 1;
                       tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                      AMR_BC_tID = 1; // Inflow
                   }
-                  else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+                  else if (tbc_type == "noflow")
                   {
                       Array<Real> val(1,0);
                       tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 4; // Noflow
+                  }
+                  else if (tbc_type == "outflow")
+                  {
+                      Array<Real> val(1,0);
+                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 2; // Outflow
                   }
                   else {
                       std::string m = "Tracer BC: \"" + tbc_names[n] 
                           + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
                       BoxLib::Abort(m.c_str());
                   }
+
+                  // Determine which boundary this bc is for, ensure that a unique type has been
+                  // specified for each boundary
+                  for (int k=0; k<tbc_region_names.size(); ++k) {
+                    int iorient = -1;
+                    for (int j=0; j<6; ++j) {
+                      if (tbc_region_names[k] == PMAMR::RlabelDEF[j]) {
+                        iorient = j;
+                      }
+                    }
+                    if (iorient<0) {
+                      BoxLib::Abort("BC givien for tracers on region that is not on boundary");
+                    }
+                    if (orient_types[iorient] < 0) {
+                      orient_types[iorient] = AMR_BC_tID;
+                    } else {
+                      if (orient_types[iorient] != AMR_BC_tID) {
+                        BoxLib::Abort("BC for tracers must all be of same type on each side");
+                      }
+                    }
+                  }
               }
+
+              // Set the default BC type = SlipWall (noflow)
+              for (int k=0; k<orient_types.size(); ++k) {
+                if (orient_types[k] < 0) orient_types[k] = 4;
+              }
+
+              BCRec phys_bc_trac;
+              for (int i = 0; i < BL_SPACEDIM; i++) {
+                phys_bc_trac.setLo(i,orient_types[i]);
+                phys_bc_trac.setHi(i,orient_types[i+3]);
+              }
+              set_tracer_bc(trac_bc,phys_bc_trac);
           }
+      }
+      if (diffuse_tracers) {
+        ndiff += ntracers;
       }
   }
 }

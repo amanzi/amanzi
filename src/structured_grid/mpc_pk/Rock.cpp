@@ -31,13 +31,14 @@ Rock::Rock(const std::string& name,
            const Array<Real>& krParam,
            int                cplType,
            const Array<Real>& cplParam,
+           Real               Deff,
            const PArray<Region>& regions_)
     : name(name), density(density),
       porosity(porosity), porosity_dist_type(porosity_dist_type),
       porosity_dist_param(porosity_dist_param),
       permeability(permeability), permeability_dist_type(permeability_dist_type),
       permeability_dist_param(permeability_dist_param),
-      krType(krType), krParam(krParam), cplType(cplType), cplParam(cplParam)
+      krType(krType), krParam(krParam), cplType(cplType), cplParam(cplParam), Deff(Deff)
 {
     regions.clear();
     int nregions=regions_.size();
@@ -115,6 +116,7 @@ Rock::operator<< (std::ostream& os) const
     for (int i=0; i<cplParam.size(); ++i) {
         os << cplParam[i] << " ";
     }
+    os << "  Deff: " << Deff << '\n';
     os << '\n';
 }
 
@@ -278,6 +280,14 @@ void Rock::set_constant_cplval(FArrayBox&  fab,
     param_tmp[i+1] = cplParam[i];
   for (int ir=0; ir<regions.size();ir++)
     regions[ir].setVal(fab,param_tmp,dx,0,0,nval); 
+}
+
+void Rock::set_constant_Deff(FArrayBox&  fab,
+                             const Real* dx) const
+{
+  Array<Real> param_tmp(1,Deff);
+  for (int ir=0; ir<regions.size();ir++)
+    regions[ir].setVal(fab,param_tmp,dx,0,0,1);
 }
 
 void Rock::set_constant_val(MultiFab&          mfdata, 

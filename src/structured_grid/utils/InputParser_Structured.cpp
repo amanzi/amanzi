@@ -595,13 +595,14 @@ namespace Amanzi {
                 {
                     const std::string tpc_start_times_str = "Start Times";
                     const std::string tpc_initial_time_steps_str = "Initial Time Step";
+                    const std::string tpc_initial_time_step_multipliers_str = "Initial Time Step Multiplier";
                     const std::string tpc_maximum_time_steps_str = "Maximum Time Step";
                     const ParameterList& tpc_list = ec_list.sublist(tpc_str);
                     Array<std::string> nL, nP;
                     PLoptions TPCopt(tpc_list,nL,nP,true,false); 
                     const Array<std::string> TPCoptP = TPCopt.OptParms();
 
-                    Array<double> tpc_start_times, tpc_initial_time_steps, tpc_maximum_time_steps;
+                    Array<double> tpc_start_times, tpc_initial_time_steps, tpc_initial_time_step_multipliers, tpc_maximum_time_steps;
                     for (int j=0; j<TPCoptP.size(); ++j)
                     {
                         const std::string& name = TPCoptP[j];
@@ -610,6 +611,9 @@ namespace Amanzi {
                         }
                         else if (name == tpc_initial_time_steps_str) {
                             tpc_initial_time_steps = tpc_list.get<Array<double> >(tpc_initial_time_steps_str);
+                        }
+                        else if (name == tpc_initial_time_step_multipliers_str) {
+                            tpc_initial_time_step_multipliers = tpc_list.get<Array<double> >(tpc_initial_time_step_multipliers_str);
                         }
                         else if (name == tpc_maximum_time_steps_str) {
                             tpc_maximum_time_steps = tpc_list.get<Array<double> >(tpc_maximum_time_steps_str);
@@ -625,6 +629,14 @@ namespace Amanzi {
                             tpc_initial_time_steps.resize(num_periods,-1);
                         }
                     }
+                    if (tpc_initial_time_step_multipliers.size() != num_periods) {
+                        if (tpc_initial_time_step_multipliers.size() != 0) {
+                            MyAbort("If specified, number of \""+tpc_initial_time_step_multipliers_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
+                        }
+                        else {
+                            tpc_initial_time_step_multipliers.resize(num_periods,1);
+                        }
+                    }
                     if (tpc_maximum_time_steps.size() != num_periods) {
                         if (tpc_maximum_time_steps.size() != 0) {
                             MyAbort("If specified, number of \""+tpc_maximum_time_steps_str+"\" entries must equal number of \""+tpc_start_times_str+"\" entries");
@@ -637,6 +649,7 @@ namespace Amanzi {
                     if (num_periods>0) {
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_start_times_str), tpc_start_times);
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_steps_str), tpc_initial_time_steps);
+                        prob_out_list.set<Array<double> >(underscore("TPC "+tpc_initial_time_step_multipliers_str), tpc_initial_time_step_multipliers);
                         prob_out_list.set<Array<double> >(underscore("TPC "+tpc_maximum_time_steps_str), tpc_maximum_time_steps);
                     }
                 }
@@ -1270,6 +1283,24 @@ namespace Amanzi {
         }
       }
 
+      void convert_EffectiveDiffusionUniform(const ParameterList& fPLin,
+                                             ParameterList&       fPLout)
+      {
+        Array<std::string> nullList, reqP;
+        if (fPLin.isParameter("Value")) {
+          const std::string val_name="Value"; reqP.push_back(val_name);
+          PLoptions opt(fPLin,nullList,reqP,true,true);
+          double val = fPLin.get<double>(val_name);
+          fPLout.set<double>("val",val);
+        }
+        else {
+          std::string str = "Unrecognized effective diffusion coefficient parameters";
+          std::cout << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+        }
+      }
+
+
         //
         // convert material to structured format
         //
@@ -1301,6 +1332,7 @@ namespace Amanzi {
             const std::string perm_file_str = "Intrinsic Permeability: Input File";
             const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
             const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
+            const std::string diff_effective_uniform_str = "Effective Diffusion Coefficient: Uniform";
 
             std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
 	    std::string porosity_plotfile_in, porosity_plotfile_out;
@@ -1358,6 +1390,11 @@ namespace Amanzi {
                               rsublist.set("permeability",psublist);
                               rsublist.set("permeability_dist","uniform");
                               mtest["Intrinsic_Permeability"] = true;
+                            }
+                            else if (rlabel==diff_effective_uniform_str) {
+                              ParameterList dsublist;
+                              convert_EffectiveDiffusionUniform(rsslist,dsublist);
+                              rsublist.set("effective_diffusion_coefficient",dsublist);
                             }
                             else if (rlabel=="Capillary Pressure: van Genuchten") {
                                 int cpl_type = 3;
@@ -2587,7 +2624,8 @@ namespace Amanzi {
         typedef std::multimap<std::string,ParameterList> SolutePLMMap;
 
         SolutePLMMap
-        convert_solute_bcs(StateDef& stateDef)
+        convert_solute_bcs(ParameterList& struc_list,
+                           StateDef&      stateDef)
         {
             SolutePLMMap solute_to_BClabel;
             StateFuncMap& state_bcs = stateDef.BC();    
@@ -2653,6 +2691,39 @@ namespace Amanzi {
                     }
                 }
             }
+
+            ParameterList& geom_list = struc_list.sublist("geometry");
+            std::map<std::string,std::string> orient_type_map;
+            for (SolutePLMMap::const_iterator it = solute_to_BClabel.begin(),
+                   End=solute_to_BClabel.end(); it!=End; ++it) {
+
+              const std::string& trac_name = it->first;
+              const ParameterList& trac_bc_pl = it->second;
+              const std::string& trac_bc_type = trac_bc_pl.get<std::string>("type");
+
+              const Array<std::string>& trac_bc_regions = trac_bc_pl.get<Array<std::string> >("regions");
+              for (int j=0; j<trac_bc_regions.size(); ++j) {
+                const std::string& regionName = trac_bc_regions[j];
+                if (geom_list.isSublist(regionName)) {
+                  const std::string& purpose = geom_list.sublist(regionName).get<std::string>("purpose");
+                  std::map<std::string,std::string>::const_iterator it = orient_type_map.find(purpose);
+                  if (it!=orient_type_map.end()) {
+                    if (trac_bc_type != it->second) {
+                      std::cerr << "All solutes must have the same boundary condition type a side\n";
+                      throw std::exception();
+                    }
+                  }
+                  else {
+                    orient_type_map[purpose] = trac_bc_type;
+                  }
+                }
+                else {
+                  std::cerr << "Unknown region " << regionName << " in boundary condition for " << trac_name << " \n";
+                  throw std::exception();
+                }
+              }
+            }
+
             return solute_to_BClabel;
         }
 
@@ -2813,7 +2884,7 @@ namespace Amanzi {
             // Only do solute BCs if do_tracer_transport
             if (do_tracer_transport)
             {
-                SolutePLMMap solute_to_bctype = convert_solute_bcs(stateDef);
+              SolutePLMMap solute_to_bctype = convert_solute_bcs(struc_list,stateDef);
 
                 for (int i=0; i<arraysolute.size(); ++i) {
                     const std::string& soluteName = arraysolute[i];
@@ -2878,6 +2949,15 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Aqueous Volumetric Flux Y"));
 #if BL_SPACEDIM==3
             user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
+#endif
+
+#if 0
+            user_derive_list.push_back(underscore("Effective Diffusion Coefficient"));
+            user_derive_list.push_back(underscore("Intrinsic Permeability X"));
+            user_derive_list.push_back(underscore("Intrinsic Permeability Y"));
+#if BL_SPACEDIM==3
+            user_derive_list.push_back(underscore("Intrinsic Permeability Z"));
+#endif
 #endif
 
             if (struc_list.isSublist("tracer")) {
