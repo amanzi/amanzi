@@ -120,18 +120,15 @@ option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 # OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
 # WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
 # THE UNSTRUCTURED SIDE
-
-if ( Enable_Structured )
+if ( ENABLE_Structured )
 option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
 if ( ENABLE_OpenMP )
   find_package(OpenMP)
+  find_package(OpenMP_Fortran)
   if ( OPENMP_FOUND )
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if ( ${CMAKE_C_COMPILER_ID} STREQUAL "Intel" )
-      set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -openmp") 
-      set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -openmp")
-    endif() 
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
   else()  
     message(SEND_ERROR "Failed to determine the OpenMP compiler flags. Will deactivate.")
     set(ENABLE_OpenMP FALSE CACHE BOOL "Enable OpenMP compile directives" FORCE)
@@ -139,9 +136,9 @@ if ( ENABLE_OpenMP )
 endif()
 endif()
 
-
 # Amanzi Test Suite
 option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
+
 
 # ############################################################################ #
 # MPI Configuration 
@@ -379,6 +376,7 @@ set(Amanzi_CMAKE_CXX_COMPILER_ARGS
      -DCMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}
      -DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
 
+
 # Fortran language flags    
 set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
      -DCMAKE_Fortran_FLAGS:STRING=${CMAKE_Fortran_FLAGS}
@@ -472,7 +470,7 @@ if(NOT CCSE_BL_SPACEDIM )
 endif()
 if ( ENABLE_Structured )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
-  append_set(Amanzi_TPL_CMAKE_ARGS 
+  append_set(Amanzi_TPL_CMAKE_ARGS
             -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}
             -DENABLE_MPI:BOOL=TRUE
             -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
@@ -589,6 +587,7 @@ option(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)
 if (Amanzi_INSTALL_PREFIX)
   set(BUILD_Amanzi TRUE)
 endif()
+
 if ( BUILD_Amanzi )
 
   set(Amanzi_CMAKE_ARGS ${Amanzi_CMAKE_COMPILER_ARGS})
