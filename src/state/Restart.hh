@@ -43,6 +43,9 @@ namespace Amanzi {
     // disable restart dumps alltogether
     bool disabled;
 
+    // write data for walkabout
+    bool walkabout;
+
     // the Epetra communicator
     Epetra_MpiComm *comm;
   };

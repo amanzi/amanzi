@@ -863,6 +863,43 @@ void MPC::cycle_driver() {
 	  if (S->get_time() == reset_times_.front())
 	    force_checkpoint = true;
 
+      if ((force_checkpoint || force) && flow_enabled) {
+	// update centroid and velocity in state
+	std::vector<Amanzi::AmanziGeometry::Point> xyz;
+	std::vector<Amanzi::AmanziGeometry::Point> velocity;
+	
+	FPK->CalculateVelocity(xyz, velocity);
+
+	int dim = xyz[0].dim();
+
+	// if this is the first time we're updating state, create the epetra multivectors
+	// first, find the global number of elements
+	if (S->get_velocity() == Teuchos::null  && S->get_centroid() == Teuchos::null) {
+	
+	  int numel = xyz.size();
+	  int gnumel;
+	  
+	  comm->SumAll(&numel, &gnumel, 1);
+	  
+	  Epetra_BlockMap map(gnumel, numel, 1, 0, *comm);
+	  
+	  S->get_centroid() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
+	  S->get_velocity() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
+	}
+
+	Teuchos::RCP<Epetra_MultiVector> centr = S->get_centroid();
+	Teuchos::RCP<Epetra_MultiVector> velo  = S->get_velocity();
+
+	// then populate the state vectors
+	for (int i=0; i<xyz.size(); ++i) {
+	  for (int j=0; j<dim; ++j) {
+	    (*(*centr)(j)) [i] = xyz[i][j];
+	    (*(*velo)(j)) [i] = velocity[i][j];
+	  }
+	}
+      }
+
+
       // write restart dump if requested
       restart->dump_state(*S, force || force_checkpoint);
       Amanzi::timer_manager.stop("I/O");
