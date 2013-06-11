@@ -269,6 +269,48 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
       surface3D_mesh = mesh;
       surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
     }
+
+    bool surf_expert_params_specified = surface_plist.isSublist("Expert");
+    if (surf_expert_params_specified) {
+      Teuchos::ParameterList surf_expert_mesh_params = surface_plist.sublist("Expert");
+      bool verify_surf_mesh_param = surf_expert_mesh_params.isParameter("Verify Mesh");
+      if (verify_surf_mesh_param) {
+        bool verify = surf_expert_mesh_params.get<bool>("Verify Mesh");
+        if (verify) {
+          std::cerr << "Verifying surface mesh with Mesh Audit..." << std::endl;
+          if (size == 1) {
+            Amanzi::MeshAudit surf_mesh_auditor(surface_mesh);
+            int status = surf_mesh_auditor.Verify();
+            if (status == 0) {
+              std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
+            } else {
+              std::cout << "Mesh Audit could not verify correctness of surface mesh" << std::endl;
+              return Amanzi::Simulator::FAIL;
+            }
+          } else {
+            std::ostringstream ofile;
+            ofile << "surf_mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
+            std::ofstream ofs(ofile.str().c_str());
+            if (rank == 0)
+              std::cerr << "Writing Surface Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
+
+            ierr = 0;
+            Amanzi::MeshAudit surf_mesh_auditor(mesh, ofs);
+            int status = surf_mesh_auditor.Verify();        // check the mesh
+            if (status != 0) ierr++;
+
+            comm->SumAll(&ierr, &aerr, 1);
+            if (aerr == 0) {
+              std::cerr << "Surface Mesh Audit confirms that mesh is ok" << std::endl;
+            } else {
+              if (rank == 0)
+                std::cerr << "Surface Mesh Audit could not verify correctness of mesh" << std::endl;
+              return Amanzi::Simulator::FAIL;
+            }
+          }
+        }  // if verify
+      }  // if verify_mesh_param
+    }  // If expert_params_specified
   }
 
   Teuchos::TimeMonitor::summarize();
