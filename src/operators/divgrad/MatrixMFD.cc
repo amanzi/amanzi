@@ -22,7 +22,11 @@ MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
     flag_symmetry_(false),
     assembled_operator_(false),
     assembled_schur_(false),
-    method_(MFD3D_NULL) {
+    method_(MFD3D_NULL),
+    hypre_ncycles_(5),
+    hypre_nsmooth_(3),
+    hypre_tol_(0.0),
+    hypre_strong_threshold_(0.25) {
   InitializeFromPList_();
 }
 
@@ -36,7 +40,11 @@ MatrixMFD::MatrixMFD(const MatrixMFD& other) :
     flag_symmetry_(other.flag_symmetry_),
     assembled_operator_(false),
     assembled_schur_(false),
-    method_(other.method_) {
+    method_(other.method_),
+    hypre_ncycles_(5),
+    hypre_nsmooth_(3),
+    hypre_tol_(0.0),
+    hypre_strong_threshold_(0.25) {
   InitializeFromPList_();
 }
 
