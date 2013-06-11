@@ -61,6 +61,8 @@ public:
     void RegisterEvent(const std::string& event_label,
                        EventCoord::Event* event); // takes control of pointer
 
+    static bool UsingMaterialServer() {return use_matFiller;}
+
 protected:
     void InitializeControlEvents();
 
@@ -87,9 +89,7 @@ protected:
     int  max_step;
     Real stop_time;
 
-
     void SetUpMaterialServer();
-    MatFiller* materialFiller;
 
 private:
     //
@@ -98,6 +98,9 @@ private:
     PMAmr (const PMAmr& rhs);
     PMAmr& operator= (const PMAmr& rhs);
 
+    // Private data
+    MatFiller* materialFiller;
+    static bool use_matFiller;
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
 };
