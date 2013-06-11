@@ -401,9 +401,15 @@ void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
   double height_l[2];
   double potential_l[2];
   AmanziGeometry::Point cntr_cell[2];
-  double dist;
+  double dist = 0;
 
   // local pointers
+  height.ScatterMasterToGhosted();
+  potential.ScatterMasterToGhosted();
+  Krel.ScatterMasterToGhosted();
+  dKrel_dp.ScatterMasterToGhosted();
+  Krel_cell.ScatterMasterToGhosted();
+  dKrel_cell_dp.ScatterMasterToGhosted();
   const Epetra_MultiVector& height_c = *height.ViewComponent("cell",true);
   const Epetra_MultiVector& potential_c = *potential.ViewComponent("cell",true);
   const Epetra_MultiVector& Krel_c = *Krel.ViewComponent("cell",true);
@@ -438,6 +444,11 @@ void MatrixMFD_TPFA::AnalyticJacobian(const CompositeVector& height,
       potential_l[1] = potential("face",f);
       k_rel[1] = Krel_cell("face",f);
       dkrel_dp[1] = 0.;
+      k_rel_cell[1] = 0.;
+      dkrel_cell_dp[1] = 0.;
+
+    } else {
+      ASSERT(0);
     }
 
     AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
