@@ -85,6 +85,8 @@ void Richards::fun(double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    res->ScatterMasterToGhosted("face");
+
     Teuchos::RCP<const CompositeVector> satl1 =
         S_next_->GetFieldData("saturation_liquid");
     Teuchos::RCP<const CompositeVector> satl0 =
@@ -182,6 +184,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
 
+    u->data()->ScatterMasterToGhosted("face");
     for (std::vector<int>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
@@ -202,6 +205,8 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 #if DEBUG_FLAG
   // Dump correction
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+
+    Pu->data()->ScatterMasterToGhosted("face");
     for (std::vector<int>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
@@ -412,7 +417,6 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 
-
   // Write out Inf norms too.
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
@@ -473,11 +477,11 @@ void Richards::PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVect
     if (p_standard > p_prev && p_prev < patm && s_new[0][c] < 0.99) {
       double pc = wrms_->second[(*wrms_->first)[c]]->capillaryPressure(s_new[0][c]);
       double p_wc = patm - pc;
-      std::cout << "preconWC on cell " << c << ":" << std::endl;
-      std::cout << "  s_new = " << s_new[0][c] << std::endl;
-      std::cout << "  p_old = " << p_prev << std::endl;
-      std::cout << "  p_corrected = " << p_standard << std::endl;
-      std::cout << "  p_wc = " << p_wc << std::endl;
+      // std::cout << "preconWC on cell " << c << ":" << std::endl;
+      // std::cout << "  s_new = " << s_new[0][c] << std::endl;
+      // std::cout << "  p_old = " << p_prev << std::endl;
+      // std::cout << "  p_corrected = " << p_standard << std::endl;
+      // std::cout << "  p_wc = " << p_wc << std::endl;
       dp[0][c] = p_prev - p_wc;
     }
   }
