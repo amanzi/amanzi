@@ -187,7 +187,7 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
       double p_new = p_old - domain_Pu_f[0][f] / damp;
       if ((p_new > patm + cap_size_) && (p_old < patm)) {
         domain_Pu_f[0][f] = p_old - (patm + cap_size_);
-        std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
+        //        std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_f[0][f] << std::endl;
         n_modified++;
       }
     }
@@ -227,7 +227,7 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
         ncapped_l++;
         double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
         domain_Pu_c[0][cells[0]] *= my_damp;
-        std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", dp_cell = " << domain_Pu_c[0][cells[0]] << std::endl;
+        //        std::cout << "  CAPPING: p_old = " << p_old << ", p_new = " << p_new << ", dp_cell = " << domain_Pu_c[0][cells[0]] << std::endl;
       }
     }
 

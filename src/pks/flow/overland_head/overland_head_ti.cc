@@ -32,6 +32,7 @@ void OverlandHeadFlow::fun( double t_old,
                         Teuchos::RCP<TreeVector> g ) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
+  niter_++;
 
   // bookkeeping
   double h = t_new - t_old;
@@ -90,6 +91,7 @@ void OverlandHeadFlow::fun( double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    res->ScatterMasterToGhosted("face");
     Teuchos::RCP<const CompositeVector> cond =
       S_next_->GetFieldData("upwind_overland_conductivity", name_);
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -160,6 +162,21 @@ void OverlandHeadFlow::fun( double t_old,
     }
   }
 #endif
+
+#if DEBUG_RES_FLAG
+  if (niter_ < 23) {
+    Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
+
+    std::stringstream namestream;
+    namestream << "flow_residual_" << niter_;
+    *S_next_->GetFieldData(namestream.str(),name_) = *res;
+
+    std::stringstream solnstream;
+    solnstream << "flow_solution_" << niter_;
+    *S_next_->GetFieldData(solnstream.str(),name_) = *depth;
+  }
+#endif
+
 };
 
 
@@ -173,6 +190,7 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
+    u->data()->ScatterMasterToGhosted("face");
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
@@ -189,6 +207,7 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
+    Pu->data()->ScatterMasterToGhosted("face");
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
@@ -227,12 +246,12 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "Precon update at t = " << t << std::endl;
 
   Teuchos::RCP<const CompositeVector> eff_p = S_next_->GetFieldData("surface_effective_pressure");
   Teuchos::RCP<const CompositeVector> surf_p = S_next_->GetFieldData("surface_pressure");
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
@@ -346,13 +365,8 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     Teuchos::RCP<Epetra_FECrsMatrix> Spp = precon_tpfa->TPFA();
 
     // Scale Spp by -dh/dp
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-      *out_ << "  scaling by dh/dp" << std::endl;
-
-    const Epetra_MultiVector& pres_sub_c =
-        *S_next_->GetFieldData("pressure")->ViewComponent("cell",false);
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh_sub = S_next_->GetMesh();
-    AmanziMesh::Entity_ID_List cells;
+    // if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    //   *out_ << "  scaling by dh/dp" << std::endl;
 
     // NOTE: dh/dp to take it to p variable, the negative sign is due to the
     //       equation being K/dz ( p - lambda ) = q = dwc/dt - div q_surf - Q,
@@ -362,7 +376,7 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
     Epetra_Vector dh_dp0(*dh_dp(0));
     for (int sc=0; sc!=ncells; ++sc) {
       dh_dp0[sc] = head[0][sc] > p_atm ? dh_dp[0][sc] : 0.;
-      *out_ << " scaling by = " << dh_dp0[sc] << std::endl;
+      //      *out_ << " scaling by = " << dh_dp0[sc] << std::endl;
     }
     int ierr = Spp->RightScale(dh_dp0);
     ASSERT(!ierr);

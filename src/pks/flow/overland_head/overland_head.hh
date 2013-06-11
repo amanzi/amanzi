@@ -46,6 +46,7 @@ public:
       perm_update_required_(true),
       update_flux_(UPDATE_FLUX_ITERATION),
       full_jacobian_(false),
+      niter_(0),
       source_only_if_unfrozen_(false) {
     plist_.set("primary variable key", "surface_pressure");
     plist_.set("domain name", "surface");
@@ -163,6 +164,8 @@ protected:
   // needed physical models
   Teuchos::RCP<FlowRelations::HeightModel> height_model_;
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
+
+  int niter_;
 
   // factory registration
   static RegisteredPKFactory<OverlandHeadFlow> reg_;
