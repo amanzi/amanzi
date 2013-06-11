@@ -379,6 +379,7 @@ option(ENABLE_OpenMP "Build Amanzi executables with OpenMP" OFF)
 #                 )
 if (ENABLE_OpenMP)
     find_package(OpenMP)
+    find_package(OpenMP_Fortran)
 endif()
 
 ##############################################################################
