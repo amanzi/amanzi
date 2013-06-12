@@ -29,6 +29,7 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   for (Teuchos::ParameterList::ConstIterator lcv=plist.begin();
        lcv!=plist.end(); ++lcv) {
     std::string name = lcv->first;
+    
     if (plist.isSublist(name)) {
       Teuchos::ParameterList& sublist = plist.sublist(name);
 

@@ -412,65 +412,66 @@ void Chemistry_State::RequireData_() {
 
 
 void Chemistry_State::Initialize() {
-  // initialize
+  // initialize the fields that are not initialized, yet
+
   if (S_->HasField("free_ion_species")) {
-    free_ion_species()->PutScalar(1.0e-9);
-    S_->GetField("free_ion_species",name_)->set_initialized();
+      free_ion_species()->PutScalar(0.0);
+      S_->GetField("free_ion_species",name_)->set_initialized();
   }
 
   if (S_->HasField("primary_activity_coeff")) {
-    primary_activity_coeff()->PutScalar(1.0);
-    S_->GetField("primary_activity_coeff",name_)->set_initialized();
+      primary_activity_coeff()->PutScalar(0.0);
+      S_->GetField("primary_activity_coeff",name_)->set_initialized();
   }
 
   if (S_->HasField("total_sorbed")) {
-    total_sorbed()->PutScalar(1.0);
-    S_->GetField("total_sorbed",name_)->set_initialized();
+      total_sorbed()->PutScalar(0.0);
+      S_->GetField("total_sorbed",name_)->set_initialized();
   }
 
   if (S_->HasField("isotherm_kd")) {
-    isotherm_kd()->PutScalar(0.0);
-    S_->GetField("isotherm_kd",name_)->set_initialized();
+      isotherm_kd()->PutScalar(0.0);
+      S_->GetField("isotherm_kd",name_)->set_initialized();
   }
 
   if (S_->HasField("isotherm_freundlich_n")) {
-    isotherm_freundlich_n()->PutScalar(1.0);
-    S_->GetField("isotherm_freundlich_n",name_)->set_initialized();
+      isotherm_freundlich_n()->PutScalar(0.0);
+      S_->GetField("isotherm_freundlich_n",name_)->set_initialized();
   }
 
   if (S_->HasField("isotherm_langmuir_b")) {
-    isotherm_langmuir_b()->PutScalar(1.0);
-    S_->GetField("isotherm_langmuir_b",name_)->set_initialized();
+      isotherm_langmuir_b()->PutScalar(0.0);
+      S_->GetField("isotherm_langmuir_b",name_)->set_initialized();
   }
 
   if (S_->HasField("mineral_volume_fractions")) {
-    mineral_volume_fractions()->PutScalar(0.0);
-    S_->GetField("mineral_volume_fractions",name_)->set_initialized();
+      mineral_volume_fractions()->PutScalar(0.0);
+      S_->GetField("mineral_volume_fractions",name_)->set_initialized();
   }
 
   if (S_->HasField("mineral_specific_surface_area")) {
-    mineral_specific_surface_area()->PutScalar(1.0);
-    S_->GetField("mineral_specific_surface_area",name_)->set_initialized();
+      mineral_specific_surface_area()->PutScalar(0.0);
+      S_->GetField("mineral_specific_surface_area",name_)->set_initialized();
   }
 
   if (S_->HasField("ion_exchange_sites")) {
-    ion_exchange_sites()->PutScalar(1.);
-    S_->GetField("ion_exchange_sites",name_)->set_initialized();
+      ion_exchange_sites()->PutScalar(0.);
+      S_->GetField("ion_exchange_sites",name_)->set_initialized();
   }
 
   if (S_->HasField("ion_exchange_ref_cation_conc")) {
-    ion_exchange_ref_cation_conc()->PutScalar(1.);
-    S_->GetField("ion_exchange_ref_cation_conc",name_)->set_initialized();
+      ion_exchange_ref_cation_conc()->PutScalar(0.);
+      S_->GetField("ion_exchange_ref_cation_conc",name_)->set_initialized();
   }
 
   if (S_->HasField("sorption_sites")) {
-    sorption_sites()->PutScalar(1.);
-    S_->GetField("sorption_sites",name_)->set_initialized();
+      sorption_sites()->PutScalar(1.);
+      S_->GetField("sorption_sites",name_)->set_initialized();
   }
 
   if (S_->HasField("surface_complex_free_site_conc")) {
-    surface_complex_free_site_conc()->PutScalar(1.);
-    S_->GetField("surface_complex_free_site_conc",name_)->set_initialized();
+      surface_complex_free_site_conc()->PutScalar(0.);
+      S_->GetField("surface_complex_free_site_conc",name_)->set_initialized();
   }
 }
 
