@@ -618,7 +618,7 @@ PorousMedia::PorousMedia (Amr&            papa,
     {
       BoxArray edge_gridskp(grids);
       edge_gridskp.surroundingNodes(dir);
-      kpedge[dir].define(edge_gridskp,1,1,Fab_allocate);
+      kpedge[dir].define(edge_gridskp,1,0,Fab_allocate);
       kpedge[dir].setVal(1.e40);
     }
 
@@ -843,7 +843,7 @@ PorousMedia::restart (Amr&          papa,
     {
       BoxArray edge_gridskp(grids);
       edge_gridskp.surroundingNodes(dir);
-      kpedge[dir].define(edge_gridskp,1,1,Fab_allocate);
+      kpedge[dir].define(edge_gridskp,1,0,Fab_allocate);
       kpedge[dir].setVal(1.e40);
     }
   init_rock_properties();
@@ -8371,242 +8371,234 @@ PorousMedia::init_rock_properties ()
 
   int ng_twoexp = twoexp * nGrowHYP;  
 
-  // permeability
-  if (kappa_dataServices!=0) {
-    AmrData& kappa_amrData = kappa_dataServices->AmrDataRef();
-    Array<std::string> names(BL_SPACEDIM,"Permeability_");
-    Array<int> dComps(BL_SPACEDIM);
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      int num_digits = 1;
-      BoxLib::Concatenate(names[d],d,num_digits);
-      dComps[d] = d;
-    }
-    BoxArray bag = BoxArray(kappa->boxArray()).grow(kappa->nGrow());
-    MultiFab kappag(bag,BL_SPACEDIM,0);
-    kappa_amrData.FillVar(kappag,level,names,dComps);
-    for (MFIter mfi(kappag); mfi.isValid(); ++mfi) {
-      (*kappa)[mfi].copy(kappag[mfi]);
-    }
-    //} else {
-  } 
-  // FIXME: Can skip if the plotfile stuff works ok
+
+
+  if (PMParent()->UsingMaterialServer()) 
   {
-    if (permeability_from_fine)
-    {
-      BoxArray cba = BoxArray(grids).grow(nGrowHYP);
-      BoxArray cban = BoxArray(cba);
-      cban.removeOverlap(); // Target region for coarsening
-      BoxArray fba = BoxArray(cban).refine(rr); // Defines region needed as source data for coarsening
-
-      BoxArray data_fba; // same region as fba, but matched to distribution of kappadata
-      Array<int> data_dist;
-      std::vector< std::pair<int,Box> > isects;
-      const BoxArray& big_ba = kappadata->boxArray();
-      const DistributionMapping& big_dm = kappadata->DistributionMap();
-      for (int i=0; i<fba.size(); ++i) {
-        isects = big_ba.intersections(fba[i]);
-        for (int j=0; j<isects.size(); ++j) {
-          int old_size = data_fba.size();
-          data_dist.resize(old_size+1);
-          data_dist[old_size] = big_dm[isects[j].first];
-          data_fba.resize(old_size+1);
-          data_fba.set(old_size,isects[j].second);
-        }
-      }
-      BoxArray data_cba = BoxArray(data_fba).coarsen(rr);
-      data_dist.resize(data_dist.size()+1);
-      DistributionMapping dm(data_dist);
-
-      int nComp = kappadata->nComp();
-      MultiFab crse_src_data, fine_src_data;
-      crse_src_data.define(data_cba,nComp,0,dm,Fab_allocate); crse_src_data.setVal(3.e40);
-      fine_src_data.define(data_fba,nComp,0,dm,Fab_allocate);
-
-      fine_src_data.copy(*kappadata);
-      const int* rrvect = rr.getVect();
-
-      for (MFIter mfi(crse_src_data); mfi.isValid(); ++mfi) {
-        FArrayBox& crse = crse_src_data[mfi];
-        FArrayBox& fine = fine_src_data[mfi];
-        const Box& fbox = fine.box();
-
-        // Shift to +ve indices so that coarsening stuff works correctly
-        IntVect fshift;
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-          fshift[d] = std::max(0,-fbox.smallEnd()[d]);
-        }
-        fine.shift(fshift);
-        IntVect cshift(Box(fine.box()).coarsen(rr).smallEnd() - crse.box().smallEnd());
-        crse.shift(cshift);
-        const Box& cbox = crse.box();
-        BL_ASSERT(fine.box().contains(Box(cbox).refine(rr))); 
-        FORT_INITKAPPA3A(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
-                        crse.dataPtr(),ARLIM(crse.loVect()),ARLIM(crse.hiVect()),
-                        cbox.loVect(),cbox.hiVect(),rrvect);
-        crse.shift(-cshift);
-        BL_ASSERT(crse.norm(0,0,nComp) < 1.e40);
-      }
-      
-      fine_src_data.clear();
-
-      MultiFab crse2(cba,crse_src_data.nComp(),0);
-      crse2.copy(crse_src_data,0,0,crse_src_data.nComp());
-      crse_src_data.clear();
-
-      MultiFab kappatmp((*kappa).boxArray(),BL_SPACEDIM,(*kappa).nGrow());
-
-      for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
-        kappatmp[mfi].copy(crse2[mfi],0,0,crse2.nComp());
-      }      
-      (*kappa).setVal(0.);
-      for (int d=0; d<BL_SPACEDIM; d++)
-	MultiFab::Add(*kappa,kappatmp,d,0,1,(*kappa).nGrow());
-      (*kappa).mult(1.0/BL_SPACEDIM);
-
-      // Now generate kpedge data, since we have kappa with valid grow data already
-      for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
-        for (int d=0; d<BL_SPACEDIM; ++d) {
-          const Box& cbox = mfi.validbox();
-
-          Box ebox = Box(cbox).surroundingNodes(d);
-          const FArrayBox& cdat = kappatmp[mfi];
-          FArrayBox& edat = kpedge[d][mfi];
-          BL_ASSERT(edat.box().contains(ebox));
-          FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
-                         edat.dataPtr(), ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
-                         cbox.loVect(),cbox.hiVect(),&d);
-        }
-      }
-    }
-  }
-  kappa->FillBoundary();
-  geom.FillPeriodicBoundary(*kappa);
-   
-  // porosity
-  if (phi_dataServices!=0) {
-    AmrData& phi_amrData = phi_dataServices->AmrDataRef();
-    std::string name = "Porosity";
-    BoxArray bag = BoxArray(rock_phi->boxArray()).grow(rock_phi->nGrow());
-    MultiFab phig(bag,1,0);
-    int dComp = 0;
-    phi_amrData.FillVar(phig,level,name,dComp);
-    for (MFIter mfi(phig); mfi.isValid(); ++mfi) {
-      (*rock_phi)[mfi].copy(phig[mfi]);
-    }
-  } else {
-    BL_ASSERT(porosity_from_fine);
-    BoxArray tba(grids);
-    tba.maxSize(new_crse_grid_size);
-    MultiFab trock_phi(tba,1,nGrowHYP);
-    trock_phi.setVal(1.e40);
-	
-    BoxArray ba(trock_phi.size());
-    BoxArray ba2(trock_phi.size());
-    for (int i = 0; i < ba.size(); i++)
-    {
-      Box bx = trock_phi.box(i);
-      bx.refine(rr);
-      ba.set(i,bx);
-      bx.grow(ng_twoexp);
-      ba2.set(i,bx);
-    }
-	
-    MultiFab mftmp(ba2,1,0);
-    mftmp.copy(*phidata);
-	
-    // mfbig has same CPU distribution as phi
-    MultiFab mfbig_phi(ba,1,ng_twoexp);
-    for (MFIter mfi(mftmp); mfi.isValid(); ++mfi)
-      mfbig_phi[mfi].copy(mftmp[mfi]);
-    mftmp.clear();
-    mfbig_phi.FillBoundary();
-    fgeom.FillPeriodicBoundary(mfbig_phi,true);
-    const int* rrvect = rr.getVect();
-	
-    for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
-    {
-      const Box& gbox = trock_phi[mfi].box();
-      const int* lo    = gbox.loVect();
-      const int* hi    = gbox.hiVect();
-	    
-      const int* p_lo  = trock_phi[mfi].loVect();
-      const int* p_hi  = trock_phi[mfi].hiVect();
-      const Real* pdat = trock_phi[mfi].dataPtr();
-	    
-      const int*  mfp_lo = mfbig_phi[mfi].loVect();
-      const int*  mfp_hi = mfbig_phi[mfi].hiVect();
-      const Real* mfpdat = mfbig_phi[mfi].dataPtr();
-	    
-      FORT_INITPHI2 (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
-                     pdat,ARLIM(p_lo),ARLIM(p_hi),
-                     lo,hi,rrvect);
-    }
-    mfbig_phi.clear();
-	
-    BoxArray tba2(trock_phi.boxArray());
-    tba2.grow(nGrowHYP);
-    MultiFab tmpgrow(tba2,1,0);
-	
-    for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
-      tmpgrow[mfi].copy(trock_phi[mfi]);
-	
-    trock_phi.clear();
-	
-    tba2 = rock_phi->boxArray();
-    tba2.grow(nGrowHYP);
-    MultiFab tmpgrow2(tba2,1,0);
-	
-    tmpgrow2.copy(tmpgrow);
-    tmpgrow.clear();
-	
-    for (MFIter mfi(tmpgrow2); mfi.isValid(); ++mfi)
-      (*rock_phi)[mfi].copy(tmpgrow2[mfi]);
-  }
-  rock_phi->FillBoundary();
-  geom.FillPeriodicBoundary(*rock_phi);
-
-
-  // Test MatFiller here
-  MatFiller* matFiller = PMParent()->GetMatFiller();
-  if (matFiller && matFiller->Initialized()) {
-    MultiFab matFiller_kappa(grids,BL_SPACEDIM,kappa->nGrow());
-    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,matFiller_kappa,
-                                      "permeability",0,kappa->nGrow());
+    MatFiller* matFiller = PMParent()->GetMatFiller();
+    MultiFab kappatmp(grids,BL_SPACEDIM,nGrowHYP);
+    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,kappatmp,
+                                      "permeability",0,kappatmp.nGrow());
     if (!ret) BoxLib::Abort("Failed to build permeability");
 
-    MultiFab* matFiller_kpedge = new MultiFab[BL_SPACEDIM];
-    for (int dir = 0; dir < BL_SPACEDIM; dir++) {
-      BoxArray edge_gridskp(grids);
-      edge_gridskp.surroundingNodes(dir);
-      matFiller_kpedge[dir].define(edge_gridskp,1,1,Fab_allocate);
-    }
-
-    for (MFIter mfi(matFiller_kappa); mfi.isValid(); ++mfi) {
+    for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
       const Box& cbox = mfi.validbox();
-      const FArrayBox& cdat = matFiller_kappa[mfi];
+      const FArrayBox& cdat = kappatmp[mfi];
       for (int d=0; d<BL_SPACEDIM; ++d) {
         Box ebox = Box(cbox).surroundingNodes(d);
-        FArrayBox& edat = matFiller_kpedge[d][mfi];
+        FArrayBox& edat = kpedge[d][mfi];
         BL_ASSERT(edat.box().contains(ebox));
         FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
                        edat.dataPtr(),ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
                        cbox.loVect(),cbox.hiVect(),&d);
       }
     }
-
-    MultiFab matFiller_kappaAvg(grids,1,kappa->nGrow());
-    matFiller_kappaAvg.setVal(0.);
+      
+    kappa->setVal(0.);
     for (int d=0; d<BL_SPACEDIM; d++) {
-      MultiFab::Add(matFiller_kappaAvg,matFiller_kappa,d,0,1,kappa->nGrow());
+      MultiFab::Add(*kappa,kappatmp,d,0,1,kappa->nGrow());
     }
-    matFiller_kappaAvg.mult(1.0/BL_SPACEDIM);
+    kappa->mult(1.0/BL_SPACEDIM);
 
-    MultiFab matFiller_phi(grids,1,rock_phi->nGrow());
-    bool ret1 = matFiller->SetProperty(state[State_Type].curTime(),level,matFiller_phi,
+    bool ret1 = matFiller->SetProperty(state[State_Type].curTime(),level,*rock_phi,
                                        "porosity",0,rock_phi->nGrow());
     if (!ret1) BoxLib::Abort("Failed to build porosity");
   }
+  else {
+    // permeability
+    if (kappa_dataServices!=0) {
+      AmrData& kappa_amrData = kappa_dataServices->AmrDataRef();
+      Array<std::string> names(BL_SPACEDIM,"Permeability_");
+      Array<int> dComps(BL_SPACEDIM);
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        int num_digits = 1;
+        BoxLib::Concatenate(names[d],d,num_digits);
+        dComps[d] = d;
+      }
+      BoxArray bag = BoxArray(kappa->boxArray()).grow(kappa->nGrow());
+      MultiFab kappag(bag,BL_SPACEDIM,0);
+      kappa_amrData.FillVar(kappag,level,names,dComps);
+      for (MFIter mfi(kappag); mfi.isValid(); ++mfi) {
+        (*kappa)[mfi].copy(kappag[mfi]);
+      }
+      //} else {
+    } 
+    // FIXME: Can skip if the plotfile stuff works ok
+    {
+      if (permeability_from_fine)
+      {
+        BoxArray cba = BoxArray(grids).grow(nGrowHYP);
+        BoxArray cban = BoxArray(cba);
+        cban.removeOverlap(); // Target region for coarsening
+        BoxArray fba = BoxArray(cban).refine(rr); // Defines region needed as source data for coarsening
 
+        BoxArray data_fba; // same region as fba, but matched to distribution of kappadata
+        Array<int> data_dist;
+        std::vector< std::pair<int,Box> > isects;
+        const BoxArray& big_ba = kappadata->boxArray();
+        const DistributionMapping& big_dm = kappadata->DistributionMap();
+        for (int i=0; i<fba.size(); ++i) {
+          isects = big_ba.intersections(fba[i]);
+          for (int j=0; j<isects.size(); ++j) {
+            int old_size = data_fba.size();
+            data_dist.resize(old_size+1);
+            data_dist[old_size] = big_dm[isects[j].first];
+            data_fba.resize(old_size+1);
+            data_fba.set(old_size,isects[j].second);
+          }
+        }
+        BoxArray data_cba = BoxArray(data_fba).coarsen(rr);
+        data_dist.resize(data_dist.size()+1);
+        DistributionMapping dm(data_dist);
+
+        int nComp = kappadata->nComp();
+        MultiFab crse_src_data, fine_src_data;
+        crse_src_data.define(data_cba,nComp,0,dm,Fab_allocate); crse_src_data.setVal(3.e40);
+        fine_src_data.define(data_fba,nComp,0,dm,Fab_allocate);
+
+        fine_src_data.copy(*kappadata);
+        const int* rrvect = rr.getVect();
+
+        for (MFIter mfi(crse_src_data); mfi.isValid(); ++mfi) {
+          FArrayBox& crse = crse_src_data[mfi];
+          FArrayBox& fine = fine_src_data[mfi];
+          const Box& fbox = fine.box();
+
+          // Shift to +ve indices so that coarsening stuff works correctly
+          IntVect fshift;
+          for (int d=0; d<BL_SPACEDIM; ++d) {
+            fshift[d] = std::max(0,-fbox.smallEnd()[d]);
+          }
+          fine.shift(fshift);
+          IntVect cshift(Box(fine.box()).coarsen(rr).smallEnd() - crse.box().smallEnd());
+          crse.shift(cshift);
+          const Box& cbox = crse.box();
+          BL_ASSERT(fine.box().contains(Box(cbox).refine(rr))); 
+          FORT_INITKAPPA3A(fine.dataPtr(),ARLIM(fine.loVect()),ARLIM(fine.hiVect()),
+                           crse.dataPtr(),ARLIM(crse.loVect()),ARLIM(crse.hiVect()),
+                           cbox.loVect(),cbox.hiVect(),rrvect);
+          crse.shift(-cshift);
+          BL_ASSERT(crse.norm(0,0,nComp) < 1.e40);
+        }
+      
+        fine_src_data.clear();
+
+        MultiFab crse2(cba,crse_src_data.nComp(),0);
+        crse2.copy(crse_src_data,0,0,crse_src_data.nComp());
+        crse_src_data.clear();
+
+        MultiFab kappatmp((*kappa).boxArray(),BL_SPACEDIM,(*kappa).nGrow());
+
+        for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
+          kappatmp[mfi].copy(crse2[mfi],0,0,crse2.nComp());
+        }      
+        (*kappa).setVal(0.);
+        for (int d=0; d<BL_SPACEDIM; d++)
+          MultiFab::Add(*kappa,kappatmp,d,0,1,(*kappa).nGrow());
+        (*kappa).mult(1.0/BL_SPACEDIM);
+
+        // Now generate kpedge data, since we have kappa with valid grow data already
+        for (MFIter mfi(kappatmp); mfi.isValid(); ++mfi) {
+          for (int d=0; d<BL_SPACEDIM; ++d) {
+            const Box& cbox = mfi.validbox();
+
+            Box ebox = Box(cbox).surroundingNodes(d);
+            const FArrayBox& cdat = kappatmp[mfi];
+            FArrayBox& edat = kpedge[d][mfi];
+            BL_ASSERT(edat.box().contains(ebox));
+            FORT_INITKEDGE(cdat.dataPtr(),ARLIM(cdat.loVect()),ARLIM(cdat.hiVect()),
+                           edat.dataPtr(), ARLIM(edat.loVect()),ARLIM(edat.hiVect()),
+                           cbox.loVect(),cbox.hiVect(),&d);
+          }
+        }
+      }
+    }
+    kappa->FillBoundary();
+    geom.FillPeriodicBoundary(*kappa);
+   
+    // porosity
+    if (phi_dataServices!=0) {
+      AmrData& phi_amrData = phi_dataServices->AmrDataRef();
+      std::string name = "Porosity";
+      BoxArray bag = BoxArray(rock_phi->boxArray()).grow(rock_phi->nGrow());
+      MultiFab phig(bag,1,0);
+      int dComp = 0;
+      phi_amrData.FillVar(phig,level,name,dComp);
+      for (MFIter mfi(phig); mfi.isValid(); ++mfi) {
+        (*rock_phi)[mfi].copy(phig[mfi]);
+      }
+    } else {
+      BL_ASSERT(porosity_from_fine);
+      BoxArray tba(grids);
+      tba.maxSize(new_crse_grid_size);
+      MultiFab trock_phi(tba,1,nGrowHYP);
+      trock_phi.setVal(1.e40);
+	
+      BoxArray ba(trock_phi.size());
+      BoxArray ba2(trock_phi.size());
+      for (int i = 0; i < ba.size(); i++)
+      {
+        Box bx = trock_phi.box(i);
+        bx.refine(rr);
+        ba.set(i,bx);
+        bx.grow(ng_twoexp);
+        ba2.set(i,bx);
+      }
+	
+      MultiFab mftmp(ba2,1,0);
+      mftmp.copy(*phidata);
+	
+      // mfbig has same CPU distribution as phi
+      MultiFab mfbig_phi(ba,1,ng_twoexp);
+      for (MFIter mfi(mftmp); mfi.isValid(); ++mfi)
+        mfbig_phi[mfi].copy(mftmp[mfi]);
+      mftmp.clear();
+      mfbig_phi.FillBoundary();
+      fgeom.FillPeriodicBoundary(mfbig_phi,true);
+      const int* rrvect = rr.getVect();
+	
+      for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
+      {
+        const Box& gbox = trock_phi[mfi].box();
+        const int* lo    = gbox.loVect();
+        const int* hi    = gbox.hiVect();
+	    
+        const int* p_lo  = trock_phi[mfi].loVect();
+        const int* p_hi  = trock_phi[mfi].hiVect();
+        const Real* pdat = trock_phi[mfi].dataPtr();
+	    
+        const int*  mfp_lo = mfbig_phi[mfi].loVect();
+        const int*  mfp_hi = mfbig_phi[mfi].hiVect();
+        const Real* mfpdat = mfbig_phi[mfi].dataPtr();
+	    
+        FORT_INITPHI2 (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
+                       pdat,ARLIM(p_lo),ARLIM(p_hi),
+                       lo,hi,rrvect);
+      }
+      mfbig_phi.clear();
+	
+      BoxArray tba2(trock_phi.boxArray());
+      tba2.grow(nGrowHYP);
+      MultiFab tmpgrow(tba2,1,0);
+	
+      for (MFIter mfi(trock_phi); mfi.isValid(); ++mfi)
+        tmpgrow[mfi].copy(trock_phi[mfi]);
+	
+      trock_phi.clear();
+	
+      tba2 = rock_phi->boxArray();
+      tba2.grow(nGrowHYP);
+      MultiFab tmpgrow2(tba2,1,0);
+	
+      tmpgrow2.copy(tmpgrow);
+      tmpgrow.clear();
+	
+      for (MFIter mfi(tmpgrow2); mfi.isValid(); ++mfi)
+        (*rock_phi)[mfi].copy(tmpgrow2[mfi]);
+    }
+    rock_phi->FillBoundary();
+    geom.FillPeriodicBoundary(*rock_phi);
+  }
 
   if (model != model_list["single-phase"] && 
       model != model_list["single-phase-solid"] &&
