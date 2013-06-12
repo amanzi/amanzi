@@ -71,6 +71,11 @@ Calculated hydraulic conductivity:
 |99.5  |49.5  |121   |0.70    |0.80          |
 +------+------+------+--------+--------------+
 
+Visualization
+~~~~~~~~~~~~~~
+
+.. image:: 1d_flow.png
+
 Code
 -----
 
