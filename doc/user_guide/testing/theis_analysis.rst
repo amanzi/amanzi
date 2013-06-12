@@ -40,7 +40,7 @@ Model
 Setup
 -------
 
-Groundwater resource evaluation is crucial to understanding the concept of groundwater yield. This concept is important because it helps determine the maximum allowable pump rate out of an aquifer and understand the consequnces on the water table.  For example, pumping water out of the water table (unconfined aquifer) may dry up near by wells due to the fall in the saturated thickness of the aquifer. This can be prevented by modeling the fall in the water table given a certain pumping rate.  
+Groundwater resource evaluation is crucial to understanding the concept of groundwater yield. This concept is vital because it helps determine the maximum allowable pump rate out of an aquifer and aid in the understanding of the consequnces on the water table.  For example, pumping water out of the water table (unconfined aquifer) may dry up near by wells due to the fall in the saturated thickness of the aquifer. This can be prevented by modeling the fall of the water table given a certain pumping rate.  
 
 Confined Aquifer
 ~~~~~~~~~~~~~~~~
@@ -69,9 +69,11 @@ Lastly, the constant pumping rate, *Q*, is the volume of water discharged from t
 Unconfined Aquifer
 ~~~~~~~~~~~~~~~~~~
 
-Note, there are multiple models to estimate the drawdown in unconfined aquifers with varying degrees of accuracy.  An important difference between a confined and an unconfined aquifer is the hydraulic gradients that are created.  This desrcibes how the water is flowing in the aquifer to the well. 
+Note, there are multiple models to estimate the drawdown in unconfined aquifers with varying degrees of certainty.  An important difference between a confined and an unconfined aquifer is the hydraulic gradients that are created.  This desrcibes how the water is flowing in the aquifer to the well. 
 
-For example, the flow in a confined aquifer is purely horizontal and no dewatering of the geologic system occurs.  The mechanisms for water production in these wells are 1) expansion of the water and 2) compaction of the aquifer.  However, in an unconfined aquifer there is both an induced horizontal and vertical flow.  The water produced in these wells come from confined delivery and the dewatering of the unconfined aquifer.  Hence, there is a new dimensionless coefficent of storage called *specific yield*.  This paramter is always far greater than the storativities of confined aquifers.    
+For example, the flow in a confined aquifer is purely horizontal and no dewatering of the geologic system occurs.  The mechanisms for water production in these wells are 1) expansion of the water and 2) compaction of the aquifer.  
+
+However, in an unconfined aquifer there is both an induced horizontal and vertical flow.  The water produced in these wells come from confined delivery and the dewatering of the unconfined aquifer.  Hence, there is a new dimensionless coefficent of storage called *specific yield*.  This paramter is always far greater than the storativities of confined aquifers.    
 
 There are three approaches to estimate the cone of depression for an unconfined aquifer.  The three approaches are: 
 
