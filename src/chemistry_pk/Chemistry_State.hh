@@ -173,6 +173,10 @@ class Chemistry_State : public PK_State {
   }
 
  protected:
+
+  void InitializeField_(Teuchos::ParameterList& ic_plist, std::string fieldname,
+                        bool sane_default, double default_val);
+
   void SetupSoluteNames_();
   void SetupMineralNames_();
   void SetupSorptionSiteNames_();

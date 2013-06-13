@@ -115,13 +115,16 @@ SUITE(GeochemistryTestsChemistryPK) {
     state_ = Teuchos::rcp(new Amanzi::State(state_parameter_list));
     state_->RegisterDomainMesh(mesh_);
 
-    // create the chemistry state object from the state
-    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(state_parameter_list, state_));
-    state_->Setup();
-    state_->Initialize();
-    
     // create the chemistry parameter list
     chemistry_parameter_list_ = parameter_list.sublist("Chemistry");
+
+    // create the chemistry state object
+    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list_, state_));
+
+    state_->Setup();
+    chemistry_state_->Initialize();
+    state_->Initialize();
+
   }
 
   ChemistryPKTest::~ChemistryPKTest() {

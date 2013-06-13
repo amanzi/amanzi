@@ -26,9 +26,9 @@ class Transport_State : public PK_State {
 
  public:
 
-  explicit Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int);
-  explicit Transport_State(Teuchos::RCP<State> S, const int);
-  explicit Transport_State(State& S, const int);
+  Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int);
+  Transport_State(Teuchos::RCP<State> S, const int);
+  Transport_State(State& S, const int);
   Transport_State(Transport_State& other, PKStateConstructMode mode);
 
   void Initialize();

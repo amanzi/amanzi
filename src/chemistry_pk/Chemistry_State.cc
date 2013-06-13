@@ -22,16 +22,23 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
         const Teuchos::RCP<State>& S) :
     PK_State(std::string("state"), S),
     plist_(plist),
-    number_of_aqueous_components_(-1),
-    number_of_minerals_(-1),
-    number_of_ion_exchange_sites_(-1),
-    number_of_sorption_sites_(-1),
+    number_of_aqueous_components_(0),
+    number_of_minerals_(0),
+    number_of_ion_exchange_sites_(0),
+    number_of_sorption_sites_(0),
     using_sorption_(false),
     using_sorption_isotherms_(false) {
 
   SetupSoluteNames_();
   SetupMineralNames_();
   SetupSorptionSiteNames_();
+
+  // in the old version, this was only in the Block sublist... may need work?
+  if (plist_.isParameter("Cation Exchange Capacity")) {
+    using_sorption_ = true;
+    number_of_ion_exchange_sites_ = 1;
+  }
+
   ParseMeshBlocks_();
   RequireData_();
 }
@@ -411,68 +418,67 @@ void Chemistry_State::RequireData_() {
 }
 
 
+void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
+    std::string fieldname, bool sane_default, double default_val) {
+  // Initialize mineral volume fractions
+  // -- first initialize to a default: this should be a valid default if the
+  // parameter is optional, and non-valid if it is not.
+  S_->GetFieldData(fieldname, name_)->PutScalar(default_val);
+
+  // -- initialize from the ParameterList
+  if (ic_plist.isSublist(fieldname)) {
+    S_->GetField(fieldname, name_)->Initialize(ic_plist.sublist(fieldname));
+  } else if (sane_default) {
+    // -- sane default provided, functional initialization not necessary
+    S_->GetField(fieldname, name_)->set_initialized();
+  }
+}
+
 void Chemistry_State::Initialize() {
-  // initialize the fields that are not initialized, yet
+  // Most things are initialized through State, but State can only manage that
+  // if they are always initialized.  If sane defaults are available, or they
+  // can be derived from other initialized quantities, they are initialized
+  // here, where we can manage that logic.
 
-  if (S_->HasField("free_ion_species")) {
-      free_ion_species()->PutScalar(0.0);
-      S_->GetField("free_ion_species",name_)->set_initialized();
+  // initialize list
+  Teuchos::ParameterList ic_plist = plist_.sublist("initial conditions");
+
+  // Aqueous species:
+  if (number_of_aqueous_components_ > 0) {
+    InitializeField_(ic_plist, "total_component_concentration", false, -1.0);
+    InitializeField_(ic_plist, "free_ion_species", true, 0.0);
+    InitializeField_(ic_plist, "primary_activity_coeff", true, 1.0);
+
+    // Sorption sites: all will have a site density, but we can default to zero
+    if (using_sorption_) {
+      InitializeField_(ic_plist, "total_sorbed", true, 0.0);
+    }
+
+    // Sorption isotherms: Kd required, Langmuir and Freundlich optional
+    if (using_sorption_isotherms_) {
+      InitializeField_(ic_plist, "isotherm_kd", false, -1.0);
+      InitializeField_(ic_plist, "isotherm_freundlich_n", true, 1.0);
+      InitializeField_(ic_plist, "isotherm_langmuir_b", true, 1.0);
+    }
   }
 
-  if (S_->HasField("primary_activity_coeff")) {
-      primary_activity_coeff()->PutScalar(0.0);
-      S_->GetField("primary_activity_coeff",name_)->set_initialized();
+  // Minerals: vol frac and surface areas
+  if (number_of_minerals_ > 0) {
+    InitializeField_(ic_plist, "mineral_volume_fractions", true, 0.0);
+    InitializeField_(ic_plist, "mineral_specific_surface_area", true, 1.0);
   }
 
-  if (S_->HasField("total_sorbed")) {
-      total_sorbed()->PutScalar(0.0);
-      S_->GetField("total_sorbed",name_)->set_initialized();
+  // Ion exchange sites: default to 1
+  if (number_of_ion_exchange_sites_ > 0) {
+    InitializeField_(ic_plist, "ion_exchange_sites", true, 1.0);
+    InitializeField_(ic_plist, "ion_exchange_ref_cation_conc", true, 1.0);
   }
 
-  if (S_->HasField("isotherm_kd")) {
-      isotherm_kd()->PutScalar(0.0);
-      S_->GetField("isotherm_kd",name_)->set_initialized();
+  if (number_of_sorption_sites_ > 0) {
+    InitializeField_(ic_plist, "sorption_sites", true, 1.0);
+    InitializeField_(ic_plist, "surface_complex_free_site_conc", true, 1.0);
   }
 
-  if (S_->HasField("isotherm_freundlich_n")) {
-      isotherm_freundlich_n()->PutScalar(0.0);
-      S_->GetField("isotherm_freundlich_n",name_)->set_initialized();
-  }
-
-  if (S_->HasField("isotherm_langmuir_b")) {
-      isotherm_langmuir_b()->PutScalar(0.0);
-      S_->GetField("isotherm_langmuir_b",name_)->set_initialized();
-  }
-
-  if (S_->HasField("mineral_volume_fractions")) {
-      mineral_volume_fractions()->PutScalar(0.0);
-      S_->GetField("mineral_volume_fractions",name_)->set_initialized();
-  }
-
-  if (S_->HasField("mineral_specific_surface_area")) {
-      mineral_specific_surface_area()->PutScalar(0.0);
-      S_->GetField("mineral_specific_surface_area",name_)->set_initialized();
-  }
-
-  if (S_->HasField("ion_exchange_sites")) {
-      ion_exchange_sites()->PutScalar(0.);
-      S_->GetField("ion_exchange_sites",name_)->set_initialized();
-  }
-
-  if (S_->HasField("ion_exchange_ref_cation_conc")) {
-      ion_exchange_ref_cation_conc()->PutScalar(0.);
-      S_->GetField("ion_exchange_ref_cation_conc",name_)->set_initialized();
-  }
-
-  if (S_->HasField("sorption_sites")) {
-      sorption_sites()->PutScalar(1.);
-      S_->GetField("sorption_sites",name_)->set_initialized();
-  }
-
-  if (S_->HasField("surface_complex_free_site_conc")) {
-      surface_complex_free_site_conc()->PutScalar(0.);
-      S_->GetField("surface_complex_free_site_conc",name_)->set_initialized();
-  }
 }
 
 
@@ -482,9 +488,11 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
   int n_secondary_comps = components.secondary_activity_coeff.size();
   if (n_secondary_comps > 0) {
     // CreateStorageSecondaryActivityCoeff()
-    S_->RequireField("secondary_activity_coeff", name_)
-        ->SetMesh(mesh_)->SetGhosted(false)
+    Teuchos::RCP<CompositeVectorFactory> fac =
+        S_->RequireField("secondary_activity_coeff", name_);
+    fac->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, n_secondary_comps);
+    S_->GetField("secondary_activity_coeff",name_)->SetData(fac->CreateVector());
     S_->GetField("secondary_activity_coeff",name_)->CreateData();
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
   }
