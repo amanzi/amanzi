@@ -136,7 +136,7 @@ void Coordinator::initialize() {
     vis->CreateFiles();
     vis->set_mesh(surface);
     visualization_.push_back(vis);
-    S_->RemoveMesh("surface_3d");
+    // S_->RemoveMesh("surface_3d");
     surface_done = true;
   }
 

@@ -14,10 +14,18 @@ namespace FlowRelations {
 
 ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
-    updated_once_(false) {
+    updated_once_(false), 
+    dynamic_mesh_(false) {
   my_keys_.push_back(plist_.get<std::string>("elevation key", "elevation"));
   my_keys_.push_back(plist_.get<std::string>("slope magnitude key", "slope_magnitude"));
   setLinePrefix(my_keys_[0]+std::string(" evaluator"));
+
+  // If the mesh changes dynamically (e.g. due to the presence of a deformation
+  // pk, then we must make sure that elevation is recomputed every time the 
+  // mesh has been deformed. The indicator for the mesh deformation event is the 
+  // the deformation field.
+  dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
+  if (dynamic_mesh_) dependencies_.insert("deformation");
 }
 
 void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -64,6 +72,23 @@ bool ElevationEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
   }
   return changed;
 }
+
+
+void ElevationEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+  // Ensure my field exists, and claim ownership.
+  for (std::vector<Key>::const_iterator my_key=my_keys_.begin();
+       my_key!=my_keys_.end(); ++my_key) {
+    Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(*my_key, *my_key);
+
+    // check plist for vis or checkpointing control
+    bool io_my_key = plist_.get<bool>(std::string("visualize ")+*my_key, true);
+    S->GetField(*my_key, *my_key)->set_io_vis(io_my_key);
+    bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+*my_key, false);
+    S->GetField(*my_key, *my_key)->set_io_checkpoint(checkpoint_my_key);
+  }
+};
+
+
 
 } //namespace
 } //namespace
