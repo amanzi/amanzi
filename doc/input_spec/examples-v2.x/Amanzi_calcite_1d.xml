@@ -1,0 +1,138 @@
+﻿<amanzi_input version="2.1.0" type="unstructured">
+	<model_description name="1D Calcite Dissolution">
+		<author>Glenn Hammond</author>
+		<units>
+			<length_unit>m</length_unit>
+			<time_unit>y</time_unit>
+			<mass_unit>kg</mass_unit>
+			<concentration_unit>molar</concentration_unit>
+		</units>
+	</model_description>
+	<process_kernels>
+		<flow state="on" process_model="saturated"/>
+		<transport state="on" process_model="implicit upwind"/>
+		<chemsitry state="on" process_model="implicit operator split"/>
+	</process_kernels>
+	</multi_process_coordinator>
+	<!--Time stepping, we start at 1. hour and maximum at 0.25 y-->
+	<!--Final simulation time: 25. y-->
+	<phases>
+		<phase name="aqueous">
+			<eos>False</eos>
+			<viscosity>1.e-3</viscosity>
+			<density>1000.</density>
+			<aqueous_components name="water">
+				<solutes>
+					H+
+					HCO3-
+					Ca++
+				</solutes>
+			</aqueous_components>
+			<coefficient_of_diffusion>1.e-9</coefficient_of_diffusion>
+		</phase>
+		<phase name="solid">
+			<solid_components name="Calcite"/>
+		</phase>
+	</phases>
+	<mesh framework="mstk">
+		<!--GEH: Using 3D domain since I don't know the format for 1D.-->
+		<dimension>3</dimension>
+		<generate>
+			<number_of_cells nx = "100"  ny = "1"  nz = "1"/>
+			<box  low_coordinates = "(0.,0.,0.)" high_coordinates = "(100.,1.,1.)"/>
+		</generate>
+	</mesh>
+	<regions>
+		<region name ="All">
+			<box low_coordinates= "(0.,0.,0.)"     high_coordinates="(100.,1.,1.)"/>
+		</region>
+
+		<region name ="Inlet Boundary">
+			<box low_coordinates= "(0.,0.,0.)"     high_coordinates="(0.,1.,1.)"/>
+		</region>
+
+		<region name ="Outlet Boundary">
+			<box low_coordinates= "(110.,0.,0.)"     high_coordinates="(100.,1.,1.)"/>
+		</region>
+	</regions>
+	<materials>
+		<material name="soil1">
+			<mechanical_properties>
+				<porosity value="0.25"/>
+				<particle density value="2720."/>
+			</mechanical_properties>
+			<permeability x="1.e-12" y="1.e-12" z="1.e-12"/>
+			<!--No capillary pressure or relative permeabilty model due to saturated flow-->
+			<assigned_regions>All</assigned_regions>
+		</material>
+	</materials>
+  	<geochemistry>
+		<reaction_network_filename>calcite_flow_and_tran.in</reaction_network_filename>
+		<constraints>
+			<!-- Provide a list of constraints for various chemistry in system. -->
+                        <!-- Chemistry input needs to be consolidated and migrated to xml file
+                             as funding becomes available -->
+			<constraint name="Initial">
+				<solute name="H+"        value="1.e-8"            type="Free Ion Concentration"/>
+				<solute name="HCO3-"     value="1.e-3"            type="Gas"      gas="CO2(g)"/>
+				<solute name="Ca++"      value="5.e-4"            type="Mineral"  mineral="Calcite"/>
+				<mineral name="Calcite"  volume_fraction="1.e-5"  surface_area ="1."/>
+			</constraint>
+			<!-- Mineral named in constraint = "Initial" because it's used to set initial condition -->
+				<constraint name="Inlet">
+				<solute name="H+"     value="5."        type="pH"/>
+				<solute name="HCO3-"  value="1.e-3"	type="Total Component Concentration"/>
+				<solute name="Ca++"   value="1.e-6"     type="Charge Balance"/>
+			</constraint>
+                        <!-- OR -->
+                        <!-- Advantage is that reaction network and associated constraints are
+                             all in the same place per Glenn and Vicky's discussion 
+                             Consolidating to pflotran is first step towards consolidation  -->
+			<constraint name="Initial" filename="calcite_flow_and_tran.in"/>>
+			<constraint name="Inlet" filename="calcite_flow_and_tran.in"/>>
+		</constraints>
+	</geochemistry>
+	<initial_conditions>
+		<phase name="Aqueous">
+			<initial_condition name="Background Aqueous">
+				<assigned_regions>All</assigned_regions>
+				<component name="water">
+					<pressure value="201325."/>
+				</component>
+				<geochemistry>
+					<constraint name="Initial"/>
+				</geochemistry>
+			</initial_condition>
+    		</phase>
+		<phase name="Solid">
+			<initial_condition name="Background Solid">
+				<assigned_regions>All</assigned_regions>
+				<geochemistry>
+					<constraint name="Initial"/>
+				</geochemistry>
+			</initial_condition>
+		</phase>
+	</initial_conditions>
+	<boundary_conditions>
+		<phase name="Aqueous">
+			<boundary_condition name="Inlet">
+				<assigned_regions>Inlet Boundary</assigned_regions>
+				<component name="water">
+					<inward_volumetric_flux value="1."/>
+				</component>
+				<geochemistry>
+					<constraint name="Inlet" start="0."/>
+				</geochemistry>
+			</boundary_condition>
+			<boundary_condition name="Outlet">
+				<assigned_regions>Outlet Boundary</assigned_regions>
+				<component name="water">
+					<pressure value="201325."/>
+				</component>
+				<geochemistry>
+					<constraint name="Initial" start="0."/>
+				</geochemistry>
+			</boundary_condition>
+		</phase>
+	</boundary_conditions>	
+</amanzi_input>
