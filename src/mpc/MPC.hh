@@ -82,7 +82,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Amanzi::Unstructured_observations* observations;
     
   // visualization
-  Amanzi::Visualization *visualization;
+  Teuchos::Ptr<Amanzi::Visualization> visualization;
   std::vector<std::string> auxnames;
     
   // checkpoint/restart 

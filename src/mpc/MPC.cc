@@ -204,10 +204,10 @@ void MPC::mpc_init() {
   // create the visualization object
   if (parameter_list.isSublist("Visualization Data"))  {
     Teuchos::ParameterList vis_parameter_list = parameter_list.sublist("Visualization Data");
-    visualization = new Amanzi::Visualization(vis_parameter_list, comm);
+    visualization = Teuchos::ptr(new Amanzi::Visualization(vis_parameter_list, comm));
     visualization->CreateFiles();
   } else {  // create a dummy vis object
-    visualization = new Amanzi::Visualization();
+    visualization = Teuchos::ptr(new Amanzi::Visualization());
   }
 
 
@@ -409,6 +409,8 @@ void MPC::cycle_driver() {
 
   // write visualization output as requested
   Amanzi::timer_manager.start("I/O");
+  visualization->set_mesh(mesh_maps);
+  visualization->CreateFiles();
   if (chemistry_enabled) {
 
     // // get the auxillary data from chemistry
@@ -417,7 +419,7 @@ void MPC::cycle_driver() {
     // S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
   } else {
     // always write the initial visualization dump
-    
+    WriteVis(visualization,S.ptr());
     // S->write_vis(*visualization, chemistry_enabled, true);
   }
 
@@ -874,6 +876,9 @@ void MPC::cycle_driver() {
         // write visualization data for timestep if requested
         //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, force);
       } else {
+	if (force) {
+	  WriteVis(visualization,S.ptr());
+	}
         //S->write_vis(*visualization, chemistry_enabled, force);
       }
 
@@ -888,7 +893,9 @@ void MPC::cycle_driver() {
 	    force_checkpoint = true;
 
       // write restart dump if requested
-      //restart->dump_state(*S, force || force_checkpoint);
+      if (force || force_checkpoint) {
+	WriteCheckpoint(restart,S.ptr(),S->time());
+      }
       Amanzi::timer_manager.stop("I/O");
     }
   }
@@ -899,9 +906,9 @@ void MPC::cycle_driver() {
     ++iter;
     S->set_cycle(iter);
     Amanzi::timer_manager.start("I/O");
-    //S->write_vis(*visualization, false, true);
-    
-    //restart->dump_state(*S, true);    
+    WriteVis(visualization,S.ptr());
+
+    WriteCheckpoint(restart,S.ptr(),S->time());
     Amanzi::timer_manager.stop("I/O");
   }
 
@@ -917,10 +924,6 @@ void MPC::cycle_driver() {
     *out << " and Time(y) = "<< S->time()/ (365.25*60*60*24);
     *out << std::endl;
   }
-
-
-  // clean up
-  delete visualization;
 }
 
 
