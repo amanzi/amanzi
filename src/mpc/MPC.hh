@@ -86,7 +86,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   std::vector<std::string> auxnames;
     
   // checkpoint/restart 
-  Amanzi::Checkpoint *restart;
+  Teuchos::Ptr<Amanzi::Checkpoint> restart;
  
   // time period control
   Teuchos::Array<double> reset_times_;

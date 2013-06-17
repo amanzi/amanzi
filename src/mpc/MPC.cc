@@ -94,7 +94,7 @@ void MPC::mpc_init() {
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("state");
     S = Teuchos::rcp(new State(state_parameter_list));
-    S->RegisterDomainMesh(mesh_maps);
+    S->RegisterMesh("domain",mesh_maps);
   }
 
   //
@@ -174,19 +174,6 @@ void MPC::mpc_init() {
   }
 
 
-
-  
-
-
-
-
-
-
-
-
-
-
-
   // done creating auxilary state objects and  process models
 
 
@@ -227,9 +214,9 @@ void MPC::mpc_init() {
   // create the restart object
   if (parameter_list.isSublist("Checkpoint Data")) {
     Teuchos::ParameterList checkpoint_parameter_list = parameter_list.sublist("Checkpoint Data");
-    restart = new Amanzi::Checkpoint(checkpoint_parameter_list, comm);
+    restart = Teuchos::ptr(new Amanzi::Checkpoint(checkpoint_parameter_list, comm));
   } else {
-    restart = new Amanzi::Checkpoint();
+    restart = Teuchos::ptr(new Amanzi::Checkpoint());
   }
 
   // are we restarting from a file?
@@ -435,7 +422,7 @@ void MPC::cycle_driver() {
   }
 
   // write a restart dump if requested (determined in dump_state)
-  // restart->dump_state(*S);
+  WriteCheckpoint(restart,S.ptr(),S->time());
   Amanzi::timer_manager.stop("I/O");
 
   Amanzi::timer_manager.start("Flow PK");
@@ -934,7 +921,6 @@ void MPC::cycle_driver() {
 
   // clean up
   delete visualization;
-  delete restart;
 }
 
 
