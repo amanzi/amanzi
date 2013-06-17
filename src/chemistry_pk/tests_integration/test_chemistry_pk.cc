@@ -170,30 +170,30 @@ SUITE(GeochemistryTestsChemistryPK) {
     CHECK_EQUAL(0, 0);
   }  // end TEST_FIXTURE()
 
-  // TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
-  //   try {
-  //     cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-  //     Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
-  //     cpk_->InitializeChemistry();
-  //   } catch (std::exception e) {
-  //     std::cout << e.what() << std::endl;
-  //     throw e;
-  //   }
-  //   std::vector<std::string> names;
-  //   cpk_->set_chemistry_output_names(&names);
-  //   CHECK_EQUAL(names.at(0), "pH");
-  // }  // end TEST_FIXTURE()
+  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
+    try {
+      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+      Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
+      cpk_->InitializeChemistry();
+    } catch (std::exception e) {
+      std::cout << e.what() << std::endl;
+      throw e;
+    }
+    std::vector<std::string> names;
+    cpk_->set_chemistry_output_names(&names);
+    CHECK_EQUAL(names.at(0), "pH");
+  }  // end TEST_FIXTURE()
 
-  // TEST_FIXTURE(ChemistryPKTest, ChemistryPK_set_component_names) {
-  //   cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-  //   Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
-  //   cpk_->InitializeChemistry();
-  //   std::vector<std::string> names;
-  //   cpk_->set_component_names(&names);
-  //   CHECK_EQUAL(names.at(0), "Al+++");
-  //   CHECK_EQUAL(names.at(1), "H+");
-  //   CHECK_EQUAL(names.at(2), "HPO4--");
-  //   CHECK_EQUAL(names.at(3), "SiO2(aq)");
-  //   CHECK_EQUAL(names.at(4), "UO2++");
-  // }  // end TEST_FIXTURE()
+  TEST_FIXTURE(ChemistryPKTest, ChemistryPK_set_component_names) {
+    cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+    Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
+    cpk_->InitializeChemistry();
+    std::vector<std::string> names;
+    cpk_->set_component_names(&names);
+    CHECK_EQUAL(names.at(0), "Al+++");
+    CHECK_EQUAL(names.at(1), "H+");
+    CHECK_EQUAL(names.at(2), "HPO4--");
+    CHECK_EQUAL(names.at(3), "SiO2(aq)");
+    CHECK_EQUAL(names.at(4), "UO2++");
+  }  // end TEST_FIXTURE()
 }  // end SUITE(GeochemistryTestChemistryPK)
