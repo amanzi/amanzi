@@ -273,7 +273,7 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
 void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    printf("Flow PK: saving krel-pc curves in file flow_dt_history.txt...\n");
+    printf("Flow PK: saving time history in file flow_dt_history.txt...\n");
 
     char file_name[30];
     sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);
