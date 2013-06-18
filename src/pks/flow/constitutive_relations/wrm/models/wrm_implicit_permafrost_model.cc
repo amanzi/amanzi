@@ -1,6 +1,7 @@
 #include <boost/math/tools/roots.hpp>
 
 #include "dbc.hh"
+#include "errors.hh"
 #include "wrm.hh"
 #include "wrm_implicit_permafrost_model.hh"
 
@@ -45,8 +46,15 @@ void WRMImplicitPermafrostModel::saturations(double pc_liq, double pc_ice,
   uintmax_t max_it(max_it_);
   double left = 0.;
   double right = 1.;
-  std::pair<double,double> result =
-      boost::math::tools::toms748_solve(func, left, right, tol, max_it);
+  std::pair<double,double> result;
+  try {
+    result =
+        boost::math::tools::toms748_solve(func, left, right, tol, max_it);
+  } catch (const std::exception& e) {
+    std::cout << "WRMImplicitPermafrostModel failed: " << e.what() << std::endl;
+    Exceptions::amanzi_throw(Errors::CutTimeStep());
+  }
+
   ASSERT(max_it < max_it_);
   //  std::cout << " took " << max_it << " steps";
   sats[2] = result.first;

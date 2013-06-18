@@ -71,8 +71,6 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     ewc_->set_model(model);
     ewc_->setup(S);
   }
-
-
 }
 
 void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {

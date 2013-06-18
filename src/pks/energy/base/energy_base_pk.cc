@@ -340,12 +340,12 @@ bool EnergyBase::is_admissible(Teuchos::RCP<const TreeVector> up) {
   int ierr = temp_v.MinValue(&minT);
   ierr |= temp_v.MaxValue(&maxT);
 
-  if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_EXTREME,true)) {
+  if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
     *out_ << "    Admissible T? (min/max): " << minT << ",  " << maxT << std::endl;
   }
 
   if (ierr || minT < 200.0 || maxT > 300.0) {
-    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_MEDIUM,true)) {
       *out_ << " is not admissible, as it is not within bounds of constitutive models: min(T) = " << minT << ", max(T) = " << maxT << std::endl;
     }
     return false;

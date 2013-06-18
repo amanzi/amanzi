@@ -178,6 +178,9 @@ protected:
   // using constraint equations scaled by rel perm?
   bool scaled_constraint_;
 
+  // scale for perm
+  double perm_scale_;
+
  private:
   // factory registration
   static RegisteredPKFactory<Richards> reg_;

@@ -123,6 +123,7 @@ void EOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       int count = dens_v.MyLength();
       for (int id=0; id!=count; ++id) {
         dens_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres_v[0][id]);
+        ASSERT(dens_v[0][id] > 0.);
       }
     }
   }
@@ -146,6 +147,7 @@ void EOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         int count = dens_v.MyLength();
         for (int id=0; id!=count; ++id) {
           dens_v[0][id] = eos_->MassDensity(temp_v[0][id], pres_v[0][id]);
+          ASSERT(dens_v[0][id] > 0.);
         }
       }
     }

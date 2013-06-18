@@ -59,7 +59,7 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
           domain+std::string("cell_volume"));
   Key poro_default;
   if (domain.size() == 0) {
-    poro_default = "porosity";
+    poro_default = "base_porosity";
   } else {
     poro_default = "";
   }
@@ -166,17 +166,19 @@ void MPCDelegateEWC::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 bool MPCDelegateEWC::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   bool modified = false;
+  double dt_prev = S_inter_->time() - time_prev2_;
+
   if (predictor_type_ == PREDICTOR_EWC) {
-    if (S_->time() == 0.) { // this needs to be fixed!
-      return false;
-    } else {
+    if (dt_prev > 0.) { // this needs to be fixed!
       modified = modify_predictor_ewc_(h,up);
+    } else {
+      return false;
     }
   } else if (predictor_type_ == PREDICTOR_SMART_EWC) {
-    if (S_->time() == 0.) { // this needs to be fixed!
-      return false;
-    } else {
+    if (dt_prev > 0.) { // this needs to be fixed!
       modified = modify_predictor_smart_ewc_(h,up);
+    } else {
+      return false;
     }
   }
   return modified;
@@ -248,9 +250,9 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
 
 
   // -- extra data
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
+  const Epetra_MultiVector& poro = *S_next_->GetFieldData(poro_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
   double wc_scale = 10.;
@@ -325,9 +327,9 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
 
 
   // -- extra data
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData("porosity")
+  const Epetra_MultiVector& poro = *S_next_->GetFieldData(poro_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
   double wc_scale = 10.;

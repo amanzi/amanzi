@@ -28,6 +28,8 @@
 #include "iem.hh"
 #include "iem_water_vapor_evaluator.hh"
 #include "iem_water_vapor.hh"
+#include "compressible_porosity_evaluator.hh"
+#include "compressible_porosity_model.hh"
 
 #include "permafrost_model.hh"
 
@@ -125,6 +127,14 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
   ASSERT(iem_rock_me != Teuchos::null);
   rock_iem_ = iem_rock_me->get_IEM();
+
+  // -- porosity
+  me = S->GetFieldEvaluator("porosity");
+  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityEvaluator> poro_me =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::CompressiblePorosityEvaluator>(me);
+  ASSERT(poro_me != Teuchos::null);
+  poro_model_ = poro_me->get_Model();
+
 }
 
 
@@ -316,10 +326,11 @@ bool PermafrostModel::IsSetUp_() {
 }
 
 
-int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, double poro, AmanziGeometry::Point& result) {
+int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, double base_poro, AmanziGeometry::Point& result) {
   int ierr = 0;
 
   try {
+    double poro = poro_model_->Porosity(base_poro, p, p_atm_);
     double eff_p = std::max(p_atm_, p);
 
     double rho_l = liquid_eos_->MolarDensity(T,eff_p);

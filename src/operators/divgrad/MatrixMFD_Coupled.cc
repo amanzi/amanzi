@@ -154,8 +154,6 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   }
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Xf = " << Xf[0][1649*2] << ", " << Xf[0][1649*2+1] << std::endl;
-
   if (prec_method_ == TRILINOS_ML) {
     ierr = ml_prec_->ApplyInverse(Xf, Yf);
   } else if (prec_method_ == TRILINOS_ILU) {
@@ -172,17 +170,10 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   ASSERT(!ierr);
 
 
-  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Yf = " << Yf[0][1649*2] << ", " << Yf[0][1649*2+1] << std::endl;
-
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
   // Yc <-- A2f2c * Yf
   ierr = A2f2c_->Multiply(false, Yf, Yc);
   ASSERT(!ierr);
-
-
-  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Yc = " << Yc[0][399*2] << ", " << Yc[0][399*2+1] << std::endl;
 
 
   // Yc -= (x_Ac,x_Bc)^T
@@ -196,9 +187,6 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   // Yc <-- -Yc
   Yc.Scale(-1.0);
 
-
-  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "Yc = " << Yc[0][399*2] << ", " << Yc[0][399*2+1] << std::endl;
 
   // pull Y data
   Teuchos::RCP<CompositeVector> YA = Y->SubVector(0)->data();
@@ -217,20 +205,10 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
         + A2c2c_cells_Inv_[c](1,1)*Yc[0][2*c + 1];
   }
 
-  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "YA_c = " << YA_c[0][399] << std::endl;
-  std::cout << "YB_c = " << YB_c[0][399] << std::endl;
-
-
   for (int f=0; f!=nfaces; ++f){
     YA_f[0][f] = Yf[0][2*f];
     YB_f[0][f] = Yf[0][2*f + 1];
   }
-
-  // Apply Schur Inverse,  Yf = Schur^-1 * Xf
-  std::cout << "YA_f = " << YA_f[0][1649] << std::endl;
-  std::cout << "YB_f = " << YB_f[0][1649] << std::endl;
-
 
 }
 
@@ -293,14 +271,15 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
 
     // Invert the cell block
     double det_cell = Acc[c] * Bcc[c] - Ccc[0][c] * Dcc[0][c];
-    if (det_cell != 0.) {
+    if (std::abs(det_cell) > 1.e-30) {
       cell_inv(0, 0) = Bcc[c]/det_cell;
       cell_inv(1, 1) = Acc[c]/det_cell;
       cell_inv(0, 1) = -Ccc[0][c]/det_cell;
       cell_inv(1, 0) = -Dcc[0][c]/det_cell;
     } else {
-      Errors::Message m("Division by zero: determinant of the cell block is zero");
-      Exceptions::amanzi_throw(m);
+      std::cout << "MatrixMFD_Coupled: Division by zero: determinant of the cell block is zero" << std::endl;
+      //      ASSERT(0);
+      Exceptions::amanzi_throw(Errors::CutTimeStep());
     }
     A2c2c_cells_Inv_.push_back(cell_inv);
 
@@ -309,8 +288,9 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
       for (int j=0; j!=nfaces; ++j) {
         S2f2f(i, j) = Aff[c](i, j) - Afc[c](i)*cell_inv(0, 0)*Acf[c](j);
         if ((i == j) && std::abs(S2f2f(i,j)) < 1.e-40) {
-          Errors::Message m("Cut time step");
-          Exceptions::amanzi_throw(m);
+          std::cout << "MatrixMFD_Coupled: Schur complement pressure diagonal is zero" << std::endl;
+          //          ASSERT(0);
+          //          Exceptions::amanzi_throw(Errors::CutTimeStep());
         }
 
       }
@@ -319,12 +299,20 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
     for (int i=0; i!=nfaces; ++i) {
       for (int j=0; j!=nfaces; ++j) {
         S2f2f(nfaces + i, nfaces + j) = Bff[c](i, j) - Bfc[c](i)*cell_inv(1, 1)*Bcf[c](j);
+        if ((i == j) && std::abs(S2f2f(nfaces+i,nfaces+j)) < 1.e-40) {
+          std::cout << "MatrixMFD_Coupled: Schur complement temperature diagonal is zero" << std::endl;
+          //          ASSERT(0);
+          //          Exceptions::amanzi_throw(Errors::CutTimeStep());
+        }
       }
     }
 
     for (int i=0; i!=nfaces; ++i) {
       for (int j=0; j!=nfaces; ++j) {
         S2f2f(i, nfaces + j) = - Afc[c](i)*cell_inv(0, 1)*Bcf[c](j);
+        if (std::abs(S2f2f(i,nfaces+j)) > 1.e+21) {
+          std::cout << "BREAKING!" << std::endl;
+        }
       }
     }
 
@@ -333,6 +321,10 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
         S2f2f(nfaces + i, j) = - Bfc[c](i)*cell_inv(1, 0)*Acf[c](j);
       }
     }
+
+
+
+
 
     // Make the local A2c2f
     for (int i=0; i!=nfaces; ++i) {
