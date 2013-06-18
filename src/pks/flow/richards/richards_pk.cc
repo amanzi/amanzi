@@ -56,7 +56,8 @@ Richards::Richards(Teuchos::ParameterList& plist,
     upwind_from_prev_flux_(false),
     precon_wc_(false),
     niter_(0),
-    dynamic_mesh_(false)
+    dynamic_mesh_(false),
+    perm_scale_(1.)
 {
   // set a few parameters before setup
   plist_.set("primary variable key", "pressure");
@@ -141,6 +142,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   for (int c=0; c!=c_owned; ++c) {
     (*K_)[c].init(mesh_->space_dimension(),1);
   }
+  // scaling for permeability
+  perm_scale_ = plist_.get<double>("permeability rescaling", 1.0);
+
 
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
@@ -524,7 +528,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       // Create the stiffness matrix without a rel perm (just n/mu)
       for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-        (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c];
+        (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c] / perm_scale_;
       }
       uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
       matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
@@ -589,7 +593,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   // Scale cells by n/mu
   if (update_perm) {
     for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-      (*uw_rel_perm)("cell",c) *= n_liq[0][c] / visc[0][c];
+      (*uw_rel_perm)("cell",c) *= n_liq[0][c] / visc[0][c] / perm_scale_;
     }
   }
 

@@ -21,7 +21,9 @@
 namespace Amanzi {
 
 namespace Flow { namespace FlowRelations { class WRMPermafrostModel; } }
-namespace Flow { namespace FlowRelations { class PCIceWater; class PCLiqAtm; } }
+namespace Flow { namespace FlowRelations { class PCIceWater;
+                                           class PCLiqAtm;
+                                           class CompressiblePorosityModel; } }
 namespace Energy { namespace EnergyRelations { class IEM; class IEMWaterVapor;} }
 namespace Relations { class EOS; class VaporPressureRelation; }
 
@@ -59,6 +61,7 @@ class PermafrostModel : public EWCModel {
   Teuchos::RCP<Energy::EnergyRelations::IEMWaterVapor> gas_iem_;
   Teuchos::RCP<Energy::EnergyRelations::IEM> ice_iem_;
   Teuchos::RCP<Energy::EnergyRelations::IEM> rock_iem_;
+  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModel> poro_model_;
   double rho_rock_;
   double p_atm_;
 

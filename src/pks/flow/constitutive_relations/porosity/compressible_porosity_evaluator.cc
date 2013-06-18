@@ -33,7 +33,7 @@ CompressiblePorosityEvaluator::CompressiblePorosityEvaluator(Teuchos::ParameterL
 
   ASSERT(plist_.isSublist("compressible porosity model parameters"));
   model_ = Teuchos::rcp(new CompressiblePorosityModel(
-      plist_.sublist("compressible porosity model parameter")));
+      plist_.sublist("compressible porosity model parameters")));
 
 }
 

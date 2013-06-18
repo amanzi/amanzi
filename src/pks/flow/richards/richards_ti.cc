@@ -403,10 +403,15 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   // Cell error is based upon error in mass conservation relative to
   // the current water content
   double enorm_cell(0.);
+  int bad_cell = -1;
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
     double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_*std::abs(wc[0][c]));
-    enorm_cell = std::max<double>(enorm_cell, tmp);
+    if (tmp > enorm_cell) {
+      enorm_cell = tmp;
+      bad_cell = c;
+    }
+    //    enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
   // Face error is mismatch in flux, so relative to flux.
@@ -430,7 +435,8 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
+    *out_ << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
+    //    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
     *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
   }
 

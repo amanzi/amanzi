@@ -24,15 +24,16 @@ class CompressiblePorosityModel {
   }
 
   virtual double Porosity(double base_poro, double pres, double patm) {
-    return pres > patm ? (pres-patm)*compressibility_ + base_poro : base_poro;
+    double poro = pres > patm ? (pres-patm)*compressibility_ + base_poro : base_poro;
+    return poro > 1.0 ? 1.0 : poro;
   }
 
   virtual double DPorosityDPressure(double base_poro, double pres, double patm) {
-    return pres > patm ? compressibility_ : 0.;
+    return pres > patm ? (Porosity(base_poro, pres, patm) > 1.0 ? 0. : compressibility_) : 0.;
   }
 
   virtual double DPorosityDBasePorosity(double base_poro, double pres, double patm) {
-    return 1.;
+    return pres > patm ? (Porosity(base_poro, pres, patm) > 1.0 ? 0. : 1.) : 1.;
   }
 
  protected:
