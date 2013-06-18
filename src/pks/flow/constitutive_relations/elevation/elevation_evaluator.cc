@@ -24,7 +24,7 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
   // pk, then we must make sure that elevation is recomputed every time the 
   // mesh has been deformed. The indicator for the mesh deformation event is the 
   // the deformation field.
-  dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
+  dynamic_mesh_ = plist_.get<bool>("dynamic mesh",true);
   if (dynamic_mesh_) dependencies_.insert("deformation");
 }
 
