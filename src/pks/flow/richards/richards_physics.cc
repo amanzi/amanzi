@@ -80,26 +80,27 @@ void Richards::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
   // currently assumes isotropic perm, should be updated
   S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> perm = S->GetFieldData("permeability");
-  int ncells = perm->size("cell");
-  int ndofs = perm->num_dofs("cell");
+  const Epetra_MultiVector& perm = *S->GetFieldData("permeability")
+      ->ViewComponent("cell",false);
+  int ncells = perm.MyLength();
+  int ndofs = perm.NumVectors();
 
   if (ndofs == 1) { // isotropic
     for (int c=0; c!=ncells; ++c) {
-      (*K_)[c](0, 0) = (*perm)("cell",c);
+      (*K_)[c](0, 0) = perm[0][c] * perm_scale_;
     }
   } else if (ndofs == 2 && S->GetMesh()->space_dimension() == 3) {
     // horizontal and vertical perms
     for (int c=0; c!=ncells; ++c) {
-      (*K_)[c](0, 0) = (*perm)("cell",0,c);
-      (*K_)[c](1, 1) = (*perm)("cell",0,c);
-      (*K_)[c](2, 2) = (*perm)("cell",1,c);
+      (*K_)[c](0, 0) = perm[0][c] * perm_scale_;
+      (*K_)[c](1, 1) = perm[0][c] * perm_scale_;
+      (*K_)[c](2, 2) = perm[1][c] * perm_scale_;
     }
   } else if (ndofs == S->GetMesh()->space_dimension()) {
     // diagonal tensor
     for (int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
       for (int c=0; c!=ncells; ++c) {
-        (*K_)[c](lcv_dof, lcv_dof) = (*perm)("cell",lcv_dof,c);
+        (*K_)[c](lcv_dof, lcv_dof) = perm[lcv_dof][c] * perm_scale_;
       }
     }
   } else {

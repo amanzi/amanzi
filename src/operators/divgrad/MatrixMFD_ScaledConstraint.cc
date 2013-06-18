@@ -101,6 +101,13 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
       Aff_cells_.push_back(Bff);
       Afc_cells_.push_back(Bfc);
       Acf_cells_.push_back(Bcf);
+
+      if (matsum < 0.) {
+        std::cout << "MatrixMFD_ScaledConstraint: local Acc < 0" << std::endl;
+        ASSERT(0);
+        Exceptions::amanzi_throw(Errors::CutTimeStep());
+      }
+
       Acc_cells_.push_back(matsum);
     }
   }

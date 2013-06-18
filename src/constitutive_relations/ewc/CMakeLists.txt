@@ -7,6 +7,7 @@
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/porosity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 
 add_library(relations_ewc
