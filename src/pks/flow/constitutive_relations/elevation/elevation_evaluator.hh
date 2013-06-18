@@ -37,8 +37,11 @@ class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
 
   virtual bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request);
 
- protected:
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+
+protected:
   bool updated_once_;
+  bool dynamic_mesh_;
 
 };
 

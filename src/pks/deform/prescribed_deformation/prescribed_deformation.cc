@@ -1,4 +1,3 @@
-
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
@@ -114,15 +113,22 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
 
 bool PrescribedDeformation::advance(double dt) {
 
+  if (prescribed_deformation_case_ == 0) return false;
+
   AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S_next_->GetMesh());
-  
+  AmanziMesh::Mesh * write_access_surface_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S_next_->GetMesh("surface"));
+  AmanziMesh::Mesh * write_access_surface3d_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S_next_->GetMesh("surface_3d"));
+
+
   double ss = S_next_->time();
   double ss0 = S_->time();
 
-  std::cout << "Advancing from " << ss0 << " to " << ss << std::endl;
+  //std::cout << "Advancing from " << ss0 << " to " << ss << std::endl;
 
   AmanziGeometry::Point_List newpos, finpos;
-  Entity_ID_List nodeids;  
+  AmanziGeometry::Point_List surface_newpos, surface_finpos;
+  AmanziGeometry::Point_List surface3d_newpos, surface3d_finpos;
+  Entity_ID_List nodeids, surface_nodeids, surface3d_nodeids; 
   Amanzi::AmanziGeometry::Point coords, new_coords;
 
 
@@ -133,10 +139,10 @@ bool PrescribedDeformation::advance(double dt) {
         double thickness = 0.9 + 0.1*std::cos( ss / (365.25*24*60*60) * 2.0*M_PI );   
         double thickness0 = 0.9 + 0.1*std::cos( ss0 / (365.25*24*60*60) * 2.0*M_PI );
         std::cout << std::setprecision(16);
-        std::cout << "  thicknesses: " << thickness << ", " << thickness0 << std::endl;
+        // std::cout << "  thicknesses: " << thickness << ", " << thickness0 << std::endl;
         
         double factor = thickness/thickness0;
-        std::cout << "SETTING factor = " << factor << std::endl;
+        // std::cout << "SETTING factor = " << factor << std::endl;
         
         // get space dimensions
         int dim = write_access_mesh_->space_dimension();
@@ -169,7 +175,7 @@ bool PrescribedDeformation::advance(double dt) {
       
     case 2: // this is denting the the mesh with a gaussian that is centered at (x,y) = (0,0)
       {
-        tmax_ = 3e10;
+        tmax_ = 3e7;
         sigma_ = .1;
         mag_ = 1.0;
         
@@ -211,15 +217,47 @@ bool PrescribedDeformation::advance(double dt) {
   
   // deform the mesh
   write_access_mesh_->deform( nodeids, newpos, true, &finpos); // deforms the mesh itself
-  solution_evaluator_->SetFieldAsChanged(S_next_.ptr()); // mark the placeholder evaluator as changed
+  
 
+  // now we have to adapt the surface mesh to the new volume mesh
+  // extract the correct new coordinates for the surface from the domain
+  // mesh and update the surface mesh accordingly
+  int nV = write_access_surface_mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
+                                                    Amanzi::AmanziMesh::OWNED);
+  AmanziGeometry::Point coord_domain(3);
+  AmanziGeometry::Point coord_surface(2);
+
+  for (int iV=0; iV<nV; iV++) {
+    // get the coords of the node
+    AmanziGeometry::Point coord(3);
+    int node = write_access_surface_mesh_->entity_get_parent(AmanziMesh::NODE, iV);
+    write_access_mesh_->node_get_coordinates(node, &coord_domain);
+    
+    // surface points are two dimensional
+    coord_surface[0] = coord_domain[0];
+    coord_surface[1] = coord_domain[1];
+    
+    surface_nodeids.push_back(iV);
+    surface_newpos.push_back(coord_surface);
+    
+    surface3d_nodeids.push_back(iV);
+    surface3d_newpos.push_back(coord_domain);
+  }
+  // now deform the surface meshes, note that we set the keep_valid flag to false, since
+  // we want the surface mesh to exactly mirror the domain mesh
+  write_access_surface_mesh_->deform( surface_nodeids, surface_newpos, false, &surface_finpos); 
+  write_access_surface3d_mesh_->deform( surface3d_nodeids, surface3d_newpos, false, &surface_finpos);
+
+
+
+  solution_evaluator_->SetFieldAsChanged(S_next_.ptr()); // mark the placeholder evaluator as changed
 
   // update vertex coordinates in state
   Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
     ->ViewComponent("node",false);
   int dim = write_access_mesh_->space_dimension();
-  int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
-					    Amanzi::AmanziMesh::OWNED);  
+  nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
+                                        Amanzi::AmanziMesh::OWNED);  
   // loop over vertices and update vc
   for (int iV=0; iV<nV; iV++) {
     // get the coords of the node
