@@ -76,6 +76,9 @@ class MatrixMFD_Coupled : public Matrix {
     blockA_ = blockA;
     blockB_ = blockB;
   }
+  Teuchos::RCP<const Epetra_FEVbrMatrix> Schur() {
+    return P2f2f_;
+  }
 
   virtual void Apply(const TreeVector& X,
                      const Teuchos::Ptr<TreeVector>& Y) const;

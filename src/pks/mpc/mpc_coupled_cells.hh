@@ -34,6 +34,7 @@ d_temperature and d_energy / d_pressure.
 #ifndef MPC_COUPLED_CELLS_HH_
 #define MPC_COUPLED_CELLS_HH_
 
+#include "MatrixMFD_Coupled.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
