@@ -97,43 +97,26 @@ void MPC::mpc_init() {
     S->RegisterMesh("domain",mesh_maps);
   }
 
-  //
+  
   // create auxilary state objects for the process models
-  //
+  
 
   // chemistry...
-  // if (chemistry_enabled) {
-  //   if (parameter_list.isSublist("Chemistry")) {
-  //     try {
-  //       CS = Teuchos::rcp( new Chemistry_State( S ) );
-
-  //       Teuchos::ParameterList chemistry_parameter_list =
-  //           parameter_list.sublist("Chemistry");
-
-  //       CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
-  //     } catch (const ChemistryException& chem_error) {
-  //       std::ostringstream error_message;
-  //       error_message << "MPC:mpc_init(): error... Chemistry_PK() returned an error status: ";
-  //       error_message << chem_error.what();
-  //       Errors::Message message(error_message.str());
-  //       Exceptions::amanzi_throw(message);
-  //     }
-  //   } else {
-  //     Errors::Message message("MPC::mpc_init() : XML input file must contain a \'Chemistry\' section if the chemistry process kernel is enabled.");
-  //     Exceptions::amanzi_throw(message);
-  //   }
-  // }
-
+  if (chemistry_enabled) {
+    Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");    
+    CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, S ) );
+  }
+      
   // transport...
   if (transport_enabled) {
-    TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S,1));
+    TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S,5));
   }
 
   // transport and chemistry...
-  // chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
-  // if (transport_enabled && chemistry_enabled) {
-  //   chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
-  // }
+  chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
+  if (transport_enabled && chemistry_enabled) {
+    chem_trans_dt_ratio = parameter_list.sublist("MPC").get<double>("max chemistry to transport timestep ratio",CHEM_TRANS_DT_RATIO);
+  }
 
   // flow...
   if (flow_enabled) {
@@ -143,8 +126,27 @@ void MPC::mpc_init() {
   if (flow_model == "Steady State Richards") {
     *out << "Flow will be off during the transient phase" << std::endl;
   }
-  
+
   S->Setup();
+  
+  if (chemistry_enabled) {
+    CS->Initialize();
+  }
+  if (transport_enabled) {
+    TS->Initialize();
+  }
+  if (flow_enabled) {
+    FS->Initialize();
+  }
+
+  S->Initialize();
+ 
+  if (chemistry_enabled) {
+    Teuchos::ParameterList chemistry_parameter_list =
+      parameter_list.sublist("Chemistry");
+    CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
+    CPK->InitializeChemistry();
+  }
 
   if (transport_enabled) {
     Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
@@ -154,8 +156,7 @@ void MPC::mpc_init() {
     TPK->InitPK();
   }
     
-  if (flow_enabled) {
-    
+  if (flow_enabled) { 
     flow_model = mpc_parameter_list.get<string>("Flow model", "Darcy");
     if (flow_model == "Darcy") {
       FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(parameter_list, FS));
@@ -173,23 +174,8 @@ void MPC::mpc_init() {
     FPK->InitPK();
   }
 
-
+ 
   // done creating auxilary state objects and  process models
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

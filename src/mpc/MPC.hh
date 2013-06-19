@@ -7,8 +7,8 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
 #include "State.hh"
-//#include "chemistry_state.hh"
-//#include "chemistry_pk.hh"
+#include "Chemistry_State.hh"
+#include "chemistry_pk.hh"
 #include "Transport_State.hh"
 #include "Transport_PK.hh"
 #include "Flow_State.hh"
@@ -40,7 +40,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
 
   // states
   Teuchos::RCP<State> S;
-  // Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
+  Teuchos::RCP<AmanziChemistry::Chemistry_State> CS;
   Teuchos::RCP<AmanziTransport::Transport_State> TS; 
   Teuchos::RCP<AmanziFlow::Flow_State> FS;
     
@@ -52,7 +52,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
     
   // process kernels
-  // Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
+  Teuchos::RCP<AmanziChemistry::Chemistry_PK> CPK;
   Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
   Teuchos::RCP<AmanziFlow::Flow_PK> FPK; 
     

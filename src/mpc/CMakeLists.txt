@@ -83,7 +83,7 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs mpc flow transport state mesh_factory geometry whetstone mesh_functions functions)
+    set(amanzi_libs mpc flow transport chemistry_pk state mesh_factory geometry whetstone mesh_functions functions)
     
     if ( ENABLE_MSTK_Mesh )
         # Test: mpc-mstk
