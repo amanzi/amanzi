@@ -18,9 +18,8 @@ Utils::RegisteredFactory<FieldEvaluator,PorosityEvaluator> PorosityEvaluator::fa
 PorosityEvaluator::PorosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  my_key_ = "porosity";
   setLinePrefix(my_key_+std::string(" evaluator"));
-  
+
   // add dependency to cell volume
   dependencies_.insert("cell_volume");
   dependencies_.insert("deformation");
@@ -41,7 +40,7 @@ PorosityEvaluator::Clone() const {
 void PorosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  Epetra_MultiVector& rho_c = *S->GetFieldData("porosity",my_key_)
+  Epetra_MultiVector& phi_c = *S->GetFieldData(my_key_,my_key_)
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& deformation_c = *S->GetFieldData("deformation")
       ->ViewComponent("cell",false);
@@ -49,10 +48,10 @@ void PorosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       ->ViewComponent("cell",false);
 
   // deformation actually stores rock_volume_old
-  // new rho = 1 - rock_vol_old / CV_new
-  int ncells = rho_c.MyLength();
+  // new phi = 1 - rock_vol_old / CV_new
+  int ncells = phi_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    rho_c[0][c] = 1. - deformation_c[0][c] / cv[0][c];
+    phi_c[0][c] = 1. - deformation_c[0][c] / cv[0][c];
   }
 
 }
