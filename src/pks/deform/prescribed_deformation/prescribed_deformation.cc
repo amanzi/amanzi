@@ -118,7 +118,8 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize functional parameters
   if (prescribed_deformation_case_ == 2 ||
-      prescribed_deformation_case_ == 3) {
+      prescribed_deformation_case_ == 3 || 
+      prescribed_deformation_case_ == 4) {
     tmax_ = plist_.get<double>("gaussian deformation time", 3.e7);
     sigma_ = plist_.get<double>("gaussian deformation sigma", 1.0);
     mag_ = plist_.get<double>("gaussian deformation amplitude", 3.0);
@@ -264,7 +265,41 @@ bool PrescribedDeformation::advance(double dt) {
         }
       }
       break;
+    case 4: // this is denting the the mesh with a gaussian that is centered at (x,y) = (0,0)
+      {
+        // get space dimensions
+        int dim = write_access_mesh_->space_dimension();
 
+        // number of vertices
+        int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+                Amanzi::AmanziMesh::OWNED);
+
+        coords.init(dim);
+        new_coords.init(dim);
+
+        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+          *out_ << std::setprecision(16);
+          *out_ << "  z-coord (0,0) = " << deformation_fn_4(0.,0.,z0_,ss0) << std::endl;
+        }
+
+        for (int iV=0; iV<nV; iV++) {
+
+          // get the coords of the node
+          write_access_mesh_->node_get_coordinates(iV,&coords);
+
+          for ( int s=0; s<dim-1; ++s ) {
+            new_coords[s] = coords[s];
+          }
+
+          // push the point down in z-direction
+          new_coords[dim-1] = coords[dim-1] + deformation_fn_4(coords[0],coords[1],coords[2],ss0) - deformation_fn_4(coords[0],coords[1],coords[2],ss);
+
+          // puch back for deform method
+          nodeids.push_back(iV);
+          newpos.push_back( new_coords );
+        }
+      }
+      break;
   }
 
 
@@ -356,6 +391,24 @@ double PrescribedDeformation::deformation_fn_2 (double x, double y, double t) {
 double PrescribedDeformation::deformation_fn_3 (double x, double y, double z, double t) {
   return std::min(1., t/tmax_) * mag_* z/z0_ * std::exp(- (x*x + y*y)/(2*sigma_*sigma_));
 }
+
+double PrescribedDeformation::deformation_fn_4 (double x, double y, double z, double t) {
+
+  double fx0 = std::exp(- x*x / (2.0 *sigma_*sigma_) );
+  double fx1 = std::exp(- (x-10.0)*(x-10.0) / (2.0 *sigma_*sigma_) );
+  double fy0 = std::exp(- y*y / (2.0 *sigma_*sigma_) );
+  double fy1 = std::exp(- (y-10.0)*(y-10.0) / (2.0 *sigma_*sigma_) );
+
+  double fx0y0 = std::exp(- (x*x+y*y) / (2.0 *sigma_*sigma_) );
+  double fx0y1 = std::exp(- (x*x+(y-10.0)*(y-10.0)) / (2.0 *sigma_*sigma_) ); 
+  double fx1y1 = std::exp(- ((x-10.0)*(x-10.0)+(y-10.0)*(y-10.0)) / (2.0 *sigma_*sigma_) );  
+  double fx1y0 = std::exp(- ((x-10.0)*(x-10.0)+y*y) / (2.0 *sigma_*sigma_) );    
+
+  return std::min(1., t/tmax_) * mag_ * z/z0_ * (fx0+fx1+fy0+fy1-fx0y0-fx0y1-fx1y1-fx1y0);
+
+}
+
+
 
 
 
