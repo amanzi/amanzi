@@ -55,6 +55,10 @@ Calculated hydraulic conductivity:
 **Pressure p(x,z)** = 
 :math:`[ h(x) - z ]\rho g`
 
+Tables are the one weakness in reStructured text, but they are 
+reasonable.  We will autogenerate these from the results of the
+Amanzi run and the analytic solution calculations.
+
 +------+------+------+-----------------------+
 | x [m]| z [m]| h [m]|       P [MPa]         |
 +======+======+======+========+==============+
@@ -74,7 +78,16 @@ Calculated hydraulic conductivity:
 Visualization
 ~~~~~~~~~~~~~~
 
-.. image:: 1d_flow.png
+Here is an image created with visit.  It may not be the prettiest but
+you get the idea.
+
+.. image:: single-phase-steady.png
+   :scale: 50%
+
+So how do we make it prettier?  We'll use matplotlib for 2D slices
+and some simple 3D plots of surfaces (i.e., in UQ parameter space).
+For Visit we'll take advantage of session files, and some custom
+python scripts like we used to make the movies for Phase 2.
 
 Code
 -----
@@ -92,7 +105,7 @@ identify three types of models: flow, transport, and chemistry.  Next,
 the user must chose between transient or steady-state time integration
 mode.  
   
-.. literalinclude:: f.xml
+.. literalinclude:: single-phase-steady.xml
     :language: xml
     :lines: 14-44
    
@@ -102,7 +115,7 @@ per plane is specified to utilize the finite difference method to
 solve for unkowns.  The domain is further specified by defining the
 lower corner and the upper corner.  
 
-.. literalinclude:: f.xml
+.. literalinclude:: single-phase-steady.xml
      :language: xml
      :lines: 46-64
 
@@ -110,14 +123,14 @@ The next major portion is defining the Region which consisting of
 domains, boundaries, and well locations.  [talk about domain again,
 really what is this defining].
 
-.. literalinclude:: f.xml
+.. literalinclude:: single-phase-steady.xml
      :language: xml
      :lines: 66-79
 
 The boundaries are specified to define the 'upstream' domain and the
 'downstream' domain.  
 
-.. literalinclude:: f.xml
+.. literalinclude:: single-phase-steady.xml
      :language: xml
      :lines: 80-94
 
@@ -129,7 +142,7 @@ location is not in center of a cell increasing the amount of cells
 will yield a closer approximation effectively reducing the distance of
 the where the solution is derived and the well location. 
 
-.. literalinclude:: f.xml
+.. literalinclude:: single-phase-steady.xml
      :language: xml 
      :lines: 95-126
 
@@ -138,7 +151,7 @@ The subsurface properties are permeability and characterization of the
 porosity i.e. uniform or nonuniform.  The fluid, typically water, is
 defined by its density and viscosity. 
 
-.. literalinclude:: f.xml
+.. literalinclude:: single-phase-steady.xml
      :language: xml
      :lines: 128-163
 
