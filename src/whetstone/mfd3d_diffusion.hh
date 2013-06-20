@@ -89,6 +89,9 @@ class MFD3D_Diffusion : public MFD3D {
   int MassMatrixInverseSO(int cell, const Tensor& permeability,
                           Teuchos::SerialDenseMatrix<int, double>& W);
 
+  int MassMatrixInverseTPFA(int cell, const Tensor& permeability,
+                            Teuchos::SerialDenseMatrix<int, double>& W);
+
   int MassMatrixInverseDiagonal(int cell, const Tensor& permeability,
                                 Teuchos::SerialDenseMatrix<int, double>& W);
 

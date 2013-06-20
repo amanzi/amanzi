@@ -443,7 +443,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       int nokay = matrix_->nokay();
       int npassed = matrix_->npassed();
 
-      std::printf("%5s discretization method: \"%s\"\n", "", mfd3d_method_name.c_str());
+      std::printf("%5s discretization method (prec): \"%s\"\n", "", mfd3d_method_name.c_str());
       std::printf("%7s assign default zero flux BC to %d faces\n", "", missed_bc_faces_);
       std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
       std::printf("*************************************************************\n");

@@ -149,6 +149,8 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
     *method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
   } else if (name == "support operator") {
     *method = FLOW_MFD3D_SUPPORT_OPERATOR;
+  } else if (name == "developer testing") {
+    *method = FLOW_MFD3D_DEVELOPER_TESTING;
   } else if (name == "two point flux approximation") {
     *method = FLOW_MFD3D_TWO_POINT_FLUX;
   } else if (name == "optimized mfd") {

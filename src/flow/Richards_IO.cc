@@ -214,6 +214,12 @@ void Richards_PK::AnalysisTI_Specs()
     msg << "Flow PK: adaptive time stepping is allowed only for transient TI phase.";
     Exceptions::amanzi_throw(msg);
   }
+
+  if (mfd3d_method_ == FLOW_MFD3D_DEVELOPER_TESTING ||  
+      mfd3d_method_ == FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+    msg << "Flow PK: you use discretization methods that under development.";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 
