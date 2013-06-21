@@ -60,7 +60,8 @@ class PrescribedDeformation : public PKPhysicalBase {
   double deformation_fn_2(double x, double y, double t);
   double deformation_fn_3(double x, double y, double z, double t);
   double deformation_fn_4(double x, double y, double z, double t);
-  double tmax_, sigma_, mag_, z0_;
+  double deformation_fn_5(double x, double y, double z, double t);
+  double tmax_, sigma_, mag_, z0_, maxpert_;
 
   Key poro_key_;
 

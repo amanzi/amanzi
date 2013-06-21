@@ -117,13 +117,13 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("vertex coordinate",name_)->set_initialized();
 
   // initialize functional parameters
-  if (prescribed_deformation_case_ == 2 ||
-      prescribed_deformation_case_ == 3 || 
-      prescribed_deformation_case_ == 4) {
+  if (prescribed_deformation_case_ >= 2 &&
+      prescribed_deformation_case_ <= 5) {
     tmax_ = plist_.get<double>("gaussian deformation time", 3.e7);
     sigma_ = plist_.get<double>("gaussian deformation sigma", 1.0);
     mag_ = plist_.get<double>("gaussian deformation amplitude", 3.0);
     z0_ = plist_.get<double>("initial height coordinate", 4.0);
+    maxpert_ = plist_.get<double>("max magnitude perturbation", 0.0);
   }
 }
 
@@ -230,7 +230,9 @@ bool PrescribedDeformation::advance(double dt) {
         }
       }
       break;
-    case 3: // this is denting the the mesh with a gaussian that is centered at (x,y) = (0,0)
+  case 3: // this is denting the the mesh with a gaussian that is centered at (x,y) = (0,0)
+  case 4:
+  case 5:
       {
         // get space dimensions
         int dim = write_access_mesh_->space_dimension();
@@ -257,42 +259,13 @@ bool PrescribedDeformation::advance(double dt) {
           }
 
           // push the point down in z-direction
-          new_coords[dim-1] = coords[dim-1] + deformation_fn_3(coords[0],coords[1],coords[2],ss0) - deformation_fn_3(coords[0],coords[1],coords[2],ss);
-
-          // puch back for deform method
-          nodeids.push_back(iV);
-          newpos.push_back( new_coords );
-        }
-      }
-      break;
-    case 4: // this is denting the the mesh with a gaussian that is centered at (x,y) = (0,0)
-      {
-        // get space dimensions
-        int dim = write_access_mesh_->space_dimension();
-
-        // number of vertices
-        int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-                Amanzi::AmanziMesh::OWNED);
-
-        coords.init(dim);
-        new_coords.init(dim);
-
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-          *out_ << std::setprecision(16);
-          *out_ << "  z-coord (0,0) = " << deformation_fn_4(0.,0.,z0_,ss0) << std::endl;
-        }
-
-        for (int iV=0; iV<nV; iV++) {
-
-          // get the coords of the node
-          write_access_mesh_->node_get_coordinates(iV,&coords);
-
-          for ( int s=0; s<dim-1; ++s ) {
-            new_coords[s] = coords[s];
+          if (prescribed_deformation_case_ == 3) {
+            new_coords[dim-1] = coords[dim-1] + deformation_fn_3(coords[0],coords[1],coords[2],ss0) - deformation_fn_3(coords[0],coords[1],coords[2],ss);
+          } else if (prescribed_deformation_case_ == 4) {
+            new_coords[dim-1] = coords[dim-1] + deformation_fn_4(coords[0],coords[1],coords[2],ss0) - deformation_fn_4(coords[0],coords[1],coords[2],ss);
+          } else if (prescribed_deformation_case_ == 5) {
+            new_coords[dim-1] = coords[dim-1] + deformation_fn_5(coords[0],coords[1],coords[2],ss0) - deformation_fn_5(coords[0],coords[1],coords[2],ss);
           }
-
-          // push the point down in z-direction
-          new_coords[dim-1] = coords[dim-1] + deformation_fn_4(coords[0],coords[1],coords[2],ss0) - deformation_fn_4(coords[0],coords[1],coords[2],ss);
 
           // puch back for deform method
           nodeids.push_back(iV);
@@ -409,7 +382,23 @@ double PrescribedDeformation::deformation_fn_4 (double x, double y, double z, do
 }
 
 
+double PrescribedDeformation::deformation_fn_5 (double x, double y, double z, double t) {
 
+  double line1 = (0.5*x - y + 2.0)/sqrt(0.25+1); 
+  double line2 = (-2.0*x - y + 14.0)/sqrt(4.0+1.0);
+  double fx0 = std::exp(- line1*line1 / (2.0 *sigma_*sigma_) );
+  double fx1 = std::exp(- line2*line2 / (2.0 *sigma_*sigma_) );
+
+  
+  double xx = 24.0/5.0;
+  double yy = 22.0/5.0;
+  double fxy = std::exp(- ((x-xx)*(x-xx)+(y-yy)*(y-yy)) /(2.0 *sigma_*sigma_) );  
+
+  double varmag = mag_ * maxpert_ * (x + y)/20.0 ;
+
+  return std::min(1., t/tmax_) * varmag * z/z0_ * (fx0+fx1 - fxy);
+
+}
 
 
 
