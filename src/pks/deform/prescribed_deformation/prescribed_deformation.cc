@@ -394,7 +394,7 @@ double PrescribedDeformation::deformation_fn_5 (double x, double y, double z, do
   double yy = 22.0/5.0;
   double fxy = std::exp(- ((x-xx)*(x-xx)+(y-yy)*(y-yy)) /(2.0 *sigma_*sigma_) );  
 
-  double varmag = mag_ * maxpert_ * (x + y)/20.0 ;
+  double varmag = mag_ *  ( 1.0 + maxpert_ * (x + y)/20.0 );
 
   return std::min(1., t/tmax_) * varmag * z/z0_ * (fx0+fx1 - fxy);
 
