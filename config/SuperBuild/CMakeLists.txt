@@ -297,7 +297,7 @@ if (NOT MPI_EXEC)
     set(MPI_EXEC "${MPIEXEC}" CACHE STRING "Select MPI executable from FindMPI results")
   else()
     find_program(MPI_EXEC
-                 NAMES mpirun mpiexec aprun
+                 NAMES openmpirun mpirun mpiexec aprun
                  HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX ENV MPI_HOME ENV MPIHOME
                 )
   endif()
@@ -499,6 +499,11 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
+# XERCES
+include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
 # NetCDF
 include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
@@ -670,6 +675,7 @@ if ( BUILD_Amanzi )
                   ${ExodusII_BUILD_TARGET}
 		          ${HDF5_BUILD_TARGET}
 		          ${ASCEMIO_BUILD_TARGET}
+			  ${XERCES_BUILD_TARGET}
 		          ${UnitTest_BUILD_TARGET}
 		          ${Boost_BUILD_TARGET}
 		          ${MSTK_BUILD_TARGET}
