@@ -12,9 +12,10 @@ define_external_project_args(XERCES
 
 
 # -- Define configure parameters
-set(cflag_args "-arch x86_64")
-set(cxxflag_args "-arch x86_64")
-
+if(APPLE)
+    set(cflag_args "-arch x86_64")
+    set(cxxflag_args "-arch x86_64")
+ENDIF(APPLE)
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${XERCES_BUILD_TARGET}
