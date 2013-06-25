@@ -1,4 +1,5 @@
 import numpy
+import matplotlib.pylab as plt
 
 class SteadyLinear(object):
     """Solves the system:
@@ -29,34 +30,45 @@ class SteadyLinear(object):
         params.setdefault("K",1.e-12)
         params.setdefault("rho",1000)
         params.setdefault("mu",1.e-3)
-        params.setdefault("q_left",1.95e-2)
-        params.setdefault("h_right",120)
+        params.setdefault("q_Upstream",1.95e-2)
+        params.setdefault("h_Downstream",120)
         self.__dict__.update(params)
 
     def run(self, coords):
         """Evaluates the solution at (x,z)-coordinates in the [n_points, 2] array."""
         pres = numpy.zeros((len(coords),), 'd')
 
-        p_right = self.rho*self.g*self.h_right + 101325.0
+        p_right = self.rho*self.g*self.h_Downstream + 101325.0
 
-        grad_p = self.q_left / self.K / self.rho * self.mu
+        grad_p = self.q_Upstream / self.K / self.rho * self.mu
 
         for i,(x,z) in enumerate(coords):
-            xi = (x - self.x1) / (self.x1 - self.x0)
+            xi = self.x1 - x
             p_upper_boundary = p_right + xi*grad_p
             pres[i] = p_upper_boundary + self.rho*self.g*(self.z1 - z)
 
         return pres
 
 def createFromXML(filename):
+
     # grab params from input file
     params = dict()
 
     import amanzi_xml.utils.io
     xml = amanzi_xml.utils.io.fromFile(filename)
     import amanzi_xml.utils.search as search
-    # this line does not work... yet
-    #    params["mu"] = search.find(xml, "..../viscosity").get("value")
+   
+    params["x0"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[0]
+    params["z0"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[2]
+    params["x1"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[0]
+    params["z1"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[2] 
+    params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
+    params["mu"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
+    params["rho"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
+    params["q_Upstream"] = search.getElementByPath(xml, "/Main/Boundary Conditions/Upstream BC/BC: Flux/Inward Mass Flux").value[0]
+    params["h_Downstream"] = search.getElementByPath(xml, "/Main/Boundary Conditions/Downstream BC/BC: Hydrostatic/Water Table Height").value[0] 
+    params.setdefault("g",9.81)
+   
 
     # instantiate the class
     return SteadyLinear(params)
@@ -64,10 +76,22 @@ def createFromXML(filename):
 
 
 if __name__ == "__main__":
+
     sl = SteadyLinear()
-    x = ...
-    c1 = numpy.array()
-    # run with generic values
+
+    x = numpy.linspace(0,1,11)
+
+    coords = numpy.zeros((11,2))
+    coords[:,0]=x
+
+    coords[:,1]=0.3
+    p1 = sl.run(coords)
+
+    coords[:,1]=0.7
+    p2 = sl.run(coords)
+
+    plt.plot(x,p1)
+    plt.plot(x,p2)
 
     # plot
     plt.show()
