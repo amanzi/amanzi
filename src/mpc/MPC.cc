@@ -142,10 +142,18 @@ void MPC::mpc_init() {
   S->Initialize();
  
   if (chemistry_enabled) {
-    Teuchos::ParameterList chemistry_parameter_list =
-      parameter_list.sublist("Chemistry");
-    CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
-    CPK->InitializeChemistry();
+    try {
+      Teuchos::ParameterList chemistry_parameter_list =
+	parameter_list.sublist("Chemistry");
+      CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
+      CPK->InitializeChemistry();
+    } catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
+      std::ostringstream error_message;
+      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+      error_message << chem_error.what();
+      Errors::Message message(error_message.str());
+      Exceptions::amanzi_throw(message);
+    }   
   }
 
   if (transport_enabled) {
@@ -331,15 +339,15 @@ void MPC::cycle_driver() {
   //     // names of components
   //     std::vector<string> compnames;
 
-  //     // total view needs this to be outside the constructor
-  //     CPK->InitializeChemistry();
-  //     CPK->set_chemistry_output_names(&auxnames);
-  //     CPK->set_component_names(&compnames);
+  //     // // total view needs this to be outside the constructor
+  //     // CPK->InitializeChemistry();
+  //     // CPK->set_chemistry_output_names(&auxnames);
+  //     // CPK->set_component_names(&compnames);
 
   //     // set the names in the visualization object
-  //     S->set_compnames(compnames);
+  //     // S->set_compnames(compnames);
 
-  //   } catch (const ChemistryException& chem_error) {
+  //   } catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
   //     std::ostringstream error_message;
   //     error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
   //     error_message << chem_error.what();
@@ -350,21 +358,21 @@ void MPC::cycle_driver() {
   // }
 
 
-  // if (chemistry_enabled) {
-  //   // create stor for chemistry data
-  //   int number_of_secondaries(0);
-  //   if (S->secondary_activity_coeff() != Teuchos::null) {
-  //     number_of_secondaries = S->secondary_activity_coeff()->NumVectors();
-  //   }
-  //   chem_data_ = Teuchos::rcp( new chemistry_data (mesh_maps->cell_map(false),
-  //                                                  S->get_total_component_concentration()->NumVectors(),
-  //                                                  S->number_of_minerals(),
-  //                                                  number_of_secondaries,
-  //                                                  S->number_of_ion_exchange_sites(),
-  //                                                  S->number_of_sorption_sites(),
-  //                                                  S->using_sorption(),
-  //                                                  S->use_sorption_isotherms()) );
-  // }
+  if (chemistry_enabled) {
+    // create stor for chemistry data
+    int number_of_secondaries(0);
+    if (CS->secondary_activity_coeff() != Teuchos::null) {
+      number_of_secondaries = CS->secondary_activity_coeff()->NumVectors();
+    }
+    chem_data_ = Teuchos::rcp( new chemistry_data (mesh_maps->cell_map(false),
+                                                   S->GetFieldData("total_component_concentration")->ViewComponent("cell", true)->NumVectors(),
+                                                   CS->number_of_minerals(),
+                                                   number_of_secondaries,
+                                                   CS->number_of_ion_exchange_sites(),
+                                                   CS->number_of_sorption_sites(),
+                                                   CS->using_sorption(),
+                                                   CS->using_sorption_isotherms()) );
+  }
 
   int iter = 0;  // set the iteration counter to zero
   S->set_cycle(iter);
@@ -398,15 +406,14 @@ void MPC::cycle_driver() {
   visualization->set_mesh(mesh_maps);
   visualization->CreateFiles();
   if (chemistry_enabled) {
-
-    // // get the auxillary data from chemistry
-    // Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-    // // write visualization data for timestep
-    // S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
+    // get the auxillary data from chemistry
+    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+    // write visualization data for timestep
+    WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
+    //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
   } else {
-    // always write the initial visualization dump
+    //always write the initial visualization dump
     WriteVis(visualization,S.ptr());
-    // S->write_vis(*visualization, chemistry_enabled, true);
   }
 
   // write a restart dump if requested (determined in dump_state)
@@ -518,11 +525,11 @@ void MPC::cycle_driver() {
           if (transport_subcycling == 0) transport_dT = transport_dT_tmp;
           Amanzi::timer_manager.stop("Transport PK");
         }
-        // if (chemistry_enabled) {
-        //   Amanzi::timer_manager.start("Chemistry PK");
-        //   chemistry_dT = CPK->max_time_step();
-        //   Amanzi::timer_manager.stop("Chemistry PK");
-        // }
+        if (chemistry_enabled) {
+          Amanzi::timer_manager.start("Chemistry PK");
+          chemistry_dT = CPK->max_time_step();
+          Amanzi::timer_manager.stop("Chemistry PK");
+        }
       }
 
       // take the mpc time step as the min of all suggested time steps
@@ -671,22 +678,22 @@ void MPC::cycle_driver() {
 
         // at this time we know the time step that we are going to use during subcycling: tc_dT
 
-        // if (chemistry_enabled) {
-        //   // first store the chemistry state
-        //   chem_data_->store(S->free_ion_concentrations(),
-        //                     S->primary_activity_coeff(),
-        //                     S->secondary_activity_coeff(),
-        //                     S->mineral_volume_fractions(),
-        //                     S->mineral_specific_surface_area(),
-        //                     S->total_sorbed(),
-        //                     S->sorption_sites(),
-        //                     S->surface_complex_free_site_conc(),
-        //                     S->ion_exchange_sites(),
-        //                     S->ion_exchange_ref_cation_conc(),
-        //                     S->isotherm_kd(),
-        //                     S->isotherm_freundlich_n(),
-        //                     S->isotherm_langmuir_b());
-        // }
+        if (chemistry_enabled) {
+          // first store the chemistry state
+          chem_data_->store(CS->free_ion_species(),
+                            CS->primary_activity_coeff(),
+                            CS->secondary_activity_coeff(),
+                            CS->mineral_volume_fractions(),
+                            CS->mineral_specific_surface_area(),
+                            CS->total_sorbed(),
+                            CS->sorption_sites(),
+                            CS->surface_complex_free_site_conc(),
+                            CS->ion_exchange_sites(),
+                            CS->ion_exchange_ref_cation_conc(),
+                            CS->isotherm_kd(),
+                            CS->isotherm_freundlich_n(),
+                            CS->isotherm_langmuir_b());
+        }
         // store the total component concentration, so that we
         // can restore it in the case of a chemistry failure
 	Teuchos::RCP<Epetra_MultiVector> tcc_stor;
@@ -698,11 +705,11 @@ void MPC::cycle_driver() {
 
         do {
           // try to subcycle with tc_dT, if that fails, we will cut that time step and try again
-          // try {
-
+	  try {
+	    
             // subcycling loop
             for (int iss = 0; iss<ntc; ++iss) {
-
+	      
               // first we do a transport step, or if transport is off, we simply prepare
               // total_component_concentration_star for the chemistry step
               if (transport_enabled) {
@@ -725,14 +732,18 @@ void MPC::cycle_driver() {
               // total_component_concentration in state
               if (chemistry_enabled) {
 
-                // if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-                //   *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
-                // }
-                // Amanzi::timer_manager.start("Chemistry PK");
-                // CPK->advance(tc_dT, total_component_concentration_star);
+                if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+                  *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
+                }
+                Amanzi::timer_manager.start("Chemistry PK");
+                CPK->advance(tc_dT, total_component_concentration_star);
 
-                // Amanzi::timer_manager.stop("Chemistry PK");
-                // S->update_total_component_concentration(CPK->get_total_component_concentration());
+                Amanzi::timer_manager.stop("Chemistry PK");
+		
+		*S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
+		  = *total_component_concentration_star;		
+		
+		//S->update_total_component_concentration(CPK->get_total_component_concentration());
               } else {
 		if (chemistry_enabled || transport_enabled) {
 		  *S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
@@ -747,67 +758,69 @@ void MPC::cycle_driver() {
               if (transport_enabled) TPK->CommitState(TS);
               Amanzi::timer_manager.stop("Transport PK");
               Amanzi::timer_manager.start("Chemistry PK");
-              // if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
+	      if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
               Amanzi::timer_manager.stop("Chemistry PK");
             }
             success = true;
-	    // }  catch (const ChemistryException& chem_error) {
+	  }  catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
             
-            // // if the chemistry step failed, we back up to the beginning of
-            // // the chemistry subcycling loop, but to do that we must restore
-            // // a few things, such as the chemistry state, total component
-            // // concentration, and back up the intermediate time
+            // if the chemistry step failed, we back up to the beginning of
+            // the chemistry subcycling loop, but to do that we must restore
+            // a few things, such as the chemistry state, total component
+            // concentration, and back up the intermediate time
 
-            // // decrease the chemistry subcycling timestep and adjust the
-            // // number of subcycles we need to take accordingly
-            // ntc = 2*ntc;
-            // tc_dT = 0.5 * tc_dT;
+            // decrease the chemistry subcycling timestep and adjust the
+            // number of subcycles we need to take accordingly
+            ntc = 2*ntc;
+            tc_dT = 0.5 * tc_dT;
 
-            // // increase the retry count
-            // ++tries;
+            // increase the retry count
+            ++tries;
 
-            // // bail if we've cut the subcycling timestep too many times
-            // if (tries>=3) {
-            //   Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
-            //   Exceptions::amanzi_throw(message);
-            // }
+            // bail if we've cut the subcycling timestep too many times
+            if (tries>=3) {
+              Errors::Message message("MPC: cut chemistry subcycling time step too many times, bailing...");
+              Exceptions::amanzi_throw(message);
+            }
 
-            // // the the user know that we're backing up due to a chemistry failure
-            // if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-            //   *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
-            //   *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
-            // }
-
-            // // restore chemistry data to the beginning of the subcycling
-            // chem_data_->retrieve(S->free_ion_concentrations(),
-            //                      S->primary_activity_coeff(),
-            //                      S->secondary_activity_coeff(),
-            //                      S->mineral_volume_fractions(),
-            //                      S->mineral_specific_surface_area(),
-            //                      S->total_sorbed(),
-            //                      S->sorption_sites(),
-            //                      S->surface_complex_free_site_conc(),
-            //                      S->ion_exchange_sites(),
-            //                      S->ion_exchange_ref_cation_conc(),
-            //                      S->isotherm_kd(),
-            //                      S->isotherm_freundlich_n(),
-            //                      S->isotherm_langmuir_b());
-
-            // // restore the total component concentration to the beginning of chemistry subcycling
-            // S->update_total_component_concentration(*tcc_stor);
+            // the the user know that we're backing up due to a chemistry failure
+            if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+              *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
+              *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
+            }
+	    
+            // restore chemistry data to the beginning of the subcycling
+            chem_data_->retrieve(CS->free_ion_species(),
+                                 CS->primary_activity_coeff(),
+                                 CS->secondary_activity_coeff(),
+                                 CS->mineral_volume_fractions(),
+                                 CS->mineral_specific_surface_area(),
+                                 CS->total_sorbed(),
+                                 CS->sorption_sites(),
+                                 CS->surface_complex_free_site_conc(),
+                                 CS->ion_exchange_sites(),
+                                 CS->ion_exchange_ref_cation_conc(),
+                                 CS->isotherm_kd(),
+                                 CS->isotherm_freundlich_n(),
+                                 CS->isotherm_langmuir_b());
+	    
+            // restore the total component concentration to the beginning of chemistry subcycling
+	    *S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
+	      = *tcc_stor;		
+	    //S->update_total_component_concentration(*tcc_stor);
             
-            // // reset the intermediate time to the beginning
-            // S->set_intermediate_time(S->initial_time());
-
-            // success = false;
-          //}
+            // reset the intermediate time to the beginning
+            S->set_intermediate_time(S->initial_time());
+	    
+            success = false;
+          }
 	  
 	  
-
+	  
         } while (!success);
-
+	
       }
-
+      
       // update the times in the state object
       S->advance_time(mpc_dT);
 
@@ -822,7 +835,7 @@ void MPC::cycle_driver() {
         Amanzi::timer_manager.stop("Transport PK");
 
         Amanzi::timer_manager.start("Chemistry PK");
-        // if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
+        if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
         Amanzi::timer_manager.stop("Chemistry PK");
       }
 
@@ -857,8 +870,10 @@ void MPC::cycle_driver() {
       Amanzi::timer_manager.start("I/O");
       if (chemistry_enabled) {
         // get the auxillary data
-        // Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-
+        Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+	if (force) {
+	  WriteVis(visualization,S.ptr());
+	}
         // write visualization data for timestep if requested
         //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, force);
       } else {
