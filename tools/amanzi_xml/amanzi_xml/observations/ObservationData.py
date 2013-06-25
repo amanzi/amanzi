@@ -13,7 +13,7 @@ class ObservationData(object):
             if "Pressure" in line:
                 [var_ref, region, obs_type, var_name, time, value] = line.rstrip().split(",")
                 print var_ref, value
-                self.pressure_value.append(value)
+                self.pressure_value.append(float(value))
                 self.observations[var_ref]={"region":region.strip(), "var_name":var_name, "value":value}
                 #pressure_value.append(observations["value"])
 
