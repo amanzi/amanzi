@@ -71,14 +71,14 @@ if __name__ == "__main__":
 
     # set up the run directory and cd into it
     run_directory = os.path.join(CWD,"output")
-    # if os.path.isdir(run_directory):
-    #     [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
-    # else:
-    #     os.mkdir(run_directory)
+    if os.path.isdir(run_directory):
+        [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
+    else:
+        os.mkdir(run_directory)
     os.chdir(run_directory)
 
     try:
-    #        run_amanzi.run_amanzi('../amanzi_steady_linear.xml')
+        run_amanzi.run_amanzi('../amanzi_steady_linear.xml')
         obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 
