@@ -12,4 +12,4 @@ Contents:
    theis_analysis.rst
    introduction.rst 
    representative_case.rst
-  
+   steady-linear/amanzi_steady_linear.rst
