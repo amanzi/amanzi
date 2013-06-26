@@ -42,7 +42,7 @@ def plotExampleObservations(Obs_xml, Obs_data, axes1):
 
     axes1.set_xlabel('Distance in x-direction [meter]')
     axes1.set_ylabel('Pressure [Pa]')
-    axes1.legend(loc=2)
+    axes1.legend(loc = 'upper center', fancybox =True)
     axes1.set_title('Aqueous Pressure vs Distance')
     return cmap
 
@@ -57,7 +57,9 @@ def plotExampleModel(filename, cmap, axes1):
     for (z_val, color) in cmap.iteritems():
         coords[:,1] = z_val
         pres = mymodel.run(coords)
-        axes1.plot(x,pres,color,label="z = %2.0d m"%z_val)
+        axes1.plot(x,pres,color,label='$z = %2.0d m$'%z_val)
+        axes1.legend(loc="upper right")
+        
 
 
 if __name__ == "__main__":
@@ -75,6 +77,7 @@ if __name__ == "__main__":
         [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
     else:
         os.mkdir(run_directory)
+         
     os.chdir(run_directory)
 
     try:
@@ -86,6 +89,7 @@ if __name__ == "__main__":
         axes1=fig1.add_axes([.1,.1,.8,.8])
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel(input_filename, cmap, axes1)
+        
         show()
 
     finally:
