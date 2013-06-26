@@ -57,7 +57,7 @@ def plotExampleModel(filename, cmap, axes1):
     for (z_val, color) in cmap.iteritems():
         coords[:,1] = z_val
         pres = mymodel.run(coords)
-        axes1.plot(x,pres,color,label='$z = %2.0d m$'%z_val)
+        axes1.plot(x,pres,color,label='$z = %0.2f m$'%z_val)
         axes1.legend(loc="upper right")
         
 
