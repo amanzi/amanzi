@@ -45,6 +45,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 	CONFIGURE_COMMAND
 		<SOURCE_DIR>/configure
 		--prefix=<INSTALL_DIR>
+		--disable-shared
 		FC=${CMAKE_Fortran_COMPILER}
 		FCFLAGS=${Amanzi_COMMON_FCFLAGS}
 		CPPFLAGS=${netcdf_fortran_cppflags}

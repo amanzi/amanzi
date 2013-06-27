@@ -17,11 +17,12 @@
 #
 #   0.90.6       - first version reference used in installations
 #   0.90.7       - updated MSTK to version 2.01
-#   0.90.8       - added Xerces-C++
+#                - added NETCDF - fortran version 4.2 (interface library)
+#   0.90.8       - added Xerces-C++ version 3.1.1 (XML support)
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 90)
-set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION_PATCH 8)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful has for the collection
 
