@@ -36,6 +36,7 @@ class SteadyLinear(object):
 
     def run(self, coords):
         """Evaluates the solution at (x,z)-coordinates in the [n_points, 2] array."""
+        
         pres = numpy.zeros((len(coords),), 'd')
 
         p_right = self.rho*self.g*self.h_Downstream + 101325.0
