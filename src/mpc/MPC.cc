@@ -868,7 +868,7 @@ void MPC::cycle_driver() {
 	std::vector<Amanzi::AmanziGeometry::Point> xyz;
 	std::vector<Amanzi::AmanziGeometry::Point> velocity;
 	
-	FPK->CalculateVelocity(xyz, velocity);
+	FPK->CalculateDarcyVelocity(xyz, velocity);
 
 	int dim = xyz[0].dim();
 
@@ -893,8 +893,8 @@ void MPC::cycle_driver() {
 	// then populate the state vectors
 	for (int i=0; i<xyz.size(); ++i) {
 	  for (int j=0; j<dim; ++j) {
-	    (*(*centr)(j)) [i] = xyz[i][j];
-	    (*(*velo)(j)) [i] = velocity[i][j];
+	    (*(*centr)(j))[i] = xyz[i][j];
+	    (*(*velo)(j))[i] = velocity[i][j];
 	  }
 	}
       }
@@ -917,8 +917,6 @@ void MPC::cycle_driver() {
     restart->dump_state(*S, true);    
     Amanzi::timer_manager.stop("I/O");
   }
-
-
 
 
 
