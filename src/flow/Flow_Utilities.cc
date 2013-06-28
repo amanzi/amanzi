@@ -25,8 +25,8 @@ namespace AmanziFlow {
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void Flow_PK::CalculateVelocity(std::vector<AmanziGeometry::Point>& xyz, 
-                                std::vector<AmanziGeometry::Point>& velocity)
+void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz, 
+                                     std::vector<AmanziGeometry::Point>& velocity)
 {
   xyz.clear();
   velocity.clear();
@@ -143,6 +143,22 @@ void Flow_PK::CalculateVelocity(std::vector<AmanziGeometry::Point>& xyz,
       xyz.push_back(tmp);
     }
   }
+}
+
+
+/* ******************************************************************
+* Calculating an extended vector of Darcy velocities. The velocity
+* is evaluated at cell-center and at boundary points.
+****************************************************************** */
+void Flow_PK::CalculatePoreVelocity(std::vector<AmanziGeometry::Point>& xyz, 
+                                    std::vector<AmanziGeometry::Point>& velocity)
+{
+  CalculateDarcyVelocity(xyz, velocity);
+
+  Epetra_Vector& porosity = FS->ref_porosity();
+
+  int n = xyz.size();
+  for (int i = 0; i< n; i++) velocity[i] /= porosity[i];  
 }
 
 }  // namespace AmanziFlow
