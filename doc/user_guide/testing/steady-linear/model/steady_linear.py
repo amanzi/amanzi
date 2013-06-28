@@ -67,7 +67,7 @@ def createFromXML(filename):
     params["rho"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
     params["q_Upstream"] = - search.getElementByPath(xml, "/Main/Boundary Conditions/Upstream BC/BC: Flux/Inward Mass Flux").value[0]
     params["h_Downstream"] = search.getElementByPath(xml, "/Main/Boundary Conditions/Downstream BC/BC: Hydrostatic/Water Table Height").value[0] 
-    params.setdefault("g",9.81)
+    params.setdefault("g",9.80665)
    
 
     # instantiate the class

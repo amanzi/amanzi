@@ -37,18 +37,21 @@ def plotExampleObservations(Obs_xml, Obs_data, axes1):
     
     # -- grab the right coordinate and value
     # -- call ObservationPlotter to plot with format="bo"
-    for i, coord in enumerate(Obs_xml.coordinates):
-        print type(coord[0])
-        print type(Obs_data.pressure_value[i])
-        axes1.scatter([coord[0]], [Obs_data.pressure_value[i]], c=cmap[coord[2]], marker='s',s=50)
+    # for i, coord in enumerate(Obs_xml.coordinates):
+    #     print type(Obs_data.pressure_value[i])
+    #     if cmap[coord[0]] == .5:
+    #         axes1.scatter([coord[0]], [Obs_data.pressure_value[i]], c=cmap[coord[2]], marker='s',s=50)
+    coord = Obs_xml.coordinates
+    axes1.scatter([coord[0][0] , coord[2][0] , coord[4][0]] , [Obs_data.pressure_value[0] , Obs_data.pressure_value[2] ,  Obs_data.pressure_value[4]] , c=cmap[coord[0][2]], marker='s',s=50, label = '$Amanzi$')
+    axes1.scatter([coord[1][0]] , [Obs_data.pressure_value[1]] , c = cmap[coord[1][2]] , marker = 's' , s = 50 , label = '$Amanzi$')
+    axes1.scatter([coord[3][0]] , [Obs_data.pressure_value[3]] , c = cmap[coord[3][2]] , marker = 's' , s = 50 , label = '$Amanzi$')
+
+       
 
     axes1.set_xlabel('Distance in x-direction [meter]')
     axes1.set_ylabel('Pressure [Pa]')
     axes1.set_title('Aqueous Pressure vs Distance')
     
-    # ax = plt.subplot(111, frame_on = False)
-    # ax.xaxis.set_visible(False)
-    # ax.yaxis.set_visible(False)
     return cmap
 
 def plotExampleModel(filename, cmap, axes1, Obs_xml, Obs_data):
@@ -64,7 +67,7 @@ def plotExampleModel(filename, cmap, axes1, Obs_xml, Obs_data):
         coords[:,1] = z_val
         
         pres = mymodel.run(coords)
-        axes1.plot(x,pres,color,label='$z = %0.2f m$'%z_val)
+        axes1.plot(x,pres,color,label='$z = %0.2f $'%z_val)
         axes1.legend(loc="upper right" , fancybox = True , shadow = True)
        
        
@@ -72,25 +75,24 @@ def plotExampleModel(filename, cmap, axes1, Obs_xml, Obs_data):
     coordinates = numpy.array(Obs_xml.coordinates)
     pres_analytic = mymodel.run(coordinates[:,[0,2]])
     pressure_analytic = pres_analytic.tolist()
-    print pressure_analytic
+    
     
     for i, coord in enumerate(Obs_xml.coordinates):
         table_values.append([coord[0] , coord[2] , format(Obs_data.pressure_value[i], "0.0f"), format(pressure_analytic[i], "0.0f")])
-        
-    print table_values
+    
    
 
     col_labels = ['x [m]', 'z [m]' ,'Pressure(Amanzi) [Pa]', 'Pressure (expected value) [Pa]', 'Pressure (analytic)[Pa]']
     ax = plt.subplot(111, frame_on = False)
-    
+    colors = ['r','b','g', 'y', 'm']
     ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
-    the_table = plt.table(cellText = table_values, colLabels = col_labels, cellLoc = 'center', colLoc = 'center', loc = 'best')
+    the_table = plt.table(cellText = table_values ,  colWidths = [.1 , .1 , .4 , .5], colLabels = col_labels,  cellLoc = 'center', colLoc = 'center', loc = 'best')
     properties = the_table.properties()
     
     the_table.auto_set_font_size(False)
     the_table.set_fontsize(14)
-    the_table.scale(1,1)    
+        
         
 
 
@@ -103,12 +105,12 @@ if __name__ == "__main__":
 
     CWD = os.getcwd()
 
-    #set up the run directory and cd into it
+    # set up the run directory and cd into it
     run_directory = os.path.join(CWD,"output")
     if os.path.isdir(run_directory):
-        [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
+         [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
     else:
-        os.mkdir(run_directory)
+         os.mkdir(run_directory)
          
     os.chdir(run_directory)
 

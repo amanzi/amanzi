@@ -37,18 +37,17 @@ def plotExampleObservations(Obs_xml, Obs_data, axes1):
     
     # -- grab the right coordinate and value
     # -- call ObservationPlotter to plot with format="bo"
-    for i, coord in enumerate(Obs_xml.coordinates):
-        print type(coord[0])
-        print type(Obs_data.pressure_value[i])
-        axes1.scatter([coord[0]], [Obs_data.pressure_value[i]], c=cmap[coord[2]], marker='s',s=50)
+    # for i, coord in enumerate(Obs_xml.coordinates):
+    #     print type(coord[0])
+    #     print type(Obs_data.pressure_value[i])
+    coord = Obs_xml.coordinates
+    axes1.scatter([coord[0][0] , coord[2][0] , coord[4][0]], [Obs_data.pressure_value[0] , Obs_data.pressure_value[2] ,  Obs_data.pressure_value[4]] , c=cmap[coord[0][2]], marker='s',s=50, label = '$Amanzi$')
+    axes1.scatter([coord[1][0]] , [Obs_data.pressure_value[1]] , c = cmap[coord[1][2]] , marker = 's' , s = 50 , label = '$Amanzi$')
+    axes1.scatter([coord[3][0]] , [Obs_data.pressure_value[3]] , c = cmap[coord[3][2]] , marker = 's' , s = 50 , label = '$Amanzi$')
 
     axes1.set_xlabel('Distance in x-direction [meter]')
     axes1.set_ylabel('Pressure [Pa]')
     axes1.set_title('Aqueous Pressure vs Distance')
-    
-    # ax = plt.subplot(111, frame_on = False)
-    # ax.xaxis.set_visible(False)
-    # ax.yaxis.set_visible(False)
     return cmap
 
 def plotExampleModel(filename, cmap, axes1, Obs_xml, Obs_data):
@@ -85,12 +84,12 @@ def plotExampleModel(filename, cmap, axes1, Obs_xml, Obs_data):
     
     ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
-    the_table = plt.table(cellText = table_values, colLabels = col_labels, cellLoc = 'center', colLoc = 'center', loc = 'best')
+    the_table = plt.table(cellText = table_values , colWidths = [.1, .1 , .4 , .5], colLabels = col_labels, cellLoc = 'center', colLoc = 'center', loc = 'best')
     properties = the_table.properties()
     
     the_table.auto_set_font_size(False)
     the_table.set_fontsize(14)
-    the_table.scale(1,1)    
+     
         
 
 
@@ -119,13 +118,11 @@ if __name__ == "__main__":
 
         fig1= plt.figure()
         fig2 = plt.figure()
-        fig2.set_size_inches(3, 2)
         axes1=fig1.add_axes([.1,.1,.8,.8])
        
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel(input_filename, cmap, axes1, obs_xml, obs_data)
         
-        plt.show()
 
     finally:
         os.chdir(CWD)
