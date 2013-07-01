@@ -111,7 +111,12 @@ if __name__ == "__main__":
     radi = [.1,.5,1,5,10,20,40,60,80,100]
     time = 360000 #100 hours
     
-    times = [60,80,100,200,300,500,800,1000,1500,2000,3000,3600,86400,200000,500000]
+    tindex=numpy.arange(100)
+    times=[]
+
+    for i in tindex:
+        times.append(50+math.exp(float(tindex[i])*(i+1)/(10*len(tindex))))
+
     radius = 10
 
     s_fixed_time = Tt.runForFixedTime(radi, time)
