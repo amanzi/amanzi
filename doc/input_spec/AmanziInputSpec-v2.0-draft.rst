@@ -72,8 +72,80 @@ Each of these is controlled in different ways, reflecting their intended use.
 
 "`Log Data`" is not explicitly controlled in this section, since it is easier to control in the context of specifying details of the algorithms.  The remaining data types are discussed in the section below.
 
-Observation Data
-----------------
+Observations
+------------
 
-A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
+The Observations element holds all the observations that the user
+is requesting from Amanzi, as well as meta data, such as the 
+name of the file that Amanzi will write observations to.  The observations
+are collected by their phase. Thus, the ''observations'' element has the
+following requirements
 
+.. code-block:: xml
+
+   <observations>
+
+     Required Elements: filename, phase
+     Optional Elements: NONE
+
+   </observations>
+
+The *filename* element contains the filename for the observation output,
+and may include the full path.
+
+.. code-block:: xml
+
+     <filename>OptionalPath/ObservationsFileName</filename>
+
+The *phase* element requires that the name of the phase be specified
+in an attribute:
+
+.. code-block:: xml
+
+     <phase name="Name of Phase (Required)">
+
+       Required Elements: NONE 
+       Optional Elements: observation (one observation element block for each observation)
+
+     </phase>
+
+In this release the only valid phase name is ''aqueous''.  The
+observation element requires a field quantity be given as an 
+attribute, and elements for a region, a model (functional)
+with which it will extract its source data, and a list of
+discrete times for its evaluation.  The observations are evaluated
+during the simulation and returned to the calling process through one
+of Amanzi arguments. 
+
+.. code-block :: xml
+
+   <observation variable="Field Quantity (Required: see above for list of valid fields)">
+
+     Required Elements: assigned_region, functional, one of either time_macro or cycle_macro
+     Optional Elements: NONE
+     
+   </observation>
+
+Here the elements are ... 
+
+
+
+Example:
+
+.. code-block :: xml
+
+   <observations>
+     <filename>observation.out</filename> 
+       <phase name="aqueous">
+         <observation variable="H+ Aqueous concentration">
+           <assigned_region>Well_1</assigned_region>
+           <functional>point</functional>
+           <time_macro>Every year</time_macro>
+         </observation>
+	 <observation variable="UO2++ Aqueous concentration">
+	   <assigned_region>Well_3</assigned_region>
+	   <functional>point</functional>
+	   <time_macro>Every year</time_macro>
+	 </observation>
+       </phase>
+     </observations>
