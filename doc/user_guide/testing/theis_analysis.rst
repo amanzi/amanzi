@@ -86,7 +86,7 @@ It is important to note that when using the third option the specific yield term
 
 
 
-Schematic
-~~~~~~~~~
+Plot of Analytic Solution and Amanzi Results (soon to be)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  
+.. plot:: testing/transient_theis/model/theis.py

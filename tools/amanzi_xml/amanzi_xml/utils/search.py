@@ -13,7 +13,7 @@ def findElementGenerator(elem, path):
 
     The path argument may be either a name or a path, which may be
     either absolute or relative, i.e.:
-      findElementGenerator(elem, "Mesh")
+re      findElementGenerator(elem, "Mesh")
       findElementGenerator(elem, "Mesh/Expert/Verify Mesh")
       findElementGenerator(elem, "/Mesh/Expert/Verify Mesh")
 
