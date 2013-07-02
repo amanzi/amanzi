@@ -229,6 +229,55 @@ MFTower::CCtoECgrad(PArray<MFTower>& mfte,
 }
 
 void
+MFTower::CCtoECavg(PArray<MFTower>& mfte,
+                   const MFTower&   mftc,
+                   Real             mult,
+                   int              sComp,
+                   int              dComp,
+                   int              nComp,
+                   int              do_harmonic,
+                   int              numLevs)
+{
+    // Note: Assumes that grow cells of mftc have been filled "properly":
+    //    f-f: COI
+    //    c-f: Parallel interp of coarse data to plane parallel to c-f, then perp interp to fine cc in grow
+    //   phys: Dirichlet data at wall extrapolated to fine cc in grow
+    // 
+    int numLevs_tmp = mftc.NumLevels();
+    const Layout& theLayout = mftc.GetLayout();
+    for (int d=0; d<BL_SPACEDIM; ++d) {            
+        if (numLevs<0) numLevs_tmp = std::min(numLevs_tmp,mfte[d].NumLevels());
+        BL_ASSERT(theLayout.IsCompatible(mfte[d]));
+    }
+    if (numLevs<0) numLevs = numLevs_tmp;
+    BL_ASSERT(numLevs<=mftc.NumLevels());
+    const Array<Geometry>& geomArray = theLayout.GeomArray();
+    for (int lev=0; lev<numLevs; ++lev) {
+        const MultiFab& mfc = mftc[lev];
+        BL_ASSERT(mfc.nGrow()>=1);
+
+        for (MFIter mfi(mfc); mfi.isValid(); ++mfi) {
+            const FArrayBox& cfab = mfc[mfi];
+            const Box& vcbox = mfi.validbox();
+            
+            for (int d=0; d<BL_SPACEDIM; ++d) {            
+                FArrayBox& efab = mfte[d][lev][mfi];
+                BL_ASSERT(dComp+nComp<=efab.nComp());
+                efab.setVal(0);
+                BL_ASSERT(Box(vcbox).surroundingNodes(d).contains(efab.box()));
+
+                int src_comp = (nComp<0 ? sComp + d : sComp);
+                int num_comp = (nComp<0 ? 1 : nComp);
+                BL_ASSERT(src_comp+num_comp<=mfc.nComp());
+                FORT_CC_TO_EC_AVG(efab.dataPtr(dComp),   ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
+                                  cfab.dataPtr(src_comp),ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
+                                  vcbox.loVect(), vcbox.hiVect(),&mult,&d,&num_comp,&do_harmonic);
+            }
+        }
+    }
+}
+
+void
 MFTower::ECtoCCdiv(MFTower&               mftc,
                    const PArray<MFTower>& mfte,
                    const Array<Real>&     mult,

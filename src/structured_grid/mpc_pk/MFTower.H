@@ -55,6 +55,15 @@ struct MFTower
                            int              nComp,
 			   int              numLevs=-1);
     
+    static void CCtoECavg(PArray<MFTower>& mft_ec,
+                          const MFTower&   mft_cc,
+                          Real             mult,
+                          int              sComp,
+                          int              dComp,
+                          int              nComp,
+                          int              do_harmonic=1,
+                          int              numLevs=-1);
+    
     static void ECtoCCdiv(MFTower&               mft_cc,
                           const PArray<MFTower>& mft_ec,
                           const Array<Real>&     mult,

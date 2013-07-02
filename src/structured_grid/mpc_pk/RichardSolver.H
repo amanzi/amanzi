@@ -12,7 +12,8 @@ struct RSParams
     RSParams();
     bool use_fd_jac; // Use matrix-free or finite-difference Jacobian
     bool use_dense_Jacobian; // Use dense storage for Jacobian
-    int upwind_krel; // Upwind Krel based on sign of Darcy forcing
+    bool upwind_krel; // Upwind Krel based on sign of Darcy forcing
+    bool subgrid_krel; // Where mixed cells, generate coarse krel by averaging refined krel
     int pressure_maxorder; // Polynomial order of boundary condition extrapolation
     Real errfd; // Scale of perturbuation for fd Jacobian
     int max_ls_iterations; // Max line search attempts
@@ -58,7 +59,7 @@ public:
   MFTower& GetAlpha() {return *Alpha;}
   Vec& GetAlphaV() {return AlphaV;}
   MFTower& GetLambda() {return *Lambda;}
-  MFTower& GetKappaCC() {return *KappaCC;}
+  MFTower& GetKappaCCavg() {return *KappaCCavg;}
   PArray<MFTower>& GetKappaEC() {return KappaEC;}
   MFTower& GetPorosity() {return *Porosity;}
   MFTower& GetPressure() {return *Pnew;}
@@ -86,9 +87,6 @@ public:
 
   void UpdateDarcyVelocity(MFTower& pressure,
 			   Real     t); // Set internal data
-
-  void UpdateDarcyVelocity(PArray<MultiFab>& pressure,
-			   Real              t); // Set internal data
 
   void ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 			    MFTower&               pressure,
@@ -129,6 +127,8 @@ public:
   int GetCurrentTimestep() const; 
 
 protected:
+  void BuildMLPropEval();
+
   void BuildOpSkel(Mat& J);
 
   void YpambX(MFTower&           Y,
@@ -182,7 +182,7 @@ protected:
 
   int nLevs;
   Array<PArray<MultiFab> > ctmp; // Currently maintains its own copy of these, should be fixed
-  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCC, *PCapParams, *Alpha;
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCCavg, *KappaCCdir, *PCapParams, *Alpha, *CoeffCC;
   PArray<MFTower> KappaEC, DarcyVelocity, RichardCoefs;
 
   Vec RhsV, SolnV, SolnTypV, SolnTypInvV, GV, AlphaV;
@@ -196,6 +196,10 @@ protected:
   int current_timestep;
 
   std::string record_file;
+
+  Array<BoxArray> state_to_fill;
+  Array<BoxArray> derive_to_fill;
+  PArray<MultiFab> phif, pcPf, kf, krf, pf, lf, lc;
 };
 
 #endif
