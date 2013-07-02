@@ -101,7 +101,7 @@ test_suite=$FALSE
 netcdf4=${TRUE}
 petsc=${TRUE}
 hypre=${TRUE}
-
+disable_downloads=${FALSE}
 
 
 
@@ -274,6 +274,7 @@ Value in brackets indicates default setting.
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
   petsc                   build the PETSc solver APIs ['"${petsc}"']
+  disable_downloads       disable downloads during SuperBuild ['"${disable_downloads}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
 
 Tool definitions:
@@ -359,6 +360,7 @@ Build Features:
     netcdf4             ='"${netcdf4}"'
     hypre               ='"${hypre}"'
     petsc               ='"${petsc}"'
+    disable_downloads   ='"${disable_downloads}"'
 
 Directories:
     prefix                 ='"${prefix}"'
@@ -1012,6 +1014,8 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_NetCDF4:BOOL=${netcdf4} \
                 -DENABLE_HYPRE:BOOL=${hypre} \
                 -DENABLE_PETSC:BOOL=${petsc} \
+                -DDISABLE_EXTERNAL_DOWNLOAD:BOOL=${disable_downloads} \
+                -DTPL_DOWNLOAD_DIR:PATH=${tpl_download_dir} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -1075,6 +1079,7 @@ cd ${amanzi_build_dir}
 
 ${cmake_binary} \
               -C${tpl_config_file} \
+              -DCMAKE_BUILD_TYPE:STRING=${build_type} \
 	      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
 	      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
 	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \

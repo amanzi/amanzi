@@ -67,41 +67,43 @@ void WritePlotfile(const std::string         &pfversion,
   //
   // Start writing plotfile.
   //
-  os << pfversion << '\n';
-  os << nComp << '\n';
-  for (int n = 0; n < nComp; n++) os << names[n] << '\n';
-  os << BL_SPACEDIM << '\n';
-  os << std::setprecision(30) << time << '\n';
   const int finestLevel = nLevs - 1;
-  os << finestLevel << '\n';
-  for (int i = 0; i < BL_SPACEDIM; i++) os << probLo[i] << ' ';
-  os << '\n';
-  for (int i = 0; i < BL_SPACEDIM; i++) os << probHi[i] << ' ';
-  os << '\n';
-  for (int i = 0; i < finestLevel; i++) os << refRatio[i] << ' ';
-  os << '\n';
-  for (int i = 0; i <= finestLevel; i++) os << probDomain[i] << ' ';
-  os << '\n';
-  if(levelSteps != 0) {
-    for (int i = 0; i <= finestLevel; i++) os << levelSteps[i] << ' ';
-  } else {
-    for (int i = 0; i <= finestLevel; i++) os << 0 << ' ';
-  }
-  os << '\n';
-  for(int i = 0; i <= finestLevel; i++) {
-    for(int k = 0; k < BL_SPACEDIM; k++) {
-      os << dxLevel[i][k] << ' ';
+  if(ParallelDescriptor::IOProcessor()) {
+    os << pfversion << '\n';
+    os << nComp << '\n';
+    for (int n = 0; n < nComp; n++) os << names[n] << '\n';
+    os << BL_SPACEDIM << '\n';
+    os << std::setprecision(30) << time << '\n';
+    os << finestLevel << '\n';
+    for (int i = 0; i < BL_SPACEDIM; i++) os << probLo[i] << ' ';
+    os << '\n';
+    for (int i = 0; i < BL_SPACEDIM; i++) os << probHi[i] << ' ';
+    os << '\n';
+    for (int i = 0; i < finestLevel; i++) os << refRatio[i] << ' ';
+    os << '\n';
+    for (int i = 0; i <= finestLevel; i++) os << probDomain[i] << ' ';
+    os << '\n';
+    if(levelSteps != 0) {
+      for (int i = 0; i <= finestLevel; i++) os << levelSteps[i] << ' ';
+    } else {
+      for (int i = 0; i <= finestLevel; i++) os << 0 << ' ';
     }
     os << '\n';
-  }
-  if(isCartGrid) {
-    for(int i(0); i <= finestLevel; i++) {
-      os << vfeps[i] << ' ';
+    for(int i = 0; i <= finestLevel; i++) {
+      for(int k = 0; k < BL_SPACEDIM; k++) {
+        os << dxLevel[i][k] << ' ';
+      }
+      os << '\n';
     }
-    os << '\n';
+    if(isCartGrid) {
+      for(int i(0); i <= finestLevel; i++) {
+        os << vfeps[i] << ' ';
+      }
+      os << '\n';
+    }
+    os << coordSys << '\n';
+    os << 0 << '\n';                  // --------------- The bndry data width.
   }
-  os << coordSys << '\n';
-  os << 0 << '\n';                  // --------------- The bndry data width.
   //
   // Write out level by level.
   //
@@ -172,6 +174,7 @@ void WritePlotfile(const std::string         &pfversion,
       ccnt += data[i][iLevel]->nComp();
     }
     VisMF::Write(tot, PathName);
+    ParallelDescriptor::Barrier();
   }
     
   os.close();

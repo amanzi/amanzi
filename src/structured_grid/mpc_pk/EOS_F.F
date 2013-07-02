@@ -443,7 +443,9 @@ c         end if
 
       end if
 
-      call get_invst(s,sat,rho,sres,ncomps)
+      if (cpl_type .ge. 0) then
+         call get_invst(s,sat,rho,sres,ncomps)
+      endif
 
       end
 
@@ -699,12 +701,13 @@ c ::: -----------------------------------------------------------
 
       integer i
 
-      call get_kr(kr,s,rho,ncomps,kr_type,kr_coef,sres)
-
-      do i = 1,ncomps
-         kr(i) = kr(i)/muval(i)
-      end do
-
+      if (kr_type .ge. 0) then
+         call get_kr(kr,s,rho,ncomps,kr_type,kr_coef,sres)
+         
+         do i = 1,ncomps
+            kr(i) = kr(i)/muval(i)
+         end do
+      endif
       end
 
 c ::: -----------------------------------------------------------

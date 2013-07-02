@@ -1044,7 +1044,7 @@ public:
   MultiFab* UMac_Prev() {return u_mac_prev;}
   MultiFab* UMac_Curr() {return u_mac_curr;}
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
-  MultiFab* KappaCC() {return kappa;};
+  MultiFab* KappaCCavg() {return kappa;};
   MultiFab* Porosity() {return rock_phi;}
   MultiFab* KappaEC() {return kpedge;}
   MultiFab* PCapParams() {return cpl_coef;}
