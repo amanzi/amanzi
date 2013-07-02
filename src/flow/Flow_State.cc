@@ -215,7 +215,7 @@ void Flow_State::set_gravity(double g) {
 
   gvec->PutScalar(0.);
   (*gvec)[dim-1] = g;
-  (*gvec)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
+  //  (*gvec)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
 }
 
 

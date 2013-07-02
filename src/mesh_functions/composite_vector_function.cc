@@ -50,6 +50,7 @@ void CompositeVectorFunction::Compute(double time,
   for (CompositeVectorSpecList::const_iterator cv_spec=cv_spec_list_.begin();
        cv_spec!=cv_spec_list_.end(); ++cv_spec) {
     std::string compname = (*cv_spec)->first;
+    Epetra_MultiVector& compvec = *cv->ViewComponent(compname,false);
     Teuchos::RCP<MeshFunction::Spec> spec = (*cv_spec)->second;
 
     AmanziMesh::Entity_kind kind = spec->first->second;
@@ -63,7 +64,7 @@ void CompositeVectorFunction::Compute(double time,
         if (mesh->valid_set_name(*region, AmanziMesh::FACE)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::USED, &id_list);
+          mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::OWNED, &id_list);
 
           const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
 
@@ -82,7 +83,7 @@ void CompositeVectorFunction::Compute(double time,
               // evaluate the functions and stuff the result into the CV
               double *value = (*spec->second)(args);
               for (int i=0; i!=(*spec->second).size(); ++i) {
-                (*cv)(compname, i, bf) = value[i];
+                compvec[i][bf] = value[i];
               }
             }
           }
@@ -97,7 +98,7 @@ void CompositeVectorFunction::Compute(double time,
         if (mesh->valid_set_name(*region, kind)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(*region, kind, AmanziMesh::USED, &id_list);
+          mesh->get_set_entities(*region, kind, AmanziMesh::OWNED, &id_list);
 
           // loop over indices
           for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
@@ -118,7 +119,7 @@ void CompositeVectorFunction::Compute(double time,
             // evaluate the functions and stuff the result into the CV
             double *value = (*spec->second)(args);
             for (int i=0; i!=(*spec->second).size(); ++i) {
-              (*cv)(compname, i, *id) = value[i];
+              compvec[i][*id] = value[i];
             }
           }
         } else {
