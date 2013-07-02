@@ -30,7 +30,7 @@ Amanzi supports both structured and unstructured numerical solution approaches. 
 
 .. code-block:: xml
 
-   <mesh class=unstructured framework=["mstk","stk::mesh"|"moab"|"simple"]>
+   <mesh class=unstructured framework=["mstk"|"stk::mesh"|"moab"|"simple"]>
 
       <comments> May be included in the Mesh element </comments>
 
@@ -75,10 +75,10 @@ Each of these is controlled in different ways, reflecting their intended use.
 Observations
 ------------
 
-The Observations element holds all the observations that the user
-is requesting from Amanzi, as well as meta data, such as the 
-name of the file that Amanzi will write observations to.  The observations
-are collected by their phase. Thus, the ''observations'' element has the
+The Observations element holds all the observations that the user is
+requesting from Amanzi, as well as meta data, such as the name of the
+file that Amanzi will write observations to.  The observations are
+collected by their phase. Thus, the ''observations'' element has the
 following requirements
 
 .. code-block:: xml
@@ -149,3 +149,30 @@ Example:
 	 </observation>
        </phase>
      </observations>
+
+
+Observations (take 2)
+------------
+
+Here I'm just experimenting with a much more compressed "use case" style.  Not sure if this 
+gives enough detail.
+
+.. code-block :: xml
+
+   <observations>
+     <!-- Amanzi will write the observation to the file specified here (required) -->
+     <filename>OptionalPath/ObservationsFileName</filename>
+       <!-- Phases: required attribute is name -->
+       <phases name="aqueous">
+         <!-- Observations: List as many observations as desired,
+                            Required Attribute is variable
+         -->
+         <observation variable="Name of field quantity from list of 'Available field quantities' defined above)">
+           <assigned_region>name of region</assigned_region>
+           <functional>name of observation functional (from list below)</functional>
+           <time_macro>name of a time macro (from definitions)</time_macro>
+         </observation>
+       </phases>
+   </observations>
+
+            
