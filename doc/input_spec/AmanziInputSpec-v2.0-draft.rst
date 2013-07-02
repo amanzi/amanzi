@@ -152,7 +152,7 @@ Example:
 
 
 Observations (take 2)
-------------
+---------------------
 
 Here I'm just experimenting with a much more compressed "use case" style.  Not sure if this 
 gives enough detail.
