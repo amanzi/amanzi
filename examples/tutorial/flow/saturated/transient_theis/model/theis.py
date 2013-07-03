@@ -46,6 +46,7 @@ class TransientTheis(object):
         params.setdefault("mu",1.e-3)
         params.setdefault("h_0", 10)
         params.setdefault("Q",-1.e-3)
+       
         self.__dict__.update(params)
         
         self.K_h = self.K*self.g*self.rho / self.mu
@@ -55,13 +56,15 @@ class TransientTheis(object):
         self.var = -self.Q / 4 / self.pi /self.T
         
         self.S = self.S_s*self.h_0
+        
+        
 
     def runForFixedTime(self, radi, time):
         #This method evaluates Theis solution for a given time at multiple radial distances from the well 
         drawdown_r = []
         for r in radi:
             u = r ** 2 * self.S / 4 / self.T / time 
-            W = -0.577216 - math.log(u) + u - (u**2 /( 2 * math.factorial(2))) + (u**3 /( 3 * math.factorial(3))) - (u**4/(4*math.factorial(4))) + (u**5/(5*math.factorial(5))) - (u**6/(6*math.factorial(6))) + (u**7/(7*math.factorial(7))) 
+            W = getWellFunction(u)
             s = self.var*W
             drawdown_r.append(s)
         return drawdown_r
@@ -71,7 +74,7 @@ class TransientTheis(object):
         drawdown_t = []
         for t in times:
             u = radius ** 2 * self.S / 4 / self.T / t
-            W = -0.577216 - math.log(u) + u - (u**2 /(2*math.factorial(2))) + (u**3/(3*math.factorial(3))) - (u**4/(4*math.factorial(4))) + (u**5/(5*math.factorial(5))) - (u**6/(6*math.factorial(6))) + (u**7/(7*math.factorial(7))) 
+            W = getWellFunction(u)
             s = self.var*W
             drawdown_t.append(s)
         return drawdown_t
@@ -109,13 +112,46 @@ def paramsFromXML(filename):
 
     return TransientTheis(params)
 
+
+def getWellFunction(U):
+    u = float(U)
+    a_0 =-0.57722
+    a_1 = 0.99999
+    a_2 =-0.24991
+    a_3 = 0.05520
+    a_4 =-0.00976
+    a_5 = 0.00108
+    b_1 = 8.57333
+    b_2 = 18.05902
+    b_3 = 8.63476
+    b_4 = 0.26777
+    c_1 = 9.57332
+    c_2 = 25.63296
+    c_3 = 21.09965
+    c_4 = 3.95850
+
+    try:
+        u < 0
+    except KeyError:
+        raise RunTimeError("u cannot be negative check input times and radius!")
+    if u < 1:
+        W = -math.log(u) + a_0 + a_1*u + a_2*u**2 + a_3*u**3 + a_4*u**4 + a_5*u**5
+        return W
+    if u >= 1:
+        W = (math.exp(-u) / u)*((u**4 +b_1*(u**3) + b_2*(u**2) + b_3*u + b_4)/(u**4 + c_1*(u**3) + c_2*(u**2) + c_3*u + c_4))
+        return W
+
+     
+         
+         
+
 if __name__ == "__main__":
     #instaniate the class
     Tt = TransientTheis()
     
     radi = []
     rindex = numpy.arange(.1,50,.3)
-    time = [1500,3600,86400,360000] #100 hours
+    time = [1500,3600,86400,360000, 860000] #100 hours
     
     tindex=numpy.arange(100)
     times=[]
@@ -124,9 +160,9 @@ if __name__ == "__main__":
         radi.append(i)
 
     for i in tindex:
-        times.append(50+math.exp(float(tindex[i])*(i+1)/(10*len(tindex))))
+        times.append(1+math.exp(float(i)*(i+1)/(8.5*len(tindex))))
 
-    radius = [1,5,10,20]
+    radius = [30,50,60]
 
 #s_fixed_time = Tt.runForFixedTime(radi, time)
 # s_fixed_radius = Tt.runForFixedRadius(times, radius)

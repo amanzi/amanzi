@@ -19,7 +19,7 @@ def run_amanzi(input_file, directory=None):
    
     try:
         stdout_file = open("stdout.out", "w")
-        ierr = subprocess.call([executable, "--xml_file="+input_file], stdout=stdout_file, stderr= subprocess.STDOUT)
+        ierr = subprocess.call([executable, "--xml_file="+input_file]), stdout=stdout_file, stderr= subprocess.STDOUT)
         
     finally:
         pass
