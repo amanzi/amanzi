@@ -89,10 +89,6 @@ void Darcy_PK::ProcessParameterList()
     std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
     LinearSolver_Specs& ls_specs = ti_specs_sss_.ls_specs;
     ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
-  } else {  // fills-in the important defaults (See InputParserIS_defaults.hh)
-    std::string linear_solver_name("AztecOO");  // Must equal to ST_SOLVER
-    LinearSolver_Specs& ls_specs = ti_specs_sss_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);   
   }
 
   // Time integrator for period II, called transient time integrator

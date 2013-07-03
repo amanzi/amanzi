@@ -19,6 +19,8 @@ Geometry
 ------------
 
 .. image:: figs/Geometry.png
+  :align: right
+  :width: 200px
 
 Stated Initial Conditions
 ------------------------------

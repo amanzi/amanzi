@@ -1946,7 +1946,7 @@ PorousMedia::richard_init_to_steady()
           }
               
           // Advance the state data structures
-          for (int lev=0;lev<num_active_levels;lev++) {
+          for (int lev=0;lev<finest_level+1;lev++) {
             PorousMedia& pm = getLevel(lev);
             for (int i = 0; i < num_state_type; i++) {
               pm.state[i].allocOldData();
@@ -1958,7 +1958,7 @@ PorousMedia::richard_init_to_steady()
           cur_time = state[Press_Type].curTime();
           prev_time = state[Press_Type].prevTime();
 
-          for (int lev=0;lev<num_active_levels;lev++)
+          for (int lev=0;lev<finest_level+1;lev++)
           {
             PorousMedia& pm = getLevel(lev);
             for (int i = 0; i < num_state_type; i++)
@@ -2055,7 +2055,7 @@ PorousMedia::richard_init_to_steady()
               BoxLib::Abort("Aborting as instructed when timestep fails");
             }
             total_rejected_Newton_steps++;
-            for (int lev=0;lev<num_active_levels;lev++) {
+            for (int lev=0;lev<finest_level+1;lev++) {
 
               PorousMedia&    fine_lev   = getLevel(lev);
               for (int k = 0; k < num_state_type; k++) {
@@ -8337,7 +8337,6 @@ PorousMedia::post_regrid (int lbase,
 void 
 PorousMedia::init_rock_properties ()
 {
-
   //
   // Determine rock properties.
   //
@@ -8370,8 +8369,6 @@ PorousMedia::init_rock_properties ()
   int new_crse_grid_size = std::max(1,new_fine_grid_size/rrmax);
 
   int ng_twoexp = twoexp * nGrowHYP;  
-
-
 
   if (PMParent()->UsingMaterialServer()) 
   {

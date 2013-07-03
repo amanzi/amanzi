@@ -572,7 +572,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::transient_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::dt_cutoff    = 0.0;
-  PorousMedia::gravity      = 9.70297e-5; // 9.81/1.01e5
+  PorousMedia::gravity      = 9.80665 / 1.01325e5;
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
   PorousMedia::sum_interval = -1;
@@ -1386,12 +1386,27 @@ PorousMedia::read_rock(int do_chem)
             ppr.getarr("kr_param",rkrParam,0,ppr.countval("kr_param"));
         }
 
+        Array<Real> krPt(rkrParam.size()+1);
+        krPt[0] = Real(rkrType);
+        for (int j=0; j<rkrParam.size(); ++j) {
+          krPt[j+1] = rkrParam[j];
+        }
+        std::string krel_str = "relative_permeability";
+        Property* krel_func = new ConstantProperty(krel_str,krPt,harm_crsn,pc_refine);
+
         // capillary pressure: include cpl_coef, sat_residual, sigma
         int rcplType = 0;  ppr.query("cpl_type", rcplType);
         Array<Real> rcplParam;
         if (rcplType > 0) {
             ppr.getarr("cpl_param",rcplParam,0,ppr.countval("cpl_param"));
         }
+        Array<Real> cplPt(rcplParam.size()+1);
+        cplPt[0] = Real(rcplType);
+        for (int j=0; j<rcplParam.size(); ++j) {
+          cplPt[j+1] = rcplParam[j];
+        }
+        std::string cpl_str = "capillary_pressure";
+        Property* cpl_func = new ConstantProperty(cpl_str,cplPt,arith_crsn,pc_refine);
 
         Array<std::string> region_names;
         ppr.getarr("regions",region_names,0,ppr.countval("regions"));
@@ -1430,10 +1445,14 @@ PorousMedia::read_rock(int do_chem)
         properties.push_back(phi_func);
         properties.push_back(kappa_func);
         properties.push_back(Deff_func);
+        properties.push_back(krel_func);
+        properties.push_back(cpl_func);
         materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
         delete phi_func;
         delete kappa_func;
         delete Deff_func;
+        delete krel_func;
+        delete cpl_func;
     }
 
     // Read rock parameters associated with chemistry
@@ -2033,7 +2052,7 @@ void PorousMedia::read_prob()
   // This is converted to the unit that is used in the code.
   if (pb.contains("gravity")) {
     pb.get("gravity",gravity);
-    gravity /= 1.01e5;
+    gravity /= 1.01325e5;
   }
 
   // Get algorithmic flags and options

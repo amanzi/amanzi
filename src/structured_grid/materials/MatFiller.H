@@ -78,10 +78,10 @@ public:
   /* Access functions follow */
 
   /* The coarsen rule registered for a given property */
-  Property::CoarsenRule coarsenRule (const std::string& property_name) const;
+  const Property::CoarsenRule coarsenRule (const std::string& property_name) const;
 
   /* The refine rule registered for a given property */
-  Property::RefineRule refineRule (const std::string& property_name) const;
+  const Property::RefineRule refineRule (const std::string& property_name) const;
 
   /* The number of components this property will fill */
   int nComp(const std::string& property_name) const;
@@ -112,16 +112,6 @@ public:
   /* Currently, not really critical, since there is no default constructor */
   bool Initialized() const {return initialized;}
 
-protected:
-
-  /* Manage all actions necessary to define this structure */
-  void Initialize();
-
-  /* Manage the cell-ID parts of the construction process */
-  void define(const Array<Geometry>& _geomArray,
-              const Array<IntVect>&  _refRatio,
-              const PArray<Material>& materials);
-
   /* Given fine property values, generate coarse property values
      per the coarsen rule registered for this property. */
   virtual void CoarsenData(const FArrayBox&   fineFab,
@@ -131,7 +121,7 @@ protected:
                            int                dComp,
                            int                nComp,
                            const IntVect&     ref,
-                           const std::string& pname) const;
+                           const Property::CoarsenRule& rule) const;
 
   /* Given crse property values, generate fine property values 
      per the refine rule registered for this property */
@@ -142,7 +132,17 @@ protected:
                           int                dComp,
                           int                nComp,
                           const IntVect&     ref,
-                          const std::string& pname) const;
+                          const Property::RefineRule& rule) const;
+
+protected:
+
+  /* Manage all actions necessary to define this structure */
+  void Initialize();
+
+  /* Manage the cell-ID parts of the construction process */
+  void define(const Array<Geometry>& _geomArray,
+              const Array<IntVect>&  _refRatio,
+              const PArray<Material>& materials);
 
   /* Manage the generation of property value based on evaluations
      at finer levels.  This is factored out to allow permuting the
