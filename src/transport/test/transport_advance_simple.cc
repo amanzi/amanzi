@@ -17,6 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
+#include "Mesh.hh"
 
 #include "State.hh"
 #include "Transport_PK.hh"
@@ -70,10 +71,10 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 20, 2, gm); 
-  
+  RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 1, 1, gm); 
+
   RCP<Transport_State> TS = rcp(new Transport_State(mesh, 1));
- 
+
   Point u(1.0, 0.0, 0.0);
   TS->Initialize();
   TS->set_darcy_flux(u);
@@ -94,6 +95,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   RCP<Transport_State> TS_next = TPK.transport_state_next();
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
+
 
   iter = 0;
   while (T < 1.0) {

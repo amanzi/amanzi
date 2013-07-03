@@ -154,6 +154,7 @@ class State {
   // Field accessor.
   Teuchos::RCP<Field> GetField(Key fieldname, Key pk_name);
   Teuchos::RCP<const Field> GetField(Key fieldname) const;
+  void SetField(Key fieldname, Key pk_name, const Teuchos::RCP<Field>& field);
 
   // Iterate over Fields.
   typedef FieldMap::const_iterator field_iterator;

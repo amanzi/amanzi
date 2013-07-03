@@ -51,7 +51,7 @@ class Transport_State : public PK_State {
 
   // non const access methods
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration() {
-    return S_->GetFieldData("total_component_concentration", name_)->ViewComponent("cell", true); }
+    return S_->GetFieldData("total_component_concentration", name_)->ViewComponent("cell", ghosted_); }
 
   Teuchos::RCP<Epetra_Vector> porosity() {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("porosity", name_)->ViewComponent("cell", ghosted_))(0)); }

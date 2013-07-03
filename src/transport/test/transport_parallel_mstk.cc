@@ -92,6 +92,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
       printf("T=%7.2f  C_0(x):", T);
       for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
     }
+
     *tcc = *tcc_next;
   }
 

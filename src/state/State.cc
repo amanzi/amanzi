@@ -493,6 +493,22 @@ Teuchos::RCP<const Field> State::GetField(Key fieldname) const {
   return record;
 };
 
+void State::SetField(Key fieldname, Key pk_name,
+                     const Teuchos::RCP<Field>& new_record) {
+  Teuchos::RCP<const Field> old_record = GetField_(fieldname);
+  if (old_record != Teuchos::null) {
+    if (old_record->owner() != pk_name) {
+      std::stringstream messagestream;
+      messagestream << "PK " << pk_name
+                    << " is attempting to overwrite field " << fieldname
+                    << " which is owned by " << old_record->owner();
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  }
+  fields_[fieldname] = new_record;
+}
+
 // modify methods
 // -- modify by pointer, no copy
 void State::SetData(Key fieldname, Key pk_name,

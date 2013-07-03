@@ -43,7 +43,7 @@ Transport_State::Transport_State(Transport_State& other,
     // Not currently needed by Transport?
     ASSERT(0);
   } else if (mode == CONSTRUCT_MODE_COPY_DATA_GHOSTED) {
-    // Copy, with ghosted TCC and flux
+    // Pointers for all but a copy on ghosted TCC and flux
     ghosted_ = true;
 
     CompositeVectorFactory fac_tcc;
@@ -54,7 +54,16 @@ Transport_State::Transport_State(Transport_State& other,
     tcc->CreateData();
     *tcc->ViewComponent("cell",false) = *other.total_component_concentration();
     tcc->ScatterMasterToGhosted();
+
+    // setting the data also requires making a new field record
+    Teuchos::RCP<Field> other_tcc_field =
+        S_->GetField("total_component_concentration", name_);
+    Teuchos::RCP<Field> new_tcc_field = other_tcc_field->Clone();
+    S_->SetField("total_component_concentration", name_, new_tcc_field);
     S_->SetData("total_component_concentration", name_, tcc);
+
+    Teuchos::RCP<Epetra_MultiVector> tcc_now = total_component_concentration();
+    Teuchos::RCP<Epetra_MultiVector> tcc_other_now = other.total_component_concentration();
 
     CompositeVectorFactory fac;
     fac.SetMesh(mesh_);
@@ -64,6 +73,12 @@ Transport_State::Transport_State(Transport_State& other,
     flux->CreateData();
     *flux->ViewComponent("face",false) = *other.darcy_flux();
     flux->ScatterMasterToGhosted();
+
+    // clone the field, assign the vector
+    Teuchos::RCP<Field> other_flux_field =
+        S_->GetField("darcy_flux", name_);
+    Teuchos::RCP<Field> new_flux_field = other_flux_field->Clone();
+    S_->SetField("darcy_flux", name_, new_flux_field);
     S_->SetData("darcy_flux", name_, flux);
   }
 }
