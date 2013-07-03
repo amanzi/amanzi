@@ -12,7 +12,7 @@
 	
 	<definitions>
 	    	<macros>
-				<cycle_macro name="Every-100-steps">
+				<cycle_macro name = "Every-100-steps">
 					<start>0</start>
 					<timestep_interval>100</timestep_interval>
 					<stop>-1</stop>
@@ -57,9 +57,9 @@
 	
 	
 	<process_kernels>
-		<flow state="on" model="saturated"></flow>
-		<transport state="on" algorithm="implicit upwind"></transport>
-		<chemistry state="on" process_model="implicit operator split"></chemistry>
+		<flow state="on" model="saturated"/>
+		<transport state="on" algorithm="implicit upwind"/>
+		<chemistry state="on" process_model="implicit operator split"/>
 	</process_kernels>
 	
 	
@@ -86,8 +86,8 @@
 	
 	<execution_controls>
 			<comments>TDS added these as required by the schema </comments>
-			<execution_control_defaults init_dt="1.0 h" max_dt="0.25 y" reduction_factor="0.8" increase_factor="1.25" mode="steady" method="picard"></execution_control_defaults>
-			<execution_control start="0.0 y" end="25.0 y" init_dt="1.0 h" max_dt="0.25 y" reduction_factor="0.5" increase_factor="2.0" mode="steady" method="picard"></execution_control>
+			<execution_control_defaults init_dt= "1.0 h"   max_dt="0.25 y"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="picard"/>
+			<execution_control  start="0.0 y" end="25.0 y" init_dt= "1.0 h" max_dt="0.25 y" reduction_factor="0.5"  increase_factor="2.0"    mode = "steady"  method="picard" />
 	</execution_controls>
 	
 	<numerical_controls>
@@ -114,8 +114,8 @@
 		<transient_controls>
 			<comments>Proposed comments section.</comments>
 			<integration_method name="bdf1">
-			   <convergence_criteria error_rel_tol="0.0" error_abs_tol="0.0"></convergence_criteria>
-                           <nonlinear_solver_parameters min_iterations="12" max_iterations="20" max_preconditioner_lag="5"></nonlinear_solver_parameters>
+			   <convergence_criteria error_rel_tol="0.0" error_abs_tol="0.0" />
+                           <nonlinear_solver_parameters min_iterations="12" max_iterations="20" max_preconditioner_lag="5" />
 			</integration_method>
 		</transient_controls>
 		<linear_solver>
@@ -140,39 +140,39 @@
 		<comments>GEH: Using 3D domain since I don't know the format for 1D.</comments>
 		<dimension>3</dimension>
 		<generate>
-			<number_of_cells nx="100" ny="1" nz="1"></number_of_cells>
-			<box low_coordinates="(0.0,0.0,0.0)" high_coordinates="(100.0,1.0,1.0)"></box>
+			<number_of_cells nx = "100"  ny = "1"  nz = "1"/>
+			<box  low_coordinates = "(0.0,0.0,0.0)" high_coordinates = "(100.0,1.0,1.0)"/>
 		</generate>
 	</mesh>
 	
 	<regions>
-		<region name="All">
-			<box low_coordinates="(0.0,0.0,0.0)" high_coordinates="(100.0,1.0,1.0)"></box>
+		<region name ="All">
+			<box low_coordinates= "(0.0,0.0,0.0)"     high_coordinates="(100.0,1.0,1.0)"/>
 		</region>
 
-		<region name="Inlet Boundary">
-			<box low_coordinates="(0.0,0.0,0.0)" high_coordinates="(0.0,1.0,1.0)"></box>
+		<region name ="Inlet Boundary">
+			<box low_coordinates= "(0.0,0.0,0.0)"     high_coordinates="(0.0,1.0,1.0)"/>
 		</region>
 
-		<region name="Outlet Boundary">
-			<box low_coordinates="(110.0,0.0,0.0)" high_coordinates="(100.0,1.0,1.0)"></box>
+		<region name ="Outlet Boundary">
+			<box low_coordinates= "(110.0,0.0,0.0)"     high_coordinates="(100.0,1.0,1.0)"/>
 		</region>
 
-		<point name="inlet" coordinate="(25.0,1.0,1.0)"></point>		
-		<point name="quarter_distance" coordinate="(25.0,1.0,1.0)"></point>
-		<point name="half_distance" coordinate="(50.0,1.0,1.0)"></point>
-		<point name="three_quarter_distance" coordinate="(75.0,1.0,1.0)"></point>
-		<point name="outlet" coordinate="(25.0,1.0,1.0)"></point>		
+		<point name="inlet" coordinate="(25.0,1.0,1.0)"/>		
+		<point name="quarter_distance" coordinate="(25.0,1.0,1.0)"/>
+		<point name="half_distance" coordinate="(50.0,1.0,1.0)"/>
+		<point name="three_quarter_distance" coordinate="(75.0,1.0,1.0)"/>
+		<point name="outlet" coordinate="(25.0,1.0,1.0)"/>		
 
 	</regions>
 	
 	<materials>
 		<material name="soil1">
 			<mechanical_properties>
-				<porosity value="0.25"></porosity>
-				<particle_density value="2720.0"></particle_density>
+				<porosity value="0.25"/>
+				<particle_density value="2720.0"/>
 			</mechanical_properties>
-			<permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"></permeability>
+			<permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
 			<!--No capillary pressure or relative permeability model due to saturated flow-->
 			<assigned_regions>All</assigned_regions>
 		</material>
@@ -185,23 +185,23 @@
                         <!-- Chemistry input needs to be consolidated and migrated to xml file
                              as funding becomes available -->
 			<constraint name="Initial">
-				<solute name="H+" value="1.0e-8" type="Free Ion Concentration"></solute>
-				<solute name="HCO3-" value="1.0e-3" type="Gas" gas="CO2(g)"></solute>
-				<solute name="Ca++" value="5.0e-4" type="Mineral" mineral="Calcite"></solute>
-				<mineral name="Calcite" volume_fraction="1.0e-5" surface_area="1.0"></mineral>
+				<solute name="H+"        value="1.0e-8"            type="Free Ion Concentration"/>
+				<solute name="HCO3-"     value="1.0e-3"            type="Gas"      gas="CO2(g)"/>
+				<solute name="Ca++"      value="5.0e-4"            type="Mineral"  mineral="Calcite"/>
+				<mineral name="Calcite"  volume_fraction="1.0e-5"  surface_area ="1.0"/>
 			</constraint>
 			<!-- Mineral named in constraint = "Initial" because it's used to set initial condition -->
 			<constraint name="Inlet">
-				<solute name="H+" value="5.0" type="pH"></solute>
-				<solute name="HCO3-" value="1.0e-3" type="Total Component Concentration"></solute>
-				<solute name="Ca++" value="1.0e-6" type="Charge Balance"></solute>
+				<solute name="H+"     value="5.0"        type="pH"/>
+				<solute name="HCO3-"  value="1.0e-3"	type="Total Component Concentration"/>
+				<solute name="Ca++"   value="1.0e-6"     type="Charge Balance"/>
 			</constraint>
                         <!-- OR -->
                         <!-- Advantage is that reaction network and associated constraints are
                              all in the same place per Glenn and Vicky's discussion 
                              Consolidating to pflotran is first step towards consolidation  -->
-			<constraint name="Initial" filename="calcite_flow_and_tran.in"></constraint>
-			<constraint name="Inlet" filename="calcite_flow_and_tran.in"></constraint>
+			<constraint name="Initial" filename="calcite_flow_and_tran.in"/>
+			<constraint name="Inlet" filename="calcite_flow_and_tran.in"/>
 		</constraints>
 	</geochemistry>
 	
@@ -210,10 +210,10 @@
 			<initial_condition name="Background Aqueous">
 				<assigned_regions>All</assigned_regions>
 				<liquid_component name="water">
-					<pressure value="201325.0"></pressure>
+					<pressure value="201325.0"/>
 				</liquid_component>
 				<geochemistry>
-					<constraint name="Initial"></constraint>
+					<constraint name="Initial"/>
 				</geochemistry>
 			</initial_condition>
     		</liquid_phase>
@@ -221,7 +221,7 @@
 			<initial_condition name="Background Solid">
 				<assigned_regions>All</assigned_regions>
 				<geochemistry>
-					<constraint name="Initial"></constraint>
+					<constraint name="Initial"/>
 				</geochemistry>
 			</initial_condition>
 		</solid_phase>
@@ -232,19 +232,19 @@
 			<boundary_condition name="Inlet">
 				<assigned_regions>Inlet Boundary</assigned_regions>
 				<liquid_component name="water">
-					<inward_volumetric_flux value="1.0" start="0" function="constant"></inward_volumetric_flux>
+					<inward_volumetric_flux value="1.0" start="0" function="constant"/>
 				</liquid_component>
 				<geochemistry>
-					<constraint name="Inlet" start="0.0" function="constant"></constraint>
+					<constraint name="Inlet" start="0.0" function="constant"/>
 				</geochemistry>
 			</boundary_condition>
 			<boundary_condition name="Outlet">
 				<assigned_regions>Outlet Boundary</assigned_regions>
 				<liquid_component name="water">
-					<uniform_pressure value="201325.0" start="0.0" function="constant"></uniform_pressure>
+					<uniform_pressure value="201325.0" start="0.0" function="constant"/>
 				</liquid_component>
 				<geochemistry>
-					<constraint name="Initial" start="0.0" function="constant"></constraint>
+					<constraint name="Initial" start="0.0" function="constant"/>
 				</geochemistry>
 			</boundary_condition>
 		</liquid_phase>
