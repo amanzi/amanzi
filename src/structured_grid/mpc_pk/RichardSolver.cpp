@@ -1205,7 +1205,7 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
       // Make sure grow cells are consistent
       for (int lev=0; lev<nLevs; ++lev) {
 	(*CoeffCC)[lev].FillBoundary(0,BL_SPACEDIM);
-	geomArray[lev].FillPeriodicBoundary((*CoeffCC)[lev],0,BL_SPACEDIM);
+	layout.GeomArray()[lev].FillPeriodicBoundary((*CoeffCC)[lev],0,BL_SPACEDIM);
       }
 
       // Get (lambda*kappa)
