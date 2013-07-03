@@ -10,12 +10,21 @@ define_external_project_args(XERCES
                              BUILD_IN_SOURCE
                              DEPENDS ${MPI_PROJECT} )
 
-
-# -- Define configure parameters
-if(APPLE)
-    set(cflag_args "-arch x86_64")
-    set(cxxflag_args "-arch x86_64")
-ENDIF(APPLE)
+set(CFLAGS "${CMAKE_C_FLAGS}")
+set(CXXFLAGS "${CMAKE_CXX_FLAGS}")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CFLAGS "${CFLAGS} ${CMAKE_C_FLAGS_DEBUG}")
+  set(CXXFLAGS "${CXXFLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+elseif (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+  set(CFLAGS "${CFLAGS} ${CMAKE_C_FLAGS_MINSIZEREL}")
+  set(CXXFLAGS "${CXXFLAGS} ${CMAKE_CXX_FLAGS_MINSIZEREL}")
+elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
+  set(CFLAGS "${CFLAGS} ${CMAKE_C_FLAGS_RELEASE}")
+  set(CXXFLAGS "${CXXFLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  set(CFLAGS "${CFLAGS} ${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+  set(CXXFLAGS "${CXXFLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+endif()
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${XERCES_BUILD_TARGET}
@@ -31,8 +40,10 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     CONFIGURE_COMMAND 
 		                      <SOURCE_DIR>/configure
 				                  --prefix=<INSTALL_DIR>
-						  CFLAGS=${cflag_args}
-						  CXXFLAGS=${cxxflag_args}
+                                                  CC=${CMAKE_C_COMPILER_USE}
+                                                  CFLAGS=${CFLAGS}
+                                                  CXX=${CMAKE_CXX_COMPILER_USE}
+                                                  CXXFLAGS=${CXXFLAGS}
                     # -- Build
                     BINARY_DIR        ${XERCES_build_dir}           # Build directory 
 		    BUILD_COMMAND     ${MAKE}                       # Build command
