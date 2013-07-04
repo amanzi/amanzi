@@ -901,16 +901,26 @@ public:
   //
   // Calculate inverse capillary pressure
   //
-  void calcInvCapillary (MultiFab& S,const MultiFab& pc);
+  static void calcInvCapillary (FArrayBox&       n,
+                                const FArrayBox& pc,
+                                const FArrayBox& rock_phi,
+                                const FArrayBox& kappa,
+                                const FArrayBox& cpl_coef);
+
+  void calcInvCapillary (MultiFab& N,const MultiFab& pc);
   //
   // Calculate inverse pressure
   //
-  void calcInvPressure (MultiFab& S,const MultiFab& P);
+  void calcInvPressure (MultiFab& N,const MultiFab& P);
   //
   // Calculate lambda = relative permeability/mu
   //
+  static void calcLambda(FArrayBox&       lambda,
+                         const FArrayBox& N,
+                         const FArrayBox& kr_coef);
+
   void calcLambda (const Real time, MultiFab* lbd_cc = 0);
-  void calcLambda (MultiFab* lbd, const MultiFab &S);
+  void calcLambda (MultiFab* lbd, const MultiFab &N);
   //
   // Calculate first derivative of lambda
   //

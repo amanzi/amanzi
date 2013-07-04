@@ -1133,30 +1133,23 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 	  if (state_to_fill[lev].size()>0) {
 
 	    pm[lev].FillCoarsePatch(pf[lev],0,t,Press_Type,0,1);
+            pf[lev].mult(-1);
 
 	    FArrayBox rsf;
 	    for (MFIter mfi(pf[lev]); mfi.isValid(); ++mfi) {
-	      const FArrayBox& pfab = pf[lev][mfi];
-	      rsf.resize(pfab.box(),1);
-	      FArrayBox& lamf = lf[lev][mfi];
+	      FArrayBox&         lamf = lf[lev][mfi];
+	      const FArrayBox&   pfab = pf[lev][mfi];
 	      const FArrayBox& phifab = phif[lev][mfi];
-	      const FArrayBox& kfab = kf[lev][mfi];
+	      const FArrayBox&   kfab = kf[lev][mfi];
 	      const FArrayBox& pcPfab = pcPf[lev][mfi];
-	      const FArrayBox& krfab = krf[lev][mfi];
+	      const FArrayBox&  krfab = krf[lev][mfi];
+	      int ncKr  = krfab.nComp();
 	      int ncPcP = pcPfab.nComp();
-	      int ncKr = krfab.nComp();
+	      rsf.resize(pfab.box(),1);
 
-	      FORT_MK_INV_CPL( pfab.dataPtr(),   ARLIM(pfab.loVect()),   ARLIM(pfab.hiVect()),
-			       rsf.dataPtr(),    ARLIM(rsf.loVect()),    ARLIM(rsf.hiVect()),
-			       phifab.dataPtr(), ARLIM(phifab.loVect()), ARLIM(phifab.hiVect()),
-			       kfab.dataPtr(),   ARLIM(kfab.loVect()),   ARLIM(kfab.hiVect()),
-			       pcPfab.dataPtr(), ARLIM(pcPfab.loVect()), ARLIM(pcPfab.hiVect()),
-			       &ncPcP); 
+              PorousMedia::calcInvCapillary(rsf, pfab, phifab, kfab, pcPfab);
+              PorousMedia::calcLambda(lamf, rsf, krfab);
 
-	      FORT_MK_LAMBDA( lamf.dataPtr(),  ARLIM(lamf.loVect()),  ARLIM(lamf.hiVect()),
-			      rsf.dataPtr(),   ARLIM(rsf.loVect()),   ARLIM(rsf.hiVect()),
-			      krfab.dataPtr(), ARLIM(krfab.loVect()), ARLIM(krfab.hiVect()),
-			      &ncKr);
 	    }
 	  }
 	}
