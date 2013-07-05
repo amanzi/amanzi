@@ -863,39 +863,48 @@ void MPC::cycle_driver() {
 	  if (S->get_time() == reset_times_.front())
 	    force_checkpoint = true;
 
-      if ((force_checkpoint || force) && flow_enabled) {
+      if ((force_checkpoint || force) && flow_enabled && restart->walkabout()) {
 	// update centroid and velocity in state
-	std::vector<Amanzi::AmanziGeometry::Point> xyz;
-	std::vector<Amanzi::AmanziGeometry::Point> velocity;
+	std::vector<Amanzi::AmanziGeometry::Point> walkabout_xyz;
+	std::vector<Amanzi::AmanziGeometry::Point> walkabout_velocity;
+	std::vector<double> walkabout_phi;
+	std::vector<double> walkabout_ws;
 	
-	FPK->CalculateDarcyVelocity(xyz, velocity);
+	// FPK->CalculateDarcyVelocity(xyz, velocity);
+	FPK->CalculatePoreVelocity(walkabout_xyz, walkabout_velocity, walkabout_phi, walkabout_ws);
 
-	int dim = xyz[0].dim();
+	int dim = walkabout_xyz[0].dim();
 
 	// if this is the first time we're updating state, create the epetra multivectors
 	// first, find the global number of elements
-	if (S->get_velocity() == Teuchos::null  && S->get_centroid() == Teuchos::null) {
-	
-	  int numel = xyz.size();
+	if (S->get_walkabout_velocity() == Teuchos::null) {
+	  int numel = walkabout_xyz.size();
 	  int gnumel;
 	  
 	  comm->SumAll(&numel, &gnumel, 1);
 	  
 	  Epetra_BlockMap map(gnumel, numel, 1, 0, *comm);
 	  
-	  S->get_centroid() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
-	  S->get_velocity() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
+	  S->get_walkabout_xyz() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
+	  S->get_walkabout_velocity() = Teuchos::rcp(new Epetra_MultiVector(map, dim));
+      
+          S->get_walkabout_porosity() = Teuchos::rcp(new Epetra_Vector(map));
+          S->get_walkabout_water_saturation() = Teuchos::rcp(new Epetra_Vector(map));
 	}
 
-	Teuchos::RCP<Epetra_MultiVector> centr = S->get_centroid();
-	Teuchos::RCP<Epetra_MultiVector> velo  = S->get_velocity();
+	Teuchos::RCP<Epetra_MultiVector> wa_xyz = S->get_walkabout_xyz();
+	Teuchos::RCP<Epetra_MultiVector> wa_vel = S->get_walkabout_velocity();
+	Teuchos::RCP<Epetra_Vector> wa_phi = S->get_walkabout_porosity();
+	Teuchos::RCP<Epetra_Vector> wa_ws = S->get_walkabout_water_saturation();
 
 	// then populate the state vectors
-	for (int i=0; i<xyz.size(); ++i) {
-	  for (int j=0; j<dim; ++j) {
-	    (*(*centr)(j))[i] = xyz[i][j];
-	    (*(*velo)(j))[i] = velocity[i][j];
+	for (int i = 0; i < walkabout_xyz.size(); ++i) {
+	  for (int j = 0; j < dim; ++j) {
+	    (*(*wa_xyz)(j))[i] = walkabout_xyz[i][j];
+	    (*(*wa_vel)(j))[i] = walkabout_velocity[i][j];
 	  }
+	  (*wa_phi)[i] = walkabout_phi[i];
+	  (*wa_ws)[i] = walkabout_ws[i];
 	}
       }
 

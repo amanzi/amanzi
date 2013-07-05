@@ -9,46 +9,47 @@
 
 namespace Amanzi {
 
-  class Restart : public Teuchos::VerboseObject<Restart>
-  {
-
-  public:
-    Restart(Teuchos::ParameterList& plist, Epetra_MpiComm *comm); 
-    Restart(Epetra_MpiComm *comm); // this object will not create any output 
-    ~Restart();
+class Restart : public Teuchos::VerboseObject<Restart> 
+{
+ public:
+  Restart(Teuchos::ParameterList& plist, Epetra_MpiComm *comm); 
+  Restart(Epetra_MpiComm *comm); // this object will not create any output 
+  ~Restart();
    
-    void dump_state (State& S, bool force = false);
-    void read_state (State& S, std::string& filename);
-    void create_files ();
-    void read_parameters(Teuchos::ParameterList& plist);
-    bool dump_requested(int cycle);
+  void dump_state (State& S, bool force = false);
+  void read_state (State& S, std::string& filename);
+  void create_files ();
+  void read_parameters(Teuchos::ParameterList& plist);
+  bool dump_requested(int cycle);
 
-  private:    
-    std::string filebasename; 
-    int filenamedigits;
+  bool walkabout() { return walkabout_; }
 
-    Teuchos::ParameterList plist;
+ private:    
+  std::string filebasename; 
+  int filenamedigits;
+
+  Teuchos::ParameterList plist;
     
-    int restart_cycle;
-    int number_of_cycle_intervals;
+  int restart_cycle;
+  int number_of_cycle_intervals;
 
-    int interval;
-    int start;
-    int end;
+  int interval;
+  int start;
+  int end;
     
-    Teuchos::Array<int> steps;
+  Teuchos::Array<int> steps;
 
-    Amanzi::HDF5_MPI *restart_output; 
+  Amanzi::HDF5_MPI *restart_output; 
 
-    // disable restart dumps alltogether
-    bool disabled;
+  // disable restart dumps alltogether
+  bool disabled;
 
-    // write data for walkabout
-    bool walkabout;
+  // write data for walkabout
+  bool walkabout_;
 
-    // the Epetra communicator
-    Epetra_MpiComm *comm;
-  };
+  // the Epetra communicator
+  Epetra_MpiComm *comm;
+};
 
-}
+}  // namespace Amanzi
 #endif

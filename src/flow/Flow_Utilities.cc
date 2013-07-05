@@ -59,7 +59,7 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
   Epetra_Vector& flux = FS->ref_darcy_flux();
   
 #ifdef HAVE_MPI
-  Epetra_Vector flux_wghost(mesh_->face_map(true));
+  Epetra_Vector flux_wghost(mesh_->face_map(true));  // must go away with new state (lipnikov@lanl.gov)
   FS->CopyMasterFace2GhostFace(flux, flux_wghost);
 #else
   Epetra_Vector& flux_wghost = flux;
@@ -136,7 +136,7 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
         N.inverse();
         local_velocity += N * tmp;
       }
-      local_velocity /= (double)d;
+      local_velocity /= (double)ncells;
       velocity.push_back(local_velocity);
 
       mesh_->node_get_coordinates(v, &tmp);
@@ -150,15 +150,81 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void Flow_PK::CalculatePoreVelocity(std::vector<AmanziGeometry::Point>& xyz, 
-                                    std::vector<AmanziGeometry::Point>& velocity)
+void Flow_PK::CalculatePoreVelocity(
+    std::vector<AmanziGeometry::Point>& xyz, 
+    std::vector<AmanziGeometry::Point>& velocity,
+    std::vector<double>& porosity, std::vector<double>& saturation)
 {
   CalculateDarcyVelocity(xyz, velocity);
 
-  Epetra_Vector& porosity = FS->ref_porosity();
+  Epetra_Vector& phi = FS->ref_porosity();
+  Epetra_Vector& ws = FS->ref_water_saturation();
+
+#ifdef HAVE_MPI
+  Epetra_Vector phi_wghost(mesh_->cell_map(true));
+  FS->CopyMasterCell2GhostCell(phi, phi_wghost);
+
+  Epetra_Vector ws_wghost(mesh_->cell_map(true));
+  FS->CopyMasterCell2GhostCell(ws, ws_wghost);
+#else
+  Epetra_Vector& flux_wghost = flux;
+  Epetra_Vector& phi_wghost = phi;
+  Epetra_Vector& ws_wghost = ws;
+#endif
+
+  // set markers for boundary nodes and faces
+  int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  std::vector<int> node_marker(nnodes_wghost);  
+  AmanziMesh::Entity_ID_List nodes, cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    if (ncells == 1) {
+      mesh_->face_get_nodes(f, &nodes);
+      int nnodes = nodes.size();
+
+      for (int n = 0; n < nnodes; n++) node_marker[nodes[n]] = 1;
+    }
+  }
+
+  // STEP 1: populate porosity and saturations in cell centers
+  porosity.clear();
+  saturation.clear();
+
+  for (int c = 0; c < ncells_owned; c++) {
+    porosity.push_back(phi[c]);
+    saturation.push_back(ws[c]);
+  }
+    
+  // STEP 2: recover porosity and saturation at boundary nodes
+  double local_phi, local_ws;
+
+  for (int v = 0; v < nnodes_owned; v++) {
+    if (node_marker[v] > 0) {
+      mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      local_phi = 0.0;
+      local_ws = 0.0;
+      for (int n = 0; n < ncells; n++) {
+        int c = cells[n];
+        local_phi += phi_wghost[c];
+        local_ws += ws_wghost[c];
+      }
+      local_phi /= (double)ncells;
+      porosity.push_back(local_phi);
+
+      local_ws /= (double)ncells;
+      saturation.push_back(local_ws);
+    }
+  }
 
   int n = xyz.size();
-  for (int i = 0; i< n; i++) velocity[i] /= porosity[i];  
+  for (int i = 0; i < n; i++) velocity[i] /= porosity[i] * saturation[i];  
 }
 
 }  // namespace AmanziFlow
