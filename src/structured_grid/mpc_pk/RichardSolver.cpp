@@ -25,8 +25,8 @@ static Real atol_DEF = 1e-10;
 static Real rtol_DEF = 1e-20;
 static Real stol_DEF = 1e-12;
 static bool scale_soln_before_solve_DEF = true;
-static bool semi_analytic_J_DEF = false; // There is a bug in this, or at least a set of solver configs reqd
-static bool centered_diff_J_DEF = true;
+static bool semi_analytic_J_DEF = false;
+static bool centered_diff_J_DEF = false;
 static Real variable_switch_saturation_threshold_DEF = -0.9999;
 static std::string ls_reason_DEF = "Invalid";
 static bool ls_success_DEF = false;
@@ -292,13 +292,17 @@ RichardSolver::BuildMLPropEval()
     }
 
     for (int lev=0; lev<num_levs_mixed; ++lev) {
-      const BoxArray& stf = (lev==0 ? gridArray[0] : state_to_fill[lev]);
-      BoxArray mixed = BoxLib::intersect(matFiller->Mixed(lev),stf);
-      derive_to_fill[lev] = Join(state_to_fill[lev],mixed,true);
+      if (lev==0) {
+        derive_to_fill[lev] = matFiller->Mixed(lev);
+      }
+      if (lev<num_levs_mixed-1) {
+        derive_to_fill[lev] = Join(derive_to_fill[lev],matFiller->Mixed(lev),true);
+      }
       if (lev>0) {
         derive_to_fill[lev] = Join(derive_to_fill[lev],
                                    BoxArray(matFiller->Mixed(lev-1)).refine(matFiller->RefRatio(lev-1)),true);
       }
+      derive_to_fill[lev].removeOverlap();
     }
 
     for (int lev=0; lev<num_levs_mixed; ++lev) {
@@ -1040,6 +1044,7 @@ RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
   }
 }
 
+
 void 
 RichardSolver::UpdateDarcyVelocity(MFTower& pressure,
 				   Real     t)
@@ -1149,7 +1154,6 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 
               PorousMedia::calcInvCapillary(rsf, pfab, phifab, kfab, pcPfab);
               PorousMedia::calcLambda(lamf, rsf, krfab);
-
 	    }
 	  }
 	}
@@ -1160,13 +1164,14 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 	  if (derive_to_fill[lev].size()>0) {
 	    const IntVect& crat = matFiller->RefRatio(lev);
 	    const BoxArray& cba = matFiller->Mixed(lev);
-	    const BoxArray fba = BoxArray(cba).refine(crat);
+            BoxArray fcba = BoxArray(cba).refine(crat);
 
 	    MultiFab tlc(cba,BL_SPACEDIM,0);
-	    MultiFab tlf(fba,BL_SPACEDIM,0);
+	    MultiFab tlf(fcba,BL_SPACEDIM,0);
 
 	    tlf.setVal(-1);
 	    tlf.copy(lf[lev+1],0,0,1);
+
 	    for (int d=1; d<BL_SPACEDIM; ++d) {
 	      tlf.copy(tlf,0,d,1);
 	    }
@@ -1177,6 +1182,7 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 	    for (MFIter mfi(tlc); mfi.isValid(); ++mfi) {
 	      const Box& crse_box = mfi.validbox();
 	      const Box fine_box = Box(crse_box).refine(crat);
+
 	      matFiller->CoarsenData(tlf[mfi],0,tlc[mfi],crse_box,0,BL_SPACEDIM,crat,
 				     matFiller->coarsenRule("relative_permeability"));
 	    }
@@ -1262,14 +1268,15 @@ RichardSolver::DpDtResidual(MFTower& residual,
 {
   DivRhoU(residual,pressure,t);
 
-  int sComp=0;
-  int dComp=0;
-  int nComp=1;
+  if (dt>0) {
+    int sComp=0;
+    int dComp=0;
+    int nComp=1;
 
-  const Array<BoxArray>& gridArray = layout.GridArray();
-  const Array<IntVect>& refRatio = layout.RefRatio();
+    const Array<BoxArray>& gridArray = layout.GridArray();
+    const Array<IntVect>& refRatio = layout.RefRatio();
 
-  for (int lev=0; lev<nLevs; ++lev)
+    for (int lev=0; lev<nLevs; ++lev)
     {
       MultiFab& Rlev = residual[lev];
       for (MFIter mfi(Rlev); mfi.isValid(); ++mfi) {
@@ -1285,8 +1292,9 @@ RichardSolver::DpDtResidual(MFTower& residual,
 			phi_n.dataPtr(),  ARLIM(phi_n.loVect()),   ARLIM(phi_n.hiVect()),
 			phi_np1.dataPtr(),ARLIM(phi_np1.loVect()), ARLIM(phi_np1.hiVect()),
 		        &dt, vbox.loVect(), vbox.hiVect(), &nComp);
-        }
+      }
     }
+  }
 }
 
 #undef __FUNCT__  
@@ -2454,7 +2462,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,MatStructure 
           y[row] *= epsilon_inv;                     /* dx = epsilon */
           srow   = row + start;                      /* global row index */
 
-          if (srow == col) {
+          if (dt_inv>0 && srow == col) {
               y[row] += a_array[srow] * dt_inv;
           }
           ierr   = MatSetValues(J,1,&srow,1,&col,y+row,INSERT_VALUES);CHKPETSC(ierr);

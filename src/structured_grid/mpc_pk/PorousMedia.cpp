@@ -1838,6 +1838,8 @@ PorousMedia::SetRichardSolverParameters(RSParams&          rsparams,
     rsparams.pressure_maxorder = richard_pressure_maxorder;
     rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
     rsparams.semi_analytic_J = richard_semi_analytic_J;
+    rsparams.centered_diff_J = richard_centered_diff_J;
+    rsparams.subgrid_krel = richard_subgrid_krel;
     rsparams.variable_switch_saturation_threshold = richard_variable_switch_saturation_threshold;
 }
 
@@ -1899,8 +1901,12 @@ PorousMedia::richard_init_to_steady()
         }
       }
 
+      bool attempting_pure_steady;
+      Real dt_thresh_pure_steady = richard_dt_thresh_pure_steady;
+
       for (int grid_seq_fine=grid_seq_init_fine; grid_seq_fine<=finest_level; ++grid_seq_fine) {
 
+        attempting_pure_steady = false;
         int num_active_levels = grid_seq_fine + 1;
         if (ParallelDescriptor::IOProcessor() && richard_init_to_steady_verbose) {
           std::cout << "Number of active levels: " << num_active_levels << std::endl;
@@ -1944,7 +1950,7 @@ PorousMedia::richard_init_to_steady()
           if (steady_use_PETSc_snes) {
             rs->SetCurrentTimestep(k);
           }
-              
+
           // Advance the state data structures
           for (int lev=0;lev<finest_level+1;lev++) {
             PorousMedia& pm = getLevel(lev);
@@ -2003,17 +2009,32 @@ PorousMedia::richard_init_to_steady()
             }
 	      
             if (steady_use_PETSc_snes) 
-            {
+            {              
 	      if (!tmp_record_file.empty()) {
 		rs->SetRecordFile(tmp_record_file);
 	      }
-              int retCode = rs->Solve(t+dt, dt, k, nld);
+
+              attempting_pure_steady = dt_thresh_pure_steady>0 && dt>dt_thresh_pure_steady;
+              Real dt_solve = attempting_pure_steady ? -1 : dt;
+              if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+                std::cout << "     **************** Attempting pure steady solve" << '\n';
+              int retCode = rs->Solve(t+dt, dt_solve, k, nld);
+
+              if (retCode < 0 && attempting_pure_steady) {
+                dt_thresh_pure_steady *= 10;
+                if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+                  std::cout << "     **************** Steady solve failed, resuming transient..." << '\n';
+                attempting_pure_steady = false;
+                retCode = rs->Solve(t+dt, dt, k, nld);
+              }
+
               if (retCode >= 0) {
                 ret = RichardNLSdata::RICHARD_SUCCESS;
                 rs->UpdateDarcyVelocity(rs->GetPressure(),t+dt);
               } 
               else {
-                if (ret == -3) {
+
+                if (retCode == -3) {
                   ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
                 }
                 else {
@@ -2061,7 +2082,7 @@ PorousMedia::richard_init_to_steady()
               for (int k = 0; k < num_state_type; k++) {
                 fine_lev.state[k].reset();
               }
-		
+
               if (do_richard_sat_solve) {
                 MultiFab& S_lev = fine_lev.get_new_data(State_Type);
                 MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
@@ -2075,16 +2096,21 @@ PorousMedia::richard_init_to_steady()
 
           Real dt_new;
           bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
-	    
+
           if (ret == RichardNLSdata::RICHARD_SUCCESS) {
             k++;
-            t += dt;
-            if (execution_mode==INIT_TO_STEADY) {
-              solved = false; // Do not kick out early
+            if (attempting_pure_steady) {
+              solved = true;
             }
             else {
-              solved = ((abs_err <= steady_abs_update_tolerance) 
-                        || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+              t += dt;
+              if (execution_mode==INIT_TO_STEADY) {
+                solved = false; // Do not kick out early
+              }
+              else {
+                solved = ((abs_err <= steady_abs_update_tolerance) 
+                          || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+              }
             }
             if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
               std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken() << std::endl;
@@ -2134,8 +2160,11 @@ PorousMedia::richard_init_to_steady()
         }
 	  
         if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-          if (solved) {
+          if (solved || attempting_pure_steady) {
             std::cout << tag << " Success!  Steady solution found" << std::endl;
+            if (grid_seq_fine!=finest_level) {
+              std::cout << tag << " Adding another refinement level and re-solving..." << std::endl;
+            }
           }
           else {
             std::cout << tag << " Warning: solution is not steady.  Continuing..." << std::endl;
