@@ -26,49 +26,65 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
       max_it_(100) {}
 
   // required methods from the base class
-  // sats[0] = s_g, sats[1] = s_l, sats[2] = s_i
+  // sats[0] = sg, sats[1] = sl, sats[2] = si
   virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]);
-  void saturations(double pc_liq, double pc_ice, double guess, double (&sats)[3]);
-
   virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]);
   virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]);
 
-  // overload version with provided function evaluation
-  void dsaturations_dpc_liq(double s_i, double pc_liq, double pc_ice,
+ private:
+  // calculation if unfrozen
+  bool sats_unfrozen_(double pc_liq, double pc_ice, double (&sats)[3]);
+  bool dsats_dpc_liq_unfrozen_(double pc_liq, double pc_ice, double (&dsats)[3]);
+  bool dsats_dpc_ice_unfrozen_(double pc_liq, double pc_ice, double (&dsats)[3]);
+
+  // calculation if saturated
+  bool sats_saturated_(double pc_liq, double pc_ice, double (&sats)[3]);
+  bool dsats_dpc_liq_saturated_(double pc_liq, double pc_ice, double (&dsats)[3]);
+  bool dsats_dpc_ice_saturated_(double pc_liq, double pc_ice, double (&dsats)[3]);
+
+  // calculation if unfrozen and saturated
+  bool sats_frozen_unsaturated_(double pc_liq, double pc_ice, double (&sats)[3]);
+  bool dsats_dpc_liq_frozen_unsaturated_(double pc_liq, double pc_ice,
           double (&dsats)[3]);
-  void  dsaturations_dpc_ice(double s_i, double pc_liq, double pc_ice,
+  bool dsats_dpc_ice_frozen_unsaturated_(double pc_liq, double pc_ice,
           double (&dsats)[3]);
 
- private:
-  bool saturations_if_saturated_(double pc_liq, double pc_ice, double (&sats)[3]);
-  bool saturations_if_above_freezing_(double pc_liq, double pc_ice, double (&sats)[3]);
+  double si_frozen_unsaturated_(double pc_liq, double pc_ice);
+  double dsi_dpc_liq_frozen_unsaturated_(double pc_liq, double pc_ice, double si);
+  double dsi_dpc_ice_frozen_unsaturated_(double pc_liq, double pc_ice, double si);
+
+  double si_frozen_unsaturated_nospline_(double pc_liq, double pc_ice);
+  double dsi_dpc_liq_frozen_unsaturated_nospline_(double pc_liq, double pc_ice,
+          double si);
+  double dsi_dpc_ice_frozen_unsaturated_nospline_(double pc_liq, double pc_ice,
+          double si);
+
+  bool DetermineSplineCutoff_(double pc_liq, double pc_ice, double& cutoff, double& si);
+  bool FitSpline_(double pc_ice, double cutoff, double si_cutoff, double (&coefs)[3]);
 
   double eps_;
   int max_it_;
 
  private:
-  // Functor for saturations()
-
- private:
-  // this Functor gets used within a root-finding algorithm
+  // Functor for ice saturation, gets used within a root-finding algorithm
   class SatIceFunctor_ {
    public:
     SatIceFunctor_(double pc_liq, double pc_ice,
                    const Teuchos::RCP<WRM>& wrm) :
         pc_liq_(pc_liq), pc_ice_(pc_ice), wrm_(wrm) {}
 
-    double operator()(double s_i) {
-      double tmp = (1.0 - s_i) * wrm_->saturation(pc_liq_);
-      return tmp - wrm_->saturation( pc_ice_ + wrm_->capillaryPressure( tmp + s_i));
+    double operator()(double si) {
+      double tmp = (1.0 - si) * wrm_->saturation(pc_liq_);
+      return tmp - wrm_->saturation( pc_ice_ + wrm_->capillaryPressure( tmp + si));
     }
 
    private:
     double pc_liq_;
     double pc_ice_;
     Teuchos::RCP<WRM> wrm_;
-
   };
 
+  // Convergence criteria for root-finding
   struct Tol_ {
     Tol_(double eps) : eps_(eps) {}
     bool operator()(const double& a, const double& b) const {
@@ -78,6 +94,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   };
 
  private:
+  // factory registration
   static Utils::RegisteredFactory<WRMPermafrostModel,WRMImplicitPermafrostModel> factory_;
 
 };
