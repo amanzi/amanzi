@@ -90,6 +90,8 @@ class MatrixMFD_Coupled : public Matrix {
   virtual void SymbolicAssembleGlobalMatrices();
   virtual void InitPreconditioner();
   virtual void UpdatePreconditioner();
+  virtual void UpdateConsistentFaceCorrection(const TreeVector& u,
+          const Teuchos::Ptr<TreeVector>& Pu);
 
  protected:
   // mesh
@@ -106,6 +108,7 @@ class MatrixMFD_Coupled : public Matrix {
 
   // global matrices
   Teuchos::RCP<Epetra_VbrMatrix> A2f2c_;
+  Teuchos::RCP<Epetra_VbrMatrix> A2c2f_;
   Teuchos::RCP<Epetra_FEVbrMatrix> P2f2f_;
 
   // maps

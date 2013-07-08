@@ -171,8 +171,8 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
 
 
   // Backward Substitution, Yc = inv( A2c2c) [  (x_Ac,x_Bc)^T - A2c2f * Yf ]
-  // Yc <-- A2f2c * Yf
-  ierr = A2f2c_->Multiply(false, Yf, Yc);
+  // Yc <-- A2c2f * Yf
+  ierr = A2c2f_->Multiply(false, Yf, Yc);
   ASSERT(!ierr);
 
 
@@ -184,7 +184,7 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
     Yc.SumIntoMyValue(c, 1, 0, b_c);
   }
 
-  // Yc <-- -Yc
+  // Yc <-- -Yc, now Yc =  (x_Ac,x_Bc)^T - A2c2f * Yf
   Yc.Scale(-1.0);
 
 
@@ -255,6 +255,8 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
   // space for the assembled matrices
   Epetra_SerialDenseMatrix S2f2f(2*nfaces, 2*nfaces);
   Epetra_SerialDenseMatrix A2c2f(2, 2*nfaces);
+  Epetra_SerialDenseMatrix A2f2c(2, 2*nfaces);
+
   A2c2c_cells_Inv_.clear();
   if (is_matrix_constructed_) P2f2f_->PutScalar(0.0);
 
@@ -322,16 +324,17 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
       }
     }
 
-
-
-
-
-    // Make the local A2c2f
+    // Make the local A2c2f, A2f2c
     for (int i=0; i!=nfaces; ++i) {
       A2c2f(0,i) =           Acf[c](i);
       A2c2f(0,i + nfaces)  = 0;
       A2c2f(1,i) =           0;
-      A2c2f(1,i + nfaces)  = Bfc[c](i);
+      A2c2f(1,i + nfaces)  = Bcf[c](i);
+
+      A2f2c(0,i) =           Afc[c](i);
+      A2f2c(0,i + nfaces)  = 0;
+      A2f2c(1,i) =           0;
+      A2f2c(1,i + nfaces)  = Bfc[c](i);
     }
 
     // -- Assemble Schur complement
@@ -355,15 +358,15 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
       ASSERT(!ierr);
     }
 
-    // -- Assemble A2f2c, which is stored as transpose?
+    // -- Assemble A2f2c, which is stored as transpose
     ierr = A2f2c_->BeginReplaceGlobalValues(cell_GID, nentries, faces_GID);
     ASSERT(!ierr);
 
     for (int i=0; i!=nfaces; ++i) {
-      values(0,0) = A2c2f(0,i);
-      values(0,1) = A2c2f(0,i + nfaces);
-      values(1,0) = A2c2f(1,i);
-      values(1,1) = A2c2f(1,i + nfaces);
+      values(0,0) = A2f2c(0,i);
+      values(0,1) = A2f2c(0,i + nfaces);
+      values(1,0) = A2f2c(1,i);
+      values(1,1) = A2f2c(1,i + nfaces);
       ierr = A2f2c_->SubmitBlockEntry(values);
       ASSERT(!ierr);
     }
@@ -371,10 +374,28 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
     ierr = A2f2c_->EndSubmitEntries();
     ASSERT(!ierr);
 
+    // -- Assemble A2c2f
+    ierr = A2c2f_->BeginReplaceGlobalValues(cell_GID, nentries, faces_GID);
+    ASSERT(!ierr);
+
+    for (int i=0; i!=nfaces; ++i) {
+      values(0,0) = A2c2f(0,i);
+      values(0,1) = A2c2f(0,i + nfaces);
+      values(1,0) = A2c2f(1,i);
+      values(1,1) = A2c2f(1,i + nfaces);
+      ierr = A2c2f_->SubmitBlockEntry(values);
+      ASSERT(!ierr);
+    }
+
+    ierr = A2c2f_->EndSubmitEntries();
+    ASSERT(!ierr);
+
   }
 
   // Finish assembly
   ierr = A2f2c_->FillComplete(*double_fmap_, *double_cmap_);
+  ASSERT(!ierr);
+  ierr = A2c2f_->FillComplete(*double_fmap_, *double_cmap_);
   ASSERT(!ierr);
   ierr = P2f2f_->GlobalAssemble();
   ASSERT(!ierr);
@@ -431,7 +452,8 @@ void MatrixMFD_Coupled::SymbolicAssembleGlobalMatrices() {
   ASSERT(!ierr);
 
   // Create the matrices
-  A2f2c_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph));
+  A2f2c_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph)); // stored in transpose
+  A2c2f_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph));
   P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
   ierr = P2f2f_->GlobalAssemble();
   ASSERT(!ierr);
@@ -540,6 +562,14 @@ void MatrixMFD_Coupled::UpdatePreconditioner() {
   }
 }
 
+
+void MatrixMFD_Coupled::UpdateConsistentFaceCorrection(const TreeVector& u,
+        const Teuchos::Ptr<TreeVector>& Pu) {
+  blockA_->UpdateConsistentFaceCorrection(*u.SubVector(0)->data(),
+          Pu->SubVector(0)->data().ptr());
+  blockB_->UpdateConsistentFaceCorrection(*u.SubVector(1)->data(),
+          Pu->SubVector(1)->data().ptr());
+}
 
 } // namespace
 } // namespace
