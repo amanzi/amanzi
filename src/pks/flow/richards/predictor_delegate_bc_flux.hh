@@ -63,7 +63,9 @@ class PredictorDelegateBCFlux {
     double operator()(double face_p) {
       (*lambda_)[face_index_] = face_p;
       double Krel = wrm_->k_relative(patm_ - face_p);
-      std::cout << "Fluxes: " << flux_() << ", " << g_flux_*Krel << ", " << bc_flux_ << std::endl;
+      //      std::cout << "Fluxes: " << std::endl;
+      double q = flux_();
+      //      std::cout << "  K grad p = " << q << ", K grad gz = " << g_flux_*Krel << ", bc = " << bc_flux_ << std::endl;
       return flux_() + g_flux_*Krel - bc_flux_;
     }
 
@@ -73,9 +75,11 @@ class PredictorDelegateBCFlux {
       double s = 0.;
       double Krel = wrm_->k_relative(patm_ - (*lambda_)[face_index_]);
 
+      //      std::cout << "  Krel = " << Krel << std::endl;
+      //      std::cout << "  lambda_bc = " << (*lambda_)[face_index_] << std::endl;
       for (int n=0; n!=lambda_->size(); ++n)
         s += (*Aff_)[n] * Krel * (cell_p_ - (*lambda_)[n]);
-      return s * dir_;
+      return s;
     }
 
    protected:
