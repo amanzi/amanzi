@@ -327,6 +327,15 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   const Epetra_MultiVector& pres =
       *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
+#if DEBUG_FLAG
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    for (std::vector<int>::const_iterator c0=dc_.begin();
+         c0!=dc_.end(); ++c0) {
+      *out_ << "    dwc_dp(" << *c0 << "): " << dwc_dp[0][*c0] << std::endl;
+    }
+  }
+#endif
+
   // -- update the cell-cell block
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
@@ -461,7 +470,7 @@ void Richards::PreconWC_(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVect
       *S_next_->GetFieldData("saturation_liquid")->ViewComponent("cell",false);
   const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
-  // calculate ds/dt
+  // calculate ds/dp
   S_next_->GetFieldEvaluator("saturation_liquid")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
 
