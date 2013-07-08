@@ -32,19 +32,19 @@ class ThermalRichardsModel : public EWCModel {
   ThermalRichardsModel() {}
   virtual void InitializeModel(const Teuchos::Ptr<State>& S);
   virtual void UpdateModel(const Teuchos::Ptr<State>& S);
-  virtual int Evaluate(double T, double p, double poro, double& energy, double& wc);
-  virtual int InverseEvaluate(double energy, double wc, double poro, double& T, double& p);
+  virtual int Evaluate(double T, double p, double base_poro, double& energy, double& wc);
+  virtual int InverseEvaluate(double energy, double wc, double base_poro, double& T, double& p);
 
  protected:
   bool IsSetUp_();
 
-  int EvaluateEnergyAndWaterContent_(double T, double p, double poro,
+  int EvaluateEnergyAndWaterContent_(double T, double p, double base_poro,
           AmanziGeometry::Point& result);
 
-  int EvaluateEnergyAndWaterContentAndJacobian_(double T, double p, double poro,
+  int EvaluateEnergyAndWaterContentAndJacobian_(double T, double p, double base_poro,
           AmanziGeometry::Point& result, WhetStone::Tensor& jac);
 
-  int EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p, double poro,
+  int EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p, double base_poro,
           AmanziGeometry::Point& result, WhetStone::Tensor& jac);
 
  protected:

@@ -179,6 +179,8 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
   // -- scaling for the norms
   double wc_scale = 10.;
   double e_scale = 10000.;
+  double T_corr_cap = 2.;
+  double p_corr_cap = 20000.;
   double tol = 1.e-6;
   double max_steps = 100;
   double stepnum = 0;
@@ -220,19 +222,28 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
     double detJ = jac.determinant();
     AmanziGeometry::Point correction;
 
-    if (std::abs(detJ) < 1.e-12) {
-      std::cout << " Zero determinate of Jacobian:" << std::endl;
+    if (std::abs(detJ) < 1.e-20) {
+      std::cout << " Zero determinant of Jacobian:" << std::endl;
       std::cout << "   [" << jac(0,0) << "," << jac(0,1) << "]" << std::endl;
       std::cout << "   [" << jac(1,0) << "," << jac(1,1) << "]" << std::endl;
       std::cout << "  at T,p = " << x_tmp[0] << ", " << x_tmp[1] << std::endl;
       std::cout << "  with res(e,wc) = " << res[0] << ", " << res[1] << std::endl;
       return 1;
-
-    } else {
-      jac.inverse();
-      correction = jac * res;
     }
 
+    jac.inverse();
+    correction = jac * res;
+
+    // cap the correction
+    double scale = 1.;
+    if (std::abs(correction[0]) > T_corr_cap) {
+      scale = T_corr_cap / std::abs(correction[0]);
+    }
+    if (std::abs(correction[1]) > p_corr_cap) {
+      double pscale = p_corr_cap / std::abs(correction[1]);
+      scale = std::min(scale,pscale);
+    }
+    correction *= scale;
 
     // perform the update
     x_tmp = x - correction;
@@ -243,14 +254,15 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
     }
     res = res - f;
 
-#if DEBUG_FLAG
-      std::cout << "  Iter: " << stepnum;
-      std::cout << " corrected T,p (res) = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ")" << std::endl;
-#endif
-
     // check convergence and damping
     scaled_res[0] = res[0] / e_scale; scaled_res[1] = res[1] / wc_scale;
     double norm_new = AmanziGeometry::norm(scaled_res);
+
+#if DEBUG_FLAG
+      std::cout << "  Iter: " << stepnum;
+      std::cout << " corrected T,p (res) [norm] = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ") ["
+                << norm_new << "]" << std::endl;
+#endif
 
     double damp = 1.;
     bool backtracking_required = false;
@@ -269,14 +281,16 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
       }
       res = res - f;
 
-#if DEBUG_FLAG
-      std::cout << "    Damping: " << stepnum;
-      std::cout << " corrected T,p (res) = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ")" << std::endl;
-#endif
-
       // check the new residual
       scaled_res[0] = res[0] / e_scale; scaled_res[1] = res[1] / wc_scale;
       norm_new = AmanziGeometry::norm(scaled_res);
+
+#if DEBUG_FLAG
+      std::cout << "    Damping: " << stepnum;
+      std::cout << " corrected T,p (res) [norm] = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ") ["
+                << norm_new << "]" << std::endl;
+#endif
+
     }
 
     if (backtracking_required) {
@@ -293,7 +307,10 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
     x = x_tmp;
     norm = norm_new;
 
-    converged = norm < tol;
+    AmanziGeometry::Point scaled_correction = damp * correction;
+    scaled_correction[1] = scaled_correction[1] / 100000.;
+    converged = norm < tol || AmanziGeometry::norm(scaled_correction) < 1.e-3;
+
     stepnum++;
     if (stepnum > max_steps && !converged) {
       std::cout << " Nonconverged after " << max_steps << " steps with norm (tol) "
@@ -304,6 +321,146 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
 
   T = x[0];
   p = x[1];
+  return 0;
+}
+
+
+/* ----------------------------------------------------------------------
+Solves a given energy and water content (at a given, fixed porosity), for
+temperature and pressure.
+
+Note this cannot really work for a saturated cell, as d_wc / d{T,p} = 0
+
+Error codes:
+
+  1 = Singular Jacobian at some point in the evaluation.  Often this is
+      because the cell is saturated or becomes saturated and below
+      freezing.
+  2 = Iteration did not converge in max_steps (hard-coded to be 100 for
+      now).
+---------------------------------------------------------------------- */
+int PermafrostModel::InverseEvaluateEnergy(double energy, double p,
+        double poro, double& T) {
+
+  // -- scaling for the norms
+  double e_scale = 10000.;
+  double T_corr_cap = 2.;
+  double tol = 1.e-6;
+  double max_steps = 100;
+  double stepnum = 0;
+
+  // get the initial residual
+  AmanziGeometry::Point res(2);
+  WhetStone::Tensor jac(2,2);
+  int ierr = EvaluateEnergyAndWaterContentAndJacobian_(T,p,poro,res,jac);
+  if (ierr) {
+    std::cout << "Error in evaluation: " << ierr << std::endl;
+    return ierr + 10;
+  }
+
+#if DEBUG_FLAG
+  std::cout << "Inverse Evaluating, e=" << energy << std::endl;
+  std::cout << "   guess T,p (res) = " << T << ", " << p << " (" << res[0] << ")" << std::endl;
+#endif
+
+
+  // check convergence
+  double f = res[0] - energy;
+  double norm = std::abs(f);
+  bool converged = norm < tol;
+
+  // workspace
+  double T_tmp = T;
+  double T_tmp2 = T;
+
+  while (!converged) {
+    // calculate the update size
+    double detJ = jac(0,0);
+    double correction;
+
+    if (std::abs(detJ) < 1.e-20) {
+      std::cout << " Zero determinant of Jacobian:" << std::endl;
+      std::cout << "   [" << jac(0,0) << "]" << std::endl;
+      std::cout << "  at T,p = " << T_tmp2 << ", " << p << std::endl;
+      std::cout << "  with res(e) = " << f << std::endl;
+      return 1;
+    }
+
+    correction = f / detJ;
+
+    // cap the correction
+    if (std::abs(correction) > T_corr_cap) {
+      correction = correction / std::abs(correction) * T_corr_cap;
+    }
+
+    // perform the update
+    T_tmp2 = T_tmp - correction;
+    ierr = EvaluateEnergyAndWaterContentAndJacobian_(T_tmp2,p,poro,res,jac);
+    if (ierr) {
+      std::cout << "Error in evaluation: " << ierr << std::endl;
+      return ierr + 10;
+    }
+    f = res[0] - energy;
+
+    // check convergence and damping
+    double norm_new = std::abs(f);
+
+#if DEBUG_FLAG
+      std::cout << "  Iter: " << stepnum;
+      std::cout << " corrected T,p (res) [norm] = " << T_tmp2 << ", " << p << " (" << f << ")" << std::endl;
+#endif
+
+    double damp = 1.;
+    bool backtracking_required = false;
+    while (norm_new > norm) {
+      backtracking_required = true;
+
+      // backtrack
+      damp *= 0.5;
+      T_tmp2 = T_tmp - (damp * correction);
+
+      // evaluate the damped value
+      ierr = EvaluateEnergyAndWaterContent_(T_tmp2,p,poro,res);
+      if (ierr) {
+        std::cout << "Error in evaluation: " << ierr << std::endl;
+        return ierr + 10;
+      }
+      f = res[0] - energy;
+
+      // check the new residual
+      norm_new = std::abs(f);
+
+#if DEBUG_FLAG
+      std::cout << "    Damping: " << stepnum;
+      std::cout << " corrected T,p (res) [norm] = " << T_tmp2 << ", " << p << " (" << f << ")" << std::endl;
+#endif
+
+    }
+
+    if (backtracking_required) {
+      // must recalculate the Jacobian at the new value
+      ierr = EvaluateEnergyAndWaterContentAndJacobian_(T_tmp2,p,poro,res,jac);
+      if (ierr) {
+        std::cout << "Error in evaluation: " << ierr << std::endl;
+        return ierr + 10;
+      }
+      f = res[0] - energy;
+    }
+
+    // iterate
+    T_tmp = T_tmp2;
+    norm = norm_new;
+
+    converged = norm < tol || std::abs(correction) < 1.e-3;
+    stepnum++;
+    if (stepnum > max_steps && !converged) {
+      std::cout << " Nonconverged after " << max_steps << " steps with norm (tol) "
+                << norm << " (" << tol << ")" << std::endl;
+      return 2;
+    }
+  }
+
+  T = T_tmp;
   return 0;
 }
 
@@ -325,6 +482,37 @@ bool PermafrostModel::IsSetUp_() {
   return true;
 }
 
+
+int PermafrostModel::EvaluateSaturations(double T, double p, double base_poro, double& s_gas, double& s_liq, double& s_ice) {
+  int ierr = 0;
+  try {
+    double eff_p = std::max(p_atm_, p);
+    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
+    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+
+    double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
+    double pc_i;
+    if (pc_i_->IsMolarBasis()) {
+      pc_i = pc_i_->CapillaryPressure(T, rho_l);
+    } else {
+      double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
+      pc_i = pc_i_->CapillaryPressure(T, mass_rho_l);
+    }
+
+    double sats[3];
+    wrm_->saturations(pc_l, pc_i, sats);
+    s_gas = sats[0];
+    s_liq = sats[1];
+    s_ice = sats[2];
+
+  } catch (const Exceptions::Amanzi_exception& e) {
+    if (e.what() == std::string("Cut time step")) {
+      ierr = 1;
+    }
+  }
+
+  return ierr;
+}
 
 int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, double base_poro, AmanziGeometry::Point& result) {
   int ierr = 0;
