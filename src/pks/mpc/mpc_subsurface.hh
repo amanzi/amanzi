@@ -76,6 +76,8 @@ class MPCSubsurface : public MPCCoupledCells {
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWC> ewc_;
 
+  bool dumped_;
+
  private:
   // factory registration
   static RegisteredPKFactory<MPCSubsurface> reg_;

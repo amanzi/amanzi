@@ -9,10 +9,14 @@ Interface for the derived MPC for coupling energy and water in the subsurface,
 with freezing.
 
 ------------------------------------------------------------------------- */
+#include "Epetra_FEVbrMatrix.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "permafrost_model.hh"
 #include "mpc_delegate_ewc.hh"
 #include "mpc_subsurface.hh"
+
+#define DEBUG_FLAG 1
 
 namespace Amanzi {
 
@@ -21,6 +25,8 @@ RegisteredPKFactory<MPCSubsurface> MPCSubsurface::reg_("subsurface permafrost");
 
 // -- Initialize owned (dependent) variables.
 void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
+  dumped_ = false;
+
   // off-diagonal terms needed by MPCCoupledCells
   plist_.set("conserved quantity A", "water_content");
   plist_.set("conserved quantity B", "energy");
@@ -121,6 +127,14 @@ void MPCSubsurface::update_precon(double t, Teuchos::RCP<const TreeVector> up, d
     MPCCoupledCells::update_precon(t,up,h);
     ewc_->update_precon(t,up,h);
   }
+
+  if (S_next_->cycle() == 437 && !dumped_) {
+    Teuchos::RCP<const Epetra_FEVbrMatrix> sc = mfd_preconditioner_->Schur();
+    std::stringstream filename_s;
+    filename_s << "schur_" << S_next_->cycle() << ".txt";
+    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+    dumped_ = true;
+  }
 }
 
 
@@ -138,9 +152,75 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
   } else if (precon_type_ == PRECON_EWC) {
     MPCCoupledCells::precon(u,Pu);
     ewc_->precon(u, Pu);
+    mfd_preconditioner_->UpdateConsistentFaceCorrection(*u, Pu.ptr());
   } else if (precon_type_ == PRECON_SMART_EWC) {
     MPCCoupledCells::precon(u,Pu);
+
+#if DEBUG_FLAG
+  // Dump residual
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "Picard Precon application:" << std::endl;
+
+    int c0 = 0;
+    u->SubVector(0)->data()->ScatterMasterToGhosted("face");
+    AmanziMesh::Entity_ID_List fnums0;
+    std::vector<int> dirs;
+    mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+
+    *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->data())("cell",c0);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+    *out_ << std::endl;
+
+    *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->data())("cell",c0);
+    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+    *out_ << std::endl;
+
+  }
+#endif
+
+    // make sure we can backcalc face corrections that preserve residuals on faces
+    Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*u));
+    res0->PutScalar(0.);
+    Teuchos::RCP<TreeVector> Pu_std = Teuchos::rcp(new TreeVector(*Pu));
+    *Pu_std = *Pu;
+
+    // call EWC, which does Pu_p <-- Pu_p_std + dPu_p
     ewc_->precon(u, Pu);
+
+    // calculate dPu_lambda from dPu_p
+    Pu_std->Update(1.0, *Pu, -1.0);
+    mfd_preconditioner_->UpdateConsistentFaceCorrection(*res0, Pu_std.ptr());
+
+    // update Pu_lambda <-- Pu_lambda_std + dPu_lambda
+    Pu->SubVector(0)->data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(0)->data()->ViewComponent("face",false), 1.);
+    Pu->SubVector(1)->data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(1)->data()->ViewComponent("face",false), 1.);
+
+#if DEBUG_FLAG
+  // Dump residual
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "EWC Precon application:" << std::endl;
+
+    for (int c0=42; c0!=46; ++c0) {
+      u->SubVector(0)->data()->ScatterMasterToGhosted("face");
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+
+      *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->data())("cell",c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+      *out_ << std::endl;
+
+      *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->data())("cell",c0);
+      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+      *out_ << std::endl;
+    }
+
+  }
+#endif
+
+
   }
 }
 
