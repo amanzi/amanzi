@@ -13,9 +13,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-const int FLOW_WRM_MUALEM = 1;
-const int FLOW_WRM_BURDINE = 2;
-
 Utils::RegisteredFactory<WRM,WRMVanGenuchten> WRMVanGenuchten::factory_("van Genuchten");
 
 /* ******************************************************************
@@ -103,6 +100,7 @@ double WRMVanGenuchten::d_saturation(double pc) {
 double WRMVanGenuchten::capillaryPressure(double s) {
   double se = (s - sr_) / (1.0 - sr_);
   se = std::min<double>(se, 1.0);
+  se = std::max<double>(se, 1.e-40);
   if (se < 1.e-8) {
     return std::pow(se, -1.0/(m_*n_)) / alpha_;
   } else {
@@ -118,7 +116,6 @@ double WRMVanGenuchten::d_capillaryPressure(double s) {
   double se = (s - sr_) / (1.0 - sr_);
   se = std::min<double>(se, 1.0);
   se = std::max<double>(se, 1.e-40);
-
   if (se < 1.e-8) {
     return -1.0/(m_*n_*alpha_) * std::pow(se, -1.0/(m_*n_) - 1.)  / (1.0 - sr_);
   } else {
@@ -139,9 +136,9 @@ void WRMVanGenuchten::InitializeFromPlist_() {
   }
 
   alpha_ = plist_.get<double>("van Genuchten alpha");
-  sr_ = plist_.get<double>("van Genuchten residual saturation", 0.0);
+  sr_ = plist_.get<double>("residual saturation", 0.0);
   l_ = plist_.get<double>("Mualem exponent l", 0.5);
-  pc0_ = plist_.get<double>("van Genuchten smoothing interval width", 0.0);
+  pc0_ = plist_.get<double>("smoothing interval width", 0.0);
 
   if (plist_.isParameter("van Genuchten m")) {
     m_ = plist_.get<double>("van Genuchten m");

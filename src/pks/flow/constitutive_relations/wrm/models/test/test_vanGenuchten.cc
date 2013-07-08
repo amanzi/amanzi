@@ -14,8 +14,8 @@ TEST(vanGenuchten) {
   Teuchos::ParameterList plist;
   plist.set("van Genuchten m", m);
   plist.set("van Genuchten alpha", alpha);
-  plist.set("van Genuchten residual saturation", sr);
-  plist.set("van Genuchten smoothing interval width", 0.0);
+  plist.set("residual saturation", sr);
+  plist.set("smoothing interval width", 0.0);
   WRMVanGenuchten vG(plist);
 
   // check k_relative for p = 2*p_atm

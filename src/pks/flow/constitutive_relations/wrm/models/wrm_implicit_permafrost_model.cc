@@ -25,6 +25,7 @@ bool WRMImplicitPermafrostModel::sats_unfrozen_(double pc_liq,
     sats[2] = 0.; // ice
     sats[1] = wrm_->saturation(pc_liq);  // liquid
     sats[0] = 1.0 - sats[1];  // gas
+    ASSERT(sats[0] >= 0.);
     return true;
   }
   return false;
@@ -65,6 +66,7 @@ bool WRMImplicitPermafrostModel::sats_saturated_(double pc_liq,
     sats[0] = 0.; // gas
     sats[1] = wrm_->saturation(pc_ice); // liquid
     sats[2] = 1.0 - sats[1];  // ice
+    ASSERT(sats[2] >= 0.);
     return true;
   }
   return false;
@@ -105,6 +107,12 @@ bool WRMImplicitPermafrostModel::sats_frozen_unsaturated_(double pc_liq,
   sats[2] = si;
   sats[1] = (1. - si) * wrm_->saturation(pc_liq);
   sats[0] = 1. - si - sats[1];
+  ASSERT(sats[0] >= 0.);
+  ASSERT(sats[1] >= 0.);
+  ASSERT(sats[2] >= 0.);
+  ASSERT(sats[0] <= 1.);
+  ASSERT(sats[1] <= 1.);
+  ASSERT(sats[2] <= 1.);
   return true;
 }
 
@@ -143,7 +151,12 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_(double pc_liq, double 
     // fit spline, evaluate
     double spline[3];
     FitSpline_(pc_ice, cutoff, si_cutoff, spline);
-    return (spline[0] * pc_liq + spline[1]) * pc_liq + spline[2];
+    std::cout << " cutoff = " << cutoff << std::endl;
+    std::cout << " ABC = " << spline[0] << ", " << spline[1] << ", " << spline[2] << std::endl;
+
+    double si = (spline[0] * pc_liq + spline[1]) * pc_liq + spline[2];
+    std::cout << " si = " << si << std::endl;
+    return std::min(si, 1.0);
   }
 }
 
@@ -180,14 +193,16 @@ double WRMImplicitPermafrostModel::dsi_dpc_ice_frozen_unsaturated_(double pc_liq
     double spline1[3], spline2[3];
     FitSpline_(pc_ice, cutoff, si_cutoff, spline1);
 
-    double pc_ice2 = pc_ice + 10.;
+    double delta_pc_ice = std::max(.1, pc_ice / 100.);
+
+    double pc_ice2 = pc_ice + delta_pc_ice;
     double si_cutoff2 = si_frozen_unsaturated_nospline_(cutoff, pc_ice2);
     FitSpline_(pc_ice2, cutoff, si_cutoff2, spline2);
 
     double dspline[3];
-    dspline[0] = (spline2[0] - spline1[0]) / 10.;
-    dspline[1] = (spline2[1] - spline1[1]) / 10.;
-    dspline[2] = (spline2[2] - spline1[2]) / 10.;
+    dspline[0] = (spline2[0] - spline1[0]) / delta_pc_ice;
+    dspline[1] = (spline2[1] - spline1[1]) / delta_pc_ice;
+    dspline[2] = (spline2[2] - spline1[2]) / delta_pc_ice;
 
     return (dspline[0] * pc_liq + dspline[1]) * pc_liq + dspline[2];
   }
@@ -201,9 +216,9 @@ bool WRMImplicitPermafrostModel::DetermineSplineCutoff_(double pc_liq, double pc
   cutoff = std::exp(std::floor(std::log(pc_liq)));
   bool done(false);
   while (!done) {
-    si = si_frozen_unsaturated_nospline_(pc_liq, pc_ice);
+    si = si_frozen_unsaturated_nospline_(cutoff, pc_ice);
     double sstar = wrm_->saturation(cutoff);
-    if ((1. - si) * sstar + si < (1. - 1.e-12)) {
+    if ((1. - si) * sstar + si < (1. - 1.e-16)) {
       done = true;
     } else {
       cutoff = std::exp(std::log(cutoff) + 1.);
@@ -219,34 +234,19 @@ bool WRMImplicitPermafrostModel::FitSpline_(double pc_ice, double cutoff,
   double dsi_cutoff = dsi_dpc_liq_frozen_unsaturated_nospline_(cutoff, pc_ice, si_cutoff);
 
 
-  // spline given by si = a * pc^2 + b * pc + c
+  // spline given by si = b * pc + c
   // constraint equations:
   //   1. si(0) = si_saturated  (right-continuous)
   //   2. si(cutoff) = si_cutoff (left-continuous)
-  //   3. dsi_dpcliq(cutoff) = dsi_cutoff (continuous left derivative)
   // solve for (a,b,c)
+
+  coefs[0] = 0.;
 
   // c
   sats_saturated_(-1.0, pc_ice, coefs);
 
   // a,b require the inversion of a linear system of equations
-  Epetra_SerialDenseMatrix M(2, 2);
-  double rhs[2];
-
-  // -- equation 3
-  M(0,0) = 2. * cutoff;
-  M(0,1) = 1.;
-  rhs[0] = dsi_cutoff;
-
-  // -- equation 2
-  M(1,0) = cutoff * cutoff;
-  M(1,1) = cutoff;
-  rhs[1] = si_cutoff - coefs[2];
-
-  // invert
-  double detM = M(0,0)*M(1,1) - M(0,1)*M(1,0);
-  coefs[0] = M(1,1) / detM * rhs[0] - M(0,1) / detM * rhs[1];
-  coefs[1] = M(0,0) / detM * rhs[1] - M(1,0) / detM * rhs[0];
+  coefs[1] = (si_cutoff - coefs[2]) / cutoff;
   return true;
 }
 
@@ -271,7 +271,7 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
 
   ASSERT(max_it < max_it_);
   //  std::cout << " took " << max_it << " steps";
-  return result.first;
+  return std::min(result.first, 1.0);
 }
 
 
