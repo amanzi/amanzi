@@ -20,6 +20,17 @@ bool WRMImplicitPermafrostModel::saturations_if_saturated_(double pc_liq,
     sats[1] = wrm_->saturation(pc_ice); // liquid
     sats[2] = 1.0 - sats[1];  // ice
     return true;
+  } else if (pc_liq < 100.) { // regularization near saturated
+    // si if it was saturated
+    double si_sat = 1.0 - wrm_->saturation(pc_ice);
+
+    // si if bounded away from saturated
+    saturations(100.1, pc_ice, sats);
+
+    // linearly interpolate between the two
+    sats[2] = (si_sat - sats[2])/(0. - 100.1) * (pc_liq - 100.1) + sats[2];
+    sats[1] = (1. - sats[2]) * wrm_->saturation(pc_liq);
+    sats[0] = 1. - sats[1] - sats[2];
   }
   return false;
 }
@@ -123,11 +134,19 @@ void WRMImplicitPermafrostModel::dsaturations_dpc_liq(double s_i, double pc_liq,
   double tmp = (1.0 - s_i) * sstar;
   double tmpprime = (1.0 - s_i) * sstarprime;
 
-  if (std::abs(1.0 - tmp - s_i) < 1.e-15) {
-    // effectively saturated
+  if (pc_liq <= 0.) {
+    // saturated
     dsats[2] = 0.;
     dsats[1] = 0.;
     dsats[0] = 0.;
+    return;
+  }
+
+  if (std::abs((1.0 - s_i) - tmp) < 1.e-15) {
+    // effectively saturated in ice
+    dsats[2] = -1.e-12;
+    dsats[1] = -1.e-12;
+    dsats[0] = 2.e-12;
     return;
   }
 
