@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build with the correct compiler
+export CC=@CMAKE_C_COMPILER_USE@
+#export CFLAGS='@hypre_cflags@'
+export CXX=@CMAKE_CXX_COMPILER_USE@
+#export CXXFLAGS='@hypre_cxxflags@'
+export F77=@CMAKE_Fortran_COMPILER_USE@
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
+export PFLOTRAN_DIR='@PFLOTRAN_DIR@'
+
+# alquimia in-source build under src 
+cd @ALQUIMIA_source_dir@/src
+make all 
+echo "make all returned $?"
+
+exit $?

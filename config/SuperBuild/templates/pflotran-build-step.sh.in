@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build with the correct compiler
+export CC=@CMAKE_C_COMPILER_USE@
+#export CFLAGS='@hypre_cflags@'
+export CXX=@CMAKE_CXX_COMPILER_USE@
+#export CXXFLAGS='@hypre_cxxflags@'
+export F77=@CMAKE_Fortran_COMPILER_USE@
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
+export PETSC_DIR='@PETSC_DIR@'
+
+# pflotran in-source build under src 
+cd @PFLOTRAN_source_dir@/src/pflotran
+make pflotran_rxn 
+echo "make pflotran_rxn returned $?"
+
+exit $?
