@@ -14,6 +14,7 @@ class ObservationXML(object):
 
         self.obs_file = self.getObservationFilename()
         self.coordinates = []
+        self.names= []
 
     def getObservationList(self):
         return search.getElementByPath(self.xml, "/Main/Output/Observation Data")
@@ -22,19 +23,20 @@ class ObservationXML(object):
         return search.getElementByPath(self.xml, "/Main/Regions")
 
     def getAllNames(self):
-        names = []
+        self.names = []
         for obs in self.obs_lists:
-            names.append(obs.get("name"))
-        return names
+            self.names.append(obs.get("name"))
+        return self.names
 
     def getAllCoordinates(self):
+        self.coordinates = {}
         for item in self.obs_lists:
             well_name =item.getElement("Region").value
             region = search.getElementByPath(self.xml, "/Main/Regions/"+ well_name)
             local = region.sublist("Region: Point")
             location = search.getElementByPath(local, "/Region: Point/Coordinate")
             coordinate = location.value
-            self.coordinates.append(coordinate)
+            self.coordaintes[well_name] = coordinate
         return self.coordinates
 
     def getCoordinateFromList(self, one_list):

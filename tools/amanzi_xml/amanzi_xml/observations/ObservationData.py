@@ -1,34 +1,39 @@
 import optparse
 
+
 class ObservationData(object):
+    class Data(object):
+        def __init__(self, var_ref, region, obs_type, var_name):
+            self.var_ref = var_ref
+            self.region = region
+            self.obs_type = obs_type
+            self.var_name = var_name
+            self.times = []
+            self.data = []
+            self.coordinate = None
+
     def __init__(self, obs_file):
         self.obs_file = obs_file
         self.observations={}
-        self.pressure_value=[]
 
     def getObservationData(self):
         obs_fid = open(self.obs_file)
+        obs_fid.next() # pop header line "name, region,..."
+        obs_fid.next() # pop header line "===="
 
         for line in obs_fid:
-            if "Pressure" in line:
-                [var_ref, region, obs_type, var_name, time, value] = line.rstrip().split(",")
-                print var_ref, value
-                self.pressure_value.append(float(value))
-                self.observations[var_ref]={"region":region.strip(), "var_name":var_name, "value":value}
-                #pressure_value.append(observations["value"])
+            [var_ref, region, obs_type, var_name, time, value] = line.rstrip().split(",")
+            key = (var_ref,region)
+            if not self.observations.has_key(key):
+                self.observations[key] = Data(var_ref, region, obs_type, var_name)
 
-            elif "Head" in line:
-                [var_ref, region, obs_type, var_name, time, value] = line.rstrip().split(",")
-                print var_ref, value
-                self.observations[var_ref]={"region":region.lstrip().rstrip(),"var_name":var_name,"value":value}
-
-            elif "Observation Name" in line and "========" in line:
-                break
+            self.observations[key].time.append(time)
+            self.observations[key].data.append(value)
 
     def printSummary(self):
         print "Read observation data file:", self.obs_file
-        for var_ref in self.observations.keys():
-            print "  obs:", var_ref, "on region", self.observations[var_ref]["region"]
+        for key in self.observations.keys():
+            print "  obs:", key[0], "on region", key[1]
 
 
 
