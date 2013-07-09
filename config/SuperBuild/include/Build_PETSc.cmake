@@ -68,16 +68,20 @@ endif()
 
 # BLAS options
 if (BLAS_LIBRARIES) 
-  build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
-  set(petsc_blas_option --with-blas-libs='${petsc_blas_libs}')
+  IF (NOT APPLE) # Macs are different.
+    build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
+    set(petsc_blas_option --with-blas-libs='${petsc_blas_libs}')
+  ENDIF()
 else()
   set(petsc_blas_option)
 endif()
 
 # LAPACK options
 if ( LAPACK_LIBRARIES ) 
-  build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
-  set(petsc_lapack_option --with-lapack-libs='${petsc_lapack_libs}')
+  IF (NOT APPLE) # Macs are different.
+    build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
+    set(petsc_lapack_option --with-lapack-libs='${petsc_lapack_libs}')
+  ENDIF()
 else()
   set(petsc_lapack_option)
 endif()

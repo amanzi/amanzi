@@ -35,7 +35,7 @@ searches for CMake and will build CMake 2.8.8, if it does not locate the cmake c
 At this time, the script does not build compilers, ``LAPACK`` or ``BLAS``. See the
 compilers_ section on how to obtain a supported compiler and LAPACK_ for ``LAPACK`` and ``BLAS`` suggestions. See the MPI_ section on how to obtain and install other mpi implementations.
 
-The ``boostrap.sh`` script will create two build directories, one for the TPLs, TPL_BUILD, and one for amanzi,
+The ``bootstrap.sh`` script will create two build directories, one for the TPLs, TPL_BUILD, and one for amanzi,
 amanzi-build, in the directory the script is called from. Users can control the 
 install location of the TPLs and Amanzi through command line arguments.
 The command ::

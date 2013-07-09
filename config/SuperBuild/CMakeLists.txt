@@ -553,6 +553,19 @@ if ( ENABLE_MSTK_Mesh )
             -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
+# Alquimia and PFlotran
+option(ENABLE_ALQUIMIA "Build the Alquimia chemistry interface" FALSE)
+option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
+if (ENABLE_ALQUIMIA)
+  set(ENABLE_PFLOTRAN TRUE)
+endif()
+if (ENABLE_PFLOTRAN)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_PFLOTRAN.cmake)
+endif()
+if (ENABLE_ALQUIMIA)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_ALQUIMIA.cmake)
+endif()
+
 # ############################################################################ #
 #  Final steps
 # ############################################################################ #
