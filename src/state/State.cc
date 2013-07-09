@@ -253,7 +253,9 @@ void State::initialize_from_parameter_list()
       } else if (sublist.isSublist("linear saturation")) {
         const Teuchos::ParameterList& lin_s_list = sublist.sublist("linear saturation");
         set_uniform_saturation(lin_s_list, region);
-      }  
+      } else {
+        set_water_saturation(1.0);
+      } 
 
       // set specific storage Ss or specific yield Sy in the same state variable
       if (sublist.isParameter("Constant specific storage"))
