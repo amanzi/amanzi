@@ -43,7 +43,7 @@
 
   <!--
   
-    Mesh:  three-dimensional box [-500, 500 ] x [-500, 500] x [0,100] m
+    Mesh:  three-dimensional box [-100, 100 ] x [-100, 100] x [0,50] m
 
   -->
   <ParameterList name="Mesh">
@@ -91,7 +91,7 @@
     </ParameterList>
     <ParameterList name="Obs_r45">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-10.5.0, 0.0, 35.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-10.5, 0.0, 35.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r65">
@@ -213,7 +213,7 @@
       <ParameterList name="Source: Volume Weighted">
         <Parameter name="Times" type="Array(double)" value="{0.0, 8.64e6}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Values" type="Array(double)" value="{-4.0e-3, -4.e-3}"/>
+        <Parameter name="Values" type="Array(double)" value="{-4.0e-1, -4.0e-1}"/>
       </ParameterList>
       
     </ParameterList>
@@ -233,7 +233,7 @@
       <ParameterList name="BC: Hydrostatic">
         <Parameter name="Times" type="Array(double)" value="{0.0, 8.64e6}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Water Table Height" type="Array(double)" value="{10.0,10.0}"/>
+        <Parameter name="Water Table Height" type="Array(double)" value="{100.0,100.0}"/>
       </ParameterList>
     </ParameterList>
 
@@ -249,14 +249,14 @@
     <ParameterList name="Time Macros">
       <ParameterList name="Observation Times">
 	<Parameter name="Values" type="Array(double)" value="{
-                   0.0 864, 1944, 3294, 4981, 7090, 9727, 13023,
+                   0.0864, 1944, 3294, 4981, 7090, 9727, 13023,
                    17143, 22293, 28730, 36777, 46835, 59408, 75124,
                    94769, 119325, 150021, 188390, 236352, 296304,
                    371244, 464919, 582013, 728380, 911339, 1140038,
                    1425912, 1783254, 2229931, 2788278, 3486212,
                    4358629, 5449150, 6812302, 8516241, 10646166,
                    13308571, 16636578, 20796587, 25996598, 32496611,
-                   40621628, 8640000
+                   40621628, 86400000
                    }"/>
       </ParameterList>
     </ParameterList>
@@ -273,20 +273,20 @@
     </ParameterList>
 
     <ParameterList name="Observation Data">
-      <Parameter name="Observation Output Filename" type="string" value="obs.out"/>
-      <ParameterList name="output01">
+      <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
+      <ParameterList name="Pressure 01">
 	<Parameter name="Region" type="string" value="Obs_r25"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
 	<Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="output02">
+      <ParameterList name="Pressure 02">
 	<Parameter name="Region" type="string" value="Obs_r45"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
 	<Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="output03">
+      <ParameterList name="Pressure 03">
 	<Parameter name="Region" type="string" value="Obs_r65"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
