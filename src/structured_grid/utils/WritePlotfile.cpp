@@ -52,23 +52,24 @@ void WritePlotfile(const std::string         &pfversion,
   VisMF::IO_Buffer io_buffer(VisMF::IO_Buffer_Size);
     
   std::ofstream os;
+  const int finestLevel = nLevs - 1;
     
   //os.rdbuf()->pubsetbuf(io_buffer.dataPtr(), io_buffer.size());
     
-  if(verbose && ParallelDescriptor::IOProcessor()) {
-    std::cout << "Opening file = " << oFileHeader << '\n';
-  }
-    
-  os.open(oFileHeader.c_str(), std::ios::out|std::ios::binary);
-    
-  if(os.fail()) {
-    BoxLib::FileOpenFailed(oFileHeader);
-  }
-  //
-  // Start writing plotfile.
-  //
-  const int finestLevel = nLevs - 1;
   if(ParallelDescriptor::IOProcessor()) {
+    if(verbose) {
+      std::cout << "Opening file = " << oFileHeader << '\n';
+    }
+    
+    os.open(oFileHeader.c_str(), std::ios::out|std::ios::binary);
+    
+    if(os.fail()) {
+      BoxLib::FileOpenFailed(oFileHeader);
+    }
+
+    //
+    // Start writing plotfile.
+    //
     os << pfversion << '\n';
     os << nComp << '\n';
     for (int n = 0; n < nComp; n++) os << names[n] << '\n';
@@ -104,6 +105,7 @@ void WritePlotfile(const std::string         &pfversion,
     os << coordSys << '\n';
     os << 0 << '\n';                  // --------------- The bndry data width.
   }
+
   //
   // Write out level by level.
   //
@@ -174,7 +176,6 @@ void WritePlotfile(const std::string         &pfversion,
       ccnt += data[i][iLevel]->nComp();
     }
     VisMF::Write(tot, PathName);
-    ParallelDescriptor::Barrier();
   }
     
   os.close();

@@ -1599,6 +1599,10 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
   Real cur_time = rs->GetTime();
   Real rho = rs->GetDensity()[0];
   PArray<PorousMedia>& pm = rs->PMArray();
+
+  Real junk_val = -1.e20;
+  Dp_origMFT.SetValCovered(junk_val);
+
   for (int lev=0; lev<nLevs; ++lev) {
     pm[lev].FillStateBndry(cur_time,Press_Type,0,1);
     pm[lev].calcInvPressure(SnewMFT[lev],PnewMFT[lev]);
@@ -1615,7 +1619,7 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
       for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
 	const Real& num = DpMFT[lev][mfi](iv,0);
 	const Real& den = Dp_origMFT[lev][mfi](iv,0);
-	fMFT[lev][mfi](iv,0) = den==0 ? 1 : std::abs(num/den);
+	fMFT[lev][mfi](iv,0) = den==junk_val ? 1 : std::abs(num/den);
       }
     }
   }
