@@ -901,16 +901,26 @@ public:
   //
   // Calculate inverse capillary pressure
   //
-  void calcInvCapillary (MultiFab& S,const MultiFab& pc);
+  static void calcInvCapillary (FArrayBox&       n,
+                                const FArrayBox& pc,
+                                const FArrayBox& rock_phi,
+                                const FArrayBox& kappa,
+                                const FArrayBox& cpl_coef);
+
+  void calcInvCapillary (MultiFab& N,const MultiFab& pc);
   //
   // Calculate inverse pressure
   //
-  void calcInvPressure (MultiFab& S,const MultiFab& P);
+  void calcInvPressure (MultiFab& N,const MultiFab& P);
   //
   // Calculate lambda = relative permeability/mu
   //
+  static void calcLambda(FArrayBox&       lambda,
+                         const FArrayBox& N,
+                         const FArrayBox& kr_coef);
+
   void calcLambda (const Real time, MultiFab* lbd_cc = 0);
-  void calcLambda (MultiFab* lbd, const MultiFab &S);
+  void calcLambda (MultiFab* lbd, const MultiFab &N);
   //
   // Calculate first derivative of lambda
   //
@@ -1390,7 +1400,10 @@ protected:
   static int  richard_pressure_maxorder;
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;
+  static bool richard_centered_diff_J;
+  static bool richard_subgrid_krel;
   static Real richard_variable_switch_saturation_threshold;
+  static Real richard_dt_thresh_pure_steady;
   //
   // Number of states
   //
