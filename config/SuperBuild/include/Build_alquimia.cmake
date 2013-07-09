@@ -15,14 +15,14 @@ define_external_project_args(ALQUIMIA
 # --- Define the build command
 
 # Build the build script
-set(ALQUIMIA_sh_build ${ALQUIMIA_prefix_dir}/ALQUIMIA-build-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ALQUIMIA-build-step.sh.in
+set(ALQUIMIA_sh_build ${ALQUIMIA_prefix_dir}/alquimia-build-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-build-step.sh.in
                ${ALQUIMIA_sh_build}
 	       @ONLY)
 
 # Configure the CMake command file
-set(ALQUIMIA_cmake_build ${ALQUIMIA_prefix_dir}/ALQUIMIA-build-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ALQUIMIA-build-step.cmake.in
+set(ALQUIMIA_cmake_build ${ALQUIMIA_prefix_dir}/alquimia-build-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-build-step.cmake.in
                ${ALQUIMIA_cmake_build}
 	       @ONLY)
 set(ALQUIMIA_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_build})	

@@ -27,8 +27,8 @@ set(PFLOTRAN_CMAKE_CACHE_ARGS
 # --- Define the build command
 
 # Build the build script
-set(PFLOTRAN_sh_build ${PFLOTRAN_prefix_dir}/PFLOTRAN-build-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/PFLOTRAN-build-step.sh.in
+set(PFLOTRAN_sh_build ${PFLOTRAN_prefix_dir}/pflotran-build-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-build-step.sh.in
                ${PFLOTRAN_sh_build}
 	       @ONLY)
 
