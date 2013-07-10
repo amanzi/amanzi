@@ -180,7 +180,7 @@ void Transport_PK::AddDispersiveFluxes(int component,
 
         (*tcc_next)[component][c] += corner_fluxes[i];
         int c2 = mfd.cell_get_face_adj_cell(c, f);
-        if (c2 >= 0) (*tcc_next)[component][c2] -= corner_fluxes[i];
+        if (c2 >= 0) (*tcc_next)[component][c2] += dT * corner_fluxes[i];
       }
     }
   }

@@ -166,9 +166,26 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
 {
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
+  Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
+  Epetra_Vector& flux = FS->ref_darcy_flux();
 
   // update all coefficients, boundary data, and source/sink terms
   //Amanzi::timer_manager.stop("Update precon");
+  if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    if (matrix_tpfa == 0) {
+      Errors::Message msg;
+      msg << "Richards_PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
+      Exceptions::amanzi_throw(msg);
+    }
+    matrix_tpfa -> DeriveDarcyMassFlux(*u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
+    //cout<<flux<<endl;
+  }
+
+
+
+
 
   rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
@@ -212,20 +229,21 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
   }
   else {
-    //Amanzi::timer_manager.start("AnalyticJacobian");
+
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(preconditioner_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    //Amanzi::timer_manager.stop("AnalyticJacobian");
+
+    //Amanzi::timer_manager.start("AnalyticJacobian");
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
     matrix_tpfa -> ApplyBoundaryConditions( bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
     matrix_tpfa -> AssembleSchurComplement( Krel_faces, *Transmis_faces );
 
-    //Amanzi::timer_manager.start("AnalyticJacobian");
+
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, bc_model, bc_values, *Transmis_faces, *Grav_term_faces, *rel_perm);
     //Amanzi::timer_manager.stop("AnalyticJacobian");
   }
@@ -255,7 +273,7 @@ void Richards_PK::ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_
 
   std::vector<int> dirs;
 
-  //cout.precision(10);
+  cout.precision(18);
 
 
   // for (int c = 0; c < ncells_owned; c++) {
@@ -278,11 +296,14 @@ void Richards_PK::ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_
 
 
     for (int i=0; i<ncells; i++){
+
       h[i] = norm(face_centr - mesh_->cell_centroid(cells[i]));
       perm[i] = (rho/vis)*((K[cells[i]] * normal) * normal)/ area;
       //perm[i] = ((K[cells[i]] * normal) * normal)/ area;
-      //cout<<K[cells[i]]<<" "<<rho<<" "<<vis<<" "<<perm[i]<<" "<<h[i]<<endl;   
-      //exit(0);
+      if (fabs(normal[2]) > 0.3){
+	//cout<<cells[i]<<" "<<K[cells[i]]<<" rho "<<rho<<" vis "<<vis<<" perm[i] "<<perm[i]<<" Dq "<<vis*perm[i]/(h[i]*rho*area)<<" h "<<h[i]<<endl;   
+	//	exit(0);
+      }
     }
     double factor, grav;
 
@@ -293,7 +314,7 @@ void Richards_PK::ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_
       factor = (perm[0]*perm[1])/(h[0]*perm[1] + h[1]*perm[0]);
       grav *= (h[0] + h[1]);
     }
-    else if (ncells == 1){
+    else if (ncells == 1){    
       factor = perm[0]/h[0];
       grav *= h[0];
     } 
@@ -306,12 +327,14 @@ void Richards_PK::ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_
     //if (fabs(normal[2]) > 0.3){
     // if (ncells > 1){
     // //   cout<<"grav "<<grav_faces[f]<<endl;
-    //  	cout<<"Transmisibilities "<<f<<": "<< Trans_faces[f]<<" area "<<area<<" Dq "<<vis * factor /rho<<" Krel "<<(*Krel_faces)[f]<<endl;
+      //cout<< "Dq calc "<<perm[0]<<" "<<h[0]<<endl;
+      // cout<<"Transmisibilities "<<f<<": "<< Trans_faces[f]<<" area "<<area<<" Dq "<<vis * factor /(rho * area)<<endl;
+      // cout<<"vis "<<vis<<" rho "<<rho<<" area "<<area<<endl;
     // // 	cout<<"cells ";
     // // 	for (int j=0; j<ncells; j++) cout<<cells[j]<<" ";
     // // 	cout<<endl<<endl;
     // // // cout<<" grav_term_faces "<< grav_faces[f]<<endl;
-    // }
+    //}
     
   }
 

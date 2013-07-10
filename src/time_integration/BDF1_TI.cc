@@ -374,29 +374,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-  //*****************************
-  // h = 3.50362e+07;
-  // u[0] = 59947.896613379933 ;
-  // u[1] = 43592.738470104247 ;
-  // u[2] = 73275.463792323280 ;
-  // u[3] = 85091.476905447722 ;
-  // u[4] = 89438.073602763077 ;
-  // u[5] = 90983.084774170551 ;
-  // u[6] = 100230.48129315022 ;
-  // u[7] = 100286.11888622568 ;
-  // u[8] = 100288.49133992816 ;
-  // u[9] = 100288.81544240398 ;
-  // u[10] = 100288.85844005689 ;
-  // u[11] = 100288.86263140998 ;
-
-  //u0 = u;
-
-  // cout.precision(16);
-  // cout<<"Initial Guess\n";
-  // for (int i=0;i<12;i++) cout<<u[i]<<"\n";
-  // cout<<endl;
-  //*************************************************
-  //cout.precision(16);
 
   fpa->nka_restart();
 
@@ -419,7 +396,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
     *out << "BDF1: preconditioner lag is " << state.currentpclag  <<std::endl;
   }  
-
+ 
   do {
     // Check for too many nonlinear iterations.
     if (itr > state.mitr) {
@@ -449,21 +426,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
 
-    //cout<<"Residual\n";
-    // for (int i=0;i<12;i++) cout<<du[i]<<" sol "<<u[i]<<"\n";
-    // cout<<endl;
-    // cout<<du<<endl;
-    //cout<<"Solution\n"<<u<<endl;
-    //exit(0);
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
 
-    //cout<<"Update\n";
-    // for (int i=0;i<12;i++) cout<<u_tmp[i]<<"\n";
-    // cout<<endl;
-    //cout<<u_tmp<<endl;
-
-    //exit(0);
 
     // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
@@ -544,13 +509,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // norm provided in the model evaluator
     error = fn.enorm(u, du);
 
-    // for (int i=0;i<12;i++) cout<<"test_sol   "<<u[i]<<"\n";
-    // cout<<endl;
-    //cout<<"Update \n"<<du<<endl;
-    //cout<<"Solution \n"<<u<<endl;
-    int tmp;
-    //    cin >> tmp;
-    
+      
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;
@@ -559,8 +518,6 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
 
     // Check for convergence
     if (error < state.ntol*state.ntol_multiplier_current)   {
-                 // cout<<" test_sol Exit before convergence\n";
-                 // exit(0);
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
       }

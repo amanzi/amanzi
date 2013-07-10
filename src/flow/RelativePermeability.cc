@@ -115,6 +115,7 @@ void RelativePermeability::ComputeOnFaces(
 
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     Epetra_Vector& flux = FS_->ref_darcy_flux();
+    //cout<<flux<<endl;
     FaceUpwindFlux_(p, flux, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
@@ -151,8 +152,10 @@ void RelativePermeability::FaceUpwindGravity_(
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE) {
           double pc = atm_pressure - bc_values[f][0];
           (*Krel_faces_)[f] = WRM_[(*map_c2mb_)[c]]->k_relative(pc);
+	  cout<<"Relative permeability on boundary "<<(*Krel_faces_)[f]<<endl;
         } else {
           (*Krel_faces_)[f] = (*Krel_cells_)[c];
+	  //if (bc_model[f] == FLOW_BC_FACE_PRESSURE) cout<<"Relative permeability from cell "<<(*Krel_faces_)[f]<<endl;
         }
       } else {
         if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
