@@ -251,6 +251,8 @@ tools.
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.81"/>
+
+    <Parameter name="Number of component concentrations" type="int" value="0"/>
     <Parameter name="Material Names" type="Array(string)" value="{Mesh block 1, Mesh block 2}"/>
 
     <ParameterList name="Mesh block sand">
@@ -272,6 +274,11 @@ tools.
       ...
     </ParameterList>
   </ParameterList>
+
+Some State parameters are described below:
+
+* `"Number of component concentrations`" [int] This parameter does not have 
+  a default value. Thus if transport is not initialized, set it to zero.
 
 Some data can be initialized from files. Additional sublist has to be added to
 the `"State`" list with the file name and names of attributes. 

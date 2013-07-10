@@ -19,6 +19,8 @@ Geometry
 ------------
 
 .. image:: figs/Geometry.png
+  :align: right
+  :width: 200px
 
 Stated Initial Conditions
 ------------------------------
@@ -31,6 +33,7 @@ Stated Boundary Conditions
 Flow at surface for all time:  .5 cm/d = 5.78703704E-8 m/s 
 :math:`\partial \psi / \partial x` at 200cm depth=0
 
+
 Case 2a
 ^^^^^^^^
 
@@ -39,4 +42,6 @@ Case 2b
 
 Cace 2c
 ^^^^^^^^
+
+
 

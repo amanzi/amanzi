@@ -47,6 +47,66 @@
       endif
       end     
 
+      subroutine FORT_CC_TO_EC_AVG(avg,DIMS(avg),
+     &     c,DIMS(c),lo,hi,mult,dir,nc,do_harm)
+      implicit none      
+      integer DIMDEC(avg)
+      integer DIMDEC(c)
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  avg(DIMV(avg),0:nc-1)
+      REAL_T  c(DIMV(c),0:nc-1)
+      REAL_T  mult
+      integer dir, nc, do_harm
+      
+      integer i, j, n
+      REAL_T tmult
+
+      if (dir.ne.0 .and. dir.ne.1) then
+         print *, 'FORT_CC_TO_EC_AVG::bad dir: ',dir
+         call bl_pd_abort()
+      endif
+
+      if (do_harm .eq. 1) then
+         tmult = mult*2.d0
+         if (dir.eq.0) then
+            do n=0,nc-1
+               do j = lo(2),hi(2)
+                  do i = lo(1),hi(1)+1
+                     avg(i,j,n) = tmult/(1.d0/c(i,j,n) + 1.d0/c(i-1,j,n))
+                  enddo
+               enddo
+            enddo
+         else if (dir.eq.1) then
+            do n=0,nc-1
+               do j = lo(2),hi(2)+1
+                  do i = lo(1),hi(1)
+                     avg(i,j,n) = tmult/(1.d0/c(i,j,n) + 1.d0/c(i,j-1,n))
+                  enddo
+               enddo
+            enddo
+         endif
+      else
+         tmult = mult*0.5d0
+         if (dir.eq.0) then
+            do n=0,nc-1
+               do j = lo(2),hi(2)
+                  do i = lo(1),hi(1)+1
+                     avg(i,j,n) = tmult*(c(i,j,n) + c(i-1,j,n))
+                  enddo
+               enddo
+            enddo
+         else if (dir.eq.1) then
+            do n=0,nc-1
+               do j = lo(2),hi(2)+1
+                  do i = lo(1),hi(1)
+                     avg(i,j,n) = tmult*(c(i,j,n) + c(i,j-1,n))
+                  enddo
+               enddo
+            enddo
+         endif
+      endif
+      end     
+
       subroutine FORT_EC_TO_CC_DIV(div,DIMS(div),
      &     e,DIMS(e),a,DIMS(a),v,DIMS(v),lo,hi,mult,dir,nc)
       implicit none      

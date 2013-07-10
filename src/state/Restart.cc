@@ -7,7 +7,7 @@
 #include "boost/filesystem.hpp"
 
 Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
-  plist(plist_), disabled(false), comm(comm_), restart_output(NULL)
+  plist(plist_), disabled(false), comm(comm_), restart_output(NULL), walkabout_(false)
 {
   read_parameters(plist);
 
@@ -42,6 +42,7 @@ void Amanzi::Restart::read_parameters(Teuchos::ParameterList& plist)
 
   boost::filesystem::path fbn(filebasename);
   boost::filesystem::path parent = fbn.parent_path();
+  
   if (!parent.empty()) {
     // we need to check whether the parent path exists
     if (!boost::filesystem::exists(parent)) {
@@ -61,25 +62,21 @@ void Amanzi::Restart::read_parameters(Teuchos::ParameterList& plist)
   number_of_cycle_intervals = 0;
 
   // read the cycle data namelist
-
-  if ( plist.isSublist("Cycle Data") ) 
-    {
-      Teuchos::ParameterList &iclist = plist.sublist("Cycle Data");
+  if ( plist.isSublist("Cycle Data") ) {
+    Teuchos::ParameterList &iclist = plist.sublist("Cycle Data");
       
-      interval = iclist.get<int>("Interval",1);
-      start = iclist.get<int>("Start",0);
-      end = iclist.get<int>("End",-1);
+    interval = iclist.get<int>("Interval",1);
+    start = iclist.get<int>("Start",0);
+    end = iclist.get<int>("End",-1);
       
-      if (iclist.isParameter("Steps"))
-	{
-	  steps = iclist.get<Teuchos::Array<int> >("Steps");  
-	}
-    }	
-  else
-    {
-      // error
+    if (iclist.isParameter("Steps")) {
+      steps = iclist.get<Teuchos::Array<int> >("Steps");  
     }
+  } else {
+    // error
+  }
 
+  walkabout_ = plist.get<bool>("walkabout", false);
 }
 
 
@@ -119,6 +116,26 @@ void Amanzi::Restart::dump_state(State& S, bool force)
       restart_output->writeDataReal(*S.get_vertical_permeability(),"vertical permeability");
       restart_output->writeDataReal(*S.get_material_ids(),"material IDs");
       
+
+      // velocity data for walkabout (only write when we force a checkpoint, this
+      // will write them when the problem starts, when it ends and at switchover time
+      if (force && walkabout_) {
+	int dim = S.get_walkabout_xyz()->NumVectors();
+
+	for (int comp = 0; comp < dim; ++comp) {
+	  std::stringstream xyzstr;
+	  xyzstr << "walkabout xyz " << comp;
+
+	  std::stringstream velocitystr;
+	  velocitystr << "walkabout velocity " << comp;
+
+	  restart_output->writeDataReal( *(*S.get_walkabout_xyz())(comp), xyzstr.str());
+	  restart_output->writeDataReal( *(*S.get_walkabout_velocity())(comp), velocitystr.str());
+	}
+	restart_output->writeDataReal( *S.get_walkabout_porosity(), "walkabout porosity");
+	restart_output->writeDataReal( *S.get_walkabout_water_saturation(), "walkabout water saturation");
+      }
+
       for (int i=0; i<S.get_number_of_components(); i++) {
 	std::stringstream tcc_name;
 	

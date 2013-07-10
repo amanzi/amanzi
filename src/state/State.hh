@@ -49,6 +49,13 @@ class State : public Teuchos::VerboseObject<State> {
   Teuchos::RCP<Epetra_Vector>      get_specific_storage() { return specific_storage; }
   Teuchos::RCP<Epetra_Vector>      get_specific_yield() { return specific_yield; }
   
+  // the next two are for walkabout
+  Teuchos::RCP<Epetra_MultiVector>& get_walkabout_xyz() { return walkabout_xyz; }
+  Teuchos::RCP<Epetra_MultiVector>& get_walkabout_velocity() { return walkabout_velocity; }
+  Teuchos::RCP<Epetra_Vector>& get_walkabout_porosity() { return walkabout_porosity; }
+  Teuchos::RCP<Epetra_Vector>& get_walkabout_water_saturation() { return walkabout_water_saturation; }
+  
+
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
   double get_time () const { return time; };
@@ -384,6 +391,12 @@ class State : public Teuchos::VerboseObject<State> {
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
   Teuchos::RCP<Epetra_Vector> material_ids;
   Teuchos::RCP<Epetra_Vector> volume_;
+
+  // the next two are for walkabout
+  Teuchos::RCP<Epetra_MultiVector> walkabout_xyz;
+  Teuchos::RCP<Epetra_MultiVector> walkabout_velocity;
+  Teuchos::RCP<Epetra_Vector> walkabout_porosity;
+  Teuchos::RCP<Epetra_Vector> walkabout_water_saturation;
 
   Teuchos::RCP<Epetra_MultiVector> free_ion_concentrations_; 
   Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff_;

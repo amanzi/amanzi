@@ -325,7 +325,7 @@ public:
 
   void predictDT(MultiFab* u_mac, Real t_eval);
 
-  void predictDT_diffusion_explicit (Real t_eval);
+  Real predictDT_diffusion_explicit (Real t_eval);
 
   Real initialTimeStep (MultiFab* u_mac);
 
@@ -1044,7 +1044,7 @@ public:
   MultiFab* UMac_Prev() {return u_mac_prev;}
   MultiFab* UMac_Curr() {return u_mac_curr;}
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
-  MultiFab* KappaCC() {return kappa;};
+  MultiFab* KappaCCavg() {return kappa;};
   MultiFab* Porosity() {return rock_phi;}
   MultiFab* KappaEC() {return kpedge;}
   MultiFab* PCapParams() {return cpl_coef;}
@@ -1296,7 +1296,6 @@ protected:
   static Array<int>  is_diffusive;    // does variable diffuse?
   static Array<Real> visc_coef;       // const coef viscosity terms
   static Array<Real> diff_coef;       // const coef molecular diffusion coefficients (for tracers)
-  static bool        diffuse_tracers;
   static Real        visc_tol;
   static Real        visc_abs_tol;
   static Real        be_cn_theta;
@@ -1309,6 +1308,7 @@ protected:
   static bool do_tracer_transport; // Does the user want to transport tracers
   static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized
   static int  transport_tracers; // Should the tracers be transported now
+  static bool diffuse_tracers;
   static int  do_full_strang;
   static int  n_chem_interval;
   static int  it_chem;

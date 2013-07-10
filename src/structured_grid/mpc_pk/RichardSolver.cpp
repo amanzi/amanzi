@@ -10,7 +10,8 @@
 
 static bool use_fd_jac_DEF = true;
 static bool use_dense_Jacobian_DEF = false;
-static int upwind_krel_DEF = 1;
+static bool upwind_krel_DEF = false;
+static bool subgrid_krel_DEF = false; // Default off, not debugged yet
 static int pressure_maxorder_DEF = 3;
 static Real errfd_DEF = 1.e-8;
 static int max_ls_iterations_DEF = 10;
@@ -39,6 +40,7 @@ RSParams::RSParams()
   use_fd_jac = use_fd_jac_DEF;
   use_dense_Jacobian = use_dense_Jacobian_DEF;
   upwind_krel = upwind_krel_DEF;
+  subgrid_krel = subgrid_krel_DEF;
   pressure_maxorder = pressure_maxorder_DEF;
   errfd = errfd_DEF;
   max_ls_iterations = max_ls_iterations_DEF;
@@ -106,12 +108,13 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
 			     Layout&         _layout)
   : pm_amr(_pm_amr),
     layout(_layout),
-    params(_params)
+    params(_params),
+    KappaCCdir(0)
 {
   nLevs = layout.NumLevels();
   mftfp = new MFTFillPatch(layout);
-  pm.resize(nLevs,PArrayNoManage);
-  for (int lev = 0; lev < nLevs; lev++)  {
+  pm.resize(pm_amr.finestLevel()+1,PArrayNoManage);
+  for (int lev = 0; lev < pm.size(); lev++)  {
     pm.set(lev,dynamic_cast<PorousMedia*>(&pm_amr.getLevel(lev)));
   }
 
@@ -121,41 +124,33 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   RhoSatOld = 0;
   RhoSatNew = 0;
   Pnew = 0;
+  KappaCCdir = 0;
+  CoeffCC = 0;
 
   PArray<MultiFab> lambda(nLevs,PArrayNoManage);
-  PArray<MultiFab> kappacc(nLevs,PArrayNoManage);
+  PArray<MultiFab> kappaccavg(nLevs,PArrayNoManage);
+  PArray<MultiFab> kappaccdir(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
   PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
-  Array<PArray<MultiFab> > kappaEC(BL_SPACEDIM);
 
-  for (int d=0; d<BL_SPACEDIM; ++d) {
-    kappaEC[d].resize(nLevs,PArrayNoManage);
-  }
   for (int lev=0; lev<nLevs; ++lev) {
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      kappaEC[d].set(lev,&(pm[lev].KappaEC()[d]));
-    }
     lambda.set(lev,pm[lev].LambdaCC_Curr());
     porosity.set(lev,pm[lev].Porosity());
     pcap_params.set(lev,pm[lev].PCapParams());
     if (!params.use_fd_jac || params.semi_analytic_J || params.variable_switch_saturation_threshold) {
-        kappacc.set(lev,pm[lev].KappaCC());
+        kappaccavg.set(lev,pm[lev].KappaCCavg());
     }
   }
 
   if (!params.use_fd_jac || params.semi_analytic_J || params.variable_switch_saturation_threshold) {
-    KappaCC = new MFTower(layout,kappacc,nLevs);
+    KappaCCavg = new MFTower(layout,kappaccavg,nLevs);
   }
   else {
-    KappaCC = 0;
+    KappaCCavg = 0;
   }
   Lambda = new MFTower(layout,lambda,nLevs);
   Porosity = new MFTower(layout,porosity,nLevs);
   PCapParams = new MFTower(layout,pcap_params,nLevs);
-  KappaEC.resize(BL_SPACEDIM, PArrayManage);
-  for (int d=0; d<BL_SPACEDIM; ++d) {
-    KappaEC.set(d, new MFTower(layout,kappaEC[d],nLevs));
-  }
       
   ctmp.resize(BL_SPACEDIM);
   Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
@@ -176,6 +171,9 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     utmp.clear();
   }
 
+  if (!params.upwind_krel) {
+    CoeffCC = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
+  }
 
   PetscErrorCode ierr;       
   int n = layout.NumberOfLocalNodeIds();
@@ -210,6 +208,7 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
 #endif  
 
   BuildOpSkel(Jac);
+  BuildMLPropEval();
   
   matfdcoloring = 0;
   ierr = SNESCreate(comm,&snes); CHKPETSC(ierr);
@@ -238,6 +237,117 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
 
   ierr = SNESSetTolerances(snes,params.atol,params.rtol,params.stol,params.maxit,params.maxf);CHKPETSC(ierr);
   ierr = SNESSetFromOptions(snes);CHKPETSC(ierr);
+}
+
+BoxArray 
+ComplementIn(const BoxArray& ba, const BoxArray& ba_in, bool do_simplify = false)
+{
+  BoxList bl;
+  for (int i=0; i<ba_in.size(); ++i) {
+    bl.join(BoxList(BoxLib::complementIn(ba_in[i],ba)));
+  }
+  if (do_simplify) {
+    bl.simplify();
+  }
+  return BoxArray(bl);
+}
+
+BoxArray 
+Join(const BoxArray& ba1, const BoxArray& ba2, bool do_simplify = false)
+{
+  BoxList bl(ba1);
+  bl.join(ba2.boxList());
+  if (do_simplify) {
+    bl.simplify();
+  }
+  return BoxArray(bl);
+}
+
+void
+RichardSolver::BuildMLPropEval()
+{
+  if (!params.upwind_krel  &&  params.subgrid_krel) {
+    MatFiller* matFiller = pm_amr.GetMatFiller();
+    bool ret = matFiller != 0 && matFiller->Initialized();
+    if (!ret) {
+      BoxLib::Abort("RichardSolver::BuildMLPropEval: matFiller not ready");
+    }
+
+    const Array<BoxArray>& gridArray = layout.GridArray();
+    int num_levs_mixed = matFiller->NumLevels();
+
+    state_to_fill.resize(num_levs_mixed);
+    derive_to_fill.resize(num_levs_mixed);
+
+    for (int lev=0; lev<num_levs_mixed; ++lev) {
+      const BoxArray& stf = (lev==0 ? gridArray[0] : state_to_fill[lev]);
+      BoxArray mixed = BoxLib::intersect(matFiller->Mixed(lev),stf);
+      if (mixed.size()>0) {
+        if (lev<num_levs_mixed-1) {
+          state_to_fill[lev+1] = BoxArray(mixed).refine(matFiller->RefRatio(lev));          
+          BoxList bl(state_to_fill[lev+1]); bl.simplify(); state_to_fill[lev+1] = BoxArray(bl);
+        }
+        state_to_fill[lev] = ComplementIn(mixed,state_to_fill[lev],true);
+      }
+    }
+
+    for (int lev=0; lev<num_levs_mixed; ++lev) {
+      const BoxArray& stf = (lev==0 ? gridArray[0] : state_to_fill[lev]);
+      BoxArray mixed = BoxLib::intersect(matFiller->Mixed(lev),stf);
+      derive_to_fill[lev] = Join(state_to_fill[lev],mixed,true);
+      if (lev>0) {
+        derive_to_fill[lev] = Join(derive_to_fill[lev],
+                                   BoxArray(matFiller->Mixed(lev-1)).refine(matFiller->RefRatio(lev-1)),true);
+      }
+    }
+
+    for (int lev=0; lev<num_levs_mixed; ++lev) {
+      int mg = pm_amr.maxGridSize(lev);
+      if (state_to_fill[lev].size()>0) {
+        state_to_fill[lev].maxSize(mg);
+      }
+      if (derive_to_fill[lev].size()>0) {
+        derive_to_fill[lev].maxSize(mg);
+      }
+    }
+
+    int num_fill = state_to_fill.size();
+    phif.resize(num_fill,PArrayManage);
+    pcPf.resize(num_fill,PArrayManage);
+    kf.resize(num_fill,PArrayManage);
+    krf.resize(num_fill,PArrayManage);
+    pf.resize(num_fill,PArrayManage);
+    lf.resize(num_fill,PArrayManage);
+
+    for (int lev=1; lev<num_fill; ++lev) {
+      const BoxArray& stff = state_to_fill[lev];
+      if (stff.size()>0) {	
+	int ncPhi = matFiller->nComp("porosity");
+	phif.set(lev, new MultiFab(stff,ncPhi,0));
+
+	int ncPcP = matFiller->nComp("capillary_pressure");
+	pcPf.set(lev, new MultiFab(stff,ncPcP,0));
+
+	int ncK = matFiller->nComp("permeability");
+	kf.set(lev, new MultiFab(stff,ncK,0));
+
+	int ncKr = matFiller->nComp("relative_permeability");
+	krf.set(lev, new MultiFab(stff,ncKr,0));
+
+	pf.set(lev, new MultiFab(stff,1,0));
+	lf.set(lev, new MultiFab(stff,1,0));
+      }
+    }
+
+    int num_derive = derive_to_fill.size();
+    lc.resize(num_derive,PArrayManage);
+    for (int lev=0; lev<num_derive; ++lev) {
+      if (derive_to_fill[lev].size()>0) {
+	lc.set(lev,new MultiFab(derive_to_fill[lev],BL_SPACEDIM,0));
+      }
+    }
+
+  }
 }
 
 #undef __FUNCT__  
@@ -275,7 +385,8 @@ RichardSolver::~RichardSolver()
     delete Porosity;
     delete PCapParams;
     delete Lambda;
-    delete KappaCC;
+    delete KappaCCavg;
+    delete KappaCCdir;
 
     delete mftfp;
 }
@@ -364,6 +475,44 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   SetTime(cur_time);
   SetDt(delta_t);
+
+  // Set permeability
+  Array<PArray<MultiFab> > kappaEC(BL_SPACEDIM);
+  if (params.upwind_krel) {
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      kappaEC[d].resize(nLevs,PArrayNoManage);
+    }
+    for (int lev=0; lev<nLevs; ++lev) {
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        kappaEC[d].set(lev,&(pm[lev].KappaEC()[d]));
+      }
+    }
+    KappaEC.resize(BL_SPACEDIM, PArrayManage);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      KappaEC.set(d, new MFTower(layout,kappaEC[d],nLevs));
+    }
+  }
+  else {
+    MatFiller* matFiller = pm_amr.GetMatFiller();
+    bool ret = matFiller != 0 && matFiller->Initialized();
+    KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
+    for (int lev=0; lev<nLevs && ret; ++lev) {
+      (*KappaCCdir)[lev].setVal(0);
+      ret = matFiller->SetProperty(cur_time,lev,(*KappaCCdir)[lev],"permeability",0,1);
+    }
+    if (!ret) BoxLib::Abort("Failed to build permeability");
+
+    int num_fill = state_to_fill.size();
+    for (int lev=1; lev<num_fill; ++lev) {
+      const BoxArray& stff = state_to_fill[lev];
+      if (stff.size()>0) {	
+	bool retPhi = matFiller->SetProperty(cur_time,lev,phif[lev],"porosity",0,0);
+	bool retPc = matFiller->SetProperty(cur_time,lev,pcPf[lev],"capillary_pressure",0,0);
+	bool retK = matFiller->SetProperty(cur_time,lev,kf[lev],"permeability",0,0);
+	bool retKr = matFiller->SetProperty(cur_time,lev,krf[lev],"relative_permeability",0,0);
+      }
+    }
+  }
 
   CheckCtx check_ctx;
   check_ctx.rs = this;
@@ -732,12 +881,13 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
                 
                 int dir_bc_lo = bc.lo()[d]==EXT_DIR && vccbox.smallEnd()[d]==domain.smallEnd()[d];
                 int dir_bc_hi = bc.hi()[d]==EXT_DIR && vccbox.bigEnd()[d]==domain.bigEnd()[d];
-                
+
+                int upwind_flag = (int)params.upwind_krel;
                 FORT_RS_CTE_UPW(efab.dataPtr(), ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
 				cfab.dataPtr(), ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
 				sgnfab.dataPtr(),ARLIM(sgnfab.loVect()), ARLIM(sgnfab.hiVect()),
 				vccbox.loVect(), vccbox.hiVect(), &d, &nComp, &dir_bc_lo, &dir_bc_hi,
-				&params.upwind_krel);
+				&upwind_flag);
             }
         }
     }
@@ -891,15 +1041,6 @@ RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
 }
 
 void 
-RichardSolver::UpdateDarcyVelocity(PArray<MultiFab>& pressure,
-				   Real              t)
-{
-  MFTower* P = new MFTower(layout,pressure,nLevs);
-  UpdateDarcyVelocity(*P,t);
-  delete P;
-}
-
-void 
 RichardSolver::UpdateDarcyVelocity(MFTower& pressure,
 				   Real     t)
 {
@@ -931,7 +1072,6 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
     for (int lev=0; lev<nLevs; ++lev) {
         pm[lev].FillStateBndry(t,Press_Type,0,1); // Set new boundary data
         pm[lev].calcInvPressure(rhoSat[lev],pressure[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
-        pm[lev].calcLambda(&(lambda[lev]),rhoSat[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
     }
 
     int nComp = 1;
@@ -952,14 +1092,137 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
     // Get  -(Grad(p) + rho.g)
     CCtoECgradAdd(darcy_vel,pressure,a);
 
-    // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) + rho.g)
-    const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
-    CenterToEdgeUpwind(GetRichardCoefs(),lambda,darcy_vel,nComp,pressure_bc);
+    if (params.upwind_krel) {
 
-    // Get Darcy velocity = - lambda * kappa * (Grad(p) + rho.g)
-    for (int d=0; d<BL_SPACEDIM; ++d) {
+      for (int lev=0; lev<nLevs; ++lev) {
+        pm[lev].calcLambda(&(lambda[lev]),rhoSat[lev]); // FIXME: Writes/reads only to comp=0, does 1 grow
+      }
+
+      // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) + rho.g)
+      const BCRec& pressure_bc = pm[0].get_desc_lst()[Press_Type].getBC(0);
+      CenterToEdgeUpwind(GetRichardCoefs(),lambda,darcy_vel,nComp,pressure_bc);
+      
+      // Get Darcy velocity = - lambda * kappa * (Grad(p) + rho.g)
+      for (int d=0; d<BL_SPACEDIM; ++d) {
         XmultYZ(darcy_vel[d],GetRichardCoefs()[d],kappa[d]);
-    }    
+      }    
+    }
+    else {
+
+      for (int lev=0; lev<nLevs; ++lev) {
+        pm[lev].calcLambda(&(lambda[lev]),rhoSat[lev]);
+        MultiFab::Copy((*CoeffCC)[lev],lambda[lev],0,0,1,1);
+        for (int d=1; d<BL_SPACEDIM; ++d) {
+          MultiFab::Copy((*CoeffCC)[lev],(*CoeffCC)[lev],0,d,1,1);
+        }
+      }
+
+      if (params.subgrid_krel) {
+	const Array<IntVect>& refRatio = layout.RefRatio();
+	const Array<BoxArray>& gridArray = layout.GridArray();
+	const Array<Geometry>& geomArray = layout.GeomArray();
+	MatFiller* matFiller = pm_amr.GetMatFiller();
+	bool ret = matFiller != 0 && matFiller->Initialized();
+	if (!ret) {
+	  BoxLib::Abort("RichardSolver:: matFiller not ready");
+	}      
+	int num_levs_mixed = matFiller->NumLevels();
+	int num_fill = state_to_fill.size();
+
+	for (int lev=1; lev<num_fill; ++lev) {
+	  if (state_to_fill[lev].size()>0) {
+
+	    pm[lev].FillCoarsePatch(pf[lev],0,t,Press_Type,0,1);
+
+	    FArrayBox rsf;
+	    for (MFIter mfi(pf[lev]); mfi.isValid(); ++mfi) {
+	      const FArrayBox& pfab = pf[lev][mfi];
+	      rsf.resize(pfab.box(),1);
+	      FArrayBox& lamf = lf[lev][mfi];
+	      const FArrayBox& phifab = phif[lev][mfi];
+	      const FArrayBox& kfab = kf[lev][mfi];
+	      const FArrayBox& pcPfab = pcPf[lev][mfi];
+	      const FArrayBox& krfab = krf[lev][mfi];
+	      int ncPcP = pcPfab.nComp();
+	      int ncKr = krfab.nComp();
+
+	      FORT_MK_INV_CPL( pfab.dataPtr(),   ARLIM(pfab.loVect()),   ARLIM(pfab.hiVect()),
+			       rsf.dataPtr(),    ARLIM(rsf.loVect()),    ARLIM(rsf.hiVect()),
+			       phifab.dataPtr(), ARLIM(phifab.loVect()), ARLIM(phifab.hiVect()),
+			       kfab.dataPtr(),   ARLIM(kfab.loVect()),   ARLIM(kfab.hiVect()),
+			       pcPfab.dataPtr(), ARLIM(pcPfab.loVect()), ARLIM(pcPfab.hiVect()),
+			       &ncPcP); 
+
+	      FORT_MK_LAMBDA( lamf.dataPtr(),  ARLIM(lamf.loVect()),  ARLIM(lamf.hiVect()),
+			      rsf.dataPtr(),   ARLIM(rsf.loVect()),   ARLIM(rsf.hiVect()),
+			      krfab.dataPtr(), ARLIM(krfab.loVect()), ARLIM(krfab.hiVect()),
+			      &ncKr);
+	    }
+	  }
+	}
+
+	// Average down, insert into CoeffCC
+	int num_derive = derive_to_fill.size();
+	for (int lev=num_derive-2; lev>=0; --lev) {
+	  if (derive_to_fill[lev].size()>0) {
+	    const IntVect& crat = matFiller->RefRatio(lev);
+	    const BoxArray& cba = matFiller->Mixed(lev);
+	    const BoxArray fba = BoxArray(cba).refine(crat);
+
+	    MultiFab tlc(cba,BL_SPACEDIM,0);
+	    MultiFab tlf(fba,BL_SPACEDIM,0);
+
+	    tlf.setVal(-1);
+	    tlf.copy(lf[lev+1],0,0,1);
+	    for (int d=1; d<BL_SPACEDIM; ++d) {
+	      tlf.copy(tlf,0,d,1);
+	    }
+	    if (lev<num_derive-2) {
+	      tlf.copy(lc[lev+1],0,0,BL_SPACEDIM);
+	    }
+
+	    for (MFIter mfi(tlc); mfi.isValid(); ++mfi) {
+	      const Box& crse_box = mfi.validbox();
+	      const Box fine_box = Box(crse_box).refine(crat);
+	      matFiller->CoarsenData(tlf[mfi],0,tlc[mfi],crse_box,0,BL_SPACEDIM,crat,
+				     matFiller->coarsenRule("relative_permeability"));
+	    }
+
+	    lc[lev].copy(tlc,0,0,BL_SPACEDIM);
+	    if (lev>0) {
+	      for (int d=0; d<BL_SPACEDIM; ++d) {
+		lc[lev].copy(lf[lev],0,d,1);
+	      }
+	    }
+
+	    if (lev<nLevs) {
+	      (*CoeffCC)[lev].copy(lc[lev],0,0,BL_SPACEDIM);
+	    }
+	  }
+	}
+      }
+
+      // Make sure grow cells are consistent
+      for (int lev=0; lev<nLevs; ++lev) {
+	(*CoeffCC)[lev].FillBoundary(0,BL_SPACEDIM);
+	layout.GeomArray()[lev].FillPeriodicBoundary((*CoeffCC)[lev],0,BL_SPACEDIM);
+      }
+
+      // Get (lambda*kappa)
+      for (int lev=0; lev<nLevs; ++lev) {
+        MultiFab::Multiply((*CoeffCC)[lev],(*KappaCCdir)[lev],0,0,BL_SPACEDIM,1);
+      }
+
+      int do_harmonic = 1;
+      int nComp = -1; // Note signal to take multiple components of cc to single comp of ec
+      MFTower::CCtoECavg(GetRichardCoefs(),(*CoeffCC),1.0,0,0,nComp,do_harmonic);
+
+      for (int lev=0; lev<nLevs; ++lev) {
+        for (int d=0; d<BL_SPACEDIM; ++d) {
+          MultiFab::Multiply(darcy_vel[d][lev],GetRichardCoefs()[d][lev],0,0,1,0);
+        }
+      }
+    }
 
     // Overwrite face velocities at boundary with boundary conditions
     SetInflowVelocity(darcy_vel,t);
@@ -987,7 +1250,8 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
                        Real     t)
 {
   // Get the Darcy flux
-  UpdateDarcyVelocity(pressure,t);
+  ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),
+                       GetLambda(),GetKappaEC(),GetDensity(),GetGravity(),t);
 
   // Get the divergence of the Darcy velocity flux = darcy vel . rho 
   //   leave velocity unscaled
@@ -1054,7 +1318,7 @@ void RichardSolver::CreateJac(Mat& J,
   const Array<int>& rinflow_bc_lo = pm[0].rinflowBCLo();
   const Array<int>& rinflow_bc_hi = pm[0].rinflowBCHi();
 
-  int do_upwind =1;
+  int do_upwind = (int)params.upwind_krel;
   for (int lev=0; lev<nLevs; ++lev) {
     const Box& domain = GeomArray()[lev].Domain();
     const Real* dx = GeomArray()[lev].CellSize();
@@ -1096,7 +1360,7 @@ void RichardSolver::CreateJac(Mat& J,
       FArrayBox& ldfab = GetLambda()[lev][mfi];
       FArrayBox& prfab = pressure[lev][mfi];
       FArrayBox& pofab = GetPorosity()[lev][mfi];
-      FArrayBox& kcfab = GetKappaCC() [lev][mfi];
+      FArrayBox& kcfab = GetKappaCCavg() [lev][mfi];
       FArrayBox& cpfab = PCapParamsMFT[lev][mfi];
       const int n_cp_coef = cpfab.nComp();
       FArrayBox& krfab = KrParamsMFT[lev][mfi];
@@ -1231,7 +1495,6 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     }
 #endif
 
-    
     ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
     if (rs->Parameters().scale_soln_before_solve) {
@@ -1552,7 +1815,7 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
     MFTower& P_MFT = rs->GetPressure();
     MFTower& RS_MFT = rs->GetRhoSatNp1();
     MFTower& DP_MFT = rs->GetAlpha(); //Handy data container
-    const MFTower& K_MFT = rs->GetKappaCC();
+    const MFTower& K_MFT = rs->GetKappaCCavg();
 
     Layout& layout = rs->GetLayout();
     ierr = layout.VecToMFTower(P_MFT,pk,0); CHKPETSC(ierr);
@@ -2005,7 +2268,7 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
       const Box& vbox = mfi.validbox();
 
       FArrayBox& pofab = GetPorosity()[lev][mfi];
-      FArrayBox& kcfab = GetKappaCC()[lev][mfi];
+      FArrayBox& kcfab = GetKappaCCavg()[lev][mfi];
       FArrayBox& cpfab = PCapParamsMFT[lev][mfi];
       const int n_cp_coef = cpfab.nComp();
 
@@ -2020,7 +2283,7 @@ RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
 			 vbox.loVect(), vbox.hiVect());
       
     }
-
+    
     //MultiFab::Multiply(aMFT[lev],GetLayout().Volume(lev),0,0,1,0);
     //aMFT[lev].mult(total_volume_inv,0,1);
   }

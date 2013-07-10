@@ -261,6 +261,14 @@ set_feature_info(ExodusII
 
 
 ##############################################################################
+# XERCES-C - http://http://xerces.apache.org/xerces-c/
+##############################################################################
+find_package(XERCES REQUIRED)
+set_feature_info(XERCES
+	         "Validating XML parser")
+
+
+##############################################################################
 # CCSE - http://ccse.lbl.gov/Software/ccse_core.html
 ##############################################################################
 if (ENABLE_Structured)
@@ -379,6 +387,7 @@ option(ENABLE_OpenMP "Build Amanzi executables with OpenMP" OFF)
 #                 )
 if (ENABLE_OpenMP)
     find_package(OpenMP)
+    find_package(OpenMP_Fortran)
 endif()
 
 ##############################################################################

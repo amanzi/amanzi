@@ -149,6 +149,8 @@ void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
     *method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
   } else if (name == "support operator") {
     *method = FLOW_MFD3D_SUPPORT_OPERATOR;
+  } else if (name == "developer testing") {
+    *method = FLOW_MFD3D_DEVELOPER_TESTING;
   } else if (name == "two point flux approximation") {
     *method = FLOW_MFD3D_TWO_POINT_FLUX;
   } else if (name == "optimized mfd") {
@@ -273,7 +275,7 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
 void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
 {
   if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    printf("Flow PK: saving krel-pc curves in file flow_dt_history.txt...\n");
+    printf("Flow PK: saving time history in file flow_dt_history.txt...\n");
 
     char file_name[30];
     sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);

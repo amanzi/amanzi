@@ -233,13 +233,13 @@ int  PorousMedia::variable_scal_diff;
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
 Array<Real> PorousMedia::diff_coef;
-bool        PorousMedia::diffuse_tracers;
 //
 // Transport flags
 //
 bool PorousMedia::do_tracer_transport;
 bool PorousMedia::setup_tracer_transport;
 int  PorousMedia::transport_tracers;
+bool PorousMedia::diffuse_tracers;
 bool PorousMedia::solute_transport_limits_dt;
 
 //
@@ -370,7 +370,8 @@ static int scalar_bc[] =
 
 static int tracer_bc[] =
   {
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, SEEPAGE
+    //INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_EVEN, SEEPAGE
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, SEEPAGE
   };
 
 static int press_bc[] =
@@ -387,6 +388,8 @@ static int tang_vel_bc[] =
   {
     INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, HOEXTRAP, EXT_DIR
   };
+
+static BCRec trac_bc; // Set in read_trac, used in variableSetUp
 
 static
 void
@@ -569,7 +572,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::transient_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::dt_cutoff    = 0.0;
-  PorousMedia::gravity      = 9.70297e-5; // 9.81/1.01e5
+  PorousMedia::gravity      = 9.80665 / 1.01325e5;
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
   PorousMedia::sum_interval = -1;
@@ -592,7 +595,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_chem            = 0;
   PorousMedia::do_tracer_transport = false;
   PorousMedia::setup_tracer_transport = false;
-  PorousMedia::transport_tracers = 0;
+  PorousMedia::transport_tracers  = 0;
+  PorousMedia::diffuse_tracers    = false;
   PorousMedia::do_full_strang     = 0;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -677,7 +681,6 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::echo_inputs    = 0;
   PorousMedia::richard_solver = 0;
-  PorousMedia::diffuse_tracers = false;
 }
 
 std::pair<std::string,std::string>
@@ -819,10 +822,9 @@ PorousMedia::variableSetUp ()
     Array<BCRec>       tbcs(ntracers);
     Array<std::string> tnames(ntracers);
 
-    set_tracer_bc(bc,phys_bc);
     for (int i = 0; i < ntracers; i++) 
     {
-      tbcs[i]   = bc;
+      tbcs[i]   = trac_bc;
       tnames[i] = tNames[i];
     }
 
@@ -868,7 +870,7 @@ PorousMedia::variableSetUp ()
       advectionType[ncomps+i] = NonConservative;
       diffusionType[ncomps+i] = Laplacian_S;
       is_diffusive[ncomps+i] = false;
-      if (diff_coef[i] > 0.0)
+      if (diffuse_tracers)
 	is_diffusive[ncomps+i] = true;
     }
 
@@ -1268,13 +1270,21 @@ PorousMedia::read_rock(int do_chem)
         const std::string prefix("rock." + rname);
         ParmParse ppr(prefix.c_str());
         
-        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
-
         static Property::CoarsenRule arith_crsn = Property::Arithmetic;
         static Property::CoarsenRule harm_crsn = Property::ComponentHarmonic;
         static Property::RefineRule pc_refine = Property::PiecewiseConstant;
 
-        Property* phi_func;
+        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
+
+        Real rDeff = -1;
+        if (ppr.countval("effective_diffusion_coefficient.val")) {
+          ppr.get("effective_diffusion_coefficient.val",rDeff);
+          diffuse_tracers = true;
+        }
+        std::string Deff_str = "Deff";
+        Property* Deff_func = new ConstantProperty(Deff_str,rDeff,harm_crsn,pc_refine);
+
+        Property* phi_func = 0;
         std::string phi_str = "porosity";
         Array<Real> rpvals(1), rptimes;
         Array<std::string> rpforms;
@@ -1298,7 +1308,7 @@ PorousMedia::read_rock(int do_chem)
         }
 
 
-        Property* kappa_func;
+        Property* kappa_func = 0;
         std::string kappa_str = "permeability";
         Array<Real> rvpvals(1), rhpvals(1), rvptimes(1), rhptimes(1);
         Array<std::string> rvpforms, rhpforms;
@@ -1376,12 +1386,27 @@ PorousMedia::read_rock(int do_chem)
             ppr.getarr("kr_param",rkrParam,0,ppr.countval("kr_param"));
         }
 
+        Array<Real> krPt(rkrParam.size()+1);
+        krPt[0] = Real(rkrType);
+        for (int j=0; j<rkrParam.size(); ++j) {
+          krPt[j+1] = rkrParam[j];
+        }
+        std::string krel_str = "relative_permeability";
+        Property* krel_func = new ConstantProperty(krel_str,krPt,harm_crsn,pc_refine);
+
         // capillary pressure: include cpl_coef, sat_residual, sigma
         int rcplType = 0;  ppr.query("cpl_type", rcplType);
         Array<Real> rcplParam;
         if (rcplType > 0) {
             ppr.getarr("cpl_param",rcplParam,0,ppr.countval("cpl_param"));
         }
+        Array<Real> cplPt(rcplParam.size()+1);
+        cplPt[0] = Real(rcplType);
+        for (int j=0; j<rcplParam.size(); ++j) {
+          cplPt[j+1] = rcplParam[j];
+        }
+        std::string cpl_str = "capillary_pressure";
+        Property* cpl_func = new ConstantProperty(cpl_str,cplPt,arith_crsn,pc_refine);
 
         Array<std::string> region_names;
         ppr.getarr("regions",region_names,0,ppr.countval("regions"));
@@ -1390,11 +1415,10 @@ PorousMedia::read_rock(int do_chem)
             material_regions.push_back(region_names[j]);
         }
 
-#if 1
         if (ppr.countval("porosity_dist_param")>0) {
           BoxLib::Abort("porosity_dist_param not currently supported");
         }
-#endif
+
         std::string porosity_dist="uniform"; ppr.query("porosity_dist",porosity_dist);
         int rporosity_dist_type = Rock::rock_dist_map[porosity_dist];
         Array<Real> rporosity_dist_param;
@@ -1414,13 +1438,21 @@ PorousMedia::read_rock(int do_chem)
         }
         rocks.set(i, new Rock(rname,rdensity,rpvals[0],rporosity_dist_type,rporosity_dist_param,
                               rpermeability,rpermeability_dist_type,rpermeability_dist_param,
-                              rkrType,rkrParam,rcplType,rcplParam,rregions));
+                              rkrType,rkrParam,rcplType,rcplParam,rDeff,rregions));
 
 
         std::vector<Property*> properties;
         properties.push_back(phi_func);
         properties.push_back(kappa_func);
+        properties.push_back(Deff_func);
+        properties.push_back(krel_func);
+        properties.push_back(cpl_func);
         materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
+        delete phi_func;
+        delete kappa_func;
+        delete Deff_func;
+        delete krel_func;
+        delete cpl_func;
     }
 
     // Read rock parameters associated with chemistry
@@ -1621,78 +1653,81 @@ PorousMedia::read_rock(int do_chem)
 
     FORT_KR_INIT(&saturation_threshold_for_vg_Kr,
 		 &use_shifted_Kr_eval);
+
+    ParmParse ppa("amr");
+    bool use_matFiller = pp.query("use_matFiller",use_matFiller);
+    if (!use_matFiller) 
+    {
+      bool read_full_pmap  = false;
+      bool read_full_kmap  = false;
+      bool write_full_pmap  = false;
+      bool write_full_kmap  = false;
+      bool build_full_pmap = true;
+      bool build_full_kmap = true;
+      permeability_from_fine = true;
+      porosity_from_fine = true;
     
+      std::string kfileout, pfileout, gsfile;
+      if (pp.countval("permeability_output_file")>0) {
+        write_full_kmap = true;
+        pp.get("permeability_output_file",kfileout);
+      }
 
-    bool read_full_pmap  = false;
-    bool read_full_kmap  = false;
-    bool write_full_pmap  = false;
-    bool write_full_kmap  = false;
-    bool build_full_pmap = true;
-    bool build_full_kmap = true;
-    permeability_from_fine = true;
-    porosity_from_fine = true;
+      if (pp.countval("porosity_output_file")>0) {
+        write_full_pmap = true;
+        pp.get("porosity_output_file",pfileout);
+      }
     
-    std::string kfileout, pfileout, gsfile;
-    if (pp.countval("permeability_output_file")>0) {
-      write_full_kmap = true;
-      pp.get("permeability_output_file",kfileout);
-    }
+      std::string kfilein, pfilein;
+      if (pp.countval("permeability_input_file")>0) {
+        pp.get("permeability_input_file",kfilein);
+        read_full_kmap = true;
+        build_full_kmap = false;
+      }
 
-    if (pp.countval("porosity_output_file")>0) {
-      write_full_pmap = true;
-      pp.get("porosity_output_file",pfileout);
-    }
-    
-    std::string kfilein, pfilein;
-    if (pp.countval("permeability_input_file")>0) {
-      pp.get("permeability_input_file",kfilein);
-      read_full_kmap = true;
-      build_full_kmap = false;
-    }
+      if (pp.countval("porosity_input_file")>0) {
+        pp.get("porosity_input_file",pfilein);
+        read_full_pmap = true;
+        build_full_pmap = false;
+      }
 
-    if (pp.countval("porosity_input_file")>0) {
-      pp.get("porosity_input_file",pfilein);
-      read_full_pmap = true;
-      build_full_pmap = false;
-    }
+      // The variables names expected for the properties in the permeability and porosity plotfiles
+      kappa_plotfile_varnames.resize(BL_SPACEDIM,"Permeability_");
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        BoxLib::Concatenate(kappa_plotfile_varnames[d],d,1);
+      }
+      phi_plotfile_varname = "Porosity";
 
-    // The variables names expected for the properties in the permeability and porosity plotfiles
-    kappa_plotfile_varnames.resize(BL_SPACEDIM,"Permeability_");
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      BoxLib::Concatenate(kappa_plotfile_varnames[d],d,1);
-    }
-    phi_plotfile_varname = "Porosity";
+      if (read_full_kmap) {
+        build_full_kmap = false;
 
-    if (read_full_kmap) {
-      build_full_kmap = false;
+        if (kappadata == 0)
+          kappadata = new MultiFab;
 
-      if (kappadata == 0)
-        kappadata = new MultiFab;
+        if (verbose > 1 && ParallelDescriptor::IOProcessor())
+          std::cout << "Reading kmap on finest level: " << kfilein << std::endl;
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
-        std::cout << "Reading kmap on finest level: " << kfilein << std::endl;
+        VisMF::Read(*kappadata,kfilein+"/kp");
+      }
 
-      VisMF::Read(*kappadata,kfilein+"/kp");
-    }
+      if (read_full_pmap) {
+        build_full_pmap = false;
 
-    if (read_full_pmap) {
-      build_full_pmap = false;
+        if (phidata == 0)
+          phidata = new MultiFab;
 
-      if (phidata == 0)
-        phidata = new MultiFab;
+        if (verbose > 1 && ParallelDescriptor::IOProcessor())
+          std::cout << "Reading pmap on finest level: " << pfilein << std::endl;
 
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
-        std::cout << "Reading pmap on finest level: " << pfilein << std::endl;
+        VisMF::Read(*phidata,pfilein+"/pp");
+      }
 
-      VisMF::Read(*phidata,pfilein+"/pp");
-    }
-
-    // determine parameters needed to build kappadata and phidata, and to determine
-    // if entire domain covered with union of regions
-    int max_level;
-    Array<int> n_cell, fratio;
-    Array<Real> problo, probhi;
-    if (build_full_kmap || build_full_pmap || read_full_kmap || read_full_pmap)
+      // determine parameters needed to build kappadata and phidata, and to determine
+      // if entire domain covered with union of regions
+      int max_level;
+      Array<int> n_cell, fratio;
+      Array<Real> problo, probhi;
+      if (build_full_kmap || build_full_pmap || read_full_kmap || read_full_pmap)
       { 
         ParmParse am("amr");
         am.query("max_level",max_level);
@@ -1706,190 +1741,191 @@ PorousMedia::read_rock(int do_chem)
         gm.getarr("prob_hi",probhi,0,BL_SPACEDIM);
       }
     
-    std::string permeability_plotfile_in;
-    pp.query("permeability_plotfile_in", permeability_plotfile_in);
-    if (!permeability_plotfile_in.empty()) {
-      kappa_dataServices = OpenMaterialDataPltFile(permeability_plotfile_in,
+      std::string permeability_plotfile_in;
+      pp.query("permeability_plotfile_in", permeability_plotfile_in);
+      if (!permeability_plotfile_in.empty()) {
+        kappa_dataServices = OpenMaterialDataPltFile(permeability_plotfile_in,
+                                                     max_level,fratio,n_cell,nGrowHYP);
+
+        if (kappa_dataServices==0 || !kappa_dataServices->AmrDataRef().CanDerive(kappa_plotfile_varnames)) {
+          std::string str=permeability_plotfile_in
+            + " either does not exist or is not compatible with this run.";
+          BoxLib::Error(str.c_str());
+        }
+      }
+
+      // construct permeability field based on the specified parameters
+      if (build_full_kmap) {
+        if (verbose > 1 && ParallelDescriptor::IOProcessor())
+          std::cout << "Building kmap on finest level..." << std::endl;
+
+        int twoexp = 1;
+        for (int ii = 0; ii<max_level; ii++) {
+          twoexp *= fratio[ii];
+        }
+
+        int maxBaseGrid = twoexp; // FIXME: MUST be a multiple of twoexp for init_rock_properties to work!
+        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
+      
+        if (kappadata == 0) {
+
+          kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate);
+        
+          for (int i=0; i<rocks.size(); ++i) {
+            // these are temporary work around.   
+            // Should utilizes region to determine size.
+            Rock& r = rocks[i];
+            r.max_level = max_level;
+            r.n_cell = n_cell;
+            r.fratio = fratio;
+            r.problo = problo;
+            r.probhi = probhi;
+            r.build_kmap(*kappadata, gsfile);
+          } 
+          std::string permeability_plotfile_out;
+          pp.query("permeability_plotfile_out", permeability_plotfile_out);
+          if (!permeability_plotfile_out.empty()) {
+            Array<int> harmDir(BL_SPACEDIM); 
+            Array<std::string> names(harmDir.size(),"Permeability_");
+            for (int d=0; d<BL_SPACEDIM; ++d) {
+              harmDir[d] = d;
+              int num_digits = 1;
+              names[d] = BoxLib::Concatenate(names[d],d,num_digits);
+            }
+            WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),kappadata,
+                                 permeability_plotfile_out,nGrowHYP,harmDir,names);
+            if (ParallelDescriptor::IOProcessor()) {
+              std::cout << "Permeability plotfile written: " << permeability_plotfile_out <<std::endl;
+            }
+          }
+        
+          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Finished building kmap on finest level." << std::endl;
+        }
+      }
+
+      if (write_full_kmap) {
+        if (kfilein != kfileout) {
+          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Writing kmap to: " << kfileout << std::endl;
+        
+          VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+          if (ParallelDescriptor::IOProcessor())
+            if (!BoxLib::UtilCreateDirectory(kfileout, 0755))
+              BoxLib::CreateDirectoryFailed(kfileout);
+          ParallelDescriptor::Barrier();
+          VisMF::Write(*kappadata,kfileout+"/kp");
+        }
+        else {
+          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Permeability output file name same as input.  Will not overwrite" << std::endl;
+        }
+      }
+
+      std::string porosity_plotfile_in;
+      pp.query("porosity_plotfile_in", porosity_plotfile_in);
+      if (!porosity_plotfile_in.empty()) {
+        phi_dataServices = OpenMaterialDataPltFile(porosity_plotfile_in,
                                                    max_level,fratio,n_cell,nGrowHYP);
 
-      if (kappa_dataServices==0 || !kappa_dataServices->AmrDataRef().CanDerive(kappa_plotfile_varnames)) {
-	std::string str=permeability_plotfile_in
-	  + " either does not exist or is not compatible with this run.";
-	BoxLib::Error(str.c_str());
-      }
-    }
-
-    // construct permeability field based on the specified parameters
-    if (build_full_kmap) {
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
-        std::cout << "Building kmap on finest level..." << std::endl;
-
-      int twoexp = 1;
-      for (int ii = 0; ii<max_level; ii++) {
-        twoexp *= fratio[ii];
-      }
-
-      int maxBaseGrid = twoexp; // FIXME: MUST be a multiple of twoexp for init_rock_properties to work!
-      BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
-      
-      if (kappadata == 0) {
-
-        kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate);
-        
-        for (int i=0; i<rocks.size(); ++i) {
-          // these are temporary work around.   
-          // Should utilizes region to determine size.
-          Rock& r = rocks[i];
-          r.max_level = max_level;
-          r.n_cell = n_cell;
-          r.fratio = fratio;
-          r.problo = problo;
-          r.probhi = probhi;
-          r.build_kmap(*kappadata, gsfile);
-        } 
-        std::string permeability_plotfile_out;
-        pp.query("permeability_plotfile_out", permeability_plotfile_out);
-        if (!permeability_plotfile_out.empty()) {
-          Array<int> harmDir(BL_SPACEDIM); 
-          Array<std::string> names(harmDir.size(),"Permeability_");
-          for (int d=0; d<BL_SPACEDIM; ++d) {
-            harmDir[d] = d;
-            int num_digits = 1;
-            names[d] = BoxLib::Concatenate(names[d],d,num_digits);
-          }
-          WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),kappadata,
-                               permeability_plotfile_out,nGrowHYP,harmDir,names);
-          if (ParallelDescriptor::IOProcessor()) {
-            std::cout << "Permeability plotfile written: " << permeability_plotfile_out <<std::endl;
-          }
+        if (phi_dataServices==0 || !phi_dataServices->AmrDataRef().CanDerive(phi_plotfile_varname)) {
+          std::string str=porosity_plotfile_in
+            + " either does not exist or is not compatible with this run.";
+          BoxLib::Error(str.c_str());
         }
-        
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-          std::cout << "   Finished building kmap on finest level." << std::endl;
       }
-    }
-
-    if (write_full_kmap) {
-      if (kfilein != kfileout) {
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-          std::cout << "   Writing kmap to: " << kfileout << std::endl;
-        
-        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-        if (ParallelDescriptor::IOProcessor())
-          if (!BoxLib::UtilCreateDirectory(kfileout, 0755))
-            BoxLib::CreateDirectoryFailed(kfileout);
-        ParallelDescriptor::Barrier();
-        VisMF::Write(*kappadata,kfileout+"/kp");
-      }
-      else {
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-          std::cout << "   Permeability output file name same as input.  Will not overwrite" << std::endl;
-      }
-    }
-
-    std::string porosity_plotfile_in;
-    pp.query("porosity_plotfile_in", porosity_plotfile_in);
-    if (!porosity_plotfile_in.empty()) {
-      phi_dataServices = OpenMaterialDataPltFile(porosity_plotfile_in,
-                                                 max_level,fratio,n_cell,nGrowHYP);
-
-      if (phi_dataServices==0 || !phi_dataServices->AmrDataRef().CanDerive(phi_plotfile_varname)) {
-	std::string str=porosity_plotfile_in
-	  + " either does not exist or is not compatible with this run.";
-	BoxLib::Error(str.c_str());
-      }
-    }
-    else if (build_full_pmap) {
-
-      if (verbose > 1 && ParallelDescriptor::IOProcessor())
-        std::cout << "Building pmap on finest level..." << std::endl;
-
-      int maxBaseGrid = 32; // FIXME: Should not be hardwired here
-      BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
-
-      if (phidata == 0) {
-
-        phidata = new MultiFab(ba,1,0,Fab_allocate);
-
-        for (int i=0; i<rocks.size(); ++i) {
-          // these are temporary work around.
-          // Should utilizes region to determine size.
-          Rock& r = rocks[i];
-          r.max_level = max_level;
-          r.n_cell = n_cell;
-          r.fratio = fratio;
-          r.problo = problo;
-          r.probhi = probhi;
-          r.build_pmap(*phidata, gsfile);
-        }
-
-        std::string porosity_plotfile_out;
-        pp.query("porosity_plotfile_out", porosity_plotfile_out);
-        if (!porosity_plotfile_out.empty()) {
-          Array<int> harmDir(1,-1);
-          Array<std::string> names(1,"Porosity");
-          WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),
-			       phidata,porosity_plotfile_out,nGrowHYP,harmDir,names);
-          if (ParallelDescriptor::IOProcessor()) {
-            std::cout << "Porosity plotfile written: " << porosity_plotfile_out <<std::endl;
-          }
-        }
+      else if (build_full_pmap) {
 
         if (verbose > 1 && ParallelDescriptor::IOProcessor())
-          std::cout << "   Finished building pmap on finest level." << std::endl;
-      }
-    }
+          std::cout << "Building pmap on finest level..." << std::endl;
 
-    if (write_full_pmap) {
-      if (pfilein != pfileout) {
-        if (verbose > 1 && ParallelDescriptor::IOProcessor())
-          std::cout << "   Writing pmap to: " << pfileout << std::endl;
+        int maxBaseGrid = 32; // FIXME: Should not be hardwired here
+        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
+
+        if (phidata == 0) {
+
+          phidata = new MultiFab(ba,1,0,Fab_allocate);
+
+          for (int i=0; i<rocks.size(); ++i) {
+            // these are temporary work around.
+            // Should utilizes region to determine size.
+            Rock& r = rocks[i];
+            r.max_level = max_level;
+            r.n_cell = n_cell;
+            r.fratio = fratio;
+            r.problo = problo;
+            r.probhi = probhi;
+            r.build_pmap(*phidata, gsfile);
+          }
+
+          std::string porosity_plotfile_out;
+          pp.query("porosity_plotfile_out", porosity_plotfile_out);
+          if (!porosity_plotfile_out.empty()) {
+            Array<int> harmDir(1,-1);
+            Array<std::string> names(1,"Porosity");
+            WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),
+                                 phidata,porosity_plotfile_out,nGrowHYP,harmDir,names);
+            if (ParallelDescriptor::IOProcessor()) {
+              std::cout << "Porosity plotfile written: " << porosity_plotfile_out <<std::endl;
+            }
+          }
+
+          if (verbose > 1 && ParallelDescriptor::IOProcessor())
+            std::cout << "   Finished building pmap on finest level." << std::endl;
+        }
+      }
+
+      if (write_full_pmap) {
+        if (pfilein != pfileout) {
+          if (verbose > 1 && ParallelDescriptor::IOProcessor())
+            std::cout << "   Writing pmap to: " << pfileout << std::endl;
         
-        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-        if (ParallelDescriptor::IOProcessor())
-          if (!BoxLib::UtilCreateDirectory(pfileout, 0755))
-            BoxLib::CreateDirectoryFailed(pfileout);
-        ParallelDescriptor::Barrier();
-        VisMF::Write(*phidata,pfileout+"/pp");
+          VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+          if (ParallelDescriptor::IOProcessor())
+            if (!BoxLib::UtilCreateDirectory(pfileout, 0755))
+              BoxLib::CreateDirectoryFailed(pfileout);
+          ParallelDescriptor::Barrier();
+          VisMF::Write(*phidata,pfileout+"/pp");
+        }
+        else {
+          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+            std::cout << "   Porosity output file name same as input.  Will not overwrite" << std::endl;
+        }
       }
-      else {
-        if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-          std::cout << "   Porosity output file name same as input.  Will not overwrite" << std::endl;
-      }
-    }
 
-    if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "Rock name mapping in output: " << std::endl;
-    }
-    for (int i=0; i<rocks.size(); ++i) {
       if (ParallelDescriptor::IOProcessor()) {
-        std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
+        std::cout << "Rock name mapping in output: " << std::endl;
       }
-    }
-
-    // Check that at the coarse level material id have been set over the entire domain
-    BoxArray ba(Box(IntVect(D_DECL(0,0,0)),
-                    IntVect(D_DECL(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1))));
-    ba.maxSize(32);
-    MultiFab rockTest(ba,1,0);
-    rockTest.setVal(-1);
-    Array<Real> dx0(BL_SPACEDIM);
-    for (int i=0; i<BL_SPACEDIM; ++i) {
-      dx0[i] = (probhi[i] - problo[i])/n_cell[i];
-    }
-    for (MFIter mfi(rockTest); mfi.isValid(); ++mfi) {
-      FArrayBox& fab = rockTest[mfi];
       for (int i=0; i<rocks.size(); ++i) {
-        Real val = (Real)i;
-        const PArray<Region>& rock_regions = rocks[i].regions;
-        for (int j=0; j<rock_regions.size(); ++j) {
-          rock_regions[j].setVal(fab,val,0,dx0.dataPtr(),0);
+        if (ParallelDescriptor::IOProcessor()) {
+          std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
         }
       }
-    }
-    if (rockTest.min(0) < 0) {
-      VisMF::Write(rockTest,"RockTest");
-      BoxLib::Abort("Material has not been defined over the entire domain.  See mf on disk: RockTest");
+
+      // Check that at the coarse level material id have been set over the entire domain
+      BoxArray ba(Box(IntVect(D_DECL(0,0,0)),
+                      IntVect(D_DECL(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1))));
+      ba.maxSize(32);
+      MultiFab rockTest(ba,1,0);
+      rockTest.setVal(-1);
+      Array<Real> dx0(BL_SPACEDIM);
+      for (int i=0; i<BL_SPACEDIM; ++i) {
+        dx0[i] = (probhi[i] - problo[i])/n_cell[i];
+      }
+      for (MFIter mfi(rockTest); mfi.isValid(); ++mfi) {
+        FArrayBox& fab = rockTest[mfi];
+        for (int i=0; i<rocks.size(); ++i) {
+          Real val = (Real)i;
+          const PArray<Region>& rock_regions = rocks[i].regions;
+          for (int j=0; j<rock_regions.size(); ++j) {
+            rock_regions[j].setVal(fab,val,0,dx0.dataPtr(),0);
+          }
+        }
+      }
+      if (rockTest.min(0) < 0) {
+        VisMF::Write(rockTest,"RockTest");
+        BoxLib::Abort("Material has not been defined over the entire domain.  See mf on disk: RockTest");
+      }
     }
 }
     
@@ -2016,7 +2052,7 @@ void PorousMedia::read_prob()
   // This is converted to the unit that is used in the code.
   if (pb.contains("gravity")) {
     pb.get("gravity",gravity);
-    gravity /= 1.01e5;
+    gravity /= 1.01325e5;
   }
 
   // Get algorithmic flags and options
@@ -2258,7 +2294,7 @@ void  PorousMedia::read_comp()
       phys_bc.setLo(i,lo_bc[i]);
       phys_bc.setHi(i,hi_bc[i]);
     }
-    
+
   // Check phys_bc against possible periodic geometry: 
   //  if periodic, that boundary must be internal BC.
   if (Geometry::isAnyPeriodic())
@@ -2610,8 +2646,6 @@ void  PorousMedia::read_tracer(int do_chem)
       tic_array.resize(ntracers);
       tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
-      diff_coef.resize(ntracers,-1); // FIXME: read these 
-      diffuse_tracers = false;
 
       for (int i = 0; i<ntracers; i++)
       {
@@ -2660,17 +2694,6 @@ void  PorousMedia::read_tracer(int do_chem)
 
           if (setup_tracer_transport)
           {
-	      int nd = pp.countval("tracer_diffusion_coef");
-	      BL_ASSERT(nd==0 || nd==1 || nd>=ntracers);
-	      if (nd==1) {
-	        Real one_diff_coef;
-	        pp.get("tracer_diffusion_coef",one_diff_coef);
-	        diff_coef.resize(ntracers,one_diff_coef);
-                diffuse_tracers = true;
-	      } else if (nd>0) {
-	        pp.getarr("tracer_diffusion_coef",diff_coef,0,nd);
-                diffuse_tracers = true;
-	      }
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
               if (n_tbc <= 0)
@@ -2680,6 +2703,8 @@ void  PorousMedia::read_tracer(int do_chem)
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
               tbc_array[i].resize(n_tbc,PArrayManage);
               
+
+              Array<int> orient_types(6,-1);
               for (int n = 0; n<n_tbc; n++)
               {
                   const std::string prefixTBC(prefix + "." + tbc_names[n]);
@@ -2688,9 +2713,13 @@ void  PorousMedia::read_tracer(int do_chem)
                   int n_tbc_region = ppri.countval("regions");
                   Array<std::string> tbc_region_names;
                   ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
+
                   const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
                   std::string tbc_type; ppri.get("type",tbc_type);
-                  
+
+                  // When we get the BCs, we need to translate to AMR-standardized type id.  By
+                  // convention, components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.
+                  int AMR_BC_tID = -1;
                   if (tbc_type == "concentration")
                   {
                       Array<Real> times, vals;
@@ -2713,19 +2742,63 @@ void  PorousMedia::read_tracer(int do_chem)
                       }
                       int nComp = 1;
                       tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                      AMR_BC_tID = 1; // Inflow
                   }
-                  else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+                  else if (tbc_type == "noflow")
                   {
                       Array<Real> val(1,0);
                       tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 4; // Noflow
+                  }
+                  else if (tbc_type == "outflow")
+                  {
+                      Array<Real> val(1,0);
+                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 2; // Outflow
                   }
                   else {
                       std::string m = "Tracer BC: \"" + tbc_names[n] 
                           + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
                       BoxLib::Abort(m.c_str());
                   }
+
+                  // Determine which boundary this bc is for, ensure that a unique type has been
+                  // specified for each boundary
+                  for (int k=0; k<tbc_region_names.size(); ++k) {
+                    int iorient = -1;
+                    for (int j=0; j<6; ++j) {
+                      if (tbc_region_names[k] == PMAMR::RlabelDEF[j]) {
+                        iorient = j;
+                      }
+                    }
+                    if (iorient<0) {
+                      BoxLib::Abort("BC givien for tracers on region that is not on boundary");
+                    }
+                    if (orient_types[iorient] < 0) {
+                      orient_types[iorient] = AMR_BC_tID;
+                    } else {
+                      if (orient_types[iorient] != AMR_BC_tID) {
+                        BoxLib::Abort("BC for tracers must all be of same type on each side");
+                      }
+                    }
+                  }
               }
+
+              // Set the default BC type = SlipWall (noflow)
+              for (int k=0; k<orient_types.size(); ++k) {
+                if (orient_types[k] < 0) orient_types[k] = 4;
+              }
+
+              BCRec phys_bc_trac;
+              for (int i = 0; i < BL_SPACEDIM; i++) {
+                phys_bc_trac.setLo(i,orient_types[i]);
+                phys_bc_trac.setHi(i,orient_types[i+3]);
+              }
+              set_tracer_bc(trac_bc,phys_bc_trac);
           }
+      }
+      if (diffuse_tracers) {
+        ndiff += ntracers;
       }
   }
 }

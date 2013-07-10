@@ -61,6 +61,8 @@ public:
     void RegisterEvent(const std::string& event_label,
                        EventCoord::Event* event); // takes control of pointer
 
+    static bool UsingMaterialServer() {return use_matFiller;}
+
 protected:
     void InitializeControlEvents();
 
@@ -78,6 +80,7 @@ protected:
     Array<std::string> tpc_labels;
     Array<Real> tpc_start_times;
     Array<Real> tpc_initial_time_steps;
+    Array<Real> tpc_initial_time_step_multipliers;
     Array<Real> tpc_maximum_time_steps;
 
     static void CleanupStatics ();
@@ -86,9 +89,7 @@ protected:
     int  max_step;
     Real stop_time;
 
-
     void SetUpMaterialServer();
-    MatFiller* materialFiller;
 
 private:
     //
@@ -97,6 +98,9 @@ private:
     PMAmr (const PMAmr& rhs);
     PMAmr& operator= (const PMAmr& rhs);
 
+    // Private data
+    MatFiller* materialFiller;
+    static bool use_matFiller;
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
 };

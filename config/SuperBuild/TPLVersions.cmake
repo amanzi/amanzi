@@ -17,12 +17,25 @@
 #
 #   0.90.6       - first version reference used in installations
 #   0.90.7       - updated MSTK to version 2.01
+#                - added NETCDF - fortran version 4.2 (interface library)
+#   0.90.8       - added Xerces-C++ version 3.1.1 (XML support)
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 90)
-set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION_PATCH 8)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful has for the collection
+
+#
+# TPL: Xerces
+#
+set(XERCES_VERSION_MAJOR 3)
+set(XERCES_VERSION_MINOR 1)
+set(XERCES_VERSION_PATCH 1)
+set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
+set(XERCES_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.gz)
+set(XERCES_MD5_SUM        6a8ec45d83c8cfb1584c5a5345cb51ae ) 
 
 #
 # TPL: OpenMPI

@@ -129,8 +129,11 @@ class Flow_PK : public BDF2::fnBase {
   int BoundaryFaceGetCell(int f);
 
   // utilities
-  void CalculateVelocity(std::vector<AmanziGeometry::Point>& xyz, 
-                         std::vector<AmanziGeometry::Point>& velocity);
+  void CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz, 
+                              std::vector<AmanziGeometry::Point>& velocity);
+  void CalculatePoreVelocity(std::vector<AmanziGeometry::Point>& xyz, 
+                             std::vector<AmanziGeometry::Point>& velocity,
+                             std::vector<double>& porosity, std::vector<double>& saturation);
 
   // extension of STL
   void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1, 

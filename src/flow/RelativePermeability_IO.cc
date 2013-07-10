@@ -191,6 +191,25 @@ void RelativePermeability::PlotWRMcurves()
       }
       ofile.close();
     }
+
+    if (list_.isParameter("plot sat-pc curves")) {
+      std::printf("Flow PK: saving sat-pc curves in file flow_sat_pc.txt...\n");
+      std::ofstream ofile;
+      ofile.open("flow_sat_pc.txt");
+
+      std::vector<double> spe;
+      spe = list_.get<Teuchos::Array<double> >("plot sat-pc curves").toVector();
+
+      for (double pc = spe[0]; pc < spe[2]; pc += spe[1]) {
+        ofile << pc << " ";
+        for (int mb = 0; mb < WRM_.size(); mb++) {
+          double sat = WRM_[mb]->saturation(pc);
+          ofile << sat << " ";
+        }
+        ofile << endl;
+      }
+      ofile.close();
+    }
   }
 }
 

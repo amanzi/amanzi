@@ -31,6 +31,36 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* This is a conventional tro-point flux approximation scheme for
+* general meshes.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
+                                           Teuchos::SerialDenseMatrix<int, double>& W)
+{
+  int d = mesh_->space_dimension();
+  double volume = mesh_->cell_volume(cell);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  int nfaces = faces.size();
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
+
+  W.putScalar(0.0);
+  for (int n = 0; n < nfaces; n++) {
+    int f = faces[n];
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    double Knn = (permeability * normal) * normal;
+    double dxn = (xf - xc) * normal;
+    W(n, n) = Knn / fabs(dxn);
+  }
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
 * This is a debug version of the above routine for a scalar tensor
 * and an orthogonal brick element.
 ****************************************************************** */

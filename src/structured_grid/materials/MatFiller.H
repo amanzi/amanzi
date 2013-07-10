@@ -57,8 +57,10 @@ public:
   /* Fill a MultiFab with the value of a property, given a time, 
      and refinement level (as defined in the ctr), including
      nGrow cells.  ctx is a user-defined context which is passed
-     through to the Property "eval" function. */
-  void SetProperty(Real               time,
+     through to the Property "eval" function. Return is false if
+     requested property not registered.
+  */
+  bool SetProperty(Real               time,
                    int                level,
                    MultiFab&          mf,
                    const std::string& pname,
@@ -76,10 +78,10 @@ public:
   /* Access functions follow */
 
   /* The coarsen rule registered for a given property */
-  Property::CoarsenRule coarsenRule (const std::string& property_name) const;
+  const Property::CoarsenRule coarsenRule (const std::string& property_name) const;
 
   /* The refine rule registered for a given property */
-  Property::RefineRule refineRule (const std::string& property_name) const;
+  const Property::RefineRule refineRule (const std::string& property_name) const;
 
   /* The number of components this property will fill */
   int nComp(const std::string& property_name) const;
@@ -107,18 +109,8 @@ public:
   /* The number of AMR levels used to uniquely determine the material ID of the cells. */
   const int NumLevels() const {return nLevs;}
 
-protected:
-
   /* Currently, not really critical, since there is no default constructor */
   bool Initialized() const {return initialized;}
-
-  /* Manage all actions necessary to define this structure */
-  void Initialize();
-
-  /* Manage the cell-ID parts of the construction process */
-  void define(const Array<Geometry>& _geomArray,
-              const Array<IntVect>&  _refRatio,
-              const PArray<Material>& materials);
 
   /* Given fine property values, generate coarse property values
      per the coarsen rule registered for this property. */
@@ -129,7 +121,7 @@ protected:
                            int                dComp,
                            int                nComp,
                            const IntVect&     ref,
-                           const std::string& pname) const;
+                           const Property::CoarsenRule& rule) const;
 
   /* Given crse property values, generate fine property values 
      per the refine rule registered for this property */
@@ -140,14 +132,24 @@ protected:
                           int                dComp,
                           int                nComp,
                           const IntVect&     ref,
-                          const std::string& pname) const;
+                          const Property::RefineRule& rule) const;
+
+protected:
+
+  /* Manage all actions necessary to define this structure */
+  void Initialize();
+
+  /* Manage the cell-ID parts of the construction process */
+  void define(const Array<Geometry>& _geomArray,
+              const Array<IntVect>&  _refRatio,
+              const PArray<Material>& materials);
 
   /* Manage the generation of property value based on evaluations
      at finer levels.  This is factored out to allow permuting the
      order of evaluation and averaging.  The default implementation
      evaluates the property at the finer level, then calls 
      CoarsenData to generate coarsened values. */
-  virtual void FillCoarseCells(Real               t,
+  virtual bool FillCoarseCells(Real               t,
 			       int                level,
 			       MultiFab&          mfc,
 			       const std::string& pname,
