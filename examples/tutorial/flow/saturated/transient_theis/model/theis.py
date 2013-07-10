@@ -1,6 +1,7 @@
 import numpy
 import matplotlib.pylab as plt
 import math
+import matplotlib.gridspec as gridspec
 
 class TransientTheis(object):
     """ Solves the system
@@ -31,18 +32,18 @@ class TransientTheis(object):
     def __init__(self, params=None):
         if params is None:
             params = dict()
-        params.setdefault("t",[1,2,3])
-        params.setdefault("r", [20,40,50])
+        #params.setdefault("t") = numpy.arange(1.2e2,3.72e3,1.2e2)
+        params.setdefault("r", [20,40,55])
         params.setdefault("High",[1,1,1])
         params.setdefault("Cells",[1,1,1])
-        params.setdefault("S_s",0.00001)
+        params.setdefault("S_s",7.5e-5)
         params.setdefault("pi",math.pi)
         params.setdefault("g",9.80665)
-        params.setdefault("K",1.e-12)
-        params.setdefault("rho",1000)
-        params.setdefault("mu",1.e-3)
+        params.setdefault("K",1.e-10)
+        params.setdefault("rho",998.2)
+        params.setdefault("mu",4.e-3)
         params.setdefault("h_0", 10)
-        params.setdefault("Q",-4.e-3)
+        params.setdefault("Q",-4.0)
        
         self.__dict__.update(params)
 
@@ -59,7 +60,7 @@ class TransientTheis(object):
         
         self.K_h = self.K*self.g*self.rho / self.mu
         
-        self.T =self. K_h*self.h_0
+        self.T =self.K_h*self.h_0
         
         self.var = self.Q_vol / 4 / self.pi /self.T
         
@@ -96,7 +97,7 @@ def createFromXML(filename):
     params = dict()
    
     params["r"] = []
-    for coord in coords:
+    for coord in coords.itervalues():
         params["r"].append(coord[0]) 
     
     params.setdefault("g",9.80665)
@@ -109,7 +110,7 @@ def createFromXML(filename):
     params["h_0"]= search.getElementByPath(xml, "/Main/Boundary Conditions/Far Field Head/BC: Hydrostatic/Water Table Height").value[0]
     params["Q"]= search.getElementByPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
     params["S_s"]= search.getElementByPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
-    params["t"]= search.getElementByPath(xml, "/Main/Output/Time Macros/Observation Times/Values").value
+   # params["t"]= search.getElementByPath(xml, "/Main/Output/Time Macros/Observation Times/Values").value
     
     return TransientTheis(params)
 
@@ -149,19 +150,26 @@ if __name__ == "__main__":
     rindex = numpy.arange(.1,50,.3)
     time = [1500,3600,86400,360000, 860000] #100 hours
     
-    tindex=numpy.arange(100)
+    tindex=numpy.arange(1.2e2,3.72e3,120)
     times=[]
+    table_values=[]
+    error=[]
+    PORFLOW =[6.2764e-3,2.9013E-02,5.3206E-02,7.5200E-02,9.4700E-02,1.1203E-01,1.2757E-01,1.4161E-01,1.5440E-01,1.6614E-01,1.7699E-01,1.8706E-01,1.9645E-01,2.0526E-01,2.1355E-01,2.2137E-01,2.2877E-01,2.3581E-01,2.4250E-01,2.4889E-01,2.5500E-01,2.6085E-01,2.6647E-01,2.7186E-01,2.7706E-01,2.8207E-01,2.8690E-01,2.9157E-01,2.9609E-01,3.0046E-01]
 
+   
     for i in rindex:
         radi.append(i)
 
     for i in tindex:
-        times.append(1+math.exp(float(i)*(i+1)/(8.5*len(tindex))))
+        times.append(i)
+#1+math.exp(float(i)*(i+1)/(8.5*len(tindex))))
 
-    radius = [30,50,60]
+    radius = [35,55,65]
 
+    col_labels = ['time [s]','Theis [m]','PORFLOW [m]','Difference']
     fig1 = plt.figure()
     fig2 = plt.figure()
+    fig3 = plt.figure()
     ax1 = fig1.add_axes([.1,.1,.8,.8]) 
     ax2 = fig2.add_axes([.1,.1,.8,.8])
     ax1.set_xlabel('Radial Distance from Well [m]')
@@ -170,10 +178,16 @@ if __name__ == "__main__":
     ax2.set_ylabel('Drawddown [m]')
     ax1.set_title('Drawdown vs Radial Distance')
     ax2.set_title('Drawdown vs Time after Pumping')
-
+   
+    
     for r in radius:
         s_fixed_radius = Tt.runForFixedRadius(times, r)
         ax2.plot(times , s_fixed_radius, label ='$r=%0.1f m$'%r )
+        if r == 55:
+            for s,t,p in zip(s_fixed_radius, times,PORFLOW):
+                
+                table_values.append([format(t,"0.1f") ,format(s,"0.7f") , p,format(s-p,"0.7f")])
+        
     
     for t in time: 
         s_fixed_time = Tt.runForFixedTime(radi, t)
@@ -182,6 +196,22 @@ if __name__ == "__main__":
     ax1.legend(title='Theis Solution',loc = 'upper right', fancybox=True, shadow = True)
     ax2.legend(title = 'Theis Solution',loc = 'lower right', fancybox=True, shadow = True)
 
+    
+
+    cellText = table_values
+    ax = plt.subplot(111,frame_on = False)
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+    the_table = plt.table(cellText = table_values ,  colWidths = [.1 , .3 , .3,.3 ], colLabels = col_labels,  cellLoc = 'center', colLoc = 'center', loc = 'best')
+    properties = the_table.properties()
+    cells = properties['child_artists']
+    for cell in cells: 
+        cell.set_height(.045)
+    
+    
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(12)
+   
     plt.show()
     
 

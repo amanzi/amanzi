@@ -23,12 +23,17 @@ class ObservationData(object):
 
         for line in obs_fid:
             [var_ref, region, obs_type, var_name, time, value] = line.rstrip().split(",")
+            var_ref = var_ref.strip()
+            region = region.strip()
+            obs_type = obs_type.strip()
+            var_name = var_name.strip()
+
             key = (var_ref,region)
             if not self.observations.has_key(key):
-                self.observations[key] = Data(var_ref, region, obs_type, var_name)
+                self.observations[key] = self.Data(var_ref, region, obs_type, var_name)
 
-            self.observations[key].time.append(time)
-            self.observations[key].data.append(value)
+            self.observations[key].times.append(float(time.strip()))
+            self.observations[key].data.append(float(value.strip()))
 
     def printSummary(self):
         print "Read observation data file:", self.obs_file

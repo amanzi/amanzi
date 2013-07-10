@@ -21,8 +21,8 @@
     <ParameterList name="Time Integration Mode">
         <ParameterList name="Transient">
           <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="End" type="double" value="8.64e6"/>
-          <Parameter name="Initial Time Step" type="double" value="8.64e2"/>
+          <Parameter name="End" type="double" value="5.64e4"/>
+          <Parameter name="Initial Time Step" type="double" value="8.64e1"/>
         </ParameterList>
     </ParameterList>
 
@@ -53,7 +53,7 @@
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{100, 100, 5}"/>
+          <Parameter name="Number of Cells" type="Array(int)" value="{50, 50, 5}"/>
           <Parameter name="Domain Low Corner" type="Array(double)" value="{-100.0,-100.0,0.0}" />
           <Parameter name="Domain High Corner" type="Array(double)" value="{100.0,100.0,50.0}" />
         </ParameterList>
@@ -79,24 +79,24 @@
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-1.0,-1.0,0.0}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,50.0}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-2.0,-2.0,0.0}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{2.0,2.0,50.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Obs_r25">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-2.5, 0.0, 35.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-3.0, 0.0, 35.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r45">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-10.5, 0.0, 35.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-9.0, 0.0, 35.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r65">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-30.5, 0.0, 35.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-55.0, 0.0, 35.0}"/>
       </ParameterList>
     </ParameterList>
     
@@ -248,16 +248,10 @@
 
     <ParameterList name="Time Macros">
       <ParameterList name="Observation Times">
-	<Parameter name="Values" type="Array(double)" value="{
-                   0.0864, 1944, 3294, 4981, 7090, 9727, 13023,
-                   17143, 22293, 28730, 36777, 46835, 59408, 75124,
-                   94769, 119325, 150021, 188390, 236352, 296304,
-                   371244, 464919, 582013, 728380, 911339, 1140038,
-                   1425912, 1783254, 2229931, 2788278, 3486212,
-                   4358629, 5449150, 6812302, 8516241, 10646166,
-                   13308571, 16636578, 20796587, 25996598, 32496611,
-                   40621628, 86400000
-                   }"/>
+	<Parameter name="Values" type="Array(double)" value="{0.0,0.005,0.008,0.01,.0864,100,500,800,1944,3294,4981,5000,6000,7090,9727,
+							     13023,15000,16000,17143,18000,20000, 22293, 28730, 36777, 46835, 59408,75124,
+							     94769,119325,150021,188390,236352,296304,
+							     371244,464919,582013,728380}"/>
       </ParameterList>
     </ParameterList>
 

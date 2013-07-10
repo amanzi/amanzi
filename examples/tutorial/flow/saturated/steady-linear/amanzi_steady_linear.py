@@ -29,7 +29,7 @@ def loadDataFile(Obs_xml):
 def plotExampleObservations(Obs_xml, Obs_data, axes1):
     #=== SPECIAL CODE ==== ONLY EXAMPLE 1 
     # Collect the used z-values
-    z_vals = [coord[2] for coord in Obs_xml.coordinates]
+    z_vals = [coord[2] for coord in Obs_xml.coordinates()]
     z_vals = set(z_vals)
     colors = ['r','b','g']
     cmap = dict((zval,color) for (zval,color) in zip(z_vals, colors))

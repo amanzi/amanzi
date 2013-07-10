@@ -31,13 +31,14 @@ class TransientTheis(object):
     def __init__(self, params=None):
         if params is None:
             params = dict()
-        
-        params.setdefault("x_low",-1)
-        params.setdefault("x_high",1)
-        params.setdefault("z_low",0)
-        params.setdefault("z_high",1)
-        params.setdefault("y_low",-1)
-        params.setdefault("y_high",1)
+
+        params.setdefault("r", [20,40,50])
+       # params.setdefault("x_low",-1)
+       # params.setdefault("x_high",1)
+       # params.setdefault("z_low",0)
+       # params.setdefault("z_high",1)
+       # params.setdefault("y_low",-1)
+       # params.setdefault("y_high",1)
         params.setdefault("S_s",0.00001)
         params.setdefault("pi",math.pi)
         params.setdefault("g",9.80665)
@@ -46,7 +47,10 @@ class TransientTheis(object):
         params.setdefault("mu",1.e-3)
         params.setdefault("h_0", 10)
         params.setdefault("Q",-1.e-3)
+       
         self.__dict__.update(params)
+
+        self.r
         
         self.K_h = self.K*self.g*self.rho / self.mu
         
@@ -55,13 +59,13 @@ class TransientTheis(object):
         self.var = -self.Q / 4 / self.pi /self.T
         
         self.S = self.S_s*self.h_0
-
+        
     def runForFixedTime(self, radi, time):
         #This method evaluates Theis solution for a given time at multiple radial distances from the well 
         drawdown_r = []
         for r in radi:
             u = r ** 2 * self.S / 4 / self.T / time 
-            W = -0.577216 - math.log(u) + u - (u**2 /( 2 * math.factorial(2))) + (u**3 /( 3 * math.factorial(3))) - (u**4/(4*math.factorial(4))) + (u**5/(5*math.factorial(5))) - (u**6/(6*math.factorial(6))) + (u**7/(7*math.factorial(7))) 
+            W = getWellFunction(u)
             s = self.var*W
             drawdown_r.append(s)
         return drawdown_r
@@ -71,26 +75,25 @@ class TransientTheis(object):
         drawdown_t = []
         for t in times:
             u = radius ** 2 * self.S / 4 / self.T / t
-            W = -0.577216 - math.log(u) + u - (u**2 /(2*math.factorial(2))) + (u**3/(3*math.factorial(3))) - (u**4/(4*math.factorial(4))) + (u**5/(5*math.factorial(5))) - (u**6/(6*math.factorial(6))) + (u**7/(7*math.factorial(7))) 
+            W = getWellFunction(u)
             s = self.var*W
             drawdown_t.append(s)
         return drawdown_t
  
-def paramsFromXML(filename):
+def createFromXML(filename):
         
-        #grab parameters from input XML file.
-    import amanzi_xml.utils.io
-    xml = amanzi_xml.utils.io.fromFile(filename)
+    #-- grab parameters from input XML file.
+    import amanzi_xml.observations.ObservationXML as Obs_xml
+    observations = Obs_xml.ObservationXML(filename)
+    xml = observations.xml
+    coords = observations.getAllCoordinates()
     import amanzi_xml.utils.search as search
-
     params = dict()
-    obs_lists = []
-    obs_list = search.getElementByPath(xml, "/Main/Regions/Region: Point")
-    for el in obs_list.getchildren():
-        if el.tag == "Parameter":
-            obs_lists.append(el)
-    print obs_list
-
+   
+    params["r"] = []
+    for coord in coords:
+        params["r"].append(coord[0]) 
+    
     params.setdefault("g",9.80665)
     params.setdefault("pi",math.pi)
     params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
@@ -99,15 +102,36 @@ def paramsFromXML(filename):
     params["h_0"]= search.getElementByPath(xml, "/Main/Boundary Conditions/Far Field Head/BC: Hydrostatic/Water Table Height").value[0]
     params["Q"]= search.getElementByPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
     params["S_s"]= search.getElementByPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
-    params["n"]= search.getElementByPath(xml, "/Main/Material Properties/Soil/Porosity: Uniform/Value").value
-    params["x_low"]=search.getElementByPath(xml, "/Main/Regions/Entire Domain/Region: Box/Low Coordinate").value[0] 
-    params["y_low"]=search.getElementByPath(xml, "/Main/Regions/Entire Domain/Region: Box/Low Coordinate").value[1]    
-    params["z_low"]=search.getElementByPath(xml, "/Main/Regions/Entire Domain/Region: Box/Low Coordinate").value[2]
-    params["x_high"]=search.getElementByPath(xml, "/Main/Regions/Entire Domain/Region: Box/High Coordinate").value[0]  
-    params["y_high"]=search.getElementByPath(xml, "/Main/Regions/Entire Domain/Region: Box/High Coordinate").value[1] 
-    params["z_high"]=search.getElementByPath(xml, "/Main/Regions/Entire Domain/Region: Box/High Coordinate").value[2]
-
+    
     return TransientTheis(params)
+
+def getWellFunction(U):
+    u = float(U)
+    a_0 =-0.57722
+    a_1 = 0.99999
+    a_2 =-0.24991
+    a_3 = 0.05520
+    a_4 =-0.00976
+    a_5 = 0.00108
+    b_1 = 8.57333
+    b_2 = 18.05902
+    b_3 = 8.63476
+    b_4 = 0.26777
+    c_1 = 9.57332
+    c_2 = 25.63296
+    c_3 = 21.09965
+    c_4 = 3.95850
+
+    try:
+        u < 0
+    except KeyError:
+        raise RunTimeError("u cannot be negative check input times and radius!")
+    if u < 1:
+        W = -math.log(u) + a_0 + a_1*u + a_2*u**2 + a_3*u**3 + a_4*u**4 + a_5*u**5
+        return W
+    if u >= 1:
+        W = (math.exp(-u) / u)*((u**4 +b_1*(u**3) + b_2*(u**2) + b_3*u + b_4)/(u**4 + c_1*(u**3) + c_2*(u**2) + c_3*u + c_4))
+        return W
 
 if __name__ == "__main__":
     #instaniate the class
@@ -115,7 +139,7 @@ if __name__ == "__main__":
     
     radi = []
     rindex = numpy.arange(.1,50,.3)
-    time = [1500,3600,86400,360000] #100 hours
+    time = [1500,3600,86400,360000, 860000] #100 hours
     
     tindex=numpy.arange(100)
     times=[]
@@ -124,12 +148,9 @@ if __name__ == "__main__":
         radi.append(i)
 
     for i in tindex:
-        times.append(50+math.exp(float(tindex[i])*(i+1)/(10*len(tindex))))
+        times.append(1+math.exp(float(i)*(i+1)/(8.5*len(tindex))))
 
-    radius = [1,5,10,20]
-
-#s_fixed_time = Tt.runForFixedTime(radi, time)
-# s_fixed_radius = Tt.runForFixedRadius(times, radius)
+    radius = [30,50,60]
 
     fig1 = plt.figure()
     fig2 = plt.figure()
@@ -146,12 +167,10 @@ if __name__ == "__main__":
         s_fixed_radius = Tt.runForFixedRadius(times, r)
         ax2.plot(times , s_fixed_radius, label ='$r=%0.1f m$'%r )
     
-
     for t in time: 
         s_fixed_time = Tt.runForFixedTime(radi, t)
         ax1.plot(radi , s_fixed_time, label = '$t=%0.1f s$'%t )
     
-
     ax1.legend(title='Theis Solution',loc = 'upper right', fancybox=True, shadow = True)
     ax2.legend(title = 'Theis Solution',loc = 'lower right', fancybox=True, shadow = True)
 
