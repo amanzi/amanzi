@@ -99,77 +99,18 @@ void Transport_PK::ProcessParameterList()
     TransportSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.CreateSource();
     
-    // commented out to make compile with new function code, need to fix
-    
-    // src_sink_distribution = src_sink->CollectActionsList();
-    // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    //   Errors::Message msg;
-    //   msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
-    //   Exceptions::amanzi_throw(msg);  
-    // }
+    // revisit the code below (lipnikov@lanl.gov)
+    src_sink_distribution = src_sink->CollectActionsList();
+    if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      Errors::Message msg;
+      msg << "Transport PK: support of permeability weighted source distribution is pending.\n";
+      Exceptions::amanzi_throw(msg);  
+    }
   } else {
     src_sink = NULL;
     src_sink_distribution = 0;
   }
 }
-
-
-// /* ******************************************************************
-// * Process Dirichet BC (concentration).
-// * Warning: the routine is marked as obsolete.
-// ****************************************************************** */
-// void Transport_PK::CreateConcentration(Teuchos::ParameterList& bcs_list)
-// {
-//   for (Teuchos::ParameterList::ConstIterator it = bcs_list.begin(); it != bcs_list.end(); ++it) {
-//     if (bcs_list.isSublist(it->first)) {
-//       Teuchos::ParameterList bc_list = bcs_list.sublist(it->first); 
-      
-//       bool flag_BCX = false;
-//       for (int i = 0; i < number_components; i++) {
-//         char tcc_char_name[20];
-	
-//         sprintf(tcc_char_name, "Component %d", i);
-//         string tcc_name(tcc_char_name);
-//   	      string tcc_name_alt(TS->get_component_name(i));
-		
-//         if (bc_list.isParameter(tcc_name) || bc_list.isParameter(tcc_name_alt)) {
-//           flag_BCX = true;
-//           std::vector<std::string> regions, functions;
-//           std::vector<double> times, values;
-	  
-//           regions = bc_list.get<Teuchos::Array<std::string> >("Regions").toVector();
-//           times = bc_list.get<Teuchos::Array<double> >("Times").toVector();
-//           if (bc_list.isParameter(tcc_name)) {
-//             values = bc_list.get<Teuchos::Array<double> >(tcc_name).toVector();
-//           } else if (bc_list.isParameter(tcc_name_alt)) {
-//             values = bc_list.get<Teuchos::Array<double> >(tcc_name_alt).toVector();
-//           }
-//           functions = bc_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
-	  
-//           int nfunctions = functions.size();  // convert strings to forms
-//           std::vector<MultiFunction::Form> forms(functions.size());
-//           for (int k = 0; k < nfunctions; k++) {
-//             forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
-//           }
-	  
-//           Teuchos::RCP<TabularFunction> f;
-//   	  f = Teuchos::rcp(new TabularFunction(times, values, forms));
-	  
-//   	  Functions::TransportBoundaryFunction* bnd_fun = new Functions::TransportBoundaryFunction(mesh_);
-//           bnd_fun->Define(regions, f); //, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);     // commented out to make compile with new function code, need to fix
-//           bcs.push_back(bnd_fun);
-//           bcs_tcc_index.push_back(i);
-//           break;
-//         }
-//       }
-//       if (! flag_BCX) {
-//         Errors::Message msg;
-//         msg << "Transport PK: sublist BC X was not found.\n";
-//         Exceptions::amanzi_throw(msg);
-//       }
-//     }
-//   }
-// }
 
 
 /* ****************************************************************

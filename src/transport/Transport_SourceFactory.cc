@@ -92,8 +92,7 @@ void TransportSourceFactory::ProcessSourceSpec(
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
   
-  // commented out to make code compile with new function code, need to fix
-  //src->DefineMultiValue(regions, f, method, name);
+  src->Define(regions, f, method, name);
 }
 
 

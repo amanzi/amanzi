@@ -1,7 +1,7 @@
 /*
 This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
 Amanzi is released under the three-clause BSD License. 
 The terms of use and "as is" disclaimer for this license are 
 provided in the top-level COPYRIGHT file.
@@ -87,8 +87,6 @@ int Transport_PK::InitPK()
 
   cell_importer = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
 
-
-
   const Epetra_Map& source_fmap = mesh_->face_map(false);
   const Epetra_Map& target_fmap = mesh_->face_map(true);
 
@@ -97,8 +95,6 @@ int Transport_PK::InitPK()
   const Epetra_Comm& comm = source_cmap.Comm();
   MyPID = comm.MyPID();
 #endif
-
-
 
   ProcessParameterList();
 
@@ -143,15 +139,12 @@ int Transport_PK::InitPK()
     bcs[i]->Compute(time);
   }
 
-
   CheckInfluxBC();
 
-  
-  // commented out to compile with new function code, need to fix
-  // // source term memory allocation
-  // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-  //   Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  // }
+  // source term memory allocation (revisit the code (lipnikov@lanl.gov)
+  if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+    Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  }
  
   return 0;
 }
@@ -644,24 +637,24 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 * Computes source and sink terms and adds them to vector tcc.                                   
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
-                                         Functions::UniqueMeshFunction* src_sink, Epetra_MultiVector& tcc)
+                                         Functions::TransportDomainFunction* src_sink, 
+                                         Epetra_MultiVector& tcc)
 {
   int num_components = tcc.NumVectors();
   for (int i = 0; i < num_components; i++) {
     std::string name(TS->get_component_name(i));
     
-    // commented out to make compile with new function code, need to fix
-    
-    // if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-    //   src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
-    // else
-    //   src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
+    if (src_sink_distribution & 
+        Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+      src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
+    else
+      src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
 
-    // Amanzi::Iterator src;
-    // for (src = src_sink->begin(); src != src_sink->end(); ++src) {
-    //   int c = src->first;
-    //   tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
-    // }
+    Functions::TransportDomainFunction::Iterator src;
+    for (src = src_sink->begin(); src != src_sink->end(); ++src) {
+      int c = src->first;
+      tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
+    }
   }
 }
 

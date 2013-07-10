@@ -24,6 +24,7 @@ Usage:
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
 #include "transport-boundary-function.hh"
+#include "transport-domain-function.hh"
 
 #include "State.hh"
 #include "Transport_State.hh"
@@ -87,7 +88,8 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // sources and sinks
   void ComputeAddSourceTerms(double Tp, double dTp, 
-                             Functions::UniqueMeshFunction* src_sink, Epetra_MultiVector& tcc);
+                             Functions::TransportDomainFunction* src_sink, 
+                             Epetra_MultiVector& tcc);
 
  private:
   // advection members
@@ -181,7 +183,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
 
-  Functions::UniqueMeshFunction* src_sink;  // Source and sink terms
+  Functions::TransportDomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
