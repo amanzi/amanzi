@@ -395,7 +395,7 @@ void Transport_PK::Advance(double dT_MPC)
 void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
-  dT = dT_cycle;  // overwrite the maximu stable transport step
+  dT = dT_cycle;  // overwrite the maximum stable transport step
 
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();

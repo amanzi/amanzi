@@ -2275,7 +2275,7 @@ void check_AmanziInputVersion(Teuchos::ParameterList* plist) {
 
   std::string version = plist->get<std::string>("Amanzi Input Format Version","FAIL");
   if (version == "FAIL") {
-    Exceptions::amanzi_throw(Errors::Message("The input file does not specify an input format version"));
+    Exceptions::amanzi_throw(Errors::Message("The input file does not specify an \"Amanzi Input Format Version\""));
   }
 
   int major, minor, micro;
