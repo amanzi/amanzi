@@ -272,6 +272,7 @@ void Richards_PK::InitializeSteadySaturated()
   }
   double T = FS->get_time();
   SolveFullySaturatedProblem(T, *solution, ti_specs->ls_specs_ini);
+
 }
 
 
@@ -490,6 +491,104 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   // nonlinear solver control options
   ti_specs.num_itrs = 0;
   block_picard = 0;
+
+  cout.precision(18);
+
+//(*solution)[0] =     52379.260600147107;    (*solution)[12] =            52379.260600147107;
+//(*solution)[1] =    -45524.909592913857;    (*solution)[13] =           -45524.909592913857;
+//(*solution)[2] =    -143420.26276065828;    (*solution)[14] =           -143420.26276065828;
+//(*solution)[3] =    -241310.70333263048;    (*solution)[15] =           -241310.70333263048;
+//(*solution)[4] =    -339196.86154932308;    (*solution)[16] =           -339196.86154932308;
+//(*solution)[5] =    -437078.58948655933;    (*solution)[17] =           -437078.58948655933;
+//(*solution)[6] =    -534955.95697036269;    (*solution)[18] =           -534955.95697036269;
+//(*solution)[7] =    -632828.96881072235;    (*solution)[19] =           -632828.96881072235;
+//(*solution)[8] =    -730696.58974089660;    (*solution)[20] =           -730696.58974089660;
+//(*solution)[9] =    -824907.35812937492;    (*solution)[21] =           -824907.35812937841;
+//(*solution)[10] =   -262673.70150732755;    (*solution)[22] =           -262673.70150731626;
+//(*solution)[11] =    49216.513114148212;    (*solution)[23] =            49216.513114147514;
+
+(*solution)[0] =      52379.0;    
+(*solution)[1] =     -45524.0;    
+(*solution)[2] =    -143420.0;    
+(*solution)[3] =    -241310.0;    
+(*solution)[4] =    -339196.0;    
+(*solution)[5] =    -437078.0;    
+(*solution)[6] =    -534955.0;    
+(*solution)[7] =    -632828.0;    
+(*solution)[8] =    -730696.0;    
+(*solution)[9] =    -824907.0;    
+(*solution)[10] =   -262673.0;    
+(*solution)[11] =     49216.0;    
+
+
+
+  // (*solution)[0] =      52379.246734404362 ;    (*solution)[12] =        52379.246734404362 ;
+  // (*solution)[1] =     -45525.439415637193 ;    (*solution)[13] =       -45525.439415637193 ;
+  // (*solution)[2] =     -143420.27869048112 ;    (*solution)[14] =       -143420.27869048112 ;
+  // (*solution)[3] =     -241310.74924679098 ;    (*solution)[15] =       -241310.74924679098 ;
+  // (*solution)[4] =     -339196.85290296009 ;    (*solution)[16] =       -339196.85290296009 ;
+  // (*solution)[5] =     -437078.58837289631 ;    (*solution)[17] =       -437078.58837289631 ;
+  // (*solution)[6] =     -534955.95522822789 ;    (*solution)[18] =       -534955.95522822789 ;
+  // (*solution)[7] =     -632828.95278439857 ;    (*solution)[19] =       -632828.95278439857 ;
+  // (*solution)[8] =     -730697.58008313493 ;    (*solution)[20] =       -730697.58008313493 ;
+  // (*solution)[9] =     -828561.83685387718 ;    (*solution)[21] =       -828561.83685387718 ;
+  // (*solution)[10] =    -926421.64094482514 ;    (*solution)[22] =       -926421.64094482514 ;
+  // (*solution)[11] =    -991113.77194176801 ;    (*solution)[23] =       -991113.77194176801 ;
+
+
+
+ // (*solution)[0] =   52373.761510661403;    (*solution)[12] =            52373.761510661403;
+ // (*solution)[1] =  -45525.441533871584;    (*solution)[13] =           -45525.441533871584;
+ // (*solution)[2] =  -143420.27874743633;    (*solution)[14] =           -143420.27874743633;
+ // (*solution)[3] =  -241310.74942696560;    (*solution)[15] =           -241310.74942696560;
+ // (*solution)[4] =  -339196.85286877857;    (*solution)[16] =           -339196.85286877857;
+ // (*solution)[5] =  -437078.58836857992;    (*solution)[17] =           -437078.58836857992;
+ // (*solution)[6] =  -534955.95522145857;    (*solution)[18] =           -534955.95522145857;
+ // (*solution)[7] =  -632828.95272188657;    (*solution)[19] =           -632828.95272188657;
+ // (*solution)[8] =  -730697.58016371820;    (*solution)[20] =           -730697.58016371820;
+ // (*solution)[9] =  -828561.83684018860;    (*solution)[21] =           -828561.83684018860;
+ // (*solution)[10] = -926421.72204391344;    (*solution)[22] =           -926421.72204391344;
+ // (*solution)[11] = -1024277.2350668865;    (*solution)[23] =           -1024277.2350668865;
+
+  Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
+  //cout<<"Krel_faces\n"<<Krel_faces<<endl;
+
+  Epetra_Vector& flux = FS->ref_darcy_flux();
+  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
+    matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+
+    AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
+  }
+  else {
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    if (matrix_tpfa == 0) {
+      Errors::Message msg;
+      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
+      Exceptions::amanzi_throw(msg);
+    }
+    matrix_tpfa -> DeriveDarcyMassFlux(*solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+  }
+
+  for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
+
+  // (*solution)[0] =  91534.665003775299;    (*solution)[12] =          91534.665003775299;  
+  // (*solution)[1] =  71954.125957457407;    (*solution)[13] =          71954.125957457407;
+  // (*solution)[2] =  52373.761510661403;    (*solution)[14] =          52373.761510661403;
+  // (*solution)[3] =  32793.571669003984;    (*solution)[15] =          32793.571669003984;
+  // (*solution)[4] =  13213.556438102829;    (*solution)[16] =          13213.556438102829;
+  // (*solution)[5] = -6366.2841764234072;    (*solution)[17] =         -6366.2841764234072;
+  // (*solution)[6] = -25945.950168955082;    (*solution)[18] =         -25945.950168955082;
+  // (*solution)[7] = -45525.441533871584;    (*solution)[19] =         -45525.441533871584;
+  // (*solution)[8] = -65104.758265551311;    (*solution)[20] =         -65104.758265551311;
+  // (*solution)[9] = -84683.900358371699;    (*solution)[21] =         -84683.900358371699;
+  // (*solution)[10] =-104262.86780670918;    (*solution)[22] =         -104262.86780670918;
+  // (*solution)[11] =-123841.66060493923;    (*solution)[23] =         -123841.66060493923;
+
+  // cout<<(*solution)<<endl;
+  // exit(0);
+
+
 }
 
 
@@ -732,6 +831,7 @@ void Richards_PK::AddTimeDerivative_MFD(
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = rho_ * phi[c] * dSdP[c] * volume / dT_prec;
+    //cout << "factor "<<factor<<" dSdP[c] "<<dSdP[c]<<endl;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }

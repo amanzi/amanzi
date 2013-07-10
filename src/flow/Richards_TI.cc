@@ -61,11 +61,6 @@ void Richards_PK::fun(
      matrix_->ComputeNegativeResidual(u, f);     
   }
 
-  // for (int c=0; c<12; c++){
-  //   cout<<"res "<<f[c]<<" sol "<<u[c]<<endl;
-  // }
-  // exit(0);
-
   const Epetra_Vector& phi = FS->ref_porosity();
 
   functional_max_norm = 0.0;
@@ -114,6 +109,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
+
   //Amanzi::timer_manager.start("Update precon");
   AssemblePreconditionerMFD(u, Tp, dTp);
   ierr = 0;
@@ -255,9 +251,13 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
         cout << "Flow PK: saturation clipping in cell " << c << 
                 " pressure change: " << du[c] << " -> " << du_pert_max << endl;
       }
+
+      double tmp = du[c];
        
       if (du[c] >= 0.0) du[c] = fabs(du_pert_max);
       else du[c] = -fabs(du_pert_max);
+
+      //cout<<"old "<<u[c]<<" new "<<u[c]-du[c]<<" dp "<<du[c]<<" old dp "<<tmp<<endl;
 
       ncells_clipped++;
       ret_val = true;

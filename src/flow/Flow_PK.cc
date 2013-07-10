@@ -392,6 +392,9 @@ void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetr
   std::vector<int> dirs;
   Teuchos::RCP<Epetra_Vector>& rhs_cells = matrix_operator->rhs_cells();
 
+  // cout<<"Before rhs AddGravityFluxes_TPFA\n";
+  // std::cout<<(*rhs_cells)<<endl;
+
   for (int f = 0; f < nfaces_wghost; f++) {
     if (bc_model[f] == FLOW_BC_FACE_FLUX) continue;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -400,10 +403,12 @@ void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetr
       int c = cells[i];
       if (c >= ncells_owned) continue;
       (*rhs_cells)[c] -= pow(-1, i)*Grav_term[f]*Krel_faces[f];  
+      //if ((f==84)||(f==86)) cout<<"Gravity flux "<<f<<" "<<Grav_term[f]*Krel_faces[f]<<endl;
     }
   }
 
-  //std::cout<<(*rhs_cells)<<endl;
+  // cout<<"rhs AddGravityFluxes_TPFA\n";
+  // std::cout<<(*rhs_cells)<<endl;
   //cin >> tmp;
   //exit(0);
 

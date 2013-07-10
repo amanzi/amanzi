@@ -251,14 +251,15 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
       cells_LID[n] = cells[n];
       cells_GID[n] = cmap_wghost.GID(cells_LID[n]);     
     }
+    double tij;
     for (int i=0; i < mcells; i++){
       for (int j=0; j < mcells; j++){
-	double tij = Trans_faces[f]*Krel_faces[f];
+	tij = Trans_faces[f]*Krel_faces[f];
 	if (i==j) Spp_local(i,j) = tij;
 	else Spp_local(i,j) = -tij;
       }
     }
-   
+    //cout<<"face "<<f<<": "<<tij<<" ukvr "<<Krel_faces[f]<<endl;
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
 
   }
@@ -275,6 +276,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
 
   Spp_->GlobalAssemble();
   // int tmp;
+  // cout<<"From AssembleGlobalMatrices\n";
   // std::cout<<(*Spp_)<<endl;
   // std::cout<<(*rhs_cells_)<<endl;
   //cin >> tmp;
@@ -365,6 +367,15 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
       dk_dp[0] = dKdP_faces[f];
     }
 
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
+
+    // if (fabs(normal[2]) > 0.3) {
+    //   cout<<f<<" Krel "<<Krel_faces[f]<<" "<<dKdP_faces[f]<<" ";
+    //   if (mcells == 1) cout<<cells_GID[0]<<" ";
+    //   else cout<<cells_GID[0]<<" "<<cells_GID[1];
+    //   cout<<endl;
+    // }
+
     // AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
     // normal *= 1./ mesh_->face_area(f);
 
@@ -374,21 +385,24 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
     ComputeJacobianLocal(mcells, f, method, bc_models, bc_values, pres, dk_dp, trans_faces, grav_term_faces, Jpp);
 
     // if (((cells_GID[0]>5)||(cells_GID[1]>5))&& (mcells > 1)){
-	  //   cout<<"GID "<<cells_GID[0]<<" "<<cells_GID[1]<<endl;
+    // if (f==107){
+    //   cout<<"GID "<<cells_GID[0]<<" "<<cells_GID[1]<<endl;
     //   cout<<"dist "<<dist<<endl;
-		//   cout<<"pres "<<pres[0]<<" "<<pres[1]<<endl;
-		//   cout<<"perm v "<< perm_abs_vert[0]<<" "<< perm_abs_vert[1]<<endl;
-		//   cout<<"perm h "<< perm_abs_horz[0]<<" "<< perm_abs_horz[1]<<endl;
-		//   cout<<"k_rel "<<k_rel[0]<<" "<<k_rel[1]<<endl;
-		//   cout<<"dk_dp "<<dk_dp[0]<<" "<<dk_dp[1]<<endl;
-		//   cout<<"normal "<<normal<<endl;
+    //   cout<<"pres "<<pres[0]<<" "<<pres[1]<<endl;
+    //   cout<<"perm v "<< perm_abs_vert[0]<<" "<< perm_abs_vert[1]<<endl;
+    //   cout<<"perm h "<< perm_abs_horz[0]<<" "<< perm_abs_horz[1]<<endl;
+    //   cout<<"k_rel "<<k_rel[0]<<" "<<k_rel[1]<<endl;
+    //   cout<<"dk_dp "<<dk_dp[0]<<" "<<dk_dp[1]<<endl;
+    //   cout<<"normal "<<normal<<endl;
     //   cout<<Jpp<<endl;
-		// }
+    // }
 
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
   }
 
   Spp_->GlobalAssemble();
+
+  //cout<<(*Spp_)<<endl;
 }
 
 
@@ -462,13 +476,13 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
       }
     } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-      if (dpres + grav_term_faces[face_id] > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      if (trans_faces[face_id]*dpres + grav_term_faces[face_id] > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dk_dp_cell[0];
         dKrel_dp[1] = 0.0;
-    } else if (dpres + grav_term_faces[face_id] < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+    } else if (trans_faces[face_id]*dpres + grav_term_faces[face_id] < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.0;
         dKrel_dp[1] = dk_dp_cell[1];
-    } else if (fabs(dpres + grav_term_faces[face_id]) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+    } else if (fabs(trans_faces[face_id]*dpres + grav_term_faces[face_id]) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.5*dk_dp_cell[0];
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
     }
@@ -476,6 +490,13 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
     dKrel_dp[0] = 0.5*dk_dp_cell[0];
     dKrel_dp[1] = 0.5*dk_dp_cell[1];
   }
+
+    // if (face_id == 107){
+    //   cout<<"trans "<<trans_faces[face_id]<<endl;
+    //   cout<<"dpres "<<dpres<<endl;
+    //   cout<<"grav  "<<grav_term_faces[face_id]<<endl;
+    //   cout<<"dKrel_dp "<<dKrel_dp[0]<<" "<<dKrel_dp[1]<<endl;
+    // }
 
     Jpp(0, 0) = (trans_faces[face_id]*dpres + grav_term_faces[face_id])*dKrel_dp[0];
     Jpp(0, 1) = (trans_faces[face_id]*dpres + grav_term_faces[face_id])*dKrel_dp[1];
@@ -487,7 +508,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
       pres[1] = bc_values[face_id][0];
 
       dpres = pres[0] - pres[1];// + grn;
-		  
+      //cout<<"dk_dp_cell[0] "<<dk_dp_cell[0]<<endl;
       Jpp(0,0) = (trans_faces[face_id]*dpres + grav_term_faces[face_id]) * dk_dp_cell[0];
     } else {
       Jpp(0,0) = 0.0;
@@ -589,6 +610,8 @@ void Matrix_MFD_TPFA::InitPreconditioner(int method, Teuchos::ParameterList& pre
 ****************************************************************** */
 void Matrix_MFD_TPFA::UpdatePreconditioner()
 {
+  //cout<<"In update preconditioner\n"<<*Spp_;
+
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     if (MLprec->IsPreconditionerComputed()) MLprec->DestroyPreconditioner();
     MLprec->SetParameterList(ML_list);
@@ -607,7 +630,7 @@ void Matrix_MFD_TPFA::UpdatePreconditioner()
     functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
 
     Teuchos::ParameterList hypre_list;
-    // hypre_list.set("Solver", PCG);
+    hypre_list.set("Solver", PCG);
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
@@ -705,6 +728,9 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
   Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
   Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
 
+  // cout<<"Xc\n";
+  // cout<<Xc<<endl;
+
   // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
   // use the same memory for X and Y, we introduce auxiliaty vector Tc.
   int ierr = 0;
@@ -756,9 +782,11 @@ void  Matrix_MFD_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
 
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
+	//if (f==84) cout<<"value*Trans_faces[f]*Krel_faces[f] "<<value*Trans_faces[f]*Krel_faces[f]<<" Trans_faces[f]*Krel_faces[f] "<< Trans_faces[f]*Krel_faces[f]<<endl;
 	(*rhs_cells_)[c] += value*Trans_faces[f]*Krel_faces[f];
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
         (*rhs_cells_)[c] -= value * mesh_->face_area(f);
+	//if (value < 0)	cout<<"FLOW_BC_FACE_FLUX "<<value * mesh_->face_area(f)<<" "<<value<<" "<<mesh_->face_area(f)<<endl;
 	Trans_faces[f] = 0.0;
 	grav_term_faces[f] =0.0;
       } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
@@ -811,19 +839,23 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 	int c = cells[i];
 	if (c >= ncells_owned) continue;
 	residual[c] += pow(-1, i)*Krel_faces[f]*trans_faces[f]*(sol_gh[cells[0]] - sol_gh[cells[1]]);  
+	// if (c==11) {
+	//   cout<<"Negative Res2 "<<c<<" "<<Krel_faces[f]*trans_faces[f]*(sol_gh[cells[0]] - sol_gh[cells[1]])<<" "<<Krel_faces[f]*trans_faces[f]<<" "<<(sol_gh[cells[0]] - sol_gh[cells[1]])<<endl;
+	// } 
       }
     }
     else if (ncells == 1){
       int c = cells[0];
       residual[c] += Krel_faces[f]*trans_faces[f]*(sol_gh[c]);
+      //if (c==11) cout<<"Negative Res1 "<<c<<" "<<Krel_faces[f]*trans_faces[f]*(sol_gh[c])<<endl;
     }							
   } 
   
 
 
-  for (int c = 0; c < ncells_owned; c++) {
-    //cout<<"residual "<<c<<": "<< residual[c]<<" "<<sol_gh[c]<<endl;
+  for (int c = 0; c < ncells_owned; c++) {    
     residual[c] -= (*rhs_cells_)[c];
+    //cout<<"residual "<<c<<": "<< residual[c]<<" "<<sol_gh[c]<<" "<<(*rhs_cells_)[c]<<endl;
   }
     
   //cout<<"residual "<<c<<": "<< residual[c]<<endl;
