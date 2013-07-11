@@ -15,6 +15,7 @@ Usage:
 #include <vector>
 
 #include "tensor.hh"
+#include "mfd3d.hh"
 #include "mfd3d_vag.hh"
 
 
@@ -92,7 +93,7 @@ int MFD3D_VAG::DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
 
   // gradient calculation grad(C) = X^{-1} * d_values
   Tensor X(d, 2);
-  AmanziGeometry::Point dp[d];
+  AmanziGeometry::Point dp[WHETSTONE_MAX_SPATIAL_DIMENSION];
 
   for (int i = 0; i < d; i++) {
     (dp[i]).init(d);
