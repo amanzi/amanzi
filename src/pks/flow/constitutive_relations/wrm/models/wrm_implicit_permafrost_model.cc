@@ -5,6 +5,9 @@
 
 #include "dbc.hh"
 #include "errors.hh"
+#include "tensor.hh"
+#include "Point.hh"
+
 #include "wrm.hh"
 #include "wrm_implicit_permafrost_model.hh"
 
@@ -16,6 +19,14 @@ namespace FlowRelations {
 // registry of method
 Utils::RegisteredFactory<WRMPermafrostModel,WRMImplicitPermafrostModel> WRMImplicitPermafrostModel::factory_("permafrost model");
 
+
+// Constructor
+WRMImplicitPermafrostModel::WRMImplicitPermafrostModel(Teuchos::ParameterList& plist) :
+    WRMPermafrostModel(plist) {
+  eps_ = plist_.get<double>("converged tolerance", 1.e-12);
+  max_it_ = plist_.get<int>("max iterations", 100);
+  deriv_regularization_ = plist_.get<double>("minimum dsi_dpressure magnitude", 1.e-10);
+}
 
 // Above freezing calculation methods:
 // -- saturation calculation, above freezing
@@ -149,14 +160,11 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_(double pc_liq, double 
     return si_frozen_unsaturated_nospline_(pc_liq, pc_ice);
   } else {
     // fit spline, evaluate
-    double spline[3];
+    double spline[4];
     FitSpline_(pc_ice, cutoff, si_cutoff, spline);
-    std::cout << " cutoff = " << cutoff << std::endl;
-    std::cout << " ABC = " << spline[0] << ", " << spline[1] << ", " << spline[2] << std::endl;
-
-    double si = (spline[0] * pc_liq + spline[1]) * pc_liq + spline[2];
-    std::cout << " si = " << si << std::endl;
-    return std::min(si, 1.0);
+    double si = ((spline[0] * pc_liq + spline[1]) * pc_liq + spline[2]) * pc_liq + spline[3];
+    si = std::max(si, 0.);
+    ASSERT(si <= 1.);
   }
 }
 
@@ -166,16 +174,24 @@ double WRMImplicitPermafrostModel::dsi_dpc_liq_frozen_unsaturated_(double pc_liq
         double pc_ice, double si) {
   // check if we are in the splined region
   double cutoff(0.), si_cutoff(0.);
+  double dsi(0.);
+
   DetermineSplineCutoff_(pc_liq, pc_ice, cutoff, si_cutoff);
   if (pc_liq > cutoff) {
     // outside of the spline
-    return dsi_dpc_liq_frozen_unsaturated_nospline_(pc_liq, pc_ice, si);
+    dsi = dsi_dpc_liq_frozen_unsaturated_nospline_(pc_liq, pc_ice, si);
   } else {
     // fit spline, evaluate
-    double spline[3];
+    double spline[4];
     FitSpline_(pc_ice, cutoff, si_cutoff, spline);
-    return 2 * spline[0] * pc_liq + spline[1];
+    dsi = (3 * spline[0] * pc_liq + 2 * spline[1]) * pc_liq + spline[2];
   }
+
+  // regularize
+  if (std::abs(dsi) < deriv_regularization_) {
+    dsi = dsi < 0. ? -deriv_regularization_ : dsi > 0. ? deriv_regularization_ : 0;
+  }
+  return dsi;
 }
 
 
@@ -190,7 +206,7 @@ double WRMImplicitPermafrostModel::dsi_dpc_ice_frozen_unsaturated_(double pc_liq
     return dsi_dpc_ice_frozen_unsaturated_nospline_(pc_liq, pc_ice, si);
   } else {
     // fit two splines, difference neighboring splines
-    double spline1[3], spline2[3];
+    double spline1[4], spline2[4];
     FitSpline_(pc_ice, cutoff, si_cutoff, spline1);
 
     double delta_pc_ice = std::max(.1, pc_ice / 100.);
@@ -199,12 +215,13 @@ double WRMImplicitPermafrostModel::dsi_dpc_ice_frozen_unsaturated_(double pc_liq
     double si_cutoff2 = si_frozen_unsaturated_nospline_(cutoff, pc_ice2);
     FitSpline_(pc_ice2, cutoff, si_cutoff2, spline2);
 
-    double dspline[3];
+    double dspline[4];
     dspline[0] = (spline2[0] - spline1[0]) / delta_pc_ice;
     dspline[1] = (spline2[1] - spline1[1]) / delta_pc_ice;
     dspline[2] = (spline2[2] - spline1[2]) / delta_pc_ice;
+    dspline[3] = (spline2[3] - spline1[3]) / delta_pc_ice;
 
-    return (dspline[0] * pc_liq + dspline[1]) * pc_liq + dspline[2];
+    return ((dspline[0] * pc_liq + dspline[1]) * pc_liq + dspline[2]) * pc_liq + dspline[3];
   }
 }
 
@@ -230,23 +247,46 @@ bool WRMImplicitPermafrostModel::DetermineSplineCutoff_(double pc_liq, double pc
 
 // -- Determine the coefficients of the spline
 bool WRMImplicitPermafrostModel::FitSpline_(double pc_ice, double cutoff,
-        double si_cutoff, double (&coefs)[3]) {
+        double si_cutoff, double (&coefs)[4]) {
   double dsi_cutoff = dsi_dpc_liq_frozen_unsaturated_nospline_(cutoff, pc_ice, si_cutoff);
 
 
-  // spline given by si = b * pc + c
+  // spline given by si = a * pc^3 + b * pc^3 + c * pc + d
   // constraint equations:
   //   1. si(0) = si_saturated  (right-continuous)
   //   2. si(cutoff) = si_cutoff (left-continuous)
+  //   3. dsi_dpcliq(0) = dsi_saturated (continuous right deriv)
+  //   4. dsi_dpcliq(cutoff) = dsi_cutoff (continuous left derivative)
   // solve for (a,b,c)
 
-  coefs[0] = 0.;
+  double sats[3];
+  sats_saturated_(-1.0, pc_ice, sats);
+  double si_saturated = sats[2];
+  double dsi_saturated = (si_cutoff - si_saturated) / cutoff;
 
-  // c
-  sats_saturated_(-1.0, pc_ice, coefs);
+  // form the linear system
+  Amanzi::WhetStone::Tensor M(2,2);
+  Amanzi::AmanziGeometry::Point rhs(2);
 
-  // a,b require the inversion of a linear system of equations
-  coefs[1] = (si_cutoff - coefs[2]) / cutoff;
+  // Equation 1:
+  coefs[3] = si_saturated;
+
+  // Equation 3
+  coefs[2] = dsi_saturated;
+
+  // Equation 2:
+  M(0,0) = std::pow(cutoff,3);
+  M(0,1) = std::pow(cutoff,2);
+  rhs[0] = si_cutoff - (coefs[2] * cutoff + coefs[3]);
+
+  // Equation 4
+  M(1,0) = 3 * cutoff * cutoff;
+  M(1,1) = 2 * cutoff;
+  rhs[1] = dsi_cutoff - coefs[2];
+
+  M.inverse();
+  coefs[0] = M(0,0) * rhs[0] + M(0,1) * rhs[1];
+  coefs[1] = M(1,0) * rhs[0] + M(1,1) * rhs[1];
   return true;
 }
 
@@ -260,6 +300,7 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
   uintmax_t max_it(max_it_);
   double left = 0.;
   double right = 1.;
+
   std::pair<double,double> result;
   try {
     result =
@@ -269,9 +310,14 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
     Exceptions::amanzi_throw(Errors::CutTimeStep());
   }
 
-  ASSERT(max_it < max_it_);
-  //  std::cout << " took " << max_it << " steps";
-  return std::min(result.first, 1.0);
+  double si = (result.first + result.second) / 2.;
+  ASSERT(0. <= si && si <= 1.);
+
+  if (max_it >= max_it_) {
+    // did not converge?  May be ABS converged but not REL converged!
+    ASSERT(tol(func(si),0.));
+  }
+  return si;
 }
 
 
