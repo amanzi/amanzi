@@ -109,15 +109,33 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
     Teuchos::RCP<const CompositeVector> dA_dy2 = S_next_->GetFieldData(dA_dy2_key_);
     Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
 
-    // scale by 1/h
+    // collect derivatives
     Epetra_MultiVector Ccc(*dA_dy2->ViewComponent("cell",false));
     Ccc = *dA_dy2->ViewComponent("cell",false);
-    Ccc.Scale(1./h);
 
     Epetra_MultiVector Dcc(*dB_dy1->ViewComponent("cell",false));
     Dcc = *dB_dy1->ViewComponent("cell",false);
+
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+      const Epetra_MultiVector& dsi_dp = *S_next_->GetFieldData("dsaturation_ice_dpressure")->ViewComponent("cell",false);
+      const Epetra_MultiVector& dsi_dT = *S_next_->GetFieldData("dsaturation_ice_dtemperature")->ViewComponent("cell",false);
+
+      for (std::vector<int>::const_iterator c0=dc_.begin();
+           c0!=dc_.end(); ++c0) {
+        *out_ << "    dwc_dT(" << *c0 << "): " << Ccc[0][*c0] << std::endl;
+        *out_ << "    de_dp(" << *c0 << "): " << Dcc[0][*c0] << std::endl;
+        *out_ << "       dsi_dp(" << *c0 << "): " << dsi_dp[0][*c0] << std::endl;
+        *out_ << "       dsi_dT(" << *c0 << "): " << dsi_dT[0][*c0] << std::endl;
+        *out_ << "    --" << std::endl;
+
+      }
+    }
+
+    // scale by 1/h
+    Ccc.Scale(1./h);
     Dcc.Scale(1./h);
 
+    // compute
     mfd_preconditioner_->ComputeSchurComplement(Ccc, Dcc);
 
     // Assemble the precon, form Schur complement
