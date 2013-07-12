@@ -180,7 +180,7 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
   double wc_scale = 10.;
   double e_scale = 10000.;
   double T_corr_cap = 2.;
-  double p_corr_cap = 20000.;
+  double p_corr_cap = 200000.;
   double tol = 1.e-6;
   double max_steps = 100;
   double stepnum = 0;
