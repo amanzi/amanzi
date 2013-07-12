@@ -226,6 +226,15 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(de_dT_key_)
       ->ViewComponent("cell",false);
 
+#if DEBUG_FLAG
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    for (std::vector<int>::const_iterator c0=dc_.begin();
+         c0!=dc_.end(); ++c0) {
+      *out_ << "    de_dT(" << *c0 << "): " << de_dT[0][*c0] << std::endl;
+    }
+  }
+#endif
+
   // -- get the matrices/rhs that need updating
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
 
@@ -306,10 +315,15 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   // Cell error is based upon error in energy conservation relative to
   // a characteristic energy
   double enorm_cell(0.);
+  int bad_cell = -1;
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
     double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_* (cv[0][c]*2.e6));
-    enorm_cell = std::max<double>(enorm_cell, tmp);
+    if (tmp > enorm_cell) {
+      enorm_cell = tmp;
+      bad_cell = c;
+    }
+    //    enorm_cell = std::max<double>(enorm_cell, tmp);
   }
 
   // Face error is mismatch in flux.
@@ -333,7 +347,8 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
+    *out_ << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
+    //    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
     *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
   }
 
