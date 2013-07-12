@@ -20,7 +20,7 @@ class TransientTheis(object):
          W(u) = \int_u^\infty \frac{exp[-u]}{u} du = -0.5772 - ln(u) + u - \frac{u^2}{2*2!} + \frac{u^3}{3*3!} - ...
 
          Parameters are in units of:
-         Q   : Pumping Rate [m^3/s]
+         Q_vol   : Pumping Rate [m^3/s]
          s   : Drawdown [m]
          h_0 : Initial height of water table [m]
          T   : Transmissivity [m^2/s]
@@ -32,7 +32,7 @@ class TransientTheis(object):
     def __init__(self, params=None):
         if params is None:
             params = dict()
-        #params.setdefault("t") = numpy.arange(1.2e2,3.72e3,1.2e2)
+       #params.setdefault("t") = numpy.arange(1.2e2,3.72e3,1.2e2)
         params.setdefault("r", [20,40,55])
         params.setdefault("High",[1,1,1])
         params.setdefault("Cells",[1,1,1])
