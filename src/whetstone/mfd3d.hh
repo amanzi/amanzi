@@ -51,6 +51,8 @@ const int WHETSTONE_STABILITY_GENERIC_SCALED = 2;
 const int WHETSTONE_STABILITY_OPTIMIZED_DMP = 3;
 const int WHETSTONE_STABILITY_OPTIMIZED_GEOMETRY = 4;
 
+const int WHETSTONE_MAX_SPATIAL_DIMENSION = 3;
+
 class MFD3D { 
  public:
   explicit MFD3D(Teuchos::RCP<const AmanziMesh::Mesh> mesh);

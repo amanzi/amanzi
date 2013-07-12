@@ -53,17 +53,17 @@ class MFD3D_Elasticity : public MFD3D {
 
   int L2consistencyInverse(int cell, const Tensor& deformation,
                            Teuchos::SerialDenseMatrix<int, double>& R,
-                           Teuchos::SerialDenseMatrix<int, double>& Wc) {};
+                           Teuchos::SerialDenseMatrix<int, double>& Wc) { return WHETSTONE_ELEMENTAL_MATRIX_OK; }
 
   int H1consistency(int cell, const Tensor& deformation,
                     Teuchos::SerialDenseMatrix<int, double>& N,
                     Teuchos::SerialDenseMatrix<int, double>& Mc);
 
   int MassMatrix(int cell, const Tensor& deformation,
-                 Teuchos::SerialDenseMatrix<int, double>& M) {}; 
+                 Teuchos::SerialDenseMatrix<int, double>& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
   int MassMatrixInverse(int cell, const Tensor& deformation,
-                        Teuchos::SerialDenseMatrix<int, double>& W) {}; 
+                        Teuchos::SerialDenseMatrix<int, double>& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
   int StiffnessMatrix(int cell, const Tensor& deformation,
                       Teuchos::SerialDenseMatrix<int, double>& A);

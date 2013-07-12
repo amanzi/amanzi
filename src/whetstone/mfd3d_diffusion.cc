@@ -371,6 +371,8 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
     }
   }
   gradient *= 1.0 / mesh_->cell_volume(cell);
+
+  return 0;
 }
 
 
