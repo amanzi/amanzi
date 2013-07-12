@@ -24,12 +24,29 @@ class CompressiblePorosityModel {
   }
 
   virtual double Porosity(double base_poro, double pres, double patm) {
-    double poro = pres > patm ? (pres-patm)*compressibility_ + base_poro : base_poro;
-    return poro > 1.0 ? 1.0 : poro;
+    double poro = base_poro;
+    double p_over = pres - patm;
+    if (p_over > cutoff_) {
+      poro = base_poro + compressibility_ * ( cutoff_ / 2. + (p_over - cutoff_));
+    } else if (p_over > 0.) {
+      poro = base_poro + compressibility_ * (std::pow(p_over,2.) / 2. / cutoff_);
+    }
+
+    return poro > 1. ? 1. : poro;
   }
 
   virtual double DPorosityDPressure(double base_poro, double pres, double patm) {
-    return pres > patm ? (Porosity(base_poro, pres, patm) > 1.0 ? 0. : compressibility_) : 0.;
+    double p_over = pres - patm;
+    double poro = Porosity(base_poro, pres, patm);
+    if (poro == 1.) {
+      return 0.;
+    } else if (p_over > cutoff_) {
+      return compressibility_;
+    } else if (p_over > 0.) {
+      return compressibility_ * p_over / cutoff_;
+    }
+
+    return 0.;
   }
 
   virtual double DPorosityDBasePorosity(double base_poro, double pres, double patm) {
@@ -39,12 +56,14 @@ class CompressiblePorosityModel {
  protected:
   void InitializeFromPlist_() {
     compressibility_ = plist_.get<double>("pore compressibility");
+    cutoff_ = plist_.get<double>("pore compressibility inflection point", 1000.);
   }
 
  protected:
 
   Teuchos::ParameterList plist_;
   double compressibility_;
+  double cutoff_;
 
 };
 
