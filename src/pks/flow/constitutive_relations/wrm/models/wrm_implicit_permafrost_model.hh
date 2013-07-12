@@ -20,10 +20,8 @@ class WRM;
 class WRMImplicitPermafrostModel : public WRMPermafrostModel {
 
  public:
-  WRMImplicitPermafrostModel(Teuchos::ParameterList& plist) :
-      WRMPermafrostModel(plist),
-      eps_(1.e-12),
-      max_it_(100) {}
+  explicit
+  WRMImplicitPermafrostModel(Teuchos::ParameterList& plist);
 
   // required methods from the base class
   // sats[0] = sg, sats[1] = sl, sats[2] = si
@@ -31,7 +29,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   virtual void dsaturations_dpc_liq(double pc_liq, double pc_ice, double (&dsats)[3]);
   virtual void dsaturations_dpc_ice(double pc_liq, double pc_ice, double (&dsats)[3]);
 
- private:
+ protected:
   // calculation if unfrozen
   bool sats_unfrozen_(double pc_liq, double pc_ice, double (&sats)[3]);
   bool dsats_dpc_liq_unfrozen_(double pc_liq, double pc_ice, double (&dsats)[3]);
@@ -60,10 +58,13 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
           double si);
 
   bool DetermineSplineCutoff_(double pc_liq, double pc_ice, double& cutoff, double& si);
-  bool FitSpline_(double pc_ice, double cutoff, double si_cutoff, double (&coefs)[3]);
+  bool FitSpline_(double pc_ice, double cutoff, double si_cutoff, double (&coefs)[4]);
 
+
+ protected:
   double eps_;
   int max_it_;
+  double deriv_regularization_;
 
  private:
   // Functor for ice saturation, gets used within a root-finding algorithm
@@ -75,7 +76,8 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
 
     double operator()(double si) {
       double tmp = (1.0 - si) * wrm_->saturation(pc_liq_);
-      return tmp - wrm_->saturation( pc_ice_ + wrm_->capillaryPressure( tmp + si));
+      double result = tmp - wrm_->saturation( pc_ice_ + wrm_->capillaryPressure( tmp + si));
+      return result;
     }
 
    private:
