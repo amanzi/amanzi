@@ -13,6 +13,8 @@ multiple coupler types.
 
 #include "MatrixMFD_Surf.hh"
 #include "MatrixMFD_TPFA.hh"
+#include "MatrixMFD_Surf_ScaledConstraint.hh"
+#include "MatrixMFD_TPFA_ScaledConstraint.hh"
 #include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {
@@ -83,22 +85,32 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
     }
   }
 
+  // Replace the subdomain preconditioners with the necessary versions.
+  Teuchos::ParameterList surface_pc_plist = plist_.sublist("PKs")
+      .sublist(surf_pk_name_).sublist("Diffusion PC");
+  Teuchos::ParameterList subsurface_pc_plist = plist_.sublist("PKs")
+      .sublist(domain_pk_name_).sublist("Diffusion PC");
+  Teuchos::ParameterList surface_op_plist = plist_.sublist("PKs")
+      .sublist(surf_pk_name_).sublist("Diffusion");
+  Teuchos::ParameterList subsurface_op_plist = plist_.sublist("PKs")
+      .sublist(domain_pk_name_).sublist("Diffusion");
 
-  // Get the domain's preconditioner and replace it with a MatrixMFD_Surf.
-  Teuchos::RCP<Operators::Matrix> precon = domain_pk_->preconditioner();
-  Teuchos::RCP<Operators::MatrixMFD> mfd_precon =
-    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
-  ASSERT(mfd_precon != Teuchos::null);
-
-  mfd_preconditioner_ =
-      Teuchos::rcp(new Operators::MatrixMFD_Surf(*mfd_precon, surf_mesh_));
+  if (subsurface_op_plist.get<bool>("scaled constraint equation", false)) {
+    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Surf_ScaledConstraint(
+        subsurface_pc_plist, domain_mesh_, surf_mesh_));
+  } else {
+    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Surf(
+        subsurface_pc_plist, domain_mesh_, surf_mesh_));
+  }
   preconditioner_ = mfd_preconditioner_;
 
-  // Get the surface's preconditioner and ensure it is TPFA.
-  Teuchos::RCP<Operators::Matrix> surf_precon = surf_pk_->preconditioner();
-  surf_preconditioner_ =
-    Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(surf_precon);
-  ASSERT(surf_preconditioner_ != Teuchos::null);
+  if (surface_op_plist.get<bool>("scaled constraint equation", false)) {
+    surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(
+        surface_pc_plist, surf_mesh_));
+  } else {
+    surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(
+        surface_pc_plist, surf_mesh_));
+  }
 
   // set the surface A in the MFD_Surf.
   mfd_preconditioner_->SetSurfaceOperator(surf_preconditioner_);

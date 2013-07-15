@@ -560,34 +560,34 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // patch up the surface, use 1
     //    if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
-    // if (S->HasMesh("surface")) {
-    //   Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-    //   int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    if (S->HasMesh("surface")) {
+      Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+      int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-    //   if (S->HasFieldEvaluator("unfrozen_fraction")) {
-    //     S->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S.ptr(), name_);
-    //     const Epetra_MultiVector& uf = *S->GetFieldData("unfrozen_fraction")
-    //         ->ViewComponent("cell",false);
-    //     for (int c=0; c!=ncells_surface; ++c) {
-    //       // -- get the surface cell's equivalent subsurface face
-    //       AmanziMesh::Entity_ID f =
-    //           surface->entity_get_parent(AmanziMesh::CELL, c);
+      if (S->HasFieldEvaluator("unfrozen_fraction")) {
+        S->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S.ptr(), name_);
+        const Epetra_MultiVector& uf = *S->GetFieldData("unfrozen_fraction")
+            ->ViewComponent("cell",false);
+        for (int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face
+          AmanziMesh::Entity_ID f =
+              surface->entity_get_parent(AmanziMesh::CELL, c);
 
-    //       // -- set that value to the unfrozen fraction to ensure we
-    //       // -- don't advect ice
-    //       uw_rel_perm_f[0][f] = uf[0][c];
-    //     }
-    //   } else {
-    //     for (int c=0; c!=ncells_surface; ++c) {
-    //       // -- get the surface cell's equivalent subsurface face
-    //       AmanziMesh::Entity_ID f =
-    //           surface->entity_get_parent(AmanziMesh::CELL, c);
+          // -- set that value to the unfrozen fraction to ensure we
+          // -- don't advect ice
+          uw_rel_perm_f[0][f] = uf[0][c];
+        }
+      } else {
+        for (int c=0; c!=ncells_surface; ++c) {
+          // -- get the surface cell's equivalent subsurface face
+          AmanziMesh::Entity_ID f =
+              surface->entity_get_parent(AmanziMesh::CELL, c);
 
-    //       // -- set that value to 1
-    //       uw_rel_perm_f[0][f] = 1.0;
-    //     }
-    //   }
-    // }
+          // -- set that value to 1
+          uw_rel_perm_f[0][f] = 1.0;
+        }
+      }
+    }
   }
 
   // Scale cells by n/mu

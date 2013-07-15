@@ -51,7 +51,10 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
                         const CompositeVector& Krel_cell,
                         const CompositeVector& dKrel_cell_dp);
 
-  Teuchos::RCP<Epetra_FECrsMatrix> TPFA() { return Spp_; }
+  Teuchos::RCP<Epetra_FECrsMatrix> TPFA() {
+    AssertAssembledOperator_or_die_();
+    return Spp_;
+  }
 
   virtual void UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u);
   virtual void UpdateConsistentFaceCorrection(const CompositeVector& u,

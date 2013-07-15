@@ -50,11 +50,9 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement(const Epetra_MultiVector& Cc
   Epetra_SerialDenseMatrix block(2,2);
 
   // DEBUG dump
-  std::stringstream filename_sp;
-  filename_sp << "coupled_schur_pre_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_sp.str().c_str(), *P2f2f_);
-
-
+  // std::stringstream filename_sp;
+  // filename_sp << "coupled_schur_pre_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_sp.str().c_str(), *P2f2f_);
 
   // Loop over surface cells (subsurface faces)
   int ierr(0);
@@ -115,9 +113,9 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement(const Epetra_MultiVector& Cc
   ASSERT(!ierr);
 
   // DEBUG dump
-  std::stringstream filename_s;
-  filename_s << "coupled_schur_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+  // std::stringstream filename_s;
+  // filename_s << "coupled_schur_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
 
   delete[] indicesA;
   delete[] indicesB;

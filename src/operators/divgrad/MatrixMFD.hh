@@ -99,21 +99,27 @@ class MatrixMFD : public Matrix {
 
   // Const access to assembled matrices.
   Teuchos::RCP<const Epetra_Vector> Acc() {
+    AssertAssembledOperator_or_die_();
     return Acc_;
   }
   Teuchos::RCP<const Epetra_FECrsMatrix> Aff() {
+    AssertAssembledOperator_or_die_();
     return Aff_;
   }
   Teuchos::RCP<const Epetra_CrsMatrix> Afc() {
+    AssertAssembledOperator_or_die_();
     return Afc_;
   }
   Teuchos::RCP<const Epetra_CrsMatrix> Acf() {
+    AssertAssembledOperator_or_die_();
     return Acf_;
   }
   Teuchos::RCP<const Epetra_FECrsMatrix> Schur() {
+    AssertAssembledSchur_or_die_();
     return Sff_;
   }
   Teuchos::RCP<const CompositeVector> rhs() {
+    AssertAssembledOperator_or_die_();
     return rhs_;
   }
 
