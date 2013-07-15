@@ -145,7 +145,7 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   Teuchos::OSTab tab = getOSTab();
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << "Modifying predictor." << std::endl;
+    *out_ << "Modifying predictor, MPCPermafrost." << std::endl;
 
     for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;

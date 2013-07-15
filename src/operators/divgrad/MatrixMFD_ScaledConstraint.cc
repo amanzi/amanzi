@@ -157,7 +157,11 @@ void MatrixMFD_ScaledConstraint::ApplyBoundaryConditions(
         Ff[n] = bc_values[f];
       } else if (bc_markers[f] == MATRIX_BC_FLUX) {
         if (std::abs(bc_values[f]) > 0.) {
-          Ff[n] -= bc_values[f] * mesh_->face_area(f) / (*Krel_)[f];
+          if ((*Krel_)[f] > 1.e-30) {
+            Ff[n] -= bc_values[f] * mesh_->face_area(f) / (*Krel_)[f];
+          } else {
+            std::cout << "WARNING: Face " << f << " BC imposes nonzero flux " << bc_values[f] << " when rel perm is 0." << std::endl;
+          }
         }
       }
     }

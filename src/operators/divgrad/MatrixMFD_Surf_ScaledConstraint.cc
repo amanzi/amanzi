@@ -147,9 +147,11 @@ void MatrixMFD_Surf_ScaledConstraint::ComputeSchurComplement(const std::vector<M
   }
 
   // Call base Schur
+  std::cout << " Acc(99) = " << Acc_cells_[99] << std::endl;
+  std::cout << " Aff(501,501) = " << Aff_cells_[99](5,5) << std::endl;
   MatrixMFD_ScaledConstraint::ComputeSchurComplement(new_markers, bc_values);
 
-  // dump the schur complement
+  //  dump the schur complement
   // std::stringstream filename_s;
   // filename_s << "schur_pre_surf_" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *Sff_);
