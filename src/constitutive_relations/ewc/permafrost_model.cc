@@ -309,7 +309,7 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
 
     AmanziGeometry::Point scaled_correction = damp * correction;
     scaled_correction[1] = scaled_correction[1] / 100000.;
-    converged = norm < tol || AmanziGeometry::norm(scaled_correction) < 1.e-3;
+    converged = norm < tol || AmanziGeometry::norm(scaled_correction) < 1.e-5;
 
     stepnum++;
     if (stepnum > max_steps && !converged) {
