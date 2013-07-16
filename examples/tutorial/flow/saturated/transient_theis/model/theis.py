@@ -32,10 +32,10 @@ class TransientTheis(object):
     def __init__(self, params=None):
         if params is None:
             params = dict()
-       #params.setdefault("t") = numpy.arange(1.2e2,3.72e3,1.2e2)
+        params.setdefault("x",2.5)
+        params.setdefault("y",2.5)
+        params.setdefault("z",100)
         params.setdefault("r", [20,40,55])
-        params.setdefault("High",[1,1,1])
-        params.setdefault("Cells",[1,1,1])
         params.setdefault("S_s",7.5e-5)
         params.setdefault("pi",math.pi)
         params.setdefault("g",9.80665)
@@ -49,23 +49,18 @@ class TransientTheis(object):
 
         self.r
         
-        size = []
-        for i,cell in zip(self.High,self.Cells):
-            size.append(i / cell)
-        print size
-            
-        self.Vol_cell = size[0]*size[1]*size[2]
-        
-        self.Q_vol = -self.Q * self.Vol_cell / self.rho
+        self.Vol_well = (abs(self.x*2))*(abs(self.y*2))*self.z
+  
+        self.Q_vol = -3.0*self.Q*self.Vol_well / self.rho
         
         self.K_h = self.K*self.g*self.rho / self.mu
-        
+       
         self.T =self.K_h*self.h_0
         
-        self.var = self.Q_vol / 4 / self.pi /self.T
+        self.var = self.Q_vol / 4 / self.pi / self.T
         
         self.S = self.S_s*self.h_0
-        
+       
     def runForFixedTime(self, radi, time):
         #This method evaluates Theis solution for a given time at multiple radial distances from the well 
         drawdown_r = []
@@ -82,7 +77,7 @@ class TransientTheis(object):
         for t in times:
             u = radius ** 2 * self.S / 4 / self.T / t
             W = getWellFunction(u)
-            s = self.var*W
+            s = self.var * W
             drawdown_t.append(s)
         return drawdown_t
  
@@ -102,15 +97,15 @@ def createFromXML(filename):
     
     params.setdefault("g",9.80665)
     params.setdefault("pi",math.pi)
-    params["High"]= search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value
-    params["Cells"]= search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Number of Cells").value
+    params["x"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/Low Coordinate").value[0]
+    params["y"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/Low Coordinate").value[1]
+    params["z"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/High Coordinate").value[2]
     params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
-    params["mu"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
-    params["rho"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
-    params["h_0"]= search.getElementByPath(xml, "/Main/Boundary Conditions/Far Field Head/BC: Hydrostatic/Water Table Height").value[0]
-    params["Q"]= search.getElementByPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
-    params["S_s"]= search.getElementByPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
-   # params["t"]= search.getElementByPath(xml, "/Main/Output/Time Macros/Observation Times/Values").value
+    params["mu"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
+    params["rho"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
+    params["h_0"] = search.getElementByPath(xml, "/Main/Boundary Conditions/Far Field Head/BC: Hydrostatic/Water Table Height").value[0]
+    params["Q"] = search.getElementByPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
+    params["S_s"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
     
     return TransientTheis(params)
 
@@ -156,7 +151,6 @@ if __name__ == "__main__":
     error=[]
     PORFLOW =[6.2764e-3,2.9013E-02,5.3206E-02,7.5200E-02,9.4700E-02,1.1203E-01,1.2757E-01,1.4161E-01,1.5440E-01,1.6614E-01,1.7699E-01,1.8706E-01,1.9645E-01,2.0526E-01,2.1355E-01,2.2137E-01,2.2877E-01,2.3581E-01,2.4250E-01,2.4889E-01,2.5500E-01,2.6085E-01,2.6647E-01,2.7186E-01,2.7706E-01,2.8207E-01,2.8690E-01,2.9157E-01,2.9609E-01,3.0046E-01]
 
-   
     for i in rindex:
         radi.append(i)
 
@@ -196,8 +190,6 @@ if __name__ == "__main__":
     ax1.legend(title='Theis Solution',loc = 'upper right', fancybox=True, shadow = True)
     ax2.legend(title = 'Theis Solution',loc = 'lower right', fancybox=True, shadow = True)
 
-    
-
     cellText = table_values
     ax = plt.subplot(111,frame_on = False)
     ax.xaxis.set_visible(False)
@@ -207,7 +199,6 @@ if __name__ == "__main__":
     cells = properties['child_artists']
     for cell in cells: 
         cell.set_height(.045)
-    
     
     the_table.auto_set_font_size(False)
     the_table.set_fontsize(12)

@@ -43,7 +43,6 @@ def plotExampleObservations(Obs_xml, Obs_data, axes1):
     for obs in Obs_data.observations.itervalues(): 
         pressure_value.append(obs.data)
         coords_list.append(obs.coordinate)
-    print coords_list, pressure_value
         
     axes1.scatter([coords_list[0][0],coords_list[2][0],coords_list[3][0]],[pressure_value[0],pressure_value[2],pressure_value[3]],c=cmap[coords_list[0][2]],marker='s',s=50, label = '$Amanzi$')
     axes1.scatter([coords_list[1][0]],[pressure_value[1]],c = cmap[coords_list[1][2]],marker = 's',s = 50,label = '$Amanzi$')
@@ -81,10 +80,8 @@ def plotExampleModel(filename, cmap, axes1,Obs_xml, Obs_data):
     coordinates = numpy.array(coordinates)
     pres_analytic = mymodel.run(coordinates)
     pressure_analytic = list(pres_analytic)
-    print pressure_analytic[1]
     
     for coord,press_amanzi, press_analytic in zip(coordinates,pressure_value,pressure_analytic):
-        print press_amanzi, press_analytic
         table_values.append([coord[0],coord[1],press_amanzi,press_analytic])
         
     col_labels = ['x [m]', 'z [m]' ,'Pressure(Amanzi) [Pa]','Pressure (analytic)[Pa]']
