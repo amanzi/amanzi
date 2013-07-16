@@ -47,7 +47,7 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   // index within that cell's faces
-  int n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+  unsigned int n = std::find(faces.begin(), faces.end(), f) - faces.begin();
   ASSERT(n != faces.size());
 
   Teuchos::RCP< std::vector<double> > Aff = Teuchos::rcp(new std::vector<double>());
@@ -59,7 +59,7 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   double Krel = (*S_next_->GetFieldData("numerical_rel_perm"))("face",f);
 
   // fill the arrays
-  for (int i=0; i!=faces.size(); ++i) {
+  for (unsigned int i=0; i!=faces.size(); ++i) {
     (*Aff)[i] = matrix_->Aff_cells()[c](n,i) / Krel;
     (*lambda)[i] = (*pres)("face",faces[i]);
   }
@@ -70,9 +70,9 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
 
 #if DEBUG_FLAG
   std::cout << "   Aff = ";
-  for (int i=0; i!=faces.size(); ++i) std::cout << (*Aff)[i] << ", ";
+  for (unsigned int i=0; i!=faces.size(); ++i) std::cout << (*Aff)[i] << ", ";
   std::cout << std::endl << "   lambda = ";
-  for (int i=0; i!=faces.size(); ++i) std::cout << (*lambda)[i] << ", ";
+  for (unsigned int i=0; i!=faces.size(); ++i) std::cout << (*lambda)[i] << ", ";
   std::cout << std::endl << "   p_cell = " << (*pres)("cell",c) << std::endl;
   std::cout << "    and init K_rel = " << wrms_->second[(*wrms_->first)[c]]->k_relative(101325. - (*lambda)[n]) << std::endl;
   std::cout << "    to match fluxes: bc = " << bc_flux << " and grav = " << gflux << std::endl;
@@ -98,7 +98,7 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
   // -- convergence criteria
   double eps = std::max(1.e-4 * std::abs((*bc_values_)[f]), 1.e-8);
   Tol_ tol(eps);
-  int max_it = 100;
+  uintmax_t max_it = 100;
   uintmax_t actual_it(max_it);
 
   double res = (*func)(lambda);

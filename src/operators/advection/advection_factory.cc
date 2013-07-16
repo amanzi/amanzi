@@ -8,6 +8,7 @@
    Interface for a general-purpose advection factory.
    ------------------------------------------------------------------------- */
 
+#include "errors.hh"
 #include "advection_donor_upwind.hh"
 #include "advection_factory.hh"
 
@@ -20,7 +21,14 @@ Teuchos::RCP<Advection> AdvectionFactory::create(Teuchos::ParameterList& plist,
 
   if (method == "donor upwind") {
     return Teuchos::rcp(new AdvectionDonorUpwind(plist, mesh));
+  } else {
+    std::stringstream emsg;
+    emsg << "AdvectionFactory: unknown advection type " << method;
+    Errors::Message message(emsg.str());
+    Exceptions::amanzi_throw(message);
   }
+
+  return Teuchos::null;
 };
 
 } // namespace Operators

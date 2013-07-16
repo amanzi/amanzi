@@ -56,8 +56,8 @@ void OverlandFlow::fun( double t_old,
     Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
     Teuchos::RCP<const CompositeVector> preselev= S_next_->GetFieldData("pres_elev");
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
         AmanziMesh::Entity_ID_List fnums0;
         std::vector<int> dirs;
@@ -65,10 +65,10 @@ void OverlandFlow::fun( double t_old,
 
         *out_ << "  p(" << *c0 <<"): " << (*u)("cell",0,*c0) << std::endl;
         *out_ << "  h(" << *c0 <<"): " << (*depth)("cell",0,*c0);
-        for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*depth)("face",fnums0[n]);
+        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*depth)("face",fnums0[n]);
         *out_ << std::endl;
         *out_ << "  hz(" << *c0 <<"): " << (*preselev)("cell",0,*c0);
-        for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*preselev)("face",fnums0[n]);
+        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*preselev)("face",fnums0[n]);
         *out_ << std::endl;
         *out_ << " --" << std::endl;
       }
@@ -91,18 +91,18 @@ void OverlandFlow::fun( double t_old,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     Teuchos::RCP<const CompositeVector> cond =
       S_next_->GetFieldData("upwind_overland_conductivity", name_);
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
         AmanziMesh::Entity_ID_List fnums0;
         std::vector<int> dirs;
         mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
         *out_ << "  cond(" << *c0 << "): " << (*cond)("cell",*c0);
-        for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*cond)("face",fnums0[n]);
+        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*cond)("face",fnums0[n]);
         *out_ << std::endl;
         *out_ << "  res(" << *c0 << ") (diff): " << (*res)("cell",*c0);
-        for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
         *out_ << std::endl;
       }
     }
@@ -114,8 +114,8 @@ void OverlandFlow::fun( double t_old,
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
         *out_ << "  res(" << *c0 << ") (acc): " << (*res)("cell",*c0) << std::endl;
       }
@@ -127,8 +127,8 @@ void OverlandFlow::fun( double t_old,
   AddSourceTerms_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
         *out_ << "  res(" << *c0 << ") (source): " << (*res)("cell",*c0) << std::endl;
       }
@@ -148,8 +148,8 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
         *out_ << "  p(" << *c0 <<"): " << (*u->data())("cell",0,*c0) << std::endl;
       }
@@ -164,8 +164,8 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
         *out_ << "  PC*p(" << *c0 <<") (pre-var): " << (*u->data())("cell",0,*c0) << std::endl;
       }
@@ -214,8 +214,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
 
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
-  int ncells = cell_volume->size("cell");
-  for (int c=0; c!=ncells; ++c) {
+  unsigned int ncells = cell_volume->size("cell");
+  for (unsigned int c=0; c!=ncells; ++c) {
     // accumulation term
     Acc_cells[c] += (*cell_volume)("cell",c) / h;
     Fc_cells[c] += (*depth)("cell",c) * (*cell_volume)("cell",c) / h;

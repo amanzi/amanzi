@@ -46,11 +46,10 @@ void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_gr
   AmanziMesh::Entity_ID_List surf_cells;
   int equiv_face_LID[2];
   int equiv_face_GID[2];
-  int surf_cell_GID[2];
 
-  int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  unsigned int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int fs=0; fs!=nfaces_surf; ++fs) {
+  for (unsigned int fs=0; fs!=nfaces_surf; ++fs) {
     surface_mesh_->face_get_cells(fs, AmanziMesh::USED, &surf_cells);
     int ncells_surf = surf_cells.size(); ASSERT(ncells_surf <= 2);
 
@@ -58,8 +57,6 @@ void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_gr
     for (int n=0; n!=ncells_surf; ++n) {
       equiv_face_LID[n] = surface_mesh_->entity_get_parent(AmanziMesh::CELL, surf_cells[n]);
       equiv_face_GID[n] = fmap_wghost.GID(equiv_face_LID[n]);
-
-      surf_cell_GID[n] = surf_cmap_wghost.GID(surf_cells[n]);
     }
 
     // insert the connection

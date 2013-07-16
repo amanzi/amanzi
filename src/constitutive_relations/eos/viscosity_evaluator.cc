@@ -70,6 +70,7 @@ void ViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     int count = result->size(*comp);
     for (int id=0; id!=count; ++id) {
+      ASSERT(temp_v[0][id] > 200.);
       result_v[0][id] = visc_->Viscosity(temp_v[0][id]);
     }
   }

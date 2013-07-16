@@ -168,11 +168,11 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
 
     *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->data())("cell",c0);
-    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
     *out_ << std::endl;
 
     *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->data())("cell",c0);
-    for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
     *out_ << std::endl;
 
   }
@@ -209,11 +209,11 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
       mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
 
       *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->data())("cell",c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->data())("cell",c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
       *out_ << std::endl;
     }
 
@@ -226,7 +226,9 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
 
 
 bool MPCSubsurface::modify_predictor_heuristic_(double h, Teuchos::RCP<TreeVector> up) {
-  ASSERT(0);
+  Errors::Message message("MPCSubsurface: heuristic no longer implemented");
+  Exceptions::amanzi_throw(message);
+  return false;
 }
 
 

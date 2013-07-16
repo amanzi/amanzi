@@ -71,7 +71,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   for (int c=0; c!=ncells; ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
-    for (int n=0; n!=faces.size(); ++n) {
+    for (unsigned int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
 
       if (f < nfaces_local) {

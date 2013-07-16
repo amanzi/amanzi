@@ -75,7 +75,7 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
   for (CompositeVector::name_iterator comp=vec->begin();
        comp!=vec->end(); ++comp) {
     double enorm_comp = 0.0;
-    for (int id=0; id!=vec->size(*comp,false); ++id) {
+    for (unsigned int id=0; id!=vec->size(*comp,false); ++id) {
       double tmp = abs((*dvec)(*comp,id)) / (atol_+rtol_*abs((*vec)(*comp,id)));
       enorm_comp = std::max<double>(enorm_comp, tmp);
     }

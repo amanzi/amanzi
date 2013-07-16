@@ -179,8 +179,8 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
     const Epetra_MultiVector& temp = *S->GetFieldData("temperature")
         ->ViewComponent("face",false);
 
-    int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-    for (int c=0; c!=ncells_surface; ++c) {
+    unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+    for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face and neighboring cell
       AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
@@ -237,8 +237,8 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
       ->ViewComponent("face",false);
 
   AmanziMesh::Entity_ID_List cells;
-  int nfaces = enth_f.MyLength();
-  for (int f=0; f!=nfaces; ++f) {
+  unsigned int nfaces = enth_f.MyLength();
+  for (unsigned int f=0; f!=nfaces; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (cells.size() == 1) {
       double T = bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET ?
@@ -289,14 +289,14 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData("surface_energy_source")->ViewComponent("cell",false);
 
-    int ncells = g_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
       g_c[0][c] -= 0.5* ((*fa0)[0][c] * source0[0][c] + (*fa1)[0][c] * source1[0][c]);
     }
 
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
         *out_ << "  res_source Q_E(" << *c0 << "): " << g_c[0][*c0] << std::endl;
       }
     }
@@ -351,8 +351,8 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
           *S_next_->GetFieldData("surface_molar_density_liquid")
           ->ViewComponent("cell",false);
 
-      int ncells = g_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
+      unsigned int ncells = g_c.MyLength();
+      for (unsigned int c=0; c!=ncells; ++c) {
         double molar_flux = 0.5 * (cv0[0][c] * source0[0][c] * nliq0[0][c] + cv1[0][c] * source1[0][c] * nliq1[0][c]);
 
         // upwind the enthalpy
@@ -365,7 +365,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
         *out_ << "  res_source E*Q_m(" << *c0 << "): " << g_c[0][*c0] << std::endl;
       }
     }
@@ -379,13 +379,13 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& temp_c =
         *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
-    int ncells = g_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
       g_c[0][c] -= K_surface_to_air_ * (T_air1 - temp_c[0][c]) * (*fa1)[0][c];
     }
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
         *out_ << "  res_source K(" << *c0 << "): (" << T_air1 << "-T): "
               << g_c[0][*c0] << std::endl;
       }
@@ -411,8 +411,8 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
     AmanziMesh::Entity_ID_List cells;
 
-    int ncells = g_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
       double flux = source1[0][c];
 
       // upwind the enthalpy
@@ -430,7 +430,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
         *out_ << "  res_source E*q_m_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
       }
     }
@@ -445,14 +445,14 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
     AmanziMesh::Entity_ID_List cells;
 
-    int ncells = g_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
       g_c[0][c] -= e_source1[0][cells[0]];
     }
 
 #if DEBUG_FLAG
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
         *out_ << "  res_source q^E_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
       }
     }
@@ -480,8 +480,8 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
 
   // precon from air conductivity
   if (is_air_conductivity_) {
-    int ncells = Acc_cells.size();
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = Acc_cells.size();
+    for (unsigned int c=0; c!=ncells; ++c) {
       Acc_cells[c] += K_surface_to_air_ * (*fa1)[0][c];
     }
   }

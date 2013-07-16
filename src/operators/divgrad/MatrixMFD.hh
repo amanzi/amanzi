@@ -125,7 +125,7 @@ class MatrixMFD : public Matrix {
 
   // Other accessors/mutators.
   bool symmetric() { return flag_symmetry_; }
-  bool set_symmetric(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
+  void set_symmetric(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
 
   // Main computational methods

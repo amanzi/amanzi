@@ -8,6 +8,8 @@ Painter's permafrost model.
 #ifndef AMANZI_FLOWRELATIONS_WRM_IMPLICIT_PERMAFROST_MODEL_
 #define AMANZI_FLOWRELATIONS_WRM_IMPLICIT_PERMAFROST_MODEL_
 
+#include <boost/math/tools/roots.hpp>
+
 #include "wrm_permafrost_model.hh"
 #include "wrm_permafrost_factory.hh"
 
@@ -63,7 +65,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
 
  protected:
   double eps_;
-  int max_it_;
+  uintmax_t max_it_;
   double deriv_regularization_;
 
  private:

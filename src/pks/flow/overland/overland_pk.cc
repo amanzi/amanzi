@@ -225,7 +225,7 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::initialize(S);
 
   // Initialize BC data structures
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::Matrix::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
@@ -329,8 +329,8 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 
     Epetra_MultiVector& vel_c = *velocity->ViewComponent("cell",false);
 
-    int ncells = velocity->size("cell");
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = velocity->size("cell");
+    for (unsigned int c=0; c!=ncells; ++c) {
       vel_c[0][c] /= std::max( depth_c[0][c] , 1e-7);
       vel_c[1][c] /= std::max( depth_c[0][c] , 1e-7);
     }
@@ -410,7 +410,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
       ->ViewComponent("face",false);
 
   // initialize all as null
-  for (int n=0; n!=bc_markers_.size(); ++n) {
+  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
@@ -456,7 +456,7 @@ void OverlandFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S
 
   AmanziMesh::Entity_ID_List cells;
   // initialize all as null
-  for (int n=0; n!=bc_markers_.size(); ++n) {
+  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
     bc_values_[n] = 0.;
   }
@@ -519,14 +519,14 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
     dp.resize(faces.size());
-    for (int n=0; n!=faces.size(); ++n) {
+    for (unsigned int n=0; n!=faces.size(); ++n) {
       dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
     }
-    int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+    unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
     ASSERT(my_n !=faces.size());
 
     double bc_val = 0.;
-    for (int m=0; m!=faces.size(); ++m) {
+    for (unsigned int m=0; m!=faces.size(); ++m) {
       bc_val -= Aff_cells[c](my_n,m) * dp[m];
     }
 
@@ -534,10 +534,10 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     std::cout << "  cond = " << cond_f[0][f] << std::endl;
     std::cout << "  my_n = " << my_n << std::endl;
     std::cout << "  d(h+z) = ";
-    for (int m=0; m!=faces.size(); ++m) std::cout << dp[m] << ", ";
+    for (unsigned int m=0; m!=faces.size(); ++m) std::cout << dp[m] << ", ";
     std::cout << std::endl;
     std::cout << "  Aff = ";
-    for (int m=0; m!=faces.size(); ++m) std::cout << Aff_cells[c](my_n,m) << ", ";
+    for (unsigned int m=0; m!=faces.size(); ++m) std::cout << Aff_cells[c](my_n,m) << ", ";
     std::cout << std::endl;
 
     // Apply the BC to the matrix
@@ -555,7 +555,7 @@ void OverlandFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
   // double eps = 1.e-30;
   // Teuchos::RCP<CompositeVector> relperm =
   //     S->GetFieldData("upwind_overland_conductivity", name_);
-  // for (int f=0; f!=relperm->size("face"); ++f) {
+  // for (unsigned int f=0; f!=relperm->size("face"); ++f) {
   //   if ((*relperm)("face",f) < eps) {
   //     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_FLUX) {
   //       bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
@@ -579,7 +579,7 @@ void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
   // Teuchos::RCP<CompositeVector> relperm =
   //     S->GetFieldData("upwind_overland_conductivity", name_);
 
-  // for (int f=0; f!=relperm->size("face"); ++f) {
+  // for (unsigned int f=0; f!=relperm->size("face"); ++f) {
   //   if ((*relperm)("face",f) < eps) {
   //     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_FLUX) {
   //       bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
@@ -618,14 +618,14 @@ void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
     dp.resize(faces.size());
-    for (int n=0; n!=faces.size(); ++n) {
+    for (unsigned int n=0; n!=faces.size(); ++n) {
       dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
     }
-    int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+    unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
     ASSERT(my_n !=faces.size());
 
     double bc_val = 0.;
-    for (int m=0; m!=faces.size(); ++m) {
+    for (unsigned int m=0; m!=faces.size(); ++m) {
       bc_val -= Aff_cells[c](my_n,m) * dp[m];
     }
 
@@ -640,8 +640,8 @@ void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
  ****************************************************************** */
 void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
-  int nfaces = pres->size("face",true);
-  for (int f=0; f!=nfaces; ++f) {
+  unsigned int nfaces = pres->size("face",true);
+  for (unsigned int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
       (*pres)("face",f) = bc_values_[f];
     }
@@ -693,7 +693,7 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Consistent faces:" << std::endl;
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       *out_ << "  u_c = " << (*u)("cell",*c0) << ",  pres_elev_c = " << (*pres_elev)("cell",*c0) << std::endl;
     }
   }
@@ -716,7 +716,7 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);

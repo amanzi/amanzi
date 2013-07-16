@@ -54,6 +54,7 @@ TEST(implicitPermafrost) {
   CHECK_CLOSE(sats[1], sats2[1], std::abs(sats[1])/1.e3);
   CHECK_CLOSE(sats[2], sats2[2], std::abs(sats[2])/1.e3);
 
+
   // saturated, above freezing
   // -- value
   pc_liq = -1000.;

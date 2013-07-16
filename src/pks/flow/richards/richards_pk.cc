@@ -77,8 +77,8 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
     if (plist_.get<bool>("debug all surface cells", false)) {
       dc_.clear();
       Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh("surface");
-      int ncells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-      for (int c=0; c!=ncells; ++c) {
+      unsigned int ncells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      for (unsigned int c=0; c!=ncells; ++c) {
         AmanziMesh::Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
         AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -111,7 +111,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
 #if DEBUG_RES_FLAG
   // -- residuals of various iterations for debugging
-  for (int i=1; i!=23; ++i) {
+  for (unsigned int i=1; i!=23; ++i) {
     std::stringstream namestream;
     namestream << "flow_residual_" << i;
     std::stringstream solnstream;
@@ -137,9 +137,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireScalar("atmospheric_pressure");
 
   // Create the absolute permeability tensor.
-  int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
-  for (int c=0; c!=c_owned; ++c) {
+  for (unsigned int c=0; c!=c_owned; ++c) {
     (*K_)[c].init(mesh_->space_dimension(),1);
   }
   // scaling for permeability
@@ -332,7 +332,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
-  for (int i=1; i!=23; ++i) {
+  for (unsigned int i=1; i!=23; ++i) {
     std::stringstream namestream;
     namestream << "flow_residual_" << i;
     S->GetFieldData(namestream.str(),name_)->PutScalar(0.);
@@ -424,13 +424,13 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", name_);
     CompositeVector error(*wc1);
 
-    for (int c=0; c!=error.size("cell"); ++c) {
+    for (unsigned int c=0; c!=error.size("cell"); ++c) {
       error("cell",c) = (*wc1)("cell",c) - (*wc0)("cell",c);
 
       AmanziMesh::Entity_ID_List faces;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         error("cell",c) += (*darcy_flux)("face",faces[n]) * dirs[n] * dt;
       }
     }
@@ -481,8 +481,8 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
         ->ViewComponent("cell",false);
 
     Epetra_MultiVector& vel_c = *darcy_velocity->ViewComponent("cell",false);
-    int ncells = vel_c.MyLength();
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = vel_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
       for (int n=0; n!=vel_c.NumVectors(); ++n) {
         vel_c[n][c] /= nliq_c[0][c];
       }
@@ -527,7 +527,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           S->GetFieldData("darcy_flux_direction", name_);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
-      for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
+      for (unsigned int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
         (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c] / perm_scale_;
       }
       uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
@@ -562,13 +562,13 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     //    if (coupled_to_surface_via_head_ || coupled_to_surface_via_flux_) {
     if (S->HasMesh("surface")) {
       Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-      int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      unsigned int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
       if (S->HasFieldEvaluator("unfrozen_fraction")) {
         S->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S.ptr(), name_);
         const Epetra_MultiVector& uf = *S->GetFieldData("unfrozen_fraction")
             ->ViewComponent("cell",false);
-        for (int c=0; c!=ncells_surface; ++c) {
+        for (unsigned int c=0; c!=ncells_surface; ++c) {
           // -- get the surface cell's equivalent subsurface face
           AmanziMesh::Entity_ID f =
               surface->entity_get_parent(AmanziMesh::CELL, c);
@@ -578,7 +578,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           uw_rel_perm_f[0][f] = uf[0][c];
         }
       } else {
-        for (int c=0; c!=ncells_surface; ++c) {
+        for (unsigned int c=0; c!=ncells_surface; ++c) {
           // -- get the surface cell's equivalent subsurface face
           AmanziMesh::Entity_ID f =
               surface->entity_get_parent(AmanziMesh::CELL, c);
@@ -592,7 +592,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   // Scale cells by n/mu
   if (update_perm) {
-    for (int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
+    for (unsigned int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
       (*uw_rel_perm)("cell",c) *= n_liq[0][c] / visc[0][c] / perm_scale_;
     }
   }
@@ -613,7 +613,7 @@ void Richards::UpdateBoundaryConditions_() {
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
     *out_ << "  Updating BCs." << std::endl;
 
-  for (int n=0; n!=bc_markers_.size(); ++n) {
+  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
@@ -668,8 +668,8 @@ void Richards::UpdateBoundaryConditions_() {
     const Epetra_MultiVector& head = *S_next_->GetFieldData("surface_pressure")
         ->ViewComponent("cell",false);
 
-    int ncells_surface = head.MyLength();
-    for (int c=0; c!=ncells_surface; ++c) {
+    unsigned int ncells_surface = head.MyLength();
+    for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
       AmanziMesh::Entity_ID f =
         surface->entity_get_parent(AmanziMesh::CELL, c);
@@ -687,8 +687,8 @@ void Richards::UpdateBoundaryConditions_() {
     const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_subsurface_flux")
         ->ViewComponent("cell",false);
 
-    int ncells_surface = flux.MyLength();
-    for (int c=0; c!=ncells_surface; ++c) {
+    unsigned int ncells_surface = flux.MyLength();
+    for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
       AmanziMesh::Entity_ID f =
         surface->entity_get_parent(AmanziMesh::CELL, c);
@@ -711,8 +711,8 @@ void Richards::UpdateBoundaryConditions_() {
 void
 Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
   Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
-  int nfaces = pres_f.MyLength();
-  for (int f=0; f!=nfaces; ++f) {
+  unsigned int nfaces = pres_f.MyLength();
+  for (unsigned int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
       pres_f[0][f] = bc_values_[f];
     }
@@ -819,8 +819,8 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 
   // // determine pressure at new step
   // Epetra_MultiVector pres_wc(u_c);
-  // int ncells = pres_wc.MyLength();
-  // for (int c=0; c!=ncells; ++c) {
+  // unsigned int ncells = pres_wc.MyLength();
+  // for (unsigned int c=0; c!=ncells; ++c) {
   //   // Query the WRM somehow?
   // }
 }

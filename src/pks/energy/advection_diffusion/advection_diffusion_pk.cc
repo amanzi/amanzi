@@ -100,7 +100,7 @@ void AdvectionDiffusion::initialize(const Teuchos::Ptr<State>& S) {
 
 // Evaluate BCs
 void AdvectionDiffusion::UpdateBoundaryConditions_() {
-  for (int n=0; n!=bc_markers_.size(); ++n) {
+  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
     bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }

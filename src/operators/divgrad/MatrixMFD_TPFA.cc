@@ -24,7 +24,7 @@ namespace Operators {
 
 template<class T>
 int FindPosition(const std::vector<T>& v, const T& value) {
-  for (int i = 0; i < v.size(); i++)
+  for (unsigned int i=0; i!=v.size(); ++i)
     if (v[i] == value) return i;
   return -1;
 }
@@ -309,9 +309,11 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
     ierr |= ifp_prec_->ApplyInverse(Xc, Tc);
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
-    ierr != IfpHypre_Sff_->ApplyInverse(Xc, Tc);
+    ierr |= IfpHypre_Sff_->ApplyInverse(Xc, Tc);
 #endif
   }
+  ASSERT(!ierr);
+
   *Y->ViewComponent("cell",false) = Tc;
 
   if (ierr) {

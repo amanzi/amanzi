@@ -50,7 +50,7 @@ public:
   // -- Update diagnostics for vis.
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
 
-  virtual bool advance(double dt) {}
+  virtual bool advance(double dt) { return true; }
 
   virtual double get_dt() { return 1.e99; }
 

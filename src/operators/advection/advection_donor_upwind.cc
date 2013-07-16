@@ -53,7 +53,6 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
   //  field_->ViewComponent("face")->PutScalar(0.0);
   for (int f=f_begin_; f != f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
-    int c2 = (*downwind_cell_)[f];
 
     if (c1 >=0) {
       u = fabs((*flux_)("face",0,f));
@@ -109,8 +108,8 @@ void AdvectionDonorUpwind::IdentifyUpwindCells_() {
   for (int c=c_begin_; c != c_end_; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
-    for (int i = 0; i != faces.size(); ++i) {
-      int f = faces[i];
+    for (unsigned int i = 0; i != faces.size(); ++i) {
+      AmanziMesh::Entity_ID f = faces[i];
       if ((*flux_)("face",0,f) * fdirs[i] >= 0) {
         (*upwind_cell_)[f] = c;
       } else {

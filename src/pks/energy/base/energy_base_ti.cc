@@ -47,7 +47,7 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
 
     Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
 
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(*c0);
       *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << std::endl;
 
@@ -56,11 +56,11 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  T_old(" << *c0 << "): " << (*u_old)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  T_new(" << *c0 << "): " << (*u)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -79,13 +79,13 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  res(" << *c0 << ") (after diffusion): " << (*res)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -95,13 +95,13 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  res(" << *c0 << ") (after accumulation): " << (*res)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -111,13 +111,13 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddAdvection_(S_next_.ptr(), res.ptr(), true);
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  res(" << *c0 << ") (after advection): " << (*res)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -127,13 +127,13 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   AddSources_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  res(" << *c0 << ") (after source): " << (*res)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -164,7 +164,7 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
 
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
@@ -179,7 +179,7 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
@@ -228,7 +228,7 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       *out_ << "    de_dT(" << *c0 << "): " << de_dT[0][*c0] << std::endl;
     }
@@ -239,21 +239,21 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
 
   // -- update the diagonal
-  int ncells = de_dT.MyLength();
+  unsigned int ncells = de_dT.MyLength();
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     // do not add in de/dT if the height is 0
     const Epetra_MultiVector& pres = *S_next_->GetFieldData("surface_pressure")
         ->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
-    for (int c=0; c!=ncells; ++c) {
+    for (unsigned int c=0; c!=ncells; ++c) {
       Acc_cells[c] += pres[0][c] >= patm ? de_dT[0][c] / h : 0.;
       if (ncells == 1) {
         std::cout << "adding surface deriv = " << (pres[0][c] >= patm ? de_dT[0][c] / h : 0.) << std::endl;
       }
     }
   } else {
-    for (int c=0; c!=ncells; ++c) {
+    for (unsigned int c=0; c!=ncells; ++c) {
       Acc_cells[c] += de_dT[0][c] / h;
       if (ncells == 1) {
         std::cout << "adding surface deriv = " << de_dT[0][c] / h << std::endl;
@@ -316,8 +316,8 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   // a characteristic energy
   double enorm_cell(0.);
   int bad_cell = -1;
-  int ncells = res_c.MyLength();
-  for (int c=0; c!=ncells; ++c) {
+  unsigned int ncells = res_c.MyLength();
+  for (unsigned int c=0; c!=ncells; ++c) {
     double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_* (cv[0][c]*2.e6));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
@@ -328,15 +328,15 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
 
   // Face error is mismatch in flux.
   double enorm_face(0.);
-  int nfaces = res_f.MyLength();
-  for (int f=0; f!=nfaces; ++f) {
+  unsigned int nfaces = res_f.MyLength();
+  for (unsigned int f=0; f!=nfaces; ++f) {
     double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_+rtol_*flux_max);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 
   // Write out Inf norms too.
   Teuchos::OSTab tab = getOSTab(2);
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
     double infnorm_c(0.), infnorm_f(0.);
     res_c.NormInf(&infnorm_c);
     res_f.NormInf(&infnorm_f);

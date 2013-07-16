@@ -120,7 +120,7 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
       const Epetra_MultiVector& dsi_dp = *S_next_->GetFieldData("dsaturation_ice_dpressure")->ViewComponent("cell",false);
       const Epetra_MultiVector& dsi_dT = *S_next_->GetFieldData("dsaturation_ice_dtemperature")->ViewComponent("cell",false);
 
-      for (std::vector<int>::const_iterator c0=dc_.begin();
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
            c0!=dc_.end(); ++c0) {
         *out_ << "    dwc_dT(" << *c0 << "): " << Ccc[0][*c0] << std::endl;
         *out_ << "    de_dp(" << *c0 << "): " << Dcc[0][*c0] << std::endl;
@@ -151,18 +151,22 @@ void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tree
   if (decoupled_) return StrongMPC::precon(u,Pu);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "Residuals:" << std::endl;
       *out_ << "  p(" << *c0 << "): " << (*u->SubVector(0)->data())("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u->SubVector(0)->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) {
+        *out_ << ",  " << (*u->SubVector(0)->data())("face",fnums0[n]);
+      }
       *out_ << std::endl;
 
       *out_ << "  T(" << *c0 << "): " << (*u->SubVector(1)->data())("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u->SubVector(1)->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) {
+        *out_ << ",  " << (*u->SubVector(1)->data())("face",fnums0[n]);
+      }
       *out_ << std::endl;
     }
   }
@@ -170,18 +174,22 @@ void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tree
   mfd_preconditioner_->ApplyInverse(*u, Pu.ptr());
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "Preconditioned Updates:" << std::endl;
       *out_ << "  Pp(" << *c0 << "): " << (*Pu->SubVector(0)->data())("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) {
+        *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+      }
       *out_ << std::endl;
 
       *out_ << "  PT(" << *c0 << "): " << (*Pu->SubVector(1)->data())("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) {
+        *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+      }
       *out_ << std::endl;
     }
   }
