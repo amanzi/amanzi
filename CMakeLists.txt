@@ -7,6 +7,7 @@
 
 # Require cmake 2.8 or higher
 cmake_minimum_required(VERSION 2.8.2)
+set(CMAKE_CTEST_COMMAND ${CMAKE_CTEST_COMMAND} -E examples)  
 
 if ("${CMAKE_PATCH_VERSION}" GREATER 3)
   set(ADJUST_POLICY "True")
@@ -19,6 +20,7 @@ endif()
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
 enable_testing()
+
 
 # Define the project name
 # This command will define
@@ -107,5 +109,7 @@ if (ENABLE_Config_Report)
     message(STATUS "end configuration output --")
     message(STATUS "********************************************************************************")
 
-endif()    
+endif() 
+
+ 
 
