@@ -13,13 +13,13 @@
 namespace Amanzi {
 namespace Operators {
 
-bool MatrixMFD_ScaledConstraint::set_symmetric(bool flag_symmetry) {
-    if (flag_symmetry) {
-      Errors::Message msg("MatrixMFD_ScaledConstraint: ScaledConstraint cannot be symmetric");
-      Exceptions::amanzi_throw(msg);
-    }
-    MatrixMFD::set_symmetric(false);
+void MatrixMFD_ScaledConstraint::set_symmetric(bool flag_symmetry) {
+  if (flag_symmetry) {
+    Errors::Message msg("MatrixMFD_ScaledConstraint: ScaledConstraint cannot be symmetric");
+    Exceptions::amanzi_throw(msg);
   }
+  MatrixMFD::set_symmetric(false);
+}
 
 
 /* ******************************************************************

@@ -137,6 +137,8 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_surf_to_subsurf_(double 
     int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
     domain_u_f[0][f] = surf_u_c[0][c];
   }
+
+  return true;
 }
 
 
@@ -156,6 +158,8 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_subsurf_to_surf_(double 
     int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
     surf_u_c[0][c] = domain_u_f[0][f];
   }
+
+  return true;
 }
 
 bool MPCSurfaceSubsurfaceCoupler::modify_predictor(double h,

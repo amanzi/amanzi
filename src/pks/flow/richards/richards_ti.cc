@@ -52,7 +52,7 @@ void Richards::fun(double t_old,
 
     Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
 
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(*c0);
       *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << std::endl;
 
@@ -61,11 +61,11 @@ void Richards::fun(double t_old,
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  p_old(" << *c0 << "): " << (*u_old)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  p_new(" << *c0 << "): " << (*u)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -110,7 +110,7 @@ void Richards::fun(double t_old,
       Teuchos::RCP<const CompositeVector> sati0 =
           S_inter_->GetFieldData("saturation_ice");
 
-      for (std::vector<int>::const_iterator c0=dc_.begin();
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
            c0!=dc_.end(); ++c0) {
         *out_ << "    sat_old(" << *c0 << "): " << (*satl0)("cell",*c0) << ", "
               << (*sati0)("cell",*c0) << std::endl;
@@ -118,25 +118,25 @@ void Richards::fun(double t_old,
               << (*sati1)("cell",*c0) << std::endl;
       }
     } else {
-      for (std::vector<int>::const_iterator c0=dc_.begin();
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
            c0!=dc_.end(); ++c0) {
         *out_ << "    sat_old(" << *c0 << "): " << (*satl0)("cell",*c0) << std::endl;
         *out_ << "    sat_new(" << *c0 << "): " << (*satl1)("cell",*c0) << std::endl;
       }
     }
 
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "    k_rel(" << *c0 << "): " << (*uw_relperm)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  res(" << *c0 << ") (after diffusion): " << (*res)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -147,7 +147,7 @@ void Richards::fun(double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
@@ -185,14 +185,14 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
     *out_ << "Precon application:" << std::endl;
 
     u->data()->ScatterMasterToGhosted("face");
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  p(" << *c0 << "): " << (*u->data())("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u->data())("face",fnums0[n]);
       *out_ << std::endl;
 
     }
@@ -207,14 +207,14 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
 
     Pu->data()->ScatterMasterToGhosted("face");
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  PC*p(" << *c0 << "): " << (*Pu->data())("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->data())("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->data())("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -244,25 +244,25 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     Teuchos::RCP<const CompositeVector> T_old = S_inter_->GetFieldData("temperature");
     Teuchos::RCP<const CompositeVector> T_new = S_next_->GetFieldData("temperature");
 
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << " c0=" << *c0 <<", faces = ";
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << fnums0[n];
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << fnums0[n];
       *out_ << std::endl;
 
       *out_ << std::setprecision(15);
       *out_ << "  p_old(" << *c0 << "): " << (*u_old)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
       *out_ << std::endl;
       *out_ << "  T_old(" << *c0 << "): " << (*T_old)("cell",*c0);
       *out_ << std::endl;
 
       *out_ << "  p_new(" << *c0 << "): " << (*u)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
       *out_ << std::endl;
       *out_ << "  T_new(" << *c0 << "): " << (*T_new)("cell",*c0);
       *out_ << std::endl;
@@ -298,14 +298,14 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
 
     *out_ << "  In update precon:" << std::endl;
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "    k_rel(" << *c0 << "): " << (*rel_perm)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*rel_perm)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*rel_perm)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -329,7 +329,7 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       *out_ << "    dwc_dp(" << *c0 << "): " << dwc_dp[0][*c0] << std::endl;
     }
@@ -340,8 +340,8 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
   std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
   std::vector<double>& Fc_cells = mfd_preconditioner_->Fc_cells();
 
-  int ncells = dwc_dp.MyLength();
-  for (int c=0; c!=ncells; ++c) {
+  unsigned int ncells = dwc_dp.MyLength();
+  for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / h;
     Fc_cells[c] += pres[0][c] * dwc_dp[0][c] / h;
   }
@@ -413,8 +413,8 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
   // the current water content
   double enorm_cell(0.);
   int bad_cell = -1;
-  int ncells = res_c.MyLength();
-  for (int c=0; c!=ncells; ++c) {
+  unsigned int ncells = res_c.MyLength();
+  for (unsigned int c=0; c!=ncells; ++c) {
     double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_*std::abs(wc[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
@@ -425,8 +425,8 @@ double Richards::enorm(Teuchos::RCP<const TreeVector> u,
 
   // Face error is mismatch in flux, so relative to flux.
   double enorm_face(0.);
-  int nfaces = res_f.MyLength();
-  for (int f=0; f!=nfaces; ++f) {
+  unsigned int nfaces = res_f.MyLength();
+  for (unsigned int f=0; f!=nfaces; ++f) {
     double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
     enorm_face = std::max<double>(enorm_face, tmp);
   }

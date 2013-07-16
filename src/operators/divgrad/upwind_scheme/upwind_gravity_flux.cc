@@ -66,11 +66,11 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
   // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
 
-  for (int c=0; c!=cell_coef.size("cell", true); ++c) {
+  for (unsigned int c=0; c!=cell_coef.size("cell", true); ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     AmanziGeometry::Point Kgravity = (*K_)[c] * gravity;
 
-    for (int n=0; n!=faces.size(); ++n) {
+    for (unsigned int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
 
       const AmanziGeometry::Point& normal = mesh->face_normal(f);

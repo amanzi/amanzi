@@ -174,7 +174,7 @@ void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVecto
 
     Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
 
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(*c0);
       *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << std::endl;
 
@@ -183,11 +183,11 @@ void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVecto
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  p_old(" << *c0 << "): " << (*u_old)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  p_new(" << *c0 << "): " << (*u)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }
@@ -229,7 +229,7 @@ void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVecto
           S_next_->GetFieldData("saturation_ice");
       Teuchos::RCP<const CompositeVector> sati0 =
           S_inter_->GetFieldData("saturation_ice");
-      for (std::vector<int>::const_iterator c0=dc_.begin();
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
            c0!=dc_.end(); ++c0) {
         *out_ << "    sat_old(" << *c0 << "): " << (*satl0)("cell",*c0) << ", "
               << (*sati0)("cell",*c0) << std::endl;
@@ -237,25 +237,25 @@ void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVecto
               << (*sati1)("cell",*c0) << std::endl;
       }
     } else {
-      for (std::vector<int>::const_iterator c0=dc_.begin();
+      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
            c0!=dc_.end(); ++c0) {
         *out_ << "    sat_old(" << *c0 << "): " << (*satl0)("cell",*c0) << std::endl;
         *out_ << "    sat_new(" << *c0 << "): " << (*satl1)("cell",*c0) << std::endl;
       }
     }
 
-    for (std::vector<int>::const_iterator c0=dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "    k_rel(" << *c0 << "): " << (*uw_relperm)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  res(" << *c0 << ") (after diffusion): " << (*res)("cell",*c0);
-      for (int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
       *out_ << std::endl;
     }
   }

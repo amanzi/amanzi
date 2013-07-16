@@ -109,7 +109,7 @@ void ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 
   if (wrt_key == "porosity") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = s_l[0][c]*n_l[0][c]*u_l[0][c]
         + s_i[0][c]*n_i[0][c]*u_i[0][c]
         + s_g[0][c]*n_g[0][c]*u_g[0][c]
@@ -117,53 +117,53 @@ void ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
     }
 
   } else if (wrt_key == "saturation_liquid") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*n_l[0][c]*u_l[0][c];
     }
   } else if (wrt_key == "molar_density_liquid") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*s_l[0][c]*u_l[0][c];
     }
   } else if (wrt_key == "internal_energy_liquid") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*s_l[0][c]*n_l[0][c];
     }
 
   } else if (wrt_key == "saturation_gas") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*n_g[0][c]*u_g[0][c];
     }
   } else if (wrt_key == "molar_density_gas") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*s_g[0][c]*u_g[0][c];
     }
   } else if (wrt_key == "internal_energy_gas") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*s_g[0][c]*n_g[0][c];
     }
 
   } else if (wrt_key == "saturation_ice") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*n_i[0][c]*u_i[0][c];
     }
   } else if (wrt_key == "molar_density_ice") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*s_i[0][c]*u_i[0][c];
     }
   } else if (wrt_key == "internal_energy_ice") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = phi[0][c]*s_i[0][c]*n_i[0][c];
     }
 
   } else if (wrt_key == "internal_energy_rock") {
-    for (int c=0; c!=result->size("cell"); ++c) {
+    for (unsigned int c=0; c!=result->size("cell"); ++c) {
       result_v[0][c] = (1.0 - phi[0][c])*rho_rock;
     }
   } else {
     ASSERT(0);
   }
 
-  for (int c=0; c!=result->size("cell"); ++c) {
+  for (unsigned int c=0; c!=result->size("cell"); ++c) {
     result_v[0][c] *= cell_volume[0][c];
   }
 };

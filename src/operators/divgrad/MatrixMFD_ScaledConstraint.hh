@@ -37,7 +37,7 @@ class MatrixMFD_ScaledConstraint : virtual public MatrixMFD {
   }
 
   // By definition, this is NOT symmetric
-  bool set_symmetric(bool flag_symmetry);
+  void set_symmetric(bool flag_symmetry);
 
   // Main computational methods
   // -- local matrices

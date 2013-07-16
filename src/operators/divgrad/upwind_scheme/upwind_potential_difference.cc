@@ -65,7 +65,7 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
   const Epetra_MultiVector& potential_c = *potential.ViewComponent("cell",true);
   const Epetra_MultiVector& cell_coef_c = *cell_coef.ViewComponent("cell",true);
 
-  for (int f=0; f!=face_coef->size("face",false); ++f) {
+  for (unsigned int f=0; f!=face_coef->size("face",false); ++f) {
     mesh->face_get_cells(f, AmanziMesh::USED, &cells);
 
     if (cells.size() == 1) {

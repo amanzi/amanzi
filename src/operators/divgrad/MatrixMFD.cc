@@ -899,6 +899,8 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
     ASSERT(0);
   }
 
+  ASSERT(!ierr);
+
   // revert schur complement
   Sff_ = Sff_tmp;
 }
@@ -939,6 +941,7 @@ void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
     ierr = IfpHypre_Sff_->ApplyInverse(update_f, Pu_f);
 #endif
   }
+  ASSERT(!ierr);
 
   // revert schur complement
   Sff_ = Sff_tmp;

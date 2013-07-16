@@ -147,7 +147,7 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Modifying predictor, MPCPermafrost." << std::endl;
 
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
@@ -173,7 +173,7 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   changed |= StrongMPC::modify_predictor(h, up);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       up->SubVector(0)->SubVector(0)->data()->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
@@ -273,30 +273,30 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
     *out_ << "Preconditioner application" << std::endl;
     *out_ << " SubSurface precon:" << std::endl;
 
-    for (std::vector<int>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
       domain_p->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "  p(" << *c0 << "): " << (*domain_p)("cell",*c0);
-      for (int n=0;n!=fnums0.size();++n)
+      for (unsigned int n=0;n!=fnums0.size();++n)
         *out_ << ", " << (*domain_p)("face", fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  PC*p(" << *c0 << "): " << (*domain_Pp)("cell",*c0);
-      for (int n=0;n!=fnums0.size();++n)
+      for (unsigned int n=0;n!=fnums0.size();++n)
         *out_ << ", " << (*domain_Pp)("face", fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  ---" << std::endl;
 
       *out_ << "  T(" << *c0 << "): " << (*domain_T)("cell",*c0);
-      for (int n=0;n!=fnums0.size();++n)
+      for (unsigned int n=0;n!=fnums0.size();++n)
         *out_ << ", " << (*domain_T)("face", fnums0[n]);
       *out_ << std::endl;
 
       *out_ << "  PC*T(" << *c0 << "): " << (*domain_PT)("cell",*c0);
-      for (int n=0;n!=fnums0.size();++n)
+      for (unsigned int n=0;n!=fnums0.size();++n)
         *out_ << ", " << (*domain_PT)("face", fnums0[n]);
       *out_ << std::endl;
 
@@ -307,7 +307,7 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << " Surface precon:" << std::endl;
 
-    for (std::vector<int>::const_iterator c0=coupled_flow_pk_->surf_dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=coupled_flow_pk_->surf_dc_.begin();
          c0!=coupled_flow_pk_->surf_dc_.end(); ++c0) {
       if (*c0 < surf_p->size("cell",false)) {
         AmanziMesh::Entity_ID_List fnums0;
@@ -315,24 +315,24 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
         surf_p->mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
         *out_ << "  p(" << *c0 << "): " << (*surf_p)("cell",*c0);
-        for (int n=0;n!=fnums0.size();++n)
+        for (unsigned int n=0;n!=fnums0.size();++n)
           *out_ << ", " << (*surf_p)("face", fnums0[n]);
         *out_ << std::endl;
 
         *out_ << "  PC*p(" << *c0 << "): " << (*surf_Pp)("cell",*c0);
-        for (int n=0;n!=fnums0.size();++n)
+        for (unsigned int n=0;n!=fnums0.size();++n)
           *out_ << ", " << (*surf_Pp)("face", fnums0[n]);
         *out_ << std::endl;
 
         *out_ << "  ---" << std::endl;
 
         *out_ << "  T(" << *c0 << "): " << (*surf_T)("cell",*c0);
-        for (int n=0;n!=fnums0.size();++n)
+        for (unsigned int n=0;n!=fnums0.size();++n)
           *out_ << ", " << (*surf_T)("face", fnums0[n]);
         *out_ << std::endl;
 
         *out_ << "  PC*T(" << *c0 << "): " << (*surf_PT)("cell",*c0);
-        for (int n=0;n!=fnums0.size();++n)
+        for (unsigned int n=0;n!=fnums0.size();++n)
           *out_ << ", " << (*surf_PT)("face", fnums0[n]);
         *out_ << std::endl;
 

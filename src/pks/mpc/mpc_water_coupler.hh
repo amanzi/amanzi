@@ -278,7 +278,7 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
 
   if (this->out_.get() && includesVerbLevel(this->verbosity_, Teuchos::VERB_HIGH, true)) {
     Teuchos::RCP<const CompositeVector> h_new = S_next_->GetFieldData("ponded_depth");
-    for (std::vector<int>::const_iterator c0=this->surf_dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=this->surf_dc_.begin();
          c0!=this->surf_dc_.end(); ++c0) {
       if (*c0 < surf_u->size("cell",false)) {
         AmanziMesh::Entity_ID_List fnums0;
@@ -304,7 +304,7 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
 
   if (this->out_.get() && includesVerbLevel(this->verbosity_, Teuchos::VERB_HIGH, true)) {
 
-    for (std::vector<int>::const_iterator c0=this->surf_dc_.begin();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=this->surf_dc_.begin();
          c0!=this->surf_dc_.end(); ++c0) {
       if (*c0 < surf_u->size("cell",false)) {
         AmanziMesh::Entity_ID_List fnums0;

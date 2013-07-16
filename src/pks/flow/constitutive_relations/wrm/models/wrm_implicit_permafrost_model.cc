@@ -1,4 +1,3 @@
-#include <boost/math/tools/roots.hpp>
 #include <cmath>
 
 #include "Epetra_SerialDenseMatrix.h"
@@ -152,20 +151,24 @@ bool WRMImplicitPermafrostModel::dsats_dpc_ice_frozen_unsaturated_(double pc_liq
 
 // -- si calculation, partially frozen, unsaturated
 double WRMImplicitPermafrostModel::si_frozen_unsaturated_(double pc_liq, double pc_ice) {
+  double si(0.);
+
   // check if we are in the splined region
   double cutoff(0.), si_cutoff(0.);
   DetermineSplineCutoff_(pc_liq, pc_ice, cutoff, si_cutoff);
   if (pc_liq > cutoff) {
     // outside of the spline
-    return si_frozen_unsaturated_nospline_(pc_liq, pc_ice);
+    si = si_frozen_unsaturated_nospline_(pc_liq, pc_ice);
   } else {
     // fit spline, evaluate
     double spline[4];
     FitSpline_(pc_ice, cutoff, si_cutoff, spline);
-    double si = ((spline[0] * pc_liq + spline[1]) * pc_liq + spline[2]) * pc_liq + spline[3];
+    si = ((spline[0] * pc_liq + spline[1]) * pc_liq + spline[2]) * pc_liq + spline[3];
     si = std::max(si, 0.);
     ASSERT(si <= 1.);
   }
+
+  return si;
 }
 
 

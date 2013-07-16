@@ -75,11 +75,11 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   // indicates to not include the values, but instead place zeros here.
   advection_->Apply(bc_flux_, false);
   if (negate) {
-    for (int c=0; c!=g->size("cell"); ++c) {
+    for (unsigned int c=0; c!=g->size("cell"); ++c) {
       (*g)("cell",c) -= (*field)("cell",c);
     }
   } else {
-    for (int c=0; c!=g->size("cell"); ++c) {
+    for (unsigned int c=0; c!=g->size("cell"); ++c) {
       (*g)("cell",c) += (*field)("cell",c);
     }
   }

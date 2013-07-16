@@ -77,7 +77,7 @@ class PredictorDelegateBCFlux {
 
       //      std::cout << "  Krel = " << Krel << std::endl;
       //      std::cout << "  lambda_bc = " << (*lambda_)[face_index_] << std::endl;
-      for (int n=0; n!=lambda_->size(); ++n)
+      for (unsigned int n=0; n!=lambda_->size(); ++n)
         s += (*Aff_)[n] * Krel * (cell_p_ - (*lambda_)[n]);
       return s;
     }

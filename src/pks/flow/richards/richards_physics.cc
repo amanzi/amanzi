@@ -82,24 +82,24 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
   S->GetFieldEvaluator("permeability")->HasFieldChanged(S.ptr(), name_);
   const Epetra_MultiVector& perm = *S->GetFieldData("permeability")
       ->ViewComponent("cell",false);
-  int ncells = perm.MyLength();
-  int ndofs = perm.NumVectors();
+  unsigned int ncells = perm.MyLength();
+  unsigned int ndofs = perm.NumVectors();
 
   if (ndofs == 1) { // isotropic
-    for (int c=0; c!=ncells; ++c) {
+    for (unsigned int c=0; c!=ncells; ++c) {
       (*K_)[c](0, 0) = perm[0][c] * perm_scale_;
     }
   } else if (ndofs == 2 && S->GetMesh()->space_dimension() == 3) {
     // horizontal and vertical perms
-    for (int c=0; c!=ncells; ++c) {
+    for (unsigned int c=0; c!=ncells; ++c) {
       (*K_)[c](0, 0) = perm[0][c] * perm_scale_;
       (*K_)[c](1, 1) = perm[0][c] * perm_scale_;
       (*K_)[c](2, 2) = perm[1][c] * perm_scale_;
     }
   } else if (ndofs == S->GetMesh()->space_dimension()) {
     // diagonal tensor
-    for (int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
-      for (int c=0; c!=ncells; ++c) {
+    for (unsigned int lcv_dof=0; lcv_dof!=ndofs; ++lcv_dof) {
+      for (unsigned int c=0; c!=ncells; ++c) {
         (*K_)[c](lcv_dof, lcv_dof) = perm[lcv_dof][c] * perm_scale_;
       }
     }
@@ -128,14 +128,14 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
 
   if (rel_perm == Teuchos::null) { // no rel perm
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
@@ -149,14 +149,14 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
   } else if (!rel_perm->has_component("face")) { // rel perm on cells only
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
 
@@ -170,14 +170,14 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
   } else if (!rel_perm->has_component("cell")) { // rel perm on faces only
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
 
@@ -192,14 +192,14 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       rho->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       Epetra_SerialDenseVector& Ff = matrix->Ff_cells()[c];
       double& Fc = matrix->Fc_cells()[c];
 
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = rho->mesh()->face_normal(f);
 
@@ -233,10 +233,10 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
 
   if (rel_perm == Teuchos::null) { // no rel perm
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
         if (f<f_owned && !done[f]) {
@@ -249,10 +249,10 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
   } else if (!rel_perm->has_component("face")) { // rel perm on cells only
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
         if (f<f_owned && !done[f]) {
@@ -266,10 +266,10 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
   } else if (!rel_perm->has_component("cell")) { // rel perm on faces only
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
         if (f<f_owned && !done[f]) {
@@ -284,10 +284,10 @@ void Richards::AddGravityFluxesToVector_(const Teuchos::Ptr<const Epetra_Vector>
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);
-    int ncells = rho->size("cell",false);
-    for (int c=0; c!=ncells; ++c) {
+    unsigned int ncells = rho->size("cell",false);
+    for (unsigned int c=0; c!=ncells; ++c) {
       darcy_flux->mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
-      for (int n=0; n!=faces.size(); ++n) {
+      for (unsigned int n=0; n!=faces.size(); ++n) {
         int f = faces[n];
         const AmanziGeometry::Point& normal = darcy_flux->mesh()->face_normal(f);
         if (f<f_owned && !done[f]) {

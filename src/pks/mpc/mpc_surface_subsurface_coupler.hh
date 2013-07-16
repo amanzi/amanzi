@@ -57,7 +57,7 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
   Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
 
   // cruft for easier global debugging
-  std::vector<int> surf_dc_;
+  std::vector<AmanziMesh::Entity_ID> surf_dc_;
 
 };
 
