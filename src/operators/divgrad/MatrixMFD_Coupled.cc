@@ -245,18 +245,13 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
   // workspace
   Teuchos::SerialDenseMatrix<int, double> cell_inv(2, 2);
   Epetra_SerialDenseMatrix values(2, 2);
-  int nfaces = 6;
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   const int MFD_MAX_FACES = 14;
   int faces_LID[MFD_MAX_FACES];  // Contigious memory is required.
   int faces_GID[MFD_MAX_FACES];
 
-  // space for the assembled matrices
-  Epetra_SerialDenseMatrix S2f2f(2*nfaces, 2*nfaces);
-  Epetra_SerialDenseMatrix A2c2f(2, 2*nfaces);
-  Epetra_SerialDenseMatrix A2f2c(2, 2*nfaces);
-
+  // clear global space
   A2c2c_cells_Inv_.clear();
   if (is_matrix_constructed_) P2f2f_->PutScalar(0.0);
 
@@ -264,8 +259,15 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
   for (int c=0; c!=ncells; ++c){
     int cell_GID = cmap.GID(c);
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+    int nentries = nfaces; // not sure if this is required, but may be passed by ref
 
-    int nentries = nfaces;
+    // space for the local matrices
+    Epetra_SerialDenseMatrix S2f2f(2*nfaces, 2*nfaces);
+    Epetra_SerialDenseMatrix A2c2f(2, 2*nfaces);
+    Epetra_SerialDenseMatrix A2f2c(2, 2*nfaces);
+
+    // get IDs of faces
     for (int i=0; i!=nfaces; ++i) {
       faces_LID[i] = faces[i];
       faces_GID[i] = fmap_wghost.GID(faces_LID[i]);
