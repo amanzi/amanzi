@@ -253,7 +253,7 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
       int nbfaces = sat_bf.MyLength();
       for (int bf=0; bf!=nbfaces; ++bf) {
         // given a boundary face, we need the internal cell to choose the right WRM
-        AmanziMesh::Entity_ID f = vandelay_map.GID(bf);
+        AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
         mesh->face_get_cells(f, AmanziMesh::USED, &cells);
         ASSERT(cells.size() == 1);
 
