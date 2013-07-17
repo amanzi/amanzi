@@ -6,8 +6,8 @@
 
 #include "boost/filesystem.hpp"
 
-Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
-  plist(plist_), disabled(false), comm(comm_), restart_output(NULL), walkabout_(false)
+Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_)
+    : plist(plist_), disabled(false), comm(comm_), restart_output(NULL), walkabout_(false)
 {
   read_parameters(plist);
 
@@ -24,10 +24,11 @@ Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_)
 
 // this constructor makes an object that will not create any output
 // but it will allow for reading a restart file
-Amanzi::Restart::Restart (Epetra_MpiComm* comm_): disabled(true), restart_output(NULL), comm(comm_)
+Amanzi::Restart::Restart (Epetra_MpiComm* comm_)
+    : disabled(true), restart_output(NULL), comm(comm_), walkabout_(false)
 {
-  
 }
+
 
 Amanzi::Restart::~Restart() 
 {
