@@ -31,6 +31,10 @@
       <ParameterList name="Unstructured Algorithm">
         <Parameter name="linear solver tolerance" type="double" value="1e-16"/>
         <Parameter name="linear solver maximum iterations" type="int" value="400"/>
+
+        <ParameterList name="Transient Implicit Time Integration">
+          <Parameter name="transient timestep increase factor" type="double" value="1.2"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   
@@ -48,7 +52,7 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Read Mesh File">
-        <Parameter name="File" type="string" value="mesh_hex.exo"/>
+        <Parameter name="File" type="string" value="../mesh/mesh_hex.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
       <!--ParameterList name="Expert">
