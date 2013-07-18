@@ -68,6 +68,7 @@ target_link_libraries(ats
                       ${pk_flow_icy_overland}
 		              ${pk_prescribed_deformation}
                       ${pk_bases}
+                      deform_relations_porosity
                       ${energy_relations_thermal_conductivity}
                       ${energy_relations_internal_energy}
                       ${energy_relations_enthalpy}
