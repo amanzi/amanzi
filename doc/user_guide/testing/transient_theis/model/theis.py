@@ -42,7 +42,6 @@ class TransientTheis(object):
         params.setdefault("K",1.e-10)
         params.setdefault("rho",998.2)
         params.setdefault("mu",4.e-3)
-        params.setdefault("h_0", 10)
         params.setdefault("Q",-4.0)
        
         self.__dict__.update(params)
@@ -55,11 +54,11 @@ class TransientTheis(object):
         
         self.K_h = self.K*self.g*self.rho / self.mu
        
-        self.T =self.K_h*self.h_0
+        self.T =self.K_h*200
         
         self.var = self.Q_vol / 4 / self.pi / self.T
         
-        self.S = self.S_s*self.h_0
+        self.S = self.S_s*200
        
     def runForFixedTime(self, radi, time):
         #This method evaluates Theis solution for a given time at multiple radial distances from the well 
