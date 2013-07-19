@@ -50,7 +50,7 @@ class TransientTheis(object):
         
         self.Vol_well = (abs(self.x*2))*(abs(self.y*2))*self.z
   
-        self.Q_vol = -3.0*self.Q*self.Vol_well / self.rho
+        self.Q_vol = -self.Q / self.rho
         
         self.K_h = self.K*self.g*self.rho / self.mu
        

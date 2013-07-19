@@ -41,10 +41,10 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
 
     for obs in Obs_data.observations.itervalues():
         color = cmap[obs.coordinate[0]]
-        pres0 = 101325 -9810 * (obs.coordinate[2] - 200)
+        pres0 = 101325 -9.80665e+03 * (obs.coordinate[2] - 200)
         print "pressure",obs.data
         pres_drop = (pres0 - numpy.array([obs.data]))
-        drawdown = pres_drop / 9810
+        drawdown = pres_drop / 9.80665e+03
         axes1.scatter(obs.times, drawdown, marker='s', s=25, c=color)
         
     return cmap

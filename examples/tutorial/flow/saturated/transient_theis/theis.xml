@@ -30,7 +30,7 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <Parameter name="linear solver tolerance" type="double" value="1e-16"/>
-        <Parameter name="linear solver maximum iterations" type="int" value="100"/>
+        <Parameter name="linear solver maximum iterations" type="int" value="400"/>
 	<ParameterList name="Transient Implicit Time Integration">
 	  <Parameter name="Transient Time Step Increase Factor" type="double" value="1.25"/>
 	</ParameterList>
@@ -193,7 +193,7 @@
 	<Parameter name="Phase" type="string" value="Aqueous"/>
 	<Parameter name="Reference Value" type="double" value="101325.0"/>
 	<Parameter name="Reference Coordinate" type="Array(double)" value="{-502.5,-502.5,200.0}"/>
-	<Parameter name="Gradient Value" type="Array(double)" value="{0.0,0.0,-9788.99803}"/>
+	<Parameter name="Gradient Value" type="Array(double)" value="{0.0,0.0,-9086.65}"/>
       </ParameterList>
       
     </ParameterList>
@@ -214,7 +214,7 @@
       <ParameterList name="Source: Volume Weighted">
         <Parameter name="Times" type="Array(double)" value="{0.0, 8.64e6}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Values" type="Array(double)" value="{-4.0e-7, -4.e-7}"/>
+        <Parameter name="Values" type="Array(double)" value="{-1.0e-3, -1.e-3}"/>
       </ParameterList>
       
     </ParameterList>
@@ -259,8 +259,8 @@
       <ParameterList name="Every Cycle">
 	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
       </ParameterList>
-      <ParameterList name="Every 10">
-	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0,10,-1}"/>
+      <ParameterList name="Every 5">
+	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0,5,-1}"/>
       </ParameterList>
 
     </ParameterList>
@@ -290,7 +290,7 @@
     <ParameterList name="Visualization Data">
       <Parameter name="File Name Base" type="string" value="theis"/>
       <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Cycle Macro" type="string" value="Every 10"/>
+      <Parameter name="Cycle Macro" type="string" value="Every 5"/>
     </ParameterList>
 
   </ParameterList>
