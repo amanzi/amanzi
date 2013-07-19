@@ -133,18 +133,17 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
     }
 
     Teuchos::RCP<Epetra_Vector>& rhs_cells_ = matrix_tpfa -> rhs_cells();
-    rhs_cells_ -> PutScalar(0.);
+    rhs_cells_->PutScalar(0.0);
 
     //Epetra_Vector& Trans_faces = matrix_tpfa -> ref_trans_faces();
     //Epetra_Vector& grav_faces = matrix_tpfa -> ref_grav_term_faces();
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
     //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
+    matrix_tpfa->ApplyBoundaryConditions(
+        bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
     AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
-    matrix_tpfa -> AssembleGlobalMatrices(Krel_faces, *Transmis_faces);
-  
-  }
-  else{
+    matrix_tpfa->AssembleGlobalMatrices(Krel_faces, *Transmis_faces);
+  } else{
     // setup a new algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
@@ -178,14 +177,12 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
       msg << "Richards_PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    matrix_tpfa -> DeriveDarcyMassFlux(*u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+
+    matrix_tpfa->DeriveDarcyMassFlux(*
+        u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+
     for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
-    //cout<<flux<<endl;
   }
-
-
-
-
 
   rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
@@ -196,25 +193,20 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
-  }
-  else {
-    //u_faces -> PutScalar(0.);
+  } else {
+    //u_faces -> PutScalar(0.0);
     //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-    std::vector<double>& Acc_cells = preconditioner_ -> Acc_cells();
-    //std::vector<double>& Fc_cells = preconditioner_ -> Fc_cells();
+    std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
+    //std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
 
     double* Ac = Acc_cells.data();
     //double* Fc = Fc_cells.data();
     int nsize = Acc_cells.size();
     memset(Ac, 0., nsize*sizeof(double));
-    //memset(Fc, 0., nsize*sizeof(double));
-
   }
 
   AddTimeDerivative_MFD(*u_cells, dTp, preconditioner_);
   
-  
-
   if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
     Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
     Epetra_Vector& flux = FS->ref_darcy_flux();
@@ -223,13 +215,10 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     AddNewtonFluxes_MFD(*rel_perm, *u_cells, flux, *rhs, matrix_plambda);
   }
 
-
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
-  }
-  else {
-
+  } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(preconditioner_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
@@ -240,9 +229,8 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     //Amanzi::timer_manager.start("AnalyticJacobian");
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
-    matrix_tpfa -> ApplyBoundaryConditions( bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
-    matrix_tpfa -> AssembleSchurComplement( Krel_faces, *Transmis_faces );
-
+    matrix_tpfa->ApplyBoundaryConditions(bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
+    matrix_tpfa->AssembleSchurComplement(Krel_faces, *Transmis_faces);
 
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, bc_model, bc_values, *Transmis_faces, *Grav_term_faces, *rel_perm);
     //Amanzi::timer_manager.stop("AnalyticJacobian");
@@ -251,16 +239,16 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   preconditioner_->UpdatePreconditioner();
 }
 
+
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void Richards_PK::ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces){
-
-  Trans_faces.PutScalar(0.);
+void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces)
+{
+  Trans_faces.PutScalar(0.0);
 
   double rho = FS->ref_fluid_density();
   double vis = FS->ref_fluid_viscosity();
-  //  std::vector<AmanziGeometry::Point >& rel_perm->Kgravity_unit();
 
   AmanziGeometry::Point gravity(dim);
   for (int k = 0; k < dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
@@ -273,85 +261,37 @@ void Richards_PK::ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_
 
   std::vector<int> dirs;
 
-  cout.precision(18);
-
-
-  // for (int c = 0; c < ncells_owned; c++) {
-  //   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  //   int nfaces = faces.size();
-
-
   for (int f = 0; f < nfaces_owned; f++) {
-
-      //if (dirs[n] < 0) continue;
-    //      int f = faces[n];
-
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
     const AmanziGeometry::Point& face_centr = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-
-
-
-    for (int i=0; i<ncells; i++){
-
+    for (int i=0; i<ncells; i++) {
       h[i] = norm(face_centr - mesh_->cell_centroid(cells[i]));
-      perm[i] = (rho/vis)*((K[cells[i]] * normal) * normal)/ area;
+      perm[i] = (rho/vis) * ((K[cells[i]] * normal) * normal) / area;
       //perm[i] = ((K[cells[i]] * normal) * normal)/ area;
-      if (fabs(normal[2]) > 0.3){
-	//cout<<cells[i]<<" "<<K[cells[i]]<<" rho "<<rho<<" vis "<<vis<<" perm[i] "<<perm[i]<<" Dq "<<vis*perm[i]/(h[i]*rho*area)<<" h "<<h[i]<<endl;   
-	//	exit(0);
-      }
     }
     double factor, grav;
 
-    grav = (gravity * normal)/area;
+    grav = (gravity * normal) / area;
 
-    
     if (ncells == 2){
-      factor = (perm[0]*perm[1])/(h[0]*perm[1] + h[1]*perm[0]);
+      factor = (perm[0]*perm[1]) / (h[0]*perm[1] + h[1]*perm[0]);
       grav *= (h[0] + h[1]);
-    }
-    else if (ncells == 1){    
+    } else if (ncells == 1) {    
       factor = perm[0]/h[0];
       grav *= h[0];
     } 
 
-    
     Trans_faces[f] = factor;
-    grav_faces[f] =  Trans_faces[f]*grav;
-
-    //cout<<"Trans "<<Trans_faces[f]<<" "<<grav_faces[f]<<" "<<face_centr[0]<<" "<<face_centr[1]<<" "<<face_centr[2]<<"\n";
-    //if (fabs(normal[2]) > 0.3){
-    // if (ncells > 1){
-    // //   cout<<"grav "<<grav_faces[f]<<endl;
-      //cout<< "Dq calc "<<perm[0]<<" "<<h[0]<<endl;
-      // cout<<"Transmisibilities "<<f<<": "<< Trans_faces[f]<<" area "<<area<<" Dq "<<vis * factor /(rho * area)<<endl;
-      // cout<<"vis "<<vis<<" rho "<<rho<<" area "<<area<<endl;
-    // // 	cout<<"cells ";
-    // // 	for (int j=0; j<ncells; j++) cout<<cells[j]<<" ";
-    // // 	cout<<endl<<endl;
-    // // // cout<<" grav_term_faces "<< grav_faces[f]<<endl;
-    //}
-    
+    grav_faces[f] = Trans_faces[f] * grav;
   }
-
-  //cout<<" grav_term_faces "<< grav_faces<<endl;
-  //cout<<Trans_faces<<endl;
-  // cout<<"Transmisibilities computed\n";
-  //exit(0);
 
   FS->CopyMasterFace2GhostFace(Trans_faces);
   FS->CopyMasterFace2GhostFace(grav_faces);
-
-  //cout<<grav_faces<<endl;
-  //exit(0);
-
-
 }
-
 
 
 }  // namespace AmanziFlow

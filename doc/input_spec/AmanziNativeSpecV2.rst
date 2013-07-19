@@ -1263,9 +1263,15 @@ Example:
       <Parameter name="Interval" type="int" value="100"/>
       <Parameter name="End" type="int" value="-1"/>
     </ParameterList>
+
+    <Parameter name="walkabout" type="bool" value="false"/>
   </ParameterList>
 
-In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 100.
+In this example, Checkpoint Data files are written when the cycle number is 
+a multiple of 100.
+
+Additional data are written to this file when parameter `"walkabout`"
+is set to true.  
 
 
 
