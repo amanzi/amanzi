@@ -81,6 +81,38 @@ Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() {
   FreeAlquimiaEngineStatus(&chem_status_);
 }  // end ~Alquimia_Chemistry_PK()
 
+// This helper performs initialization on a single cell within Amanzi's state.
+// It returns an error code that indicates success (0) or failure (1).
+int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex) {
+
+  // Copy the state and material information from Amanzi's state within 
+  // this cell to Alquimia.
+  CopyAmanziStateToAlquimia(cell, chemistry_state_->total_component_concentration());
+  CopyAmanziMaterialPropertiesToAlquimia(cell, chemistry_state_->total_component_concentration());
+
+  // Apply the geochemical conditions.
+  int ierr = 0;
+  try {
+      //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
+      // solve for initial free-ion concentrations
+      chem_->Speciate(&beaker_components_, beaker_parameters_);
+      CopyBeakerStructuresToCellState(cell);
+  } catch (AmanziException& geochem_error) {
+    ierr = 1;
+    // std::cout << "ChemistryPK::InitializeChemistry(): " 
+    //           << "An error occured while initializing chemistry in cell: " 
+    //           << cell << ".\n" << geochem_error.what() << std::endl;
+    // beaker_components_.Display("-- input components:\n");
+    // Exceptions::amanzi_throw(geochem_error);
+  }
+
+  // Copy the state information back out.
+  CopyAlquimiaStateToAmanzi(cell);
+  CopyAlquimiaMaterialPropertiesToAmanzi(cell);
+
+  return ierr;
+}
+
 void Alquimia_Chemistry_PK::InitializeChemistry(void) {
   if (debug()) {
     std::cout << "  Alquimia_Chemistry_PK::InitializeChemistry()" << std::endl;
@@ -137,60 +169,21 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
 
   // Initialize Alquimia's state and material properties with
   // appropriate values from the our cell properties.
-  
-  // FIXME: This is where I'm stopped. Have to ask Moulton / Libnikov(?) 
-  // FIXME: about how to get data from the mesh using the State and place it
-  // FIXME: into Chemistry_State. Set up a correspondence between chemical 
-  // FIXME: conditions and grid cells.
-  
-  CopyCellStateToAlquimiaState(demo_state, &chem_data.meta_data,
-                               &chem_data.state);
-  CopyMaterialPropertiesToAlquimiaMaterials(
-      demo_material_props, chem_data.meta_data, &chem_data.material_properties);
 
-  PrintAlquimiaData(&chem_data);
-
-  // copy the first cell data into the beaker storage for
-  // initialization purposes
-  int cell = 0;
-  CopyCellStateToBeakerStructures(
-      cell, 
-      chemistry_state_->total_component_concentration());
-
-  // finish setting up & testing the chemistry object
-  int ierr(0);
-  try {
-    chem_->set_debug(false);
-    chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in cell 0...\n");
-    chem_->Setup(beaker_components_, beaker_parameters_);
-    chem_->Display();
-    // solve for initial free-ion concentrations
-    chem_out->Write(kVerbose, "ChemistryPK: Initial speciation calculations in cell 0...\n");
-    chem_->Speciate(&beaker_components_, beaker_parameters_);
-    if (debug()) {
-      chem_out->Write(kVerbose, "\nTest solution of initial conditions in cell 0:\n");
-      chem_->DisplayResults();
-    }
-  } catch (AmanziException& geochem_error) {
-    ierr = 1;
-    //chem_->DisplayResults();
-    //std::cout << geochem_error.what() << std::endl;
-    //Exceptions::amanzi_throw(geochem_error);
-  }
-  int recv(0);
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) {
-    AmanziException geochem_error("Error in Alquimia_Chemistry_PK::InitializeChemistry 0");
+  // NOTE: we need to perform the initialization on the first cell to determine 
+  // NOTE: the number of secondary activity coefficients, which we'll stash in 
+  // NOTE: the chemistry state.
+  int ierr = InitializeSingleCell(0);
+  if (ierr != 0)
+  {
+    AmanziException geochem_error("Error in Alquimia_Chemistry_PK::InitializeChemistry 1");
     Exceptions::amanzi_throw(geochem_error); 
   }
-
-  // TODO(bandre): at this point we should know about any additional
-  // storage that chemistry needs...
   chemistry_state_->AllocateAdditionalChemistryStorage(beaker_components_);
 
   SetupAuxiliaryOutput();
 
-  // now loop through all the cells and initialize
+  // Now loop through all the cells and initialize
   chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
   int num_cells = chemistry_state_->porosity()->MyLength();
   ierr = 0;
@@ -199,30 +192,7 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
       std::cout << "Initial speciation in cell " << cell << std::endl;
     }
 
-    CopyCellStateToBeakerStructures(
-        cell,
-        chemistry_state_->total_component_concentration());
-
-    try {
-      //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
-      // solve for initial free-ion concentrations
-      chem_->Speciate(&beaker_components_, beaker_parameters_);
-      CopyBeakerStructuresToCellState(cell);
-    } catch (AmanziException& geochem_error) {
-      ierr = 1;
-      // std::cout << "ChemistryPK::InitializeChemistry(): " 
-      //           << "An error occured while initializing chemistry in cell: " 
-      //           << cell << ".\n" << geochem_error.what() << std::endl;
-      // beaker_components_.Display("-- input components:\n");
-      // Exceptions::amanzi_throw(geochem_error);
-    }
-
-#ifdef GLENN_DEBUG
-    if (cell % (num_cells / 10) == 0) {
-      std::cout << "  " << cell * 100 / num_cells
-                << "%" << std::endl;
-    }
-#endif
+    ierr = InitializeSingleCell(cell);
   }
   recv = 0;
   // figure out if any of the processes threw an error, if so all processes will re-throw
@@ -231,8 +201,6 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
     AmanziException geochem_error("Error in Alquimia_Chemistry_PK::InitializeChemistry 1");
     Exceptions::amanzi_throw(geochem_error); 
   }  
-
-
 
   chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
 
@@ -408,140 +376,84 @@ void Alquimia_Chemistry_PK::SetupAuxiliaryOutput(void) {
   }
 }  // end SetupAuxiliaryOutput()
 
-
-void Alquimia_Chemistry_PK::SizeBeakerStructures(void) {
-  // initialize the beaker component data structure
-
-  // NOTE: The beaker already has data for site density, sorption
-  // isotherms, ssa. If we want to use that single global value, then
-  // we leave these arrays empty as a flag to the beaker to use its
-  // own value. If we want to over ride the global chemistry value
-  // with cell by cell data, then we resize the containers here.
-
-  beaker_components_.total.resize(number_aqueous_components(), 0.0);
-  beaker_components_.free_ion.resize(number_aqueous_components(), 1.0e-9);
-  beaker_components_.mineral_volume_fraction.resize(number_minerals(), 0.0);
-
-  if (using_sorption()) {
-    beaker_components_.total_sorbed.resize(number_total_sorbed(), 0.0);
-  } else {
-    beaker_components_.total_sorbed.clear();
-  }
-
-  if (number_minerals() > 0) {
-    beaker_components_.mineral_specific_surface_area.resize(number_minerals(), 0.0);
-  } else {
-    beaker_components_.mineral_specific_surface_area.clear();
-  }
-
-  if (number_ion_exchange_sites() > 0) {
-    beaker_components_.ion_exchange_sites.resize(number_ion_exchange_sites(), 0.0);
-  } else {
-    beaker_components_.ion_exchange_sites.clear();
-  }
-
-  if (number_sorption_sites() > 0) {
-    beaker_components_.surface_site_density.resize(number_sorption_sites(), 0.0);
-  } else {
-    beaker_components_.surface_site_density.clear();
-  }
-
-  if (using_sorption_isotherms()) {
-    beaker_components_.isotherm_kd.resize(number_aqueous_components(), 0.0);
-    beaker_components_.isotherm_freundlich_n.resize(number_aqueous_components(), 0.0);
-    beaker_components_.isotherm_langmuir_b.resize(number_aqueous_components(), 0.0);
-  } else {
-    beaker_components_.isotherm_kd.clear();
-    beaker_components_.isotherm_freundlich_n.clear();
-    beaker_components_.isotherm_langmuir_b.clear();
-  }
-}  // end SizeBeakerStructures()
-
-
-void Alquimia_Chemistry_PK::CopyCellStateToBeakerStructures(
+void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(
     const int cell_id,
     Teuchos::RCP<const Epetra_MultiVector> aqueous_components) {
-  // NOTE: want the aqueous totals value calculated from transport
-  // (aqueous_components), not the value stored in state!
 
+  AlquimiaState* alquimia_state = &chem_data_.state;
+
+  alquimia_state->water_density = (*chemistry_state_->water_density())[cell_id];
+  alquimia_state->porosity = (*chemistry_state_->porosity())[cell_id];
+
+  // NOTE: free ion concentrations, activity coefficients, ion exchange 
+  // NOTE: ref cation sorbed concentrations, and surface complexation free 
+  // NOTE: site concentrations are all computed internally by Alquimia and 
+  // NOTE: are not needed from Amanzi, which only reports them as diagnostics.
+
+  // Alquimia breaks the total aqueous component concentrations into mobile 
+  // and immobile parts. The "total sorbed" components are immobile, and 
+  // the remainder of the total are mobile.
   for (unsigned int c = 0; c < number_aqueous_components(); c++) {
     double* cell_components = (*aqueous_components)[c];
-    beaker_components_.total.at(c) = cell_components[cell_id];
-  }
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_free_ion = (*chemistry_state_->free_ion_species())[c];
-    beaker_components_.free_ion.at(c) = cell_free_ion[cell_id];
-  }
-
-  //
-  // activity coefficients
-  //
-  for (unsigned int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
-    double* cells = (*chemistry_state_->primary_activity_coeff())[i];
-    beaker_components_.primary_activity_coeff.at(i) = cells[cell_id];
-  }
-
-  for (unsigned int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
-    double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
-    beaker_components_.secondary_activity_coeff.at(i) = cells[cell_id];
+    double total = cell_components[cell_id];
+    double immobile = 0.0;
+    if (using_sorption()) {
+      double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
+      immobile = cell_total_sorbed[cell_id];
+    }  // end if(using_sorption)
+    double mobile = total - immobile;
+    alquimia_state->total_mobile.data[c] = mobile;
+    alquimia_state->total_immobile.data[c] = immobile;
   }
 
   //
   // minerals
   //
+  assert(alquimia_state.mineral_volume_fraction.size == number_minerals());
+  assert(alquimia_state.mineral_specific_surface_area.size == number_minerals());
   for (unsigned int m = 0; m < number_minerals(); m++) {
     double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    beaker_components_.mineral_volume_fraction[m] = cell_minerals[cell_id];
+    alquimia_state->mineral_volume_fraction.data[m] = cell_minerals[cell_id];
     if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) {
       double* cells_ssa = (*chemistry_state_->mineral_specific_surface_area())[m];
-      beaker_components_.mineral_specific_surface_area.at(m) = cells_ssa[cell_id];
+      alquimia_state->mineral_specific_surface_area.data[m] = cells_ssa[cell_id];
     }
   }
-
-  //
-  // general sorption storage
-  //
-  if (using_sorption()) {
-    for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-      double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
-      beaker_components_.total_sorbed.at(c) = cell_total_sorbed[cell_id];
-    }
-  }  // end if(using_sorption)
 
   //
   // ion exchange
   //
+  assert(alquimia_state->cation_exchange_capacity.size == number_ion_exchange_sites());
   if (number_ion_exchange_sites() > 0) {
-    // TODO: only allow one ion exchange site at the moment!
     for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
       double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
-      beaker_components_.ion_exchange_sites[i] = cell_ion_exchange_sites[cell_id];
-      // TODO(bandre): need to save ion exchange ref cation conc here!
+      alquimia_state->cation_exchange_capacity[i] = cell_ion_exchange_sites[cell_id];
     }
   }
   
-  for (unsigned int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
-    double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
-    beaker_components_.ion_exchange_ref_cation_conc.at(i) = cells[cell_id];
-  }
-
   //
   // surface complexation
   //
   if (number_sorption_sites() > 0) {
+    assert(number_sorption_sites() == alquimia_state->surface_site_density.size);
     for (int s = 0; s < number_sorption_sites(); ++s) {
-      double* cell_sorption_sites = 
-          (*chemistry_state_->sorption_sites())[s];
-      beaker_components_.surface_site_density[s] = cell_sorption_sites[cell_id];
+      // FIXME: Need site density names, too?
+      double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[s];
+      alquimia_state->surface_site_density.data[s] = cell_sorption_sites[cell_id];
       // TODO(bandre): need to save surface complexation free site conc here!
     }
   }
 
-  for (unsigned int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
-    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
-    beaker_components_.surface_complex_free_site_conc.at(i) = cells[cell_id];
-  }
+}  // end CopyAmanziStateToAlquimia()
+
+void Alquimia_Chemistry_PK::CopyAmanziMaterialPropertiesToAlquimiaMaterialProperties(
+    const int cell_id,
+    Teuchos::RCP<const Epetra_MultiVector> aqueous_components) {
+
+  AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
+
+  alquimia_mat_props->volume = (*chemistry_state_->volume())[cell_id];
+  alquimia_mat_props->saturation = (*chemistry_state_->water_saturation())[cell_id];
 
   //
   // sorption isotherms
@@ -549,33 +461,85 @@ void Alquimia_Chemistry_PK::CopyCellStateToBeakerStructures(
   if (using_sorption_isotherms()) {
     for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
       double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      beaker_components_.isotherm_kd.at(i) = cell_data[cell_id];
+      alquimia_mat_props->isotherm_kd.data[i] = cell_data[cell_id];
       
       cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      beaker_components_.isotherm_freundlich_n.at(i) = cell_data[cell_id];
+      alquimia_mat_props->isotherm_freundlich_n[i] = cell_data[cell_id];
       
       cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      beaker_components_.isotherm_langmuir_b.at(i) = cell_data[cell_id];
+      alquimia_mat_props->isotherm_langmuir_b[i] = cell_data[cell_id];
+    }
+  }
+}  // end CopyAmanziMaterialPropertiesToAlquimiaMaterialProperties()
+
+void CopyAmanziGeochemicalConditionsToAlquimia(const int cell_id,
+                                               Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
+{
+  // FIXME: Need to understand how Amanzi conveys geochemical conditions before 
+  // FIXME: proceeding with this.
+}
+
+void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id) {
+  AlquimiaState* alquimia_state = &chem_data_.state;
+
+  // If the chemistry has modified the porosity and/or density, it needs to 
+  // be updated here.
+  (*chemistry_state_->water_density())[cell_id] = alquimia_state->water_density;
+  (*chemistry_state_->porosity())[cell_id] = alquimia_state->porosity;
+
+  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
+    double mobile = alquimia_state->total_mobile.data[c];
+    double immobile = alquimia_state->total_mobile.data[c];
+
+    // NOTE: We place our mobile concentrations into the chemistry state's
+    // NOTE: total component concentrations, not the aqueous concentrations.
+    // NOTE: I assume this has to do with our operator splitting technique.
+    double total = mobile + immobile;
+    double* cell_components = (*chemistry_state_->total_component_concentration())[c];
+    cell_components[cell_id] = total;
+
+    if (using_sorption())
+    {
+      double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
+      cell_total_sorbed[cell_id] = immobile;
     }
   }
 
-  // copy data from state arrays into the beaker parameters
-  beaker_parameters_.water_density = (*chemistry_state_->water_density())[cell_id];
-  beaker_parameters_.porosity = (*chemistry_state_->porosity())[cell_id];
-  beaker_parameters_.saturation = (*chemistry_state_->water_saturation())[cell_id];
-  beaker_parameters_.volume = (*chemistry_state_->volume())[cell_id];
-
-}  // end CopyCellStateToBeakerStructures()
-
-
-void Alquimia_Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
-  // copy data from the beaker back into the state arrays
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_components = (*chemistry_state_->total_component_concentration())[c];
-    cell_components[cell_id] = beaker_components_.total.at(c);
+  //
+  // minerals
+  //
+  for (unsigned int m = 0; m < number_minerals(); m++) {
+    double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
+    cell_minerals[cell_id] = alquimia_state->mineral_volume_fraction.data[m];
+    if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) {
+      cell_minerals = (*chemistry_state_->mineral_specific_surface_area())[m];
+      cell_minerals[cell_id] = alquimia_state->mineral_specific_surface_area.data[m];
+    }
   }
 
+  //
+  // ion exchange
+  //
+  for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
+    double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
+    cell_ion_exchange_sites[cell_id] = alquimia_state->cation_exchange_capacity.data[i];
+  }
+
+  //
+  // surface complexation
+  //
+  for (unsigned int i = 0; i < number_sorption_sites(); i++) {
+    double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
+    cell_sorption_sites[cell_id] = alquimia_state->surface_site_density.data[i];
+  }
+
+  // NOTE: free ion concentrations, activity coefficients, ion exchange 
+  // NOTE: ref cation sorbed concentrations, and surface complexation free 
+  // NOTE: site concentrations are all computed internally by Alquimia.
+  // NOTE: We need to extract them from Alquimia's auxiliary arrays, and to 
+  // NOTE: do that, we need to know which engine we're using. 
+  // FIXME: For the moment, this is not implemented.
+#if 0
   for (unsigned int c = 0; c < number_aqueous_components(); c++) {
     double* cell_free_ion = (*chemistry_state_->free_ion_species())[c];
     cell_free_ion[cell_id] = beaker_components_.free_ion.at(c);
@@ -593,55 +557,24 @@ void Alquimia_Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
     cells[cell_id] =  beaker_components_.secondary_activity_coeff.at(i);
   }
 
-  //
-  // minerals
-  //
-  for (unsigned int m = 0; m < number_minerals(); m++) {
-    double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    cell_minerals[cell_id] = beaker_components_.mineral_volume_fraction.at(m);
-    if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) {
-      cell_minerals = (*chemistry_state_->mineral_specific_surface_area())[m];
-      cell_minerals[cell_id] = beaker_components_.mineral_specific_surface_area.at(m);
-    }
-  }
-
-  //
-  // sorption
-  //
-  if (using_sorption()) {
-    for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-      double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
-      cell_total_sorbed[cell_id] = beaker_components_.total_sorbed.at(c);
-    }
-  }
-
-  //
-  // surface complexation
-  //
-  for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-    double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
-    cell_sorption_sites[cell_id] = beaker_components_.surface_site_density.at(i);
-    // TODO(bandre): need to save surface complexation free site conc here!
-  }
-
   for (unsigned int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
     double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
     cells[cell_id] = beaker_components_.surface_complex_free_site_conc.at(i);
-  }
-
-  //
-  // ion exchange
-  //
-  for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
-    double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
-    cell_ion_exchange_sites[cell_id] = beaker_components_.ion_exchange_sites.at(i);
-    // TODO(bandre): need to save ion exchange ref cation conc here!
   }
 
   for (unsigned int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
     double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
     cells[cell_id] = beaker_components_.ion_exchange_ref_cation_conc.at(i);
   }
+#endif
+
+}  // end CopyAlquimiaStateToAmanzi()
+
+void Alquimia_Chemistry_PK::CopyAlquimiaMaterialPropertiesToAmanzi(const int cell_id) {
+
+  AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
+
+  // FIXME: Do we need to copy over volume and saturation, too?
 
   //
   // sorption isotherms
@@ -649,24 +582,16 @@ void Alquimia_Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
   if (using_sorption_isotherms()) {
     for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
       double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      cell_data[cell_id] = beaker_components_.isotherm_kd.at(i);
+      cell_data[cell_id] = alquimia_mat_props->isotherm_kd.data[i];
 
       cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      cell_data[cell_id] = beaker_components_.isotherm_freundlich_n.at(i);
+      cell_data[cell_id] = alquimia_mat_props->isotherm_freundlich_n.data[i];
 
       cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      cell_data[cell_id] = beaker_components_.isotherm_langmuir_b.at(i);
+      cell_data[cell_id] = alquimia_mat_props->isotherm_langmuir_b.data[i];
     }
   }
-
-  // TODO(bandre): if chemistry can modify the porosity or density,
-  // then they should be updated here!
-
-}  // end CopyBeakerStructureToCellState()
-
-
-
-
+}
 
 /*******************************************************************************
  **

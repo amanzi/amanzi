@@ -124,14 +124,28 @@ class Alquimia_Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
   void UpdateChemistryStateStorage(void);
+  int InitializeSingleCell(int cellIndex);
 
   void XMLParameters(void);
   void SetupAuxiliaryOutput(void);
-  void SizeBeakerStructures(void);
-  void CopyCellStateToBeakerStructures(
+
+  // These helpers copy data at the given cell from Amanzi's chemistry state to 
+  // their corresponding locations within Alquimia.
+  void CopyAmanziStateToAlquimia(
       const int cell_id,
       Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyBeakerStructuresToCellState(const int cell_id);
+  void CopyAmanziMaterialPropertiesToAlquimia(
+      const int cell_id,
+      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
+  void CopyAmanziGeochemicalConditionsToAlquimia(
+      const int cell_id,
+      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
+
+  // These helpers copy Alquimia's data to Amanzi's chemistry state at the 
+  // given cell.
+  void CopyAlquimiaStateToAmanzi(const int cell_id);
+  void CopyAlquimiaMaterialPropertiesToAmanzi(const int cell_id);
+
 };
 
 }  // namespace AmanziChemistry
