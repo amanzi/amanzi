@@ -13,6 +13,7 @@
    </ParameterList>
 
    ------------------------------------------------------------------------- */
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "composite_vector_function_factory.hh"
 
@@ -37,6 +38,7 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
 // -- Setup data
 void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
+  mesh_->build_columns(bottom_surface_name_);
 
   // save the meshes
   surf_mesh_ = S->GetMesh("surface");
@@ -69,6 +71,11 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   int dim = mesh_->space_dimension();
   S->RequireField("vertex coordinate", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("node", AmanziMesh::NODE, dim);
+
+  S->RequireFieldEvaluator("cell_volume");
+  S->RequireFieldEvaluator("porosity");
+  S->RequireField("porosity")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell",AmanziMesh::CELL,1);
 }
 
 // -- Initialize owned (dependent) variables.
@@ -116,7 +123,7 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
 
 bool VolumetricDeformation::advance(double dt) {
   Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
     *out_ << "Advancing deformation PK from time " << S_->time() << " to "
           << S_next_->time() << " with step size " << dt << std::endl;
     *out_ << "----------------------------------------------------------------" << std::endl;
@@ -145,6 +152,9 @@ bool VolumetricDeformation::advance(double dt) {
   AmanziMesh::Entity_ID_List bottomfaces;
   mesh_->get_set_entities(bottom_surface_name_, AmanziMesh::FACE,
                           AmanziMesh::OWNED, &bottomfaces);
+  int ncols = 0;
+  int ncells_tot = 0;
+
   for (unsigned int i=0; i!=bottomfaces.size(); ++i) {
     // find the bottom cell
     AmanziMesh::Entity_ID f_below = bottomfaces[i];
@@ -156,23 +166,11 @@ bool VolumetricDeformation::advance(double dt) {
     // for each cell in the column, integrate the change
     double face_displacement = 0.;
     bool done = false;
+    int ncells_in_col = 1;
+
     while (!done) {
       // find the face above
-      std::vector<int> dirs;
-      AmanziMesh::Entity_ID_List faces0;
-      mesh_->cell_get_faces_and_dirs(c0, &faces0, &dirs);
-      AmanziMesh::Entity_ID f_above = -1;
-      AmanziGeometry::Point centroid = mesh_->cell_centroid(c0);
-      for (AmanziMesh::Entity_ID_List::const_iterator f=faces0.begin();
-           f!=faces0.end(); ++f) {
-        AmanziGeometry::Point df = mesh_->face_centroid(*f) - centroid;
-        df = df / AmanziGeometry::norm(df);
-        if (df[2] > 0.99) {
-          f_above = *f;
-          break;
-        }
-      }
-      ASSERT(f_above >= 0);
+      AmanziMesh::Entity_ID f_above = mesh_->cell_get_face_above(c0);
 
       // calculate the displacement of the face above the cell
       double dz = mesh_->face_centroid(f_above)[2] - mesh_->face_centroid(f_below)[2];
@@ -188,21 +186,37 @@ bool VolumetricDeformation::advance(double dt) {
       }
 
       // iterate til we reach the top of the domain
+      // get the cell above
       AmanziMesh::Entity_ID c1 = mesh_->cell_get_cell_above(c0);
       if (c1 >= 0) {
         c0 = c1;
         f_below = f_above;
+        ncells_in_col++;
       } else {
         done = true;
       }
     }
+
+    ncells_tot += ncells_in_col;
+    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+      *out_ << "  Integrated column " << ncols << " with " << ncells_in_col << " cells." << std::endl;
+    }
+    ncols++;
+  }
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+    int ncells_loc = ncells_tot;
+    nodal_dz_vec->comm()->SumAll(&ncells_loc, &ncells_tot, 1);
+    *out_ << "Integrated " << ncols << " columns, total # cells touched = " << ncells_tot << std::endl;
   }
 
   // take the average
   nodal_dz_vec->GatherGhostedToMaster("node");
   Epetra_MultiVector& nodal_dz_l = *nodal_dz_vec->ViewComponent("node",false);
   for (int i=0; i!=nodal_dz_l.MyLength(); ++i) {
-    nodal_dz_l[0][i] /= nodal_dz_l[1][i];
+    if (nodal_dz_l[1][i] > 1) {
+      nodal_dz_l[0][i] /= nodal_dz_l[1][i];
+    }
   }
 
 
@@ -224,7 +238,7 @@ bool VolumetricDeformation::advance(double dt) {
 
   // deform the mesh
   AmanziGeometry::Point_List finpos;
-  mesh_nc_->deform(nodeids, newpos, true, &finpos);
+  mesh_nc_->deform(nodeids, newpos, false, &finpos);
 
   // now we have to adapt the surface mesh to the new volume mesh
   // extract the correct new coordinates for the surface from the domain
@@ -260,10 +274,6 @@ bool VolumetricDeformation::advance(double dt) {
   surf_mesh_nc_->deform(surface_nodeids, surface_newpos, false, &surface_finpos);
   surf3d_mesh_nc_->deform(surface3d_nodeids, surface3d_newpos, false, &surface_finpos);
 
-  // get the cell volumes from the previous time step
-  const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
-      ->ViewComponent("cell",false);
-
   // update vertex coordinates in state (for checkpointing)
   Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
       ->ViewComponent("node",false);
@@ -273,9 +283,11 @@ bool VolumetricDeformation::advance(double dt) {
   }
 
   // setting deformation to be rock_volume at old time, (1-poro_old)*CV_old
-  Epetra_MultiVector& def = *S_next_->GetFieldData(key_,name_)
+  const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& poro = *S_->GetFieldData(poro_key_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& def = *S_next_->GetFieldData(key_,name_)
       ->ViewComponent("cell",false);
 
   int ncells = def.MyLength();
@@ -284,6 +296,12 @@ bool VolumetricDeformation::advance(double dt) {
   }
   // mark the placeholder evaluator as changed
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+
+  // update porosity and cell volumes
+  S_next_->GetFieldEvaluator("cell_volume")
+      ->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("porosity")
+      ->HasFieldChanged(S_next_.ptr(), name_);
 
   return false;
 }

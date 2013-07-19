@@ -52,6 +52,11 @@ void PorosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   int ncells = phi_c.MyLength();
   for (int c=0; c!=ncells; ++c) {
     phi_c[0][c] = 1. - deformation_c[0][c] / cv[0][c];
+    if (phi_c[0][c] < 0.) {
+      std::cout << "WARNING: Negative porosity due to too much deformation in cell " << c << std::endl;
+      std::cout << "  setting poro = 0" << std::endl;
+      phi_c[0][c] = 0.;
+    }
   }
 
 }
