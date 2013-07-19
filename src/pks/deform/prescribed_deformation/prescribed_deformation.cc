@@ -63,6 +63,13 @@ void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
   name[0] = "node";
   S->RequireField("vertex coordinate", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponents(name, location, num_dofs);
+
+  // Also required are porosity and cell_volume fields.
+  S->RequireFieldEvaluator("cell_volume");
+
+  S->RequireFieldEvaluator("porosity");
+  S->RequireField("porosity")->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell",AmanziMesh::CELL,1);
 }
 
 // -- Initialize owned (dependent) variables.

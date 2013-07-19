@@ -48,6 +48,7 @@ WHOLE_ARCHIVE(flow_relations_porosity)
 WHOLE_ARCHIVE(energy_relations_enthalpy)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
+WHOLE_ARCHIVE(deform_relations_porosity)
 WHOLE_ARCHIVE(amanzi_mesh_functions)
 WHOLE_ARCHIVE(amanzi_state)
 
@@ -70,7 +71,7 @@ target_link_libraries(ats
 		              ${pk_prescribed_deformation}
 		              ${pk_volumetric_deformation}
                       ${pk_bases}
-                      deform_relations_porosity
+                      ${deform_relations_porosity}
                       ${energy_relations_thermal_conductivity}
                       ${energy_relations_internal_energy}
                       ${energy_relations_enthalpy}
