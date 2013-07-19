@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+cd @ALQUIMIA_source_dir@
+
+# Do a manual installation.
+alquimia_lib_dir=@ALQUIMIA_install_dir@/lib
+alquimia_include_dir=@ALQUIMIA_install_dir@/include
+if [ ! -e ${alquimia_lib_dir} ]; then mkdir -p ${alquimia_lib_dir} ; fi
+if [ ! -e ${alquimia_include_dir} ]; then mkdir -p ${alquimia_include_dir} ; fi
+
+cp src/alquimia/c/libalquimia_c.a ${alquimia_lib_dir}
+cp src/alquimia/c/libalquimia_cutils.a ${alquimia_lib_dir}
+cp src/alquimia/c/*.h ${alquimia_include_dir}
+cp src/alquimia/fortran/libalquimia_fortran.h ${alquimia_lib_dir}
+cp src/alquimia/fortran/*.mod ${alquimia_include_dir}
+
+exit $?

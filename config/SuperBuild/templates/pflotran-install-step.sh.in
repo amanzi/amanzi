@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+cd @PFLOTRAN_source_dir@
+
+# Manual install required for 4.0.x versions
+pflotran_lib_dir=@PFLOTRAN_install_dir@/lib
+pflotran_include_dir=@PFLOTRAN_install_dir@/include
+if [ ! -e ${pflotran_lib_dir} ]; then mkdir -p ${pflotran_lib_dir} ; fi
+if [ ! -e ${pflotran_include_dir} ]; then mkdir -p ${pflotran_include_dir} ; fi
+
+cp src/pflotran/libpflotranchem.a ${pflotran_lib_dir}
+cp src/pflotran/*.mod ${pflotran_include_dir}
+
+exit $?

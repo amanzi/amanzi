@@ -44,7 +44,6 @@ add_amanzi_library(chemistry_pk
                    SOURCE Chemistry_State.cc chemistry_pk.cc HEADERS ${chem_inc_files}
                    LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 
-
 if (BUILD_TESTS)
   add_subdirectory(tests_integration)
 endif()
