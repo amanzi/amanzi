@@ -73,18 +73,20 @@
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
         <ParameterList name="BDF2">
+          <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
+          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
+          <Parameter name="NKA max vectors" type="int" value="5"/>
+          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
+          <Parameter name="Nonlinear solver tolerance" type="double" value="1e-4"/>
+
+          <Parameter name="error abs tol" type="double" value="0.1"/>
+          <Parameter name="error rel tol" type="double" value="1e-5"/>
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
+
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="100.0"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximum time step" type="double" value="1.0"/>
-
-          <ParameterList name="BDF2 parameters">
-            <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
-            <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
-            <Parameter name="NKA max vectors" type="int" value="5"/>
-            <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-            <Parameter name="Nonlinear solver tolerance" type="double" value="1e-4"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
 

@@ -77,8 +77,12 @@
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
         <ParameterList name="backward Euler">
-          <Parameter name="convergence tolerance" type="double" value="1e-9"/>
+          <Parameter name="error abs tol" type="double" value="1.0"/>
+          <Parameter name="error rel tol" type="double" value="0.0"/>
+          <Parameter name="time step increase factor" type="double" value="1.0"/>
+
           <Parameter name="maximum number of iterations" type="int" value="3000"/>
+          <Parameter name="convergence tolerance" type="double" value="1e-10"/>
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1e+4"/>
           <Parameter name="initial time step" type="double" value="0.01"/>
