@@ -35,7 +35,7 @@
 
 namespace Amanzi {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
   // these are not yet initialized
