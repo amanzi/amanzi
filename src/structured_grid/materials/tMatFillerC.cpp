@@ -237,7 +237,7 @@ main (int   argc,
   BoxLib::Initialize(argc,argv);
 
   ParmParse pp;
-  std::string case_size="small"; pp.query("case_size",case_size);
+  std::string case_size="medium"; pp.query("case_size",case_size);
 
   Array<int> n_cells(BL_SPACEDIM); 
   int nLevs;

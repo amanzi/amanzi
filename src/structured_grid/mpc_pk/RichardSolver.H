@@ -131,6 +131,8 @@ protected:
 
   void BuildOpSkel(Mat& J);
 
+  void SetPermeability(Real cur_time);
+
   void YpambX(MFTower&           Y,
 	      const MFTower&     X,
 	      const Array<Real>& a,
