@@ -20,13 +20,13 @@ class TransientTheis(object):
          W(u) = \int_u^\infty \frac{exp[-u]}{u} du = -0.5772 - ln(u) + u - \frac{u^2}{2*2!} + \frac{u^3}{3*3!} - ...
 
          Parameters are in units of:
-         Q_vol   : Pumping Rate [m^3/s]
-         s   : Drawdown [m]
-         h_0 : Initial height of water table [m]
-         T   : Transmissivity [m^2/s]
-         r   : radial distance measuresd outward from well [m]
-         S   : Storage coefficient (unitless)
-         t   : duration of pumping [s]
+         Q_vol : Pumping Rate [m^3/s]
+         s     : Drawdown [m]
+         z     : Thickness of Confined Aquifer [m]
+         T     : Transmissivity [m^2/s]
+         r     : radial distance measuresd outward from well [m]
+         S     : Storage coefficient (unitless)
+         t     : duration of pumping [s]
     """
 
     def __init__(self, params=None):
@@ -50,7 +50,7 @@ class TransientTheis(object):
         
         self.Vol_well = (abs(self.x*2))*(abs(self.y*2))*self.z
   
-        self.Q_vol = self.Q / self.rho
+        self.Q_vol = -self.Q / self.rho
         
         self.K_h = self.K*self.g*self.rho / self.mu
        
@@ -102,7 +102,6 @@ def createFromXML(filename):
     params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
     params["mu"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
     params["rho"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
-    params["h_0"] = search.getElementByPath(xml, "/Main/Boundary Conditions/Far Field Head/BC: Hydrostatic/Water Table Height").value[0]
     params["Q"] = search.getElementByPath(xml, "/Main/Sources/Pumping Well/Source: Volume Weighted/Values").value[0]
     params["S_s"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Specific Storage: Uniform/Value").value
     

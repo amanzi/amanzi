@@ -33,6 +33,7 @@
         <Parameter name="linear solver maximum iterations" type="int" value="400"/>
 	<ParameterList name="Transient Implicit Time Integration">
 	  <Parameter name="Transient Time Step Increase Factor" type="double" value="1.25"/>
+	  <Parameter name="Preconditioner" type="string" value="Trilinos ML"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList>
@@ -51,14 +52,16 @@
   -->
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
-      <ParameterList name="Read Mesh File">
-        <Parameter name="File" type="string" value="mesh_hex.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
+      <ParameterList name="Expert">
+	<Parameter name="Framework" type="string" value="MSTK"/>
       </ParameterList>
-      <!--ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
-        <Parameter name="Verify Mesh" type="bool" value="false"/>
-       </ParameterList-->
+      <ParameterList name="Generate Mesh">
+        <ParameterList name="Uniform Structured">
+          <Parameter name="Number of Cells" type="Array(int)" value="{201, 201, 10}"/>
+          <Parameter name="Domain Low Corner" type="Array(double)" value="{-502.5, -502.5,0.0}" />
+          <Parameter name="Domain High Corner" type="Array(double)" value="{502.5, 502.5,100.0}" />
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -125,7 +128,7 @@
         <Parameter name="Direction" type="Array(double)" value="{0.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    
+  
   </ParameterList>
 
   <!--
@@ -180,27 +183,26 @@
     Initial Conditions:
 
   -->
+
   <ParameterList name="Initial Conditions">
-
+    
     <ParameterList name="Initial Condition">
-
       <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
+      
       
       <!--
         Confined Aquifer with h=200m
       -->
       <ParameterList name="IC: Linear Pressure">
-	<Parameter name="Phase" type="string" value="Aqueous"/>
-	<Parameter name="Reference Value" type="double" value="101325.0"/>
-	<Parameter name="Reference Coordinate" type="Array(double)" value="{-502.5,-502.5,200.0}"/>
-	<Parameter name="Gradient Value" type="Array(double)" value="{0.0,0.0,-9086.65}"/>
+	<Parameter name="Reference Coordinate" type="Array(double)" value="{502.5,502.5,100}"/>
+	<Parameter name="Reference Value" type="double" value="101325"/>
+	<Parameter name="Gradient Value" type="Array(double)" value="{0.0,0.0,-9806.65}"/>
       </ParameterList>
       
     </ParameterList>
+  </ParameterList>-->
 
-  </ParameterList>
-
-
+  
   <!--
 
     Source Terms:
@@ -237,7 +239,7 @@
         <Parameter name="Water Table Height" type="Array(double)" value="{200.0,200.0}"/>
       </ParameterList>
     </ParameterList>
-
+   
   </ParameterList>
 
   <!--

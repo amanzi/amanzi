@@ -42,7 +42,6 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
     for obs in Obs_data.observations.itervalues():
         color = cmap[obs.coordinate[0]]
         pres0 = 101325 -9806.65 * (obs.coordinate[2] - 200)
-        print "pressure",obs.data
         pres_drop = (pres0 - numpy.array([obs.data]))
         drawdown = pres_drop / 9806.65
         axes1.scatter(obs.times, drawdown, marker='s', s=25, c=color)
@@ -62,11 +61,10 @@ def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
     axes1.set_title('Drawdown vs Time after Pumping')
     
     for i in tindex:
-        times.append(1+math.exp(float(i)*(i+1)/(7.8*len(tindex))))
+        times.append(1+math.exp(float(i)*(i+1)/(7.72*len(tindex))))
     
     for rad in mymodel.r:
         r= abs(rad)
-        print "this is r", r
         drawdown=mymodel.runForFixedRadius(times,abs(r))
         axes1.plot(times,drawdown, label='$r=%0.1f m$'%r)
         press_analytic.append([r,drawdown])
