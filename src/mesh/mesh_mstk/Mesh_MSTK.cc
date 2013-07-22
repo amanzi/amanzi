@@ -13,6 +13,7 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
+  char kind_to_string[4][256] = {"NODE","EDGE","FACE","CELL"};
 
 //--------------------------------------
 // Constructor - load up mesh from file
@@ -482,6 +483,38 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 }
 
 
+std::string 
+Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
+                                const Entity_kind entity_kind) const {
+
+  std::string internal_name;
+  
+  if (r->type() == AmanziGeometry::LABELEDSET) {
+    
+    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
+      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    std::string label = lsrgn->label();
+
+    if (entity_kind == CELL)
+      internal_name = "matset_" + label;
+    else if (entity_kind == FACE)
+      internal_name = "sideset_" + label;
+    else if (entity_kind == NODE)
+      internal_name = "nodeset_" + label;      
+  }
+  else {
+    if (entity_kind == CELL)
+      internal_name = "CELLSET_" + r->name();
+    else if (entity_kind == FACE)
+      internal_name = "FACESET_" + r->name();
+    else if (entity_kind == NODE)
+      internal_name = "NODESET_" + r->name();
+  }
+
+  return internal_name;
+}
+
+
 
 //--------------------------------------
 // Constructor - Construct a new mesh from a subset of an existing mesh
@@ -594,31 +627,10 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
     AmanziGeometry::GeometricModelPtr gm = inmesh.geometric_model();
     AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
 
-    if (rgn->type() == AmanziGeometry::LABELEDSET) {
-      
-      // We are doing no error checking here because the call made
-      // earlier to initialize the sets (get_set_size) should have
-      // trapped any errors that might be present
-      // See CODE_LABEL_NUMBER 1
+    std::string internal_name = internal_name_of_set(rgn,setkind);
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
-      std::string label = lsrgn->label();
-      std::string entity_type = lsrgn->entity_str();
-      
-      char internal_name[256];
+    mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
 
-      if (entity_type == "CELL")
-        sprintf(internal_name,"matset_%s",label.c_str());
-      else if (entity_type == "FACE")
-        sprintf(internal_name,"sideset_%s",label.c_str());
-      else if (entity_type == "NODE")
-        sprintf(internal_name,"nodeset_%s",label.c_str());
-
-      mset = MESH_MSetByName(inmesh_mstk,internal_name);
-    }
-    else
-      mset = MESH_MSetByName(inmesh_mstk,setnames[i].c_str());
-      
     idx = 0;
     MEntity_ptr ment;
     while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
@@ -2089,9 +2101,10 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
   int celldim = Mesh::cell_dimension();
   int spacedim = Mesh::space_dimension();
   AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
-  
-  std::string setname = region->name();
-  
+
+  // Modify region/set name by prefixing it with the type of entity requested
+
+  std::string internal_name = internal_name_of_set(region,kind);
 
   // Create entity set based on the region defintion  
 
@@ -2101,7 +2114,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
   case CELL:    // cellsets      
 
     enttype = (celldim == 3) ? MREGION : MFACE;
-    mset = MSet_New(mesh,setname.c_str(),enttype);
+    mset = MSet_New(mesh,internal_name.c_str(),enttype);
       
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::COLORFUNCTION) {
@@ -2154,8 +2167,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     else if (region->type() == AmanziGeometry::PLANE) {
 
       if (celldim == 2) {
-        //        mset = MSet_New(mesh,setname.c_str(),MFACE);
-              
+
         int ncells = num_entities(CELL, USED);              
         for (int ic = 0; ic < ncells; ic++) {
 
@@ -2188,9 +2200,12 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
-       char internal_name[256];
-       sprintf(internal_name,"matset_%s",label.c_str());
-       mset = MESH_MSetByName(mesh,internal_name);
+      if (entity_type != "CELL") {
+        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        amanzi_throw(mesg);
+      }
+
+      mset = MESH_MSetByName(mesh,internal_name.c_str());
     }
     else {
       Errors::Message mesg("Region type not applicable/supported for cell sets");
@@ -2210,7 +2225,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     //            }
 
     enttype = (celldim == 3) ? MFACE : MEDGE;
-    mset = MSet_New(mesh,setname.c_str(),enttype);
+    mset = MSet_New(mesh,internal_name.c_str(),enttype);
 
     if (region->type() == AmanziGeometry::BOX)  {
 
@@ -2252,9 +2267,12 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
-       char internal_name[256];
-       sprintf(internal_name,"sideset_%s",label.c_str());
-       mset = MESH_MSetByName(mesh,internal_name);
+      if (entity_type != "FACE") {
+        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        amanzi_throw(mesg);
+      }
+
+      mset = MESH_MSetByName(mesh,internal_name.c_str());
     }
     else if (region->type() == AmanziGeometry::LOGICAL) {
       // Will handle it later in the routine
@@ -2268,7 +2286,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
   case NODE: // Nodesets
 
     enttype = MVERTEX;
-    mset = MSet_New(mesh,setname.c_str(),enttype);
+    mset = MSet_New(mesh,internal_name.c_str(),enttype);
 
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::PLANE ||
@@ -2298,9 +2316,12 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
-       char internal_name[256];
-       sprintf(internal_name,"nodeset_%s",label.c_str());
-       mset = MESH_MSetByName(mesh,internal_name);
+      if (entity_type != "FACE") {
+        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        amanzi_throw(mesg);
+      }
+
+      mset = MESH_MSetByName(mesh,internal_name.c_str());
     }
     else if (region->type() == AmanziGeometry::LOGICAL) {
       // We will handle it later in the routine
@@ -2313,8 +2334,6 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     break;
   }
 
-  // Logical regions can be treated agnostically - they don't need to know 
-  // what types of entities are in the sets (for the most part)
 
   if (region->type() == AmanziGeometry::LOGICAL) {
     AmanziGeometry::LogicalRegionPtr boolregion = (AmanziGeometry::LogicalRegionPtr) region;
@@ -2337,9 +2356,10 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
         amanzi_throw(mesg);
       }
         
-      MSet_ptr mset1 = MESH_MSetByName(mesh,region_names[r].c_str());
+      internal_name = internal_name_of_set(rgn1,kind);
+      MSet_ptr mset1 = MESH_MSetByName(mesh,internal_name.c_str());
       if (!mset1)        
-        mset1 = build_set(rgn1,kind);
+        mset1 = build_set(rgn1,kind);  // Recursive call
 
       msets.push_back(mset1);
     }
@@ -2522,8 +2542,9 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   }
 
 
+  std::string internal_name = internal_name_of_set(rgn,kind);
 
-  // Region is of type labeled set and a mesh set should have been
+  // If region is of type labeled set and a mesh set should have been
   // initialized from the input file
   
   if (rgn->type() == AmanziGeometry::LABELEDSET)
@@ -2542,16 +2563,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
           amanzi_throw(mesg);
         } 
 
-      char internal_name[256];
-
-      if (entity_type == "CELL")
-        sprintf(internal_name,"matset_%s",label.c_str());
-      else if (entity_type == "FACE")
-        sprintf(internal_name,"sideset_%s",label.c_str());
-      else if (entity_type == "NODE")
-        sprintf(internal_name,"nodeset_%s",label.c_str());
-
-      mset1 = MESH_MSetByName(mesh,internal_name);
+      mset1 = MESH_MSetByName(mesh,internal_name.c_str());
       
       if (!mset1)
         {
@@ -2563,7 +2575,10 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
     }
   else
     {
-      mset1 = MESH_MSetByName(mesh,setname.c_str());
+      // Modify region/set name by prefixing it with the type of
+      // entity requested
+
+      mset1 = MESH_MSetByName(mesh,internal_name.c_str());
 
       // Make sure we retrieved a mesh set with the right kind of entities
 
@@ -2600,11 +2615,13 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
               MSet_Name(mset1,setname1);
               
               if (MSet_EntDim(mset1) == entdim &&
-                  strcmp(setname1,setname.c_str()) == 0)
+                  strcmp(setname1,internal_name.c_str()) == 0)
                 break;
             }
         }
     }
+
+  // All attempts to find the set failed so it must not exist - build it
 
   if (mset1 == NULL) 
     mset1 = build_set(rgn, kind);
@@ -2653,7 +2670,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
     
     if (nent_glob == 0) {
       std::stringstream mesg_stream;
-      mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+      mesg_stream << "Could not retrieve any mesh cells for set " << setname << std::endl;
       Errors::Message mesg(mesg_stream.str());
       Exceptions::amanzi_throw(mesg);
     }
@@ -2696,7 +2713,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
     if (nent_glob == 0) {
       std::stringstream mesg_stream;
-      mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+      mesg_stream << "Could not retrieve any mesh faces for set " << setname << std::endl;
       Errors::Message mesg(mesg_stream.str());
       Exceptions::amanzi_throw(mesg);
     }
@@ -2739,7 +2756,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
     if (nent_glob == 0) {
       std::stringstream mesg_stream;
-      mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+      mesg_stream << "Could not retrieve any mesh nodes for set " << setname << std::endl;
       Errors::Message mesg(mesg_stream.str());
       Exceptions::amanzi_throw(mesg);
     }
@@ -3583,25 +3600,24 @@ void Mesh_MSTK::init_set_info() {
   for (int i = 0; i < ngr; i++) {
     AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
 
-    strcpy(setname,rgn->name().c_str());
-
     MType entdim;
     if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
       AmanziGeometry::LabeledSetRegionPtr lsrgn =
         dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
 
-      char internal_name[256];
+      std::string internal_name;
       std::string label = lsrgn->label();
-      std::string entity_type = lsrgn->entity_str();
-      if (entity_type == "CELL")
-        sprintf(internal_name,"matset_%s",label.c_str());
-      else if (entity_type == "FACE")
-        sprintf(internal_name,"sideset_%s",label.c_str());
-      else if (entity_type == "NODE")
-        sprintf(internal_name,"nodeset_%s",label.c_str());
+      std::string entity_type_str = lsrgn->entity_str();
 
-      mset = MESH_MSetByName(mesh,internal_name);
+      if (entity_type_str == "CELL")
+        internal_name = internal_name_of_set(rgn,CELL);
+      else if (entity_type_str == "FACE")
+        internal_name = internal_name_of_set(rgn,FACE);
+      else if (entity_type_str == "NODE")
+        internal_name = internal_name_of_set(rgn,NODE);
+
+      mset = MESH_MSetByName(mesh,internal_name.c_str());
    
       if (!mset) {
 	Errors::Message mesg("Missing labeled set \"" + label + "\" or error in input");
@@ -3611,54 +3627,95 @@ void Mesh_MSTK::init_set_info() {
       entdim = MSet_EntDim(mset);
       if (Mesh::cell_dimension() == 3) {
 
-        if ((lsrgn->entity_str() == "CELL" && entdim != MREGION) ||
-            (lsrgn->entity_str() == "FACE" && entdim != MFACE) ||
-            (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
+        if ((entity_type_str == "CELL" && entdim != MREGION) ||
+            (entity_type_str == "FACE" && entdim != MFACE) ||
+            (entity_type_str == "NODE" && entdim != MVERTEX)) {
           Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set");
           amanzi_throw(mesg);
         }
       }
       else if (Mesh::cell_dimension() == 2) {
-        if ((lsrgn->entity_str() == "CELL" && entdim != MFACE) ||
-            (lsrgn->entity_str() == "FACE" && entdim != MEDGE) ||
-            (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
+        if ((entity_type_str == "CELL" && entdim != MFACE) ||
+            (entity_type_str == "FACE" && entdim != MEDGE) ||
+            (entity_type_str == "NODE" && entdim != MVERTEX)) {
           std::cerr << "Mismatch of entity type in labeled set region and mesh set" << std::endl;
           throw std::exception();
         }
       }
 
-    }
-    else
-      mset = MESH_MSetByName(mesh,setname);
-  
-    if (mset) {
-      if (entities_deleted) {
-        entdim = MSet_EntDim(mset);
-        int idx=0;
-        switch (entdim) {
-        case MREGION:
-          MRegion_ptr region;
-          while (region = List_Next_Entry(deleted_regions,&idx))
-            MSet_Rem(mset,region);
-          break;
-        case MFACE:
-          MFace_ptr face;
-          while (face = List_Next_Entry(deleted_faces,&idx))
-            MSet_Rem(mset,face);
-          break;
-        case MEDGE:
-          MEdge_ptr edge;
-          while (edge = List_Next_Entry(deleted_edges,&idx))
-            MSet_Rem(mset,edge);
-          break;
-        case MVERTEX:
-          MVertex_ptr vertex;
-          while (vertex = List_Next_Entry(deleted_vertices,&idx))
-            MSet_Rem(mset,vertex);
-          break;
+      if (mset) {
+        if (entities_deleted) {
+          entdim = MSet_EntDim(mset);
+          int idx=0;
+          switch (entdim) {
+          case MREGION:
+            MRegion_ptr region;
+            while (region = List_Next_Entry(deleted_regions,&idx))
+              MSet_Rem(mset,region);
+            break;
+          case MFACE:
+            MFace_ptr face;
+            while (face = List_Next_Entry(deleted_faces,&idx))
+              MSet_Rem(mset,face);
+            break;
+          case MEDGE:
+            MEdge_ptr edge;
+            while (edge = List_Next_Entry(deleted_edges,&idx))
+              MSet_Rem(mset,edge);
+            break;
+          case MVERTEX:
+            MVertex_ptr vertex;
+            while (vertex = List_Next_Entry(deleted_vertices,&idx))
+              MSet_Rem(mset,vertex);
+            break;
+          }
         }
       }
     }
+    else { /* General region - we have to account for all kinds of
+              entities being queried in a set defined by this 
+              region */
+      Entity_kind int_to_kind[3] = {NODE,FACE,CELL};
+
+      for (int k = 0; k < 3; k++) {
+        Entity_kind kind = int_to_kind[i];
+        
+        std::string internal_name = internal_name_of_set(rgn,kind);
+
+        mset = MESH_MSetByName(mesh,internal_name.c_str());
+
+        if (mset) {
+          if (entities_deleted) {
+            entdim = MSet_EntDim(mset);
+            int idx=0;
+            switch (entdim) {
+            case MREGION:
+              MRegion_ptr region;
+              while (region = List_Next_Entry(deleted_regions,&idx))
+                MSet_Rem(mset,region);
+              break;
+            case MFACE:
+              MFace_ptr face;
+              while (face = List_Next_Entry(deleted_faces,&idx))
+                MSet_Rem(mset,face);
+              break;
+            case MEDGE:
+              MEdge_ptr edge;
+              while (edge = List_Next_Entry(deleted_edges,&idx))
+                MSet_Rem(mset,edge);
+              break;
+            case MVERTEX:
+              MVertex_ptr vertex;
+              while (vertex = List_Next_Entry(deleted_vertices,&idx))
+                MSet_Rem(mset,vertex);
+              break;
+            }
+          }
+        }
+      }
+
+    }
+
   }
   
 
@@ -4449,21 +4506,21 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
 
       // Get the set from the parent mesh
 
-      strcpy(setname,rgn->name().c_str());
       AmanziGeometry::LabeledSetRegionPtr lsrgn =
         dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
 
-      char internal_name[256];
+      std::string internal_name;
       std::string label = lsrgn->label();
       
       if (lsrgn->entity_str() == "CELL")
-        sprintf(internal_name,"matset_%s",lsrgn->label().c_str());
+        internal_name_of_set(rgn,CELL);
       else if (lsrgn->entity_str() == "FACE")
-        sprintf(internal_name,"sideset_%s",lsrgn->label().c_str());
+        internal_name_of_set(rgn,FACE);
       else if (lsrgn->entity_str() == "NODE")
-        sprintf(internal_name,"nodeset_%s",lsrgn->label().c_str());
+        internal_name_of_set(rgn,NODE);
 
-      MSet_ptr mset_parent = MESH_MSetByName(parent_mstk_mesh,internal_name);
+
+      MSet_ptr mset_parent = MESH_MSetByName(parent_mstk_mesh,internal_name.c_str());
       if (!mset_parent) {
         Errors::Message mesg("Cannot find labeled set in parent mesh");
         amanzi_throw(mesg);
@@ -4478,7 +4535,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
       else
         subentdim = (MType) (entdim-diffdim);
       
-      MSet_ptr mset = MSet_New(mesh,internal_name,subentdim);
+      MSet_ptr mset = MSet_New(mesh,internal_name.c_str(),subentdim);
 
 
       // Populate the set

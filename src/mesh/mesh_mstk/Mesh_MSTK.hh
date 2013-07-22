@@ -132,6 +132,8 @@ private:
   
   void init_set_info();
   void inherit_labeled_sets(MAttrib_ptr copyatt);
+  std::string internal_name_of_set(const AmanziGeometry::RegionPtr region,
+                                   const Entity_kind entity_kind) const;
 
   int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
 			     double x1, double y1, double z1, int nx,
