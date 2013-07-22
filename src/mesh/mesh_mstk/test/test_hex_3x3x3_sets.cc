@@ -132,7 +132,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
 
 	  // This is a reduced dimensionality box - request a faceset or nodeset
 
-          if (reg_name == "YLO FACE BOX") {
+          if (reg_name == "YLO FACE Box") {
 
             // Do we have a valid sideset by this name
             
@@ -146,15 +146,30 @@ TEST(MSTK_HEX_3x3x3_SETS)
             CHECK(j < 7);
             
             
-            // Verify that we can get the number of entities in the set
+            // Verify that we can get the number of faces in the set
             
             int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+            CHECK(set_size == 9);
             
             // Verify that we can retrieve the set entities
             
             Amanzi::AmanziMesh::Entity_ID_List setents;
             mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+
+            // Also try to extract a node set using this same box and same set name
+
+            CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+
+            // Verify that we can the number of nodes in the set
             
+            set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+            CHECK(set_size == 16);
+
+            // Verify that we can retrieve the set entities
+
+            setents.clear();
+            mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents);
+
           }
           else if (reg_name == "TOP BOX") {
 
