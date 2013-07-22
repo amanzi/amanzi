@@ -1838,6 +1838,8 @@ PorousMedia::SetRichardSolverParameters(RSParams&          rsparams,
     rsparams.pressure_maxorder = richard_pressure_maxorder;
     rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
     rsparams.semi_analytic_J = richard_semi_analytic_J;
+    rsparams.centered_diff_J = richard_centered_diff_J;
+    rsparams.subgrid_krel = richard_subgrid_krel;
     rsparams.variable_switch_saturation_threshold = richard_variable_switch_saturation_threshold;
 }
 
@@ -1899,8 +1901,12 @@ PorousMedia::richard_init_to_steady()
         }
       }
 
+      bool attempting_pure_steady;
+      Real dt_thresh_pure_steady = richard_dt_thresh_pure_steady;
+
       for (int grid_seq_fine=grid_seq_init_fine; grid_seq_fine<=finest_level; ++grid_seq_fine) {
 
+        attempting_pure_steady = false;
         int num_active_levels = grid_seq_fine + 1;
         if (ParallelDescriptor::IOProcessor() && richard_init_to_steady_verbose) {
           std::cout << "Number of active levels: " << num_active_levels << std::endl;
@@ -1944,7 +1950,7 @@ PorousMedia::richard_init_to_steady()
           if (steady_use_PETSc_snes) {
             rs->SetCurrentTimestep(k);
           }
-              
+
           // Advance the state data structures
           for (int lev=0;lev<finest_level+1;lev++) {
             PorousMedia& pm = getLevel(lev);
@@ -2003,17 +2009,32 @@ PorousMedia::richard_init_to_steady()
             }
 	      
             if (steady_use_PETSc_snes) 
-            {
+            {              
 	      if (!tmp_record_file.empty()) {
 		rs->SetRecordFile(tmp_record_file);
 	      }
-              int retCode = rs->Solve(t+dt, dt, k, nld);
+
+              attempting_pure_steady = dt_thresh_pure_steady>0 && dt>dt_thresh_pure_steady;
+              Real dt_solve = attempting_pure_steady ? -1 : dt;
+              if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+                std::cout << "     **************** Attempting pure steady solve" << '\n';
+              int retCode = rs->Solve(t+dt, dt_solve, k, nld);
+
+              if (retCode < 0 && attempting_pure_steady) {
+                dt_thresh_pure_steady *= 10;
+                if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+                  std::cout << "     **************** Steady solve failed, resuming transient..." << '\n';
+                attempting_pure_steady = false;
+                retCode = rs->Solve(t+dt, dt, k, nld);
+              }
+
               if (retCode >= 0) {
                 ret = RichardNLSdata::RICHARD_SUCCESS;
                 rs->UpdateDarcyVelocity(rs->GetPressure(),t+dt);
               } 
               else {
-                if (ret == -3) {
+
+                if (retCode == -3) {
                   ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
                 }
                 else {
@@ -2061,7 +2082,7 @@ PorousMedia::richard_init_to_steady()
               for (int k = 0; k < num_state_type; k++) {
                 fine_lev.state[k].reset();
               }
-		
+
               if (do_richard_sat_solve) {
                 MultiFab& S_lev = fine_lev.get_new_data(State_Type);
                 MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
@@ -2075,16 +2096,21 @@ PorousMedia::richard_init_to_steady()
 
           Real dt_new;
           bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
-	    
+
           if (ret == RichardNLSdata::RICHARD_SUCCESS) {
             k++;
-            t += dt;
-            if (execution_mode==INIT_TO_STEADY) {
-              solved = false; // Do not kick out early
+            if (attempting_pure_steady) {
+              solved = true;
             }
             else {
-              solved = ((abs_err <= steady_abs_update_tolerance) 
-                        || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+              t += dt;
+              if (execution_mode==INIT_TO_STEADY) {
+                solved = false; // Do not kick out early
+              }
+              else {
+                solved = ((abs_err <= steady_abs_update_tolerance) 
+                          || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+              }
             }
             if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
               std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken() << std::endl;
@@ -2134,8 +2160,11 @@ PorousMedia::richard_init_to_steady()
         }
 	  
         if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-          if (solved) {
+          if (solved || attempting_pure_steady) {
             std::cout << tag << " Success!  Steady solution found" << std::endl;
+            if (grid_seq_fine!=finest_level) {
+              std::cout << tag << " Adding another refinement level and re-solving..." << std::endl;
+            }
           }
           else {
             std::cout << tag << " Warning: solution is not steady.  Continuing..." << std::endl;
@@ -11406,90 +11435,66 @@ PorousMedia::calcCapillary (FArrayBox&       pc,
 }
 
 void 
-PorousMedia::calcInvCapillary (MultiFab& S,
-			       const MultiFab& pc)
+PorousMedia::calcInvCapillary (FArrayBox& n,
+			       const FArrayBox& pc,
+			       const FArrayBox& rock_phi,
+			       const FArrayBox& kappa,
+			       const FArrayBox& cpl_coef)
 {
   //
   // Calculate inverse capillary pressure
+  // (ie, compute rho.sat from pcap)
   //    
-  const int n_cpl_coef = cpl_coef->nComp();
-  for (MFIter mfi(S); mfi.isValid(); ++mfi)
-    {
+  const int n_cpl_coef = cpl_coef.nComp();
+  const Real* ndat  = n.dataPtr(); 
+  const int*  n_lo  = n.loVect();
+  const int*  n_hi  = n.hiVect();
 
-      FArrayBox& Sfab   = S[mfi];
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
+  const Real* ddat  = pc.dataPtr(); 
+  const int*  d_lo  = pc.loVect();
+  const int*  d_hi  = pc.hiVect();
+  
+  const Real* pdat = rock_phi.dataPtr();
+  const int* p_lo  = rock_phi.loVect();
+  const int* p_hi  = rock_phi.hiVect();
+  
+  const Real* kdat = kappa.dataPtr();
+  const int* k_lo  = kappa.loVect();
+  const int* k_hi  = kappa.hiVect();
+  
+  const Real* cpdat  = cpl_coef.dataPtr(); 
+  const int*  cp_lo  = cpl_coef.loVect();
+  const int*  cp_hi  = cpl_coef.hiVect();
 
-      const Real* ddat  = pc[mfi].dataPtr(); 
-      const int*  d_lo  = pc[mfi].loVect();
-      const int*  d_hi  = pc[mfi].hiVect();
-
-      const Real* pdat = (*rock_phi)[mfi].dataPtr();
-      const int* p_lo  = (*rock_phi)[mfi].loVect();
-      const int* p_hi  = (*rock_phi)[mfi].hiVect();
-
-      const Real* kdat = (*kappa)[mfi].dataPtr();
-      const int* k_lo  = (*kappa)[mfi].loVect();
-      const int* k_hi  = (*kappa)[mfi].hiVect();
-
-      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
-      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
-      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
-
-      FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		       ndat, ARLIM(n_lo), ARLIM(n_hi),
-		       pdat, ARLIM(p_lo), ARLIM(p_hi),
-		       kdat, ARLIM(k_lo), ARLIM(k_hi),
-		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-		       &n_cpl_coef); 
-    }
+  FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
+                   ndat, ARLIM(n_lo), ARLIM(n_hi),
+                   pdat, ARLIM(p_lo), ARLIM(p_hi),
+                   kdat, ARLIM(k_lo), ARLIM(k_hi),
+                   cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
+                   &n_cpl_coef);
 }
 
 void 
-PorousMedia::calcInvPressure (MultiFab& S,
+PorousMedia::calcInvCapillary (MultiFab&       N,
+			       const MultiFab& pc)
+{
+  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
+    PorousMedia::calcInvCapillary (N[mfi],pc[mfi],(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
+  }
+}
+
+void 
+PorousMedia::calcInvPressure (MultiFab&       N,
 			      const MultiFab& p)
 {
-  //
-  // Calculate inverse pressure
-  //    
-  const int n_cpl_coef = cpl_coef->nComp();
-  for (MFIter mfi(S); mfi.isValid(); ++mfi)
-    { 
-      FArrayBox pc;
-      const Box& fbox = S[mfi].box(); 
-      pc.resize(fbox,1);
-      pc.copy(p[mfi],fbox,0,fbox,0,1);
-      pc.mult(-1.0);
-
-      FArrayBox& Sfab   = S[mfi];
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
-
-      const Real* ddat  = pc.dataPtr(); 
-      const int*  d_lo  = pc.loVect();
-      const int*  d_hi  = pc.hiVect();
-
-      const Real* pdat = (*rock_phi)[mfi].dataPtr();
-      const int* p_lo  = (*rock_phi)[mfi].loVect();
-      const int* p_hi  = (*rock_phi)[mfi].hiVect();
-
-      const Real* kdat = (*kappa)[mfi].dataPtr();
-      const int* k_lo  = (*kappa)[mfi].loVect();
-      const int* k_hi  = (*kappa)[mfi].hiVect();
-
-      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
-      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
-      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
-
-      FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		       ndat, ARLIM(n_lo), ARLIM(n_hi),
-		       pdat, ARLIM(p_lo), ARLIM(p_hi),
-		       kdat, ARLIM(k_lo), ARLIM(k_hi),
-		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-		       &n_cpl_coef); 
-    }
+  for (MFIter mfi(N); mfi.isValid(); ++mfi) { 
+    FArrayBox pc;
+    const Box& fbox = N[mfi].box(); 
+    pc.resize(fbox,1);
+    pc.copy(p[mfi],fbox,0,fbox,0,1);
+    pc.mult(-1.0);    
+    PorousMedia::calcInvCapillary (N[mfi],pc,(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
+  }
 }
 
 void 
@@ -11520,6 +11525,31 @@ PorousMedia::smooth_pc (MultiFab* pc)
   pc->FillBoundary();
 }
 
+void
+PorousMedia::calcLambda(FArrayBox&       lambda,
+                        const FArrayBox& N,
+                        const FArrayBox& kr_coef)
+{
+  const int n_kr_coef = kr_coef.nComp();
+
+  const Real* ndat  = N.dataPtr(); 
+  const int*  n_lo  = N.loVect();
+  const int*  n_hi  = N.hiVect();
+  
+  const Real* ddat  = lambda.dataPtr(); 
+  const int*  d_lo  = lambda.loVect();
+  const int*  d_hi  = lambda.hiVect();
+  
+  const Real* krdat  = kr_coef.dataPtr(); 
+  const int*  kr_lo  = kr_coef.loVect();
+  const int*  kr_hi  = kr_coef.hiVect();
+  
+  FORT_MK_LAMBDA( ddat, ARLIM(d_lo), ARLIM(d_hi),
+                  ndat, ARLIM(n_lo), ARLIM(n_hi),
+                  krdat, ARLIM(kr_lo),ARLIM(kr_hi),
+                  &n_kr_coef);
+}
+
 
 void 
 PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
@@ -11540,7 +11570,6 @@ PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
     lcc = lbd_cc;  
 
   const int nGrow = 1;
-  const int n_kr_coef = kr_coef->nComp();  
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
        fpi.isValid();
        ++fpi)
@@ -11549,54 +11578,20 @@ PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       BL_ASSERT(box == fpi().box());
 
-      const FArrayBox& Sfab = fpi();
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
-
-      const Real* ddat  = (*lcc)[fpi].dataPtr(); 
-      const int*  d_lo  = (*lcc)[fpi].loVect();
-      const int*  d_hi  = (*lcc)[fpi].hiVect();
-
-      const Real* krdat  = (*kr_coef)[fpi].dataPtr(); 
-      const int*  kr_lo  = (*kr_coef)[fpi].loVect();
-      const int*  kr_hi  = (*kr_coef)[fpi].hiVect();
-	
-      FORT_MK_LAMBDA( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		      ndat, ARLIM(n_lo), ARLIM(n_hi),
-		      krdat, ARLIM(kr_lo),ARLIM(kr_hi),
-		      &n_kr_coef);
+      PorousMedia::calcLambda((*lcc)[fpi], fpi(), (*kr_coef)[fpi]);
     }
   lcc->FillBoundary();
 }
 
 void 
-PorousMedia::calcLambda (MultiFab* lbd, const MultiFab& S)
+PorousMedia::calcLambda (MultiFab* lbd, const MultiFab& N)
 {
   //
   // Calculate the lambda values at cell-center. 
   //   
-  const int n_kr_coef = kr_coef->nComp();
-  for (MFIter mfi(S); mfi.isValid(); ++mfi)
-    {
-      const FArrayBox& Sfab = S[mfi];
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
-
-      const Real* ddat  = (*lbd)[mfi].dataPtr(); 
-      const int*  d_lo  = (*lbd)[mfi].loVect();
-      const int*  d_hi  = (*lbd)[mfi].hiVect();
-
-      const Real* krdat  = (*kr_coef)[mfi].dataPtr(); 
-      const int*  kr_lo  = (*kr_coef)[mfi].loVect();
-      const int*  kr_hi  = (*kr_coef)[mfi].hiVect();
-	
-      FORT_MK_LAMBDA( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		      ndat, ARLIM(n_lo), ARLIM(n_hi),
-		      krdat, ARLIM(kr_lo),ARLIM(kr_hi),
-		      &n_kr_coef);
-    }
+  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
+    calcLambda((*lbd)[mfi], N[mfi], (*kr_coef)[mfi]);
+  }
   lbd->FillBoundary();
 }
 

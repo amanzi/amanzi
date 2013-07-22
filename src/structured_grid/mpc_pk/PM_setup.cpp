@@ -341,7 +341,10 @@ int  PorousMedia::richard_upwind_krel;
 int  PorousMedia::richard_pressure_maxorder;
 bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
+bool PorousMedia::richard_centered_diff_J;
+bool PorousMedia::richard_subgrid_krel;
 Real PorousMedia::richard_variable_switch_saturation_threshold;
+Real PorousMedia::richard_dt_thresh_pure_steady;
 
 RichardSolver* PorousMedia::richard_solver;
 
@@ -677,7 +680,10 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_pressure_maxorder = 4;
   PorousMedia::richard_scale_solution_before_solve = true;
   PorousMedia::richard_semi_analytic_J = false;
+  PorousMedia::richard_centered_diff_J = true;
+  PorousMedia::richard_subgrid_krel = false;
   PorousMedia::richard_variable_switch_saturation_threshold = -1;
+  PorousMedia::richard_dt_thresh_pure_steady = -1;
 
   PorousMedia::echo_inputs    = 0;
   PorousMedia::richard_solver = 0;
@@ -2015,6 +2021,7 @@ void PorousMedia::read_prob()
   if (ndt > 0) {
       pb.getarr("steady_grid_sequence_new_level_dt_factor",steady_grid_sequence_new_level_dt_factor,0,ndt);
   }
+
   pb.query("richard_max_ls_iterations",richard_max_ls_iterations);
   pb.query("richard_min_ls_factor",richard_min_ls_factor);
   pb.query("richard_ls_acceptance_factor",richard_ls_acceptance_factor);
@@ -2028,7 +2035,10 @@ void PorousMedia::read_prob()
   pb.query("richard_pressure_maxorder",richard_pressure_maxorder);
   pb.query("richard_scale_solution_before_solve",richard_scale_solution_before_solve);
   pb.query("richard_semi_analytic_J",richard_semi_analytic_J);
+  pb.query("richard_centered_diff_J",richard_centered_diff_J);
+  pb.query("richard_subgrid_krel",richard_subgrid_krel);
   pb.query("richard_variable_switch_saturation_threshold",richard_variable_switch_saturation_threshold);
+  pb.query("richard_dt_thresh_pure_steady",richard_dt_thresh_pure_steady);
 
   // Get timestepping parameters.
   pb.get("cfl",cfl);
