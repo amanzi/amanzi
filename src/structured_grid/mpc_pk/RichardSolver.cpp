@@ -13,7 +13,7 @@ static bool use_dense_Jacobian_DEF = false;
 static bool upwind_krel_DEF = false;
 static bool subgrid_krel_DEF = false; // Default off, not debugged yet
 static int pressure_maxorder_DEF = 3;
-static Real errfd_DEF = 1.e-8;
+static Real errfd_DEF = 1.e-10;
 static int max_ls_iterations_DEF = 10;
 static Real min_ls_factor_DEF = 1.e-8;
 static Real ls_acceptance_factor_DEF = 1.4;
@@ -475,44 +475,7 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
 
   SetTime(cur_time);
   SetDt(delta_t);
-
-  // Set permeability
-  Array<PArray<MultiFab> > kappaEC(BL_SPACEDIM);
-  if (params.upwind_krel) {
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      kappaEC[d].resize(nLevs,PArrayNoManage);
-    }
-    for (int lev=0; lev<nLevs; ++lev) {
-      for (int d=0; d<BL_SPACEDIM; ++d) {
-        kappaEC[d].set(lev,&(pm[lev].KappaEC()[d]));
-      }
-    }
-    KappaEC.resize(BL_SPACEDIM, PArrayManage);
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      KappaEC.set(d, new MFTower(layout,kappaEC[d],nLevs));
-    }
-  }
-  else {
-    MatFiller* matFiller = pm_amr.GetMatFiller();
-    bool ret = matFiller != 0 && matFiller->Initialized();
-    KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
-    for (int lev=0; lev<nLevs && ret; ++lev) {
-      (*KappaCCdir)[lev].setVal(0);
-      ret = matFiller->SetProperty(cur_time,lev,(*KappaCCdir)[lev],"permeability",0,1);
-    }
-    if (!ret) BoxLib::Abort("Failed to build permeability");
-
-    int num_fill = state_to_fill.size();
-    for (int lev=1; lev<num_fill; ++lev) {
-      const BoxArray& stff = state_to_fill[lev];
-      if (stff.size()>0) {	
-	bool retPhi = matFiller->SetProperty(cur_time,lev,phif[lev],"porosity",0,0);
-	bool retPc = matFiller->SetProperty(cur_time,lev,pcPf[lev],"capillary_pressure",0,0);
-	bool retK = matFiller->SetProperty(cur_time,lev,kf[lev],"permeability",0,0);
-	bool retKr = matFiller->SetProperty(cur_time,lev,krf[lev],"relative_permeability",0,0);
-      }
-    }
-  }
+  SetPermeability(cur_time);
 
   CheckCtx check_ctx;
   check_ctx.rs = this;
@@ -559,6 +522,54 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   ierr = layout.VecToMFTower(SolnMFT,SolnV,0); CHKPETSC(ierr);
 
   return reason;
+}
+
+void
+RichardSolver::SetPermeability(Real cur_time)
+{
+  // Set permeability
+  Array<PArray<MultiFab> > kappaEC(BL_SPACEDIM);
+  if (params.upwind_krel) {
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      kappaEC[d].resize(nLevs,PArrayNoManage);
+    }
+    for (int lev=0; lev<nLevs; ++lev) {
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        kappaEC[d].set(lev,&(pm[lev].KappaEC()[d]));
+      }
+    }
+    KappaEC.resize(BL_SPACEDIM, PArrayManage);
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      if (KappaEC.defined(d)) {
+	KappaEC.clear(d);
+      }
+      KappaEC.set(d, new MFTower(layout,kappaEC[d],nLevs));
+    }
+  }
+  else {
+    MatFiller* matFiller = pm_amr.GetMatFiller();
+    bool ret = matFiller != 0 && matFiller->Initialized();
+    if (KappaCCdir != 0) {
+      delete KappaCCdir;
+    }
+    KappaCCdir = new MFTower(layout,IndexType(IntVect::TheZeroVector()),BL_SPACEDIM,1,nLevs);
+    for (int lev=0; lev<nLevs && ret; ++lev) {
+      (*KappaCCdir)[lev].setVal(0);
+      ret = matFiller->SetProperty(cur_time,lev,(*KappaCCdir)[lev],"permeability",0,1);
+    }
+    if (!ret) BoxLib::Abort("Failed to build permeability");
+
+    int num_fill = state_to_fill.size();
+    for (int lev=1; lev<num_fill; ++lev) {
+      const BoxArray& stff = state_to_fill[lev];
+      if (stff.size()>0) {	
+	bool retPhi = matFiller->SetProperty(cur_time,lev,phif[lev],"porosity",0,0);
+	bool retPc = matFiller->SetProperty(cur_time,lev,pcPf[lev],"capillary_pressure",0,0);
+	bool retK = matFiller->SetProperty(cur_time,lev,kf[lev],"permeability",0,0);
+	bool retKr = matFiller->SetProperty(cur_time,lev,krf[lev],"relative_permeability",0,0);
+      }
+    }
+  }
 }
 
 void
@@ -1044,6 +1055,7 @@ void
 RichardSolver::UpdateDarcyVelocity(MFTower& pressure,
 				   Real     t)
 {
+  SetPermeability(t);
   ComputeDarcyVelocity(GetDarcyVelocity(),pressure,GetRhoSatNp1(),
                        GetLambda(),GetKappaEC(),GetDensity(),GetGravity(),t);
 }
