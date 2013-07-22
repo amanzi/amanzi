@@ -309,6 +309,8 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
 
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
+  const Epetra_MultiVector& energy = *S_next_->GetFieldData(energy_key_)
+      ->ViewComponent("cell",false);
   const CompositeVector& temp = *u->data();
   double h = S_next_->time() - S_inter_->time();
 
@@ -318,7 +320,8 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_* (cv[0][c]*2.e6));
+    double scaling = std:max(cv[0][c] * 2.e6, std::abs(energy[0][c]));
+    double tmp = std::abs(h*res_c[0][c]) / (atol_ + rtol_*scaling);
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;
