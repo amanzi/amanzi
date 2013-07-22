@@ -89,4 +89,4 @@ It is important to note that when using the third option the specific yield term
 Plot of Analytic Solution and Amanzi Results (soon to be)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. plot:: testing/transient_theis/model/theis.py
+.. plot:: testing/transient_theis/theis.py

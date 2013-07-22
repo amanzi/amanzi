@@ -32,7 +32,10 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   ~MPC () {};
     
   void cycle_driver ();
-    
+
+  // special function for walkabout
+  void populate_walkabout_data();
+
  private:
   void mpc_init();
   void read_parameter_list();

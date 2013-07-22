@@ -361,6 +361,7 @@ TEST(FLOW_DARCY_NODAL) {
 
   for (int n = 0; n < 240; n+=50) {
     double factor = pow(10.0, (double)(n - 50) / 100.0);
+    // double factor = pow(10.0, (double)(n - 150) / 100.0);
 
     // populate matrix
     matrix.CreateMFDstiffnessMatrices(K, factor);

@@ -492,9 +492,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   ti_specs.num_itrs = 0;
   block_picard = 0;
 
-
   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-
 
   Epetra_Vector& flux = FS->ref_darcy_flux();
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
@@ -502,20 +500,18 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
 
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
-  }
-  else {
+  } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    matrix_tpfa -> DeriveDarcyMassFlux(*solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa->DeriveDarcyMassFlux(
+        *solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
-
-
 }
 
 
@@ -644,26 +640,25 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
 
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
-  }
-  else {
+  } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    matrix_tpfa -> DeriveDarcyMassFlux(*solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa->DeriveDarcyMassFlux(
+        *solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
-
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
 
   // update mass balance
   // ImproveAlgebraicConsistency(flux, ws_prev, ws);
-
+  
   if (verbosity >= FLOW_VERBOSITY_HIGH && flow_status_ >= FLOW_STATUS_TRANSIENT_STATE) {
     Epetra_Vector& phi = FS_MPC->ref_porosity();
     double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
@@ -758,7 +753,6 @@ void Richards_PK::AddTimeDerivative_MFD(
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = rho_ * phi[c] * dSdP[c] * volume / dT_prec;
-    //cout << "factor "<<factor<<" dSdP[c] "<<dSdP[c]<<endl;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
