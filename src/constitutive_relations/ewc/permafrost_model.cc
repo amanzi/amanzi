@@ -174,7 +174,7 @@ Error codes:
       now).
 ---------------------------------------------------------------------- */
 int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
-        double& T, double& p) {
+        double& T, double& p, bool verbose) {
 
   // -- scaling for the norms
   double wc_scale = 10.;
@@ -194,10 +194,10 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
     return ierr + 10;
   }
 
-#if DEBUG_FLAG
-  std::cout << "Inverse Evaluating, e=" << energy << ", wc=" << wc << std::endl;
-  std::cout << "   guess T,p (res) = " << T << ", " << p << " (" << res[0] << ", " << res[1] << ")" << std::endl;
-#endif
+  if (verbose) {
+    std::cout << "Inverse Evaluating, e=" << energy << ", wc=" << wc << std::endl;
+    std::cout << "   guess T,p (res) = " << T << ", " << p << " (" << res[0] << ", " << res[1] << ")" << std::endl;
+  }
 
   AmanziGeometry::Point f(2);
   f[0] = energy;
@@ -258,11 +258,11 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
     scaled_res[0] = res[0] / e_scale; scaled_res[1] = res[1] / wc_scale;
     double norm_new = AmanziGeometry::norm(scaled_res);
 
-#if DEBUG_FLAG
+    if (verbose) {
       std::cout << "  Iter: " << stepnum;
       std::cout << " corrected T,p (res) [norm] = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ") ["
                 << norm_new << "]" << std::endl;
-#endif
+    }
 
     double damp = 1.;
     bool backtracking_required = false;
@@ -285,11 +285,11 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
       scaled_res[0] = res[0] / e_scale; scaled_res[1] = res[1] / wc_scale;
       norm_new = AmanziGeometry::norm(scaled_res);
 
-#if DEBUG_FLAG
-      std::cout << "    Damping: " << stepnum;
-      std::cout << " corrected T,p (res) [norm] = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ") ["
-                << norm_new << "]" << std::endl;
-#endif
+      if (verbose) {
+        std::cout << "    Damping: " << stepnum;
+        std::cout << " corrected T,p (res) [norm] = " << x_tmp[0] << ", " << x_tmp[1] << " (" << res[0] << ", " << res[1] << ") ["
+                  << norm_new << "]" << std::endl;
+      }
 
     }
 
