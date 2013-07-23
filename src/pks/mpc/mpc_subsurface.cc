@@ -202,17 +202,18 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "EWC Precon application:" << std::endl;
 
-    for (int c0=42; c0!=46; ++c0) {
-      u->SubVector(0)->data()->ScatterMasterToGhosted("face");
+    Pu->SubVector(0)->data()->ScatterMasterToGhosted("face");
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
+         c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-      *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->data())("cell",c0);
+      *out_ << "  PC_p(" << *c0 << "): " << (*Pu->SubVector(0)->data())("cell",*c0);
       for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
       *out_ << std::endl;
 
-      *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->data())("cell",c0);
+      *out_ << "  PC_T(" << *c0 << "): " << (*Pu->SubVector(1)->data())("cell",*c0);
       for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
       *out_ << std::endl;
     }
@@ -231,5 +232,36 @@ bool MPCSubsurface::modify_predictor_heuristic_(double h, Teuchos::RCP<TreeVecto
   return false;
 }
 
+bool MPCSubsurface::modify_correction(double h,
+        Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> du) {
+
+#if DEBUG_FLAG
+  // Dump residual
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    *out_ << "NKA'd PC application:" << std::endl;
+
+    du->SubVector(0)->data()->ScatterMasterToGhosted("face");
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
+         c0!=dc_.end(); ++c0) {
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+      *out_ << "  NKA_PC_p(" << *c0 << "): " << (*du->SubVector(0)->data())("cell",*c0);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(0)->data())("face",fnums0[n]);
+      *out_ << std::endl;
+
+      *out_ << "  NKA_PC_T(" << *c0 << "): " << (*du->SubVector(1)->data())("cell",*c0);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(1)->data())("face",fnums0[n]);
+      *out_ << std::endl;
+    }
+
+  }
+#endif
+
+  return false;
+}
 
 } // namespace
