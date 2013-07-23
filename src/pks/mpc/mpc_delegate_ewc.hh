@@ -102,6 +102,9 @@ class MPCDelegateEWC : public Teuchos::VerboseObject<MPCDelegateEWC> {
   Key poro_key_;
   Key cv_key_;
 
+  // debug cells
+  std::vector<AmanziMesh::Entity_ID> dc_;
+
 };
 
 } // namespace
