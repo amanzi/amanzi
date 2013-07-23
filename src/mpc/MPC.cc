@@ -495,6 +495,7 @@ void MPC::cycle_driver() {
         if (ti_mode == INIT_TO_STEADY && S->last_time() < Tswitch && S->time() >= Tswitch) {
           if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
             *out << "Steady state computation complete... now running in transient mode." << std::endl;
+	    *out << "Tswitch = " << Tswitch << " S->time() = " << S->time() << " S->last_time() = " << S->last_time() << std::endl;
           }
           // only init the transient problem if we need to
           if (flow_model != "Steady State Richards") { //  && flow_model != "Steady State Saturated" )  {
@@ -724,7 +725,7 @@ void MPC::cycle_driver() {
                   Exceptions::amanzi_throw(message);
                 }
                 Amanzi::timer_manager.stop("Transport PK");
-              } else { // if we're not advancing transport we still need to prepare for chemistry
+              } else if (chemistry_enabled ) { // if we're not advancing transport we still need to prepare for chemistry
 		*total_component_concentration_star = *S->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
 	      }
 
