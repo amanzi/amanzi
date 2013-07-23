@@ -104,6 +104,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
     matrix_->DeriveFlux(*temp, flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 
   // finish assembly of the stiffness matrix
