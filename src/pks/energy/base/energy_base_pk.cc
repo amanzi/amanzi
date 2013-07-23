@@ -97,7 +97,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
                                 ->AddComponent("face", AmanziMesh::FACE, 1);
 
   // Require a field for the energy flux.
-  std::string updatestring = plist_.get<std::string>("update flux mode", "timestep");
+  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
   if (updatestring == "iteration") {
     update_flux_ = UPDATE_FLUX_ITERATION;
   } else if (updatestring == "timestep") {
@@ -134,10 +134,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
 
   // flux of energy
-  if (update_flux_ != UPDATE_FLUX_NEVER) {
-    S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
-        ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
+  S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
@@ -196,10 +194,8 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
   bc_values_.resize(nfaces, 0.0);
 
   // initialize flux
-  if (update_flux_ != UPDATE_FLUX_NEVER) {
-    S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
-    S->GetField(energy_flux_key_, name_)->set_initialized();
-  }
+  S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
+  S->GetField(energy_flux_key_, name_)->set_initialized();
 
   // initialize coupling terms
   if (coupled_to_surface_via_flux_) {
@@ -235,6 +231,7 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
     matrix_->DeriveFlux(*temp, flux.ptr());
+    flux->ScatterMasterToGhosted();
   }
 };
 

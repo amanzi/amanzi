@@ -302,10 +302,10 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
   const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
 
-  const Epetra_MultiVector& flux = *S_next_->GetFieldData(energy_flux_key_)
-      ->ViewComponent("face",false);
-  double flux_max(0.);
-  flux.NormInf(&flux_max);
+  // const Epetra_MultiVector& flux = *S_->GetFieldData(energy_flux_key_)
+  //     ->ViewComponent("face",false);
+  // double flux_max(0.);
+  // flux.NormInf(&flux_max);
 
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
@@ -333,7 +333,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   double enorm_face(0.);
   unsigned int nfaces = res_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_+rtol_*flux_max);
+    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_+rtol_*273.15);
     enorm_face = std::max<double>(enorm_face, tmp);
   }
 
