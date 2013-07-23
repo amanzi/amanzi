@@ -18,6 +18,13 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+#include <xercesc/dom/DOM.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/parsers/XercesDOMParser.hpp>
+#include <xercesc/framework/StdOutFormatTarget.hpp>
+#include <xercesc/util/OutOfMemoryException.hpp>
+
 #include "amanzi_version.hh"
 #include "dbc.hh"
 #include "errors.hh"
@@ -87,6 +94,42 @@ int main(int argc, char *argv[]) {
       }
       exit(0);
     }
+
+    try {
+      xercesc::XMLPlatformUtils::Initialize();
+      xercesc::XercesDOMParser *parser = new xercesc::XercesDOMParser;
+      parser->setValidationScheme(xercesc::XercesDOMParser::Val_Never);
+      bool errorsOccured = false;
+      try{
+        parser->parse(xmlInFileName.c_str());
+      }
+      catch (const xercesc::OutOfMemoryException&)
+      {
+	std::cerr << "OutOfMemoryException" << std::endl;
+        errorsOccured = true;
+      }
+      xercesc::DOMDocument *doc = parser->getDocument();
+      xercesc::DOMElement *root = doc->getDocumentElement();
+      char* temp2 = xercesc::XMLString::transcode(root->getTagName());
+
+      // EIB - check for new input format - throw exception and exit for now,
+      //       this will be replaced will call to translator for new format back to old format
+      if (strcmp(temp2,"amanzi_input")==0) {
+	amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
+      } 
+
+      xercesc::XMLString::release( &temp2) ;
+      doc->release();
+      xercesc::XMLPlatformUtils::Terminate();
+    }
+    catch (std::exception& e)
+    {
+      if (rank == 0) {
+        std::cout << e.what() << std::endl;
+        std::cout << "Amanzi::XERCES-INPUT_FAILED\n";
+      }
+    }
+    // EIB - if you didn't find the new input spec, you got passed thru to here, the old code
 
     // read the main parameter list
     Teuchos::ParameterList driver_parameter_list;
