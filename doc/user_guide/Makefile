@@ -1,9 +1,18 @@
 # Makefile for Sphinx documentation
 #
 
+AMANZI_UG_DIR = $(CURDIR)
+AMANZI_PYTHON = $(subst doc/user_guide,tools/amanzi_xml,$(CURDIR))
+
+ifndef PYTHONPATH
+  NEW_PYTHONPATH=$(AMANZI_PYTHON)
+else
+  NEW_PYTHONPATH=$(AMANZI_PYTHON):$(PYTHONPATH)
+endif
+
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+SPHINXBUILD   = export PYTHONPATH=$(NEW_PYTHONPATH); sphinx-build
 PAPER         =
 BUILDDIR      = _build
 
@@ -13,6 +22,7 @@ PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+
 
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
 
@@ -37,6 +47,11 @@ help:
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+	@echo ""
+	@echo " Environment Check "
+	@echo " AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
+	@echo " AMANZI_PYTHON  = $(AMANZI_PYTHON)"
+	@echo " NEW_PYTHONPATH = $(NEW_PYTHONPATH)"
 
 clean:
 	-rm -rf $(BUILDDIR)/*

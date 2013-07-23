@@ -82,7 +82,7 @@ if __name__ == "__main__":
     import os
     #import run_amanzi
 
-    input_filename =os.path.join("theis.xml")
+    input_filename =os.path.join("amanzi_transient_theis.xml")
 
     CWD = os.getcwd()
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         cmap = plotTheisObservations(obs_xml,obs_data,axes1)
         plotTheisAnalytic(input_filename,cmap,axes1,obs_xml,obs_data)
         
-        plt.show()
+        #plt.show()
 
     finally:
         os.chdir(CWD)

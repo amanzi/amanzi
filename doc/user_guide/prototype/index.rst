@@ -8,4 +8,4 @@ Contents:
    :maxdepth: 5
 
    steady-linear/amanzi_steady_linear.rst
-   transient-theis/theis.rst
+   transient-theis/amanzi_transient_theis.rst
