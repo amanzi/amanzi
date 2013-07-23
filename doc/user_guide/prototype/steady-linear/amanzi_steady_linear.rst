@@ -79,4 +79,4 @@ Amanzi run and the analytic solution calculations.
 Plot the solutions
 ~~~~~~~~~~~~~~~~~~
 
-.. plot:: testing/steady-linear/amanzi_steady_linear.py
+.. plot:: prototype/steady-linear/amanzi_steady_linear.py
