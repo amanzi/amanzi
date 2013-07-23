@@ -530,7 +530,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       for (unsigned int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
         (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c] / perm_scale_;
       }
-      uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
+      uw_rel_perm->ViewComponent("face",true)->PutScalar(1.);
       matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
 
       // Derive the pressure fluxes
