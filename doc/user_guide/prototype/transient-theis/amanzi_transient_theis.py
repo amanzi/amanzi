@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy
 import math
+import model.theis
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
@@ -49,7 +50,6 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
     return cmap
 
 def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
-    import model.theis
     mymodel = model.theis.createFromXML(filename)
     tindex = numpy.arange(125)
     times = []
@@ -82,18 +82,18 @@ if __name__ == "__main__":
     import os
     #import run_amanzi
 
-    input_filename =os.path.join("amanzi_transient_theis.xml")
+    input_filename =os.path.join("..","amanzi_transient_theis.xml")
 
     CWD = os.getcwd()
 
     #--set up the run directory and cd into it--#--This is not set up to run amanzi on the fly yet--#
-    # run_directory = os.path.join(CWD,"output")
-    # if os.path.isdir(run_directory):
+    run_directory = os.path.join(CWD,"output")
+    #if os.path.isdir(run_directory):
     #     [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
-    # else:
+    #else:
     #     os.mkdir(run_directory)
          
-    # os.chdir(run_directory)
+    os.chdir(run_directory)
 
     try: 
         #run_amanzi.run_amanzi('../theis.xml')
