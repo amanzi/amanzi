@@ -17,12 +17,12 @@ Author: ...
 namespace Amanzi {
 namespace TestPKs {
 
-class TestPKBCFactory : public Amanzi::BCFactory {
+class TestPKBCFactory : public BCFactory {
 
 public:
   TestPKBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
-                  const Teuchos::ParameterList& plist)
-      : Amanzi::BCFactory(mesh,plist) {}
+                  const Teuchos::ParameterList& plist) : 
+	BCFactory(mesh,plist) {}
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateDirichlet() const {
     return CreateWithFunction("dirichlet", "boundary data");
