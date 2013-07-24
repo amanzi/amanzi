@@ -16,8 +16,8 @@ Process kernel for energy equation for overland flow.
 #include "enthalpy_evaluator.hh"
 #include "energy_bc_factory.hh"
 #include "MatrixMFD_TPFA.hh"
-#include "function.hh"
-#include "function-factory.hh"
+#include "Function.hh"
+#include "FunctionFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
 

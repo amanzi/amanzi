@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 ------------------------------------------------------------------------- */
 
-#include "bc_factory.hh"
+#include "test_pk_bc_factory.hh"
 
 #include "divgrad_test.hh"
 
@@ -50,7 +50,7 @@ void DivGradTest::setup(const Teuchos::Ptr<State>& S) {
 
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
-  BCFactory bc_factory(mesh_, bc_plist);
+  TestPKBCFactory bc_factory(mesh_, bc_plist);
   bc_dirichlet_ = bc_factory.CreateDirichlet();
   bc_neumann_ = bc_factory.CreateNeumann();
 

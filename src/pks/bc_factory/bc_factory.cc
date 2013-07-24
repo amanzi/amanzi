@@ -5,10 +5,9 @@ Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
          Ethan Coon (ATS version)
 */
 
-#include "constant-function.hh"
-#include "function-factory.hh"
-#include "vector_function.hh"
-#include "composite_function.hh"
+#include "ConstantFunction.hh"
+#include "FunctionFactory.hh"
+#include "MultiFunction.hh"
 #include "errors.hh"
 
 #include "bc_factory.hh"
@@ -138,7 +137,7 @@ void BCFactory::ProcessSpecWithFunction_(const Teuchos::ParameterList& list,
 
   // A bit hacky -- this entire code needs to be revisited in light of the new
   // options for mesh_functions.
-  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+  Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
   // Add this BC specification to the boundary function.
   bc->Define(regions, func);
@@ -199,7 +198,7 @@ void BCFactory::ProcessSpecWithoutFunction_(const Teuchos::ParameterList& list,
 
   // A bit hacky -- this entire code needs to be revisited in light of the new
   // options for mesh_functions.
-  Teuchos::RCP<VectorFunction> func = Teuchos::rcp(new CompositeFunction(f));
+  Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
   // Add this BC specification to the boundary function.
   bc->Define(regions, func);
