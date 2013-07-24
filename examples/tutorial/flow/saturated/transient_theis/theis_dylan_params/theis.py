@@ -4,7 +4,7 @@ import math
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
-import model.theis
+
 # load input xml file
 #  -- create an ObservationXML object
 def loadInputXML(filename):
@@ -49,6 +49,7 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
     return cmap
 
 def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
+    import model.theis
     mymodel = model.theis.createFromXML(filename)
     tindex = numpy.arange(125)
     times = []
@@ -60,11 +61,11 @@ def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
     axes1.set_title('Drawdown vs Time after Pumping')
     
     for i in tindex:
-        times.append(1+math.exp(float(i)*(i+1)/(7.72*len(tindex))))
+        times.append(1+math.exp(float(i)*(i+1)/(7.75*len(tindex))))
     
     for rad in mymodel.r:
         r= abs(rad)
-        drawdown=mymodel.runForFixedRadius(times,abs(r))
+        drawdown=mymodel.runForFixedRadius(times,r)
         axes1.plot(times,drawdown, label='$r=%0.1f m$'%r)
         press_analytic.append([r,drawdown])
     
@@ -82,6 +83,7 @@ if __name__ == "__main__":
     #import run_amanzi
 
     input_filename =os.path.join("theis.xml")
+
     CWD = os.getcwd()
 
     #--set up the run directory and cd into it--#--This is not set up to run amanzi on the fly yet--#
@@ -94,7 +96,6 @@ if __name__ == "__main__":
     # os.chdir(run_directory)
 
     try: 
-        print os.getcwd()
         #run_amanzi.run_amanzi('../theis.xml')
         obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
@@ -104,7 +105,9 @@ if __name__ == "__main__":
        
         cmap = plotTheisObservations(obs_xml,obs_data,axes1)
         plotTheisAnalytic(input_filename,cmap,axes1,obs_xml,obs_data)
-   
+        
+        plt.show()
+
     finally:
         os.chdir(CWD)
 

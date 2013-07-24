@@ -91,7 +91,7 @@ def createFromXML(filename):
     params = dict()
    
     params["r"] = []
-    for coord in coords.itervalues():
+    for (coord) in coords.itervalues():
         params["r"].append(coord[0]) 
     
     params.setdefault("g",9.80665)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     rindex = numpy.arange(.1,50,.3)
     time = [1500,3600,86400,360000, 860000] #100 hours
     
-    tindex=numpy.arange(1.2e2,3.72e3,120)
+    tindex=numpy.arange(1.2e2,1.0e5,120)
     times=[]
     table_values=[]
     error=[]
@@ -154,7 +154,7 @@ if __name__ == "__main__":
         times.append(i)
 #1+math.exp(float(i)*(i+1)/(8.5*len(tindex))))
 
-    radius = [20,30,55]
+    radius = [55]
 
     col_labels = ['time [s]','Theis [m]','PORFLOW [m]','Difference']
     fig1 = plt.figure()
