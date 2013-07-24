@@ -48,11 +48,11 @@ namespace BDF2 {
     // parameters are passed along so that they can be used in extracting
     // values!
 
-    paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
+    // paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
     paramList_ = paramList;
 
     // make sure that the parameter list is actually valid (this is probably redundant)
-    paramList_->validateParameters(*this->getValidParameters());
+    // paramList_->validateParameters(*this->getValidParameters());
 
     // read the parameter list and initialize the class
     state.mitr = paramList_->get<int>("Nonlinear solver max iterations");

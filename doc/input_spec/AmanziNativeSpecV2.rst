@@ -565,12 +565,33 @@ nonlinear solvers during steady state time integration. Here is an example:
      </ParameterList>
 
      <ParameterList name="BDF1">
+       <Parameter name="max iterations" type="int" value="15"/>
+       <Parameter name="min iterations" type="int" value="10"/>
+       <Parameter name="limit iterations" type="int" value="20"/>
+       <Parameter name="nonlinear tolerance" type="double" value="1e-05"/>
+       <Parameter name="time step reduction factor" type="double" value="0.8"/>
+       <Parameter name="time step increase factor" type="double" value="1.25"/>
+       <Parameter name="max time step" type="double" value="6e+10"/>
+       <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
+       <Parameter name="error abs tol" type="double" value="1.0"/>
+       <Parameter name="error rel tol" type="double" value="0.0"/>
+       <Parameter name="time step increase factor" type="double" value="1.2"/>
+       <Parameter name="max divergent iterations" type="int" value="3"/>
+       <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
+       <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+       <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+       <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+       <Parameter name="nonlinear iteration divergence factor" type="double" value="1e+03"/>
+
        <Parameter name="initial time step" type="double" value="1e-07"/>
        <Parameter name="maximum time step" type="double" value="1e+10"/>
        <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <ParameterList name="BDF1 parameters">
-         ...
-       </ParameterList>
+       <Parameter name="convergence tolerance" type="double" value="1e-12"/>
+       <Parameter name="maximal number of iterations" type="int" value="200"/>
+       <Parameter name="start time" type="double" value="0.0"/>
+       <Parameter name="end time" type="double" value="100.0"/>
+       <Parameter name="initial time step" type="double" value="0.1"/>
+       <Parameter name="maximum time step" type="double" value="1.0"/>
      </ParameterList>
    </ParameterList>
 
@@ -602,8 +623,7 @@ The parameters used here are
     initial time step. If adaptive time stepping strategy is specified, this
     parameter is ignored. Default is 1.0.
 
-  * `"BDF1 parameters`" [list] used for initialization of the BDF1 time
-    integrator. 
+  * Other parameters will be described later.
 
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
@@ -633,9 +653,6 @@ The parameters used here are
   * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
 
 * `"BFD1`" [list] the named list used to control the nonlinear solver.
-  It might go away in the next revision of the Native Specs. 
-  Now, only the sublist `"BFD1 parameters`" is supported. The remaining parameters
-  are used for development and unit tests.
 
 
 Transient Time Integratior
@@ -665,12 +682,7 @@ pressure re-initialization. Here is an example:
      </ParameterList>
 
      <ParameterList name="BDF1">
-       <Parameter name="initial time step" type="double" value="1e-07"/>
-       <Parameter name="maximum time step" type="double" value="1e+10"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <ParameterList name="BDF1 parameters">
-         ...
-       </ParameterList>
+       ...
      </ParameterList>
    </ParameterList>
 

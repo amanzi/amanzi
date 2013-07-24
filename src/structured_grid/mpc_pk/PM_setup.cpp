@@ -629,7 +629,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = 0;
 
-  PorousMedia::richard_solver_verbose = 1;
+  PorousMedia::richard_solver_verbose = 2;
 
   PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::richard_init_to_steady_verbose = 1;

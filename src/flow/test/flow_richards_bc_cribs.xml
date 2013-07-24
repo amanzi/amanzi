@@ -33,6 +33,10 @@
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
         <ParameterList name="Picard">
+          <Parameter name="error abs tol" type="double" value="1"/>
+          <Parameter name="error rel tol" type="double" value="0"/>
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
+
           <Parameter name="convergence tolerance" type="double" value="1e-12"/>
           <Parameter name="maximum number of iterations" type="int" value="600"/>
           <Parameter name="start time" type="double" value="0.0"/>

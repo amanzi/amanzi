@@ -5,6 +5,9 @@ from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 
+
+
+
 # load input xml file
 #  -- create an ObservationXML object
 def loadInputXML(filename):
@@ -127,8 +130,11 @@ if __name__ == "__main__":
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel("../"+input_filename, cmap, axes1,obs_xml, obs_data)
      
-
-    finally:
+    except Error:
         os.chdir(CWD)
+        raise
+
+    os.chdir(CWD)
+
 
 
