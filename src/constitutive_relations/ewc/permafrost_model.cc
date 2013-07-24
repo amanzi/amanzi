@@ -35,7 +35,7 @@
 
 namespace Amanzi {
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
   // these are not yet initialized
@@ -164,7 +164,7 @@ Solves a given energy and water content (at a given, fixed porosity), for
 temperature and pressure.
 
 Note this cannot really work for a saturated cell, as d_wc / d{T,p} = 0
-
+<
 Error codes:
 
   1 = Singular Jacobian at some point in the evaluation.  Often this is
@@ -175,6 +175,8 @@ Error codes:
 ---------------------------------------------------------------------- */
 int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
         double& T, double& p, bool verbose) {
+  verbose = true;
+
 
   // -- scaling for the norms
   double wc_scale = 10.;
@@ -515,8 +517,8 @@ int PermafrostModel::EvaluateSaturations(double T, double p, double base_poro, d
 }
 
 int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, double base_poro, AmanziGeometry::Point& result) {
+  if (T < 100) return 1; // invalid temperature
   int ierr = 0;
-
   try {
     double poro = poro_model_->Porosity(base_poro, p, p_atm_);
     double eff_p = std::max(p_atm_, p);
@@ -578,21 +580,58 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
 
   int ierr = EvaluateEnergyAndWaterContent_(T, p, poro, result);
   if (ierr) return ierr;
-
   AmanziGeometry::Point test(result);
-  // d / dT
-  ierr = EvaluateEnergyAndWaterContent_(T+eps_T, p, poro, test);
-  if (ierr) return ierr;
 
-  jac(0,0) = (test[0] - result[0]) / (eps_T);
-  jac(1,0) = (test[1] - result[1]) / (eps_T);
+  // d / dT
+  jac(0,0) = 0.;
+  jac(1,0) = 0.;
+
+  bool done = false;
+  while (!done) {
+    ierr = EvaluateEnergyAndWaterContent_(T + eps_T, p, poro, test);
+    if (ierr) return ierr;
+
+    jac(0,0) = (test[0] - result[0]) / (eps_T);
+    jac(1,0) = (test[1] - result[1]) / (eps_T);
+
+    done = (std::abs(jac(0,0)) > 1.e-12) || (std::abs(jac(1,0)) > 1.e-12);
+    eps_T *= 2;
+
+    if (!done) {
+      std::cout << " Zero determinant of Jacobian:" << std::endl;
+      std::cout << "   [" << jac(0,0) << "," << jac(0,1) << "]" << std::endl;
+      std::cout << "   [" << jac(1,0) << "," << jac(1,1) << "]" << std::endl;
+      std::cout << "  at T,p = " << T << ", " << p << std::endl;
+      std::cout << "  with dT,dp = " << eps_T << ", " << eps_p << std::endl;
+    }
+  }
 
   // d / dp
-  ierr = EvaluateEnergyAndWaterContent_(T, p + eps_p, poro, test);
-  if (ierr) return ierr;
+  if (p < p_atm_) eps_p = -eps_p;
+  jac(0,1) = 0.;
+  jac(1,1) = 0.;
 
-  jac(0,1) = (test[0] - result[0]) / (eps_p);
-  jac(1,1) = (test[1] - result[1]) / (eps_p);
+  // failure point seems to be d/dp = 0
+  done = false;
+  while (!done) {
+    ierr = EvaluateEnergyAndWaterContent_(T, p + eps_p, poro, test);
+    if (ierr) return ierr;
+
+    jac(0,1) = (test[0] - result[0]) / (eps_p);
+    jac(1,1) = (test[1] - result[1]) / (eps_p);
+
+    done = (std::abs(jac(0,1)) > 1.e-12) || (std::abs(jac(1,1)) > 1.e-12);
+    eps_p *= 2;
+
+    if (!done) {
+      std::cout << " Zero determinant of Jacobian:" << std::endl;
+      std::cout << "   [" << jac(0,0) << "," << jac(0,1) << "]" << std::endl;
+      std::cout << "   [" << jac(1,0) << "," << jac(1,1) << "]" << std::endl;
+      std::cout << "  at T,p = " << T << ", " << p << std::endl;
+      std::cout << "  with dT,dp = " << eps_T << ", " << eps_p << std::endl;
+    }
+  }
+
   return 0;
 }
 
