@@ -1,7 +1,13 @@
+import os,sys
 import matplotlib.pyplot as plt
 import numpy
-import math
-import model.theis
+
+try:
+    import theis
+except ImportError:
+    sys.path.append("./model")
+    import theis
+
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
@@ -26,11 +32,11 @@ def loadDataFile(Obs_xml):
     for obs in Obs_data.observations.itervalues():
         region = obs.region
         obs.coordinate = coords[region]
-    
+
     return Obs_data
 
 def plotTheisObservations(Obs_xml, Obs_data, axes1):
-    #=== SPECIAL CODE === Theis EXAMPLE === Water Table is 200 m 
+    #=== SPECIAL CODE === Theis EXAMPLE === Water Table is 200 m
     r_vals =[]
     for obs in Obs_data.observations.itervalues():
         r_vals.append(obs.coordinate[0])
@@ -46,11 +52,11 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
         pres_drop = (pres0 - numpy.array([obs.data]))
         drawdown = pres_drop / 9806.65
         axes1.scatter(obs.times, drawdown, marker='s', s=25, c=color)
-        
+
     return cmap
 
 def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
-    mymodel = model.theis.createFromXML(filename)
+    mymodel = theis.createFromXML(filename)
     tindex = numpy.arange(125)
     times = []
     table_values = []
@@ -59,56 +65,56 @@ def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
     axes1.set_ylabel('Drawdown [m]')
     axes1.set_xlabel('Time after pumping [s]')
     axes1.set_title('Drawdown vs Time after Pumping')
-    
+
     for i in tindex:
-        times.append(1+math.exp(float(i)*(i+1)/(7.72*len(tindex))))
-    
+        times.append(1+numpy.exp(float(i)*(i+1)/(7.72*len(tindex))))
+
     for rad in mymodel.r:
         r= abs(rad)
         drawdown=mymodel.runForFixedRadius(times,abs(r))
         axes1.plot(times,drawdown, label='$r=%0.1f m$'%r)
         press_analytic.append([r,drawdown])
-    
+
     for obs in Obs_data.observations.itervalues():
         press_amanzi.append(obs.data)
-    
+
     for press1, press2 in zip(press_analytic,press_amanzi):
         table_values.append([press1[0],press1[1],press2])
-        
+
     axes1.legend(title='Theis Solution',loc='lower right', fancybox=True, shadow=True)
 
 if __name__ == "__main__":
-
-    import os
-    #import run_amanzi
-
     input_filename =os.path.join("..","amanzi_transient_theis.xml")
-
     CWD = os.getcwd()
 
-    #--set up the run directory and cd into it--#--This is not set up to run amanzi on the fly yet--#
+    #--set up the run directory and cd into it--
+
+    #--This is not set up to run amanzi on the fly yet--#
     run_directory = os.path.join(CWD,"output")
     #if os.path.isdir(run_directory):
     #     [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
     #else:
     #     os.mkdir(run_directory)
-         
     os.chdir(run_directory)
 
-    try: 
+    try:
+        #import run_amanzi
         #run_amanzi.run_amanzi('../theis.xml')
         obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 
         fig1= plt.figure()
         axes1=fig1.add_axes([.1,.1,.8,.8])
-       
+
         cmap = plotTheisObservations(obs_xml,obs_data,axes1)
         plotTheisAnalytic(input_filename,cmap,axes1,obs_xml,obs_data)
-        
+
         #plt.show()
 
-    finally:
+    except Exception:
+        os.chdir(CWD)
+        raise
+    else:
         os.chdir(CWD)
 
 

@@ -1,6 +1,12 @@
+import os
 import matplotlib.pyplot as plt
 import numpy
-import model.steady_linear 
+
+import sys
+if "./model" not in sys.path:
+    sys.path.append("./model")
+import steady_linear
+
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
@@ -10,7 +16,7 @@ import amanzi_xml.utils.search as search
 def loadInputXML(filename):
     Obs_xml = ObsXML(filename)
     return Obs_xml
-            
+
 # load the data file
 #  -- use above xml object to get observation filename
 #  -- create an ObservationData object
@@ -55,7 +61,7 @@ def plotExampleObservations(Obs_xml, Obs_data, axes1):
     return cmap
 
 def plotExampleModel(filename, cmap, axes1,Obs_xml, Obs_data):
-    mymodel = model.steady_linear.createFromXML(filename)
+    mymodel = steady_linear.createFromXML(filename)
     table_values = []
 
     x = numpy.linspace(mymodel.x0,mymodel.x1,11)
@@ -98,40 +104,36 @@ def plotExampleModel(filename, cmap, axes1,Obs_xml, Obs_data):
     the_table.set_fontsize(14)
 
 if __name__ == "__main__":
-
-    import os
-    import run_amanzi
-
-    input_filename = os.path.join("amanzi_steady_linear.xml")
-    print os.getcwd()
+    input_filename = os.path.join("..","amanzi_steady_linear.xml")
     CWD = os.getcwd()
+
     #--set up the run directory and cd into it
     run_directory = os.path.join(CWD,"output")
     if os.path.isdir(run_directory):
         [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
     else:
         os.mkdir(run_directory)
-         
+
     os.chdir(run_directory)
 
     try:
-        print os.getcwd() 
-        run_amanzi.run_amanzi('../'+input_filename)
-        obs_xml=loadInputXML("../"+input_filename)
+        import run_amanzi
+        run_amanzi.run_amanzi(input_filename)
+        obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 
         fig1= plt.figure()
         fig2 = plt.figure()
         axes1=fig1.add_axes([.1,.1,.8,.8])
-       
+
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
-        plotExampleModel("../"+input_filename, cmap, axes1,obs_xml, obs_data)
-     
-    except Error:
+        plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
+
+    except Exception:
         os.chdir(CWD)
         raise
-
-    os.chdir(CWD)
+    else:
+        os.chdir(CWD)
 
 
 
