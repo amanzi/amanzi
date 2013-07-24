@@ -966,7 +966,13 @@ MFTower::Write(const std::string& fileName,
 	       Real               time) const
 {
   Array<MFTower*> mfta(1,(MFTower*)this);
-  Array<std::string> varnames(1,varname);
+  Array<std::string> varnames(1,std::string(varname));
+  if (NComp()>1) {
+    varnames.resize(NComp());
+    for (int i=0; i<NComp(); ++i) {
+      varnames[i] = BoxLib::Concatenate(varname,i,2);
+    }
+  }
   MFTower::WriteSet(fileName,mfta,varnames,time);
 }
 
@@ -977,7 +983,11 @@ MFTower::WriteSet(const std::string&          fileName,
 		  Real                        time)
 {
   std::string pfversion = "MFTowerData-0.1";
-  BL_ASSERT(mfta.size()>0 && mfta.size()==varnames.size());
+  int ncomps = 0;
+  for (int i=0; i<mfta.size(); ++i) {
+    ncomps += mfta[i]->NComp();
+  }
+  BL_ASSERT(ncomps>0 && ncomps==varnames.size());
   const MFTower& mft = *(mfta[0]);
   for (int i=1; i<mfta.size(); ++i) {
     BL_ASSERT(mfta[i]->IsCompatible(mft));

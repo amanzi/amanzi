@@ -38,6 +38,8 @@ class RSParams;
 #include "beaker.hh"
 #endif
 
+static Real BL_ONEATM = 101325.0;
+
 enum StateType {State_Type=0, Press_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type, Num_State_Type};
 
 enum PressureNames { Pressure=0 };
@@ -1033,7 +1035,6 @@ public:
   void setup_bound_desc();
 
   // list
-  static std::map<std::string, int> model_list;
   static std::map<std::string, int> phase_list;
   static std::map<std::string, int> comp_list;
   static std::map<std::string, int> tracer_list;
@@ -1044,10 +1045,20 @@ public:
     1: single-phase flow with precipitate
     2: 2-phase 2-component flow
     3: polymer flow (2-phase 3-component)
-    4: saturated (perhaps same as 0??)
+    4: steady-saturated
   */
-  static std::string model_name;
-  static int model;
+  enum MODEL_ID
+  {
+    PM_SINGLE_PHASE,
+    PM_SINGLE_PHASE_SOLID,
+    PM_TWO_PHASE,
+    PM_POLYMER,
+    PM_RICHARDS,
+    PM_STEADY_SATURATED,
+    PM_INVALID
+  };
+  static MODEL_ID model;
+  static int Model() {return (int)model;}
 
   PMAmr* PMParent();
 

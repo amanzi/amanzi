@@ -2835,6 +2835,43 @@ c ::: -------------------------------------------------------------
 
 
 c ::: ---------------------------------------------------------
+c ::: Define linear pressure profile
+c ::: ---------------------------------------------------------
+
+      subroutine FORT_LINEAR_PRESSURE(p,DIMS(p),ncomps,
+     &     dx,problo,ref_val,ref_loc,gradp)
+
+      implicit none
+
+      integer DIMDEC(p)
+      integer ncomps
+      REAL_T  p(DIMV(p))
+      REAL_T  rhoval(ncomps)
+      REAL_T  dx(SDIM)
+      REAL_T  problo(SDIM)
+      REAL_T  ref_val
+      REAL_T  ref_loc(SDIM)
+      REAL_T  gradp(SDIM)
+
+      integer i,j,k
+      REAL_T  dp(SDIM), x, y,z
+
+      do k = ARG_L3(p), ARG_H3(p)
+         z = (dble(k)+half)*dx(3) + problo(3)
+         dp(3) = (z-ref_loc(3))*gradp(3)
+         do j = ARG_L2(p), ARG_H2(p)
+            y = (dble(j)+half)*dx(2) + problo(2)
+            dp(2) = (y-ref_loc(2))*gradp(2)
+            do i = ARG_L1(p), ARG_H1(p)
+               x = (dble(i)+half)*dx(1) + problo(1)
+               dp(1) = (x-ref_loc(1))*gradp(1)
+               p(i,j) = ref_val + dp(1) + dp(2) + dp(3)
+            end do
+         end do
+      end do
+      end
+
+c ::: ---------------------------------------------------------
 c ::: Define hydrostatic boundary condition
 c ::: ---------------------------------------------------------
       

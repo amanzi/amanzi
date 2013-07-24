@@ -2392,11 +2392,11 @@ c     dummy
 
 
 c ::: ---------------------------------------------------------
-c ::: Define hydrostatic boundary condition
+c ::: Define linear pressure profile
 c ::: ---------------------------------------------------------
       
-      subroutine FORT_HYDRO_PRESSURE(p,DIMS(p),rhoval,ncomps,
-     &     dx,wt_loc,grav)
+      subroutine FORT_LINEAR_PRESSURE(p,DIMS(p),ncomps,
+     &     dx,problo,ref_val,ref_loc,gradp)
 
       implicit none
 
@@ -2405,23 +2405,23 @@ c ::: ---------------------------------------------------------
       REAL_T  p(DIMV(p))
       REAL_T  rhoval(ncomps)
       REAL_T  dx(SDIM)
-      REAL_T  wt_loc
-      REAL_T  grav
+      REAL_T  problo(SDIM)
+      REAL_T  ref_val
+      REAL_T  ref_loc(SDIM)
+      REAL_T  gradp(SDIM)
       
       integer i,j
-      REAL_T  y
+      REAL_T  dp(SDIM), x, y
 
       do j = ARG_L2(p), ARG_H2(p)
-            y = (dble(j)+half)*dx(2)
+         y = (dble(j)+half)*dx(2) + problo(2)
+         dp(2) = (y-ref_loc(2))*gradp(2)
          do i = ARG_L1(p), ARG_H1(p)
-            if (ncomps .eq. 1) then
-               p(i,j) = -rhoval(1)*grav*(y-wt_loc)
-            else
-               p(i,j) = -(rhoval(1)-rhoval(2))*grav*(y-wt_loc)
-            endif
+            x = (dble(i)+half)*dx(1) + problo(1)
+            dp(1) = (x-ref_loc(1))*gradp(1)
+            p(i,j) = ref_val + dp(1) + dp(2)
          end do
       end do 
-
       end
 
 c ::: ------------------------------------------------------------------

@@ -233,7 +233,7 @@ namespace Amanzi {
                 prob_out_list.set("do_simple",2);
             }
             else if (flow_mode == "Richards") {
-                model_name = "richard";
+                model_name = "richards";
                 prob_out_list.set("have_capillary",1);
                 prob_out_list.set("cfl",-1);
             }
@@ -2089,13 +2089,10 @@ namespace Amanzi {
             const std::string ref_name="Reference Coordinate";reqP.push_back(ref_name);
             PLoptions opt(fPLin,nullList,reqP,true,true);  
     
-	    fPLout.set<std::string>("type","hydrostatic");
+	    fPLout.set<std::string>("type","linear_pressure");
 	    fPLout.set<double>("val",fPLin.get<double>(rval_name));
-	    const Array<double>& grad = fPLin.get<Array<double> >(grad_name);
-	    const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
-	    int coord = water_table.size()-1;
-	    fPLout.set<double>("water_table_height",water_table[coord]); 
-	    fPLout.set<double>("grad",grad[coord]);
+	    fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
+	    fPLout.set<Array<double> >("ref_coord",fPLin.get<Array<double> >(ref_name));
         }
 
         void convert_ICFlow(const ParameterList& fPLin,
@@ -2953,11 +2950,11 @@ namespace Amanzi {
 
 #if 0
             user_derive_list.push_back(underscore("Effective Diffusion Coefficient"));
+#endif
             user_derive_list.push_back(underscore("Intrinsic Permeability X"));
             user_derive_list.push_back(underscore("Intrinsic Permeability Y"));
 #if BL_SPACEDIM==3
             user_derive_list.push_back(underscore("Intrinsic Permeability Z"));
-#endif
 #endif
 
             if (struc_list.isSublist("tracer")) {

@@ -126,8 +126,6 @@ Array<Real>         PorousMedia::density;
 PArray<RegionData>  PorousMedia::ic_array;
 PArray<RegionData>  PorousMedia::bc_array;
 Array<Real>         PorousMedia::muval;
-std::string         PorousMedia::model_name;
-int                 PorousMedia::model;
 int                 PorousMedia::nphases;
 int                 PorousMedia::ncomps;
 int                 PorousMedia::ndiff;
@@ -257,11 +255,11 @@ bool PorousMedia::do_richard_sat_solve;
 //
 // Lists.
 //
-std::map<std::string, int> PorousMedia::model_list;
 std::map<std::string, int> PorousMedia::phase_list;
 std::map<std::string, int> PorousMedia::comp_list;
 std::map<std::string, int> PorousMedia::tracer_list;
 Array<std::string> PorousMedia::user_derive_list;
+PorousMedia::MODEL_ID PorousMedia::model;
 //
 // AMANZI flags.
 //
@@ -490,25 +488,24 @@ set_z_vel_bc (BCRec&       bc,
 typedef StateDescriptor::BndryFunc BndryFunc;
 typedef ErrorRec::ErrorFunc ErrorFunc;
 
+struct PMModel
+{
+  PMModel(PorousMedia::MODEL_ID id = PorousMedia::PM_INVALID) 
+    : model(id) {}
+  PorousMedia::MODEL_ID model;
+};
+static std::map<std::string,PMModel> available_models;
+
 void 
 PorousMedia::setup_list()
 {
   // model list
-  model_list["single-phase"] = 0;
-  model_list["single-phase-solid"] = 1;
-  model_list["two-phase"] = 2;
-  model_list["polymer"] = 3;
-  model_list["richard"] = 4;
-  model_list["steady-saturated"] = 5;
-
-#if 0
-  // bc_list
-  bc_list["file"] = 0;
-  bc_list["scalar"] = 1;
-  bc_list["hydrostatic"] = 2;
-  bc_list["rockhold"] = 3;
-  bc_list["zero_total_velocity"] = 4;
-#endif
+  available_models["single-phase"] = PMModel(PM_SINGLE_PHASE);
+  available_models["single-phase-solid"] = PMModel(PM_SINGLE_PHASE_SOLID);
+  available_models["two-phase"] = PMModel(PM_TWO_PHASE);
+  available_models["polymer"] = PMModel(PM_POLYMER);
+  available_models["richards"] = PMModel(PM_RICHARDS);
+  available_models["steady-saturated"] = PMModel(PM_STEADY_SATURATED);
 }
 
 void
@@ -529,7 +526,7 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::do_source_term = false;
 
-  PorousMedia::model        = 0;
+  PorousMedia::model        = PorousMedia::PM_INVALID;
   PorousMedia::nphases      = 0;
   PorousMedia::ncomps       = 0; 
   PorousMedia::ndiff        = 0;
@@ -575,7 +572,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::transient_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::dt_cutoff    = 0.0;
-  PorousMedia::gravity      = 9.80665 / 1.01325e5;
+  PorousMedia::gravity      = 9.807 / BL_ONEATM;
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
   PorousMedia::sum_interval = -1;
@@ -786,7 +783,7 @@ PorousMedia::variableSetUp ()
   if (ntracers > 0)
     NUM_SCALARS = NUM_SCALARS + ntracers;
 
-  if (model == model_list["polymer"])
+  if (model == PM_POLYMER)
   {
     NUM_SCALARS = NUM_SCALARS + 2;
   }
@@ -849,7 +846,7 @@ PorousMedia::variableSetUp ()
 			bc,BndryFunc(FORT_ADVFILL));
 #endif
 
-  if (model == model_list["polymer"]) {
+  if (model == PM_POLYMER) {
     desc_lst.setComponent(State_Type,ncomps+2,"s",
 			  bc,BndryFunc(FORT_ONE_N_FILL));
     desc_lst.setComponent(State_Type,ncomps+3,"c",
@@ -1960,14 +1957,16 @@ void PorousMedia::read_prob()
 
   // determine the model based on model_name
   ParmParse pb("prob");
+  std::string model_name;
   pb.query("model_name",model_name);
-  model = model_list[model_name];
+  model = available_models[model_name].model;
+  if (model == PM_INVALID) {
+    BoxLib::Abort("Invalid model selected");
+  }
+
   if (model_name=="steady-saturated") {
       solute_transport_limits_dt = true;
   }
-
-  // if model is specified, this supersedes model_name
-  pb.query("model",model);
 
   pb.query("do_tracer_transport",do_tracer_transport);
   if (do_tracer_transport) {
@@ -1975,7 +1974,7 @@ void PorousMedia::read_prob()
   }
 
   if (setup_tracer_transport && 
-      ( model==model_list["steady-saturated"]
+      ( model==PM_STEADY_SATURATED
         || (execution_mode==INIT_TO_STEADY && switch_time<=0)
         || (execution_mode!=INIT_TO_STEADY && do_tracer_transport) ) ) {
       transport_tracers = true;
@@ -2062,7 +2061,7 @@ void PorousMedia::read_prob()
   // This is converted to the unit that is used in the code.
   if (pb.contains("gravity")) {
     pb.get("gravity",gravity);
-    gravity /= 1.01325e5;
+    gravity /= BL_ONEATM;
   }
 
   // Get algorithmic flags and options
@@ -2388,20 +2387,14 @@ void  PorousMedia::read_comp()
               std::map<std::string,bool> phases_set;
               for (int j = 0; j<pNames.size(); j++)
               {
-                  std::string val_name = "val";                  
-#if 1
-                  ParmParse& pps = ppr;
-#else
-                  ParmParse pps(prefix + "." + pNames[j]);
-#endif
-                  ppr.get(val_name.c_str(),vals[0]);    
-
+                  std::string val_name = "val";
+                  ppr.get(val_name.c_str(),vals[0]);
                   phases_set[pNames[j]] = true;
               }
 	      
-	      // convert to atm with datum at atmospheric pressure
+	      // convert to atm
 	      for (int j=0; j<vals.size(); ++j) {
-		vals[j] = vals[j] / 1.01325e5 - 1.e0;
+		vals[j] = vals[j] / BL_ONEATM - 1.e0;
 	      }
       
               int num_phases = phases_set.size();
@@ -2415,6 +2408,47 @@ void  PorousMedia::read_comp()
               Array<Real> times(1,0);
               Array<std::string> forms(0);
               ic_array.set(i, new ArrayRegionData(icname,times,vals,forms,ic_regions,ic_type,1));
+          }
+          else if (ic_type == "linear_pressure")
+          {
+              int nPhase = pNames.size();
+              if (nPhase!=1) {
+                std::cerr << "Multiphase not currently surrported" << std::endl;
+                BoxLib::Abort();
+              }
+
+              Real press_val;
+              std::string val_name = "val";
+              ppr.get(val_name.c_str(),press_val);
+              press_val = press_val / BL_ONEATM - 1.0;
+
+              int ngrad = ppr.countval("grad");
+              if (ngrad<BL_SPACEDIM) {
+                std::cerr << "Insufficient number of components given for pressure gradient" << std::endl;
+                BoxLib::Abort();
+              }
+              Array<Real> pgrad(BL_SPACEDIM);
+              ppr.getarr("grad",pgrad,0,ngrad);
+	      for (int j=0; j<pgrad.size(); ++j) {
+                pgrad[j] = pgrad[j] / BL_ONEATM;
+	      }
+
+              int nref = ppr.countval("ref_coord");
+              if (nref<BL_SPACEDIM) {
+                std::cerr << "Insufficient number of components given for pressure refernce lication" << std::endl;
+                BoxLib::Abort();
+              }
+              Array<Real> pref(BL_SPACEDIM);
+              ppr.getarr("ref_coord",pref,0,nref);
+
+              int ntmp = 2*BL_SPACEDIM+1;
+              Array<Real> tmp(ntmp);
+              tmp[0] = press_val;
+              for (int j=0; j<BL_SPACEDIM; ++j) {
+                tmp[1+j] = pgrad[j];
+                tmp[1+j+BL_SPACEDIM] = pref[j];
+              }
+              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,tmp));
           }
           else if (ic_type == "saturation")
           {
@@ -2505,18 +2539,22 @@ void  PorousMedia::read_comp()
                   }
               }
               
-              // convert to atm with datum at atmospheric pressure
+              // convert to atm
               for (int j=0; j<vals.size(); ++j) {
-                  vals[j] = vals[j] / 1.01325e5 - 1.e0;
+                vals[j] = vals[j] / BL_ONEATM - 1;
               }
               
               is_inflow = false;
               component_bc = 1;
               pressure_bc = 2;
 
-              PressToRhoSat p_to_sat;
-              bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
-                                                        bc_type,ncomps,p_to_sat));
+              if (model == PM_STEADY_SATURATED) {
+                bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals));
+              } else {
+                PressToRhoSat p_to_sat;
+                bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
+                                                          bc_type,ncomps,p_to_sat));
+              }
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -3138,7 +3176,8 @@ void PorousMedia::read_params()
   //  std::cout << "Read sources."<< std::endl;
   //read_source();
 
-  FORT_INITPARAMS(&ncomps,&nphases,&model,density.dataPtr(),
+  int model_int = Model();
+  FORT_INITPARAMS(&ncomps,&nphases,&model_int,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
 		  &gravity);
     

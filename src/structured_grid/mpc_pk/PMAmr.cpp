@@ -36,7 +36,7 @@ PMAmr::PMAmr()
         compute_new_dt_on_regrid = 1;
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
-        use_matFiller            = false;
+        use_matFiller            = true;
 
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         pmamr_initialized = true;
