@@ -156,8 +156,6 @@ PM_Error_Value::tagCells(int* tag, D_DECL(const int& tlo0,const int& tlo1,const 
          level,&value);
 }
 
-static Real BL_ONEATM = 101325.0;
-
 namespace
 {
   const std::string solid("Solid");
@@ -203,7 +201,6 @@ PorousMedia::variableCleanUp ()
   delete godunov;
   godunov = 0;
 
-  model_list.clear();
   phase_list.clear();
   comp_list.clear();
   tracer_list.clear();
@@ -553,9 +550,9 @@ PorousMedia::PorousMedia (Amr&            papa,
   BL_ASSERT(rock_phi == 0);
   rock_phi = new MultiFab(grids,1,3);
 
-  if (model != model_list["single-phase"] &&
-      model != model_list["single-phase-solid"] &&
-      model != model_list["steady-saturated"])
+  if (model != PM_SINGLE_PHASE &&
+      model != PM_SINGLE_PHASE_SOLID &&
+      model != PM_STEADY_SATURATED)
     {
       BL_ASSERT(kr_coef == 0);
       kr_coef = new MultiFab(grids,5,1);
@@ -801,9 +798,9 @@ PorousMedia::restart (Amr&          papa,
   BL_ASSERT(rock_phi == 0);
   rock_phi = new MultiFab(grids,1,3);
 
-  if (model != model_list["single-phase"] &&
-      model != model_list["single-phase-solid"] &&
-      model != model_list["steady-saturated"])
+  if (model != PM_SINGLE_PHASE &&
+      model != PM_SINGLE_PHASE_SOLID &&
+      model != PM_STEADY_SATURATED)
     {
       BL_ASSERT(kr_coef == 0);
       kr_coef = new MultiFab(grids,5,1);
@@ -894,8 +891,8 @@ PorousMedia::restart (Amr&          papa,
 #endif
   
 #ifdef MG_USE_FBOXLIB
-  if (model != model_list["richard"] &&
-      model != model_list["steady-saturated"])
+  if (model != PM_RICHARDS &&
+      model != PM_STEADY_SATURATED)
     {
       std::string rxfile = "/rhs_RhoD_x";
       std::string ryfile = "/rhs_RhoD_y";
@@ -1048,7 +1045,7 @@ PorousMedia::initData ()
 		}
 
 		// set pressure to single value
-		if (model==model_list["richard"]) {
+		if (model==PM_RICHARDS) {
 		  const int idx = mfi.index();
 		  Array<int> s_bc = getBCArray(State_Type,idx,0,1);
 		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
@@ -1058,12 +1055,29 @@ PorousMedia::initData ()
 	    }
             else if (type == "pressure") 
 	    {
-	      BL_ASSERT(model == model_list["steady-saturated"]);
+	      BL_ASSERT(model == PM_STEADY_SATURATED);
 	      Array<Real> vals = ic();
 	      for (int jt=0; jt<ic_regions.size(); ++jt) {
 		regions[jt].setVal(P_new[mfi],vals,
 				   dx,0,0,ncomps);
 	      }
+	      for (int n=0; n<ncomps; ++n) {
+		S_new[mfi].setVal(density[n],mfi.validbox(),n,1);
+	      }
+	    }
+            else if (type == "linear_pressure")
+	    {
+	      Array<Real> vals = ic();
+              BL_ASSERT(vals.size() > 2*BL_SPACEDIM);
+
+              const Real* ref_val = &(vals[0]);
+              const Real* gradp = &(vals[1]);
+              const Real* ref_loc = &(vals[1+BL_SPACEDIM]);
+              const Real* problo = geom.ProbLo();
+
+              FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+                                   dx, problo, ref_val, ref_loc, gradp);
+
 	      for (int n=0; n<ncomps; ++n) {
 		S_new[mfi].setVal(density[n],mfi.validbox(),n,1);
 	      }
@@ -1080,17 +1094,19 @@ PorousMedia::initData ()
                            c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
                            dx, vals.dataPtr(), &gravity);
 
-		// set pressure to phydrostatic
-		FORT_HYDRO_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), 
-				    density.dataPtr(),&ncomps, 
-				    dx, vals.dataPtr(), &gravity);
-		
-
+                Array<Real> gradp(BL_SPACEDIM,0);
+                Real dr = (ncomps == 1 ? density[0] : density[0] - density[1]);
+                gradp[BL_SPACEDIM-1] = - gravity * dr;
+                const Real* problo = geom.ProbLo();
+                const Real* ref_loc = problo;
+                Real ref_val = 0;
+                FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+                                     dx, problo, &ref_val, ref_loc, gradp.dataPtr());
 	    }
             else if (type == "zero_total_velocity")
 	    {	     
-                BL_ASSERT(model != model_list["single-phase"] && 
-                          model != model_list["single-phase-solid"]);
+                BL_ASSERT(model != PM_SINGLE_PHASE && 
+                          model != PM_SINGLE_PHASE_SOLID);
                 int nc = 1;
 		Array<Real> vals = ic();
 		FArrayBox& cdat = (*cpl_coef)[mfi];
@@ -1109,7 +1125,7 @@ PorousMedia::initData ()
 				 dx, &vals[0], &nc, &gravity);
 		
 		// set pressure
-		if (model==model_list["richard"]) {
+		if (model==PM_RICHARDS) {
 		  const int idx = mfi.index();
 		  Array<int> s_bc = getBCArray(State_Type,idx,0,1);
 		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
@@ -1126,7 +1142,7 @@ PorousMedia::initData ()
                               density.dataPtr(), &ncomps, dx);
 
 		// set pressure to single value
-		if (model==model_list["richard"]) {
+		if (model==PM_RICHARDS) {
 		  const int idx = mfi.index();
 		  Array<int> s_bc = getBCArray(State_Type,idx,0,1);
 		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
@@ -1368,7 +1384,7 @@ PorousMedia::initData ()
         get_new_data(FuncCount_Type).setVal(1);
     }
         
-    if (model == model_list["richard"]) {
+    if (model == PM_RICHARDS) {
       calcInvPressure(S_new,P_new); // Set sat from p
 
       // FIXME: Why are these needed here?
@@ -1387,20 +1403,20 @@ PorousMedia::initData ()
     //
     // compute lambda
     //
-    if (model != model_list["steady-saturated"]) {
+    if (model != PM_STEADY_SATURATED) {
       calcLambda(cur_time);
     }
 
     //
     // Initialize u_mac_curr 
     //
-    if (model != model_list["richard"]) {
+    if (model != PM_RICHARDS) {
 
       if (u_macG_curr == 0) {
         u_macG_curr = AllocateUMacG();
       }
 
-      if (model == model_list["steady-saturated"]) {
+      if (model == PM_STEADY_SATURATED) {
 	set_vel_from_bcs(cur_time,u_mac_curr);
       }
       else {
@@ -1838,6 +1854,8 @@ PorousMedia::SetRichardSolverParameters(RSParams&          rsparams,
     rsparams.pressure_maxorder = richard_pressure_maxorder;
     rsparams.scale_soln_before_solve = richard_scale_solution_before_solve;
     rsparams.semi_analytic_J = richard_semi_analytic_J;
+    rsparams.centered_diff_J = richard_centered_diff_J;
+    rsparams.subgrid_krel = richard_subgrid_krel;
     rsparams.variable_switch_saturation_threshold = richard_variable_switch_saturation_threshold;
 }
 
@@ -1847,7 +1865,7 @@ PorousMedia::richard_init_to_steady()
   //
   // Richard initialization
   //
-  if (model == model_list["richard"]) {
+  if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
     std::string tag = "Richard Init-to-Steady";
     if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
       std::cout << tag << std::endl;
@@ -1899,8 +1917,12 @@ PorousMedia::richard_init_to_steady()
         }
       }
 
+      bool attempting_pure_steady;
+      Real dt_thresh_pure_steady = richard_dt_thresh_pure_steady;
+
       for (int grid_seq_fine=grid_seq_init_fine; grid_seq_fine<=finest_level; ++grid_seq_fine) {
 
+        attempting_pure_steady = false;
         int num_active_levels = grid_seq_fine + 1;
         if (ParallelDescriptor::IOProcessor() && richard_init_to_steady_verbose) {
           std::cout << "Number of active levels: " << num_active_levels << std::endl;
@@ -1944,7 +1966,7 @@ PorousMedia::richard_init_to_steady()
           if (steady_use_PETSc_snes) {
             rs->SetCurrentTimestep(k);
           }
-              
+
           // Advance the state data structures
           for (int lev=0;lev<finest_level+1;lev++) {
             PorousMedia& pm = getLevel(lev);
@@ -2003,17 +2025,32 @@ PorousMedia::richard_init_to_steady()
             }
 	      
             if (steady_use_PETSc_snes) 
-            {
+            {              
 	      if (!tmp_record_file.empty()) {
 		rs->SetRecordFile(tmp_record_file);
 	      }
-              int retCode = rs->Solve(t+dt, dt, k, nld);
+
+              attempting_pure_steady = dt_thresh_pure_steady>0 && dt>dt_thresh_pure_steady;
+              Real dt_solve = attempting_pure_steady ? -1 : dt;
+              if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+                std::cout << "     **************** Attempting pure steady solve" << '\n';
+              int retCode = rs->Solve(t+dt, dt_solve, k, nld);
+
+              if (retCode < 0 && attempting_pure_steady) {
+                dt_thresh_pure_steady *= 10;
+                if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+                  std::cout << "     **************** Steady solve failed, resuming transient..." << '\n';
+                attempting_pure_steady = false;
+                retCode = rs->Solve(t+dt, dt, k, nld);
+              }
+
               if (retCode >= 0) {
                 ret = RichardNLSdata::RICHARD_SUCCESS;
                 rs->UpdateDarcyVelocity(rs->GetPressure(),t+dt);
               } 
               else {
-                if (ret == -3) {
+
+                if (retCode == -3) {
                   ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
                 }
                 else {
@@ -2061,7 +2098,7 @@ PorousMedia::richard_init_to_steady()
               for (int k = 0; k < num_state_type; k++) {
                 fine_lev.state[k].reset();
               }
-		
+
               if (do_richard_sat_solve) {
                 MultiFab& S_lev = fine_lev.get_new_data(State_Type);
                 MultiFab::Copy(S_lev,nld.initialState[lev],0,0,1,1);
@@ -2075,16 +2112,21 @@ PorousMedia::richard_init_to_steady()
 
           Real dt_new;
           bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
-	    
+
           if (ret == RichardNLSdata::RICHARD_SUCCESS) {
             k++;
-            t += dt;
-            if (execution_mode==INIT_TO_STEADY) {
-              solved = false; // Do not kick out early
+            if (attempting_pure_steady) {
+              solved = true;
             }
             else {
-              solved = ((abs_err <= steady_abs_update_tolerance) 
-                        || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+              t += dt;
+              if (execution_mode==INIT_TO_STEADY) {
+                solved = false; // Do not kick out early
+              }
+              else {
+                solved = ((abs_err <= steady_abs_update_tolerance) 
+                          || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
+              }
             }
             if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
               std::cout << tag << "   Step successful, Niters=" << nld.NLIterationsTaken() << std::endl;
@@ -2134,8 +2176,11 @@ PorousMedia::richard_init_to_steady()
         }
 	  
         if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-          if (solved) {
+          if (solved || attempting_pure_steady) {
             std::cout << tag << " Success!  Steady solution found" << std::endl;
+            if (grid_seq_fine!=finest_level) {
+              std::cout << tag << " Adding another refinement level and re-solving..." << std::endl;
+            }
           }
           else {
             std::cout << tag << " Warning: solution is not steady.  Continuing..." << std::endl;
@@ -2222,10 +2267,10 @@ PorousMedia::init (AmrLevel& old)
       is_grid_changed_after_regrid = false;
     }
 
-  if (is_grid_changed_after_regrid && model == model_list["steady-saturated"]) {
+  if (is_grid_changed_after_regrid && model == PM_STEADY_SATURATED) {
     set_vel_from_bcs(cur_time,u_mac_curr);
       }
-  /*  if (!is_grid_changed_after_regrid && model == model_list["richard"])
+  /*  if (!is_grid_changed_after_regrid && model == PM_RICHARDS)
     {
       MultiFab P_tmp(grids      MultiFab::Copy(P_tmp,P_new,0,0,1,1);
       P_tmp.mult(-1.0);
@@ -2315,7 +2360,7 @@ PorousMedia::init ()
 
   U_cor.setVal(0.);
 
-  if (model == model_list["steady-saturated"]) {
+  if (model == PM_STEADY_SATURATED) {
     set_vel_from_bcs(cur_time,u_mac_curr);
   }  
 
@@ -2427,18 +2472,18 @@ PorousMedia::advance_setup (Real time,
         state[k].swapTimeLevels(dt);
     }
 
-  if (model != model_list["steady-saturated"]) {
+  if (model != PM_STEADY_SATURATED) {
     //
     // Compute lambda at cell centers
     //
 
       // FIXME: this test is messed up!
-    if (model != model_list["single-phase"] || 
-	model != model_list["single-phase-solid"]) 
+    if (model != PM_SINGLE_PHASE ||
+	model != PM_SINGLE_PHASE_SOLID)
       {
 	calcLambda(time); 
 #ifdef MG_USE_FBOXLIB
-	if (model != model_list["richard"])
+	if (model != PM_RICHARDS)
 #endif
 	  calcDLambda(time);
 	MultiFab::Copy(*lambdap1_cc,*lambda_cc,0,0,ncomps,1);
@@ -2466,10 +2511,10 @@ PorousMedia::advance_setup (Real time,
     // must be recomputed if grid has changed after a timestep.
     //
 #ifdef MG_USE_FBOXLIB
-    if (model != model_list["richard"])
+    if (model != PM_RICHARDS)
 #endif
       {
-	if (model_list["steady-saturated"]) {
+	if (PM_STEADY_SATURATED) {
 	  set_vel_from_bcs(time,u_mac_curr);
 	}
 	else if (do_simple == 0 && (full_cycle == 1 || no_corrector == 1))
@@ -2554,7 +2599,7 @@ PorousMedia::ml_step_driver(Real  t,
 {
     Real dt_min = 1.e-20 * dt_try;
     int max_dt_iters = 1; // By default, do not subcycle this process
-    if (model == model_list["richard"])  {
+    if (model == PM_RICHARDS)  {
       max_dt_iters = max_dt_iters_flow;
     }
 
@@ -2568,9 +2613,6 @@ PorousMedia::ml_step_driver(Real  t,
       if (ntracers>0 && do_tracer_transport && execution_mode==INIT_TO_STEADY) {
 	transport_tracers = t >= switch_time;
       }
-      //if (level = 1 && model == model_list["steady-saturated"]) {
-      //	std::cout << u_mac_curr[0][0] << std::endl;
-      //}
       step_ok = multilevel_advance(t,dt_this_attempt,amr_iteration,amr_ncycle,dt_suggest);
       if (step_ok) {
 	dt_taken = dt_this_attempt;
@@ -2666,7 +2708,7 @@ PorousMedia::advance (Real time,
       }
 
 #ifdef MG_USE_FBOXLIB
-    if (model == model_list["richard"]) 
+    if (model == PM_RICHARDS)
       {
 	advance_richard(time,dt);
       }
@@ -2761,7 +2803,7 @@ PorousMedia::multilevel_advance (Real  time,
 
   bool step_ok = true;
 
-  if (model == model_list["richard"])  {
+  if (model == PM_RICHARDS)  {
 
     // Richards:
     //   Flow: Multilevel solve for p,s,u_mac
@@ -2816,7 +2858,7 @@ PorousMedia::multilevel_advance (Real  time,
     }
     dt_new = std::min(dt_new, dt_suggest_tc);
   }
-  else if (model == model_list["steady-saturated"]) {
+  else if (model == PM_STEADY_SATURATED) {
 
     // Saturated flow
     //   Flow: Set velocity from boundary data at each time step
@@ -3691,8 +3733,8 @@ PorousMedia::create_lambda (Real time)
   // lambda_T is evaluated at edges.  
   // 
 
-  if (model == model_list["single-phase"] || 
-      model == model_list["single-phase-rock"]) 
+  if (model == PM_SINGLE_PHASE ||
+      model == PM_SINGLE_PHASE_SOLID)
     {
       for (int dir=0; dir<BL_SPACEDIM; dir++)
 	{
@@ -3863,8 +3905,8 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
     delete forces;
     
 
-  if (model != model_list["single-phase"] || 
-      model != model_list["single-phase-solid"]) 
+  if (model != PM_SINGLE_PHASE ||
+      model != PM_SINGLE_PHASE_SOLID)
     {
       MultiFab* u_phase = new MultiFab[BL_SPACEDIM];
       for (int dir = 0; dir < BL_SPACEDIM; dir++)
@@ -4131,7 +4173,7 @@ PorousMedia::get_inflow_density(const Orientation& face,
 				Real               t)
 {
   Box ovlp = ccBndBox & fab.box();
-  if (model == model_list["steady-saturated"]) {
+  if (model == PM_STEADY_SATURATED) {
     for (int n=0; n<ncomps; ++n) {
       fab.setVal(density[n],ovlp,n,1);
     }
@@ -4524,7 +4566,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
       //
       // Polymer model.
       //
-      if (model == model_list["polymer"]) 
+      if (model == PM_POLYMER) 
 	{ 
 	  godunov->AdvectStatePmr(grids[i], dx, dt, 
 				  area[0][i], u_macG[0][i], flux[0], kpedge[0][i],
@@ -4544,8 +4586,8 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
       //
       // Single phase  model.
       //
-      else if (model == model_list["single-phase"] || 
-	       model == model_list["single-phase-solid"])
+      else if (model == PM_SINGLE_PHASE ||
+	       model == PM_SINGLE_PHASE_SOLID)
 	{
 	  godunov->AdvectStateLin(grids[i], dx, dt, 
 				  area[0][i], u_macG[0][i], flux[0],
@@ -4561,7 +4603,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
       //
       // Two-phase two-component model.
       //
-      else if (model == model_list["two-phase"])
+      else if (model == PM_TWO_PHASE)
 	{
 	  const int n_kr_coef = kr_coef->nComp();
 	  if (do_cpl_advect) 
@@ -4607,7 +4649,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
       //
       // Set aofs of components in solid phase to zero.
       //
-      if ((model == model_list["single-phase-solid"]) && (nphases > 1)) 
+      if ((model == PM_SINGLE_PHASE_SOLID) && (nphases > 1))
 	{
 	  for (int ii=0; ii<ncomps; ii++) 
 	    {
@@ -4638,7 +4680,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
       // Allocate the eigenvalues into scalar array.
       //
       
-      if (model == model_list["two-phase"])
+      if (model == PM_TWO_PHASE)
 	{
 	  S_new[i].setVal(0.0,ncomps+ntracers);
 	  S_new[i].setVal(0.0,ncomps+ntracers+1);
@@ -4747,7 +4789,7 @@ PorousMedia::scalar_diffusion_update (Real dt,
   if (verbose > 2 && ParallelDescriptor::IOProcessor())
     std::cout << "... diffuse scalars\n";
 
-  BL_ASSERT(model == model_list["single-phase"] || model == model_list["single-phase-solid"]);
+  BL_ASSERT(model == PM_SINGLE_PHASE || model == PM_SINGLE_PHASE_SOLID);
 
   const Real strt_time = ParallelDescriptor::second();
 
@@ -6570,7 +6612,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
                     std::cout << "     Iteration (n) " << itr_nwt 
                               << " : Error = "       << err_nwt << " (tol: " << max_err_nwt << ")\n";
                 }
-                if (model != model_list["richard"])
+                if (model != PM_RICHARDS)
                     scalar_adjust_constraint(0,ncomps-1);
                 FillStateBndry(pcTime,State_Type,0,ncomps);
                 calcCapillary(pcTime);
@@ -7616,14 +7658,14 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
                   u_mac[dir].setVal(0.);
               }
 #ifdef MG_USE_FBOXLIB
-              if (model == model_list["richard"]) {
+              if (model == PM_RICHARDS) {
                   if (!steady_use_PETSc_snes) {
                       compute_vel_phase(u_mac,0,cur_time);
                   }
               }
               else
 #endif
-		if (model == model_list["steady-saturated"]) {
+		if (model == PM_STEADY_SATURATED) {
 		  set_vel_from_bcs(PMParent()->startTime(),u_mac);
 		} else 
               {
@@ -7660,7 +7702,7 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
   // Limit by max_dt
   //
 #ifdef MG_USE_FBOXLIB
-  if (model == model_list["richard"]) {
+  if (model == PM_RICHARDS) {
       Real richard_max_dt = (initial_iter  ?  steady_richard_max_dt  :  transient_richard_max_dt);
       if (richard_max_dt>0) {
           estdt = std::min(richard_max_dt,estdt);
@@ -7717,14 +7759,14 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 
       Real eigmax_m[BL_SPACEDIM] = {D_DECL(0,0,0)};
       
-      if (model == model_list["single-phase"])
+      if (model == PM_SINGLE_PHASE)
 	{
 	  godunov->esteig_lin (grids[i], D_DECL(u_macG[0][i],
                                                 u_macG[1][i],
                                                 u_macG[2][i]),
 			       (*rock_phi)[i], eigmax_m);
 	}
-      else if (model == model_list["two-phase"])
+      else if (model == PM_TWO_PHASE)
 	{
 	  const int n_kr_coef = kr_coef->nComp();
 	  if (do_cpl_advect)
@@ -8228,7 +8270,7 @@ PorousMedia::post_timestep (int crse_iteration)
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_timestep()");
 
 #ifdef MG_USE_FBOXLIB
-  if (model == model_list["richard"] && !do_multilevel_full) {
+  if (model == PM_RICHARDS && !do_multilevel_full) {
     richard_sync();
   }
   else 
@@ -8597,9 +8639,9 @@ PorousMedia::init_rock_properties ()
     geom.FillPeriodicBoundary(*rock_phi);
   }
 
-  if (model != model_list["single-phase"] && 
-      model != model_list["single-phase-solid"] &&
-      model != model_list["steady-saturated"])
+  if (model != PM_SINGLE_PHASE &&
+      model != PM_SINGLE_PHASE_SOLID &&
+      model != PM_STEADY_SATURATED)
     {
       bool do_fine_average = false;
       // relative permeability
@@ -8765,7 +8807,7 @@ PorousMedia::post_init_state ()
     }
   }
 
-  if (model == model_list["richard"]) {
+  if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
     if (do_richard_init_to_steady) {
       richard_init_to_steady();        
     }
@@ -9534,12 +9576,12 @@ PorousMedia::mac_sync ()
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::mac_sync()");
 
-  bool do_sl_richard_sync = ( model == model_list["richard"]  && !do_multilevel_full);
+  bool do_sl_richard_sync = ( model == PM_RICHARDS  && !do_multilevel_full);
   BL_ASSERT(!do_sl_richard_sync);
 
   bool do_explicit_tracer_sync_only = 
-    (model == model_list["steady-saturated"]) 
-    || ( (model == model_list["richard"] && do_multilevel_full) );
+    (model == PM_STEADY_SATURATED)
+    || ( (model == PM_RICHARDS && do_multilevel_full) );
 
   const int  numscal   = ncomps; 
   const Real prev_time = state[State_Type].prevTime();
@@ -9821,7 +9863,7 @@ PorousMedia::mac_sync ()
   //
   // Add the sync correction to the state.
   //
-  if (model != model_list["steady-saturated"] && have_capillary == 0) {
+  if (model != PM_STEADY_SATURATED && have_capillary == 0) {
     if (!any_diffusive) {
       for (MFIter mfi(*Ssync); mfi.isValid(); ++mfi) {
 	for (int nc = 0; nc < ncomps; nc++)
@@ -10001,7 +10043,7 @@ PorousMedia::richard_sync ()
                 if (verbose > 3 && ParallelDescriptor::IOProcessor())
                     std::cout << "Newton iteration " << itr_nwt 
                               << " : Error = "       << err_nwt << "\n"; 
-                if (model != model_list["richard"])
+                if (model != PM_RICHARDS)
                     scalar_adjust_constraint(0,ncomps-1);
                 FillStateBndry(pcTime,State_Type,0,ncomps);
                 calcCapillary(pcTime);
@@ -10035,7 +10077,7 @@ PorousMedia::richard_sync ()
                     std::cout << "Newton iteration " << itr_nwt 
                               << " : Error = "       << err_nwt << "\n"; 
                 calcInvPressure (S_new,P_new); 
-                if (model != model_list["richard"])
+                if (model != PM_RICHARDS)
                     scalar_adjust_constraint(0,ncomps-1);
                 calcLambda(pcTime);
                 compute_vel_phase(u_mac_curr,0,pcTime);
@@ -10162,23 +10204,23 @@ void
 PorousMedia::reflux ()
 {
   bool do_tracer_advection_reflux = 
-    (model == model_list["steady-saturated"]) 
-    || ( (model == model_list["richard"] && !do_multilevel_full) );
+    (model == PM_STEADY_SATURATED)
+    || ( (model == PM_RICHARDS && !do_multilevel_full) );
 
   if (do_tracer_advection_reflux) {
     reflux(getAdvFluxReg(level+1),ncomps,ntracers);
   }
 
   bool do_component_advection_reflux =
-    (model != model_list["steady-saturated"]) 
-    && ( ! (model == model_list["richard"] && do_multilevel_full) );
+    (model != PM_STEADY_SATURATED)
+    && ( ! (model == PM_RICHARDS && do_multilevel_full) );
 
   if (do_component_advection_reflux) {
     reflux(getAdvFluxReg(level+1),0,ncomps);
   }
 
-  if ( (model != model_list["steady-saturated"]) 
-       && (model != model_list["richard"]) ) {
+  if ( (model != PM_STEADY_SATURATED)
+       && (model != PM_RICHARDS) ) {
     // Do all refluxing, assumes visc+adv fluxregs used
     reflux(getAdvFluxReg(level+1),0,NUM_SCALARS);
     reflux(getViscFluxReg(level+1),0,NUM_SCALARS);
@@ -11406,90 +11448,66 @@ PorousMedia::calcCapillary (FArrayBox&       pc,
 }
 
 void 
-PorousMedia::calcInvCapillary (MultiFab& S,
-			       const MultiFab& pc)
+PorousMedia::calcInvCapillary (FArrayBox& n,
+			       const FArrayBox& pc,
+			       const FArrayBox& rock_phi,
+			       const FArrayBox& kappa,
+			       const FArrayBox& cpl_coef)
 {
   //
   // Calculate inverse capillary pressure
+  // (ie, compute rho.sat from pcap)
   //    
-  const int n_cpl_coef = cpl_coef->nComp();
-  for (MFIter mfi(S); mfi.isValid(); ++mfi)
-    {
+  const int n_cpl_coef = cpl_coef.nComp();
+  const Real* ndat  = n.dataPtr(); 
+  const int*  n_lo  = n.loVect();
+  const int*  n_hi  = n.hiVect();
 
-      FArrayBox& Sfab   = S[mfi];
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
+  const Real* ddat  = pc.dataPtr(); 
+  const int*  d_lo  = pc.loVect();
+  const int*  d_hi  = pc.hiVect();
+  
+  const Real* pdat = rock_phi.dataPtr();
+  const int* p_lo  = rock_phi.loVect();
+  const int* p_hi  = rock_phi.hiVect();
+  
+  const Real* kdat = kappa.dataPtr();
+  const int* k_lo  = kappa.loVect();
+  const int* k_hi  = kappa.hiVect();
+  
+  const Real* cpdat  = cpl_coef.dataPtr(); 
+  const int*  cp_lo  = cpl_coef.loVect();
+  const int*  cp_hi  = cpl_coef.hiVect();
 
-      const Real* ddat  = pc[mfi].dataPtr(); 
-      const int*  d_lo  = pc[mfi].loVect();
-      const int*  d_hi  = pc[mfi].hiVect();
-
-      const Real* pdat = (*rock_phi)[mfi].dataPtr();
-      const int* p_lo  = (*rock_phi)[mfi].loVect();
-      const int* p_hi  = (*rock_phi)[mfi].hiVect();
-
-      const Real* kdat = (*kappa)[mfi].dataPtr();
-      const int* k_lo  = (*kappa)[mfi].loVect();
-      const int* k_hi  = (*kappa)[mfi].hiVect();
-
-      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
-      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
-      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
-
-      FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		       ndat, ARLIM(n_lo), ARLIM(n_hi),
-		       pdat, ARLIM(p_lo), ARLIM(p_hi),
-		       kdat, ARLIM(k_lo), ARLIM(k_hi),
-		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-		       &n_cpl_coef); 
-    }
+  FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
+                   ndat, ARLIM(n_lo), ARLIM(n_hi),
+                   pdat, ARLIM(p_lo), ARLIM(p_hi),
+                   kdat, ARLIM(k_lo), ARLIM(k_hi),
+                   cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
+                   &n_cpl_coef);
 }
 
 void 
-PorousMedia::calcInvPressure (MultiFab& S,
+PorousMedia::calcInvCapillary (MultiFab&       N,
+			       const MultiFab& pc)
+{
+  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
+    PorousMedia::calcInvCapillary (N[mfi],pc[mfi],(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
+  }
+}
+
+void 
+PorousMedia::calcInvPressure (MultiFab&       N,
 			      const MultiFab& p)
 {
-  //
-  // Calculate inverse pressure
-  //    
-  const int n_cpl_coef = cpl_coef->nComp();
-  for (MFIter mfi(S); mfi.isValid(); ++mfi)
-    { 
-      FArrayBox pc;
-      const Box& fbox = S[mfi].box(); 
-      pc.resize(fbox,1);
-      pc.copy(p[mfi],fbox,0,fbox,0,1);
-      pc.mult(-1.0);
-
-      FArrayBox& Sfab   = S[mfi];
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
-
-      const Real* ddat  = pc.dataPtr(); 
-      const int*  d_lo  = pc.loVect();
-      const int*  d_hi  = pc.hiVect();
-
-      const Real* pdat = (*rock_phi)[mfi].dataPtr();
-      const int* p_lo  = (*rock_phi)[mfi].loVect();
-      const int* p_hi  = (*rock_phi)[mfi].hiVect();
-
-      const Real* kdat = (*kappa)[mfi].dataPtr();
-      const int* k_lo  = (*kappa)[mfi].loVect();
-      const int* k_hi  = (*kappa)[mfi].hiVect();
-
-      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
-      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
-      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
-
-      FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		       ndat, ARLIM(n_lo), ARLIM(n_hi),
-		       pdat, ARLIM(p_lo), ARLIM(p_hi),
-		       kdat, ARLIM(k_lo), ARLIM(k_hi),
-		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-		       &n_cpl_coef); 
-    }
+  for (MFIter mfi(N); mfi.isValid(); ++mfi) { 
+    FArrayBox pc;
+    const Box& fbox = N[mfi].box(); 
+    pc.resize(fbox,1);
+    pc.copy(p[mfi],fbox,0,fbox,0,1);
+    pc.mult(-1.0);    
+    PorousMedia::calcInvCapillary (N[mfi],pc,(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
+  }
 }
 
 void 
@@ -11520,6 +11538,31 @@ PorousMedia::smooth_pc (MultiFab* pc)
   pc->FillBoundary();
 }
 
+void
+PorousMedia::calcLambda(FArrayBox&       lambda,
+                        const FArrayBox& N,
+                        const FArrayBox& kr_coef)
+{
+  const int n_kr_coef = kr_coef.nComp();
+
+  const Real* ndat  = N.dataPtr(); 
+  const int*  n_lo  = N.loVect();
+  const int*  n_hi  = N.hiVect();
+  
+  const Real* ddat  = lambda.dataPtr(); 
+  const int*  d_lo  = lambda.loVect();
+  const int*  d_hi  = lambda.hiVect();
+  
+  const Real* krdat  = kr_coef.dataPtr(); 
+  const int*  kr_lo  = kr_coef.loVect();
+  const int*  kr_hi  = kr_coef.hiVect();
+  
+  FORT_MK_LAMBDA( ddat, ARLIM(d_lo), ARLIM(d_hi),
+                  ndat, ARLIM(n_lo), ARLIM(n_hi),
+                  krdat, ARLIM(kr_lo),ARLIM(kr_hi),
+                  &n_kr_coef);
+}
+
 
 void 
 PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
@@ -11540,7 +11583,6 @@ PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
     lcc = lbd_cc;  
 
   const int nGrow = 1;
-  const int n_kr_coef = kr_coef->nComp();  
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
        fpi.isValid();
        ++fpi)
@@ -11549,54 +11591,20 @@ PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       BL_ASSERT(box == fpi().box());
 
-      const FArrayBox& Sfab = fpi();
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
-
-      const Real* ddat  = (*lcc)[fpi].dataPtr(); 
-      const int*  d_lo  = (*lcc)[fpi].loVect();
-      const int*  d_hi  = (*lcc)[fpi].hiVect();
-
-      const Real* krdat  = (*kr_coef)[fpi].dataPtr(); 
-      const int*  kr_lo  = (*kr_coef)[fpi].loVect();
-      const int*  kr_hi  = (*kr_coef)[fpi].hiVect();
-	
-      FORT_MK_LAMBDA( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		      ndat, ARLIM(n_lo), ARLIM(n_hi),
-		      krdat, ARLIM(kr_lo),ARLIM(kr_hi),
-		      &n_kr_coef);
+      PorousMedia::calcLambda((*lcc)[fpi], fpi(), (*kr_coef)[fpi]);
     }
   lcc->FillBoundary();
 }
 
 void 
-PorousMedia::calcLambda (MultiFab* lbd, const MultiFab& S)
+PorousMedia::calcLambda (MultiFab* lbd, const MultiFab& N)
 {
   //
   // Calculate the lambda values at cell-center. 
   //   
-  const int n_kr_coef = kr_coef->nComp();
-  for (MFIter mfi(S); mfi.isValid(); ++mfi)
-    {
-      const FArrayBox& Sfab = S[mfi];
-      const Real* ndat  = Sfab.dataPtr(); 
-      const int*  n_lo  = Sfab.loVect();
-      const int*  n_hi  = Sfab.hiVect();
-
-      const Real* ddat  = (*lbd)[mfi].dataPtr(); 
-      const int*  d_lo  = (*lbd)[mfi].loVect();
-      const int*  d_hi  = (*lbd)[mfi].hiVect();
-
-      const Real* krdat  = (*kr_coef)[mfi].dataPtr(); 
-      const int*  kr_lo  = (*kr_coef)[mfi].loVect();
-      const int*  kr_hi  = (*kr_coef)[mfi].hiVect();
-	
-      FORT_MK_LAMBDA( ddat, ARLIM(d_lo), ARLIM(d_hi),
-		      ndat, ARLIM(n_lo), ARLIM(n_hi),
-		      krdat, ARLIM(kr_lo),ARLIM(kr_hi),
-		      &n_kr_coef);
-    }
+  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
+    calcLambda((*lbd)[mfi], N[mfi], (*kr_coef)[mfi]);
+  }
   lbd->FillBoundary();
 }
 
@@ -11958,7 +11966,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
                 for (int i=0; i<face_bc_idxs.size(); ++i) {
                     const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
                     
-                    if (model==model_list["richard"]) {
+                    if (model==PM_RICHARDS) {
                         sdat.setVal(0);
                         face_bc.apply(sdat,dx,0,ncomps,t_eval);
                         mask.resize(subbox,1); mask.setVal(-1);
@@ -11989,6 +11997,12 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
                                 }
                             }
                         }
+                    }
+                    else if (model==PM_STEADY_SATURATED) {
+                      if (face_bc.Type() == "pressure") {
+                        face_bc.apply(prdat,dx,0,ncomps,t_eval);
+                        fab.copy(prdat,0,0,ncomps);
+                      }
                     }
 		}
 	    }
@@ -12170,7 +12184,7 @@ PorousMedia::derive (const std::string& name,
             MultiFab::Copy(mf,tmpmf,0,dcomp,ncomp,nGrowOut);
             mf.mult(BL_ONEATM,dcomp,ncomp,nGrowOut);
         }
-        else if (model == model_list["steady-saturated"]) {
+        else if (model == PM_STEADY_SATURATED) {
 	  mf.setVal(0,dcomp,ncomp);
 	}
 	else {
@@ -12253,7 +12267,7 @@ PorousMedia::derive (const std::string& name,
         int ncomp = 1;
         int ngrow = mf.nGrow();
         AmrLevel::derive("pressure",time,mf,dcomp);
-        if (model == model_list["richard"] || model == model_list["steady-saturated"]) {
+        if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
             mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
             mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
         }
@@ -12267,12 +12281,14 @@ PorousMedia::derive (const std::string& name,
                     name == "Aqueous_Volumetric_Flux_Y" ? 1 : 2);
 
         BL_ASSERT(dir < BL_SPACEDIM);
-        if (model == model_list["richard"] || model == model_list["steady-saturated"]) {
+        if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
 	  MultiFab tmf(grids,BL_SPACEDIM,0);
           // FIXME: Input parameter?
           bool do_upwind = true;
 	  umac_edge_to_cen(u_mac_curr,tmf,do_upwind); 
 	  MultiFab::Copy(mf,tmf,dir,dcomp,1,0);
+          // Return values in m/d
+          mf.mult(24*60*60,dcomp,1,0);
         }
         else {
 	  BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "+model).c_str());
@@ -12303,7 +12319,7 @@ PorousMedia::derive (const std::string& name,
         if (!ret) BoxLib::Abort("Failed to build permeability");
         MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
         // Return values in mks
-        mf.mult(1/101325.,dcomp,1,0);
+        mf.mult(1/BL_ONEATM,dcomp,1,0);
       }
       else if (name=="Effective_Diffusion_Coefficient") {
 
@@ -12764,8 +12780,8 @@ PorousMedia::checkPoint (const std::string& dir,
 #endif 
 
 #ifdef MG_USE_FBOXLIB
-  if (model != model_list["richard"] &&
-      model != model_list["steady-saturated"])
+  if (model != PM_RICHARDS &&
+      model != PM_STEADY_SATURATED)
     {
       std::string rxfile = "/rhs_RhoD_x";
       std::string ryfile = "/rhs_RhoD_y";

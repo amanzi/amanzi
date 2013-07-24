@@ -38,6 +38,8 @@ class RSParams;
 #include "beaker.hh"
 #endif
 
+static Real BL_ONEATM = 101325.0;
+
 enum StateType {State_Type=0, Press_Type, Vcr_Type, FuncCount_Type, Aux_Chem_Type, Num_State_Type};
 
 enum PressureNames { Pressure=0 };
@@ -901,16 +903,26 @@ public:
   //
   // Calculate inverse capillary pressure
   //
-  void calcInvCapillary (MultiFab& S,const MultiFab& pc);
+  static void calcInvCapillary (FArrayBox&       n,
+                                const FArrayBox& pc,
+                                const FArrayBox& rock_phi,
+                                const FArrayBox& kappa,
+                                const FArrayBox& cpl_coef);
+
+  void calcInvCapillary (MultiFab& N,const MultiFab& pc);
   //
   // Calculate inverse pressure
   //
-  void calcInvPressure (MultiFab& S,const MultiFab& P);
+  void calcInvPressure (MultiFab& N,const MultiFab& P);
   //
   // Calculate lambda = relative permeability/mu
   //
+  static void calcLambda(FArrayBox&       lambda,
+                         const FArrayBox& N,
+                         const FArrayBox& kr_coef);
+
   void calcLambda (const Real time, MultiFab* lbd_cc = 0);
-  void calcLambda (MultiFab* lbd, const MultiFab &S);
+  void calcLambda (MultiFab* lbd, const MultiFab &N);
   //
   // Calculate first derivative of lambda
   //
@@ -1023,7 +1035,6 @@ public:
   void setup_bound_desc();
 
   // list
-  static std::map<std::string, int> model_list;
   static std::map<std::string, int> phase_list;
   static std::map<std::string, int> comp_list;
   static std::map<std::string, int> tracer_list;
@@ -1034,10 +1045,20 @@ public:
     1: single-phase flow with precipitate
     2: 2-phase 2-component flow
     3: polymer flow (2-phase 3-component)
-    4: saturated (perhaps same as 0??)
+    4: steady-saturated
   */
-  static std::string model_name;
-  static int model;
+  enum MODEL_ID
+  {
+    PM_SINGLE_PHASE,
+    PM_SINGLE_PHASE_SOLID,
+    PM_TWO_PHASE,
+    PM_POLYMER,
+    PM_RICHARDS,
+    PM_STEADY_SATURATED,
+    PM_INVALID
+  };
+  static MODEL_ID model;
+  static int Model() {return (int)model;}
 
   PMAmr* PMParent();
 
@@ -1390,7 +1411,10 @@ protected:
   static int  richard_pressure_maxorder;
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;
+  static bool richard_centered_diff_J;
+  static bool richard_subgrid_krel;
   static Real richard_variable_switch_saturation_threshold;
+  static Real richard_dt_thresh_pure_steady;
   //
   // Number of states
   //

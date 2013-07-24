@@ -526,7 +526,7 @@ MacProj::mac_sync_compute (int                   level,
   const Real*     dx                  = geom.CellSize();
   PorousMedia&    pm_level            = *(PorousMedia*) &(parent->getLevel(level));
   Godunov*        godunov             = pm_level.godunov;
-  int model = pm_level.model;
+  int model = pm_level.Model();
 
   MultiFab* rhod_tmp;
   rhod_tmp = new MultiFab[BL_SPACEDIM];
