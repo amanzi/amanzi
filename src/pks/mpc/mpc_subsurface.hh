@@ -46,6 +46,8 @@ class MPCSubsurface : public MPCCoupledCells {
 
   // preconditioner application
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
   bool modify_predictor_heuristic_(double h, Teuchos::RCP<TreeVector> up);
