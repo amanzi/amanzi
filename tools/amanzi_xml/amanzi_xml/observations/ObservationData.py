@@ -11,6 +11,7 @@ class ObservationData(object):
             self.times = []
             self.data = []
             self.coordinate = None
+            self.head = None
 
     def __init__(self, obs_file):
         self.obs_file = obs_file

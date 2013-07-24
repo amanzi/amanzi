@@ -26,7 +26,7 @@ class SteadyLinear(object):
         params.setdefault("x1",1)
         params.setdefault("z0",0)
         params.setdefault("z1",1)
-        params.setdefault("g",9.81)
+        params.setdefault("g",9.80665)
         params.setdefault("K",1.e-12)
         params.setdefault("rho",1000)
         params.setdefault("mu",1.e-3)
@@ -36,6 +36,7 @@ class SteadyLinear(object):
 
     def run(self, coords):
         """Evaluates the solution at (x,z)-coordinates in the [n_points, 2] array."""
+        
         pres = numpy.zeros((len(coords),), 'd')
 
         p_right = self.rho*self.g*self.h_Downstream + 101325.0
