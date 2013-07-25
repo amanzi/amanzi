@@ -35,7 +35,7 @@
 
 namespace Amanzi {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
   // these are not yet initialized
@@ -588,6 +588,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
   jac(1,0) = 0.;
 
   bool done = false;
+  int its = 0;
   while (!done) {
     ierr = EvaluateEnergyAndWaterContent_(T + eps_T, p, poro, test);
     if (ierr) return ierr;
@@ -595,16 +596,10 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
     jac(0,0) = (test[0] - result[0]) / (eps_T);
     jac(1,0) = (test[1] - result[1]) / (eps_T);
 
+    its++;
     done = (std::abs(jac(0,0)) > 1.e-12) || (std::abs(jac(1,0)) > 1.e-12);
+    done |= (its > 30);
     eps_T *= 2;
-
-    if (!done) {
-      std::cout << " Zero determinant of Jacobian:" << std::endl;
-      std::cout << "   [" << jac(0,0) << "," << jac(0,1) << "]" << std::endl;
-      std::cout << "   [" << jac(1,0) << "," << jac(1,1) << "]" << std::endl;
-      std::cout << "  at T,p = " << T << ", " << p << std::endl;
-      std::cout << "  with dT,dp = " << eps_T << ", " << eps_p << std::endl;
-    }
   }
 
   // d / dp
@@ -613,6 +608,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
 
   // failure point seems to be d/dp = 0, and p seems to need to be centered
   done = false;
+  its = 0;
   while (!done) {
     ierr = EvaluateEnergyAndWaterContent_(T, p + eps_p, poro, test);
     if (ierr) return ierr;
@@ -622,16 +618,10 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
     jac(0,1) = (test[0] - test2[0]) / (2*eps_p);
     jac(1,1) = (test[1] - test2[1]) / (2*eps_p);
 
+    its++;
     done = (std::abs(jac(0,1)) > 1.e-12) || (std::abs(jac(1,1)) > 1.e-12);
+    done |= (its > 30);
     eps_p *= 2;
-
-    if (!done) {
-      std::cout << " Zero determinant of Jacobian:" << std::endl;
-      std::cout << "   [" << jac(0,0) << "," << jac(0,1) << "]" << std::endl;
-      std::cout << "   [" << jac(1,0) << "," << jac(1,1) << "]" << std::endl;
-      std::cout << "  at T,p = " << T << ", " << p << std::endl;
-      std::cout << "  with dT,dp = " << eps_T << ", " << eps_p << std::endl;
-    }
   }
 
   return 0;
