@@ -398,13 +398,6 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
       } else {
         // -- invert for T,p at the projected ewc
         ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
-        if (ierr == 1) {
-          // zero determinate
-          p = p1[0][c];
-          T = T1[0][c];
-          std::cout << "FAILED INVERSE on proc " << mesh_->get_comm()->MyPID() << ", cell " << c << std::endl;
-          ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p, true);
-        }
         double s_g, s_l, s_i;
         ierr |= model_->EvaluateSaturations(T,p,poro[0][c],s_g,s_l,s_i);
         if (ierr) {
