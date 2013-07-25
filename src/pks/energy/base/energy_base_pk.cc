@@ -97,7 +97,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
                                 ->AddComponent("face", AmanziMesh::FACE, 1);
 
   // Require a field for the energy flux.
-  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
+  std::string updatestring = plist_.get<std::string>("update flux mode", "vis");
   if (updatestring == "iteration") {
     update_flux_ = UPDATE_FLUX_ITERATION;
   } else if (updatestring == "timestep") {
