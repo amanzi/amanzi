@@ -581,6 +581,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
   int ierr = EvaluateEnergyAndWaterContent_(T, p, poro, result);
   if (ierr) return ierr;
   AmanziGeometry::Point test(result);
+  AmanziGeometry::Point test2(result);
 
   // d / dT
   jac(0,0) = 0.;
@@ -607,18 +608,19 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
   }
 
   // d / dp
-  if (p < p_atm_) eps_p = -eps_p;
   jac(0,1) = 0.;
   jac(1,1) = 0.;
 
-  // failure point seems to be d/dp = 0
+  // failure point seems to be d/dp = 0, and p seems to need to be centered
   done = false;
   while (!done) {
     ierr = EvaluateEnergyAndWaterContent_(T, p + eps_p, poro, test);
     if (ierr) return ierr;
+    ierr = EvaluateEnergyAndWaterContent_(T, p - eps_p, poro, test2);
+    if (ierr) return ierr;
 
-    jac(0,1) = (test[0] - result[0]) / (eps_p);
-    jac(1,1) = (test[1] - result[1]) / (eps_p);
+    jac(0,1) = (test[0] - test2[0]) / (2*eps_p);
+    jac(1,1) = (test[1] - test2[1]) / (2*eps_p);
 
     done = (std::abs(jac(0,1)) > 1.e-12) || (std::abs(jac(1,1)) > 1.e-12);
     eps_p *= 2;
