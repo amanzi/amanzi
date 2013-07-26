@@ -12,7 +12,7 @@ def run_amanzi(input_file, directory=None):
         if answer == 'y':
             [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
         elif answer =='n':
-            return 
+            return "Amanzi will not run!!"
     else:
         os.mkdir(run_directory) 
     os.chdir(run_directory)
