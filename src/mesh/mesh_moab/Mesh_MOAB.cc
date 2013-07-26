@@ -2042,7 +2042,12 @@ Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
     return HEX;
   }
     
-        
+
+// Miscellaneous
+
+void Mesh_MOAB::write_to_exodus_file(const std::string filename) const {
+  throw std::exception();
+}
     
   
 

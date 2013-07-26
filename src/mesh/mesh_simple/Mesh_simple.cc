@@ -1215,6 +1215,17 @@ void Mesh_simple::get_set_entities (const std::string setname,
 }
 
 
+/*
+ * Write mesh out to exodus file
+ */
+
+void
+Mesh_simple::write_to_exodus_file(const std::string filename) const {
+  Errors::Message mesg("Not implemented");
+  amanzi_throw(mesg);
+}
+
+
 
 
 } // close namespace AmanziMesh

@@ -469,6 +469,11 @@ class Mesh
                          Entity_ID_List *entids) const = 0;
 
 
+  // Miscellaneous functions
+
+  virtual
+  void write_to_exodus_file(const std::string filename) const = 0;
+
 
   // communicator access
   // temporary until we set up an amanzi communicator

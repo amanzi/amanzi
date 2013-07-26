@@ -305,11 +305,18 @@ public:
 			 Entity_ID_List *entids) const; 
 
 
+  // Miscellaneous
+
+  void write_to_exodus_file (const std::string filename) const;
+
 
   // this should be used with extreme caution:
   // modify coordinates
   void set_coordinate(Entity_ID local_node_id,
 		      double* source_begin, double* source_end);
+
+
+
 
 private:
   void generate_(const GenerationSpec& g);

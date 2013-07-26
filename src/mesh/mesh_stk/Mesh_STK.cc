@@ -1005,5 +1005,16 @@ Mesh_STK::redistribute(const Teuchos::ParameterList &paramlist)
   this->redistribute(*newcmap);
 }
 
+
+/*
+ * Write mesh out to exodus file
+ */
+
+void
+Mesh_STK::write_to_exodus_file(const std::string filename) const {
+  Errors::Message mesg("Not implemented");
+  amanzi_throw(mesg);
+}
+
 } // namespace AmanziMesh
 } // namespace Amanzi

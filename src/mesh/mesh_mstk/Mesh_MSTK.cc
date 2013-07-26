@@ -4601,5 +4601,14 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
 
 
 
+// Write mesh out to exodus file
+
+void
+Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
+  MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm);
+}
+
+
+
 } // close namespace AmanziMesh
 } // close namespace Amanzi

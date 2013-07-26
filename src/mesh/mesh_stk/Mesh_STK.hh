@@ -341,6 +341,11 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   /// Repartition and redistribute the mesh according to the specified parameters
   void redistribute(const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
 
+
+  /// Miscellaneous
+
+  void write_to_exodus_file(const std::string filename) const;
+
  private:
 
   /// A list of supported entity kinds
