@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy
-import model.steady_linear 
+import model_steady_linear as model
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
@@ -18,7 +18,7 @@ def loadInputXML(filename):
 
 def loadDataFile(Obs_xml):
     output_file =  Obs_xml.getObservationFilename()
-    Obs_data = ObsDATA(output_file)
+    Obs_data = ObsDATA("amanzi-output/"+output_file)
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
@@ -55,7 +55,7 @@ def plotExampleObservations(Obs_xml, Obs_data, axes1):
     return cmap
 
 def plotExampleModel(filename, cmap, axes1,Obs_xml, Obs_data):
-    mymodel = model.steady_linear.createFromXML(filename)
+    mymodel = model.createFromXML(filename)
     table_values = []
 
     x = numpy.linspace(mymodel.x0,mymodel.x1,11)
@@ -102,22 +102,10 @@ if __name__ == "__main__":
     import os
     import run_amanzi
 
-    input_filename = os.path.join("amanzi_steady_linear.xml")
-    print os.getcwd()
-    CWD = os.getcwd()
-    #--set up the run directory and cd into it
-    run_directory = os.path.join(CWD,"output")
-    if os.path.isdir(run_directory):
-        [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
-    else:
-        os.mkdir(run_directory)
-         
-    os.chdir(run_directory)
-
-    try:
-        print os.getcwd() 
-        run_amanzi.run_amanzi('../'+input_filename)
-        obs_xml=loadInputXML("../"+input_filename)
+    input_filename = "amanzi_steady_linear.xml"
+    try: 
+        run_amanzi.run_amanzi("../"+input_filename)
+        obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 
         fig1= plt.figure()
@@ -125,11 +113,11 @@ if __name__ == "__main__":
         axes1=fig1.add_axes([.1,.1,.8,.8])
        
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
-        plotExampleModel("../"+input_filename, cmap, axes1,obs_xml, obs_data)
+        plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
         
         plt.show()
 
     finally:
-        os.chdir(CWD)
+        pass 
 
 

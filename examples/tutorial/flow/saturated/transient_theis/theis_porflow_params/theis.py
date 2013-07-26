@@ -4,6 +4,7 @@ import math
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
+import model_theis 
 
 # load input xml file
 #  -- create an ObservationXML object
@@ -18,7 +19,7 @@ def loadInputXML(filename):
 
 def loadDataFile(Obs_xml):
     output_file =  Obs_xml.getObservationFilename()
-    Obs_data = ObsDATA(output_file)
+    Obs_data = ObsDATA("amanzi-output/"+output_file)
     Obs_data.getObservationData()
     coords = Obs_xml.getAllCoordinates()
 
@@ -50,8 +51,7 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
     return cmap
 
 def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
-    import model.theis
-    mymodel = model.theis.createFromXML(filename)
+    mymodel = model_theis.createFromXML(filename)
     tindex = numpy.arange(125)
     times = []
     table_values = []
@@ -81,23 +81,13 @@ def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
 if __name__ == "__main__":
 
     import os
-    #import run_amanzi
+    import run_amanzi
 
     input_filename =os.path.join("theis.xml")
 
     CWD = os.getcwd()
-
-    #--set up the run directory and cd into it--#--This is not set up to run amanzi on the fly yet--#
-    # run_directory = os.path.join(CWD,"output")
-    # if os.path.isdir(run_directory):
-    #     [os.remove(os.path.join(run_directory,f)) for f in os.listdir(run_directory)]
-    # else:
-    #     os.mkdir(run_directory)
-         
-    # os.chdir(run_directory)
-
     try: 
-        #run_amanzi.run_amanzi('../theis.xml')
+        run_amanzi.run_amanzi('../'+input_filename)
         obs_xml=loadInputXML(input_filename)
         obs_data=loadDataFile(obs_xml)
 

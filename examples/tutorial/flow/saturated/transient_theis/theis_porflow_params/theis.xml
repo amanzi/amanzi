@@ -56,7 +56,7 @@
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{200,200,1}"/>
+          <Parameter name="Number of Cells" type="Array(int)" value="{400,400,1}"/>
           <Parameter name="Domain Low Corner" type="Array(double)" value="{-1200,-1200,0.0}" />
           <Parameter name="Domain High Corner" type="Array(double)" value="{1200,1200,10.0}" />
         </ParameterList>
@@ -82,24 +82,24 @@
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-6,-6,0.0}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{6,6,10.0}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-3,-3,0.0}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{3,3,10.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Obs_r10">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-45,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-34.50,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r30">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-57,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-55.5,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r50">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-69,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-160.50,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
     
@@ -250,7 +250,7 @@
 
     <ParameterList name="Time Macros">
       <ParameterList name="Observation Times">
-	<Parameter name="Values" type="Array(double)" value="{0.0,0.0864,0.4,50,70,90,110,400,500,600,1200,1400,2000,2600,3200,4000,5000,8000,10000,12000,18000,22000,28000,35000,43000,51000,61000,71000,81000,90000,100000,164000
+	<Parameter name="Values" type="Array(double)" value="{0.0,0.0864,0.4,400,500,600,5000,8000,10000,28000,35000,43000,81000,90000,100000,164000
 							     }"/>
       </ParameterList>
     </ParameterList>
@@ -260,9 +260,7 @@
       <ParameterList name="Every Cycle">
 	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
       </ParameterList>
-      <ParameterList name="Every 10">
-	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0,10,-1}"/>
-      </ParameterList>
+     
 
     </ParameterList>
 
@@ -288,11 +286,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="theis"/>
-      <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Cycle Macro" type="string" value="Every 10"/>
-    </ParameterList>
+   
 
 
   </ParameterList>
