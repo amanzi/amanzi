@@ -175,8 +175,6 @@ Error codes:
 ---------------------------------------------------------------------- */
 int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
         double& T, double& p, bool verbose) {
-  verbose = true;
-
 
   // -- scaling for the norms
   double wc_scale = 10.;
@@ -232,6 +230,7 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
       std::cout << "  with res(e,wc) = " << res[0] << ", " << res[1] << std::endl;
       return 1;
     }
+
 
     jac.inverse();
     correction = jac * res;
