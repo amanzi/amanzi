@@ -310,6 +310,13 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
           }
         }  // if verify
       }  // if verify_mesh_param
+
+      bool export_surf_mesh = surf_expert_mesh_params.isParameter("export mesh to file");
+      if (export_surf_mesh) {
+        std::string export_surf_mesh_filename =
+            surf_expert_mesh_params.get<std::string>("export mesh to file");
+        surface3D_mesh->write_to_exodus_file(export_surf_mesh_filename);
+      }
     }  // If expert_params_specified
   }
 
