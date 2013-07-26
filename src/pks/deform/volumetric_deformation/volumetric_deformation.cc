@@ -38,7 +38,11 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
 // -- Setup data
 void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
-  mesh_->build_columns(bottom_surface_name_);
+  // build_columns() call removed as Mesh reverted to old build_columns()
+  //  routine, which is currently buggy.  To run this PK, this will need
+  //  re-fixed.
+  // mesh_->build_columns(bottom_surface_name_);
+  ASSERT(0);
 
   // save the meshes
   surf_mesh_ = S->GetMesh("surface");
@@ -170,7 +174,10 @@ bool VolumetricDeformation::advance(double dt) {
 
     while (!done) {
       // find the face above
-      AmanziMesh::Entity_ID f_above = mesh_->cell_get_face_above(c0);
+      // fix me when Mesh is fixed!
+      ASSERT(0);
+      AmanziMesh::Entity_ID f_above = 0;
+      //      AmanziMesh::Entity_ID f_above = mesh_->cell_get_face_above(c0);
 
       // calculate the displacement of the face above the cell
       double dz = mesh_->face_centroid(f_above)[2] - mesh_->face_centroid(f_below)[2];
