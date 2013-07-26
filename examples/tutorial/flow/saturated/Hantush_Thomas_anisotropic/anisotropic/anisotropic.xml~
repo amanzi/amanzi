@@ -2,11 +2,11 @@
   <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
 
   <!--
-     Confined Aquifer Transient Drawdown (Theis 1935)
+    Transient, Two-Dimensional Flow to a Well in an Anisotropic Confined Aquifer (Hantush and Thomas, 1966)
   -->
   <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="Theis"/>
-    <Parameter name="Author" type="string" value="Dylan Harp"/>
+    <Parameter name="Model ID" type="string" value="Anisotropic"/>
+    <Parameter name="Author" type="string" value="Alec Thomas"/>
   </ParameterList>
 
   <!--
@@ -29,7 +29,7 @@
 
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
-        <Parameter name="linear solver tolerance" type="double" value="1e-16"/>
+        <Parameter name="linear solver tolerance" type="double" value="1e-20"/>
         <Parameter name="linear solver maximum iterations" type="int" value="1000"/>
 	<ParameterList name="Transient Implicit Time Integration">
 	  <Parameter name="Transient Time Step Increase Factor" type="double" value="1.1"/>
@@ -56,9 +56,9 @@
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{400,400,1}"/>
-          <Parameter name="Domain Low Corner" type="Array(double)" value="{-1200,-1200,0.0}" />
-          <Parameter name="Domain High Corner" type="Array(double)" value="{1200,1200,10.0}" />
+          <Parameter name="Number of Cells" type="Array(int)" value="{100,100,10}"/>
+          <Parameter name="Domain Low Corner" type="Array(double)" value="{-100,-100,0.0}" />
+          <Parameter name="Domain High Corner" type="Array(double)" value="{100,100,10.0}" />
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -76,54 +76,54 @@
     
     <ParameterList name="Entire Domain">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-1200,-1200,0.0}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{1200,1200,10.0}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-100,-100,0.0}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{100,100,10.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-3,-3,0.0}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{3,3,10.0}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-1,-1,0.0}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{1,1,10.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Obs_r10">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-34.50,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-10,0.0,6.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r30">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-55.5,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-30,0.0,6.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r50">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-160.50,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-56,0.0,6.5}"/>
       </ParameterList>
     </ParameterList>
     
     <ParameterList name="yz1">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{-1200,-1200,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-100,-100,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="yz2">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1200,-1200,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{100,-100,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="xz1">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{-1200,-1200,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-100,-100,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="xz2">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{-1200,1200,0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-100,100,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{0.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
@@ -193,7 +193,7 @@
         Confined Aquifer with h=200m
       -->
       <ParameterList name="IC: Linear Pressure">
-	<Parameter name="Reference Coordinate" type="Array(double)" value="{1200,1200,20}"/>
+	<Parameter name="Reference Coordinate" type="Array(double)" value="{100,100,50}"/>
 	<Parameter name="Reference Value" type="double" value="101325"/>
 	<Parameter name="Gradient Value" type="Array(double)" value="{0.0,0.0,-9806.65}"/>
       </ParameterList>
@@ -235,7 +235,7 @@
       <ParameterList name="BC: Hydrostatic">
         <Parameter name="Times" type="Array(double)" value="{0.0, 1.64e5}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Water Table Height" type="Array(double)" value="{20.0,20.0}"/>
+        <Parameter name="Water Table Height" type="Array(double)" value="{50.0,50.0}"/>
       </ParameterList>
     </ParameterList>
    
@@ -250,7 +250,7 @@
 
     <ParameterList name="Time Macros">
       <ParameterList name="Observation Times">
-	<Parameter name="Values" type="Array(double)" value="{0.0,0.0864,0.4,400,500,600,5000,8000,10000,28000,35000,43000,81000,90000,100000,164000
+	<Parameter name="Values" type="Array(double)" value="{0.0,0.0864,0.4,50,70,90,110,400,500,600,1200,1400,2000,2600,3200,4000,5000,8000,10000,12000,18000,22000,28000,35000,43000,51000,61000,71000,81000,90000,100000,164000
 							     }"/>
       </ParameterList>
     </ParameterList>
