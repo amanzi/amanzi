@@ -20,8 +20,8 @@
     <ParameterList name="Time Integration Mode">
         <ParameterList name="Transient">
           <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="End" type="double" value="8.64e6"/>
-          <Parameter name="Initial Time Step" type="double" value="8.64e2"/>
+          <Parameter name="End" type="double" value="1.64e5"/>
+          <Parameter name="Initial Time Step" type="double" value="3.64"/>
         </ParameterList>
     </ParameterList>
 
@@ -30,10 +30,9 @@
     <ParameterList name="Numerical Control Parameters">
       <ParameterList name="Unstructured Algorithm">
         <Parameter name="linear solver tolerance" type="double" value="1e-16"/>
-        <Parameter name="linear solver maximum iterations" type="int" value="400"/>
+        <Parameter name="linear solver maximum iterations" type="int" value="1000"/>
 	<ParameterList name="Transient Implicit Time Integration">
-	  <Parameter name="Transient Time Step Increase Factor" type="double" value="1.25"/>
-	  <Parameter name="Preconditioner" type="string" value="Trilinos ML"/>
+	  <Parameter name="Transient Time Step Increase Factor" type="double" value="1.1"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList>
@@ -57,9 +56,9 @@
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{201, 201, 10}"/>
-          <Parameter name="Domain Low Corner" type="Array(double)" value="{-502.5, -502.5,0.0}" />
-          <Parameter name="Domain High Corner" type="Array(double)" value="{502.5, 502.5,100.0}" />
+          <Parameter name="Number of Cells" type="Array(int)" value="{400,400,1}"/>
+          <Parameter name="Domain Low Corner" type="Array(double)" value="{-1200,-1200,0.0}" />
+          <Parameter name="Domain High Corner" type="Array(double)" value="{1200,1200,10.0}" />
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -77,54 +76,54 @@
     
     <ParameterList name="Entire Domain">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-502.5,-502.5,0.0}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{502.5,502.5,100.0}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-1200,-1200,0.0}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{1200,1200,10.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-2.5,-2.5,0.0}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{2.5,2.5,100.0}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-3,-3,0.0}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{3,3,10.0}"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Obs_r20">
+    <ParameterList name="Obs_r10">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-20.0, 0.0, 75.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-34.50,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Obs_r40">
+    <ParameterList name="Obs_r30">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-40.0, 0.0, 75.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-55.5,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Obs_r60">
+    <ParameterList name="Obs_r50">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-60.0, 0.0, 75.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-160.50,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
     
     <ParameterList name="yz1">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{-502.5, -502.5, 0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-1200,-1200,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="yz2">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{502.5, -502.5, 0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{1200,-1200,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="xz1">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{-502.5, -502.5, 0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-1200,-1200,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="xz2">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{-502.5, 502.5, 0.0}"/>
+        <Parameter name="Location" type="Array(double)" value="{-1200,1200,0.0}"/>
         <Parameter name="Direction" type="Array(double)" value="{0.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
@@ -145,10 +144,10 @@
         <Parameter name="Value" type="double" value="0.20"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Uniform">
-        <Parameter name="Value" type="double" value="1.0E-15"/>
+        <Parameter name="Value" type="double" value="2.350E-11"/>
       </ParameterList>
       <ParameterList name="Specific Storage: Uniform">
-	<Parameter name="Value" type="double" value="1.0E-5"/>
+	<Parameter name="Value" type="double" value="7.5E-5"/>
       </ParameterList>
 
     </ParameterList>
@@ -166,10 +165,10 @@
 
       <ParameterList name="Phase Properties">
         <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.002e-3 "/>
+          <Parameter name="Viscosity" type="double" value="1.002e-3"/>
         </ParameterList>
         <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="1000 "/>
+          <Parameter name="Density" type="double" value="1000"/>
         </ParameterList>
       </ParameterList>
 
@@ -194,7 +193,7 @@
         Confined Aquifer with h=200m
       -->
       <ParameterList name="IC: Linear Pressure">
-	<Parameter name="Reference Coordinate" type="Array(double)" value="{502.5,502.5,100}"/>
+	<Parameter name="Reference Coordinate" type="Array(double)" value="{1200,1200,20}"/>
 	<Parameter name="Reference Value" type="double" value="101325"/>
 	<Parameter name="Gradient Value" type="Array(double)" value="{0.0,0.0,-9806.65}"/>
       </ParameterList>
@@ -214,9 +213,9 @@
 
       <Parameter name="Assigned Regions" type="Array(string)" value="{Well}"/>
       <ParameterList name="Source: Volume Weighted">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 8.64e6}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0,1.64e5}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Values" type="Array(double)" value="{-1.0e-3, -1.e-3}"/>
+        <Parameter name="Values" type="Array(double)" value="{-4.0, -4.0}"/>
       </ParameterList>
       
     </ParameterList>
@@ -234,9 +233,9 @@
     <ParameterList name="Far Field Head">
       <Parameter name="Assigned Regions" type="Array(string)" value="{xz1, xz2, yz1, yz2}"/>
       <ParameterList name="BC: Hydrostatic">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 8.64e6}"/>
+        <Parameter name="Times" type="Array(double)" value="{0.0, 1.64e5}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Water Table Height" type="Array(double)" value="{200.0,200.0}"/>
+        <Parameter name="Water Table Height" type="Array(double)" value="{20.0,20.0}"/>
       </ParameterList>
     </ParameterList>
    
@@ -251,7 +250,7 @@
 
     <ParameterList name="Time Macros">
       <ParameterList name="Observation Times">
-	<Parameter name="Values" type="Array(double)" value="{0.0,0.0864, 1944, 3294, 4981, 7090, 9727, 13023, 17143, 22293, 28730, 36777, 46835, 59408, 75124, 94769, 119325, 150021, 188390, 236352, 296304, 371244, 464919, 582013, 728380, 911339, 1140038, 1425912, 1783254, 2229931, 2788278, 3486212, 4358629, 5449150, 6812302, 8516241, 10646166, 13308571, 16636578, 20796587, 25996598, 32496611, 40621628,  8640000
+	<Parameter name="Values" type="Array(double)" value="{0.0,0.0864,0.4,400,500,600,5000,8000,10000,28000,35000,43000,81000,90000,100000,164000
 							     }"/>
       </ParameterList>
     </ParameterList>
@@ -261,39 +260,34 @@
       <ParameterList name="Every Cycle">
 	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
       </ParameterList>
-      <ParameterList name="Every 10">
-	<Parameter name="Start_Period_Stop" type="Array(int)" value="{0,10,-1}"/>
-      </ParameterList>
+     
 
     </ParameterList>
 
     <ParameterList name="Observation Data">
       <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
       <ParameterList name="Pressure 01">
-	<Parameter name="Region" type="string" value="Obs_r20"/>
+	<Parameter name="Region" type="string" value="Obs_r10"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
 	<Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Pressure 02">
-	<Parameter name="Region" type="string" value="Obs_r40"/>
+	<Parameter name="Region" type="string" value="Obs_r30"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
 	<Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Pressure 03">
-	<Parameter name="Region" type="string" value="Obs_r60"/>
+	<Parameter name="Region" type="string" value="Obs_r50"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
 	<Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="theis"/>
-      <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Cycle Macro" type="string" value="Every 10"/>
-    </ParameterList>
+   
+
 
   </ParameterList>
 

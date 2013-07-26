@@ -32,29 +32,29 @@ class TransientTheis(object):
     def __init__(self, params=None):
         if params is None:
             params = dict()
-        params.setdefault("x",2.5)
-        params.setdefault("y",2.5)
-        params.setdefault("z",100)
-        params.setdefault("r", [20,40,55])
+        params.setdefault("z",10)
+        params.setdefault("r", [20,30,55])
         params.setdefault("S_s",7.5e-5)
         params.setdefault("pi",math.pi)
         params.setdefault("g",9.80665)
-        params.setdefault("K",1.e-10)
-        params.setdefault("rho",998.2)
-        params.setdefault("mu",4.e-3)
+        params.setdefault("K",2.35e-11)
+        params.setdefault("rho",1000)
+        params.setdefault("mu",1.002e-3)
         params.setdefault("Q",-4.0)
        
         self.__dict__.update(params)
 
         self.r
-        
-        self.Vol_well = (abs(self.x*2))*(abs(self.y*2))*self.z
   
         self.Q_vol = -self.Q / self.rho
+        print "this is Q",self.Q_vol
         
         self.K_h = self.K*self.g*self.rho / self.mu
+        print "this is Kh",self.K_h
        
         self.T =self.K_h*self.z
+        print "this is h_0",self.z
+        print "this is S_s",self.S_s
         
         self.var = self.Q_vol / 4 / self.pi / self.T
         
@@ -91,13 +91,11 @@ def createFromXML(filename):
     params = dict()
    
     params["r"] = []
-    for coord in coords.itervalues():
+    for (coord) in coords.itervalues():
         params["r"].append(coord[0]) 
     
     params.setdefault("g",9.80665)
     params.setdefault("pi",math.pi)
-    params["x"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/Low Coordinate").value[0]
-    params["y"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/Low Coordinate").value[1]
     params["z"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/High Coordinate").value[2]
     params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
     params["mu"] = search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
@@ -143,7 +141,7 @@ if __name__ == "__main__":
     rindex = numpy.arange(.1,50,.3)
     time = [1500,3600,86400,360000, 860000] #100 hours
     
-    tindex=numpy.arange(1.2e2,3.72e3,120)
+    tindex=numpy.arange(1.2e2,1.0e5,120)
     times=[]
     table_values=[]
     error=[]
@@ -156,7 +154,7 @@ if __name__ == "__main__":
         times.append(i)
 #1+math.exp(float(i)*(i+1)/(8.5*len(tindex))))
 
-    radius = [35,55,65]
+    radius = [55]
 
     col_labels = ['time [s]','Theis [m]','PORFLOW [m]','Difference']
     fig1 = plt.figure()
