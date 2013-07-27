@@ -398,6 +398,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "monotone mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
+  preconditioner_->DestroyPreconditioner();
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
   preconditioner_->InitPreconditioner(method, prec_list);

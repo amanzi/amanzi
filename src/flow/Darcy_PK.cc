@@ -292,6 +292,7 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     prec_list = tmp_list.sublist("Block ILU Parameters");
   }
 
+  preconditioner_->DestroyPreconditioner();
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
   preconditioner_->InitPreconditioner(method, prec_list);
 

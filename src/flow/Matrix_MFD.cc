@@ -35,7 +35,7 @@ Matrix_MFD::Matrix_MFD(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map)
 
 
 /* ******************************************************************
-* Cannot destroy ML cleanly. Try Trilinos 10.10 (lipnikov@lanl.gov)                                        
+* Cannot destroy ML cleanly. Try Trilinos 10.10 (lipnikov@lanl.gov)
 ****************************************************************** */
 Matrix_MFD::~Matrix_MFD()
 {
@@ -660,6 +660,19 @@ void Matrix_MFD::UpdatePreconditioner()
   }
 }
 
+
+/* ******************************************************************
+* Destroy ML preconditoner if it was created.
+****************************************************************** */
+void Matrix_MFD::DestroyPreconditioner()
+{
+  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
+    if (MLprec.getRawPtr() != NULL) 
+      if (MLprec->IsPreconditionerComputed()) 
+        MLprec->DestroyPreconditioner();
+  }
+}
+  
 
 /* ******************************************************************
 * Parallel matvec product A * X.                                              
