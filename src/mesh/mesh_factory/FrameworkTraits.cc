@@ -254,6 +254,9 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                          Amanzi::AmanziMesh::Entity_ID_List *entids) const
   {}
 
+  void write_to_exodus_file(const std::string filename) const
+  {}
+  
  private:
 
   Epetra_Map *bogus_map_;

@@ -38,13 +38,16 @@ typedef std::vector<Set_ID> Set_ID_List;
 // Cells (aka zones/elements) are the highest dimension entities in a mesh 
 // Nodes (aka vertices) are lowest dimension entities in a mesh 
 // Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
+// BOUNDARY_FACE are a special type used by the process kernels to construct
+// composite vectors (see src/data_structures) on boundary faces only
     
 enum Entity_kind 
 {
   NODE = 0,
   EDGE,
   FACE,
-  CELL
+  CELL,
+  BOUNDARY_FACE
 };
 
 // Check if Entity_kind is valid

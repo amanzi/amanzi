@@ -405,6 +405,10 @@ public:
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 std::vector<Entity_ID> *entids) const; 
+
+  // Miscellaneous
+  
+  void write_to_exodus_file (const std::string filename) const;
 };
 
 } // close namespace AmanziMesh

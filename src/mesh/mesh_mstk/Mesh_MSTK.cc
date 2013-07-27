@@ -4513,11 +4513,11 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
       std::string label = lsrgn->label();
       
       if (lsrgn->entity_str() == "CELL")
-        internal_name_of_set(rgn,CELL);
+        internal_name = internal_name_of_set(rgn,CELL);
       else if (lsrgn->entity_str() == "FACE")
-        internal_name_of_set(rgn,FACE);
+        internal_name = internal_name_of_set(rgn,FACE);
       else if (lsrgn->entity_str() == "NODE")
-        internal_name_of_set(rgn,NODE);
+        internal_name = internal_name_of_set(rgn,NODE);
 
 
       MSet_ptr mset_parent = MESH_MSetByName(parent_mstk_mesh,internal_name.c_str());
@@ -4598,6 +4598,15 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
   }
 
 } // inherit_labeled_sets
+
+
+
+// Write mesh out to exodus file
+
+void
+Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
+  MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm);
+}
 
 
 
