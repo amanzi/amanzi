@@ -6,9 +6,8 @@ def run_amanzi(input_file, directory=None):
         directory = os.getcwd()
     CWD =os.getcwd()
     run_directory= os.path.join(CWD,"amanzi-output")
-    print os.getcwd()
+
     if os.path.isdir(run_directory):
-        os.chdir(CWD)
         return
     else:
         os.mkdir(run_directory) 
