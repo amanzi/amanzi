@@ -93,10 +93,16 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex) {
   // Apply the geochemical conditions.
   int ierr = 0;
   try {
+    chem.ProcessCondition(&chem_data_.engine_state,
+                          &(alquimia_conditions_.data[i]),
+                          &chem_data_.material_properties,
+                          &chem_data_.state,
+                          &chem_data_.aux_data,
+                          &chem_status_);
       //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
       // solve for initial free-ion concentrations
-      chem_->Speciate(&beaker_components_, beaker_parameters_);
-      CopyBeakerStructuresToCellState(cell);
+//      chem_->Speciate(&beaker_components_, beaker_parameters_);
+//      CopyBeakerStructuresToCellState(cell);
   } catch (AmanziException& geochem_error) {
     ierr = 1;
     // std::cout << "ChemistryPK::InitializeChemistry(): " 
@@ -105,6 +111,14 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex) {
     // beaker_components_.Display("-- input components:\n");
     // Exceptions::amanzi_throw(geochem_error);
   }
+
+  // Retrieve the auxiliary output data.
+  chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
+                           &chem_data_.material_properties,
+                           &chem_data_.state,
+                           &chem_data_.aux_data,
+                           &chem_data_.aux_output,
+                           &chem_status_);
 
   // Copy the state information back out.
   CopyAlquimiaStateToAmanzi(cell);
@@ -179,7 +193,7 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
     AmanziException geochem_error("Error in Alquimia_Chemistry_PK::InitializeChemistry 1");
     Exceptions::amanzi_throw(geochem_error); 
   }
-  chemistry_state_->AllocateAdditionalChemistryStorage(beaker_components_);
+  chemistry_state_->AllocateAdditionalChemistryStorage(number_aqueous_components());
 
   SetupAuxiliaryOutput();
 
@@ -337,7 +351,7 @@ void Alquimia_Chemistry_PK::XMLParameters(void) {
 
 
 void Alquimia_Chemistry_PK::SetupAuxiliaryOutput(void) {
-  // requires that Beaker::Setup() has already been called!
+  // requires that Alquimia's Setup method has already been called!
   if (debug()) {
     std::cout << "  Alquimia_Chemistry_PK::SetupAuxiliaryOutput()" << std::endl;
   }
@@ -384,11 +398,6 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(
 
   alquimia_state->water_density = (*chemistry_state_->water_density())[cell_id];
   alquimia_state->porosity = (*chemistry_state_->porosity())[cell_id];
-
-  // NOTE: free ion concentrations, activity coefficients, ion exchange 
-  // NOTE: ref cation sorbed concentrations, and surface complexation free 
-  // NOTE: site concentrations are all computed internally by Alquimia and 
-  // NOTE: are not needed from Amanzi, which only reports them as diagnostics.
 
   // Alquimia breaks the total aqueous component concentrations into mobile 
   // and immobile parts. The "total sorbed" components are immobile, and 
@@ -444,6 +453,57 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(
     }
   }
 
+  // Free ion concentrations, activity coefficients, ion exchange 
+  // ref cation sorbed concentrations, and surface complexation free 
+  // site concentrations are stored as auxiliary variables internally within
+  // Alquimia, but are stored by Amanzi and used as initial estimates for the 
+  // new equilibrium conditions as needed. For now, we assume that the data 
+  // is ordered as it is in the PFlotran backend, which is as follows:
+  //
+  // doubles:
+  //   free ion conc <N_primary>
+  //   primary_activity_coeff <N_primary>
+  //   secondary_activity_coeff <N_aqueous_complexes>
+  //   ion exchange ref cation sorbed conc <N_ion_exchange_sites>
+  //   surface complexation free site conc <N_surface_sites>
+
+  unsigned int offset = 0;
+  //
+  // free ion concentrations
+  //
+  for (unsigned int c = 0; c < number_aqueous_components(); c++) { // FIXME: Is this the right number?
+    double* cell_free_ion = (*chemistry_state_->free_ion_species())[c];
+    chem_data_->aux_data.aux_doubles.data[offset] = cell_free-ion[cell_id];
+  }
+
+  //
+  // activity coefficients
+  //
+  for (int i = 0; i < chemistry_state_->primary_activity_coeff()->length(); ++i, ++offset) {
+    double* cells = (*chemistry_state_->primary_activity_coeff())[i];
+    chem_data_->aux_data.aux_doubles.data[offset] = cells[cell_id];
+  }
+  for (int i = 0; i < chemistry_state_->secondary_activity_coeff()->length(); ++i, ++offset) {
+    double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
+    chem_data_->aux_data.aux_doubles.data[offset] = cells[cell_id];
+  }
+
+  //
+  // ion exchange ref cation concentrations
+  //
+  for (int i = 0; i < chemistry_state_->ion_exchange_ref_cation_conc()->length(); ++i, ++offset) {
+    double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
+    chem_data_->aux_data.aux_doubles.data[offset] = cells[cell_id];
+  }
+
+  //
+  // surface complexation
+  // 
+  for (int i = 0; i < chemistry_state_->surface_complex_free_site_conc()->length(); ++i, ++offset) {
+    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
+    chem_data_->aux_data.aux_doubles.data[offset] = cells[cell_id];
+  }
+
 }  // end CopyAmanziStateToAlquimia()
 
 void Alquimia_Chemistry_PK::CopyAmanziMaterialPropertiesToAlquimiaMaterialProperties(
@@ -470,6 +530,7 @@ void Alquimia_Chemistry_PK::CopyAmanziMaterialPropertiesToAlquimiaMaterialProper
       alquimia_mat_props->isotherm_langmuir_b[i] = cell_data[cell_id];
     }
   }
+
 }  // end CopyAmanziMaterialPropertiesToAlquimiaMaterialProperties()
 
 void CopyAmanziGeochemicalConditionsToAlquimia(const int cell_id,
@@ -533,40 +594,70 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id) {
     cell_sorption_sites[cell_id] = alquimia_state->surface_site_density.data[i];
   }
 
-  // NOTE: free ion concentrations, activity coefficients, ion exchange 
-  // NOTE: ref cation sorbed concentrations, and surface complexation free 
-  // NOTE: site concentrations are all computed internally by Alquimia.
-  // NOTE: We need to extract them from Alquimia's auxiliary arrays, and to 
-  // NOTE: do that, we need to know which engine we're using. 
-  // FIXME: For the moment, this is not implemented.
-#if 0
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
+  // Free ion concentrations, activity coefficients, ion exchange 
+  // ref cation sorbed concentrations, and surface complexation free 
+  // site concentrations are all computed internally by Alquimia.
+  // We need to extract them from Alquimia's auxiliary arrays.
+  // For now, we assume that the data is ordered as it is in the 
+  // PFlotran backend, which is as follows:
+  //
+  // doubles:
+  //   free ion conc <N_primary>
+  //   primary_activity_coeff <N_primary>
+  //   secondary_activity_coeff <N_aqueous_complexes>
+  //   ion exchange ref cation sorbed conc <N_ion_exchange_sites>
+  //   surface complexation free site conc <N_surface_sites>
+
+  //
+  // free ion concentrations
+  //
+  for (unsigned int c = 0; c < number_aqueous_components(); c++) { // FIXME: Is this the right number?
     double* cell_free_ion = (*chemistry_state_->free_ion_species())[c];
-    cell_free_ion[cell_id] = beaker_components_.free_ion.at(c);
+    cell_free_ion[cell_id] = chem_data_->aux_data.aux_doubles.data[offset];
   }
 
   //
   // activity coefficients
   //
-  for (unsigned int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
-      double* cells = (*chemistry_state_->primary_activity_coeff())[i];
-      cells[cell_id] = beaker_components_.primary_activity_coeff.at(i);
+  for (int i = 0; i < chemistry_state_->primary_activity_coeff()->length(); ++i, ++offset) {
+    double* cells = (*chemistry_state_->primary_activity_coeff())[i];
+    cells[cell_id] = chem_data_->aux_data.aux_doubles.data[offset];
   }
-  for (unsigned int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
+  for (int i = 0; i < chemistry_state_->secondary_activity_coeff()->length(); ++i, ++offset) {
     double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
-    cells[cell_id] =  beaker_components_.secondary_activity_coeff.at(i);
+    cells[cell_id] = chem_data_->aux_data.aux_doubles.data[offset];
   }
 
-  for (unsigned int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
-    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
-    cells[cell_id] = beaker_components_.surface_complex_free_site_conc.at(i);
-  }
-
-  for (unsigned int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
+  //
+  // ion exchange ref cation concentrations
+  //
+  for (int i = 0; i < chemistry_state_->ion_exchange_ref_cation_conc()->length(); ++i, ++offset) {
     double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
-    cells[cell_id] = beaker_components_.ion_exchange_ref_cation_conc.at(i);
+    cells[cell_id] = chem_data_->aux_data.aux_doubles.data[offset];
   }
-#endif
+
+  //
+  // surface complexation
+  // 
+  for (int i = 0; i < chemistry_state_->surface_complex_free_site_conc()->length(); ++i, ++offset) {
+    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
+    cells[cell_id] = chem_data_->aux_data.aux_doubles.data[offset];
+  }
+
+  //
+  // Auxiliary output.
+  //
+  if (aux_data_ != Teuchos::nul) {
+    for (unsigned int i = 0; i < aux_names_.size(); i++) {
+      if (aux_names_.at(i) == "pH") {
+        double* cell_aux_data = (*aux_data_)[i];
+        cell_aux_data[cell_id] = chem_data_.aux_data.pH;
+      }
+      // FIXME: For now, we don't support mineral saturation index or 
+      // FIXME: mineral reaction rate, but when we do, these need to 
+      // FIXME: be updated here as well.
+    }
+  }
 
 }  // end CopyAlquimiaStateToAmanzi()
 
@@ -602,6 +693,39 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_total_component_conc
   return chemistry_state_->total_component_concentration();
 }  // end get_total_component_concentration()
 
+
+// This helper advances the solution on a single cell within Amanzi's state.
+// It returns the number of iterations taken to obtain the advanced solution, 
+// or -1 if an error occurred.
+int Alquimia_Chemistry_PK::AdvanceSingleCell(int cellIndex) {
+  // create a backup copy of the components
+  //      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
+  // chemistry computations for this cell
+  chem.ReactionStepOperatorSplit(&chem_data_.engine_state,
+                                 &delta_time,
+                                 &chem_data_.material_properties,
+                                 &chem_data_.state,
+                                 &chem_data_.aux_data,
+                                 &chem_status_);
+  if (!chem_status_converged)
+  {
+    return -1;
+  }
+  else
+  {
+    int num_iterations = chem_status_.num_newton_iterations;
+
+    // Retrieve the auxiliary output data.
+    chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
+        &chem_data_.material_properties,
+        &chem_data_.state,
+        &chem_data_.aux_data,
+        &chem_data_.aux_output,
+        &chem_status_);
+
+    return num_iterations;
+  }
+}
 
 /*******************************************************************************
  **
@@ -650,14 +774,9 @@ void Alquimia_Chemistry_PK::advance(
 
   int ierr(0);
   for (int cell = 0; cell < num_cells; cell++) {
-    // copy state data into the beaker data structures
-    CopyCellStateToBeakerStructures(cell, tcc_star);
-    try {
-      // create a backup copy of the components
-      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
-      // chemistry computations for this cell
-      int num_iterations = chem_->ReactionStep(&beaker_components_,
-                                               beaker_parameters_, delta_time);
+    int num_iterations = AdvanceSingleCell(cell);
+    if (num_iterations > 0)
+    {
       //std::stringstream message;
       //message << "--- " << cell << "\n";
       //beaker_components_.Display(message.str().c_str());
@@ -670,28 +789,14 @@ void Alquimia_Chemistry_PK::advance(
         imin = cell;
       }
       ave_iterations += num_iterations;
-    } catch (AmanziException& geochem_error) {
+    } 
+    else
+    {
       ierr = 1;
-
-      // std::cout << "ERROR: Alquimia_Chemistry_PK::advance() "
-      //           << "cell[" << cell << "]: " << std::endl;
-      // std::cout << geochem_error.what();
-      // std::vector<std::string> names;
-      // chem_->GetPrimaryNames(&names);
-      // beaker_components_copy_.DumpCfg(names);
-      // beaker_components_copy_.Display("--- input ");
-      // chem_->DisplayTotalColumnHeaders(display_free_columns_);
-      // std::cout << "\nFailed Solution" << std::endl;
-      // std::cout << "  Total Component Concentrations" << std::endl;
-      // chem_->DisplayTotalColumns(current_time_, beaker_components_, display_free_columns_);
-      // std::cout << "\nPrevious Solution" << std::endl;
-      // std::cout << "  Total Component Concentrations" << std::endl;
-      // chem_->DisplayTotalColumns(current_time_, beaker_components_copy_, display_free_columns_);
-      // std::cout << std::endl;
-      // Exceptions::amanzi_throw(geochem_error);
     }
+
     // update this cell's data in the arrays
-    if (ierr == 0) CopyBeakerStructuresToCellState(cell);
+    if (ierr == 0) CopyAlquimiaStateToAmanzi(cell);
 
     // TODO(bandre): was porosity etc changed? copy someplace
 
@@ -709,8 +814,6 @@ void Alquimia_Chemistry_PK::advance(
     Exceptions::amanzi_throw(geochem_error); 
   }  
   
-
-
 #ifdef GLENN_DEBUG
   if (debug() == kDebugChemistryProcessKernel) {
     std::stringstream message;
@@ -723,12 +826,14 @@ void Alquimia_Chemistry_PK::advance(
   }
 #endif
 
+#if 0
   if (debug() == kDebugChemistryProcessKernel) {
     // dumping the values of the final cell. not very helpful by itself,
     // but can be move up into the loops....
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
   }
+#endif
 }  // end advance()
 
 
@@ -745,55 +850,24 @@ void Alquimia_Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_stat
 
   saved_time_ += delta_time;
 
+  // FIXME: I'm not sure there's anything else we have to do here.
+#if 0
   if (debug() && false) {
     chem_->Speciate(&beaker_components_, beaker_parameters_);
     chem_->DisplayResults();
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
   }
+#endif
 }  // end commit_state()
 
 
 
 Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_extra_chemistry_output_data() {
-  if (aux_data_ != Teuchos::null) {
-    int num_cells = chemistry_state_->porosity()->MyLength();
-
-    for (int cell = 0; cell < num_cells; cell++) {
-      // populate aux_data_ by copying from the appropriate internal storage
-      for (unsigned int i = 0; i < aux_names_.size(); i++) {
-        if (aux_names_.at(i) == "pH") {
-          double* cell_aux_data = (*aux_data_)[i];
-          double* cell_free_ion = (*chemistry_state_->free_ion_species())[aux_index_.at(i)];
-          double* activity_coeff = (*chemistry_state_->primary_activity_coeff())[aux_index_.at(i)];
-          double activity = cell_free_ion[cell] * activity_coeff[cell];
-          cell_aux_data[cell] = -std::log10(activity);
-        } else {
-          // don't support anything else at this time....
-        }
-      }  // for(aux_names)
-    }  // for(cells)
-
-    // return the multi vector
-  }
+  // This vector is updated during the initialization and advance of 
+  // the geochemistry, so we simply return it here.
   return aux_data_;
 }
-
-
-void Alquimia_Chemistry_PK::set_chemistry_output_names(std::vector<string>* names) {
-  names->clear();
-  for (std::vector<string>::const_iterator name = aux_names_.begin();
-       name != aux_names_.end(); name++) {
-    names->push_back(*name);
-  }
-}  // end set_chemistry_output_names()
-
-void Alquimia_Chemistry_PK::set_component_names(std::vector<string>* names) {
-  // TODO(bandre): this interface should no longer be used because the
-  // xml input file should contain this data in a place state can
-  // obtain it
-  chem_->GetPrimaryNames(names);
-}  // end set_component_names()
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

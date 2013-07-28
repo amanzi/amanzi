@@ -38,6 +38,7 @@ class Chemistry_State : public PK_State {
   virtual ~Chemistry_State() {}
 
   void AllocateAdditionalChemistryStorage(const Beaker::BeakerComponents&);
+  void AllocateAdditionalChemistryStorage(int num_aqueous_components);
 
   void Initialize();
 

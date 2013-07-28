@@ -498,5 +498,20 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
   }
 }
 
+// This can only be done AFTER the chemistry is initialized and fully set up?
+// NOTE: This is the version of the above method that interacts with Alquimia.
+void Chemistry_State::AllocateAdditionalChemistryStorage(int num_aqueous_components) {
+  if (num_aqueous_components > 0) {
+    // CreateStorageSecondaryActivityCoeff()
+    Teuchos::RCP<CompositeVectorFactory> fac =
+        S_->RequireField("secondary_activity_coeff", name_);
+    fac->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, num_aqueous_components);
+    S_->GetField("secondary_activity_coeff",name_)->SetData(fac->CreateVector());
+    S_->GetField("secondary_activity_coeff",name_)->CreateData();
+    S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
+  }
+}
+
 } // namespace AmanziChemistry
 } // namespace Amanzi

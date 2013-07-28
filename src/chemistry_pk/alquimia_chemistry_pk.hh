@@ -85,14 +85,9 @@ class Alquimia_Chemistry_PK {
     debug_ = value;
   }
 
-  // Ben: the following two routines provide the interface for
+  // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
-  void set_chemistry_output_names(std::vector<std::string>* names);
-
-  // Ben: this routine should set the strings that will be
-  // appended to the component_x tag in the cgns output
-  void set_component_names(std::vector<std::string>* names);
 
  protected:
 
@@ -125,6 +120,7 @@ class Alquimia_Chemistry_PK {
 
   void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cellIndex);
+  int AdvanceSingleCell(int cellIndex);
 
   void XMLParameters(void);
   void SetupAuxiliaryOutput(void);
