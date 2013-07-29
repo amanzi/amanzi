@@ -115,7 +115,7 @@ if __name__ == "__main__":
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
         
-        plt.show()
+        #plt.show()
 
     finally:
         pass 
