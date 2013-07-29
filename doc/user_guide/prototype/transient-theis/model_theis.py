@@ -41,6 +41,7 @@ class TransientTheis(object):
         params.setdefault("rho",1000)
         params.setdefault("mu",1.002e-3)
         params.setdefault("Q",-4.0)
+        params.setdefault("times",[.1,.1,100,200,500,1000,2000,3600])
        
         self.__dict__.update(params)
 
@@ -74,10 +75,13 @@ class TransientTheis(object):
         #This method evaluates Theis solution for a given radius at multiple progressions in time
         drawdown_t = []
         for t in times:
-            u = radius ** 2 * self.S / 4 / self.T / t
-            W = getWellFunction(u)
-            s = self.var * W
-            drawdown_t.append(s)
+            if t == 0:
+                drawdown_t.append(0)
+            else:
+                u = radius ** 2 * self.S / 4 / self.T / t
+                W = getWellFunction(u)
+                s = self.var * W
+                drawdown_t.append(s)
         return drawdown_t
  
 def createFromXML(filename):
@@ -89,11 +93,14 @@ def createFromXML(filename):
     coords = observations.getAllCoordinates()
     import amanzi_xml.utils.search as search
     params = dict()
-   
+    params["times"] = []
     params["r"] = []
     for (coord) in coords.itervalues():
         params["r"].append(coord[0]) 
     
+    for i in search.getElementByPath(xml, "/Main/Output/Time Macros/Observation Times/Values").value:
+        params["times"].append(i)
+
     params.setdefault("g",9.80665)
     params.setdefault("pi",math.pi)
     params["z"] = search.getElementByPath(xml, "/Main/Regions/Well/Region: Box/High Coordinate").value[2]

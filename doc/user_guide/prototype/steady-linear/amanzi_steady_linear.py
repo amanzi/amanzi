@@ -81,21 +81,21 @@ def plotExampleModel(filename, cmap, axes1,Obs_xml, Obs_data):
     pres_analytic = mymodel.run(coordinates)
     pressure_analytic = list(pres_analytic)
     
-    for coord,press_amanzi, press_analytic in zip(coordinates,pressure_value,pressure_analytic):
-        table_values.append([coord[0],coord[1],press_amanzi,press_analytic])
+    # for coord,press_amanzi, press_analytic in zip(coordinates,pressure_value,pressure_analytic):
+    #     table_values.append([coord[0],coord[1],press_amanzi,press_analytic])
         
-    col_labels = ['x [m]', 'z [m]' ,'Pressure(Amanzi) [Pa]','Pressure (analytic)[Pa]']
-    ax = plt.subplot(111, frame_on = False)
-    ax.xaxis.set_visible(False)
-    ax.yaxis.set_visible(False)
-    the_table = plt.table(cellText = table_values ,  colWidths = [.1 , .1 , .4 , .5], colLabels = col_labels,  cellLoc = 'center', colLoc = 'center', loc = 'best') 
-    properties = the_table.properties()
-    cells = properties['child_artists']
-    for cell in cells: 
-        cell.set_height(.06)
+    # col_labels = ['x [m]', 'z [m]' ,'Pressure(Amanzi) [Pa]','Pressure (analytic)[Pa]']
+    # ax = plt.subplot(111, frame_on = False)
+    # ax.xaxis.set_visible(False)
+    # ax.yaxis.set_visible(False)
+    # the_table = plt.table(cellText = table_values ,  colWidths = [.1 , .1 , .4 , .5], colLabels = col_labels,  cellLoc = 'center', colLoc = 'center', loc = 'best') 
+    # properties = the_table.properties()
+    # cells = properties['child_artists']
+    # for cell in cells: 
+    #     cell.set_height(.06)
     
-    the_table.auto_set_font_size(False)
-    the_table.set_fontsize(14)
+    # the_table.auto_set_font_size(False)
+    # the_table.set_fontsize(14)
 
 if __name__ == "__main__":
 
@@ -115,7 +115,6 @@ if __name__ == "__main__":
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
         
-        plt.show()
 
     finally:
         pass 
