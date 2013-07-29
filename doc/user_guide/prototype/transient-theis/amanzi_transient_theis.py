@@ -39,7 +39,7 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
     r_vals.sort()
     colors = ['b','g','r']
     cmap = dict((rval,color) for (rval,color) in zip(r_vals, colors))
-    print cmap
+    #print cmap
 
     for obs in Obs_data.observations.itervalues():
         color = cmap[obs.coordinate[0]]

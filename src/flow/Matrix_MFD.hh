@@ -68,6 +68,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   virtual void InitPreconditioner(int method, Teuchos::ParameterList& prec_list);
   virtual void UpdatePreconditioner();
+  void DestroyPreconditioner();
 
   // required methods
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
