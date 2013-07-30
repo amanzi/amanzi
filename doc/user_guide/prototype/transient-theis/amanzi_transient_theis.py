@@ -5,7 +5,7 @@ from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import model_theis 
-from prettytable import PrettyTable
+import prettytable
 
 # load input xml file
 #  -- create an ObservationXML object
@@ -97,13 +97,16 @@ def MakeTable(Obs_data,Obs_xml,filename):
                drawdown_amanzi.append(drawdown)
 
     drawdown_analytic = mymodel.runForFixedRadius(mymodel.times,coordinates[0][0])
-    x = PrettyTable(["time [s]","r [m]", "z [m]", "Analytic [m]","Amanzi [m]"])
+    x = prettytable.PrettyTable(["time [s]","r [m]", "z [m]", "Analytic [m]","Amanzi [m]"])
     x.padding_width = 2
+    x.hrules = 1
 
     for time,d_analytic, d_amanzi in zip(mymodel.times,drawdown_analytic, drawdown_amanzi):
         x.add_row([time,coordinates[0][0],coordinates[0][1],"%.10f" % d_analytic,"%.10f" % d_amanzi])
     
-    x.get_string()
+    table_file = open("table_values_theis.txt", "w+")
+    table_file.write(x.get_string())
+    table_file.close()
 
 if __name__ == "__main__":
 

@@ -4,7 +4,7 @@ import model_steady_linear
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
-import prettytable 
+from prettytable import PrettyTable
 
 # load input xml file
 #  -- create an ObservationXML object
@@ -93,16 +93,14 @@ def MakeTable(Obs_data,Obs_xml,filename):
 
     pres_analytic = mymodel.run(coordinates)
     pressure_analytic = list(pres_analytic)
-    x = prettytable.PrettyTable(["x [m]", "z [m]", "Analytic [Pa]","Amanzi [Pa]"])
+    x = PrettyTable(["x [m]", "z [m]", "Analytic [Pa]","Amanzi [Pa]"])
     x.padding_width = 1
-    x.hrules = 1
+
     for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
         x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
     
-    table_file = open("table_values.txt", "w+")
-    table_file.write(x.get_string())
-    table_file.close()
-        
+    x
+
 if __name__ == "__main__":
 
     import os
@@ -115,11 +113,13 @@ if __name__ == "__main__":
         obs_data=loadDataFile(obs_xml)
 
         fig1= plt.figure()
+        fig2 = plt.figure()
         axes1=fig1.add_axes([.1,.1,.8,.8])
        
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
         MakeTable(obs_data,obs_xml,input_filename)
+ 
     finally:
         pass 
 

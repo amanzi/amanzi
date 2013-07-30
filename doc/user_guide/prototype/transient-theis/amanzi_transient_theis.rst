@@ -123,7 +123,10 @@ the saturated thickness, *b* is considered to be the initial height of
 the water table.
 
 
-Plot of Analytic Solution and Amanzi Results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Plot and Table of Analytic Solution and Amanzi Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. plot:: prototype/transient-theis/amanzi_transient_theis.py
+
+
+.. include:: table_values_theis.txt
