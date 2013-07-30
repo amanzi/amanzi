@@ -5,6 +5,7 @@ from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable 
+import os 
 
 # load input xml file
 #  -- create an ObservationXML object
@@ -98,10 +99,17 @@ def MakeTable(Obs_data,Obs_xml,filename):
     x.hrules = 1
     for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
         x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
-    
-    table_file = open("table_values.txt", "w+")
-    table_file.write(x.get_string())
-    table_file.close()
+        
+    if os.path.exists("table_values.txt"):
+        os.remove("table_values.txt")
+        table_file = open("table_values_new.txt", "w+")
+        table_file.write(x.get_string())
+        table_file.close()
+
+    else:
+        table_file = open("table_values.txt", "w+")
+        table_file.write(x.get_string())
+        table_file.close()
         
 if __name__ == "__main__":
 
