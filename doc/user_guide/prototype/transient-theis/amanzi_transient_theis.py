@@ -95,7 +95,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
                pres_drop = (pres0 - press)
                drawdown = pres_drop / 9806.65
                drawdown_amanzi.append(drawdown)
-    print coordinates
+
     drawdown_analytic = mymodel.runForFixedRadius(mymodel.times,coordinates[0][0])
     x = PrettyTable(["time [s]","r [m]", "z [m]", "Analytic [m]","Amanzi [m]"])
     x.padding_width = 2
@@ -103,7 +103,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     for time,d_analytic, d_amanzi in zip(mymodel.times,drawdown_analytic, drawdown_amanzi):
         x.add_row([time,coordinates[0][0],coordinates[0][1],"%.10f" % d_analytic,"%.10f" % d_amanzi])
     
-    print x.get_string()
+    x.get_string()
 
 if __name__ == "__main__":
 

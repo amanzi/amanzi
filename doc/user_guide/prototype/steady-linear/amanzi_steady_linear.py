@@ -99,7 +99,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
         x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
     
-    print x
+    x
 
 if __name__ == "__main__":
 

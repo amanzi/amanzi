@@ -82,7 +82,3 @@ Plot the solutions
 .. plot:: prototype/steady-linear/amanzi_steady_linear.py
 
 
-Table of Values
-~~~~~~~~~~~~~~~~
-
-.. literalinclude:: prototype/steady-linear/amanzi_table_gen.py
