@@ -97,7 +97,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     x.padding_width = 1
 
     for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
-        x.add_row([coords[0],coords[1],"%.3f" % float(p_analytic),"%.3f" % float(p_amanzi)])
+        x.add_row([coords[0],coords[1],"%.4f" % float(p_analytic),"%.4f" % float(p_amanzi)])
     
     print x
 
