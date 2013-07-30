@@ -48,14 +48,10 @@ class TransientTheis(object):
         self.r
   
         self.Q_vol = -self.Q / self.rho
-        print "this is Q",self.Q_vol
-        
-        self.K_h = self.K*self.g*self.rho / self.mu
-        print "this is Kh",self.K_h
        
+        self.K_h = self.K*self.g*self.rho / self.mu
+        
         self.T =self.K_h*self.z
-        print "this is h_0",self.z
-        print "this is S_s",self.S_s
         
         self.var = self.Q_vol / 4 / self.pi / self.T
         
@@ -75,8 +71,8 @@ class TransientTheis(object):
         #This method evaluates Theis solution for a given radius at multiple progressions in time
         drawdown_t = []
         for t in times:
-            if t == 0:
-                drawdown_t.append(0)
+            if t == 0.0000:
+                drawdown_t.append(0.0)
             else:
                 u = radius ** 2 * self.S / 4 / self.T / t
                 W = getWellFunction(u)

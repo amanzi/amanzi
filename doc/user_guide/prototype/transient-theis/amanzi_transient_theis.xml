@@ -56,7 +56,7 @@
       </ParameterList>
       <ParameterList name="Generate Mesh">
         <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{400,400,1}"/>
+          <Parameter name="Number of Cells" type="Array(int)" value="{600,600,1}"/>
           <Parameter name="Domain Low Corner" type="Array(double)" value="{-1200,-1200,0.0}" />
           <Parameter name="Domain High Corner" type="Array(double)" value="{1200,1200,10.0}" />
         </ParameterList>
@@ -82,24 +82,24 @@
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{-3,-3,0.0}"/>
-	<Parameter name="High Coordinate" type="Array(double)" value="{3,3,10.0}"/>
+	<Parameter name="Low Coordinate" type="Array(double)" value="{-2,-2,0.0}"/>
+	<Parameter name="High Coordinate" type="Array(double)" value="{2,2,10.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Obs_r10">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-34.50,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-33.0,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r30">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-55.5,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-55.0,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r50">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-160.50,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-161.0,0.0,5.0}"/>
       </ParameterList>
     </ParameterList>
     

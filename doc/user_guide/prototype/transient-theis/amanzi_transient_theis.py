@@ -5,6 +5,7 @@ from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import model_theis 
+from prettytable import PrettyTable
 
 # load input xml file
 #  -- create an ObservationXML object
@@ -78,6 +79,32 @@ def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
         
     axes1.legend(title='Theis Solution',loc='lower right', fancybox=True, shadow=True)
 
+def MakeTable(Obs_data,Obs_xml,filename):
+    #### ==== Initial height of water table is set to 20.0 meters             ==== ####
+    #### ==== The Table is set to generate at a coordinate of (55,y,z) *only* ==== ####
+    #### ==== Modify if statement of another coordinate is desired            ==== ####
+    drawdown_amanzi = []
+    coordinates = []
+    mymodel = model_theis.createFromXML(filename)
+    
+    for obs in Obs_data.observations.itervalues():
+        if obs.coordinate[0] == -55.0:
+           coordinates.append([abs(obs.coordinate[0]), obs.coordinate[2]])
+           for press in obs.data:
+               pres0  = 101325 -9806.65 * (obs.coordinate[2] - 20)
+               pres_drop = (pres0 - press)
+               drawdown = pres_drop / 9806.65
+               drawdown_amanzi.append(drawdown)
+    print coordinates
+    drawdown_analytic = mymodel.runForFixedRadius(mymodel.times,coordinates[0][0])
+    x = PrettyTable(["time [s]","r [m]", "z [m]", "Analytic [m]","Amanzi [m]"])
+    x.padding_width = 2
+
+    for time,d_analytic, d_amanzi in zip(mymodel.times,drawdown_analytic, drawdown_amanzi):
+        x.add_row([time,coordinates[0][0],coordinates[0][1],"%.10f" % d_analytic,"%.10f" % d_amanzi])
+    
+    print x.get_string()
+
 if __name__ == "__main__":
 
     import os
@@ -96,7 +123,7 @@ if __name__ == "__main__":
        
         cmap = plotTheisObservations(obs_xml,obs_data,axes1)
         plotTheisAnalytic(input_filename,cmap,axes1,obs_xml,obs_data)
-        
+        MakeTable(obs_data,obs_xml,input_filename)
 
     finally:
         os.chdir(CWD)

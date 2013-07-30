@@ -32,23 +32,23 @@
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-3.00000000000000000e+00, -3.00000000000000000e+00, 0.00000000000000000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{3.00000000000000000e+00, 3.00000000000000000e+00, 1.00000000000000000e+01}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-2.00000000000000000e+00, -2.00000000000000000e+00, 0.00000000000000000e+00}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{2.00000000000000000e+00, 2.00000000000000000e+00, 1.00000000000000000e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r10">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-3.45000000000000000e+01, 0.00000000000000000e+00, 5.00000000000000000e+00}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-3.30000000000000000e+01, 0.00000000000000000e+00, 5.00000000000000000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r30">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-5.55000000000000000e+01, 0.00000000000000000e+00, 5.00000000000000000e+00}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-5.50000000000000000e+01, 0.00000000000000000e+00, 5.00000000000000000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r50">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-1.60500000000000000e+02, 0.00000000000000000e+00, 5.00000000000000000e+00}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-1.61000000000000000e+02, 0.00000000000000000e+00, 5.00000000000000000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="yz1">
@@ -79,7 +79,7 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{400, 400, 1}"/>
+        <Parameter name="Number of Cells" type="Array(int)" value="{600, 600, 1}"/>
         <Parameter name="Domain Low Corner" type="Array(double)" value="{-1.20000000000000000e+03, -1.20000000000000000e+03, 0.00000000000000000e+00}"/>
         <Parameter name="Domain High Corner" type="Array(double)" value="{1.20000000000000000e+03, 1.20000000000000000e+03, 1.00000000000000000e+01}"/>
       </ParameterList>

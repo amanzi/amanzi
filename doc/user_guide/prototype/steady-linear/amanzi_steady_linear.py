@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy
-import model_steady_linear as model
+import model_steady_linear 
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
+from prettytable import PrettyTable
 
 # load input xml file
 #  -- create an ObservationXML object
@@ -55,7 +56,7 @@ def plotExampleObservations(Obs_xml, Obs_data, axes1):
     return cmap
 
 def plotExampleModel(filename, cmap, axes1,Obs_xml, Obs_data):
-    mymodel = model.createFromXML(filename)
+    mymodel = model_steady_linear.createFromXML(filename)
     table_values = []
 
     x = numpy.linspace(mymodel.x0,mymodel.x1,11)
@@ -81,21 +82,24 @@ def plotExampleModel(filename, cmap, axes1,Obs_xml, Obs_data):
     pres_analytic = mymodel.run(coordinates)
     pressure_analytic = list(pres_analytic)
     
-    # for coord,press_amanzi, press_analytic in zip(coordinates,pressure_value,pressure_analytic):
-    #     table_values.append([coord[0],coord[1],press_amanzi,press_analytic])
-        
-    # col_labels = ['x [m]', 'z [m]' ,'Pressure(Amanzi) [Pa]','Pressure (analytic)[Pa]']
-    # ax = plt.subplot(111, frame_on = False)
-    # ax.xaxis.set_visible(False)
-    # ax.yaxis.set_visible(False)
-    # the_table = plt.table(cellText = table_values ,  colWidths = [.1 , .1 , .4 , .5], colLabels = col_labels,  cellLoc = 'center', colLoc = 'center', loc = 'best') 
-    # properties = the_table.properties()
-    # cells = properties['child_artists']
-    # for cell in cells: 
-    #     cell.set_height(.06)
+def MakeTable(Obs_data,Obs_xml,filename):
+    pressure_amanzi = []
+    coordinates = []
+    mymodel = model_steady_linear.createFromXML(filename)
+
+    for obs in Obs_data.observations.itervalues():
+        coordinates.append([obs.coordinate[0], obs.coordinate[2]])
+        pressure_amanzi.append(str(obs.data).rstrip(']').lstrip('['))
+
+    pres_analytic = mymodel.run(coordinates)
+    pressure_analytic = list(pres_analytic)
+    x = PrettyTable(["x [m]", "z [m]", "Analytic [Pa]","Amanzi [Pa]"])
+    x.padding_width = 1
+
+    for coords, p_analytic, p_amanzi in zip(coordinates,pressure_analytic,pressure_amanzi):
+        x.add_row([coords[0],coords[1],"%.3f" % float(p_analytic),"%.3f" % float(p_amanzi)])
     
-    # the_table.auto_set_font_size(False)
-    # the_table.set_fontsize(14)
+    print x
 
 if __name__ == "__main__":
 
@@ -114,8 +118,8 @@ if __name__ == "__main__":
        
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
-        
-
+        MakeTable(obs_data,obs_xml,input_filename)
+ 
     finally:
         pass 
 

@@ -59,8 +59,21 @@ Tables are the one weakness in reStructured text, but they are
 reasonable.  We will autogenerate these from the results of the
 Amanzi run and the analytic solution calculations.
 
-
-.. plot:: prototype/steady-linear/amanzi_table_gen.py
++------+------+------+-----------------------+
+| x [m]| z [m]| h [m]|       P [MPa]         |
++======+======+======+========+==============+
+|      |      |      |Expected|Amanzi Output |                        
++------+------+------+--------+--------------+
+|0.5   |49.5  |319   |2.63    |2.74          |
++------+------+------+--------+--------------+
+|50.5  |25.5  |219   |1.90    |2.0           |
++------+------+------+--------+--------------+
+|50.5  |49.5  |219   |1.65    |1.76          |
++------+------+------+--------+--------------+
+|50.5  |0.5   |219   |2.14    |2.24          |
++------+------+------+--------+--------------+
+|99.5  |49.5  |121   |0.70    |0.80          |
++------+------+------+--------+--------------+
 
 
 Plot the solutions
@@ -69,3 +82,7 @@ Plot the solutions
 .. plot:: prototype/steady-linear/amanzi_steady_linear.py
 
 
+Table of Values
+~~~~~~~~~~~~~~~~
+
+.. literalinclude:: prototype/steady-linear/amanzi_table_gen.py
