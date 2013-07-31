@@ -59,8 +59,6 @@ Tables are the one weakness in reStructured text, but they are
 reasonable.  We will autogenerate these from the results of the
 Amanzi run and the analytic solution calculations.
 
-.. include:: prototype/steady-linear/ta
-
 
 Plot the solutions
 ~~~~~~~~~~~~~~~~~~

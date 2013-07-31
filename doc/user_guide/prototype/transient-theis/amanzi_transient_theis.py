@@ -106,14 +106,11 @@ def MakeTable(Obs_data,Obs_xml,filename):
     
     if os.path.exists("table_values_theis.txt"):
         os.remove("table_values_theis.txt")
-        table_file = open("table_values_theis_new.txt", "w+")
-        table_file.write(x.get_string())
-        table_file.close()
 
-    else:
-        table_file = open("table_values_theis.txt", "w+")
-        table_file.write(x.get_string())
-        table_file.close()
+    table_file = open("table_values_theis.txt", "w+")
+    table_file.write(x.get_string())
+    table_file.close()
+
 if __name__ == "__main__":
 
     import os
