@@ -321,6 +321,8 @@ void MPC::cycle_driver() {
   // register the final time
   TSM->RegisterTimeEvent(T1);
 
+  //  TSM->print(cout, 0.0, T1); cout << std::endl;
+
 
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
@@ -329,8 +331,6 @@ void MPC::cycle_driver() {
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-
-  //TSM.print(*out,0.0, 20.0); *out << std::endl;
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
@@ -878,13 +878,13 @@ void MPC::cycle_driver() {
       if (chemistry_enabled) {
         // get the auxillary data
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-	if (force) {
+	if (force || visualization->DumpRequested(S->time())) {
 	  WriteVis(visualization,S.ptr());
 	}
         // write visualization data for timestep if requested
         //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, force);
       } else {
-	if (force) {
+	if (force || visualization->DumpRequested(S->time())) {
 	  WriteVis(visualization,S.ptr());
 	}
         //S->write_vis(*visualization, chemistry_enabled, force);

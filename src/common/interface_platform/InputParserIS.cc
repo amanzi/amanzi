@@ -359,8 +359,7 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
         std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
         Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
 
-        vis_list.sublist("cycle start period stop").sublist(cycle_macro).set("start period stop",cm);
-
+        vis_list.set("cycles start period stop", cm);
         // delete the cycle macro
         vis_list.remove("Cycle Macro");
       }
@@ -370,11 +369,15 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
         std::vector<std::string> time_macros;
         time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macro").toVector();
 
+        int j(0);
         for (int i=0; i < time_macros.size(); i++) {
-          // Create a local parameter list and store the time macro (3 doubles)
+          // Create a local parameter to store the time macro
           Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macros[i], plist);
           if (time_macro_list.isParameter("Start_Period_Stop")) {
-            vis_list.sublist("time start period stop").sublist(time_macros[i]).set("start period stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+            std::stringstream ss;
+            ss << "times start period stop " << i;            
+            vis_list.set(ss.str(),time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+            ++j;
           }
           if (time_macro_list.isParameter("Values")) {
             vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
