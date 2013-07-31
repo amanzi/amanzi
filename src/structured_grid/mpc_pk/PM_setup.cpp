@@ -2394,7 +2394,8 @@ void  PorousMedia::read_comp()
 	      
 	      // convert to atm
 	      for (int j=0; j<vals.size(); ++j) {
-		vals[j] = vals[j] / BL_ONEATM - 1.e0;
+		//vals[j] = vals[j] / BL_ONEATM - 1.e0;
+		vals[j] = vals[j] / BL_ONEATM;
 	      }
       
               int num_phases = phases_set.size();
@@ -2420,7 +2421,8 @@ void  PorousMedia::read_comp()
               Real press_val;
               std::string val_name = "val";
               ppr.get(val_name.c_str(),press_val);
-              press_val = press_val / BL_ONEATM - 1.0;
+              //press_val = press_val / BL_ONEATM - 1.0;
+              press_val = press_val / BL_ONEATM;
 
               int ngrad = ppr.countval("grad");
               if (ngrad<BL_SPACEDIM) {
@@ -2435,7 +2437,7 @@ void  PorousMedia::read_comp()
 
               int nref = ppr.countval("ref_coord");
               if (nref<BL_SPACEDIM) {
-                std::cerr << "Insufficient number of components given for pressure refernce lication" << std::endl;
+                std::cerr << "Insufficient number of components given for pressure refernce location" << std::endl;
                 BoxLib::Abort();
               }
               Array<Real> pref(BL_SPACEDIM);
@@ -2541,13 +2543,14 @@ void  PorousMedia::read_comp()
               
               // convert to atm
               for (int j=0; j<vals.size(); ++j) {
-                vals[j] = vals[j] / BL_ONEATM - 1;
+                vals[j] = vals[j] / BL_ONEATM;
               }
               
               is_inflow = false;
               component_bc = 1;
               pressure_bc = 2;
 
+              //if (model == PM_STEADY_SATURATED || model == PM_RICHARDS) {
               if (model == PM_STEADY_SATURATED) {
                 bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals));
               } else {
@@ -2555,6 +2558,26 @@ void  PorousMedia::read_comp()
                 bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
                                                           bc_type,ncomps,p_to_sat));
               }
+          }
+          else if (bc_type == "pressure_head")
+          {              
+            Array<Real> vals, times;
+            Array<std::string> forms;
+            std::string val_name = "vals";
+            int nv = ppr.countval(val_name.c_str());
+            if (nv) {
+              ppr.getarr(val_name.c_str(),vals,0,nv);
+              times.resize(nv,0);
+              if (nv>1) {
+                ppr.getarr("times",times,0,nv);
+                ppr.getarr("forms",forms,0,nv-1);
+              }
+            }
+
+            is_inflow = false;
+            component_bc = 1;
+            pressure_bc = 2;
+            bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals[0]));//Fixme, support t-dependent
           }
           else if (bc_type == "zero_total_velocity")
           {

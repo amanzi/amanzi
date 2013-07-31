@@ -1052,21 +1052,26 @@ RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
 
   const Array<Geometry>& geomArray = layout.GeomArray();
 
-  FArrayBox inflow;
+  FArrayBox inflow, mask;
   for (OrientationIter oitr; oitr; ++oitr) {
     Orientation face = oitr();
     int dir = face.coordDir();
     for (int lev=0; lev<nLevs; ++lev) {
       MultiFab& uld = velocity[dir][lev];
-      if (pm[lev].get_inflow_velocity(face,inflow,t)) {
+      if (pm[lev].get_inflow_velocity(face,inflow,mask,t)) {
 	int shift = ( face.isHigh() ? -1 : +1 );
 	inflow.shiftHalf(dir,shift);
+	mask.shiftHalf(dir,shift);
 	for (MFIter mfi(uld); mfi.isValid(); ++mfi) {
 	  FArrayBox& u = uld[mfi];
 	  Box ovlp = inflow.box() & u.box();
-	  if (ovlp.ok()) {
-	    u.copy(inflow);
-	  }
+          if (ovlp.ok()) {
+            for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
+              if (mask(iv,0) != 0) {
+                u(iv,0) = inflow(iv,0);
+              }
+            }
+          }
 	}
       }
     }

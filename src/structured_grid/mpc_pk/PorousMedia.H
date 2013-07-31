@@ -962,6 +962,7 @@ public:
   void dirichletDefaultBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
+                           FArrayBox&         mask,
                            Real               t);
   void get_inflow_density(const Orientation& face,
                           const RegionData&  face_bc,
