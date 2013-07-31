@@ -324,7 +324,6 @@ PorousMedia::setup_bound_desc()
             found++;
           }
         }
-
         if (found) {
           myBCs.push_back(i);
         }
@@ -963,13 +962,16 @@ void
 PorousMedia::set_vel_from_bcs(Real      time,
 			      MultiFab* vel)
 {
+  BoxLib::Abort("This hack is no longer valid");
+
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
     Orientation face = oitr();
 
     PorousMedia* coarsest_pm = dynamic_cast<PorousMedia*>(&parent->getLevel(0));
 
-    if (coarsest_pm->get_inflow_velocity(face,inflow,time)) {
+    FArrayBox mask;
+    if (coarsest_pm->get_inflow_velocity(face,inflow,mask,time)) {
       // NOTE: Without doing a pressure solve formally, it is not
       //  obvious how to do this in a way that makes sense.  The hack
       //  for the moment is to just do a setval over the entire 
@@ -1055,14 +1057,10 @@ PorousMedia::initData ()
 	    }
             else if (type == "pressure") 
 	    {
-	      BL_ASSERT(model == PM_STEADY_SATURATED);
 	      Array<Real> vals = ic();
 	      for (int jt=0; jt<ic_regions.size(); ++jt) {
 		regions[jt].setVal(P_new[mfi],vals,
 				   dx,0,0,ncomps);
-	      }
-	      for (int n=0; n<ncomps; ++n) {
-		S_new[mfi].setVal(density[n],mfi.validbox(),n,1);
 	      }
 	    }
             else if (type == "linear_pressure")
@@ -1078,9 +1076,6 @@ PorousMedia::initData ()
               FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                    dx, problo, ref_val, ref_loc, gradp);
 
-	      for (int n=0; n<ncomps; ++n) {
-		S_new[mfi].setVal(density[n],mfi.validbox(),n,1);
-	      }
 	    }
             else if (type == "hydrostatic") 
 	    {
@@ -1383,28 +1378,23 @@ PorousMedia::initData ()
     if (do_chem!=0) {
         get_new_data(FuncCount_Type).setVal(1);
     }
-        
+
     if (model == PM_RICHARDS) {
       calcInvPressure(S_new,P_new); // Set sat from p
-
-      // FIXME: Why are these needed here?
-      FillStateBndry(cur_time,State_Type,0,ncomps);
-      FillStateBndry(cur_time,Press_Type,0,1);
-      
-      // FIXME: How to be sure valid tracer BCs at this time?
-      if (setup_tracer_transport) {
-	FillStateBndry(cur_time,State_Type,ncomps,ntracers);
-      }
     }
-
-
+    else if (have_capillary) {
+      calcCapillary(cur_time);
+    }
     U_vcr.setVal(0.);
-    if (have_capillary) calcCapillary(cur_time);
     //
     // compute lambda
     //
     if (model != PM_STEADY_SATURATED) {
-      calcLambda(cur_time);
+      if (model == PM_RICHARDS) {
+        calcLambda(lambdap1_cc,get_new_data(State_Type)); // Use rho.sat computed above
+      } else {
+        calcLambda(cur_time);
+      }
     }
 
     //
@@ -1416,10 +1406,7 @@ PorousMedia::initData ()
         u_macG_curr = AllocateUMacG();
       }
 
-      if (model == PM_STEADY_SATURATED) {
-	set_vel_from_bcs(cur_time,u_mac_curr);
-      }
-      else {
+      if (model != PM_STEADY_SATURATED) {
         mac_project(u_mac_curr,rhs_RhoD,cur_time);
       }
         
@@ -2157,7 +2144,7 @@ PorousMedia::richard_init_to_steady()
           std::cout << tag << "      Newton iters: " << total_num_Newton_iterations << std::endl;
           std::cout << tag << "      Rejected steps: " << total_rejected_Newton_steps << std::endl;
         }
-	  
+
         // Set data on next level by interpolating the pressure field and inverting out rho.sat
         if (num_active_levels<=finest_level) {
           int curr_flev = num_active_levels - 1;
@@ -2501,7 +2488,7 @@ PorousMedia::advance_setup (Real time,
     //
     // Compute capillary diffusive coefficients
     //
-    if (have_capillary)
+    if (model != PM_RICHARDS && have_capillary)
       {
 	calcCapillary(time);
 	MultiFab::Copy(*pcnp1_cc,*pcn_cc,0,0,1,(*pcnp1_cc).nGrow());
@@ -3296,6 +3283,7 @@ PorousMedia::advance_incompressible (Real time,
   // For single-phase constant-density problem, use advance_simple.
   //
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::advance_incompressible()");
+  BL_ASSERT(model != PM_RICHARDS);
 
   const Real cur_time = state[State_Type].curTime();
   MultiFab& S_new     = get_new_data(State_Type);
@@ -4108,14 +4096,19 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
-      if (get_inflow_velocity(face,inflow,time)) {
+      FArrayBox mask;
+      if (get_inflow_velocity(face,inflow,mask,time)) {
           int shift = ( face.isHigh() ? -1 : +1 );
           inflow.shiftHalf(face.coordDir(),shift);
           for (MFIter mfi(u_mac[face.coordDir()]); mfi.isValid(); ++mfi) {
               FArrayBox& u = u_mac[face.coordDir()][mfi];
               Box ovlp = inflow.box() & u.box();
 	      if (ovlp.ok()) {
-                  u.copy(inflow);
+                for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
+                  if (mask(iv,0) != 0) {
+                    u(iv,0) = inflow(iv,0);
+                  }
+                }
               }
           }
       }
@@ -4130,6 +4123,7 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
 bool
 PorousMedia::get_inflow_velocity(const Orientation& face,
                                  FArrayBox&         ccBndFab,
+                                 FArrayBox&         mask,
                                  Real               t)
 {
     bool ret = false;
@@ -4144,22 +4138,23 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
         const BCDesc& bc_desc = bc_descriptor_map[face];
         const Box bndBox = bc_desc.first;
         const Array<int>& face_bc_idxs = bc_desc.second;
-
+        
         ccBndFab.resize(bndBox,1); ccBndFab.setVal(0);
-
+        mask.resize(bndBox,1); mask.setVal(0);
         for (int i=0; i<face_bc_idxs.size(); ++i) {
-            const RegionData& face_bc = bc_array[face_bc_idxs[i]];
-
-            if (face_bc.Type() == "zero_total_velocity") {
-                ret = true;
-		Array<Real> inflow_tmp = face_bc(t_eval);
-		Real inflow_vel = inflow_tmp[0];
-                const PArray<Region>& regions = face_bc.Regions();
-                for (int j=0; j<regions.size(); ++j)
-                {
-                    regions[j].setVal(ccBndFab,inflow_vel,0,dx,0);
-                }
+          const RegionData& face_bc = bc_array[face_bc_idxs[i]];
+          
+          if (face_bc.Type() == "zero_total_velocity") {
+            ret = true;
+            Array<Real> inflow_tmp = face_bc(t_eval);
+            Real inflow_vel = inflow_tmp[0];
+            const PArray<Region>& regions = face_bc.Regions();
+            for (int j=0; j<regions.size(); ++j)
+            {
+              regions[j].setVal(ccBndFab,inflow_vel,0,dx,0);
+              regions[j].setVal(mask,1,0,dx,0);
             }
+          }
 	}
     }    
     return ret;
@@ -4348,14 +4343,19 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase, MultiFab* u_mac,
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
-      if (get_inflow_velocity(face,inflow,time)) {
+      FArrayBox mask;
+      if (get_inflow_velocity(face,inflow,mask,time)) {
           int shift = ( face.isHigh() ? -1 : +1 );
           inflow.shiftHalf(face.coordDir(),shift);
           for (MFIter mfi(u_phase[face.coordDir()]); mfi.isValid(); ++mfi) {
               FArrayBox& u = u_phase[face.coordDir()][mfi];
               Box ovlp = inflow.box() & u.box();
 	      if (ovlp.ok()) {
-                  u.copy(inflow);
+                for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
+                  if (mask(iv,0) != 0) {
+                    u(iv,0) = inflow(iv,0);
+                  }
+                }
               }
           }
       }
@@ -4458,14 +4458,19 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
-      if (get_inflow_velocity(face,inflow,time)) {
+      FArrayBox mask;
+      if (get_inflow_velocity(face,inflow,mask,time)) {
           int shift = ( face.isHigh() ? -1 : +1 );
           inflow.shiftHalf(face.coordDir(),shift);
           for (MFIter mfi(u_phase[face.coordDir()]); mfi.isValid(); ++mfi) {
               FArrayBox& u = u_phase[face.coordDir()][mfi];
               Box ovlp = inflow.box() & u.box();
               if (ovlp.ok()) {
-		u.copy(inflow);
+                for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
+                  if (mask(iv,0) != 0) {
+                    u(iv,0) = inflow(iv,0);
+                  }
+                }
               }
           }
       }
@@ -4710,6 +4715,8 @@ PorousMedia::scalar_update (Real      dt,
 			    int       corrector,
 			    MultiFab* u_mac)
 {
+  BL_ASSERT(model != PM_RICHARDS); // Use richards_scalar_update instead
+
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::scalar_update()");
   if (verbose > 3 && ParallelDescriptor::IOProcessor())
     std::cout << "... update scalars\n";
@@ -10926,7 +10933,8 @@ PorousMedia::calc_richard_coef (MultiFab*        diffusivity[BL_SPACEDIM],
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
       Orientation face = oitr();
-      if (get_inflow_velocity(face,inflow,time)) {
+      FArrayBox mask;
+      if (get_inflow_velocity(face,inflow,mask,time)) {
 	int shift = ( face.isHigh() ? -1 : +1 );
 	inflow.setVal(0.);
           inflow.shiftHalf(face.coordDir(),shift);
@@ -10934,7 +10942,11 @@ PorousMedia::calc_richard_coef (MultiFab*        diffusivity[BL_SPACEDIM],
 	    FArrayBox& u = (*diffusivity[face.coordDir()])[mfi];
               Box ovlp = inflow.box() & u.box();
               if (ovlp.ok()) {
-  		u.copy(inflow);
+                for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
+                  if (mask(iv,0) != 0) {
+                    u(iv,0) = inflow(iv,0);
+                  }
+                }
               }
           }
       }
@@ -11782,6 +11794,7 @@ PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
   Faces.resize(0);
   for (int idir = 0; idir < BL_SPACEDIM; idir++)
     {
+      //if (1 || (comp_Type == Press_Type && _bc.lo(idir) == EXT_DIR) ||
       if ((comp_Type == Press_Type && _bc.lo(idir) == EXT_DIR) ||
 	  (comp_Type == State_Type && _bc.lo(idir) == EXT_DIR))
         {
@@ -11789,6 +11802,7 @@ PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
 	  Faces.resize(len+1);
 	  Faces.set(len,Orientation(idir,Orientation::low));
         }
+      //if (1 || (comp_Type == Press_Type && _bc.hi(idir) == EXT_DIR) ||
       if ((comp_Type == Press_Type && _bc.hi(idir) == EXT_DIR) ||
 	  (comp_Type == State_Type && _bc.hi(idir) == EXT_DIR))
         {
@@ -11870,6 +11884,7 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
 void
 PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, int nComp)
 {
+  Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
   if (bc_descriptor_map.size()) 
   {
     BL_ASSERT(sComp+nComp<=ncomps);
@@ -11878,19 +11893,40 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
     const Real* dx   = geom.CellSize();
 
     Real t_eval = AdjustBCevalTime(State_Type,time,false);
-    FArrayBox bndFab;
+    FArrayBox bndFab, cplbnd, mask;
+    FArrayBox cpldat, phidat, kpdat, ktdat;
 
     for (std::map<Orientation,BCDesc>::const_iterator
            it=bc_descriptor_map.begin(); it!=bc_descriptor_map.end(); ++it) 
     {
-      const Box bndBox = it->second.first;
+      const BCDesc& bc_desc = it->second;
+      const Box bndBox = bc_desc.first;
       Box ovlp = bndBox & fab.box();
       if (ovlp.ok()) {
-        const Array<int>& face_bc_idxs = it->second.second;
+        const Array<int>& face_bc_idxs = bc_desc.second;
         bndFab.resize(ovlp,nComp);
-                
+        mask.resize(ovlp,1); 
+
+        bool need_press = false;
         for (int i=0; i<face_bc_idxs.size(); ++i) {
           const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+          need_press |= face_bc.Type() == "pressure"
+            || face_bc.Type() == "pressure_head"
+            || face_bc.Type() == "zero_total_velocity";
+        }
+        if (need_press) {
+          cplbnd.resize(ovlp,1);
+          cplbnd.setVal(0); // A safe value for the InvCap calc below
+          dirichletPressBC(cplbnd,t_eval);
+          cplbnd.mult(-1);
+        }
+
+#if 1
+        for (int i=0; i<face_bc_idxs.size(); ++i) {
+          const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+
+          mask.setVal(0);
+          const PArray<Region>& regions = face_bc.Regions();
                     
           if (face_bc.Type() == "zero_total_velocity") {
             get_inflow_density(it->first,face_bc,bndFab,bndBox,t_eval);
@@ -11900,6 +11936,41 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
           }
         }
         fab.copy(bndFab,0,dComp,nComp);
+#else
+        for (int i=0; i<face_bc_idxs.size(); ++i) {
+          const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+
+          mask.setVal(0);
+          const PArray<Region>& regions = face_bc.Regions();
+          if (face_bc.Type() == "pressure"
+                   || face_bc.Type() == "pressure_head"
+                   || face_bc.Type() == "zero_total_velocity") {
+
+            for (int j=0; j<regions.size(); ++j) { 
+              regions[j].setVal(mask,1,0,dx,0);
+            }
+            const int n_cpl_coef = cpl_coef->nComp();
+            cpldat.resize(ovlp,n_cpl_coef);
+            phidat.resize(ovlp,1);
+            ktdat.resize(ovlp,BL_SPACEDIM);
+            kpdat.resize(ovlp,1);
+            for (int i=0; i<rocks.size(); ++i) {	  
+              rocks[i].set_constant_cplval(cpldat,dx);
+              rocks[i].set_constant_kval(ktdat,dx);
+              rocks[i].set_constant_pval(phidat,dx);
+            }
+            kpdat.copy(ktdat,ovlp,it->first.coordDir(),ovlp,0,1);
+            calcInvCapillary(bndFab,cplbnd,phidat,kpdat,cpldat);
+            for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
+              if (mask(iv,0) > 0) {
+                for (int n=0; n<ncomps; ++n) {
+                  fab(iv,n) = bndFab(iv,n);
+                }
+              }
+            }
+          }
+        }
+#endif
       }
     }
   }
@@ -11943,72 +12014,183 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp,
 void
 PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
 {
-    Array<int> bc(BL_SPACEDIM*2,0);
-    if (pbc_descriptor_map.size()) 
-    {
-        const Box domain = geom.Domain();
-        const int* domhi = domain.hiVect();
-        const int* domlo = domain.loVect();
-        const Real* dx   = geom.CellSize();
-        Real t_eval = AdjustBCevalTime(Press_Type,time,false);
+  Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
+#if 1
+  if (pbc_descriptor_map.size()) 
+  {
+    const Box domain = geom.Domain();
+    const int* domhi = domain.hiVect();
+    const int* domlo = domain.loVect();
+    const Real* dx   = geom.CellSize();
+    Real t_eval = AdjustBCevalTime(Press_Type,time,false);
 
-        FArrayBox sdat, prdat, mask;
-        for (std::map<Orientation,BCDesc>::const_iterator
-                 it=pbc_descriptor_map.begin(); it!=pbc_descriptor_map.end(); ++it) 
-        {
-            const Box bndBox = it->second.first;
-            const Array<int>& face_bc_idxs = it->second.second;
-            Box subbox = bndBox & fab.box();
-            if (subbox.ok()) {
-                sdat.resize(subbox,ncomps); 
-                prdat.resize(subbox,ncomps); prdat.setVal(0);
+    FArrayBox sdat, prdat, mask;
+    for (std::map<Orientation,BCDesc>::const_iterator
+           it=pbc_descriptor_map.begin(); it!=pbc_descriptor_map.end(); ++it) 
+    {
+      const Box bndBox = it->second.first;
+      const Array<int>& face_bc_idxs = it->second.second;
+      Box subbox = bndBox & fab.box();
+      if (subbox.ok()) {
+        sdat.resize(subbox,ncomps); 
+        prdat.resize(subbox,ncomps); prdat.setVal(0);
                 
-                for (int i=0; i<face_bc_idxs.size(); ++i) {
-                    const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+        for (int i=0; i<face_bc_idxs.size(); ++i) {
+          const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
                     
-                    if (model==PM_RICHARDS) {
-                        sdat.setVal(0);
-                        face_bc.apply(sdat,dx,0,ncomps,t_eval);
-                        mask.resize(subbox,1); mask.setVal(-1);
-                        const PArray<Region>& regions = face_bc.Regions();
-                        for (int j=0; j<regions.size(); ++j)
-                        { 
-                            regions[j].setVal(mask,1,0,dx,0);
-                        }
+          if (model==PM_RICHARDS) {
+            sdat.setVal(0);
+            face_bc.apply(sdat,dx,0,ncomps,t_eval);
+            mask.resize(subbox,1); mask.setVal(-1);
+            const PArray<Region>& regions = face_bc.Regions();
+            for (int j=0; j<regions.size(); ++j)
+            { 
+              regions[j].setVal(mask,1,0,dx,0);
+            }
                         
-                        FArrayBox cpldat, phidat, kpdat, ktdat;
-                        const int n_cpl_coef = cpl_coef->nComp();
-                        cpldat.resize(subbox,n_cpl_coef);
-                        phidat.resize(subbox,1);
-                        ktdat.resize(subbox,BL_SPACEDIM);
-                        kpdat.resize(subbox,1);
-                        for (int i=0; i<rocks.size(); ++i)
-                        {	  
-                            rocks[i].set_constant_cplval(cpldat,dx);
-                            rocks[i].set_constant_kval(ktdat,dx);
-                            rocks[i].set_constant_pval(phidat,dx);
-                        }
-                        kpdat.copy(ktdat,subbox,it->first.coordDir(),subbox,0,1);
-                        calcCapillary(prdat,sdat,phidat,kpdat,cpldat,subbox,bc);
-                        for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
-                            if (mask(iv,0) > 0) {
-                                for (int n=0; n<ncomps; ++n) {
-                                    fab(iv,n) = - prdat(iv,n);
-                                }
-                            }
-                        }
-                    }
-                    else if (model==PM_STEADY_SATURATED) {
-                      if (face_bc.Type() == "pressure") {
-                        face_bc.apply(prdat,dx,0,ncomps,t_eval);
-                        fab.copy(prdat,0,0,ncomps);
-                      }
-                    }
-		}
-	    }
+            FArrayBox cpldat, phidat, kpdat, ktdat;
+            const int n_cpl_coef = cpl_coef->nComp();
+            cpldat.resize(subbox,n_cpl_coef);
+            phidat.resize(subbox,1);
+            ktdat.resize(subbox,BL_SPACEDIM);
+            kpdat.resize(subbox,1);
+            for (int i=0; i<rocks.size(); ++i)
+            {	  
+              rocks[i].set_constant_cplval(cpldat,dx);
+              rocks[i].set_constant_kval(ktdat,dx);
+              rocks[i].set_constant_pval(phidat,dx);
+            }
+            kpdat.copy(ktdat,subbox,it->first.coordDir(),subbox,0,1);
+            calcCapillary(prdat,sdat,phidat,kpdat,cpldat,subbox,bc);
+            for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
+              if (mask(iv,0) > 0) {
+                for (int n=0; n<ncomps; ++n) {
+                  fab(iv,n) = - prdat(iv,n);
+                }
+              }
+            }
+          }
+          else if (model==PM_STEADY_SATURATED) {
+            if (face_bc.Type() == "pressure") {
+              face_bc.apply(prdat,dx,0,ncomps,t_eval);
+              fab.copy(prdat,0,0,ncomps);
+            }
+          }
         }
-    }    
-}  
+      }
+    }
+  }
+#else
+  if (pbc_descriptor_map.size()) 
+  {
+    const Box domain = geom.Domain();
+    const int* domhi = domain.hiVect();
+    const int* domlo = domain.loVect();
+    const Real* dx   = geom.CellSize();
+    Real t_eval = AdjustBCevalTime(Press_Type,time,false);
+    
+    FArrayBox sdat, prdat, mask;
+    for (std::map<Orientation,BCDesc>::const_iterator
+           it=pbc_descriptor_map.begin(); it!=pbc_descriptor_map.end(); ++it) 
+    {
+      const BCDesc& bc_desc = it->second;
+      const Box bndBox = bc_desc.first;
+      const Array<int>& face_bc_idxs = bc_desc.second;
+      Box subbox = bndBox & fab.box();
+      if (subbox.ok()) {
+
+        // Set the pressure boundary condition based on the saturation
+        // (will not generate p>0)
+        if (model==PM_RICHARDS && do_richard_sat_solve) {
+
+          sdat.resize(subbox,ncomps); 
+          prdat.resize(subbox,ncomps); prdat.setVal(0);
+
+          for (int i=0; i<face_bc_idxs.size(); ++i) {
+            const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+
+            sdat.setVal(0);
+            face_bc.apply(sdat,dx,0,ncomps,t_eval);
+            mask.resize(subbox,1); mask.setVal(-1);
+            const PArray<Region>& regions = face_bc.Regions();
+            for (int j=0; j<regions.size(); ++j)
+            { 
+              regions[j].setVal(mask,1,0,dx,0);
+            }
+            
+            FArrayBox cpldat, phidat, kpdat, ktdat;
+            const int n_cpl_coef = cpl_coef->nComp();
+            cpldat.resize(subbox,n_cpl_coef);
+            phidat.resize(subbox,1);
+            ktdat.resize(subbox,BL_SPACEDIM);
+            kpdat.resize(subbox,1);
+            for (int i=0; i<rocks.size(); ++i)
+            {	  
+              rocks[i].set_constant_cplval(cpldat,dx);
+              rocks[i].set_constant_kval(ktdat,dx);
+              rocks[i].set_constant_pval(phidat,dx);
+            }
+            kpdat.copy(ktdat,subbox,it->first.coordDir(),subbox,0,1);
+            calcCapillary(prdat,sdat,phidat,kpdat,cpldat,subbox,bc);
+            for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
+              if (mask(iv,0) > 0) {
+                for (int n=0; n<ncomps; ++n) {
+                  fab(iv,n) = - prdat(iv,n);
+                }
+              }
+            }
+          }
+
+        }
+        else {
+
+          prdat.resize(subbox,ncomps); prdat.setVal(0);
+          mask.resize(subbox,1);
+
+          for (int i=0; i<face_bc_idxs.size(); ++i) {
+            const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
+            mask.setVal(0);
+            const PArray<Region>& regions = face_bc.Regions();
+
+            if (face_bc.Type() == "pressure") {
+              for (int j=0; j<regions.size(); ++j) {
+                regions[j].setVal(mask,1,0,dx,0);
+              }
+              face_bc.apply(prdat,dx,0,ncomps,t_eval);
+            }
+            else if (face_bc.Type() == "pressure_head") {
+              BoxLib::Abort("Pressure head boundaries not yet supported");
+              for (int j=0; j<regions.size(); ++j) {
+                regions[j].setVal(mask,1,0,dx,0);
+              }
+              Real head_val = face_bc()[0] * density[0] * gravity; // gravity=g/101325
+              Array<Real> gradp(BL_SPACEDIM,0);
+              gradp[BL_SPACEDIM-1] = - density[0] * gravity;// gravity=g/101325
+              const Real* problo = geom.ProbLo();
+              const Real* ref_loc = problo;
+              Real ref_val = head_val;
+              Real* p_ptr = prdat.dataPtr();
+              const int* p_lo = prdat.loVect();
+              const int* p_hi = prdat.hiVect();
+              FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+                                   dx, problo, &ref_val, ref_loc, gradp.dataPtr());
+
+            }
+
+            for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
+              if (mask(iv,0) > 0) {
+                for (int n=0; n<ncomps; ++n) {
+                  fab(iv,n) = prdat(iv,n);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+#endif
+}
 
 void
 PorousMedia::dirichletDefaultBC (FArrayBox& fab, Real time)
@@ -12269,7 +12451,8 @@ PorousMedia::derive (const std::string& name,
         AmrLevel::derive("pressure",time,mf,dcomp);
         if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
             mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
-            mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
+            //mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
+            //mf.mult(1/(998.2*9.807*12*2.54*1.e-2),dcomp,ncomp,ngrow); // pressure head, in feet
         }
         else {
   	    BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Pressure not yet implemented for " + model).c_str());
@@ -12288,7 +12471,7 @@ PorousMedia::derive (const std::string& name,
 	  umac_edge_to_cen(u_mac_curr,tmf,do_upwind); 
 	  MultiFab::Copy(mf,tmf,dir,dcomp,1,0);
           // Return values in m/d
-          mf.mult(24*60*60,dcomp,1,0);
+          //mf.mult(24*60*60,dcomp,1,0);
         }
         else {
 	  BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "+model).c_str());
