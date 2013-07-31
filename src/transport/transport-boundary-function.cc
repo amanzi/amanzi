@@ -67,7 +67,6 @@ void TransportBoundaryFunction::Compute(double time) {
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
     }
   }
-
   delete [] args;
 };
 

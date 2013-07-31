@@ -112,7 +112,7 @@ void MPC::mpc_init() {
     if (mpc_parameter_list.isParameter("component names")) {
       Teuchos::Array<std::string> comp_names;
       comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
-      TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S, comp_names.toVector() ));
+      TS = Teuchos::rcp(new AmanziTransport::Transport_State(S, comp_names.toVector() ));
     } else {
       
     }
@@ -334,6 +334,7 @@ void MPC::cycle_driver() {
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     S->set_time(T0);  // start at time T=T0;
+    S->set_initial_time(T0);
     S->set_intermediate_time(Tswitch);
   }
 
@@ -830,6 +831,7 @@ void MPC::cycle_driver() {
       
       // update the times in the state object
       S->advance_time(mpc_dT);
+      S->set_initial_time(S->time());
 
       // ===========================================================
       // we're done with this time step, commit the state

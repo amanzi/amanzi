@@ -28,8 +28,8 @@ class Transport_State : public PK_State {
 
   Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int);
   Transport_State(Teuchos::RCP<State> S, const int);
-  Transport_State(State& S, const int);
-  Transport_State(State& S, std::vector<std::string> comp_names);
+  // Transport_State(State& S, const int);
+  Transport_State(Teuchos::RCP<State> S, std::vector<std::string> comp_names);
   Transport_State(Transport_State& other, PKStateConstructMode mode);
 
   void Initialize();
@@ -78,9 +78,9 @@ class Transport_State : public PK_State {
   std::string get_component_name(const int component_number);
 
   // time
-  double initial_time() const { return S_->time(); }
-  double intermediate_time() const { return S_->intermediate_time(); }
-  double final_time() const { return S_->final_time(); }
+  double initial_time() const { return S_time_->time(); }
+  double intermediate_time() const { return S_time_->intermediate_time(); }
+  double final_time() const { return S_time_->final_time(); }
 
   // routines that may not belong in state
   void InterpolateCellVector(const Epetra_Vector& v0,
@@ -101,6 +101,10 @@ class Transport_State : public PK_State {
 
  protected:
   void Construct_(const int);
+
+ private:
+  Teuchos::RCP<State> S_time_;
+
 
  private:
   // not implemented

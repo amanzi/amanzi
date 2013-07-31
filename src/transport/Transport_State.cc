@@ -19,21 +19,22 @@ Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int 
 }
 
 Transport_State::Transport_State(Teuchos::RCP<State> S, const int ncomp) :
-    PK_State(std::string("state"), S) {
-
+  PK_State(std::string("state"), S),
+  S_time_(S)
+{
   Construct_(ncomp);
 }
 
-Transport_State::Transport_State(State& S, const int ncomp) :
-    PK_State(std::string("state"), S) {
+// Transport_State::Transport_State(State& S, const int ncomp) :
+//   PK_State(std::string("state"), S)
+// {
+//   Construct_(ncomp);
+// }
 
-  Construct_(ncomp);
-}
 
-
-
-Transport_State::Transport_State(State& S, std::vector<std::string> comp_names) :
-    PK_State(std::string("state"), S), 
+Transport_State::Transport_State(Teuchos::RCP<State> S, std::vector<std::string> comp_names) :
+    PK_State(std::string("state"), S),
+    S_time_(S),
     comp_names_(comp_names)
 {
   for (int i=0; i<comp_names_.size(); ++i) {
@@ -48,7 +49,9 @@ Transport_State::Transport_State(Transport_State& other,
         PKStateConstructMode mode) :
     PK_State(other, STATE_CONSTRUCT_MODE_COPY_POINTERS),
     comp_numbers_(other.comp_numbers_),
-    comp_names_(other.comp_names_) {
+    comp_names_(other.comp_names_),
+    S_time_(other.S_time_)
+ {
 
   if (mode == CONSTRUCT_MODE_VIEW_DATA) {
     ghosted_ = false;  // non-ghosted views
