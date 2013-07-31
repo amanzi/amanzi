@@ -696,6 +696,10 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
       }
     }
 
+    if (transport_on || chemistry_on) {
+      mpc_list.set<Teuchos::Array<std::string> >("component names", comp_names);
+    }
+
     if ( exe_sublist.isParameter("Flow Model") ) {
       if ( exe_sublist.get<std::string>("Flow Model") == "Off") {
         mpc_list.set<std::string>("disable Flow_PK", "yes");
@@ -781,7 +785,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
   }
 
   if (n_transport_bcs >= 0) {
-    Teuchos::ParameterList& tbc_list = trp_list.sublist("Transport BCs");
+    Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
 
     Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
@@ -810,23 +814,19 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
               if (  comps.isSublist(*i) ) {
                 std::stringstream compss;
                 compss << *i;
-                // for now just read the first value from the
                 if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
-                  // create the unique name for this boundary condition
-                  std::stringstream ss;
-                  ss << bc_root_str << " " << *i;
-                  // and create the native boundary condition list
-                  Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
-
+                  Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
+                  bc.set<Teuchos::Array<std::string> >("regions",regs);
                   Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
 
                   Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
                   Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
                   Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
-                  bc.set<Teuchos::Array<double> >(compss.str(), values );
-                  bc.set<Teuchos::Array<double> >("Times", times);
-                  bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
-                  bc.set<Teuchos::Array<std::string> >("Regions", regs);
+
+                  Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
+                  bcfn.set<Teuchos::Array<double> >("y values", values);
+                  bcfn.set<Teuchos::Array<double> >("x values", times);
+                  bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
                 }
               }
             }
@@ -840,6 +840,25 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
 
   return trp_list;
 }
+
+
+
+Teuchos::Array<std::string> translate_forms(Teuchos::Array<std::string> & forms) {
+  Teuchos::Array<std::string>  target_forms;
+  for (Teuchos::Array<std::string>::const_iterator i = forms.begin();
+       i != forms.end(); ++i) {
+    
+    if (*i == "Constant") {
+      target_forms.push_back("constant");
+    } else if (*i == "Linear") {
+      target_forms.push_back("linear");
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Cannot translate the tabular function form "+*i));     
+    }
+  }
+  return target_forms;
+}
+
 
 
 /* ******************************************************************

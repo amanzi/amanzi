@@ -109,7 +109,13 @@ void MPC::mpc_init() {
       
   // transport...
   if (transport_enabled) {
-    TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S,5));
+    if (mpc_parameter_list.isParameter("component names")) {
+      Teuchos::Array<std::string> comp_names;
+      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+      TS = Teuchos::rcp(new AmanziTransport::Transport_State(*S, comp_names.toVector() ));
+    } else {
+      
+    }
   }
 
   // transport and chemistry...
@@ -741,13 +747,13 @@ void MPC::cycle_driver() {
 
                 Amanzi::timer_manager.stop("Chemistry PK");
 		
-		*S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
+		*S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
 		  = *total_component_concentration_star;		
 		
 		//S->update_total_component_concentration(CPK->get_total_component_concentration());
               } else {
 		if (chemistry_enabled || transport_enabled) {
-		  *S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
+		  *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
 		    = *total_component_concentration_star;
 		}
 	      }

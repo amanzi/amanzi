@@ -20,13 +20,29 @@ Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int 
 
 Transport_State::Transport_State(Teuchos::RCP<State> S, const int ncomp) :
     PK_State(std::string("state"), S) {
+
   Construct_(ncomp);
 }
 
 Transport_State::Transport_State(State& S, const int ncomp) :
     PK_State(std::string("state"), S) {
+
   Construct_(ncomp);
 }
+
+
+
+Transport_State::Transport_State(State& S, std::vector<std::string> comp_names) :
+    PK_State(std::string("state"), S), 
+    comp_names_(comp_names)
+{
+  for (int i=0; i<comp_names_.size(); ++i) {
+    comp_numbers_[comp_names_[i]] = i;
+  }  
+ 
+  Construct_(comp_names_.size());
+}
+
 
 Transport_State::Transport_State(Transport_State& other,
         PKStateConstructMode mode) :
@@ -135,6 +151,7 @@ void Transport_State::Initialize() {
 }
 
 int Transport_State::get_component_number(const std::string component_name) {
+
   std::map<std::string,int>::const_iterator lb =
     comp_numbers_.lower_bound(component_name);
   if (lb != comp_numbers_.end() && !(comp_numbers_.key_comp()(component_name, lb->first))) {
