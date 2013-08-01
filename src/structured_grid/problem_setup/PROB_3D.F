@@ -314,27 +314,6 @@ c     internal variables
 
       end
 
-c ::: -----------------------------------------------------------
-c ::: Boundary function for COREREACT
-c ::: -----------------------------------------------------------
-      subroutine FORT_REC_N_FILL (rho,DIMS(rho),domlo,domhi,dx,xlo,time,bc)
-
-#include "probdata.H"
-
-      integer    DIMDEC(rho)
-      integer    domlo(SDIM), domhi(SDIM)
-      REAL_T     dx(SDIM), xlo(SDIM), time
-      REAL_T     rho(DIMV(rho),nreact)
-      integer    bc(SDIM,2)
-      integer    n
-
-      do n = 1,nreact
-        call filcc(rho(ARG_L1(rho),ARG_L2(rho),ARG_L3(rho),n),
-     &             DIMS(rho),domlo,domhi,dx,xlo,bc)
-      end do
-     
-      end
-
       subroutine FORT_XVELFILL (vel,DIMS(vel),domlo,domhi,dx,
      &                          xlo,time,bc )
 

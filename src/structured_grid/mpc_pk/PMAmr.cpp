@@ -24,7 +24,6 @@ PMAmr::CleanupStatics ()
 }
 
 static bool initialized = false;
-bool PMAmr::use_matFiller;
 
 PMAmr::PMAmr()
   : Amr(), materialFiller(0)
@@ -36,7 +35,6 @@ PMAmr::PMAmr()
         compute_new_dt_on_regrid = 1;
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
-        use_matFiller            = true;
 
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         pmamr_initialized = true;
@@ -62,8 +60,6 @@ PMAmr::PMAmr()
 
     dt0_before_event_cut = -1;
     dt0_from_previous_advance = -1;
-
-    ppa.query("use_matFiller",use_matFiller);
 }
 
 PMAmr::~PMAmr()
@@ -645,18 +641,16 @@ PMAmr::coarseTimeStep (Real _stop_time)
 void
 PMAmr::SetUpMaterialServer()
 {
-  if (UsingMaterialServer()) {
-    if (materialFiller == 0 || !materialFiller->Initialized()) {
-      if (ParallelDescriptor::IOProcessor()) {
-        std::cout << "Building MaterialFiller object..." << std::endl;
-      }
-      
-      int Nlevs = maxLevel() + 1;
-      const PArray<Material>& materials = PorousMedia::Materials();
-      materialFiller = new MatFiller(geom,refRatio(),materials);
-      if (ParallelDescriptor::IOProcessor() && verbose>0) {
-        std::cout << "....MaterialFiller object built" << std::endl;
-      }
+  if (materialFiller == 0 || !materialFiller->Initialized()) {
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Building MaterialFiller object..." << std::endl;
+    }
+
+    int Nlevs = maxLevel() + 1;
+    const PArray<Material>& materials = PorousMedia::Materials();
+    materialFiller = new MatFiller(geom,refRatio(),materials);
+    if (ParallelDescriptor::IOProcessor() && verbose>0) {
+      std::cout << "....MaterialFiller object built" << std::endl;
     }
   }
 }

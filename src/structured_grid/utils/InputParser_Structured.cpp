@@ -1005,7 +1005,7 @@ namespace Amanzi {
             Array<double> lo = rsslist.get<Array<double> >("Low Coordinate");
             Array<double> hi = rsslist.get<Array<double> >("High Coordinate");
 
-            std::string purpose, type;
+            std::string purpose="all", type="box";
             for (int d=0; d<ndim; ++d) {
                 if (std::abs(hi[d] - lo[d]) < geometry_eps) // This is a (ndim-1) dimensional region
                 {
@@ -1020,10 +1020,6 @@ namespace Amanzi {
                     else if (lo[d] == domhi[d]) {
                         purpose = PMAMR::RpurposeDEF[d+3];
                     }
-                }
-                else {
-                    type = "box";
-                    purpose = "all";
                 }
             }
 
@@ -2283,7 +2279,6 @@ namespace Amanzi {
                                 ParameterList&       fPLout)
         {
             Array<std::string> nullList, reqP;
-            fPLout.set<std::string>("type","pressure");
 
             if (Amanzi_type == "BC: Linear Pressure")
             {
@@ -2294,9 +2289,21 @@ namespace Amanzi {
 
                 fPLout.set<Array<double> >("vals",fPLin.get<Array<double> >(val_name));
                 fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
-                const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
-                int coord = water_table.size()-1;
-                fPLout.set<double>("water_table",water_table[coord]);
+                fPLout.set<std::string>("type","pressure");
+            }
+            else if (Amanzi_type == "BC: Uniform Pressure Head")
+            {
+                const std::string val_name="Values"; reqP.push_back(val_name);
+                const std::string time_name="Times"; reqP.push_back(time_name);
+                const std::string form_name="Time Functions"; reqP.push_back(form_name);
+                PLoptions opt(fPLin,nullList,reqP,true,true);
+                Array<double> vals = fPLin.get<Array<double> >(val_name);
+                fPLout.set<Array<double> >("vals",vals);
+                if (vals.size()>1) {
+                    fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+                    fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+                }
+                fPLout.set<std::string>("type","pressure_head");
             }
             else if (Amanzi_type == "BC: Uniform Pressure")
             {
@@ -2311,6 +2318,7 @@ namespace Amanzi {
                     fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
                     fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
                 }
+                fPLout.set<std::string>("type","pressure");
             }
         }
 
@@ -2492,8 +2500,9 @@ namespace Amanzi {
                 {
                     convert_BCSaturation(fPLin,Amanzi_type,fPLout);
                 }
-                else if ( (Amanzi_type == "BC: Uniform Pressure"
-                           || Amanzi_type == "BC: Linear Pressure") )
+                else if ( (Amanzi_type == "BC: Uniform Pressure")
+                          || (Amanzi_type == "BC: Uniform Pressure Head")
+                          || (Amanzi_type == "BC: Linear Pressure") )
                 {
                     convert_BCPressure(fPLin,Amanzi_type,fPLout);
                 }
@@ -2563,7 +2572,7 @@ namespace Amanzi {
 		    int& inflow_bc   = (i<3  ? inflow_lo_bc[k] : inflow_hi_bc[k]);
 
                     if (orient_RTs.size()!=0) {
-  		        const std::string& orient_type = orient_RTs[0].second;
+  		        std::string orient_type = orient_RTs[0].second;
 			for (int j=1; j<orient_RTs.size(); ++j) {
 			    if (orient_type != orient_RTs[j].second) {
 			      std::cerr << "Structured grid requires that all BCs on "
@@ -2571,14 +2580,14 @@ namespace Amanzi {
 			      throw std::exception();
 			    }
 			}
-
-
 			if (orient_type == "noflow") {
 			    sat_bc      = 4; // No flow for saturation
 			    pressure_bc = 4; // No flow for p
 			    inflow_bc   = 0; // Automatically set to zero
 			}
-			else if (orient_type == "pressure" || orient_type == "hydrostatic") {
+			else if (orient_type == "pressure"
+                                 || orient_type == "pressure_head"
+                                 || orient_type == "hydrostatic") {
 			    // Must set components by name, and phase press set by press_XX(scalar) or hydro 
 			    sat_bc      = 1; // Dirichlet for saturation,
 			    pressure_bc = 2; // Dirichlet for p
