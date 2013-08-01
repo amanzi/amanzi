@@ -8,10 +8,12 @@ def run_amanzi(input_file, directory=None):
     run_directory= os.path.join(CWD,"amanzi-output")
 
     if os.path.isdir(run_directory):
-        return
+        if os.listdir(run_directory):
+            return
     else:
         os.mkdir(run_directory) 
-        os.chdir(run_directory)
+
+    os.chdir(run_directory)
     
     # ensure that Amanzi's executable exists
     try:
@@ -19,6 +21,7 @@ def run_amanzi(input_file, directory=None):
     except KeyError:
         raise RunTimeError("Missing Amanzi installation, please set the AMANZI_INSTALL_DIR environmental variable.")
     executable = os.path.join(path, "amanzi")
+    print executable
 
     if not os.path.isfile(executable):
         raise RunTimeError("Missing Amanzi installation, please build and install Amanzi.")

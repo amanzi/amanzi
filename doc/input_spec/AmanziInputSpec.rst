@@ -135,7 +135,7 @@ Version
 =======
 
 Each input set contains at the top level a string variable `"Amanzi Input Format Version`".  As of the most recent update of this specification, the
-current version of the Amanzi input is `"1.1.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
+current version of the Amanzi input is `"1.2.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
 evolving input specification version can be found *here*.
 
 * [SU] "Amanzi Input Format Version" [string] Three part version string
@@ -909,11 +909,15 @@ The following models can be specified for the intrinsic permeability of the mate
  
  * [SU] `"Value`" [double] to specify the constant value of the intrinsic permeability
 
-* [S] `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires 
+* [SU] `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires
  
- * [S] `"Horizontal`" [double] to specify the constant value of the intrinsic permeability in the horizontal directions; and
+ * [SU] `"x`" [double] to specify the constant value of the intrinsic permeability in the x-direction; and
 
- * [S] `"Vertical`" [double] to specify the constant value of the intrinsic permeability in the vertical directions.
+ * [SU] `"y`" [double] to specify the constant value of the intrinsic permeability in the y-direction; and
+
+ * [SU] `"z`" [double] to specify the constant value of the intrinsic permeability in the z (vertical) direction.
+
+ where the directions refer to the global cartesian coordinates.
 
 * `"Intrinsic Permeability: GSLib`" [list] requires 
  
