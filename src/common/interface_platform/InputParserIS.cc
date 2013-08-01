@@ -326,11 +326,13 @@ Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist
         std::string cycle_macro = restart_list.get<std::string>("Cycle Macro");
 
         Teuchos::Array<int> range = get_Cycle_Macro(cycle_macro, plist);
-        Teuchos::ParameterList& c_restart_list = restart_list.sublist("Cycle Data");
+        // Teuchos::ParameterList& c_restart_list = restart_list.sublist("Cycle Data");
 
-        c_restart_list.set<int>("Start", range[0]);
-        c_restart_list.set<int>("End", range[2]);
-        c_restart_list.set<int>("Interval", range[1]);
+	restart_list.set("cycles start period stop", range);
+
+        // c_restart_list.set<int>("Start", range[0]);
+        // c_restart_list.set<int>("End", range[2]);
+        // c_restart_list.set<int>("Interval", range[1]);
         // now delete the Cycle Macro paramter
 
         restart_list.remove("Cycle Macro");
