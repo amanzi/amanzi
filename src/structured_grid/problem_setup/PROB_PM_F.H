@@ -173,8 +173,6 @@
      void FORT_KR_INIT (Real* sThresh,
                         int* use_shifted_kr_eval);
 
-     void FORT_COREREACT_PARAMS(int*nreact, Real* rhosec); 
-    
      void FORT_ONE_N_FILL (Real* data, ARLIM_P(data_lo), ARLIM_P(data_hi),
 			   const int* dom_lo, const int* dom_hi,
 			   const Real* dx, const Real* grd_lo,
@@ -339,16 +337,6 @@
 			     const Real* gstar,const Real* muval,
 			     const int* ncomps, const int* kr_type, const Real* kr_coef);
     
-#ifdef COREREACT
-    void FORT_CHEM (const Real* s, ARLIM_P(slo), ARLIM_P(shi), int* nc,
-		    const int* lo, const int* hi, Real* dt, 
-		    const Real* press, ARLIM_P(p_lo), ARLIM_P(p_hi),
-		    const Real* kappa, ARLIM_P(k_lo), ARLIM_P(k_hi),
-		    const Real* phi, ARLIM_P(ph_lo), ARLIM_P(ph_hi),
-		    const Real* cr, ARLIM_P(c_lo), ARLIM_P(c_hi), 
-		    int* nd, int* idx_cr, const Real* mweight);
-#endif
-
   }
 #endif
 #endif /*_PROB_PM_F_H_*/

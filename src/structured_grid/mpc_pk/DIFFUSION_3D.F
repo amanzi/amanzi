@@ -471,29 +471,3 @@ c
       end
 
 
-      subroutine FORT_ARNOLDI(soln,H,norm_rhs,nc)
-
-      implicit none
-      integer nc
-      REAL_T  norm_rhs,soln(nc),H(nc,nc)
-      
-      integer IPIV(nc), INFO,i
-
-            
-c     set up right hand side: norm_rhs*e_1
-      do i = 1,nc
-         soln(i) = 0
-      end do
-      soln(1) = norm_rhs
-
-      call DGETRF_PM( nc, nc, H, nc, IPIV, INFO)
-      if (INFO .eq. 0) then
-         call DGETRS_PM( 'N', nc, 1, H, nc, IPIV, soln, nc, INFO )
-         if (INFO .ne. 0) then
-            call bl_abort('FORT_ARNOLDI::DGETRS failed')
-         end if
-      else
-         call bl_abort('FORT_ARNOLDI::DGETRF failed')
-      end if
-
-      end

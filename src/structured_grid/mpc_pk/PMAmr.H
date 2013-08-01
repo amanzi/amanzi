@@ -61,8 +61,6 @@ public:
     void RegisterEvent(const std::string& event_label,
                        EventCoord::Event* event); // takes control of pointer
 
-    static bool UsingMaterialServer() {return use_matFiller;}
-
 protected:
     void InitializeControlEvents();
 
@@ -100,7 +98,6 @@ private:
 
     // Private data
     MatFiller* materialFiller;
-    static bool use_matFiller;
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
 };
