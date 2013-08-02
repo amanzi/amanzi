@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -26,6 +27,9 @@ namespace AmanziChemistry {
 class Alquimia_Chemistry_PK {
  public:
 
+  // Constructor. Note that we must pass the "Main" parameter list
+  // to this PK so that it has access to all information about the 
+  // problem.
   Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
                         Teuchos::RCP<Chemistry_State> chem_state);
 
@@ -106,7 +110,17 @@ class Alquimia_Chemistry_PK {
   AlquimiaInterface chem_;
   AlquimiaEngineStatus chem_status_;
   AlquimiaData chem_data_;
-  AlquimiaGeochemicalConditionVector alquimia_conditions_;
+
+  // Mapping of region names to geochemical conditions. A region is identified 
+  // by a string, and all cells within a region will have all geochemical 
+  // conditions in the corresponding condition vector applied to them.
+  std::map<std::string, AlquimiaGeochemicalCondition*> chem_initial_conditions_;
+  std::map<std::string, AlquimiaGeochemicalCondition*> chem_boundary_conditions_;
+  
+  // Vector that takes responsibility for ownership of geochemical conditions.
+  std::vector<AlquimiaGeochemicalConditionVector*> all_chem_conditions_;
+
+  // Back-end engine name and input file.
   std::string chem_engine_inputfile_;
   std::string chem_engine_name_;
 
@@ -122,6 +136,8 @@ class Alquimia_Chemistry_PK {
   int InitializeSingleCell(int cellIndex);
   int AdvanceSingleCell(int cellIndex);
 
+  void ParseChemicalConditions(const std::string& sublist_name,
+                               std::map<std::string, AlquimiaChemicalCondition*>& conditions);
   void XMLParameters(void);
   void SetupAuxiliaryOutput(void);
 

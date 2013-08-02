@@ -69,9 +69,15 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
     : debug_(false),
       display_free_columns_(false),
       max_time_step_(9.9e9),
+      chemistry_state_(chem_state),
+      parameter_list_(param_list),
       current_time_(0.0),
       chem_initialized_(false),
+      chem_engine_name_("PFloTran"),
       saved_time_(0.0) {
+
+  // We need the top-level parameter list.
+  assert(param_list.name() == "Main");
 
 }  // end Alquimia_Chemistry_PK()
 
@@ -79,6 +85,11 @@ Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() {
   chem_.Shutdown(&chem_data_.engine_state, &chem_status_);
   FreeAlquimiaData(&chem_data_);
   FreeAlquimiaEngineStatus(&chem_status_);
+
+  // Delete the various geochemical condition vectors.
+  for (size_t i = 0; i < all_chem_conditions_.size(); ++i)
+    FreeAlquimiaGeochemicalCondition(all_chem_conditions_[i]);
+
 }  // end ~Alquimia_Chemistry_PK()
 
 // This helper performs initialization on a single cell within Amanzi's state.
@@ -133,8 +144,6 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
   }
 
   // Read XML parameters from our input file.
-  // FIXME: Not implemented properly. Among other things, needs to set the 
-  // FIXME: input file for Alquimia's "engine."
   XMLParameters();
 
   // We can't initialize chemistry twice in a row.
@@ -226,99 +235,125 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
  **  initialization helper functions
  **
  ******************************************************************************/
+void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_name,
+                                                    std::map<std::string, AlquimiaChemicalCondition*>& conditions)
+{
+  // Go through the sublist containing the chemical conditions.
+  Teuchos::ParameterList& input_conditions = parameter_list_.sublist(sublist_name);
+  for (Teuchos::ParameterList::ConstIterator iter = input_conditions.begin();
+       iter != input_conditions.end(); ++iter)
+  {
+    // This parameter list contains sublists, each corresponding to a
+    // condition. 
+    std::string cond_name = input_conditions.name(iter);
+    assert(input_conditions.isSublist(cond_name));
+    Teuchos::ParameterList& cond_sublist = input_conditions.sublist(cond_name);
+ 
+    // At the moment, we only support constraints supplied through the backend engine.
+    std::ostringstream engine_constraint;
+    engine_constraint << chem_engine_name_ << " Constraint" << '\0';
+    if (!cond_sublist.isSublist(engine_constraint.str()))
+    {
+      std::ostringstream error_stream;
+      error_stream << ChemistryException::kChemistryError;
+      error_stream << "Chemistry_PK::XMLParameters(): \n";
+      error_stream << "  Geochemical condition '" << cond_name << "' has no '" << engine_constraint << "' entry.\n";
+      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    }
+    std::string engine_constraint_name = cond_sublist.get<std::string>(engine_constraint.str());
+
+    // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
+    // NOTE: the backend engine's input file.
+    AlquimiaGeochemicalCondition* condition;
+    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, 0, 0, condition);
+    condition->name = strdup(engine_constraint_name.c_str());
+
+    // Append this condition to our list of managed geochemical conditions.
+    all_chem_conditions_.push_back(condition);
+
+    // Apply this condition to all desired regions.
+    Teuchos::Array<std::string> regions = input_conditions.get<Teuchos::Array<std::string> >("Assigned Regions");
+    for (size_t r = 0; r < regions.size(); ++r)
+    {
+      conditions[regions(r)] = condition_vec;
+    }
+  }
+}
+
 void Alquimia_Chemistry_PK::XMLParameters(void) {
-  // extract parameters from the xml list and set in the parameters
-  // structure
-  if (parameter_list_.isParameter("Debug Process Kernel")) {
+
+  // NOTE that our parameter list should be the top-level parameter list "Main", 
+  // not the "Chemistry" one used by the native Amanzi Chemistry PK.
+
+  if (!parameter_list_.isSublist("Chemistry"))
+  {
+    std::ostringstream error_stream;
+    error_stream << ChemistryException::kChemistryError;
+    error_stream << "Chemistry_PK::XMLParameters(): \n";
+    error_stream << "  No 'Chemistry' sublist was found!\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+  }
+
+  // Access the Chemistry sublist and set parameters.
+  Teuchos::ParameterList& chem_list = parameter_list_.sublist("Thermodynamic Database");
+
+  // Debugging flag.
+  if (chem_list.isParameter("Debug Process Kernel")) {
     set_debug(true);
   }
 
-  if (parameter_list_.isParameter("Verbosity")) {
-    Teuchos::Array<std::string> verbosity_list = parameter_list_.get<Teuchos::Array<std::string> >("Verbosity");
+  // Verbosity.
+  if (chem_list.isParameter("Verbosity")) {
+    Teuchos::Array<std::string> verbosity_list = chem_list_.get<Teuchos::Array<std::string> >("Verbosity");
     Teuchos::Array<std::string>::const_iterator name;
     for (name = verbosity_list.begin(); name != verbosity_list.end(); ++name) {
       chem_out->AddLevel(*name);
     }
   }
-  //--------------------------------------------------------------------------
-  //
-  // thermo file name and format, then create the database!
-  //
-  //--------------------------------------------------------------------------
-  if (parameter_list_.isSublist("Thermodynamic Database")) {
-    Teuchos::ParameterList& tdb_list_ = parameter_list_.sublist("Thermodynamic Database");
-    // get format
-    // currently we only support the simple format..
-    if (tdb_list_.isParameter("Format")) {
-      std::string database_format = tdb_list_.get<std::string>("Format");
-      if (database_format == "simple") {
-        chem_ = new SimpleThermoDatabase();
-      } else {
-        // invalid database format...
-        std::ostringstream error_stream;
-        error_stream << AmanziException::kChemistryError;
-        error_stream << "Chemistry_PK::XMLParameters(): \n";
-        error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be 'simple'.\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));  
-      }
-    } else {
-      // invalid database format...
+
+  // Engine and engine input file.
+  if (chem_list.isParameter("Engine")) 
+  {
+    chem_engine_name_ = chem_list.get<std::string>("Engine");
+    if (chem_engine_name_ != "PFloTran")
+    {
       std::ostringstream error_stream;
-      error_stream << AmanziException::kChemistryError;
+      error_stream << ChemistryException::kChemistryError;
       error_stream << "Chemistry_PK::XMLParameters(): \n";
-      error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be specified.\n";
+      error_stream << "  Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";
+      error_stream << "  Options are 'PFlotran'.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
     }
-    beaker_parameters_ = chem_->GetDefaultParameters();
-    // get file name
-    if (tdb_list_.isParameter("File")) {
-      beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("File");
-    } else {
-      std::ostringstream error_stream;
-      error_stream << AmanziException::kChemistryError;
-      error_stream << "Chemistry_PK::XMLParameters(): \n";
-      error_stream << "  Input parameter 'File' in 'Thermodynamic Database' sublist must be specified.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));         
-    }
-  } else {
-    std::ostringstream error_stream;
-    error_stream << AmanziException::kChemistryError;
-    error_stream << "Chemistry_PK::XMLParameters(): \n";
-    error_stream << "  'Thermodynamic Database' sublist must be specified.\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));    
   }
+  if (chem_list.isParameter("Engine Input File"))
+  {
+    chem_engine_inputfile_ = chem_list.get<std::string>("Engine Input File");
+    // FIXME: Should we try to access the file here?
+  }
+
+#if 0
   //---------------------------------------------------------------------------
   //
   // activity model
   //
   //---------------------------------------------------------------------------
   beaker_parameters_.activity_model_name =
-      parameter_list_.get<std::string>("Activity Model", "unit");
+      chem_list_.get<std::string>("Activity Model", "unit");
   // Pitzer virial coefficients database
   if (beaker_parameters_.activity_model_name == "pitzer-hwm") {
-    if (parameter_list_.isParameter("Pitzer Database File")) {
+    if (chem_list_.isParameter("Pitzer Database File")) {
       beaker_parameters_.pitzer_database =
-          parameter_list_.get<std::string>("Pitzer Database File");
+          chem_list_.get<std::string>("Pitzer Database File");
     } else {
       std::ostringstream error_stream;
-      error_stream << AmanziException::kChemistryError;
+      error_stream << ChemistryException::kChemistryError;
       error_stream << "Chemistry_PK::XMLParameters(): \n";
       error_stream << "  Input parameter 'Pitzer Database File' must be specified if 'Activity Model' is 'pitzer-hwm'.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
       
     }
   }
-
-  // --------------------------------------------------------------------------
-  //
-  // solver parameters
-  //
-  // --------------------------------------------------------------------------
-  beaker_parameters_.tolerance =
-      parameter_list_.get<double>("Tolerance", 1.0e-12);
-
-  beaker_parameters_.max_iterations =
-      static_cast<unsigned int>(parameter_list_.get<int>("Maximum Newton Iterations", 200));
+#endif
 
   // --------------------------------------------------------------------------
   //
@@ -326,8 +361,8 @@ void Alquimia_Chemistry_PK::XMLParameters(void) {
   //
   // --------------------------------------------------------------------------
   aux_names_.clear();
-  if (parameter_list_.isParameter("Auxiliary Data")) {
-    Teuchos::Array<std::string> names = parameter_list_.get<Teuchos::Array<std::string> >("Auxiliary Data");
+  if (chem_list.isParameter("Auxiliary Data")) {
+    Teuchos::Array<std::string> names = chem_list.get<Teuchos::Array<std::string> >("Auxiliary Data");
     for (Teuchos::Array<std::string>::const_iterator name = names.begin();
          name != names.end(); ++name) {
       if (*name == "pH") {
@@ -340,13 +375,32 @@ void Alquimia_Chemistry_PK::XMLParameters(void) {
       }
     }
   }
-  // --------------------------------------------------------------------------
-  //
-  // misc other chemistry flags
-  //
-  // --------------------------------------------------------------------------
-  set_max_time_step(parameter_list_.get<double>("Max Time Step (s)", 9.9e9));
 
+  // Now set up chemical conditions based on initial and boundary conditions
+  // elsewhere in the file.
+
+  // Initial conditions.
+  if (!parameter_list_.isSublist("Initial Conditions"))
+  {
+    std::ostringstream error_stream;
+    error_stream << ChemistryException::kChemistryError;
+    error_stream << "Chemistry_PK::XMLParameters(): \n";
+    error_stream << "  No 'Initial Conditions' sublist was found!\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+  }
+  ParseChemicalConditions("Initial Conditions", chem_initial_conditions_);
+
+  // Boundary conditions.
+  chem_boundary_conditions_.clear();
+  if (!parameter_list_.isSublist("Boundary Conditions"))
+  {
+    std::ostringstream error_stream;
+    error_stream << ChemistryException::kChemistryError;
+    error_stream << "Chemistry_PK::XMLParameters(): \n";
+    error_stream << "  No 'Initial Conditions' sublist was found!\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+  }
+  ParseChemicalConditions("Boundary Conditions", chem_boundary_conditions_);
 }  // end XMLParameters()
 
 
