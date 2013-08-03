@@ -407,9 +407,8 @@ int Darcy_PK::Advance(double dT_MPC)
   bc_seepage->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  // // commented out to make compile with new function code, need to fix 
-  // else
-  //   bc_head->ComputeShift(time, shift_water_table_->Values());
+  else
+    bc_head->ComputeShift(time, shift_water_table_->Values());
 
   if (src_sink != NULL) {
     if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {

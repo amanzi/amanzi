@@ -172,9 +172,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   bc_flux->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  // // commented out to make compile with new function code, need to fix
-  // else
-  //   bc_head->ComputeShift(time, shift_water_table_->Values());
+  else
+    bc_head->ComputeShift(time, shift_water_table_->Values());
 
   // update steady state source conditons
   if (src_sink != NULL) {
@@ -289,9 +288,8 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
   bc_flux->Compute(time);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(time);
-  // // commented out to make compile with new function code, need to fix
-  // else
-  //   bc_head->ComputeShift(time, shift_water_table_->Values());
+  else
+    bc_head->ComputeShift(time, shift_water_table_->Values());
 
   int max_itrs_nonlinear = ti_specs.max_itrs;
   double residual_tol_nonlinear = ti_specs.residual_tol;

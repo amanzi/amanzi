@@ -38,21 +38,19 @@ void Flow_PK::ProcessShiftWaterTableList(
     Exceptions::amanzi_throw(msg);
   }
 
-  // commented this out to make things compile with new boundary function
+  const std::vector<Amanzi::Functions::Action>& actions = bc_head->actions();
+  int nactions = actions.size();
+  if (nactions > 0) { 
+    const Epetra_BlockMap& fmap = mesh_->face_map(false);
+    shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
+  }
 
-  // const std::vector<Amanzi::Action>& actions = bc_head->actions();
-  // int nactions = actions.size();
-  // if (nactions > 0) { 
-  //   const Epetra_BlockMap& fmap = mesh_->face_map(false);
-  //   shift_water_table_ = Teuchos::rcp(new Epetra_Vector(fmap));
-  // }
+  for (int i = 0; i < nactions; i++) {
+    int method = actions[i].second;
 
-  // for (int i = 0; i < nactions; i++) {
-  //   int method = actions[i].second;
-
-  //   if (method == Amanzi::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
-  //       CalculateShiftWaterTable(actions[i].first, shift_water_table_);
-  // }
+    if (method == Functions::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE)
+        CalculateShiftWaterTable(actions[i].first, shift_water_table_);
+  }
 }
 
 

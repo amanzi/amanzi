@@ -69,9 +69,8 @@ void Richards_PK::UpdateSourceBoundaryData(
   bc_seepage->Compute(Tp);
   if (shift_water_table_.getRawPtr() == NULL)
     bc_head->Compute(Tp);
-  // commented out to make compile with new function code, need to fix  
-  // else
-  //   bc_head->ComputeShift(Tp, shift_water_table_->Values());
+  else
+    bc_head->ComputeShift(Tp, shift_water_table_->Values());
 
   ProcessBoundaryConditions(
       bc_pressure, bc_head, bc_flux, bc_seepage,

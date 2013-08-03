@@ -1,17 +1,14 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-ATS
 
 License: see $AMANZI_DIR/COPYRIGHT
 Author (v1): Neil Carlson
        (v2): Ethan Coon
 
-Function applied to a mesh component with at most one function application per
-entity.
+Function applied to a mesh component with at most one function application 
+per entity.
 
 ------------------------------------------------------------------------- */
-
-
 #ifndef AMANZI_FLOW_BOUNDARY_FUNCTION_HH_
 #define AMANZI_FLOW_BOUNDARY_FUNCTION_HH_
 
@@ -43,17 +40,14 @@ public:
   void Define(const std::vector<std::string> &regions,
               const Teuchos::RCP<const MultiFunction> &f, 
               int method);
-
   void Define(std::string region,
               const Teuchos::RCP<const MultiFunction> &f,
               int method);
 
   void Compute(double time);
-
   void ComputeShift(double T, double* shift);
 
   const std::vector<Action>& actions() { return actions_; } 
-
 
   void Finalize();
 
@@ -68,10 +62,8 @@ protected:
   std::map<int,double> value_;
   bool finalized_;
 
-
  private:
   std::vector<Action> actions_;
-
 };
 
 } // namespace

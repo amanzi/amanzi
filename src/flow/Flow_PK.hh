@@ -59,8 +59,8 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
                                 std::vector<double>& rainfall_factor);
   void ProcessBoundaryConditions(
-				 Functions::FlowBoundaryFunction* bc_pressure, Functions::FlowBoundaryFunction* bc_head,
-				 Functions::FlowBoundaryFunction* bc_flux, Functions::FlowBoundaryFunction* bc_seepage,
+      Functions::FlowBoundaryFunction* bc_pressure, Functions::FlowBoundaryFunction* bc_head,
+      Functions::FlowBoundaryFunction* bc_flux, Functions::FlowBoundaryFunction* bc_seepage,
       const Epetra_Vector& pressure_cells, 
       const Epetra_Vector& pressure_faces, const double atm_pressure,
       const std::vector<double>& rainfall_factor,
