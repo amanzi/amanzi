@@ -224,7 +224,10 @@ PorousMedia::RegisterPhysicsBasedEvents()
   }
 
   for (int n=0; n<tbc_array.size(); ++n) {
-    for (int i=0; i<tbc_array.size(); ++i) {
+    for (int i=0; i<tbc_array[n].size(); ++i) {
+      BL_ASSERT(soluteNames().size()>n);
+      BL_ASSERT(tbc_array.size()>n);
+      BL_ASSERT(tbc_array[n].size()>i);
       const std::string& event_name = tbc_array[n][i].Label() + "_" + soluteNames()[n];
       PMParent()->RegisterEvent(event_name,new EventCoord::TimeEvent(tbc_array[n][i].time()));
     }
@@ -618,6 +621,11 @@ PorousMedia::PorousMedia (Amr&            papa,
 
   // Set up boundary condition work
   setup_bound_desc();
+
+  if (parent && !physics_events_registered) {
+    RegisterPhysicsBasedEvents();
+    physics_events_registered = true;
+  }
 }
 
 PorousMedia::~PorousMedia ()
@@ -959,7 +967,7 @@ void
 PorousMedia::set_vel_from_bcs(Real      time,
 			      MultiFab* vel)
 {
-  BoxLib::Abort("This hack is no longer valid");
+  //BoxLib::Abort("This hack is no longer valid");
 
   FArrayBox inflow;
   for (OrientationIter oitr; oitr; ++oitr) {
@@ -1037,20 +1045,8 @@ PorousMedia::initData ()
 	    }
             else if (type == "scalar") 
 	    {
-                Array<Real> vals = ic();
-                for (int jt=0; jt<ic_regions.size(); ++jt) {
-                    regions[jt].setVal(S_new[mfi],vals,
-                                       dx,0,0,ncomps);
-		}
-
-		// set pressure to single value
-		if (model==PM_RICHARDS) {
-		  const int idx = mfi.index();
-		  Array<int> s_bc = getBCArray(State_Type,idx,0,1);
-		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
-				(*kappa)[mfi],(*cpl_coef)[mfi],grids[idx],
-				s_bc);
-		}
+                std::cerr << "IC: scalar - no longer suppoerted\n";
+                BoxLib::Abort("PorousMedia::initData()");
 	    }
             else if (type == "pressure") 
 	    {
@@ -1129,18 +1125,12 @@ PorousMedia::initData ()
 	    }
             else
 	    {
+                std::cerr << "IC based on FORT_INITDATA no longer supported\n";
+                BoxLib::Abort("PorousMedia::initData()");
+
                 FORT_INITDATA(&level,&cur_time,
                               s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
                               density.dataPtr(), &ncomps, dx);
-
-		// set pressure to single value
-		if (model==PM_RICHARDS) {
-		  const int idx = mfi.index();
-		  Array<int> s_bc = getBCArray(State_Type,idx,0,1);
-		  calcCapillary((*pcnp1_cc)[mfi],S_new[mfi],(*rock_phi)[mfi],
-				(*kappa)[mfi],(*cpl_coef)[mfi],grids[idx],
-				s_bc);
-		}
 	    }
 	}
         
@@ -1372,10 +1362,14 @@ PorousMedia::initData ()
         get_new_data(FuncCount_Type).setVal(1);
     }
 
-    if (model == PM_RICHARDS) {
+    if (model == PM_STEADY_SATURATED) {
+      for (int n=0; n<ncomps; ++n) {
+        S_new.setVal(density[n],n,1);
+      }
+    } else {
       calcInvPressure(S_new,P_new); // Set sat from p
     }
-    else if (have_capillary) {
+    if (have_capillary) {
       calcCapillary(cur_time);
     }
     U_vcr.setVal(0.);
@@ -1393,15 +1387,12 @@ PorousMedia::initData ()
     //
     // Initialize u_mac_curr 
     //
-    if (model != PM_RICHARDS) {
+    if (model != PM_RICHARDS  &&  model != PM_STEADY_SATURATED) {
 
       if (u_macG_curr == 0) {
         u_macG_curr = AllocateUMacG();
       }
-
-      if (model != PM_STEADY_SATURATED) {
-        mac_project(u_mac_curr,rhs_RhoD,cur_time);
-      }
+      mac_project(u_mac_curr,rhs_RhoD,cur_time);
         
       if (level == 0) {
         create_umac_grown(u_mac_curr,u_macG_trac);
@@ -1802,6 +1793,7 @@ GetPETScReason(int flag)
   PETSc_Reasons[-6] = "SNES_DIVERGED_LINE_SEARCH    "; // the line search failed 
   PETSc_Reasons[-7] = "SNES_DIVERGED_INNER          "; // inner solve failed
   PETSc_Reasons[-8] = "SNES_DIVERGED_LOCAL_MIN      "; // || J^T b || is small, implies converged to local minimum of F()
+  PETSc_Reasons[-9] = "RS: dt too small             ";
   PETSc_Reasons[0]  = "SNES_CONVERGED_ITERATING     ";
   if (PETSc_Reasons.find(flag)==PETSc_Reasons.end()) {
     BoxLib::Abort("Unknown PETSc return flag");
@@ -1843,7 +1835,7 @@ PorousMedia::richard_init_to_steady()
   // Richard initialization
   //
   if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
-    std::string tag = "Richard Init-to-Steady";
+    std::string tag = "Pre-Execution Mode Solve";
     if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
       std::cout << tag << std::endl;
     }        
@@ -2030,6 +2022,9 @@ PorousMedia::richard_init_to_steady()
                 if (retCode == -3) {
                   ret = RichardNLSdata::RICHARD_LINEAR_FAIL;
                 }
+                else if (retCode == -9) {
+                  ret = RichardNLSdata::RICHARD_NONLINEAR_CATASTROPHIC_FAIL;
+                }
                 else {
                   ret = RichardNLSdata::RICHARD_NONLINEAR_FAIL;
                   if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
@@ -2067,6 +2062,9 @@ PorousMedia::richard_init_to_steady()
           else {
             if (steady_abort_on_psuedo_timestep_failure) {
               BoxLib::Abort("Aborting as instructed when timestep fails");
+            }
+            if (ret == RichardNLSdata::RICHARD_NONLINEAR_CATASTROPHIC_FAIL) {
+              BoxLib::Abort("Aborting ... catastrophic solver failure");
             }
             total_rejected_Newton_steps++;
             for (int lev=0;lev<finest_level+1;lev++) {
@@ -2555,6 +2553,10 @@ PorousMedia::advance_cleanup (Real dt,
     }
 }
 
+static std::string mode_status = "init";
+static std::string mode_steady = "STEADY";
+static std::string mode_transient = "TRANSIENT";
+
 bool 
 PorousMedia::ml_step_driver(Real  t,
 			    int   amr_iteration,
@@ -2576,9 +2578,28 @@ PorousMedia::ml_step_driver(Real  t,
     
     while (continue_dt_iteration) {
 
-      if (ntracers>0 && do_tracer_transport && execution_mode==INIT_TO_STEADY) {
-	transport_tracers = t >= switch_time;
+      if (execution_mode==INIT_TO_STEADY) {
+        if (ntracers>0 && do_tracer_transport) {
+          transport_tracers = t >= switch_time;
+        }
+
+        if (t < switch_time) {
+          if (mode_status != mode_steady) {
+            mode_status = mode_steady;
+            if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
+              std::cout << "init-to-steady mode: " << mode_status << ", switch to transient at t=" << switch_time << "\n\n";
+            }
+          }
+        } else {
+          if (mode_status != mode_transient) {
+            mode_status = mode_transient;
+            if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
+              std::cout << "init-to-steady mode: " << mode_status << "\n\n";
+            }
+          }
+        }
       }
+
       step_ok = multilevel_advance(t,dt_this_attempt,amr_iteration,amr_ncycle,dt_suggest);
       if (step_ok) {
 	dt_taken = dt_this_attempt;
@@ -7676,7 +7697,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   const Real* dx       = geom.CellSize();
 
   dt_eig = 1.e20; // FIXME: Need more robust
-
+  
   Real eigmax[BL_SPACEDIM] = { D_DECL(0,0,0) };
   for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowEIGEST,
 			       t_eval,State_Type,0,ncomps);
@@ -7725,6 +7746,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
     
       if (transport_tracers > 0)
 	{
+
 	  godunov->esteig_trc (grids[i], D_DECL(u_macG[0][i],
                                                 u_macG[1][i],
                                                 u_macG[2][i]),
@@ -7738,7 +7760,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 	    dt_eig = std::min(dt_eig,dx[dir]/eigmax_m[dir]);
 	}
     }
-  
+
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
   if (verbose > 3)
@@ -7826,8 +7848,11 @@ PorousMedia::GetUserInputInitDt()
     {
         Real cum_time = parent->cumTime(); // Time evolved to so far
         Real start_time = parent->startTime(); // Time simulation started from
-        
-        user_input_dt_init = switch_time <= start_time ?  dt_init  :  steady_init_time_step;
+        if (switch_time <= start_time  || cum_time > switch_time ) {
+          user_input_dt_init = dt_init;
+        } else {
+          user_input_dt_init = steady_init_time_step;
+        }
     } 
     else 
     {
@@ -7887,7 +7912,6 @@ PorousMedia::computeNewDt (int                   finest_level,
   }
   else
   {
-      Real dt_0 = dt_level[0];
       if (post_regrid_flag != 1)
       {
           if (start_with_previously_suggested_dt) {
@@ -8447,13 +8471,15 @@ PorousMedia::post_init_state ()
   }
 
   if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
+
+    PMAmr* pmamr = PMParent();
+    int  finest_level = parent->finestLevel();
+
     if (do_richard_init_to_steady) {
       richard_init_to_steady();        
     }
     else 
     {
-      PMAmr* pmamr = PMParent();
-      int  finest_level = parent->finestLevel();
         
       if (steady_use_PETSc_snes) {
         // Compute initial velocity field
@@ -8463,15 +8489,35 @@ PorousMedia::post_init_state ()
         rs.ResetRhoSat();
         rs.UpdateDarcyVelocity(rs.GetPressure(),pmamr->startTime());
       }
-      else {
-        for (int k = 0; k <= finest_level; k++) {
-          PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(k));
-          BL_ASSERT(pm);
-          int nc = 0; // Component of water in state
-          pm->compute_vel_phase(pm->u_mac_curr,nc,pmamr->startTime());
-        }
-      }
     }
+
+    for (int lev = 0; lev <= finest_level; lev++) {
+      PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+      BL_ASSERT(pm);
+      
+      if (pm->u_macG_curr == 0) {
+        pm->u_macG_curr = pm->AllocateUMacG();
+      }
+      
+      if (lev == 0) {
+        pm->create_umac_grown(pm->u_mac_curr,pm->u_macG_curr);
+      } else {
+        PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+        pm->GetCrseUmac(u_macG_crse,pmamr->startTime());
+        pm->create_umac_grown(pm->u_mac_curr,u_macG_crse,pm->u_macG_curr); 
+      }
+      
+      if (pm->u_macG_prev == 0) {
+        pm->u_macG_prev = pm->AllocateUMacG();
+      }
+      
+      // Initialize u_mac_prev
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+        MultiFab::Copy(pm->u_macG_prev[d],pm->u_macG_curr[d],0,0,1,pm->u_macG_curr[d].nGrow());
+      }
+      
+    }
+
   }
 
   PorousMedia::initial_step = true;

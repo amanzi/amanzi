@@ -631,22 +631,22 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::richard_init_to_steady_verbose = 1;
   PorousMedia::steady_min_iterations = 10;
-  PorousMedia::steady_min_iterations_2 = 0;
+  PorousMedia::steady_min_iterations_2 = 2;
   PorousMedia::steady_max_iterations = 15;
   PorousMedia::steady_limit_iterations = 20;
   PorousMedia::steady_time_step_reduction_factor = 0.8;
-  PorousMedia::steady_time_step_increase_factor = 1.25;
+  PorousMedia::steady_time_step_increase_factor = 1.8;
   PorousMedia::steady_time_step_increase_factor_2 = 10;
-  PorousMedia::steady_time_step_retry_factor_1 = 0.5;
+  PorousMedia::steady_time_step_retry_factor_1 = 0.05;
   PorousMedia::steady_time_step_retry_factor_2 = 0.01;
   PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
   PorousMedia::steady_max_consecutive_failures_2 = 4;
-  PorousMedia::steady_init_time_step = 1.e2;
+  PorousMedia::steady_init_time_step = 1.e10;
   PorousMedia::steady_max_time_steps = 8000;
-  PorousMedia::steady_max_time_step_size = 1.e12;
-  PorousMedia::steady_max_psuedo_time = 1.e10;
-  PorousMedia::steady_max_num_consecutive_success = 15;
+  PorousMedia::steady_max_time_step_size = 1.e20;
+  PorousMedia::steady_max_psuedo_time = 1.e14;
+  PorousMedia::steady_max_num_consecutive_success = 0;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
   PorousMedia::steady_consecutive_increase_reduction_factor = 0.4;
@@ -658,7 +658,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_abs_update_tolerance = 1.e-12;
   PorousMedia::steady_rel_update_tolerance = -1;
   PorousMedia::steady_do_grid_sequence = 1;
-  PorousMedia::steady_grid_sequence_new_level_dt_factor.resize(1,1.e-5);
+  PorousMedia::steady_grid_sequence_new_level_dt_factor.resize(1,1);
   PorousMedia::steady_record_file.clear();
 
   PorousMedia::richard_max_ls_iterations = 10;
@@ -1652,6 +1652,8 @@ void PorousMedia::read_prob()
 
   if (model_name=="steady-saturated") {
       solute_transport_limits_dt = true;
+      do_multilevel_full = true;
+      do_richard_init_to_steady = true;
   }
 
   pb.query("do_tracer_transport",do_tracer_transport);
@@ -1670,6 +1672,24 @@ void PorousMedia::read_prob()
   pb.query("v",verbose);
   pb.query("richard_solver_verbose",richard_solver_verbose);
   pb.query("do_richard_sat_solve",do_richard_sat_solve);
+
+  // Get timestepping parameters.  Some will be used to default values for int-to-steady solver
+  pb.get("cfl",cfl);
+  pb.query("init_shrink",init_shrink);
+  pb.query("dt_init",dt_init);
+  pb.query("dt_cutoff",dt_cutoff);
+  pb.query("dt_grow_max",dt_grow_max);
+  pb.query("dt_shrink_max",dt_shrink_max);
+  pb.query("fixed_dt",fixed_dt);
+  pb.query("steady_richard_max_dt",steady_richard_max_dt);
+  pb.query("transient_richard_max_dt",transient_richard_max_dt);
+  pb.query("sum_interval",sum_interval);
+  pb.query("max_n_subcycle_transport",max_n_subcycle_transport);
+
+  pb.query("max_dt_iters_flow",max_dt_iters_flow);
+  pb.query("verbose_chemistry",verbose_chemistry);
+  pb.query("show_selected_runtimes",show_selected_runtimes);
+  pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
   pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
@@ -1723,25 +1743,8 @@ void PorousMedia::read_prob()
   pb.query("richard_centered_diff_J",richard_centered_diff_J);
   pb.query("richard_subgrid_krel",richard_subgrid_krel);
   pb.query("richard_variable_switch_saturation_threshold",richard_variable_switch_saturation_threshold);
+  richard_dt_thresh_pure_steady = 0.99*steady_init_time_step;
   pb.query("richard_dt_thresh_pure_steady",richard_dt_thresh_pure_steady);
-
-  // Get timestepping parameters.
-  pb.get("cfl",cfl);
-  pb.query("init_shrink",init_shrink);
-  pb.query("dt_init",dt_init);
-  pb.query("dt_cutoff",dt_cutoff);
-  pb.query("dt_grow_max",dt_grow_max);
-  pb.query("dt_shrink_max",dt_shrink_max);
-  pb.query("fixed_dt",fixed_dt);
-  pb.query("steady_richard_max_dt",steady_richard_max_dt);
-  pb.query("transient_richard_max_dt",transient_richard_max_dt);
-  pb.query("sum_interval",sum_interval);
-  pb.query("max_n_subcycle_transport",max_n_subcycle_transport);
-
-  pb.query("max_dt_iters_flow",max_dt_iters_flow);
-  pb.query("verbose_chemistry",verbose_chemistry);
-  pb.query("show_selected_runtimes",show_selected_runtimes);
-  pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
   // Gravity are specified as m/s^2 in the input file
   // This is converted to the unit that is used in the code.
@@ -2173,7 +2176,11 @@ void  PorousMedia::read_comp()
               }
               
               is_inflow = false;
-              component_bc = 1;
+              if (model == PM_STEADY_SATURATED) {
+                component_bc = 2;
+              } else {
+                component_bc = 1;
+              }
               pressure_bc = 2;
 
               //if (model == PM_STEADY_SATURATED || model == PM_RICHARDS) {
@@ -2201,7 +2208,11 @@ void  PorousMedia::read_comp()
             }
 
             is_inflow = false;
-            component_bc = 1;
+            if (model == PM_STEADY_SATURATED) {
+              component_bc = 2;
+            } else {
+              component_bc = 1;
+            }
             pressure_bc = 2;
             bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals[0]));//Fixme, support t-dependent
           }

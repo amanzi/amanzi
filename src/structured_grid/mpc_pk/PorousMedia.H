@@ -122,7 +122,8 @@ struct RichardNLSdata {
   {
       RICHARD_SUCCESS, 
       RICHARD_NONLINEAR_FAIL,
-      RICHARD_LINEAR_FAIL
+      RICHARD_LINEAR_FAIL,
+      RICHARD_NONLINEAR_CATASTROPHIC_FAIL
   };
 
   RichardNLSdata(int slev, int nlevs, PMAmr* amrp);

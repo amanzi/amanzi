@@ -3,7 +3,7 @@
 
   <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
   <Parameter name="Dump ParmParse Table" type="string" value="flow03/ppfile"/>
-  <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+  <Parameter name="Petsc Options File" type="string" value="DOTpetsc"/>
 
   <ParameterList name="General Description">
     <Parameter name="Simulation name" type="string" value="PhaseII_Flow03"/>
@@ -35,7 +35,7 @@
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0"/>
         <Parameter name="Switch" type="double" value="1.e11"/>
-        <Parameter name="End" type="double" value="1.e11"/>
+        <Parameter name="End" type="double" value="0.e11"/>
         <Parameter name="Transient Initial Time Step" type="double" value="1.e5"/>
         <Parameter name="Steady Initial Time Step" type="double" value="1.e5"/>
         <Parameter name="Steady Maximum Time Step Size" type="double" value="1.e9"/>
@@ -54,13 +54,13 @@
           <Parameter name="do_richard_init_to_steady" type="int" value="1"/>
           <Parameter name="do_richard_sat_solve" type="int" value="0"/>
           <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
-          <Parameter name="steady_limit_iterations" type="int" value="20"/>
-          <Parameter name="steady_max_iterations" type="int" value="15"/>
+          <Parameter name="steady_limit_iterations" type="int" value="40"/>
+          <Parameter name="steady_max_iterations" type="int" value="25"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.7"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
-          <Parameter name="steady_time_step_increase_factor" type="double" value="1.8"/>
-          <Parameter name="steady_min_iterations_2" type="int" value="2"/>
-          <Parameter name="steady_time_step_increase_factor_2" type="double" value="3"/>
+          <Parameter name="steady_time_step_increase_factor" type="double" value="1.6"/>
+          <Parameter name="steady_min_iterations_2" type="int" value="4"/>
+          <Parameter name="steady_time_step_increase_factor_2" type="double" value="5"/>
           <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
           <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.05"/>
           <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
@@ -83,17 +83,15 @@
           <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
           <Parameter name="richard_monitor_line_search" type="int" value="1"/>
 
-          <Parameter name="richard_use_fd_jac" type="int" value="1"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-10"/>
-          <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
+          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-8"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
           <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
-          <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
+          <Parameter name="richard_scale_solution_before_solve" type="bool" value="false"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
-          <Parameter name="richard_semi_analytic_J" type="bool" value="false"/>
           <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
-	  <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-3, 1.e-4, 1.e-5}"/>
-          <Parameter name="verbose" type="double" value="2"/>
+          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="Array(double)" value="{1.e-1, 1.e-5, 1.e-6}"/>
+          <Parameter name="richard_dt_thresh_pure_steady" type="double" value="1.e8"/>
+
         </ParameterList>
       </ParameterList>
       <ParameterList name="Iterative Linear Solver Control">
@@ -251,7 +249,7 @@
   <ParameterList name="Material Properties">
     <Parameter name="Permeability Output File" type="string" value="flow03/kp"/>
     <Parameter name="Porosity Output File" type="string" value="flow03/pp"/>
-    <Parameter name="Saturation Threshold For Kr" type="double" value="0.99"/>
+    <Parameter name="Saturation Threshold For Kr" type="double" value="0.9995"/>
 
     <ParameterList name="Soil">
       <ParameterList name="Porosity: Uniform">
@@ -363,9 +361,9 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Reference Value" type="double" value="101325"/>
+        <Parameter name="Reference Value" type="double" value="0"/>
         <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
-        <Parameter name="Gradient Value" type="Array(double)" value="{0,-9793.5192 }"/>
+        <Parameter name="Gradient Value" type="Array(double)" value="{0,-9789.3474 }"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">
@@ -387,9 +385,7 @@
     <ParameterList name="BC lower">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array(double)" value="{0,2.e20}"/>
-        <Parameter name="Values" type="Array(double)" value="{101325., 101325.}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Values" type="Array(double)" value="{0}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
@@ -407,9 +403,7 @@
     <ParameterList name="BC upper">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YHIBC}"/>
       <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0,2.e20}"/>
-        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{9.513e-10, 9.513e-10}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{9.513e-10}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
