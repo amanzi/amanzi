@@ -14,7 +14,6 @@
 #include <PMAMR_Labels.H>
 #include <RegType.H> 
 #include <PROB_PM_F.H>
-#include <DERIVE_F.H>
 #include <PMAMR_Labels.H>
 #include <PMAmr.H> 
 #include <POROUS_F.H>
@@ -99,12 +98,10 @@ PArray<Material> PorousMedia::materials;
 //
 // Rock
 //
-std::string PorousMedia::gsfile;
 MultiFab*   PorousMedia::kappadata;
 MultiFab*   PorousMedia::phidata;
 bool        PorousMedia::porosity_from_fine;
 bool        PorousMedia::permeability_from_fine;
-PArray<Rock> PorousMedia::rocks;
 Real        PorousMedia::saturation_threshold_for_vg_Kr;
 int         PorousMedia::use_shifted_Kr_eval;
 DataServices* PorousMedia::phi_dataServices;
@@ -634,22 +631,22 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::richard_init_to_steady_verbose = 1;
   PorousMedia::steady_min_iterations = 10;
-  PorousMedia::steady_min_iterations_2 = 0;
+  PorousMedia::steady_min_iterations_2 = 2;
   PorousMedia::steady_max_iterations = 15;
   PorousMedia::steady_limit_iterations = 20;
   PorousMedia::steady_time_step_reduction_factor = 0.8;
-  PorousMedia::steady_time_step_increase_factor = 1.25;
+  PorousMedia::steady_time_step_increase_factor = 1.8;
   PorousMedia::steady_time_step_increase_factor_2 = 10;
-  PorousMedia::steady_time_step_retry_factor_1 = 0.5;
+  PorousMedia::steady_time_step_retry_factor_1 = 0.05;
   PorousMedia::steady_time_step_retry_factor_2 = 0.01;
   PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
   PorousMedia::steady_max_consecutive_failures_2 = 4;
-  PorousMedia::steady_init_time_step = 1.e2;
+  PorousMedia::steady_init_time_step = 1.e10;
   PorousMedia::steady_max_time_steps = 8000;
-  PorousMedia::steady_max_time_step_size = 1.e12;
-  PorousMedia::steady_max_psuedo_time = 1.e10;
-  PorousMedia::steady_max_num_consecutive_success = 15;
+  PorousMedia::steady_max_time_step_size = 1.e20;
+  PorousMedia::steady_max_psuedo_time = 1.e14;
+  PorousMedia::steady_max_num_consecutive_success = 0;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
   PorousMedia::steady_consecutive_increase_reduction_factor = 0.4;
@@ -661,7 +658,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_abs_update_tolerance = 1.e-12;
   PorousMedia::steady_rel_update_tolerance = -1;
   PorousMedia::steady_do_grid_sequence = 1;
-  PorousMedia::steady_grid_sequence_new_level_dt_factor.resize(1,1.e-5);
+  PorousMedia::steady_grid_sequence_new_level_dt_factor.resize(1,1);
   PorousMedia::steady_record_file.clear();
 
   PorousMedia::richard_max_ls_iterations = 10;
@@ -790,11 +787,6 @@ PorousMedia::variableSetUp ()
 
   // add velocity and correction velocity
   NUM_STATE = NUM_SCALARS + BL_SPACEDIM + BL_SPACEDIM ;
-
-  // add COREREACT stuff
-#if defined(COREREACT)
-    NUM_STATE = NUM_STATE + sz_corereact;
-#endif
 
   //
   // **************  DEFINE SCALAR VARIABLES  ********************
@@ -939,30 +931,6 @@ PorousMedia::variableSetUp ()
   set_z_vel_bc(bc,phys_bc);
   desc_lst.setComponent(Vcr_Type,Zvcr,"z_vcorr",
 			bc,BndryFunc(FORT_ZVELFILL));
-#endif
-
-  //
-  // **************  DEFINE DERIVED QUANTITIES ********************
-  //
-  derive_lst.add("gradn",IndexType::TheCellType(),1,
-		 FORT_DERGRDN,grow_box_by_one);
-  derive_lst.addComponent("gradn",desc_lst,State_Type,0,num_gradn);
-  //if (ntracers > 0)
-  {
-    //derive_lst.add("gradt",IndexType::TheCellType(),1,
-	//	   FORT_DERGRDN,grow_box_by_one);
-    //derive_lst.addComponent("gradn",desc_lst,State_Type,ncomps,1);
-  }
-  derive_lst.add("gradpx",IndexType::TheCellType(),1,
-		 FORT_DERGRDPX,grow_box_by_one);
-  derive_lst.addComponent("gradpx",desc_lst,Press_Type,Pressure,1);
-  derive_lst.add("gradpy",IndexType::TheCellType(),1,
-		 FORT_DERGRDPY,grow_box_by_one);
-  derive_lst.addComponent("gradpy",desc_lst,Press_Type,Pressure,1);
-#if (BL_SPACEDIM == 3)
-  derive_lst.add("gradpz",IndexType::TheCellType(),1,
-		 FORT_DERGRDPZ,grow_box_by_one);
-  derive_lst.addComponent("gradpz",desc_lst,Press_Type,Pressure,1);
 #endif
 
 #if defined(AMANZI)
@@ -1261,8 +1229,6 @@ PorousMedia::read_rock(int do_chem)
         BoxLib::Abort("At least one rock type must be defined.");
     }
     Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
-    rocks.clear();
-    rocks.resize(nrock,PArrayManage);
 
     materials.clear();
     materials.resize(nrock,PArrayManage);
@@ -1395,7 +1361,7 @@ PorousMedia::read_rock(int do_chem)
           krPt[j+1] = rkrParam[j];
         }
         std::string krel_str = "relative_permeability";
-        Property* krel_func = new ConstantProperty(krel_str,krPt,harm_crsn,pc_refine);
+        Property* krel_func = new ConstantProperty(krel_str,krPt,arith_crsn,pc_refine);
 
         // capillary pressure: include cpl_coef, sat_residual, sigma
         int rcplType = 0;  ppr.query("cpl_type", rcplType);
@@ -1423,7 +1389,6 @@ PorousMedia::read_rock(int do_chem)
         }
 
         std::string porosity_dist="uniform"; ppr.query("porosity_dist",porosity_dist);
-        int rporosity_dist_type = Rock::rock_dist_map[porosity_dist];
         Array<Real> rporosity_dist_param;
         if (porosity_dist!="uniform") {
           BoxLib::Abort("porosity_dist != uniform not currently supported");
@@ -1432,17 +1397,12 @@ PorousMedia::read_rock(int do_chem)
         }
         
         std::string permeability_dist="uniform"; ppr.get("permeability_dist",permeability_dist);
-        int rpermeability_dist_type = Rock::rock_dist_map[permeability_dist];
         Array<Real> rpermeability_dist_param;
         if (permeability_dist != "uniform")
         {
           ppr.getarr("permeability_dist_param",rpermeability_dist_param,
                      0,ppr.countval("permeability_dist_param"));
         }
-        rocks.set(i, new Rock(rname,rdensity,rpvals[0],rporosity_dist_type,rporosity_dist_param,
-                              rpermeability,rpermeability_dist_type,rpermeability_dist_param,
-                              rkrType,rkrParam,rcplType,rcplParam,rDeff,rregions));
-
 
         std::vector<Property*> properties;
         properties.push_back(phi_func);
@@ -1450,7 +1410,7 @@ PorousMedia::read_rock(int do_chem)
         properties.push_back(Deff_func);
         properties.push_back(krel_func);
         properties.push_back(cpl_func);
-        materials.set(i,new Material(rocks[i].name,rocks[i].regions,properties));
+        materials.set(i,new Material(rname,rregions,properties));
         delete phi_func;
         delete kappa_func;
         delete Deff_func;
@@ -1643,7 +1603,6 @@ PorousMedia::read_rock(int do_chem)
         }
     }
     
-    pp.query("gslib_file",gsfile);
     pp.query("Use_Shifted_Kr_Eval",use_shifted_Kr_eval);
     pp.query("Saturation_Threshold_For_Kr",saturation_threshold_for_vg_Kr);
 
@@ -1657,279 +1616,6 @@ PorousMedia::read_rock(int do_chem)
     FORT_KR_INIT(&saturation_threshold_for_vg_Kr,
 		 &use_shifted_Kr_eval);
 
-    ParmParse ppa("amr");
-    bool use_matFiller = pp.query("use_matFiller",use_matFiller);
-    if (!use_matFiller) 
-    {
-      bool read_full_pmap  = false;
-      bool read_full_kmap  = false;
-      bool write_full_pmap  = false;
-      bool write_full_kmap  = false;
-      bool build_full_pmap = true;
-      bool build_full_kmap = true;
-      permeability_from_fine = true;
-      porosity_from_fine = true;
-    
-      std::string kfileout, pfileout, gsfile;
-      if (pp.countval("permeability_output_file")>0) {
-        write_full_kmap = true;
-        pp.get("permeability_output_file",kfileout);
-      }
-
-      if (pp.countval("porosity_output_file")>0) {
-        write_full_pmap = true;
-        pp.get("porosity_output_file",pfileout);
-      }
-    
-      std::string kfilein, pfilein;
-      if (pp.countval("permeability_input_file")>0) {
-        pp.get("permeability_input_file",kfilein);
-        read_full_kmap = true;
-        build_full_kmap = false;
-      }
-
-      if (pp.countval("porosity_input_file")>0) {
-        pp.get("porosity_input_file",pfilein);
-        read_full_pmap = true;
-        build_full_pmap = false;
-      }
-
-      // The variables names expected for the properties in the permeability and porosity plotfiles
-      kappa_plotfile_varnames.resize(BL_SPACEDIM,"Permeability_");
-      for (int d=0; d<BL_SPACEDIM; ++d) {
-        BoxLib::Concatenate(kappa_plotfile_varnames[d],d,1);
-      }
-      phi_plotfile_varname = "Porosity";
-
-      if (read_full_kmap) {
-        build_full_kmap = false;
-
-        if (kappadata == 0)
-          kappadata = new MultiFab;
-
-        if (verbose > 1 && ParallelDescriptor::IOProcessor())
-          std::cout << "Reading kmap on finest level: " << kfilein << std::endl;
-
-        VisMF::Read(*kappadata,kfilein+"/kp");
-      }
-
-      if (read_full_pmap) {
-        build_full_pmap = false;
-
-        if (phidata == 0)
-          phidata = new MultiFab;
-
-        if (verbose > 1 && ParallelDescriptor::IOProcessor())
-          std::cout << "Reading pmap on finest level: " << pfilein << std::endl;
-
-        VisMF::Read(*phidata,pfilein+"/pp");
-      }
-
-      // determine parameters needed to build kappadata and phidata, and to determine
-      // if entire domain covered with union of regions
-      int max_level;
-      Array<int> n_cell, fratio;
-      Array<Real> problo, probhi;
-      if (build_full_kmap || build_full_pmap || read_full_kmap || read_full_pmap)
-      { 
-        ParmParse am("amr");
-        am.query("max_level",max_level);
-        am.getarr("n_cell",n_cell,0,BL_SPACEDIM);
-        if (max_level>0) {
-	  am.getarr("ref_ratio",fratio,0,max_level);
-        }
-        
-        ParmParse gm("geometry");
-        gm.getarr("prob_lo",problo,0,BL_SPACEDIM);
-        gm.getarr("prob_hi",probhi,0,BL_SPACEDIM);
-      }
-    
-      std::string permeability_plotfile_in;
-      pp.query("permeability_plotfile_in", permeability_plotfile_in);
-      if (!permeability_plotfile_in.empty()) {
-        kappa_dataServices = OpenMaterialDataPltFile(permeability_plotfile_in,
-                                                     max_level,fratio,n_cell,nGrowHYP);
-
-        if (kappa_dataServices==0 || !kappa_dataServices->AmrDataRef().CanDerive(kappa_plotfile_varnames)) {
-          std::string str=permeability_plotfile_in
-            + " either does not exist or is not compatible with this run.";
-          BoxLib::Error(str.c_str());
-        }
-      }
-
-      // construct permeability field based on the specified parameters
-      if (build_full_kmap) {
-        if (verbose > 1 && ParallelDescriptor::IOProcessor())
-          std::cout << "Building kmap on finest level..." << std::endl;
-
-        int twoexp = 1;
-        for (int ii = 0; ii<max_level; ii++) {
-          twoexp *= fratio[ii];
-        }
-
-        int maxBaseGrid = twoexp; // FIXME: MUST be a multiple of twoexp for init_rock_properties to work!
-        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
-      
-        if (kappadata == 0) {
-
-          kappadata = new MultiFab(ba,BL_SPACEDIM,0,Fab_allocate);
-        
-          for (int i=0; i<rocks.size(); ++i) {
-            // these are temporary work around.   
-            // Should utilizes region to determine size.
-            Rock& r = rocks[i];
-            r.max_level = max_level;
-            r.n_cell = n_cell;
-            r.fratio = fratio;
-            r.problo = problo;
-            r.probhi = probhi;
-            r.build_kmap(*kappadata, gsfile);
-          } 
-          std::string permeability_plotfile_out;
-          pp.query("permeability_plotfile_out", permeability_plotfile_out);
-          if (!permeability_plotfile_out.empty()) {
-            Array<int> harmDir(BL_SPACEDIM); 
-            Array<std::string> names(harmDir.size(),"Permeability_");
-            for (int d=0; d<BL_SPACEDIM; ++d) {
-              harmDir[d] = d;
-              int num_digits = 1;
-              names[d] = BoxLib::Concatenate(names[d],d,num_digits);
-            }
-            WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),kappadata,
-                                 permeability_plotfile_out,nGrowHYP,harmDir,names);
-            if (ParallelDescriptor::IOProcessor()) {
-              std::cout << "Permeability plotfile written: " << permeability_plotfile_out <<std::endl;
-            }
-          }
-        
-          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Finished building kmap on finest level." << std::endl;
-        }
-      }
-
-      if (write_full_kmap) {
-        if (kfilein != kfileout) {
-          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Writing kmap to: " << kfileout << std::endl;
-        
-          VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-          if (ParallelDescriptor::IOProcessor())
-            if (!BoxLib::UtilCreateDirectory(kfileout, 0755))
-              BoxLib::CreateDirectoryFailed(kfileout);
-          ParallelDescriptor::Barrier();
-          VisMF::Write(*kappadata,kfileout+"/kp");
-        }
-        else {
-          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Permeability output file name same as input.  Will not overwrite" << std::endl;
-        }
-      }
-
-      std::string porosity_plotfile_in;
-      pp.query("porosity_plotfile_in", porosity_plotfile_in);
-      if (!porosity_plotfile_in.empty()) {
-        phi_dataServices = OpenMaterialDataPltFile(porosity_plotfile_in,
-                                                   max_level,fratio,n_cell,nGrowHYP);
-
-        if (phi_dataServices==0 || !phi_dataServices->AmrDataRef().CanDerive(phi_plotfile_varname)) {
-          std::string str=porosity_plotfile_in
-            + " either does not exist or is not compatible with this run.";
-          BoxLib::Error(str.c_str());
-        }
-      }
-      else if (build_full_pmap) {
-
-        if (verbose > 1 && ParallelDescriptor::IOProcessor())
-          std::cout << "Building pmap on finest level..." << std::endl;
-
-        int maxBaseGrid = 32; // FIXME: Should not be hardwired here
-        BoxArray ba = Rock::ba_for_finest_data(max_level, n_cell, fratio, maxBaseGrid, nGrowHYP);
-
-        if (phidata == 0) {
-
-          phidata = new MultiFab(ba,1,0,Fab_allocate);
-
-          for (int i=0; i<rocks.size(); ++i) {
-            // these are temporary work around.
-            // Should utilizes region to determine size.
-            Rock& r = rocks[i];
-            r.max_level = max_level;
-            r.n_cell = n_cell;
-            r.fratio = fratio;
-            r.problo = problo;
-            r.probhi = probhi;
-            r.build_pmap(*phidata, gsfile);
-          }
-
-          std::string porosity_plotfile_out;
-          pp.query("porosity_plotfile_out", porosity_plotfile_out);
-          if (!porosity_plotfile_out.empty()) {
-            Array<int> harmDir(1,-1);
-            Array<std::string> names(1,"Porosity");
-            WriteMaterialPltFile(max_level,n_cell,fratio,problo.dataPtr(),probhi.dataPtr(),
-                                 phidata,porosity_plotfile_out,nGrowHYP,harmDir,names);
-            if (ParallelDescriptor::IOProcessor()) {
-              std::cout << "Porosity plotfile written: " << porosity_plotfile_out <<std::endl;
-            }
-          }
-
-          if (verbose > 1 && ParallelDescriptor::IOProcessor())
-            std::cout << "   Finished building pmap on finest level." << std::endl;
-        }
-      }
-
-      if (write_full_pmap) {
-        if (pfilein != pfileout) {
-          if (verbose > 1 && ParallelDescriptor::IOProcessor())
-            std::cout << "   Writing pmap to: " << pfileout << std::endl;
-        
-          VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
-          if (ParallelDescriptor::IOProcessor())
-            if (!BoxLib::UtilCreateDirectory(pfileout, 0755))
-              BoxLib::CreateDirectoryFailed(pfileout);
-          ParallelDescriptor::Barrier();
-          VisMF::Write(*phidata,pfileout+"/pp");
-        }
-        else {
-          if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-            std::cout << "   Porosity output file name same as input.  Will not overwrite" << std::endl;
-        }
-      }
-
-      if (ParallelDescriptor::IOProcessor()) {
-        std::cout << "Rock name mapping in output: " << std::endl;
-      }
-      for (int i=0; i<rocks.size(); ++i) {
-        if (ParallelDescriptor::IOProcessor()) {
-          std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
-        }
-      }
-
-      // Check that at the coarse level material id have been set over the entire domain
-      BoxArray ba(Box(IntVect(D_DECL(0,0,0)),
-                      IntVect(D_DECL(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1))));
-      ba.maxSize(32);
-      MultiFab rockTest(ba,1,0);
-      rockTest.setVal(-1);
-      Array<Real> dx0(BL_SPACEDIM);
-      for (int i=0; i<BL_SPACEDIM; ++i) {
-        dx0[i] = (probhi[i] - problo[i])/n_cell[i];
-      }
-      for (MFIter mfi(rockTest); mfi.isValid(); ++mfi) {
-        FArrayBox& fab = rockTest[mfi];
-        for (int i=0; i<rocks.size(); ++i) {
-          Real val = (Real)i;
-          const PArray<Region>& rock_regions = rocks[i].regions;
-          for (int j=0; j<rock_regions.size(); ++j) {
-            rock_regions[j].setVal(fab,val,0,dx0.dataPtr(),0);
-          }
-        }
-      }
-      if (rockTest.min(0) < 0) {
-        VisMF::Write(rockTest,"RockTest");
-        BoxLib::Abort("Material has not been defined over the entire domain.  See mf on disk: RockTest");
-      }
-    }
 }
     
 void PorousMedia::read_prob()
@@ -1966,6 +1652,8 @@ void PorousMedia::read_prob()
 
   if (model_name=="steady-saturated") {
       solute_transport_limits_dt = true;
+      do_multilevel_full = true;
+      do_richard_init_to_steady = true;
   }
 
   pb.query("do_tracer_transport",do_tracer_transport);
@@ -1984,6 +1672,24 @@ void PorousMedia::read_prob()
   pb.query("v",verbose);
   pb.query("richard_solver_verbose",richard_solver_verbose);
   pb.query("do_richard_sat_solve",do_richard_sat_solve);
+
+  // Get timestepping parameters.  Some will be used to default values for int-to-steady solver
+  pb.get("cfl",cfl);
+  pb.query("init_shrink",init_shrink);
+  pb.query("dt_init",dt_init);
+  pb.query("dt_cutoff",dt_cutoff);
+  pb.query("dt_grow_max",dt_grow_max);
+  pb.query("dt_shrink_max",dt_shrink_max);
+  pb.query("fixed_dt",fixed_dt);
+  pb.query("steady_richard_max_dt",steady_richard_max_dt);
+  pb.query("transient_richard_max_dt",transient_richard_max_dt);
+  pb.query("sum_interval",sum_interval);
+  pb.query("max_n_subcycle_transport",max_n_subcycle_transport);
+
+  pb.query("max_dt_iters_flow",max_dt_iters_flow);
+  pb.query("verbose_chemistry",verbose_chemistry);
+  pb.query("show_selected_runtimes",show_selected_runtimes);
+  pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
   pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
@@ -2037,25 +1743,8 @@ void PorousMedia::read_prob()
   pb.query("richard_centered_diff_J",richard_centered_diff_J);
   pb.query("richard_subgrid_krel",richard_subgrid_krel);
   pb.query("richard_variable_switch_saturation_threshold",richard_variable_switch_saturation_threshold);
+  richard_dt_thresh_pure_steady = 0.99*steady_init_time_step;
   pb.query("richard_dt_thresh_pure_steady",richard_dt_thresh_pure_steady);
-
-  // Get timestepping parameters.
-  pb.get("cfl",cfl);
-  pb.query("init_shrink",init_shrink);
-  pb.query("dt_init",dt_init);
-  pb.query("dt_cutoff",dt_cutoff);
-  pb.query("dt_grow_max",dt_grow_max);
-  pb.query("dt_shrink_max",dt_shrink_max);
-  pb.query("fixed_dt",fixed_dt);
-  pb.query("steady_richard_max_dt",steady_richard_max_dt);
-  pb.query("transient_richard_max_dt",transient_richard_max_dt);
-  pb.query("sum_interval",sum_interval);
-  pb.query("max_n_subcycle_transport",max_n_subcycle_transport);
-
-  pb.query("max_dt_iters_flow",max_dt_iters_flow);
-  pb.query("verbose_chemistry",verbose_chemistry);
-  pb.query("show_selected_runtimes",show_selected_runtimes);
-  pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
   // Gravity are specified as m/s^2 in the input file
   // This is converted to the unit that is used in the code.
@@ -2129,24 +1818,24 @@ PorousMedia::build_region_PArray(const Array<std::string>& region_names)
     return ret;
 }
 
-const Rock&
-PorousMedia::find_rock(const std::string& name)
+const Material&
+PorousMedia::find_material(const std::string& name)
 {
     bool found=false;
-    int iRock = -1;
-    for (int i=0; i<rocks.size() && !found; ++i)
+    int iMat = -1;
+    for (int i=0; i<materials.size() && !found; ++i)
     {
-        const Rock& rock = rocks[i];
-        if (name == rock.name) {
+        const Material& mat = materials[i];
+        if (name == mat.Name()) {
             found = true;
-            iRock = i;
+            iMat = i;
         }
     } 
-    if (iRock < 0) {
-        std::string m = "Named rock not found " + name;
+    if (iMat < 0) {
+        std::string m = "Named material not found " + name;
         BoxLib::Abort(m.c_str());
     }
-    return rocks[iRock];
+    return materials[iMat];
 }
 
 
@@ -2179,66 +1868,6 @@ PressToRhoSat::transform(Real aqueous_pressure) const
     rhoSat[idx] = density[idx] * 1; // Fully saturated...an assumption
     return rhoSat;
 }
-
-struct FluxToRhoSat
-    : public ArrayTransform
-{
-    FluxToRhoSat(const Rock& rock)
-        : rock(rock) {}
-    virtual ArrayTransform* clone() const {return new FluxToRhoSat(*this);}
-    virtual Array<Real> transform(Real inData) const;
-protected:
-    const Rock& rock;
-};
-
-Array<Real>
-FluxToRhoSat::transform(Real aqueous_Darcy_flux) const
-{
-    Real gravity = PorousMedia::getGravity();
-    const Array<Real>& density = PorousMedia::Density(); // Assumes 1 component per phase
-    int ncomps = density.size();
-    BL_ASSERT(ncomps>0 && ncomps<=2);
-        
-    Real lkappa = rock.permeability[0];
-    Real gstar;
-    if (density.size() > 1)
-        gstar = -lkappa*(density[0]-density[1])*gravity;
-    else
-        gstar = -lkappa*(density[0])*gravity;
-    
-    // Compute saturation given Aqueous flow rate
-    int lkrtype = rock.krType;
-    Real lkrcoef = rock.krParam[0];
-    Real lsatres = rock.krParam[1];            
-    int nc = 1;
-    Real vtot = 0.; // Zero total velocity
-    Real sol;
-    const Array<Real>& visc = PorousMedia::Viscosity();
-    
-    Array<Real> rhoSat(ncomps);
-
-    //std::cout << "aqueous_Darcy_flux: " << aqueous_Darcy_flux << std::endl;
-    //std::cout << "gstar: " << gstar << std::endl;
-    //std::cout << "visc: " << visc[0] << std::endl;
-
-    if (ncomps > 1) 
-      FORT_FIND_INV_FLUX(&sol, &aqueous_Darcy_flux, &nc, &vtot, &gstar,
-			 visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
-    else
-      FORT_FIND_INV_RFLUX(&sol,&aqueous_Darcy_flux, &gstar,visc.dataPtr(),
-			  &ncomps,&lkrtype,&lkrcoef);
-    
-    rhoSat[0] = density[0]*(sol*(1.0-lsatres)+lsatres);
-    if (ncomps > 1) {
-        rhoSat[1] = density[1]*(1.0-rhoSat[0]/density[0]);
-    }
-    //std::cout << "rhoSat: " << rhoSat[0] << std::endl;
-    //BoxLib::Abort();
-    return rhoSat;
-}
-
-
-
 
 void  PorousMedia::read_comp()
 {
@@ -2394,7 +2023,8 @@ void  PorousMedia::read_comp()
 	      
 	      // convert to atm
 	      for (int j=0; j<vals.size(); ++j) {
-		vals[j] = vals[j] / BL_ONEATM - 1.e0;
+		//vals[j] = vals[j] / BL_ONEATM - 1.e0;
+		vals[j] = vals[j] / BL_ONEATM;
 	      }
       
               int num_phases = phases_set.size();
@@ -2420,7 +2050,8 @@ void  PorousMedia::read_comp()
               Real press_val;
               std::string val_name = "val";
               ppr.get(val_name.c_str(),press_val);
-              press_val = press_val / BL_ONEATM - 1.0;
+              //press_val = press_val / BL_ONEATM - 1.0;
+              press_val = press_val / BL_ONEATM;
 
               int ngrad = ppr.countval("grad");
               if (ngrad<BL_SPACEDIM) {
@@ -2435,7 +2066,7 @@ void  PorousMedia::read_comp()
 
               int nref = ppr.countval("ref_coord");
               if (nref<BL_SPACEDIM) {
-                std::cerr << "Insufficient number of components given for pressure refernce lication" << std::endl;
+                std::cerr << "Insufficient number of components given for pressure refernce location" << std::endl;
                 BoxLib::Abort();
               }
               Array<Real> pref(BL_SPACEDIM);
@@ -2541,13 +2172,18 @@ void  PorousMedia::read_comp()
               
               // convert to atm
               for (int j=0; j<vals.size(); ++j) {
-                vals[j] = vals[j] / BL_ONEATM - 1;
+                vals[j] = vals[j] / BL_ONEATM;
               }
               
               is_inflow = false;
-              component_bc = 1;
+              if (model == PM_STEADY_SATURATED) {
+                component_bc = 2;
+              } else {
+                component_bc = 1;
+              }
               pressure_bc = 2;
 
+              //if (model == PM_STEADY_SATURATED || model == PM_RICHARDS) {
               if (model == PM_STEADY_SATURATED) {
                 bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals));
               } else {
@@ -2555,6 +2191,30 @@ void  PorousMedia::read_comp()
                 bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
                                                           bc_type,ncomps,p_to_sat));
               }
+          }
+          else if (bc_type == "pressure_head")
+          {              
+            Array<Real> vals, times;
+            Array<std::string> forms;
+            std::string val_name = "vals";
+            int nv = ppr.countval(val_name.c_str());
+            if (nv) {
+              ppr.getarr(val_name.c_str(),vals,0,nv);
+              times.resize(nv,0);
+              if (nv>1) {
+                ppr.getarr("times",times,0,nv);
+                ppr.getarr("forms",forms,0,nv-1);
+              }
+            }
+
+            is_inflow = false;
+            if (model == PM_STEADY_SATURATED) {
+              component_bc = 2;
+            } else {
+              component_bc = 1;
+            }
+            pressure_bc = 2;
+            bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals[0]));//Fixme, support t-dependent
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -3014,8 +2674,8 @@ void  PorousMedia::read_chem()
               for (ICParmPair::const_iterator it=solute_chem_options.begin(); it!=solute_chem_options.end(); ++it) {
                   const std::string& str = it->first;
                   bool found = false;
-                  for (int i=0; i<rocks.size(); ++i) {
-                      const std::string& rname = rocks[i].name;
+                  for (int i=0; i<materials.size(); ++i) {
+                    const std::string& rname = materials[i].Name();
                       const std::string prefix("tracer."+tNames[i]+".Initial_Condition");
                       ParmParse pprs(prefix.c_str());
                       solute_chem_ics[rname][tNames[k]][str] = it->second; // set to default value
@@ -3159,10 +2819,11 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read rock."<< std::endl;
 
+  // FIXME
   if (echo_inputs && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Materials: " << std::endl;
-      for (int i=0; i<rocks.size(); ++i) {
-          std::cout << rocks[i] << std::endl;
+      for (int i=0; i<materials.size(); ++i) {
+        //std::cout << materials[i] << std::endl;
       }
   }
 

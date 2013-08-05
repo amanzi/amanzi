@@ -13,7 +13,6 @@
 #    define FORT_FRHOG_RICHARD    frhogrichard
 #    define FORT_DFXDOTY          dfxdoty
 #    define FORT_DFSXAY           dfsxay 
-#    define FORT_ARNOLDI          arnoldi
 #else
 #  if  defined(BL_FORT_USE_UPPERCASE)
 #    define FORT_VISCFLUX_VC      VSCFLXVC
@@ -27,7 +26,6 @@
 #    define FORT_FRHOG_RICHARD    FRHOGRICHARD
 #    define FORT_DFXDOTY          DFXDOTY
 #    define FORT_DFSXAY           DFSXAY
-#    define FORT_ARNOLDI          ARNOLDI
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_VISCFLUX_VC      vscflxvc
 #    define FORT_VISCFLUX_CC      vscflxcc
@@ -40,7 +38,6 @@
 #    define FORT_FRHOG_RICHARD    frhogrichard
 #    define FORT_DFXDOTY          dfxdoty
 #    define FORT_DFSXAY           dfsxay
-#    define FORT_ARNOLDI          arnoldi
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_VISCFLUX_VC      vscflxvc_
 #    define FORT_VISCFLUX_CC      vscflxcc_
@@ -53,7 +50,6 @@
 #    define FORT_FRHOG_RICHARD    frhogrichard_
 #    define FORT_DFXDOTY          dfxdoty_
 #    define FORT_DFSXAY           dfsxay_
-#    define FORT_ARNOLDI          arnoldi_
 #  endif
 
 #include <ArrayLim.H>
@@ -158,7 +154,6 @@ extern "C"
 		      const int* lo, const int* hi,
 		      const int* nc);
 
-  void FORT_ARNOLDI(Real* soln,Real* H, Real* norm_rhs, const int *nc);
 }
 
 #endif

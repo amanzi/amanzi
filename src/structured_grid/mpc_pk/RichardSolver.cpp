@@ -34,6 +34,10 @@ static bool ls_success_DEF = false;
 static int max_num_Jacobian_reuses_DEF = 0; // This just doesnt seem to work very well....
 static bool dump_Jacobian_and_exit = false;
 
+Real norm0 = -1;
+static Real max_residual_growth_factor = 1.e8; // FIXME: set this with rsparams
+static Real min_dt = 1.e-2; // FIXME: set this with rsparams
+
 RSParams::RSParams()
 {
   // Set default values for all parameters
@@ -100,6 +104,39 @@ struct CheckCtx
     RichardNLSdata* nld;
 };
 
+#undef __FUNCT__  
+#define __FUNCT__ "CheckForLargeResidual"
+PetscErrorCode 
+CheckForLargeResidual(SNES snes,PetscReal new_res_norm,bool* res_is_large,void *ctx)
+{
+  CheckCtx* check_ctx = (CheckCtx*)ctx;
+  RichardSolver* rs = check_ctx->rs;
+  RichardNLSdata* nld = check_ctx->nld;
+  RSParams& rsp = rs->Parameters();
+  if (norm0<=0) {
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "****************** Initial residual not properly set " << std::endl;
+    }
+    PetscFunctionReturn(1);
+  }
+  *res_is_large = (new_res_norm / norm0 >= max_residual_growth_factor);
+  PetscFunctionReturn(0);
+}
+
+
+#undef __FUNCT__  
+#define __FUNCT__ "CheckForSmallDt"
+PetscErrorCode 
+CheckForSmallDt(PetscReal dt,bool* dt_is_small,void *ctx)
+{
+  CheckCtx* check_ctx = (CheckCtx*)ctx;
+  RichardSolver* rs = check_ctx->rs;
+  RichardNLSdata* nld = check_ctx->nld;
+  RSParams& rsp = rs->Parameters();
+  *dt_is_small = (dt > 0 && dt < min_dt);
+  PetscFunctionReturn(0);
+}
+
 
 #undef __FUNCT__  
 #define __FUNCT__ "RichardSolverCtr"
@@ -141,9 +178,9 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   for (int lev=0; lev<nLevs; ++lev) {
     if (!is_saturated) {
       lambda.set(lev,pm[lev].LambdaCC_Curr());
+      pcap_params.set(lev,pm[lev].PCapParams());
     }
     porosity.set(lev,pm[lev].Porosity());
-    pcap_params.set(lev,pm[lev].PCapParams());
     if (!params.use_fd_jac || params.semi_analytic_J || params.variable_switch_saturation_threshold) {
         kappaccavg.set(lev,pm[lev].KappaCCavg());
     }
@@ -158,6 +195,9 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   if (!is_saturated) {
     Lambda = new MFTower(layout,lambda,nLevs);
     PCapParams = new MFTower(layout,pcap_params,nLevs);
+  } else {
+    Lambda = 0;
+    PCapParams = 0;
   }
   Porosity = new MFTower(layout,porosity,nLevs);
       
@@ -466,6 +506,17 @@ RichardSolver::ReusePreviousJacobian()
 int
 RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& nl_data)
 {
+  CheckCtx check_ctx;
+  check_ctx.rs = this;
+  check_ctx.nld = &nl_data;
+
+  bool dt_is_small;
+  PetscErrorCode ierr;
+  ierr = CheckForSmallDt(delta_t,&dt_is_small,(void*)(&check_ctx)); CHKPETSC(ierr);
+  if (dt_is_small) {
+    PetscFunctionReturn(-9);
+  }
+
   MFTower& RhsMFT = GetResidual();
   MFTower& SolnMFT = GetPressure();
   MFTower& PCapParamsMFT = GetPCapParams();
@@ -475,7 +526,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   Vec& SolnTypInvV = GetSolnTypInvV();
 
   // Copy from MFTowers in state to Vec structures
-  PetscErrorCode ierr;
   ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
 
@@ -497,10 +547,6 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   SetDt(delta_t);
   SetPermeability(cur_time);
 
-  CheckCtx check_ctx;
-  check_ctx.rs = this;
-  check_ctx.nld = &nl_data;
-
   if (params.variable_switch_saturation_threshold>0) {
       ierr = SNESLineSearchSetPostCheck(snes,PostCheckAlt,(void *)(&check_ctx));CHKPETSC(ierr);
   }
@@ -516,6 +562,7 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   void *fctx;
   ierr = SNESGetFunction(snes,PETSC_NULL,&func,&fctx);
   ierr = (*func)(snes,SolnV,RhsV,fctx); CHKPETSC(ierr);
+  ierr = VecNorm(RhsV,NORM_2,&norm0); CHKPETSC(ierr); // Save initial norm FIXME: This is already done internally, better to access that
 
   RichardSolver::SetTheRichardSolver(this);
   dump_cnt = 0;
@@ -1052,21 +1099,26 @@ RichardSolver::SetInflowVelocity(PArray<MFTower>& velocity,
 
   const Array<Geometry>& geomArray = layout.GeomArray();
 
-  FArrayBox inflow;
+  FArrayBox inflow, mask;
   for (OrientationIter oitr; oitr; ++oitr) {
     Orientation face = oitr();
     int dir = face.coordDir();
     for (int lev=0; lev<nLevs; ++lev) {
       MultiFab& uld = velocity[dir][lev];
-      if (pm[lev].get_inflow_velocity(face,inflow,t)) {
+      if (pm[lev].get_inflow_velocity(face,inflow,mask,t)) {
 	int shift = ( face.isHigh() ? -1 : +1 );
 	inflow.shiftHalf(dir,shift);
+	mask.shiftHalf(dir,shift);
 	for (MFIter mfi(uld); mfi.isValid(); ++mfi) {
 	  FArrayBox& u = uld[mfi];
 	  Box ovlp = inflow.box() & u.box();
-	  if (ovlp.ok()) {
-	    u.copy(inflow);
-	  }
+          if (ovlp.ok()) {
+            for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
+              if (mask(iv,0) != 0) {
+                u(iv,0) = inflow(iv,0);
+              }
+            }
+          }
 	}
       }
     }
@@ -1736,7 +1788,19 @@ PostCheck(SNES snes,Vec x,Vec y,Vec w,void *ctx,PetscBool  *changed_y,PetscBool 
     ierr = VecNorm(F,NORM_2,&fnorm); CHKPETSC(ierr);
 
     ierr = (*func)(snes,w,G,fctx); CHKPETSC(ierr);
-    ierr = VecNorm(G,NORM_2,&gnorm);  CHKPETSC(ierr);
+    ierr = VecNorm(G,NORM_2,&gnorm); CHKPETSC(ierr);
+
+    bool res_is_large;
+    ierr = CheckForLargeResidual(snes,gnorm,&res_is_large,ctx); CHKPETSC(ierr);
+    if (res_is_large) {
+      std::string reason = "Solution rejected.  Norm of residual has grown too large";
+      if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
+        std::cout << tag << tag_ls << reason << std::endl;
+      }
+      rsp.ls_success = false;
+      rsp.ls_reason = reason;
+      PetscFunctionReturn(0);
+    }
 
     Vec y_orig;
     if (!(rs->GetRecordFile().empty())) {
@@ -1953,6 +2017,18 @@ PostCheckAlt(SNES snes,Vec p,Vec dp,Vec pnew,void *ctx,PetscBool  *changed_dp,Pe
 
     ierr = (*func)(snes,pnew,G,fctx);CHKPETSC(ierr);
     ierr = VecNorm(G,NORM_2,&gnorm);CHKPETSC(ierr);
+
+    bool res_is_large;
+    ierr = CheckForLargeResidual(snes,gnorm,&res_is_large,ctx); CHKPETSC(ierr);
+    if (res_is_large) {
+      std::string reason = "Solution rejected.  Norm of residual has grown too large";
+      if (ParallelDescriptor::IOProcessor() && rsp.monitor_line_search) {
+        std::cout << tag << tag_ls << reason << std::endl;
+      }
+      rsp.ls_success = false;
+      rsp.ls_reason = reason;
+      PetscFunctionReturn(0);
+    }
 
     Vec dp_orig;
     if (!(rs->GetRecordFile().empty())) {

@@ -1,8 +1,9 @@
 #ifndef BCDATA_H_
 #define BCDATA_H_
 
+#include <PArray.H>
+#include <Region.H>
 #include <TabularFunction.H>
-#include <Rock.H>
 
 class RegionData
 {

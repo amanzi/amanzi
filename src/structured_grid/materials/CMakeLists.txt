@@ -52,7 +52,7 @@ add_amanzi_library(structmat
                    HEADERS ${CXX_headers_files})
 
 
-set(structured_grid_libs pmamr gsint boxprob boxdriv structmat structutils ${CCSE_LIBRARIES})
+set(structured_grid_libs pmamr boxprob boxdriv structmat structutils ${CCSE_LIBRARIES})
 link_directories(${CCSE_EXT_LIBRARY_DIRS})
 if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
   #message(">>>>>> using darwin ld flags")

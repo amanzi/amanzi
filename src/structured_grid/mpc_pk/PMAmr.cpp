@@ -16,6 +16,8 @@ namespace
   int  plotfile_on_restart;
 }
 
+EventCoord PMAmr::event_coord;
+std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
 
 void
 PMAmr::CleanupStatics ()
@@ -24,7 +26,6 @@ PMAmr::CleanupStatics ()
 }
 
 static bool initialized = false;
-bool PMAmr::use_matFiller;
 
 PMAmr::PMAmr()
   : Amr(), materialFiller(0)
@@ -36,7 +37,6 @@ PMAmr::PMAmr()
         compute_new_dt_on_regrid = 1;
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
-        use_matFiller            = true;
 
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         pmamr_initialized = true;
@@ -56,14 +56,12 @@ PMAmr::PMAmr()
 
     std::string event_name = "Stop_Time";
     defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
-    PMAmr::eventCoord().Register(event_name,defined_events[event_name]);
+    RegisterEvent(event_name,defined_events[event_name]);
 
     layout.SetParent(this);
 
     dt0_before_event_cut = -1;
     dt0_from_previous_advance = -1;
-
-    ppa.query("use_matFiller",use_matFiller);
 }
 
 PMAmr::~PMAmr()
@@ -97,16 +95,14 @@ PMAmr::checkPoint ()
 
 void
 PMAmr::RegisterEvent(const std::string& event_label,
-                     EventCoord::Event* event)
+                     EventCoord::Event* event = 0)
 {
-  std::map<std::string,EventCoord::Event*>::iterator it=defined_events.find(event_label);
-  if (it!=defined_events.end()) {
+  std::map<std::string,EventCoord::Event*>::const_iterator it=defined_events.find(event_label);
+  if (it==defined_events.end()) {
+    BL_ASSERT(event!=0);
     defined_events[event_label] = event;
-    eventCoord().Register(event_label,defined_events[event_label]);
   }
-  else {
-    delete event;
-  }
+  eventCoord().Register(event_label,defined_events[event_label]);
 }
 
 Real
@@ -481,7 +477,7 @@ PMAmr::coarseTimeStep (Real _stop_time)
 
     if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())
     {
-        std::cout << "\nBEGIN TEMPORAL INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
+        std::cout << "\nBEGIN INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
     }
 
     bool write_plot, write_check, begin_tpc;
@@ -527,8 +523,10 @@ PMAmr::coarseTimeStep (Real _stop_time)
         }
         setDtLevel(dt_new);
     }
-    else
+    else {
        dt0_before_event_cut = -1;
+    }
+
     // Do time step
     pm_timeStep(0,cumtime,1,1);
 
@@ -645,22 +643,19 @@ PMAmr::coarseTimeStep (Real _stop_time)
 void
 PMAmr::SetUpMaterialServer()
 {
-  if (UsingMaterialServer()) {
-    if (materialFiller == 0 || !materialFiller->Initialized()) {
-      if (ParallelDescriptor::IOProcessor()) {
-        std::cout << "Building MaterialFiller object..." << std::endl;
-      }
-      
-      int Nlevs = maxLevel() + 1;
-      const PArray<Material>& materials = PorousMedia::Materials();
-      materialFiller = new MatFiller(geom,refRatio(),materials);
-      if (ParallelDescriptor::IOProcessor() && verbose>0) {
-        std::cout << "....MaterialFiller object built" << std::endl;
-      }
+  if (materialFiller == 0 || !materialFiller->Initialized()) {
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Building MaterialFiller object..." << std::endl;
+    }
+
+    int Nlevs = maxLevel() + 1;
+    const PArray<Material>& materials = PorousMedia::Materials();
+    materialFiller = new MatFiller(geom,refRatio(),materials);
+    if (ParallelDescriptor::IOProcessor() && verbose>0) {
+      std::cout << "....MaterialFiller object built" << std::endl;
     }
   }
 }
-
 
 void
 PMAmr::initialInit (Real t_start,
@@ -690,6 +685,21 @@ PMAmr::initialInit (Real t_start,
     // Define base level grids.
     //
     defBaseLevel(startTime());
+
+    if (max_level > 0)
+        bldFineLevels(startTime());
+
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].setTimeLevel(startTime(),dt_level[lev],dt_level[lev]);
+
+    for (int lev = 0; lev <= finest_level; lev++)
+        amr_level[lev].post_regrid(0,finest_level);
+    //
+    // Perform any special post_initialization operations.
+    //
+    for (int lev = 0; lev <= finest_level; lev++) {
+        amr_level[lev].post_init(t_stop);
+    }
     //
     // Compute dt and set time levels of all grid data.
     //
@@ -728,21 +738,6 @@ PMAmr::initialInit (Real t_start,
         dt_level[lev]  = dt0;
         dt_min[lev]    = dt_level[lev];
         n_cycle[lev]   = fact;
-    }
-
-    if (max_level > 0)
-        bldFineLevels(startTime());
-
-    for (int lev = 0; lev <= finest_level; lev++)
-        amr_level[lev].setTimeLevel(startTime(),dt_level[lev],dt_level[lev]);
-
-    for (int lev = 0; lev <= finest_level; lev++)
-        amr_level[lev].post_regrid(0,finest_level);
-    //
-    // Perform any special post_initialization operations.
-    //
-    for (int lev = 0; lev <= finest_level; lev++) {
-        amr_level[lev].post_init(t_stop);
     }
 
     for (int lev = 0; lev <= finest_level; lev++)
@@ -869,7 +864,7 @@ void PMAmr::InitializeControlEvents()
         eit = defined_events.find(obs_cycle_macro);
         if (eit != defined_events.end()  && eit->second->IsCycle() ) {
           event_label = eit->first;
-          event_coord.Register(event_label,eit->second);
+          RegisterEvent(event_label,eit->second);
         }
         else {
           std::string m = "obs_cycle_macro unrecognized \"" + obs_cycle_macro + "\"";
@@ -880,7 +875,7 @@ void PMAmr::InitializeControlEvents()
         eit = defined_events.find(obs_time_macro);
         if (eit != defined_events.end()  && eit->second->IsTime() ) {
           event_label = eit->first;
-          event_coord.Register(event_label,eit->second);
+          RegisterEvent(event_label,eit->second);
         }
         else {
           std::string m = "obs_time_macro unrecognized \"" + obs_time_macro + "\"";
@@ -908,7 +903,7 @@ void PMAmr::InitializeControlEvents()
   {
       eit = defined_events.find(vis_cycle_macros[i]);
       if (eit != defined_events.end()  && eit->second->IsCycle() ) {
-          event_coord.Register(eit->first,eit->second);
+          RegisterEvent(eit->first,eit->second);
       }
       else {
           std::string m = "vis_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
@@ -920,7 +915,7 @@ void PMAmr::InitializeControlEvents()
   {
       eit = defined_events.find(vis_time_macros[i]);
       if (eit != defined_events.end()  && eit->second->IsTime() ) {
-          event_coord.Register(eit->first,eit->second);
+          RegisterEvent(eit->first,eit->second);
       }
       else {
           std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
@@ -929,9 +924,9 @@ void PMAmr::InitializeControlEvents()
   }
   for (int i=0; i<chk_cycle_macros.size(); ++i)
   {
-      eit = defined_events.find(chk_cycle_macros[i]);
-      if (eit != defined_events.end()  && eit->second->IsCycle() ) {
-          event_coord.Register(eit->first,eit->second);
+    eit = defined_events.find(chk_cycle_macros[i]);
+    if (eit != defined_events.end()  && eit->second->IsCycle() ) {
+          RegisterEvent(eit->first,eit->second);
       }
       else {
           std::string m = "chk_cycle_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
@@ -942,7 +937,7 @@ void PMAmr::InitializeControlEvents()
   {
       eit = defined_events.find(chk_time_macros[i]);
       if (eit != defined_events.end()  && eit->second->IsTime() ) {
-          event_coord.Register(eit->first,eit->second);
+          RegisterEvent(eit->first,eit->second);
       }
       else {
           std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_time_macros[i] + "\"";
@@ -987,7 +982,7 @@ void PMAmr::InitializeControlEvents()
       int ndigits = (int) (std::log10(ntps) + .0001) + 1;
       tpc_labels[i] = BoxLib::Concatenate("Time_Period_Begin_",i,ndigits);
       defined_events[tpc_labels[i]] = new EventCoord::TimeEvent(Array<Real>(1,tpc_start_times[i]));
-      PMAmr::eventCoord().Register(tpc_labels[i],defined_events[tpc_labels[i]]);
+      RegisterEvent(tpc_labels[i],defined_events[tpc_labels[i]]);
   }
 
 

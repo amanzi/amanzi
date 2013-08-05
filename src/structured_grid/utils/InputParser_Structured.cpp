@@ -412,12 +412,6 @@ namespace Amanzi {
                 std::string Start_str = "Start"; reqP.push_back(Start_str);
                 std::string Switch_str = "Switch"; reqP.push_back(Switch_str);
                 std::string End_str = "End"; reqP.push_back(End_str);
-                std::string Steady_Init_Time_Step_str = "Steady Initial Time Step"; 
-                std::string Transient_Init_Time_Step_str = "Transient Initial Time Step"; 
-                if (flow_mode != "Steady State Saturated") {
-                    reqP.push_back(Transient_Init_Time_Step_str);// Can use CFL here, make these optional
-                    reqP.push_back(Steady_Init_Time_Step_str); 
-                }
 
                 // Set defaults for optional parameters
                 std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier"; optPd[Init_Time_Step_Mult_str] = -1;
@@ -431,19 +425,25 @@ namespace Amanzi {
                 optPd[Time_Step_Grow_Max_str] = -1; // <0 means inactive
                 std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink";
                 optPd[Time_Step_Shrink_Max_str] = -1; // <0 means inactive
-                if (flow_mode == "Steady State Saturated") {
-                    optPd[Steady_Init_Time_Step_str] = -1;
-                    optPd[Transient_Init_Time_Step_str] = -1;
+                std::string Steady_Init_Time_Step_str = "Steady Initial Time Step";
+                optPd[Steady_Init_Time_Step_str] = -1; // <0 means inactive
+                std::string Transient_Init_Time_Step_str = "Transient Initial Time Step";
+                optPd[Transient_Init_Time_Step_str] = -1; // <0 means inactive
+
+                double strt_time = tran_list.get<double>(Start_str);
+                double stop_time = tran_list.get<double>(End_str);
+                double switch_time = tran_list.get<double>(Switch_str);
+                struc_out_list.set<double>("strt_time", strt_time);
+                struc_out_list.set<double>("stop_time", stop_time);
+                struc_out_list.set<double>("switch_time", switch_time);
+		prob_out_list.set<double>(underscore("steady_max_pseudo_time"),tran_list.get<double>(Switch_str));
+                if (switch_time < stop_time) {
+                  prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
+                }
+                if (switch_time > strt_time) {
+                  prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
                 }
 
-                struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
-                struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
-                struc_out_list.set<double>("switch_time", tran_list.get<double>(Switch_str));
-		prob_out_list.set<double>(underscore("steady_max_pseudo_time"),tran_list.get<double>(Switch_str));
-                if (flow_mode != "Steady State Saturated") {
-                    prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
-                    prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
-                }
 		struc_out_list.set<std::string>("execution_mode", "init_to_steady");
 
                 // Extract optional parameters
@@ -473,10 +473,8 @@ namespace Amanzi {
                         prob_out_list.set<double>("steady_richard_max_dt", it->second);
                     } else if (it->first==Transient_Max_Time_Step_Size_str) {
                         prob_out_list.set<double>("transient_richard_max_dt", it->second);
-                    } else if (flow_mode == "Steady State Saturated"  && it->first==Transient_Init_Time_Step_str) {
+                    } else if (it->first==Transient_Init_Time_Step_str) {
                         prob_out_list.set<double>("dt_init", it->second);
-                    } else if (flow_mode == "Steady State Saturated"  && it->first==Steady_Init_Time_Step_str) {
-                        prob_out_list.set<double>("steady_init_time_step", it->second);
                     }
                     else {
                         prob_out_list.set<double>(underscore(it->first), it->second);
@@ -1005,7 +1003,7 @@ namespace Amanzi {
             Array<double> lo = rsslist.get<Array<double> >("Low Coordinate");
             Array<double> hi = rsslist.get<Array<double> >("High Coordinate");
 
-            std::string purpose, type;
+            std::string purpose="all", type="box";
             for (int d=0; d<ndim; ++d) {
                 if (std::abs(hi[d] - lo[d]) < geometry_eps) // This is a (ndim-1) dimensional region
                 {
@@ -1020,10 +1018,6 @@ namespace Amanzi {
                     else if (lo[d] == domhi[d]) {
                         purpose = PMAMR::RpurposeDEF[d+3];
                     }
-                }
-                else {
-                    type = "box";
-                    purpose = "all";
                 }
             }
 
@@ -2283,7 +2277,6 @@ namespace Amanzi {
                                 ParameterList&       fPLout)
         {
             Array<std::string> nullList, reqP;
-            fPLout.set<std::string>("type","pressure");
 
             if (Amanzi_type == "BC: Linear Pressure")
             {
@@ -2294,9 +2287,21 @@ namespace Amanzi {
 
                 fPLout.set<Array<double> >("vals",fPLin.get<Array<double> >(val_name));
                 fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
-                const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
-                int coord = water_table.size()-1;
-                fPLout.set<double>("water_table",water_table[coord]);
+                fPLout.set<std::string>("type","pressure");
+            }
+            else if (Amanzi_type == "BC: Uniform Pressure Head")
+            {
+                const std::string val_name="Values"; reqP.push_back(val_name);
+                const std::string time_name="Times"; reqP.push_back(time_name);
+                const std::string form_name="Time Functions"; reqP.push_back(form_name);
+                PLoptions opt(fPLin,nullList,reqP,true,true);
+                Array<double> vals = fPLin.get<Array<double> >(val_name);
+                fPLout.set<Array<double> >("vals",vals);
+                if (vals.size()>1) {
+                    fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+                    fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+                }
+                fPLout.set<std::string>("type","pressure_head");
             }
             else if (Amanzi_type == "BC: Uniform Pressure")
             {
@@ -2311,6 +2316,7 @@ namespace Amanzi {
                     fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
                     fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
                 }
+                fPLout.set<std::string>("type","pressure");
             }
         }
 
@@ -2492,8 +2498,9 @@ namespace Amanzi {
                 {
                     convert_BCSaturation(fPLin,Amanzi_type,fPLout);
                 }
-                else if ( (Amanzi_type == "BC: Uniform Pressure"
-                           || Amanzi_type == "BC: Linear Pressure") )
+                else if ( (Amanzi_type == "BC: Uniform Pressure")
+                          || (Amanzi_type == "BC: Uniform Pressure Head")
+                          || (Amanzi_type == "BC: Linear Pressure") )
                 {
                     convert_BCPressure(fPLin,Amanzi_type,fPLout);
                 }
@@ -2563,7 +2570,7 @@ namespace Amanzi {
 		    int& inflow_bc   = (i<3  ? inflow_lo_bc[k] : inflow_hi_bc[k]);
 
                     if (orient_RTs.size()!=0) {
-  		        const std::string& orient_type = orient_RTs[0].second;
+  		        std::string orient_type = orient_RTs[0].second;
 			for (int j=1; j<orient_RTs.size(); ++j) {
 			    if (orient_type != orient_RTs[j].second) {
 			      std::cerr << "Structured grid requires that all BCs on "
@@ -2571,14 +2578,14 @@ namespace Amanzi {
 			      throw std::exception();
 			    }
 			}
-
-
 			if (orient_type == "noflow") {
 			    sat_bc      = 4; // No flow for saturation
 			    pressure_bc = 4; // No flow for p
 			    inflow_bc   = 0; // Automatically set to zero
 			}
-			else if (orient_type == "pressure" || orient_type == "hydrostatic") {
+			else if (orient_type == "pressure"
+                                 || orient_type == "pressure_head"
+                                 || orient_type == "hydrostatic") {
 			    // Must set components by name, and phase press set by press_XX(scalar) or hydro 
 			    sat_bc      = 1; // Dirichlet for saturation,
 			    pressure_bc = 2; // Dirichlet for p

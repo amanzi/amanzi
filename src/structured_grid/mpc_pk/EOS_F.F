@@ -71,30 +71,6 @@ c ::: -----------------------------------------------------------
       end
 
 c ::: -----------------------------------------------------------
-c ::: Initiate data in probdata.H for COREREACT
-c ::: -----------------------------------------------------------
-      subroutine FORT_COREREACT_PARAMS(nreact_in,rhosec_in)
-
-      implicit none
-
-#include "probdata.H"      
-
-      integer nreact_in
-      REAL_T  rhosec_in(nreact_in)
-
-c      integer n
-
-      nreact = nreact_in
-
-c     this appears to be missing from probdata.H
-c      do n = 1,nreact_in
-c        rhosec(n) = rhosec_in(n)
-c      end do
-
-      end
-
-
-c ::: -----------------------------------------------------------
 c ::: Initiate data in probdata.H for get_kr function
 c ::: -----------------------------------------------------------
       subroutine FORT_KR_INIT(sThresh_in,use_shifted_kr_in)
