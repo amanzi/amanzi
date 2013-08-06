@@ -408,24 +408,6 @@ void MPC::cycle_driver() {
 
 
 
-  // write visualization output as requested
-  Amanzi::timer_manager.start("I/O");
-  visualization->set_mesh(mesh_maps);
-  visualization->CreateFiles();
-  if (chemistry_enabled) {
-    // get the auxillary data from chemistry
-    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-    // write visualization data for timestep
-    WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
-    //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
-  } else {
-    //always write the initial visualization dump
-    WriteVis(visualization,S.ptr());
-  }
-
-  // write a restart dump if requested (determined in dump_state)
-  WriteCheckpoint(restart,S.ptr(),S->time());
-  Amanzi::timer_manager.stop("I/O");
 
   Amanzi::timer_manager.start("Flow PK");
   if (flow_enabled) {
@@ -463,6 +445,27 @@ void MPC::cycle_driver() {
     }
   }
   Amanzi::timer_manager.stop("Flow PK");
+
+
+  // write visualization output as requested
+  Amanzi::timer_manager.start("I/O");
+  visualization->set_mesh(mesh_maps);
+  visualization->CreateFiles();
+  if (chemistry_enabled) {
+    // get the auxillary data from chemistry
+    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+    // write visualization data for timestep
+    WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
+    //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
+  } else {
+    //always write the initial visualization dump
+    WriteVis(visualization,S.ptr());
+  }
+
+  // write a restart dump if requested (determined in dump_state)
+  WriteCheckpoint(restart,S.ptr(),S->time());
+  Amanzi::timer_manager.stop("I/O");
+
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations) observations->make_observations(*S);
@@ -522,6 +525,8 @@ void MPC::cycle_driver() {
                (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
 	       (flow_model == std::string("Richards") ) ) ) ) {
           flow_dT = FPK->CalculateFlowDt();
+	  
+	  std::cout << flow_dT << std::endl; 
         }
       }
       Amanzi::timer_manager.stop("Flow PK");

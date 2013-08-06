@@ -39,7 +39,8 @@
 #define ST_SOLVER                       "AztecOO"
 #define ST_INIT_DARCY_BOOL              true
 #define ST_DIVERG_FACT                  1000.0
-
+#define ST_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
+ 
 
 #define TR_MAX_ITER                     15
 #define TR_MIN_ITER                     10

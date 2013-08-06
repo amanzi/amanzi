@@ -471,6 +471,7 @@ int Darcy_PK::Advance(double dT_MPC)
     dT_desirable_ = std::min(dT_MPC * dTfactor, ti_specs->dTmax);
   } else {
     dT_desirable_ = std::min(dT_desirable_ * ti_specs->dTfactor, ti_specs->dTmax);
+    std::cout << ti_specs->dTfactor << std::endl;    
   }
 
   dt_tuple times(time, dT_MPC);
