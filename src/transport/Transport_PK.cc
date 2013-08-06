@@ -236,7 +236,7 @@ double Transport_PK::CalculateTransportDt()
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dT);
       printf("Transport PK: cell %d has smallest dT, (%9.6f, %9.6f", cmin_dT, p[0], p[1]);
       if (p.dim() == 3) 
-        printf(", %9.6f)\n", p[3]);
+        printf(", %9.6f)\n", p[2]);
       else
         printf(")\n"); 
     }
