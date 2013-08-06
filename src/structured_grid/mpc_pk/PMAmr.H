@@ -35,7 +35,7 @@ public:
                       int  niter);
         
 
-    EventCoord& eventCoord() {return event_coord;}
+    static EventCoord& eventCoord() {return event_coord;}
     Real process_events(bool& write_plotfile_after_step,
                         bool& write_checkpoint_after_step,
                         Array<int>& observations_after_step,
@@ -58,10 +58,8 @@ public:
     PArray<Observation>& TheObservations() {return observations;}
     Real StopTime() const {return stop_time;}
     int MaxStep() const {return max_step;}
-    void RegisterEvent(const std::string& event_label,
-                       EventCoord::Event* event); // takes control of pointer
-
-    static bool UsingMaterialServer() {return use_matFiller;}
+    static void RegisterEvent(const std::string& event_label,
+                              EventCoord::Event* event); // takes control of pointer
 
 protected:
     void InitializeControlEvents();
@@ -70,8 +68,8 @@ protected:
     PArray<Observation> observations;
     std::string obs_outputfile;
 
-    EventCoord event_coord;
-    std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
+    static EventCoord event_coord;
+    static std::map<std::string,EventCoord::Event*> defined_events; // accumulate all defined, register as needed
     std::string observation_output_file;
 
     Array<std::string> vis_cycle_macros, vis_time_macros;
@@ -100,7 +98,6 @@ private:
 
     // Private data
     MatFiller* materialFiller;
-    static bool use_matFiller;
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
 };

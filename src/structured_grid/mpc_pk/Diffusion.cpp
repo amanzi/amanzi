@@ -1234,59 +1234,6 @@ Diffusion::richard_iter (Real                   dt,
                     << std::endl;
       }
     }
-//   // Construct krylov subspace
-//   bool do_newton_krylov = false;
-//   if (do_newton_krylov)
-//     {
-//       MultiFab::Copy(Rhs,Soln,0,0,1,0);
-
-//       int krylov_dim = 15;
-//       int H_dim = krylov_dim - 1;
-//       MultiFab krylov(grids,krylov_dim,0);
-//       MultiFab krylovn(grids,1,0);
-//       MultiFab krylovnp1(grids,1,0);
-//       Real H[H_dim*H_dim];
-//       for (int i = 0; i<H_dim*H_dim; i++)
-// 	H[i] = 0.0;
-//       Real rhs_norm = sqrt(dotxy(Rhs,Rhs));
-//       MultiFab::Copy(krylov,Rhs,0,0,1,0);
-//       for (MFIter mfi(krylov); mfi.isValid(); ++mfi)
-// 	krylov[mfi].mult(1.0/rhs_norm,0);
-//       for (int j=0; j<H_dim;j++)
-// 	{
-// 	  Soln.setVal(0.);
-// 	  MultiFab::Copy(Soln,krylov,j,0,1,0);     
-// 	  jac_richard(nc,gravity,density,res_fix,Soln,Rhs,visc_op,visc_op_dp);
-// 	  MultiFab::Copy(krylov,Soln,0,j+1,1,0);
-// 	  MultiFab::Copy(krylovnp1,Soln,0,0,1,0);
-	  
-// 	  // note that H is column first here
-// 	  for (int i=0;i<=j;i++)
-// 	    {
-// 	      MultiFab::Copy(krylovn,krylov,i,0,1,0);
-// 	      H[i+j*H_dim] = dotxy(krylovnp1,krylovn);
-// 	      krylovn.mult(-H[i+j*H_dim]);
-// 	      MultiFab::Add(krylov,krylovn,0,j+1,1,0);
-// 	    }
-// 	  Real k_norm = sqrt(dotxy(krylov,krylov,j+1,j+1));
-// 	  for (MFIter mfi(krylov); mfi.isValid(); ++mfi)
-// 	    krylov[mfi].mult(1.0/k_norm,j+1);
-// 	  if (j+1 < H_dim)
-// 	    H[j+1+j*H_dim] = k_norm;
-// 	}
-//       // Arnoldi step
-//       Real ak[H_dim];
-//       FORT_ARNOLDI(ak,H,&rhs_norm,&H_dim);
-//       Soln.setVal(0.);
-//       for (MFIter mfi(krylov); mfi.isValid(); ++mfi)
-// 	{
-// 	  for  (int i=0;i<H_dim;i++)
-// 	    {
-// 	      krylov[mfi].mult(ak[i],i);
-// 	      Soln[mfi].plus(krylov[mfi],mfi.validbox(),i,0,1);
-// 	    }
-// 	}
-//     }
   // line search 
   MultiFab Stmp(grids,1,1);
   MultiFab Rhsp1(grids,1,0);

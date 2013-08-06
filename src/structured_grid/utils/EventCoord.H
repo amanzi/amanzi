@@ -38,7 +38,7 @@ struct EventCoord
         virtual bool IsTime() const {return false;}
         bool ThisEventDue(int cycle, int dcycle) const;
         bool ThisEventInit(int cycle) const;
-        virtual Event* Clone() const {return new CycleEvent(*this);}
+        virtual CycleEvent* Clone() const {return new CycleEvent(*this);}
 
         int start, period, stop;
         Array<int> cycles;
@@ -60,7 +60,7 @@ struct EventCoord
         virtual bool IsTime() const {return true;}
         bool ThisEventDue(Real time, Real dt, Real& dt_red) const;
         bool ThisEventInit(Real time) const;
-        virtual Event* Clone() const {return new TimeEvent(*this);}
+        virtual TimeEvent* Clone() const {return new TimeEvent(*this);}
 
         Real start, period, stop;
         Array<Real> times;

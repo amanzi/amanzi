@@ -16,12 +16,8 @@
 #include <Diffusion.H>
 #include <MacProj.H> 
 #include <AuxBoundaryData.H>
-#ifdef COREREACT
-  #include <PChemDriver.H>
-#endif
 #include <ParmParse.H>
 #include <Region.H>
-#include <Rock.H>
 #include <Material.H>
 #include <Source.H>
 #include <Observation.H>
@@ -33,10 +29,9 @@ class RichardSolver;
 class RSParams;
 #include <RichardSolver.H>
 
-#ifdef AMANZI
+// Amanzi chemistry
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
-#endif
 
 static Real BL_ONEATM = 101325.0;
 
@@ -127,7 +122,8 @@ struct RichardNLSdata {
   {
       RICHARD_SUCCESS, 
       RICHARD_NONLINEAR_FAIL,
-      RICHARD_LINEAR_FAIL
+      RICHARD_LINEAR_FAIL,
+      RICHARD_NONLINEAR_CATASTROPHIC_FAIL
   };
 
   RichardNLSdata(int slev, int nlevs, PMAmr* amrp);
@@ -468,7 +464,6 @@ public:
   static const Array<std::string>& UserDerives() {return user_derive_list;}
   static PArray<Region>& Regions() {return regions;}
   static PArray<Material>& Materials() {return materials;}
-  static PArray<Rock>& Rocks() {return rocks;}
   static const Array<Real>& Density() {return density;}
   static const Array<Real>& Viscosity() {return muval;}
   static int numComponents() {return ncomps;}
@@ -503,7 +498,7 @@ public:
 			     Array<Real>& coef);
 
   static PArray<Region> build_region_PArray(const Array<std::string>& region_names);
-  static const Rock& find_rock(const std::string& name);
+  static const Material& find_material(const std::string& name);
 
   virtual void sum_integrated_quantities ();
 
@@ -962,6 +957,7 @@ public:
   void dirichletDefaultBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
+                           FArrayBox&         mask,
                            Real               t);
   void get_inflow_density(const Orientation& face,
                           const RegionData&  face_bc,
@@ -1099,9 +1095,7 @@ protected:
   static PArray<Material> materials;
 
   // Rock
-  static PArray<Rock> rocks;
   static std::map<std::string, int> rock_to_int; // hack to support user output
-  static std::string gsfile;
   static MultiFab*   kappadata;
   static MultiFab*   phidata;
   static DataServices* phi_dataServices;

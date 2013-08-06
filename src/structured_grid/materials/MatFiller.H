@@ -66,13 +66,22 @@ public:
                    const std::string& pname,
                    int                dComp,
                    int                nGrow,
-                   void*              ctx = 0);
+                   void*              ctx = 0,
+                   bool               ignore_mixed = false);
+
+  bool SetPropertyDirect(Real               t,
+                         int                level,
+                         FArrayBox&         fab,
+                         const Box&         box,
+                         const std::string& pname,
+                         int                dComp,
+                         void*              ctx = 0);
 
   /* Fill a MultiFab with the ID (a Real-casted integer) of the 
      material at that location, given a refinement level (as defined 
      in the ctr), including nGrow cells. The ID is consistent 
      with MatIdx()*/
-  void SetMaterialID(int level, MultiFab& mf, int nGrow);
+  void SetMaterialID(int level, MultiFab& mf, int nGrow, bool ignore_mixed = false);
 
 
   /* Access functions follow */
