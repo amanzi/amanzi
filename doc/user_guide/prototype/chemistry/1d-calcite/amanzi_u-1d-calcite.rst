@@ -16,6 +16,16 @@ Features tested
 	* Aqueous complexation reactions (equilibrium)
 	* Mineral dissolution
 
+Information about this test problem
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Amanzi input file: amanzi-1d-calcite.xml
+* Test type: Benchmark testing
+* Benchmark simulator: PFlotran (*input file:* 1d-calcite.in)
+* Test case ID: 1SSConTran-calcite
+* Author: B. Andre, G. Hammond
+* Testing and Documentation: S. Molins
+	
 Introduction
 ------------
 
@@ -27,7 +37,7 @@ Model
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-See the :doc:`../1d-tracer/amanzi-u-1d-tracer` example.
+See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
 
 Aqueous complexation
 ~~~~~~~~~~~~~~~~~~~~
@@ -39,7 +49,7 @@ Six reactions equilibrium reactions are considered in aqueous phase (by conventi
 * :math:`CO_2(aq) =  - H_2O + H^+ + HCO_3^-\;log(K)=-6.3447`
 * :math:`CaOH_+ = H_2O - H^+ + Ca^{++}\;log(K)=12.85000`
 * :math:`CaHCO_3^+ = HCO_3^- + Ca^{++}\;log(K)=-1.0467`
-* :math:`CaCO_3(aq) =  - H+ + HCO_3^- + Ca^{++}\;log(K)=7.0017`
+* :math:`CaCO_3(aq) =  - H^+ + HCO_3^- + Ca^{++}\;log(K)=7.0017`
 
 Calcite dissolution
 ~~~~~~~~~~~~~~~~~~~
@@ -73,14 +83,4 @@ Simulation results
 ------------------
 
 Here go the figure and table.
-
-Information about this test problem
------------------------------------
-
-* Amanzi input file: amanzi-1d-calcite.xml
-* Test type: Benchmark testing
-* Benchmark simulator: PFlotran (*input file:* 1d-calcite.in)
-* Test case ID: 1SSConTran-calcite
-.. * Author: B. Andre, G. Hammond
-.. * Documentation: S. Molins
 
