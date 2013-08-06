@@ -1,0 +1,114 @@
+1D Calcite dissolution
+======================
+
+Overview
+--------
+
+This test example performs the simulation of calcite dissolution in 1D flow domain. 
+Input file: amanzi-1d-calcite.xml
+
+
+Features
+--------
+
+* 1D flow
+* 1D advective transport 
+* Geochemical reactions
+
+	* Aqueous complexation reactions (equilibrium)
+	* Mineral dissolution
+
+Introduction
+------------
+
+Carbonate minerals are present in many subsurface environments and contribute to their buffering capacity. Under typical subsurcace flow conditons, calcite dissolution is a relatively fast geochemical reaction leading often to local geochemical equilibrium and sharp dissolution fronts. Calcite dissolution is represented with a kinetic rate expression based on the transition state theory. In this test example, a solution under saturated with calcite is injected at x=0 into a 100-m porous domain containing calcite; as a result, calcite dissolves raising the pH and concentration of cations at the effluent of the domain. The simulation is run to 100 years.
+
+
+Model
+-----
+
+
+Aqueous complexation
+~~~~~~~~~~~~~~~~~~~~
+
+Six reactions equilibrium reactions are considered in aqueous phase
+
+* OH- =   1.00 H2O  -1.00 H+  ;   13.99510 ;    3.50000 ;   -1.00000 ;   17.00730
+* CO3-- =  -1.00 H+   1.00 HCO3-  ;   10.32880 ;    4.50000 ;   -2.00000 ;   60.00920
+* CO2(aq) =  -1.00 H2O   1.00 H+   1.00 HCO3-  ;   -6.34470 ;    3.00000 ;    0.00000 ;   44.00980
+* CaOH+ =   1.00 H2O  -1.00 H+   1.00 Ca++  ;   12.85000 ;    4.00000 ;    1.00000 ;   57.08530
+* CaHCO3+ =   1.00 HCO3-   1.00 Ca++  ;   -1.04670 ;    4.00000 ;    1.00000 ;  101.09510
+* CaCO3(aq) =  -1.00 H+   1.00 HCO3-   1.00 Ca++  ;    7.00170 ;    3.00000 ;    0.00000 ;  100.08720
+
+
+
+Calcite dissolution
+~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+
+Saturated 3-D Steady-State Test Flow Problem
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Problem Definition
+~~~~~~~~~~~~~~~~~~~
+
+* Horizontal flow in the **x-direction**
+
+* Model domain:
+
+	* :math:`X_{min} = Y_{min} = Z_{min} = 0`
+	* :math:`Y_{max} = Z_{max} = 50` *meters*
+
+* Model domain: 10 meters X 5 meters X 5 meters
+
+* Total flow applied (flux) at **x = 0 plane** is *1.95E-2* 
+  :math:`kg/s/m^2`
+
+* Constant head specified at **x = 100 meters plane**: 120 meters 
+
+* Uniform Intrinsic Permeability, 
+  :math:`\kappa =` *1.0E-12*
+  :math:`m^2`
+
+* Water Viscosity,
+  :math:`\mu =` *1.002E-3 Pa - s*
+
+* Water Density,
+  :math:`\rho =` *998.2*
+  :math:`kg/m^3`
+
+Expected result, according to Darcy's Law
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+
+Darcy's Law is defined as: 
+
+.. math:: Q/A = -K \frac{dh}{dx}
+
+which, in this case, is based on isotropic soil conductivity, *K*, and the hydraulic head gradient in the x-direction.  
+
+Calculated head gradient (-): ?
+
+Calculated hydraulic conductivity:
+
+.. math:: K = \kappa \rho g / \mu = 9.67*10^{-6} \frac{m}{s}
+
+         \frac{Q}{A} = \frac{1.95*10^{-2}}{998.2} \frac{kg/s/m^2}{kg/m^3} = 9.76*10^{-6} \frac{m}{s}
+
+**Pressure p(x,z)** = 
+:math:`[ h(x) - z ]\rho g`
+
+Tables are the one weakness in reStructured text, but they are 
+reasonable.  We will autogenerate these from the results of the
+Amanzi run and the analytic solution calculations.
+
+
+Plot the solutions
+~~~~~~~~~~~~~~~~~~
+
+.. plot:: prototype/steady-linear/amanzi_steady_linear.py
+
+.. include:: table_values.txt
