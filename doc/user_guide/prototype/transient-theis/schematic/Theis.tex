@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[convert={density=100,outext=.png}]{standalone}
 \usepackage{tikz}
 \usetikzlibrary{arrows,patterns}
 
@@ -32,10 +32,10 @@
 \pgfusepath{stroke}
    }
 \begin{document}
-
 \begin{tikzpicture}
 \tikzstyle{myarrows}=[line width=1mm,-triangle 45,postaction={draw, line width=3mm, shorten >=4mm, -}]
 \tikzstyle{normarrow}=[line width=.25mm,-triangle 45,postaction={draw, line width=1mm }]
+	\draw[fill=white] (-7,-8.5) rectangle (7,4);
 	%Draws the top of the subsurface i.e. above the confined aquifer
 	\draw[draw = none, pattern = custom north west lines,hatchspread=12pt] (-6,-8) rectangle (.5,-5);
 	\draw[draw=none,pattern=custom north west lines,hatchspread=12pt] (6,-8) rectangle (.5,-5);
@@ -80,6 +80,8 @@
 	\draw[very thick] (-6,-.8)--(-.5,-.8); 
 	\draw [very thick](.5,-.8) -- (2.5,-.8);
 	\draw [very thick] (3,-.8) -- (6,-.8) node[anchor=south] {$h(r,0)$};
+        \draw [normarrow] (-4,-3) -- (-2,-3);
+        \draw (-5,-3) node {Draw down}; 
 
 	%Attributes of the confined aquifer (arrow and fill pattern)
 	\draw[myarrows] (-3.5,-7)--(-1,-7) ;
@@ -90,4 +92,5 @@
 	\draw [normarrow] (.5,.5) -- (4,.5) node [anchor=west] {$r$};
 	
 \end{tikzpicture}
+
 \end{document}

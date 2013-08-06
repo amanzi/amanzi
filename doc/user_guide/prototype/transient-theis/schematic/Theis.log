@@ -1,6 +1,6 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.6.6)  1 AUG 2013 11:14
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.6.6)  6 AUG 2013 15:12
 entering extended mode
- restricted \write18 enabled.
+ \write18 enabled.
  %&-line parsing enabled.
 **Theis.tex
 (./Theis.tex
@@ -13,64 +13,79 @@ ngolian2a, mongolian, bokmal, nynorsk, romanian, irish, coptic, serbian, turkis
 h, welsh, esperanto, uppersorbian, estonian, indonesian, interlingua, icelandic
 , kurmanji, slovenian, polish, portuguese, spanish, galician, catalan, swedish,
  loaded.
+(/packages/share/texmf.local/tex/latex/standalone/standalone.cls
+Document Class: standalone 2012/09/15 v1.1b Class to compile TeX sub-files stan
+dalone
+(/packages/share/texmf.local/tex/latex/oberdiek/ifluatex.sty
+Package: ifluatex 2010/03/01 v1.3 Provides the ifluatex switch (HO)
+Package ifluatex Info: LuaTeX not detected.
+)
+(/packages/share/texmf.local/tex/latex/oberdiek/ifpdf.sty
+Package: ifpdf 2011/01/30 v2.3 Provides the ifpdf switch (HO)
+Package ifpdf Info: pdfTeX in PDF mode is detected.
+)
+(/usr/share/texmf-texlive/tex/generic/ifxetex/ifxetex.sty
+Package: ifxetex 2009/01/23 v0.5 Provides ifxetex conditional
+)
+(/usr/share/texmf-texlive/tex/latex/xkeyval/xkeyval.sty
+Package: xkeyval 2008/08/13 v2.6a package option processing (HA)
+
+(/usr/share/texmf-texlive/tex/generic/xkeyval/xkeyval.tex
+\XKV@toks=\toks14
+\XKV@tempa@toks=\toks15
+\XKV@depth=\count79
+File: xkeyval.tex 2008/08/13 v2.6a key=value parser (HA)
+
+(/usr/share/texmf-texlive/tex/generic/xkeyval/keyval.tex)))
+\sa@internal=\count80
+
+(/packages/share/texmf.local/tex/latex/standalone/standalone.cfg
+File: standalone.cfg 2012/09/15 v1.1b Default configuration file for 'standalon
+e' class
+)
 (/usr/share/texmf-texlive/tex/latex/base/article.cls
 Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
 (/usr/share/texmf-texlive/tex/latex/base/size10.clo
 File: size10.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
 )
-\c@part=\count79
-\c@section=\count80
-\c@subsection=\count81
-\c@subsubsection=\count82
-\c@paragraph=\count83
-\c@subparagraph=\count84
-\c@figure=\count85
-\c@table=\count86
+\c@part=\count81
+\c@section=\count82
+\c@subsection=\count83
+\c@subsubsection=\count84
+\c@paragraph=\count85
+\c@subparagraph=\count86
+\c@figure=\count87
+\c@table=\count88
 \abovecaptionskip=\skip41
 \belowcaptionskip=\skip42
 \bibindent=\dimen102
 )
-(/usr/share/texmf/tex/latex/pgf/frontendlayer/tikz.sty
-(/usr/share/texmf/tex/latex/pgf/basiclayer/pgf.sty
-(/usr/share/texmf/tex/latex/pgf/utilities/pgfrcs.sty
-(/usr/share/texmf/tex/generic/pgf/utilities/pgfutil-common.tex
-\pgfutil@everybye=\toks14
-)
-(/usr/share/texmf/tex/generic/pgf/utilities/pgfutil-latex.def
-\pgfutil@abb=\box26
+\sa@box=\box26
+runsystem(pdflatex  -shell-escape  -jobname 'Theis' '\expandafter\def\csname sa
+@internal@run\endcsname{1}\input{Theis}')...executed.
 
-(/usr/share/texmf-texlive/tex/latex/ms/everyshi.sty
-Package: everyshi 2001/05/15 v3.00 EveryShipout Package (MS)
-))
-(/usr/share/texmf/tex/generic/pgf/utilities/pgfrcs.code.tex
-Package: pgfrcs 2010/10/25 v2.10 (rcs-revision 1.24)
-))
-Package: pgf 2008/01/15 v2.10 (rcs-revision 1.12)
+runsystem(convert -density 100 Theis.pdf  -quality 90 Theis.png)...executed.
 
-(/usr/share/texmf/tex/latex/pgf/basiclayer/pgfcore.sty
-(/usr/share/texmf-texlive/tex/latex/graphics/graphicx.sty
-Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
 
-(/usr/share/texmf-texlive/tex/latex/graphics/keyval.sty
-Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
-\KV@toks@=\toks15
-)
-(/usr/share/texmf-texlive/tex/latex/graphics/graphics.sty
-Package: graphics 2009/02/05 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+Class standalone:
+Output written on Theis.png.
+ ) ) 
+Here is how much of TeX's memory you used:
+ 671 strings out of 493911
+ 10262 string characters out of 1155273
+ 57697 words of memory out of 3000000
+ 3996 multiletter control sequences out of 15000+50000
+ 3640 words of font info for 14 fonts, out of 3000000 for 9000
+ 706 hyphenation exceptions out of 8191
+ 34i,1n,56p,185b,43s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-(/usr/share/texmf-texlive/tex/latex/graphics/trig.sty
-Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
-)
-(/etc/texmf/tex/latex/config/graphics.cfg
-File: graphics.cfg 2009/08/28 v1.8 graphics configuration of TeX Live
-)
-Package graphics Info: Driver file: pdftex.def on input line 91.
+No pages of output.
+PDF statistics:
+ 0 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
-(/usr/share/texmf-texlive/tex/latex/pdftex-def/pdftex.def
-File: pdftex.def 2010/03/12 v0.04p Graphics/color for pdfTeX
-\Gread@gobject=\count87
-))
-\Gin@req@height=\dimen103
+men103
 \Gin@req@width=\dimen104
 )
 (/usr/share/texmf/tex/latex/pgf/systemlayer/pgfsys.sty
@@ -78,11 +93,11 @@ File: pdftex.def 2010/03/12 v0.04p Graphics/color for pdfTeX
 Package: pgfsys 2010/06/30 v2.10 (rcs-revision 1.37)
 
 (/usr/share/texmf/tex/generic/pgf/utilities/pgfkeys.code.tex
-\pgfkeys@pathtoks=\toks16
-\pgfkeys@temptoks=\toks17
+\pgfkeys@pathtoks=\toks17
+\pgfkeys@temptoks=\toks18
 
 (/usr/share/texmf/tex/generic/pgf/utilities/pgfkeysfiltered.code.tex
-\pgfkeys@tmptoks=\toks18
+\pgfkeys@tmptoks=\toks19
 ))
 \pgf@x=\dimen105
 \pgf@y=\dimen106
@@ -94,10 +109,10 @@ Package: pgfsys 2010/06/30 v2.10 (rcs-revision 1.37)
 \pgf@yc=\dimen112
 \w@pgf@writea=\write3
 \r@pgf@reada=\read1
-\c@pgf@counta=\count88
-\c@pgf@countb=\count89
-\c@pgf@countc=\count90
-\c@pgf@countd=\count91
+\c@pgf@counta=\count90
+\c@pgf@countb=\count91
+\c@pgf@countc=\count92
+\c@pgf@countd=\count93
 
 (/usr/share/texmf/tex/generic/pgf/systemlayer/pgf.cfg
 File: pgf.cfg 2008/05/14  (rcs-revision 1.7)
@@ -112,8 +127,8 @@ File: pgfsys-common-pdf.def 2008/05/19  (rcs-revision 1.10)
 )))
 (/usr/share/texmf/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.tex
 File: pgfsyssoftpath.code.tex 2008/07/18  (rcs-revision 1.7)
-\pgfsyssoftpath@smallbuffer@items=\count92
-\pgfsyssoftpath@bigbuffer@items=\count93
+\pgfsyssoftpath@smallbuffer@items=\count94
+\pgfsyssoftpath@bigbuffer@items=\count95
 )
 (/usr/share/texmf/tex/generic/pgf/systemlayer/pgfsysprotocol.code.tex
 File: pgfsysprotocol.code.tex 2006/10/16  (rcs-revision 1.4)
@@ -143,11 +158,11 @@ Package: pgfcore 2010/04/11 v2.10 (rcs-revision 1.7)
 (/usr/share/texmf/tex/generic/pgf/math/pgfmathutil.code.tex)
 (/usr/share/texmf/tex/generic/pgf/math/pgfmathparser.code.tex
 \pgfmath@dimen=\dimen113
-\pgfmath@count=\count94
-\pgfmath@box=\box27
-\pgfmath@toks=\toks19
-\pgfmath@stack@operand=\toks20
-\pgfmath@stack@operation=\toks21
+\pgfmath@count=\count96
+\pgfmath@box=\box28
+\pgfmath@toks=\toks20
+\pgfmath@stack@operand=\toks21
+\pgfmath@stack@operation=\toks22
 )
 (/usr/share/texmf/tex/generic/pgf/math/pgfmathfunctions.code.tex
 (/usr/share/texmf/tex/generic/pgf/math/pgfmathfunctions.basic.code.tex)
@@ -158,7 +173,7 @@ Package: pgfcore 2010/04/11 v2.10 (rcs-revision 1.7)
 (/usr/share/texmf/tex/generic/pgf/math/pgfmathfunctions.round.code.tex)
 (/usr/share/texmf/tex/generic/pgf/math/pgfmathfunctions.misc.code.tex)))
 (/usr/share/texmf/tex/generic/pgf/math/pgfmathfloat.code.tex
-\c@pgfmathroundto@lastzeros=\count95
+\c@pgfmathroundto@lastzeros=\count97
 ))
 (/usr/share/texmf/tex/generic/pgf/basiclayer/pgfcorepoints.code.tex
 File: pgfcorepoints.code.tex 2010/04/09  (rcs-revision 1.20)
@@ -189,10 +204,10 @@ File: pgfcorepathusage.code.tex 2008/04/22  (rcs-revision 1.12)
 )
 (/usr/share/texmf/tex/generic/pgf/basiclayer/pgfcorescopes.code.tex
 File: pgfcorescopes.code.tex 2010/09/08  (rcs-revision 1.34)
-\pgfpic=\box28
-\pgf@hbox=\box29
-\pgf@layerbox@main=\box30
-\pgf@picture@serial@count=\count96
+\pgfpic=\box29
+\pgf@hbox=\box30
+\pgf@layerbox@main=\box31
+\pgf@picture@serial@count=\count98
 )
 (/usr/share/texmf/tex/generic/pgf/basiclayer/pgfcoregraphicstate.code.tex
 File: pgfcoregraphicstate.code.tex 2008/04/22  (rcs-revision 1.9)
@@ -219,14 +234,14 @@ File: pgfcorearrows.code.tex 2008/04/23  (rcs-revision 1.11)
 (/usr/share/texmf/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
 File: pgfcoreshade.code.tex 2008/11/23  (rcs-revision 1.13)
 \pgf@max=\dimen136
-\pgf@sys@shading@range@num=\count97
+\pgf@sys@shading@range@num=\count99
 )
 (/usr/share/texmf/tex/generic/pgf/basiclayer/pgfcoreimage.code.tex
 File: pgfcoreimage.code.tex 2010/03/25  (rcs-revision 1.16)
 
 (/usr/share/texmf/tex/generic/pgf/basiclayer/pgfcoreexternal.code.tex
 File: pgfcoreexternal.code.tex 2010/09/01  (rcs-revision 1.17)
-\pgfexternal@startupbox=\box31
+\pgfexternal@startupbox=\box32
 ))
 (/usr/share/texmf/tex/generic/pgf/basiclayer/pgfcorelayers.code.tex
 File: pgfcorelayers.code.tex 2010/08/27  (rcs-revision 1.2)
@@ -239,7 +254,7 @@ File: pgfcorepatterns.code.tex 2009/07/02  (rcs-revision 1.3)
 )))
 (/usr/share/texmf/tex/generic/pgf/modules/pgfmoduleshapes.code.tex
 File: pgfmoduleshapes.code.tex 2010/09/09  (rcs-revision 1.13)
-\pgfnodeparttextbox=\box32
+\pgfnodeparttextbox=\box33
 )
 (/usr/share/texmf/tex/generic/pgf/modules/pgfmoduleplot.code.tex
 File: pgfmoduleplot.code.tex 2010/10/22  (rcs-revision 1.8)
@@ -259,15 +274,15 @@ Package: pgfcomp-version-1-18 2007/07/23 v2.10 (rcs-revision 1.1)
 Package: pgffor 2010/03/23 v2.10 (rcs-revision 1.18)
 \pgffor@iter=\dimen139
 \pgffor@skip=\dimen140
-\pgffor@stack=\toks22
-\pgffor@toks=\toks23
+\pgffor@stack=\toks23
+\pgffor@toks=\toks24
 ))
 (/usr/share/texmf/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
 Package: tikz 2010/10/13 v2.10 (rcs-revision 1.76)
 
 (/usr/share/texmf/tex/generic/pgf/libraries/pgflibraryplothandlers.code.tex
 File: pgflibraryplothandlers.code.tex 2010/05/31 v2.10 (rcs-revision 1.15)
-\pgf@plot@mark@count=\count98
+\pgf@plot@mark@count=\count100
 \pgfplotmarksize=\dimen141
 )
 \tikz@lastx=\dimen142
@@ -276,20 +291,20 @@ File: pgflibraryplothandlers.code.tex 2010/05/31 v2.10 (rcs-revision 1.15)
 \tikz@lastysaved=\dimen145
 \tikzleveldistance=\dimen146
 \tikzsiblingdistance=\dimen147
-\tikz@figbox=\box33
-\tikz@tempbox=\box34
-\tikztreelevel=\count99
-\tikznumberofchildren=\count100
-\tikznumberofcurrentchild=\count101
-\tikz@fig@count=\count102
+\tikz@figbox=\box34
+\tikz@tempbox=\box35
+\tikztreelevel=\count101
+\tikznumberofchildren=\count102
+\tikznumberofcurrentchild=\count103
+\tikz@fig@count=\count104
 
 (/usr/share/texmf/tex/generic/pgf/modules/pgfmodulematrix.code.tex
 File: pgfmodulematrix.code.tex 2010/08/24  (rcs-revision 1.4)
-\pgfmatrixcurrentrow=\count103
-\pgfmatrixcurrentcolumn=\count104
-\pgf@matrix@numberofcolumns=\count105
+\pgfmatrixcurrentrow=\count105
+\pgfmatrixcurrentcolumn=\count106
+\pgf@matrix@numberofcolumns=\count107
 )
-\tikz@expandcount=\count106
+\tikz@expandcount=\count108
 
 (/usr/share/texmf/tex/generic/pgf/frontendlayer/tikz/libraries/tikzlibrarytopat
 hs.code.tex
@@ -332,37 +347,32 @@ LaTeX Font Info:    ... okay on input line 34.
  ABD: EveryShipout initializing macros
 (/usr/share/texmf-texlive/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count107
+\scratchcounter=\count109
 \scratchdimen=\dimen149
-\scratchbox=\box35
-\nofMPsegments=\count108
-\nofMParguments=\count109
-\everyMPshowfont=\toks24
-\MPscratchCnt=\count110
+\scratchbox=\box36
+\nofMPsegments=\count110
+\nofMParguments=\count111
+\everyMPshowfont=\toks25
+\MPscratchCnt=\count112
 \MPscratchDim=\dimen150
-\MPnumerator=\count111
-\everyMPtoPDFconversion=\toks25
+\MPnumerator=\count113
+\everyMPtoPDFconversion=\toks26
 )
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 48.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 48.
-
-Overfull \hbox (37.29355pt too wide) in paragraph at lines 92--93
-[][] 
- []
-
-[1
+ [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] (./Theis.aux) ) 
 Here is how much of TeX's memory you used:
- 9754 strings out of 493911
- 191614 string characters out of 1155273
- 239485 words of memory out of 3000000
- 12868 multiletter control sequences out of 15000+50000
+ 10197 strings out of 493911
+ 199477 string characters out of 1155273
+ 254758 words of memory out of 3000000
+ 13288 multiletter control sequences out of 15000+50000
  3640 words of font info for 14 fonts, out of 3000000 for 9000
  706 hyphenation exceptions out of 8191
- 56i,6n,55p,427b,613s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 57i,7n,56p,483b,623s stack positions out of 5000i,500n,10000p,200000b,50000s
 </usr/share
 /texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texl
 ive/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texmf-texlive/fonts/ty
@@ -370,7 +380,7 @@ pe1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/public/a
 msfonts/cm/cmr5.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cm
 r7.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></us
 r/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on Theis.pdf (1 page, 69262 bytes).
+Output written on Theis.pdf (1 page, 70062 bytes).
 PDF statistics:
  39 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
