@@ -2341,12 +2341,17 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
     // read the minerals
     //
     
-    Teuchos::Array<std::string> minerals;
-    if (plist->sublist("Phase Definitions").isSublist("Solid")) {
-      minerals = plist->sublist("Phase Definitions").sublist("Solid")
-	.get<Teuchos::Array<std::string> >("Minerals");
-      chem_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
+    // Teuchos::Array<std::string> minerals;
+    // if (plist->sublist("Phase Definitions").isSublist("Solid")) {
+    //minerals = plist->sublist("Phase Definitions").sublist("Solid")
+    // .get<Teuchos::Array<std::string> >("Minerals");
+    if (mineral_names_.size() > 0) {
+      chem_list.set<Teuchos::Array<std::string> >("Minerals", mineral_names_);
     }
+    if (sorption_site_names_.size() > 0) {
+      chem_list.set<Teuchos::Array<std::string> >("Sorption Sites", sorption_site_names_);
+    }
+
     chem_list.set<int>("Number of component concentrations", comp_names.size() );
 
     //
@@ -2374,7 +2379,7 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 	}
       } 
 
-      if (minerals.size() > 0) {
+      if (mineral_names_.size() > 0) {
 	double mvf(0.0), msa(0.0);
 
 	// mineral volume fractions
@@ -2399,20 +2404,20 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 	    .set<std::string>("component","cell")
 	    .sublist("function");
 	  
-	  aux1_list.set<int>("Number of DoFs", minerals.size())
+	  aux1_list.set<int>("Number of DoFs", mineral_names_.size())
 	    .set("Function type", "composite function");
 	  
-	  aux2_list.set<int>("Number of DoFs", minerals.size())
+	  aux2_list.set<int>("Number of DoFs", mineral_names_.size())
 	    .set("Function type", "composite function");	
 	  
-	  for (int j = 0; j<minerals.size(); ++j) {
+	  for (int j = 0; j<mineral_names_.size(); ++j) {
 	    std::stringstream ss;
 	    ss << "DoF " << j+1 << " Function";
 	    
-	    mvf = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(minerals[j])
+	    mvf = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(mineral_names_[j])
 	      .get<double>("Volume Fraction");
 	    
-	    msa = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(minerals[j])
+	    msa = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(mineral_names_[j])
 	      .get<double>("Specific Surface Area");
 	    
 	    aux1_list.sublist(ss.str()).sublist("function-constant")
@@ -2580,6 +2585,42 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 
       }
 
+      if (sorption_site_names_.size() > 0) {
+
+	
+
+	Teuchos::ParameterList & sorption_sites_ic = chem_ic.sublist("sorption_sites");
+
+	Teuchos::ParameterList & sorption_sites_list = matprop_list.sublist(matprop_list.name(i)).sublist("Surface Complexation Sites");
+	  
+	for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
+	  
+	  Teuchos::ParameterList & aux1_list = 
+	    sorption_sites_ic.sublist("function").sublist(*ir)
+	    .set<std::string>("region",*ir)
+	    .set<std::string>("component","cell")
+	    .sublist("function");	  	
+	  
+	  aux1_list.set<int>("Number of DoFs", sorption_site_names_.size())
+	    .set("Function type", "composite function");		
+	  
+	  for ( int ic = 0; ic != sorption_site_names_.size(); ++ic) {
+	    
+	    std::stringstream ss;
+	    ss << "DoF " << ic + 1 << " Function";
+	    
+	    double value(0.0);
+	    if (sorption_sites_list.isSublist(sorption_site_names_[ic])) {
+	      value = sorption_sites_list.sublist(sorption_site_names_[ic]).get<double>("Site Density",0.0);
+	    }
+	    
+	    aux1_list.sublist(ss.str()).sublist("function-constant")
+	      .set<double>("value", value);  	  
+	    
+	  }
+	}
+      }
+      
     }
   }
   return chem_list;

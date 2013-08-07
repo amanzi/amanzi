@@ -155,6 +155,12 @@ void Chemistry_State::ParseMeshBlocks_() {
     using_sorption_isotherms_ = true;
   }
 
+  if (plist_.sublist("initial conditions").isSublist("sorption_sites")) {
+    using_sorption_ = true;
+    Teuchos::Array<std::string> ss_names_ = plist_.get<Teuchos::Array<std::string> >("Sorption Sites");
+    number_of_sorption_sites_ = ss_names_.size();
+  }
+
 
   // const std::string block_key("Mesh block ");
   // // loop through the state parameter list looking for mesh blocks
