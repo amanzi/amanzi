@@ -147,20 +147,7 @@ void MPC::mpc_init() {
 
   S->Initialize();
  
-  if (chemistry_enabled) {
-    try {
-      Teuchos::ParameterList chemistry_parameter_list =
-	parameter_list.sublist("Chemistry");
-      CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
-      CPK->InitializeChemistry();
-    } catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
-      std::ostringstream error_message;
-      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
-      error_message << chem_error.what();
-      Errors::Message message(error_message.str());
-      Exceptions::amanzi_throw(message);
-    }   
-  }
+
 
   if (transport_enabled) {
     Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
@@ -188,7 +175,20 @@ void MPC::mpc_init() {
     FPK->InitPK();
   }
 
- 
+  if (chemistry_enabled) {
+    try {
+      Teuchos::ParameterList chemistry_parameter_list =
+	parameter_list.sublist("Chemistry");
+      CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
+      CPK->InitializeChemistry();
+    } catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
+      std::ostringstream error_message;
+      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+      error_message << chem_error.what();
+      Errors::Message message(error_message.str());
+      Exceptions::amanzi_throw(message);
+    }   
+  } 
   // done creating auxilary state objects and  process models
 
 
@@ -525,9 +525,7 @@ void MPC::cycle_driver() {
                (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
 	       (flow_model == std::string("Richards") ) ) ) ) {
           flow_dT = FPK->CalculateFlowDt();
-	  
-	  std::cout << flow_dT << std::endl; 
-        }
+	}
       }
       Amanzi::timer_manager.stop("Flow PK");
 
@@ -693,7 +691,8 @@ void MPC::cycle_driver() {
 
         if (chemistry_enabled) {
           // first store the chemistry state
-          chem_data_->store(CS->free_ion_species(),
+
+	  chem_data_->store(CS->free_ion_species(),
                             CS->primary_activity_coeff(),
                             CS->secondary_activity_coeff(),
                             CS->mineral_volume_fractions(),
@@ -803,6 +802,7 @@ void MPC::cycle_driver() {
             }
 	    
             // restore chemistry data to the beginning of the subcycling
+
             chem_data_->retrieve(CS->free_ion_species(),
                                  CS->primary_activity_coeff(),
                                  CS->secondary_activity_coeff(),
@@ -816,7 +816,7 @@ void MPC::cycle_driver() {
                                  CS->isotherm_kd(),
                                  CS->isotherm_freundlich_n(),
                                  CS->isotherm_langmuir_b());
-	    
+
             // restore the total component concentration to the beginning of chemistry subcycling
 	    *S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
 	      = *tcc_stor;		

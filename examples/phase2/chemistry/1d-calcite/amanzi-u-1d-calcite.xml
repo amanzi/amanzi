@@ -249,6 +249,8 @@
   </ParameterList>
 
   <ParameterList name="Chemistry">
+   <Parameter name="Verbosity" type="Array(string)" value="{verbose, warning, error}"/>
+
     <ParameterList name="Thermodynamic Database">
        <Parameter name="Format" type="string" value="simple" />
        <Parameter name="File" type="string" value="calcite.bgd" />

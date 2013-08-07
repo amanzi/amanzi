@@ -115,8 +115,12 @@ class Chemistry_State : public PK_State {
   }
 
   Teuchos::RCP<Epetra_MultiVector> total_sorbed() {
-    return S_->GetFieldData("total_sorbed", name_)
+    if (using_sorption_ > 0) {    
+      return S_->GetFieldData("total_sorbed", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    }
   }
 
   int number_of_ion_exchange_sites(void) const {
@@ -124,13 +128,21 @@ class Chemistry_State : public PK_State {
   }
 
   Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites() {
-    return S_->GetFieldData("ion_exchange_sites", name_)
+    if (number_of_ion_exchange_sites_ > 0) {
+      return S_->GetFieldData("ion_exchange_sites", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    }
   }
 
   Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc() {
-    return S_->GetFieldData("ion_exchange_ref_cation_conc", name_)
+    if (number_of_ion_exchange_sites_ > 0) {
+      return S_->GetFieldData("ion_exchange_ref_cation_conc", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    } 
   }
 
   int number_of_sorption_sites(void) const {
@@ -138,13 +150,21 @@ class Chemistry_State : public PK_State {
   }
 
   Teuchos::RCP<Epetra_MultiVector> sorption_sites() {
-    return S_->GetFieldData("sorption_sites", name_)
+    if (number_of_sorption_sites_ > 0) {
+      return S_->GetFieldData("sorption_sites", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    }
   }
 
   Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc() {
-    return S_->GetFieldData("surface_complex_free_site_conc", name_)
+    if (number_of_sorption_sites_ > 0) {    
+      return S_->GetFieldData("surface_complex_free_site_conc", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    } 
   }
 
 
@@ -154,18 +174,30 @@ class Chemistry_State : public PK_State {
 
 
   Teuchos::RCP<Epetra_MultiVector> isotherm_kd() {
-    return S_->GetFieldData("isotherm_kd", name_)
+    if (using_sorption_isotherms_) {
+      return S_->GetFieldData("isotherm_kd", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    }
   }
 
   Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n() {
-    return S_->GetFieldData("isotherm_freundlich_n", name_)
+    if (using_sorption_isotherms_) {
+      return S_->GetFieldData("isotherm_freundlich_n", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    }
   }
 
-    Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b() {
-    return S_->GetFieldData("isotherm_langmuir_b", name_)
+  Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b() {
+    if (using_sorption_isotherms_) {
+      return S_->GetFieldData("isotherm_langmuir_b", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    }
   }
 
 
