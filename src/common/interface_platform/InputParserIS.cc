@@ -2331,11 +2331,118 @@ Teuchos::ParameterList create_Verbosity_List(const std::string& vlevel) {
  * Empty
  ****************************************************************** */
 Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
-  Teuchos::ParameterList chemistry_list;
+  Teuchos::ParameterList chem_list;
   if ( plist->isSublist("Chemistry") ) {
-    chemistry_list = plist->sublist("Chemistry");
+    chem_list = plist->sublist("Chemistry");
+
+    Teuchos::ParameterList & chem_ic = chem_list.sublist("initial conditions");
+
+    //
+    // read the minerals
+    //
+    Teuchos::Array<std::string> minerals = plist->sublist("Phase Definitions").sublist("Solid")
+      .get<Teuchos::Array<std::string> >("Minerals");
+
+    chem_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
+    chem_list.set<int>("Number of component concentrations", comp_names.size() );
+
+    //
+    // --- region specific initial conditions 
+    //
+    std::map<std::string,int> region_to_matid;
+    std::map<int,std::string> matid_to_material;
+    int matid_ctr = 0;
+    // loop over the material properties
+    Teuchos::ParameterList& matprop_list = plist->sublist("Material Properties");
+    for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
+      // get the regions
+      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
+      
+      // record the material ID for each region that this material occupies
+      matid_ctr++;
+      for (int ii=0; ii<regions.size(); ii++) {
+	if (region_to_matid.find(regions[ii]) == region_to_matid.end()) {
+	  region_to_matid[regions[ii]] = matid_ctr;
+	  matid_to_material[matid_ctr] = matprop_list.name(i);
+	} else {
+	  std::stringstream ss;
+	  ss << "There is more than one material assinged to region " << regions[ii] << ".";
+	  Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+	}
+      } 
+      
+      double mvf(0.0), msa(0.0);
+
+      // mineral volume fractions
+      Teuchos::ParameterList &mineral_volfrac_ic = chem_ic.sublist("mineral_volume_fractions");
+      // mineral specific surface area
+      Teuchos::ParameterList &mineral_surfarea_ic = chem_ic.sublist("mineral_specific_surface_area");
+
+      for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
+
+	// mineral volume fractions and specific surface area
+
+	Teuchos::ParameterList & aux1_list = 
+	  mineral_volfrac_ic.sublist("function").sublist(*ir)
+	  .set<std::string>("region",*ir)
+	  .set<std::string>("component","cell")
+	  .sublist("function");
+
+	Teuchos::ParameterList & aux2_list = 
+	  mineral_surfarea_ic.sublist("function").sublist(*ir)
+	  .set<std::string>("region",*ir)
+	  .set<std::string>("component","cell")
+	  .sublist("function");
+	
+	aux1_list.set<int>("Number of DoFs", minerals.size())
+	  .set("Function type", "composite function");
+
+	aux2_list.set<int>("Number of DoFs", minerals.size())
+	  .set("Function type", "composite function");	
+	
+	for (int j = 0; j<minerals.size(); ++j) {
+	  std::stringstream ss;
+	  ss << "DoF " << j+1 << " Function";
+	  
+	  mvf = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(minerals[j])
+	    .get<double>("Volume Fraction");
+
+	  msa = matprop_list.sublist(matprop_list.name(i)).sublist("Mineralogy").sublist(minerals[j])
+	    .get<double>("Specific Surface Area");
+
+	  aux1_list.sublist(ss.str()).sublist("function-constant")
+	    .set<double>("value", mvf);
+
+	  aux2_list.sublist(ss.str()).sublist("function-constant")
+	    .set<double>("value", msa);
+	  
+	}
+      }
+
+      
+      Teuchos::ParameterList &free_ion_species_ic = chem_ic.sublist("free_ion_species");
+      for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
+	Teuchos::ParameterList & aux1_list = 
+	  free_ion_species_ic.sublist("function").sublist(*ir)
+	  .set<std::string>("region",*ir)
+	  .set<std::string>("component","cell")
+	  .sublist("function");
+	
+	aux1_list.set<int>("Number of DoFs", comp_names.size())
+	  .set("Function type", "composite function");	
+
+	for (int j = 0; j<comp_names.size(); ++j) {	
+	  std::stringstream ss;
+	  ss << "DoF " << j+1 << " Function";
+	  aux1_list.sublist(ss.str()).sublist("function-constant")
+	    .set<double>("value", 1.0e-9);  // this should be read from the input file... TODO
+	}
+	  
+      }
+
+    }
   }
-  return chemistry_list;
+  return chem_list;
 }  // end CreateChemistryList()
 
 

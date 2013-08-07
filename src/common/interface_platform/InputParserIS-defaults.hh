@@ -35,7 +35,7 @@
 #define ST_NONLIN_INIT_GUESS_EXTR_ORD   1
 #define ST_NONLIN_INIT_TS_FACTOR        1.0
 #define ST_NONLIN_INIT_TS_FACTOR_DAMP   1.0
-#define ST_PRECOND                      "Hypre AMG"
+#define ST_PRECOND                      "Trilinos ML" //"Hypre AMG"
 #define ST_SOLVER                       "AztecOO"
 #define ST_INIT_DARCY_BOOL              true
 #define ST_DIVERG_FACT                  1000.0
