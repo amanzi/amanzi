@@ -2461,27 +2461,124 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 	    .set("Function type", "composite function");	
 	  
 	  aux1_list.sublist("DoF 1 Function").sublist("function-constant")
-	    .set<double>("value", cec);  // this should be read from the input file??... TODO
+	    .set<double>("value", cec);  
+	}
+
+
+	Teuchos::ParameterList &ion_exchange_ref_cation_conc_ic = chem_ic.sublist("ion_exchange_ref_cation_conc");
+	for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
+	  Teuchos::ParameterList & aux1_list = 
+	    ion_exchange_ref_cation_conc_ic.sublist("function").sublist(*ir)
+	    .set<std::string>("region",*ir)
+	    .set<std::string>("component","cell")
+	    .sublist("function");
+	  
+	  // this needs to be more general... for now we initialize with one DoF
+	  aux1_list.set<int>("Number of DoFs", 1) 
+	    .set("Function type", "composite function");	
+	  
+	  aux1_list.sublist("DoF 1 Function").sublist("function-constant")
+	    .set<double>("value", 1.0);  // this should be read from the input file??... TODO
+	}
+      }
+
+      if ( matprop_list.sublist(matprop_list.name(i)).isSublist("Sorption Isotherms")) {
+
+	Teuchos::ParameterList & isotherm_kd_ic = chem_ic.sublist("isotherm_kd");	
+	Teuchos::ParameterList & isotherm_langmuir_b_ic = chem_ic.sublist("isotherm_langmuir_b");
+	Teuchos::ParameterList & isotherm_freundlich_n_ic = chem_ic.sublist("isotherm_freundlich_n");
+
+	Teuchos::ParameterList & sorption_isotherms_list = matprop_list.sublist(matprop_list.name(i)).sublist("Sorption Isotherms");
+	  
+	for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
+	  
+	  // Kd 
+	  
+	  {
+	    Teuchos::ParameterList & aux1_list = 
+	      isotherm_kd_ic.sublist("function").sublist(*ir)
+	      .set<std::string>("region",*ir)
+	      .set<std::string>("component","cell")
+	      .sublist("function");	  	
+	  
+	    aux1_list.set<int>("Number of DoFs", comp_names.size())
+	      .set("Function type", "composite function");		
+	    
+	    for ( int ic = 0; ic != comp_names.size(); ++ic) {
+	      
+	      std::stringstream ss;
+	      ss << "DoF " << ic + 1 << " Function";
+	      
+	      double kd(0.0);
+	      if (sorption_isotherms_list.isSublist(comp_names[ic])) {
+		kd = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Kd",0.0);
+	      }
+	      
+	      aux1_list.sublist(ss.str()).sublist("function-constant")
+		.set<double>("value", kd);  	  
+	      
+	    }
+	  }
+
+	  // Langmuir
+	  
+	  {
+	    Teuchos::ParameterList & aux2_list = 
+	      isotherm_langmuir_b_ic.sublist("function").sublist(*ir)
+	      .set<std::string>("region",*ir)
+	      .set<std::string>("component","cell")
+	      .sublist("function");	  	
+	    
+	    aux2_list.set<int>("Number of DoFs", comp_names.size())
+	      .set("Function type", "composite function");		
+	    
+	    for ( int ic = 0; ic != comp_names.size(); ++ic) {
+	      
+	      std::stringstream ss;
+	      ss << "DoF " << ic + 1 << " Function";
+	      
+	      double langmuir_b(0.0);
+	      if (sorption_isotherms_list.isSublist(comp_names[ic])) {
+		langmuir_b = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Langmuir b",0.0);
+	      }
+	      
+	      aux2_list.sublist(ss.str()).sublist("function-constant")
+		.set<double>("value", langmuir_b);  	  
+	      
+	    }	  
+	  }
+
+	  // Freundlich
+
+	  {
+	    Teuchos::ParameterList & aux3_list = 
+	      isotherm_freundlich_n_ic.sublist("function").sublist(*ir)
+	      .set<std::string>("region",*ir)
+	      .set<std::string>("component","cell")
+	      .sublist("function");	  	
+	    
+	    aux3_list.set<int>("Number of DoFs", comp_names.size())
+	      .set("Function type", "composite function");		
+	    
+	    for ( int ic = 0; ic != comp_names.size(); ++ic) {
+	      
+	      std::stringstream ss;
+	      ss << "DoF " << ic + 1 << " Function";
+	      
+	      double freundlich_n(1.0);
+	      if (sorption_isotherms_list.isSublist(comp_names[ic])) {
+		freundlich_n = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Freundlich n",1.0);
+	      }
+	      
+	      aux3_list.sublist(ss.str()).sublist("function-constant")
+		.set<double>("value", freundlich_n);  	  
+	      
+	    }	  
+	  }
+
 	}
 
       }
-
-      Teuchos::ParameterList &ion_exchange_ref_cation_conc_ic = chem_ic.sublist("ion_exchange_ref_cation_conc");
-      for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
-	Teuchos::ParameterList & aux1_list = 
-	  ion_exchange_ref_cation_conc_ic.sublist("function").sublist(*ir)
-	  .set<std::string>("region",*ir)
-	  .set<std::string>("component","cell")
-	  .sublist("function");
-	
-	// this needs to be more general... for now we initialize with one DoF
-	aux1_list.set<int>("Number of DoFs", 1) 
-	  .set("Function type", "composite function");	
-
-	aux1_list.sublist("DoF 1 Function").sublist("function-constant")
-	  .set<double>("value", 1.0);  // this should be read from the input file??... TODO
-      }
-
 
     }
   }

@@ -150,6 +150,11 @@ void Chemistry_State::ParseMeshBlocks_() {
     number_of_ion_exchange_sites_ = 1;
   }
 
+  if (plist_.sublist("initial conditions").isSublist("isotherm_kd")) {
+    using_sorption_ = true;
+    using_sorption_isotherms_ = true;
+  }
+
 
   // const std::string block_key("Mesh block ");
   // // loop through the state parameter list looking for mesh blocks
