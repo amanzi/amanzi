@@ -90,100 +90,168 @@ void Unstructured_observations::make_observations(State& state)
 
     std::string label = i->first;
 
-    // make sure that we need to make an observation now
-    if (observation_requested(state.time(), state.last_time(), (i->second).times, (i->second).sps) ||
-        observation_requested(state.cycle(), (i->second).cycles, (i->second).csps ) ) {
-      // we need to make an observation for each variable in the observable
-      std::string var = (i->second).variable;
-
-      // data structure to store the observation
-      Amanzi::ObservationData::DataTriple data_triplet;
-
-      // build the name of the observation
-      std::stringstream ss;
-      ss << label << ", " << var;
-
-      std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label];  //ss.str() ];
-
-      if ((i->second).functional == "Observation Data: Integral")  {
-        if (var == "Water") {
-	  // // must upgrade state to make this work
-          // data_triplet.value = state.water_mass();
-        }
-      } else if ((i->second).functional == "Observation Data: Point") {
+    // we need to make an observation for each variable in the observable
+    std::string var = (i->second).variable;
+    
+    // data structure to store the observation
+    Amanzi::ObservationData::DataTriple data_triplet;
+    
+    // build the name of the observation
+    std::stringstream ss;
+    ss << label << ", " << var;
+    
+    std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label];  //ss.str() ];
+    
+    if ((i->second).functional == "Observation Data: Integral")  {
+      if (var == "Water") {
 	// // must upgrade state to make this work
-	//        data_triplet.value = state.point_value((i->second).region, var);
+	// data_triplet.value = state.water_mass();
       }
-
+    } else if ((i->second).functional == "Observation Data: Point") {
+      
+      unsigned int mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
+								   Amanzi::AmanziMesh::CELL,
+								   Amanzi::AmanziMesh::OWNED);
+      
+      double value(0.0);
+      double volume(0.0);
+      
+      Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
+      
+      state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+					&cell_ids);
+      
+      // check if Aqueous concentration was requested
+      std::string name = var;
+      
+      int pos = name.find("Aqueous concentration");
+      if (pos != string::npos) {
+	var = name.substr(0, pos-1);
+      } else {
+	var = name;
+      }
+      
+      // extract the value if it is a component
+      if (comp_names_.size() > 0) {
+	int comp_index(0);
+	for (comp_index = 0; comp_index != comp_names_.size(); ++comp_index) {
+	  if ( comp_names_[comp_index] == var ) break;
+	}
+	if (comp_index != comp_names_.size() ) {
+	  value = 0.0;
+	  volume = 0.0;
+	  
+	  Teuchos::RCP<const Epetra_MultiVector> total_component_concentration = 
+	    state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
+	  
+	  for (int i=0; i<mesh_block_size; i++) {
+	    int ic = cell_ids[i];
+	    value += (*(*total_component_concentration)(comp_index))[ic] * state.GetMesh()->cell_volume(ic);
+	    
+	    volume += state.GetMesh()->cell_volume(ic);
+	  }
+	}
+      
+      } else if (var == "Volumetric water content") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> porosity = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));	  
+	Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = cell_ids[i];
+	  value += (*porosity)[ic] * (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else if (var == "Gravimetric water content") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
+	double water_density =  *state.GetScalarData("fluid_density");
+	double particle_density(1.0); // does not exist in new state, yet... TODO
+	Teuchos::RCP<const Epetra_Vector> porosity = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = cell_ids[i];
+	  value += (*porosity)[ic] * (*water_saturation)[ic] * water_density 
+	    / ( particle_density * (1.0 - (*porosity)[ic] ) )  * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}    
+      } else if (var == "Aqueous pressure") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> pressure = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = cell_ids[i];
+	  value += (*pressure)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else if (var == "Aqueous saturation") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));	  
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = cell_ids[i];
+	  value += (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}    
+      } else if (var == "Hydraulic Head") {
+	value = 0.0;
+	volume = 0.0;
+	int dim = state.GetMesh()->space_dimension();
+	
+	Teuchos::RCP<const Epetra_Vector> pressure = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
+	double density = *state.GetScalarData("fluid_density");
+	double p_atm = 101325.0;
+	Teuchos::RCP<const Epetra_Vector> gravity = state.GetConstantVectorData("gravity");
+	
+	for (int i=0; i<mesh_block_size; ++i) {
+	  int ic = cell_ids[i];
+	  Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
+	  value += ( (*pressure)[ic] - p_atm ) / ( density * (*gravity)[dim-1]) + p[dim-1];
+	  value *= state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else {
+	std::stringstream ss;
+	ss << "State::point_value: cannot make an observation for variable " << name;
+	Errors::Message m(ss.str().c_str());
+	Exceptions::amanzi_throw(m);
+      }
+      
+      // syncronize the result across processors
+      double result;
+      state.GetMesh()->get_comm()->SumAll(&value,&result,1);
+      
+      double vresult;
+      state.GetMesh()->get_comm()->SumAll(&volume,&vresult,1);
+      
+      data_triplet.value = result/vresult;	
+      
+      
+      
       data_triplet.is_valid = true;
       data_triplet.time = state.time();
-
+      
       od.push_back(data_triplet);
+      
     }
   }
 }
 
-void Unstructured_observations::register_with_time_step_manager(TimeStepManager& TSM) {
-  // loop over all observables
-  for (std::map<std::string, Observable>::const_iterator i = observations.begin();
-       i != observations.end(); i++) {
-    if ((i->second).sps.size() > 0) {
-      for (std::vector<std::vector<double> >::const_iterator j=(i->second).sps.begin();
-           j!=(i->second).sps.end(); ++j) {
-        if (j->size() == 3) {
-          TSM.RegisterTimeEvent((*j)[0], (*j)[1], (*j)[2]);
-        }
-      }
-    }
-    if ((i->second).times.size() > 0) {
-      TSM.RegisterTimeEvent((i->second).times);
-    }
-  }
-}
-
-bool Unstructured_observations::observation_requested(double time, double last_time,
-                                                      const std::vector<double>& T,
-                                                      const std::vector<std::vector<double> >& SPS) {
-  for (int i = 0; i < T.size(); i++)
-    if (Amanzi::near_equal(T[i],time)) {
-      return true;
-    }
-  if (SPS.size() > 0) {
-    for (std::vector<std::vector<double> >::const_iterator i=SPS.begin(); i!=SPS.end(); ++i) {
-      if  ( (Amanzi::near_equal(time,(*i)[0]) || time >= (*i)[0]) && 
-	    (Amanzi::near_equal((*i)[2],-1.0) || time <= (*i)[2] || Amanzi::near_equal(time,(*i)[2]) ) ) {
-        if (Amanzi::near_equal(time,(*i)[0])) {
-	  return true;
-	}
-	double n_per_tmp = (time - (*i)[0])/(*i)[1];
-        double n_periods = floor(n_per_tmp);
-	if (Amanzi::near_equal(n_periods+1.0,n_per_tmp)) n_periods += 1.0;
-        double tmp = (*i)[0] + n_periods*(*i)[1];
-	if (Amanzi::near_equal(time,tmp)) {
-	  return true;
-	}
-      }
-    }
-  }
-  return false;
-}
-
-
-bool Unstructured_observations::observation_requested(int cycle,
-                                                      const std::vector<int>& cyc,
-                                                      const std::vector<std::vector<int> >& isps) {
-  for (int i = 0; i < cyc.size(); i++)
-    if (cyc[i] == cycle) return true;
-  if (isps.size() > 0) {
-    for (std::vector<std::vector<int> >::const_iterator i=isps.begin(); i!=isps.end(); ++i) {
-      if  (cycle >= (*i)[0] && ((*i)[2] == -1 || cycle <= (*i)[2])) {
-        if (  ( cycle-(*i)[0] ) % (*i)[1] == 0 ) return true;
-      }
-    }
-  }
-
-  return false;
-}
 
 
 

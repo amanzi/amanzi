@@ -31,10 +31,6 @@
 
 namespace Amanzi {
 
-  //using amanzi::chemistry::Chemistry_State;
-  //using amanzi::chemistry::Chemistry_PK;
-  //using amanzi::chemistry::ChemistryException;
-
 
 /* *******************************************************************/
 MPC::MPC(Teuchos::ParameterList parameter_list_,
@@ -148,7 +144,6 @@ void MPC::mpc_init() {
   S->Initialize();
  
 
-
   if (transport_enabled) {
     Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
@@ -197,6 +192,12 @@ void MPC::mpc_init() {
   if (parameter_list.isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data");
     observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
+
+    if (mpc_parameter_list.isParameter("component names")) {
+      Teuchos::Array<std::string> comp_names;
+      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+      observations->register_component_names(comp_names.toVector());
+    }
   } else {
     observations = NULL;
   }
@@ -313,16 +314,13 @@ void MPC::cycle_driver() {
   // register visualization times with the time step manager
   visualization->RegisterWithTimeStepManager(TSM);
   // register observation times with the time step manager
-  if (observations) observations->register_with_time_step_manager(*TSM);
+  if (observations) observations->RegisterWithTimeStepManager(TSM);
   // register reset_times
   TSM->RegisterTimeEvent(reset_times_.toVector());
   // if this is an init to steady run, register the switchover time
   if (ti_mode == INIT_TO_STEADY) TSM->RegisterTimeEvent(Tswitch);
   // register the final time
   TSM->RegisterTimeEvent(T1);
-
-  //  TSM->print(cout, 0.0, T1); cout << std::endl;
-
 
   enum time_step_limiter_type {FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS};
   time_step_limiter_type tslimiter;
@@ -456,7 +454,6 @@ void MPC::cycle_driver() {
     Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
     // write visualization data for timestep
     WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
-    //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, true);
   } else {
     //always write the initial visualization dump
     WriteVis(visualization,S.ptr());
@@ -468,8 +465,11 @@ void MPC::cycle_driver() {
 
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
-    if (observations) observations->make_observations(*S);
-
+    if (observations) {
+      if (observations->DumpRequested(S->time(), iter)) {
+	observations->make_observations(*S);
+      }
+    }
     // we need to create an EpetraMulitVector that will store the
     // intermediate value for the total component concentration
     if (chemistry_enabled || transport_enabled) {
@@ -638,10 +638,6 @@ void MPC::cycle_driver() {
           break;
       }
 
-      // DataDebug ddd(mesh_maps);
-      // ddd.write_region_data("Entire Domain",*S->get_pressure(),"pressure");
-      // ddd.write_region_statistics("Entire Domain",*S->get_pressure(),"pressure");
-
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << setprecision(5);
         *out << "Cycle " << iter;
@@ -754,9 +750,7 @@ void MPC::cycle_driver() {
 		
 		*S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
 		  = *total_component_concentration_star;		
-		
-		//S->update_total_component_concentration(CPK->get_total_component_concentration());
-              } else {
+	      } else {
 		if (chemistry_enabled || transport_enabled) {
 		  *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
 		    = *total_component_concentration_star;
@@ -820,7 +814,6 @@ void MPC::cycle_driver() {
             // restore the total component concentration to the beginning of chemistry subcycling
 	    *S->GetFieldData("total_component_concentration","transport")->ViewComponent("cell", true)
 	      = *tcc_stor;		
-	    //S->update_total_component_concentration(*tcc_stor);
             
             // reset the intermediate time to the beginning
             S->set_intermediate_time(S->initial_time());
@@ -842,7 +835,6 @@ void MPC::cycle_driver() {
       // we're done with this time step, commit the state
       // in the process kernels
 
-      // if (flow_enabled) FPK->CommitState(FS);
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
         Amanzi::timer_manager.start("Transport PK");
         if (transport_enabled) TPK->CommitState(TS);
@@ -865,7 +857,11 @@ void MPC::cycle_driver() {
       S->set_cycle(iter);
 
       // make observations
-      if (observations) observations->make_observations(*S);
+      if (observations) {
+	if (observations->DumpRequested(S->time(), iter)) {
+	  observations->make_observations(*S);
+	}
+      } 
 
       // write visualization if requested
       // force a vis dump and checkpoint in certain cases,
@@ -888,13 +884,10 @@ void MPC::cycle_driver() {
 	if (force || visualization->DumpRequested(S->time())) {
 	  WriteVis(visualization,S.ptr());
 	}
-        // write visualization data for timestep if requested
-        //S->write_vis(*visualization, aux, auxnames, chemistry_enabled, force);
       } else {
 	if (force || visualization->DumpRequested(S->time())) {
 	  WriteVis(visualization,S.ptr());
 	}
-        //S->write_vis(*visualization, chemistry_enabled, force);
       }
 
       
@@ -926,10 +919,6 @@ void MPC::cycle_driver() {
     WriteCheckpoint(restart,S.ptr(),S->time());
     Amanzi::timer_manager.stop("I/O");
   }
-
-
-
-
 
 
   // some final output
