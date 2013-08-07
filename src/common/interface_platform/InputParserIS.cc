@@ -2429,24 +2429,7 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 	}
       }
 
-      Teuchos::ParameterList &free_ion_species_ic = chem_ic.sublist("free_ion_species");
-      for (Teuchos::Array<std::string>::const_iterator ir=regions.begin(); ir!=regions.end(); ir++) {
-	Teuchos::ParameterList & aux1_list = 
-	  free_ion_species_ic.sublist("function").sublist(*ir)
-	  .set<std::string>("region",*ir)
-	  .set<std::string>("component","cell")
-	  .sublist("function");
-	
-	aux1_list.set<int>("Number of DoFs", comp_names.size())
-	  .set("Function type", "composite function");	
 
-	for (int j = 0; j<comp_names.size(); ++j) {	
-	  std::stringstream ss;
-	  ss << "DoF " << j+1 << " Function";
-	  aux1_list.sublist(ss.str()).sublist("function-constant")
-	    .set<double>("value", 1.0e-9);  // this should be read from the input file... TODO
-	}
-      }
 
       
       if ( matprop_list.sublist(matprop_list.name(i)).isParameter("Cation Exchange Capacity")) {
@@ -2542,9 +2525,9 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 	      std::stringstream ss;
 	      ss << "DoF " << ic + 1 << " Function";
 	      
-	      double langmuir_b(0.0);
+	      double langmuir_b(1.0);
 	      if (sorption_isotherms_list.isSublist(comp_names[ic])) {
-		langmuir_b = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Langmuir b",0.0);
+		langmuir_b = sorption_isotherms_list.sublist(comp_names[ic]).get<double>("Langmuir b",1.0);
 	      }
 	      
 	      aux2_list.sublist(ss.str()).sublist("function-constant")
@@ -2617,6 +2600,44 @@ Teuchos::ParameterList CreateChemistryList(Teuchos::ParameterList* plist) {
 	    aux1_list.sublist(ss.str()).sublist("function-constant")
 	      .set<double>("value", value);  	  
 	    
+	  }
+	}
+      }
+      
+    }
+
+    
+    Teuchos::ParameterList & ic_list = plist->sublist("Initial Conditions");
+    
+    for (Teuchos::ParameterList::ConstIterator ic = ic_list.begin(); ic != ic_list.end(); ++ic) {
+      if (ic_list.isSublist(ic->first)) {
+	
+	Teuchos::ParameterList & ics = ic_list.sublist(ic->first);
+	
+	Teuchos::Array<std::string> ass_regions = ics.get<Teuchos::Array<std::string> >("Assigned Regions"); 
+	
+	Teuchos::ParameterList &free_ion_species_ic = chem_ic.sublist("free_ion_species");
+	
+	for (Teuchos::Array<std::string>::const_iterator ir=ass_regions.begin(); ir!=ass_regions.end(); ir++) {
+	  
+	  Teuchos::ParameterList & aux1_list = 
+	    free_ion_species_ic.sublist("function").sublist(*ir)
+	    .set<std::string>("region",*ir)
+	    .set<std::string>("component","cell")
+	    .sublist("function");
+	  
+	  aux1_list.set<int>("Number of DoFs", comp_names.size())
+	    .set("Function type", "composite function");	
+	  
+	  for (int j = 0; j<comp_names.size(); ++j) {	
+	    std::stringstream ss;
+	    ss << "DoF " << j+1 << " Function";
+	    
+	    double value(1.0e-9);	    
+	    value = ics.sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[j]).sublist("IC: Uniform Concentration").get<double>("Free Ion Guess",1.0e-9);
+	    
+	    aux1_list.sublist(ss.str()).sublist("function-constant")
+	      .set<double>("value", value); 
 	  }
 	}
       }
