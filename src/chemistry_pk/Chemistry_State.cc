@@ -142,46 +142,54 @@ void Chemistry_State::SetupSorptionSiteNames_() {
 
 
 void Chemistry_State::ParseMeshBlocks_() {
-  const std::string block_key("Mesh block ");
 
-  // loop through the state parameter list looking for mesh blocks
-  for (Teuchos::ParameterList::ConstIterator item = plist_.begin();
-       item != plist_.end(); ++item) {
+  // check if there is an initial condition for ion_exchange_sites
+  if (plist_.sublist("initial conditions").isSublist("ion_exchange_sites")) {
+    // there is currently only at most one site...
+    using_sorption_ = true;
+    number_of_ion_exchange_sites_ = 1;
+  }
 
-    std::string item_name = plist_.name(item);
-    size_t found_block = item_name.find(block_key);
-    if (found_block != std::string::npos) {
-      std::string block_name = item_name.substr(found_block + block_key.length(),
-              item_name.length());
-      Teuchos::ParameterList mesh_block_data = plist_.sublist(plist_.name(item));
-      // block_name should match mesh_block_data.region...
-      std::string region_name = mesh_block_data.get<std::string>("Region");
 
-      //
-      // check for chemistry related data in the block:
-      //
+  // const std::string block_key("Mesh block ");
+  // // loop through the state parameter list looking for mesh blocks
+  // for (Teuchos::ParameterList::ConstIterator item = plist_.begin();
+  //      item != plist_.end(); ++item) {
 
-      if (mesh_block_data.isSublist("Mineralogy")) {
-        VerifyMineralogy_(region_name, mesh_block_data.sublist("Mineralogy"));
-      }
+  //   std::string item_name = plist_.name(item);
+  //   size_t found_block = item_name.find(block_key);
+  //   if (found_block != std::string::npos) {
+  //     std::string block_name = item_name.substr(found_block + block_key.length(),
+  //             item_name.length());
+  //     Teuchos::ParameterList mesh_block_data = plist_.sublist(plist_.name(item));
+  //     // block_name should match mesh_block_data.region...
+  //     std::string region_name = mesh_block_data.get<std::string>("Region");
 
-      if (mesh_block_data.isSublist("Sorption Isotherms")) {
-        VerifySorptionIsotherms_(region_name,
-                mesh_block_data.sublist("Sorption Isotherms"));
-      }
+  //     //
+  //     // check for chemistry related data in the block:
+  //     //
 
-      if (mesh_block_data.isSublist("Surface Complexation Sites")) {
-        VerifySorptionSites_(region_name,
-                             mesh_block_data.sublist("Surface Complexation Sites"));
-      }
+  //     if (mesh_block_data.isSublist("Mineralogy")) {
+  //       VerifyMineralogy_(region_name, mesh_block_data.sublist("Mineralogy"));
+  //     }
 
-      if (mesh_block_data.isParameter("Cation Exchange Capacity")) {
-        // limit to one ion exchange site for now....
-        using_sorption_ = true;
-        number_of_ion_exchange_sites_ = 1;
-      }
-    }  // end if(mesh_block)
-  }  // end for(plist_)
+  //     if (mesh_block_data.isSublist("Sorption Isotherms")) {
+  //       VerifySorptionIsotherms_(region_name,
+  //               mesh_block_data.sublist("Sorption Isotherms"));
+  //     }
+
+  //     if (mesh_block_data.isSublist("Surface Complexation Sites")) {
+  //       VerifySorptionSites_(region_name,
+  //                            mesh_block_data.sublist("Surface Complexation Sites"));
+  //     }
+
+  //     if (mesh_block_data.isParameter("Cation Exchange Capacity")) {
+  //       // limit to one ion exchange site for now....
+  //       using_sorption_ = true;
+  //       number_of_ion_exchange_sites_ = 1;
+  //     }
+  //   }  // end if(mesh_block)
+  // }  // end for(plist_)
 }
 
 

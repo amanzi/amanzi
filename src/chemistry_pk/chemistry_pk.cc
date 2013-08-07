@@ -128,6 +128,15 @@ void Chemistry_PK::InitializeChemistry(void) {
       cell, 
       chemistry_state_->total_component_concentration());
 
+  std::cout << "number_aqueous_components        = " << number_aqueous_components() << std::endl;
+  std::cout << "number_free_ion                  = " << number_free_ion() << std::endl;
+  std::cout << "number_total_sorbed              = " << number_total_sorbed() << std::endl;
+  std::cout << "number_minerals                  = " << number_minerals() << std::endl;
+  std::cout << "number_ion_exchange_sites        = " << number_ion_exchange_sites() << std::endl;
+  std::cout << "number_sorption_sites            = " << number_sorption_sites() << std:: endl;
+  std::cout << "using_sorption                   = " << using_sorption() << std::endl;
+  std::cout << "using_sorption_isotherms         = " << using_sorption_isotherms() << std::endl;
+
   // finish setting up & testing the chemistry object
   int ierr(0);
   try {

@@ -85,18 +85,30 @@ class Chemistry_State : public PK_State {
   }
 
   Teuchos::RCP<Epetra_MultiVector> free_ion_species() {
-    return S_->GetFieldData("free_ion_species", name_)
+    try {
+      return S_->GetFieldData("free_ion_species", name_)
         ->ViewComponent("cell", true);
+    } catch (...) {
+      return Teuchos::null;
+    }
   }
 
   Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff() {
-    return S_->GetFieldData("primary_activity_coeff", name_)
+    try {
+      return S_->GetFieldData("primary_activity_coeff", name_)
         ->ViewComponent("cell", true);
+    } catch (...) {
+      return Teuchos::null;
+    } 
   }
 
   Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff() {
-    return S_->GetFieldData("secondary_activity_coeff", name_)
+    try {
+      return S_->GetFieldData("secondary_activity_coeff", name_)
         ->ViewComponent("cell", true);
+    } catch (...) {
+      return Teuchos::null;
+    }
   }
 
 
@@ -105,13 +117,21 @@ class Chemistry_State : public PK_State {
   }
 
   Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions() {
-    return S_->GetFieldData("mineral_volume_fractions", name_)
+    if (number_of_minerals_ > 0) {
+      return S_->GetFieldData("mineral_volume_fractions", name_)
         ->ViewComponent("cell", true);
+    }  else {
+      return Teuchos::null;
+    }
   }
 
   Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area() {
-    return S_->GetFieldData("mineral_specific_surface_area", name_)
+    if (number_of_minerals_ > 0) {
+      return S_->GetFieldData("mineral_specific_surface_area", name_)
         ->ViewComponent("cell", true);
+    } else {
+      return Teuchos::null;
+    }
   }
 
   Teuchos::RCP<Epetra_MultiVector> total_sorbed() {
