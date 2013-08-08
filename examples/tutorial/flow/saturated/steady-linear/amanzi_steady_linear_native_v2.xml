@@ -1,7 +1,7 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter isUsed="true" name="input file name" type="string" value="../amanzi_steady_linear.xml"/>
+  <Parameter isUsed="true" name="input file name" type="string" value="amanzi_steady_linear.xml"/>
   <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="steady-flow"/>
     <Parameter name="File Name Digits" type="string" value="5"/>
@@ -134,7 +134,7 @@
       <Parameter name="Constant particle density" type="double" value="1.00000000000000000e+00"/>
       <Parameter name="Region" type="string" value="Entire Domain"/>
       <ParameterList name="uniform pressure">
-        <Parameter name="value" type="double" value="5.00132500000000000e+06"/>
+        <Parameter name="value" type="double" value="1.17466778519900003e+06"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Region Name to Material ID Map (Material IDs)" type="Array(int)" value="{1}"/>

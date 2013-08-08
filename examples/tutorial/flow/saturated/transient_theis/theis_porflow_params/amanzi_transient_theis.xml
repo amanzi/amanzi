@@ -86,23 +86,21 @@
 	<Parameter name="High Coordinate" type="Array(double)" value="{3,3,10.0}"/>
       </ParameterList>
     </ParameterList>
-
-    <ParameterList name="Obs_r10">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-34.50,0.0,5.0}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Obs_r30">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-55.5,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-498.5,1.5,5.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Obs_r50">
       <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{-160.50,0.0,5.0}"/>
+        <Parameter name="Coordinate" type="Array(double)" value="{-751.5,1.5,5.0}"/>
       </ParameterList>
     </ParameterList>
-    
+    <ParameterList name="Obs_r1000">
+      <ParameterList name="Region: Point">
+	<Parameter name="Coordinate" type="Array(double)" value="{-1000.5, 1.5,5}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="yz1">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array(double)" value="{-1200,-1200,0.0}"/>
@@ -266,12 +264,6 @@
 
     <ParameterList name="Observation Data">
       <Parameter name="Observation Output Filename" type="string" value="observation.out"/>
-      <ParameterList name="Pressure 01">
-	<Parameter name="Region" type="string" value="Obs_r10"/>
-	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
-	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
-	<Parameter name="Time Macro" type="string" value="Observation Times"/>
-      </ParameterList>
       <ParameterList name="Pressure 02">
 	<Parameter name="Region" type="string" value="Obs_r30"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
@@ -280,6 +272,12 @@
       </ParameterList>
       <ParameterList name="Pressure 03">
 	<Parameter name="Region" type="string" value="Obs_r50"/>
+	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
+	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
+	<Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Pressure 04">
+	<Parameter name="Region" type="string" value="Obs_r1000"/>
 	<Parameter name="Functional" type="string" value="Observation Data: Point"/>
 	<Parameter name="Variable" type="string" value="Aqueous pressure"/>
 	<Parameter name="Time Macro" type="string" value="Observation Times"/>

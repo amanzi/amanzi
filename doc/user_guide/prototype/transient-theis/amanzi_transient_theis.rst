@@ -158,3 +158,8 @@ Plot and Table of Analytic Solution and Amanzi Results
 
 
 .. include:: table_values_theis.txt
+
+Note, this is an image of contour lines of constant draw down measured
+at 35,000 seconds after pumping begins.  
+
+.. image:: schematic/contour.png

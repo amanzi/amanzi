@@ -173,7 +173,7 @@
       
       <ParameterList name="IC: Uniform Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Value" type="double" value="5001325.0"/>
+        <Parameter name="Value" type="double" value="1174667.785199"/>
       </ParameterList>
 
     </ParameterList>
