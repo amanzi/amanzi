@@ -654,7 +654,7 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                             interpCoef = &iCoefsRO;
                         }
                         else {
-                            BoxLib::Abort("Unrecognized BC type");
+                            BoxLib::Abort("MFTower::BuildStencil: Unrecognized BC type");
                         }
 
                         int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
