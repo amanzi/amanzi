@@ -886,7 +886,9 @@ public:
   // Calculate capillary pressure
   //
   void calcCapillary (const Real time);
-  void calcCapillary (MultiFab* pc, const MultiFab& S);
+  void calcCapillary (MultiFab*       pc,
+		      const MultiFab& S,
+		      int             nComp = 1);
   void calcCapillary (FArrayBox&       pc,
 		      const FArrayBox& S,
 		      const FArrayBox& rockphi,

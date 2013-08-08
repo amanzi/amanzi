@@ -671,7 +671,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_use_fd_jac = 1;
   PorousMedia::richard_use_dense_Jacobian = 0;
   PorousMedia::richard_upwind_krel = 1;
-  PorousMedia::richard_pressure_maxorder = 4;
+  PorousMedia::richard_pressure_maxorder = 3;
   PorousMedia::richard_scale_solution_before_solve = true;
   PorousMedia::richard_semi_analytic_J = false;
   PorousMedia::richard_centered_diff_J = true;
@@ -2023,7 +2023,6 @@ void  PorousMedia::read_comp()
 	      
 	      // convert to atm
 	      for (int j=0; j<vals.size(); ++j) {
-		//vals[j] = vals[j] / BL_ONEATM - 1.e0;
 		vals[j] = vals[j] / BL_ONEATM;
 	      }
       
@@ -2050,7 +2049,6 @@ void  PorousMedia::read_comp()
               Real press_val;
               std::string val_name = "val";
               ppr.get(val_name.c_str(),press_val);
-              //press_val = press_val / BL_ONEATM - 1.0;
               press_val = press_val / BL_ONEATM;
 
               int ngrad = ppr.countval("grad");
@@ -2183,8 +2181,8 @@ void  PorousMedia::read_comp()
               }
               pressure_bc = 2;
 
-              //if (model == PM_STEADY_SATURATED || model == PM_RICHARDS) {
-              if (model == PM_STEADY_SATURATED) {
+              if (model == PM_STEADY_SATURATED 
+		  || (model == PM_RICHARDS && !do_richard_sat_solve)) {
                 bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals));
               } else {
                 PressToRhoSat p_to_sat;
@@ -2215,6 +2213,33 @@ void  PorousMedia::read_comp()
             }
             pressure_bc = 2;
             bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals[0]));//Fixme, support t-dependent
+          }
+          else if (bc_type == "linear_pressure")
+          {
+	    Real val; ppr.get("val",val);
+            int ng = ppr.countval("grad");
+	    BL_ASSERT(ng>=BL_SPACEDIM);
+	    Array<Real> grad(BL_SPACEDIM); ppr.getarr("grad",grad,0,BL_SPACEDIM);
+
+            int nl = ppr.countval("loc");
+	    BL_ASSERT(nl>=BL_SPACEDIM);
+	    Array<Real> loc(BL_SPACEDIM); ppr.getarr("loc",loc,0,BL_SPACEDIM);
+	    
+            Array<Real> vals(2*BL_SPACEDIM+1);
+	    vals[0] = val / BL_ONEATM;
+	    for (int d=0; d<BL_SPACEDIM; ++d) {
+	      vals[1+d] = grad[d] / BL_ONEATM;
+	      vals[1+d+BL_SPACEDIM] = loc[d];
+	    }
+
+            is_inflow = false;
+            if (model == PM_STEADY_SATURATED) {
+              component_bc = 2;
+            } else {
+              component_bc = 1;
+            }
+            pressure_bc = 2;
+            bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals));//Fixme, support t-dependent
           }
           else if (bc_type == "zero_total_velocity")
           {

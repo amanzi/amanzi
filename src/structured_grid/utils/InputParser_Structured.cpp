@@ -234,7 +234,7 @@ namespace Amanzi {
             }
             else if (flow_mode == "Richards") {
                 model_name = "richards";
-                prob_out_list.set("have_capillary",1);
+                prob_out_list.set("have_capillary",0);
                 prob_out_list.set("cfl",-1);
             }
             else if (flow_mode == "Steady State Saturated") {
@@ -535,7 +535,7 @@ namespace Amanzi {
             Array<int> ref_ratio(max_level,ref_ratio_DEF);
             int regrid_int_DEF = 2;
             Array<int> regrid_int(num_levels,regrid_int_DEF);
-            int blocking_factor_DEF = 8;
+            int blocking_factor_DEF = 1;
             Array<int> blocking_factor(num_levels,blocking_factor_DEF);
             int n_err_buf_DEF = 1;
             Array<int> n_err_buf(max_level,n_err_buf_DEF);
@@ -1760,7 +1760,8 @@ namespace Amanzi {
                     if (solutes_with_isotherms.size()>0) {
                         rsublist.set(underscore(isotherm_str),siPL);
                         state.getSolid().sorption_isotherm_names.resize(solutes_with_isotherms.size());
-                        for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(), End=solutes_with_isotherms.end(); it!=End; ++it) {
+                        for (std::set<std::string>::const_iterator it=solutes_with_isotherms.begin(),                                    
+			       End=solutes_with_isotherms.end(); it!=End; ++it) {
                             state.getSolid().sorption_isotherm_names.push_back(*it);
                         }
                     }
@@ -1927,9 +1928,8 @@ namespace Amanzi {
                 }
             }
 
-            build_solute_funcs(state_bcs,"Boundary Conditions","Solute BC");
-            build_solute_funcs(state_ics,"Initial Conditions","Solute IC");
-          
+	    build_solute_funcs(state_bcs,"Boundary Conditions","Solute BC");
+	    build_solute_funcs(state_ics,"Initial Conditions","Solute IC");
         }
 
 
@@ -1959,63 +1959,74 @@ namespace Amanzi {
                 const std::string& BClabel = bcLabels[i];
                 const ParameterList& bc_plist = plist.sublist(BClabel);
 
-                reqP.clear(); reqP.push_back("Assigned Regions");
-                reqL.clear(); reqL.push_back(solute_section_label);
-                PLoptions BCs(bc_plist,reqL,reqP,false,true);  
+		Array<std::string> reqPbc, reqLbc;
+                reqPbc.push_back("Assigned Regions");
+                PLoptions BCs(bc_plist,reqLbc,reqPbc,false,false);  
 
                 // The optional list is for the phase/comp func
-                const Array<std::string>& phaseBCfuncs = BCs.OptLists();
+                Array<std::string> phaseBCfuncs;
+		const Array<std::string>& phaseBCentries = BCs.OptLists();
+		int nBCfuncs = 0;
+		bool has_solute_bcs = false;
+		for (int j=0; j<phaseBCentries.size(); ++j) {
+		  if (phaseBCentries[j] == solute_section_label) {
+		    has_solute_bcs = true;
+		  } else {
+		    phaseBCfuncs.append(phaseBCentries[j]);
+		  }
+		}
+
                 if (phaseBCfuncs.size()!=1) {
-                    std::cerr << "Phase/comp BCs and ICs required for BC/IC label: " << BClabel << std::endl;
+                    std::cerr << "StateDef::build_solute_funcs: Only one Phase/comp BC and IC allowed for BC/IC label: " << BClabel << std::endl;
                     throw std::exception();
                 }
                 const ParameterList& func_plist = bc_plist.sublist(phaseBCfuncs[0]);
-
-                const Array<std::string>& assigned_regions = bc_plist.get<Array<std::string> >(reqP[0]);
+                const Array<std::string>& assigned_regions = bc_plist.get<Array<std::string> >(reqPbc[0]);
                 const std::string& Amanzi_type = phaseBCfuncs[0];              
 
                 s[BClabel] = StateFunc(BClabel, Amanzi_type, func_plist, assigned_regions);
 
                 // Now add solute data
-                Array<std::string> nullList;
-                const ParameterList& solute_plist = bc_plist.sublist(reqL[0]);
-                PLoptions soluteOPT(solute_plist,nullList,nullList,false,false); // Expect only phase names here
-                const Array<std::string>& phaseNames = soluteOPT.OptLists();
+		if (has_solute_bcs) {
+		  Array<std::string> nullList;
+		  const ParameterList& solute_plist = bc_plist.sublist(solute_section_label);
+		  PLoptions soluteOPT(solute_plist,nullList,nullList,false,false); // Expect only phase names here
+		  const Array<std::string>& phaseNames = soluteOPT.OptLists();
 
-                for (int icp=0; icp<phaseNames.size(); ++icp) {
+		  for (int icp=0; icp<phaseNames.size(); ++icp) {
                     const ParameterList& phasePL = solute_plist.sublist(phaseNames[icp]);
                     PLoptions soluteOPTc(phasePL,nullList,nullList,false,true);  // Expect only comp names here
                     const Array<std::string>& compNames = soluteOPTc.OptLists();
                   
                     for (int icc=0; icc<compNames.size(); ++icc) {
-                        const ParameterList& compPL = phasePL.sublist(compNames[icc]);
-                        PLoptions soluteOPTs(compPL,nullList,nullList,false,true); // Expect only solute names here
-                        const Array<std::string>& soluteNames = soluteOPTs.OptLists();
+		      const ParameterList& compPL = phasePL.sublist(compNames[icc]);
+		      PLoptions soluteOPTs(compPL,nullList,nullList,false,true); // Expect only solute names here
+		      const Array<std::string>& soluteNames = soluteOPTs.OptLists();
 
-                        for (int ics=0; ics<soluteNames.size(); ++ics) {                          
-                            const ParameterList& solutePL = compPL.sublist(soluteNames[ics]);
+		      for (int ics=0; ics<soluteNames.size(); ++ics) {                          
+			const ParameterList& solutePL = compPL.sublist(soluteNames[ics]);
                           
-                            Array<std::string> funcL, funcP;
-                            funcP.push_back("Concentration Units");
-                            PLoptions soluteOPTf(solutePL,nullList,funcP,false,true);
+			Array<std::string> funcL, funcP;
+			funcP.push_back("Concentration Units");
+			PLoptions soluteOPTf(solutePL,nullList,funcP,false,true);
                           
-                            // Get units
-                            const std::string& units = solutePL.get<std::string>(funcP[0]);
+			// Get units
+			const std::string& units = solutePL.get<std::string>(funcP[0]);
 
-                            // Get function name/list
-                            const Array<std::string>& funcNames = soluteOPTf.OptLists();
-			    if (funcNames.size()!=1) {
-                                std::cout << "Each solute BC expects a single function" << std::endl;
-                                throw std::exception();
-                            }
-                            const std::string& Amanzi_solute_type = funcNames[0];
-                            ParameterList solute_func_plist = solutePL.sublist(Amanzi_solute_type);
-                            s[BClabel][phaseNames[icp]][compNames[icc]][soluteNames[ics]]
-                                = ICBCFunc(solute_func_plist,Amanzi_solute_type,units,BClabel);
-                        }
+			// Get function name/list
+			const Array<std::string>& funcNames = soluteOPTf.OptLists();
+			if (funcNames.size()!=1) {
+			  std::cout << "Each solute BC expects a single function" << std::endl;
+			  throw std::exception();
+			}
+			const std::string& Amanzi_solute_type = funcNames[0];
+			ParameterList solute_func_plist = solutePL.sublist(Amanzi_solute_type);
+			s[BClabel][phaseNames[icp]][compNames[icc]][soluteNames[ics]]
+			  = ICBCFunc(solute_func_plist,Amanzi_solute_type,units,BClabel);
+		      }
                     }
-                }
-              
+		  }
+		}
                 // Confirm that embedded phase/comp and solute names are compatible with state
                 StateFunc::PhaseFuncMap& pfm = s[BClabel].getPhaseFuncMap();
                 for (StateFunc::PhaseFuncMap::iterator pit=pfm.begin(); pit!=pfm.end(); ++pit) {
@@ -2271,6 +2282,37 @@ namespace Amanzi {
             }
         }
 
+      void convert_length_units(const ParameterList& fPLin,
+				Array<double>&       vals)
+      {
+	const std::string units_name = "Units";
+	std::map<std::string,double> conversion;
+	conversion["m"] = 1;
+	conversion["ft"] = 12*2.54*.01;
+
+	Array<std::string> nullList;
+	PLoptions opt(fPLin,nullList,nullList,false,false);
+	const Array<std::string>& optional_params = opt.OptParms();
+	if (optional_params.size()>0) {
+	  for (int i=0; i<optional_params.size(); ++i) {
+	    if (optional_params[i] == units_name) {
+	      const std::string& units = fPLin.get<std::string>(units_name);
+	      std::map<std::string,double>::const_iterator it=conversion.find(units);
+	      if (it != conversion.end()) {
+		double factor = it->second;
+		for (int j=0; j<vals.size(); ++j) {
+		  vals[j] *= factor;
+		}
+	      }
+	      else {
+		std::cerr << " Unrecognized units (\"" << units << "\") in " << fPLin << std::endl;
+		throw std::exception();
+	      }
+	    }
+	  }
+	}
+      }
+
 
         void convert_BCPressure(const ParameterList& fPLin,
                                 const std::string&   Amanzi_type,
@@ -2280,22 +2322,24 @@ namespace Amanzi {
 
             if (Amanzi_type == "BC: Linear Pressure")
             {
-                const std::string val_name="Reference Values"; reqP.push_back(val_name);
+                const std::string val_name="Reference Value"; reqP.push_back(val_name);
                 const std::string grad_name="Gradient Value";reqP.push_back(grad_name);
                 const std::string ref_name="Reference Coordinate"; reqP.push_back(ref_name);
                 PLoptions opt(fPLin,nullList,reqP,true,true);
 
-                fPLout.set<Array<double> >("vals",fPLin.get<Array<double> >(val_name));
+                fPLout.set<Array<double> >("val",fPLin.get<Array<double> >(val_name));
                 fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
-                fPLout.set<std::string>("type","pressure");
+                fPLout.set<Array<double> >("loc",fPLin.get<Array<double> >(ref_name));
+                fPLout.set<std::string>("type","linear_pressure");
             }
             else if (Amanzi_type == "BC: Uniform Pressure Head")
             {
                 const std::string val_name="Values"; reqP.push_back(val_name);
                 const std::string time_name="Times"; reqP.push_back(time_name);
                 const std::string form_name="Time Functions"; reqP.push_back(form_name);
-                PLoptions opt(fPLin,nullList,reqP,true,true);
+                PLoptions opt(fPLin,nullList,reqP,true,false);
                 Array<double> vals = fPLin.get<Array<double> >(val_name);
+		convert_length_units(fPLin,vals);
                 fPLout.set<Array<double> >("vals",vals);
                 if (vals.size()>1) {
                     fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
@@ -2585,6 +2629,7 @@ namespace Amanzi {
 			}
 			else if (orient_type == "pressure"
                                  || orient_type == "pressure_head"
+                                 || orient_type == "linear_pressure"
                                  || orient_type == "hydrostatic") {
 			    // Must set components by name, and phase press set by press_XX(scalar) or hydro 
 			    sat_bc      = 1; // Dirichlet for saturation,
@@ -2944,7 +2989,6 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Grid ID"));
             user_derive_list.push_back(underscore("Core ID"));
             user_derive_list.push_back(underscore("Cell ID"));
-            user_derive_list.push_back(underscore("Capillary Pressure"));
             user_derive_list.push_back(underscore("Volumetric Water Content"));
             user_derive_list.push_back(underscore("Porosity"));
             user_derive_list.push_back(underscore("Aqueous Saturation"));

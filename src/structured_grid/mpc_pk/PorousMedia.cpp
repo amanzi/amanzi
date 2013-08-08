@@ -1370,7 +1370,9 @@ PorousMedia::initData ()
       calcInvPressure(S_new,P_new); // Set sat from p
     }
     if (have_capillary) {
-      calcCapillary(cur_time);
+      if (model != PM_RICHARDS || do_richard_sat_solve) {
+	calcCapillary(cur_time);
+      }
     }
     U_vcr.setVal(0.);
     //
@@ -2210,6 +2212,9 @@ PorousMedia::init (AmrLevel& old)
   // Get best state data: from old. 
   // FIXME: What to do for parts of State_Type that are not comps or tracers?
   //
+  if (model == PM_RICHARDS)
+
+
   for (FillPatchIterator fpi(old,S_new,0,cur_time,State_Type,0,ncomps+ntracers);
        fpi.isValid();
        ++fpi)
@@ -8383,7 +8388,6 @@ PorousMedia::init_rock_properties ()
     bool retCpl = matFiller->SetProperty(state[State_Type].curTime(),level,*cpl_coef,
                                          "capillary_pressure",0,kr_coef->nGrow(),0,ignore_mixed);
     if (!retCpl) BoxLib::Abort("Failed to build capillary_pressure");
-
   }
 }
 
@@ -11054,25 +11058,28 @@ PorousMedia::calcCapillary (const Real time)
 }
 
 void 
-PorousMedia::calcCapillary (MultiFab* pc,
-			    const MultiFab& S)
+PorousMedia::calcCapillary (MultiFab*       pc,
+			    const MultiFab& S,
+			    int             nGrow)
 {
   //
   // Calculate the capillary pressure for a given state.  
   //
-  BL_ASSERT(S.nGrow() >=1); // Assumes that boundary cells have been properly filled
-  BL_ASSERT(pc->nGrow() >= 0); // Fill boundary cells (in F)
-  for (MFIter mfi(S); mfi.isValid(); ++mfi) 
-    {
-      
+  Array<int> s_bc;
+  BL_ASSERT(S.nGrow() >= nGrow); // Assumes that boundary cells have been properly filled
+  BL_ASSERT(pc->nGrow() >= nGrow); // Fill boundary cells (in F)
+  BL_ASSERT(S.nComp()>=ncomps && pc->nComp()>=ncomps);
+  for (MFIter mfi(S); mfi.isValid(); ++mfi) {
       const int idx  = mfi.index();
-      Array<int> s_bc;
-      s_bc = getBCArray(State_Type,idx,0,1);
-
+      Box box = BoxLib::grow(mfi.validbox(),nGrow);
+      s_bc = getBCArray(State_Type,idx,0,ncomps);
       calcCapillary ((*pc)[mfi],S[mfi],(*rock_phi)[mfi],(*kappa)[mfi],
-		     (*cpl_coef)[mfi],grids[idx],s_bc);
-    }
-  pc->FillBoundary();
+		     (*cpl_coef)[mfi],box,s_bc);
+  }
+  if (nGrow > 0) {
+    pc->FillBoundary();
+    geom.FillPeriodicBoundary(*pc,0,ncomps);
+  }
 }
 
 void 
@@ -11544,6 +11551,14 @@ PorousMedia::AdjustBCevalTime(int  state_idx,
 void
 PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, int nComp)
 {
+  if (model == PM_RICHARDS) { // FIXME: Support solving Richards in saturation form?
+    if (! (geom.Domain().contains(fab.box())) ) {
+      if (ParallelDescriptor::IOProcessor()) {
+	BoxLib::Abort("Should not be fillPatching rhosat directly with Richards when solving pressure form");
+      }
+    }
+  }
+
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
   if (bc_descriptor_map.size()) 
   {
@@ -11567,7 +11582,6 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
         bndFab.resize(ovlp,nComp);
         mask.resize(ovlp,1); 
 
-#if 1
         for (int i=0; i<face_bc_idxs.size(); ++i) {
           const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
 
@@ -11582,56 +11596,6 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
           }
         }
         fab.copy(bndFab,0,dComp,nComp);
-#else
-        bool need_press = false;
-        for (int i=0; i<face_bc_idxs.size(); ++i) {
-          const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
-          need_press |= face_bc.Type() == "pressure"
-            || face_bc.Type() == "pressure_head"
-            || face_bc.Type() == "zero_total_velocity";
-        }
-        if (need_press) {
-          cplbnd.resize(ovlp,1);
-          cplbnd.setVal(0); // A safe value for the InvCap calc below
-          dirichletPressBC(cplbnd,t_eval);
-          cplbnd.mult(-1);
-        }
-
-        for (int i=0; i<face_bc_idxs.size(); ++i) {
-          const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
-
-          mask.setVal(0);
-          const PArray<Region>& regions = face_bc.Regions();
-          if (face_bc.Type() == "pressure"
-                   || face_bc.Type() == "pressure_head"
-                   || face_bc.Type() == "zero_total_velocity") {
-
-            for (int j=0; j<regions.size(); ++j) { 
-              regions[j].setVal(mask,1,0,dx,0);
-            }
-            const int n_cpl_coef = cpl_coef->nComp();
-            cpldat.resize(ovlp,n_cpl_coef);
-            phidat.resize(ovlp,1);
-            ktdat.resize(ovlp,BL_SPACEDIM);
-            kpdat.resize(ovlp,1);
-
-            MatFiller* matFiller = PMParent()->GetMatFiller();
-            matFiller->SetPropertyDirect(time,level,cptdat,subbox,"capillary_pressure",0);
-            matFiller->SetPropertyDirect(time,level,ktdat,subbox,"permeability",0);
-            matFiller->SetPropertyDirect(time,level,phidat,subbox,"porosity",0);
-
-            kpdat.copy(ktdat,ovlp,it->first.coordDir(),ovlp,0,1);
-            calcInvCapillary(bndFab,cplbnd,phidat,kpdat,cpldat);
-            for (IntVect iv=ovlp.smallEnd(), End=ovlp.bigEnd(); iv<=End; ovlp.next(iv)) {
-              if (mask(iv,0) > 0) {
-                for (int n=0; n<ncomps; ++n) {
-                  fab(iv,n) = bndFab(iv,n);
-                }
-              }
-            }
-          }
-        }
-#endif
       }
     }
   }
@@ -11676,72 +11640,6 @@ void
 PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
 {
   Array<int> bc(BL_SPACEDIM*2,0); // FIXME: Never set, why do we need this
-#if 1
-  if (pbc_descriptor_map.size()) 
-  {
-    const Box domain = geom.Domain();
-    const int* domhi = domain.hiVect();
-    const int* domlo = domain.loVect();
-    const Real* dx   = geom.CellSize();
-    Real t_eval = AdjustBCevalTime(Press_Type,time,false);
-
-    FArrayBox sdat, prdat, mask;
-    for (std::map<Orientation,BCDesc>::const_iterator
-           it=pbc_descriptor_map.begin(); it!=pbc_descriptor_map.end(); ++it) 
-    {
-      const Box bndBox = it->second.first;
-      const Array<int>& face_bc_idxs = it->second.second;
-      Box subbox = bndBox & fab.box();
-      if (subbox.ok()) {
-        sdat.resize(subbox,ncomps); 
-        prdat.resize(subbox,ncomps); prdat.setVal(0);
-                
-        for (int i=0; i<face_bc_idxs.size(); ++i) {
-          const RegionData& face_bc = bc_array[face_bc_idxs[i]]; 
-                    
-          if (model==PM_RICHARDS) {
-            sdat.setVal(0);
-            face_bc.apply(sdat,dx,0,ncomps,t_eval);
-            mask.resize(subbox,1); mask.setVal(-1);
-            const PArray<Region>& regions = face_bc.Regions();
-            for (int j=0; j<regions.size(); ++j)
-            { 
-              regions[j].setVal(mask,1,0,dx,0);
-            }
-                        
-            FArrayBox cpldat, phidat, kpdat, ktdat;
-            const int n_cpl_coef = cpl_coef->nComp();
-            cpldat.resize(subbox,n_cpl_coef);
-            phidat.resize(subbox,1);
-            ktdat.resize(subbox,BL_SPACEDIM);
-            kpdat.resize(subbox,1);
-
-            MatFiller* matFiller = PMParent()->GetMatFiller();
-            matFiller->SetPropertyDirect(time,level,cpldat,subbox,"capillary_pressure",0);
-            matFiller->SetPropertyDirect(time,level,ktdat,subbox,"permeability",0);
-            matFiller->SetPropertyDirect(time,level,phidat,subbox,"porosity",0);
-
-            kpdat.copy(ktdat,subbox,it->first.coordDir(),subbox,0,1);
-            calcCapillary(prdat,sdat,phidat,kpdat,cpldat,subbox,bc);
-            for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
-              if (mask(iv,0) > 0) {
-                for (int n=0; n<ncomps; ++n) {
-                  fab(iv,n) = - prdat(iv,n);
-                }
-              }
-            }
-          }
-          else if (model==PM_STEADY_SATURATED) {
-            if (face_bc.Type() == "pressure") {
-              face_bc.apply(prdat,dx,0,ncomps,t_eval);
-              fab.copy(prdat,0,0,ncomps);
-            }
-          }
-        }
-      }
-    }
-  }
-#else
   if (pbc_descriptor_map.size()) 
   {
     const Box domain = geom.Domain();
@@ -11787,7 +11685,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
             kpdat.resize(subbox,1);
 
             MatFiller* matFiller = PMParent()->GetMatFiller();
-            matFiller->SetPropertyDirect(time,level,cptdat,subbox,"capillary_pressure",0);
+            matFiller->SetPropertyDirect(time,level,cpldat,subbox,"capillary_pressure",0);
             matFiller->SetPropertyDirect(time,level,ktdat,subbox,"permeability",0);
             matFiller->SetPropertyDirect(time,level,phidat,subbox,"porosity",0);
 
@@ -11820,11 +11718,10 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
               face_bc.apply(prdat,dx,0,ncomps,t_eval);
             }
             else if (face_bc.Type() == "pressure_head") {
-              BoxLib::Abort("Pressure head boundaries not yet supported");
               for (int j=0; j<regions.size(); ++j) {
                 regions[j].setVal(mask,1,0,dx,0);
               }
-              Real head_val = face_bc()[0] * density[0] * gravity; // gravity=g/101325
+              Real head_val = face_bc(t_eval)[0] * density[0] * gravity; // gravity=g/101325
               Array<Real> gradp(BL_SPACEDIM,0);
               gradp[BL_SPACEDIM-1] = - density[0] * gravity;// gravity=g/101325
               const Real* problo = geom.ProbLo();
@@ -11836,6 +11733,21 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
               FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                    dx, problo, &ref_val, ref_loc, gradp.dataPtr());
 
+            }
+            else if (face_bc.Type() == "linear_pressure") {
+              for (int j=0; j<regions.size(); ++j) {
+                regions[j].setVal(mask,1,0,dx,0);
+              }
+	      Array<Real> vals = face_bc(t_eval);
+	      BL_ASSERT(vals.size()>=2*BL_SPACEDIM+1);
+	      const Real* gradp = &(vals[1]);
+	      const Real* loc = &(vals[1+BL_SPACEDIM]);
+              Real* p_ptr = prdat.dataPtr();
+              const int* p_lo = prdat.loVect();
+              const int* p_hi = prdat.hiVect();
+              const Real* problo = geom.ProbLo();
+              FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+                                   dx, problo, &(vals[0]), loc, gradp);
             }
 
             for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
@@ -11850,7 +11762,6 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
       }
     }
   }
-#endif
 }
 
 void
@@ -12002,37 +11913,6 @@ PorousMedia::derive (const std::string& name,
             for (int i=0; i<numpts; ++i) {
                 rdat[i] = Real(idat[i]);
             }
-        }
-    }
-    else if (name=="Capillary_Pressure") {
-        
-        int ncomp = rec->numDerive();
-        if (have_capillary)
-        {
-            const BoxArray& BA = mf.boxArray();
-            BL_ASSERT(rec->deriveType() == BA[0].ixType());
-
-            int ngrow = 1;
-            MultiFab S(BA,ncomps,ngrow);
-            FillPatchIterator fpi(*this,S,ngrow,time,State_Type,0,ncomps);
-            for ( ; fpi.isValid(); ++fpi)
-            {
-                S[fpi].copy(fpi(),0,0,ncomps);
-            }
-            
-            int nGrowP = 1;
-            MultiFab tmpmf(BA,ncomp,nGrowP);
-            calcCapillary(&tmpmf,S);
-            int nGrowOut = std::min(nGrowP,mf.nGrow());
-            MultiFab::Copy(mf,tmpmf,0,dcomp,ncomp,nGrowOut);
-            mf.mult(BL_ONEATM,dcomp,ncomp,nGrowOut);
-        }
-        else if (model == PM_STEADY_SATURATED) {
-	  mf.setVal(0,dcomp,ncomp);
-	}
-	else {
-
-	  BoxLib::Abort("PorousMedia::derive: cannot derive Capillary Pressure");
         }
     }
     else if (name=="Volumetric_Water_Content") {
