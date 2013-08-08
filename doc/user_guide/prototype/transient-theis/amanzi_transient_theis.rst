@@ -1,3 +1,5 @@
+.. _Theis:
+
 Theis Analysis
 ===============
 
@@ -25,7 +27,7 @@ The analytical solution of drawdown as a function of time and distance
 is found to be:
 
 .. math:: s = h(r,0) - h(r,t) = \frac{Q W(u)}{4 \pi T} 
-   = \int_u^\infty \frac{exp[-u]}{u} du = \frac{Q W(u)}{4\pi T}
+   = \int_u^\infty \frac{exp[-\tau]}{\tau} d\tau = \frac{Q W(u)}{4\pi T}
 
 where, 
 
