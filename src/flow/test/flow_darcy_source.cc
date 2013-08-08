@@ -153,7 +153,7 @@ TEST(FLOW_DARCY_SOURCE) {
   // create and populate fake flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
   FS->Initialize();
-  FS->set_permeability(2.0, 1.0, "Material 1");
+  FS->set_permeability_2D(2.0, 1.0, "Material 1");
   FS->set_porosity(1.0);
   FS->set_fluid_viscosity(1.0);
   FS->set_fluid_density(1.0);

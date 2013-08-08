@@ -245,8 +245,9 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
   AmanziMesh::Entity_ID_List cells;
 
   int cells_LID[2], cells_GID[2];
-  double perm_abs_vert[2];
-  double perm_abs_horz[2];
+  double perm_abs_x[2];
+  double perm_abs_y[2];
+  double perm_abs_z[2];
   double k_rel[2];
   double dk_dp[2];
   double pres[2];
@@ -261,13 +262,19 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
   // Epetra_Vector pressure_vec(solution);
   FS_->CopyMasterCell2GhostCell(solution, pres_gh);
 
-  Epetra_Vector perm_vert_gh(cmap_wghost);
-  Epetra_Vector& perm_vert_vec = FS_->ref_vertical_permeability();
-  FS_->CopyMasterCell2GhostCell(perm_vert_vec, perm_vert_gh);
+  Epetra_Vector perm_x_gh(cmap_wghost);
+  Epetra_Vector& perm_x_vec = *(*FS_->permeability())(0);
+  FS_->CopyMasterCell2GhostCell(perm_x_vec, perm_x_gh);
 
-  Epetra_Vector perm_horz_gh(cmap_wghost);
-  Epetra_Vector& perm_horz_vec = FS_->ref_horizontal_permeability();
-  FS_->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
+  Epetra_Vector perm_y_gh(cmap_wghost);
+  Epetra_Vector& perm_y_vec = *(*FS_->permeability())(1);
+  FS_->CopyMasterCell2GhostCell(perm_y_vec, perm_y_gh);
+
+  Epetra_Vector perm_z_gh(cmap_wghost);  
+  if (dim  == 3) {
+    Epetra_Vector& perm_z_vec = *(*FS_->permeability())(2);
+    FS_->CopyMasterCell2GhostCell(perm_z_vec, perm_z_gh);    
+  }
 
   for (int f = 0; f < nfaces_owned; f++){
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -278,8 +285,9 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
     for (int n = 0; n < mcells; n++) {
       cells_LID[n] = cells[n];
       cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
-      perm_abs_vert[n] = perm_vert_gh[cells_LID[n]];
-      perm_abs_horz[n] = perm_horz_gh[cells_LID[n]];
+      perm_abs_x[n] = perm_x_gh[cells_LID[n]];
+      perm_abs_y[n] = perm_y_gh[cells_LID[n]];
+      if (dim == 3) perm_abs_z[n] = perm_z_gh[cells_LID[n]];
       pres[n] = pres_gh[cells_LID[n]];
       // k_rel[n] = Krel_gh[cells_LID[n]];
       k_rel[n] = Krel_cells[cells_LID[n]];
@@ -299,7 +307,7 @@ void Matrix_MFD_TPFA::AnalyticJacobian(const Epetra_Vector& solution,
     normal *= 1./ mesh_->face_area(f);
 
     ComputeJacobianLocal(mcells, f, dim, Krel_method, bc_models, bc_values, dist, pres,
-                         perm_abs_vert, perm_abs_horz, k_rel, dk_dp, normal, Jpp);
+                         perm_abs_x, perm_abs_y, perm_abs_z, k_rel, dk_dp, normal, Jpp);
 
     // if (((cells_GID[0]>5)||(cells_GID[1]>5))&& (mcells > 1)){
 	  //   cout<<"GID "<<cells_GID[0]<<" "<<cells_GID[1]<<endl;
@@ -336,8 +344,9 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
                                            std::vector<bc_tuple>& bc_values,
                                            double dist,
                                            double *pres,
-                                           double *perm_abs_vert,
-                                           double *perm_abs_horz,
+                                           double *perm_abs_x,
+					   double *perm_abs_y,
+					   double *perm_abs_z,
                                            double *k_rel,
                                            double *dk_dp_cell,
                                            AmanziGeometry::Point& normal,
@@ -350,8 +359,9 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 
   for (int c = 0; c < mcells; c++) {
     K[c] = 0.0;
-    for (int i = 0; i < dim-1; i++) K[c] += normal[i]*normal[i]*perm_abs_horz[c];
-    K[c] += normal[dim-1]*normal[dim-1]*perm_abs_vert[c];
+    K[c] += normal[0]*normal[0]*perm_abs_x[c];
+    K[c] += normal[1]*normal[1]*perm_abs_y[c]; 
+    if (dim == 3) K[c] += normal[2]*normal[2]*perm_abs_z[c];
     K[c] /= FS_->ref_fluid_viscosity();
   }
 

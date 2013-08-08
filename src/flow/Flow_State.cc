@@ -76,7 +76,7 @@ void Flow_State::Construct_() {
   }
   if (!S_->HasField("permeability")) {
     S_->RequireField("permeability", name_)->SetMesh(mesh_)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
+      ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
   }
   if (!S_->HasField("porosity")) {
     S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
@@ -187,15 +187,20 @@ void Flow_State::set_pressure_hydrostatic(double z0, double p0) {
 
 }
 
-void Flow_State::set_permeability(double Kh, double Kv) {
-  horizontal_permeability()->PutScalar(Kh);
-  vertical_permeability()->PutScalar(Kv);
+void Flow_State::set_permeability_2D(double Kx, double Ky) {
+  (*permeability())(0)->PutScalar(Kx);
+  (*permeability())(1)->PutScalar(Ky); 
 }
 
+void Flow_State::set_permeability_3D(double Kx, double Ky, double Kz) {
+  (*permeability())(0)->PutScalar(Kx);
+  (*permeability())(1)->PutScalar(Ky);
+  (*permeability())(2)->PutScalar(Kz);
+}
 
-void Flow_State::set_permeability(double Kh, double Kv, const string region) {
-  Epetra_Vector& horizontal_perm = ref_horizontal_permeability();
-  Epetra_Vector& vertical_perm = ref_vertical_permeability();
+void Flow_State::set_permeability_2D(double Kx, double Ky, const string region) {
+  Epetra_Vector& perm_x = *(*permeability())(0);
+  Epetra_Vector& perm_y = *(*permeability())(1);
 
   AmanziMesh::Entity_ID_List block;
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
@@ -203,11 +208,27 @@ void Flow_State::set_permeability(double Kh, double Kv, const string region) {
 
   for (int i=0; i!=ncells; ++i) {
     int c = block[i];
-    horizontal_perm[c] = Kh;
-    vertical_perm[c] = Kv;
+    perm_x[c] = Kx;
+    perm_y[c] = Ky;
   }
 }
 
+void Flow_State::set_permeability_3D(double Kx, double Ky, double Kz, const string region) {
+  Epetra_Vector& perm_x = *(*permeability())(0);
+  Epetra_Vector& perm_y = *(*permeability())(1);
+  Epetra_Vector& perm_z = *(*permeability())(2);
+
+  AmanziMesh::Entity_ID_List block;
+  mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  int ncells = block.size();
+
+  for (int i=0; i!=ncells; ++i) {
+    int c = block[i];
+    perm_x[c] = Kx;
+    perm_y[c] = Ky;
+    perm_z[c] = Kz;
+  }
+}
 
 void Flow_State::set_gravity(double g) {
   Teuchos::RCP<Epetra_Vector> gvec = S_->GetConstantVectorData("gravity",name_);

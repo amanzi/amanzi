@@ -1829,14 +1829,16 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     }
     
     double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
-    double perm_vert, perm_horiz;
+    double perm_x, perm_y, perm_z;
     
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Uniform")) {
-      perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
-      perm_horiz = perm_vert;
+      perm_x = perm_y = perm_z = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
     } else if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
-      perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
-      perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
+      perm_x = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("x");
+      perm_y = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("y");
+      if (matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").isParameter("z") ) {
+	perm_z = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("z");
+      }
     } else {
       Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
     }
@@ -1890,15 +1892,22 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	.set<std::string>("component","cell")
 	.sublist("function");
 
-      aux_list.set<int>("Number of DoFs",2)
+      
+      aux_list.set<int>("Number of DoFs",spatial_dimension_)
 	.set<std::string>("Function type","composite function");
       
       aux_list.sublist("DoF 1 Function").sublist("function-constant")
-	.set<double>("value", perm_horiz);
+	.set<double>("value", perm_x);
       
-      aux_list.sublist("DoF 2 Function").sublist("function-constant")
-	.set<double>("value", perm_vert);
-
+      if (spatial_dimension_ >= 2) {
+	aux_list.sublist("DoF 2 Function").sublist("function-constant")
+	  .set<double>("value", perm_y);
+      }
+      
+      if (spatial_dimension_ == 3) {
+	aux_list.sublist("DoF 3 Function").sublist("function-constant")
+	  .set<double>("value", perm_z);
+      }
       
       Teuchos::ParameterList& aux2_list = 
 	darcy_flux_ic.sublist("function").sublist(*i)

@@ -63,7 +63,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
   FS->Initialize();
-  FS->set_permeability(5.0e-13, 5.0e-14, "Material 1");
+  FS->set_permeability_2D(5.0e-13, 5.0e-14, "Material 1");
   FS->set_porosity(0.2);
   FS->set_fluid_viscosity(0.00089);
   FS->set_fluid_density(998);

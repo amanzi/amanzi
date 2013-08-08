@@ -66,8 +66,8 @@ TEST(FLOW_3D_RICHARDS) {
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
   FS->Initialize();
-  FS->set_permeability(0.1, 2.0, "Material 1");
-  FS->set_permeability(0.5, 0.5, "Material 2");
+  FS->set_permeability_3D(0.1, 0.1, 2.0, "Material 1");
+  FS->set_permeability_3D(0.5, 0.5, 0.5, "Material 2");
   FS->set_porosity(0.2);
   FS->set_fluid_viscosity(1.0);
   FS->set_fluid_density(1.0);

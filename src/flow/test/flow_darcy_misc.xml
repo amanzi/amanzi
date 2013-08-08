@@ -207,7 +207,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="Number of DoFs" type="int" value="3"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.0"/>
@@ -219,6 +219,13 @@
                   <Parameter name="value" type="double" value="1.0"/>
                 </ParameterList>
               </ParameterList>
+
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0"/>
+                </ParameterList>
+              </ParameterList>
+
 
             </ParameterList>
           </ParameterList>

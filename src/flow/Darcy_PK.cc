@@ -509,18 +509,37 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 ****************************************************************** */
 void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
-  const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
-  const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
+  if (dim == 2) {
+    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
+    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
 
-  for (int c = 0; c < K.size(); c++) {
-    if (vertical_permeability[c] == horizontal_permeability[c]) {
-      K[c].init(dim, 1);
-      K[c](0, 0) = vertical_permeability[c];
-    } else {
-      K[c].init(dim, 2);
-      for (int i = 0; i < dim-1; i++) K[c](i, i) = horizontal_permeability[c];
-      K[c](dim-1, dim-1) = vertical_permeability[c];
-    }
+    for (int c = 0; c < K.size(); c++) {
+      if (permeability_x[c] == permeability_y[c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = permeability_x[c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = permeability_x[c];
+	K[c](1, 1) = permeability_y[c];
+      }
+    }    
+    
+  } else if (dim == 3) {
+    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
+    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
+    const Epetra_Vector& permeability_z = *(*FS->permeability())(2);
+    
+    for (int c = 0; c < K.size(); c++) {
+      if (permeability_x[c] == permeability_y[c]  && permeability_y[c] == permeability_z[c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = permeability_x[c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = permeability_x[c];
+	K[c](1, 1) = permeability_y[c];
+	K[c](2, 2) = permeability_z[c];
+      }
+    }        
   }
 }
 
