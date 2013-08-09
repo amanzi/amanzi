@@ -2327,7 +2327,7 @@ namespace Amanzi {
                 const std::string ref_name="Reference Coordinate"; reqP.push_back(ref_name);
                 PLoptions opt(fPLin,nullList,reqP,true,true);
 
-                fPLout.set<Array<double> >("val",fPLin.get<Array<double> >(val_name));
+                fPLout.set<double>("val",fPLin.get<double>(val_name));
                 fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
                 fPLout.set<Array<double> >("loc",fPLin.get<Array<double> >(ref_name));
                 fPLout.set<std::string>("type","linear_pressure");

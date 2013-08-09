@@ -1195,7 +1195,7 @@ The following boundary condition parameterizations are supported:
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [SU] `"BC: Linear Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
+* [SU] `"BC: Linear Pressure`" requires `"Reference Value`" [double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
 * [S] `"BC: Uniform Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
@@ -1205,9 +1205,9 @@ The following boundary condition parameterizations are supported:
 
 * [U] `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
-* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this paramter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
+* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
 
-* `"BC: Impermeable`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* `"BC: Impermeable`"  requires no parameters
 
 * [SU] `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
