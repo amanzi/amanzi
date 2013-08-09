@@ -32,7 +32,7 @@ class Mesh
   mutable std::vector<double> cell_volumes, face_areas;
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normal0, face_normal1;
-  mutable Entity_ID_List cell_cellabove, cell_cellbelow;
+  mutable Entity_ID_List cell_cellabove, cell_cellbelow, node_nodeabove;
   AmanziGeometry::GeometricModelPtr geometric_model_;
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
@@ -274,6 +274,7 @@ class Mesh
 
   Entity_ID cell_get_cell_below(const Entity_ID cellid) const;
 
+  Entity_ID node_get_node_above(const Entity_ID nodeid) const;
 
   //
   // Mesh entity geometry

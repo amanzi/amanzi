@@ -772,6 +772,7 @@ int Mesh::build_columns() const {
   // that these are all the boundary faces whose normal points in the
   // negative z-direction
 
+  int nn = num_entities(NODE,USED);
   int nf = num_entities(FACE,USED);
   int nc = num_entities(CELL,USED);
 
@@ -782,6 +783,8 @@ int Mesh::build_columns() const {
   cell_cellbelow.assign(nc,-1);
   cell_cellabove.resize(nc);
   cell_cellabove.assign(nc,-1);
+  node_nodeabove.resize(nn);
+  node_nodeabove.assign(nn,-1);
 
 
   for (int i = 0; i < nf; i++) {
@@ -859,6 +862,9 @@ int Mesh::build_columns() const {
 
       assert(top_face != bot_face);
 
+
+      // record the cell above and cell below
+
       face_get_cells(top_face,USED,&fcells2);
       if (fcells2.size() == 2) {
 
@@ -883,11 +889,84 @@ int Mesh::build_columns() const {
           Errors::Message mesg("Unlikely problem in face to cell connectivity");
           Exceptions::amanzi_throw(mesg);
         }
-
-        bot_face = top_face;
       }
       else
         done = true;
+
+
+      // record the node above for each of the bot face nodes
+
+      // start node of bottom face 
+
+      Entity_ID_List botnodes, topnodes, sidenodes;
+
+      face_get_nodes(bot_face,&botnodes);
+      Entity_ID botnode0 = botnodes[0];
+
+      // nodes of the top face
+      face_get_nodes(top_face,&topnodes);
+
+      if (botnodes.size() != topnodes.size()) {
+        std::cerr << "Top and bottom face of cell have different number of nodes." << 
+          " Data in node_nodeabove may not be accurate" << std::endl;
+      }
+      int nfvbot = botnodes.size();
+
+      // Find a lateral face in which a node of the top face is
+      // adjacent to botnode0 (i.e. they are connected by an edge)
+
+      bool found = false;
+      int ind = -1;
+      for (int j = 0; j < cfaces.size(); j++) {
+        if (cfaces[j] == bot_face || cfaces[j] == top_face) continue;
+
+        // lateral face
+        face_get_nodes(cfaces[j],&sidenodes);
+
+        int nfvside = sidenodes.size();
+        for (int k = 0; k < nfvside; k++) {
+          if (sidenodes[k] == botnode0) {
+
+            Entity_ID adjnode0, adjnode1;
+        
+            adjnode0 = sidenodes[(k+1)%nfvside]; 
+            adjnode1 = sidenodes[(k-1+nfvside)%nfvside];
+
+            // See if adjnode0 or adjnode1 are in the top face
+            int nfvtop = topnodes.size();
+            for (int l = 0; l < nfvtop; l++) {
+              if (topnodes[l] == adjnode0 || topnodes[l] == adjnode1) {
+                found = true;
+                ind = l;
+                break;
+              }
+            }
+
+            break;
+          }
+        }
+
+        if (found) 
+          break;
+      }
+
+      if (!found) {
+        Errors::Message mesg("Could not find the right structure in mesh");
+        amanzi_throw(mesg);
+      }
+
+      // We have a matching botnode and topnode - now match up the rest
+
+      for (int k = 0; k < nfvbot; k++) {
+        Entity_ID botnode = botnodes[k];
+        Entity_ID topnode = topnodes[(ind+k)%nfvbot];
+        node_nodeabove[botnode] = topnode;          
+      }
+
+
+      // continue the process
+
+      bot_face = top_face;
 
     } // while (!done)
 
@@ -912,6 +991,14 @@ Entity_ID Mesh::cell_get_cell_below(const Entity_ID cellid) const {
     build_columns();
 
   return cell_cellbelow[cellid];
+}
+
+Entity_ID Mesh::node_get_node_above(const Entity_ID nodeid) const {
+
+  if (!columns_built)
+    build_columns();
+
+  return node_nodeabove[nodeid];
 }
 
 std::string Mesh::cell_type_to_name (const Cell_type type)
