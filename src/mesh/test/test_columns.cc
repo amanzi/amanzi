@@ -86,7 +86,7 @@ TEST(MESH_COLUMNS)
     CHECK_EQUAL(aerr,0);
 
 
-    int status, nnodes;
+    int status;
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
                                     Amanzi::AmanziMesh::OWNED);
 
@@ -95,6 +95,14 @@ TEST(MESH_COLUMNS)
       CHECK_EQUAL(expcellabove,mesh->cell_get_cell_above(j));
       int expcellbelow = (j%4 == 0) ? -1 : j-1;
       CHECK_EQUAL(expcellbelow,mesh->cell_get_cell_below(j));
+    }
+
+    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::CELL,
+                                    Amanzi::AmanziMesh::OWNED);
+
+    for (int j = 0; j < nnodes; j++) {
+      int expnodeabove = (j >= 100) ? -1 : j+25;
+      CHECK_EQUAL(expnodeabove,mesh->node_get_node_above(j));
     }
       
   } // for each framework i
