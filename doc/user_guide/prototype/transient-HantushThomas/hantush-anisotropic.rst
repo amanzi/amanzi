@@ -1,5 +1,5 @@
-Hantush Analysis
-=================
+Hantush and Thomas (1966) Analysis
+====================================
 
 Introduction
 -------------
@@ -33,8 +33,19 @@ Hantush and Thomas found the solution to the governing equation as
 
 where
 
-.. math:: \phi = \frac{(x^2T_t + y^2T_x)\;S}{4T_xT_y}
+.. math:: \phi = \frac{(x^2T_t + y^2T_x)\;S}{4T_xT_yt}
 
 Notice when :math:`T_x=T_y`, :math:`\phi` is now equal to *u* and the
-problem simplifies to the :ref:`Theis`.   
+problem simplifies to the :ref:`Theis`.  The variables in
+the equations above are defined in :ref:`Variables` with subtle
+differences.  We have now defined transmissivity in two directions and
+redefined the well function, *W*, to apply to :math:`\phi` instead of
+*u*.  The integral is still solved as a negative exponential integral.  
+
+ 
+Schematic
+----------
+
+.. image:: schematic/ellipse.png
+	   
 
