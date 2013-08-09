@@ -1,6 +1,9 @@
 #include "Mesh_MOAB.hh"
 //#include <Teuchos_RCP.hpp>
 
+#include "dbc.hh"
+#include "errors.hh"
+
 using namespace std;
 using namespace moab;
 
@@ -2043,13 +2046,27 @@ Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
   }
     
 
+// Deform a mesh so that cell volumes conform as closely as possible
+// to target volumes without dropping below the minimum volumes.  If
+// move_vertical = true, nodes will be allowed to move only in the
+// vertical direction (right now arbitrary node movement is not allowed)
+
+int Mesh_MOAB::deform(const std::vector<double>& target_cell_volumes_in, 
+                      const std::vector<double>& min_cell_volumes_in, 
+                      const std::vector<std::string>& fixed_set_names,
+                      const bool move_vertical) 
+{
+  Errors::Message mesg("Deformation not implemented for Mesh_MOAB");
+  amanzi_throw(mesg);
+}
+
 // Miscellaneous
 
 void Mesh_MOAB::write_to_exodus_file(const std::string filename) const {
   throw std::exception();
 }
-    
-  
+
+ 
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi

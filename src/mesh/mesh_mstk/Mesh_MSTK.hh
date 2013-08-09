@@ -103,6 +103,11 @@ private:
   MAttrib_ptr rparentatt, fparentatt, eparentatt, vparentatt;
 
   const Mesh_MSTK *parent_mesh;
+
+  // variables needed for mesh deformation
+
+  double *meshxyz;
+  double *target_cell_volumes, *min_cell_volumes, *target_weights;
   
   // Private methods
   // ----------------------------
@@ -150,6 +155,32 @@ private:
   MSet_ptr build_set(const AmanziGeometry::RegionPtr region,
                      const Entity_kind kind) const;
 
+
+  // Compute the value of the LOCAL component of the GLOBAL
+  // deformation objective function given a new position 'nodexyz' for
+  // node 'nodeid' i.e. only those terms in the global function that
+  // are affected by the movement of this node. 
+
+  double deform_function(const int nodeid, double const * const nodexyz) const;
+  
+  // Finite difference gradient of deformation objective function
+
+  void deform_gradient(const int nodeid, double const * const vxyz, 
+                       double *gradient) const;
+
+  // Finite difference hessian of deformation objective function
+
+  void deform_hessian(const int nodeid, double const * const nodexyz, 
+                      double hessian[3][3]) const;
+
+  // Minimum eigen value of a matrix (rank 2 and rank 3)
+
+  double mineigenvalue(const double A[3][3]) const;
+
+  // Inverse of Hessian of rank 2 or 3
+
+  int hessian_inverse(const double H[3][3],double iH[3][3]) const;
+
 public:
 
   // Constructors that read the mesh from a file
@@ -158,7 +189,8 @@ public:
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL);
 
-  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, int space_dimension,
+  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
+             int space_dimension,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL);
 
@@ -374,7 +406,7 @@ public:
   void face_get_coordinates (const Entity_ID faceid, 
 			     std::vector<AmanziGeometry::Point> *fcoords) const; 
     
-  // Coordinates of cells in standard order (Exodus II convention)
+  // Coordinates of cells in standard order (Exodus  II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
@@ -446,6 +478,16 @@ public:
 			 const Parallel_type ptype, 
 			 std::vector<Entity_ID> *entids) const; 
 
+
+  // Deform a mesh so that cell volumes conform as closely as possible
+  // to target volumes without dropping below the minimum volumes.  If
+  // move_vertical = true, nodes will be allowed to move only in the
+  // vertical direction (right now arbitrary node movement is not allowed)
+
+  int deform(const std::vector<double>& target_cell_volumes_in, 
+             const std::vector<double>& min_cell_volumes_in, 
+             const std::vector<std::string>& fixed_set_names,
+             const bool move_vertical);
 
   // Miscellaneous
 

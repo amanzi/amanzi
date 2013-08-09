@@ -406,9 +406,21 @@ public:
 			 const Parallel_type ptype, 
 			 std::vector<Entity_ID> *entids) const; 
 
-  // Miscellaneous
+  // Deform a mesh so that cell volumes conform as closely as possible
+  // to target volumes without dropping below the minimum volumes.  If
+  // move_vertical = true, nodes will be allowed to move only in the
+  // vertical direction (right now arbitrary node movement is not allowed)
+
+  int deform(const std::vector<double>& target_cell_volumes_in, 
+             const std::vector<double>& min_cell_volumes_in, 
+             const std::vector<std::string>& fixed_set_names,
+             const bool move_vertical);
+
+ 
+ // Miscellaneous
   
   void write_to_exodus_file (const std::string filename) const;
+
 };
 
 } // close namespace AmanziMesh

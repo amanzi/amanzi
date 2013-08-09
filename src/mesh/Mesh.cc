@@ -646,8 +646,8 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
 // If keep_valid is true, the routine will cut back node displacement
 // if the cells connected to a moved node become invalid
 
-int Mesh::deform (const Entity_ID_List nodeids,
-                  const AmanziGeometry::Point_List new_positions,
+int Mesh::deform (const Entity_ID_List& nodeids,
+                  const AmanziGeometry::Point_List& new_positions,
                   const bool keep_valid,
                   AmanziGeometry::Point_List *final_positions) {
 

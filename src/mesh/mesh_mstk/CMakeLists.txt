@@ -37,7 +37,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 # Library: mstk_mesh
 #
-set(mstk_mesh_files Mesh_MSTK.cc) 
+set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc) 
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
@@ -67,6 +67,7 @@ if (BUILD_TESTS)
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
+                         test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES}) 
 
     # Test: mstk_mesh_parallel

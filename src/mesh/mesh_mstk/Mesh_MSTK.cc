@@ -21,7 +21,8 @@ namespace AmanziMesh
 
 Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 		      const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm())
+  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
+  min_cell_volumes(NULL)
 {  
 
   int numprocs = incomm->NumProc();
@@ -144,7 +145,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
 		      int space_dimension,
 		      const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm())
+  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
+  min_cell_volumes(NULL)
 {
 
   // Assume three dimensional problem if constructor called without 
@@ -238,7 +240,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const unsigned int nz, 
 		     const Epetra_MpiComm *incomm,
 		     const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm())
+  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
+  min_cell_volumes(NULL)
 {
   int ok;
 
@@ -316,7 +319,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const int nx, const int ny, 
 		     const Epetra_MpiComm *incomm,
 		     const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm())
+  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
+  min_cell_volumes(NULL)
 {
   int ok;
   int space_dim = 2;
@@ -394,7 +398,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 		     const Epetra_MpiComm *incomm,
 		     const AmanziGeometry::GeometricModelPtr& gm) :
-  mpicomm(incomm->GetMpiComm())
+  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), target_cell_volumes(NULL),
+  min_cell_volumes(NULL)
 {
   int ok;
 
@@ -4607,7 +4612,6 @@ void
 Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
   MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm);
 }
-
 
 
 } // close namespace AmanziMesh

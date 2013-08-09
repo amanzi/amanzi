@@ -38,7 +38,6 @@ class Mesh
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
 
 
-  int compute_geometric_quantities() const;
   int compute_cell_geometry(const Entity_ID cellid, 
                             double *volume, 
                             AmanziGeometry::Point *centroid) const;
@@ -51,6 +50,8 @@ class Mesh
   int build_columns() const;
 
  protected:
+
+  int compute_geometric_quantities() const;
 
  public:
 
@@ -374,10 +375,23 @@ class Mesh
   // The final positions of the nodes is returned in final_positions
 
 
-  int deform (const Entity_ID_List nodeids,
-              const AmanziGeometry::Point_List new_positions,
+  int deform (const Entity_ID_List& nodeids,
+              const AmanziGeometry::Point_List& new_positions,
               const bool keep_valid,
               AmanziGeometry::Point_List *final_positions);
+
+  // Deform a mesh so that cell volumes conform as closely as possible
+  // to target volumes without dropping below the minimum volumes.  If
+  // move_vertical = true, nodes will be allowed to move only in the
+  // vertical direction (right now arbitrary node movement is not allowed)
+  // Nodes in any set in the fixed_sets will not be permitted to move.
+
+  virtual
+  int deform (const std::vector<double>& target_cell_volumes_in, 
+              const std::vector<double>& min_cell_volumes_in, 
+              const std::vector<std::string>& fixed_set_names,
+              const bool move_vertical) = 0;
+
 
   //
   // Epetra maps

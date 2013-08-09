@@ -1215,6 +1215,20 @@ void Mesh_simple::get_set_entities (const std::string setname,
 }
 
 
+// Deform a mesh so that cell volumes conform as closely as possible
+// to target volumes without dropping below the minimum volumes.  If
+// move_vertical = true, nodes will be allowed to move only in the
+// vertical direction (right now arbitrary node movement is not allowed)
+
+int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in, 
+                        const std::vector<double>& min_cell_volumes_in, 
+                        const std::vector<std::string>& fixed_set_names,
+                        const bool move_vertical) 
+{
+  Errors::Message mesg("Deformation not implemented for Mesh_simple");
+  amanzi_throw(mesg);
+}
+
 /*
  * Write mesh out to exodus file
  */
@@ -1224,7 +1238,6 @@ Mesh_simple::write_to_exodus_file(const std::string filename) const {
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
 }
-
 
 
 

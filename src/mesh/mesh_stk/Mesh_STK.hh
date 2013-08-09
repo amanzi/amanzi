@@ -332,6 +332,16 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 			 std::vector<Entity_ID> *entids) const; 
 
 
+
+
+
+  int deform(const std::vector<double>& target_cell_volumes_in, 
+             const std::vector<double>& min_cell_volumes_in, 
+             const std::vector<std::string>& fixed_set_names,
+             const bool move_vertical);
+
+
+
   /// Make a cell-to-cell graph from the mesh
   Teuchos::RCP<Epetra_CrsGraph> cellgraph(void) const;
 
