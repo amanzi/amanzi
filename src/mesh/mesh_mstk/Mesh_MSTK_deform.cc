@@ -80,20 +80,12 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
  
   int nc = num_entities(CELL,USED);
   target_cell_volumes = new double[nc];     // class variable
-  target_weights      = new double[nc];     // class variable
   min_cell_volumes    = new double[nc];     // class variable
  
   std::copy(&(target_cell_volumes_in[0]), &(target_cell_volumes_in[nc]), 
             target_cell_volumes);
   std::copy(&(min_cell_volumes_in[0]), &(min_cell_volumes_in[nc]), 
             min_cell_volumes);
-
-  for (int i = 0; i < nc; i++) {
-    if (target_cell_volumes[i] == 0.0 || this->cell_volume(i) == target_cell_volumes[i])
-      target_weights[i] = 0.25;
-    else
-      target_weights[i] = 1.0;
-  }
 
   // Now start mesh deformation to match the target volumes
 
@@ -107,7 +99,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   // iteration over the entire mesh. Global iterations, of course, are
   // carried out until convergence
 
-  int iter_global=0, maxiter_global=200;
+  int iter_global=0, maxiter_global=50;
   bool converged_global=false;
   
   while (!converged_global && iter_global < maxiter_global) {
@@ -141,7 +133,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       double vxyzcur[ndim], vxyzold[ndim], vxyznew[ndim];
 
       for (int i = 0; i < ndim; i++) {
-        vxyzcur[i] = meshxyz[3*(id-1)+i];
+        vxyzcur[i] = newxyz[3*(id-1)+i];
         vxyzold[i] = vxyzcur[i];
         vxyznew[i] = 0.0;
       }
@@ -199,9 +191,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
         double update[3]={0.0,0.0,0.0};
         update[ndim-1] -= damping_factor*gradient_z/hessian_zz;  
-        vxyznew[ndim-1] = vxyzcur[ndim-1] + update[ndim-1];            
-          
+        vxyznew[ndim-1] = vxyzcur[ndim-1] + update[ndim-1];                    
 
+        
         // ****** value of function with updated coordinates
           
         double fnew = deform_function(id-1, vxyznew);
@@ -210,16 +202,16 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
         // Check the Armijo condition (the step size should 
         // produce a decrease in the function) 
           
-        double alpha_1 = 1.0;
-        while ((fnew >= fcur) && (alpha_1 >= 1.0e-02)) {
-          vxyznew[ndim-1] = vxyzcur[ndim-1] + alpha_1*update[ndim-1];        
+        double alpha = 1.0;
+        while ((fnew >= fcur) && (alpha >= 1.0e-02)) {
+          vxyznew[ndim-1] = vxyzcur[ndim-1] + alpha*update[ndim-1];        
             
           fnew = deform_function(id-1, vxyznew);
           if (fnew >= fcur)
-            alpha_1 *= 0.8;
+            alpha *= 0.8;
         }
           
-        if (alpha_1 < 1.0e-02) { // if movement is too little, dont move at all 
+        if (alpha < 1.0e-02) { // if movement is too little, dont move at all 
           for (int i = 0; i < ndim; i++)
             vxyznew[i] = vxyzcur[i];
           fnew = fcur;
@@ -231,13 +223,55 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       } // while (iter_local < maxiter_local)
         
         
-      global_dist2 += ((vxyzcur[0]-vxyzold[0])*(vxyzcur[0]-vxyzold[0]) +
-                       (vxyzcur[1]-vxyzold[1])*(vxyzcur[1]-vxyzold[1]) +
-                       (vxyzcur[2]-vxyzold[2])*(vxyzcur[2]-vxyzold[2]));
+      double delta_z =  vxyzcur[ndim-1]-vxyzold[ndim-1];
+      global_dist2 += delta_z*delta_z;
       
       // update the new xyz values for this vertex 
       for (int i = 0; i < 3; i++)
         newxyz[3*(id-1)+i] = vxyzcur[i];
+
+      // Also drop the nodes above if the objective function
+      // components corresponding to those nodes do not increase
+
+      int curid = id-1;
+      bool done = false;
+      while (!done) {
+        int nextid = this->node_get_node_above(curid);
+        if (nextid == -1) {
+          done = true;
+          continue;
+        }
+        double vxyz_above[3];
+        std::copy(&(newxyz[3*nextid]),&(newxyz[3*nextid+ndim]),vxyz_above);
+
+        double fcur_above = deform_function(nextid, vxyz_above); 
+
+        double alpha = 1.0;
+        vxyz_above[ndim-1] += alpha*delta_z; // 'add' delta_z (which is -ve) 
+        
+        double fnew_above = deform_function(nextid, vxyz_above);
+
+        // If the new function value w.r.t. nextid increases
+        // cut back the proposed update as necessary
+
+        while (fnew_above > fcur_above && alpha > 1.0e-02) {
+          vxyz_above[ndim-1] = newxyz[3*nextid+ndim-1];
+
+          alpha *= 0.8;
+          vxyz_above[ndim-1] = newxyz[3*nextid+ndim-1] + alpha*delta_z;
+
+          fnew_above = deform_function(nextid, vxyz_above);
+        }
+
+        if (alpha <= 1.0e-02) 
+          vxyz_above[ndim-1] = newxyz[3*nextid+ndim-1];
+
+        // Update the coordinates
+
+        newxyz[3*nextid+ndim-1] = vxyz_above[ndim-1];
+
+        curid = nextid;
+      }
       
     } // while (mv = ...)
 
@@ -423,10 +457,8 @@ double Mesh_MSTK::deform_function(const int nodeid,
   double condfunc=0.0, volfunc=0.0, barrierfunc=0.0;
   int i, j, k, m, id, jr, jf, nf0, found;
   int vind=-1, ind[4], nbrs[4][3];
-  MRegion_ptr r;
-  MFace_ptr f;
   MVertex_ptr fv, rv;
-  List_ptr fvlist, vfaces, rvlist, vregions;
+  List_ptr fvlist, rvlist;
   static MVertex_ptr last_v=NULL;
   static MVertex_ptr (*fverts)[MAXPV2], (*rverts)[MAXPV3];
     static int vnbrsgen[MAXPV3], nnbrsgen;
@@ -452,12 +484,12 @@ double Mesh_MSTK::deform_function(const int nodeid,
   if (v != last_v) {
     /* Collect face data */
 
-    vfaces = MV_Faces(v);
-    nf = List_Num_Entries(vfaces);
-    vregions = MV_Regions(v);
-    nr = vregions ? List_Num_Entries(vregions) : 0;
 
-    if (nr == 0) {
+    if (space_dimension() == 2) {
+
+      List_ptr flist = MV_Faces(v);
+      nf = List_Num_Entries(flist);
+
       if (last_v == NULL) {
 	maxf = nf;
 	fverts = 
@@ -476,7 +508,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       }
       
       for (k = 0, jf = 0; k < nf; k++) {
-	f = List_Entry(vfaces,k);
+	MFace_ptr f = List_Entry(flist,k);
 
         vfids[jf] = MF_ID(f);
 	fvlist = MF_Vertices(f,1,v);
@@ -490,12 +522,14 @@ double Mesh_MSTK::deform_function(const int nodeid,
 	
 	jf++;
       }
+      List_Delete(flist);
     }
-    List_Delete(vfaces);
+    else {
+      /* Collect region data */
 
-    /* Collect region data */
+      List_ptr rlist = MV_Regions(v);
+      nr = List_Num_Entries(rlist);
 
-    if (nr > 0) {
       if (last_v == NULL) {
 	maxr = nr;
 	nrv = (int *) malloc(maxr*sizeof(int));
@@ -528,7 +562,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
           nrfv[jr][jf] = 0;
       
       for (jr = 0; jr < nr; jr++) {
-	r = List_Entry(vregions,jr);
+	MRegion_ptr r = List_Entry(rlist,jr);
 
         vrids[jr] = MR_ID(r);
 	rvlist = MR_Vertices(r);
@@ -596,7 +630,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
         List_Delete(rflist);
         List_Delete(rvlist);          
       }
-      List_Delete(vregions);
+      List_Delete(rlist);
     }
 
     last_v = v;
@@ -605,7 +639,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
   // Actual computation of objective function
 
-  if (nr == 0) {
+  if (space_dimension() == 2) {
 
     for (jf =  0; jf < nf; jf++) {
       int fid = vfids[jf];
@@ -674,10 +708,9 @@ double Mesh_MSTK::deform_function(const int nodeid,
       // only if a +ve target area was requested for this face,
 
       double target_area = target_cell_volumes[fid-1];
-      double weight = target_weights[fid-1];
       if (target_area > 0) {
         double area_diff = (face_area-target_area)/target_area;
-        volfunc += weight*area_diff*area_diff;
+        volfunc += area_diff*area_diff;
       }
 
       // every face always contributes a barrier function to
@@ -686,7 +719,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       double min_area = min_cell_volumes[fid-1];
       double min_area_diff = (face_area-min_area)/min_area;
 
-      double bfunc = 1/(1+exp(10*min_area_diff));
+      double bfunc = 1/(1+exp(100*min_area_diff));
       barrierfunc += bfunc;
     }
 
@@ -864,10 +897,9 @@ double Mesh_MSTK::deform_function(const int nodeid,
       } // else
 
       double target_volume = target_cell_volumes[rid-1];
-      double weight = target_weights[rid-1];
       if (target_volume > 0.0) {
         double volume_diff = (region_volume-target_volume)/target_volume;
-        volfunc += weight*volume_diff*volume_diff;
+        volfunc += volume_diff*volume_diff;
       }
 
       // every face always contributes a barrier function to
@@ -876,13 +908,13 @@ double Mesh_MSTK::deform_function(const int nodeid,
       double min_volume = min_cell_volumes[rid-1];
       double min_volume_diff = (region_volume-min_volume)/min_volume;
 
-      double bfunc = 1/(1+exp(10*min_volume_diff));
+      double bfunc = 1/(1+exp(100*min_volume_diff));
       barrierfunc += bfunc;
     } // for each region
 
   }
 
-  double c1 = 1.0e+0, c2=1.0e-2, c3=1.0e-2, k1=1.0, k2=1.0, k3=0.0;
+  double c1 = 1.0e+0, c2=1.0e-1, c3=1.0e-2, k1=1.0, k2=1.0, k3=0.0;
   double inlogexpr = k1*exp(c1*volfunc) + k2*exp(c2*barrierfunc) + k3*exp(c3*condfunc);
   if (inlogexpr > 0.0)
     func = log(inlogexpr);
@@ -890,6 +922,8 @@ double Mesh_MSTK::deform_function(const int nodeid,
     func = 1e+14;
   return func;
 }
+
+
 
 // Finite difference gradient of deformation objective function
 
@@ -1328,8 +1362,11 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 
 //       int fid = MF_ID(vf);
 //       double target_area = target_cell_volumes[fid-1];
-//       double area_diff = (area-target_area)/target_area;
-//       volfunc += area_diff*area_diff;
+//       double weight = target_weights[fid-1];
+//       if (target_area > 0.0) {
+//         double area_diff = (area-target_area)/target_area;
+//         volfunc += weight*area_diff*area_diff;
+//       }
 
 //       double min_area = min_cell_volumes[fid-1];
 //       double min_area_diff = (area-min_area)/min_area;
@@ -1409,8 +1446,11 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 
 //       int rid = MR_ID(vr);
 //       double target_volume = target_cell_volumes[rid-1];
-//       double volume_diff = (volume-target_volume)/target_volume;
-//       volfunc += volume_diff*volume_diff;
+//       double weight = target_weights[rid-1];
+//       if (target_volume > 0.0) {
+//         double volume_diff = (volume-target_volume)/target_volume;
+//         volfunc += weight*volume_diff*volume_diff;
+//       }
 
 //       double min_volume = min_cell_volumes[rid-1];
 //       double min_volume_diff = (volume-min_volume)/min_volume;
@@ -1422,7 +1462,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //   }
 
 //   double func;
-//   double c1 = 1.0e+0, c2 = 1.0e-3, k1 = 1.0, k2 = 1.0;
+//   double c1 = 1.0e+0, c2 = 1.0e-2, k1 = 1.0, k2 = 1.0;
 //   double inlogexpr = k1*exp(c1*volfunc) + k2*exp(c2*barrierfunc);
 //   if (inlogexpr > 0.0)
 //     func = log(inlogexpr);

@@ -54,8 +54,8 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
   for (int i = 0; i < nc; i++) {    
     orig_volumes[i] = mesh->cell_volume(i);
-    target_volumes[i] = orig_volumes[i];
-    // target_volumes[i] = 0.0;
+    // target_volumes[i] = orig_volumes[i];
+    target_volumes[i] = 0.0;
     min_volumes[i] = 0.5*orig_volumes[i];
 
     Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
@@ -72,12 +72,12 @@ TEST(MSTK_DEFORM_VOLS_2D)
   CHECK(status);
 
   for (int i = 0; i < nc; i++) {
-    if (target_volumes[i] < orig_volumes[i]) {
+    if (target_volumes[i] > 0.0 && target_volumes[i] < orig_volumes[i]) {
       double voldiff = 
         (mesh->cell_volume(i)-target_volumes[i])/target_volumes[i];
     
-      // Check if volume difference is with 1% of target volume
-      CHECK_CLOSE(0,voldiff,10.0e-02);
+      // Check if volume difference is with 5% of target volume
+      CHECK_CLOSE(0,voldiff,5.0e-02);
     }
 
     // Check that we didn't fall below the minimum prescribed volume
@@ -129,8 +129,8 @@ TEST(MSTK_DEFORM_VOLS_3D)
   for (int i = 0; i < nc; i++) {    
     orig_volumes[i] = mesh->cell_volume(i);
     target_volumes[i] = orig_volumes[i];
-    target_weights[i] = 0.25;
-    // target_volumes[i] = 0.0;
+    // target_weights[i] = 0.25;
+    target_volumes[i] = 0.0;
     min_volumes[i] = 0.5*orig_volumes[i];
 
     Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
@@ -147,11 +147,11 @@ TEST(MSTK_DEFORM_VOLS_3D)
   CHECK(status);
 
   for (int i = 0; i < nc; i++) {
-    if (target_volumes[i] < orig_volumes[i]) {
+    if (target_volumes[i] > 0.0 && target_volumes[i] < orig_volumes[i]) {
       double voldiff = (mesh->cell_volume(i)-target_volumes[i])/target_volumes[i];
     
-      // Check if volume difference is with 10% of target volume
-      CHECK_CLOSE(0,voldiff,1.0e-01);
+      // Check if volume difference is with 5% of target volume
+      CHECK_CLOSE(0,voldiff,5.0e-02);
     }
 
     // Check that we didn't fall below the minimum prescribed volume
