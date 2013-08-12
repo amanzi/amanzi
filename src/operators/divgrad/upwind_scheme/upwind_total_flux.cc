@@ -48,7 +48,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 
-  // communicate ghosted cells
+  // communicate needed ghost values
   cell_coef.ScatterMasterToGhosted("cell");
 
   // pull out vectors
@@ -141,8 +141,6 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       coef_faces[0][f] = coefs[0] * param + coefs[1] * (1. - param);
     }
   }
-
-  face_coef->ScatterMasterToGhosted("face");
 };
 
 } //namespace

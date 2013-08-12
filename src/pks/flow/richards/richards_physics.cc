@@ -41,7 +41,6 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   // assemble the stiffness matrix
@@ -168,6 +167,8 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
     }
 
   } else if (!rel_perm->has_component("cell")) { // rel perm on faces only
+    rel_perm->ScatterMasterToGhosted("face");
+
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
     unsigned int ncells = rho->size("cell",false);
@@ -189,6 +190,8 @@ void Richards::AddGravityFluxes_(const Teuchos::Ptr<const Epetra_Vector>& g_vec,
     }
 
   } else { // rel perm on both cells and faces
+    rel_perm->ScatterMasterToGhosted("face");
+
     const Epetra_MultiVector& rho_v = *rho->ViewComponent("cell",false);
     const Epetra_MultiVector& krel_faces = *rel_perm->ViewComponent("face",true);
     const Epetra_MultiVector& krel_cells = *rel_perm->ViewComponent("cell",false);

@@ -47,7 +47,12 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
     assembled_operator_ = false;
 
     // store a copy of Krel on faces
-    *Krel_ = *(*Krel->ViewComponent("face", true))(0);
+    if (Krel != Teuchos::null) {
+      Krel->ScatterMasterToGhosted("face");
+      *Krel_ = *(*Krel->ViewComponent("face", true))(0);
+    } else {
+      Krel_->PutScalar(1.);
+    }
 
     int dim = mesh_->space_dimension();
     WhetStone::MFD3D mfd(mesh_);
@@ -84,12 +89,11 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
         }
       }
 
-      const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
       double matsum = 0.0;
       for (int n=0; n!=nfaces; ++n) {
         double rowsum = 0.0, colsum = 0.0;
         for (int m=0; m!=nfaces; ++m) {
-          colsum += Bff(m,n) * Krel_f[0][faces[m]];
+          colsum += Bff(m,n) * (*Krel_)[faces[m]];
           rowsum += Bff(n, m);
         }
 
@@ -192,11 +196,12 @@ void MatrixMFD_ScaledConstraint::DeriveFlux(const CompositeVector& solution,
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = flux->size("face",false);
 
-  std::vector<bool> done(nfaces_owned, false);
+  solution.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& soln_cells = *solution.ViewComponent("cell",false);
   const Epetra_MultiVector& soln_faces = *solution.ViewComponent("face",true);
   Epetra_MultiVector& flux_v = *flux->ViewComponent("face",false);
 
+  std::vector<bool> done(nfaces_owned, false);
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();

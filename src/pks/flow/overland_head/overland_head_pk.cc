@@ -350,7 +350,6 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
 
   // Teuchos::RCP<CompositeVector> elev = S->GetFieldData("elevation","elevation");
   // matrix_->UpdateConsistentFaceConstraints(elev.ptr());
-  // elev->ScatterMasterToGhosted();
 
   // Initialize BC values
   bc_pressure_->Compute(S->time());
@@ -401,35 +400,43 @@ void OverlandHeadFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
     matrix_->DeriveFlux(*potential, flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   // As a diagnostic, calculate the mass balance error
 #if DEBUG_FLAG
   if (S_next_ != Teuchos::null) {
-    Teuchos::RCP<const CompositeVector> wc1 =
-        S_next_->GetFieldData("surface_water_content");
-    Teuchos::RCP<const CompositeVector> wc0 =
-        S_->GetFieldData("surface_water_content");
+    const Epetra_MultiVector& wc1 =
+        *S_next_->GetFieldData("surface_water_content")
+            ->ViewComponent("cell",false);
+    const Epetra_MultiVector& wc0 =
+        *S_->GetFieldData("surface_water_content")
+            ->ViewComponent("cell",false);
+
     Teuchos::RCP<const CompositeVector> flux =
         S->GetFieldData("surface_flux", name_);
+    flux->ScatterMasterToGhosted("face");
+    const Epetra_MultiVector& flux_f = *flux->ViewComponent("face",true);
+
+    // create work space
+    Teuchos::RCP<CompositeVector> error = Teuchos::rcp(
+        new CompositeVector(*S_->GetFieldData("surface_water_content")));
+    error->PutScalar(0.);
 
     // source terms
-    Teuchos::RCP<CompositeVector> error = Teuchos::rcp(new CompositeVector(*wc1));
-    error->PutScalar(0.);
     AddSourceTerms_(error.ptr());
     error->Scale(dt);
 
+    Epetra_MultiVector& error_c = *error->ViewComponent("cell",false);
     for (unsigned int c=0; c!=error->size("cell"); ++c) {
       // accumulation
-      (*error)("cell",c) += (*wc1)("cell",c) - (*wc0)("cell",c);
+      error_c[0][c] += wc1[0][c] - wc0[0][c];
 
       // flux
       AmanziMesh::Entity_ID_List faces;
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (unsigned int n=0; n!=faces.size(); ++n) {
-        (*error)("cell",c) += (*flux)("face",faces[n]) * dirs[n] * dt;
+        error_c[0][c] += flux_f[0][faces[n]] * dirs[n] * dt;
       }
     }
 
@@ -464,7 +471,6 @@ void OverlandHeadFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     matrix_->DeriveFlux(*potential, flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
@@ -519,36 +525,32 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // get upwind conductivity data
     Teuchos::RCP<CompositeVector> uw_cond =
         S->GetFieldData("upwind_overland_conductivity", name_);
-    Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
-    Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
 
-    // patch up the BCs -- move rel perm on boundary_faces into uw_rel_perm on faces
-    const Epetra_Import& vandelay = mesh_->exterior_face_importer();
-    const Epetra_Map& vandelay_map = mesh_->exterior_face_epetra_map();
-    uw_cond_f.Export(cond_bf, vandelay, Insert);
+    { // place boundary_faces on faces
+      Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
+      const Epetra_Import& vandelay = mesh_->exterior_face_importer();
+      const Epetra_Map& vandelay_map = mesh_->exterior_face_epetra_map();
+      uw_cond_f.Export(cond_bf, vandelay, Insert);
 
-    // Patch up zero-gradient case, which should not upwind.
-    AmanziMesh::Entity_ID_List cells;
-    for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-         bc!=bc_zero_gradient_->end(); ++bc) {
-      int f = bc->first;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-      int c = cells[0];
-      uw_cond_f[0][f] = cond_c[0][c];
+      // Patch up zero-gradient case, which should not upwind.
+      AmanziMesh::Entity_ID_List cells;
+      for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+           bc!=bc_zero_gradient_->end(); ++bc) {
+        int f = bc->first;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        ASSERT(cells.size() == 1);
+        int c = cells[0];
+        uw_cond_f[0][f] = cond_c[0][c];
+      }
     }
 
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
 
     // Set cells to be n_liq
-    const Epetra_MultiVector& n_liq = *S->GetFieldData("surface_molar_density_liquid")
-        ->ViewComponent("cell",false);
-    uw_cond_c = n_liq;
-
-    // Communicate.  This could be done later, but i'm not exactly sure where, so
-    // we'll do it here.
-    //    upwind_conductivity->ScatterMasterToGhosted();
+    *uw_cond->ViewComponent("cell",false) =
+          *S->GetFieldData("surface_molar_density_liquid")
+              ->ViewComponent("cell",false);
   }
 
   if (update_perm && out_.get() &&
@@ -685,12 +687,10 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   std::vector<double> dp;
   std::vector<int> dirs;
 
-  const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& elevation_f = *S->GetFieldData("elevation")
-      ->ViewComponent("face",true);
-  const Epetra_MultiVector& cond_f =
-    *S->GetFieldData("upwind_overland_conductivity")->ViewComponent("face",false);
+  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
+  elev->ScatterMasterToGhosted();
+  const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
+  const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells =
       matrix_->Aff_cells();
@@ -717,16 +717,6 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     for (unsigned int m=0; m!=faces.size(); ++m) {
       bc_val -= Aff_cells[c](my_n,m) * dp[m];
     }
-
-    std::cout << "BC_VAL (" << f << ") = " << bc_val << std::endl;
-    std::cout << "  cond = " << cond_f[0][f] << std::endl;
-    std::cout << "  my_n = " << my_n << std::endl;
-    std::cout << "  d(h+z) = ";
-    for (unsigned int m=0; m!=faces.size(); ++m) std::cout << dp[m] << ", ";
-    std::cout << std::endl;
-    std::cout << "  Aff = ";
-    for (unsigned int m=0; m!=faces.size(); ++m) std::cout << Aff_cells[c](my_n,m) << ", ";
-    std::cout << std::endl;
 
     // Apply the BC to the matrix
     Ff_cells[c][my_n] -= bc_val;
@@ -785,12 +775,10 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
   std::vector<double> dp;
   std::vector<int> dirs;
 
-  const Epetra_MultiVector& elevation_f = *S->GetFieldData("elevation")
-      ->ViewComponent("face",false);
-  const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cond_f =
-    *S->GetFieldData("upwind_overland_conductivity")->ViewComponent("face",false);
+  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
+  elev->ScatterMasterToGhosted();
+  const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
+  const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells =
       matrix_->Aff_cells();
@@ -828,10 +816,11 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
  ****************************************************************** */
 void OverlandHeadFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
-  unsigned int nfaces = pres->size("face",true);
+  Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
+  unsigned int nfaces = pres_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
-      (*pres)("face",f) = bc_values_[f];
+      pres_f[0][f] = bc_values_[f];
     }
   }
 };

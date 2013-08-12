@@ -198,10 +198,13 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   // create a with-ghost copy of Acc
   CompositeVector Dcc(mesh_,names_c,locations_c,ndofs,true);
   Dcc.CreateData();
-  Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
 
-  for (int c=0; c!=ncells_owned; ++c) Dcc_c[0][c] = (*Acc_)[c];
+  { // context for non-const access
+    Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
+    for (int c=0; c!=ncells_owned; ++c) Dcc_c[0][c] = (*Acc_)[c];
+  }
   Dcc.ScatterMasterToGhosted();
+  Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
 
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];

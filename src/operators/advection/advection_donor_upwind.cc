@@ -46,18 +46,20 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
 
   field_->ScatterMasterToGhosted("cell"); // communicate the cells
 
-  double u;
   // collect fluxes in faces
-  Teuchos::RCP<Epetra_MultiVector> faces = field_->ViewComponent("face",true);
+  Epetra_MultiVector& field_f = *field_->ViewComponent("face",true);
+  Epetra_MultiVector& field_c = *field_->ViewComponent("cell", true);
 
-  //  field_->ViewComponent("face")->PutScalar(0.0);
+  Teuchos::RCP<const CompositeVector> flux_const(flux_);
+  const Epetra_MultiVector& flux = *flux_const->ViewComponent("face",false);
+
   for (int f=f_begin_; f != f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
 
     if (c1 >=0) {
-      u = fabs((*flux_)("face",0,f));
+      double u = std::abs(flux[0][f]);
       for (int i=0; i != num_dofs_; ++i) {
-        (*field_)("face",i,f) = u * (*field_)("cell",i,c1);
+        field_f[i][f] = u * field_c[i][c1];
       }
     }
   }
@@ -67,17 +69,18 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
        bc!=bc_flux->end(); ++bc) {
     if (include_bc_fluxes) {
       if ((*upwind_cell_)[bc->first] >= 0) {
-        (*field_)("face",0,bc->first) = bc->second*mesh_->face_area(bc->second);
+        field_f[0][bc->first] = bc->second*mesh_->face_area(bc->second);
       } else {
-        (*field_)("face",0,bc->first) = -bc->second*mesh_->face_area(bc->second);
+        field_f[0][bc->first] = -bc->second*mesh_->face_area(bc->second);
       }
     } else {
-      // HACKED for fluxes included in diffusion term.  This needs rethought. --etc
-      (*field_)("face",0,bc->first) = 0.0;
+      // HACKED for fluxes included in diffusion term.  This needs
+      // rethought. --etc
+      field_f[0][bc->first] = 0.;
     }
   }
 
-  field_->ViewComponent("cell")->PutScalar(0.0);
+  field_c.PutScalar(0.);
   // put fluxes in cell
   for (int f=f_begin_; f!=f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
@@ -85,12 +88,12 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
 
     if (c1 >=0 && c1 < c_owned_) {
       for (int i=0; i<num_dofs_; i++) {
-        (*field_)("cell",i,c1) -= (*field_)("face",i,f);
+        field_c[i][c1] -= field_f[i][f];
       }
     }
     if (c2 >=0 && c2 < c_owned_) {
       for (int i=0; i<num_dofs_; i++) {
-        (*field_)("cell",i,c2) += (*field_)("face",i,f);
+        field_c[i][c1] += field_f[i][f];
       }
     }
   }
@@ -104,13 +107,16 @@ void AdvectionDonorUpwind::IdentifyUpwindCells_() {
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
+  flux_->ScatterMasterToGhosted("face");
+  Teuchos::RCP<const CompositeVector> flux_const(flux_);
+  const Epetra_MultiVector& flux_f = *flux_const->ViewComponent("face",true);
 
   for (int c=c_begin_; c != c_end_; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
 
     for (unsigned int i = 0; i != faces.size(); ++i) {
       AmanziMesh::Entity_ID f = faces[i];
-      if ((*flux_)("face",0,f) * fdirs[i] >= 0) {
+      if (flux_f[0][f] * fdirs[i] >= 0) {
         (*upwind_cell_)[f] = c;
       } else {
         (*downwind_cell_)[f] = c;

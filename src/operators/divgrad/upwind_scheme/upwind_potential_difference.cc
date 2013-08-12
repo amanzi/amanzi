@@ -56,8 +56,7 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
 
   // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
-  //  potential.ScatterMasterToGhosted("cell"); // potential need not be communicated, done by PK,
-                                                // as it also needs to be done for flux
+  potential.ScatterMasterToGhosted("cell");
   overlap.ScatterMasterToGhosted("cell");
 
   Epetra_MultiVector& face_coef_f = *face_coef->ViewComponent("face",false);
@@ -65,7 +64,8 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
   const Epetra_MultiVector& potential_c = *potential.ViewComponent("cell",true);
   const Epetra_MultiVector& cell_coef_c = *cell_coef.ViewComponent("cell",true);
 
-  for (unsigned int f=0; f!=face_coef->size("face",false); ++f) {
+  int nfaces = face_coef->size("face",false);
+  for (unsigned int f=0; f!=nfaces; ++f) {
     mesh->face_get_cells(f, AmanziMesh::USED, &cells);
 
     if (cells.size() == 1) {
@@ -106,8 +106,6 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
 
     }
   }
-
-  face_coef->ScatterMasterToGhosted("face");
 };
 
 
