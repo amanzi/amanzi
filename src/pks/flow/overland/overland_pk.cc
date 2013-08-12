@@ -67,7 +67,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  S->RequireField(key_, name_)->SetMesh(mesh_)
+  S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(names2, locations2, num_dofs2);
 
   // -- owned secondary variables, no evaluator used
@@ -174,11 +174,9 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   if (standalone_mode_) {
     ASSERT(plist_.isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
-    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
-    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
@@ -188,7 +186,6 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
   Teuchos::ParameterList pres_elev_plist = plist_.sublist("potential evaluator");
-  pres_elev_plist.set("manage communication", true);
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
@@ -229,20 +226,20 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   bc_markers_.resize(nfaces, Operators::Matrix::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
-  // Initialize elevation, whose faces need to be updated so that h=0 is a
-  // valid solution.
-  S->GetFieldEvaluator("elevation")->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<CompositeVector> cond =
-    S->GetFieldData("upwind_overland_conductivity", name_);
-  cond->ViewComponent("cell",true)->PutScalar(1.0);
-  cond->ViewComponent("face",true)->PutScalar(1.0);
-  matrix_->CreateMFDstiffnessMatrices(cond.ptr());
-  matrix_->CreateMFDrhsVectors();
-  matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
-  matrix_->AssembleGlobalMatrices();
+  // // Initialize elevation, whose faces need to be updated so that h=0 is a
+  // // valid solution.
+  // S->GetFieldEvaluator("elevation")->HasFieldChanged(S.ptr(), name_);
+  // Teuchos::RCP<CompositeVector> cond =
+  //   S->GetFieldData("upwind_overland_conductivity", name_);
+  // cond->ViewComponent("cell",true)->PutScalar(1.0);
+  // cond->ViewComponent("face",true)->PutScalar(1.0);
+  // matrix_->CreateMFDstiffnessMatrices(cond.ptr());
+  // matrix_->CreateMFDrhsVectors();
+  // matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+  // matrix_->AssembleGlobalMatrices();
 
-  Teuchos::RCP<CompositeVector> elev = S->GetFieldData("elevation","elevation");
-  matrix_->UpdateConsistentFaceConstraints(elev.ptr());
+  // Teuchos::RCP<CompositeVector> elev = S->GetFieldData("elevation","elevation");
+  // matrix_->UpdateConsistentFaceConstraints(elev.ptr());
 
   // Initialize BC values
   bc_head_->Compute(S->time());
@@ -488,56 +485,47 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     *out_ << "    Tweaking BCs for the Operator." << std::endl;
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
-  AmanziMesh::Entity_ID_List cells;
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<double> dp;
-  std::vector<int> dirs;
-
-  const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& elevation_f = *S->GetFieldData("elevation")
-      ->ViewComponent("face",true);
-  const Epetra_MultiVector& cond_f =
-    *S->GetFieldData("upwind_overland_conductivity")->ViewComponent("face",false);
+  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
+  elev->ScatterMasterToGhosted();
+  const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
+  const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells =
       matrix_->Aff_cells();
   std::vector<Epetra_SerialDenseVector>& Ff_cells =
       matrix_->Ff_cells();
 
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
 
     int f = bc->first;
+
+    AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-    dp.resize(faces.size());
-    for (unsigned int n=0; n!=faces.size(); ++n) {
-      dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+    if (c < ncells_owned) {
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      std::vector<double> dp(faces.size());
+      for (unsigned int n=0; n!=faces.size(); ++n) {
+        dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+      }
+      unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+      ASSERT(my_n !=faces.size());
+
+      double bc_val = 0.;
+      for (unsigned int m=0; m!=faces.size(); ++m) {
+        bc_val -= Aff_cells[c](my_n,m) * dp[m];
+      }
+
+      // Apply the BC to the matrix
+      Ff_cells[c][my_n] -= bc_val;
     }
-    unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-    ASSERT(my_n !=faces.size());
-
-    double bc_val = 0.;
-    for (unsigned int m=0; m!=faces.size(); ++m) {
-      bc_val -= Aff_cells[c](my_n,m) * dp[m];
-    }
-
-    std::cout << "BC_VAL (" << f << ") = " << bc_val << std::endl;
-    std::cout << "  cond = " << cond_f[0][f] << std::endl;
-    std::cout << "  my_n = " << my_n << std::endl;
-    std::cout << "  d(h+z) = ";
-    for (unsigned int m=0; m!=faces.size(); ++m) std::cout << dp[m] << ", ";
-    std::cout << std::endl;
-    std::cout << "  Aff = ";
-    for (unsigned int m=0; m!=faces.size(); ++m) std::cout << Aff_cells[c](my_n,m) << ", ";
-    std::cout << std::endl;
-
-    // Apply the BC to the matrix
-    Ff_cells[c][my_n] -= bc_val;
   }
 };
 
@@ -546,20 +534,6 @@ void OverlandFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
   Teuchos::OSTab tab = getOSTab();
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
     *out_ << "    Tweaking BCs for the PC." << std::endl;
-
-  // // Attempt of a hack to deal with zero rel perm
-  // double eps = 1.e-30;
-  // Teuchos::RCP<CompositeVector> relperm =
-  //     S->GetFieldData("upwind_overland_conductivity", name_);
-  // for (unsigned int f=0; f!=relperm->size("face"); ++f) {
-  //   if ((*relperm)("face",f) < eps) {
-  //     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_FLUX) {
-  //       bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
-  //     } else if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_NULL) {
-  //       bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
-  //     }
-  //   }
-  // }
 };
 
 void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
@@ -567,66 +541,48 @@ void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
     *out_ << "    Tweaking BCs for calculation of consistent faces." << std::endl;
 
-  // // If the rel perm is 0, the face value drops out and is unconstrained.
-  // // Therefore we set it to Dirichlet to eliminate it from the system.
-  // double eps = 1.e-30;
-  // const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
-  //     ->ViewComponent("face",false);
-  // Teuchos::RCP<CompositeVector> relperm =
-  //     S->GetFieldData("upwind_overland_conductivity", name_);
-
-  // for (unsigned int f=0; f!=relperm->size("face"); ++f) {
-  //   if ((*relperm)("face",f) < eps) {
-  //     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_FLUX) {
-  //       bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
-  //       bc_values_[f] =  elevation[0][f];
-  //     } else if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_NULL) {
-  //       bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
-  //       bc_values_[f] =  elevation[0][f];
-  //     }
-  //   }
-  // }
-
   // Now we can safely calculate q = -k grad z for zero-gradient problems
-  AmanziMesh::Entity_ID_List cells;
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<double> dp;
-  std::vector<int> dirs;
-
-  const Epetra_MultiVector& elevation_f = *S->GetFieldData("elevation")
-      ->ViewComponent("face",false);
-  const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cond_f =
-    *S->GetFieldData("upwind_overland_conductivity")->ViewComponent("face",false);
+  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
+  elev->ScatterMasterToGhosted();
+  const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
+  const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff_cells =
       matrix_->Aff_cells();
   std::vector<Epetra_SerialDenseVector>& Ff_cells =
       matrix_->Ff_cells();
 
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
+
     int f = bc->first;
+
+    AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-    dp.resize(faces.size());
-    for (unsigned int n=0; n!=faces.size(); ++n) {
-      dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+    if (c < ncells_owned) {
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      std::vector<double> dp(faces.size());
+      for (unsigned int n=0; n!=faces.size(); ++n) {
+        dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+      }
+      unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+      ASSERT(my_n !=faces.size());
+
+      double bc_val = 0.;
+      for (unsigned int m=0; m!=faces.size(); ++m) {
+        bc_val -= Aff_cells[c](my_n,m) * dp[m];
+      }
+
+      // Apply the BC to the matrix
+      Ff_cells[c][my_n] -= bc_val;
     }
-    unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-    ASSERT(my_n !=faces.size());
-
-    double bc_val = 0.;
-    for (unsigned int m=0; m!=faces.size(); ++m) {
-      bc_val -= Aff_cells[c](my_n,m) * dp[m];
-    }
-
-    // Apply the BC to the matrix
-    Ff_cells[c][my_n] -= bc_val;
   }
 };
 
@@ -714,13 +670,16 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+      unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      if (*c0 < ncells) {
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-      *out_ << "  cond = " << (*cond)("face",fnums0[0]) << std::endl;
-      *out_ << "  pres_e_f = " << (*pres_elev)("face",fnums0[0]) << std::endl;
-      *out_ << "  u_f = " << (*u)("face",fnums0[0]) << std::endl;
+        *out_ << "  cond = " << (*cond)("face",fnums0[0]) << std::endl;
+        *out_ << "  pres_e_f = " << (*pres_elev)("face",fnums0[0]) << std::endl;
+        *out_ << "  u_f = " << (*u)("face",fnums0[0]) << std::endl;
+      }
     }
   }
 #endif
