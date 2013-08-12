@@ -16,4 +16,9 @@ echo "Patching file ${make_file}"
 @PERL_EXECUTABLE@ -w -i -p -e "s:^CXXFLAGS[\s]{0,}\?=.*:CXXFLAGS ?= ${cxx_flags}:" ${make_file}
 @PERL_EXECUTABLE@ -w -i -p -e "s:^LDFLAGS[\s]{0,}\?=.*:LDFLAGS ?= ${ldflags}:" ${make_file}
 
+# TestTestRunner.cpp has a bug in it which is described here:
+# http://comments.gmane.org/gmane.comp.lang.c%2B%2B.unittest%2B%2B.devel/394
+# We copy a fixed version into place before building unittest++.
+cp @SuperBuild_TEMPLATE_FILES_DIR@/unittest-TestTestRunner.cpp @UnitTest_source_dir@/src/tests/TestTestRunner.cpp
+
 exit $?
