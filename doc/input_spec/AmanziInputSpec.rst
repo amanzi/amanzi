@@ -135,7 +135,7 @@ Version
 =======
 
 Each input set contains at the top level a string variable `"Amanzi Input Format Version`".  As of the most recent update of this specification, the
-current version of the Amanzi input is `"1.1.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
+current version of the Amanzi input is `"1.2.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
 evolving input specification version can be found *here*.
 
 * [SU] "Amanzi Input Format Version" [string] Three part version string
@@ -595,7 +595,7 @@ Example:
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
 
-For unstructured Amanzi, this parameter must currently equal 3.
+For unstructured Amanzi, this parameter can equal 2 or 3.
 
 Mesh
 ====
@@ -909,11 +909,15 @@ The following models can be specified for the intrinsic permeability of the mate
  
  * [SU] `"Value`" [double] to specify the constant value of the intrinsic permeability
 
-* [S] `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires 
+* [SU] `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires
  
- * [S] `"Horizontal`" [double] to specify the constant value of the intrinsic permeability in the horizontal directions; and
+ * [SU] `"x`" [double] to specify the constant value of the intrinsic permeability in the x-direction; and
 
- * [S] `"Vertical`" [double] to specify the constant value of the intrinsic permeability in the vertical directions.
+ * [SU] `"y`" [double] to specify the constant value of the intrinsic permeability in the y-direction; and
+
+ * [SU] `"z`" [double] to specify the constant value of the intrinsic permeability in the z (vertical) direction.
+
+ where the directions refer to the global cartesian coordinates.
 
 * `"Intrinsic Permeability: GSLib`" [list] requires 
  
@@ -1191,7 +1195,7 @@ The following boundary condition parameterizations are supported:
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [SU] `"BC: Linear Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
+* [SU] `"BC: Linear Pressure`" requires `"Reference Value`" [double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
 * [S] `"BC: Uniform Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
@@ -1201,9 +1205,9 @@ The following boundary condition parameterizations are supported:
 
 * [U] `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
-* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this paramter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
+* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
 
-* `"BC: Impermeable`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* `"BC: Impermeable`"  requires no parameters
 
 * [SU] `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 

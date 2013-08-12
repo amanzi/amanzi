@@ -1,8 +1,8 @@
 .. viz:
 
-=======
+============
 Introduction
-=======
+============
 
 Amanzi writes out visualization information using HDF5 and Xdmf.  HDF5 is a platform independent binary file format utilized by many high performance computing applications.  Xdmf uses XML to describe data, store light data internally, and locate heavy data in a separate HDF5 file.  Xdmf provides a standard interface for exchanging information between applications.  
 
