@@ -91,7 +91,6 @@ void OverlandHeadFlow::fun( double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    res->ScatterMasterToGhosted("face");
     Teuchos::RCP<const CompositeVector> cond =
       S_next_->GetFieldData("upwind_overland_conductivity", name_);
     unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -190,7 +189,6 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    u->data()->ScatterMasterToGhosted("face");
     unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
@@ -207,7 +205,6 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    Pu->data()->ScatterMasterToGhosted("face");
     unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {

@@ -85,8 +85,6 @@ void Richards::fun(double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    res->ScatterMasterToGhosted("face");
-
     Teuchos::RCP<const CompositeVector> satl1 =
         S_next_->GetFieldData("saturation_liquid");
     Teuchos::RCP<const CompositeVector> satl0 =
@@ -184,7 +182,6 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
 
-    u->data()->ScatterMasterToGhosted("face");
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
@@ -206,7 +203,6 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
   // Dump correction
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
 
-    Pu->data()->ScatterMasterToGhosted("face");
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;

@@ -413,7 +413,6 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", name_);
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   // As a diagnostic, calculate the mass balance error
@@ -468,7 +467,6 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
@@ -527,8 +525,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           S->GetFieldData("darcy_flux_direction", name_);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
-      for (unsigned int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-        (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c] / perm_scale_;
+      {
+        Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
+        int ncells = uw_rel_perm_c.MyLength();
+        for (unsigned int c=0; c!=ncells; ++c) {
+          uw_rel_perm_c[0][c] = n_liq[0][c] / visc[0][c] / perm_scale_;
+        }
       }
       uw_rel_perm->ViewComponent("face",true)->PutScalar(1.);
       matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
@@ -541,7 +543,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
       AddGravityFluxesToVector_(gvec.ptr(), uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
-      flux_dir->ScatterMasterToGhosted();
     }
 
     update_perm |= update_dir;
@@ -592,8 +593,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   // Scale cells by n/mu
   if (update_perm) {
-    for (unsigned int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-      (*uw_rel_perm)("cell",c) *= n_liq[0][c] / visc[0][c] / perm_scale_;
+    Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
+    int ncells = uw_rel_perm_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      uw_rel_perm_c[0][c] *= n_liq[0][c] / visc[0][c] / perm_scale_;
     }
   }
 

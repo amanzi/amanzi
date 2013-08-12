@@ -122,10 +122,11 @@ void AdvectionDiffusion::UpdateBoundaryConditions_() {
 
 // Add a boundary marker to owned faces.
 void AdvectionDiffusion::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
+  Epetra_MultiVector& temp_f = *temperature->ViewComponent("face",true);
   int nfaces = temperature->size("face",false);
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
-      (*temperature)("face", 0, f) = bc_values_[f];
+      temp_f[0][f] = bc_values_[f];
     }
   }
 };

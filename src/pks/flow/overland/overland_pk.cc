@@ -243,7 +243,6 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<CompositeVector> elev = S->GetFieldData("elevation","elevation");
   matrix_->UpdateConsistentFaceConstraints(elev.ptr());
-  elev->ScatterMasterToGhosted();
 
   // Initialize BC values
   bc_head_->Compute(S->time());
@@ -291,7 +290,6 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface_flux", name_);
     matrix_->DeriveFlux(*potential, flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 };
 
@@ -315,7 +313,6 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
     Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
     matrix_->DeriveFlux(*potential, flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
@@ -367,7 +364,6 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<CompositeVector> uw_cond =
         S->GetFieldData("upwind_overland_conductivity", name_);
     Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
-    Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
 
     // patch up the BCs -- move rel perm on boundary_faces into uw_rel_perm on faces
     const Epetra_Import& vandelay = mesh_->exterior_face_importer();
@@ -640,10 +636,11 @@ void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
  ****************************************************************** */
 void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<CompositeVector>& pres) {
+  Epetra_MultiVector& pres_f = *pres->ViewComponent("face",true);
   unsigned int nfaces = pres->size("face",true);
   for (unsigned int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
-      (*pres)("face",f) = bc_values_[f];
+      pres_f[0][f] = bc_values_[f];
     }
   }
 };

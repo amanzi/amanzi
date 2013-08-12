@@ -16,6 +16,8 @@ namespace Flow {
 #define DEBUG_FLAG 1
 
 bool PredictorDelegateBCFlux::modify_predictor(const Teuchos::Ptr<CompositeVector>& u) {
+  Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
+
   int nfaces = bc_values_->size();
   for (int f=0; f!=nfaces; ++f) {
     if ((*bc_markers_)[f] == Operators::Matrix::MATRIX_BC_FLUX) {
@@ -24,7 +26,7 @@ bool PredictorDelegateBCFlux::modify_predictor(const Teuchos::Ptr<CompositeVecto
       if (lambda < 101325.) {
         int ierr = CalculateLambdaToms_(f, u, lambda);
         ASSERT(!ierr);
-        if (!ierr) (*u)("face",f) = lambda;
+        if (!ierr) u_f[0][f] = lambda;
       }
     }
   }

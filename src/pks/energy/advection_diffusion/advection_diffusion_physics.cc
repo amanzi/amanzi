@@ -27,21 +27,19 @@ void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
   Teuchos::RCP<const CompositeVector> temp1 =
     S_next_->GetFieldData("temperature");
 
-  Teuchos::RCP<const CompositeVector> cell_volume0 =
+  Teuchos::RCP<const CompositeVector> cv0 =
     S_inter_->GetFieldData("cell_volume");
-  Teuchos::RCP<const CompositeVector> cell_volume1 =
+  Teuchos::RCP<const CompositeVector> cv1 =
     S_next_->GetFieldData("cell_volume");
 
   double dt = S_next_->time() - S_inter_->time();
 
-  // NOTE: gas and liquid are done in a ?? basis, but rock is done in a mass basis
-
-  int c_owned = g->size("cell",false);
-  for (int c=0; c != c_owned; ++c) {
-    // add the time derivative of energy density to the residual
-    (*g)("cell",c) += ((*temp1)("cell",c)*(*cell_volume1)("cell",c)
-                         - (*temp0)("cell",c)*(*cell_volume0)("cell",c))/dt;
-  }
+  //  --   g <-- g - (cv*h)_t0/dt
+  g->ViewComponent("cell",false)->Multiply(-1./dt,
+          *cv0->ViewComponent("cell",false), *temp0->ViewComponent("cell",false), 1.);
+  //  --   g <-- g + (cv*h)_t1/dt
+  g->ViewComponent("cell",false)->Multiply(1./dt,
+          *cv1->ViewComponent("cell",false), *temp1->ViewComponent("cell",false), 1.);
 };
 
 
@@ -54,31 +52,39 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
 
   // set the flux field as the darcy flux
   Teuchos::RCP<const CompositeVector> darcy_flux = S->GetFieldData("darcy_flux");
+  const Epetra_MultiVector& flux_f = *darcy_flux->ViewComponent("face",true);
   advection_->set_flux(darcy_flux);
 
   // put the advected quantity in cells
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+  const Epetra_MultiVector& temp_f = *temp->ViewComponent("face", true);
+
   *field->ViewComponent("cell", false) = *temp->ViewComponent("cell", false);
+  Epetra_MultiVector& field_f = *field->ViewComponent("face",true);
 
   // put the boundary fluxes in faces -- assumes all Dirichlet BC in temperature!
   for (Functions::BoundaryFunction::Iterator bc = bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
-    // note that temp has the correct BC value in its face already, as it was
-    // solved from the previous timestep.
-    (*field)("face",f) = (*temp)("face",f) * fabs((*darcy_flux)("face",f));
+    field_f[0][f] = temp_f[0][f] * std::abs(flux_f[0][f]);
   }
 
   // apply the advection operator and add to residual
   advection_->Apply(bc_flux_);
-  int c_owned = g->size("cell",false);
+
+  Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
+  Teuchos::RCP<const CompositeVector> field_const(field);
+  const Epetra_MultiVector& field_c =
+      *field_const->ViewComponent("cell", false);
+
+  int c_owned = g_c.MyLength();
   if (negate) {
     for (int c=0; c!=c_owned; ++c) {
-      (*g)("cell",c) -= (*field)("cell",c);
+      g_c[0][c] -= field_c[0][c];
     }
   } else {
     for (int c=0; c!=c_owned; ++c) {
-      (*g)("cell",c) += (*field)("cell",c);
+      g_c[0][c] += field_c[0][c];
     }
   }
 };

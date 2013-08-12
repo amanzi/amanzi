@@ -154,10 +154,11 @@ void DivGradTest::UpdateBoundaryConditions_() {
 // -----------------------------------------------------------------------------
 void
 DivGradTest::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& pres) {
+  Epetra_MultiVector& pres_f = *pres->ViewComponent("face",true);
   int nfaces = pres->size("face");
   for (int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
-      (*pres)("face",f) = bc_values_[f];
+      pres_f[0][f] = bc_values_[f];
     }
   }
 };
