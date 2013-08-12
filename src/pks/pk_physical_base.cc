@@ -123,7 +123,9 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
       DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
     }
 
-    solution_evaluator_->SetFieldAsChanged(S); // communicates if necessary
+    // communicate just to make sure values are initialized for valgrind's sake
+    field->GetFieldData()->ScatterMasterToGhosted();
+    solution_evaluator_->SetFieldAsChanged(S);
   }
 
   // -- Push the data into the solution.

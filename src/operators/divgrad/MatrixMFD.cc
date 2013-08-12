@@ -462,13 +462,13 @@ void MatrixMFD::AssembleGlobalMatrices() {
 
   // loop over cells and fill
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   int faces_LID[MFD_MAX_FACES];
   int faces_GID[MFD_MAX_FACES];
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 

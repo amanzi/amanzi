@@ -213,11 +213,9 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   if (standalone_mode_) {
     ASSERT(plist_.isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
-    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
-    elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
@@ -227,7 +225,6 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
   Teuchos::ParameterList pres_elev_plist = plist_.sublist("potential evaluator");
-  pres_elev_plist.set("manage communication", true);
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
@@ -262,7 +259,6 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
   Teuchos::ParameterList height_plist = plist_.sublist("ponded depth evaluator");
-  height_plist.set("manage communication", true);
   Teuchos::RCP<FlowRelations::HeightEvaluator> height_evaluator =
       Teuchos::rcp(new FlowRelations::HeightEvaluator(height_plist));
   S->SetFieldEvaluator("ponded_depth", height_evaluator);
@@ -618,7 +614,6 @@ void OverlandHeadFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
-    std::cout << "zero grad!" << std::endl;
     //    bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
     //    bc_values_[f] = 0.;
     //    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
@@ -682,11 +677,6 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     *out_ << "    Tweaking BCs for the Operator." << std::endl;
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
-  AmanziMesh::Entity_ID_List cells;
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<double> dp;
-  std::vector<int> dirs;
-
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
   elev->ScatterMasterToGhosted();
   const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
@@ -697,29 +687,37 @@ void OverlandHeadFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   std::vector<Epetra_SerialDenseVector>& Ff_cells =
       matrix_->Ff_cells();
 
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
 
     int f = bc->first;
+
+    AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-    dp.resize(faces.size());
-    for (unsigned int n=0; n!=faces.size(); ++n) {
-      dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+    if (c < ncells_owned) {
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      std::vector<double> dp(faces.size());
+      for (unsigned int n=0; n!=faces.size(); ++n) {
+        dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+      }
+      unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+      ASSERT(my_n !=faces.size());
+
+      double bc_val = 0.;
+      for (unsigned int m=0; m!=faces.size(); ++m) {
+        bc_val -= Aff_cells[c](my_n,m) * dp[m];
+      }
+
+      // Apply the BC to the matrix
+      Ff_cells[c][my_n] -= bc_val;
     }
-    unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-    ASSERT(my_n !=faces.size());
-
-    double bc_val = 0.;
-    for (unsigned int m=0; m!=faces.size(); ++m) {
-      bc_val -= Aff_cells[c](my_n,m) * dp[m];
-    }
-
-    // Apply the BC to the matrix
-    Ff_cells[c][my_n] -= bc_val;
   }
 };
 
@@ -770,11 +768,6 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
   // }
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
-  AmanziMesh::Entity_ID_List cells;
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<double> dp;
-  std::vector<int> dirs;
-
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
   elev->ScatterMasterToGhosted();
   const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
@@ -785,28 +778,36 @@ void OverlandHeadFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
   std::vector<Epetra_SerialDenseVector>& Ff_cells =
       matrix_->Ff_cells();
 
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
+
+    AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-    dp.resize(faces.size());
-    for (unsigned int n=0; n!=faces.size(); ++n) {
-      dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+    if (c < ncells_owned) {
+      AmanziMesh::Entity_ID_List faces;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+      std::vector<double> dp(faces.size());
+      for (unsigned int n=0; n!=faces.size(); ++n) {
+        dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
+      }
+      unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
+      ASSERT(my_n !=faces.size());
+
+      double bc_val = 0.;
+      for (unsigned int m=0; m!=faces.size(); ++m) {
+        bc_val -= Aff_cells[c](my_n,m) * dp[m];
+      }
+
+      // Apply the BC to the matrix
+      Ff_cells[c][my_n] -= bc_val;
     }
-    unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-    ASSERT(my_n !=faces.size());
-
-    double bc_val = 0.;
-    for (unsigned int m=0; m!=faces.size(); ++m) {
-      bc_val -= Aff_cells[c](my_n,m) * dp[m];
-    }
-
-    // Apply the BC to the matrix
-    Ff_cells[c][my_n] -= bc_val;
   }
 };
 
