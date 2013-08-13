@@ -92,7 +92,7 @@ int MFD3D::DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
 
   // gradient calculation grad(C) = X^{-1} * d_values
   Tensor X(d, 2);
-  AmanziGeometry::Point dp[d];
+  AmanziGeometry::Point* dp = new AmanziGeometry::Point[d];
 
   for (int i = 0; i < d; i++) {
     (dp[i]).init(d);
@@ -100,6 +100,7 @@ int MFD3D::DispersionCornerFluxes(int node, int cell, Tensor& dispersion,
     for (int j = 0; j < d; j++) X(j, i) = (dp[i])[j];
   }
   X.inverse();
+  delete [] dp;
 
   AmanziGeometry::Point gradient(d), dvalues(d);
   for (int i = 0; i < d; i++) dvalues[i] = corner_values[i] - cell_value;
