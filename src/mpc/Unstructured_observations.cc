@@ -221,8 +221,7 @@ void Unstructured_observations::make_observations(State& state)
 	for (int i=0; i<mesh_block_size; ++i) {
 	  int ic = cell_ids[i];
 	  Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
-	  value += ( (*pressure)[ic] - p_atm ) / ( density * (*gravity)[dim-1]) + p[dim-1];
-	  value *= state.GetMesh()->cell_volume(ic);
+	  value +=  ( ( (*pressure)[ic] - p_atm ) / ( density * (*gravity)[dim-1]) + p[dim-1] ) * state.GetMesh()->cell_volume(ic) ;
 	  volume += state.GetMesh()->cell_volume(ic);
 	}
       } else {
