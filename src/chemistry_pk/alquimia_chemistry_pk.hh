@@ -9,6 +9,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Chemistry_State.hh"
+
 #include "alquimia_memory.h"
 #include "alquimia_util.h"
 #include "alquimia_constants.h"
@@ -118,7 +120,7 @@ class Alquimia_Chemistry_PK {
   std::map<std::string, AlquimiaGeochemicalCondition*> chem_boundary_conditions_;
   
   // Vector that takes responsibility for ownership of geochemical conditions.
-  std::vector<AlquimiaGeochemicalConditionVector*> all_chem_conditions_;
+  std::vector<AlquimiaGeochemicalCondition*> all_chem_conditions_;
 
   // Back-end engine name and input file.
   std::string chem_engine_inputfile_;
@@ -127,17 +129,16 @@ class Alquimia_Chemistry_PK {
   double current_time_;
   double saved_time_;
 
+  // Auxiliary data, requested by and stored within Amanzi.
   std::vector<std::string> aux_names_;
-  std::vector<int> aux_index_;
-
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
   void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
-  int AdvanceSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
+  int AdvanceSingleCell(double delta_time, int cellIndex, AlquimiaGeochemicalCondition* condition);
 
   void ParseChemicalConditions(const std::string& sublist_name,
-                               std::map<std::string, AlquimiaChemicalCondition*>& conditions);
+                               std::map<std::string, AlquimiaGeochemicalCondition*>& conditions);
   void XMLParameters(void);
   void SetupAuxiliaryOutput(void);
 

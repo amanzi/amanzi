@@ -42,7 +42,7 @@ include_directories(${ALQUIMIA_INCLUDE_DIRS})
 
 file(GLOB chem_inc_files "*hh")
 add_amanzi_library(chemistry_pk
-                   SOURCE Chemistry_State.cc chemistry_pk.cc #alquimia_chemistry_pk.cc 
+                   SOURCE Chemistry_State.cc chemistry_pk.cc alquimia_chemistry_pk.cc 
                    HEADERS ${chem_inc_files}
                    LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 
