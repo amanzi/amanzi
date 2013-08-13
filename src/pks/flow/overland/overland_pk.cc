@@ -18,8 +18,9 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "independent_variable_field_evaluator.hh"
 
 #include "MatrixMFD_TPFA_ScaledConstraint.hh"
-#include "upwinding.hh"
 #include "upwind_potential_difference.hh"
+#include "upwind_total_flux.hh"
+#include "upwind_cell_centered.hh"
 #include "pres_elev_evaluator.hh"
 #include "elevation_evaluator.hh"
 #include "meshed_elevation_evaluator.hh"
@@ -70,12 +71,6 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetGhosted()
     ->SetComponents(names2, locations2, num_dofs2);
 
-  // -- owned secondary variables, no evaluator used
-  S->RequireField("surface_flux", name_)->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("surface_velocity", name_)->SetMesh(S->GetMesh("surface"))
-                ->SetComponent("cell", AmanziMesh::CELL, 3);
-
   // -- cell volume and evaluator
   S->RequireFieldEvaluator("surface_cell_volume");
 
@@ -91,9 +86,38 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
-  upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
+  std::string method_name = plist_.get<string>("upwind conductivity method",
+          "upwind by potential difference");
+  if (method_name == "cell centered") {
+    upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
+    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
+            "overland_conductivity", "upwind_overland_conductivity"));
+  } else if (method_name == "upwind with total flux") {
+    upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
+    upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
           "overland_conductivity", "upwind_overland_conductivity",
-          "pres_elev", "ponded_depth"));
+            "surface_flux_direction"));
+  } else if (method_name == "upwind by potential difference") {
+    upwind_method_ = Operators::UPWIND_METHOD_POTENTIAL_DIFFERENCE;
+    upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
+            "overland_conductivity", "upwind_overland_conductivity",
+            "pres_elev", "ponded_depth"));
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Overland FLow PK has no upwinding method named: " << method_name;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  // -- owned secondary variables, no evaluator used
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
+    S->RequireField("surface_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  S->RequireField("surface_flux", name_)->SetMesh(S->GetMesh("surface"))
+                ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("surface_velocity", name_)->SetMesh(S->GetMesh("surface"))
+                ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
@@ -144,6 +168,10 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
     Exceptions::amanzi_throw(message);
   }
+
+  // upwinding by total flux requires a flux each iteration
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
+    update_flux_ = UPDATE_FLUX_ITERATION;
 };
 
 
@@ -251,6 +279,8 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
   S->GetField("surface_flux", name_)->set_initialized();
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
+    S->GetField("surface_flux_direction", name_)->set_initialized();
   S->GetField("surface_velocity", name_)->set_initialized();
 };
 
@@ -352,6 +382,19 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Update the perm only if needed.
     perm_update_required_ = false;
 
+    if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
+      // update the direction of the flux -- note this is NOT the flux
+      Teuchos::RCP<CompositeVector> flux_dir =
+          S->GetFieldData("surface_flux_direction", name_);
+
+      // Create the stiffness matrix without a rel perm (just n/mu)
+      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
+
+      // Derive the flux
+      Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+      matrix_->DeriveFlux(*pres_elev, flux_dir.ptr());
+    }
+
     // get conductivity data
     Teuchos::RCP<const CompositeVector> cond = S->GetFieldData("overland_conductivity");
     const Epetra_MultiVector& cond_bf = *cond->ViewComponent("boundary_face",false);
@@ -360,22 +403,23 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // get upwind conductivity data
     Teuchos::RCP<CompositeVector> uw_cond =
         S->GetFieldData("upwind_overland_conductivity", name_);
-    Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
 
-    // patch up the BCs -- move rel perm on boundary_faces into uw_rel_perm on faces
-    const Epetra_Import& vandelay = mesh_->exterior_face_importer();
-    const Epetra_Map& vandelay_map = mesh_->exterior_face_epetra_map();
-    uw_cond_f.Export(cond_bf, vandelay, Insert);
+    { // place boundary_faces on faces
+      Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
+      const Epetra_Import& vandelay = mesh_->exterior_face_importer();
+      const Epetra_Map& vandelay_map = mesh_->exterior_face_epetra_map();
+      uw_cond_f.Export(cond_bf, vandelay, Insert);
 
-    // Patch up zero-gradient case, which should not upwind.
-    AmanziMesh::Entity_ID_List cells;
-    for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
-         bc!=bc_zero_gradient_->end(); ++bc) {
-      int f = bc->first;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-      int c = cells[0];
-      uw_cond_f[0][f] = cond_c[0][c];
+      // Patch up zero-gradient case, which should not upwind.
+      AmanziMesh::Entity_ID_List cells;
+      for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
+           bc!=bc_zero_gradient_->end(); ++bc) {
+        int f = bc->first;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        ASSERT(cells.size() == 1);
+        int c = cells[0];
+        uw_cond_f[0][f] = cond_c[0][c];
+      }
     }
 
     // Then upwind.  This overwrites the boundary if upwinding says so.
