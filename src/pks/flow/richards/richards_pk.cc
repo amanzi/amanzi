@@ -13,7 +13,6 @@ Authors: Neil Carlson (version 1)
 
 #include "flow_bc_factory.hh"
 
-#include "upwinding.hh"
 #include "Point.hh"
 
 #include "upwind_cell_centered.hh"
@@ -200,12 +199,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (method_name == "upwind with gravity") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux(name_,
             "relative_permeability", "numerical_rel_perm", K_));
-    Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
+    Krel_method_ = Operators::UPWIND_METHOD_GRAVITY;
   } else if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             "relative_permeability", "numerical_rel_perm"));
     symmetric_ = true;
-    Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
+    Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
     upwind_from_prev_flux_ = plist_.get<bool>("upwind flux from previous iteration", false);
     if (upwind_from_prev_flux_) {
@@ -215,11 +214,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
       upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               "relative_permeability", "numerical_rel_perm", "darcy_flux_direction"));
     }
-    Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
+    Krel_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
   } else if (method_name == "arithmetic mean") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
             "relative_permeability", "numerical_rel_perm"));
-    Krel_method_ = FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+    Krel_method_ = Operators::UPWIND_METHOD_ARITHMETIC_MEAN;
   } else {
     std::stringstream messagestream;
     messagestream << "Richards FLow PK has no upwinding method named: " << method_name;
@@ -505,7 +504,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
 
-  // place n/mu on cells
+  // n/mu on cells
   update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
   const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
@@ -514,7 +513,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       ->ViewComponent("cell",false);
 
   // requirements due to the upwinding method
-  if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+  if (Krel_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
     bool update_dir = S->GetFieldEvaluator("mass_density_liquid")
         ->HasFieldChanged(S, name_);
     update_dir |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);

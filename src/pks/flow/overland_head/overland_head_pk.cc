@@ -18,8 +18,9 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "independent_variable_field_evaluator.hh"
 
 #include "MatrixMFD_TPFA_ScaledConstraint.hh"
-#include "upwinding.hh"
 #include "upwind_potential_difference.hh"
+#include "upwind_total_flux.hh"
+#include "upwind_cell_centered.hh"
 #include "pres_elev_evaluator.hh"
 #include "elevation_evaluator.hh"
 #include "meshed_elevation_evaluator.hh"
@@ -89,12 +90,6 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   }
 #endif
 
-  // -- owned secondary variables, no evaluator used
-  S->RequireField("surface_flux", name_)->SetMesh(S->GetMesh("surface"))
-                ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("surface_velocity", name_)->SetMesh(S->GetMesh("surface"))
-                ->SetComponent("cell", AmanziMesh::CELL, 3);
-
   // -- cell volume and evaluator
   S->RequireFieldEvaluator("surface_cell_volume");
   S->RequireGravity();
@@ -115,6 +110,44 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
+  // Create the upwinding method.
+  S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
+    ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+  S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
+
+  std::string method_name = plist_.get<string>("upwind conductivity method",
+          "upwind by potential difference");
+  if (method_name == "cell centered") {
+    upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
+    upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
+            "overland_conductivity", "upwind_overland_conductivity"));
+  } else if (method_name == "upwind with total flux") {
+    upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
+    upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+          "overland_conductivity", "upwind_overland_conductivity",
+            "surface_flux_direction"));
+  } else if (method_name == "upwind by potential difference") {
+    upwind_method_ = Operators::UPWIND_METHOD_POTENTIAL_DIFFERENCE;
+    upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
+            "overland_conductivity", "upwind_overland_conductivity",
+            "pres_elev", "ponded_depth"));
+  } else {
+    std::stringstream messagestream;
+    messagestream << "Overland FLow PK has no upwinding method named: " << method_name;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  // -- owned secondary variables, no evaluator used
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
+    S->RequireField("surface_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  S->RequireField("surface_flux", name_)->SetMesh(S->GetMesh("surface"))
+                ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("surface_velocity", name_)->SetMesh(S->GetMesh("surface"))
+                ->SetComponent("cell", AmanziMesh::CELL, 3);
+
   // Create the boundary condition data structures.
   Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
@@ -123,14 +156,6 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
 
-  // Create the upwinding method.
-  S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
-    ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
-  S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
-
-  upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
-          "overland_conductivity", "upwind_overland_conductivity",
-          "pres_elev", "ponded_depth"));
 
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
@@ -183,6 +208,10 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
     Exceptions::amanzi_throw(message);
   }
+
+  // upwinding by total flux requires a flux each iteration
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
+    update_flux_ = UPDATE_FLUX_ITERATION;
 };
 
 
@@ -357,6 +386,8 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
   S->GetField("surface_flux", name_)->set_initialized();
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
+    S->GetField("surface_flux_direction", name_)->set_initialized();
   S->GetField("surface_velocity", name_)->set_initialized();
 };
 
@@ -513,6 +544,19 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Update the perm only if needed.
     perm_update_required_ = false;
 
+    if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
+      // update the direction of the flux -- note this is NOT the flux
+      Teuchos::RCP<CompositeVector> flux_dir =
+          S->GetFieldData("surface_flux_direction", name_);
+
+      // Create the stiffness matrix without a rel perm (just n/mu)
+      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
+
+      // Derive the flux
+      Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+      matrix_->DeriveFlux(*pres_elev, flux_dir.ptr());
+    }
+
     // get conductivity data
     Teuchos::RCP<const CompositeVector> cond = S->GetFieldData("overland_conductivity");
     const Epetra_MultiVector& cond_bf = *cond->ViewComponent("boundary_face",false);
@@ -543,10 +587,17 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Then upwind.  This overwrites the boundary if upwinding says so.
     upwinding_->Update(S);
 
-    // Set cells to be n_liq
-    *uw_cond->ViewComponent("cell",false) =
+    { // Scale cells by n_liq
+      const Epetra_MultiVector& n_liq =
           *S->GetFieldData("surface_molar_density_liquid")
               ->ViewComponent("cell",false);
+
+      Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
+      int ncells = uw_cond_c.MyLength();
+      for (unsigned int c=0; c!=ncells; ++c) {
+        uw_cond_c[0][c] *= n_liq[0][c];
+      }
+    }
   }
 
   if (update_perm && out_.get() &&

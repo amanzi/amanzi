@@ -13,6 +13,7 @@
 #include "wrm_partition.hh"
 #include "boundary_function.hh"
 #include "MatrixMFD.hh"
+#include "upwinding.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -25,14 +26,8 @@ class MPCDiagonalFlowEnergy;
 class MPCSurfaceSubsurfaceDirichletCoupler;
 class PredictorDelegateBCFlux;
 namespace WhetStone { class Tensor; }
-namespace Operators { class Upwinding; }
 
 namespace Flow {
-
-const int FLOW_RELATIVE_PERM_CENTERED = 1;
-const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 2;
-const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 3;
-const int FLOW_RELATIVE_PERM_ARITHMETIC_MEAN = 4;
 
 class Richards : public PKPhysicalBDFBase {
 
@@ -129,7 +124,7 @@ protected:
 
   // control switches
   FluxUpdateMode update_flux_;
-  int Krel_method_;
+  Operators::UpwindMethod Krel_method_;
   int niter_;
   bool infiltrate_only_if_unfrozen_;
   bool modify_predictor_with_consistent_faces_;
