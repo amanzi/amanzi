@@ -27,6 +27,21 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-build-step.cmake.in
 	       @ONLY)
 set(ALQUIMIA_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_build})	
 
+# --- Define the install command
+
+# Build the install script
+set(ALQUIMIA_sh_install ${ALQUIMIA_prefix_dir}/alquimia-install-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-install-step.sh.in
+               ${ALQUIMIA_sh_install}
+	       @ONLY)
+
+# Configure the CMake command file
+set(ALQUIMIA_cmake_install ${ALQUIMIA_prefix_dir}/alquimia-install-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-install-step.cmake.in
+               ${ALQUIMIA_cmake_install}
+	       @ONLY)
+set(ALQUIMIA_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_install})	
+
 # --- Add external project build and tie to the ALQUIMIA build target
 ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     DEPENDS   ${ALQUIMIA_PACKAGE_DEPENDS}             # Package dependency target
@@ -47,8 +62,9 @@ ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     BUILD_COMMAND     ${ALQUIMIA_CMAKE_COMMAND}                     # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   1    # Flag for in source builds
                     # -- Install
-                    INSTALL_COMMAND   ""
-#                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+            		    INSTALL_COMMAND  ${ALQUIMIA_INSTALL_COMMAND}
+                    # -- Output control
                     # -- Output control
                     ${ALQUIMIA_logging_args})
 

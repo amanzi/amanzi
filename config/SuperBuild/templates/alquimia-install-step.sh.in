@@ -6,8 +6,8 @@
 cd @ALQUIMIA_source_dir@
 
 # Do a manual installation.
-alquimia_lib_dir=@ALQUIMIA_install_dir@/lib
-alquimia_include_dir=@ALQUIMIA_install_dir@/include
+alquimia_lib_dir=@TPL_INSTALL_PREFIX@/lib
+alquimia_include_dir=@TPL_INSTALL_PREFIX@/include
 if [ ! -e ${alquimia_lib_dir} ]; then mkdir -p ${alquimia_lib_dir} ; fi
 if [ ! -e ${alquimia_include_dir} ]; then mkdir -p ${alquimia_include_dir} ; fi
 

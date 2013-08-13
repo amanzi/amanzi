@@ -39,6 +39,22 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/PFLOTRAN-build-step.cmake.in
 	       @ONLY)
 set(PFLOTRAN_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_build})	
 
+# --- Define the install command
+
+# Build the install script
+set(PFLOTRAN_sh_install ${PFLOTRAN_prefix_dir}/pflotran-install-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.sh.in
+               ${PFLOTRAN_sh_install}
+	       @ONLY)
+
+# Configure the CMake command file
+set(PFLOTRAN_cmake_install ${PFLOTRAN_prefix_dir}/pflotran-install-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.cmake.in
+               ${PFLOTRAN_cmake_install}
+	       @ONLY)
+set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})	
+
+
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}             # Package dependency target
@@ -59,13 +75,13 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     BUILD_COMMAND     ${PFLOTRAN_CMAKE_COMMAND}            # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   1     # Flag for in source builds
                     # -- Install
-                    INSTALL_COMMAND   "" 
-#                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_COMMAND   ${PFLOTRAN_INSTALL_COMMAND} 
                     # -- Output control
                     ${PFLOTRAN_logging_args})
 
 include(BuildLibraryName)
 build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-set(PFLOTRAN_INCLUDE_DIRS ${PFLOTRAN_source_dir}/src/pflotran)
-set(PFLOTRAN_DIR ${PFLOTRAN_source_dir})
+set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/pflotran/src/pflotran)
+set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX}/pflotran)
 
