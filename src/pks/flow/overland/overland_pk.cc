@@ -691,7 +691,10 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     *out_ << "Consistent faces:" << std::endl;
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      *out_ << "  u_c = " << (*u)("cell",*c0) << ",  pres_elev_c = " << (*pres_elev)("cell",*c0) << std::endl;
+      unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      if (*c0 < ncells) {
+        *out_ << "  u_c = " << (*u)("cell",*c0) << ",  pres_elev_c = " << (*pres_elev)("cell",*c0) << std::endl;
+      }
     }
   }
 #endif

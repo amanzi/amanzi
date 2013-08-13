@@ -266,5 +266,68 @@ void OverlandFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> prec
   mfd_preconditioner_->InitPreconditioner();
 }
 
+
+double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du) {
+  const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_flux")
+      ->ViewComponent("face",false);
+  double flux_max(0.);
+  flux.NormInf(&flux_max);
+
+  Teuchos::RCP<const CompositeVector> res = du->data();
+  const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
+  const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
+  const Epetra_MultiVector& height_c = *u->data()->ViewComponent("cell",false);
+  double h = S_next_->time() - S_inter_->time();
+
+  // Cell error is based upon error in mass conservation relative to
+  // the current water content
+  double enorm_cell(0.);
+  int bad_cell = -1;
+  unsigned int ncells = res_c.MyLength();
+  for (unsigned int c=0; c!=ncells; ++c) {
+    double tmp = std::abs(h*res_c[0][c])
+        / (atol_*0.01 + rtol_*std::abs(height_c[0][c]));
+    if (tmp > enorm_cell) {
+      enorm_cell = tmp;
+      bad_cell = c;
+    }
+  }
+
+  // Face error given by mismatch of flux, so relative to flux.
+  double enorm_face(0.);
+  unsigned int nfaces = res_f.MyLength();
+  for (unsigned int f=0; f!=nfaces; ++f) {
+    double tmp = 1.e-4 * std::abs(res_f[0][f]) / (atol_ + rtol_*flux_max);
+    enorm_face = std::max<double>(enorm_face, tmp);
+  }
+
+
+  // Write out Inf norms too.
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
+    double infnorm_c(0.), infnorm_f(0.);
+    res_c.NormInf(&infnorm_c);
+    res_f.NormInf(&infnorm_f);
+
+#ifdef HAVE_MPI
+    double buf_c(enorm_cell), buf_f(enorm_face);
+    MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+
+    *out_ << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
+    //    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
+    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
+  }
+
+  double enorm_val(std::max<double>(enorm_face, enorm_cell));
+#ifdef HAVE_MPI
+  double buf = enorm_val;
+  MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+  return enorm_val;
+};
+
 }  // namespace Flow
 }  // namespace Amanzi
