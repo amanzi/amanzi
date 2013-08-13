@@ -91,7 +91,6 @@ void OverlandHeadFlow::fun( double t_old,
 
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    res->ScatterMasterToGhosted("face");
     Teuchos::RCP<const CompositeVector> cond =
       S_next_->GetFieldData("upwind_overland_conductivity", name_);
     unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -190,11 +189,16 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    u->data()->ScatterMasterToGhosted("face");
     unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
-        *out_ << "  p(" << *c0 <<"): " << (*u->data())("cell",0,*c0) << std::endl;
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+        *out_ << "  p(" << *c0 <<"): " << (*u->data())("cell",0,*c0);
+        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u->data())("face",fnums0[n]);
+        *out_ << std::endl;
       }
     }
   }
@@ -207,11 +211,16 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #if DEBUG_FLAG
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "Precon application:" << std::endl;
-    Pu->data()->ScatterMasterToGhosted("face");
     unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
-        *out_ << "  PC*p(" << *c0 <<") (pre-var): " << (*u->data())("cell",0,*c0) << std::endl;
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+        *out_ << "  PC*p(" << *c0 <<") (pre-var): " << (*Pu->data())("cell",0,*c0);
+        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->data())("face",fnums0[n]);
+        *out_ << std::endl;
       }
     }
   }
@@ -232,7 +241,13 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
     *out_ << "Precon application:" << std::endl;
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       if (*c0 < ncells) {
-        *out_ << "  PC*p(" << *c0 <<"): " << (*u->data())("cell",0,*c0) << std::endl;
+        AmanziMesh::Entity_ID_List fnums0;
+        std::vector<int> dirs;
+        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+
+        *out_ << "  PC*p(" << *c0 <<"): " << (*Pu->data())("cell",0,*c0);
+        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->data())("face",fnums0[n]);
+        *out_ << std::endl;
       }
     }
   }

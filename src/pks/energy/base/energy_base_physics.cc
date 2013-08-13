@@ -70,17 +70,21 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   ApplyDirichletBCsToEnthalpy_(S.ptr(), field.ptr());
 
   // apply the advection operator and add to residual
+  advection_->Apply(bc_flux_);
 
-  // NOTE: all energy flux BCs are applied as diffusive fluxes, so the false
-  // indicates to not include the values, but instead place zeros here.
-  advection_->Apply(bc_flux_, false);
+  Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
+  Teuchos::RCP<const CompositeVector> field_const(field);
+  const Epetra_MultiVector& field_c =
+      *field_const->ViewComponent("cell", false);
+
+  int c_owned = g_c.MyLength();
   if (negate) {
-    for (unsigned int c=0; c!=g->size("cell"); ++c) {
-      (*g)("cell",c) -= (*field)("cell",c);
+    for (int c=0; c!=c_owned; ++c) {
+      g_c[0][c] -= field_c[0][c];
     }
   } else {
-    for (unsigned int c=0; c!=g->size("cell"); ++c) {
-      (*g)("cell",c) += (*field)("cell",c);
+    for (int c=0; c!=c_owned; ++c) {
+      g_c[0][c] += field_c[0][c];
     }
   }
 };
@@ -104,7 +108,6 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
     matrix_->DeriveFlux(*temp, flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   // finish assembly of the stiffness matrix

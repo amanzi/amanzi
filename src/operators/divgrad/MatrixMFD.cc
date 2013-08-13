@@ -227,6 +227,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
         }
       }
     } else if (!Krel->has_component("cell") && Krel->has_component("face")) {
+      Krel->ScatterMasterToGhosted("face");
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
 
       for (int n=0; n!=nfaces; ++n) {
@@ -235,8 +236,9 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
         }
       }
     } else if (Krel->has_component("cell") && Krel->has_component("face")) {
-      const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
+      Krel->ScatterMasterToGhosted("face");
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
+      const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
 
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
@@ -460,13 +462,13 @@ void MatrixMFD::AssembleGlobalMatrices() {
 
   // loop over cells and fill
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   int faces_LID[MFD_MAX_FACES];
   int faces_GID[MFD_MAX_FACES];
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c!=ncells; ++c) {
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -774,15 +776,16 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 
   flux->PutScalar(0.);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = flux->size("face",false);
+  solution.ScatterMasterToGhosted("face");
 
   std::vector<bool> done(nfaces_owned, false);
   const Epetra_MultiVector& soln_cells = *solution.ViewComponent("cell",false);
   const Epetra_MultiVector& soln_faces = *solution.ViewComponent("face",true);
   Epetra_MultiVector& flux_v = *flux->ViewComponent("face",false);
 
-  for (int c=0; c!=ncells; ++c) {
+  for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -822,6 +825,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
         const Teuchos::Ptr<CompositeVector>& velocity) const {
 
+  flux.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& flux_f = *flux.ViewComponent("face",true);
   Epetra_MultiVector& velocity_c = *velocity->ViewComponent("cell",false);
 

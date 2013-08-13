@@ -36,7 +36,6 @@ void OverlandHeadFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
     Teuchos::RCP<CompositeVector> flux =
         S->GetFieldData("surface_flux", name_);
     matrix_->DeriveFlux(*pres_elev, flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   // Patch up BCs for zero-gradient

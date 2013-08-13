@@ -188,20 +188,27 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   Teuchos::RCP<Epetra_MultiVector> rhs_faces = rhs_->ViewComponent("face",false);
   Teuchos::RCP<Epetra_MultiVector> rhs_cells = rhs_->ViewComponent("cell",false);
 
+  // Schur complement RHS
   for (int f=0; f!=nfaces_owned; ++f) {
     (*rhs_faces)[0][f] /= Dff_f[0][f];
   }
   (*Acf_).Multiply(false, *rhs_faces, Tc);
   for (int c=0; c!=ncells_owned; ++c) (*rhs_cells)[0][c] -= Tc[c];
-  for (int f=0; f!=nfaces_owned; ++f) (*rhs_faces)[0][f] *= Dff_f[0][f];
+
+  // Zero the face RHS out, as the application of matrix results in zero in
+  // the face system.
+  rhs_faces->PutScalar(0.);
 
   // create a with-ghost copy of Acc
   CompositeVector Dcc(mesh_,names_c,locations_c,ndofs,true);
   Dcc.CreateData();
-  Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
 
-  for (int c=0; c!=ncells_owned; ++c) Dcc_c[0][c] = (*Acc_)[c];
+  { // context for non-const access
+    Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
+    for (int c=0; c!=ncells_owned; ++c) Dcc_c[0][c] = (*Acc_)[c];
+  }
   Dcc.ScatterMasterToGhosted();
+  Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
 
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];

@@ -13,7 +13,6 @@ Authors: Neil Carlson (version 1)
 
 #include "flow_bc_factory.hh"
 
-#include "upwinding.hh"
 #include "Point.hh"
 
 #include "upwind_cell_centered.hh"
@@ -200,12 +199,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (method_name == "upwind with gravity") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux(name_,
             "relative_permeability", "numerical_rel_perm", K_));
-    Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
+    Krel_method_ = Operators::UPWIND_METHOD_GRAVITY;
   } else if (method_name == "cell centered") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
             "relative_permeability", "numerical_rel_perm"));
     symmetric_ = true;
-    Krel_method_ = FLOW_RELATIVE_PERM_CENTERED;
+    Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
     upwind_from_prev_flux_ = plist_.get<bool>("upwind flux from previous iteration", false);
     if (upwind_from_prev_flux_) {
@@ -215,11 +214,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
       upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               "relative_permeability", "numerical_rel_perm", "darcy_flux_direction"));
     }
-    Krel_method_ = FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
+    Krel_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
   } else if (method_name == "arithmetic mean") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
             "relative_permeability", "numerical_rel_perm"));
-    Krel_method_ = FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+    Krel_method_ = Operators::UPWIND_METHOD_ARITHMETIC_MEAN;
   } else {
     std::stringstream messagestream;
     messagestream << "Richards FLow PK has no upwinding method named: " << method_name;
@@ -413,7 +412,6 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", name_);
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   // As a diagnostic, calculate the mass balance error
@@ -468,7 +466,6 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
     Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
     matrix_->DeriveFlux(*pres, flux.ptr());
     AddGravityFluxesToVector_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 
   if (update_flux_ != UPDATE_FLUX_NEVER) {
@@ -507,7 +504,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   bool update_perm = S->GetFieldEvaluator("relative_permeability")
       ->HasFieldChanged(S, name_);
 
-  // place n/mu on cells
+  // n/mu on cells
   update_perm |= S->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S, name_);
   const Epetra_MultiVector& n_liq = *S->GetFieldData("molar_density_liquid")
@@ -516,7 +513,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       ->ViewComponent("cell",false);
 
   // requirements due to the upwinding method
-  if (Krel_method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+  if (Krel_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
     bool update_dir = S->GetFieldEvaluator("mass_density_liquid")
         ->HasFieldChanged(S, name_);
     update_dir |= S->GetFieldEvaluator(key_)->HasFieldChanged(S, name_);
@@ -527,8 +524,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           S->GetFieldData("darcy_flux_direction", name_);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
-      for (unsigned int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-        (*uw_rel_perm)("cell",c) = n_liq[0][c] / visc[0][c] / perm_scale_;
+      {
+        Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
+        int ncells = uw_rel_perm_c.MyLength();
+        for (unsigned int c=0; c!=ncells; ++c) {
+          uw_rel_perm_c[0][c] = n_liq[0][c] / visc[0][c] / perm_scale_;
+        }
       }
       uw_rel_perm->ViewComponent("face",true)->PutScalar(1.);
       matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
@@ -541,7 +542,6 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
       AddGravityFluxesToVector_(gvec.ptr(), uw_rel_perm.ptr(), rho.ptr(), flux_dir.ptr());
-      flux_dir->ScatterMasterToGhosted();
     }
 
     update_perm |= update_dir;
@@ -592,8 +592,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   // Scale cells by n/mu
   if (update_perm) {
-    for (unsigned int c=0; c!=uw_rel_perm->size("cell", false); ++c) {
-      (*uw_rel_perm)("cell",c) *= n_liq[0][c] / visc[0][c] / perm_scale_;
+    Epetra_MultiVector& uw_rel_perm_c = *uw_rel_perm->ViewComponent("cell",false);
+    int ncells = uw_rel_perm_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      uw_rel_perm_c[0][c] *= n_liq[0][c] / visc[0][c] / perm_scale_;
     }
   }
 

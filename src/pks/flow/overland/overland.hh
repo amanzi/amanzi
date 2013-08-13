@@ -11,6 +11,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 #include "boundary_function.hh"
 #include "MatrixMFD.hh"
+#include "upwinding.hh"
 
 #include "pk_factory.hh"
 #include "pk_physical_bdf_base.hh"
@@ -18,7 +19,6 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 
 namespace Operators {
-  class Upwinding;
   class MatrixMFD_TPFA;
 }
 class MPCSurfaceSubsurfaceDirichletCoupler;
@@ -75,6 +75,10 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
+  // error monitor
+  virtual double enorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du);
+
   virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
@@ -126,6 +130,7 @@ protected:
   // control switches
   bool standalone_mode_; // domain mesh == surface mesh
   FluxUpdateMode update_flux_;
+  Operators::UpwindMethod upwind_method_;
   bool is_source_term_;
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;

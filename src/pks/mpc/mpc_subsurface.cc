@@ -162,7 +162,6 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     *out_ << "Picard Precon application:" << std::endl;
 
     int c0 = 0;
-    u->SubVector(0)->data()->ScatterMasterToGhosted("face");
     AmanziMesh::Entity_ID_List fnums0;
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
@@ -202,7 +201,6 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "EWC Precon application:" << std::endl;
 
-    Pu->SubVector(0)->data()->ScatterMasterToGhosted("face");
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;
@@ -242,7 +240,6 @@ bool MPCSubsurface::modify_correction(double h,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     *out_ << "NKA'd PC application:" << std::endl;
 
-    du->SubVector(0)->data()->ScatterMasterToGhosted("face");
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
          c0!=dc_.end(); ++c0) {
       AmanziMesh::Entity_ID_List fnums0;

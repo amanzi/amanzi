@@ -66,6 +66,10 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
   // communicate ghosted cells
   cell_coef.ScatterMasterToGhosted("cell");
 
+  Epetra_MultiVector& face_coef_v = *face_coef->ViewComponent("face",true);
+  const Epetra_MultiVector& cell_coef_v = *cell_coef.ViewComponent("cell",true);
+
+
   for (unsigned int c=0; c!=cell_coef.size("cell", true); ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     AmanziGeometry::Point Kgravity = (*K_)[c] * gravity;
@@ -75,9 +79,9 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
 
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       if ((normal * Kgravity) * dirs[n] >= flow_eps) {
-        (*face_coef)("face",f) = cell_coef("cell",c);
+        face_coef_v[0][f] = cell_coef_v[0][c];
       } else if (std::abs((normal * Kgravity) * dirs[n]) < flow_eps) {
-        (*face_coef)("face",f) += cell_coef("cell",c) / 2.0;
+        face_coef_v[0][f] += cell_coef_v[0][c] / 2.;
       }
     }
   }

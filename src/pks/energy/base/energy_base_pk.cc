@@ -231,7 +231,6 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
     Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
     matrix_->DeriveFlux(*temp, flux.ptr());
-    flux->ScatterMasterToGhosted();
   }
 };
 
@@ -310,11 +309,12 @@ void EnergyBase::UpdateBoundaryConditions_() {
 // -----------------------------------------------------------------------------
 // Add a boundary marker to owned faces.
 // -----------------------------------------------------------------------------
-void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
-  int nfaces = temperature->size("face");
-  for (int f=0; f!=nfaces; ++f) {
+void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temp) {
+  Epetra_MultiVector& temp_f = *temp->ViewComponent("face",true);
+  unsigned int nfaces = temp->size("face",true);
+  for (unsigned int f=0; f!=nfaces; ++f) {
     if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
-      (*temperature)("face",f) = bc_values_[f];
+      temp_f[0][f] = bc_values_[f];
     }
   }
 };

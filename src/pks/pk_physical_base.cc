@@ -123,7 +123,9 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
       DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
     }
 
-    solution_evaluator_->SetFieldAsChanged(S); // communicates if necessary
+    // communicate just to make sure values are initialized for valgrind's sake
+    field->GetFieldData()->ScatterMasterToGhosted();
+    solution_evaluator_->SetFieldAsChanged(S);
   }
 
   // -- Push the data into the solution.
@@ -135,20 +137,22 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv) {
-  AmanziMesh::Entity_ID_List cells;
   cv->ScatterMasterToGhosted("cell");
+  Teuchos::Ptr<const CompositeVector> cv_const(cv);
+  const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);
+  Epetra_MultiVector& cv_f = *cv->ViewComponent("face",false);
 
-  int f_owned = cv->size("face");
+  int f_owned = cv_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
-    cells.clear();
+    AmanziMesh::Entity_ID_List cells;
     cv->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;
     for (int n=0; n!=ncells; ++n) {
-      face_value += (*cv)("cell",cells[n]);
+      face_value += cv_c[0][cells[n]];
     }
-    (*cv)("face",f) = face_value / ncells;
+    cv_f[0][f] = face_value / ncells;
   }
 };
 
