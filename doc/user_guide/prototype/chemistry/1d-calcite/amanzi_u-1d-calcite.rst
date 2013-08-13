@@ -6,8 +6,8 @@ Overview
 
 This test example performs the simulation of calcite dissolution in a 1D flow domain. 
 
-Features tested
-~~~~~~~~~~~~~~~
+Capabilities tested
+~~~~~~~~~~~~~~~~~~~
 
 * 1D flow
 * 1D advective transport 
@@ -16,15 +16,21 @@ Features tested
 	* Aqueous complexation reactions (equilibrium)
 	* Mineral dissolution
 
-Information about this test problem
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+About
+~~~~~
 
-* Amanzi input file: amanzi-1d-calcite.xml
-* Test type: Benchmark testing
-* Benchmark simulator: PFlotran (*input file:* 1d-calcite.in)
 * Test case ID: 1SSConTran-calcite
+* Test type: Benchmark
+* Benchmark simulator: PFlotran (*input file:* 1d-calcite.in)
+* Files
+
+  * Amanzi input file: amanzi-1d-calcite.xml
+  * Benchmark simulator input file: 1d-calcite.in
+
+* Location: amanzi/examples/examples/phase2/chemistry/1d-calcite
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
+* Last tested on: Aug 31, 2013
 	
 Introduction
 ------------
@@ -74,13 +80,21 @@ is the ion activity product, and
 :math:`K_{sp}`
 is the solubility constant of calcite. 
 
+Problem Specification
+---------------------
+
+See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+
+Results and Comparison
+----------------------
+
 Expected results
 ~~~~~~~~~~~~~~~~
 
 These are the expected results.
 
 Simulation results
-------------------
+~~~~~~~~~~~~~~~~~~
 
 Here go the figure and table.
 

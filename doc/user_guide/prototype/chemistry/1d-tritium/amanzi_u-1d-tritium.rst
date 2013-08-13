@@ -6,8 +6,8 @@ Overview
 
 This test example performs the simulation of decay of tritium, a radioactive isotope of hydrogen, in a 1D flow domain. 
 
-Features tested
-~~~~~~~~~~~~~~~
+Capabilities tested
+~~~~~~~~~~~~~~~~~~~
 
 * 1D flow
 * 1D advective transport 
@@ -15,16 +15,22 @@ Features tested
 
 	* First order decay (aqueous kinetics)
 
-Information about this test problem
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+About
+~~~~~
 
-* Amanzi input file: amanzi-u-1d-tritium.xml
-* Test type: Benchmark testing
-* Benchmark simulator: PFlotran (*input file:* 1d-tritium.in)
 * Test case ID: 1SSConTran-tritium
+* Test type: Benchmark
+* Benchmark simulator: PFlotran
+* Files
+
+  * Amanzi input file: amanzi-u-1d-tritium.xml
+  * Benchmark simulator input file: 1d-tritium.in
+
+* Location: amanzi/examples/examples/phase2/chemistry/1d-tritium
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
-	
+* Last tested on Aug 31, 2013
+
 Introduction
 ------------
 
@@ -60,13 +66,21 @@ In this example, the half life of tririum is taken as
 . Thus, 
 :math:`\lambda = 1.78577 \cdot 10^{-9} s^{-1}`
 
+Problem Specification
+---------------------
+
+See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+
+Results and Comparison
+----------------------
+
 Expected results
 ~~~~~~~~~~~~~~~~
 
 These are the expected results.
 
 Simulation results
-------------------
+~~~~~~~~~~~~~~~~~~
 
 Here go the figure and table.
 
