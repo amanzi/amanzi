@@ -133,8 +133,8 @@ class Alquimia_Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
   void UpdateChemistryStateStorage(void);
-  int InitializeSingleCell(int cellIndex);
-  int AdvanceSingleCell(int cellIndex);
+  int InitializeSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
+  int AdvanceSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
 
   void ParseChemicalConditions(const std::string& sublist_name,
                                std::map<std::string, AlquimiaChemicalCondition*>& conditions);

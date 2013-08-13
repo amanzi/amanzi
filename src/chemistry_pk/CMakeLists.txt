@@ -33,15 +33,17 @@ include_directories(${OUTPUT_SOURCE_DIR})
 
 
 # External (TPL) include directories
-# Although, it does not call HDF5 directly 
+# Although it does not call HDF5 directly 
 # it does need HDF5 for the Vis.hpp file 
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
+include_directories(${ALQUIMIA_INCLUDE_DIRS})
 
 
 file(GLOB chem_inc_files "*hh")
 add_amanzi_library(chemistry_pk
-                   SOURCE Chemistry_State.cc chemistry_pk.cc HEADERS ${chem_inc_files}
+                   SOURCE Chemistry_State.cc chemistry_pk.cc #alquimia_chemistry_pk.cc 
+                   HEADERS ${chem_inc_files}
                    LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 
 if (BUILD_TESTS)

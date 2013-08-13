@@ -94,34 +94,24 @@ Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() {
 
 // This helper performs initialization on a single cell within Amanzi's state.
 // It returns an error code that indicates success (0) or failure (1).
-int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex) {
+int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaChemicalCondition* condition) {
 
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
   CopyAmanziStateToAlquimia(cell, chemistry_state_->total_component_concentration());
   CopyAmanziMaterialPropertiesToAlquimia(cell, chemistry_state_->total_component_concentration());
 
-  // Apply the geochemical conditions.
+  // Apply the geochemical condition for this cell.
   int ierr = 0;
-  try {
-    chem.ProcessCondition(&chem_data_.engine_state,
-                          &(alquimia_conditions_.data[i]),
-                          &chem_data_.material_properties,
-                          &chem_data_.state,
-                          &chem_data_.aux_data,
-                          &chem_status_);
-      //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
-      // solve for initial free-ion concentrations
-//      chem_->Speciate(&beaker_components_, beaker_parameters_);
-//      CopyBeakerStructuresToCellState(cell);
-  } catch (AmanziException& geochem_error) {
+  chem.ProcessCondition(&chem_data_.engine_state,
+                        condition,
+                        &chem_data_.material_properties,
+                        &chem_data_.state,
+                        &chem_data_.aux_data,
+                        &chem_status_);
+  int ierr = 0;
+  if (chem_status_.error != 0)
     ierr = 1;
-    // std::cout << "ChemistryPK::InitializeChemistry(): " 
-    //           << "An error occured while initializing chemistry in cell: " 
-    //           << cell << ".\n" << geochem_error.what() << std::endl;
-    // beaker_components_.Display("-- input components:\n");
-    // Exceptions::amanzi_throw(geochem_error);
-  }
 
   // Retrieve the auxiliary output data.
   chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
@@ -195,8 +185,12 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
 
   // NOTE: we need to perform the initialization on the first cell to determine 
   // NOTE: the number of secondary activity coefficients, which we'll stash in 
-  // NOTE: the chemistry state.
-  int ierr = InitializeSingleCell(0);
+  // NOTE: the chemistry state. For this operation, it doesn't matter which 
+  // NOTE: geochemical condition we use.
+  std::map<std::string, AlquimiaGeochemicalCondition*>::iterator cond_iter = 
+    chem_initial_conditions_.begin();
+  AlquimiaGeochemicalCondition* condition = cond_iter->second;
+  int ierr = InitializeSingleCell(0, condition);
   if (ierr != 0)
   {
     AmanziException geochem_error("Error in Alquimia_Chemistry_PK::InitializeChemistry 1");
@@ -206,19 +200,33 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void) {
 
   SetupAuxiliaryOutput();
 
-  // Now loop through all the cells and initialize
+  // Now loop through all the regions and initialize.
   chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
-  int num_cells = chemistry_state_->porosity()->MyLength();
-  ierr = 0;
-  for (cell = 0; cell < num_cells; ++cell) {
-    if (debug()) {
-      std::cout << "Initial speciation in cell " << cell << std::endl;
-    }
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
+  for (cond_iter = chem_initial_conditions_.begin(); 
+       cond_iter != chem_initial_conditions_.end(); ++cond_iter)
+  {
+    std::string region_name = cond_iter->first;
+    condition = cond_iter->second;
 
-    ierr = InitializeSingleCell(cell);
+    // Get the cells that belong to this region.
+    unsigned int num_cells = mesh->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List cell_indices;
+    mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+  
+    // Loop over the cells.
+    ierr = 0;
+    for (unsigned int i = 0; i < num_cells; ++i) {
+      if (debug()) {
+        std::cout << "Initial speciation in cell " << cell << std::endl;
+      }
+      int cell = cell_indices[i];
+      ierr = InitializeSingleCell(cell, condition);
+    }
   }
-  recv = 0;
+
   // figure out if any of the processes threw an error, if so all processes will re-throw
+  recv = 0;
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
     AmanziException geochem_error("Error in Alquimia_Chemistry_PK::InitializeChemistry 1");
@@ -590,8 +598,9 @@ void Alquimia_Chemistry_PK::CopyAmanziMaterialPropertiesToAlquimiaMaterialProper
 void CopyAmanziGeochemicalConditionsToAlquimia(const int cell_id,
                                                Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
 {
-  // FIXME: Need to understand how Amanzi conveys geochemical conditions before 
-  // FIXME: proceeding with this.
+  // For now, Amanzi doesn't store geochemical conditions--we parse the 
+  // name of the backend engine's input file from XML and then pass that 
+  // filename directly to Alquimia.
 }
 
 void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id) {
@@ -751,7 +760,19 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_total_component_conc
 // This helper advances the solution on a single cell within Amanzi's state.
 // It returns the number of iterations taken to obtain the advanced solution, 
 // or -1 if an error occurred.
-int Alquimia_Chemistry_PK::AdvanceSingleCell(int cellIndex) {
+int Alquimia_Chemistry_PK::AdvanceSingleCell(int cellIndex, AlquimiaChemicalCondition* condition) {
+
+  // Apply the geochemical condition for this cell.
+  int ierr = 0;
+  chem.ProcessCondition(&chem_data_.engine_state,
+                        condition,
+                        &chem_data_.material_properties,
+                        &chem_data_.state,
+                        &chem_data_.aux_data,
+                        &chem_status_);
+  if (chem_status_.error != 0)
+    return -1;
+
   // create a backup copy of the components
   //      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
   // chemistry computations for this cell
@@ -761,24 +782,20 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(int cellIndex) {
                                  &chem_data_.state,
                                  &chem_data_.aux_data,
                                  &chem_status_);
-  if (!chem_status_converged)
-  {
+  if (chem_status_.error != 0)
     return -1;
-  }
-  else
-  {
-    int num_iterations = chem_status_.num_newton_iterations;
 
-    // Retrieve the auxiliary output data.
-    chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
-        &chem_data_.material_properties,
-        &chem_data_.state,
-        &chem_data_.aux_data,
-        &chem_data_.aux_output,
-        &chem_status_);
+  int num_iterations = chem_status_.num_newton_iterations;
 
-    return num_iterations;
-  }
+  // Retrieve the auxiliary output data.
+  chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
+      &chem_data_.material_properties,
+      &chem_data_.state,
+      &chem_data_.aux_data,
+      &chem_data_.aux_output,
+      &chem_status_);
+
+  return num_iterations;
 }
 
 /*******************************************************************************
@@ -826,41 +843,57 @@ void Alquimia_Chemistry_PK::advance(
   int imin = -999;
   int min_iterations = 10000000;
 
-  int ierr(0);
-  for (int cell = 0; cell < num_cells; cell++) {
-    int num_iterations = AdvanceSingleCell(cell);
-    if (num_iterations > 0)
-    {
-      //std::stringstream message;
-      //message << "--- " << cell << "\n";
-      //beaker_components_.Display(message.str().c_str());
-      if (max_iterations < num_iterations) {
-        max_iterations = num_iterations;
-        imax = cell;
-      }
-      if (min_iterations > num_iterations) {
-        min_iterations = num_iterations;
-        imin = cell;
-      }
-      ave_iterations += num_iterations;
-    } 
-    else
-    {
-      ierr = 1;
-    }
+  // Now loop through all the regions and initialize.
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
+  for (std::map<std::string, AlquimiaGeochemicalCondition*>::iterator 
+       cond_iter = chem_boundary_conditions_.begin(); 
+       cond_iter != chem_boundary_conditions_.end(); ++cond_iter)
+  {
+    std::string region_name = cond_iter->first;
+    AlquimiaGeochemicalCondition* condition = cond_iter->second;
 
-    // update this cell's data in the arrays
-    if (ierr == 0) CopyAlquimiaStateToAmanzi(cell);
+    // Get the cells that belong to this region.
+    unsigned int num_cells = mesh->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List cell_indices;
+    mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
 
-    // TODO(bandre): was porosity etc changed? copy someplace
+    int ierr = 0;
+    for (unsigned int i = 0; i < num_cells; i++) {
+      int cell = cell_indices[i];
+      int num_iterations = AdvanceSingleCell(cell, condition);
+      if (num_iterations > 0)
+      {
+        //std::stringstream message;
+        //message << "--- " << cell << "\n";
+        //beaker_components_.Display(message.str().c_str());
+        if (max_iterations < num_iterations) {
+          max_iterations = num_iterations;
+          imax = cell;
+        }
+        if (min_iterations > num_iterations) {
+          min_iterations = num_iterations;
+          imin = cell;
+        }
+        ave_iterations += num_iterations;
+      } 
+      else
+      {
+        ierr = 1;
+      }
+
+      // update this cell's data in the arrays
+      if (ierr == 0) CopyAlquimiaStateToAmanzi(cell);
+
+      // TODO(bandre): was porosity etc changed? copy someplace
 
 #ifdef GLENN_DEBUG
-    if (cell % (num_cells / 10) == 0) {
-      std::cout << "  " << cell * 100 / num_cells
-                << "%" << std::endl;
-    }
+      if (cell % (num_cells / 10) == 0) {
+        std::cout << "  " << cell * 100 / num_cells
+          << "%" << std::endl;
+      }
 #endif
-  }  // for(cells)
+    }  // for(cells)
+  }
   int recv(0);
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
