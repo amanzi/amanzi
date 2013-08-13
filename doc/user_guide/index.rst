@@ -10,10 +10,12 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-
+   
+  
    install/index.rst
-   testing/index.rst
    viz/index.rst
+   testing/index.rst
+   prototype/index.rst
 
 Indices and tables
 ==================

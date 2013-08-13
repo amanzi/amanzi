@@ -1,0 +1,6 @@
+add_subdirectory(1d-tracer)
+add_subdirectory(1d-tritium)
+add_subdirectory(1d-calcite)
+add_subdirectory(1d-ion-exchange)
+add_subdirectory(1d-surface-complexation)
+add_subdirectory(farea)

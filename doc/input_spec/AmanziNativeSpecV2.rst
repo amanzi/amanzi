@@ -236,9 +236,11 @@ The following is an example of a complete MPC list:
 
 
 
-State (tbw)
-===========
-Here is an example
+State (incomplete)
+==================
+
+State allows the user to initialize physical variables using a variety of 
+tools.
 
 .. code-block:: xml
 
@@ -249,14 +251,16 @@ Here is an example
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.81"/>
+
+    <Parameter name="Number of component concentrations" type="int" value="0"/>
     <Parameter name="Material Names" type="Array(string)" value="{Mesh block 1, Mesh block 2}"/>
 
-    <ParameterList name="Mesh block Gordon aquifer">
+    <ParameterList name="Mesh block sand">
+      <Parameter name="Region" type="string" value="Sand"/>
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
       <Parameter name="Constant horizontal permeability" type="double" value="1e-17"/>
       <Parameter name="Constant porosity" type="double" value="0.39"/>
       <Parameter name="Constant vertical permeability" type="double" value="1e-17"/>
-      <Parameter name="Region" type="string" value="Gordon aquifer"/>
       <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
       <ParameterList name="linear pressure">
         <Parameter name="gradient" type="Array(double)" value="{0, -9793.52}"/>
@@ -264,8 +268,35 @@ Here is an example
         <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="Mesh block gravel">  <!-- next mesh block --> 
+      <Parameter name="Region" type="string" value="Gravel"/>
+      ...
+    </ParameterList>
   </ParameterList>
 
+Some State parameters are described below:
+
+* `"Number of component concentrations`" [int] This parameter does not have 
+  a default value. Thus if transport is not initialized, set it to zero.
+
+Some data can be initialized from files. Additional sublist has to be added to
+the `"State`" list with the file name and names of attributes. 
+The provided data will override results of other initialization tools. 
+Here is an example:
+
+.. code-block:: xml
+
+  <ParameterList name="File initialization">
+    <ParameterList name="absolute permeability">  <!-- Amanzi's name of a state variable -->
+      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
+      <Parameter name="attribute" type="string" value="perm"/>
+    </ParameterList>
+    <ParameterList name="porosity">
+      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
+      <Parameter name="attribute" type="string" value="porosity"/>
+    </ParameterList>
+  </ParameterList>
 
 Flow
 ====
@@ -276,7 +307,8 @@ Structure of both sublists is quite similar. We make necessary comments on diffe
 Water retention models
 -----------------------
 
-User defines water retention models in sublist `"Water retention models`". It contains as many sublists, 
+User defines water retention models in sublist `"Water retention models`". 
+It contains as many sublists, 
 e.g. `"Soil 1`", `"Soil 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
 inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
@@ -311,18 +343,17 @@ An example of the van Genuchten model specification is:
 
 Amanzi performs rudimentary checks of validity of the provided parameters. 
 The relative permeability curves can be calculated and saved in the file krel_pc.txt
-and krel_sat.txt using the following optional commands (that go to `"Richards Problem`" list):
+and krel_sat.txt using the following optional commands (that go to `"Water Retention Models`" list):
 
 .. code-block:: xml
 
-    <Parameter name="calculate krel-pc curves" type="Array(double)" value="{0.0, 0.1, 3000.0}"/>
-    <Parameter name="calculate krel-sat curves" type="Array(double)" value="{0.0001, 0.01, 1.0}"/>
+    <Parameter name="plot krel-pc curves" type="Array(double)" value="{0.0, 0.1, 3000.0}"/>
+    <Parameter name="plot krel-sat curves" type="Array(double)" value="{0.0001, 0.01, 1.0}"/>
 
 The triple of doubles means the starting capillary pressure (resp., saturation), the period, and 
 the final capillary pressure (resp., saturation).
 Each line in the output file will contain the capilalry pressure (resp., saturation) and relative 
 permeability values for all water retention models in the order they appear in the input spec.
-This output requires verbosity level `"medium`" or higher. 
 
 
 Boundary conditions
@@ -534,12 +565,33 @@ nonlinear solvers during steady state time integration. Here is an example:
      </ParameterList>
 
      <ParameterList name="BDF1">
+       <Parameter name="max iterations" type="int" value="15"/>
+       <Parameter name="min iterations" type="int" value="10"/>
+       <Parameter name="limit iterations" type="int" value="20"/>
+       <Parameter name="nonlinear tolerance" type="double" value="1e-05"/>
+       <Parameter name="time step reduction factor" type="double" value="0.8"/>
+       <Parameter name="time step increase factor" type="double" value="1.25"/>
+       <Parameter name="max time step" type="double" value="6e+10"/>
+       <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
+       <Parameter name="error abs tol" type="double" value="1.0"/>
+       <Parameter name="error rel tol" type="double" value="0.0"/>
+       <Parameter name="time step increase factor" type="double" value="1.2"/>
+       <Parameter name="max divergent iterations" type="int" value="3"/>
+       <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
+       <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+       <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+       <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+       <Parameter name="nonlinear iteration divergence factor" type="double" value="1e+03"/>
+
        <Parameter name="initial time step" type="double" value="1e-07"/>
        <Parameter name="maximum time step" type="double" value="1e+10"/>
        <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <ParameterList name="BDF1 parameters">
-         ...
-       </ParameterList>
+       <Parameter name="convergence tolerance" type="double" value="1e-12"/>
+       <Parameter name="maximal number of iterations" type="int" value="200"/>
+       <Parameter name="start time" type="double" value="0.0"/>
+       <Parameter name="end time" type="double" value="100.0"/>
+       <Parameter name="initial time step" type="double" value="0.1"/>
+       <Parameter name="maximum time step" type="double" value="1.0"/>
      </ParameterList>
    </ParameterList>
 
@@ -571,8 +623,7 @@ The parameters used here are
     initial time step. If adaptive time stepping strategy is specified, this
     parameter is ignored. Default is 1.0.
 
-  * `"BDF1 parameters`" [list] used for initialization of the BDF1 time
-    integrator. 
+  * Other parameters will be described later.
 
 * `"initialization`" [list] defines parameters for calculating initial pressure guess.
   It can be used to obtain pressure field which is consistent with the boundary conditions.
@@ -602,9 +653,6 @@ The parameters used here are
   * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
 
 * `"BFD1`" [list] the named list used to control the nonlinear solver.
-  It might go away in the next revision of the Native Specs. 
-  Now, only the sublist `"BFD1 parameters`" is supported. The remaining parameters
-  are used for development and unit tests.
 
 
 Transient Time Integratior
@@ -634,12 +682,7 @@ pressure re-initialization. Here is an example:
      </ParameterList>
 
      <ParameterList name="BDF1">
-       <Parameter name="initial time step" type="double" value="1e-07"/>
-       <Parameter name="maximum time step" type="double" value="1e+10"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <ParameterList name="BDF1 parameters">
-         ...
-       </ParameterList>
+       ...
      </ParameterList>
    </ParameterList>
 
@@ -715,9 +758,30 @@ Here is an example:
 Boundary Conditions
 -------------------
 
+The boundary conditions sublist differs from a similar specification of the boundary conditions 
+in `"Flow`". Its structure will be changed in the nearest future. 
 For the advective transport, the boundary conditions must be specified on inflow parts of the
 boundary. If no value is prescribed through the XML input, the zero inlux boundary condition
-is used. Note that the boundary condition is set up separately for each component.
+is used. Note that the boundary condition is set up separately for each component:
+
+.. code-block:: xml
+
+   <ParameterList name="Transport BCs">
+     <ParameterList name="West Boundary for H+">
+       <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
+       <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
+       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
+     </ParameterList>  
+
+     <ParameterList name="East Boundary for TC-99">
+       <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
+       <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
+       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
+     </ParameterList>  
+   </ParameterList>  
+
 
 The new structure of boundary conditions is aligned with that used for Flow.
 It allows the use to define spatially variable boundary conditions. 
@@ -727,26 +791,16 @@ Temporary, both approaches to specifying boundary condtions are supported.
 
    <ParameterList name="boundary conditions">
      <ParameterList name="concentration">
-       <ParameterList name="H+">
-         <ParameterList name="descriptive name for first boundary condition">
-           <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
+       <ParameterList name="H+"> 
+         <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
            <ParameterList name="boundary concentration">
              <ParameterList name="function-constant">  <!-- any time function -->
                <Parameter name="value" type="double" value="0.0"/>
              </ParameterList>
            </ParameterList>
-	 </ParameterList>
-         <ParameterList name="descriptive name for next boundary condition">
-           <Parameter name="regions" type="Array(string)" value="{Left, Right}"/>
-           <ParameterList name="boundary concentration">
-             <ParameterList name="function-tabular">  <!-- any time function -->
-	       <Parameter name="forms" type="Array(string)" value="{constan}"/> 
-               <Parameter name="x values" type="Array(double)" value="{0.0, 1.0}"/>
-	       <Parameter name="y values" type="Array(double)" value="{1.0, 0.5}"/>
-             </ParameterList>
-           </ParameterList>
-	 </ParameterList>	 
+         </ParameterList>
        </ParameterList>
+
        <ParameterList name="Tc-99"> <!-- Next component --> 
        ...
        </ParameteList>
@@ -754,7 +808,6 @@ Temporary, both approaches to specifying boundary condtions are supported.
 
      <ParameterList name="outward flux">  <!-- Future boundary conditions -->
      </ParameteList>
-
    </ParameterList>
 
 Sources and Sinks
@@ -1222,9 +1275,15 @@ Example:
       <Parameter name="Interval" type="int" value="100"/>
       <Parameter name="End" type="int" value="-1"/>
     </ParameterList>
+
+    <Parameter name="walkabout" type="bool" value="false"/>
   </ParameterList>
 
-In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 100.
+In this example, Checkpoint Data files are written when the cycle number is 
+a multiple of 100.
+
+Additional data are written to this file when parameter `"walkabout`"
+is set to true.  
 
 
 
