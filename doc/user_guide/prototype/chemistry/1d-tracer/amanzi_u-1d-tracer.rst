@@ -48,6 +48,8 @@ Model set-up:
 
 * The domain is discretized with 100 cells in the x-direction, 1 meter long each. 
 
+* Porosity is 0.25
+
 * The flow is horizontal in the x-direction. The uniform flow velocity in x-direction is
   :math:`7.913 \cdot 10^{-6} kg/s`
   (or 
