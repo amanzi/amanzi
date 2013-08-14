@@ -5,6 +5,13 @@
   Deformation optimization matrix
 */
 
+#include "EpetraExt_MatrixMatrix.h"
+
+#include "errors.hh"
+#include "composite_vector_factory.hh"
+#include "MatrixVolumetricDeformation.hh"
+
+
 namespace Amanzi {
 namespace Operators {
 
@@ -43,6 +50,8 @@ void MatrixVolumetricDeformation::Apply(const CompositeVector& x,
 // Apply the inverse, x <-- A^-1 b
 void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
         const Teuchos::Ptr<CompositeVector>& x) {
+  int ierr(0);
+
   // ensure we have a solver
   if (prec_method_ == PREC_METHOD_NULL) {
     Errors::Message msg("MatrixVolumetricDeformation::ApplyInverse requires a specified method");
@@ -54,7 +63,8 @@ void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
   // -- form dVdz^T * b
   Teuchos::RCP<CompositeVector> rhs = domain()->CreateVector(false);
   rhs->CreateData();
-  dVdz->Apply(true, *b->ViewComponent("cell",false),
+  dVdz_->SetUseTranspose(true);
+  dVdz_->Apply(*b.ViewComponent("cell",false),
               *rhs->ViewComponent("node",false));
 
   // Solve the system x = operator_^-1 * rhs
@@ -79,6 +89,10 @@ void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
 }
 
 void MatrixVolumetricDeformation::InitializeFromOptions_() {
+  // parameters for optimization
+  smoothing_ = plist_.get<double>("smoothing coefficient");
+  diagonal_shift_ = plist_.get<double>("diagonal shift", 1.e-6);
+
   // method for inversion
   prec_method_ = PREC_METHOD_NULL;
   if (plist_.isParameter("preconditioner")) {
@@ -208,17 +222,17 @@ void MatrixVolumetricDeformation::Assemble_() {
   }
 
   operator_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,node_map,node_map,nnz_op));
-  delete nnz_op[];
+  delete[] nnz_op;
 
   // form explicitly dVdz^T * dVdz
-  Epetra_Ext::MatrixMatrix::Multiply(*dVdz,true, *dVdz,false, *operator_);
+  EpetraExt::MatrixMatrix::Multiply(*dVdz_,true, *dVdz_,false, *operator_);
 
   // == Add in optimization components ==
   // -- Add a small shift to the diagonal
   Epetra_Vector diag(node_map);
-  ierr = dVdz->ExtractDiagonalCopy(&diag);  ASSERT(!ierr);
+  ierr = operator_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
   for (int n=0; n!=nnodes; ++n) diag[n] += diagonal_shift_;
-  ierr = dVdz->ReplaceDiagonalValues(diag);  ASSERT(!ierr);
+  ierr = operator_->ReplaceDiagonalValues(diag);  ASSERT(!ierr);
 
   // -- Add in a diffusive term
   int *node_indices = new int[max_nnode_neighbors];
@@ -269,8 +283,8 @@ void MatrixVolumetricDeformation::Assemble_() {
   ierr = operator_->FillComplete();  ASSERT(!ierr);
 
   // clean up
-  delete node_indices[];
-  delete node_values[];
+  delete[] node_indices;
+  delete[] node_values;
 }
 
 

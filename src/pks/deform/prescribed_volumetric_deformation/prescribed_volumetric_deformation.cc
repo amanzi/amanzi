@@ -30,7 +30,7 @@ PrescribedVolumetricDeformation::PrescribedVolumetricDeformation(Teuchos::Parame
     PKPhysicalBase(plist,solution)
 {
   poro_key_ = plist.get<std::string>("porosity key","porosity");
-  
+
   bottom_surface_ = plist_.get<Teuchos::Array<std::string> >("bottom surface").toVector();
   deform_region_ = plist_.get<std::string>("region");
   deform_factor_ = plist_.get<double>("factor");

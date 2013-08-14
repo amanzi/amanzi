@@ -15,5 +15,6 @@
 
 add_subdirectory(advection)
 add_subdirectory(divgrad)
+add_subdirectory(deformation)
 
 # elliptic operators?

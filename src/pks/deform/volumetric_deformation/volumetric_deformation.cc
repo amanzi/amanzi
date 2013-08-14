@@ -80,6 +80,17 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator("porosity");
   S->RequireField("porosity")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell",AmanziMesh::CELL,1);
+
+  // solve method
+  global_solve_ = plist_.isSublist("global solve");
+  if (global_solve_) {
+    Teuchos::ParameterList op_plist = plist_.sublist("global solve");
+    Teuchos::RCP<std::vector<std::string> > bottom_region_list = Teuchos::rcp(new std::vector<std::string>());
+    bottom_region_list->push_back(bottom_surface_name_);
+
+    operator_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(op_plist,
+            mesh_, bottom_region_list));
+  }
 }
 
 // -- Initialize owned (dependent) variables.
@@ -122,7 +133,6 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
     for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
   }
   S->GetField("vertex coordinate",name_)->set_initialized();
-
 }
 
 bool VolumetricDeformation::advance(double dt) {
@@ -142,90 +152,101 @@ bool VolumetricDeformation::advance(double dt) {
   Teuchos::RCP<CompositeVector> dcell_vol_vec =
       S_next_->GetFieldData("dcell_volume_dtime", name_);
   deform_func_->Compute(T_mid, dcell_vol_vec.ptr());
-  const Epetra_MultiVector& dcell_vol = *dcell_vol_vec->ViewComponent("cell",false);
 
-  // Evaluate dz of the plane above the prism by integrating up the
-  // change, and contribute these to the nodes that make up that plane
-  // for averaging.
-  Teuchos::RCP<CompositeVector> nodal_dz_vec = S_next_->GetFieldData("nodal_dz",name_);
-  Epetra_MultiVector& nodal_dz_g = *nodal_dz_vec->ViewComponent("node",true);
-  nodal_dz_g.PutScalar(0.);
+  Teuchos::RCP<CompositeVector> nodal_dz_vec =
+      S_next_->GetFieldData("nodal_dz",name_);
 
-  // Simultaneously evaluate contributions to the 
+  if (global_solve_) {
+    Teuchos::RCP<CompositeVector> delta_cell_vol =
+        Teuchos::rcp(new CompositeVector(*dcell_vol_vec));
+    *delta_cell_vol = *dcell_vol_vec;
+    delta_cell_vol->Scale(dT);
+    operator_->ApplyInverse(*delta_cell_vol, nodal_dz_vec.ptr());
 
-  AmanziMesh::Entity_ID_List bottomfaces;
-  mesh_->get_set_entities(bottom_surface_name_, AmanziMesh::FACE,
-                          AmanziMesh::OWNED, &bottomfaces);
-  int ncols = 0;
-  int ncells_tot = 0;
+  } else {
+    const Epetra_MultiVector& dcell_vol = *dcell_vol_vec->ViewComponent("cell",false);
 
-  for (unsigned int i=0; i!=bottomfaces.size(); ++i) {
-    // find the bottom cell
-    AmanziMesh::Entity_ID f_below = bottomfaces[i];
-    AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f_below, AmanziMesh::OWNED, &cells);
-    ASSERT(cells.size() == 1);
-    AmanziMesh::Entity_ID c0 = cells[0];
+    // Evaluate dz of the plane above the prism by integrating up the
+    // change, and contribute these to the nodes that make up that plane
+    // for averaging.
+    Epetra_MultiVector& nodal_dz_g = *nodal_dz_vec->ViewComponent("node",true);
+    nodal_dz_g.PutScalar(0.);
 
-    // for each cell in the column, integrate the change
-    double face_displacement = 0.;
-    bool done = false;
-    int ncells_in_col = 1;
+    // Simultaneously evaluate contributions to the 
 
-    while (!done) {
-      // find the face above
-      // fix me when Mesh is fixed!
-      ASSERT(0);
-      AmanziMesh::Entity_ID f_above = 0;
-      //      AmanziMesh::Entity_ID f_above = mesh_->cell_get_face_above(c0);
+    AmanziMesh::Entity_ID_List bottomfaces;
+    mesh_->get_set_entities(bottom_surface_name_, AmanziMesh::FACE,
+                            AmanziMesh::OWNED, &bottomfaces);
+    int ncols = 0;
+    int ncells_tot = 0;
 
-      // calculate the displacement of the face above the cell
-      double dz = mesh_->face_centroid(f_above)[2] - mesh_->face_centroid(f_below)[2];
-      face_displacement += dz * dcell_vol[0][c0] * dT;
+    for (unsigned int i=0; i!=bottomfaces.size(); ++i) {
+      // find the bottom cell
+      AmanziMesh::Entity_ID f_below = bottomfaces[i];
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f_below, AmanziMesh::OWNED, &cells);
+      ASSERT(cells.size() == 1);
+      AmanziMesh::Entity_ID c0 = cells[0];
 
-      // distribute that to the nodes of the face
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_->face_get_nodes(f_above, &nodes);
-      for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
-           n!=nodes.end(); ++n) {
-        nodal_dz_g[0][*n] += face_displacement;
-        nodal_dz_g[1][*n]++;
+      // for each cell in the column, integrate the change
+      double face_displacement = 0.;
+      bool done = false;
+      int ncells_in_col = 1;
+
+      while (!done) {
+        // find the face above
+        // fix me when Mesh is fixed!
+        ASSERT(0);
+        AmanziMesh::Entity_ID f_above = 0;
+        //      AmanziMesh::Entity_ID f_above = mesh_->cell_get_face_above(c0);
+        
+        // calculate the displacement of the face above the cell
+        double dz = mesh_->face_centroid(f_above)[2] - mesh_->face_centroid(f_below)[2];
+        face_displacement += dz * dcell_vol[0][c0] * dT;
+
+        // distribute that to the nodes of the face
+        AmanziMesh::Entity_ID_List nodes;
+        mesh_->face_get_nodes(f_above, &nodes);
+        for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
+             n!=nodes.end(); ++n) {
+          nodal_dz_g[0][*n] += face_displacement;
+          nodal_dz_g[1][*n]++;
+        }
+
+        // iterate til we reach the top of the domain
+        // get the cell above
+        AmanziMesh::Entity_ID c1 = mesh_->cell_get_cell_above(c0);
+        if (c1 >= 0) {
+          c0 = c1;
+          f_below = f_above;
+          ncells_in_col++;
+        } else {
+          done = true;
+        }
       }
 
-      // iterate til we reach the top of the domain
-      // get the cell above
-      AmanziMesh::Entity_ID c1 = mesh_->cell_get_cell_above(c0);
-      if (c1 >= 0) {
-        c0 = c1;
-        f_below = f_above;
-        ncells_in_col++;
-      } else {
-        done = true;
+      ncells_tot += ncells_in_col;
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+        *out_ << "  Integrated column " << ncols << " with " << ncells_in_col << " cells." << std::endl;
       }
+      ncols++;
     }
 
-    ncells_tot += ncells_in_col;
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      *out_ << "  Integrated column " << ncols << " with " << ncells_in_col << " cells." << std::endl;
+      int ncells_loc = ncells_tot;
+      nodal_dz_vec->comm()->SumAll(&ncells_loc, &ncells_tot, 1);
+      *out_ << "Integrated " << ncols << " columns, total # cells touched = " << ncells_tot << std::endl;
     }
-    ncols++;
-  }
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    int ncells_loc = ncells_tot;
-    nodal_dz_vec->comm()->SumAll(&ncells_loc, &ncells_tot, 1);
-    *out_ << "Integrated " << ncols << " columns, total # cells touched = " << ncells_tot << std::endl;
-  }
-
-  // take the average
-  nodal_dz_vec->GatherGhostedToMaster("node");
-  Epetra_MultiVector& nodal_dz_l = *nodal_dz_vec->ViewComponent("node",false);
-  for (int i=0; i!=nodal_dz_l.MyLength(); ++i) {
-    if (nodal_dz_l[1][i] > 1) {
-      nodal_dz_l[0][i] /= nodal_dz_l[1][i];
+    // take the average
+    nodal_dz_vec->GatherGhostedToMaster("node");
+    Epetra_MultiVector& nodal_dz_l = *nodal_dz_vec->ViewComponent("node",false);
+    for (int i=0; i!=nodal_dz_l.MyLength(); ++i) {
+      if (nodal_dz_l[1][i] > 1) {
+        nodal_dz_l[0][i] /= nodal_dz_l[1][i];
+      }
     }
   }
-
 
   // form list of deformed nodes
   Entity_ID_List nodeids;
@@ -233,6 +254,9 @@ bool VolumetricDeformation::advance(double dt) {
   Amanzi::AmanziGeometry::Point coords, new_coords;
   int dim = mesh_->space_dimension();
   new_coords.init(dim);
+
+  const Epetra_MultiVector& nodal_dz_l =
+      *nodal_dz_vec->ViewComponent("node",false);
 
   int nnodes = nodal_dz_l.MyLength();
   for (int i=0; i!=nnodes; ++i) {
