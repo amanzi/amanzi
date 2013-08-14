@@ -28,7 +28,9 @@ TEST(MSTK_DEFORM_VOLS_2D)
   botreg_def.set< Teuchos::Array<double> >("Low Coordinate",lo_coord);
   botreg_def.set< Teuchos::Array<double> >("High Coordinate",hi_coord);
 
-  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
+  //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
+
+  if (comm->NumProc() > 1) return;
 
   // Create a geometric model from region spec
 
@@ -38,7 +40,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
   // Generate a mesh consisting of 3x3 elements 
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-1.5,0.0,1.5,1.5,5,5,comm.get(),gm));
+    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-1.5,0.0,1.5,1.0,5,5,comm.get(),gm));
 
   int nc = 
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
@@ -56,7 +58,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
     orig_volumes[i] = mesh->cell_volume(i);
     // target_volumes[i] = orig_volumes[i];
     target_volumes[i] = 0.0;
-    min_volumes[i] = 0.5*orig_volumes[i];
+    min_volumes[i] = 0.25*orig_volumes[i];
 
     Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
     if (fabs(ccen[0]) < 1.0e-06)
@@ -84,6 +86,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
     CHECK(mesh->cell_volume(i) > min_volumes[i]);
   }
 
+  mesh->write_to_exodus_file("deformed2.exo");
 }
 
 
@@ -102,7 +105,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
   botreg_def.set< Teuchos::Array<double> >("Low Coordinate",lo_coord);
   botreg_def.set< Teuchos::Array<double> >("High Coordinate",hi_coord);
 
-  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
+  //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
   // Create a geometric model from region spec
 
@@ -111,11 +114,12 @@ TEST(MSTK_DEFORM_VOLS_3D)
 
   // Generate a mesh consisting of 3x3 elements 
 
+  std::string meshfilename = (comm->NumProc() == 1) ? "test/hex_5x5x5.exo" : "test/hex_5x5x5.par";
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-1.5,-1.5,0.0,1.5,1.5,1.5,5,5,5,comm.get(),gm));
+    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(meshfilename.c_str(),comm.get(),gm));
 
   int nc = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
 
   // Request target volume of 50% for bottom two cells in center column
   // The others are unconstrained except for a barrier of minimum volume
@@ -158,5 +162,6 @@ TEST(MSTK_DEFORM_VOLS_3D)
     CHECK(mesh->cell_volume(i) > min_volumes[i]);
   }
 
+  mesh->write_to_exodus_file("deformed3.exo");
 }
 
