@@ -98,11 +98,11 @@ class DarcyProblem {
   void createBClist(const char* type, const char* bc_x, 
                     Teuchos::Array<std::string>& regions, double value) {
     std::string func_list_name;
-    if (type == "pressure") {
+    if (!strcmp(type, "pressure")) {
       func_list_name = "boundary pressure";
-    } else if (type == "static head") {
+    } else if (!strcmp(type, "static head")) {
       func_list_name = "water table elevation";
-    } else if (type == "mass flux") {
+    } else if (!strcmp(type, "mass flux")) {
       func_list_name = "outward mass flux";
     }
     Teuchos::ParameterList& bc_list = dp_list.get<Teuchos::ParameterList>("boundary conditions");
