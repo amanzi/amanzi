@@ -4052,8 +4052,8 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
   int egid_tmpl0[3][3] = {{1,1,3},{3,1,4},{5,2,7}}; /* X direction edges (iterating over j,k) */
   int fgdim_tmpl[3] = {2,3,2};
   int fgid_tmpl0[3] = {6,1,5};
-  int fgid_tmpl1[3] = {3,1,4};
-  int fgid_tmpl2[3] = {1,1,2};
+  int fgid_tmpl1[3] = {1,1,2};
+  int fgid_tmpl2[3] = {3,1,4};
 
   dx = (x1-x0)/nx;
   dy = (y1-y0)/ny;

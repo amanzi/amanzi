@@ -65,7 +65,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   
   // Simultaneously get the extents of the problem
   
-  int nv = num_entities(NODE,OWNED);  
+  int nv = num_entities(NODE,USED);  
   meshxyz = new double [3*nv];        // class variable
   double *newxyz = new double [3*nv];
 
@@ -75,6 +75,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     MV_Coords(mv,&(meshxyz[3*(id-1)]));
   }
   std::copy(meshxyz,meshxyz+3*nv,newxyz);
+
 
   // copy the target and min volumes for cells from the input
  
@@ -99,8 +100,8 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   // iteration over the entire mesh. Global iterations, of course, are
   // carried out until convergence
 
-  int iter_global=0, maxiter_global=50;
-  bool converged_global=false;
+  int iter_global=0, maxiter_global=100;
+  int converged_global=0;
   
   while (!converged_global && iter_global < maxiter_global) {
     double global_dist2 = 0.0;
@@ -275,17 +276,21 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       
     } // while (mv = ...)
 
-    double global_normdist2 = global_dist2/nv;
-    if (global_normdist2 < eps*eps) {
-      converged_global = 1;
-    }
-
     // an iteration over all vertices is over
     // update the current coordinates to be the newly computed coordinates
 
     std::copy(newxyz,newxyz+3*nv,meshxyz);
 
     iter_global++;
+
+    if (get_comm()->NumProc() > 1)
+      MESH_UpdateVertexCoords(mesh,mpicomm);
+
+    double global_normdist2 = global_dist2/nv;
+    int converged_onthisproc = 0;
+    if (global_normdist2 < eps*eps)
+      converged_onthisproc = 1;
+    get_comm()->MinAll(&converged_onthisproc,&converged_global,1);
 
   } // while (!converged_global)
 
