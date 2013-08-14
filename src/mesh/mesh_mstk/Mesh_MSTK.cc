@@ -2153,19 +2153,19 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
           if (mindist2 <= 1.0e-32)
             break;
         }
+      }
 
-        Entity_ID_List cells, cells1;
+      Entity_ID_List cells, cells1;
 
-        node_get_cells(minnode,USED,&cells);
-
-        int ncells = cells.size();
-        for (int ic = 0; ic < ncells; ic++) {
-          Entity_ID icell = cells[ic];
-                  
-          // Check if point is contained in cell            
-          if (point_in_cell(rgnpnt,icell))
-            MSet_Add(mset,cell_id_to_handle[icell]);
-        }
+      node_get_cells(minnode,USED,&cells);
+      
+      int ncells = cells.size();
+      for (int ic = 0; ic < ncells; ic++) {
+        Entity_ID icell = cells[ic];
+        
+        // Check if point is contained in cell            
+        if (point_in_cell(rgnpnt,icell))
+          MSet_Add(mset,cell_id_to_handle[icell]);
       }
 
     }
