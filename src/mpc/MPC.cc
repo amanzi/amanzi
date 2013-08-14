@@ -8,8 +8,6 @@
 #include "Epetra_MpiComm.h"
 #include "MPC.hh"
 #include "State.hh"
-#include "Chemistry_State.hh"
-#include "chemistry_pk.hh"
 #include "Flow_State.hh"
 #include "Darcy_PK.hh"
 #include "Richards_PK.hh"
@@ -28,6 +26,13 @@
 #include "TimerManager.hh"
 
 #include "DataDebug.hh"
+
+// Alquimia/Amanzi chemistry packages have different exception types.
+#ifdef ALQUIMIA_ENABLED
+typedef Exceptions::Amanzi_exception ChemistryExceptionType;
+#else
+typedef Amanzi::AmanziChemistry::ChemistryException ChemistryExceptionType;
+#endif
 
 namespace Amanzi {
 
@@ -174,11 +179,15 @@ void MPC::mpc_init() {
     try {
       Teuchos::ParameterList chemistry_parameter_list =
 	parameter_list.sublist("Chemistry");
+#ifdef ALQUIMIA_ENABLED
+      CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(chemistry_parameter_list, CS) );
+#else
       CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
+#endif
       CPK->InitializeChemistry();
-    } catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
+    } catch (const ChemistryExceptionType& chem_error) {
       std::ostringstream error_message;
-      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+      error_message << "MPC:mpc_init(): error... Alquimia_Chemistry_PK.InitializeChemistry returned an error status: ";
       error_message << chem_error.what();
       Errors::Message message(error_message.str());
       Exceptions::amanzi_throw(message);
@@ -768,7 +777,7 @@ void MPC::cycle_driver() {
               Amanzi::timer_manager.stop("Chemistry PK");
             }
             success = true;
-	  }  catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
+    } catch (const ChemistryExceptionType& chem_error) {
             
             // if the chemistry step failed, we back up to the beginning of
             // the chemistry subcycling loop, but to do that we must restore

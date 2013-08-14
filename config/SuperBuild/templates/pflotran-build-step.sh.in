@@ -15,6 +15,7 @@ export PETSC_DIR='@PETSC_DIR@'
 # pflotran in-source build under src 
 cd @PFLOTRAN_source_dir@/src/pflotran
 make pflotran_rxn 
-echo "make pflotran_rxn returned $?"
+rc=$?
+echo "make pflotran_rxn returned $rc"
 
-exit $?
+exit $rc

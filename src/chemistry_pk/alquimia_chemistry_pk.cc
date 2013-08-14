@@ -11,8 +11,6 @@
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "simple_thermo_database.hh"
-
 #include "Mesh.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -59,10 +57,6 @@ namespace AmanziChemistry {
  **
  **
  ******************************************************************************/
-
-// global ChemistryOutput object in the Amanzi::chemisry
-// namespace that will be used by the chemistry library
-extern ChemistryOutput* chem_out;
 
 Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
                                              Teuchos::RCP<Chemistry_State> chem_state)
@@ -209,7 +203,7 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   SetupAuxiliaryOutput();
 
   // Now loop through all the regions and initialize.
-  chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
+//  chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
   for (cond_iter = chem_initial_conditions_.begin(); 
        cond_iter != chem_initial_conditions_.end(); ++cond_iter)
@@ -244,7 +238,7 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     Exceptions::amanzi_throw(msg); 
   }  
 
-  chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
+//  chem_out->Write(kVerbose, "ChemistryPK::InitializeChemistry(): initialization was successful.\n");
 
   chem_initialized_ = true;
 }  // end InitializeChemistry()
@@ -323,15 +317,15 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   }
 
   // Verbosity.
-  if (chem_list.isParameter("Verbosity")) 
-  {
-    Teuchos::Array<std::string> verbosity_list = chem_list.get<Teuchos::Array<std::string> >("Verbosity");
-    Teuchos::Array<std::string>::const_iterator name;
-    for (name = verbosity_list.begin(); name != verbosity_list.end(); ++name) 
-    {
-      chem_out->AddLevel(*name);
-    }
-  }
+//  if (chem_list.isParameter("Verbosity")) 
+//  {
+//    Teuchos::Array<std::string> verbosity_list = chem_list.get<Teuchos::Array<std::string> >("Verbosity");
+//    Teuchos::Array<std::string>::const_iterator name;
+//    for (name = verbosity_list.begin(); name != verbosity_list.end(); ++name) 
+//    {
+//      chem_out->AddLevel(*name);
+//    }
+//  }
 
   // Engine and engine input file.
   if (chem_list.isParameter("Engine")) 
@@ -396,13 +390,13 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
       {
         aux_names_.push_back(*name);
       } 
-      else 
-      {
-        std::stringstream message;
-        message << "ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
-                << *name << std::endl;
-        chem_out->Write(kWarning, message);
-      }
+//      else 
+//      {
+//        std::stringstream message;
+//        message << "ChemistryPK::XMLParameters(): unknown value in 'Auxiliary Data' list: " 
+//                << *name << std::endl;
+//        chem_out->Write(kWarning, message);
+//      }
     }
   }
 
@@ -879,10 +873,10 @@ void Alquimia_Chemistry_PK::advance(
 {
   Errors::Message msg;
 
-  if (debug()) 
-  {
-    chem_out->Write(kVerbose, "  Alquimia_Chemistry_PK::advance() : advancing the chemistry process model...\n");
-  }
+//  if (debug()) 
+//  {
+//    chem_out->Write(kVerbose, "  Alquimia_Chemistry_PK::advance() : advancing the chemistry process model...\n");
+//  }
 
   current_time_ = saved_time_ + delta_time;
 
@@ -996,11 +990,11 @@ void Alquimia_Chemistry_PK::advance(
 void Alquimia_Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
                                          const double& delta_time) 
 {
-  if (debug() == kDebugChemistryProcessKernel) 
-  {
-    chem_out->Write(kVerbose,
-                    "  Alquimia_Chemistry_PK::commit_state() : Committing internal state.\n");
-  }
+//  if (debug() == kDebugChemistryProcessKernel) 
+//  {
+//    chem_out->Write(kVerbose,
+//                    "  Alquimia_Chemistry_PK::commit_state() : Committing internal state.\n");
+//  }
 
   saved_time_ += delta_time;
 

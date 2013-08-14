@@ -12,7 +12,7 @@ define_external_project_args(PFLOTRAN
 
 
 # PFlotran needs PETSc.
-list(APPEND PFLOTRAN_PACKAGE_DEPENDS ${PETSC_BUILD_TARGET})
+list(APPEND PFLOTRAN_PACKAGE_DEPENDS ${PETSc_BUILD_TARGET})
 
 # --- Define the CMake configure parameters
 # Note:
@@ -38,6 +38,21 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/PFLOTRAN-build-step.cmake.in
                ${PFLOTRAN_cmake_build}
 	       @ONLY)
 set(PFLOTRAN_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_build})	
+
+# --- Define patch command
+
+# Need Perl to patch
+find_package(Perl)
+if ( NOT PERL_FOUND )
+  message(FATAL_ERROR "Failed to locate perl. "
+                      "Can not patch pflotran without PERL")
+endif()
+
+# Build the patch script
+set(PFLOTRAN_sh_patch ${PFLOTRAN_prefix_dir}/pflotran-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-patch-step.sh.in
+               ${PFLOTRAN_sh_patch}
+               @ONLY)
 
 # --- Define the install command
 
@@ -66,6 +81,7 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     URL_MD5      ${PFLOTRAN_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
                     SOURCE_DIR       ${PFLOTRAN_source_dir}       # Source directory
+		                PATCH_COMMAND sh ${PFLOTRAN_sh_patch}         # Run the patch script
                     CONFIGURE_COMMAND ""
 #                    CMAKE_CACHE_ARGS ${PFLOTRAN_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
 #                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build

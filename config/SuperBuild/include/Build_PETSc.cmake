@@ -103,6 +103,9 @@ set(petsc_superlu_flags
 # PETSc install directory
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
 
+# PETSC needs this set while building.
+#set(ENV{PETSC_DIR} ${PETSc_source_dir})
+
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DEPENDS   ${PETSc_PACKAGE_DEPENDS}             # Package dependency target
@@ -122,17 +125,19 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                                           --with-fc=${CMAKE_Fortran_COMPILER_USE}
                                           --CFLAGS=${petsc_cflags}
                                           --CXXFLAGS=${petsc_cxxflags}
+                                          --without-x
                                           --with-debugging=${petsc_debug_flag}
-					  ${petsc_mpi_flags}
+					                                ${petsc_mpi_flags}
                                           ${petsc_lapack_option}
                                           ${petsc_blas_option}
-					  ${petsc_superlu_flags}
+                              					  ${petsc_superlu_flags}
                     # -- Build
                     BINARY_DIR        ${PETSc_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE)                      # Run the CMake script to build
+                    BUILD_COMMAND     $(MAKE) PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
                     BUILD_IN_SOURCE   ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${petsc_install_dir}  # Install directory, NOT in the usual directory
+                    INSTALL_COMMAND   $(MAKE) install PETSC_DIR=${PETSc_source_dir} # Install directory, NOT in the usual directory
                     # -- Output control
                     ${PETSc_logging_args})
 

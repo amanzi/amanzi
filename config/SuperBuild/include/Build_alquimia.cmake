@@ -4,13 +4,13 @@
 # Build TPL:  ALQUIMIA 
 #   
 
-# Alquimia needs PFlotran.
-list(APPEND ALQUIMIA_PACKAGE_DEPENDS ${PFLOTRAN_BUILD_TARGET})
-
 # --- Define all the directories and common external project flags
 define_external_project_args(ALQUIMIA
                              TARGET alquimia
                              BUILD_IN_SOURCE)
+
+# Alquimia needs PFlotran.
+list(APPEND ALQUIMIA_PACKAGE_DEPENDS ${PFLOTRAN_BUILD_TARGET})
 
 # --- Define the build command
 
@@ -69,6 +69,9 @@ ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     ${ALQUIMIA_logging_args})
 
 include(BuildLibraryName)
-build_library_name(alquimia ALQUIMIA_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(ALQUIMIA_LIBRARIES ${ALQUIMIA_C_LIB};${ALQUIMIA_CUTILS_LIB};${ALQUIMIA_F_LIB})
 set(ALQUIMIA_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 

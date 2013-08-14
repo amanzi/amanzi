@@ -99,10 +99,10 @@ moab_mesh=$FALSE
 amanzi_branch=
 test_suite=$FALSE
 netcdf4=${TRUE}
-petsc=${TRUE}
+petsc=${FALSE}
 hypre=${TRUE}
-alquimia=${TRUE}
-pflotran=${TRUE}
+alquimia=${FALSE}
+pflotran=${FALSE}
 
 
 

@@ -13,8 +13,6 @@
 
 #include "Chemistry_State.hh"
 
-#include "beaker.hh"
-
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -500,7 +498,7 @@ void Chemistry_State::Initialize() {
 
 }
 
-
+#ifndef ALQUIMIA_ENABLED
 // This can only be done AFTER the chemistry is initialized and fully set up?
 void Chemistry_State::AllocateAdditionalChemistryStorage(
     const Beaker::BeakerComponents& components) {
@@ -516,6 +514,7 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
     S_->GetFieldData("secondary_activity_coeff",name_)->PutScalar(1.0);
   }
 }
+#endif
 
 // This can only be done AFTER the chemistry is initialized and fully set up?
 // NOTE: This is the version of the above method that interacts with Alquimia.

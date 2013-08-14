@@ -12,9 +12,25 @@ if [ ! -e ${alquimia_lib_dir} ]; then mkdir -p ${alquimia_lib_dir} ; fi
 if [ ! -e ${alquimia_include_dir} ]; then mkdir -p ${alquimia_include_dir} ; fi
 
 cp src/alquimia/c/libalquimia_c.a ${alquimia_lib_dir}
+rc=$?
+if [ "$rc" -ne "0" ]; then
+  exit $rc
+fi
 cp src/alquimia/c/libalquimia_cutils.a ${alquimia_lib_dir}
+rc=$?
+if [ "$rc" -ne "0" ]; then
+  exit $rc
+fi
 cp src/alquimia/c/*.h ${alquimia_include_dir}
-cp src/alquimia/fortran/libalquimia_fortran.h ${alquimia_lib_dir}
+rc=$?
+if [ "$rc" -ne "0" ]; then
+  exit $rc
+fi
+cp src/alquimia/fortran/libalquimia_fortran.a ${alquimia_lib_dir}
+rc=$?
+if [ "$rc" -ne "0" ]; then
+  exit $rc
+fi
 cp src/alquimia/fortran/*.mod ${alquimia_include_dir}
 
 exit $?
