@@ -88,6 +88,7 @@ target_link_libraries(ats
                       bc_factory
                       advection
                       divgrad
+                      deformation_operator
                       amanzi_whetstone
                       amanzi_time_integration
                       amanzi_mesh

@@ -19,6 +19,7 @@
 
 #include "composite_vector_function.hh"
 
+#include "MatrixVolumetricDeformation.hh"
 #include "pk_factory.hh"
 #include "pk_default_base.hh"
 #include "pk_physical_base.hh"
@@ -69,6 +70,10 @@ class VolumetricDeformation : public PKPhysicalBase {
   Teuchos::RCP<AmanziMesh::Mesh> mesh_nc_;
   Teuchos::RCP<AmanziMesh::Mesh> surf_mesh_nc_;
   Teuchos::RCP<AmanziMesh::Mesh> surf3d_mesh_nc_;
+
+  // operator
+  bool global_solve_;
+  Teuchos::RCP<Operators::MatrixVolumetricDeformation> operator_;
 
   // factory registration
   static RegisteredPKFactory<VolumetricDeformation> reg_;

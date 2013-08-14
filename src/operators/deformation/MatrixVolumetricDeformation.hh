@@ -80,7 +80,7 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
   Teuchos::ParameterList ml_plist_;
 #ifdef HAVE_HYPRE
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
+  Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
   Teuchos::ParameterList hypre_plist_;
   int hypre_ncycles_, hypre_nsmooth_;
   double hypre_tol_, hypre_strong_threshold_;
@@ -96,6 +96,12 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Epetra_CrsMatrix> operator_;
+  Teuchos::RCP<Epetra_CrsMatrix> dVdz_;
+  Teuchos::RCP<std::vector<std::string> > bottom_region_list_;
+
+  // parameters to control optimization
+  double diagonal_shift_;
+  double smoothing_;
 };
 
 
