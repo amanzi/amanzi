@@ -42,14 +42,17 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   //  routine, which is currently buggy.  To run this PK, this will need
   //  re-fixed.
   // mesh_->build_columns(bottom_surface_name_);
-  ASSERT(0);
+  //  ASSERT(0);
 
   // save the meshes
-  surf_mesh_ = S->GetMesh("surface");
-  surf3d_mesh_ = S->GetMesh("surface_3d");
   mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh_);
-  surf_mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(surf_mesh_);
-  surf3d_mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(surf3d_mesh_);
+
+  if (S->HasMesh("surface")) {
+    surf_mesh_ = S->GetMesh("surface");
+    surf3d_mesh_ = S->GetMesh("surface_3d");
+    surf_mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(surf_mesh_);
+    surf3d_mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(surf3d_mesh_);
+  }
 
   // create storage for primary variable, rock volume
   Teuchos::RCP<CompositeVectorFactory> cell_def_fac = S->RequireField(key_, name_);
@@ -65,10 +68,6 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("dcell_volume_dtime", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  // create storage for the nodal deformation
-  S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("node", AmanziMesh::NODE, 2);
-
   // create storage for the vertex coordinates
   // we need to checkpoint those to be able to create
   // the deformed mesh after restart
@@ -82,15 +81,25 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell",AmanziMesh::CELL,1);
 
   // solve method
-  global_solve_ = plist_.isSublist("global solve");
+  global_solve_ = plist_.isSublist("global solve operator");
   if (global_solve_) {
-    Teuchos::ParameterList op_plist = plist_.sublist("global solve");
+    Teuchos::ParameterList op_plist = plist_.sublist("global solve operator");
     Teuchos::RCP<std::vector<std::string> > bottom_region_list = Teuchos::rcp(new std::vector<std::string>());
     bottom_region_list->push_back(bottom_surface_name_);
 
     operator_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(op_plist,
             mesh_, bottom_region_list));
   }
+
+  // create storage for the nodal deformation
+  if (global_solve_) {
+    S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("node", AmanziMesh::NODE, 1);
+  } else {
+    S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("node", AmanziMesh::NODE, 2);
+  }
+
 }
 
 // -- Initialize owned (dependent) variables.
@@ -199,7 +208,7 @@ bool VolumetricDeformation::advance(double dt) {
         ASSERT(0);
         AmanziMesh::Entity_ID f_above = 0;
         //      AmanziMesh::Entity_ID f_above = mesh_->cell_get_face_above(c0);
-        
+
         // calculate the displacement of the face above the cell
         double dz = mesh_->face_centroid(f_above)[2] - mesh_->face_centroid(f_below)[2];
         face_displacement += dz * dcell_vol[0][c0] * dT;
@@ -271,39 +280,41 @@ bool VolumetricDeformation::advance(double dt) {
   AmanziGeometry::Point_List finpos;
   mesh_nc_->deform(nodeids, newpos, false, &finpos);
 
-  // now we have to adapt the surface mesh to the new volume mesh
-  // extract the correct new coordinates for the surface from the domain
-  // mesh and update the surface mesh accordingly
-  int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
-  AmanziGeometry::Point coord_domain(dim);
-  AmanziGeometry::Point coord_surface(dim-1);
+  if (surf_mesh_ != Teuchos::null) {
+    // now we have to adapt the surface mesh to the new volume mesh
+    // extract the correct new coordinates for the surface from the domain
+    // mesh and update the surface mesh accordingly
+    int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+            Amanzi::AmanziMesh::OWNED);
+    AmanziGeometry::Point coord_domain(dim);
+    AmanziGeometry::Point coord_surface(dim-1);
 
-  Entity_ID_List surface_nodeids, surface3d_nodeids;
-  AmanziGeometry::Point_List surface_newpos, surface3d_newpos;
+    Entity_ID_List surface_nodeids, surface3d_nodeids;
+    AmanziGeometry::Point_List surface_newpos, surface3d_newpos;
 
-  for (int i=0; i!=nsurfnodes; ++i) {
-    // get the coords of the node
-    AmanziGeometry::Point coord(3);
-    AmanziMesh::Entity_ID pnode =
-      surf_mesh_->entity_get_parent(AmanziMesh::NODE, i);
-    mesh_->node_get_coordinates(i, &coord_domain);
+    for (int i=0; i!=nsurfnodes; ++i) {
+      // get the coords of the node
+      AmanziGeometry::Point coord(3);
+      AmanziMesh::Entity_ID pnode =
+          surf_mesh_->entity_get_parent(AmanziMesh::NODE, i);
+      mesh_->node_get_coordinates(i, &coord_domain);
 
-    // surface points are two dimensional
-    for (int s=0; s!=dim-1; ++s) coord_surface[s] = coord_domain[s];
-    surface_nodeids.push_back(i);
-    surface_newpos.push_back(coord_surface);
+      // surface points are two dimensional
+      for (int s=0; s!=dim-1; ++s) coord_surface[s] = coord_domain[s];
+      surface_nodeids.push_back(i);
+      surface_newpos.push_back(coord_surface);
 
-    surface3d_nodeids.push_back(i);
-    surface3d_newpos.push_back(coord_domain);
+      surface3d_nodeids.push_back(i);
+      surface3d_newpos.push_back(coord_domain);
+    }
+
+    // now deform the surface meshes, note that we set the keep_valid
+    // flag to false, since we want the surface mesh to exactly mirror
+    // the domain mesh
+    AmanziGeometry::Point_List surface_finpos;
+    surf_mesh_nc_->deform(surface_nodeids, surface_newpos, false, &surface_finpos);
+    surf3d_mesh_nc_->deform(surface3d_nodeids, surface3d_newpos, false, &surface_finpos);
   }
-
-  // now deform the surface meshes, note that we set the keep_valid
-  // flag to false, since we want the surface mesh to exactly mirror
-  // the domain mesh
-  AmanziGeometry::Point_List surface_finpos;
-  surf_mesh_nc_->deform(surface_nodeids, surface_newpos, false, &surface_finpos);
-  surf3d_mesh_nc_->deform(surface3d_nodeids, surface3d_newpos, false, &surface_finpos);
 
   // update vertex coordinates in state (for checkpointing)
   Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
