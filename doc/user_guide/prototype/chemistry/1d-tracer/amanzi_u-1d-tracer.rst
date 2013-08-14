@@ -6,21 +6,27 @@ Overview
 
 This test example performs the simulation of advective transport of a single conservative tracer component.
 
-Features tested
-~~~~~~~~~~~~~~~
+Capabilities tested
+~~~~~~~~~~~~~~~~~~~
 
 * 1D flow
 * 1D advective (single-component) transport 
 
-Information about this test problem
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+About
+~~~~~
 
-* Amanzi input file: amanzi-1d-tracer.xml
-* Test type: Benchmark testing
-* Benchmark simulator: PFlotran (*input file:* 1d-tracer.in)
 * Test case ID: 1SSConTran-tracer
+* Test type: Benchmark
+* Benchmark simulator: PFlotran
+* Files: 
+  
+  * Amanzi input file: amanzi-1d-tracer.xml
+  * Benchmark simulator input file: 1d-tracer.in
+
+* Location: amanzi/examples/examples/phase2/chemistry/1d-tracer
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
+* Last tested on: Aug 31, 2013
 
 Introduction
 ------------
@@ -41,12 +47,15 @@ The transport equation solved is the transient advective transport equation:
 
   :math:`\frac{\partial}{\partial t} (c)+ \nabla(\mathbf{q} c) = 0`
 
-Model set-up:   
+Problem Specification
+---------------------
 
 * 1D model domain length: 100 meters,  
   :math:`[x_{min},x_{max}] = [0, 100]`
 
 * The domain is discretized with 100 cells in the x-direction, 1 meter long each. 
+
+* Porosity is 0.25
 
 * The flow is horizontal in the x-direction. The uniform flow velocity in x-direction is
   :math:`7.913 \cdot 10^{-6} kg/s`
@@ -66,8 +75,11 @@ Model set-up:
   :math:`10^{-3} mol/L` 
   is injected during the entire simulation time (50 years).
 
+Results and Comparison
+---------------------- 
+
 Expected results
-~~~~~~~~~~~~~~~~ 
+~~~~~~~~~~~~~~~~
 
 The flow solution is trivial and is independent of the choice of permeability. The flow velocity everywhere in the domain should be
 :math:`7.927 \cdot 10{-9} m^3/s`
@@ -75,7 +87,7 @@ The flow solution is trivial and is independent of the choice of permeability. T
 The advective front moves with the flow velocity. In the simulation time (50 years), the front moves half way through the domain. In the absence of diffusion, spreading of the front can be attributed to numerical dispersion added by the numberical scheme employed. Both Amanzi and PFlotran (the benchmark simulator used in the example) add a moderate amount of numerical dispersion to the solution. In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFlotran (see below) along the length of the domain. 
 
 Simulation results
-------------------
+~~~~~~~~~~~~~~~~~~
 
 .. figure:: 1d-tracer-figure.png
    :scale: 50 %

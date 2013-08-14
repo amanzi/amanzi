@@ -1192,6 +1192,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * Volumetric water content [volume water / bulk volume]
       * Aqueous saturation [volume water / volume pore space]
       * Aqueous pressure [Pa]
+      * Hydrolic Head [m] 
       * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
       * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
       * MaterialID

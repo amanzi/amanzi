@@ -4,10 +4,10 @@
 Overview
 --------
 
-This test example performs the simulation of calcite dissolution in 1D flow domain. 
+This test example performs the simulation of calcite dissolution in a 1D flow domain. 
 
-Features tested
-~~~~~~~~~~~~~~~
+Capabilities tested
+~~~~~~~~~~~~~~~~~~~
 
 * 1D flow
 * 1D advective transport 
@@ -16,20 +16,26 @@ Features tested
 	* Aqueous complexation reactions (equilibrium)
 	* Mineral dissolution
 
-Information about this test problem
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+About
+~~~~~
 
-* Amanzi input file: amanzi-1d-calcite.xml
-* Test type: Benchmark testing
-* Benchmark simulator: PFlotran (*input file:* 1d-calcite.in)
 * Test case ID: 1SSConTran-calcite
+* Test type: Benchmark
+* Benchmark simulator: PFlotran (*input file:* 1d-calcite.in)
+* Files
+
+  * Amanzi input file: amanzi-1d-calcite.xml
+  * Benchmark simulator input file: 1d-calcite.in
+
+* Location: amanzi/examples/examples/phase2/chemistry/1d-calcite
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
+* Last tested on: Aug 31, 2013
 	
 Introduction
 ------------
 
-Carbonate minerals are present in many subsurface environments and contribute to their buffering capacity. Under common subsurface flow conditons, calcite dissolution is a relatively fast geochemical reaction leading often to local geochemical equilibrium and sharp dissolution fronts. Calcite dissolution is represented with a kinetic rate expression based on the transition state theory. In this test example, a solution under saturated with calcite is injected at x=0 into a 100-m porous domain containing calcite; as a result, calcite dissolves raising the pH and concentration of cations at the effluent of the domain. The simulation is run to 100 years.
+Carbonate minerals are present in many subsurface environments and contribute to their buffering capacity. Under common subsurface flow conditons, calcite dissolution is a relatively fast geochemical reaction leading often to local geochemical equilibrium and sharp dissolution fronts. Calcite dissolution is represented with a kinetic rate expression based on the transition state theory. In this test example, a solution under saturated with calcite is injected at x=0 into a 100-m porous domain containing calcite; as a result, calcite dissolves raising the pH and concentration of cations at the effluent of the domain. The simulation is run to 50 years.
 
 Model
 -----
@@ -74,13 +80,21 @@ is the ion activity product, and
 :math:`K_{sp}`
 is the solubility constant of calcite. 
 
+Problem Specification
+---------------------
+
+See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+
+Results and Comparison
+----------------------
+
 Expected results
 ~~~~~~~~~~~~~~~~
 
 These are the expected results.
 
 Simulation results
-------------------
+~~~~~~~~~~~~~~~~~~
 
 Here go the figure and table.
 
