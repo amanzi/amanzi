@@ -88,24 +88,9 @@ void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
     }
   }
 
-  // Solve the system x = operator_^-1 * rhs
-  if (prec_method_ == TRILINOS_ML) {
-    ierr |= ml_prec_->ApplyInverse(*rhs->ViewComponent("node",false),
-            *x->ViewComponent("node", false));
-  } else if (prec_method_ == TRILINOS_ILU) {
-    ierr |= ilu_prec_->ApplyInverse(*rhs->ViewComponent("node",false),
-            *x->ViewComponent("node", false));
-  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    ierr |= ifp_prec_->ApplyInverse(*rhs->ViewComponent("node",false),
-            *x->ViewComponent("node", false));
-#ifdef HAVE_HYPRE
-  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
-    ierr |= IfpHypre_->ApplyInverse(*rhs->ViewComponent("node",false),
-            *x->ViewComponent("node", false));
-#endif
-  } else {
-    ASSERT(0);
-  }
+  ierr |= IfpHypre_->ApplyInverse(*rhs->ViewComponent("node",false),
+				  *x->ViewComponent("node", false));
+  
   ASSERT(!ierr);
 }
 
@@ -113,33 +98,30 @@ void MatrixVolumetricDeformation::InitializeFromOptions_() {
   // parameters for optimization
   smoothing_ = plist_.get<double>("smoothing coefficient");
   diagonal_shift_ = plist_.get<double>("diagonal shift", 1.e-6);
+  
+  if ( plist_.isSublist("HYPRE AMG Parameters") ) {
+    Teuchos::ParameterList & hypre_list = plist_.sublist("HYPRE AMG Parameters");
+    
+    hypre_ncycles_ = hypre_list.get<int>("number of cycles",2);
+    hypre_nsmooth_ = hypre_list.get<int>("number of smoothing iterations",2);
+    hypre_tol_     = hypre_list.get<double>("tolerance", 1e-12);
+    hypre_strong_threshold_ = hypre_list.get<double>("strong threshold", 0.5);
+    hypre_verbose_ = hypre_list.get<int>("verbosity level",0);
+    hypre_coarsen_type_ = hypre_list.get<int>("coarsen type",0);
+    hypre_relax_type_ = hypre_list.get<int>("relax type",6);
+    hypre_cycle_type_ = hypre_list.get<int>("cycle type",1);
 
-  // method for inversion
-  prec_method_ = PREC_METHOD_NULL;
-  if (plist_.isParameter("preconditioner")) {
-    std::string precmethodstring = plist_.get<string>("preconditioner");
-    if (precmethodstring == "ML") {
-      prec_method_ = TRILINOS_ML;
-    } else if (precmethodstring == "ILU" ) {
-      prec_method_ = TRILINOS_ILU;
-    } else if (precmethodstring == "Block ILU" ) {
-      prec_method_ = TRILINOS_BLOCK_ILU;
-#ifdef HAVE_HYPRE
-    } else if (precmethodstring == "HYPRE AMG") {
-      prec_method_ = HYPRE_AMG;
-    } else if (precmethodstring == "HYPRE Euclid") {
-      prec_method_ = HYPRE_EUCLID;
-    } else if (precmethodstring == "HYPRE ParaSails") {
-      prec_method_ = HYPRE_EUCLID;
-#endif
-    } else {
-#ifdef HAVE_HYPRE
-      Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, ILU, HYPRE AMG, HYPRE Euclid, and HYPRE ParaSails");
-#else
-      Errors::Message msg("Matrix_MFD: The specified preconditioner "+precmethodstring+" is not supported, we only support ML, and ILU");
-#endif
-      Exceptions::amanzi_throw(msg);
-    }
+  } else {
+    // set reasonable defaults for HYPRE AMG
+    hypre_ncycles_ = 100;
+    hypre_nsmooth_ = 2;
+    hypre_tol_ = 1e-12;
+    hypre_strong_threshold_ = 0.5;
+    hypre_verbose_ = 0;
+    hypre_coarsen_type_ = 0;
+    hypre_relax_type_ = 6;
+    hypre_cycle_type_ = 1;
+
   }
 };
 
@@ -347,74 +329,29 @@ void MatrixVolumetricDeformation::Assemble_() {
 
 
 void MatrixVolumetricDeformation::UpdateInverse_() {
-  // Set up the solver
-  if (prec_method_ == TRILINOS_ML) {
-    if (ml_prec_->IsPreconditionerComputed()) ml_prec_->DestroyPreconditioner();
-    ml_prec_->SetParameterList(ml_plist_);
-    ml_prec_->ComputePreconditioner();
-  } else if (prec_method_ == TRILINOS_ILU) {
-    ilu_prec_ = Teuchos::rcp(new Ifpack_ILU(&*operator_));
-    ilu_prec_->SetParameters(ilu_plist_);
-    ilu_prec_->Initialize();
-    ilu_prec_->Compute();
-  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    Ifpack factory;
-    std::string prectype("ILU");
-    int ovl = ifp_plist_.get<int>("overlap",0);
-    ifp_plist_.set<std::string>("schwarz: combine mode","Add");
-    ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*operator_, ovl));
-    ifp_prec_->SetParameters(ifp_plist_);
-    ifp_prec_->Initialize();
-    ifp_prec_->Compute();
-#ifdef HAVE_HYPRE
-  } else if (prec_method_ == HYPRE_AMG) {
-    IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*operator_));
-    Teuchos::RCP<FunctionParameter> functs[8];
-    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
-    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
-    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_));
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
 
-    Teuchos::ParameterList hypre_list;
-    hypre_list.set("Preconditioner", BoomerAMG);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 8);
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
-
-    IfpHypre_->SetParameters(hypre_list);
-    IfpHypre_->Initialize();
-    IfpHypre_->Compute();
-  } else if (prec_method_ == HYPRE_EUCLID) {
-    IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*operator_));
-
-    Teuchos::ParameterList hypre_list;
-    hypre_list.set("Preconditioner", Euclid);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 0);
-
-    IfpHypre_->SetParameters(hypre_list);
-    IfpHypre_->Initialize();
-    IfpHypre_->Compute();
-  } else if (prec_method_ == HYPRE_PARASAILS) {
-    IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*operator_));
-
-    Teuchos::ParameterList hypre_list;
-    hypre_list.set("Preconditioner", ParaSails);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 0);
-
-    IfpHypre_->SetParameters(hypre_list);
-    IfpHypre_->Initialize();
-    IfpHypre_->Compute();
-#endif
-  }
+  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*operator_));
+  Teuchos::RCP<FunctionParameter> functs[8];
+  functs[0] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetCoarsenType, hypre_coarsen_type_));
+  functs[1] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetPrintLevel, hypre_verbose_));
+  functs[2] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
+  functs[3] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
+  functs[4] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetRelaxType, hypre_relax_type_));
+  functs[5] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
+  functs[6] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetTol, hypre_tol_));
+  functs[7] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetCycleType, hypre_cycle_type_));
+  
+  Teuchos::ParameterList hypre_list;
+  hypre_list.set("Solver", BoomerAMG);
+  hypre_list.set("SolveOrPrecondition", Solver);
+  hypre_list.set("SetPreconditioner", false);
+  hypre_list.set("NumFunctions", 8);
+  hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
+  
+  IfpHypre_->SetParameters(hypre_list);
+  IfpHypre_->Initialize();
+  IfpHypre_->Compute();
+  
 };
 
 

@@ -84,6 +84,8 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   Teuchos::ParameterList hypre_plist_;
   int hypre_ncycles_, hypre_nsmooth_;
   double hypre_tol_, hypre_strong_threshold_;
+  int hypre_coarsen_type_, hypre_relax_type_;
+  int hypre_verbose_, hypre_cycle_type_;
 #endif
   Teuchos::RCP<Ifpack_ILU> ilu_prec_;
   Teuchos::ParameterList ilu_plist_;
