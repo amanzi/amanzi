@@ -6,11 +6,13 @@
 */
 
 #include "EpetraExt_MatrixMatrix.h"
+#include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
 #include "composite_vector_factory.hh"
 #include "MatrixVolumetricDeformation.hh"
 
+#define MESH_TYPE 0 // 0 = HEXES, 1 = TRIANGULAR PRISMS
 
 namespace Amanzi {
 namespace Operators {
@@ -66,6 +68,25 @@ void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
   dVdz_->SetUseTranspose(true);
   dVdz_->Apply(*b.ViewComponent("cell",false),
               *rhs->ViewComponent("node",false));
+
+  // Must also apply the boundary condition, dz_bottom = 0
+  // -- Fix the bottom nodes, they may not move
+  {
+    Epetra_MultiVector& rhs_n = *rhs->ViewComponent("node",false);
+
+    for (std::vector<std::string>::const_iterator region_name=
+             bottom_region_list_->begin();
+         region_name!=bottom_region_list_->end(); ++region_name) {
+      AmanziMesh::Entity_ID_List region_nodes;
+      mesh_->get_set_entities(*region_name, AmanziMesh::NODE,
+              AmanziMesh::OWNED, &region_nodes);
+
+      for (AmanziMesh::Entity_ID_List::const_iterator n=region_nodes.begin();
+           n!=region_nodes.end(); ++n) {
+        rhs_n[0][*n] = 0;
+      }
+    }
+  }
 
   // Solve the system x = operator_^-1 * rhs
   if (prec_method_ == TRILINOS_ML) {
@@ -128,15 +149,24 @@ void MatrixVolumetricDeformation::Assemble_() {
   int ierr = 0;
 
   // HARD CODED CRUFT!
+#if MESH_TYPE
   int nnz = 6;
   int indices[6];
   double values[6];
+#else
+  int nnz = 8;
+  int indices[8];
+  double values[8];
+#endif
+
+
   double eps = 1.e-4;
 
   // Domain and Range: matrix inverse solves the problem, given dV, what is
   // dnode_z that results in that dV.  Therefore, A * dnode_z = dV
   const Epetra_Map& cell_map = mesh_->cell_epetra_map(false);
   const Epetra_Map& node_map = mesh_->node_epetra_map(false);
+  const Epetra_Map& node_map_wghost = mesh_->node_epetra_map(true);
 
   range_ = Teuchos::rcp(new CompositeVectorFactory());
   range_->SetMesh(mesh_)->SetComponent("cell",AmanziMesh::CELL,1);
@@ -150,7 +180,7 @@ void MatrixVolumetricDeformation::Assemble_() {
   // == Create dVdz ==
   // -- create the matrix
   dVdz_ =
-      Teuchos::rcp(new Epetra_CrsMatrix(Copy,cell_map,node_map,nnz,true));
+      Teuchos::rcp(new Epetra_CrsMatrix(Copy,cell_map,nnz,true));
 
   // -- Assemble
   for (unsigned int c=0; c!=ncells; ++c) {
@@ -159,7 +189,6 @@ void MatrixVolumetricDeformation::Assemble_() {
     AmanziMesh::Entity_ID_List nodes;
     mesh_->cell_get_nodes(c, &nodes);
     ASSERT(nodes.size() == nnz);
-    for (int n=0; n!=nnz; ++n) indices[n] = nodes[n];
 
     // determine the upward/downward faces
     AmanziMesh::Entity_ID_List faces;
@@ -187,25 +216,35 @@ void MatrixVolumetricDeformation::Assemble_() {
     // loop over nodes in the top face, setting the Jacobian
     AmanziMesh::Entity_ID_List nodes_up;
     mesh_->face_get_nodes(faces[my_up_n], &nodes_up);
-    for (int n=0; n!=nodes_up.size(); ++n) values[n] = perp_area / 3.;
+    for (int n=0; n!=nodes_up.size(); ++n) {
+      values[n] = perp_area / (nnz/2.);
+      indices[n] = node_map_wghost.GID(nodes_up[n]);
+    }
 
     // loop over nodes in the bottom face, setting the Jacobian
     AmanziMesh::Entity_ID_List nodes_down;
     mesh_->face_get_nodes(faces[my_down_n], &nodes_down);
-    for (int n=0; n!=nodes_down.size(); ++n) values[n] = -perp_area / 3.;
+    int nnz_half = nnz/2;
+    for (int n=0; n!=nodes_down.size(); ++n) {
+      values[n+nnz_half] = -perp_area / (nnz/2.);
+      indices[n+nnz_half] = node_map_wghost.GID(nodes_down[n]);
+    }
 
     // ensure all are nonzero
-    for (int n=0; n!=nodes_down.size(); ++n)
+    for (int n=0; n!=nnz; ++n)
       ASSERT(std::abs(values[n]) > 0.);
 
     // Assemble
-    int ierr = dVdz_->InsertMyValues(c, nnz, values, indices);
+    int ierr = dVdz_->InsertGlobalValues(cell_map.GID(c), nnz,
+            values, indices);
     ASSERT(!ierr);
   }
 
-  ierr = dVdz_->FillComplete();
+  ierr = dVdz_->FillComplete(node_map, cell_map);
   ASSERT(!ierr);
 
+  // dump dvdz
+  EpetraExt::RowMatrixToMatlabFile("dvdz.txt", *dVdz_);
 
   // == Form the normal equations, dVdz^T * dVdz ==
 
@@ -216,16 +255,23 @@ void MatrixVolumetricDeformation::Assemble_() {
     AmanziMesh::Entity_ID_List cells;
     mesh_->node_get_cells(no, AmanziMesh::USED,&cells);
     // THIS IS VERY SPECIFIC TO GEOMETRY!
+#if MESH_TYPE
     int nnode_neighbors = (cells.size()/2 + 1) * 3;
+#else
+    int nnode_neighbors = 9*3;
+#endif
     max_nnode_neighbors = std::max(nnode_neighbors, max_nnode_neighbors);
     nnz_op[no] = nnode_neighbors;
   }
 
-  operator_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,node_map,node_map,nnz_op));
+  operator_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,node_map,nnz_op));
   delete[] nnz_op;
 
   // form explicitly dVdz^T * dVdz
   EpetraExt::MatrixMatrix::Multiply(*dVdz_,true, *dVdz_,false, *operator_);
+
+  // dump Operator intermediate step
+  EpetraExt::RowMatrixToMatlabFile("op_normal_eq.txt", *operator_);
 
   // == Add in optimization components ==
   // -- Add a small shift to the diagonal
@@ -234,23 +280,30 @@ void MatrixVolumetricDeformation::Assemble_() {
   for (int n=0; n!=nnodes; ++n) diag[n] += diagonal_shift_;
   ierr = operator_->ReplaceDiagonalValues(diag);  ASSERT(!ierr);
 
+  // dump Operator intermediate step
+  EpetraExt::RowMatrixToMatlabFile("op_diag.txt", *operator_);
+
   // -- Add in a diffusive term
   int *node_indices = new int[max_nnode_neighbors];
   double *node_values = new double[max_nnode_neighbors];
 
   for (int n=0; n!=nnodes; ++n) {
     int nneighbors;
+    int n_gid = node_map.GID(n);
     // get the row
-    ierr = operator_->ExtractMyRowCopy(n,max_nnode_neighbors,nneighbors,
+    ierr = operator_->ExtractGlobalRowCopy(n_gid,
+            max_nnode_neighbors,nneighbors,
             node_values, node_indices);  ASSERT(!ierr);
 
     // apply the stencil, - nneighbors * smoothing_ on diag, smoothing_ on
     // off-diagonals
     for (int i=0; i!=nneighbors; ++i)
-      node_values[i] += indices[i] == n ? -nneighbors * smoothing_ : smoothing_;
+      node_values[i] += node_indices[i] == n_gid ?
+          nneighbors * smoothing_ : -smoothing_;
 
     // replace the row
-    ierr = operator_->ReplaceMyValues(n,nneighbors,node_values,indices);
+    ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
+            node_values, node_indices);
     ASSERT(!ierr);
   }
 
@@ -266,21 +319,25 @@ void MatrixVolumetricDeformation::Assemble_() {
     for (AmanziMesh::Entity_ID_List::const_iterator n=region_nodes.begin();
          n!=region_nodes.end(); ++n) {
       // extract the row
+      int n_gid = node_map.GID(*n);
       int nneighbors;
-      ierr = operator_->ExtractMyRowCopy(*n,max_nnode_neighbors,nneighbors,
-              node_values, node_indices); ASSERT(!ierr);
+      ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors,
+              nneighbors, node_values, node_indices); ASSERT(!ierr);
 
       // zero the row, 1 on diagonal
       for (int i=0; i!=nneighbors; ++i)
-        node_values[i] = indices[i] == *n ? 1. : 0.;
+        node_values[i] = node_indices[i] == n_gid ? 1. : 0.;
 
       // replace the row
-      ierr = operator_->ReplaceMyValues(*n,nneighbors,node_values,indices);
-      ASSERT(!ierr);
+      ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
+              node_values, node_indices); ASSERT(!ierr);
     }
   }
 
   ierr = operator_->FillComplete();  ASSERT(!ierr);
+
+  // dump Operator intermediate step
+  EpetraExt::RowMatrixToMatlabFile("op.txt", *operator_);
 
   // clean up
   delete[] node_indices;
