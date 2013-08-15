@@ -386,7 +386,8 @@ endif()
 ##############################################################################
 
 option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" FALSE)
-if ( ENABLE_Structured AND  ENABLE_PETSC )
+message("enable petsc: ${ENABLE_PETSC}")
+if ( ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC ) # FIXME: Sloppy.
   find_package(PETSc)
   if ( NOT PETSC_FOUND )
     message(WARNING "Failed to locate PETSc")
@@ -399,5 +400,4 @@ if ( ENABLE_Structured AND  ENABLE_PETSC )
     message(STATUS "\tPETSC_LIBRARIES     =${PETSC_LIBRARIES}")
   endif()
 endif()
-
 

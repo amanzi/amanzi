@@ -564,10 +564,10 @@ if (ENABLE_PFLOTRAN)
     set(ENABLE_PETSC TRUE)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
   endif()
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_PFLOTRAN.cmake)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_pflotran.cmake)
 endif()
 if (ENABLE_ALQUIMIA)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_ALQUIMIA.cmake)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_alquimia.cmake)
 endif()
 
 # ############################################################################ #
@@ -678,7 +678,7 @@ if ( BUILD_Amanzi )
   include(ExternalProject)
 
   set(Amanzi_DEPENDS 
-                  ${ExodusII_BUILD_TARGET}
+              ${ExodusII_BUILD_TARGET}
 		          ${HDF5_BUILD_TARGET}
 		          ${ASCEMIO_BUILD_TARGET}
 		          ${UnitTest_BUILD_TARGET}

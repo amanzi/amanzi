@@ -72,6 +72,4 @@ include(BuildLibraryName)
 build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-set(ALQUIMIA_LIBRARIES ${ALQUIMIA_C_LIB};${ALQUIMIA_CUTILS_LIB};${ALQUIMIA_F_LIB})
-set(ALQUIMIA_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 
