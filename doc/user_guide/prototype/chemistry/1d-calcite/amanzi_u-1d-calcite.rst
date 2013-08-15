@@ -21,7 +21,7 @@ About
 
 * Test case ID: 1SSConTran-calcite
 * Test type: Benchmark
-* Benchmark simulator: PFlotran (*input file:* 1d-calcite.in)
+* Benchmark simulator: PFlotran
 * Files
 
   * Amanzi input file: amanzi-1d-calcite.xml
@@ -83,7 +83,15 @@ is the solubility constant of calcite.
 Problem Specification
 ---------------------
 
+Flow and transport 
+~~~~~~~~~~~~~~~~~~
+
 See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+
+Geochemstry
+~~~~~~~~~~~
+
+To do.
 
 Results and Comparison
 ----------------------

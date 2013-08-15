@@ -61,15 +61,21 @@ is the first order constant. This is related to the half life of tritium accordi
 
 :math:`\lambda = \frac{ln(2)}{t_{1/2}}`
 
+Problem Specification
+---------------------
+
+Flow and transport 
+~~~~~~~~~~~~~~~~~~
+
+See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+
+Geochemistry
+~~~~~~~~~~~~
+
 In this example, the half life of tririum is taken as 
 :math:`t_{1/2} = 13.31 s`
 . Thus, 
 :math:`\lambda = 1.78577 \cdot 10^{-9} s^{-1}`
-
-Problem Specification
----------------------
-
-See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
 
 Results and Comparison
 ----------------------
