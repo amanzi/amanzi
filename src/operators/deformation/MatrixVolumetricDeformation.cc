@@ -12,7 +12,7 @@
 #include "composite_vector_factory.hh"
 #include "MatrixVolumetricDeformation.hh"
 
-#define MESH_TYPE 0 // 0 = HEXES, 1 = TRIANGULAR PRISMS
+#define MESH_TYPE 1 // 0 = HEXES, 1 = TRIANGULAR PRISMS
 
 namespace Amanzi {
 namespace Operators {
@@ -20,11 +20,9 @@ namespace Operators {
 
 MatrixVolumetricDeformation::MatrixVolumetricDeformation(
           Teuchos::ParameterList& plist,
-          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-          const Teuchos::RCP<std::vector<std::string> >& bottom_region_list) :
+          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     plist_(plist),
-    mesh_(mesh),
-    bottom_region_list_(bottom_region_list) {
+    mesh_(mesh) {
   InitializeFromOptions_();
   Assemble_();
   UpdateInverse_();
@@ -34,8 +32,7 @@ MatrixVolumetricDeformation::MatrixVolumetricDeformation(
 MatrixVolumetricDeformation::MatrixVolumetricDeformation(
           const MatrixVolumetricDeformation& other) :
     plist_(other.plist_),
-    mesh_(other.mesh_),
-    bottom_region_list_(other.bottom_region_list_) {
+    mesh_(other.mesh_) {
   InitializeFromOptions_();
   Assemble_();
   UpdateInverse_();
@@ -75,8 +72,8 @@ void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
     Epetra_MultiVector& rhs_n = *rhs->ViewComponent("node",false);
 
     for (std::vector<std::string>::const_iterator region_name=
-             bottom_region_list_->begin();
-         region_name!=bottom_region_list_->end(); ++region_name) {
+             bottom_region_list_.begin();
+         region_name!=bottom_region_list_.end(); ++region_name) {
       AmanziMesh::Entity_ID_List region_nodes;
       mesh_->get_set_entities(*region_name, AmanziMesh::NODE,
               AmanziMesh::OWNED, &region_nodes);
@@ -90,7 +87,7 @@ void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
 
   ierr |= IfpHypre_->ApplyInverse(*rhs->ViewComponent("node",false),
 				  *x->ViewComponent("node", false));
-  
+
   ASSERT(!ierr);
 }
 
@@ -98,10 +95,17 @@ void MatrixVolumetricDeformation::InitializeFromOptions_() {
   // parameters for optimization
   smoothing_ = plist_.get<double>("smoothing coefficient");
   diagonal_shift_ = plist_.get<double>("diagonal shift", 1.e-6);
-  
+
+  if (plist_.isParameter("bottom region")) {
+    bottom_region_list_.push_back(plist_.get<std::string>("bottom region"));
+  } else {
+    bottom_region_list_ =
+        plist_.get<Teuchos::Array<std::string> >("bottom regions").toVector();
+  }
+
   if ( plist_.isSublist("HYPRE AMG Parameters") ) {
     Teuchos::ParameterList & hypre_list = plist_.sublist("HYPRE AMG Parameters");
-    
+
     hypre_ncycles_ = hypre_list.get<int>("number of cycles",2);
     hypre_nsmooth_ = hypre_list.get<int>("number of smoothing iterations",2);
     hypre_tol_     = hypre_list.get<double>("tolerance", 1e-12);
@@ -292,8 +296,8 @@ void MatrixVolumetricDeformation::Assemble_() {
 
   // -- Fix the bottom nodes, they may not move
   for (std::vector<std::string>::const_iterator region_name=
-           bottom_region_list_->begin();
-       region_name!=bottom_region_list_->end(); ++region_name) {
+           bottom_region_list_.begin();
+       region_name!=bottom_region_list_.end(); ++region_name) {
     AmanziMesh::Entity_ID_List region_nodes;
     mesh_->get_set_entities(*region_name, AmanziMesh::NODE,
                             AmanziMesh::OWNED, &region_nodes);
@@ -340,18 +344,18 @@ void MatrixVolumetricDeformation::UpdateInverse_() {
   functs[5] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
   functs[6] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetTol, hypre_tol_));
   functs[7] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetCycleType, hypre_cycle_type_));
-  
+
   Teuchos::ParameterList hypre_list;
   hypre_list.set("Solver", BoomerAMG);
   hypre_list.set("SolveOrPrecondition", Solver);
   hypre_list.set("SetPreconditioner", false);
   hypre_list.set("NumFunctions", 8);
   hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
-  
+
   IfpHypre_->SetParameters(hypre_list);
   IfpHypre_->Initialize();
   IfpHypre_->Compute();
-  
+
 };
 
 
