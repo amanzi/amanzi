@@ -19,12 +19,13 @@
 #   0.90.7       - updated MSTK to version 2.01
 #                - added NETCDF - fortran version 4.2 (interface library)
 #   0.90.8       - added Xerces-C++ version 3.1.1 (XML support)
+#   0.90.9       - update MSTK to version 2.02
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 90)
-set (AMANZI_TPLS_VERSION_PATCH 8)
+set (AMANZI_TPLS_VERSION_PATCH 9)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
-#   Not sure how to create a meaningful has for the collection
+#   Not sure how to create a meaningful hash key for the collection
 
 #
 # TPL: Xerces
@@ -189,12 +190,12 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 01)
+set(MSTK_VERSION_MINOR 02)
 set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        3d86118ccc71480dd1f6a9250fff96de)
+set(MSTK_MD5_SUM        7eb6955dc04542b6f87a2b419c717949)
 
 #
 # TPL: MOAB
