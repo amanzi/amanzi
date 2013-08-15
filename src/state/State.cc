@@ -931,13 +931,14 @@ double State::point_value(const std::string& point_region, const std::string& na
     value = 0.0;
     volume = 0.0;
     int dim = mesh_maps->space_dimension();
+    double rho_g = (*density) * (*gravity)[dim-1];
 
     for (int i=0; i<mesh_block_size; ++i) {
       int ic = cell_ids[i];
+      double v = mesh_maps->cell_volume(ic);
       Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
-      value += ( (*pressure)[ic] - p_atm ) / ( (*density) * (*gravity)[dim-1]) + p[dim-1];
-      value *= mesh_maps->cell_volume(ic);
-      volume += mesh_maps->cell_volume(ic);
+      value += ((p_atm - (*pressure)[ic]) / rho_g + p[dim-1]) * v;
+      volume += v;
     }
   } else {
     std::stringstream ss;
