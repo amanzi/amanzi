@@ -11788,7 +11788,269 @@ PorousMedia::dirichletDefaultBC (FArrayBox& fab, Real time)
       }    
 }
 
+void
+PorousMedia::derive_Material_ID(Real      time,
+                                MultiFab& mf,
+                                int       dcomp)
+{
+  BL_ASSERT(dcomp < mf.nComp());  
+  const int ngrow = mf.nGrow();
+  const Real* dx = geom.CellSize();
+  
+  BoxArray dstBA(mf.boxArray());
+  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+  
+  mf.setVal(-1,dcomp,1,ngrow);  
+  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+    FArrayBox& fab = mf[mfi];
+    for (int i=0; i<materials.size(); ++i) {
+      Real val = (Real)i;
+      const PArray<Region>& mat_regions = materials[i].Regions();
+      for (int j=0; j<mat_regions.size(); ++j) {
+        mat_regions[j].setVal(fab,val,dcomp,dx,0);
+      }
+    }
+  }
+}
 
+void
+PorousMedia::derive_Grid_ID(Real      time,
+                            MultiFab& mf,
+                            int       dcomp)
+{
+  BL_ASSERT(dcomp < mf.nComp());
+  const int ngrow = mf.nGrow();
+
+  BoxArray dstBA(mf.boxArray());
+  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+  mf.setVal(-1,dcomp,1,ngrow);
+  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+    mf[mfi].setVal(mfi.index());
+  }
+}
+
+void
+PorousMedia::derive_Core_ID(Real      time,
+                            MultiFab& mf,
+                            int       dcomp)
+{
+  BL_ASSERT(dcomp < mf.nComp());
+  const int ngrow = mf.nGrow();
+
+  BoxArray dstBA(mf.boxArray());
+  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+  mf.setVal(-1,dcomp,1,ngrow);
+  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+    mf[mfi].setVal(ParallelDescriptor::MyProc());
+  }
+}
+
+void
+PorousMedia::derive_Cell_ID(Real      time,
+                            MultiFab& mf,
+                            int       dcomp)
+{
+  BL_ASSERT(dcomp < mf.nComp());
+  const int ngrow = mf.nGrow();
+
+  BoxArray dstBA(mf.boxArray());
+  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+  mf.setVal(-1,dcomp,1,ngrow);
+  Layout& layout = PMParent()->GetLayout();
+  Layout::IntFab ifab;
+  for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+    Box gbox = mf[mfi].box();
+    ifab.resize(gbox,1);
+    layout.SetNodeIds(ifab,level,mfi.index());
+    const int* idat = ifab.dataPtr();
+    Real* rdat = mf[mfi].dataPtr();
+    int numpts = gbox.numPts();
+    for (int i=0; i<numpts; ++i) {
+      rdat[i] = Real(idat[i]);
+    }
+  }
+}
+
+void
+PorousMedia::derive_Volumetric_Water_Content(Real      time,
+                                             MultiFab& mf,
+                                             int       dcomp)
+{
+  // Note, assumes one comp per phase
+  int scomp = -1;
+  for (int i=0; i<cNames.size(); ++i) {
+    if (cNames[i] == "Water") {
+      if (pNames[i] != "Aqueous") {
+        BoxLib::Abort("No Water in the Aqueous phase");
+      }
+      scomp = i;
+    }
+  }
+
+  if (scomp>=0) {
+    const BoxArray& BA = mf.boxArray();
+    BL_ASSERT(rec->deriveType() == BA[0].ixType());
+    int ngrow = mf.nGrow();
+    BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
+
+    int ncomp = 1; // Just water
+    BL_ASSERT(rec->numDerive()==ncomp);
+    
+    FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
+    for ( ; fpi.isValid(); ++fpi) {
+      mf[fpi].copy(fpi(),0,dcomp,ncomp);
+      mf[fpi].mult((*rock_phi)[fpi],0,dcomp,ncomp);
+      mf[fpi].mult(1/density[scomp],dcomp,ncomp);
+    }
+  }            
+  else {
+    BoxLib::Abort("PorousMedia: cannot derive Volumetric_Water_Content");
+  }
+}
+
+void
+PorousMedia::derive_Aqueous_Saturation(Real      time,
+                                       MultiFab& mf,
+                                       int       dcomp)
+{
+  // Sum all components in the Aqueous phase
+  // FIXME: Assumes one comp per phase
+  int scomp = -1;
+  int naq = 0;
+  for (int ip=0; ip<pNames.size(); ++ip) {
+    if (pNames[ip] == "Aqueous") {
+      scomp = ip;
+      naq++;
+    }
+  }
+
+  if (naq==1) {
+    const BoxArray& BA = mf.boxArray();
+    BL_ASSERT(rec->deriveType() == BA[0].ixType());
+    int ngrow = mf.nGrow();
+    BL_ASSERT(mf.nGrow()<=1); // state only has this many
+    int ncomp = 1; // Just aqueous
+    BL_ASSERT(rec->numDerive()==ncomp);
+    FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
+    for ( ; fpi.isValid(); ++fpi)
+    {
+      mf[fpi].copy(fpi(),0,dcomp,ncomp);
+      mf[fpi].mult(1/density[scomp],dcomp,ncomp);
+    }
+    BL_ASSERT(scomp>=0 && scomp<ncomps);        }            
+  else {
+    BoxLib::Abort("PorousMedia:: no support for more than one Aqueous component");
+  }
+}
+
+void
+PorousMedia::derive_Aqueous_Pressure(Real      time,
+                                     MultiFab& mf,
+                                     int       dcomp)
+{
+  Real t_new = state[Press_Type].curTime(); 
+  int ncomp = 1;
+  int ngrow = mf.nGrow();
+  AmrLevel::derive("pressure",time,mf,dcomp);
+  if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
+    mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
+  }
+  else {
+    BoxLib::Abort(std::string("PorousMedia:: Aqueous_Pressure not yet implemented for " + model).c_str());
+  }
+}
+
+void
+PorousMedia::derive_Hydraulic_Head(Real      time,
+                                   MultiFab& mf,
+                                   int       dcomp)
+{
+  Real t_new = state[Press_Type].curTime(); 
+  int ncomp = 1;
+  int ngrow = mf.nGrow();
+  AmrLevel::derive("pressure",time,mf,dcomp);
+  const Real* plo = geom.ProbLo();
+  const Real* dx = geom.CellSize();
+  Real rhog[BL_SPACEDIM];
+  for (int d=0; d<BL_SPACEDIM; ++d) {
+    rhog[d] = density[d] * gravity;
+  }
+  if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
+    for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+      FArrayBox& fab = mf[mfi];
+      const Box box = BoxLib::grow(mfi.validbox(),ngrow);
+      FORT_HYD_HEAD(box.loVect(), box.hiVect(),
+                    fab.dataPtr(), ARLIM(fab.loVect()), ARLIM(fab.hiVect()),
+                    rhog, dx, plo, &ncomps);
+    }
+  }
+  else {
+    BoxLib::Abort(std::string("PorousMedia:: Hydraulic_Head not yet implemented for " + model).c_str());
+  }
+}
+
+void
+PorousMedia::derive_Aqueous_Volumetric_Flux(Real      time,
+                                            MultiFab& mf,
+                                            int       dcomp,
+                                            int       dir)
+{
+  BL_ASSERT(dir < BL_SPACEDIM);
+  if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
+    MultiFab tmf(grids,BL_SPACEDIM,0);
+    // FIXME: Input parameter?
+    bool do_upwind = true;
+    umac_edge_to_cen(u_mac_curr,tmf,do_upwind); 
+    MultiFab::Copy(mf,tmf,dir,dcomp,1,0);
+  }
+  else {
+    BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "+model).c_str());
+  }
+}
+
+void
+PorousMedia::derive_Porosity(Real      time,
+                             MultiFab& mf,
+                             int       dcomp)
+{
+  const BoxArray& BA = mf.boxArray();
+  BL_ASSERT(rec->deriveType() == BA[0].ixType());
+  int ngrow = mf.nGrow();
+  int ncomp = 1;
+  BL_ASSERT(rec->numDerive()==ncomp);
+  BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
+  MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
+}
+
+void
+PorousMedia::derive_Intrinsic_Permeability(Real      time,
+                                           MultiFab& mf,
+                                           int       dcomp,
+                                           int       dir)
+{
+    MatFiller* matFiller = PMParent()->GetMatFiller();
+    MultiFab kappatmp(grids,BL_SPACEDIM,0);
+    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,kappatmp,
+                                      "permeability",0,mf.nGrow());
+    if (!ret) BoxLib::Abort("Failed to build permeability");
+    MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
+    // Return values in mks
+    mf.mult(1/BL_ONEATM,dcomp,1,0);
+}
+
+void
+PorousMedia::derive_Effective_Diffusion_Coefficient(Real      time,
+                                                    MultiFab& mf,
+                                                    int       dcomp)
+{
+    MatFiller* matFiller = PMParent()->GetMatFiller();
+    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,mf,
+                                      "Deff",dcomp,mf.nGrow());
+    if (!ret) BoxLib::Abort("Failed to build Deff");
+}
 
 MultiFab*
 PorousMedia::derive (const std::string& name,
@@ -11823,258 +12085,77 @@ PorousMedia::derive (const std::string& name,
                      MultiFab&          mf,
                      int                dcomp)
 {
-    const DeriveRec* rec = derive_lst.get(name);
-    MatFiller* matFiller = PMParent()->GetMatFiller();
+  const DeriveRec* rec = derive_lst.get(name);
+  MatFiller* matFiller = PMParent()->GetMatFiller();
 
-    bool not_found_yet = false;
+  bool not_found_yet = false;
 
-    if (name=="Material_ID") {
-        
-        BL_ASSERT(dcomp < mf.nComp());
-
-        const int ngrow = mf.nGrow();
-        
-        BoxArray dstBA(mf.boxArray());
-        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-
-        const Real* dx = geom.CellSize();
-
-        mf.setVal(-1,dcomp,1,ngrow);
-
-        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
-        {
-            FArrayBox& fab = mf[mfi];
-            for (int i=0; i<materials.size(); ++i)
-            {
-                Real val = (Real)i;
-                const PArray<Region>& mat_regions = materials[i].Regions();
-                for (int j=0; j<mat_regions.size(); ++j) {
-                    mat_regions[j].setVal(fab,val,dcomp,dx,0);
-                }
-            }
-        }
-
+  if (name == "Material_ID") {
+    derive_Material_ID(time,mf,dcomp);
+  }
+  else if (name == "Grid_ID") {
+    derive_Grid_ID(time,mf,dcomp);
+  }
+  else if (name == "Core_ID") {
+    derive_Core_ID(time,mf,dcomp);
+  }
+  else if (name == "Cell_ID") {
+    derive_Cell_ID(time,mf,dcomp);
+  }
+  else if (name == "Volumetric_Water_Content") {
+    derive_Volumetric_Water_Content(time,mf,dcomp);
+  }
+  else if (name == "Aqueous_Saturation") {
+    derive_Aqueous_Saturation(time,mf,dcomp);
+  }
+  else if (name == "Aqueous_Pressure") {
+    derive_Aqueous_Pressure(time,mf,dcomp);
+  }
+  else if (name == "Hydraulic_Head") {
+    derive_Hydraulic_Head(time,mf,dcomp);
+  }
+  else if (name == "Aqueous_Volumetric_Flux_X" ||
+           name == "Aqueous_Volumetric_Flux_Y" ||
+           name == "Aqueous_Volumetric_Flux_Z") {
+    int dir = ( name == "Aqueous_Volumetric_Flux_X"  ?  0  :
+                name == "Aqueous_Volumetric_Flux_Y" ? 1 : 2);
+    derive_Aqueous_Volumetric_Flux(time,mf,dcomp,dir);
+  }
+  else if (name=="Porosity") {
+    derive_Porosity(time,mf,dcomp);
+  }
+  else if (matFiller && matFiller->Initialized())
+  {
+    if (name == "Intrinsic_Permeability_X" ||
+        name == "Intrinsic_Permeability_Y" ||
+        name == "Intrinsic_Permeability_Z") {
+      int dir = ( name == "Intrinsic_Permeability_X"  ?  0  :
+                  name == "Intrinsic_Permeability_Y" ? 1 : 2);
+      derive_Intrinsic_Permeability(time,mf,dcomp,dir);
     }
-    else if (name=="Grid_ID") {
-        
-        BL_ASSERT(dcomp < mf.nComp());
-
-        const int ngrow = mf.nGrow();
-        
-        BoxArray dstBA(mf.boxArray());
-        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-
-        mf.setVal(-1,dcomp,1,ngrow);
-
-        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
-        {
-            mf[mfi].setVal(mfi.index());
-        }
-
+    else if (name == "Effective_Diffusion_Coefficient") {
+      derive_Effective_Diffusion_Coefficient(time,mf,dcomp);
     }
-    else if (name=="Core_ID") {
-        
-        BL_ASSERT(dcomp < mf.nComp());
-
-        const int ngrow = mf.nGrow();
-        
-        BoxArray dstBA(mf.boxArray());
-        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-
-        mf.setVal(-1,dcomp,1,ngrow);
-
-        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
-        {
-            mf[mfi].setVal(ParallelDescriptor::MyProc());
-        }
-
-    }
-    else if (name=="Cell_ID") {
-        
-        BL_ASSERT(dcomp < mf.nComp());
-
-        const int ngrow = mf.nGrow();
-        
-        BoxArray dstBA(mf.boxArray());
-        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-
-        mf.setVal(-1,dcomp,1,ngrow);
-        Layout& layout = PMParent()->GetLayout();
-
-        Layout::IntFab ifab;
-        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
-        {
-            Box gbox = mf[mfi].box();
-            ifab.resize(gbox,1);
-            layout.SetNodeIds(ifab,level,mfi.index());
-            const int* idat = ifab.dataPtr();
-            Real* rdat = mf[mfi].dataPtr();
-            int numpts = gbox.numPts();
-            for (int i=0; i<numpts; ++i) {
-                rdat[i] = Real(idat[i]);
-            }
-        }
-    }
-    else if (name=="Volumetric_Water_Content") {
-        
-        // Note, assumes one comp per phase
-        int scomp = -1;
-        for (int i=0; i<cNames.size(); ++i) {
-            if (cNames[i] == "Water") {
-                if (pNames[i] != "Aqueous") {
-                    BoxLib::Abort("No Water in the Aqueous phase");
-                }
-                scomp = i;
-            }
-        }
-
-        if (scomp>=0)
-        {
-            const BoxArray& BA = mf.boxArray();
-            BL_ASSERT(rec->deriveType() == BA[0].ixType());
-            int ngrow = mf.nGrow();
-            BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
-
-            int ncomp = 1; // Just water
-            BL_ASSERT(rec->numDerive()==ncomp);
-
-            FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
-            for ( ; fpi.isValid(); ++fpi)
-            {
-                mf[fpi].copy(fpi(),0,dcomp,ncomp);
-                mf[fpi].mult((*rock_phi)[fpi],0,dcomp,ncomp);
-                mf[fpi].mult(1/density[scomp],dcomp,ncomp);
-            }
-        }            
-        else {
-            BoxLib::Abort("PorousMedia::derive: cannot derive Volumetric_Water_Content");
-        }
-    }
-    else if (name=="Aqueous_Saturation") {
-
-        // Sum all components in the Aqueous phase
-        // FIXME: Assumes one comp per phase
-        int scomp = -1;
-        int naq = 0;
-        for (int ip=0; ip<pNames.size(); ++ip) {
-            if (pNames[ip] == "Aqueous") {
-                scomp = ip;
-                naq++;
-            }
-        }
-
-        if (naq==1)
-        {
-            const BoxArray& BA = mf.boxArray();
-            BL_ASSERT(rec->deriveType() == BA[0].ixType());
-            int ngrow = mf.nGrow();
-            BL_ASSERT(mf.nGrow()<=1); // state only has this many
-            int ncomp = 1; // Just aqueous
-            BL_ASSERT(rec->numDerive()==ncomp);
-            FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
-            for ( ; fpi.isValid(); ++fpi)
-            {
-                mf[fpi].copy(fpi(),0,dcomp,ncomp);
-                mf[fpi].mult(1/density[scomp],dcomp,ncomp);
-            }
-            BL_ASSERT(scomp>=0 && scomp<ncomps);        }            
-        else {
-            BoxLib::Abort("PorousMedia::derive: no support for more than one Aqueous component");
-        }
-    }
-    else if (name=="Aqueous_Pressure") {
-
-      Real t_new = state[Press_Type].curTime(); 
-        // The pressure field is the Aqueous pressure in atm
-        // (assumes nphase==1,2) 
-        int ncomp = 1;
-        int ngrow = mf.nGrow();
-        AmrLevel::derive("pressure",time,mf,dcomp);
-        if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
-            mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
-            //mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
-            //mf.mult(1/(998.2*9.807*12*2.54*1.e-2),dcomp,ncomp,ngrow); // pressure head, in feet
-        }
-        else {
-  	    BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Pressure not yet implemented for " + model).c_str());
-        }
-    }
-    else if (name=="Aqueous_Volumetric_Flux_X" || name=="Aqueous_Volumetric_Flux_Y" || name=="Aqueous_Volumetric_Flux_Z")
-    {
-        int dir = ( name=="Aqueous_Volumetric_Flux_X"  ?  0  :
-                    name == "Aqueous_Volumetric_Flux_Y" ? 1 : 2);
-
-        BL_ASSERT(dir < BL_SPACEDIM);
-        if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
-	  MultiFab tmf(grids,BL_SPACEDIM,0);
-          // FIXME: Input parameter?
-          bool do_upwind = true;
-	  umac_edge_to_cen(u_mac_curr,tmf,do_upwind); 
-	  MultiFab::Copy(mf,tmf,dir,dcomp,1,0);
-          // Return values in m/d
-          //mf.mult(24*60*60,dcomp,1,0);
-        }
-        else {
-	  BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "+model).c_str());
-        }
-    }
-    else if (name=="Porosity") {
-        
-        const BoxArray& BA = mf.boxArray();
-        BL_ASSERT(rec->deriveType() == BA[0].ixType());
-        int ngrow = mf.nGrow();
-        int ncomp = 1; // just porosity
-        BL_ASSERT(rec->numDerive()==ncomp);
-        BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
-        MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
-    }
-    else if (matFiller && matFiller->Initialized())
-    {
-      if (name=="Intrinsic_Permeability_X" ||
-          name=="Intrinsic_Permeability_Y" ||
-          name=="Intrinsic_Permeability_Z") {
-
-        int dir = ( name=="Intrinsic_Permeability_X"  ?  0  :
-                    name == "Intrinsic_Permeability_Y" ? 1 : 2);
-
-        MultiFab kappatmp(grids,BL_SPACEDIM,0);
-        bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,kappatmp,
-                                          "permeability",0,mf.nGrow());
-        if (!ret) BoxLib::Abort("Failed to build permeability");
-        MultiFab::Copy(mf,kappatmp,dir,dcomp,1,0);
-        // Return values in mks
-        mf.mult(1/BL_ONEATM,dcomp,1,0);
-      }
-      else if (name=="Effective_Diffusion_Coefficient") {
-
-        bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,mf,
-                                          "Deff",dcomp,mf.nGrow());
-        if (!ret) BoxLib::Abort("Failed to build Deff");
-      }
-      else {
-        not_found_yet = true;
-      }
-
-    } else {
-
+    else {
       not_found_yet = true;
     }
+  } else {
+    not_found_yet = true;
+  }
 
-    if (not_found_yet) {
-
-        for (int n=0; n<ntracers && not_found_yet; ++n) {
-            std::string tname = tNames[n] + "_Aqueous_Concentration";
-            if (name==tname) {
-                AmrLevel::derive(tNames[n],time,mf,dcomp);
-                not_found_yet = false;
-            }
-        }
+  if (not_found_yet) {
+    for (int n=0; n<ntracers && not_found_yet; ++n) {
+      std::string tname = tNames[n] + "_Aqueous_Concentration";
+      if (name==tname) {
+        AmrLevel::derive(tNames[n],time,mf,dcomp);
+        not_found_yet = false;
+      }
     }
+  }
 
-    if (not_found_yet)
-    {
-        AmrLevel::derive(name,time,mf,dcomp);
-    }
+  if (not_found_yet) {
+    AmrLevel::derive(name,time,mf,dcomp);
+  }
 }
 
 void
