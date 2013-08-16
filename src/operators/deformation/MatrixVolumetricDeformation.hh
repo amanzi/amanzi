@@ -36,7 +36,7 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
 
   MatrixVolumetricDeformation(Teuchos::ParameterList& plist,
           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-          const Teuchos::RCP<std::vector<std::string> >& bottom_region_list);
+          const Teuchos::RCP<const AmanziMesh::Entity_ID_List>& fixed_nodes);
 
   MatrixVolumetricDeformation(const MatrixVolumetricDeformation& other);
 
@@ -99,7 +99,7 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Epetra_CrsMatrix> operator_;
   Teuchos::RCP<Epetra_CrsMatrix> dVdz_;
-  Teuchos::RCP<std::vector<std::string> > bottom_region_list_;
+  Teuchos::RCP<const AmanziMesh::Entity_ID_List> fixed_nodes_;
 
   // parameters to control optimization
   double diagonal_shift_;
