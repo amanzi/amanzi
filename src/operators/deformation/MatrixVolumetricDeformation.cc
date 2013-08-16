@@ -20,9 +20,11 @@ namespace Operators {
 
 MatrixVolumetricDeformation::MatrixVolumetricDeformation(
           Teuchos::ParameterList& plist,
-          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+          const Teuchos::RCP<const AmanziMesh::Entity_ID_List>& fixed_nodes) :
     plist_(plist),
-    mesh_(mesh) {
+    mesh_(mesh),
+    fixed_nodes_(fixed_nodes) {
   InitializeFromOptions_();
   Assemble_();
   UpdateInverse_();
@@ -32,7 +34,8 @@ MatrixVolumetricDeformation::MatrixVolumetricDeformation(
 MatrixVolumetricDeformation::MatrixVolumetricDeformation(
           const MatrixVolumetricDeformation& other) :
     plist_(other.plist_),
-    mesh_(other.mesh_) {
+    mesh_(other.mesh_),
+    fixed_nodes_(other.fixed_nodes_) {
   InitializeFromOptions_();
   Assemble_();
   UpdateInverse_();
@@ -70,38 +73,31 @@ void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
   // -- Fix the bottom nodes, they may not move
   {
     Epetra_MultiVector& rhs_n = *rhs->ViewComponent("node",false);
-
-    for (std::vector<std::string>::const_iterator region_name=
-             bottom_region_list_.begin();
-         region_name!=bottom_region_list_.end(); ++region_name) {
-      AmanziMesh::Entity_ID_List region_nodes;
-      mesh_->get_set_entities(*region_name, AmanziMesh::NODE,
-              AmanziMesh::OWNED, &region_nodes);
-
-      for (AmanziMesh::Entity_ID_List::const_iterator n=region_nodes.begin();
-           n!=region_nodes.end(); ++n) {
-        rhs_n[0][*n] = 0;
-      }
+    for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes_->begin();
+         n!=fixed_nodes_->end(); ++n) {
+      rhs_n[0][*n] = 0;
     }
   }
 
   ierr |= IfpHypre_->ApplyInverse(*rhs->ViewComponent("node",false),
 				  *x->ViewComponent("node", false));
-
   ASSERT(!ierr);
+
+  // write a measure of error
+  Epetra_MultiVector error(*b.ViewComponent("cell",false));
+  dVdz_->SetUseTranspose(false);
+  dVdz_->Apply(*x->ViewComponent("node",false), error);
+  error.Update(-1., *b.ViewComponent("cell",false), 1.);
+  double err(0.);
+  error.NormInf(&err);
+  std::cout << "ERROR IN dV = " << err << std::endl;
+
 }
 
 void MatrixVolumetricDeformation::InitializeFromOptions_() {
   // parameters for optimization
   smoothing_ = plist_.get<double>("smoothing coefficient");
   diagonal_shift_ = plist_.get<double>("diagonal shift", 1.e-6);
-
-  if (plist_.isParameter("bottom region")) {
-    bottom_region_list_.push_back(plist_.get<std::string>("bottom region"));
-  } else {
-    bottom_region_list_ =
-        plist_.get<Teuchos::Array<std::string> >("bottom regions").toVector();
-  }
 
   if ( plist_.isSublist("HYPRE AMG Parameters") ) {
     Teuchos::ParameterList & hypre_list = plist_.sublist("HYPRE AMG Parameters");
@@ -197,7 +193,9 @@ void MatrixVolumetricDeformation::Assemble_() {
 
     // Determine the perpendicular area (remember, face_normal() is weighted
     // by face area already).
-    double perp_area = mesh_->face_normal(faces[my_up_n])[2];
+    double perp_area_up = mesh_->face_normal(faces[my_up_n])[2];
+    double perp_area_down = mesh_->face_normal(faces[my_down_n])[2];
+    ASSERT(std::abs(perp_area_up - perp_area_down) < 1.e-6);
 
     // loop over nodes in the top face, setting the Jacobian
     AmanziMesh::Entity_ID_List nodes_up;
@@ -274,50 +272,66 @@ void MatrixVolumetricDeformation::Assemble_() {
   double *node_values = new double[max_nnode_neighbors];
 
   for (int n=0; n!=nnodes; ++n) {
-    int nneighbors;
-    int n_gid = node_map.GID(n);
-    // get the row
-    ierr = operator_->ExtractGlobalRowCopy(n_gid,
-            max_nnode_neighbors,nneighbors,
-            node_values, node_indices);  ASSERT(!ierr);
+    // determine the set of node neighbors
+    std::set<int> neighbors;
+    AmanziMesh::Entity_ID_List faces;
+    mesh_->node_get_faces(n, AmanziMesh::USED, &faces);
+    for (AmanziMesh::Entity_ID_List::const_iterator f=faces.begin();
+         f!=faces.end(); ++f) {
+      AmanziMesh::Entity_ID_List neighbor_nodes;
+      mesh_->face_get_nodes(*f, &neighbor_nodes);
+      neighbors.insert(neighbor_nodes.begin(), neighbor_nodes.end());
+    }
 
-    // apply the stencil, - nneighbors * smoothing_ on diag, smoothing_ on
-    // off-diagonals
-    for (int i=0; i!=nneighbors; ++i)
-      node_values[i] += node_indices[i] == n_gid ?
-          nneighbors * smoothing_ : -smoothing_;
+    // remove my node
+    neighbors.erase(n);
 
-    // replace the row
-    ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
+    // apply the stencil
+    int nneighbors = neighbors.size() + 1;
+    AmanziGeometry::Point center(3);
+    mesh_->node_get_coordinates(n,&center);
+    node_indices[0] = node_map.GID(n);
+    node_values[0] = 0.;
+
+    int lcv = 1;
+    for (std::set<int>::const_iterator hn=neighbors.begin();
+         hn!=neighbors.end(); ++hn) {
+      node_indices[lcv] = node_map_wghost.GID(*hn);
+
+      AmanziGeometry::Point coord(3);
+      mesh_->node_get_coordinates(*hn,&coord);
+      double smoothing = smoothing_ / AmanziGeometry::norm(center - coord);
+      node_values[0] += smoothing;
+      node_values[lcv] = - smoothing;
+      lcv++;
+    }
+
+    // add into the row
+    ierr = operator_->SumIntoGlobalValues(node_map.GID(n), nneighbors,
             node_values, node_indices);
     ASSERT(!ierr);
   }
 
+  ierr = operator_->FillComplete();  ASSERT(!ierr);
+
 
   // -- Fix the bottom nodes, they may not move
-  for (std::vector<std::string>::const_iterator region_name=
-           bottom_region_list_.begin();
-       region_name!=bottom_region_list_.end(); ++region_name) {
-    AmanziMesh::Entity_ID_List region_nodes;
-    mesh_->get_set_entities(*region_name, AmanziMesh::NODE,
-                            AmanziMesh::OWNED, &region_nodes);
+  for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes_->begin();
+       n!=fixed_nodes_->end(); ++n) {
 
-    for (AmanziMesh::Entity_ID_List::const_iterator n=region_nodes.begin();
-         n!=region_nodes.end(); ++n) {
-      // extract the row
-      int n_gid = node_map.GID(*n);
-      int nneighbors;
-      ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors,
-              nneighbors, node_values, node_indices); ASSERT(!ierr);
+    // extract the row
+    int n_gid = node_map.GID(*n);
+    int nneighbors;
+    ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors,
+            nneighbors, node_values, node_indices); ASSERT(!ierr);
 
-      // zero the row, 1 on diagonal
-      for (int i=0; i!=nneighbors; ++i)
-        node_values[i] = node_indices[i] == n_gid ? 1. : 0.;
+    // zero the row, 1 on diagonal
+    for (int i=0; i!=nneighbors; ++i)
+      node_values[i] = node_indices[i] == n_gid ? 1. : 0.;
 
-      // replace the row
-      ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
-              node_values, node_indices); ASSERT(!ierr);
-    }
+    // replace the row
+    ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
+            node_values, node_indices); ASSERT(!ierr);
   }
 
   ierr = operator_->FillComplete();  ASSERT(!ierr);

@@ -59,7 +59,6 @@ class VolumetricDeformation : public PKPhysicalBase {
 
  private:
   Key poro_key_;
-  Key bottom_surface_name_;
 
   // function describing d(cv)/dT
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;

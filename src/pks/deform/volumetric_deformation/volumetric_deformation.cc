@@ -32,17 +32,11 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
     PKDefaultBase(plist,solution),
     PKPhysicalBase(plist,solution) {
   poro_key_ = plist_.get<std::string>("porosity key","porosity");
-  bottom_surface_name_ = plist_.get<std::string>("bottom surface region", "bottom face");
 }
 
 // -- Setup data
 void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
-  // build_columns() call removed as Mesh reverted to old build_columns()
-  //  routine, which is currently buggy.  To run this PK, this will need
-  //  re-fixed.
-  // mesh_->build_columns(bottom_surface_name_);
-  //  ASSERT(0);
 
   // save the meshes
   mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh_);
@@ -55,18 +49,17 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // create storage for primary variable, rock volume
-  Teuchos::RCP<CompositeVectorFactory> cell_def_fac = S->RequireField(key_, name_);
-  cell_def_fac->SetMesh(mesh_)->SetGhosted()
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-  // create the function
-  Teuchos::ParameterList func_plist = plist_.sublist("deformation function");
-  deform_func_ = Functions::CreateCompositeVectorFunction(func_plist, *cell_def_fac);
-
-  // Additional data:
-  // create storage for cell volume change
-  S->RequireField("dcell_volume_dtime", name_)->SetMesh(mesh_)->SetGhosted()
+  Teuchos::RCP<CompositeVectorFactory> rv_fac =
+      S->RequireField(key_, name_);
+  rv_fac->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  // Create storage and a function for cell volume change
+  Teuchos::RCP<CompositeVectorFactory> cv_fac =
+      S->RequireField("dcell_volume_dtime", name_);
+  cv_fac->Update(*rv_fac);
+  Teuchos::ParameterList func_plist = plist_.sublist("deformation function");
+  deform_func_ = Functions::CreateCompositeVectorFunction(func_plist, *cv_fac);
 
   // create storage for the vertex coordinates
   // we need to checkpoint those to be able to create
@@ -81,25 +74,55 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell",AmanziMesh::CELL,1);
 
   // solve method
-  global_solve_ = plist_.isSublist("global solve operator");
-  if (global_solve_) {
-    Teuchos::ParameterList op_plist = plist_.sublist("global solve operator");
-    Teuchos::RCP<std::vector<std::string> > bottom_region_list = Teuchos::rcp(new std::vector<std::string>());
-    bottom_region_list->push_back(bottom_surface_name_);
+  Teuchos::ParameterList op_plist = plist_.sublist("global solve operator");
 
-    operator_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(op_plist,
-            mesh_, bottom_region_list));
+  // collect a set of the fixed nodes
+  std::vector<std::string> bottom_regions;
+  if (op_plist.isParameter("bottom region")) {
+    bottom_regions.push_back(op_plist.get<std::string>("bottom region"));
+  } else {
+    bottom_regions =
+        op_plist.get<Teuchos::Array<std::string> >("bottom regions").toVector();
   }
+  std::string bottom_region_type = op_plist.get<std::string>("bottom region type","node");
+  std::set<AmanziMesh::Entity_ID> bottom_node_set;
+  for (std::vector<std::string>::const_iterator region=bottom_regions.begin();
+       region!=bottom_regions.end(); ++region) {
+    if (bottom_region_type == "node") {
+      AmanziMesh::Entity_ID_List region_nodes;
+      mesh_->get_set_entities(*region, AmanziMesh::NODE, AmanziMesh::OWNED,&region_nodes);
+      bottom_node_set.insert(region_nodes.begin(), region_nodes.end());
+    } else if (bottom_region_type == "face") {
+      AmanziMesh::Entity_ID_List region_faces;
+      mesh_->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::OWNED,&region_faces);
+      for (AmanziMesh::Entity_ID_List::const_iterator f=region_faces.begin();
+           f!=region_faces.end(); ++f) {
+        AmanziMesh::Entity_ID_List face_nodes;
+        mesh_->face_get_nodes(*f, &face_nodes);
+        bottom_node_set.insert(face_nodes.begin(), face_nodes.end());
+      }
+    } else {
+      Errors::Message mesg("Invalid bottom region type (must be node or face)");
+      Exceptions::amanzi_throw(mesg);
+    }
+  }
+
+  // create the unique list of owned bottom nodes
+  unsigned int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  Teuchos::RCP<AmanziMesh::Entity_ID_List> bottom_node_list =
+      Teuchos::rcp(new AmanziMesh::Entity_ID_List());
+  for (std::set<AmanziMesh::Entity_ID>::const_iterator n=bottom_node_set.begin();
+       n!=bottom_node_set.end(); ++n) {
+    if (*n < nnodes_owned) bottom_node_list->push_back(*n);
+  }
+
+  // create the operator
+  operator_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(op_plist,
+          mesh_, bottom_node_list));
 
   // create storage for the nodal deformation
-  if (global_solve_) {
-    S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
-        ->SetComponent("node", AmanziMesh::NODE, 1);
-  } else {
-    S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
-        ->SetComponent("node", AmanziMesh::NODE, 2);
-  }
-
+  S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("node", AmanziMesh::NODE, 1);
 }
 
 // -- Initialize owned (dependent) variables.
@@ -123,23 +146,22 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("nodal_dz",name_)->PutScalar(0.);
   S->GetField("nodal_dz",name_)->set_initialized();
 
-  // initialize the vertex coordinate to the current mesh
-  int dim = mesh_->space_dimension();
-  AmanziGeometry::Point coords;
-  coords.init(dim);
+  { // initialize the vertex coordinate to the current mesh
+    int dim = mesh_->space_dimension();
+    AmanziGeometry::Point coords;
+    coords.init(dim);
+    int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+            Amanzi::AmanziMesh::OWNED);
 
-  // number of vertices
-  int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+    Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate",name_)
+        ->ViewComponent("node",false);
 
-  Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate",name_)
-      ->ViewComponent("node",false);
-
-  // search the id of the mid point on the top
-  for (int iV=0; iV!=nV; ++iV) {
-    // get the coords of the node
-    mesh_->node_get_coordinates(iV,&coords);
-    for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
+    // search the id of the mid point on the top
+    for (int iV=0; iV!=nnodes; ++iV) {
+      // get the coords of the node
+      mesh_->node_get_coordinates(iV,&coords);
+      for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
+    }
   }
   S->GetField("vertex coordinate",name_)->set_initialized();
 }
@@ -157,105 +179,28 @@ bool VolumetricDeformation::advance(double dt) {
   double dT = ss - ss0;
   double T_mid = (ss + ss0) / 2.;
 
+  const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& poro = *S_->GetFieldData(poro_key_)
+      ->ViewComponent("cell",false);
+
   // Evaluate the function at the mean time to get d(cv)/dT
   Teuchos::RCP<CompositeVector> dcell_vol_vec =
       S_next_->GetFieldData("dcell_volume_dtime", name_);
+  dcell_vol_vec->PutScalar(0.);
   deform_func_->Compute(T_mid, dcell_vol_vec.ptr());
 
-  Teuchos::RCP<CompositeVector> nodal_dz_vec =
-      S_next_->GetFieldData("nodal_dz",name_);
-
-  if (global_solve_) {
-    Teuchos::RCP<CompositeVector> delta_cell_vol =
-        Teuchos::rcp(new CompositeVector(*dcell_vol_vec));
-    *delta_cell_vol = *dcell_vol_vec;
-    delta_cell_vol->Scale(dT);
-    operator_->ApplyInverse(*delta_cell_vol, nodal_dz_vec.ptr());
-
-  } else {
-    const Epetra_MultiVector& dcell_vol = *dcell_vol_vec->ViewComponent("cell",false);
-
-    // Evaluate dz of the plane above the prism by integrating up the
-    // change, and contribute these to the nodes that make up that plane
-    // for averaging.
-    Epetra_MultiVector& nodal_dz_g = *nodal_dz_vec->ViewComponent("node",true);
-    nodal_dz_g.PutScalar(0.);
-
-    // Simultaneously evaluate contributions to the 
-
-    AmanziMesh::Entity_ID_List bottomfaces;
-    mesh_->get_set_entities(bottom_surface_name_, AmanziMesh::FACE,
-                            AmanziMesh::OWNED, &bottomfaces);
-    int ncols = 0;
-    int ncells_tot = 0;
-
-    for (unsigned int i=0; i!=bottomfaces.size(); ++i) {
-      // find the bottom cell
-      AmanziMesh::Entity_ID f_below = bottomfaces[i];
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f_below, AmanziMesh::OWNED, &cells);
-      ASSERT(cells.size() == 1);
-      AmanziMesh::Entity_ID c0 = cells[0];
-
-      // for each cell in the column, integrate the change
-      double face_displacement = 0.;
-      bool done = false;
-      int ncells_in_col = 1;
-
-      while (!done) {
-        // find the face above
-        // fix me when Mesh is fixed!
-        ASSERT(0);
-        AmanziMesh::Entity_ID f_above = 0;
-        //      AmanziMesh::Entity_ID f_above = mesh_->cell_get_face_above(c0);
-
-        // calculate the displacement of the face above the cell
-        double dz = mesh_->face_centroid(f_above)[2] - mesh_->face_centroid(f_below)[2];
-        face_displacement += dz * dcell_vol[0][c0] * dT;
-
-        // distribute that to the nodes of the face
-        AmanziMesh::Entity_ID_List nodes;
-        mesh_->face_get_nodes(f_above, &nodes);
-        for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
-             n!=nodes.end(); ++n) {
-          nodal_dz_g[0][*n] += face_displacement;
-          nodal_dz_g[1][*n]++;
-        }
-
-        // iterate til we reach the top of the domain
-        // get the cell above
-        AmanziMesh::Entity_ID c1 = mesh_->cell_get_cell_above(c0);
-        if (c1 >= 0) {
-          c0 = c1;
-          f_below = f_above;
-          ncells_in_col++;
-        } else {
-          done = true;
-        }
-      }
-
-      ncells_tot += ncells_in_col;
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-        *out_ << "  Integrated column " << ncols << " with " << ncells_in_col << " cells." << std::endl;
-      }
-      ncols++;
-    }
-
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      int ncells_loc = ncells_tot;
-      nodal_dz_vec->comm()->SumAll(&ncells_loc, &ncells_tot, 1);
-      *out_ << "Integrated " << ncols << " columns, total # cells touched = " << ncells_tot << std::endl;
-    }
-
-    // take the average
-    nodal_dz_vec->GatherGhostedToMaster("node");
-    Epetra_MultiVector& nodal_dz_l = *nodal_dz_vec->ViewComponent("node",false);
-    for (int i=0; i!=nodal_dz_l.MyLength(); ++i) {
-      if (nodal_dz_l[1][i] > 1) {
-        nodal_dz_l[0][i] /= nodal_dz_l[1][i];
-      }
+  { // scale by cell volume, this is fractional loss
+    Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
+    for (int c=0; c!=dcell_vol_c.MyLength(); ++c) {
+      dcell_vol_c[0][c] *= cv[0][c] * dT;
     }
   }
+
+  // calculate the nodal deformation
+  Teuchos::RCP<CompositeVector> nodal_dz_vec =
+      S_next_->GetFieldData("nodal_dz",name_);
+  operator_->ApplyInverse(*dcell_vol_vec, nodal_dz_vec.ptr());
 
   // form list of deformed nodes
   Entity_ID_List nodeids;
@@ -264,8 +209,13 @@ bool VolumetricDeformation::advance(double dt) {
   int dim = mesh_->space_dimension();
   new_coords.init(dim);
 
+  nodal_dz_vec->ScatterMasterToGhosted("node",true);
+
+  // WORKAROUND for non-communication in deform() by Mesh
+  //  const Epetra_MultiVector& nodal_dz_l =
+  //      *nodal_dz_vec->ViewComponent("node",false);
   const Epetra_MultiVector& nodal_dz_l =
-      *nodal_dz_vec->ViewComponent("node",false);
+      *nodal_dz_vec->ViewComponent("node",true);
 
   int nnodes = nodal_dz_l.MyLength();
   for (int i=0; i!=nnodes; ++i) {
@@ -284,8 +234,12 @@ bool VolumetricDeformation::advance(double dt) {
     // now we have to adapt the surface mesh to the new volume mesh
     // extract the correct new coordinates for the surface from the domain
     // mesh and update the surface mesh accordingly
+
+    // WORKAROUND for non-communication in deform() by Mesh
+    //    int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+    //            Amanzi::AmanziMesh::OWNED);
     int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-            Amanzi::AmanziMesh::OWNED);
+            Amanzi::AmanziMesh::USED);
     AmanziGeometry::Point coord_domain(dim);
     AmanziGeometry::Point coord_surface(dim-1);
 
@@ -316,29 +270,31 @@ bool VolumetricDeformation::advance(double dt) {
     surf3d_mesh_nc_->deform(surface3d_nodeids, surface3d_newpos, false, &surface_finpos);
   }
 
-  // update vertex coordinates in state (for checkpointing)
-  Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
-      ->ViewComponent("node",false);
-  for (int i=0; i!=nnodes; ++i) {
-    mesh_->node_get_coordinates(i,&coords);
-    for (int s=0; s!=dim; ++s) vc[s][i] = coords[s];
+  {  // update vertex coordinates in state (for checkpointing)
+    Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
+        ->ViewComponent("node",false);
+    int nnodes = vc.MyLength();
+    for (int i=0; i!=nnodes; ++i) {
+      mesh_->node_get_coordinates(i,&coords);
+      for (int s=0; s!=dim; ++s) vc[s][i] = coords[s];
+    }
   }
 
   // setting deformation to be rock_volume at old time, (1-poro_old)*CV_old
-  const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& poro = *S_->GetFieldData(poro_key_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& def = *S_next_->GetFieldData(key_,name_)
-      ->ViewComponent("cell",false);
+  {
+    Epetra_MultiVector& def = *S_next_->GetFieldData(key_,name_)
+        ->ViewComponent("cell",false);
 
-  int ncells = def.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    def[0][c] = (1. - poro[0][c]) * cv[0][c];
+    int ncells = def.MyLength();
+    for (int c=0; c!=ncells; ++c) {
+      def[0][c] = (1. - poro[0][c]) * cv[0][c];
+    }
   }
+
   // mark the placeholder evaluator as changed
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 
+  // REMOVE ME --etc
   // update porosity and cell volumes
   S_next_->GetFieldEvaluator("cell_volume")
       ->HasFieldChanged(S_next_.ptr(), name_);
