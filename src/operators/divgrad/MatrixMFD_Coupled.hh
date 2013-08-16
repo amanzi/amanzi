@@ -139,6 +139,10 @@ class MatrixMFD_Coupled : public Matrix {
   Teuchos::ParameterList hypre_plist_;
   int hypre_ncycles_, hypre_nsmooth_;
   double hypre_tol_, hypre_strong_threshold_;
+  int hypre_relax_type_, hypre_coarsen_type_, hypre_cycle_type_;
+  int hypre_print_level_,hypre_max_row_sum_,hypre_max_levels_;
+  int hypre_max_iter_, hypre_relax_wt_, hypre_interp_type_;
+  int hypre_agg_num_levels_, hypre_agg_num_paths_;  
 #endif
 
   Teuchos::RCP<Ifpack_ILU> ilu_prec_;

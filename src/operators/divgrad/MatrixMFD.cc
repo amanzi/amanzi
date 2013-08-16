@@ -669,12 +669,27 @@ void MatrixMFD::InitPreconditioner() {
   } else if (prec_method_ == HYPRE_AMG) {
     // read some boomer amg parameters
     hypre_plist_ = plist_.sublist("HYPRE AMG Parameters");
+
     hypre_ncycles_ = hypre_plist_.get<int>("number of cycles",5);
     hypre_nsmooth_ = hypre_plist_.get<int>("number of smoothing iterations",3);
     hypre_tol_ = hypre_plist_.get<double>("tolerance",0.0);
     hypre_strong_threshold_ = hypre_plist_.get<double>("strong threshold",0.25);
+    hypre_cycle_type_ = hypre_plist_.get<int>("cycle type",1);
+    hypre_relax_type_ = hypre_plist_.get<int>("relax type",6);
+    hypre_coarsen_type_ = hypre_plist_.get<int>("coarsen type",0);
+    hypre_print_level_ = hypre_plist_.get<int>("print level",0);
+    hypre_max_row_sum_ = hypre_plist_.get<double>("max row sum",0.9);
+    hypre_max_levels_ = hypre_plist_.get<int>("max levels",25);
+    hypre_max_iter_ = hypre_plist_.get<int>("max iterations",20);
+    hypre_relax_wt_ = hypre_plist_.get<double>("relax wt",1.0);
+    hypre_interp_type_ = hypre_plist_.get<int>("interpolation type",0);
+    hypre_agg_num_levels_ = hypre_plist_.get<int>("aggressive coarsening levels",0);
+    hypre_agg_num_paths_ = hypre_plist_.get<int>("aggressive coarsening paths",1);
+    hypre_print_level_ =  hypre_plist_.get<int>("print level",0);
+
   } else if (prec_method_ == HYPRE_EUCLID) {
     hypre_plist_ = plist_.sublist("HYPRE Euclid Parameters");
+
   } else if (prec_method_ == HYPRE_PARASAILS) {
     hypre_plist_ = plist_.sublist("HYPRE ParaSails Parameters");
 #endif
@@ -707,21 +722,30 @@ void MatrixMFD::UpdatePreconditioner() {
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG) {
     IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
-    Teuchos::RCP<FunctionParameter> functs[8];
-    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
+    Teuchos::RCP<FunctionParameter> functs[16];
+
+    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, hypre_coarsen_type_));
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, hypre_print_level_));
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
     functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
+    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, hypre_relax_type_));
     functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
     functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol_));
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
-
+    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, hypre_cycle_type_));
+    functs[8] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, hypre_print_level_));
+    functs[9] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxRowSum, hypre_max_row_sum_));
+    functs[10] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxLevels, hypre_max_levels_));
+    functs[11] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_max_iter_));
+    functs[12] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetInterpType, hypre_interp_type_));
+    functs[13] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetAggNumLevels, hypre_agg_num_levels_));
+    functs[14] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumPaths, hypre_agg_num_paths_));
+    functs[15] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxWt, hypre_relax_wt_));
+        
     Teuchos::ParameterList hypre_list;
     hypre_list.set("Preconditioner", BoomerAMG);
     hypre_list.set("SolveOrPrecondition", Preconditioner);
     hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 8);
+    hypre_list.set("NumFunctions", 16);
     hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
 
     IfpHypre_Sff_->SetParameters(hypre_list);
