@@ -42,11 +42,11 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
 
 
   // Vector space of the Matrix's domain.
-  virtual Teuchos::RCP<const CompositeVectorFactory> domain() {
+  virtual Teuchos::RCP<const CompositeVectorFactory> domain() const {
     return domain_; }
 
   // Vector space of the Matrix's range.
-  virtual Teuchos::RCP<const CompositeVectorFactory> range() {
+  virtual Teuchos::RCP<const CompositeVectorFactory> range() const {
     return range_; }
 
   // Virtual copy constructor.
@@ -55,11 +55,16 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
 
   // Apply matrix, b <-- Ax
   virtual void Apply(const CompositeVector& x,
-                     const Teuchos::Ptr<CompositeVector>& b);
+                     const Teuchos::Ptr<CompositeVector>& b) const;
 
   // Apply the inverse, x <-- A^-1 b
   virtual void ApplyInverse(const CompositeVector& b,
-                            const Teuchos::Ptr<CompositeVector>& x);
+                            const Teuchos::Ptr<CompositeVector>& x) const;
+
+  // This is a Normal equation, so we need to apply N^T to the rhs
+  void ApplyRHS(const CompositeVector& x_cell,
+                const Teuchos::Ptr<CompositeVector>& x_node) const;
+
 
  protected:
   void InitializeFromOptions_();
@@ -67,30 +72,13 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   void UpdateInverse_();
 
  protected:
-  enum PrecMethod { PREC_METHOD_NULL,
-                    TRILINOS_ML,
-                    TRILINOS_ILU,
-                    TRILINOS_BLOCK_ILU,
-                    HYPRE_AMG,
-                    HYPRE_EUCLID,
-                    HYPRE_PARASAILS };
-  PrecMethod prec_method_;
-
   // solver methods
-  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
-  Teuchos::ParameterList ml_plist_;
-#ifdef HAVE_HYPRE
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
   Teuchos::ParameterList hypre_plist_;
   int hypre_ncycles_, hypre_nsmooth_;
   double hypre_tol_, hypre_strong_threshold_;
   int hypre_coarsen_type_, hypre_relax_type_;
   int hypre_verbose_, hypre_cycle_type_;
-#endif
-  Teuchos::RCP<Ifpack_ILU> ilu_prec_;
-  Teuchos::ParameterList ilu_plist_;
-  Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
-  Teuchos::ParameterList ifp_plist_;
 
   // local data
   Teuchos::RCP<CompositeVectorFactory> range_;
