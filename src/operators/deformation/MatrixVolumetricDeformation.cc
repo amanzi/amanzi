@@ -12,7 +12,7 @@
 #include "composite_vector_factory.hh"
 #include "MatrixVolumetricDeformation.hh"
 
-#define MESH_TYPE 1 // 0 = HEXES, 1 = TRIANGULAR PRISMS
+#define MESH_TYPE 0 // 0 = HEXES, 1 = TRIANGULAR PRISMS
 
 namespace Amanzi {
 namespace Operators {
@@ -44,53 +44,29 @@ MatrixVolumetricDeformation::MatrixVolumetricDeformation(
 
 // Apply matrix, b <-- Ax
 void MatrixVolumetricDeformation::Apply(const CompositeVector& x,
-        const Teuchos::Ptr<CompositeVector>& b) {
-  ASSERT(0);
+        const Teuchos::Ptr<CompositeVector>& b) const {
+  operator_->Apply(*x.ViewComponent("node",false),
+                   *b->ViewComponent("node",false));
 }
 
 
 // Apply the inverse, x <-- A^-1 b
 void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
-        const Teuchos::Ptr<CompositeVector>& x) {
+        const Teuchos::Ptr<CompositeVector>& x) const {
   int ierr(0);
 
-  // ensure we have a solver
-  if (prec_method_ == PREC_METHOD_NULL) {
-    Errors::Message msg("MatrixVolumetricDeformation::ApplyInverse requires a specified method");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // Equations of the form: dVdz x = b, solved via:
-  //   dVdz^T * dVdz * x = dVdz^T * b, where operator_ = dVdz^T * dVdz
-  // -- form dVdz^T * b
-  Teuchos::RCP<CompositeVector> rhs = domain()->CreateVector(false);
-  rhs->CreateData();
-  dVdz_->SetUseTranspose(true);
-  dVdz_->Apply(*b.ViewComponent("cell",false),
-              *rhs->ViewComponent("node",false));
-
-  // Must also apply the boundary condition, dz_bottom = 0
-  // -- Fix the bottom nodes, they may not move
-  {
-    Epetra_MultiVector& rhs_n = *rhs->ViewComponent("node",false);
-    for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes_->begin();
-         n!=fixed_nodes_->end(); ++n) {
-      rhs_n[0][*n] = 0;
-    }
-  }
-
-  ierr |= IfpHypre_->ApplyInverse(*rhs->ViewComponent("node",false),
+  ierr |= IfpHypre_->ApplyInverse(*b.ViewComponent("node",false),
 				  *x->ViewComponent("node", false));
   ASSERT(!ierr);
 
   // write a measure of error
-  Epetra_MultiVector error(*b.ViewComponent("cell",false));
-  dVdz_->SetUseTranspose(false);
-  dVdz_->Apply(*x->ViewComponent("node",false), error);
-  error.Update(-1., *b.ViewComponent("cell",false), 1.);
-  double err(0.);
-  error.NormInf(&err);
-  std::cout << "ERROR IN dV = " << err << std::endl;
+  // Epetra_MultiVector error(*b.ViewComponent("cell",false));
+  // dVdz_->SetUseTranspose(false);
+  // dVdz_->Apply(*x->ViewComponent("node",false), error);
+  // error.Update(-1., *b.ViewComponent("cell",false), 1.);
+  // double err(0.);
+  // error.NormInf(&err);
+  // std::cout << "ERROR IN dV = " << err << std::endl;
 
 }
 
@@ -126,6 +102,25 @@ void MatrixVolumetricDeformation::InitializeFromOptions_() {
 };
 
 
+
+// This is a Normal equation, so we need to apply N^T to the rhs
+void MatrixVolumetricDeformation::ApplyRHS(const CompositeVector& x_cell,
+        const Teuchos::Ptr<CompositeVector>& x_node) const {
+  // Equations of the form: dVdz x = b, solved via:
+  //   dVdz^T * dVdz * x = dVdz^T * b, where operator_ = dVdz^T * dVdz
+  // -- form dVdz^T * b
+  dVdz_->SetUseTranspose(true);
+  dVdz_->Apply(*x_cell.ViewComponent("cell",false),
+               *x_node->ViewComponent("node",false));
+
+  // Must also apply the boundary condition, dz_bottom = 0
+  // -- Fix the bottom nodes, they may not move
+  Epetra_MultiVector& rhs_n = *x_node->ViewComponent("node",false);
+  for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes_->begin();
+       n!=fixed_nodes_->end(); ++n) {
+    rhs_n[0][*n] = 0;
+  }
+}
 
 void MatrixVolumetricDeformation::Assemble_() {
   int ierr = 0;
@@ -201,7 +196,7 @@ void MatrixVolumetricDeformation::Assemble_() {
     AmanziMesh::Entity_ID_List nodes_up;
     mesh_->face_get_nodes(faces[my_up_n], &nodes_up);
     for (int n=0; n!=nodes_up.size(); ++n) {
-      values[n] = perp_area / (nnz/2.);
+      values[n] = perp_area_up / (nnz/2.);
       indices[n] = node_map_wghost.GID(nodes_up[n]);
     }
 
@@ -210,7 +205,7 @@ void MatrixVolumetricDeformation::Assemble_() {
     mesh_->face_get_nodes(faces[my_down_n], &nodes_down);
     int nnz_half = nnz/2;
     for (int n=0; n!=nodes_down.size(); ++n) {
-      values[n+nnz_half] = -perp_area / (nnz/2.);
+      values[n+nnz_half] = -perp_area_up / (nnz/2.);
       indices[n+nnz_half] = node_map_wghost.GID(nodes_down[n]);
     }
 

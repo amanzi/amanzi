@@ -17,12 +17,13 @@
 #ifndef PKS_VOLUMETRIC_DEFORMATION_HH_
 #define PKS_VOLUMETRIC_DEFORMATION_HH_
 
+#include "composite_matrix.hh"
 #include "composite_vector_function.hh"
 
-#include "MatrixVolumetricDeformation.hh"
 #include "pk_factory.hh"
 #include "pk_default_base.hh"
 #include "pk_physical_base.hh"
+#include "MatrixVolumetricDeformation.hh"
 
 namespace Amanzi {
 namespace Deform {
@@ -72,7 +73,8 @@ class VolumetricDeformation : public PKPhysicalBase {
 
   // operator
   bool global_solve_;
-  Teuchos::RCP<Operators::MatrixVolumetricDeformation> operator_;
+  Teuchos::RCP<CompositeMatrix> operator_;
+  Teuchos::RCP<Operators::MatrixVolumetricDeformation> def_matrix_;
 
   // factory registration
   static RegisteredPKFactory<VolumetricDeformation> reg_;

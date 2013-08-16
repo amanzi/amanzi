@@ -15,6 +15,7 @@
    ------------------------------------------------------------------------- */
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "NKAOperator.hh"
 #include "composite_vector_function_factory.hh"
 
 #include "volumetric_deformation.hh"
@@ -117,8 +118,17 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // create the operator
-  operator_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(op_plist,
+  def_matrix_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(op_plist,
           mesh_, bottom_node_list));
+
+  if (op_plist.isSublist("NKA Solver")) {
+    Teuchos::ParameterList solver_plist = op_plist.sublist("NKA Solver");
+    operator_ = Teuchos::rcp(
+        new NKAOperator<CompositeMatrix,CompositeVector,
+                        CompositeVectorFactory>(solver_plist,def_matrix_));
+  } else {
+    operator_ = def_matrix_;
+  }
 
   // create storage for the nodal deformation
   S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
@@ -200,7 +210,9 @@ bool VolumetricDeformation::advance(double dt) {
   // calculate the nodal deformation
   Teuchos::RCP<CompositeVector> nodal_dz_vec =
       S_next_->GetFieldData("nodal_dz",name_);
-  operator_->ApplyInverse(*dcell_vol_vec, nodal_dz_vec.ptr());
+  Teuchos::RCP<CompositeVector> rhs = Teuchos::rcp(new CompositeVector(*nodal_dz_vec));
+  def_matrix_->ApplyRHS(*dcell_vol_vec, rhs.ptr());
+  operator_->ApplyInverse(*rhs, nodal_dz_vec.ptr());
 
   // form list of deformed nodes
   Entity_ID_List nodeids;
