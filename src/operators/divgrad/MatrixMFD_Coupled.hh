@@ -141,7 +141,7 @@ class MatrixMFD_Coupled : public Matrix {
   double hypre_tol_, hypre_strong_threshold_;
   int hypre_relax_type_, hypre_coarsen_type_, hypre_cycle_type_;
   int hypre_print_level_,hypre_max_row_sum_,hypre_max_levels_;
-  int hypre_max_iter_, hypre_relax_wt_, hypre_interp_type_;
+  int hypre_relax_wt_, hypre_interp_type_;
   int hypre_agg_num_levels_, hypre_agg_num_paths_;  
 #endif
 
