@@ -2993,6 +2993,7 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Porosity"));
             user_derive_list.push_back(underscore("Aqueous Saturation"));
             user_derive_list.push_back(underscore("Aqueous Pressure"));
+            user_derive_list.push_back(underscore("Hydraulic Head"));
             user_derive_list.push_back(underscore("Aqueous Volumetric Flux X"));
             user_derive_list.push_back(underscore("Aqueous Volumetric Flux Y"));
 #if BL_SPACEDIM==3

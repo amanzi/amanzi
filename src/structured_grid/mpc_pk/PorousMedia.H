@@ -1030,8 +1030,6 @@ public:
   void check_minmax(int fscalar, int lscalar);
   void compute_divu (MultiFab& soln, MultiFab* umac);
 
-  void setup_bound_desc();
-
   // list
   static std::map<std::string, int> phase_list;
   static std::map<std::string, int> comp_list;
@@ -1078,9 +1076,60 @@ public:
   static DataServices* PhiData() {return phi_dataServices;}
   static int NGrowHYP() {return nGrowHYP;}
 
+  void derive_Material_ID(Real      time,
+                          MultiFab& mf,
+                          int       dcomp);
+  void derive_Grid_ID(Real      time,
+                      MultiFab& mf,
+                      int       dcomp);
+
+  void derive_Core_ID(Real      time,
+                      MultiFab& mf,
+                      int       dcomp);
+
+  void derive_Cell_ID(Real      time,
+                      MultiFab& mf,
+                      int       dcomp);
+
+  void derive_Volumetric_Water_Content(Real      time,
+                                       MultiFab& mf,
+                                       int       dcomp);
+
+  void derive_Aqueous_Saturation(Real      time,
+                                 MultiFab& mf,
+                                 int       dcomp);
+
+  void derive_Aqueous_Pressure(Real      time,
+                               MultiFab& mf,
+                               int       dcomp);
+
+  void derive_Hydraulic_Head(Real      time,
+                             MultiFab& mf,
+                             int       dcomp);
+
+  void derive_Aqueous_Volumetric_Flux(Real      time,
+                                      MultiFab& mf,
+                                      int       dcomp,
+                                      int       dir);
+
+  void derive_Porosity(Real      time,
+                       MultiFab& mf,
+                       int       dcomp);
+
+  void derive_Intrinsic_Permeability(Real      time,
+                                     MultiFab& mf,
+                                     int       dcomp,
+                                     int       dir);
+
+  void derive_Effective_Diffusion_Coefficient(Real      time,
+                                              MultiFab& mf,
+                                              int       dcomp);
+
 protected:
 
   static void InitializeStaticVariables();
+
+  void setup_bound_desc();
 
   void SetRichardSolverParameters(RSParams&          rsparams,
                                   const std::string& IDstring) const;
