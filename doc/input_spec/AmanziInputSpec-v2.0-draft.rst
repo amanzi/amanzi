@@ -19,6 +19,150 @@ document. Where applicable, the relevant sections of the MRD are
 indicated.
 
 
+Model Description
+=================
+
+This allows the users to provide a name and general description of model being devepoled.  This is also the section in which the units for the problem are stored. This entire section is optional but encouraged as documentation.
+
+.. code-block:: xml
+
+  <model_description name="Name of Model" >
+      Required Elements: NONE
+      Optional Elements: comment, author, created, modeified, model_id, description, purpose (units - NOT IMPLEMENTED YET)
+  </model_description>
+
+Units has the optional elements of length, time, mass, and concentration.  Each of those in turn have their own sturcture.  The structures are as follows.
+
+REMINDER - UNITS ARE NOT IMPLEMENTED YET
+
+.. code-block:: xml
+
+  <units>
+      Required Elements: NONE
+      Optional Elements: length_unit, time_unit, mass_unit, conc_unit
+  </units>
+
+.. code-block:: xml
+
+  <length_unit>
+      Required Elements: m or cm
+      Optional Elements: NONE
+  </length_unit>
+
+.. code-block:: xml
+
+  <time_unit>
+      Required Elements: y, d, h, or s
+      Optional Elements: NONE
+  </time_unit>
+
+.. code-block:: xml
+
+  <mass_unit>
+      Required Elements: kg
+      Optional Elements: NONE
+  </mass_unit>
+
+.. code-block:: xml
+
+  <conc_unit>
+      Required Elements: molar
+      Optional Elements: NONE
+  </conc_unit>
+
+
+Here is an overall example for the modle description element.
+
+.. code-block:: xml
+
+  <model_description name="BC Cribs">
+    <comments>Added section on units definition</comments>
+    <model_name>What should be in this field; originally TBD</model_name>
+    <author>d3k870</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+
+Execution Control
+=================
+
+.. code-block:: xml
+  
+  <execution_controls>
+      Required Elements: execution_control_defaults, execution_control
+      Optional Elements: comments, verbosity
+  </execution_controls>
+
+.. code-block:: xml
+  
+  <verbosity>
+      Attribute: level="low | medium | high"
+  </verbosity>
+  
+NOTE: EIB - I don't understand where these map to in the old spec.  These are not currently implemented
+
+.. code-block:: xml
+
+  <execution_control_defaults>
+      Attributes: init_dt, max_dt, reduction_factor, increase_factor, mode, method
+  </execution_control_defaults>
+  
+.. code-block:: xml
+
+  <execution_control>
+      Attributes: start, end, init_dt, mode, method
+      SKIPPED ATTRIBUTES: max_dt, reduction_factor, increase_factor
+  </execution_control>
+  
+Numerical Controls
+==================
+
+.. code-block:: xml
+
+  <numerical_controls>
+      Required Elements: NONE????
+      Optional Elements: steady-state_controls, transient_controls, comments, linear_solver (not specified)
+  </numerical_controls>
+
+* `"steady-state_controls`"  has the following elements
+
+    * `"min_iterations`" 
+
+    * `"max_iterations`"
+
+    * `"max_preconditioner_lag_iterations`"
+
+    * `"nonlinear_tolerance`"
+
+    * `"error_rel_tol`" 
+
+    * `"error_abs_tol`" 
+
+    * `"pseudo_time_integrator`"
+
+* `"transient_controls`" has the elements `"comments`" and `"integration_method`". `"integration_method`" has the following elements
+
+    * `"method`"
+
+    * `"preconditioner`" 
+
+    * `"linear_solver`" 
+
+    * `"control_options`"
+
+    * `"divergent_max_iterations`" 
+
+    * `"clipping_saturation`"
+
+    * `"convergence_tolerance`" 
+
+    * `"initialize_with_darcy`"
+
 Mesh
 ====
 
@@ -54,74 +198,257 @@ testing.
   </mesh>
 
 
+Regions
+=======
+
+TODO: general description of what regions are
+
+.. code-block:: xml
+
+  <regions>
+      Required Elements: NONE
+      Optional Elements: comments, box, point, region
+  </regions>
+
+The regions block is required.  Within the region block no regions are required to be defined.  
+
+The elements box and point allow for inline description of regions.  The region element uses a subelement to either define a box region or specify a region file.  
+
+Box
+---
+
+A box region region is defined by a low corner coordinates and high corner coordinates.
+
+.. code-block:: xml
+
+  <box>
+      Attributes: low_coordinates, high_coordinates, name
+  </box>
+
+Point
+-----
+
+A point region region is defined by a point coordinates.
+
+.. code-block:: xml
+
+  <point>
+      Attributes: coordinates, name
+  </point>
+
+Region
+------
+
+A region allows for a box region or a region file.
+
+.. code-block:: xml
+
+  <region name="Name of Region">
+      Required Elements: region  ( OR file - NOT IMPLEMENTED YET)
+      Optional Elements: comments
+  </region>
+
+A region is define as describe above.  A file is define as follows.
+
+REMINDER - FILE OPTION NOT YET IMPLEMENTED
+
+.. code-block:: xml
+
+  <file>
+      Attributes: name, type, format, entity, label
+  </file>
+
+Geochemistry
+============
+
+SKIPPING FOR NOW!!!
+
+Material
+========
+
+TODO - general description of the material section
+
+Within the Materials block an unbounded number of `"material`" elements can be defined.  Each material has the following requirements.
+
+.. code-block:: xml
+
+  <material>
+      Required Elements: mechanical_properties, permeability, assigned_regions
+      Optional Elements: comments, cap_pressure (rel_perm - NOT YET IMPLEMENTED)
+  </material>
+
+`"mechanical_properties`" has two elements that can be either values or specified as files.  It has the following requirements.
+
+.. code-block:: xml
+
+  <mechanical_properties>
+      Required Elements: porosity, particle_density   (FILE OPTION NOT IMPLEMENTED) 
+  </mechanical_properties>
+
+* `"porosity`" is defined inline using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`".
+
+* `"particle_density`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".
+
+* `"assigned_regions`" is a comma seperated list of region names for which this material is to be assigned.
+
+* `"permeability`" is the permiability and has the attributes `"x`", `"y`", and `"z`".
+
+* `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+
+  * `"van_genuchten`" parameters include `"alpha`", `"sr`", and `"m`".  `"brooks_corey`" parameters include `"alpha`", `"sr`", and `"m`".
+
+.. code-block:: xml
+
+  <cap_pressure name="van_genuchten ( NOT IMPLEMENTED YET - | brooks_corey | none )" >
+      Required Elements: parameters
+  </cap_pressure>
+
+
+
+REMINDER - REL_PERM IS NOT YET IMPLEMENTED
+
+* `"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
+
+  * `"mualem`" parameters include `"optional_krel_smoothing_interval`".  `"burdine`" parameters include `"optional_krel_smoothing_interval`", and `"exp`".
+
+.. code-block:: xml
+
+  <rel_perm name="mualem | burdine | none )" >
+      Required Elements: parameters
+  </rel_perm>
+
+
+
+Process Kernels
+===============
+
+.. code-block:: xml
+
+  <process_kernels>
+      Required Elements: flow, transport, chemistry
+      Optional Elements: comments
+  </process_kernels>
+
+* `"flow`" has two attributes, `"state`" and `"model`".
+      
+      * `"state`" = "on | off"
+
+      *  `"model`" = " richards | saturated " 
+
+* `"transport`" has two attributes, `"state`" and `"algorithm`".
+      
+      * SKIPPED FOR NOW
+
+* `"chemistry`" has two attributes, `"state`" and `"process_model`".
+      
+      * SKIPPED FOR NOW
+
+Phases
+======
+
+Initial Conditions
+==================
+
+Boundary Conditions
+===================
+
 Output
 ======
 
-Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`" `"Diagnostic Output`" and `"Log Data`".  
+Output data from Amanzi is currently organized into three specific elements: `"Vis`", `"Checkpoint`", and `"Observations`".  
 Each of these is controlled in different ways, reflecting their intended use.
 
-* `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint Data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint Data at the discrete intervals of the simulation.
+* `"Vis`" is intended to represent snapshots of the solution at defined instances during the simulation to be visualized.  The ''vis'' element defines the naming and frequencing of saving the visualization files.  The visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see *elsewhere* for more discussion).
 
-* `"Visualization Data`" is intended to represent spatially complete snapshots of the solution at defined instances during the simulation.  Dependeing on the control parameters provided here, visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see below for more discussion).
+* `"Checkpoint`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a Checkpoint Data dump is specific to the algorithm options and mesh framework selected.  Checkpoint is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write Checkpoint at the discrete intervals of the simulation. The ''checkpoint'' element defines the naming and frequencing of saving the checkpoint files.
 
-* `"Observation Data`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.
+* `"Observations`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.  The ''observations'' element may define one or more specific ''observation''.
 
-* `"Diagnostic Output`" is intended to represent diagnostic values to be written to stdout during a simulation. The available diagnostics are for the most part analogous to what is available as observations under the Observation Data capability. 
+*EIB NOTE* - All three of the above are REQUIRED!!
+For the obserservations I understand how to leave that empty.  But how do I execute without writing a checkpoint? If I'm running a dinky test am I really required to specify a checkpoint?  Will need to test this will validator.  Talk to Ellen about this.
 
-* `"Log Data`" is intended to represent runtime diagnostics to indicate the status of the simulation in progress.  This data is typically written by the simulation code to the screen or some other stream or file pipe.  The volume of `"Log Data`" generated is a function of the `"Verbosity`" setting under `"Execution Control`".
+Vis
+---
 
-"`Log Data`" is not explicitly controlled in this section, since it is easier to control in the context of specifying details of the algorithms.  The remaining data types are discussed in the section below.
+The ''vis'' element defines the visualization filenaming scheme and how often to write out the files.  Thus, the ''vis'' element has the following requiements
+
+.. code-block:: xml
+
+  <vis>
+      Required Elements: base_filename, num_digits, time_macro
+      Optional Elements: NONE
+  </vis>
+
+The *base_filename* element contain the text component of the how the visualization files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the visualization files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *time_macro* element indicates the previously defined time_macro to be used to determin the frequency at which to write the visualization files.
+
+(*EIB NOTE* - there should be a comment here about how the output is controlled, i.e. for each PK where do you go to turn on and off fields.  This will probably get filled in as the other sections fill out.)
+
+Example:
+
+.. code-block:: xml
+
+  <vis>
+     <base_filename>plot</base_filename>
+     <num_digits>5</num_digits>
+     <time_macro>Macro 1</time_macro>
+  </vis>
+
+
+Checkpoint
+----------
+
+The ''checkpoint'' element deines the filenaming scheme and frequency for writing out the checkpoint files.  As mentioned above, the user does not influence what is written to the checkpoint files.  Thus, the ''checkpoint'' element has the following requiements
+
+.. code-block:: xml
+
+  <checkpoint>
+      Required Elements: base_filename, num_digits, time_macro
+      Optional Elements: NONE
+  </checkpoint>
+
+The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or interation id)  Final the *time_macro* element indicates the previously defined time_macro to be used to determin the frequency at which to write the checkpoint files.
+
+Example:
+
+.. code-block:: xml
+
+  <checkpoint>
+     <base_filename>chk</base_filename>
+     <num_digits>5</num_digits>
+     <time_macro>Every_100_timesteps</time_macro>
+  </checkpoint>
+
 
 Observations
 ------------
 
-The Observations element holds all the observations that the user is
-requesting from Amanzi, as well as meta data, such as the name of the
-file that Amanzi will write observations to.  The observations are
-collected by their phase. Thus, the ''observations'' element has the
-following requirements
+The Observations element holds all the observations that the user is requesting from Amanzi, as well as meta data, such as the name of the file that Amanzi will write observations to.  The observations are collected by their phase. Thus, the ''observations'' element has the following requirements
 
 .. code-block:: xml
 
    <observations>
-
      Required Elements: filename, phase
      Optional Elements: NONE
-
    </observations>
 
-The *filename* element contains the filename for the observation output,
-and may include the full path.
+The *filename* element contains the filename for the observation output, and may include the full path.  Currently, all observations are written to the same file.  
 
-.. code-block:: xml
-
-     <filename>OptionalPath/ObservationsFileName</filename>
-
-The *phase* element requires that the name of the phase be specified
-in an attribute:
+The *phase* element requires that the name of the phase be specified as an attribute and at least one observaton.
 
 .. code-block:: xml
 
      <phase name="Name of Phase (Required)">
-
-       Required Elements: NONE 
-       Optional Elements: observation (one observation element block for each observation)
-
+       Required Elements: observation (one observation element block for each observation)
+       Optional Elements: NONE
      </phase>
 
-In this release the only valid phase name is ''aqueous''.  The
-observation element requires a field quantity be given as an 
-attribute, and elements for a region, a model (functional)
-with which it will extract its source data, and a list of
-discrete times for its evaluation.  The observations are evaluated
-during the simulation and returned to the calling process through one
-of Amanzi arguments. 
+In this release the only valid phase name is ''aqueous''.  The observation element requires a field quantity be given as an attribute, and elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. 
 
 .. code-block :: xml
 
    <observation variable="Field Quantity (Required: see above for list of valid fields)">
 
-     Required Elements: assigned_region, functional, one of either time_macro or cycle_macro
+     Required Elements: assigned_region, functional, time_macro 
      Optional Elements: NONE
      
    </observation>
@@ -151,28 +478,4 @@ Example:
      </observations>
 
 
-Observations (take 2)
----------------------
 
-Here I'm just experimenting with a much more compressed "use case" style.  Not sure if this 
-gives enough detail.
-
-.. code-block :: xml
-
-   <observations>
-     <!-- Amanzi will write the observation to the file specified here (required) -->
-     <filename>OptionalPath/ObservationsFileName</filename>
-       <!-- Phases: required attribute is name -->
-       <phases name="aqueous">
-         <!-- Observations: List as many observations as desired,
-                            Required Attribute is variable
-         -->
-         <observation variable="Name of field quantity from list of 'Available field quantities' defined above)">
-           <assigned_region>name of region</assigned_region>
-           <functional>name of observation functional (from list below)</functional>
-           <time_macro>name of a time macro (from definitions)</time_macro>
-         </observation>
-       </phases>
-   </observations>
-
-            
