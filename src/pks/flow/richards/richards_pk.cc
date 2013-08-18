@@ -531,7 +531,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           uw_rel_perm_c[0][c] = n_liq[0][c] / visc[0][c] / perm_scale_;
         }
       }
-      uw_rel_perm->ViewComponent("face",true)->PutScalar(1.);
+      uw_rel_perm->ViewComponent("face",false)->PutScalar(1.);
       matrix_->CreateMFDstiffnessMatrices(uw_rel_perm.ptr());
 
       // Derive the pressure fluxes
@@ -552,8 +552,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     const Epetra_Import& vandelay = mesh_->exterior_face_importer();
     const Epetra_MultiVector& rel_perm_bf =
         *rel_perm->ViewComponent("boundary_face",false);
-    Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
-    uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
+    {
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
+    }
 
     // upwind
     upwinding_->Update(S);
@@ -565,6 +567,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       unsigned int ncells_surface = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
       if (S->HasFieldEvaluator("unfrozen_fraction")) {
+        Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
         S->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S.ptr(), name_);
         const Epetra_MultiVector& uf = *S->GetFieldData("unfrozen_fraction")
             ->ViewComponent("cell",false);
@@ -578,6 +581,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           uw_rel_perm_f[0][f] = uf[0][c];
         }
       } else {
+        Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
         for (unsigned int c=0; c!=ncells_surface; ++c) {
           // -- get the surface cell's equivalent subsurface face
           AmanziMesh::Entity_ID f =
