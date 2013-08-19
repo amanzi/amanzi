@@ -12,7 +12,7 @@
 #include "composite_vector_factory.hh"
 #include "MatrixVolumetricDeformation.hh"
 
-#define MESH_TYPE 0 // 0 = HEXES, 1 = TRIANGULAR PRISMS
+#define MESH_TYPE 1 // 0 = HEXES, 1 = TRIANGULAR PRISMS
 
 namespace Amanzi {
 namespace Operators {
@@ -188,8 +188,8 @@ void MatrixVolumetricDeformation::Assemble_() {
 
     // Determine the perpendicular area (remember, face_normal() is weighted
     // by face area already).
-    double perp_area_up = mesh_->face_normal(faces[my_up_n])[2];
-    double perp_area_down = mesh_->face_normal(faces[my_down_n])[2];
+    double perp_area_up = std::abs(mesh_->face_normal(faces[my_up_n])[2]);
+    double perp_area_down = std::abs(mesh_->face_normal(faces[my_down_n])[2]);
     ASSERT(std::abs(perp_area_up - perp_area_down) < 1.e-6);
 
     // loop over nodes in the top face, setting the Jacobian
