@@ -34,7 +34,7 @@ namespace AmanziNewInput {
 /* ******************************************************************
  * Empty
  ****************************************************************** */
-Teuchos::ParameterList translate(const std::string& xmlfilename) {
+Teuchos::ParameterList translate(const std::string& xmlfilename, const std::string& xmlSchemafile) {
 
   Teuchos::ParameterList new_list;
 
@@ -49,12 +49,12 @@ Teuchos::ParameterList translate(const std::string& xmlfilename) {
   // TODO: error handler
   xercesc::XMLPlatformUtils::Initialize();
   xercesc::XercesDOMParser *parser = new xercesc::XercesDOMParser;
-  if (parser->loadGrammar("/Users/bark137/src/ASCEM/input/round2/amanzi.xsd", 
+  if (parser->loadGrammar(xmlSchemafile.c_str(), 
 			  xercesc::Grammar::SchemaGrammarType, true) == NULL) {
       amanzi_throw(Errors::Message("ERROR: didn't load grammar"));
   }
   parser->useCachedGrammarInParse( true );
-  ErinErrorHandler* errHandler = new ErinErrorHandler();
+  AmanziErrorHandler* errHandler = new AmanziErrorHandler();
   parser->setErrorHandler(errHandler);
   parser->setValidationScheme(xercesc::XercesDOMParser::Val_Always);
   parser->setDoNamespaces(true);

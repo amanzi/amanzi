@@ -7,13 +7,13 @@
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/validators/common/Grammar.hpp>
 
-class ErinErrorHandler : public ErrorHandler
+class AmanziErrorHandler : public ErrorHandler
 {
     private:
         void reportParseException(const SAXParseException& ex)
         {
             char* msg = XMLString::transcode(ex.getMessage());
-            fprintf(stderr, "at line %llu column %llu, %s\n",
+            fprintf(stderr, "at line %lu column %lu, %s\n",
                     ex.getColumnNumber(), ex.getLineNumber(), msg);
             XMLString::release(&msg);
         }

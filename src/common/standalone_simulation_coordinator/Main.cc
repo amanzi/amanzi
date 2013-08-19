@@ -73,8 +73,11 @@ int main(int argc, char *argv[]) {
     CLP.setDocString("The Amanzi driver reads an XML input file and\n"
                      "runs a reactive flow and transport simulation.\n");
 
-    std::string xmlInFileName = "options.xml";
+    std::string xmlInFileName = "doc/input_spec/amanzi.xsd";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
+
+    std::string xmlSchema = "options.xml";
+    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File"); 
 
     bool print_version(false);
     CLP.setOption("version", "no_version", &print_version, "Print version number and exit.");
@@ -123,7 +126,7 @@ int main(int argc, char *argv[]) {
       if (strcmp(temp2,"amanzi_input")==0) {
 
 	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
-	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
+	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, xmlSchema);
 	//driver_parameter_list.print(std::cout,true,false);
       } else if(strcmp(temp2,"ParameterList")==0) {
 	Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
