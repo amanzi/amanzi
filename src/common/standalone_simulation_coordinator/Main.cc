@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 
 	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName);
-	driver_parameter_list.print(std::cout,true,false);
+	//driver_parameter_list.print(std::cout,true,false);
       } else if(strcmp(temp2,"ParameterList")==0) {
 	Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
         driver_parameter_list = xmlreader.getParameters();
