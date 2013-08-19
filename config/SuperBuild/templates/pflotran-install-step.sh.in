@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+cd @PFLOTRAN_source_dir@
+
+# Manual install required for 4.0.x versions
+pflotran_dir=@TPL_INSTALL_PREFIX@/pflotran
+tpl_lib_dir=@TPL_INSTALL_PREFIX@/lib
+if [ ! -e ${pflotran_dir} ]; then mkdir -p ${pflotran_dir} ; fi
+
+cp -R * ${pflotran_dir}
+rc=$?
+if [ "$rc" -ne "0" ]; then
+  exit $rc
+fi
+cp src/pflotran/libpflotranchem.a ${tpl_lib_dir}
+
+exit $?

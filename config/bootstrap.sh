@@ -25,7 +25,7 @@ print_exit=${FALSE}
 
 # Known compiler lists
 known_c_compilers="mpicc cc gcc icc"
-known_cxx_compilers="mpiCC mpicxx CC g++ icpc"
+known_cxx_compilers="mpicxx mpiCC CC g++ icpc"
 known_fortran_compilers="mpif90 ftn gfortran ifort"
 
 # Directory information
@@ -99,9 +99,11 @@ moab_mesh=$FALSE
 amanzi_branch=
 test_suite=$FALSE
 netcdf4=${TRUE}
-petsc=${TRUE}
+petsc=${FALSE}
 hypre=${TRUE}
-disable_downloads=${FALSE}
+alquimia=${FALSE}
+pflotran=${FALSE}
+
 
 
 
@@ -274,7 +276,8 @@ Value in brackets indicates default setting.
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
   petsc                   build the PETSc solver APIs ['"${petsc}"']
-  disable_downloads       disable downloads during SuperBuild ['"${disable_downloads}"']
+  pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
+  alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
 
 Tool definitions:
@@ -360,7 +363,8 @@ Build Features:
     netcdf4             ='"${netcdf4}"'
     hypre               ='"${hypre}"'
     petsc               ='"${petsc}"'
-    disable_downloads   ='"${disable_downloads}"'
+    alquimia            ='"${alquimia}"'
+    pflotran            ='"${pflotran}"'
 
 Directories:
     prefix                 ='"${prefix}"'
@@ -1014,8 +1018,8 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_NetCDF4:BOOL=${netcdf4} \
                 -DENABLE_HYPRE:BOOL=${hypre} \
                 -DENABLE_PETSC:BOOL=${petsc} \
-                -DDISABLE_EXTERNAL_DOWNLOAD:BOOL=${disable_downloads} \
-                -DTPL_DOWNLOAD_DIR:PATH=${tpl_download_dir} \
+                -DENABLE_ALQUIMIA:BOOL=${alquimia} \
+                -DENABLE_PFLOTRAN:BOOL=${plotran} \
                 ${tpl_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -1079,7 +1083,6 @@ cd ${amanzi_build_dir}
 
 ${cmake_binary} \
               -C${tpl_config_file} \
-              -DCMAKE_BUILD_TYPE:STRING=${build_type} \
 	      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
 	      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
 	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
@@ -1092,6 +1095,8 @@ ${cmake_binary} \
               -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
               -DENABLE_HYPRE:BOOL=${hypre} \
               -DENABLE_PETSC:BOOL=${petsc} \
+              -DENABLE_ALQUIMIA:BOOL=${alquimia} \
+              -DENABLE_PFLOTRAN:BOOL=${plotran} \
               ${amanzi_source_dir}
 
 if [ $? -ne 0 ]; then
