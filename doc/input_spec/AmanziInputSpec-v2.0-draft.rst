@@ -91,6 +91,8 @@ Here is an overall example for the modle description element.
 Execution Control
 =================
 
+Some general explaination of exection control goes here.
+
 .. code-block:: xml
   
   <execution_controls>
@@ -98,27 +100,56 @@ Execution Control
       Optional Elements: comments, verbosity
   </execution_controls>
 
+Some explaination of each element goes here.
+
 .. code-block:: xml
   
-  <verbosity>
-      Attribute: level="low | medium | high"
-  </verbosity>
+  <verbosity level="low | medium | high" />
   
-NOTE: EIB - I don't understand where these map to in the old spec.  These are not currently implemented
+QUESTION: EIB - I don't understand what `"execution_control_defaults`" gets used for verses `"execution_control`"?  For now I am just skipping `"execution_control_defaults`".
 
 .. code-block:: xml
 
-  <execution_control_defaults>
-      Attributes: init_dt, max_dt, reduction_factor, increase_factor, mode, method
-  </execution_control_defaults>
-  
+  <execution_control_defaults init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" />
+
+NOTE: EIB - I don't understand how the method maps back to the old spec: bdf1 | picard? Is bdf1 the default? Does picard means, "Use Picard = true"?
+
+    * init_dt="labeled_time" 
+      
+    * max_dt="labeled_time" 
+      
+    * reduction_factor="exponential" 
+      
+    * increase_factor="exponential" 
+      
+    * mode="stead | transient" 
+      
+    * method=" bdf1 | picard" 
+
 .. code-block:: xml
 
-  <execution_control>
-      Attributes: start, end, init_dt, mode, method
-      SKIPPED ATTRIBUTES: max_dt, reduction_factor, increase_factor
-  </execution_control>
+  <execution_control start="string" end="labeled_time" init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" />
+
+NOTE: start is REQUIRED
   
+    * start="string", this attribute is required
+      
+    * end="labeled_time" 
+      
+    * init_dt="labeled_time" 
+      
+    * max_dt="labeled_time" 
+      
+    * reduction_factor="exponential" 
+      
+    * increase_factor="exponential" 
+      
+    * mode="stead | transient" 
+      
+    * method=" bdf1 | picard" 
+
+SKIPPED ATTRIBUTES: max_dt, reduction_factor, increase_factor
+
 Numerical Controls
 ==================
 
@@ -129,39 +160,105 @@ Numerical Controls
       Optional Elements: steady-state_controls, transient_controls, comments, linear_solver (not specified)
   </numerical_controls>
 
+NOTE: EIB - Currently `"linear_solver`" isn't listed in the schema with a min/max occurs.
+
+Some discussion of the elements, what the minimum necessary for a simulation is goes here.  For now I have just listed the elements that are available.  
+
+* `"comments`"="string" - SKIPPED 
+
+    * Note: In many cases extra elements, such as comments, are not accommodated in the current input parsing. Therefore, for the most part `"comment`" elements are ignored.
+
 * `"steady-state_controls`"  has the following elements
 
-    * `"min_iterations`" 
+    * `"comments`"="string" - SKIPPED
+ 
+    * `"min_iterations`"="integer"
 
-    * `"max_iterations`"
+    * `"max_iterations`"="integer"
 
-    * `"max_preconditioner_lag_iterations`"
+    * `"max_preconditioner_lag_iterations`"="integer"
 
-    * `"nonlinear_tolerance`"
+    * `"nonlinear_tolerance`"="exponential"
 
-    * `"error_rel_tol`" 
+    * `"error_rel_tol`"="exponential"
 
-    * `"error_abs_tol`" 
+    * `"error_abs_tol`"="exponential"
 
-    * `"pseudo_time_integrator`"
+    * `"pseudo_time_integrator`"  has the following elements
+
+        * `"method`"="string"
+
+        * `"preconditioner`"="string"
+
+        * `"linear_solver`"="string"
+
+        * `"control_options`"="string"
+
+        * `"divergent_max_iterations`"="integer"
+
+        * `"clipping_saturation`"="exponential"
+
+        * `"convergence_tolerance`"="exponential"
+
+        * `"initialize_with_darcy`"="string"
 
 * `"transient_controls`" has the elements `"comments`" and `"integration_method`". `"integration_method`" has the following elements
 
-    * `"method`"
+    * `"comments`"="string" - SKIPPED 
+      
+    * `"integration_method`" has the following elements
 
-    * `"preconditioner`" 
+        * `"convergence_criteria`" has the following elements
 
-    * `"linear_solver`" 
+            * `"error_rel_tol`"="exponential"
 
-    * `"control_options`"
+            * `"error_abs_tol`"="exponential"
 
-    * `"divergent_max_iterations`" 
+        * `"nonlinear_solver_parameters`" has the following elements
 
-    * `"clipping_saturation`"
+            * `"min_iterations`"="integer"
 
-    * `"convergence_tolerance`" 
+            * `"max_iterations`"="integer"
 
-    * `"initialize_with_darcy`"
+            * `"limit_iterations`"="integer"
+ 
+            * `"nonlinear_tolerance`"="exponential"
+
+            * `"max_divergent_iterations`"="integer"
+
+            * `"max_preconditioner_lag`"="integer"
+
+* `"linear_solver`"  has the following elements
+
+    * `"comments`"="string" - SKIPPED
+ 
+    * `"method`"="string"
+
+    * `"max_iterations`"="integer"
+
+    * `"tolerance`"="exponential"
+
+    * `"ml_cycle_applications`"="integer"
+
+    * `"use_hypre_amg`"="string"
+
+    * `"use_block_ilu`"="string"
+
+    * `"hypre_amg_cycle_applications`"="integer"
+
+    * `"hypre_amg_smoother_sweeps`"="integer"
+
+    * `"hypre_amg_tolerance`"="exponential"
+
+    * `"hypre_amg_threshold`"="exponential"
+
+    * `"ml_smoother_type`"="string"
+
+    * `"sub_cycling`"="string"
+
+    * `"transport_sub_cycling`"="string"
+
+
 
 Mesh
 ====
@@ -221,9 +318,7 @@ A box region region is defined by a low corner coordinates and high corner coord
 
 .. code-block:: xml
 
-  <box>
-      Attributes: low_coordinates, high_coordinates, name
-  </box>
+  <box  name="box name" low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
 
 Point
 -----
@@ -232,9 +327,7 @@ A point region region is defined by a point coordinates.
 
 .. code-block:: xml
 
-  <point>
-      Attributes: coordinates, name
-  </point>
+  <point name="point name" coordinate = "x,y,z" />
 
 Region
 ------
@@ -254,9 +347,9 @@ REMINDER - FILE OPTION NOT YET IMPLEMENTED
 
 .. code-block:: xml
 
-  <file>
-      Attributes: name, type, format, entity, label
-  </file>
+  <file name="file name" type="color | labeled set" format="exodus ii" entity="cell | face" label="integer"/>
+
+Some discussion of reading a region file goes here. Talk about the color function or labeled set.  State we only read the ExodusII mesh format files.  State the region file must be specify cells or faces.  Explain what the label is for.
 
 Geochemistry
 ============
@@ -285,13 +378,22 @@ Within the Materials block an unbounded number of `"material`" elements can be d
       Required Elements: porosity, particle_density   (FILE OPTION NOT IMPLEMENTED) 
   </mechanical_properties>
 
-* `"porosity`" is defined inline using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`".
+* `"porosity`" is defined inline using attributes.  Either it is specified as a value between 0 and 1 using `"value`" or it specified through a file using `"filename`" and `"type`". NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
-* `"particle_density`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".
+.. code-block:: xml
+
+  <porosity value="decimal value"/>
+  <porosity filename="file name" type="file"/>
+
+* `"particle_density`" is defined inline using attributes.  Either it is specified as a value greater than 0 using `"value`" or it specified through a file using `"filename`" and `"type`".  See porosity for example.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
 * `"assigned_regions`" is a comma seperated list of region names for which this material is to be assigned.
 
 * `"permeability`" is the permiability and has the attributes `"x`", `"y`", and `"z`".
+
+.. code-block:: xml
+
+  <permeability x="exponential" y="exponential" z="exponential" />
 
 * `"cap_pressure`" is an optional element.  The available models are `"van_genuchten`", `"brooks_corey`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
@@ -302,7 +404,6 @@ Within the Materials block an unbounded number of `"material`" elements can be d
   <cap_pressure name="van_genuchten ( NOT IMPLEMENTED YET - | brooks_corey | none )" >
       Required Elements: parameters
   </cap_pressure>
-
 
 
 REMINDER - REL_PERM IS NOT YET IMPLEMENTED
@@ -346,11 +447,194 @@ Process Kernels
 Phases
 ======
 
+Some general discussion of the `"Phases`" section goes here.
+
+.. code-block:: xml
+
+  <Phases>
+      Required Elements: liquid_phase
+      Optional Elements: comments, solid_phase - SKIPPED
+  </Phases>
+
+* `"liquid_phase`" has the following elements
+
+.. code-block:: xml
+
+  <liquid_phase>
+      Required Elements: eos, viscosity, density
+      Optional Elements: dissolved_components - SKIPPED
+  </liquid_phase>
+
+Here is more info on the `"liquid_phase`" elements:
+
+    * `"eos`"="string" - QUESTION - EIB: note sure what this translate to in the old spec.
+
+    * `"viscosity`"="exponential"
+
+    * `"density`"="exponential"
+
+    * `"dissolved_components`" has the elements - SKIPPED
+
+        * `"solutes`"
+
+* `"solid_phase`" has the following elements - Remineder this element has been SKIPPED
+
+.. code-block:: xml
+
+  <solid_phase>
+      Required Elements: minerals
+      Optional Elements: NONE
+  </solid_phase>
+
+Here is more info on the `"solid_phase`" elements:
+
+    * `"minerals`" has the element - SKIPPED
+
+        * `"mineral`" which contains the name of the mineral
+
 Initial Conditions
 ==================
 
+Some general discussion of the `"initial_condition`" section goes here.
+
+The `"initial_conditions`" section contains at least 1 and up to an unbounded number of `"initial_condition`" elements.  Each `"initial_condition`" element defines a single initial condition that is applied to one or more region.  The following is a description of the `"initial_condition`" element.
+
+.. code-block:: xml
+
+  <initial_condition>
+      Required Elements: assigned_regions, liquid_phase
+      Optional Elements: comments, solid_phase - SKIPPED
+  </initial_condition>
+
+* `"assigned_regions`" is a comma seperated list of regions to apply the initical condition to.
+
+* `"liquid_phase`" has the following elements
+
+.. code-block:: xml
+
+  <liquid_phase>
+      Required Elements: liquid_component
+      Optional Elements: solute_component, geochemistry - BOTH SKIPPED
+  </liquid_phase>
+
+Here is more info on the `"liquid_phase`" elements:
+
+    * `"liquid_component`" is an element with the following subelement: 
+
+        * `"pressure`" is an element with the following attributes: ONLY UNIFORM, for now
+
+.. code-block:: xml
+
+     <pressure name="some name" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
+
+.
+    * `"solute_component`" is an element with the following attributes: NOT IMPLEMENTED YET
+
+.. code-block:: xml
+
+     <solute_component name="some name" filename="filename" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
+
+.
+    * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
+
+        * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+
+.. code-block:: xml
+
+     <constraint name="some name" start="time" />
+
+* `"solid_phase`" has the following elements - Remineder this element has been SKIPPED
+
+.. code-block:: xml
+
+  <solid_phase>
+      Required Elements: geochemistry - SKIPPED
+      Optional Elements: mineral, geochemistry - BOTH SKIPPED 
+  </solid_phase>
+
+Here is more info on the `"solid_phase`" elements: - NOT IMPLEMENTED YET
+
+    * `"mineral`" has the element - SKIPPED (EIB - I there's a typo in the schema here!)
+
+        * `"mineral`" which contains the name of the mineral
+
+    * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
+
+        * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+
 Boundary Conditions
 ===================
+
+Some general discussion of the `"boundary_condition`" section goes here.
+
+The `"boundary_conditions`" section contains at least 1 and up to an unbounded number of `"boundary_condition`" elements.  Each `"boundary_condition`" element defines a single initial condition that is applied to one or more region.  The following is a description of the `"boundary_condition`" element.
+
+.. code-block:: xml
+
+  <boundary_condition>
+      Required Elements: assigned_regions, liquid_phase
+      Optional Elements: comments - SKIPPED
+  </boundary_condition>
+
+* `"assigned_regions`" is a comma seperated list of regions to apply the initical condition to.
+
+* `"liquid_phase`" has the following elements
+
+.. code-block:: xml
+
+  <liquid_phase>
+      Required Elements: liquid_component
+      Optional Elements: solute_component, geochemistry - BOTH SKIPPED
+  </liquid_phase>
+
+Here is more info on the `"liquid_phase`" elements:
+
+    * `"liquid_component`" is an element with the following subelement: 
+
+        * `"inward_mass_flux`" is an element with the following attributes: ONLY CONSTANT, for now
+
+.. code-block:: xml
+
+     <inward_mass_flux value="exponential" function="linear | uniform | constant" start="time" />
+
+.
+        * `"inward_volumetric_flux`" is an element with the following attributes: ONLY CONSTANT, for now
+
+.. code-block:: xml
+
+     <inward_volumetric_flux value="exponential" function="linear | uniform | constant" start="time" />
+
+.
+        * `"uniform_pressure`" is an element with the following attributes: ONLY CONSTANT, for now
+
+.. code-block:: xml
+
+     <uniform_pressure name="some name" value="exponential" function="uniform | constant" start="time" />
+
+.
+        * `"hydrostatic`" is an element with the following attributes: ONLY CONSTANT, for now
+
+.. code-block:: xml
+
+     <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" />
+
+.
+    * `"solute_component`" is an element with the following subelement: NOT IMPLEMENTED YET
+
+        * `"aqueous_conc`" is an element with the following attributes: ONLY CONTANT, for now
+
+.. code-block:: xml
+
+     <aqueous_conc name="some name" value="exponential" function="linear | uniform | constant" start="time" />
+
+.
+    * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
+
+        * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
+
+.. code-block:: xml
+
+     <constraint name="some name" start="time" function="linear | uniform | constant"/>
 
 Output
 ======
