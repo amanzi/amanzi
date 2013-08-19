@@ -250,33 +250,28 @@ bool VolumetricDeformation::advance(double dt) {
     // WORKAROUND for non-communication in deform() by Mesh
     //    int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
     //            Amanzi::AmanziMesh::OWNED);
-    int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-            Amanzi::AmanziMesh::USED);
-    AmanziGeometry::Point coord_domain(dim);
-    AmanziGeometry::Point coord_surface(dim-1);
+    int nsurfnodes = surf_mesh_->num_entities(AmanziMesh::NODE,
+            AmanziMesh::USED);
 
     Entity_ID_List surface_nodeids, surface3d_nodeids;
     AmanziGeometry::Point_List surface_newpos, surface3d_newpos;
 
     for (int i=0; i!=nsurfnodes; ++i) {
       // get the coords of the node
-      AmanziGeometry::Point coord(3);
       AmanziMesh::Entity_ID pnode =
           surf_mesh_->entity_get_parent(AmanziMesh::NODE, i);
-      mesh_->node_get_coordinates(i, &coord_domain);
-
-      // surface points are two dimensional
-      for (int s=0; s!=dim-1; ++s) coord_surface[s] = coord_domain[s];
-      surface_nodeids.push_back(i);
-      surface_newpos.push_back(coord_surface);
+      AmanziGeometry::Point coord_domain(dim);
+      mesh_->node_get_coordinates(pnode, &coord_domain);
 
       surface3d_nodeids.push_back(i);
       surface3d_newpos.push_back(coord_domain);
-    }
 
-    // now deform the surface meshes, note that we set the keep_valid
-    // flag to false, since we want the surface mesh to exactly mirror
-    // the domain mesh
+      // surface points are two dimensional
+      AmanziGeometry::Point coord_surface(dim-1);
+      for (int s=0; s!=dim-1; ++s) coord_surface[s] = coord_domain[s];
+      surface_nodeids.push_back(i);
+      surface_newpos.push_back(coord_surface);
+    }
     AmanziGeometry::Point_List surface_finpos;
     surf_mesh_nc_->deform(surface_nodeids, surface_newpos, false, &surface_finpos);
     surf3d_mesh_nc_->deform(surface3d_nodeids, surface3d_newpos, false, &surface_finpos);
