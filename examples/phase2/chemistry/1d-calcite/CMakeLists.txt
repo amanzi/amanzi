@@ -6,6 +6,8 @@ project(CHEMISTRY_1D_CALCITE_TEST)
           copy ${CHEMISTRY_1D_CALCITE_TEST_SOURCE_DIR}/amanzi-u-1d-calcite.xml ${CHEMISTRY_1D_CALCITE_TEST_BINARY_DIR}/amanzi-u-1d-calcite.xml) 
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
           copy ${CHEMISTRY_1D_CALCITE_TEST_SOURCE_DIR}/calcite.bgd ${CHEMISTRY_1D_CALCITE_TEST_BINARY_DIR}/calcite.bgd) 
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy ${CHEMISTRY_1D_CALCITE_TEST_SOURCE_DIR}/calcite-short.in ${CHEMISTRY_1D_CALCITE_TEST_BINARY_DIR}/calcite-short.in) 
     endif()
 
     add_amanzi_test(examples-phase2-chemistry-1d-calcite amanzi "--xml_file=amanzi-u-1d-calcite.xml" KIND int)

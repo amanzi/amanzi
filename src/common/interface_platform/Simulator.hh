@@ -12,6 +12,8 @@ namespace Amanzi
   struct Simulator
   {
     enum ReturnType {SUCCESS, FAIL, NUM_RETURN_TYPES};
+
+    virtual ~Simulator() {}
     
     virtual Amanzi::Simulator::ReturnType Run(const MPI_Comm&               mpi_comm,
                                               Teuchos::ParameterList&       input_parameter_list,
