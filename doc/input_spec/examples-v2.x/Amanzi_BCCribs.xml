@@ -33,7 +33,7 @@
 		<constant name="pre_1956_recharge" type="area_mass_flux" value="1.5815524627981847E-7"/>
 		<constant name="post_1956_recharge" type="area_mass_flux" value="1.9927561031257127E-6"/>
 		<constant name="future_recharge" type="area_mass_flux" value="1.7587764354333456E-6"/>
-		
+
 		<time_constant name="start_time" value="1956.0;y"/>
 		<numerical_constant name="zero" value="0.000"/>
 		<area_mass_flux_constant name="future_recharge" value="1.7587764354333456E-6"/>
@@ -123,9 +123,11 @@
 			<eos>false</eos>  <!-- default is false; and can be left out -->
 			<viscosity>1.002E-03</viscosity>
 			<density>998.2</density>
-			<dissolved_components>
-				<solutes>Tc-99, U-234,</solutes>  <!-- can also be vertically aligned if list is long -->
-				<coefficient_of_diffusion>1.0e-9</coefficient_of_diffusion> <!-- TDS: Added since it was in F-Area instance-->
+			<dissolved_components> 
+				<solutes>
+					<solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+					<solute coefficient_of_diffusion="1.0e-9">U-234</solute>
+				</solutes> 
 			</dissolved_components>
 		</liquid_phase>
 	</phases>
@@ -162,7 +164,7 @@
 			   <execution_control  start="1957.000;y"  end="3000.0;y"/>
 	</execution_controls>
 
-        <!-- There are few different ways to iterate to steady-state - 
+        <!-- There are few different ways to iterate to steady-state -
         most use pseudo-time. But what may complicate this is that two different PKs may have different needs here or in transient.-->
 
 	<numerical_controls>
@@ -198,29 +200,65 @@
 			<method>gmres</method>
 			<max_iterations>20</max_iterations>
 			<tolerance>1.0e-18</tolerance>
-			<ml_cycle_applications>3</ml_cycle_applications>
-			<use_hypre_amg>true</use_hypre_amg>
-			<use_block_ilu>false</use_block_ilu>
-			<hypre_amg_cycle_applications>10</hypre_amg_cycle_applications>
-			<hypre_amg_smoother_sweeps>10</hypre_amg_smoother_sweeps>
-			<hypre_amg_tolerance>0.1</hypre_amg_tolerance>
-			<hypre_amg_threshold>0.8</hypre_amg_threshold>
-			<ml_smoother_type>jacobi</ml_smoother_type>
+	                <preconditioner name = "hypre_amg">
+	                     	<hypre_cycle_applications>10</hypre_cycle_applications>
+	                	<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+	                       	<hypre_tolerance>0.1</hypre_tolerance>
+	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
+	                 </preconditioner>
        		         <sub_cycling>true</sub_cycling>
 			<transport_sub_cycling>true</transport_sub_cycling>
 		</linear_solver>
 	</numerical_controls>
+	
+	        <regions>
+	                <!-- Allow either verbose or compact formats -->
+	                <!-- see proposed spec for limited logical operations on regions(union,intersection,subtraction) -->
+	
+	                <region name ="facies1">
+	                        <comments>The term 'color function' was eliminated</comments>
+	                        <region_file name = "model.tf3"  type="color" label="1"/>
+	                </region>
+	
+	                <region name ="facies2">
+	                        <comments>The term 'color function' was eliminated</comments>
+	                        <region_file name = "model.tf3"  type="color" label="2"/>
+	                </region>
+	
+	                <region name ="facies3">
+	                        <comments>The term 'color function' was eliminated</comments>
+	                        <region_file name = "model.tf3"  type="color" label="3"/>
+	                </region>
+	
+	                <region name ="Top Surface 1">
+	                        <comments>Proposed comments field</comments>
+	                        <box low_coordinates= "0.0,0.0,106.0"     high_coordinates="110.0,280.0,107.0"/>
+	                </region>
 
-	<mesh framework="mstk"> <!-- default is MSTK for unstructured -->
-		<comments>This same information is also defined in the .tf3 file - is the redundancy necessary?</comments>
-		<dimension>3</dimension>
-		<generate>
-			<number_of_cells nx = "64"  ny = "56"  nz = "107"/>
-			<box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "320.0,280.0,107.0"/>
-		</generate>
-	</mesh>
+			<!-- vlf:  Additional regions defined -->
+	                <region name ="Water Table">
+	                        <comments>Proposed comments field</comments>
+	                        <plane location = "0.0,0.0,0.0"     normal="0.0,0.0,-1.0"/>
+	                </region>
 
-	<regions>
+			<!-- vlf:  Layers and surfaces not currently supported -->
+	                <region name= "Upper aquifer">
+	                        <region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="cell" label="50000"/>
+
+	                </region>
+	
+	                        <box name="Top Surface 1"    low_coordinates= "(0.0,0.0,106.0)"     high_coordinates="(110.0,280.0,107.0)"/>
+	                        <box name="Top Surface 2"    low_coordinates= "(205.0,0.0,106.0)"    high_coordinates="(320.0,280.0,107.0)"/>
+	                        <box name="Top Surface 3"    low_coordinates= "(110.0,165.0,106.0)" high_coordinates="(205.0,280.0,107.0)"/>
+	                        <box name="Top Surface 4"    low_coordinates= "(110.0,0.0,106.0)"   high_coordinates="(205.0,115.0,107.0)"/>
+	                        <box name="Top Surface 5"    low_coordinates= "(110.0,120.0,106.0)" high_coordinates="(205.0,160.0,107.0)"/>
+	                        <box name="Top Surface 6"    low_coordinates= "(115.0,160.0,106.0)" high_coordinates="(155.0,165.0,107.0)"/>
+	                        <box name="Top Surface 7"    low_coordinates= "(115.0,160.0,106.0)" high_coordinates="(155.0,165.0,107.0)"/>
+	                        <box name="Top Surface 8"    low_coordinates= "(160.0,160.0,106.0)" high_coordinates="(200.0,165.0,107.0)"/>
+	                        <box name="Top Surface 9"    low_coordinates= "(115.0,115.0,106.0)"  high_coordinates="(155.0,120.0,107.0)"/>
+	                        <box name="Top Surface 10"   low_coordinates= "(160.0,115.0,106.0)" high_coordinates="(200.0,120.0,107.0)"/>
+	                        <box name="Crib 216-B-14"    low_coordinates= "(200.0,115.0,106.0)" high_coordinates="(205.0,120.0,107.0)"/>
+
              	<!-- Allow either verbose or compact formats -->
       		<!-- see proposed spec for limited logical operations on regions(union,intersection,subtraction) -->
 
@@ -309,10 +347,19 @@
       			<point name="Well C_14" coordinate="(82.5,217.5,45.0)"/>
 	</regions>
 
+	<mesh framework="mstk"> <!-- default is MSTK for unstructured -->
+		<comments>This same information is also defined in the .tf3 file - is the redundancy necessary?</comments>
+		<dimension>3</dimension>
+		<generate>
+			<number_of_cells nx = "64"  ny = "56"  nz = "107"/>
+			<box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "320.0,280.0,107.0"/>
+		</generate>
+	</mesh>
+
 	<materials>
 		<material name="material1">
 		       	<comments>Material corresponds to region facies1</comments>
-               		<mechanical_properties> 
+               		<mechanical_properties>
                          	<porosity value="0.2206"/>
                          	<particle_density value="2720.0"/>
  	 	      	 </mechanical_properties>
@@ -329,7 +376,7 @@
 
 		<material name ="material2">
 			<comments>Material corresponds to region facies2</comments>
-            		<mechanical_properties> 
+            		<mechanical_properties>
        		 		<porosity value="0.2206" />
                 		<particle_density value="2720.0"/>
       			</mechanical_properties>
@@ -346,7 +393,7 @@
 
 		<material name ="material3">
 			<comments>aterial corresponds to region facies3</comments>
-           		 <mechanical_properties> 
+           		 <mechanical_properties>
        		 		<porosity value="0.234" />
                 		<particle_density value="2720.0"/>
        			</mechanical_properties>
@@ -364,26 +411,27 @@
 	</materials>
 
 	<initial_conditions>
-		<liquid_phase name = "water">
-			<initial_condition name="Pressure and concentration for entire domain">
-				<comments>Proposed comment section</comments>
-				<assigned_regions>all</assigned_regions>
+		<initial_condition name="Pressure and concentration for entire domain">
+			<comments>Initial Conditions Comments</comments>
+			<assigned_regions>all</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<pressure value = "101325" function="linear" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
 				</liquid_component>
 				   <!-- For solutes, either provide value/function or filename; value can be a user-defined constant -->
+				   <!-- TODO: This capability does not currently exist -->
 				<solute_component name = "Tc-99" value = "0" function="uniform"/>
 				<solute_component name = "U-234" filename = "uranium_initial.dat" />
-         	 	</initial_condition>
-		</liquid_phase>
+			</liquid_phase>
+         	</initial_condition>
 	</initial_conditions>
 
 	<boundary_conditions>
-		<liquid_phase name = "water">
-			<comments>Format was changed because it is more readable for long time series</comments>
-			<boundary_condition name = "Recharge at top of the domain">
-				<comments>Would be nice to have comments section for each boundary_condition but its not clear how it maps to UI</comments>
-			  	<assigned_regions> Top Surface 1, Top Surface 2, Top Surface 3, Top Surface 4, Top Surface 5, Top Surface 6, Top Surface 7, Top Surface 8, Top Surface 9, Top Surface 10</assigned_regions>
+		<comments>Format was changed because it is more readable for long time series</comments>
+		<boundary_condition name = "Recharge at top of the domain">
+			<comments>Would be nice to have comments section for each boundary_condition but its not clear how it maps to UI</comments>
+			<assigned_regions> Top Surface 1, Top Surface 2, Top Surface 3, Top Surface 4, Top Surface 5, Top Surface 6, Top Surface 7, Top Surface 8, Top Surface 9, Top Surface 10</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="start"    function= "constant"  value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y" function= "constant"  value="post_1956_recharge"/>
@@ -396,10 +444,12 @@
 					<aqueous_conc name = "Tc-99" start="2012.0,y"  function= "constant"  value="zero"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"  value="zero"/>
 				</solute_component>
-			</boundary_condition>
+			</liquid_phase>
+		</boundary_condition>
 
-			<boundary_condition name = "B-14">
-				<assigned_regions>Crib 216-B-14</assigned_regions>
+		<boundary_condition name = "B-14">
+			<assigned_regions>Crib 216-B-14</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="0.0"              function= "constant"    value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y"         function= "constant"    value="0.06581788729180926"/>
@@ -414,11 +464,13 @@
 					<aqueous_conc name = "Tc-99" start="2012.0,y"         function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"         function= "constant"    value="0.0"/>
 				</solute_component>
-			</boundary_condition>
+			</liquid_phase>
+		</boundary_condition>
 
-			<boundary_condition name = "B-15">
-				<comments>Can have comments in each BC, but they are optional</comments>
-				<assigned_regions>Crib 216-B-15</assigned_regions>
+		<boundary_condition name = "B-15">
+			<comments>Can have comments in each BC, but they are optional</comments>
+			<assigned_regions>Crib 216-B-15</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y"                function= "constant"    value="post_1956_recharge"/>
@@ -435,10 +487,12 @@
 					<aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>
 				</solute_component>
-			</boundary_condition>
+			</liquid_phase>
+		</boundary_condition>
 
-			<boundary_condition name = "B-16">
-				<assigned_regions>Crib 216-B-16</assigned_regions>
+		<boundary_condition name = "B-16">
+			<assigned_regions>Crib 216-B-16</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y"                function= "constant"    value="post_1956_recharge"/>
@@ -455,10 +509,12 @@
 					<aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>
 				</solute_component>
-			</boundary_condition>
+			</liquid_phase>
+		</boundary_condition>
 
-			<boundary_condition name = "B-17">
-				<assigned_regions>Crib 216-B-17</assigned_regions>
+		<boundary_condition name = "B-17">
+			<assigned_regions>Crib 216-B-17</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
 					<inward_mass_flux start="B-14_B-17_release_begin" function= "constant"    value="0.05177370142216137"/>
@@ -473,10 +529,12 @@
 					<aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>
 				</solute_component>
-			</boundary_condition>
+			</liquid_phase>
+		</boundary_condition>
 
-			<boundary_condition name = "B-18">
-				<assigned_regions>Crib 216-B-18</assigned_regions>
+		<boundary_condition name = "B-18">
+			<assigned_regions>Crib 216-B-18</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="0.0"                function= "constant"    value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y"           function= "constant"    value="post_1956_recharge"/>
@@ -493,10 +551,12 @@
 					<aqueous_conc name = "Tc-99" start="2012.0,y"           function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"           function= "constant"    value="0.0"/>
 				</solute_component>
-			</boundary_condition>
+			</liquid_phase>
+		</boundary_condition>
 
-			<boundary_condition name = "B-19">
-				<assigned_regions>Crib 216-B-19</assigned_regions>
+		<boundary_condition name = "B-19">
+			<assigned_regions>Crib 216-B-19</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="0.0"                function= "constant"    value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y"           function= "constant"    value="post_1956_recharge"/>
@@ -513,12 +573,15 @@
 					<aqueous_conc name = "Tc-99" start="2012.0,y"           function= "constant"  value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"           function= "constant"  value="0.0"/>
 				</solute_component>
-			</boundary_condition>
+			</liquid_phase>
+		</boundary_condition>
 
-			<boundary_condition name = "Bottom of Domain">
-				<assigned_regions>Water Table</assigned_regions>
+		<boundary_condition name = "Bottom of Domain">
+			<assigned_regions>Water Table</assigned_regions>
+			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<!--TDS Deleted type="Uniform Pressure" as that is redundant information -->
+					<!--TODO THIS needs to be reworked uniform vs. constant, time-function vs. spatial -->
 					<uniform_pressure name = "1" start="0.0"        function= "constant" value="106221.7596"/>
 					<uniform_pressure name = "2" start="3000.0,yr"  function= "constant" value="106221.7596"/>
 				</liquid_component>
@@ -526,8 +589,8 @@
 					<aqueous_conc name = "Tc-99" start="0.0"        function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,yr"  function= "constant"    value="0.0"/>
 				</solute_component>
-			</boundary_condition>
-		</liquid_phase>
+			</liquid_phase>
+		</boundary_condition>
 	</boundary_conditions>
 
 	<output>
@@ -566,7 +629,7 @@
 		<diagnostics>
 		</diagnostics>
 	-->
-	
+
 	</output>
 
 </amanzi_input>

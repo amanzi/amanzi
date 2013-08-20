@@ -9,7 +9,7 @@
 			<conc_unit>molar</conc_unit>
 		</units>
 	</model_description>
-	
+
 	<definitions>
 	    	<macros>
 				<cycle_macro name = "Every-100-steps">
@@ -54,15 +54,14 @@
 				</time_macro>
 		</macros>
 	</definitions>
-	
-	
+
+
 	<process_kernels>
 		<flow state="on" model="saturated"/>
 		<transport state="on" algorithm="implicit upwind"/>
 		<chemistry state="on" process_model="implicit operator split"/>
 	</process_kernels>
-	
-	
+
 	<phases>
 		<liquid_phase name="water">
 			<eos>False</eos>
@@ -70,11 +69,10 @@
 			<density>1000.0</density>
 			<dissolved_components>
 				<solutes>
-					H+
-					HCO3-
-					Ca++
+					<solute coefficient_of_diffusion="1.0e-9">H+</solute>
+					<solute coefficient_of_diffusion="1.0e-9">HCO3-</solute>
+					<solute coefficient_of_diffusion="1.0e-9">Ca++</solute>
 				</solutes>
-				<coefficient_of_diffusion>1.0e-9</coefficient_of_diffusion>
 			</dissolved_components>
 		</liquid_phase>
 		<solid_phase>
@@ -83,13 +81,13 @@
 			</minerals>
 		</solid_phase>
 	</phases>
-	
+
 	<execution_controls>
 			<comments>TDS added these as required by the schema </comments>
 			<execution_control_defaults init_dt= "1.0 h"   max_dt="0.25 y"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="picard"/>
 			<execution_control  start="0.0 y" end="25.0 y" init_dt= "1.0 h" max_dt="0.25 y" reduction_factor="0.5"  increase_factor="2.0"    mode = "steady"  method="picard" />
 	</execution_controls>
-	
+
 	<numerical_controls>
 		<comments>Numerical controls comments here</comments>
 		<steady-state_controls>
@@ -123,19 +121,17 @@
 			<method>gmres</method>
 			<max_iterations>20</max_iterations>
 			<tolerance>1.0e-18</tolerance>
-			<ml_cycle_applications>3</ml_cycle_applications>
-			<use_hypre_amg>true</use_hypre_amg>
-			<use_block_ilu>false</use_block_ilu>
-			<hypre_amg_cycle_applications>10</hypre_amg_cycle_applications>
-			<hypre_amg_smoother_sweeps>10</hypre_amg_smoother_sweeps>
-			<hypre_amg_tolerance>0.1</hypre_amg_tolerance>
-			<hypre_amg_threshold>0.8</hypre_amg_threshold>
-			<ml_smoother_type>jacobi</ml_smoother_type>
+	                <preconditioner name = "hypre_amg">
+	                     	<hypre_cycle_applications>10</hypre_cycle_applications>
+	                	<hypre_smoother_sweeps>10</hypre_smoother_sweeps>
+	                       	<hypre_tolerance>0.1</hypre_tolerance>
+	                       	<hypre_strong_threshold>0.8</hypre_strong_threshold>
+	                 </preconditioner>
        		         <sub_cycling>true</sub_cycling>
 			<transport_sub_cycling>true</transport_sub_cycling>
 		</linear_solver>
 	</numerical_controls>
-	
+
 	<mesh framework="mstk">
 		<comments>GEH: Using 3D domain since I don't know the format for 1D.</comments>
 		<dimension>3</dimension>
@@ -144,7 +140,7 @@
 			<box  low_coordinates = "(0.0,0.0,0.0)" high_coordinates = "(100.0,1.0,1.0)"/>
 		</generate>
 	</mesh>
-	
+
 	<regions>
 		<region name ="All">
 			<box low_coordinates= "(0.0,0.0,0.0)"     high_coordinates="(100.0,1.0,1.0)"/>
@@ -158,14 +154,14 @@
 			<box low_coordinates= "(110.0,0.0,0.0)"     high_coordinates="(100.0,1.0,1.0)"/>
 		</region>
 
-		<point name="inlet" coordinate="(25.0,1.0,1.0)"/>		
+		<point name="inlet" coordinate="(25.0,1.0,1.0)"/>
 		<point name="quarter_distance" coordinate="(25.0,1.0,1.0)"/>
 		<point name="half_distance" coordinate="(50.0,1.0,1.0)"/>
 		<point name="three_quarter_distance" coordinate="(75.0,1.0,1.0)"/>
-		<point name="outlet" coordinate="(25.0,1.0,1.0)"/>		
+		<point name="outlet" coordinate="(25.0,1.0,1.0)"/>
 
 	</regions>
-	
+
 	<materials>
 		<material name="soil1">
 			<mechanical_properties>
@@ -177,9 +173,9 @@
 			<assigned_regions>All</assigned_regions>
 		</material>
 	</materials>
-	
+
   	<geochemistry>
-		<reaction_network_filename>calcite_flow_and_tran.in</reaction_network_filename>
+		<reaction_network file = "calcite_flow_and_tran.in" format= "simple"/>
 		<constraints>
 			<!-- Provide a list of constraints for various chemistry in system. -->
                         <!-- Chemistry input needs to be consolidated and migrated to xml file
@@ -198,58 +194,57 @@
 			</constraint>
                         <!-- OR -->
                         <!-- Advantage is that reaction network and associated constraints are
-                             all in the same place per Glenn and Vicky's discussion 
+                             all in the same place per Glenn and Vicky's discussion
                              Consolidating to pflotran is first step towards consolidation  -->
 			<constraint name="Initial" filename="calcite_flow_and_tran.in"/>
 			<constraint name="Inlet" filename="calcite_flow_and_tran.in"/>
 		</constraints>
 	</geochemistry>
-	
-	<initial_conditions>
-		<liquid_phase name="water">
-			<initial_condition name="Background Aqueous">
-				<assigned_regions>All</assigned_regions>
+
+	<initial_conditions>  
+		<initial_condition name="Background">
+			<assigned_regions>All</assigned_regions>
+			<liquid_phase name="water">
 				<liquid_component name="water">
 					<pressure value="201325.0"/>
 				</liquid_component>
 				<geochemistry>
 					<constraint name="Initial"/>
 				</geochemistry>
-			</initial_condition>
-    		</liquid_phase>
-		<solid_phase name="Solid">
-			<initial_condition name="Background Solid">
-				<assigned_regions>All</assigned_regions>
+    			</liquid_phase>
+			<solid_phase name="Solid">
 				<geochemistry>
 					<constraint name="Initial"/>
 				</geochemistry>
-			</initial_condition>
-		</solid_phase>
+			</solid_phase>
+		</initial_condition>
 	</initial_conditions>
-	
-	<boundary_conditions>
-		<liquid_phase name="water">
-			<boundary_condition name="Inlet">
-				<assigned_regions>Inlet Boundary</assigned_regions>
+
+	<boundary_conditions> 
+		<boundary_condition name="Inlet">
+			<assigned_regions>Inlet Boundary</assigned_regions>
+			<liquid_phase name="water">
 				<liquid_component name="water">
 					<inward_volumetric_flux value="1.0" start="0" function="constant"/>
 				</liquid_component>
 				<geochemistry>
 					<constraint name="Inlet" start="0.0" function="constant"/>
 				</geochemistry>
-			</boundary_condition>
-			<boundary_condition name="Outlet">
-				<assigned_regions>Outlet Boundary</assigned_regions>
+			</liquid_phase>
+		</boundary_condition>
+		<boundary_condition name="Outlet">
+			<assigned_regions>Outlet Boundary</assigned_regions>
+			<liquid_phase name="water">
 				<liquid_component name="water">
 					<uniform_pressure value="201325.0" start="0.0" function="constant"/>
 				</liquid_component>
 				<geochemistry>
 					<constraint name="Initial" start="0.0" function="constant"/>
 				</geochemistry>
-			</boundary_condition>
-		</liquid_phase>
-	</boundary_conditions>	
-	
+			</liquid_phase>
+		</boundary_condition>
+	</boundary_conditions>
+
 	<output>
 		<vis>
 			<base_filename>plot</base_filename>
@@ -282,5 +277,5 @@
 			</liquid_phase>
 		</observations>
 	</output>
-	
+
 </amanzi_input>
