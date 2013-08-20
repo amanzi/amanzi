@@ -144,6 +144,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       double fcur = deform_function(id-1, vxyzcur);
       
       int iter_local=0, maxiter_local=1;
+      bool node_moved = false;
       while (iter_local < maxiter_local) {
         iter_local++;
              
@@ -167,7 +168,10 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
         gradient_z = (f1-f0)/h;
 
-        if (fabs(gradient_z) < eps*eps) continue;
+        if (fabs(gradient_z) < eps*eps) continue; // too small
+        
+        if (gradient_z < 0.0) continue; // don't allow upward movement
+
 
         // ********* Get the ZZ component of the Hessian ****
       
@@ -218,12 +222,14 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
           fnew = fcur;
         }
         
+        node_moved = true;
         // Update current coordinates to the newly calculated coordinates 
         for (int i = 0; i < ndim; i++) vxyzcur[i] = vxyznew[i];
 
       } // while (iter_local < maxiter_local)
         
-        
+      if (!node_moved) continue;
+
       double delta_z =  vxyzcur[ndim-1]-vxyzold[ndim-1];
       global_dist2 += delta_z*delta_z;
       
@@ -659,49 +665,49 @@ double Mesh_MSTK::deform_function(const int nodeid,
           xyz[i] = nodexyz_copy;
       }
       
-      for (i = 0; i < nfv[jf]; i++) {
+      // for (i = 0; i < nfv[jf]; i++) {
 
-        if (i > 1 && i < nfv[jf]-1)
-          continue;
+      //   if (i > 1 && i < nfv[jf]-1)
+      //     continue;
 
-        xyz1[0] = xyz[i];
-        xyz1[1] = xyz[(i+1)%nfv[jf]];
-        xyz1[2] = xyz[(i+nfv[jf]-1)%nfv[jf]];
+      //   xyz1[0] = xyz[i];
+      //   xyz1[1] = xyz[(i+1)%nfv[jf]];
+      //   xyz1[2] = xyz[(i+nfv[jf]-1)%nfv[jf]];
 
-        VDiff3(xyz1[1],xyz1[0],evec0);
-        L10_sqr = VLenSqr3(evec0);
+      //   VDiff3(xyz1[1],xyz1[0],evec0);
+      //   L10_sqr = VLenSqr3(evec0);
 
-        if (L10_sqr < 1e-12)
-          L10_sqr = 1e-12;
+      //   if (L10_sqr < 1e-12)
+      //     L10_sqr = 1e-12;
 
-        VDiff3(xyz1[2],xyz1[0],evec1);
-        L20_sqr = VLenSqr3(evec1);
+      //   VDiff3(xyz1[2],xyz1[0],evec1);
+      //   L20_sqr = VLenSqr3(evec1);
       
-        if (L20_sqr < 1e-12)
-          L20_sqr = 1e-12;
+      //   if (L20_sqr < 1e-12)
+      //     L20_sqr = 1e-12;
       
-        a = L10_sqr+L20_sqr;
+      //   a = L10_sqr+L20_sqr;
 
-        if (space_dimension() == 3) {
-          /* if we are dealing with volume mesh or a pure surface mesh
-             then it is hard to define what inverted means on the
-             surface. So we will use an unsigned area */
+      //   if (space_dimension() == 3) {
+      //     /* if we are dealing with volume mesh or a pure surface mesh
+      //        then it is hard to define what inverted means on the
+      //        surface. So we will use an unsigned area */
         
-          double areavec[3];
-          VCross3(evec0,evec1,areavec);
-          A = VLen3(areavec);
-        }
-        else {
-          /* This is a planar mesh - compute the signed area */
+      //     double areavec[3];
+      //     VCross3(evec0,evec1,areavec);
+      //     A = VLen3(areavec);
+      //   }
+      //   else {
+      //     /* This is a planar mesh - compute the signed area */
         
-          A =  0.5*( xyz1[2][0]*xyz1[0][1] + xyz1[0][0]*xyz1[1][1] + 
-                     xyz1[1][0]*xyz1[2][1] - xyz1[1][0]*xyz1[0][1] - 
-                     xyz1[2][0]*xyz1[1][1] - xyz1[0][0]*xyz1[2][1]);	
-        }
-        delta = 1.0/(1+exp(A));
-        condfunc += 2*a/(A+sqrt(A*A+delta*delta));
+      //     A =  0.5*( xyz1[2][0]*xyz1[0][1] + xyz1[0][0]*xyz1[1][1] + 
+      //                xyz1[1][0]*xyz1[2][1] - xyz1[1][0]*xyz1[0][1] - 
+      //                xyz1[2][0]*xyz1[1][1] - xyz1[0][0]*xyz1[2][1]);	
+      //   }
+      //   delta = 1.0/(1+exp(A));
+      //   condfunc += 2*a/(A+sqrt(A*A+delta*delta));
 
-      }
+      // }
 
       double (*pxyz)[3] = (double (*)[3]) malloc(nfv[jf]*sizeof(double [3]));
       for (k = 0; k < nfv[jf]; k++) 
@@ -758,51 +764,51 @@ double Mesh_MSTK::deform_function(const int nodeid,
         /* This is the index of the vertex and its edge connected neighbors */
         /* Also make general list of neighbors of the involved vertices */
       
-        ind[0] = vind;    
-        switch (nrv[jr]) {
-        case 4:
-          for (i = 0; i < 3; i++)
-            ind[i+1] = tetidx[vind][i];
-          for (i = 0; i < 4; i++) {
-            j = ind[i];
-            for (k = 0; k < 3; k++)
-              nbrs[i][k] = tetidx[j][k];
-          }
-          break;
-        case 6:      
-          for (i = 0; i < 3; i++)
-            ind[i+1] = prsmidx[vind][i];
-          for (i = 0; i < 4; i++) {
-            j = ind[i];
-            for (k = 0; k < 3; k++)
-              nbrs[i][k] = prsmidx[j][k];
-          }
-          break;
-        case 8:
-          for (i = 0; i < 3; i++)
-            ind[i+1] = hexidx[vind][i];      
-          for (i = 0; i < 4; i++) {
-            j = ind[i];
-            for (k = 0; k < 3; k++)
-              nbrs[i][k] = hexidx[j][k];
-          }
-          break;
-        }
+        // ind[0] = vind;    
+        // switch (nrv[jr]) {
+        // case 4:
+        //   for (i = 0; i < 3; i++)
+        //     ind[i+1] = tetidx[vind][i];
+        //   for (i = 0; i < 4; i++) {
+        //     j = ind[i];
+        //     for (k = 0; k < 3; k++)
+        //       nbrs[i][k] = tetidx[j][k];
+        //   }
+        //   break;
+        // case 6:      
+        //   for (i = 0; i < 3; i++)
+        //     ind[i+1] = prsmidx[vind][i];
+        //   for (i = 0; i < 4; i++) {
+        //     j = ind[i];
+        //     for (k = 0; k < 3; k++)
+        //       nbrs[i][k] = prsmidx[j][k];
+        //   }
+        //   break;
+        // case 8:
+        //   for (i = 0; i < 3; i++)
+        //     ind[i+1] = hexidx[vind][i];      
+        //   for (i = 0; i < 4; i++) {
+        //     j = ind[i];
+        //     for (k = 0; k < 3; k++)
+        //       nbrs[i][k] = hexidx[j][k];
+        //   }
+        //   break;
+        // }
       
-        for (i = 0; i < 4; i++) {
-          /* For each relevant corner ind[i], compute condition number */
+        // for (i = 0; i < 4; i++) {
+        //   /* For each relevant corner ind[i], compute condition number */
         
-          /* coordinates of vertex ind[i] itself */
-          xyz1[0] = xyz[ind[i]];
+        //   /* coordinates of vertex ind[i] itself */
+        //   xyz1[0] = xyz[ind[i]];
         
-          /* coordinates of its edge connected neighbors */
-          for (j = 0; j < 3; j++) {
-            m = nbrs[i][j]; /* j'th neighbor of ind[i] */
-            xyz1[j+1] = xyz[m];
-          }
+        //   /* coordinates of its edge connected neighbors */
+        //   for (j = 0; j < 3; j++) {
+        //     m = nbrs[i][j]; /* j'th neighbor of ind[i] */
+        //     xyz1[j+1] = xyz[m];
+        //   }
 
-          condfunc += func_modcn_corner3d(xyz1[0], xyz1[1], xyz1[2], xyz1[3]);
-        }
+        //   condfunc += func_modcn_corner3d(xyz1[0], xyz1[1], xyz1[2], xyz1[3]);
+        // }
 
         // FOR NOW ASSUME THAT USE_SUBTETS_4ALL IS TRUE
         // AND SO CODE WILL COME HERE ONLY FOR TETS
@@ -865,37 +871,37 @@ double Mesh_MSTK::deform_function(const int nodeid,
             /* Condition number at corners of this tet if it is relevant */
             /* Is face vertex either v or one of its edge connected nbrs? */
           
-            found = 0;
-            if (rverts[rvlid] == v) found = 1;
-            for (k = 0; !found && k < nnbrsgen; k++)
-              if (rvlid == vnbrsgen[k]) found = 1;
+            // found = 0;
+            // if (rverts[rvlid] == v) found = 1;
+            // for (k = 0; !found && k < nnbrsgen; k++)
+            //   if (rvlid == vnbrsgen[k]) found = 1;
           
-            if (!found) continue;
+            // if (!found) continue;
         
-            if (use_face_centers == 1) {
-              /* form virtual tets using the central face point, central
-                 element point and edges of the element - compute condition
-                 numbers at tet corners affected by the movement of v. Which
-                 condition numbers to compute is subject to debate since the
-                 central element point and central face points are also
-                 affected by movement of v. However, to keep it simple, we
-                 will compute the condition numbers only at vertices we would
-                 have computed them at if we were not using a virtual
-                 decomposition of the element */
+            // if (use_face_centers == 1) {
+            //   /* form virtual tets using the central face point, central
+            //      element point and edges of the element - compute condition
+            //      numbers at tet corners affected by the movement of v. Which
+            //      condition numbers to compute is subject to debate since the
+            //      central element point and central face points are also
+            //      affected by movement of v. However, to keep it simple, we
+            //      will compute the condition numbers only at vertices we would
+            //      have computed them at if we were not using a virtual
+            //      decomposition of the element */
             
-              rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];            
-              condfunc += func_modcn_corner3d(xyz[rvlid],fcen,xyz[rvlid1],rcen);
+            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];            
+            //   condfunc += func_modcn_corner3d(xyz[rvlid],fcen,xyz[rvlid1],rcen);
 
-              rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
-              condfunc += func_modcn_corner3d(xyz[rvlid],xyz[rvlid1],fcen,rcen);
-            }
-            else {            
-              int rvlid1;
-              rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];
-              int rvlid2 = rfvlocid[jr][jf][(j+1)%nfv];
-              condfunc += func_modcn_corner3d(xyz[rvlid], xyz[rvlid2], 
-                                               xyz[rvlid1], rcen);
-            }
+            //   rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
+            //   condfunc += func_modcn_corner3d(xyz[rvlid],xyz[rvlid1],fcen,rcen);
+            // }
+            // else {            
+            //   int rvlid1;
+            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];
+            //   int rvlid2 = rfvlocid[jr][jf][(j+1)%nfv];
+            //   condfunc += func_modcn_corner3d(xyz[rvlid], xyz[rvlid2], 
+            //                                    xyz[rvlid1], rcen);
+            // }
           
           } // nfv
         } // jf
