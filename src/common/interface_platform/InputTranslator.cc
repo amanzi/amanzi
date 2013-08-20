@@ -821,7 +821,7 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc) {
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("coordinate"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	char_array = strtok(textContent2,",");
+	char_array = strtok(textContent2,"(,");
         Teuchos::Array<double> coord;
 	coord.append(atof(char_array));
 	char_array = strtok(NULL,",");
