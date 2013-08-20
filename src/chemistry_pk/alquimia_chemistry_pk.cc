@@ -70,21 +70,23 @@ Alquimia_Chemistry_PK::Alquimia_Chemistry_PK(const Teuchos::ParameterList& param
       chem_engine_name_("PFloTran"),
       saved_time_(0.0) 
 {
-
   // We need the top-level parameter list.
-  assert(param_list.name() == "Main");
-
+  assert(param_list.name() == "Chemistry");
 }  // end Alquimia_Chemistry_PK()
 
 Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK() 
 {
-  chem_.Shutdown(&chem_data_.engine_state, &chem_status_);
-  FreeAlquimiaData(&chem_data_);
-  FreeAlquimiaEngineStatus(&chem_status_);
+  if (chem_initialized_)
+  {
+    chem_.Shutdown(&chem_data_.engine_state, &chem_status_);
+    FreeAlquimiaData(&chem_data_);
 
-  // Delete the various geochemical condition vectors.
-  for (size_t i = 0; i < all_chem_conditions_.size(); ++i)
-    FreeAlquimiaGeochemicalCondition(all_chem_conditions_[i]);
+    // Delete the various geochemical conditions.
+    for (size_t i = 0; i < all_chem_conditions_.size(); ++i)
+      FreeAlquimiaGeochemicalCondition(&all_chem_conditions_[i]);
+
+    FreeAlquimiaEngineStatus(&chem_status_);
+  }
 
 }  // end ~Alquimia_Chemistry_PK()
 
@@ -99,6 +101,7 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemic
 
   // Apply the geochemical condition for this cell.
   int ierr = 0;
+std::cout << "Applying geochemical conditions...\n";
   chem_.ProcessCondition(&chem_data_.engine_state,
                          condition,
                          &chem_data_.material_properties,
@@ -109,6 +112,7 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemic
     ierr = 1;
 
   // Retrieve the auxiliary output data.
+std::cout << "Getting auxialiary output...\n";
   chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
                            &chem_data_.material_properties,
                            &chem_data_.state,
@@ -117,7 +121,9 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemic
                            &chem_status_);
 
   // Copy the state information back out.
+std::cout << "Copying Alquimia state to Amanzi...\n";
   CopyAlquimiaStateToAmanzi(cellIndex);
+std::cout << "Copying Alquimia material properties to Amanzi...\n";
   CopyAlquimiaMaterialPropertiesToAmanzi(cellIndex);
 
   return ierr;
@@ -166,6 +172,7 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   }
 
   // Allocate data storage now that we have our space requirements.
+PrintAlquimiaSizes(&chem_data_.sizes);
   AllocateAlquimiaData(&chem_data_);
 
   // Get the problem metadata (species and mineral names, etc).
@@ -183,11 +190,13 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
 
   // Initialize Alquimia's state and material properties with
   // appropriate values from the our cell properties.
+  chemistry_state_->AllocateAdditionalChemistryStorage(number_aqueous_components());
 
   // NOTE: we need to perform the initialization on the first cell to determine 
   // NOTE: the number of secondary activity coefficients, which we'll stash in 
   // NOTE: the chemistry state. For this operation, it doesn't matter which 
   // NOTE: geochemical condition we use.
+std::cout << "Getting aux variables...\n";
   std::map<std::string, AlquimiaGeochemicalCondition*>::iterator cond_iter = 
     chem_initial_conditions_.begin();
   AlquimiaGeochemicalCondition* condition = cond_iter->second;
@@ -197,13 +206,14 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     msg << "Error in Alquimia_Chemistry_PK::InitializeChemistry 1";
     Exceptions::amanzi_throw(msg); 
   }
-  chemistry_state_->AllocateAdditionalChemistryStorage(number_aqueous_components());
 
   // Make storage within Amanzi for auxiliary output.
+std::cout << "Setting up aux output...\n";
   SetupAuxiliaryOutput();
 
   // Now loop through all the regions and initialize.
 //  chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
+std::cout << "Going through regions...\n";
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
   for (cond_iter = chem_initial_conditions_.begin(); 
        cond_iter != chem_initial_conditions_.end(); ++cond_iter)
@@ -221,6 +231,7 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     for (unsigned int i = 0; i < num_cells; ++i) 
     {
       int cell = cell_indices[i];
+std::cout << "Initializing cell " << cell << std::endl;
       if (debug()) 
       {
         std::cout << "Initial speciation in cell " << cell << std::endl;
@@ -265,27 +276,32 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
     Teuchos::ParameterList& cond_sublist = input_conditions.sublist(cond_name);
  
     // At the moment, we only support constraints supplied through the backend engine.
-    std::ostringstream engine_constraint;
-    engine_constraint << chem_engine_name_ << " Constraint" << '\0';
-    if (!cond_sublist.isSublist(engine_constraint.str()))
+    std::string engine_constraint = chem_engine_name_ + std::string(" Constraint");
+    if (!cond_sublist.isType<std::string>(engine_constraint))
     {
       msg << "Chemistry_PK::XMLParameters(): \n";
-      msg << "  Geochemical condition '" << cond_name << "' has no '" << engine_constraint.str() << "' entry.\n";
+      msg << "  Geochemical condition '" << cond_name << "' has no '" << engine_constraint << "' entry.\n";
+      msg << "  (Must be of type Array(string).)\n";
       Exceptions::amanzi_throw(msg);
     }
-    std::string engine_constraint_name = cond_sublist.get<std::string>(engine_constraint.str());
 
     // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
     // NOTE: the backend engine's input file.
-    AlquimiaGeochemicalCondition* condition;
-    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, 0, 0, condition);
-    condition->name = strdup(engine_constraint_name.c_str());
+    all_chem_conditions_.resize(all_chem_conditions_.size()+1);
+    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, engine_constraint.length(), 0, &all_chem_conditions_.back());
+    AlquimiaGeochemicalCondition* condition = &all_chem_conditions_.back();
+    strcpy(condition->name, engine_constraint.c_str());
 
     // Append this condition to our list of managed geochemical conditions.
-    all_chem_conditions_.push_back(condition);
 
     // Apply this condition to all desired regions.
-    Teuchos::Array<std::string> regions = input_conditions.get<Teuchos::Array<std::string> >("Assigned Regions");
+    if (!cond_sublist.isType<Teuchos::Array<std::string> >("Assigned Regions"))
+    {
+      msg << "Chemistry_PK::XMLParameters(): \n";
+      msg << "  Geochemical condition '" << cond_name << "' has no valid 'Assigned Regions' entry.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+    Teuchos::Array<std::string> regions = cond_sublist.get<Teuchos::Array<std::string> >("Assigned Regions");
     for (size_t r = 0; r < regions.size(); ++r)
     {
       conditions[regions[r]] = condition;
@@ -300,26 +316,16 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   // NOTE that our parameter list should be the top-level parameter list "Main", 
   // not the "Chemistry" one used by the native Amanzi Chemistry PK.
 
-  if (!parameter_list_.isSublist("Chemistry"))
-  {
-    msg << "Chemistry_PK::XMLParameters(): \n";
-    msg << "  No 'Chemistry' sublist was found!\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // Access the Chemistry sublist and set parameters.
-  Teuchos::ParameterList& chem_list = parameter_list_.sublist("Thermodynamic Database");
-
   // Debugging flag.
-  if (chem_list.isParameter("Debug Process Kernel")) 
+  if (parameter_list_.isParameter("Debug Process Kernel")) 
   {
     set_debug(true);
   }
 
   // Verbosity.
-//  if (chem_list.isParameter("Verbosity")) 
+//  if (parameter_list_.isParameter("Verbosity")) 
 //  {
-//    Teuchos::Array<std::string> verbosity_list = chem_list.get<Teuchos::Array<std::string> >("Verbosity");
+//    Teuchos::Array<std::string> verbosity_list = parameter_list_.get<Teuchos::Array<std::string> >("Verbosity");
 //    Teuchos::Array<std::string>::const_iterator name;
 //    for (name = verbosity_list.begin(); name != verbosity_list.end(); ++name) 
 //    {
@@ -328,10 +334,10 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
 //  }
 
   // Engine and engine input file.
-  if (chem_list.isParameter("Engine")) 
+  if (parameter_list_.isParameter("Engine")) 
   {
     Errors::Message msg;
-    chem_engine_name_ = chem_list.get<std::string>("Engine");
+    chem_engine_name_ = parameter_list_.get<std::string>("Engine");
     if (chem_engine_name_ != "PFloTran")
     {
       msg << "Chemistry_PK::XMLParameters(): \n";
@@ -340,9 +346,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
       Exceptions::amanzi_throw(msg);
     }
   }
-  if (chem_list.isParameter("Engine Input File"))
+  if (parameter_list_.isParameter("Engine Input File"))
   {
-    chem_engine_inputfile_ = chem_list.get<std::string>("Engine Input File");
+    chem_engine_inputfile_ = parameter_list_.get<std::string>("Engine Input File");
     // FIXME: Should we try to access the file here?
   }
 
@@ -353,14 +359,14 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   //
   //---------------------------------------------------------------------------
   beaker_parameters_.activity_model_name =
-      chem_list_.get<std::string>("Activity Model", "unit");
+      parameter_list_.get<std::string>("Activity Model", "unit");
   // Pitzer virial coefficients database
   if (beaker_parameters_.activity_model_name == "pitzer-hwm") 
   {
-    if (chem_list_.isParameter("Pitzer Database File")) 
+    if (parameter_list_.isParameter("Pitzer Database File")) 
     {
       beaker_parameters_.pitzer_database =
-          chem_list_.get<std::string>("Pitzer Database File");
+          parameter_list_.get<std::string>("Pitzer Database File");
     } 
     else 
     {
@@ -380,9 +386,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   //
   // --------------------------------------------------------------------------
   aux_names_.clear();
-  if (chem_list.isParameter("Auxiliary Data")) 
+  if (parameter_list_.isParameter("Auxiliary Data")) 
   {
-    Teuchos::Array<std::string> names = chem_list.get<Teuchos::Array<std::string> >("Auxiliary Data");
+    Teuchos::Array<std::string> names = parameter_list_.get<Teuchos::Array<std::string> >("Auxiliary Data");
     for (Teuchos::Array<std::string>::const_iterator name = names.begin();
          name != names.end(); ++name) 
     {
@@ -411,16 +417,29 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     Exceptions::amanzi_throw(msg);
   }
   ParseChemicalConditions("Initial Conditions", chem_initial_conditions_);
+  if (chem_initial_conditions_.empty())
+  {
+    msg << "Chemistry_PK::XMLParameters(): \n";
+    msg << "  No chemical conditions were found in 'Initial Conditions'!\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   // Boundary conditions.
   chem_boundary_conditions_.clear();
   if (!parameter_list_.isSublist("Boundary Conditions"))
   {
     msg << "Chemistry_PK::XMLParameters(): \n";
-    msg << "  No 'Initial Conditions' sublist was found!\n";
+    msg << "  No chemical initial conditions were found!\n";
     Exceptions::amanzi_throw(msg);
   }
   ParseChemicalConditions("Boundary Conditions", chem_boundary_conditions_);
+  if (chem_boundary_conditions_.empty())
+  {
+    msg << "Chemistry_PK::XMLParameters(): \n";
+    msg << "  No chemical boundary conditions were found!\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
 }  // end XMLParameters()
 
 void Alquimia_Chemistry_PK::SetupAuxiliaryOutput(void) 
@@ -483,12 +502,13 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
     double immobile = 0.0;
     if (using_sorption()) 
     {
+      std::cout << "Trying to get total sorbed\n";
       double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
       immobile = cell_total_sorbed[cell_id];
+      alquimia_state->total_immobile.data[c] = immobile;
     }  // end if(using_sorption)
     double mobile = total - immobile;
     alquimia_state->total_mobile.data[c] = mobile;
-    alquimia_state->total_immobile.data[c] = immobile;
   }
 
   //
@@ -561,33 +581,41 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
   //
   // activity coefficients
   //
-  for (int i = 0; i < chemistry_state_->primary_activity_coeff()->MyLength(); ++i, ++offset) 
+  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->primary_activity_coeff())[i];
+    assert(cells != NULL);
     chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
   }
-  for (int i = 0; i < chemistry_state_->secondary_activity_coeff()->MyLength(); ++i, ++offset) 
+  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
+    assert(cells != NULL);
     chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
   }
 
   //
   // ion exchange ref cation concentrations
   //
-  for (int i = 0; i < chemistry_state_->ion_exchange_ref_cation_conc()->MyLength(); ++i, ++offset) 
+  for (int i = 0; i < chemistry_state_->number_of_ion_exchange_sites(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
+    assert(cells != NULL);
     chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
   }
 
+std::cout << "Setting surface complexation II\n";
   //
   // surface complexation
   // 
-  for (int i = 0; i < chemistry_state_->surface_complex_free_site_conc()->MyLength(); ++i, ++offset) 
+  if (using_sorption())
   {
-    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
-    chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
+    for (int i = 0; i < chemistry_state_->number_of_sorption_sites(); ++i, ++offset) 
+    {
+      double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
+      assert(cells != NULL);
+      chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
+    }
   }
 
 }  // end CopyAmanziStateToAlquimia()

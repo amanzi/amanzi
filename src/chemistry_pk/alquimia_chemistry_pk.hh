@@ -120,7 +120,7 @@ class Alquimia_Chemistry_PK {
   std::map<std::string, AlquimiaGeochemicalCondition*> chem_boundary_conditions_;
   
   // Vector that takes responsibility for ownership of geochemical conditions.
-  std::vector<AlquimiaGeochemicalCondition*> all_chem_conditions_;
+  std::vector<AlquimiaGeochemicalCondition> all_chem_conditions_;
 
   // Back-end engine name and input file.
   std::string chem_engine_inputfile_;
