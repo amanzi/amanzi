@@ -94,6 +94,8 @@ Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK()
 // It returns an error code that indicates success (0) or failure (1).
 int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition) 
 {
+  assert(condition != NULL);
+
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
   CopyAmanziStateToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
@@ -101,7 +103,8 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemic
 
   // Apply the geochemical condition for this cell.
   int ierr = 0;
-std::cout << "Applying geochemical conditions...\n";
+std::cout << "Made it here!\n";
+std::cout << "Applying geochemical condition " << condition->name << "...\n";
   chem_.ProcessCondition(&chem_data_.engine_state,
                          condition,
                          &chem_data_.material_properties,
@@ -112,7 +115,7 @@ std::cout << "Applying geochemical conditions...\n";
     ierr = 1;
 
   // Retrieve the auxiliary output data.
-std::cout << "Getting auxialiary output...\n";
+std::cout << "Getting auxiliary output...\n";
   chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
                            &chem_data_.material_properties,
                            &chem_data_.state,
@@ -199,6 +202,7 @@ PrintAlquimiaSizes(&chem_data_.sizes);
 std::cout << "Getting aux variables...\n";
   std::map<std::string, AlquimiaGeochemicalCondition*>::iterator cond_iter = 
     chem_initial_conditions_.begin();
+  assert(cond_iter != chem_initial_conditions_.end());
   AlquimiaGeochemicalCondition* condition = cond_iter->second;
   int ierr = InitializeSingleCell(0, condition);
   if (ierr != 0)
@@ -231,7 +235,7 @@ std::cout << "Going through regions...\n";
     for (unsigned int i = 0; i < num_cells; ++i) 
     {
       int cell = cell_indices[i];
-std::cout << "Initializing cell " << cell << std::endl;
+std::cout << "Initializing cell " << cell << " with condition " << condition->name << std::endl;
       if (debug()) 
       {
         std::cout << "Initial speciation in cell " << cell << std::endl;
@@ -288,9 +292,9 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
     // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
     // NOTE: the backend engine's input file.
     all_chem_conditions_.resize(all_chem_conditions_.size()+1);
-    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, engine_constraint.length(), 0, &all_chem_conditions_.back());
     AlquimiaGeochemicalCondition* condition = &all_chem_conditions_.back();
-    strcpy(condition->name, engine_constraint.c_str());
+    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, engine_constraint.length(), 0, condition);
+    strcpy(condition->name, cond_name.c_str());
 
     // Append this condition to our list of managed geochemical conditions.
 
