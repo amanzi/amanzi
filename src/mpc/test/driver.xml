@@ -96,6 +96,7 @@
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
       <Parameter name="Dump cycle frequency" type="int" value="1000"/>
     </ParameterList>    
+    <Parameter name="component names" type="Array(string)" value="{A, B, C, D, E}" />
   </ParameterList> <!-- End MPC -->
 
   <ParameterList name="Solvers">
@@ -497,6 +498,7 @@
           <Parameter name="end time" type="double" value="100.0"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximal time step" type="double" value="1.0"/>
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
         </ParameterList>
       </ParameterList>
 
