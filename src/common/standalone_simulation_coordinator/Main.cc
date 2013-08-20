@@ -73,10 +73,10 @@ int main(int argc, char *argv[]) {
     CLP.setDocString("The Amanzi driver reads an XML input file and\n"
                      "runs a reactive flow and transport simulation.\n");
 
-    std::string xmlInFileName = "doc/input_spec/amanzi.xsd";
+    std::string xmlInFileName = "options.xml";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
 
-    std::string xmlSchema = "options.xml";
+    std::string xmlSchema = "doc/input_spec/amanzi.xsd";
     CLP.setOption("xml_schema", &xmlSchema, "XML Schema File"); 
 
     bool print_version(false);
