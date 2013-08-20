@@ -72,6 +72,7 @@
           <Parameter name="end time" type="double" value="1e+11"/>
           <Parameter name="initial time step" type="double" value="1e+3"/>
           <Parameter name="maximum time step" type="double" value="1e+11"/>
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
 
           <ParameterList name="BDF2 parameters">
             <Parameter name="Maximum number of BDF tries" type="int" value="10"/>

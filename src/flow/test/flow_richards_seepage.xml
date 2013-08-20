@@ -79,6 +79,7 @@
           <Parameter name="end time" type="double" value="1.0e+10"/>
           <Parameter name="initial time step" type="double" value="0.1"/>
           <Parameter name="maximum time step" type="double" value="1.0e+8"/>
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
         </ParameterList>
       </ParameterList>
 
