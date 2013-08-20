@@ -83,7 +83,7 @@ Alquimia_Chemistry_PK::~Alquimia_Chemistry_PK()
 
     // Delete the various geochemical conditions.
     for (size_t i = 0; i < all_chem_conditions_.size(); ++i)
-      FreeAlquimiaGeochemicalCondition(&all_chem_conditions_[i]);
+      FreeAlquimiaGeochemicalCondition(all_chem_conditions_[i]);
 
     FreeAlquimiaEngineStatus(&chem_status_);
   }
@@ -103,8 +103,6 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemic
 
   // Apply the geochemical condition for this cell.
   int ierr = 0;
-std::cout << "Made it here!\n";
-std::cout << "Applying geochemical condition " << condition->name << "...\n";
   chem_.ProcessCondition(&chem_data_.engine_state,
                          condition,
                          &chem_data_.material_properties,
@@ -115,7 +113,6 @@ std::cout << "Applying geochemical condition " << condition->name << "...\n";
     ierr = 1;
 
   // Retrieve the auxiliary output data.
-std::cout << "Getting auxiliary output...\n";
   chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
                            &chem_data_.material_properties,
                            &chem_data_.state,
@@ -124,9 +121,7 @@ std::cout << "Getting auxiliary output...\n";
                            &chem_status_);
 
   // Copy the state information back out.
-std::cout << "Copying Alquimia state to Amanzi...\n";
   CopyAlquimiaStateToAmanzi(cellIndex);
-std::cout << "Copying Alquimia material properties to Amanzi...\n";
   CopyAlquimiaMaterialPropertiesToAmanzi(cellIndex);
 
   return ierr;
@@ -199,7 +194,6 @@ PrintAlquimiaSizes(&chem_data_.sizes);
   // NOTE: the number of secondary activity coefficients, which we'll stash in 
   // NOTE: the chemistry state. For this operation, it doesn't matter which 
   // NOTE: geochemical condition we use.
-std::cout << "Getting aux variables...\n";
   std::map<std::string, AlquimiaGeochemicalCondition*>::iterator cond_iter = 
     chem_initial_conditions_.begin();
   assert(cond_iter != chem_initial_conditions_.end());
@@ -212,12 +206,10 @@ std::cout << "Getting aux variables...\n";
   }
 
   // Make storage within Amanzi for auxiliary output.
-std::cout << "Setting up aux output...\n";
   SetupAuxiliaryOutput();
 
   // Now loop through all the regions and initialize.
 //  chem_out->Write(kVerbose, "ChemistryPK: Initializing chemistry in all cells...\n");
-std::cout << "Going through regions...\n";
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
   for (cond_iter = chem_initial_conditions_.begin(); 
        cond_iter != chem_initial_conditions_.end(); ++cond_iter)
@@ -235,7 +227,6 @@ std::cout << "Going through regions...\n";
     for (unsigned int i = 0; i < num_cells; ++i) 
     {
       int cell = cell_indices[i];
-std::cout << "Initializing cell " << cell << " with condition " << condition->name << std::endl;
       if (debug()) 
       {
         std::cout << "Initial speciation in cell " << cell << std::endl;
@@ -291,8 +282,8 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
 
     // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
     // NOTE: the backend engine's input file.
-    all_chem_conditions_.resize(all_chem_conditions_.size()+1);
-    AlquimiaGeochemicalCondition* condition = &all_chem_conditions_.back();
+    AlquimiaGeochemicalCondition* condition = new AlquimiaGeochemicalCondition();
+    all_chem_conditions_.push_back(condition);
     AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, engine_constraint.length(), 0, condition);
     strcpy(condition->name, cond_name.c_str());
 
@@ -506,7 +497,6 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
     double immobile = 0.0;
     if (using_sorption()) 
     {
-      std::cout << "Trying to get total sorbed\n";
       double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
       immobile = cell_total_sorbed[cell_id];
       alquimia_state->total_immobile.data[c] = immobile;
@@ -608,7 +598,6 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
     chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
   }
 
-std::cout << "Setting surface complexation II\n";
   //
   // surface complexation
   // 

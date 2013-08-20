@@ -115,12 +115,14 @@ class Alquimia_Chemistry_PK {
 
   // Mapping of region names to geochemical conditions. A region is identified 
   // by a string, and all cells within a region will have all geochemical 
-  // conditions in the corresponding condition vector applied to them.
+  // conditions in the corresponding condition vector applied to them. NOTE
+  // that these maps do not own the geochemical conditions--they only hold 
+  // pointers to the objects.
   std::map<std::string, AlquimiaGeochemicalCondition*> chem_initial_conditions_;
   std::map<std::string, AlquimiaGeochemicalCondition*> chem_boundary_conditions_;
   
   // Vector that takes responsibility for ownership of geochemical conditions.
-  std::vector<AlquimiaGeochemicalCondition> all_chem_conditions_;
+  std::vector<AlquimiaGeochemicalCondition*> all_chem_conditions_;
 
   // Back-end engine name and input file.
   std::string chem_engine_inputfile_;
