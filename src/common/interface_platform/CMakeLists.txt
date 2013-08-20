@@ -38,6 +38,7 @@ set(interface_inc_files  ${_hh_inc_files} )
 add_amanzi_library(interface
                       SOURCE 
                            InputParserIS.hh InputParserIS.cc
+			   InputTranslator.hh InputTranslator.cc
                            ObservationData.hh Simulator.hh
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})

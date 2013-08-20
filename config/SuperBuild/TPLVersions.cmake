@@ -19,12 +19,15 @@
 #   0.90.7       - updated MSTK to version 2.01
 #                - added NETCDF - fortran version 4.2 (interface library)
 #   0.90.8       - added Xerces-C++ version 3.1.1 (XML support)
+#   0.90.9       - update MSTK to version 2.02
+#
+#   0.91.0       - Added PFLOTRAN and Alquimia (updates from Jeff Johnson's work on state-branch)
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
-set (AMANZI_TPLS_VERSION_MINOR 90)
-set (AMANZI_TPLS_VERSION_PATCH 8)
+set (AMANZI_TPLS_VERSION_MINOR 91)
+set (AMANZI_TPLS_VERSION_PATCH 0)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
-#   Not sure how to create a meaningful has for the collection
+#   Not sure how to create a meaningful hash key for the collection
 
 #
 # TPL: Xerces
@@ -189,12 +192,12 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 01)
+set(MSTK_VERSION_MINOR 02)
 set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        3d86118ccc71480dd1f6a9250fff96de)
+set(MSTK_MD5_SUM        7eb6955dc04542b6f87a2b419c717949)
 
 #
 # TPL: MOAB
@@ -280,3 +283,18 @@ set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}.${SEACAS_VERSION_MINOR}.${SEACAS_VERS
 set(SEACAS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.bz2)
 set(SEACAS_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7) 
+
+#
+# TPL: PFlotran
+#
+set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-07032013-clean.tgz)
+set(PFLOTRAN_MD5_SUM        f81f285837e4490992e9dda2159e1baa)
+
+#
+# TPL: Alquimia
+#
+set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(ALQUIMIA_ARCHIVE_FILE   berkeleylab-alquimia-639283b202dd.tar.gz)
+set(ALQUIMIA_MD5_SUM        09f0a9fa24b8ee7b7657e973d55c260c)
+

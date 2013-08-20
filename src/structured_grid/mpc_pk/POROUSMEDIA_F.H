@@ -37,6 +37,7 @@
 #    define FORT_CPY_UMAC          cpyumac
 #    define FORT_HYDRO             hydro
 #    define FORT_LINEAR_PRESSURE   linearpres
+#    define FORT_HYD_HEAD          hydhead
 #    define FORT_ROCKHOLD          rockhold
 #    define FORT_STEADYSTATE       steadystate
 #    define FORT_STEADYSTATE_FAB   steadystatefab
@@ -79,6 +80,7 @@
 #    define FORT_CPY_UMAC          CPYUMAC
 #    define FORT_HYDRO             HYDRO
 #    define FORT_LINEAR_PRESSURE   LINEARPRES
+#    define FORT_HYD_HEAD          HYDHEAD
 #    define FORT_ROCKHOLD          ROCKHOLD
 #    define FORT_STEADYSTATE       STEADYSTATE
 #    define FORT_STEADYSTATE_FAB   STEADYSTATEFAB
@@ -120,6 +122,7 @@
 #    define FORT_CPY_UMAC          cpyumac
 #    define FORT_HYDRO             hydro
 #    define FORT_LINEAR_PRESSURE   linearpres
+#    define FORT_HYD_HEAD          hydhead
 #    define FORT_ROCKHOLD          rockhold
 #    define FORT_STEADYSTATE       steadystate
 #    define FORT_STEADYSTATE_FAB   steadystatefab
@@ -161,6 +164,7 @@
 #    define FORT_CPY_UMAC          cpyumac_
 #    define FORT_HYDRO             hydro_
 #    define FORT_LINEAR_PRESSURE   linearpres_
+#    define FORT_HYD_HEAD          hydhead_
 #    define FORT_ROCKHOLD          rockhold_
 #    define FORT_STEADYSTATE       steadystate_
 #    define FORT_STEADYSTATE_FAB   steadystatefab_
@@ -512,6 +516,11 @@ extern "C" {
   void FORT_LINEAR_PRESSURE(Real* p, ARLIM_P(p), ARLIM_P(p), const int* ncomps,
                             const Real* dx, const Real* problo, const Real* ref_val,
                             const Real* ref_loc, const Real* gradp);
+
+  void FORT_HYD_HEAD(const int* lo, const int* hi,
+                     const Real* pin_hout, ARLIM_P(plo), ARLIM_P(phi),
+                     const Real* rhog, const Real* dx, const Real* plo,
+                     const int* ncomps);
 
   void FORT_ROCKHOLD(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi), 
 		     const Real* rhoval, const int* ncomps,

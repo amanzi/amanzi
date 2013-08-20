@@ -2950,6 +2950,39 @@ c     dummy
 
       end
 
+c ::: ---------------------------------------------------------
+c ::: Define hydraulic head
+c ::: ---------------------------------------------------------
+
+      subroutine FORT_HYD_HEAD(lo, hi, ph, DIMS(ph),
+     &     rhog, dx, plo, nc)
+
+      implicit none
+
+      integer DIMDEC(ph)
+      integer nc
+      integer lo(SDIM), hi(SDIM)
+      REAL_T  ph(DIMV(ph),nc)
+      REAL_T  dx(SDIM)
+      REAL_T  plo(SDIM)
+      REAL_T  rhog(nc)
+
+      integer i,j,k,n
+      REAL_T  z, fac
+
+      do n = 1,nc
+         fac = 1.d0 / rhog(n)
+         do k = ARG_L3(ph), ARG_H3(ph)
+            z = (dble(k)+half)*dx(3) + plo(3)
+            do j = ARG_L2(ph), ARG_H2(ph)
+               do i = ARG_L1(ph), ARG_H1(ph)
+                  ph(i,j,k,n) = z  +  ph(i,j,k,n) * fac
+               enddo
+            enddo
+         enddo
+      enddo
+      end
+
 c ::: ------------------------------------------------------------------
 c ::: Define approximate steady state condition based on inflow velocity
 c ::: ------------------------------------------------------------------

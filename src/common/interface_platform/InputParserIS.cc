@@ -291,15 +291,15 @@ void init_global_info(Teuchos::ParameterList* plist) {
 
     std::string verbosity = plist->sublist("Execution Control").get<std::string>("Verbosity",VERBOSITY_DEFAULT);
 
-    if ( verbosity == "None" ) {
+    if ( verbosity == "None" || verbosity == "none") {
       verbosity_level = "none";
-    } else if ( verbosity == "Low" ) {
+    } else if ( verbosity == "Low" || verbosity == "low") {
       verbosity_level = "low";
-    } else if ( verbosity == "Medium" ) {
+    } else if ( verbosity == "Medium" ||verbosity == "medium") {
       verbosity_level = "medium";
-    } else if ( verbosity == "High" ) {
+    } else if ( verbosity == "High" || verbosity == "high") {
       verbosity_level = "high";
-    } else if ( verbosity == "Extreme" ) {
+    } else if ( verbosity == "Extreme" || verbosity == "extreme") {
       verbosity_level = "extreme";
     } else {
       Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
@@ -631,9 +631,9 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
 
     // now interpret the modes
     if ( exe_sublist.isParameter("Transport Model") ) {
-      if ( exe_sublist.get<std::string>("Transport Model") == "Off" ) {
+      if ( exe_sublist.get<std::string>("Transport Model") == "Off" || exe_sublist.get<std::string>("Transport Model") == "off") {
         mpc_list.set<std::string>("disable Transport_PK","yes");
-      } else if ( exe_sublist.get<std::string>("Transport Model") == "On" ) {
+      } else if ( exe_sublist.get<std::string>("Transport Model") == "On" || exe_sublist.get<std::string>("Transport Model") == "on") {
         transport_on = true;
         mpc_list.set<std::string>("disable Transport_PK","no");
 
@@ -697,9 +697,9 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
     }
 
     if ( exe_sublist.isParameter("Flow Model") ) {
-      if ( exe_sublist.get<std::string>("Flow Model") == "Off") {
+      if ( exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off") {
         mpc_list.set<std::string>("disable Flow_PK", "yes");
-      } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards") {
+      } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" || exe_sublist.get<std::string>("Flow Model") == "richards") {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Richards");
       } else if (exe_sublist.get<std::string>("Flow Model") == "Single Phase") {

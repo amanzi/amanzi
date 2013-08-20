@@ -6,13 +6,13 @@
     <Parameter name="Model ID" type="string" value="1SSConFlow3"/>
     <Parameter name="Author"   type="string" value="Marc Day"/>
   </ParameterList>
+
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Steady State Saturated"/>
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="Off"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <ParameterList name="Time Integration Mode">
-      <ParameterList name="Initialize To Steady">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start"                            type="double" value="0"/>
         <Parameter name="Switch"                           type="double" value="0"/>
@@ -31,11 +31,12 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-
   </ParameterList>
+
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
+
   <ParameterList name="Mesh">
     <ParameterList name="Structured">
       <Parameter name="Domain Low Corner"  type="Array(double)" value="{0,  0}"/>
@@ -116,7 +117,7 @@
         <Parameter name="Phase"                type="string"        value="Aqueous"/>
         <Parameter name="Reference Value"      type="double"        value="195786.9"/>
         <Parameter name="Reference Coordinate" type="Array(double)" value="{0, 0}"/>
-        <Parameter name="Gradient Value"       type="Array(double)" value="{-97.89347, -9789.347}"/>
+        <Parameter name="Gradient Value"       type="Array(double)" value="{-97.893474, -9789.3474}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

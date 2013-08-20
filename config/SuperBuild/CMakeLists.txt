@@ -297,7 +297,7 @@ if (NOT MPI_EXEC)
     set(MPI_EXEC "${MPIEXEC}" CACHE STRING "Select MPI executable from FindMPI results")
   else()
     find_program(MPI_EXEC
-                 NAMES openmpirun mpirun mpiexec aprun
+                 NAMES mpirun mpiexec aprun
                  HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX ENV MPI_HOME ENV MPIHOME
                 )
   endif()
@@ -377,7 +377,6 @@ set(Amanzi_CMAKE_CXX_COMPILER_ARGS
      -DCMAKE_CXX_FLAGS_MINSIZEREL:STRING=${CMAKE_CXX_FLAGS_MINSIZEREL}
      -DCMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}
      -DCMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-
 
 # Fortran language flags    
 set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
@@ -535,7 +534,7 @@ endif()
 
 # PETSc
 option(ENABLE_PETSC "Build the PETSc package" FALSE)
-if (ENABLE_Structured)
+if (ENABLE_PETSC OR ENABLE_Structured)
   set(ENABLE_PETSC TRUE)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
 endif()
@@ -561,6 +560,23 @@ if ( ENABLE_MSTK_Mesh )
             -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
             -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
             -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+endif()
+
+# Alquimia and PFlotran
+option(ENABLE_ALQUIMIA "Build the Alquimia chemistry interface" FALSE)
+option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
+if (ENABLE_ALQUIMIA)
+  set(ENABLE_PFLOTRAN TRUE)
+endif()
+if (ENABLE_PFLOTRAN)
+  if (NOT ENABLE_PETSC)
+    set(ENABLE_PETSC TRUE)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+  endif()
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_pflotran.cmake)
+endif()
+if (ENABLE_ALQUIMIA)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_alquimia.cmake)
 endif()
 
 # ############################################################################ #

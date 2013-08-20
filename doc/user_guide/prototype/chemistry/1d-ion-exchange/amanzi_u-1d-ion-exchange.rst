@@ -69,9 +69,7 @@ Ion exchange
 :math:`Mg^{2+}`
 exchange on the single bulk site
 :math:`X-`
-with a cation exchange capacity (CEC) of 750.0 :math:`eq/m^3`. Note that the CEC is a material property, defined in 'Material Properties'.
-
-The three equilbrium exchange reactions are (by convention, secondary species are given in the left hand side, while primary species are in the right hand side):
+. The three equilbrium exchange reactions are (by convention, secondary species are given in the left hand side, while primary species are in the right hand side):
 
 * :math:`NaX = Na^+ + X^-\;log(K)=1.0`
 * :math:`CaX_2 = Ca^{2+} + 2 X^-\;log(K)=0.2953`
@@ -80,7 +78,15 @@ The three equilbrium exchange reactions are (by convention, secondary species ar
 Problem specifications
 ----------------------
 
+Flow and transport 
+~~~~~~~~~~~~~~~~~~
+
 See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+
+Geochemistry 
+~~~~~~~~~~~~
+
+The cation exchange capacity (CEC) of the bulk site is 750.0 :math:`eq/m^3`. Note that the CEC is a material property, defined in 'Material Properties'.
 
 Results and Comparison
 ----------------------

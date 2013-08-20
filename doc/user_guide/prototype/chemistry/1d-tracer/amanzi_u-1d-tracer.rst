@@ -31,7 +31,7 @@ About
 Introduction
 ------------
 
-When running a reactive transport problem, it is good practice to include a non-reactive component or tracer. Results obtained for this conservative tracer can be compared to results for reactive components. This comparison can provide insights into the effects of reactions on the fate of the reactive species, e.g. retardation of species subject to sorption. The problem presented here simulates the conservative (advective) transport of a single component in a 1D domain. The flow and transport components of this test problem are used as basis to develope the following reactive transport test problems: 1d-tritium, :doc:`../1d-calcite/amanzi_u-1d-calcite`, 1d-ion-exchange, 1d-surface-complexation, 1d-farea-full.
+When running a reactive transport problem, it is good practice to include a non-reactive component or tracer. Results obtained for this conservative tracer can be compared to results for reactive components. This comparison can provide insights into the effects of reactions on the fate of the reactive species, e.g. retardation of species subject to sorption. The problem presented here simulates the conservative (advective) transport of a single component in a 1D domain. The flow and transport components of this test problem are used as basis to develope the following reactive transport test problems: :doc:`../1d-tritium/amanzi_u-1d-tritium`, :doc:`../1d-calcite/amanzi_u-1d-calcite`, :doc:`../1d-ion-exchange/amanzi_u-1d-ion-exchange`, :doc:`../1d-surface-complexation/amanzi_u-1d-surface-complexation`, :doc:`../1d-farea/amanzi_u-1d-farea`.
 
 Model
 -----

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build with the correct compiler
+export CC=@CMAKE_C_COMPILER_USE@
+#export CFLAGS='@hypre_cflags@'
+export CXX=@CMAKE_CXX_COMPILER_USE@
+#export CXXFLAGS='@hypre_cxxflags@'
+export F77=@CMAKE_Fortran_COMPILER_USE@
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
+export PFLOTRAN_DIR='@PFLOTRAN_DIR@'
+export PETSC_DIR='@PETSC_DIR@'
+
+# alquimia in-source build under src 
+# At the moment, it looks like parallel builds don't work with Alquimia,
+# so this is an attempt to build it with only 1 thread.
+cd @ALQUIMIA_source_dir@/src
+make -j1 all 
+rc=$?
+echo "make all returned $rc"
+
+exit $rc

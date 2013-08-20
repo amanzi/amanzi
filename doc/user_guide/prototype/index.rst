@@ -15,3 +15,4 @@ Contents:
    chemistry/1d-calcite/amanzi_u-1d-calcite.rst
    chemistry/1d-ion-exchange/amanzi_u-1d-ion-exchange.rst
    chemistry/1d-surface-complexation/amanzi_u-1d-surface-complexation.rst
+   chemistry/1d-farea/amanzi_u-1d-farea.rst

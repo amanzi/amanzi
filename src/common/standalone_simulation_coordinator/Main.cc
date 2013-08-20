@@ -24,6 +24,10 @@
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/framework/StdOutFormatTarget.hpp>
 #include <xercesc/util/OutOfMemoryException.hpp>
+#include "DOMTreeErrorReporter.hpp"
+#include "ErrorHandler.hpp"
+#include "InputTranslator.hh"
+//#include "DOMPrintErrorHandler.hpp"
 
 #include "amanzi_version.hh"
 #include "dbc.hh"
@@ -72,6 +76,9 @@ int main(int argc, char *argv[]) {
     std::string xmlInFileName = "options.xml";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
 
+    std::string xmlSchema = "doc/input_spec/amanzi.xsd";
+    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File"); 
+
     bool print_version(false);
     CLP.setOption("version", "no_version", &print_version, "Print version number and exit.");
 
@@ -95,6 +102,10 @@ int main(int argc, char *argv[]) {
       exit(0);
     }
 
+    // EIB - this is the new piece which reads either the new or old input
+    /***************************************/
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+    Teuchos::ParameterList driver_parameter_list;
     try {
       xercesc::XMLPlatformUtils::Initialize();
       xercesc::XercesDOMParser *parser = new xercesc::XercesDOMParser;
@@ -111,12 +122,23 @@ int main(int argc, char *argv[]) {
       xercesc::DOMDocument *doc = parser->getDocument();
       xercesc::DOMElement *root = doc->getDocumentElement();
       char* temp2 = xercesc::XMLString::transcode(root->getTagName());
-
-      // EIB - check for new input format - throw exception and exit for now,
-      //       this will be replaced will call to translator for new format back to old format
+      //DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
       if (strcmp(temp2,"amanzi_input")==0) {
-	amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
-      } 
+
+	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
+	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, xmlSchema);
+	//driver_parameter_list.print(std::cout,true,false);
+      } else if(strcmp(temp2,"ParameterList")==0) {
+	Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
+        driver_parameter_list = xmlreader.getParameters();
+      }
+      else {
+	amanzi_throw(Errors::Message("Unexpected Error reading input file"));
+      }
+
+      // check root tag 
+      // if ParameterList - do old and pass thru
+      // if amanzi_input  - validate, convert to old
 
       xercesc::XMLString::release( &temp2) ;
       doc->release();
@@ -129,13 +151,15 @@ int main(int argc, char *argv[]) {
         std::cout << "Amanzi::XERCES-INPUT_FAILED\n";
       }
     }
-    // EIB - if you didn't find the new input spec, you got passed thru to here, the old code
-
-    // read the main parameter list
-    Teuchos::ParameterList driver_parameter_list;
-    // DEPRECATED    Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
-    Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
-    driver_parameter_list = xmlreader.getParameters();
+    /***************************************/
+    // EIB - this is the old stuff I'm replacing
+    // *************************************//
+    //// read the main parameter list
+    //Teuchos::ParameterList driver_parameter_list;
+    //// DEPRECATED    Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+    //Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
+    //driver_parameter_list = xmlreader.getParameters();
+    // *************************************//
 
     const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
     driver_parameter_list.set<string>("input file name", xmlInFileName);
@@ -170,7 +194,7 @@ int main(int argc, char *argv[]) {
 #endif
     }
 
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+    //MPI_Comm mpi_comm(MPI_COMM_WORLD);
     Amanzi::ObservationData output_observations;
     Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm, driver_parameter_list, output_observations);
 
