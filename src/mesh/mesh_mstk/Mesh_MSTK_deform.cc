@@ -221,11 +221,12 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
             vxyznew[i] = vxyzcur[i];
           fnew = fcur;
         }
-        
-        node_moved = true;
-        // Update current coordinates to the newly calculated coordinates 
-        for (int i = 0; i < ndim; i++) vxyzcur[i] = vxyznew[i];
+        else  {     
+          node_moved = true;
 
+          // Update current coordinates to the newly calculated coordinates 
+          for (int i = 0; i < ndim; i++) vxyzcur[i] = vxyznew[i];
+        }
       } // while (iter_local < maxiter_local)
         
       if (!node_moved) continue;
