@@ -1484,7 +1484,7 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
 
 
 /* ******************************************************************
- * Hypre BoomerAMG preconditioner sublist
+ * HypreBoomerAMG preconditioner sublist
  ****************************************************************** */
 Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
 {
