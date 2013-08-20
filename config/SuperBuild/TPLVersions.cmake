@@ -2,9 +2,43 @@
 
 #
 # TPLVersions
+#
 #    Define the versions, approved download locations for each TPL
 #
+
 #
+# TPL: Amanzi Collection of TPLs
+#
+#   Define a "version number" for the collection of TPLs listed here.
+#   It's not clear this is the best way to include this information, 
+#   but it's a reasonable place to start.
+#   
+#   Upgrade History:
+#
+#   0.90.6       - first version reference used in installations
+#   0.90.7       - updated MSTK to version 2.01
+#                - added NETCDF - fortran version 4.2 (interface library)
+#   0.90.8       - added Xerces-C++ version 3.1.1 (XML support)
+#   0.90.9       - update MSTK to version 2.02
+#
+#   0.91.0       - Added PFLOTRAN and Alquimia (updates from Jeff Johnson's work on state-branch)
+#
+set (AMANZI_TPLS_VERSION_MAJOR 0)
+set (AMANZI_TPLS_VERSION_MINOR 91)
+set (AMANZI_TPLS_VERSION_PATCH 0)
+set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
+#   Not sure how to create a meaningful hash key for the collection
+
+#
+# TPL: Xerces
+#
+set(XERCES_VERSION_MAJOR 3)
+set(XERCES_VERSION_MINOR 1)
+set(XERCES_VERSION_PATCH 1)
+set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
+set(XERCES_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.gz)
+set(XERCES_MD5_SUM        6a8ec45d83c8cfb1584c5a5345cb51ae ) 
 
 #
 # TPL: OpenMPI
@@ -118,6 +152,16 @@ set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
 set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc) 
 
 #
+# TPL: NetCDF Fortran
+#
+set(NetCDF_Fortran_VERSION_MAJOR 4)
+set(NetCDF_Fortran_VERSION_MINOR 2)
+set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR})
+set(NetCDF_Fortran_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(NetCDF_Fortran_ARCHIVE_FILE   netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
+set(NetCDF_Fortran_MD5_SUM        cc3bf530223e8f4aff93793b9f197bf3) 
+
+#
 # ASCEM-IO
 #
 set(ASCEMIO_VERSION_MAJOR 2)
@@ -148,12 +192,12 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 01)
-set(MSTK_VERSION_PATCH rc2)
+set(MSTK_VERSION_MINOR 02)
+set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        ebe14d337a2d1e4a7d513f5904ed6ec2)
+set(MSTK_MD5_SUM        7eb6955dc04542b6f87a2b419c717949)
 
 #
 # TPL: MOAB
@@ -244,8 +288,8 @@ set(SEACAS_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7)
 # TPL: PFlotran
 #
 set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-07032013.tar.gz)
-set(PFLOTRAN_MD5_SUM        fb05a86a8c2fbd9f405f73473f173bb9)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-07032013-clean.tgz)
+set(PFLOTRAN_MD5_SUM        f81f285837e4490992e9dda2159e1baa)
 
 #
 # TPL: Alquimia

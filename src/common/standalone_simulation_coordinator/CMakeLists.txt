@@ -6,9 +6,13 @@
 #   SSC_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
+
 project(SSC)
 
-include(CCSEOptions)
+if ( ENABLE_Structured)
+  include(CCSEOptions)
+endif()
+
 include(BinaryManager)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

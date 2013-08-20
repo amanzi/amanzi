@@ -139,9 +139,9 @@ if ( ENABLE_OpenMP )
 endif()
 endif()
 
-
 # Amanzi Test Suite
 option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
+
 
 # ############################################################################ #
 # MPI Configuration 
@@ -472,7 +472,7 @@ if(NOT CCSE_BL_SPACEDIM )
 endif()
 if ( ENABLE_Structured )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
-  append_set(Amanzi_TPL_CMAKE_ARGS 
+  append_set(Amanzi_TPL_CMAKE_ARGS
             -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}
             -DENABLE_MPI:BOOL=TRUE
             -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
@@ -499,10 +499,20 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake)
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
+# XERCES
+include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
 # NetCDF
 include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# NetCDF Fortran
+include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # ExodusII
 include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
@@ -601,6 +611,7 @@ option(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)
 if (Amanzi_INSTALL_PREFIX)
   set(BUILD_Amanzi TRUE)
 endif()
+
 if ( BUILD_Amanzi )
 
   set(Amanzi_CMAKE_ARGS ${Amanzi_CMAKE_COMPILER_ARGS})
@@ -678,9 +689,10 @@ if ( BUILD_Amanzi )
   include(ExternalProject)
 
   set(Amanzi_DEPENDS 
-              ${ExodusII_BUILD_TARGET}
+                  ${ExodusII_BUILD_TARGET}
 		          ${HDF5_BUILD_TARGET}
 		          ${ASCEMIO_BUILD_TARGET}
+			  ${XERCES_BUILD_TARGET}
 		          ${UnitTest_BUILD_TARGET}
 		          ${Boost_BUILD_TARGET}
 		          ${MSTK_BUILD_TARGET}
