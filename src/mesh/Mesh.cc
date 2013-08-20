@@ -1,3 +1,5 @@
+#include "Epetra_MultiVector.h"
+
 #include "Geometry.hh"
 #include "dbc.hh"
 #include "errors.hh"
@@ -641,6 +643,45 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
   return false;
 }
 
+// synchronize node positions across processors
+
+void Mesh::update_ghost_node_coordinates () {
+
+  int ndim = space_dimension();
+
+  Epetra_Map owned_node_map = node_epetra_map(false);
+  Epetra_Map used_node_map = node_epetra_map(true);
+  Epetra_Import importer(used_node_map, owned_node_map);
+
+  // change last arg to false after debugging
+  Epetra_MultiVector owned_node_coords(node_epetra_map(true),ndim,true);
+
+  AmanziGeometry::Point pnt(ndim);
+
+  // Fill the owned node coordinates
+
+  int nnodes_owned = num_entities(NODE,OWNED);
+  for (int i = 0; i < nnodes_owned; i++) {
+    node_get_coordinates(i,&pnt);
+    for (int k = 0; k < ndim; k++)
+      owned_node_coords[k][i] = pnt[k];
+  }
+
+  double **data;
+  owned_node_coords.ExtractView(&data);
+  Epetra_MultiVector used_node_coords(View, owned_node_map, data, ndim);
+  
+  used_node_coords.Import(owned_node_coords, importer, Insert);
+
+  int nnodes_used = num_entities(NODE,USED);
+  for (int i = nnodes_owned; i < nnodes_used; i++) {
+    double xyz[3];
+    for (int k = 0; k < ndim; k++)
+      xyz[k] = used_node_coords[k][i];
+    pnt.set(xyz);
+    node_set_coordinates(i, pnt);
+  }
+}
 
 // Deform the mesh according to a given set of new node positions
 // If keep_valid is true, the routine will cut back node displacement
