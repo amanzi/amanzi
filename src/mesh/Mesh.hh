@@ -394,6 +394,10 @@ class Mesh
               const bool move_vertical) = 0;
 
 
+  // Synchronize node positions across processors
+
+  void update_ghost_node_coordinates ();
+
   //
   // Epetra maps
   //------------

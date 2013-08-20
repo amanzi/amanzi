@@ -62,7 +62,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
     Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
     if (fabs(ccen[0]) < 1.0e-06)
-      if (ccen[1] < 1.0)
+      if (ccen[1] > 0.3 && ccen[1] < 0.9)
         target_volumes[i] = 0.5*orig_volumes[i];
   }
 
@@ -138,8 +138,10 @@ TEST(MSTK_DEFORM_VOLS_3D)
     min_volumes[i] = 0.5*orig_volumes[i];
 
     Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
-    if (fabs(ccen[0]) < 1.0e-06 && fabs(ccen[1]) < 1.0e-06)
-      if (ccen[2] < 1.0)
+    //    if (fabs(ccen[0]) < 1.0e-06 && fabs(ccen[1]) < 1.0e-06) // cells in the center
+    //    if (ccen[0] < -1.0 && fabs(ccen[1]) < 1.0e-06) // cells in left center
+    if (fabs(ccen[0]) < 1.0e-06) // row of cells along y axis
+      if (ccen[2] > 0.3 && ccen[2] < 0.9)  
         target_volumes[i] = 0.5*orig_volumes[i];
   }
 

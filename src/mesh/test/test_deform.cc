@@ -80,7 +80,7 @@ TEST(MESH_DEFORM2D)
 
       factory.preference(prefs);
 
-      mesh = factory(0.0,0.0,1.0,1.0,10,10);
+      mesh = factory(0.0,0.0,10.0,10.0,10,10);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -101,42 +101,37 @@ TEST(MESH_DEFORM2D)
     Amanzi::AmanziGeometry::Point_List newpos, finpos;
 
     int status, nnodes;
-    if (nproc == 1) {
 
-      nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-                                 Amanzi::AmanziMesh::OWNED);
-
-      for (int j = 0; j < nnodes; j++) {
-        double pi = 3.1415926;
-        nodeids.push_back(j);
-
-        Amanzi::AmanziGeometry::Point oldcoord(2),newcoord(2);
-
-        mesh->node_get_coordinates(j,&oldcoord);
-
-        newcoord.set(oldcoord[0],oldcoord[1]+sin((oldcoord[0]+1)*pi)*oldcoord[1]*0.2);
-
-        newpos.push_back(newcoord);
-      }
-
-      status = mesh->deform(nodeids,newpos,false,&finpos);
-      
-    } else {
-      
-      std::cerr << "Parallel deformation not implemented" << std::endl;
-      status = 0;
-
-    }
-
-    CHECK_EQUAL(status,1);
-
-
-    // Check the deformations
-
+    nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
+                                Amanzi::AmanziMesh::OWNED);
+    
     for (int j = 0; j < nnodes; j++) {
-      Amanzi::AmanziGeometry::Point diff = finpos[j]-newpos[j];
-      CHECK_EQUAL(diff[0],0.0);
-      CHECK_EQUAL(diff[1],0.0);
+      nodeids.push_back(j);
+      
+      Amanzi::AmanziGeometry::Point oldcoord(2),newcoord(2);
+      
+      mesh->node_get_coordinates(j,&oldcoord);
+      
+      newcoord.set(oldcoord[0],0.5*oldcoord[1]);
+      
+      newpos.push_back(newcoord);
+    }
+    
+    status = mesh->deform(nodeids,newpos,false,&finpos);
+    
+    
+    CHECK_EQUAL(status,1);
+    
+    
+    // If the deformation was successful, the cell volumes should be half
+    // of what they were
+    
+    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
+                                    Amanzi::AmanziMesh::USED);
+
+    for (int j = 0; j < ncells; j++) {
+      double volume = mesh->cell_volume(j);
+      CHECK_EQUAL(volume,0.5);
     }
 
   } // for each framework i
