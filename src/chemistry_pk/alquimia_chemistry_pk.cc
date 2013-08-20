@@ -281,10 +281,11 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
     }
 
     // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
-    // NOTE: the backend engine's input file.
+    // NOTE: the backend engine's input file. 
     AlquimiaGeochemicalCondition* condition = new AlquimiaGeochemicalCondition();
     all_chem_conditions_.push_back(condition);
-    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, engine_constraint.length(), 0, condition);
+    int num_aq = 0, num_min = 0;
+    AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
     strcpy(condition->name, cond_name.c_str());
 
     // Append this condition to our list of managed geochemical conditions.
@@ -563,12 +564,13 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
   //   ion exchange ref cation sorbed conc <N_ion_exchange_sites>
   //   surface complexation free site conc <N_surface_sites>
 
-  unsigned int offset = 0;
+  int offset = 0;
   //
   // free ion concentrations
   //
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) { // FIXME: Is this the right number?
-    double* cell_free_ion = (*chemistry_state_->free_ion_species())[c];
+  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
+  { 
+    double* cell_free_ion = (*chemistry_state_->free_ion_species())[i];
     chem_data_.aux_data.aux_doubles.data[offset] = cell_free_ion[cell_id];
   }
 
@@ -660,11 +662,10 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   // NOTE: At the moment, these accessors are const-only in Chemistry_State.
   //(*chemistry_state_->water_density())[cell_id] = alquimia_state->water_density;
   //(*chemistry_state_->porosity())[cell_id] = alquimia_state->porosity;
-
   for (unsigned int c = 0; c < number_aqueous_components(); c++) 
   {
     double mobile = alquimia_state->total_mobile.data[c];
-    double immobile = alquimia_state->total_mobile.data[c];
+    double immobile = (using_sorption()) ? alquimia_state->total_immobile.data[c] : 0.0;
 
     // NOTE: We place our mobile concentrations into the chemistry state's
     // NOTE: total component concentrations, not the aqueous concentrations.
@@ -706,10 +707,13 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   //
   // surface complexation
   //
-  for (unsigned int i = 0; i < number_sorption_sites(); i++) 
+  if (number_sorption_sites() > 0)
   {
-    double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
-    cell_sorption_sites[cell_id] = alquimia_state->surface_site_density.data[i];
+    for (unsigned int i = 0; i < number_sorption_sites(); i++) 
+    {
+      double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
+      cell_sorption_sites[cell_id] = alquimia_state->surface_site_density.data[i];
+    }
   }
 
   // Free ion concentrations, activity coefficients, ion exchange 
@@ -730,7 +734,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   // free ion concentrations
   //
   int offset = 0;
-  for (int i = 0; i < chemistry_state_->primary_activity_coeff()->MyLength(); ++i, ++offset) 
+  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
   {
     double* cell_free_ion = (*chemistry_state_->free_ion_species())[i];
     cell_free_ion[cell_id] = chem_data_.aux_data.aux_doubles.data[offset];
@@ -739,12 +743,12 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   //
   // activity coefficients
   //
-  for (int i = 0; i < chemistry_state_->primary_activity_coeff()->MyLength(); ++i, ++offset) 
+  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->primary_activity_coeff())[i];
     cells[cell_id] = chem_data_.aux_data.aux_doubles.data[offset];
   }
-  for (int i = 0; i < chemistry_state_->secondary_activity_coeff()->MyLength(); ++i, ++offset) 
+  for (int i = 0; i < number_aqueous_components(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
     cells[cell_id] = chem_data_.aux_data.aux_doubles.data[offset];
@@ -753,7 +757,8 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   //
   // ion exchange ref cation concentrations
   //
-  for (int i = 0; i < chemistry_state_->ion_exchange_ref_cation_conc()->MyLength(); ++i, ++offset) 
+std::cout << "Ref cationization\n";
+  for (int i = 0; i < chemistry_state_->number_of_ion_exchange_sites(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
     cells[cell_id] = chem_data_.aux_data.aux_doubles.data[offset];
@@ -762,10 +767,14 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   //
   // surface complexation
   // 
-  for (int i = 0; i < chemistry_state_->surface_complex_free_site_conc()->MyLength(); ++i, ++offset) 
+  if (using_sorption())
   {
-    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
-    cells[cell_id] = chem_data_.aux_data.aux_doubles.data[offset];
+std::cout << "Complexation II\n";
+    for (int i = 0; i < chemistry_state_->number_of_sorption_sites(); ++i, ++offset) 
+    {
+      double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
+      cells[cell_id] = chem_data_.aux_data.aux_doubles.data[offset];
+    }
   }
 
   //
@@ -773,6 +782,7 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   //
   if (aux_data_ != Teuchos::null) 
   {
+std::cout << "aux shiat\n";
     for (unsigned int i = 0; i < aux_names_.size(); i++) 
     {
       if (aux_names_.at(i) == "pH") 
