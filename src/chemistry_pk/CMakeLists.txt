@@ -17,25 +17,7 @@ project(CHEMPK)
 IF (ENABLE_ALQUIMIA)
   # We use Alquimia for chemistry instead of Amanzi's built-in thing, 
   # so we replace whatever existing GEOCHEM_LIBS property exists.
-
-  # The following code, which expresses the libraries for Alquimia and 
-  # PFlotran to CMake, belongs somewhere else, but there's no obvious home
-  # for it.
-
-  # PFlotran libraries.
-  add_library(pflotranchem STATIC IMPORTED)
-  set_target_properties(pflotranchem PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/tpls/lib/libpflotranchem.a")
-
-  # Alquimia libraries.
-  add_library(alquimia_c STATIC IMPORTED)
-  set_target_properties(alquimia_c PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/tpls/lib/libalquimia_c.a")
-  add_library(alquimia_cutils STATIC IMPORTED)
-  set_target_properties(alquimia_cutils PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/tpls/lib/libalquimia_cutils.a")
-  add_library(alquimia_fortran STATIC IMPORTED)
-  set_target_properties(alquimia_fortran PROPERTIES IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/tpls/lib/libalquimia_fortran.a")
-
-  set(ALQUIMIA_LIBRARIES alquimia_c;alquimia_cutils;alquimia_fortran;pflotranchem;${PETSC_LIBRARIES})
-  set(GEOCHEM_LIBS ${ALQUIMIA_LIBRARIES})
+  set(GEOCHEM_LIBS ${ALQUIMIA_LIBRARIES} ${PFLOTRAN_LIBRARIES} ${PETSC_LIBRARIES})
   set_property(GLOBAL PROPERTY GEOCHEM_LIBS "${GEOCHEM_LIBS}")
   set(CHEM_INCLUDES_DIR ${ALQUIMIA_INCLUDE_DIRS})
   set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")

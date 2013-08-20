@@ -33,8 +33,8 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-build-step.sh.in
 	       @ONLY)
 
 # Configure the CMake command file
-set(PFLOTRAN_cmake_build ${PFLOTRAN_prefix_dir}/PFLOTRAN-build-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/PFLOTRAN-build-step.cmake.in
+set(PFLOTRAN_cmake_build ${PFLOTRAN_prefix_dir}/pflotran-build-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-build-step.cmake.in
                ${PFLOTRAN_cmake_build}
 	       @ONLY)
 set(PFLOTRAN_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_build})	
