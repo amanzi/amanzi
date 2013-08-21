@@ -11798,8 +11798,6 @@ PorousMedia::derive_Material_ID(Real      time,
   const Real* dx = geom.CellSize();
   
   BoxArray dstBA(mf.boxArray());
-  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-  
   mf.setVal(-1,dcomp,1,ngrow);  
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     FArrayBox& fab = mf[mfi];
@@ -11822,8 +11820,6 @@ PorousMedia::derive_Grid_ID(Real      time,
   const int ngrow = mf.nGrow();
 
   BoxArray dstBA(mf.boxArray());
-  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-
   mf.setVal(-1,dcomp,1,ngrow);
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     mf[mfi].setVal(mfi.index());
@@ -11839,8 +11835,6 @@ PorousMedia::derive_Core_ID(Real      time,
   const int ngrow = mf.nGrow();
 
   BoxArray dstBA(mf.boxArray());
-  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-
   mf.setVal(-1,dcomp,1,ngrow);
   for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
     mf[mfi].setVal(ParallelDescriptor::MyProc());
@@ -11856,8 +11850,6 @@ PorousMedia::derive_Cell_ID(Real      time,
   const int ngrow = mf.nGrow();
 
   BoxArray dstBA(mf.boxArray());
-  BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
-
   mf.setVal(-1,dcomp,1,ngrow);
   Layout& layout = PMParent()->GetLayout();
   Layout::IntFab ifab;
@@ -11892,13 +11884,10 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
 
   if (scomp>=0) {
     const BoxArray& BA = mf.boxArray();
-    BL_ASSERT(rec->deriveType() == BA[0].ixType());
     int ngrow = mf.nGrow();
     BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
 
     int ncomp = 1; // Just water
-    BL_ASSERT(rec->numDerive()==ncomp);
-    
     FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
     for ( ; fpi.isValid(); ++fpi) {
       mf[fpi].copy(fpi(),0,dcomp,ncomp);
@@ -11929,11 +11918,9 @@ PorousMedia::derive_Aqueous_Saturation(Real      time,
 
   if (naq==1) {
     const BoxArray& BA = mf.boxArray();
-    BL_ASSERT(rec->deriveType() == BA[0].ixType());
     int ngrow = mf.nGrow();
     BL_ASSERT(mf.nGrow()<=1); // state only has this many
     int ncomp = 1; // Just aqueous
-    BL_ASSERT(rec->numDerive()==ncomp);
     FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
     for ( ; fpi.isValid(); ++fpi)
     {
@@ -11971,20 +11958,23 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
   Real t_new = state[Press_Type].curTime(); 
   int ncomp = 1;
   int ngrow = mf.nGrow();
-  AmrLevel::derive("pressure",time,mf,dcomp);
   const Real* plo = geom.ProbLo();
   const Real* dx = geom.CellSize();
-  Real rhog[BL_SPACEDIM];
-  for (int d=0; d<BL_SPACEDIM; ++d) {
-    rhog[d] = density[d] * gravity;
-  }
   if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
+    if (gravity==0) {
+      BoxLib::Abort("PorousMedia::derive_Hydraulic_Head: cannot derived hydraulic head since gravity = 0");
+    }
+    AmrLevel::derive("pressure",time,mf,dcomp);
+    Array<Real> rhog(ncomps);
+    for (int i=0; i<ncomps; ++i) {
+      rhog[i] = density[i] * gravity;
+    }
     for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
       FArrayBox& fab = mf[mfi];
       const Box box = BoxLib::grow(mfi.validbox(),ngrow);
       FORT_HYD_HEAD(box.loVect(), box.hiVect(),
                     fab.dataPtr(), ARLIM(fab.loVect()), ARLIM(fab.hiVect()),
-                    rhog, dx, plo, &ncomps);
+                    rhog.dataPtr(), dx, plo, &ncomps);
     }
   }
   else {
@@ -12017,10 +12007,8 @@ PorousMedia::derive_Porosity(Real      time,
                              int       dcomp)
 {
   const BoxArray& BA = mf.boxArray();
-  BL_ASSERT(rec->deriveType() == BA[0].ixType());
   int ngrow = mf.nGrow();
   int ncomp = 1;
-  BL_ASSERT(rec->numDerive()==ncomp);
   BL_ASSERT(mf.nGrow()<=rock_phi->nGrow());
   MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
 }
