@@ -298,8 +298,15 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
       Exceptions::amanzi_throw(msg);
     }
     Teuchos::Array<std::string> regions = cond_sublist.get<Teuchos::Array<std::string> >("Assigned Regions");
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
     for (size_t r = 0; r < regions.size(); ++r)
     {
+      if (!mesh->valid_set_name(regions[r], AmanziMesh::CELL))
+      {
+        msg << "Chemistry_PK::XMLParameters(): \n";
+        msg << "  Invalid region assigned to '" << regions[r] << " for geochemical condition '" << cond_name << "'.\n";
+        Exceptions::amanzi_throw(msg);
+      }
       conditions[regions[r]] = condition;
     }
   }
@@ -937,6 +944,7 @@ void Alquimia_Chemistry_PK::advance(
     AlquimiaGeochemicalCondition* condition = cond_iter->second;
 
     // Get the cells that belong to this region.
+    assert(mesh->valid_set_name(region_name, AmanziMesh::CELL));
     unsigned int num_cells = mesh->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
     AmanziMesh::Entity_ID_List cell_indices;
     mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
