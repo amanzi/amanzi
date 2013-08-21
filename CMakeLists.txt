@@ -76,7 +76,7 @@ include(InstallManager)
 add_subdirectory(src)
 
 # Examples added as tests
-#add_subdirectory(examples) 
+# add_subdirectory(examples) 
 
 # Python modules
 add_subdirectory(tools/py_lib)

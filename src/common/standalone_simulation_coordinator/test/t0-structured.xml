@@ -26,11 +26,6 @@
         <Parameter name="Maximum Grid Size" type="Array(int)" value="{100}"/>
         <Parameter name="v" type="int" value="2"/>
       </ParameterList>
-      <ParameterList name="Basic Algorithm Control">
-        <ParameterList name="Expert Settings">
-          <Parameter name="gravity" type="double" value="0"/> 
-        </ParameterList>
-      </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Domain">

@@ -257,7 +257,15 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc ) {
     if (generate) {
       if (unstructured) {
         list.sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured") = mesh_list;
-        list.sublist("Unstructured").sublist("Generate Mesh").sublist("Expert").set("Framework",framework);
+        if (strcmp(framework,"mstk")==0) {
+          list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
+        } else if (strcmp(framework,"moab")==0) {
+          list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MOAB");
+        } else if (strcmp(framework,"simple")==0) {
+          list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","Simple");
+        } else if (strcmp(framework,"stk::mesh")==0) {
+          list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","stk::mesh");
+        }
       } else {
         list.sublist("Structured") = mesh_list;
       }
