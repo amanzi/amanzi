@@ -287,7 +287,9 @@ void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
       ofile << setprecision(10) << dT_history[n].first / FLOW_YEAR << " " << dT_history[n].second << endl;
     }
     ofile.close();
+    printf("Flow PK: saving time history in file flow_dt_history.txt...done\n");
   }
+  
 }
 
 

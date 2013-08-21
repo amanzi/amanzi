@@ -212,6 +212,7 @@ void Timer::parSync(MPI_Comm comm) {
   int numpe(1);
   MPI_Comm_size(comm, &numpe);
   _avg_elapsed /= static_cast<double>(numpe);
+
 }
 
 /**

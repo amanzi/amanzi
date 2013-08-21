@@ -13,7 +13,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Epetra_FECrsGraph.h"
-
+#include "AztecOO.h"
 #include "mfd3d_diffusion.hh"
 
 #include "Flow_constants.hh"
@@ -733,23 +733,38 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
 
   // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
   // use the same memory for X and Y, we introduce auxiliaty vector Tc.
-  int ierr = 0;
-  Epetra_Vector Tc(cmap);
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    MLprec->ApplyInverse(Xc, Tc);
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE
-    ierr = IfpHypre_Spp_->ApplyInverse(Xc, Tc);
-#endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ifp_prec_->ApplyInverse(Xc, Tc);
-  }
-  Yc = Tc;
+//   int ierr = 0;
+//   Epetra_Vector Tc(cmap);
+//   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
+//     MLprec->ApplyInverse(Xc, Tc);
+//   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
+// #ifdef HAVE_HYPRE
+//     ierr = IfpHypre_Spp_->ApplyInverse(Xc, Tc);
+// #endif
+//   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
+//     ifp_prec_->ApplyInverse(Xc, Tc);
+//   }
+//   Yc = Tc;
 
-  if (ierr) {
-    Errors::Message msg("Matrix_MFD_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
-    Exceptions::amanzi_throw(msg);
-  }
+
+  Epetra_LinearProblem problem(&*Spp_, &Yc, &Xc);
+
+  AztecOO solver(problem);
+
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_output, AZ_none);
+  solver.SetAztecOption(AZ_conv, AZ_rhs);
+ 
+  int max_itrs_linear = 100;
+  double convergence_tol_linear = 1e-10;
+
+  solver.Iterate(max_itrs_linear, convergence_tol_linear);
+  int num_itrs = solver.NumIters();
+
+  // if (ierr) {
+  //   Errors::Message msg("Matrix_MFD_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
+  //   Exceptions::amanzi_throw(msg);
+  // }
 
   Yf = Xf;
 
@@ -906,6 +921,10 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
 	darcy_mass_flux[f] = dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value) + Grav_term[f]);
+	// cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<endl;
+	// cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
+	// cout<<"Boundary gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
+	// cout<<"Dirichler BC flux "<<darcy_mass_flux[f] <<endl;
       }
       else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
 	double value = bc_values[f][0];
@@ -914,17 +933,29 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
       else {
 	if (f < nfaces_owned) {
 	  mesh_->face_get_cells(f,  AmanziMesh::USED, &cells);
+	  // if (fabs(Grav_term[f]) > 1e-12){
+	  //   cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<" "<<" Krel "<<Krel_faces[f]<<endl;
+	  //   //cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
+	  //   cout<<"gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
+	  // }
+	  //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
 	  double s = Trans_faces[f]*solution[c];
 	  darcy_mass_flux[f] += s * dirs[n];
 	  if (cells[0] == c) darcy_mass_flux[f] += dirs[n]*Grav_term[f]*0.5;
 	  else darcy_mass_flux[f] -= dirs[n]*Grav_term[f]*0.5;  
 	  darcy_mass_flux[f] *= Krel_faces[f];
+	  //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
 	}
       }
     }
   }
 
+  //cout<<"Darcy\n"<<darcy_mass_flux<<endl;
+
+
 }
+
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

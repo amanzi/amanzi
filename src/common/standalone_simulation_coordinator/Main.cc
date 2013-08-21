@@ -217,9 +217,9 @@ int main(int argc, char *argv[]) {
       obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
     }
 
+
     if (obs_list.isParameter("Observation Output Filename")) {
       std::string obs_file = obs_list.get<std::string>("Observation Output Filename");
-
       if (rank == 0) {
         std::ofstream out;
         out.open(obs_file.c_str(),std::ios::out);
@@ -260,9 +260,11 @@ int main(int argc, char *argv[]) {
         out.close();
       }
     }
-
+    
     Amanzi::timer_manager.stop( "Full Simulation" );
+
     Amanzi::timer_manager.parSync(mpi_comm);
+
     if (rank == 0) {
       std::cout << "Amanzi::SIMULATION_SUCCESSFUL\n\n";
       std::cout << Amanzi::timer_manager << std::endl;

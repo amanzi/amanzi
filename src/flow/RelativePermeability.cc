@@ -62,6 +62,7 @@ void RelativePermeability::Compute(const Epetra_Vector& p,
                                     const std::vector<int>& bc_model,
                                     const std::vector<bc_tuple>& bc_values)
 {
+
   if (method_ == FLOW_RELATIVE_PERM_UPWIND_GRAVITY ||
       method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
       method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
@@ -115,6 +116,7 @@ void RelativePermeability::ComputeOnFaces(
 
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     Epetra_Vector& flux = FS_->ref_darcy_flux();
+    //cout<<"Before FaceUpwindFlux\n"<<flux<<endl;
     FaceUpwindFlux_(p, flux, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
@@ -225,6 +227,8 @@ void RelativePermeability::FaceUpwindFlux_(
   std::vector<int> dirs;
 
   Krel_faces_->PutScalar(0.0);
+  // cout<<"Enter FaceUpwindFlux\n";
+  // cout<<flux<<endl;
 
   double max_flux, min_flux;
   flux.MaxValue(&max_flux);
@@ -246,8 +250,10 @@ void RelativePermeability::FaceUpwindFlux_(
           (*Krel_faces_)[f] = (*Krel_cells_)[c];
         }
       } else {
+
         if (flux[f] * dirs[n] > tol) {
           (*Krel_faces_)[f] = (*Krel_cells_)[c];  // The upwind face.
+	  //cout<<" flux "<<flux[f]<<" c: "<<c<<" "<<p[c]<< endl;
         } else if (fabs(flux[f]) <= tol) { 
           (*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  // Almost vertical face.
         }

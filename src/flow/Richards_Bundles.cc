@@ -166,7 +166,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   Epetra_Vector* u_cells = FS->CreateCellView(u);
   Epetra_Vector* u_faces = FS->CreateFaceView(u);
   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-  Epetra_Vector& flux = FS->ref_darcy_flux();
+  Epetra_Vector& flux = FS_aux->ref_darcy_flux();
 
   // update all coefficients, boundary data, and source/sink terms
   //Amanzi::timer_manager.stop("Update precon");
@@ -181,7 +181,12 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     matrix_tpfa->DeriveDarcyMassFlux(*
         u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
 
-    for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
+    for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
+
+    // cout<<"After DeriveDarcyMassFlux\n"<<endl;
+    // for (int f = 48; f < nfaces_owned; f++){
+    //   cout<<"flux "<<f<<" - "<<flux[f]<<endl;
+    // }
   }
 
   rel_perm->Compute(u, bc_model, bc_values);

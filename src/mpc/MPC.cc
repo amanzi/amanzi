@@ -274,10 +274,10 @@ void MPC::read_parameter_list()  {
 /* *******************************************************************/
 void MPC::cycle_driver() {
 
-  Amanzi::timer_manager.add("AnalyticJacobian", Amanzi::Timer::ACCUMULATE);
-  Amanzi::timer_manager.add("Function", Amanzi::Timer::ACCUMULATE);
-  Amanzi::timer_manager.add("Update precon", Amanzi::Timer::ACCUMULATE);
-  Amanzi::timer_manager.add("Apply precon", Amanzi::Timer::ACCUMULATE);
+  // Amanzi::timer_manager.add("AnalyticJacobian", Amanzi::Timer::ACCUMULATE);
+  // Amanzi::timer_manager.add("Function", Amanzi::Timer::ACCUMULATE);
+  // Amanzi::timer_manager.add("Update precon", Amanzi::Timer::ACCUMULATE);
+  // Amanzi::timer_manager.add("Apply precon", Amanzi::Timer::ACCUMULATE);
 
 
   // start timers
@@ -448,35 +448,6 @@ void MPC::cycle_driver() {
 
   cout.precision(18);
 
-  // u[0] =  91534.665003775299;    u[12] =          91534.665003775299;  
-  // u[1] =  71954.125957457407;    u[13] =          71954.125957457407;
-  // u[2] =  52373.761510661403;    u[14] =          52373.761510661403;
-  // u[3] =  32793.571669003984;    u[15] =          32793.571669003984;
-  // u[4] =  13213.556438102829;    u[16] =          13213.556438102829;
-  // u[5] = -6366.2841764234072;    u[17] =         -6366.2841764234072;
-  // u[6] = -25945.950168955082;    u[18] =         -25945.950168955082;
-  // u[7] = -45525.441533871584;    u[19] =         -45525.441533871584;
-  // u[8] = -65104.758265551311;    u[20] =         -65104.758265551311;
-  // u[9] = -84683.900358371699;    u[21] =         -84683.900358371699;
-  // u[10] =-104262.86780670918;    u[22] =         -104262.86780670918;
-  // u[11] =-123841.66060493923;    u[23] =         -123841.66060493923;
-
-//  u[0] =   91534.665003775299;    u[12] =     91534.665003775299;
-//  u[1] =   71954.125957457407;    u[13] =     71954.125957457407;
-//  u[2] =   52373.761510661403;    u[14] =     52373.761510661403;
-//  u[3] =   32793.571669003984;    u[15] =     32793.571669003984;
-//  u[4] =   13213.556438102829;    u[16] =     13213.556438102829;
-//  u[5] =  -6366.2841764234072;    u[17] =    -6366.2841764234072;
-//  u[6] =  -25945.950168955082;    u[18] =    -25945.950168955082;
-//  u[7] =  -45525.441533871584;    u[19] =    -45525.441533871584;
-//  u[8] =  -65104.758265551311;    u[20] =    -65104.758265551311;
-//  u[9] =  -84683.900358371699;    u[21] =    -84683.900358371699;
-//  u[10] = -104262.86780670918;    u[22] =    -104262.86780670918;
-//  u[11] = -123841.66060493923;    u[23] =    -123841.66060493923;
-
-  // cout<<u<<endl;
-
-  // exit(0);
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations) observations->make_observations(*S);
