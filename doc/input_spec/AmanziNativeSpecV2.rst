@@ -245,33 +245,87 @@ tools.
 .. code-block:: xml
 
   <ParameterList name="State">
-    <Parameter name="Component Solutes" type="Array(string)" value="{3H}"/>
-    <Parameter name="Constant viscosity" type="double" value="0.001"/>
-    <Parameter name="Constant water density" type="double" value="997.16"/>
-    <Parameter name="Gravity x" type="double" value="0.0"/>
-    <Parameter name="Gravity y" type="double" value="0.0"/>
-    <Parameter name="Gravity z" type="double" value="-9.81"/>
-
-    <Parameter name="Number of component concentrations" type="int" value="0"/>
-    <Parameter name="Material Names" type="Array(string)" value="{Mesh block 1, Mesh block 2}"/>
-
-    <ParameterList name="Mesh block sand">
-      <Parameter name="Region" type="string" value="Sand"/>
-      <Parameter name="Constant component concentration 0" type="double" value="0"/>
-      <Parameter name="Constant horizontal permeability" type="double" value="1e-17"/>
-      <Parameter name="Constant porosity" type="double" value="0.39"/>
-      <Parameter name="Constant vertical permeability" type="double" value="1e-17"/>
-      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array(double)" value="{0, -9793.52}"/>
-        <Parameter name="reference coordinate" type="Array(double)" value="{0, 60}"/>
-        <Parameter name="reference value" type="double" value="101325"/>
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
-    </ParameterList>
 
-    <ParameterList name="Mesh block gravel">  <!-- next mesh block --> 
-      <Parameter name="Region" type="string" value="Gravel"/>
-      ...
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="0.001"/>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+      </ParameterList>
+
+      <ParameterList name="porosity">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> 
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="permeability">
+        <ParameterList name="function">
+          <ParameterList name="Mesh Block 1">
+            <Parameter name="region" type="string" value="Material 1 Region"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-12"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-13"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Mesh Block 2">
+            <Parameter name="region" type="string" value="Material 2 Region"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2e-13"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2e-14"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
