@@ -96,7 +96,6 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Function
 **************************************************************** */
 void FlowSourceFactory::ProcessStringActions(const std::string& name, int* method) const
 {
-
   Errors::Message msg;
   if (name == "none") {
     *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_NONE;

@@ -15,7 +15,6 @@ Authors: Neil Carlson (version 1)
 
 #include "WRM_vanGenuchten.hh"
 
-
 namespace Amanzi {
 namespace AmanziFlow {
 

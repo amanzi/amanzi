@@ -1,16 +1,14 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-ATS
+This is the Transport component of Amanzi
 
 License: see $AMANZI_DIR/COPYRIGHT
 Author (v1): Neil Carlson
        (v2): Ethan Coon
 
-Function applied to a mesh component with at most one function application per
-entity.
-
+Function applied to a mesh component with at most one function 
+application per entity.
 ------------------------------------------------------------------------- */
-
 
 #ifndef AMANZI_TRANSPORT_BOUNDARY_FUNCTION_HH_
 #define AMANZI_TRANSPORT_BOUNDARY_FUNCTION_HH_
@@ -31,8 +29,7 @@ namespace Functions {
 typedef std::pair<std::string, int> Action;
 
 class TransportBoundaryFunction : public UniqueMeshFunction {
-  
-public:
+ public:
   TransportBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
       UniqueMeshFunction(mesh),
       finalized_(false) {}
@@ -56,7 +53,7 @@ public:
   Iterator find(const int j) const { return value_.find(j); }
   std::map<int,double>::size_type size() { return value_.size(); }
 
-protected:
+ protected:
   std::map<int,double> value_;
   bool finalized_;
 };

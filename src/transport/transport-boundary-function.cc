@@ -4,9 +4,6 @@
 License: see $AMANZI_DIR/COPYRIGHT
 Author (v1): Neil Carlson
        (v2): Ethan Coon
-
-
-
 ------------------------------------------------------------------------- */
 
 #include "transport-boundary-function.hh"
@@ -14,26 +11,34 @@ Author (v1): Neil Carlson
 namespace Amanzi {
 namespace Functions {
 
+/* ******************************************************************
+* TBW
+****************************************************************** */
 void TransportBoundaryFunction::Define(const std::vector<std::string> &regions,
-                                  const Teuchos::RCP<const MultiFunction> &f) {
-
+                                       const Teuchos::RCP<const MultiFunction> &f) 
+{
   // Create the domain
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));
 
-  // add the spec
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 };
 
 
+/* ******************************************************************
+* TBW
+****************************************************************** */
 void TransportBoundaryFunction::Define(std::string region,
-                                  const Teuchos::RCP<const MultiFunction> &f) {
-
+                                       const Teuchos::RCP<const MultiFunction> &f) 
+{
   RegionList regions(1,region);
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::FACE));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 };
 
-// Evaluate values at time.
+
+/* ******************************************************************
+* Evaluate values at time.
+****************************************************************** */
 void TransportBoundaryFunction::Compute(double time) {
   // lazily generate space for the values
   if (!finalized_) {
@@ -51,8 +56,8 @@ void TransportBoundaryFunction::Compute(double time) {
   // Loop over all FACE specs and evaluate the function at all IDs in the
   // list.
   for (SpecAndIDsList::const_iterator
-         spec_and_ids=specs_and_ids_[AmanziMesh::FACE]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::FACE]->end(); ++spec_and_ids) {
+       spec_and_ids = specs_and_ids_[AmanziMesh::FACE]->begin();
+       spec_and_ids != specs_and_ids_[AmanziMesh::FACE]->end(); ++spec_and_ids) {
     // Here we could specialize on the argument signature of the function:
     // time-independent functions need only be evaluated at each face on the
     // first call; space-independent functions need only be evaluated once per
@@ -61,9 +66,9 @@ void TransportBoundaryFunction::Compute(double time) {
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
       AmanziGeometry::Point xc = mesh_->face_centroid(*id);
-      for (int i=0; i!=dim; ++i) xargs[i] = xc[i];
+      for (int i = 0; i != dim; ++i) xargs[i] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
-      //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
+      // is a RCP<Spec>, and the Spec's second is an RCP to the function.
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
     }
   }
@@ -77,7 +82,6 @@ void TransportBoundaryFunction::Compute(double time) {
 **************************************************************** */
 void TransportBoundaryFunction::ComputeShift(double time, double* shift)
 {
-
   // lazily generate space for the values
   if (!finalized_) {
     Finalize();
@@ -94,8 +98,8 @@ void TransportBoundaryFunction::ComputeShift(double time, double* shift)
   // Loop over all FACE specs and evaluate the function at all IDs in the
   // list.
   for (SpecAndIDsList::const_iterator
-         spec_and_ids=specs_and_ids_[AmanziMesh::FACE]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::FACE]->end(); ++spec_and_ids) {
+       spec_and_ids = specs_and_ids_[AmanziMesh::FACE]->begin();
+       spec_and_ids != specs_and_ids_[AmanziMesh::FACE]->end(); ++spec_and_ids) {
     // Here we could specialize on the argument signature of the function:
     // time-independent functions need only be evaluated at each face on the
     // first call; space-independent functions need only be evaluated once per
@@ -104,7 +108,7 @@ void TransportBoundaryFunction::ComputeShift(double time, double* shift)
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
       AmanziGeometry::Point xc = mesh_->face_centroid(*id);
-      for (int i=0; i!=dim; ++i) xargs[i] = xc[i];
+      for (int i = 0; i != dim; ++i) xargs[i] = xc[i];
       // Careful tracing of the typedefs is required here: spec_and_ids->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
       value_[*id] = (*(*spec_and_ids)->first->second)(args)[0]  + shift[*id];
@@ -112,11 +116,12 @@ void TransportBoundaryFunction::ComputeShift(double time, double* shift)
   }
 
   delete [] args;
-
 }
 
 
-
+/* ******************************************************************
+* TBW
+****************************************************************** */
 void TransportBoundaryFunction::Finalize() {
   finalized_ = true;
   if (specs_and_ids_.size() == 0) { return; }
@@ -137,3 +142,4 @@ void TransportBoundaryFunction::Finalize() {
 
 } // namespace
 } // namespace
+

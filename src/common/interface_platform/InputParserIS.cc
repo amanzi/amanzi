@@ -997,6 +997,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  }
 	
 	  Teuchos::ParameterList& picard_list = flow_list->sublist("initial guess pseudo time integrator");
+	  picard_list.sublist("Picard").set<double>("error abs tol", ST_ERROR_ABS_TOL);
+	  picard_list.sublist("Picard").set<double>("error rel tol", ST_ERROR_REL_TOL);
+	  picard_list.sublist("Picard").set<double>("time step increase factor", ST_TS_INC_FACTOR);
 	
 	  if (have_picard_params_list) {
 	    picard_list.set<bool>("initialize with darcy",picard_params_list.get<bool>("pseudo time integrator initialize with darcy",PIC_INIT_DARCY));

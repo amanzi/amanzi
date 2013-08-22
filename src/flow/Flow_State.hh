@@ -20,9 +20,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 class Flow_State : public PK_State {
-
  public:
-
   explicit Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   explicit Flow_State(Teuchos::RCP<State> S);
   explicit Flow_State(State& S);
@@ -137,7 +135,6 @@ class Flow_State : public PK_State {
  private:
   // not implemented
   Flow_State(const Flow_State& other);
-
 };
 
 } // namespace

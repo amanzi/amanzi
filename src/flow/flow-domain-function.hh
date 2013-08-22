@@ -56,7 +56,6 @@ class FlowDomainFunction : public UniqueMeshFunction {
 
   // extract internal information
   int CollectActionsList();
- 
 
  private:
   std::vector<int> actions_;
@@ -64,7 +63,6 @@ class FlowDomainFunction : public UniqueMeshFunction {
  protected:
   std::map<int,double> value_;
   bool finalized_;
-
 };
 
 

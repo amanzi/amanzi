@@ -8,14 +8,16 @@ Author: Ethan Coon
 Interface layer between Flow and State, this is a harness for
 accessing the new state-dev from the old Flow PK.
 
- ------------------------------------------------------------------------- */
-
+------------------------------------------------------------------------- */
 
 #include "Flow_State.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
 
+/* ****************************************************************
+* Constructors.
+**************************************************************** */
 Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
     PK_State(std::string("state"), mesh) {
   Construct_();
@@ -31,8 +33,12 @@ Flow_State::Flow_State(State& S) :
   Construct_();
 }
 
+
+/* ****************************************************************
+* Constructors.
+**************************************************************** */
 Flow_State::Flow_State(const Flow_State& other,
-        PKStateConstructMode mode) :
+    PKStateConstructMode mode) :
     PK_State(other, STATE_CONSTRUCT_MODE_COPY_POINTERS) {
   if (mode == CONSTRUCT_MODE_VIEW_DATA) {
     ghosted_ = false; // non-ghosted views
@@ -57,6 +63,10 @@ Flow_State::Flow_State(const Flow_State& other,
   }
 }
 
+
+/* ****************************************************************
+* TBW.
+**************************************************************** */
 void Flow_State::Construct_() {
   // for creating fields
   std::vector<AmanziMesh::Entity_kind> locations(2);
@@ -108,6 +118,10 @@ void Flow_State::Construct_() {
   }
 };
 
+
+/* ****************************************************************
+* TBW.
+**************************************************************** */
 void Flow_State::Initialize() {
   if (standalone_mode_) {
     S_->Setup();
@@ -171,17 +185,21 @@ void Flow_State::CombineGhostNode2MasterNode(Epetra_Vector& v, Epetra_CombineMod
 }
 
 
-Teuchos::RCP<AmanziGeometry::Point>
-Flow_State::gravity() {
+/* ****************************************************************
+* TBW.
+**************************************************************** */
+Teuchos::RCP<AmanziGeometry::Point> Flow_State::gravity() {
   Teuchos::RCP<Epetra_Vector> gvec = S_->GetConstantVectorData("gravity", name_);
   Teuchos::RCP<AmanziGeometry::Point> gpoint =
-    Teuchos::rcp(new AmanziGeometry::Point(gvec->MyLength()));
-  for (int i=0; i!=gvec->MyLength(); ++i) (*gpoint)[i] = (*gvec)[i];
+      Teuchos::rcp(new AmanziGeometry::Point(gvec->MyLength()));
+  for (int i = 0; i != gvec->MyLength(); ++i) (*gpoint)[i] = (*gvec)[i];
   return gpoint;
 }
 
 
-// debug routines
+/* ****************************************************************
+* Debug routines
+**************************************************************** */
 void Flow_State::set_fluid_density(double rho) {
   *fluid_density() = rho;
 }
@@ -206,7 +224,6 @@ void Flow_State::set_pressure_hydrostatic(double z0, double p0) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     pres[c] = p0 + rho * g * (xc[dim - 1] - z0);
   }
-
 }
 
 void Flow_State::set_permeability_2D(double Kx, double Ky) {
@@ -244,7 +261,7 @@ void Flow_State::set_permeability_3D(double Kx, double Ky, double Kz, const stri
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   int ncells = block.size();
 
-  for (int i=0; i!=ncells; ++i) {
+  for (int i = 0; i != ncells; ++i) {
     int c = block[i];
     perm_x[c] = Kx;
     perm_y[c] = Ky;
@@ -258,9 +275,8 @@ void Flow_State::set_gravity(double g) {
 
   gvec->PutScalar(0.);
   (*gvec)[dim-1] = g;
-  //  (*gvec)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
+  // (*gvec)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
 }
-
 
 void Flow_State::set_specific_storage(double ss) {
   specific_storage()->PutScalar(ss);

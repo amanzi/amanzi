@@ -257,7 +257,6 @@ void Richards_PK::InitializeAuxiliaryData()
 
   DeriveSaturationFromPressure(pressure, ws);
   ws_prev = ws;
-
 }
 
 
@@ -271,7 +270,6 @@ void Richards_PK::InitializeSteadySaturated()
   }
   double T = FS->get_time();
   SolveFullySaturatedProblem(T, *solution, ti_specs->ls_specs_ini);
-
 }
 
 
@@ -513,9 +511,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
 
-  //rel_perm->Compute(*solution , bc_model, bc_values);
-  //exit(0);
-
+  // rel_perm->Compute(*solution , bc_model, bc_values);
 }
 
 

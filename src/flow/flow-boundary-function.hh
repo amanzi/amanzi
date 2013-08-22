@@ -31,8 +31,7 @@ const int BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE = 1;
 typedef std::pair<std::string, int> Action;
 
 class FlowBoundaryFunction : public UniqueMeshFunction {
-  
-public:
+ public:
   FlowBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
       UniqueMeshFunction(mesh),
       finalized_(false) {}
@@ -58,7 +57,7 @@ public:
   Iterator find(const int j) const { return value_.find(j); }
   std::map<int,double>::size_type size() { return value_.size(); }
 
-protected:
+ protected:
   std::map<int,double> value_;
   bool finalized_;
 

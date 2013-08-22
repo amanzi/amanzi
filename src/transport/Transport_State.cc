@@ -21,12 +21,14 @@ Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int 
   Construct_(ncomp);
 }
 
+
 Transport_State::Transport_State(Teuchos::RCP<State> S, const int ncomp) :
   PK_State(std::string("state"), S),
   S_time_(S)
 {
   Construct_(ncomp);
 }
+
 
 Transport_State::Transport_State(Teuchos::RCP<State> S, std::vector<std::string> comp_names) :
     PK_State(std::string("state"), S),
@@ -47,8 +49,7 @@ Transport_State::Transport_State(Transport_State& other,
     comp_numbers_(other.comp_numbers_),
     comp_names_(other.comp_names_),
     S_time_(other.S_time_)
- {
-
+{
   if (mode == CONSTRUCT_MODE_VIEW_DATA) {
     ghosted_ = false;  // non-ghosted views
   } else if (mode == CONSTRUCT_MODE_VIEW_DATA_GHOSTED) {
@@ -99,8 +100,8 @@ Transport_State::Transport_State(Transport_State& other,
 }
 
 
-void Transport_State::Construct_(const int ncomp) {
- 
+void Transport_State::Construct_(const int ncomp) 
+{
   // Require data, all owned by "state" to cheat the system.
   S_->RequireScalar("fluid_density", name_);
   if (!S_->HasField("porosity")) {
@@ -149,8 +150,9 @@ void Transport_State::Initialize() {
   }
 }
 
-int Transport_State::get_component_number(const std::string component_name) {
 
+int Transport_State::get_component_number(const std::string component_name)
+{
   std::map<std::string,int>::const_iterator lb =
     comp_numbers_.lower_bound(component_name);
   if (lb != comp_numbers_.end() && !(comp_numbers_.key_comp()(component_name, lb->first))) {
@@ -159,6 +161,7 @@ int Transport_State::get_component_number(const std::string component_name) {
     return -1;
   }
 }
+
 
 std::string Transport_State::get_component_name(const int component_number) {
   return comp_names_[component_number];
@@ -179,12 +182,9 @@ void Transport_State::InterpolateCellVector(const Epetra_Vector& v0,
 }
 
 
-
-
-//
-// debug methods ...
-//
-
+/* *******************************************************************
+* Debug methods
+******************************************************************* */
 void Transport_State::set_porosity(const double phi) {
   porosity()->PutScalar(phi);
 }
@@ -229,7 +229,8 @@ void Transport_State::set_total_component_concentration(f_conc_t func, const dou
   }
 }
 
-  void Transport_State::set_total_component_concentration(const double val, const int i) {
+void Transport_State::set_total_component_concentration(const double val, const int i) 
+{
   const Epetra_BlockMap& cmap = total_component_concentration()->Map();
 
   for (int c = cmap.MinLID(); c <= cmap.MaxLID(); c++) {
@@ -258,12 +259,6 @@ void Transport_State::error_total_component_concentration(f_conc_t f, double t, 
   *L2 = sqrt(*L2);
 }
 
+}  // namespace AmanziTransport
+}  // namespace Amanzi
 
-
-
-
-
-
-
-} // namspace
-} // namspace
