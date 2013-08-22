@@ -1092,8 +1092,12 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 		
 		steady_time_integrator.set<std::string>("preconditioner",
                     num_list.get<std::string>("steady preconditioner", ST_PRECOND));
-		steady_time_integrator.set<bool>("initialize with darcy",
-                    num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL));
+		if (!use_picard) {
+		  steady_time_integrator.set<bool>("initialize with darcy",
+						   num_list.get<bool>("steady initialize with darcy", ST_INIT_DARCY_BOOL));
+		} else {
+		  steady_time_integrator.set<bool>("initialize with darcy",false);
+		}
 
 		if (flow_model == "Single Phase") {
 		  sti_bdf1.set<double>("time step increase factor",num_list.get<double>("steady time step increase factor",ST_SP_DT_INCR_FACTOR));
