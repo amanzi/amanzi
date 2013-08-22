@@ -141,10 +141,16 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
       mesh = meshfactory("test/random_mesh3.exo", gm);
     }
 
-    // create Richards process kernel
-    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+    // create flow state
+    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
+    State S(state_list);
+    S.RegisterDomainMesh(mesh);
+    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+    S.Setup();
     FS->Initialize();
+    S.Initialize();
 
+    // create Richards process kernel
     Richards_PK* RPK = new Richards_PK(parameter_list, FS);
     RPK->InitPK();  // setup the problem
     RPK->InitSteadyState(0.0, 0.01);

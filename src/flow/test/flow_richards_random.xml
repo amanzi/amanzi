@@ -1,10 +1,10 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter name="number of meshes" type="int" value="1"/>
+  <Parameter name="number of meshes" type="int" value="2"/>
 
   <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="2"/>
+    <Parameter name="Spatial Dimension" type="int" value="1"/>
   </ParameterList>
 
   <ParameterList name="Mesh">
@@ -21,6 +21,12 @@
    
   <!--  REGIONS  -->
   <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,-10.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0, 0.0}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Material 1 Region">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,-10.0}"/>
@@ -172,46 +178,87 @@
   <!--  STATE: this super input desk will be used to cut-off smaller 
   input deks for other flow tests -->
   <ParameterList name="State">
-    <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
-    <Parameter name="Constant viscosity" type="double" value="1.0"/>
-    <Parameter name="Constant water density" type="double" value="1.0"/>
-    <Parameter name="Constant water saturation" type="double" value="1.0"/>
-    <Parameter name="Gravity x" type="double" value="0"/>
-    <Parameter name="Gravity y" type="double" value="-2.0"/>
-    <Parameter name="Gravity z" type="double" value="-2.0"/>
-
-    <Parameter name="Number of component concentrations" type="int" value="1"/>
-    <Parameter name="Number of mesh blocks" type="int" value="2"/>
-
-    <ParameterList name="Mesh block 1">
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="0.5"/>
-      <Parameter name="Constant porosity" type="double" value="0.2"/>
-      <Parameter name="Region" type="string" value="Material 1 Region"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="reference value" type="double" value="0.0"/>
-      </ParameterList>
-      <ParameterList name="uniform saturation">
+    <ParameterList name="initial conditions">
+      <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
-      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
-    </ParameterList>
-    <ParameterList name="Mesh block 2">
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="2.0"/>
-      <Parameter name="Constant porosity" type="double" value="0.2"/>
-      <Parameter name="Region" type="string" value="Material 2 Region"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="reference value" type="double" value="0.0"/>
-      </ParameterList>
-      <ParameterList name="uniform saturation">
+
+      <ParameterList name="fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
-      <Parameter name="Free Ion Guess 0" type="double" value="0.0"/>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -2.0}"/>
+      </ParameterList>
+
+      <ParameterList name="porosity">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="permeability">
+        <ParameterList name="function">
+          <ParameterList name="Mesh Block 1">
+            <Parameter name="region" type="string" value="Material 1 Region"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.5"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.5"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Mesh Block 2">
+            <Parameter name="region" type="string" value="Material 2 Region"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.0"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 </ParameterList>
