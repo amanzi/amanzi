@@ -8,8 +8,8 @@
 
 #include "sorption_isotherm.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich()
     : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH),
@@ -67,5 +67,5 @@ void SorptionIsothermFreundlich::Display(void) const {
             << std::endl;
 }  // end Display()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

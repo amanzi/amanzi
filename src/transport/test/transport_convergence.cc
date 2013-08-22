@@ -67,17 +67,16 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     meshfactory.preference(pref);
     RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 2, gm);
 
-    // create a transport state with one component 
-    int num_components = 1;
-    State mpc_state(num_components, 0, mesh);
-    RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+    RCP<Transport_State> TS = rcp(new Transport_State(mesh, 1));
  
     Point u(1.0, 0.0, 0.0);
-    TS->AnalyticDarcyFlux(u);
-    TS->AnalyticTotalComponentConcentration(f_cubic);
-    TS->AnalyticPorosity(1.0);
-    TS->AnalyticWaterSaturation(1.0);
-    TS->AnalyticWaterDensity(1.0);
+    TS->Initialize();
+    TS->set_darcy_flux(u);
+    TS->set_total_component_concentration(f_cubic, 0.0);
+    TS->set_porosity(1.0);
+    TS->set_water_saturation(1.0);
+    TS->set_prev_water_saturation(1.0);
+    TS->set_water_density(1.0);
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);
@@ -160,17 +159,16 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     meshfactory.preference(pref);
     RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
 
-    // create a transport states with one component
-    int num_components = 1;
-    State mpc_state(num_components, 0, mesh);
-    RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+    RCP<Transport_State> TS = rcp(new Transport_State(mesh, 1));
 
     Point u(1.0, 0.0, 0.0);
-    TS->AnalyticDarcyFlux(u);
-    TS->AnalyticTotalComponentConcentration(f_cubic);
-    TS->AnalyticPorosity(1.0);
-    TS->AnalyticWaterSaturation(1.0);
-    TS->AnalyticWaterDensity(1.0);
+    TS->Initialize();
+    TS->set_darcy_flux(u);
+    TS->set_total_component_concentration(f_cubic, 0.0);
+    TS->set_porosity(1.0);
+    TS->set_water_saturation(1.0);
+    TS->set_prev_water_saturation(1.0);
+    TS->set_water_density(1.0);    
 
     ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
     Transport_PK TPK(transport_list, TS);

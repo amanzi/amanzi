@@ -2,8 +2,8 @@
 #include "glenn.hh"
 #include "beaker.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 Glenn::Glenn(Beaker* b) {
   b_ = b;
@@ -54,5 +54,5 @@ void Glenn::solve(Beaker::BeakerComponents* components,
   }
 }  // end solve()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

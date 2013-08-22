@@ -47,6 +47,7 @@ double Darcy_PK::ErrorEstimate(double* dTfactor)
     double error_tmp = error_max;
     solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
 #endif
+
   return error_max;
 }
 

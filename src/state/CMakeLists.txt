@@ -24,9 +24,14 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -47,7 +52,23 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 file(GLOB state_inc_files "*.hh")
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
-                   SOURCE State.cc StateFromFile.cc Restart.cc Vis.cc chemistry_data.cc HEADERS ${state_inc_files}
+                   SOURCE State.cc
+                          PK_State.cc
+                          checkpoint.cc
+                          visualization.cc
+                          Observable.cc
+                          UnstructuredObservations.cc
+                          chemistry_data.cc
+                          cell_volume_evaluator.cc
+                          Field.cc
+			  Field_CompositeVector.cc
+			  Field_ConstantVector.cc
+			  Field_Scalar.cc
+			  FieldEvaluator.cc
+			  FieldEvaluator_Factory.cc
+			  io_event.cc
+			  rank_evaluator.cc
+                   HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
@@ -84,7 +105,7 @@ if (BUILD_TESTS)
 	  	          test/Main.cc
 	 		  test/test_restart.cc
 	 		  test/test_vis.cc
-                      LINK_LIBS state mesh_factory mesh ${UnitTest_LIBRARIES})
+                      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
     endif()
 
 endif()

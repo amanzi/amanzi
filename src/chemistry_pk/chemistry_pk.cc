@@ -11,7 +11,6 @@
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "chemistry_state.hh"
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "chemistry_output.hh"
@@ -19,14 +18,13 @@
 #include "chemistry_exception.hh"
 
 #include "Mesh.hh"
-#include "State.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
 #include "boost/mpi.hpp"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 /*******************************************************************************
  **
@@ -66,7 +64,7 @@ namespace chemistry {
  **
  ******************************************************************************/
 
-// global ChemistryOutput object in the amanzi::chemisry
+// global ChemistryOutput object in the Amanzi::chemisry
 // namespace that will be used by the chemistry library
 extern ChemistryOutput* chem_out;
 
@@ -129,6 +127,15 @@ void Chemistry_PK::InitializeChemistry(void) {
   CopyCellStateToBeakerStructures(
       cell, 
       chemistry_state_->total_component_concentration());
+
+  // std::cout << "number_aqueous_components        = " << number_aqueous_components() << std::endl;
+  // std::cout << "number_free_ion                  = " << number_free_ion() << std::endl;
+  // std::cout << "number_total_sorbed              = " << number_total_sorbed() << std::endl;
+  // std::cout << "number_minerals                  = " << number_minerals() << std::endl;
+  // std::cout << "number_ion_exchange_sites        = " << number_ion_exchange_sites() << std::endl;
+  // std::cout << "number_sorption_sites            = " << number_sorption_sites() << std:: endl;
+  // std::cout << "using_sorption                   = " << using_sorption() << std::endl;
+  // std::cout << "using_sorption_isotherms         = " << using_sorption_isotherms() << std::endl;
 
   // finish setting up & testing the chemistry object
   int ierr(0);
@@ -841,5 +848,5 @@ void Chemistry_PK::set_component_names(std::vector<string>* names) {
   chem_->GetPrimaryNames(names);
 }  // end set_component_names()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

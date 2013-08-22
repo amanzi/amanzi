@@ -11,8 +11,8 @@
 
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 SorptionIsothermRxn::SorptionIsothermRxn() {
 }
@@ -58,5 +58,5 @@ void SorptionIsothermRxn::Display(void) const {
   isotherm_->Display();
 }  // end Display()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

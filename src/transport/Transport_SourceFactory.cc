@@ -12,7 +12,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <string>
 #include <vector>
 
-#include "FunctionFactory.hh"
 #include "errors.hh"
 
 #include "Transport_SourceFactory.hh"
@@ -23,9 +22,9 @@ namespace AmanziTransport {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-DomainFunction* TransportSourceFactory::CreateSource()
+Functions::TransportDomainFunction* TransportSourceFactory::CreateSource()
 {
-  DomainFunction* src = new DomainFunction(mesh_);
+  Functions::TransportDomainFunction* src = new Functions::TransportDomainFunction(mesh_);
 
   // Iterate through the source specification sublists in the params_.
   // All are expected to be sublists of identical structure.
@@ -54,7 +53,7 @@ DomainFunction* TransportSourceFactory::CreateSource()
 * Process source, step 2.
 ****************************************************************** */
 void TransportSourceFactory::ProcessSourceSpec(
-    Teuchos::ParameterList& list, const std::string& name, DomainFunction* src) const
+    Teuchos::ParameterList& list, const std::string& name, Functions::TransportDomainFunction* src) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -80,10 +79,9 @@ void TransportSourceFactory::ProcessSourceSpec(
   }
 
   // Make the source function.
-  Teuchos::RCP<Function> f;
-  FunctionFactory f_fact;
+  Teuchos::RCP<MultiFunction> f;
   try {
-    f = Teuchos::rcp(f_fact.Create(*f_list));
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in source sublist : " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -94,7 +92,7 @@ void TransportSourceFactory::ProcessSourceSpec(
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
   
-  src->DefineMultiValue(regions, f, method, name);
+  src->Define(regions, f, method, name);
 }
 
 
@@ -105,11 +103,11 @@ void TransportSourceFactory::ProcessStringActions(const std::string& name, int* 
 {
   Errors::Message msg;
   if (name == "none") {
-    *method = Amanzi::DOMAIN_FUNCTION_ACTION_NONE;
+    *method = Amanzi::Functions::TransportActions::DOMAIN_FUNCTION_ACTION_NONE;
   } else if (name == "volume") {
-    *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+    *method = Amanzi::Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
   } else if (name == "permeability") {
-    *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+    *method = Amanzi::Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
   } else {
     msg << "Transport PK: unknown source distribution method has been specified.";
     Exceptions::amanzi_throw(msg);

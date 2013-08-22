@@ -8,8 +8,8 @@
 #include "species.hh"
 #include "beaker.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class SimpleThermoDatabase : public Beaker {
  public:
@@ -73,6 +73,6 @@ class SimpleThermoDatabase : public Beaker {
   std::vector<SurfaceComplexationRxn> surface_complexation_reactions_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_

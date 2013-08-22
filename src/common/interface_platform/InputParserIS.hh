@@ -32,6 +32,7 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_FlowSrc_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_State_List_old ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel );
 Teuchos::ParameterList CreateChemistryList ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Preconditioners_List ( Teuchos::ParameterList* plist );
@@ -41,6 +42,8 @@ Teuchos::ParameterList create_HypreAMG_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
 void output_boundary_conditions( Teuchos::ParameterList* plist );
 void check_AmanziInputVersion(Teuchos::ParameterList* plist);
+
+Teuchos::Array<std::string> translate_forms (Teuchos::Array<std::string> & forms);
 
 static std::string phase_name;
 static std::string phase_comp_name;

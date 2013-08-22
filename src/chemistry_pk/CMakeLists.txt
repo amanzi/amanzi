@@ -14,8 +14,18 @@
 # through these variables.
 project(CHEMPK)
 
-get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
-get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
+IF (ENABLE_ALQUIMIA)
+  # We use Alquimia for chemistry instead of Amanzi's built-in thing, 
+  # so we replace whatever existing GEOCHEM_LIBS property exists.
+  set(GEOCHEM_LIBS ${ALQUIMIA_LIBRARIES} ${PFLOTRAN_LIBRARIES} ${PETSC_LIBRARIES})
+  set_property(GLOBAL PROPERTY GEOCHEM_LIBS "${GEOCHEM_LIBS}")
+  set(CHEM_INCLUDES_DIR ${ALQUIMIA_INCLUDE_DIRS})
+  set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
+ELSE()
+  # Just use what's already there.
+  get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+  get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
+ENDIF()
 
 # Chemistry include
 include_directories(${CHEM_INCLUDES_DIR})
@@ -25,24 +35,33 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 
 
 # External (TPL) include directories
-# Although, it does not call HDF5 directly 
+# Although it does not call HDF5 directly 
 # it does need HDF5 for the Vis.hpp file 
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
-
 file(GLOB chem_inc_files "*hh")
+set(chem_src_files Chemistry_State.cc)
+if (ENABLE_ALQUIMIA)
+  list(APPEND chem_src_files alquimia_chemistry_pk.cc)
+else()
+  list(APPEND chem_src_files chemistry_pk.cc)
+endif()
 add_amanzi_library(chemistry_pk
-                   SOURCE chemistry_state.cc chemistry_pk.cc HEADERS ${chem_inc_files}
+                   SOURCE ${chem_src_files}
+                   HEADERS ${chem_inc_files}
                    LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 
-
 if (BUILD_TESTS)
-  add_subdirectory(tests_integration)
+  if (NOT ENABLE_ALQUIMIA)
+    add_subdirectory(tests_integration)
+  endif()
 endif()

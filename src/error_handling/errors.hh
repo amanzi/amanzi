@@ -23,10 +23,12 @@ public:
     const char* what () const throw () { return message_.c_str (); }
 
     void add_data (const char* data) { message_ += data;  }
+    void add_data (const std::string& data) { message_ += data;  }
 
 };
 
 Message& operator<<(Message &message, const char* data);
+Message& operator<<(Message &message, const std::string& data);
 
 }
 #endif /* _ERRORS_H_ */

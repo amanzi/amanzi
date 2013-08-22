@@ -17,6 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
+#include "Mesh.hh"
 
 #include "State.hh"
 #include "Transport_PK.hh"
@@ -70,18 +71,18 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 20, 2, gm); 
-  
-  // create a transport state with one component 
-  int num_components = 1;
-  State mpc_state(num_components, 0, mesh);
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
- 
+  RCP<Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 1, 1, gm); 
+
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh, 1));
+
   Point u(1.0, 0.0, 0.0);
-  TS->AnalyticDarcyFlux(u);
-  TS->AnalyticPorosity();
-  TS->AnalyticWaterSaturation();
-  TS->AnalyticWaterDensity();
+  TS->Initialize();
+  TS->set_darcy_flux(u);
+  TS->set_porosity(0.2);
+  TS->set_water_saturation(1.0);
+  TS->set_prev_water_saturation(1.0);
+  TS->set_water_density(1000.0);
+  TS->set_total_component_concentration(0.0,0);
 
   ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
@@ -94,6 +95,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   RCP<Transport_State> TS_next = TPK.transport_state_next();
   RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
+
 
   iter = 0;
   while (T < 1.0) {

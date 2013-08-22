@@ -9,7 +9,7 @@
  * 
  */
 
-#include "ColorFunctionFactory.hh"
+#include "color-function-factory.hh"
 
 #include "ColorFunctionRegion.hh"
 #include "dbc.hh"

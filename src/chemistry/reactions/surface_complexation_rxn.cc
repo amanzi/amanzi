@@ -13,8 +13,8 @@
 
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 extern ChemistryOutput* chem_out;
 
@@ -248,5 +248,5 @@ void SurfaceComplexationRxn::DisplayResults(void) const {
   }
 }  // end DisplayResults()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

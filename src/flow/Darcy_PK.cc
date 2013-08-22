@@ -180,7 +180,7 @@ void Darcy_PK::InitPK()
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
 
   // Allocate memory for wells
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
@@ -317,18 +317,19 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   }
 
   // Well modeling (one-time call)
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
   }
 
   // Initialize source
   if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       src_sink->ComputeDistribute(T0, Kxy->Values()); 
-    else
+    } else {
       src_sink->ComputeDistribute(T0, NULL);
+    }
   }
-
+  
   // make initial guess consistent with boundary conditions
   if (ti_specs.initialize_with_darcy) {
     ti_specs.initialize_with_darcy = false;
@@ -382,10 +383,11 @@ int Darcy_PK::Advance(double dT_MPC)
     bc_head->ComputeShift(time, shift_water_table_->Values());
 
   if (src_sink != NULL) {
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
-        src_sink->ComputeDistribute(time, Kxy->Values()); 
-    else
-        src_sink->ComputeDistribute(time, NULL);
+    if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      src_sink->ComputeDistribute(time, Kxy->Values()); 
+    } else {
+      src_sink->ComputeDistribute(time, NULL);
+    }
   }
 
   ProcessBoundaryConditions(
@@ -477,18 +479,37 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 ****************************************************************** */
 void Darcy_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
-  const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
-  const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
+  if (dim == 2) {
+    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
+    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
 
-  for (int c = 0; c < K.size(); c++) {
-    if (vertical_permeability[c] == horizontal_permeability[c]) {
-      K[c].init(dim, 1);
-      K[c](0, 0) = vertical_permeability[c];
-    } else {
-      K[c].init(dim, 2);
-      for (int i = 0; i < dim-1; i++) K[c](i, i) = horizontal_permeability[c];
-      K[c](dim-1, dim-1) = vertical_permeability[c];
-    }
+    for (int c = 0; c < K.size(); c++) {
+      if (permeability_x[c] == permeability_y[c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = permeability_x[c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = permeability_x[c];
+	K[c](1, 1) = permeability_y[c];
+      }
+    }    
+    
+  } else if (dim == 3) {
+    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
+    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
+    const Epetra_Vector& permeability_z = *(*FS->permeability())(2);
+    
+    for (int c = 0; c < K.size(); c++) {
+      if (permeability_x[c] == permeability_y[c]  && permeability_y[c] == permeability_z[c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = permeability_x[c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = permeability_x[c];
+	K[c](1, 1) = permeability_y[c];
+	K[c](2, 2) = permeability_z[c];
+      }
+    }        
   }
 }
 

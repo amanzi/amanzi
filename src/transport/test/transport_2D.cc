@@ -19,7 +19,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshAudit.hh"
 #include "GMVMesh.hh"
 
-#include "State.hh"
+#include "Transport_State.hh"
 #include "Transport_PK.hh"
 
 
@@ -62,18 +62,17 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
-  
-  /* create a MPC state with two component */
-  int num_components = 2;
-  State mpc_state(num_components, 0, mesh);
- 
-  /* create a transport state from the MPC state and populate it */
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
-  TS->AnalyticDarcyFlux(f_velocity);
-  TS->AnalyticPorosity();
-  TS->AnalyticWaterSaturation();
-  TS->AnalyticWaterDensity();
+  /* create a transport state from the MPC state and populate it */
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh,2));
+  TS->Initialize();
+  TS->set_darcy_flux(f_velocity, 0.0);
+  TS->set_porosity(0.2);
+  TS->set_water_saturation(1.0);
+  TS->set_prev_water_saturation(1.0);
+  TS->set_water_density(1000.0);
+  TS->set_total_component_concentration(0.0,0);
+  TS->set_total_component_concentration(0.0,1);
 
   /* initialize a transport process kernel from a transport state */
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");

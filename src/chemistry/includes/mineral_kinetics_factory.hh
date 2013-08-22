@@ -17,8 +17,8 @@
 #include "mineral.hh"
 #include "string_tokenizer.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class KineticRate;
 
@@ -50,6 +50,6 @@ class MineralKineticsFactory {
   static const std::string kTST;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif     /* AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_ */

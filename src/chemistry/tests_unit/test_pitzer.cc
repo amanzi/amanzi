@@ -14,8 +14,8 @@
 #include "activity_model.hh"
 #include "chemistry_exception.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 namespace unit_tests {
 
 using std::vector;
@@ -23,7 +23,7 @@ using std::string;
 
 SUITE(TestPitzer) {
 
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
 
   class PitzerTest {
    public:
@@ -103,7 +103,7 @@ SUITE(TestPitzer) {
   }
 
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_I
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_I
 
     @brief TestComputeActivityCoeff_System_I
 
@@ -158,7 +158,7 @@ SUITE(TestPitzer) {
     CHECK_CLOSE(-0.055, actw, 1.0e-2);  // H2O
   }
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_II
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_II
 
     @brief TestComputeActivityCoeff_System_II
 
@@ -219,7 +219,7 @@ SUITE(TestPitzer) {
     CHECK_CLOSE(-0.055, actw, 1.0e-2);  // H2O
   }
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_III
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_III
 
     @brief TestComputeActivityCoeff_System_III
 
@@ -283,7 +283,7 @@ SUITE(TestPitzer) {
     CHECK_CLOSE(-0.13, actw, 1.0e-2);  // H2O
   }
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestInvalidActivityModel
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestInvalidActivityModel
 
     @brief TestInvalidActivityModel
 
@@ -304,7 +304,7 @@ SUITE(TestPitzer) {
     CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_), ac::ChemistryException);
   }
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestInvalidDatabase
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestInvalidDatabase
 
     @brief TestInvalidDatabase
 
@@ -326,7 +326,7 @@ SUITE(TestPitzer) {
     CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_), ac::ChemistryException);
   }
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroNumberSpecies
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestZeroNumberSpecies
 
     @brief TestZeroNumberSpecies
 
@@ -338,7 +338,7 @@ SUITE(TestPitzer) {
     CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_), ac::ChemistryException);
   }
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
 
     @brief TestZeroConcentrations
 
@@ -367,7 +367,7 @@ SUITE(TestPitzer) {
   }
 
   /*!
-    @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
+    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
 
     @brief TestNumberSpecies
 

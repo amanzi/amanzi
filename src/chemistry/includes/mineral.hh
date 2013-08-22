@@ -17,8 +17,8 @@
 #include "secondary_species.hh"
 #include "chemistry_verbosity.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -97,6 +97,6 @@ class Mineral : public SecondarySpecies {
 
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_MINERAL_HH_

@@ -17,8 +17,8 @@
 #include "string_tokenizer.hh"
 #include "chemistry_output.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 extern ChemistryOutput* chem_out;
 
@@ -96,6 +96,6 @@ class KineticRate {
   double reaction_rate_;  // volumetric rate: [moles/sec/m^3 bulk]
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_HH_ */

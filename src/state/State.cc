@@ -1,1744 +1,833 @@
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Import.h"
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_LAPACK.hpp"
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Implementation for the State.  State is a simple data-manager, allowing PKs to
+require, read, and write various fields.  Provides some data protection by
+providing both const and non-const fields to PKs.  Provides some
+initialization capability -- this is where all independent variables can be
+initialized (as independent variables are owned by state, not by any PK).
+
+------------------------------------------------------------------------- */
+
+#include <iostream>
+
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Epetra_Vector.h"
 
 #include "errors.hh"
-#include "exceptions.hh"
-
-#include "Mesh.hh"
-#include "Point.hh"
-#include "LinearFunction.hh"
+#include "composite_vector.hh"
+#include "function-factory.hh"
+#include "function.hh"
+#include "FieldEvaluator_Factory.hh"
+#include "cell_volume_evaluator.hh"
+#include "rank_evaluator.hh"
 
 #include "State.hh"
 
+namespace Amanzi {
 
-/* *******************************************************************/
-State::State(int number_of_components_,
-             int number_of_minerals,
-             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
-    : number_of_components(number_of_components_),
-      mesh_maps(mesh_maps_),
-      number_of_minerals_(number_of_minerals),
-      number_of_ion_exchange_sites_(0),
-      number_of_sorption_sites_(0),
-      using_sorption_(false),
-      use_sorption_isotherms_(false),
-      time(0.0) {
-  // the default parameter_list is empty, so we can't sanely implement
-  // mineralogy or isotherms here because we can't safely allocate
-  // memory.... This constructor can't be used for anything with
-  // geochemistry...?!
-  init_verbosity(parameter_list);
+State::State() :
+    time_(0.0),
+    final_time_(0.0),
+    intermediate_time_(0.0),
+    cycle_(0) {};
 
-  SetupSoluteNames();
-  // can't call verify mineralogy because no way of setting the 
-  //VerifyMaterialChemistry();
-  // create the Eptera_Vector objects
-  create_storage();
-  ExtractVolumeFromMesh();
-};
+State::State(Teuchos::ParameterList& state_plist) :
+    state_plist_(state_plist),
+    time_(0.0),
+    final_time_(0.0),
+    intermediate_time_(0.0),
+    cycle_(0) {};
 
+// copy constructor:
+// Create a new State with different data but the same values.
+//
+// Could get a better implementation with a CopyMode, see TransportState in
+// Amanzi as an example.  I'm not sure its needed at this point, however.
+State::State(const State& other, StateConstructMode mode) :
+    state_plist_(other.state_plist_),
+    meshes_(other.meshes_),
+    field_factories_(other.field_factories_),
+    time_(other.time_),
+    final_time_(other.final_time_),
+    intermediate_time_(other.intermediate_time_),
+    cycle_(other.cycle_) {
 
-State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
-    : mesh_maps(mesh_maps_),
-      number_of_ion_exchange_sites_(0),
-      number_of_sorption_sites_(0),
-      using_sorption_(false),
-      use_sorption_isotherms_(false),
-      time(0.0) {
-  // this constructor is going to be used in restarts, where we
-  // read the number of components from a file before creating
-  // storage
-  init_verbosity(parameter_list);
-}
+  if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
+    for (FieldMap::const_iterator f_it=other.fields_.begin();
+         f_it!=other.fields_.end(); ++f_it) {
+      fields_[f_it->first] = f_it->second->Clone();
+    }
 
-
-State::State(Teuchos::ParameterList &parameter_list_,
-             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_)
-    : mesh_maps(mesh_maps_),
-      parameter_list(parameter_list_),
-      number_of_minerals_(0),
-      number_of_ion_exchange_sites_(0),
-      number_of_sorption_sites_(0),
-      using_sorption_(false),
-      use_sorption_isotherms_(false),
-      time(0.0) {
-  init_verbosity(parameter_list);
-
-  // need to set up a few things before we can setup the storage and assign values
-  SetupSoluteNames();
-  VerifyMaterialChemistry();
-
-  // create the Eptera_Vector objects
-  create_storage();
-  initialize_from_parameter_list();
-  initialize_from_file_list();
-  ExtractVolumeFromMesh();
-};
-
-
-/* *******************************************************************/
-void State::init_verbosity (Teuchos::ParameterList &parameter_list_) {
-  // set the line prefix for output
-  this->setLinePrefix("Amanzi::State       ");
-  // make sure that the line prefix is printed
-  this->getOStream()->setShowLinePrefix(true);
-  
-  // Read the sublist for verbosity settings.
-  Teuchos::readVerboseObjectSublist(&parameter_list,this);    
-
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-}
-
-
-/* *******************************************************************/
-State::~State()
-{
-  //delete [] (*gravity);
-}
-
-
-/* *******************************************************************/
-void State::create_default_compnames(int n)
-{
-  compnames.resize(n);
-  for (int i=0; i<n; i++)
-  {
-    std::stringstream ss;
-    ss << "Component " << i;
-    compnames[i] = ss.str();
-  }
-}
-
-void State::SetupSoluteNames(void) {
-  // get the number of component concentrations from the
-  // parameter list
-  if (parameter_list.isParameter("Number of component concentrations")) {
-    number_of_components = 
-        parameter_list.get<int>("Number of component concentrations");
+    for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
+         fm_it!=other.field_evaluators_.end(); ++fm_it) {
+      field_evaluators_[fm_it->first] = fm_it->second->Clone();
+    }
   } else {
-    // if the parameter list does not contain this key, then assume we
-    // are being called from a state constructor w/o a valid parameter
-    // list (vis/restart) and the number_of_components variable was
-    // already set to a valid (non-zero?) value....
-  }
-
-  if (number_of_components > 0) {
-    
-    // read the component names if they are spelled out
-    Teuchos::Array<std::string> comp_names;
-    if (parameter_list.isParameter("Component Solutes"))
-      {
-	comp_names = 
-	  parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
-      }
-    
-    if (comp_names.size()) {
-      set_compnames(comp_names);
-    } else {
-      create_default_compnames(number_of_components);
+    for (FieldMap::const_iterator f_it=other.fields_.begin();
+         f_it!=other.fields_.end(); ++f_it) {
+      fields_[f_it->first] = f_it->second;
     }
-    // now create the map
-    for (int i = 0; i < comp_names.size(); ++i) {
-      comp_no[comp_names[i]] = i;
+
+    for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
+         fm_it!=other.field_evaluators_.end(); ++fm_it) {
+      field_evaluators_[fm_it->first] = fm_it->second;
     }
   }
-}  // end SetupSoluteNames()
 
-void State::initialize_from_parameter_list()
-{
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+};
 
-
-  double u[3];
-  int dim = mesh_maps->space_dimension();
-  u[0] = parameter_list.get<double>("Gravity x");
-  u[1] = parameter_list.get<double>("Gravity y");
-  if (dim == 3)
-    u[2] = parameter_list.get<double>("Gravity z");
-  else
-    u[2] = 0.0;
-  set_gravity(u);
-
-  p_atm = parameter_list.get<double>("atmospheric pressure",101325.0);
-
-  set_zero_total_component_concentration();
-  set_water_density(parameter_list.get<double>("Constant water density"));
-  set_viscosity(parameter_list.get<double>("Constant viscosity"));
-
-
-  // initialize the material ID array (this is only used for visualization)
-  if (parameter_list.isParameter("Region Name to Material ID Map (Material IDs)")) {
-    if (parameter_list.isParameter("Region Name to Material ID Map (Region Names)")) {
-      // read the region to material id map
-      Teuchos::Array<int> matids = parameter_list.get<Teuchos::Array<int> >("Region Name to Material ID Map (Material IDs)");
-      Teuchos::Array<std::string> regnames = parameter_list.get<Teuchos::Array<std::string> >("Region Name to Material ID Map (Region Names)");
-
-      // stop if there is a lenght mismatch between the two arrays
-      if (matids.size() != regnames.size()) {
-        Exceptions::amanzi_throw(Errors::Message("State.cpp: The number of material IDs does not match the number of region names"));
+// operator=:
+//  Assign a state's data from another state.  Note this
+// implementation requires the State being copied has the same structure (in
+// terms of fields, order of fields, etc) as *this.  This really means that
+// it should be a previously-copy-constructed version of the State.  One and
+// only one State should be instantiated and populated -- all other States
+// should be copy-constructed from that initial State.
+State& State::operator=(const State& other) {
+  if (this != &other) {
+    for (FieldMap::const_iterator f_it=other.fields_.begin();
+         f_it!=other.fields_.end(); ++f_it) {
+      Teuchos::RCP<Field> myfield = GetField_(f_it->first);
+      if (myfield == Teuchos::null) {
+        myfield = f_it->second->Clone();
+        fields_[f_it->first] = myfield;
       }
-      
-      if (parameter_list.isParameter("Material Names")) {
-        Teuchos::Array<std::string> matnames =  parameter_list.get<Teuchos::Array<std::string> >("Material Names");
-        
-        *out << std::endl << "Material name ---> Material ID:" << std::endl;
-        for (int k=0; k<matnames.size(); k++) {
-          *out << matnames[k] << " ---> " << k+1 << std::endl;
+
+      Teuchos::RCP<const Field> otherfield = f_it->second;
+      myfield->set_io_checkpoint(otherfield->io_checkpoint());
+      myfield->set_io_vis(otherfield->io_vis());
+      myfield->set_initialized(otherfield->initialized());
+
+      if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
+        myfield->SetData(*otherfield->GetFieldData());
+      } else if (myfield->type() == CONSTANT_VECTOR) {
+        myfield->SetData(*otherfield->GetConstantVectorData());
+      } else if (myfield->type() == CONSTANT_SCALAR) {
+        myfield->SetData(*otherfield->GetScalarData());
+      }
+    }
+
+    for (FieldEvaluatorMap::const_iterator fm_it=other.field_evaluators_.begin();
+         fm_it!=other.field_evaluators_.end(); ++fm_it) {
+      Teuchos::RCP<FieldEvaluator> myfm = GetFieldEvaluator_(fm_it->first);
+      if (myfm == Teuchos::null) {
+        myfm = fm_it->second->Clone();
+        field_evaluators_[fm_it->first] = myfm;
+      }
+      *myfm = *fm_it->second;
+    }
+
+    time_ = other.time_;
+    cycle_ = other.cycle_;
+    meshes_ = other.meshes_;
+  }
+  return *this;
+};
+
+
+// -----------------------------------------------------------------------------
+// State handles mesh management.
+// -----------------------------------------------------------------------------
+void State::RegisterDomainMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+  RegisterMesh("domain", mesh);
+}
+
+
+void State::RegisterMesh(Key key,
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+  meshes_.insert(std::make_pair(key, mesh));
+};
+
+
+void State::RemoveMesh(Key key) {
+  meshes_.erase(key);
+};
+
+
+Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(Key key) const {
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = GetMesh_(key);
+  if (mesh == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Mesh " << key << " does not exist in the state.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  return mesh;
+};
+
+
+Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh_(Key key) const {
+  mesh_iterator lb = meshes_.lower_bound(key);
+  if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
+    return lb->second;
+  } else {
+    return Teuchos::null;
+  }
+};
+
+
+// -----------------------------------------------------------------------------
+// State handles data evaluation.
+// -----------------------------------------------------------------------------
+Teuchos::RCP<FieldEvaluator>
+State::RequireFieldEvaluator(Key key) {
+  Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
+
+  // See if the key is provided by another existing evaluator.
+  if (evaluator == Teuchos::null) {
+    for (evaluator_iterator f_it = field_evaluator_begin();
+         f_it != field_evaluator_end(); ++f_it) {
+      if (f_it->second->ProvidesKey(key)) {
+        evaluator = f_it->second;
+        SetFieldEvaluator(key, evaluator);
+        break;
+      }
+    }
+  }
+
+  // Get the evaluator from state's Plist
+  if (evaluator == Teuchos::null) {
+    // -- Get the Field Evaluator plist
+    Teuchos::ParameterList fm_plist;
+    if (state_plist_.isSublist("field evaluators")) {
+      fm_plist = state_plist_.sublist("field evaluators");
+    }
+
+    if (fm_plist.isSublist(key)) {
+      // -- Get this evaluator's plist.
+      Teuchos::ParameterList sublist = fm_plist.sublist(key);
+      sublist.set<Key>("evaluator name", key);
+
+      // -- Get the model plist.
+      Teuchos::ParameterList model_plist;
+      if (state_plist_.isSublist("model parameters")) {
+        model_plist = state_plist_.sublist("model parameters");
+      }
+
+      // -- Insert any model parameters.
+      if (sublist.isParameter("model parameters")) {
+        std::string modelname = sublist.get<std::string>("model parameters");
+        Teuchos::ParameterList modellist = GetModelParameters(modelname);
+        std::string modeltype = modellist.get<std::string>("model type");
+        sublist.set(modeltype, modellist);
+      } else if (sublist.isParameter("models parameters")) {
+        Teuchos::Array<std::string> modelnames =
+            sublist.get<Teuchos::Array<std::string> >("models parameters");
+        for (Teuchos::Array<std::string>::const_iterator modelname=modelnames.begin();
+             modelname!=modelnames.end(); ++modelname) {
+          Teuchos::ParameterList modellist = GetModelParameters(*modelname);
+          std::string modeltype = modellist.get<std::string>("model type");
+          sublist.set(modeltype, modellist);
         }
-        *out << std::endl;
       }
 
-      for (int ii=0; ii<regnames.size(); ii++) {
-        double value = static_cast<double>(matids[ii]);
-        set_cell_value_in_region(value, *get_material_ids(), regnames[ii]);
-      }
-    }  
-  } else {
-    material_ids->PutScalar(0.0);
+      // -- Create and set the evaluator.
+      FieldEvaluator_Factory evaluator_factory;
+      evaluator = evaluator_factory.createFieldEvaluator(sublist);
+      SetFieldEvaluator(key, evaluator);
+    }
   }
 
-  for (Teuchos::ParameterList::ConstIterator it = parameter_list.begin(); it != parameter_list.end(); it++) {
-    if (parameter_list.isSublist(it->first) && (it->first != "VerboseObject")) {
-      if (it->first == "File initialization") continue;
-      Teuchos::ParameterList& sublist = parameter_list.sublist(it->first);
+  // Try a cell_volume.
+  if (evaluator == Teuchos::null) {
+    Key cell_vol("cell_volume");
+    if (key.length() >= cell_vol.length() &&
+        (0 == key.compare(key.length()-cell_vol.length(), cell_vol.length(), cell_vol))) {
+      Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
+      Teuchos::ParameterList plist = model_plist.sublist(key);
+      plist.set("evaluator name", key);
+      evaluator = Teuchos::rcp(new CellVolumeEvaluator(plist));
+      SetFieldEvaluator(key, evaluator);
+    }
+  }
 
-      std::string region = sublist.get<std::string>("Region");
 
-      // initialize the arrays with some constants from the input file
-      set_porosity(sublist.get<double>("Constant porosity"), region);
+  if (evaluator == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Model for field " << key << " cannot be created in State.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  return evaluator;
+}
 
-      set_cell_value_in_region(sublist.get<double>("Constant particle density",1.0), *particle_density, region);
 
-      if (sublist.isParameter("Constant permeability")) {
-        set_permeability(sublist.get<double>("Constant permeability"), region);
+Teuchos::RCP<FieldEvaluator>
+State::RequireFieldEvaluator(Key key, Teuchos::ParameterList& plist) {
+  Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
+
+  // See if the key is provided by another existing evaluator.
+  if (evaluator == Teuchos::null) {
+    for (evaluator_iterator f_it = field_evaluator_begin();
+         f_it != field_evaluator_end(); ++f_it) {
+      if (f_it->second->ProvidesKey(key)) {
+        evaluator = f_it->second;
+        SetFieldEvaluator(key, evaluator);
+      }
+    }
+  }
+
+  // Create a new evaluator.
+  if (evaluator == Teuchos::null) {
+    // -- Create and set the evaluator.
+    FieldEvaluator_Factory evaluator_factory;
+    evaluator = evaluator_factory.createFieldEvaluator(plist);
+    SetFieldEvaluator(key, evaluator);
+  }
+  return evaluator;
+}
+
+
+Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator(Key key) {
+  Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
+  if (evaluator == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Model for field " << key << " does not exist in the state.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  return evaluator;
+};
+
+
+Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(Key key) {
+  FieldEvaluatorMap::iterator lb = field_evaluators_.lower_bound(key);
+  if (lb != field_evaluators_.end() && !(field_evaluators_.key_comp()(key, lb->first))) {
+    return lb->second;
+  } else {
+    return Teuchos::null;
+  }
+};
+
+
+void State::SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evaluator) {
+  ASSERT(field_evaluators_[key] == Teuchos::null);
+  field_evaluators_[key] = evaluator;
+};
+
+
+// -----------------------------------------------------------------------------
+// State handles data management.
+// -----------------------------------------------------------------------------
+Teuchos::RCP<Field> State::GetField_(Key fieldname) {
+  FieldMap::iterator lb = fields_.lower_bound(fieldname);
+  if (lb != fields_.end() && !(fields_.key_comp()(fieldname, lb->first))) {
+    return lb->second;
+  } else {
+    return Teuchos::null;
+  }
+};
+
+Teuchos::RCP<const Field> State::GetField_(Key fieldname) const {
+  FieldMap::const_iterator lb = fields_.lower_bound(fieldname);
+  if (lb != fields_.end() && !(fields_.key_comp()(fieldname, lb->first))) {
+    return lb->second;
+  } else {
+    return Teuchos::null;
+  }
+};
+
+
+// Scalar requires
+void State::RequireScalar(Key fieldname, Key owner) {
+  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname, CONSTANT_SCALAR, owner);
+
+  if (field == Teuchos::null) {
+    Teuchos::RCP<Field_Scalar> newfield = Teuchos::rcp(new Field_Scalar(fieldname, owner));
+    fields_[fieldname] = newfield;
+  } else if (owner != Key("state")) {
+    field->set_owner(owner);
+  }
+};
+
+
+// Require a constant vector of a given size.
+void State::RequireConstantVector(Key fieldname, Key owner,
+              int dimension) {
+  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname, CONSTANT_VECTOR, owner);
+
+  if (field == Teuchos::null) {
+    Teuchos::RCP<Field_ConstantVector> field =
+        Teuchos::rcp(new Field_ConstantVector(fieldname, Key("state"), dimension));
+    fields_[fieldname] = field;
+  } else {
+    Teuchos::RCP<Field_ConstantVector> cv =
+        Teuchos::rcp_static_cast<Field_ConstantVector>(field);
+    cv->set_dimension(dimension);
+
+    if (owner != Key("state")) {
+      cv->set_owner(owner);
+    }
+  }
+};
+
+void State::RequireConstantVector(Key fieldname, int dimension) {
+  RequireConstantVector(fieldname, Key("state"), dimension);
+};
+
+// Vector Field requires
+Teuchos::RCP<CompositeVectorFactory>
+State::RequireField(Key fieldname, Key owner) {
+  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
+          COMPOSITE_VECTOR_FIELD, owner);
+
+  if (field == Teuchos::null) {
+    // Create the field and CV factory.
+    Teuchos::RCP<Field_CompositeVector> field =
+        Teuchos::rcp(new Field_CompositeVector(fieldname, owner));
+    fields_[fieldname] = field;
+    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorFactory());
+  } else if (owner != Key("state")) {
+    field->set_owner(owner);
+  }
+
+  return field_factories_[fieldname];
+};
+
+
+// Vector Field requires
+Teuchos::RCP<CompositeVectorFactory>
+State::RequireField(Key fieldname, Key owner,
+                    const std::vector<std::vector<std::string> >& subfield_names) {
+  Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
+          COMPOSITE_VECTOR_FIELD, owner);
+
+  if (field == Teuchos::null) {
+    // Create the field and CV factory.
+    Teuchos::RCP<Field_CompositeVector> field =
+        Teuchos::rcp(new Field_CompositeVector(fieldname, owner, subfield_names));
+    fields_[fieldname] = field;
+    field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorFactory());
+  } else if (owner != Key("state")) {
+    field->set_owner(owner);
+  }
+
+  return field_factories_[fieldname];
+};
+
+
+void State::RequireGravity() {
+  int dim = 3;
+  Key fieldname("gravity");
+  RequireConstantVector(fieldname, dim);
+  std::vector<Key> subfield_names(dim);
+  subfield_names[0] = "x";
+  if (dim > 1) subfield_names[1] = "y";
+  if (dim > 2) subfield_names[2] = "z";
+  Teuchos::RCP<Field> field = GetField_(fieldname);
+  Teuchos::RCP<Field_ConstantVector> cvfield =
+    Teuchos::rcp_dynamic_cast<Field_ConstantVector>(field, true);
+  cvfield->set_subfield_names(subfield_names);
+};
+
+
+// -- access methods -- Const methods should be used by PKs who don't own
+// the field, i.e.  flow accessing a temperature field if an energy PK owns
+// the temperature field.  This ensures a PK cannot mistakenly alter data it
+// doesn't own.  Non-const methods get used by the owning PK.
+Teuchos::RCP<const double>
+State::GetScalarData(Key fieldname) const {
+  return GetField(fieldname)->GetScalarData();
+};
+
+Teuchos::RCP<double>
+State::GetScalarData(Key fieldname, Key pk_name) {
+  return GetField(fieldname, pk_name)->GetScalarData();
+};
+
+Teuchos::RCP<const Epetra_Vector>
+State::GetConstantVectorData(Key fieldname) const {
+  return GetField(fieldname)->GetConstantVectorData();
+};
+
+Teuchos::RCP<Epetra_Vector>
+State::GetConstantVectorData(Key fieldname, Key pk_name) {
+  return GetField(fieldname, pk_name)->GetConstantVectorData();
+};
+
+Teuchos::RCP<const CompositeVector>
+State::GetFieldData(Key fieldname) const {
+  return GetField(fieldname)->GetFieldData();
+};
+
+Teuchos::RCP<CompositeVector>
+State::GetFieldData(Key fieldname, Key pk_name) {
+  return GetField(fieldname, pk_name)->GetFieldData();
+};
+
+
+// Access to the full field record, not just the data.
+Teuchos::RCP<Field> State::GetField(Key fieldname, Key pk_name) {
+  Teuchos::RCP<Field> record = GetField_(fieldname);
+
+  if (record == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Field " << fieldname << " does not exist in the state.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  } else if (record->owner() != pk_name) {
+    std::stringstream messagestream;
+    messagestream << "PK " << pk_name
+                  << " is attempting write access to field " << fieldname
+                  << " which is owned by " << GetField_(fieldname)->owner();
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  return record;
+};
+
+Teuchos::RCP<const Field> State::GetField(Key fieldname) const {
+  Teuchos::RCP<const Field> record = GetField_(fieldname);
+
+  if (record == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Field " << fieldname << " does not exist in the state.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  return record;
+};
+
+void State::SetField(Key fieldname, Key pk_name,
+                     const Teuchos::RCP<Field>& new_record) {
+  Teuchos::RCP<const Field> old_record = GetField_(fieldname);
+  if (old_record != Teuchos::null) {
+    if (old_record->owner() != pk_name) {
+      std::stringstream messagestream;
+      messagestream << "PK " << pk_name
+                    << " is attempting to overwrite field " << fieldname
+                    << " which is owned by " << old_record->owner();
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  }
+  fields_[fieldname] = new_record;
+}
+
+// modify methods
+// -- modify by pointer, no copy
+void State::SetData(Key fieldname, Key pk_name,
+                    const Teuchos::RCP<double>& data) {
+  GetField(fieldname, pk_name)->SetData(data);
+};
+
+void State::SetData(Key fieldname, Key pk_name,
+                    const Teuchos::RCP<Epetra_Vector>& data) {
+  GetField(fieldname, pk_name)->SetData(data);
+};
+
+void State::SetData(Key fieldname, Key pk_name,
+                    const Teuchos::RCP<CompositeVector>& data){
+  GetField(fieldname, pk_name)->SetData(data);
+};
+
+
+// -----------------------------------------------------------------------------
+// State handles model parameters.
+// -----------------------------------------------------------------------------
+Teuchos::ParameterList
+State::GetModelParameters(std::string modelname) {
+  ASSERT(state_plist_.isSublist("model parameters"));
+  Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
+  ASSERT(model_plist.isSublist(modelname));
+  return model_plist.sublist(modelname);
+}
+
+
+// -----------------------------------------------------------------------------
+// Initialization, etc.
+// -----------------------------------------------------------------------------
+// Initialize data, allowing values to be specified here or in the owning PK.
+// All independent variables must be initialized here.
+void State::Setup() {
+  // State-required data
+  if (state_plist_.isParameter("visualize mesh ranks")) {
+    for (mesh_iterator mesh_it=meshes_.begin();
+         mesh_it!=meshes_.end(); ++mesh_it) {
+      Key rank_key;
+      if (mesh_it->first == "domain") {
+        rank_key = "mpi_comm_rank";
       } else {
-        set_vertical_permeability(sublist.get<double>("Constant vertical permeability"), region);
-        set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"), region);
+        rank_key = mesh_it->first + "_mpi_comm_rank";
       }
-
-      Amanzi::AmanziGeometry::Point velocity(dim);
-      velocity[0] = sublist.get<double>("Constant velocity x", 0.0);
-      velocity[1] = sublist.get<double>("Constant velocity y", 0.0);
-      if (dim == 3) velocity[2] = sublist.get<double>("Constant velocity z", 0.0);
-      set_darcy_flux(velocity, region);
-
-      // set the pressure
-      if (sublist.isSublist("uniform pressure")) {
-        const Teuchos::ParameterList& unif_p_list = sublist.sublist("uniform pressure");
-        set_uniform_pressure( unif_p_list, region );
-      } else if (sublist.isSublist("linear pressure")) {
-        const Teuchos::ParameterList& lin_p_list = sublist.sublist("linear pressure");
-        set_linear_pressure(lin_p_list, region);
-      } else if (sublist.isSublist("file pressure")) {
-	const Teuchos::ParameterList& file_p_list = sublist.sublist("file pressure");
-	set_file_pressure(file_p_list, region);
-      }
-
-      // set the saturation
-      if (sublist.isSublist("uniform saturation")) {
-        const Teuchos::ParameterList& unif_s_list = sublist.sublist("uniform saturation");
-        set_uniform_saturation(unif_s_list, region);
-      } else if (sublist.isSublist("linear saturation")) {
-        const Teuchos::ParameterList& lin_s_list = sublist.sublist("linear saturation");
-        set_uniform_saturation(lin_s_list, region);
-      } else {
-        set_water_saturation(1.0);
-      } 
-
-      // set specific storage Ss or specific yield Sy in the same state variable
-      if (sublist.isParameter("Constant specific storage"))
-          set_specific_storage(sublist.get<double>("Constant specific storage"), region);
-      if (sublist.isParameter("Constant specific yield"))
-          set_specific_yield(sublist.get<double>("Constant specific yield"), region);
-
-      // read the component concentrations from the xml file
-      // and initialize them in mesh block mesh_block_ID
-      double tcc_const[number_of_components];
-      double free_ion_guess[number_of_components];
-      for (int nc=0; nc<number_of_components; nc++) {
-        std::stringstream s;
-        s << "Constant component concentration " << nc;
-	if (sublist.isParameter(s.str())) {
-	  tcc_const[nc] = sublist.get<double>(s.str());
-	} else {
-	  tcc_const[nc] = 0.0;
-	}
-        s.clear();
-        s.str("");
-        s << "Free Ion Guess " << nc;
-	if (sublist.isParameter(s.str())) {
-	  free_ion_guess[nc] = sublist.get<double>(s.str());
-	} else {
-	  free_ion_guess[nc] = 0.0;
-	}
-        s.clear();
-        s.str("");
-      }
-      set_total_component_concentration(tcc_const, region);
-      set_free_ion_concentrations(free_ion_guess, region);
-      SetRegionMaterialChemistry(region, &sublist);
+      Teuchos::ParameterList plist;
+      plist.set("evaluator name", rank_key);
+      plist.set("mesh name", mesh_it->first);
+      SetFieldEvaluator(rank_key, Teuchos::rcp(new RankEvaluator(plist)));
     }
   }
-}  // end initialize_from_parameter_list()
 
-
-
-/* *******************************************************************/
-void State::create_storage()
-{
-  // create the Eptera_Vector objects
-  water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  lambda =           Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
-  darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
-  porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  prev_water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  vertical_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  horizontal_permeability = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  if (number_of_components > 0) {
-    total_component_concentration
-      = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );
-  }
-  darcy_velocity = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
-  material_ids = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  particle_density = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-
-  density = Teuchos::rcp(new double);
-  viscosity = Teuchos::rcp(new double);
-  gravity = Teuchos::rcp(new double*);
-  *gravity = new double[3];
-
-  specific_storage = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
-  specific_yield = Teuchos::rcp(new Epetra_Vector(mesh_maps->cell_map(false)));
-
-  volume_ = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-
-  if (number_of_components > 0 ) {
-    CreateStoragePrimarySpecies();
-    CreateStorageMinerals();
-    CreateStorageTotalSorbed();
-    CreateStorageIonExchange();
-    CreateStorageSurfaceComplexation();
-    CreateStorageSorptionIsotherms();
-  }
-
-}  // end create_storage()
-
-void State::CreateStoragePrimarySpecies(void) {
-  // if chemistry in enabled, we'll always need free_ions stored.
-  int size = number_of_components;
-  free_ion_concentrations_ = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), size ) );
-  free_ion_concentrations_->PutScalar(1.0e-9);
-
-  // TODO(bandre): don't always need activity coeffs, but it makes life easier for now...
-  primary_activity_coeff_ = Teuchos::rcp(
-      new Epetra_MultiVector(mesh_maps->cell_map(false), size));
-  primary_activity_coeff_->PutScalar(1.0);
-}  // end CreateStoragePrimaryActivityCoeff()
-
-void State::CreateStorageSecondaryActivityCoeff(const int size) {
-  // NOTE: do not know the size of this array until after chemistry has been initialized!
-  if (size > 0) {
-    secondary_activity_coeff_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
-    secondary_activity_coeff_->PutScalar(1.0);
-  } else {
-    secondary_activity_coeff_ = Teuchos::null;
-  }
-}  // end CreateStorageSecondaryActivityCoeff()
-
-void State::CreateStorageMinerals() {
-  if (number_of_minerals() > 0) {
-    mineral_volume_fractions_ = Teuchos::rcp(
-        new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
-    mineral_specific_surface_area_ = Teuchos::rcp(
-        new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_minerals()));
-    mineral_volume_fractions_->PutScalar(0.0);
-    mineral_specific_surface_area_->PutScalar(1.0);
-  } else {
-    mineral_volume_fractions_ = Teuchos::null;
-    mineral_specific_surface_area_ = Teuchos::null;
-  }
-}  // end CreateStorageMinerals()
-
-void State::CreateStorageTotalSorbed(void) {
-  if (using_sorption()) {
-    total_sorbed_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
-    total_sorbed_->PutScalar(1.0);
-  } else {
-    total_sorbed_ = Teuchos::null;
-  }
-}  // end CreateStorageTotalSorbed()
-
-void State::CreateStorageIonExchange(void) {
-  // TODO: eventually this probably needs to be a 3d array: [cell][mineral][site]
-  // for now we assume [cell][site], but site will always be one?
-  unsigned int size = number_of_ion_exchange_sites();
-  if (size > 0) {
-    ion_exchange_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
-    ion_exchange_ref_cation_conc_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
-    ion_exchange_sites_->PutScalar(1.0);
-    ion_exchange_ref_cation_conc_->PutScalar(1.0);
-  } else {
-    ion_exchange_sites_ = Teuchos::null;
-    ion_exchange_ref_cation_conc_ = Teuchos::null;
-  }
-}  // end CreateStorageIonExchange()
-
-void State::CreateStorageSurfaceComplexation(void) {
-  // TODO: this will eventually need to be a 3d array: [cell][mineral][site]
-  unsigned int size = number_of_sorption_sites();
-  if (size > 0) {
-    sorption_sites_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
-    surface_complex_free_site_conc_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), size));
-    sorption_sites_->PutScalar(1.0);
-    surface_complex_free_site_conc_->PutScalar(1.0);
-  } else {
-    sorption_sites_ = Teuchos::null;
-    surface_complex_free_site_conc_ = Teuchos::null;
-  }
-}  // end CreateStorageIonExchangeRefCationConc()
-
-void State::CreateStorageSorptionIsotherms(void) {
-  if (use_sorption_isotherms()) {
-    isotherm_kd_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
-    isotherm_freundlich_n_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
-    isotherm_langmuir_b_ = Teuchos::rcp(
-        new Epetra_MultiVector(mesh_maps->cell_map(false), number_of_components));
-    isotherm_kd_->PutScalar(0.0);
-    isotherm_freundlich_n_->PutScalar(1.0);
-    isotherm_langmuir_b_->PutScalar(1.0);
-  } else {
-    isotherm_kd_ = Teuchos::null;
-    isotherm_freundlich_n_ = Teuchos::null;
-    isotherm_langmuir_b_ = Teuchos::null;
-  }
-}  // end CreateStorageSorptionIsotherms()
-
-void State::set_time ( double new_time ) {
-  last_time = new_time;
-  time = new_time;
-}
-
-
-void State::set_cycle(int new_cycle) {
-  cycle = new_cycle;
-}
-
-
-void State::set_number_of_components(const int n)
-{
-  number_of_components = n;
-}
-
-
-void State::update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector> new_tcc)
-{
-  *total_component_concentration = *new_tcc;
-}
-
-
-void State::update_total_component_concentration(const Epetra_MultiVector& new_tcc)
-{
-  *total_component_concentration = new_tcc;
-}
-
-
-/* *******************************************************************/
-void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
-{
-  *darcy_flux = new_darcy_flux;
-}
-
-
-void State::update_pressure(const Epetra_Vector &new_pressure)
-{
-  *pressure = new_pressure;
-}
-
-
-/* *******************************************************************/
-void State::advance_time(double dT)
-{
-  last_time = time;
-  time = time + dT;
-}
-
-
-/* *******************************************************************/
-void State::set_cell_value_in_region(const double& value, Epetra_Vector& v,
-                                     const std::string& region)
-{
-  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
-    std::stringstream tempstr;
-    tempstr << "\n" << "Region " << region << " required by state does not define a valid cell set" << std::endl;
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
-                                                         Amanzi::AmanziMesh::CELL,
-                                                         Amanzi::AmanziMesh::OWNED);
-
-  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-
-  //mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-  //cell_ids.begin(),cell_ids.end());
-
-  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                              &cell_ids);
-
-  for (Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
-    v[*c] = value;
-  }
-}
-
-
-
-/* *******************************************************************/
-void State::set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
-                                     const std::string& region) {
-
-  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
-    std::stringstream tempstr;
-    tempstr << "\n" << "Region " << region << " required by State does not define a valid cell set" << std::endl;
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
-                                                         Amanzi::AmanziMesh::CELL,
-                                                         Amanzi::AmanziMesh::OWNED);
-
-  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-
-  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                              &cell_ids);
-
-  for(Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
-    v[*c] = x[*c];
-  }
-}
-
-
-
-/* *******************************************************************/
-void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector& v,
-                                     const std::string& region)
-{
-  if (!mesh_maps->valid_set_name(region, Amanzi::AmanziMesh::CELL)) {
-    std::stringstream tempstr;
-    tempstr << "\n" << "Region " << region << " required by State does not define a valid cell set" << std::endl;
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
-                                                         Amanzi::AmanziMesh::CELL,
-                                                         Amanzi::AmanziMesh::OWNED);
-  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                              &cell_ids);
-
-  for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end();  c++) {
-    const Amanzi::AmanziGeometry::Point& p = mesh_maps->cell_centroid(*c);
-    v[*c] = fun(&p[0]);
-  }
-}
-
-
-/* *******************************************************************/
-void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
-                                         int mesh_block_id)
-{
-  if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
-    std::stringstream tempstr;
-    tempstr << "\n" << "Mesh block " << mesh_block_id << " required by State does not define a valid cell set" << std::endl;
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
-                                                         Amanzi::AmanziMesh::CELL,
-                                                         Amanzi::AmanziMesh::OWNED);
-
-  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-
-  mesh_maps->get_set_entities(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                     &cell_ids);
-
-  for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin();
-       c != cell_ids.end();  c++) {
-    v[*c] = value;
-  }
-}
-
-
-/* *******************************************************************/
-void State::set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const int mesh_block_id)
-{
-  // Epetra_Map face_map = mesh_maps->face_map(false);
-  if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
-    std::stringstream tempstr;
-    tempstr << "\n" << "Mesh block " << mesh_block_id << " required by State does not define a valid cell set" << std::endl;
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
-                                                         Amanzi::AmanziMesh::CELL,
-                                                         Amanzi::AmanziMesh::OWNED);
-
-  Amanzi::AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-
-  mesh_maps->get_set_entities(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                     &cell_ids);
-
-  for (Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
-    mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-
-      if (mesh_maps->face_map(false).MyLID(f)) {
-        const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
-        (*darcy_flux)[f] = u * normal;
-      }
+  // Ensure compatibility of all the evaluators -- each evaluator's dependencies must
+  // provide what is required of that evaluator.
+  for (FieldEvaluatorMap::iterator evaluator=field_evaluators_.begin();
+       evaluator!=field_evaluators_.end(); ++evaluator) {
+    if (!evaluator->second->ProvidesKey(evaluator->first)) {
+      std::stringstream messagestream;
+      messagestream << "Field Evaluator " << evaluator->first
+                    << " does not provide it's own key.";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
     }
-  }
-}
-
-
-/* *******************************************************************/
-void State::set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const std::string region)
-{
-  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
-    std::stringstream tempstr;
-    tempstr << "\n" << "Region " << region << " required by State does not define a valid cell set" << std::endl;
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
+    evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
   }
 
-  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
-                                                         Amanzi::AmanziMesh::CELL,
-                                                         Amanzi::AmanziMesh::OWNED);
-
-  Amanzi::AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-
-  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                              &cell_ids);
-
-  for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); c++) {
-    mesh_maps->cell_get_faces_and_dirs(*c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int i = 0; i< nfaces; i++) {
-      int f = faces[i];
-
-      if (mesh_maps->face_map(false).MyLID(f)) {
-        const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
-        (*darcy_flux)[f] = u * normal;
-      }
-    }
-  }
-}
-
-
-/* *******************************************************************/
-void State::set_water_density(const double wd)
-{
-  water_density->PutScalar(wd);
-  *density = wd;
-}
-
-
-void State::set_water_saturation(const double ws)
-{
-  water_saturation->PutScalar(ws);
-}
-
-
-/* *******************************************************************/
-void State::set_porosity(const double phi)
-{
-  porosity->PutScalar(phi);
-}
-
-
-void State::set_porosity(const double phi, const int mesh_block_id)
-{
-  set_cell_value_in_mesh_block(phi, *porosity, mesh_block_id);
-}
-
-
-void State::set_porosity( const double phi, const std::string region )
-{
-  set_cell_value_in_region(phi, *porosity, region);
-}
-
-
-/* ********************************************************************
- * Set constant specific storage and yield
- *********************************************************************/
-void State::set_specific_storage(const double ss, const std::string region)
-{
-  set_cell_value_in_region(ss, *specific_storage, region);
-}
-
-
-void State::set_specific_yield(const double sy, const std::string region)
-{
-  set_cell_value_in_region(sy, *specific_yield, region);
-}
-
-
-/* *******************************************************************/
-void State::set_zero_total_component_concentration()
-{
-  if (number_of_components > 0) 
-    total_component_concentration->PutScalar(0.0);
-}
-
-
-void State::set_total_component_concentration(const double* conc, const int mesh_block_id)
-{
-  for (int nc=0; nc<number_of_components; nc++) {
-    set_cell_value_in_mesh_block(conc[nc], *(*total_component_concentration)(nc),mesh_block_id);
-  }
-}
-
-void State::set_total_component_concentration(const double* conc, const std::string region)
-{
-  for (int nc=0; nc<number_of_components; nc++) {
-    set_cell_value_in_region(conc[nc], *(*total_component_concentration)(nc), region);
-  }
-}
-
-
-void State::set_free_ion_concentrations( const double* conc, const std::string region )
-{
-  for (int nc=0; nc<number_of_components; nc++) {
-    set_cell_value_in_region(conc[nc], *(*free_ion_concentrations_)(nc),region);
-  }
-}
-
-
-/* *******************************************************************/
-void State::set_permeability(const double kappa)
-{
-  vertical_permeability->PutScalar(kappa);
-  horizontal_permeability->PutScalar(kappa);
-}
-
-
-void State::set_permeability(const double kappa, const int mesh_block_id)
-{
-  set_cell_value_in_mesh_block(kappa, *vertical_permeability, mesh_block_id);
-  set_cell_value_in_mesh_block(kappa, *horizontal_permeability, mesh_block_id);
-}
-
-
-void State::set_permeability(const double kappa, const std::string region)
-{
-  set_cell_value_in_region(kappa, *vertical_permeability, region);
-  set_cell_value_in_region(kappa, *horizontal_permeability, region);
-}
-
-
-void State::set_vertical_permeability(const double kappa)
-{
-  vertical_permeability->PutScalar(kappa);
-}
-
-
-void State::set_vertical_permeability(const double kappa, const int mesh_block_id)
-{
-  set_cell_value_in_mesh_block(kappa, *vertical_permeability, mesh_block_id);
-}
-
-
-void State::set_vertical_permeability(const double kappa, const std::string region)
-{
-  set_cell_value_in_region(kappa, *vertical_permeability, region);
-}
-
-
-void State::set_horizontal_permeability(const double kappa)
-{
-  horizontal_permeability->PutScalar(kappa);
-}
-
-
-void State::set_horizontal_permeability(const double kappa, const int mesh_block_id)
-{
-  set_cell_value_in_mesh_block(kappa,*horizontal_permeability,mesh_block_id);
-}
-
-
-void State::set_horizontal_permeability( const double kappa, const std::string region)
-{
-  set_cell_value_in_region(kappa,*horizontal_permeability,region);
-}
-
-
-/* *******************************************************************/
-void State::set_viscosity(const double mu)
-{
-  *viscosity = mu;
-}
-
-
-/* *******************************************************************/
-void State::set_gravity(const double *g)
-{
-  (*gravity)[0] = g[0];
-  (*gravity)[1] = g[1];
-  (*gravity)[2] = g[2];
-}
-
-
-/* ********************************************************************
-* Computes the total mass of water in the domain.
-**********************************************************************/
-double State::water_mass()
-{
-  Epetra_Vector wm ( *water_saturation );
-
-  wm.Multiply(1.0, *water_density, wm, 0.0);
-  wm.Multiply(1.0, *porosity, wm, 0.0);
-
-  Epetra_Vector cell_volume( mesh_maps->cell_map(false) );
-
-  for (int i=0; i<(mesh_maps->cell_map(false)).NumMyElements(); i++)
-  {
-    cell_volume[i] = mesh_maps->cell_volume(i);
+  // Create all data for vector fields.
+  // -- First use factories to instantiate composite vectors.
+  for (FieldFactoryMap::iterator fac_it=field_factories_.begin();
+       fac_it!=field_factories_.end(); ++fac_it) {
+    GetField_(fac_it->first)->SetData(fac_it->second->CreateVector());
   }
 
-  wm.Multiply(1.0, cell_volume, wm, 0.0);
-
-  double mass;
-  wm.Norm1(&mass);
-
-  return mass;
-}
-
-
-
-/* *******************************************************************/
-double State::point_value(const std::string& point_region, const std::string& name)
-{
-  // if (!mesh_maps->valid_set_name(point_region, Amanzi::AmanziMesh::CELL)) {
-  //   throw
-  // }
-
-  unsigned int mesh_block_size = mesh_maps->get_set_size(point_region,
-                                                         Amanzi::AmanziMesh::CELL,
-                                                         Amanzi::AmanziMesh::OWNED);
-
-  double value(0.0);
-  double volume(0.0);
-
-  Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-
-  mesh_maps->get_set_entities(point_region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                              &cell_ids);
-
-  // check if Aqueous concentration was requested
-  std::string var;
-
-  int pos = name.find("Aqueous concentration");
-  if (pos != string::npos) {
-    var = name.substr(0, pos-1);
-  } else {
-    var = name;
+  // -- Now create the data for all fields.
+  for (field_iterator f_it = field_begin();
+       f_it != field_end(); ++f_it) {
+    f_it->second->CreateData();
   }
-  
-  // extract the value if it is a component
-  if (comp_no.size() > 0) { 
-    if (comp_no.find(var) != comp_no.end())  {
-      value = 0.0;
-      volume = 0.0;
-      for (int i=0; i<mesh_block_size; i++) {
-	int ic = cell_ids[i];
-	value += (*(*total_component_concentration)(comp_no[var]))[ic] * mesh_maps->cell_volume(ic);
-	
-	volume += mesh_maps->cell_volume(ic);
-      }
-    }
-  } else if (var == "Volumetric water content") {
-    value = 0.0;
-    volume = 0.0;
-    
-    for (int i=0; i<mesh_block_size; i++) {
-      int ic = cell_ids[i];
-      value += (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
-      volume += mesh_maps->cell_volume(ic);
-    }
-  } else if (var == "Gravimetric water content") {
-    value = 0.0;
-    volume = 0.0;
-    
-    for (int i=0; i<mesh_block_size; i++) {
-      int ic = cell_ids[i];
-      value += (*porosity)[ic] * (*water_saturation)[ic] * (*water_density)[ic] 
-	/ ( (*particle_density)[ic] * (1.0 - (*porosity)[ic] ) )  * mesh_maps->cell_volume(ic);
-      volume += mesh_maps->cell_volume(ic);
-    }    
-  } else if (var == "Aqueous pressure") {
-    value = 0.0;
-    volume = 0.0;
-    
-    for (int i=0; i<mesh_block_size; i++) {
-      int ic = cell_ids[i];
-      value += (*pressure)[ic] * mesh_maps->cell_volume(ic);
-      volume += mesh_maps->cell_volume(ic);
-    }
-  } else if (var == "Aqueous saturation") {
-    value = 0.0;
-    volume = 0.0;
-    
-    for (int i=0; i<mesh_block_size; i++) {
-      int ic = cell_ids[i];
-      value += (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
-      volume += mesh_maps->cell_volume(ic);
-    }    
-  } else if (var == "Hydraulic Head") {
-    value = 0.0;
-    volume = 0.0;
-    int dim = mesh_maps->space_dimension();
-    double rho_g = (*density) * (*gravity)[dim-1];
-
-    for (int i=0; i<mesh_block_size; ++i) {
-      int ic = cell_ids[i];
-      double v = mesh_maps->cell_volume(ic);
-      Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
-      value += ((p_atm - (*pressure)[ic]) / rho_g + p[dim-1]) * v;
-      volume += v;
-    }
-  } else {
-    std::stringstream ss;
-    ss << "State::point_value: cannot make an observation for variable " << name;
-    Errors::Message m(ss.str().c_str());
-    Exceptions::amanzi_throw(m);
-  }
-
-  // syncronize the result across processors
-  double result;
-  mesh_maps->get_comm()->SumAll(&value,&result,1);
-
-  double vresult;
-  mesh_maps->get_comm()->SumAll(&volume,&vresult,1);
-
-  return result/vresult;
-}
-
-
-/* *******************************************************************/
-void State::set_darcy_flux(const Epetra_Vector& darcy_flux_)
-{
-  *darcy_flux = darcy_flux_;
-}
-
-
-void State::set_water_saturation(const Epetra_Vector& water_saturation_)
-{
-  *water_saturation = water_saturation_;
 };
 
 
-void State::set_prev_water_saturation(const Epetra_Vector& prev_water_saturation_)
-{
-  *prev_water_saturation = prev_water_saturation_;
+void State::Initialize() {
+  // Initialize any other fields from state plist.
+  InitializeFields_();
+
+  // Ensure that non-evaluator-based fields are initialized.
+  CheckNotEvaluatedFieldsInitialized_();
+
+  // Initialize other field evaluators.
+  InitializeEvaluators_();
+
+  // Ensure everything is owned and initialized.
+  CheckAllFieldsInitialized_();
 };
 
 
-void State::set_porosity(const Epetra_Vector& porosity_)
-{
-  *porosity = porosity_;
-};
-
-void State::set_particle_density(const Epetra_Vector& particle_density_)
-{
-  *particle_density = particle_density_;
-};
-
-
-
-/* *******************************************************************/
-void State::set_permeability(const Epetra_Vector& permeability_)
-{
-  *vertical_permeability = permeability_;
-  *horizontal_permeability = permeability_;
+void State::InitializeEvaluators_() {
+  for (evaluator_iterator f_it = field_evaluator_begin();
+       f_it != field_evaluator_end(); ++f_it) {
+    f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
+    fields_[f_it->first]->set_initialized();
+  }
 };
 
 
-void State::set_vertical_permeability(const Epetra_Vector& permeability_)
-{
-  *vertical_permeability = permeability_;
-};
-
-
-void State::set_horizontal_permeability( const Epetra_Vector& permeability_)
-{
-  *horizontal_permeability = permeability_;
-};
-
-
-/* *******************************************************************/
-void State::set_pressure(const Epetra_Vector& pressure_)
-{
-  *pressure = pressure_;
-};
-
-
-/* *******************************************************************/
-void State::set_lambda(const Epetra_Vector& lambda_)
-{
-  *lambda = lambda_;
-};
-
-
-/* *******************************************************************/
-void State::set_water_density(const Epetra_Vector& water_density_)
-{
-  *water_density = water_density_;
-};
-
-
-void State::set_darcy_velocity(const Epetra_MultiVector& darcy_velocity_)
-{
-  *darcy_velocity = darcy_velocity_;
-};
-
-
-/* *******************************************************************/
-void State::set_total_component_concentration(const Epetra_MultiVector& total_component_concentration_)
-{
-  *total_component_concentration = total_component_concentration_;
-};
-
-
-/* *******************************************************************/
-void State::set_material_ids(const Epetra_Vector& material_ids_)
-{
-  *material_ids = material_ids_;
-}
-
-
-/* *******************************************************************/
-void State::set_uniform_pressure(const Teuchos::ParameterList& unif_p_list, const std::string& region)
-{
-  // get value from paramter list
-  const double value = unif_p_list.get<double>("value");
-  set_cell_value_in_region(value, *pressure, region);
-}
-
-
-void State::set_linear_pressure(const Teuchos::ParameterList& lin_p_list, const std::string& region)
-{
-  // get parameters from parameter list
-  const double ref_value = lin_p_list.get<double>("reference value");
-  const Teuchos::Array<double>& ref_coord = lin_p_list.get<Teuchos::Array<double> >("reference coordinate");
-  const Teuchos::Array<double>& gradient = lin_p_list.get<Teuchos::Array<double> >("gradient");
-
-  // create function
-  Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
-
-  set_cell_value_in_region(lin_p, *pressure, region);
-}
-
-
-void State::set_file_pressure ( const Teuchos::ParameterList& file_p_list, const std::string& region )
-{
-  // get parameters from parameter list
-  const std::string filename = file_p_list.get<std::string>("file name");
-  const std::string label = file_p_list.get<std::string>("label");
-
-  // read the pressure variable from the checkpoint file
-  Amanzi::HDF5_MPI *checkpoint_input = new Amanzi::HDF5_MPI(*mesh_maps->get_comm(), filename);   
-  
-  Epetra_Vector cell_vector(mesh_maps->cell_epetra_map(false));
-  checkpoint_input->readData(cell_vector,label);
-
-  set_cell_value_in_region(cell_vector, *pressure, region);
-};
-
-
-/* *******************************************************************/
-void State::set_uniform_saturation(const Teuchos::ParameterList& unif_s_list, const std::string& region)
-{
-  // get value from paramter list
-  const double value = unif_s_list.get<double>("value");
-  set_cell_value_in_region(value, *water_saturation, region);
-  set_cell_value_in_region(value, *prev_water_saturation, region);
-};
-
-
-void State::set_linear_saturation(const Teuchos::ParameterList& lin_s_list, const std::string& region)
-{
-  // get parameters from parameter list
-  const double ref_value = lin_s_list.get<double>("reference value");
-  const Teuchos::Array<double>& ref_coord = lin_s_list.get<Teuchos::Array<double> >("reference coordinate");
-  const Teuchos::Array<double>& gradient = lin_s_list.get<Teuchos::Array<double> >("gradient");
-
-  // create function
-  Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
-
-  set_cell_value_in_region(lin_p, *water_saturation, region);
-  set_cell_value_in_region(lin_p, *prev_water_saturation, region);
-  
-}
-
-
-// return component number, -1 if the component does not exist
-int State::get_component_number(const std::string component_name) {
-  std::map<std::string, int>::const_iterator it = comp_no.find(component_name);
-  if (it != comp_no.end()) {
-    return it->second;
-  } else {
-    return -1;
-  }
-}
-
-
-// return component name, empty string if number does not exist
-std::string State::get_component_name(const int component_number) {
-  return compnames[component_number];
-
-  // if ( component_number < 0  || component_number >= compnames.size() ) { 
-  //   return compnames[component_number];
-  // } else {
-  //   return std::string("");
-  // }
-}
-
-
-
-/* *******************************************************************/
-void State::write_vis_(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-  
-  if (out.get() && includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) {
-    *out << std::setprecision(5) << "Writing visualization dump, cycle = " 
-	 << get_cycle() << ", time(y) = " << std::fixed << get_time()/(365.25*24*60*60) << std::endl;
-  }
-  
-  // create the new time step...
-  vis.create_timestep(get_time()/(365.25*24*60*60),get_cycle());
-  
-  // dump all the state vectors into the file
-  vis.write_vector(*get_pressure(), "pressure");
-  vis.write_vector(*get_porosity(),"porosity");
-  vis.write_vector(*get_water_saturation(),"water saturation");
-  vis.write_vector(*get_water_density(),"water density");
-  vis.write_vector(*get_vertical_permeability(),"vertical permeability");
-  vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
-  vis.write_vector(*get_material_ids(),"material IDs");
-  
-  // compute volumetric water content for visualization (porosity*water_saturation)
-  Epetra_Vector vol_water( mesh_maps->cell_map(false) );
-  vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
-  vis.write_vector(vol_water,"volumetric water content");
-  
-  // compute gravimetric water content for visualization
-  // MUST have computed volumetric water content before
-  vol_water.Multiply(1.0, *water_density, vol_water, 0.0);
-  Epetra_Vector bulk_density( mesh_maps->cell_map(false) );
-  bulk_density.PutScalar(1.0);
-  bulk_density.Update(-1.0,*porosity,1.0);
-  bulk_density.Multiply(1.0,*particle_density,bulk_density,0.0);
-  vol_water.ReciprocalMultiply(1.0,bulk_density,vol_water,0.0);
-  vis.write_vector(vol_water,"gravimetric water content");
-  
-  // compute hydraulic head (p-p_atm)/(rho*g)-z
-  Epetra_Vector hydraulic_head( mesh_maps->cell_map(false) );
-  hydraulic_head.PutScalar(p_atm);
-  hydraulic_head.Update(-1.0,*pressure,1.0);
-  int dim = mesh_maps->space_dimension();
-  hydraulic_head.Scale(1.0/( (*density) * (*gravity)[dim-1]));
-  Epetra_Vector centroid_z( mesh_maps->cell_map(false) );
-  for( int ic = mesh_maps->cell_map(false).MinLID(); ic <= mesh_maps->cell_map(false).MaxLID();  ++ic) {
-    Amanzi::AmanziGeometry::Point p = mesh_maps->cell_centroid(ic);
-    centroid_z[ic] = p[dim-1];
-  }
-  hydraulic_head.Update(1.0,centroid_z,1.0);
-  vis.write_vector(hydraulic_head,"hydraulic head");
-  
-  std::vector<std::string> names(3);
-  names[0] = "darcy velocity x";
-  names[1] = "darcy velocity y";
-  names[2] = "darcy velocity z";
-  DeriveDarcyVelocity();
-  vis.write_vector(*get_darcy_velocity(), names);
-  
-  if (number_of_components > 0) {
-    // write component data
-    vis.write_vector( *get_total_component_concentration(), compnames);
-  }
-
-  // write the geochemistry data
-  if (chemistry_enabled) WriteChemistryToVis(&vis);
-}
-
-/* *******************************************************************/
-void State::write_vis_(Amanzi::Vis& vis, 
-		       Teuchos::RCP<Epetra_MultiVector> auxdata, 
-		       const std::vector<std::string>& auxnames, 
-		       bool chemistry_enabled, bool force)  {  
-  // write auxillary data
-  if (!is_null(auxdata))  {
-    vis.write_vector( *auxdata , auxnames);
-  }
-}
-
-/* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, bool chemistry_enabled, bool force) {
-  if ( !vis.is_disabled() ) {
-    if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
-      write_vis_(vis, chemistry_enabled, force);
-      vis.finalize_timestep();
-    }
-  }
-}
-
-/* *******************************************************************/
-void State::write_vis(Amanzi::Vis& vis, 
-		      Teuchos::RCP<Epetra_MultiVector> auxdata, 
-		      const std::vector<std::string>& auxnames, 
-		      bool chemistry_enabled, bool force)  {  
-  if ( !vis.is_disabled() ) {
-    if ( vis.dump_requested(get_cycle(), get_time()) || force )  {
-      write_vis_(vis, chemistry_enabled, force);
-      write_vis_(vis, auxdata, auxnames, chemistry_enabled, force);
-      vis.finalize_timestep();
-    }
-  }
-}
-
-/* *******************************************************************/
-void State::set_compnames(std::vector<std::string>& compnames_)
-{
-  compnames = compnames_;
-}
-
-void State::set_compnames(Teuchos::Array<std::string>& compnames_)
-{
-  compnames.clear();
-  compnames.resize(compnames_.size());
-  for (int i = 0; i < compnames.size(); ++i) {
-    compnames.at(i) = compnames_.at(i);
-  }
-}
-
-void State::ExtractVolumeFromMesh(void) {
-  int ncell = mesh_maps->cell_map(false).NumMyElements();
-  if (ncell != volume()->MyLength()) {
-    Exceptions::amanzi_throw(Errors::Message("State::ExtractVolumeFromMesh() size error."));
-  }
-  for (int j = 0; j < ncell; ++j) {
-    (*volume_)[j] = mesh_maps->cell_volume(j);
-  }
-}
-
-
-void State::VerifyMaterialChemistry(void) {
-  /*
-  ** This function is setting the mineral_names_, mineral_name_id_map_,
-  ** number of ion exchange sites, number of sorption sites, etc. It
-  ** must be called *before* create_storage()!
-  **
-  ** loop through each mesh region/mesh block whatever and verify that
-  ** the mineralogy and isotherm data, if provided, is correct.
-  **
-  */
-  const std::string block_key("Mesh block ");
-
-  SetupMineralNames();
-  SetupSorptionSiteNames();
-
-  // loop through the state parameter list looking for mesh blocks
-  for (Teuchos::ParameterList::ConstIterator item = parameter_list.begin();
-       item != parameter_list.end(); ++item) {
-
-    std::string item_name = parameter_list.name(item);
-    size_t found_block = item_name.find(block_key);
-    if (found_block != std::string::npos) {
-      std::string block_name = item_name.substr(found_block + block_key.length(), 
-                                                item_name.length());
-      Teuchos::ParameterList mesh_block_data = parameter_list.sublist(parameter_list.name(item));
-      // block_name should match mesh_block_data.region...
-      std::string region_name = mesh_block_data.get<std::string>("Region");
-
-      //
-      // check for chemistry related data in the block:
-      //
-
-      if (mesh_block_data.isSublist("Mineralogy")) {
-        VerifyMineralogy(region_name, mesh_block_data.sublist("Mineralogy"));
-      }
-
-      if (mesh_block_data.isSublist("Sorption Isotherms")) {
-        VerifySorptionIsotherms(region_name,
-                                mesh_block_data.sublist("Sorption Isotherms"));
-      }
-
-      if (mesh_block_data.isSublist("Surface Complexation Sites")) {
-        VerifySorptionSites(region_name,
-                            mesh_block_data.sublist("Surface Complexation Sites"));
-      }
-      
-      if (mesh_block_data.isParameter("Cation Exchange Capacity")) {
-        // limit to one ion exchange site for now....
-        set_using_sorption(true);
-        set_number_of_ion_exchange_sites(1);
-      }
-    }  // end if(mesh_block)
-  }  // end for(parameter_list)
-
-
-  //
-  // error checking?
-  //
-
-}  // end VerifyMaterialChemistry()
-
-void State::SetupMineralNames() {
-  // do we need to worry about minerals?
-  mineral_names_.clear();
-  Teuchos::Array<std::string> data;
-  if (parameter_list.isParameter("Minerals")) {
-    data = parameter_list.get<Teuchos::Array<std::string> >("Minerals");
-  } 
-
-  // the mineral_names_ list should be the order expected by the chemistry....
-  mineral_names_.clear();
-  mineral_name_id_map_.clear();
-  for (int m = 0; m < data.size(); ++m) {
-    mineral_name_id_map_[data.at(m)] = m;
-    mineral_names_.push_back(data.at(m));
-  }
-
-  if (mineral_names_.size() > 0) {
-    // we read some mineral names, so override any value that may have
-    // been set in the constructor
-    set_number_of_minerals(mineral_names_.size());
-  } else if (number_of_minerals() > 0 && mineral_names_.size() == 0) {
-    // assume we are called from the constructor w/o a valid parameter
-    // list and the mineral names will be set later....
-  }
-}  // end SetupMineralNames()
-
-void State::SetupSorptionSiteNames() {
-  // could almost generalize the SetupMineralNames and
-  // SetupSorptionSiteNames into a single function w/ different
-  // parameters, but using_sorption needs to be set...
-
-  // do we need to worry about sorption sites?
-  sorption_site_names_.clear();
-  Teuchos::Array<std::string> data;
-  if (parameter_list.isParameter("Sorption Sites")) {
-    data = parameter_list.get<Teuchos::Array<std::string> >("Sorption Sites");
-  } 
-
-  // the sorption_site_names_ list should be the order expected by the chemistry...
-  sorption_site_names_.clear();
-  sorption_site_name_id_map_.clear();
-  for (int s = 0; s < data.size(); ++s) {
-    sorption_site_name_id_map_[data.at(s)] = s;
-    sorption_site_names_.push_back(data.at(s));
-  }
-
-  if (sorption_site_names_.size() > 0) {
-    // we read some sorption site names, so override any value that
-    // may have been set in the constructor and set the sorption flag
-    // so we allocate the correct amount of memory
-    set_number_of_sorption_sites(sorption_site_names_.size());
-    set_using_sorption(true);
-  } else if (number_of_sorption_sites() > 0 && sorption_site_names_.size() == 0) {
-    // assume we are called from the constructor w/o a valid parameter
-    // list and the sorption names will be set later....?
-  }
-}  // end SetupSorptionSiteNames()
-
-void State::VerifyMineralogy(const std::string& region_name,
-                             const Teuchos::ParameterList& minerals_list) {
-  // loop through each mineral, verify that the mineral name is known
-  for (Teuchos::ParameterList::ConstIterator mineral_iter = minerals_list.begin(); 
-       mineral_iter != minerals_list.end(); ++mineral_iter) {
-    std::string mineral_name = minerals_list.name(mineral_iter);
-    if (!mineral_name_id_map_.count(mineral_name)) {
-      std::stringstream message;
-      message << "Error: State::VerifyMineralogy(): " << mineral_name
-              << " was specified in the mineralogy for region "
-              << region_name << " but was not listed in the minerals phase list.\n";
-      Exceptions::amanzi_throw(Errors::Message(message.str()));            
-    }
-
-    // all minerals will have a volume fraction and specific surface
-    // area, but sane defaults can be provided, so we don't bother
-    // with them here.
-
-  }  // end for(minerals)
-}  // end VerifyMineralogy()
-
-void State::VerifySorptionIsotherms(const std::string& region_name,
-                                    const Teuchos::ParameterList& isotherms_list) {
-  // verify that every species listed is in the component names list.
-  // verify that every listed species has a Kd value (no sane default)
-  // langmuir and freundlich values are optional (sane defaults)
-  set_using_sorption(true);
-  set_use_sorption_isotherms(true);
-
-  // loop through each species in the isotherm list
-  for (Teuchos::ParameterList::ConstIterator species_iter = isotherms_list.begin(); 
-       species_iter != isotherms_list.end(); ++species_iter) {
-    std::string species_name = isotherms_list.name(species_iter);
-
-    // verify that the name is a known species
-    if (!comp_no.count(species_name)) {
-      std::stringstream message;
-      message << "Error: State::VerifySorptionIsotherms(): region: "
-              << region_name << " contains isotherm data for solute \'" 
-              << species_name 
-              << "\' but it is not specified in the component solutes list.\n";
-      Exceptions::amanzi_throw(Errors::Message(message.str()));      
-    }
-
-
-    // check that this item is a sublist:
-    Teuchos::ParameterList species_data;
-    if (!isotherms_list.isSublist(species_name)) {
-      std::stringstream message;
-      message << "Error: State::VerifySorptionIsotherms(): region: "
-              << region_name << " ; species : " << species_name
-              << " ; must be a named \'ParameterList\' of isotherm data.\n";
-      Exceptions::amanzi_throw(Errors::Message(message.str()));            
-    } else {
-      species_data = isotherms_list.sublist(species_name);
-    }
-
-    // verify that the required parameters are present
-    if (!species_data.isParameter("Kd")) {
-      std::stringstream message;
-      message << "Error: State::VerifySorptionIsotherms(): region: "
-              << region_name << " ; species name: " << species_name 
-              << " ; each isotherm must have a 'Kd' parameter.\n";
-      Exceptions::amanzi_throw(Errors::Message(message.str()));      
-    }
-    // langmuir and freundlich parameters are optional, we'll assign
-    // sane defaults.
-  }  // end for(species)
-}  // end VerifySorptionIsotherms()
-
-void State::VerifySorptionSites(const std::string& region_name,
-                                const Teuchos::ParameterList& sorption_site_list) {
-  set_using_sorption(true);
-  // loop through each sorption site, verify that the site name is known
-  for (Teuchos::ParameterList::ConstIterator site_iter = sorption_site_list.begin(); 
-       site_iter != sorption_site_list.end(); ++site_iter) {
-    std::string site_name = sorption_site_list.name(site_iter);
-    if (!sorption_site_name_id_map_.count(site_name)) {
-      std::stringstream message;
-      message << "Error: State::VerifySorptionSites(): " << site_name
-              << " was specified in the 'Surface Complexation Sites' list for region "
-              << region_name << " but was not listed in the sorption sites phase list.\n";
-      Exceptions::amanzi_throw(Errors::Message(message.str()));            
-    }
-
-    // all sorption sites will have a site density
-    // but we can default to zero, so don't do any further checking
-
-  }  // end for(sorption_sites)
-}  // end VerifySorptionSites()
-
-void State::SetRegionMaterialChemistry(const std::string& region_name,
-                                       Teuchos::ParameterList* region_data) {
-
-  // NOTE(bandre): I don't think this is going to ensure all memory is
-  // initialized correctly. If a region doesn't have a particular
-  // block (e.g. isotherms) in the XML file, it will have
-  // uninitialized data!?!?
-
-  if (region_data->isSublist("Mineralogy")) {
-    SetRegionMineralogy(region_name, region_data->sublist("Mineralogy"));
-  } else {
-    // std::cout << "no mineralogy in region '" << region_name 
-    //           << "'..." << std::endl;
-  }
-
-  if (region_data->isSublist("Sorption Isotherms")) {
-    SetRegionSorptionIsotherms(region_name, region_data->sublist("Sorption Isotherms"));
-  } else {
-    // std::cout << "no sorption isotherms in region '" << region_name 
-    //           << "'..." << std::endl;
-  }
-
-  if (region_data->isSublist("Surface Complexation Sites")) {
-    SetRegionSorptionSites(region_name, region_data->sublist("Surface Complexation Sites"));
-  } else {
-    // std::cout << "no surface complexation sites in region '" << region_name 
-    //           << "'..." << std::endl;
-  }
-
-  double cec = region_data->get<double>("Cation Exchange Capacity", 0.0);
-  if (number_of_ion_exchange_sites() > 0) {
-    set_cell_value_in_region(cec, *(*ion_exchange_sites_)(0), region_name);
-  }
-
-}  // end SetRegionMaterialChemistry()
-
-void State::SetRegionMineralogy(const std::string& region_name,
-                                const Teuchos::ParameterList& region_mineralogy) {
-  /*
-  ** Process a "Mineralogy" parameter list for the current region.
-  ** 
-  ** NOTE: assumes that error checking in the parameter list was done
-  ** during VerifyMaterialChemistry()!
-  */
-
-  Teuchos::ParameterList::ConstIterator mineral;
-  for (mineral = region_mineralogy.begin(); 
-       mineral != region_mineralogy.end(); ++mineral) {
-    std::string mineral_name = region_mineralogy.name(mineral);
-
-    // find the correct index for this mineral name
-    // std::vector<std::string>::iterator mineral_iterator = 
-    //     std::find(mineral_names_.begin(), mineral_names_.end(), mineral_name); 
-    // int m = std::distance(mineral_names_.begin(), mineral_iterator);
-    
-    int m = mineral_name_id_map_[mineral_name];
-
-    Teuchos::ParameterList mineral_data = region_mineralogy.sublist(mineral_name);
-
-    double value = mineral_data.get<double>("Volume Fraction", 0.0);
-    set_cell_value_in_region(value, *(*mineral_volume_fractions_)(m), region_name);
-
-    value = mineral_data.get<double>("Specific Surface Area", 1.0);
-    set_cell_value_in_region(value, *(*mineral_specific_surface_area_)(m), region_name);
-
-  }  // end for(mineral_list)
-}  // end SetRegionMineralogy()
-
-
-void State::SetRegionSorptionIsotherms(const std::string& region_name,
-                                       const Teuchos::ParameterList& region_isotherms) {
-  /*
-  ** Process a "Sorption Isotherm" parameter list for the current region
-  **
-  ** Note: assume that the species names have already been verified
-  */
-
-  Teuchos::ParameterList::ConstIterator isotherm_species;
-  for (isotherm_species = region_isotherms.begin(); 
-       isotherm_species != region_isotherms.end(); ++isotherm_species) {
-
-    // assume that all sublists are going to be species names with
-    // some optional parameters.
-    std::string species_name = region_isotherms.name(isotherm_species);
-
-    // determine the species index for this name
-    // std::vector<std::string>::iterator species_iterator = 
-    //     std::find(compnames.begin(), compnames.end(), species_name); 
-    // int s = std::distance(compnames.begin(), species_iterator);
-
-    int s = comp_no[species_name];
-
-    Teuchos::ParameterList species_data = region_isotherms.sublist(species_name);
-
-    // assign per region per species parameter values with sane defaults
-    double value = species_data.get<double>("Kd", 0.0);
-    set_cell_value_in_region(value, *(*isotherm_kd_)(s), region_name);
-
-    // TODO(bandre): is this a sane default?
-    value = species_data.get<double>("Langmuir b", 1.0);
-    set_cell_value_in_region(value, *(*isotherm_langmuir_b_)(s), region_name);
-
-    value = species_data.get<double>("Freundlich N", 1.0);
-    set_cell_value_in_region(value, *(*isotherm_freundlich_n_)(s), region_name);
-  }  // end for(isotherm_species)
-}  // end SetRegionSorptionIsotherms()
-
-
-void State::SetRegionSorptionSites(const std::string& region_name,
-                                   const Teuchos::ParameterList& region_sorption_sites) {
-  /*
-  ** Process a "Surface Complexation Sites" parameter list for the current region
-  **
-  ** Note: assume that the surface sites names have already been verified
-  */
-
-  std::map<std::string, int>::iterator site_data;
-  for (site_data = sorption_site_name_id_map_.begin();
-       site_data != sorption_site_name_id_map_.end(); ++site_data) {
-    std::string site_name = site_data->first;
-    int index = site_data->second;
-    double site_density = 0.0;
-    if (region_sorption_sites.isSublist(site_name)) {
-      Teuchos::ParameterList site_list = region_sorption_sites.sublist(site_name);
-      site_density = site_list.get<double>("Site Density", 0.0);
-    }
-    set_cell_value_in_region(site_density, *(*sorption_sites_)(index), region_name);
-  }
-}  // end SetRegionSorptionSites()
-
-
-/*******************************************************************************
- **
- **  Chemistry Vis
- **
- ******************************************************************************/
-void State::WriteChemistryToVis(Amanzi::Vis* vis) {
-  // TODO(bandre): activity corrections....
-  WriteFreeIonsToVis(vis);
-  WriteTotalSorbedToVis(vis);
-  WriteMineralsToVis(vis);
-  WriteIsothermsToVis(vis);
-  WriteSorptionSitesToVis(vis);
-  WriteIonExchangeSitesToVis(vis);
-}  // end WriteChemistryToVis()
-
-void State::WriteFreeIonsToVis(Amanzi::Vis* vis) {
-  std::string name;
-  for (int i = 0; i < get_number_of_components(); ++i) {
-    name = compnames.at(i);
-    name += "_free";
-    vis->write_vector(*(*free_ion_concentrations_)(i), name);
-  }
-}  // end WriteFreeIonsToVis()
-
-void State::WriteTotalSorbedToVis(Amanzi::Vis* vis) {
-  if (using_sorption()) {
-    std::string name;
-    for (int i = 0; i < get_number_of_components(); ++i) {
-      name = compnames.at(i);
-      name += "_sorbed";
-      vis->write_vector(*(*total_sorbed_)(i), name);
-    }
-  }
-}  // end WriteTotalSorbedToVis()
-
-void State::WriteMineralsToVis(Amanzi::Vis* vis) {
-  std::string name;
-  for (int m = 0; m < number_of_minerals(); ++m) {
-    name = mineral_names().at(m);
-    name += "_volume_fraction";
-    vis->write_vector(*(*mineral_volume_fractions_)(m), name);
-    name = mineral_names().at(m);
-    name += "_specific_surface_area";
-    vis->write_vector(*(*mineral_specific_surface_area_)(m), name);
-  }
-}  // end WriteMineralsToVis()
-
-void State::WriteIsothermsToVis(Amanzi::Vis* vis) {
-  if (use_sorption_isotherms()) {
-    std::string name;
-    for (int i = 0; i < get_number_of_components(); ++i) {
-      name = compnames.at(i);
-      name += "_Kd";
-      vis->write_vector(*(*isotherm_kd_)(i), name);
-      name = compnames.at(i);
-      name += "_freundlich_n";
-      vis->write_vector(*(*isotherm_freundlich_n_)(i), name);
-      name = compnames.at(i);
-      name += "_langmuir_b";
-      vis->write_vector(*(*isotherm_langmuir_b_)(i), name);
-    }
-  }
-}  // end WriteIsothermsToVis()
-
-void State::WriteSorptionSitesToVis(Amanzi::Vis* vis) {
-  std::string name;
-  for (int s = 0; s < number_of_sorption_sites(); ++s) {
-    name = sorption_site_names_.at(s);
-    vis->write_vector(*(*sorption_sites_)(s), name);
-  }
-}  // end WriteSorptionSitesToVis()
-
-void State::WriteIonExchangeSitesToVis(Amanzi::Vis* vis) {
-  if (number_of_ion_exchange_sites() > 0) {
-    // NOTE: Assume that only one ion exchange site!
-    std::string name("CEC");
-    vis->write_vector(*(*ion_exchange_sites_)(0), name);
-  }
-}  // end WriteIonExchangeSitesToVis()
-
-
-
-
-void State::DeriveDarcyVelocity() {
-  const Epetra_Map& source_fmap = mesh_maps->face_map(false);
-  const Epetra_Map& target_fmap = mesh_maps->face_map(true);
-  Epetra_Import face_importer(target_fmap, source_fmap);  
-
-#ifdef HAVE_MPI
-  Epetra_Vector darcy_flux_wghost(mesh_maps->face_map(true));
-  darcy_flux_wghost.Import(*darcy_flux, face_importer, Insert);
-#else
-  Epetra_Vector& darcy_flux_wghost = *darcy_flux;
-#endif
-
-  Teuchos::LAPACK<int, double> lapack;
-
-  int dim = mesh_maps->space_dimension();
-  Teuchos::SerialDenseMatrix<int, double> matrix(dim, dim);
-  double rhs_cell[dim];
-
-  Amanzi::AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  int ncells_owned = mesh_maps->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_maps->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int i = 0; i < dim; i++) rhs_cell[i] = 0.0;
-    matrix.putScalar(0.0);
-
-    for (int n = 0; n < nfaces; n++) {  // populate least-square matrix
-      int f = faces[n];
-      const Amanzi::AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
-      double area = mesh_maps->face_area(f);
-
-      for (int i = 0; i < dim; i++) {
-        rhs_cell[i] += normal[i] * darcy_flux_wghost[f];
-        matrix(i, i) += normal[i] * normal[i];
-        for (int j = i+1; j < dim; j++) {
-          matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
+void State::InitializeFields_() {
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    if (!f_it->second->initialized()) {
+      if (state_plist_.isSublist("initial conditions")) {
+        if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
+          Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
+          f_it->second->Initialize(sublist);
         }
       }
     }
-
-    int info;
-    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info);
-
-    for (int i = 0; i < dim; i++) (*darcy_velocity)[i][c] = rhs_cell[i];
   }
+};
+
+
+// Make sure all fields that are not evaluated by a FieldEvaluator are
+// initialized.  Such fields may be used by an evaluator field but are not in
+// the dependency tree due to poor design.
+bool State::CheckNotEvaluatedFieldsInitialized_() {
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    if (!HasFieldEvaluator(f_it->first) && !field->initialized()) {
+      std::stringstream messagestream;
+      messagestream << "Field " << field->fieldname() << " was not initialized.";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+      return false;
+    }
+  }
+  return true;
+};
+
+
+// Make sure all fields have gotten their IC, either from State or the owning PK.
+bool State::CheckAllFieldsInitialized_() {
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    if (!field->initialized()) {
+      // field was not initialized
+      std::stringstream messagestream;
+      messagestream << "Field " << field->fieldname() << " was not initialized.";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+      return false;
+    }
+  }
+  return true;
+};
+
+
+// Check the consistency of a field's meta-data.
+Teuchos::RCP<Field>
+State::CheckConsistent_or_die_(Key fieldname, FieldType type, Key owner) {
+  ASSERT(fieldname != Key(""));
+
+  Teuchos::RCP<Field> record = GetField_(fieldname);
+  if (record == Teuchos::null) {
+    // No existing field of that fieldname, so anything is ok.
+    return record;
+  }
+
+  if (owner == Key("state") ||
+      record->owner() == Key("state") ||
+      owner == record->owner()) {
+
+    if (record->type() != type) {
+      std::stringstream messagestream;
+      messagestream << "Requested field " << fieldname << " of type "
+                    << type << " already exists and is of type "
+                    << record->type();
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  } else {
+    // Field exists and is owned
+    std::stringstream messagestream;
+    messagestream << "Requested field " << fieldname << " already exists and is owned by "
+                  << record->owner();
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  return record;
+};
+
+
+// Set the State's time and evaluate any state-owned scalar/vector fields at
+// the new time if they have an associated function.
+void State::set_time( double new_time ) {
+  for (FieldMap::iterator f_it = fields_.begin();
+       f_it != fields_.end(); ++f_it) {
+    f_it->second->Compute(new_time);
+  }
+  time_ = new_time;
 }
+
+
+// Non-member function for vis.
+void WriteVis(const Teuchos::Ptr<Visualization>& vis,
+              const Teuchos::Ptr<State>& S) {
+  if (!vis->is_disabled()) {
+    // Create the new time step (internally we use seconds, but write the time in years).
+    vis->WriteMesh(S->time()/(365.25*24*60*60),S->cycle());
+    vis->CreateTimestep(S->time()/(365.25*24*60*60),S->cycle());
+
+    // Write all fields to the visualization file, the fields know if they
+    // need to be written.
+    for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
+      field->second->WriteVis(vis);
+    }
+
+    // Finalize i/o.
+    vis->FinalizeTimestep();
+  }
+};
+
+
+// Non-member function for checkpointing.
+void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
+                     const Teuchos::Ptr<State>& S,
+                     double dt) {
+  if ( !chk->is_disabled() ) {
+    chk->CreateFile(S->cycle());
+
+    for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
+      field->second->WriteCheckpoint(chk);
+    }
+
+    chk->WriteAttributes(S->time(), dt, S->cycle());
+  }
+};
+
+// Non-member function for checkpointing.
+double ReadCheckpoint(Epetra_MpiComm* comm,
+                      const Teuchos::Ptr<State>& S,
+                      std::string filename) {
+  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
+
+  // load the attributes
+  double time(0.);
+  checkpoint->readAttrReal(time, "time");
+  S->set_time(time);
+
+  double dt(0.);
+  checkpoint->readAttrReal(dt, "dt");
+
+  int cycle(0);
+  checkpoint->readAttrInt(cycle, "cycle");
+  S->set_cycle(cycle);
+
+  // load the number of processes and ensure they are the same -- otherwise
+  // the below just gives crap.
+  int rank(-1);
+  checkpoint->readAttrInt(rank, "mpi_comm_world_rank");
+  if (comm->NumProc() != rank) {
+    std::stringstream messagestream;
+    messagestream << "Requested checkpoint file " << filename << " was created on "
+                  << rank << " processes, making it incompatible with this run on "
+                  << comm->NumProc() << " process.";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  // load the data
+  for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
+    if (field->second->io_checkpoint()) {
+      field->second->ReadCheckpoint(checkpoint);
+    }
+  }
+
+  return dt;
+};
+
+// Non-member function for checkpointing.
+double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
+        std::string filename) {
+  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
+
+  // load the attributes
+  double time(0.);
+  checkpoint->readAttrReal(time, "time");
+  return time;
+};
+
+// Non-member function for deforming the mesh after reading a checkpoint file
+// that contains the vertex coordinate field (this is written by deformation pks)
+void DeformCheckpointMesh(const Teuchos::Ptr<State>& S) {
+  if (S->HasField("vertex coordinate")) { // only deform mesh if vertex coordinate field exists
+    AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S->GetMesh());
+    // get vertex coordinates state
+    const Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate")
+        ->ViewComponent("node",false);
+    int dim = write_access_mesh_->space_dimension();
+    int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE, 
+                                              Amanzi::AmanziMesh::OWNED);  
+    Amanzi::AmanziMesh::Entity_ID_List nodeids;  
+    Amanzi::AmanziGeometry::Point new_coords(3);
+    AmanziGeometry::Point_List new_pos, final_pos;  
+    // loop over vertices and update vc
+    for (int iV=0; iV<nV; iV++) {
+      // set the coords of the node
+      for ( int s=0; s<dim; ++s ) {
+        new_coords[s] = vc[s][iV];
+      }
+      // push back for deform method
+      nodeids.push_back(iV);
+      new_pos.push_back(new_coords);    
+    } 
+    write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
+  }
+  
+}
+
+} // namespace amanzi

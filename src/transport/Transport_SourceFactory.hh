@@ -1,7 +1,7 @@
 /*
 This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
 Amanzi is released under the three-clause BSD License. 
 The terms of use and "as is" disclaimer for this license are 
 provided Reconstruction.cppin the top-level COPYRIGHT file.
@@ -17,7 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "DomainFunction.hh"
+#include "transport-domain-function.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -29,10 +29,12 @@ class TransportSourceFactory {
      : mesh_(mesh), params_(params) {};
   ~TransportSourceFactory() {};
   
-  DomainFunction* CreateSource();
+  Functions::TransportDomainFunction* CreateSource();
 
  private:
-  void ProcessSourceSpec(Teuchos::ParameterList& list, const std::string& name, DomainFunction* src) const;
+  void ProcessSourceSpec(Teuchos::ParameterList& list, 
+                         const std::string& name, 
+                         Functions::TransportDomainFunction* src) const;
   void ProcessStringActions(const std::string& name, int* method) const;
      
  private:

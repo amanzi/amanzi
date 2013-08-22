@@ -410,4 +410,39 @@ if ( ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC ) # FIXME: Sloppy.
   endif()
 endif()
 
+##############################################################################
+# ALQUIMIA / PFLOTRAN 
+##############################################################################
+
+if ( ENABLE_ALQUIMIA ) 
+  #
+  find_package(PETSc)
+  if ( NOT PETSC_FOUND ) 
+    message(WARNING "Failed to locate PETSC")
+  endif ( ) 
+
+  find_package(PFLOTRAN)
+  if ( NOT PFLOTRAN_FOUND )
+    message(WARNING "Failed to locate PFLOTRAN")
+  else ( )
+    message(STATUS "PFLOTRAN Package information")
+    message(STATUS "\tPFLOTRAN_INCLUDE_DIR   =${PFLOTRAN_INCLUDE_DIR}")
+    message(STATUS "\tPFLOTRAN_INCLUDE_DIRS  =${PFLOTRAN_INCLUDE_DIRS}")
+    message(STATUS "\tPFLOTRAN_LIBRARY       =${PFLOTRAN_LIBRARY}")
+    message(STATUS "\tPFLOTRAN_LIBRARIES     =${PFLOTRAN_LIBRARIES}")
+  endif()
+
+  find_package(Alquimia)
+  if ( NOT ALQUIMIA_FOUND )
+    message(WARNING "Failed to locate ALQUIMIA")
+  else ( )
+    message(STATUS "ALQUIMIA Package information")
+    message(STATUS "\tALQUIMIA_INCLUDE_DIR   =${ALQUIMIA_INCLUDE_DIR}")
+    message(STATUS "\tALQUIMIA_INCLUDE_DIRS  =${ALQUIMIA_INCLUDE_DIRS}")
+    message(STATUS "\tALQUIMIA_LIBRARY       =${ALQUIMIA_LIBRARY}")
+    message(STATUS "\tALQUIMIA_LIBRARIES     =${ALQUIMIA_LIBRARIES}")
+    message(STATUS "\tALQUIMIA_LIBRARY_DIR   =${ALQUIMIA_LIBRARY_DIR}")
+  endif()
+ 
+endif()
 

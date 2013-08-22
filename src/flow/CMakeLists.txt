@@ -22,7 +22,9 @@ project(FLOW)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
@@ -52,7 +54,8 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Stiffness_MFD.cc 
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
-                   Flow_Utilities.cc)
+                   Flow_Utilities.cc
+                   flow-domain-function.cc flow-boundary-function.cc)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
@@ -61,7 +64,7 @@ list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration)
+                   LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration data_structures state)
 
 #
 # Library: matrix audit
@@ -91,12 +94,14 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone)
+        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
  
         # Test: miscaleneous Darcy flow routines
-        add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cc)
-        target_link_libraries(flow_darcy_misc ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
+        add_amanzi_test(flow_darcy_misc flow_darcy_misc 
+	                KIND int
+	                SOURCE test/Main.cc test/flow_darcy_misc.cc
+			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
         add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
         add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
 
@@ -166,7 +171,7 @@ if (BUILD_TESTS)
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
  
-    set(amanzi_libs geometry mesh mesh_factory state flow whetstone)
+    set(amanzi_libs geometry mesh mesh_factory state flow whetstone data_structures)
  
     # Test: van Genuchten flow routines
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
@@ -181,7 +186,7 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
  
     # Test: 3D Richards
-    set(amanzi_libs geometry mesh mesh_factory flow state whetstone solvers output)
+    set(amanzi_libs geometry mesh mesh_factory flow state whetstone solvers output data_structures)
     
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit

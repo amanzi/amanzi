@@ -16,8 +16,8 @@
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 const std::string MineralKineticsFactory::kTST = "TST";
 
@@ -91,5 +91,5 @@ SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_na
   return mineral_id;
 }  // end VerifyMineralName()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

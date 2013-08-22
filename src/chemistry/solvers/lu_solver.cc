@@ -10,8 +10,8 @@
 
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 const double LUSolver::kSmallNumber = 1.0e-20;
 
@@ -138,5 +138,5 @@ void LUSolver::BackSolve(MatrixBlock* A, std::vector<double>* b) {
 }  // end BackSolve()
 
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

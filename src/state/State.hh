@@ -1,449 +1,313 @@
-#ifndef __State_hpp__
-#define __State_hpp__
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+   ATS
 
+   License: see $ATS_DIR/COPYRIGHT
+   Author: Ethan Coon
+
+   Interface for the State.  State is a simple data-manager, allowing PKs to
+   require, read, and write various fields, including:
+    -- Acts as a factory for fields through the various require methods.
+    -- Provides some data protection by providing both const and non-const
+       data pointers to PKs.
+    -- Provides some initialization capability -- this is where all
+       independent variables can be initialized (as independent variables
+       are owned by state, not by any PK).
+   ------------------------------------------------------------------------- */
+
+#ifndef STATE_STATE_HH_
+#define STATE_STATE_HH_
+
+#include <string>
+#include <vector>
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_VerboseObject.hpp"
-#include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
-#include "Epetra_Map.h"
-#include "Epetra_Export.h"
 
 #include "Mesh.hh"
-#include "Point.hh"
-#include "Vis.hh"
-#include "Function.hh"
 
-typedef enum { COMPLETE, UPDATING } status_type;
+#include "composite_vector.hh"
+#include "composite_vector_factory.hh"
 
-class State : public Teuchos::VerboseObject<State> {
- public:
-  State( int, int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
+#include "state_defs.hh"
 
-  State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
+#include "visualization.hh"
+#include "checkpoint.hh"
 
-  State(Teuchos::ParameterList &parameter_list, 
-	Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
+#include "Field.hh"
+#include "Field_Scalar.hh"
+#include "Field_ConstantVector.hh"
+#include "Field_CompositeVector.hh"
 
-  ~State();
+namespace Amanzi {
 
-  // access methods
-  Teuchos::RCP<Epetra_Vector>      get_pressure ()         { return pressure; }; 
-  Teuchos::RCP<Epetra_Vector>      get_lambda ()           { return lambda; }
-  Teuchos::RCP<Epetra_Vector>      get_darcy_flux ()       { return darcy_flux; };
-  Teuchos::RCP<Epetra_Vector>      get_porosity ()         { return porosity; };
-  Teuchos::RCP<Epetra_Vector>      get_water_saturation () { return water_saturation; };
-  Teuchos::RCP<Epetra_Vector>      get_prev_water_saturation () { return prev_water_saturation; };
-  Teuchos::RCP<Epetra_Vector>      get_water_density ()    { return water_density; };
-  Teuchos::RCP<Epetra_Vector>      get_vertical_permeability () { return vertical_permeability; };
-  Teuchos::RCP<Epetra_Vector>      get_horizontal_permeability () { return horizontal_permeability; };
-  Teuchos::RCP<Epetra_Vector>      get_material_ids ()     { return material_ids; };
-  Teuchos::RCP<Epetra_Vector>      get_particle_density () { return particle_density; };
+class FieldEvaluator;
 
-  Teuchos::RCP<double>             get_density()   { return density; } 
-  Teuchos::RCP<double>             get_viscosity() { return viscosity; }
-  Teuchos::RCP<double*>            get_gravity()   { return gravity; }
+enum StateConstructMode {
+  STATE_CONSTRUCT_MODE_COPY_POINTERS,
+  STATE_CONSTRUCT_MODE_COPY_DATA
+};
 
-  Teuchos::RCP<Epetra_MultiVector> get_darcy_velocity () { return darcy_velocity; }
-  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration () { return total_component_concentration; };
-  Teuchos::RCP<Epetra_Vector>      get_specific_storage() { return specific_storage; }
-  Teuchos::RCP<Epetra_Vector>      get_specific_yield() { return specific_yield; }
-  
-  // the next two are for walkabout
-  Teuchos::RCP<Epetra_MultiVector>& get_walkabout_xyz() { return walkabout_xyz; }
-  Teuchos::RCP<Epetra_MultiVector>& get_walkabout_velocity() { return walkabout_velocity; }
-  Teuchos::RCP<Epetra_Vector>& get_walkabout_porosity() { return walkabout_porosity; }
-  Teuchos::RCP<Epetra_Vector>& get_walkabout_water_saturation() { return walkabout_water_saturation; }
-  
-
-  Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
-
-  double get_time () const { return time; };
-  double get_last_time () const { return last_time; }
-  int get_cycle () const { return cycle; };
-
-  double initial_time() const { return time; } 
-  double final_time() const { return fin_time_; }
-  double intermediate_time() const { return inter_time_; }
-  
-  int get_number_of_components() const { return number_of_components; };
-
-  const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
-
-  int get_component_number(const std::string component_name);
-  std::string get_component_name(const int component_number);
-
-  // modify methods
-  void set_time ( double new_time );
-  void set_intermediate_time ( double new_time ) { inter_time_ = new_time; }
-  void set_final_time ( double time ) { fin_time_ = time; }
-  void set_cycle ( int new_cycle );
-  void advance_time(double dT);
-  void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
-  void update_total_component_concentration(const Epetra_MultiVector&);
-  void update_darcy_flux(const Epetra_Vector&);
-  void update_pressure(const Epetra_Vector&);
-  void update_lambda(const Epetra_Vector&);
-
-  // status methods
-  status_type get_status () const { return status; };
-  void set_status ( status_type new_status ) { status = new_status; }
-
-
-  // debug helpers
-  void set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const int mesh_block_id);
-  void set_darcy_flux(const Amanzi::AmanziGeometry::Point& u, const std::string region);
-  void set_water_saturation(const double ws);
-  void set_water_density(const double wd);
-  void set_zero_total_component_concentration();
-  void set_total_component_concentration(const double* conc, const int mesh_block_id); 
-  void set_total_component_concentration(const double* conc, const std::string region); 
-  void set_free_ion_concentrations(const double* conc, const std::string region); 
-  void set_porosity( const double phi );
-  void set_porosity( const double phi, const int mesh_block_id );
-  void set_porosity( const double phi, const std::string region );
-  void set_permeability (const double kappa);
-  void set_permeability (const double kappa, const int mesh_block_id);
-  void set_permeability (const double kappa, const std::string region);
-  void set_horizontal_permeability (const double kappa);
-  void set_horizontal_permeability (const double kappa, const int mesh_block_id);
-  void set_horizontal_permeability (const double kappa, const std::string region);  
-  void set_vertical_permeability (const double kappa);
-  void set_vertical_permeability (const double kappa, const int mesh_block_id);
-  void set_vertical_permeability (const double kappa, const std::string region);
-  void set_viscosity(const double mu);
-  void set_gravity(const double *g);
-  void set_number_of_components(const int n);
-  void set_specific_storage(const double ss, const std::string region);
-  void set_specific_yield(const double sy, const std::string region);
-
-  // set methods 
-  void set_darcy_flux ( const Epetra_Vector& darcy_flux_ );
-  void set_water_saturation ( const Epetra_Vector& water_saturation_ );
-  void set_prev_water_saturation ( const Epetra_Vector& prev_water_saturation_ );
-  void set_water_density ( const Epetra_Vector& water_density_ );
-  void set_porosity ( const Epetra_Vector& porosity_ );
-  void set_permeability ( const Epetra_Vector& permeability_ );
-  void set_vertical_permeability ( const Epetra_Vector& permeability_ );
-  void set_horizontal_permeability ( const Epetra_Vector& permeability_ );
-  void set_pressure ( const Epetra_Vector& pressure_ );
-  void set_lambda ( const Epetra_Vector& lambda_ );
-  void set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ );
-  void set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ );
-  void set_material_ids ( const Epetra_Vector& material_ids_ );
-  void set_particle_density( const Epetra_Vector& particle_density_);
-
-  void set_linear_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
-  void set_uniform_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
-  void set_file_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
-  void set_linear_saturation ( const Teuchos::ParameterList& ic_list, const std::string& region );
-  void set_uniform_saturation ( const Teuchos::ParameterList& ic_list, const std::string& region );
-
-  // observation functions
-  double water_mass();
-  double point_value(const std::string& point_region, const std::string& comp_name);
-      
-  void DeriveDarcyVelocity();
-
-  void create_storage();
-  void CreateStoragePrimarySpecies(void);
-  void CreateStorageSecondaryActivityCoeff(const int size);
-  void CreateStorageMinerals(void);
-  void CreateStorageTotalSorbed(void);
-  void CreateStorageIonExchange(void);
-  void CreateStorageSurfaceComplexation(void);
-  void CreateStorageSorptionIsotherms(void);
-
-  void write_vis (Amanzi::Vis& vis, bool chemistry_enabled,  bool force=false);
-  void write_vis (Amanzi::Vis& vis, 
-                  Teuchos::RCP<Epetra_MultiVector> auxdata, 
-                  const std::vector<std::string>& auxnames, 
-                  bool chemistry_enabled, bool force=false);
-  void set_compnames(std::vector<std::string>& compnames_);
-  void set_compnames(Teuchos::Array<std::string>& compnames_);
-
-  void SetupSoluteNames(void);
-  void SetupMineralNames(void);
-  void SetupSorptionSiteNames(void);
-  void ExtractVolumeFromMesh(void);
-  void VerifyMaterialChemistry(void);
-  void VerifyMineralogy(const std::string& region_name,
-                        const Teuchos::ParameterList& minerals_list);
-  void VerifySorptionIsotherms(const std::string& region_name,
-                               const Teuchos::ParameterList& isotherms_list);
-  void VerifySorptionSites(const std::string& region_name,
-                           const Teuchos::ParameterList& sorption_sites_list);
-  void SetRegionMaterialChemistry(const std::string& region_name,
-                                  Teuchos::ParameterList* region_data);
-  void SetRegionMineralogy(const std::string& region_name,
-                           const Teuchos::ParameterList& mineralogy_list);
-  void SetRegionSorptionIsotherms(const std::string& region_name,
-                          const Teuchos::ParameterList& isotherm_list);
-  void SetRegionSorptionSites(const std::string& region_name,
-                              const Teuchos::ParameterList& sorption_sites_list);
-
-  void WriteChemistryToVis(Amanzi::Vis* vis);
-  void WriteFreeIonsToVis(Amanzi::Vis* vis);
-  void WriteTotalSorbedToVis(Amanzi::Vis* vis);
-  void WriteMineralsToVis(Amanzi::Vis* vis);
-  void WriteIsothermsToVis(Amanzi::Vis* vis);
-  void WriteSorptionSitesToVis(Amanzi::Vis* vis);
-  void WriteIonExchangeSitesToVis(Amanzi::Vis* vis);
-
-  Teuchos::RCP<const Epetra_Vector> volume() const {
-    return volume_;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> free_ion_concentrations() const {
-    return free_ion_concentrations_;
-  }
-
-  void set_free_ion_concentrations(const Epetra_MultiVector& free_ion_conc) {
-    *free_ion_concentrations_ = free_ion_conc;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff() const {
-    return primary_activity_coeff_;
-  }
-
-  void set_primary_activity_coeff(const Epetra_MultiVector& primary_activity_coeff ) {
-    *primary_activity_coeff_ = primary_activity_coeff;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff() const {
-    return secondary_activity_coeff_;
-  }
-
-  void set_secondary_activity_coeff(const Epetra_MultiVector& secondary_activity_coeff ) {
-    *secondary_activity_coeff_ = secondary_activity_coeff;
-  }
-
-  int number_of_minerals(void) const {
-    return number_of_minerals_;
-  }
-
-  void set_number_of_minerals(const int n) {
-    number_of_minerals_ = n;
-  }
-
-  std::vector<std::string> mineral_names(void) const {
-    return mineral_names_;
-  }
-
-  void set_mineral_names(std::vector<std::string> mineral_names) {
-    mineral_names_ = mineral_names;
-  }
-  Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions() const {
-    return mineral_volume_fractions_;
-  }
-
-  void set_mineral_volume_fractions(const Epetra_MultiVector& mineral_volume_fractions) {
-    *mineral_volume_fractions_ = mineral_volume_fractions;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area() const {
-    return mineral_specific_surface_area_;
-  }
-
-  void set_mineral_specific_surface_area(const Epetra_MultiVector& mineral_specific_surface_area) {
-    *mineral_specific_surface_area_ = mineral_specific_surface_area;
-  }
-
-  bool using_sorption(void) const {
-    return using_sorption_;
-  }
-
-  void set_using_sorption(const bool value) {
-    using_sorption_ = value;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> total_sorbed() const {
-    return total_sorbed_;
-  }
-
-  void set_total_sorbed(const Epetra_MultiVector& total_sorbed) {
-    *total_sorbed_ = total_sorbed;
-  }
-
-  int number_of_ion_exchange_sites(void) const {
-    return number_of_ion_exchange_sites_;
-  }
-
-  void set_number_of_ion_exchange_sites(const int n) {
-    number_of_ion_exchange_sites_ = n;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites() const {
-    return ion_exchange_sites_;
-  }
-
-  void set_ion_exchange_sites(const Epetra_MultiVector& ion_exchange_sites) {
-    *ion_exchange_sites_ = ion_exchange_sites;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc() const {
-    return ion_exchange_ref_cation_conc_;
-  }
-  
-  void set_ion_exchange_ref_cation_conc(const Epetra_MultiVector& ion_exchange_ref_cation_conc) {
-    *ion_exchange_ref_cation_conc_ = ion_exchange_ref_cation_conc;
-  }  
-
-
-  Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc() const {
-    return surface_complex_free_site_conc_;
-  }
-
-  void set_surface_complex_free_site_conc(const Epetra_MultiVector& surface_complex_free_site_conc) {
-    *surface_complex_free_site_conc_ = surface_complex_free_site_conc;
-  }
-
-  int number_of_sorption_sites(void) const {
-    return number_of_sorption_sites_;
-  }
-
-  void set_number_of_sorption_sites(const int n) {
-    number_of_sorption_sites_ = n;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> sorption_sites() const {
-    return sorption_sites_;
-  }
-
-  void set_sorption_sites(const Epetra_MultiVector& sorption_sites) {
-    *sorption_sites_ = sorption_sites;
-  }
-
-  bool use_sorption_isotherms(void) const {
-    return use_sorption_isotherms_;
-  }
-
-  void set_use_sorption_isotherms(const bool value) {
-    use_sorption_isotherms_ = value;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> isotherm_kd() const {
-    return isotherm_kd_;
-  }
-
-  void set_isotherm_kd (const Epetra_MultiVector& isotherm_kd ) {
-    *isotherm_kd_ = isotherm_kd;
-  }
-
-  Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n() const {
-    return isotherm_freundlich_n_;
-  }
-
-  void set_isotherm_freundlich_n (const Epetra_MultiVector& isotherm_freundlich_n ) {
-    *isotherm_freundlich_n_ = isotherm_freundlich_n;
-  }  
-
-  Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b() const {
-    return isotherm_langmuir_b_;
-  }
-
-  void set_isotherm_langmuir_b (const Epetra_MultiVector& isotherm_langmuir_b ) {
-    *isotherm_langmuir_b_ = isotherm_langmuir_b;
-  }
-
-  void set_specific_storage (const Epetra_Vector& spc_storage ) {
-    *specific_storage = spc_storage;
-  }
-  
-  void set_specific_yield (const Epetra_Vector& spc_yield ) {
-    *specific_yield = spc_yield;
-  }
+class State {
 
  private:
-  void initialize_from_parameter_list();
-  void initialize_from_file_list();
-  void init_verbosity (Teuchos::ParameterList& parameter_list_);
-  void create_default_compnames(int n);
-  void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
-				    int mesh_block_id);
 
-  void set_cell_value_in_region(const double& value, Epetra_Vector& v,
-				const std::string& region);
+  typedef std::map<Key, Teuchos::RCP<const AmanziMesh::Mesh> > MeshMap;
+  typedef std::map<Key, Teuchos::RCP<CompositeVectorFactory> > FieldFactoryMap;
+  typedef std::map<Key, Teuchos::RCP<Field> > FieldMap;
+  typedef std::map<Key, Teuchos::RCP<FieldEvaluator> > FieldEvaluatorMap;
 
-  void set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector &v,
-				const std::string& region);
+ public:
 
-  void set_cell_value_in_region(const Epetra_Vector& x, Epetra_Vector& v,
-				const std::string& region);
+  // Default constructor.
+  State();
 
-  void write_vis_ (Amanzi::Vis& vis, bool chemistry_enabled,  bool force=false);
-  void write_vis_ (Amanzi::Vis& vis, 
-		   Teuchos::RCP<Epetra_MultiVector> auxdata, 
-		   const std::vector<std::string>& auxnames, 
-		   bool chemistry_enabled, bool force=false);
-  // state vectors
-  Teuchos::RCP<Epetra_Vector> water_density;  
-  Teuchos::RCP<Epetra_Vector> pressure;
-  Teuchos::RCP<Epetra_Vector> lambda;
-  Teuchos::RCP<Epetra_Vector> darcy_flux;
-  Teuchos::RCP<Epetra_Vector> porosity;
-  Teuchos::RCP<Epetra_Vector> particle_density;
-  Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
-  Teuchos::RCP<Epetra_Vector> water_saturation;
-  Teuchos::RCP<Epetra_Vector> prev_water_saturation;
-  Teuchos::RCP<Epetra_Vector> horizontal_permeability;
-  Teuchos::RCP<Epetra_Vector> vertical_permeability;  
-  Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
-  Teuchos::RCP<Epetra_Vector> material_ids;
-  Teuchos::RCP<Epetra_Vector> volume_;
+  // Usual constructor.
+  explicit State(Teuchos::ParameterList& state_plist);
 
-  // the next two are for walkabout
-  Teuchos::RCP<Epetra_MultiVector> walkabout_xyz;
-  Teuchos::RCP<Epetra_MultiVector> walkabout_velocity;
-  Teuchos::RCP<Epetra_Vector> walkabout_porosity;
-  Teuchos::RCP<Epetra_Vector> walkabout_water_saturation;
+  // Copy constructor, copies memory not pointers.
+  State(const State& other, StateConstructMode mode);
 
-  Teuchos::RCP<Epetra_MultiVector> free_ion_concentrations_; 
-  Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff_;
-  Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff_;
-  Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions_; // [cell][mineral]
-  Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area_; // [cell][mineral]
-  Teuchos::RCP<Epetra_MultiVector> total_sorbed_;  // [cell][species]
-  Teuchos::RCP<Epetra_MultiVector> sorption_sites_;  // [cell][site], eventually [cell][mineral][site]
-  Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc_;
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites_; // CEC, [cell][mineral]
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc_;
-  Teuchos::RCP<Epetra_MultiVector> isotherm_kd_; // [cell][species]
-  Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n_; // [cell][species]
-  Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b_; // [cell][species]
-  Teuchos::RCP<Epetra_Vector> specific_storage; 
-  Teuchos::RCP<Epetra_Vector> specific_yield; 
+  // Assignment operator, copies memory not pointers.  Note this
+  // implementation requires the State being copied has the same structure (in
+  // terms of fields, order of fields, etc) as *this.  This really means that
+  // it should be a previously-copy-constructed version of the State.  One and
+  // only one State should be instantiated and populated -- all other States
+  // should be copy-constructed from that initial State.
+  State& operator=(const State& other);
 
-  Teuchos::RCP<double*> gravity;
-  Teuchos::RCP<double> density;
-  Teuchos::RCP<double> viscosity;
+  // Create data structures, finalizing the structure of the state.
+  void Setup();
 
-  double p_atm;
-  
-  int number_of_components;
-  std::map<std::string,int> comp_no;
+  // Initialize field evaluators using ICs set by PKs.
+  void Initialize();
 
-  double time, last_time, inter_time_, fin_time_;
-  int cycle;
-  status_type status;
 
-  // mesh
-  const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps;
+  // -----------------------------------------------------------------------------
+  // State handles mesh management.
+  // -----------------------------------------------------------------------------
+  // Meshes are "registered" with state.  Creation of meshes is NOT handled by
+  // state.
+  //
+  // Register a mesh under the default key, "domain".
+  void RegisterDomainMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+
+  // Register a mesh under a generic key.
+  void RegisterMesh(Key key, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+
+  // Remove a mesh.
+  void RemoveMesh(Key key);
+
+  // Ensure a mesh exists.
+  bool HasMesh(Key key) const { return GetMesh_(key) != Teuchos::null; }
+
+  // Mesh accessor.
+  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(Key key=Key("domain")) const;
+
+  // Iterate over meshes.
+  typedef MeshMap::const_iterator mesh_iterator;
+  mesh_iterator mesh_begin() const { return meshes_.begin(); }
+  mesh_iterator mesh_end() const { return meshes_.end(); }
+  MeshMap::size_type mesh_count() { return meshes_.size(); }
+
+  // -----------------------------------------------------------------------------
+  // State handles data management.
+  // -----------------------------------------------------------------------------
+  // Data is stored and referenced in a common base class, the Field.
+  //
+  // State manages the creation and consistency of Fields.  Data is "required"
+  // of the state.  The require methods act as factories and consistency
+  // checks for ownership and type specifiers of the fields.
+  //
+  // State also manages access to fields.  A Field is "owned" by at most one
+  // object -- that object, which is typically either a PK or a
+  // FieldEvaluator, may write the solution, and therefore receives non-const
+  // pointers to data.  A Field may be used by anyone, but non-owning objects
+  // receive const-only pointers to data.  Additionally, fields may be owned
+  // by state, meaning that they are independent variables used but not
+  // altered by PKs (this is likely changing with the introduction of
+  // FieldEvaluators which perform that role).
+  //
+  // Require Fields from State.
+  // -- Require a scalar field, either owned or not.
+  void RequireScalar(Key fieldname, Key owner=Key("state"));
+
+  // -- Require a constant vector of given dimension, either owned or not.
+  void RequireConstantVector(Key fieldname, Key owner=Key("state"),
+                             int dimension=-1);
+  void RequireConstantVector(Key fieldname, int dimension=-1);
+
+  // -- Require a vector field, either owned or not.
+  Teuchos::RCP<CompositeVectorFactory>
+  RequireField(Key fieldname, Key owner="state");
+
+  Teuchos::RCP<CompositeVectorFactory>
+  RequireField(Key fieldname, Key owner,
+               const std::vector<std::vector<std::string> >& subfield_names);
+
+  // -- A few common, special cases, where we know some of the implied meta-data.
+  void RequireGravity();
+
+  // Ensure a mesh exists.
+  bool HasField(Key key) const { return GetField_(key) != Teuchos::null; }
+
+  // Field accessor.
+  Teuchos::RCP<Field> GetField(Key fieldname, Key pk_name);
+  Teuchos::RCP<const Field> GetField(Key fieldname) const;
+  void SetField(Key fieldname, Key pk_name, const Teuchos::RCP<Field>& field);
+
+  // Iterate over Fields.
+  typedef FieldMap::const_iterator field_iterator;
+  field_iterator field_begin() const { return fields_.begin(); }
+  field_iterator field_end() const { return fields_.end(); }
+  FieldMap::size_type field_count() { return fields_.size(); }
+
+  // Access to Field data
+  Teuchos::RCP<const double> GetScalarData(Key fieldname) const;
+  Teuchos::RCP<double> GetScalarData(Key fieldname, Key pk_name);
+
+  Teuchos::RCP<const Epetra_Vector> GetConstantVectorData(Key fieldname) const;
+  Teuchos::RCP<Epetra_Vector> GetConstantVectorData(Key fieldname, Key pk_name);
+
+  Teuchos::RCP<const CompositeVector> GetFieldData(Key fieldname) const;
+  Teuchos::RCP<CompositeVector> GetFieldData(Key fieldname, Key pk_name);
+
+  // Mutator for Field data.
+  // -- Modify by pointer, no copy.
+  void SetData(Key fieldname, Key pk_name,
+                const Teuchos::RCP<double>& data);
+  void SetData(Key fieldname, Key pk_name,
+                const Teuchos::RCP<Epetra_Vector>& data);
+  void SetData(Key fieldname, Key pk_name,
+                const Teuchos::RCP<CompositeVector>& data);
+
+
+  // -----------------------------------------------------------------------------
+  // State handles data evaluation.
+  // -----------------------------------------------------------------------------
+  // To manage lazy yet sufficient updating of models and derivatives of
+  // models, we use a graph-based view of data and data dependencies, much
+  // like the Phalanx approach.  A directed acyclic graph of dependencies are
+  // managed in State, where each node is a FieldEvaluator.
+  //
+  // Require FieldEvaluators.
+  Teuchos::RCP<FieldEvaluator> RequireFieldEvaluator(Key);
+  Teuchos::RCP<FieldEvaluator> RequireFieldEvaluator(Key, Teuchos::ParameterList&);
+
+  // Ensure a FieldEvaluator exists.
+  bool HasFieldEvaluator(Key key) { return GetFieldEvaluator_(key) != Teuchos::null; }
+
+  // FieldEvaluator accessor.
+  Teuchos::RCP<FieldEvaluator> GetFieldEvaluator(Key);
+
+  // FieldEvaluator mutator.
+  void SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evaluator);
+
+  // Iterate over evaluators.
+  typedef FieldEvaluatorMap::const_iterator evaluator_iterator;
+  evaluator_iterator field_evaluator_begin() const { return field_evaluators_.begin(); }
+  evaluator_iterator field_evaluator_end() const { return field_evaluators_.end(); }
+  FieldEvaluatorMap::size_type field_evaluator_count() { return field_evaluators_.size(); }
+
+
+  // -----------------------------------------------------------------------------
+  // State handles model parameters.
+  // -----------------------------------------------------------------------------
+  // Some model parameters may be common to many PKs, Evaluators, boundary
+  // conditions, etc.  Access to the parameters required to make these models
+  // is handled through state.
+  //
+  // Get a parameter list.
+  Teuchos::ParameterList GetModelParameters(std::string modelname); 
+
+
+  // -----------------------------------------------------------------------------
+  // State is representative of an instant in time and a single cycle within
+  // the time integration process.
+  // -----------------------------------------------------------------------------
+  // Time accessor and mutators.
+  double time() const { return time_; }
+  void set_time(double new_time);  // note this also evaluates state-owned functions
+  void advance_time(double dT) { last_time_ = time(); set_time(time() + dT); }
+
+  double final_time() const { return final_time_; }
+  void set_final_time(double new_time) { final_time_ = new_time; }
+  double intermediate_time() const { return intermediate_time_; }
+  void set_intermediate_time(double new_time) { intermediate_time_ = new_time; }
+
+  double last_time() const { return last_time_; }
+  void set_last_time( double last_time) { last_time_ = last_time; }
+  double initial_time() const { return initial_time_; }
+  void set_initial_time( double initial_time) { initial_time_ = initial_time; }
+
+  // Cycle accessor and mutators.
+  int cycle() const { return cycle_; }
+  void set_cycle(int cycle) { cycle_ = cycle; }
+  void advance_cycle(int dcycle=1) { cycle_ += dcycle; }
+
+private:
+  // sub-steps in the initialization process.
+  void InitializeEvaluators_();
+  void InitializeFields_();
+  bool CheckNotEvaluatedFieldsInitialized_();
+  bool CheckAllFieldsInitialized_();
+
+  // Accessors that return null if the Key does not exist.
+  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh_(Key key) const;
+  Teuchos::RCP<const Field> GetField_(Key fieldname) const;
+  Teuchos::RCP<Field> GetField_(Key fieldname);
+  Teuchos::RCP<FieldEvaluator> GetFieldEvaluator_(Key key);
+
+  // Consistency checking of fieldnames and types.
+  Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
+          FieldType type, Key owner);
+
+  // Containers
+  MeshMap meshes_;
+  FieldMap fields_;
+  FieldFactoryMap field_factories_;
+  FieldEvaluatorMap field_evaluators_;
+
+  // meta-data
+  double time_;
+  double final_time_;
+  double intermediate_time_;
+  double last_time_;
+  double initial_time_;
+
+  int cycle_;
 
   // parameter list
-  Teuchos::ParameterList parameter_list;
+  Teuchos::ParameterList state_plist_;
 
-  // names for components
-  std::vector<std::string> compnames;
-  int number_of_minerals_;
-  std::vector<std::string> mineral_names_;
-  std::map<std::string, int> mineral_name_id_map_;
-  bool using_sorption_;
-  bool use_sorption_isotherms_;
-  int number_of_ion_exchange_sites_;
-  int number_of_sorption_sites_;
-  std::vector<std::string> sorption_site_names_;
-  std::map<std::string, int> sorption_site_name_id_map_;
+ private:
+  // un-defined!
+  State(const State& other);
+
 };
+
+
+// -----------------------------------------------------------------------------
+// Non-member functions for I/O of a State.
+// -----------------------------------------------------------------------------
+// Visualization of State.
+void WriteVis(const Teuchos::Ptr<Visualization>& vis,
+              const Teuchos::Ptr<State>& S);
+
+// Checkpointing State.
+void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp,
+                     const Teuchos::Ptr<State>& S,
+                     double dt);
+
+double ReadCheckpoint(Epetra_MpiComm* comm,
+                      const Teuchos::Ptr<State>& S,
+                      std::string filename);
+
+double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
+                      std::string filename);
+
+void DeformCheckpointMesh(const Teuchos::Ptr<State>& S);
+
+} // namespace amanzi
 
 #endif

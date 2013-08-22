@@ -10,8 +10,8 @@
 #include<species.hh>
 #include<sorption_isotherm.hh>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -63,6 +63,6 @@ class SorptionIsothermRxn {
 
 }; // SorptionIsothermRxn
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SORPTION_ISOTHERM_RXN_HH_

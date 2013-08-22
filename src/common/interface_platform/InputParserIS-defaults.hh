@@ -35,11 +35,12 @@
 #define ST_NONLIN_INIT_GUESS_EXTR_ORD   1
 #define ST_NONLIN_INIT_TS_FACTOR        1.0
 #define ST_NONLIN_INIT_TS_FACTOR_DAMP   1.0
-#define ST_PRECOND                      "Hypre AMG"
+#define ST_PRECOND                      "Trilinos ML" //"Hypre AMG"
 #define ST_SOLVER                       "AztecOO"
 #define ST_INIT_DARCY_BOOL              true
 #define ST_DIVERG_FACT                  1000.0
-
+#define ST_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
+ 
 
 #define TR_MAX_ITER                     15
 #define TR_MIN_ITER                     10
@@ -56,7 +57,7 @@
 #define TR_NONLIN_INIT_GUESS_EXTR_ORD   1
 #define TR_NONLIN_INIT_TS_FACTOR        1.0
 #define TR_NONLIN_INIT_TS_FACTOR_DAMP   1.0
-#define TR_PRECOND                      "Hypre AMG"
+#define TR_PRECOND                      "Trilinos ML"
 #define TR_SOLVER                       "AztecOO"
 #define TR_DIVERG_FACT                  1000.0
 #define TR_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase

@@ -65,8 +65,12 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  State* S = new State(state_list, mesh);
+  State* S = new State(state_list);
+  S->RegisterDomainMesh(mesh);
   RCP<Flow_State> FS = Teuchos::rcp(new AmanziFlow::Flow_State(*S));
+  S->Setup();
+  FS->Initialize();
+  S->Initialize();
 
   // create Richards problem
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
@@ -78,10 +82,11 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   double mu = FS->ref_fluid_viscosity();
   AmanziGeometry::Point& g = RPK->gravity();
 
-  const Epetra_Vector& kh = FS->ref_horizontal_permeability();
-  const Epetra_Vector& kv = FS->ref_vertical_permeability();
+  const Epetra_Vector& kx = *(*FS->permeability())(0);
+  const Epetra_Vector& ky = *(*FS->permeability())(1);
+  const Epetra_Vector& kz = *(*FS->permeability())(2);
 
-  Point K(kh[0], kh[0], kv[0]);  // model the permeability tensor
+  Point K(kx[0], ky[0], kz[0]);  // model the permeability tensor
   Point u0(1.0, 1.0, 1.0);
   Point v0(3);
 

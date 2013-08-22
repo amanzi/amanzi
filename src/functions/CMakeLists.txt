@@ -5,10 +5,15 @@
 #    Functions
 #
 
+MACRO(WHOLE_ARCHIVE inlib)
+  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
+ENDMACRO(WHOLE_ARCHIVE inlib)
+
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
 include(LibraryManager)
+include(RegistryManager)
 
 
 #
@@ -30,6 +35,18 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 
+# Need to move this up to the root -- lpritch
+add_definitions("-DUSE_MPI")
+
+# register to factories
+register_to_factory(SOURCE linear-function_reg.hh
+                    PATH   ${FUNCS_SOURCE_DIR})
+register_to_factory(SOURCE constant-function_reg.hh
+                    PATH   ${FUNCS_SOURCE_DIR})
+
+
+create_reg_source(FILENAME registry.cc)
+
 #
 # Library: functions
 #
@@ -42,7 +59,8 @@ add_amanzi_library(functions
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
-    
+  WHOLE_ARCHIVE(functions)
+
   # Add UnitTest includes
   include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -55,28 +73,35 @@ if (BUILD_TESTS)
         copy_directory ${FUNCS_SOURCE_DIR}/test ${FUNCS_BINARY_DIR}/test) 
   endif()
 
+
   add_amanzi_test(concrete-functions all-function-test
                   KIND unit
-  SOURCE test/AllFunctionTest.cc
+  SOURCE test/all-function-test.cc
   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(function-factory function-factory-test
                   KIND unit
-                  SOURCE test/FunctionFactoryTest.cc
+                  SOURCE test/function-factory-test.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
  
   add_amanzi_test(concrete-color-function all-color-function-test
                   KIND unit
-                  SOURCE test/AllColorFunctionTest.cc
+                  SOURCE test/all-color-function-test.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
   add_amanzi_test(color-function-factory color-function-factory-test
                   KIND unit
-                  SOURCE test/ColorFunctionFactoryTest.cc
+                  SOURCE test/color-function-factory-test.cc
                   LINK_LIBS 
                          functions
                          ${UnitTest_LIBRARIES}
                          ${Teuchos_LIBRARIES}
                          ${Epetra_LIBRARIES})
 
+  add_amanzi_test(composite-function composite-function-test
+                  KIND unit
+                  SOURCE test/composite-function-test.cc
+		  LINK_LIBS functions ${UnitTest_LIBRARIES})
+
 endif()
+

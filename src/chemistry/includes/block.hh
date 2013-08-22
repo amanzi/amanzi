@@ -3,8 +3,8 @@
 #define AMANZI_CHEMISTRY_BLOCK_HH_
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class Block {
  public:
@@ -56,6 +56,6 @@ class Block {
   double** A;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_BLOCK_HH_

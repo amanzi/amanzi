@@ -17,7 +17,7 @@
 
 #include "Epetra_MpiComm.h"
 
-#include "ColorFunction.hh"
+#include "color-function.hh"
 
 #include "Region.hh"
 

@@ -7,7 +7,7 @@ Authors: Konstantin Lipnikov (version 2)  (lipnikov@lanl.gov)
 #include <string>
 #include <vector>
 
-#include "FunctionFactory.hh"
+#include "MultiFunction.hh"
 #include "errors.hh"
 
 #include "Flow_SourceFactory.hh"
@@ -18,9 +18,9 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-DomainFunction* FlowSourceFactory::createSource() const
+Functions::FlowDomainFunction* FlowSourceFactory::createSource() const
 {
-  DomainFunction* src = new DomainFunction(mesh_);
+  Functions::FlowDomainFunction* src = new Functions::FlowDomainFunction(mesh_);
 
   // Iterate through the source specification sublists in the params_.
   // All are expected to be sublists of identical structure.
@@ -48,7 +48,7 @@ DomainFunction* FlowSourceFactory::createSource() const
 /* ******************************************************************
 * Process source, step 2.
 ****************************************************************** */
-void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, DomainFunction* src) const
+void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, Functions::FlowDomainFunction* src) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -74,10 +74,9 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, DomainFu
   }
 
   // Make the source function.
-  Teuchos::RCP<Function> f;
-  FunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = Teuchos::rcp(f_fact.Create(*f_list));
+    f = Teuchos::rcp(new MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in source sublist : " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -87,7 +86,7 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, DomainFu
   int method;
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
-  
+
   src->Define(regions, f, method);
 }
 
@@ -97,13 +96,14 @@ void FlowSourceFactory::ProcessSourceSpec(Teuchos::ParameterList& list, DomainFu
 **************************************************************** */
 void FlowSourceFactory::ProcessStringActions(const std::string& name, int* method) const
 {
+
   Errors::Message msg;
   if (name == "none") {
-    *method = Amanzi::DOMAIN_FUNCTION_ACTION_NONE;
+    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_NONE;
   } else if (name == "volume") {
-    *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
+    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME;
   } else if (name == "permeability") {
-    *method = Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
+    *method = Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY;
   } else {
     msg << "Flow PK: unknown source distribution method has been specified.";
     Exceptions::amanzi_throw(msg);

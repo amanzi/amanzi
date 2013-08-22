@@ -60,8 +60,12 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
-  State S(state_list, mesh);
+  State S(state_list);
+  S.RegisterDomainMesh(mesh);
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  S.Setup();
+  FS->Initialize();
+  S.Initialize();
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
@@ -83,7 +87,9 @@ TEST(FLOW_3D_RICHARDS) {
   GMV::start_data();
   GMV::write_cell_data(pressure, 0, "pressure");
   GMV::write_cell_data(saturation, 0, "saturation");
-  GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
+  GMV::write_cell_data(*(*FS->permeability())(0), 0, "permeability_x");
+  GMV::write_cell_data(*(*FS->permeability())(1), 0, "permeability_y");
+  GMV::write_cell_data(*(*FS->permeability())(2), 0, "permeability_z");
   GMV::close_data_file();
 
   // check the pressure profile

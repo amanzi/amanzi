@@ -32,6 +32,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "boundary_function.hh"
 
 #include "Flow_State.hh"
 #include "Flow_typedefs.hh"
@@ -43,7 +44,7 @@ namespace AmanziFlow {
 
 class Matrix_MFD : public Epetra_Operator {
  public:
-   Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_);
+  Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_);
   ~Matrix_MFD();
 
   // main methods

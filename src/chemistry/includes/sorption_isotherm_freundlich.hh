@@ -8,8 +8,8 @@
 
 // Class for Freundlich isotherm
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class SorptionIsothermFreundlich : public SorptionIsotherm {
  public:
@@ -37,6 +37,6 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
 
 }; // SorptionIsothermFreundlich
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SORPTION_ISOTHERM_FREUNDLICH_HH_

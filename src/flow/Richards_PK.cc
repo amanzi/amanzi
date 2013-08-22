@@ -24,7 +24,6 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 
 #include "dbc.hh"
 #include "exceptions.hh"
-#include "BoundaryFunction.hh"
 
 #include "Mesh.hh"
 #include "Point.hh"
@@ -214,7 +213,7 @@ void Richards_PK::InitPK()
   }
 
   // Allocate memory for wells
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     const Epetra_Map& cmap_owned = mesh_->cell_map(false);
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
@@ -453,7 +452,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   }
 
   // Well modeling
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     CalculatePermeabilityFactorInWell(K, *Kxy);
   }
 
@@ -717,25 +716,54 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
 ****************************************************************** */
 void Richards_PK::SetAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
-  const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
-  const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
+ 
+  if (dim == 2) {
+    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
+    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
 
-  const Epetra_BlockMap& cmap_wghost = mesh_->cell_map(true);
-  Epetra_Vector perm_vert_gh(cmap_wghost);
-  Epetra_Vector perm_horz_gh(cmap_wghost);
+    const Epetra_BlockMap& cmap_wghost = mesh_->cell_map(true);
+    Epetra_Vector perm_x_gh(cmap_wghost);
+    Epetra_Vector perm_y_gh(cmap_wghost);
 
-  FS->CopyMasterCell2GhostCell(vertical_permeability, perm_vert_gh);
-  FS->CopyMasterCell2GhostCell(horizontal_permeability, perm_horz_gh);
+    FS->CopyMasterCell2GhostCell(permeability_x, perm_x_gh);
+    FS->CopyMasterCell2GhostCell(permeability_y, perm_y_gh);    
+    
+    for (int c = 0; c < ncells_wghost; c++) {
+      if (perm_x_gh[c] == perm_y_gh[c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = perm_x_gh[c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = perm_x_gh[c];
+	K[c](1, 1) = perm_y_gh[c];
+      }
+    }    
+    
+  } else if (dim == 3) {
+    const Epetra_Vector& permeability_x = *(*FS->permeability())(0);
+    const Epetra_Vector& permeability_y = *(*FS->permeability())(1);
+    const Epetra_Vector& permeability_z = *(*FS->permeability())(2);
+    
+    const Epetra_BlockMap& cmap_wghost = mesh_->cell_map(true);
+    Epetra_Vector perm_x_gh(cmap_wghost);
+    Epetra_Vector perm_y_gh(cmap_wghost);
+    Epetra_Vector perm_z_gh(cmap_wghost);
 
-  for (int c = 0; c < ncells_wghost; c++) {
-    if (perm_vert_gh[c] == perm_horz_gh[c]) {
-      K[c].init(dim, 1);
-      K[c](0, 0) = perm_vert_gh[c];
-    } else {
-      K[c].init(dim, 2);
-      for (int i = 0; i < dim-1; i++) K[c](i, i) = perm_horz_gh[c];
-      K[c](dim-1, dim-1) = perm_vert_gh[c];
-    }
+    FS->CopyMasterCell2GhostCell(permeability_x, perm_x_gh);
+    FS->CopyMasterCell2GhostCell(permeability_y, perm_y_gh);        
+    FS->CopyMasterCell2GhostCell(permeability_z, perm_z_gh);        
+
+    for (int c = 0; c < ncells_wghost; c++) {
+      if (perm_x_gh[c] == perm_y_gh[c]  && perm_y_gh[c] == perm_z_gh[c]) {
+	K[c].init(dim, 1);
+	K[c](0, 0) = perm_x_gh[c];
+      } else {
+	K[c].init(dim, 2);
+	K[c](0, 0) = perm_x_gh[c];
+	K[c](1, 1) = perm_y_gh[c];
+	K[c](2, 2) = perm_z_gh[c];
+      }
+    }        
   }
 }
 

@@ -8,12 +8,12 @@
 #include "chemistry_verbosity.hh"
 
 int CommandLineOptions(int argc, char** argv,
-                       amanzi::chemistry::Verbosity* verbosity);
+                       Amanzi::AmanziChemistry::Verbosity* verbosity);
 
-void fbasin_source(amanzi::chemistry::Beaker::BeakerComponents* components);
-void fbasin_aqueous_source(amanzi::chemistry::Beaker::BeakerComponents* components);
-void fbasin_free_ions(amanzi::chemistry::Beaker::BeakerComponents* components);
-void fbasin_minerals(amanzi::chemistry::Beaker::BeakerComponents* components);
-void fbasin_sorbed(amanzi::chemistry::Beaker::BeakerComponents* components);
+void fbasin_source(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
+void fbasin_aqueous_source(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
+void fbasin_free_ions(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
+void fbasin_minerals(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
+void fbasin_sorbed(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
 
 #endif

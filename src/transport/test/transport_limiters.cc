@@ -57,16 +57,17 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   factory.preference(pref);
   RCP<Mesh> mesh = factory(0.0,0.0,0.0, 1.0,1.0,1.0, 3, 4, 7, gm); 
 
-  // create a Transport state with two components
-  int num_components = 1;
-  State mpc_state(num_components, 0, mesh);
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh,1));
 
   Point u(1.0, 0.0, 0.0);
-  TS->AnalyticDarcyFlux(u);
-  TS->AnalyticPorosity();
-  TS->AnalyticWaterSaturation();
-  TS->AnalyticWaterDensity();
+  TS->Initialize();
+  TS->set_darcy_flux(u);
+  TS->set_porosity(0.2);
+  TS->set_water_saturation(1.0);
+  TS->set_prev_water_saturation(1.0);
+  TS->set_water_density(1000.0);
+  TS->set_total_component_concentration(0.0,0);
 
   // create transport PK  
   ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");

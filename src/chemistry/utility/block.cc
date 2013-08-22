@@ -6,8 +6,8 @@
 #include <iostream>
 #include <iomanip>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 Block::Block() {
   size = 0;
@@ -200,5 +200,5 @@ Block::~Block() {
   A = NULL;
 }
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

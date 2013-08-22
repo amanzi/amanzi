@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 ActivityModelUnit::ActivityModelUnit()
     : ActivityModel() {
@@ -41,5 +41,5 @@ void ActivityModelUnit::Display(void) const {
             << std::endl;
 }  // end Display()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

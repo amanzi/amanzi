@@ -21,6 +21,9 @@ Authors: Neil Carlson (version 1)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "flow-boundary-function.hh"
+#include "flow-domain-function.hh"
+
 #include "BDF2_TI.hh"
 #include "BDF1_TI.hh"
 
@@ -93,7 +96,7 @@ class Richards_PK : public Flow_PK {
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
   void AssembleMatrixMFD(const Epetra_Vector &u, double Tp);
   void AssemblePreconditionerMFD(const Epetra_Vector &u, double Tp, double dTp);
-  void ComputeTransmissibilities (Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
+  void ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_Vector& grav_faces);
 
   void UpdateSourceBoundaryData(double Tp, Epetra_Vector& p_cells, Epetra_Vector& p_faces);
   double AdaptiveTimeStepEstimate(double* dTfactor);
@@ -172,16 +175,16 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
 
-  BoundaryFunction* bc_pressure;  // Pressure BC.
-  BoundaryFunction* bc_head;  // Static pressure head BC.
-  BoundaryFunction* bc_flux;  // Outward mass flux BC.
-  BoundaryFunction* bc_seepage;  // Seepage face BC.
+  Functions::FlowBoundaryFunction* bc_pressure;  // Pressure BC.
+  Functions::FlowBoundaryFunction* bc_head;  // Static pressure head BC.
+  Functions::FlowBoundaryFunction* bc_flux;  // Outward mass flux BC.
+  Functions::FlowBoundaryFunction* bc_seepage;  // Seepage face BC.
   std::vector<int> bc_model, bc_submodel; 
   std::vector<bc_tuple> bc_values;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
   std::vector<double> rainfall_factor;
 
-  DomainFunction* src_sink;  // Source and sink terms
+  Functions::FlowDomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability

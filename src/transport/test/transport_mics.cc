@@ -62,10 +62,9 @@ TEST(CONSTRUCTOR) {
   //MeshAudit audit(mesh);
   //audit.Verify();
 
-  /* create a Transport state with two components */
-  int num_components = 2;
-  State mpc_state(num_components, 0, mesh);
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh,2));
+  TS->Initialize();
 
   ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);

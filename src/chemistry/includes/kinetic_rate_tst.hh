@@ -28,8 +28,8 @@
 #include "string_tokenizer.hh"
 #include "chemistry_output.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 extern ChemistryOutput* chem_out;
 
@@ -137,6 +137,6 @@ class KineticRateTST : public KineticRate {
   std::vector<double> modifying_secondary_exponents;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_ */

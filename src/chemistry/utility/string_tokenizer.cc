@@ -21,8 +21,8 @@
 #include <string>
 #include <vector>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 StringTokenizer::StringTokenizer(void) {
 } /* end StringTokenizer() */
@@ -68,5 +68,5 @@ void StringTokenizer::tokenize_leave_delimiters(const std::string& source,
   }
 } /* end tokenize_with_delimiters(source, delimitiers) */
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

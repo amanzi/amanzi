@@ -9,8 +9,8 @@
 #include "species.hh"
 #include "surface_site.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -145,6 +145,6 @@ class SurfaceComplex {
   double logK_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_

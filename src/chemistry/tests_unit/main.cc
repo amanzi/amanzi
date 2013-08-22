@@ -6,17 +6,17 @@
 #include "chemistry_verbosity.hh"
 #include "chemistry_containers.hh"
 
-// create a global ChemistryOutput* pointer in the amanzi::chemisry
+// create a global ChemistryOutput* pointer in the Amanzi::chemisry
 // namespace that can be used by an other chemistry object
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 extern ChemistryOutput* chem_out;
-}  // end namespace chemistry
-}  // end namespace amanzi
+}  // end namespace AmanziChemistry
+}  // end namespace Amanzi
 
 
 int main(int argc, char* argv[]) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
 
   ac::SetupDefaultChemistryOutput();
 

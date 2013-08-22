@@ -60,9 +60,8 @@ TEST(NEWTON_RICHARD_STEADY) {
   Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
 
   // create flow state
-  ParameterList state_list = parameter_list.get<ParameterList>("State");
-  State S(state_list, mesh);
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+  FS->Initialize();
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
@@ -70,7 +69,7 @@ TEST(NEWTON_RICHARD_STEADY) {
   RPK->InitSteadyState(0.0, 1e+4);
 
   // solve the problem
-  S.set_time(0.0);
+  // S.set_time(0.0);
   RPK->AdvanceToSteadyState(0.0, 1000.0);
   RPK->CommitState(FS);
 
@@ -83,7 +82,6 @@ TEST(NEWTON_RICHARD_STEADY) {
   GMV::start_data();
   GMV::write_cell_data(pressure, 0, "pressure");
   GMV::write_cell_data(saturation, 0, "saturation");
-  GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
   GMV::close_data_file();
 
   // check the number of iteration

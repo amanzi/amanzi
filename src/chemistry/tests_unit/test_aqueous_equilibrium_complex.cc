@@ -12,7 +12,7 @@
 #include "matrix_block.hh"
 
 SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   /*****************************************************************************
    **
    **  Test for AqueousEquilibriumComplex.cpp

@@ -31,8 +31,8 @@
 
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 /*
 **
@@ -1324,5 +1324,5 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
 }  // end ParseSurfaceComplexReaction()
 
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

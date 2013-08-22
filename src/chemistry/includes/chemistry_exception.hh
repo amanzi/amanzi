@@ -5,8 +5,8 @@
 #include <string>
 
 #include "errors.hh"
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class ChemistryException : public Errors::Message {
  public:
@@ -80,6 +80,6 @@ class ChemistryMemorySizeError : public ChemistryException {
  private:
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_EXCEPTION_HH_

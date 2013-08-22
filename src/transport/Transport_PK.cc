@@ -1,7 +1,7 @@
 /*
 This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
 Amanzi is released under the three-clause BSD License. 
 The terms of use and "as is" disclaimer for this license are 
 provided in the top-level COPYRIGHT file.
@@ -20,7 +20,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "errors.hh"
-#include "TabularFunction.hh"
+#include "tabular-function.hh"
 #include "GMVMesh.hh"
 
 #include "Explicit_TI_RK.hh"
@@ -43,7 +43,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   parameter_list = parameter_list_MPC;
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
-  TS = Teuchos::rcp(new Transport_State(*TS_MPC));
+  TS = Teuchos::rcp(new Transport_State(*TS_MPC, Transport_State::CONSTRUCT_MODE_COPY_POINTERS));
 
   dT = dT_debug = T_physics = 0.0;
   double time = TS->initial_time();
@@ -70,8 +70,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 ****************************************************************** */
 int Transport_PK::InitPK()
 {
-  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory));
-  TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, ViewMemory));
+  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, Transport_State::CONSTRUCT_MODE_COPY_DATA_GHOSTED));
+  TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, Transport_State::CONSTRUCT_MODE_VIEW_DATA));
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -135,12 +135,14 @@ int Transport_PK::InitPK()
 
   // boundary conditions initialization
   double time = T_physics;
-  for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
+  for (int i = 0; i < bcs.size(); i++) {
+    bcs[i]->Compute(time);
+  }
 
   CheckInfluxBC();
 
-  // source term memory allocation
-  if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  // source term memory allocation (revisit the code (lipnikov@lanl.gov)
+  if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
  
@@ -302,7 +304,7 @@ void Transport_PK::Advance(double dT_MPC)
     // update boundary conditions
     time = T_physics;
     for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
-
+    
     double dT_try = dT_MPC - dT_sum;
     bool final_cycle = false;
     if (dT_try >= 2 * dT_original) {
@@ -448,7 +450,8 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
   // loop over exterior boundary sets
   for (int n = 0; n < bcs.size(); n++) {
     int i = bcs_tcc_index[n];
-    for (Amanzi::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+
+    for (Amanzi::Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
       int f = bc->first;
       int c2 = (*downwind_cell_)[f];
 
@@ -635,18 +638,20 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 * Computes source and sink terms and adds them to vector tcc.                                   
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
-                                         DomainFunction* src_sink, Epetra_MultiVector& tcc)
+                                         Functions::TransportDomainFunction* src_sink, 
+                                         Epetra_MultiVector& tcc)
 {
   int num_components = tcc.NumVectors();
   for (int i = 0; i < num_components; i++) {
     std::string name(TS->get_component_name(i));
-
-    if (src_sink_distribution & Amanzi::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
+    
+    if (src_sink_distribution & 
+        Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY)
       src_sink->ComputeDistributeMultiValue(Tp, name, Kxy->Values()); 
     else
       src_sink->ComputeDistributeMultiValue(Tp, name, NULL);
 
-    Amanzi::Iterator src;
+    Functions::TransportDomainFunction::Iterator src;
     for (src = src_sink->begin(); src != src_sink->end(); ++src) {
       int c = src->first;
       tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
@@ -685,6 +690,13 @@ void Transport_PK::IdentifyUpwindCells()
     }
   }
 }
+
+
+
+
+
+
+
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi

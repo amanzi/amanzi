@@ -71,12 +71,12 @@ void Richards_PK::ProcessParameterList()
   if (rp_list_.isSublist("source terms")) {
     string distribution_method_name = rp_list_.get<string>("source and sink distribution method", "none");
     ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
-
+    
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(rp_list_.sublist("source terms", true));
     FlowSourceFactory src_factory(mesh_, src_list);
     src_sink = src_factory.createSource();
     src_sink_distribution = src_sink->CollectActionsList();
-  }  
+  }
 
   // experimental solver (NKA is default)
   string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");

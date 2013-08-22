@@ -8,7 +8,7 @@
 #include "chemistry_utilities.hh"
 
 SUITE(amanzi_chemistry_unit_tests_ChemistryUtilities) {
-  namespace acu = amanzi::chemistry::utilities;
+  namespace acu = Amanzi::AmanziChemistry::utilities;
 
   TEST(TestUtilities_CaseInsensitiveStringCompare) {
     std::string base_string("The quick brown fox jumps over the lazy dog.");

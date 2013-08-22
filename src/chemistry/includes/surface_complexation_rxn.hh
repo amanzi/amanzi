@@ -18,8 +18,8 @@
 #include "surface_complex.hh"
 #include "surface_site.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -88,6 +88,6 @@ class SurfaceComplexationRxn {
   //std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_

@@ -11,7 +11,7 @@
 #include "exceptions.hh"
 
 SUITE(GeochemistryTests_ChemistryException) {
-  namespace ac = amanzi::chemistry;
+  namespace ac = Amanzi::AmanziChemistry;
   TEST(TestChemistryException_default_message) {
     try {
       ac::ChemistryException ce;

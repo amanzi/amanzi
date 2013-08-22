@@ -70,6 +70,7 @@
           <Parameter name="error abs tol" type="double" value="1"/>
           <Parameter name="error rel tol" type="double" value="0"/>
           <Parameter name="time step increase factor" type="double" value="1.2"/>
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
           <Parameter name="max iterations" type="int" value="5"/>
           <Parameter name="min iterations" type="int" value="2"/>
           <Parameter name="limit iterations" type="int" value="12"/>

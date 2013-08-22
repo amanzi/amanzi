@@ -9,8 +9,8 @@
 #include <vector>
 #include <ostream>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class MatrixBlock;
 
@@ -41,6 +41,6 @@ class LUSolver {
   bool factored_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_LU_SOLVER_HH_

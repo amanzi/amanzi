@@ -9,8 +9,8 @@
 
 #include "species.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations from chemistry
 class MatrixBlock;
@@ -61,6 +61,6 @@ class GeneralRxn {
   double lnQkb_;  // backward rate storage
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_GENERAL_RXN_HH_

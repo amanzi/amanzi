@@ -8,8 +8,8 @@
 #include "chemistry/includes/solver.hh"
 #include "chemistry/includes/block.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class DirectSolver : public Solver {
  public:
@@ -33,6 +33,6 @@ class DirectSolver : public Solver {
   bool factored_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_DIRECTSOLVER_HH_

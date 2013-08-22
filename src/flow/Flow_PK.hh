@@ -17,8 +17,9 @@ Usage:
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "BoundaryFunction.hh"
-#include "DomainFunction.hh"
+#include "flow-boundary-function.hh"
+#include "flow-domain-function.hh"
+#include "unique_mesh_function.hh"
 #include "BDF_FnBase.hh"
 
 #include "Flow_State.hh"
@@ -59,8 +60,8 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
                                 std::vector<double>& rainfall_factor);
   void ProcessBoundaryConditions(
-      BoundaryFunction* bc_pressure, BoundaryFunction* bc_head,
-      BoundaryFunction* bc_flux, BoundaryFunction* bc_seepage,
+      Functions::FlowBoundaryFunction* bc_pressure, Functions::FlowBoundaryFunction* bc_head,
+      Functions::FlowBoundaryFunction* bc_flux, Functions::FlowBoundaryFunction* bc_seepage,
       const Epetra_Vector& pressure_cells, 
       const Epetra_Vector& pressure_faces, const double atm_pressure,
       const std::vector<double>& rainfall_factor,
@@ -68,10 +69,10 @@ class Flow_PK : public BDF2::fnBase {
       std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   void CalculatePermeabilityFactorInWell(const std::vector<WhetStone::Tensor>& K, Epetra_Vector& Kxy);
-  void AddSourceTerms(DomainFunction* src_sink, Epetra_Vector& rhs);
+  void AddSourceTerms(Functions::FlowDomainFunction* src_sink, Epetra_Vector& rhs);
 
   void ProcessShiftWaterTableList(
-      const Teuchos::ParameterList& list, BoundaryFunction* bc_head,
+      const Teuchos::ParameterList& list, Functions::FlowBoundaryFunction* bc_head,
       Teuchos::RCP<Epetra_Vector>& shift_water_table_);
   void CalculateShiftWaterTable(
       const std::string region, Teuchos::RCP<Epetra_Vector> shift_water_table_);
@@ -101,8 +102,9 @@ class Flow_PK : public BDF2::fnBase {
   int flow_status() { return flow_status_; }
 
   // control members
-  void ValidateBoundaryConditions(
-      BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
+  void ValidateBoundaryConditions(Functions::FlowBoundaryFunction *bc_pressure, 
+                                  Functions::FlowBoundaryFunction *bc_head, 
+                                  Functions::FlowBoundaryFunction *bc_flux) const;
   void WriteGMVfile(Teuchos::RCP<Flow_State> FS) const;
  
   void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }
@@ -149,16 +151,16 @@ public:
   int MyPID;  // parallel information: will be moved to private
   int verbosity, verbosity_AztecOO;  // output information
   int missed_bc_faces_;
- 
+
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<Flow_State> FS_aux;  // adds ghosts to selected state variables 
-  
-  int ti_phase_counter;  
+
+  int ti_phase_counter;
   double T_physics, dT, dTnext;
   int flow_status_;
   int dim;
 
- protected:
+protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   Teuchos::ParameterList solver_list_;
@@ -167,7 +169,6 @@ public:
   AmanziGeometry::Point gravity_;
   double rho_, mu_;
 
- private:
   int nseepage_prev;
 };
 

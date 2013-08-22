@@ -55,7 +55,7 @@ const int WHETSTONE_MAX_SPATIAL_DIMENSION = 3;
 
 class MFD3D { 
  public:
-  explicit MFD3D(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+  explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
 
   virtual int L2consistency(int cell, const Tensor& T,

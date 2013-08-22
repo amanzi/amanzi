@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 VirialCoefficient::VirialCoefficient()
     :  isp1(-1),
@@ -42,5 +42,5 @@ void VirialCoefficient::UpdateVirial(const double& temp, const double& pressure)
 		  else if (i==4) {virial += pol[i]/(temp*temp);}
 	  }
 }
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

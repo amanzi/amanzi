@@ -32,15 +32,15 @@
 #include "chemistry_exception.hh"
 #include "string_tokenizer.hh"
 
-// create a global ChemistryOutput* pointer in the amanzi::chemisry
+// create a global ChemistryOutput* pointer in the Amanzi::chemisry
 // namespace that can be used by an other chemistry object
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 extern ChemistryOutput* chem_out;
-}  // end namespace chemistry
-}  // end namespace amanzi
+}  // end namespace AmanziChemistry
+}  // end namespace Amanzi
 
-namespace ac = amanzi::chemistry;
+namespace ac = Amanzi::AmanziChemistry;
 
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
@@ -664,7 +664,7 @@ void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
 }  // end WriteTextOutputHeader()
 
 void WriteTextOutput(std::fstream* text_output, const double time, 
-                     const amanzi::chemistry::Beaker::BeakerComponents& components) {
+                     const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components) {
   if (text_output->is_open()) {
     std::string seperator(" , ");
     *text_output << std::scientific << std::setprecision(6) << std::setw(15) << time;
@@ -680,7 +680,7 @@ void WriteTextOutput(std::fstream* text_output, const double time,
 
 
 void PrintInput(const SimulationParameters& params,
-                const amanzi::chemistry::Beaker::BeakerComponents& components)
+                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components)
 {
   ac::chem_out->Write(ac::kVerbose, "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params);

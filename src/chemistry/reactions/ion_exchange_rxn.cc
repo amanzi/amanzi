@@ -12,8 +12,8 @@
 
 #include "exceptions.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 IonExchangeRxn::IonExchangeRxn()
     : ref_cation_sorbed_conc_(1.e-9),
@@ -257,5 +257,5 @@ void IonExchangeRxn::DisplayResults(void) const {
   }
 }  // end DisplayResults()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

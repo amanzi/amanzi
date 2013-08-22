@@ -8,8 +8,8 @@
 
 #include "mineral.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // forward declarations
 class Block;
@@ -103,6 +103,6 @@ class SurfaceSite {
   // std::vector<Mineral*> minerals_;
 };
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACESITE_HH_

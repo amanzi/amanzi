@@ -13,7 +13,7 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
 #include <vector>
 #include <string>
 
-#include "FunctionFactory.hh"
+#include "MultiFunction.hh"
 #include "errors.hh"
 
 #include "Flow_BC_Factory.hh"
@@ -25,9 +25,9 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Process Dirichet BC (pressure), step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::CreatePressure(std::vector<int>& submodel) const
+Functions::FlowBoundaryFunction* FlowBCFactory::CreatePressure(std::vector<int>& submodel) const
 {
-  BoundaryFunction* bc = new BoundaryFunction(mesh_);
+  Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
   try {
     ProcessPressureList(params_->sublist("pressure"), submodel, bc);
   } catch (Errors::Message& msg) {
@@ -46,11 +46,11 @@ BoundaryFunction* FlowBCFactory::CreatePressure(std::vector<int>& submodel) cons
 /* ******************************************************************
 * Process Neumann BC (mass flux), step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::CreateMassFlux(std::vector<int>& submodel) const
+Functions::FlowBoundaryFunction* FlowBCFactory::CreateMassFlux(std::vector<int>& submodel) const
 {
   int ncells = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  BoundaryFunction* bc = new BoundaryFunction(mesh_);
+  Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
   try {
     ProcessMassFluxList(params_->sublist("mass flux"), submodel, bc);
   } catch (Errors::Message& msg) {
@@ -69,11 +69,11 @@ BoundaryFunction* FlowBCFactory::CreateMassFlux(std::vector<int>& submodel) cons
 /* ******************************************************************
 * Process Dirichet BC (static head), step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::CreateStaticHead(
+Functions::FlowBoundaryFunction* FlowBCFactory::CreateStaticHead(
     double p0, double density, const AmanziGeometry::Point& gravity, 
     std::vector<int>& submodel) const
 {
-  BoundaryFunction* bc = new BoundaryFunction(mesh_);
+  Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
   try {
     ProcessStaticHeadList(p0, density, gravity, params_->sublist("static head"), submodel, bc);
   } catch (Errors::Message& msg) {
@@ -92,9 +92,9 @@ BoundaryFunction* FlowBCFactory::CreateStaticHead(
 /* ******************************************************************
 * Seepage Face BC, step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::CreateSeepageFace(std::vector<int>& submodel) const
+Functions::FlowBoundaryFunction* FlowBCFactory::CreateSeepageFace(std::vector<int>& submodel) const
 {
-  BoundaryFunction* bc = new BoundaryFunction(mesh_);
+  Functions::FlowBoundaryFunction* bc = new Functions::FlowBoundaryFunction(mesh_);
   try {
     ProcessSeepageFaceList(params_->sublist("seepage face"), submodel, bc);
   } catch (Errors::Message& msg) {
@@ -115,7 +115,7 @@ BoundaryFunction* FlowBCFactory::CreateSeepageFace(std::vector<int>& submodel) c
 * Loop over sublists with typical names "BC 0", "BC 1", etc.
 ****************************************************************** */
 void FlowBCFactory::ProcessPressureList(
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
@@ -143,7 +143,7 @@ void FlowBCFactory::ProcessPressureList(
 * Process Dirichet BC (pressure), step 3.
 ****************************************************************** */
 void FlowBCFactory::ProcessPressureSpec(
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -169,17 +169,16 @@ void FlowBCFactory::ProcessPressureSpec(
   }
 
   // Make the boundary pressure function.
-  Teuchos::RCP<Function> f;
-  FunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = Teuchos::rcp(f_fact.Create(*f_list));
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"boundary pressure\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
+  bc->Define(regions, f, Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_NONE);
 }
 
 
@@ -190,7 +189,7 @@ void FlowBCFactory::ProcessPressureSpec(
 * of identical structure.
 ****************************************************************** */
 void FlowBCFactory::ProcessMassFluxList(
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
     std::string name = i->first;
@@ -216,7 +215,7 @@ void FlowBCFactory::ProcessMassFluxList(
 * Process Neumann BC (mass flux), step 3.
 ****************************************************************** */
 void FlowBCFactory::ProcessMassFluxSpec(
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -242,17 +241,16 @@ void FlowBCFactory::ProcessMassFluxSpec(
   }
 
   // Make the outward mass flux function.
-  Teuchos::RCP<Function> f;
-  FunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = Teuchos::rcp(f_fact.Create(*f_list));
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
+  bc->Define(regions, f, Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_NONE);
 
   // Populate submodel flags.
   if (list.get<bool>("rainfall", false))
@@ -262,13 +260,13 @@ void FlowBCFactory::ProcessMassFluxSpec(
 
 /* ******************************************************************
 * Process Dirichet BC (static head), step 2.
-* Iterate through the BC specification sublists with typical names 
-* "BC 0", "BC 1", etc. All are expected to be sublists of identical 
+* Iterate through the BC specification sublists with typical names
+* "BC 0", "BC 1", etc. All are expected to be sublists of identical
 * structure.
 ****************************************************************** */
 void FlowBCFactory::ProcessStaticHeadList(
     double p0, double density, const AmanziGeometry::Point& gravity,
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
     std::string name = i->first;
@@ -295,7 +293,7 @@ void FlowBCFactory::ProcessStaticHeadList(
 ****************************************************************** */
 void FlowBCFactory::ProcessStaticHeadSpec(
     double p0, double density, const AmanziGeometry::Point& gravity,
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -332,20 +330,19 @@ void FlowBCFactory::ProcessStaticHeadSpec(
   static_head_list.set("space dimension", dim);
   static_head_list.set("water table elevation", *water_table_list);
 
-  Teuchos::RCP<Function> f;  // Make the static head function.
-  FunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = Teuchos::rcp(f_fact.Create(f_list));
+    f = Teuchos::rcp(new Amanzi::MultiFunction(f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"water table elevation\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
 
   // Populate submodel flags.
-  int method = Amanzi::BOUNDARY_FUNCTION_ACTION_NONE;
+  int method = Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_NONE;
   if (list.get<bool>("relative to top", false)) {
     PopulateSubmodelFlag(regions, FLOW_BC_SUBMODEL_HEAD_RELATIVE, submodel);
-    method = Amanzi::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE;
+    method = Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_HEAD_RELATIVE;
   }
 
   // Add this BC specification to the boundary function.
@@ -357,7 +354,7 @@ void FlowBCFactory::ProcessStaticHeadSpec(
 * Process Seepage Face BC, step 2.
 ****************************************************************** */
 void FlowBCFactory::ProcessSeepageFaceList(
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
@@ -385,7 +382,7 @@ void FlowBCFactory::ProcessSeepageFaceList(
 * Process Seepage Face BC, step 3.
 ****************************************************************** */
 void FlowBCFactory::ProcessSeepageFaceSpec(
-    Teuchos::ParameterList& list, std::vector<int>& submodel, BoundaryFunction* bc) const
+    Teuchos::ParameterList& list, std::vector<int>& submodel, Functions::FlowBoundaryFunction* bc) const
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -411,17 +408,16 @@ void FlowBCFactory::ProcessSeepageFaceSpec(
   }
 
   // Make the seepage face function.
-  Teuchos::RCP<Function> f;
-  FunctionFactory f_fact;
+  Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    f = Teuchos::rcp(f_fact.Create(*f_list));
+    f = Teuchos::rcp(new Amanzi::MultiFunction(*f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
 
   // Add this BC specification to the boundary function.
-  bc->Define(regions, f, Amanzi::BOUNDARY_FUNCTION_ACTION_NONE);
+  bc->Define(regions, f, Amanzi::Functions::BOUNDARY_FUNCTION_ACTION_NONE);
 
   // Populate submodel flags.
   if (list.get<bool>("rainfall", false))

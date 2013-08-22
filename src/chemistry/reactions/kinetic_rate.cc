@@ -11,8 +11,8 @@
 #include "chemistry_output.hh"
 #include "chemistry_verbosity.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 extern ChemistryOutput* chem_out;
 
@@ -95,5 +95,5 @@ void KineticRate::DisplayReaction(void) const {
   chem_out->Write(kVerbose, message);
 }  // end DisplayReaction
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

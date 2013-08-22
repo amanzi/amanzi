@@ -73,6 +73,7 @@
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
 
         <ParameterList name="BDF2">
+          <Parameter name="time step increase factor" type="double" value="1.2"/>
           <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
           <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
           <Parameter name="NKA max vectors" type="int" value="5"/>

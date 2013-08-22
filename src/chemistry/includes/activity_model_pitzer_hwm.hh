@@ -16,8 +16,8 @@ class Epetra_MultiVector;
 class Epetra_Vector;
 class Epetra_SerialDenseVector;
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 class Species;
 
@@ -125,6 +125,6 @@ class ActivityModelPitzerHWM : public ActivityModel {
   int number_species;                                  // Number of aqueous species
 
 };
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HWM_HH_

@@ -6,9 +6,13 @@
 #   SSC_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
+
 project(SSC)
 
-include(CCSEOptions)
+if ( ENABLE_Structured)
+  include(CCSEOptions)
+endif()
+
 include(BinaryManager)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -81,6 +85,7 @@ endif()
 #
 if ( ENABLE_Unstructured )
   set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit)
+  #set(ssc_unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
 else()
   set(ssc_unstructured_grid_libs)
 endif()

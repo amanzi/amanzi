@@ -1,294 +1,152 @@
-/*
-This is the flow component of the Amanzi code. 
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+Amanzi Flow
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+License: see COPYRIGHT
+Author: Ethan Coon
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
+Interface layer between Flow and State, this is a harness for
+accessing the new state-dev from the old Flow PK.
 
-#include <string>
-#include <vector>
+ ------------------------------------------------------------------------- */
 
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Import.h"
 
-#include "Point.hh"
-#include "errors.hh"
-#include "Mesh.hh"
-
-#include "State.hh"
 #include "Flow_State.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
 
-/* *******************************************************************
-* Flow state is build from scratch and filled with zeros.         
-******************************************************************* */
-Flow_State::Flow_State(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) : S_(NULL)
-{
-  int dim = mesh->space_dimension();
-  const Epetra_BlockMap& cmap = mesh->cell_map(false);
-  const Epetra_BlockMap& fmap = mesh->face_map(false);
-
-  vertical_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  horizontal_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  porosity_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  water_saturation_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  prev_water_saturation_ = Teuchos::rcp(new Epetra_Vector(cmap));
-
-  fluid_density_ = Teuchos::rcp(new double);
-  fluid_viscosity_ = Teuchos::rcp(new double);
-  pressure_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  lambda_ = Teuchos::rcp(new Epetra_Vector(fmap));
-  darcy_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
-  darcy_velocity_ = Teuchos::rcp(new Epetra_MultiVector(fmap, dim));
-
-  gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
-  for (int i = 0; i < 3; i++) (*gravity_)[i] = 0.0;
-
-  specific_storage_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  specific_yield_ = Teuchos::rcp(new Epetra_Vector(cmap));
-
-  mesh_ = mesh;
+Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+    PK_State(std::string("state"), mesh) {
+  Construct_();
 }
 
-
-/* *******************************************************************
-* Flow state is build from the pointer to state S.        
-******************************************************************* */
-Flow_State::Flow_State(const Teuchos::RCP<State>& S) : S_(NULL)
-{
-  vertical_permeability_ = S->get_vertical_permeability();
-  horizontal_permeability_ = S->get_horizontal_permeability();
-  porosity_ = S->get_porosity();
-  water_saturation_ = S->get_water_saturation();
-  prev_water_saturation_ = S->get_prev_water_saturation();
-
-  fluid_density_ = S->get_density();
-  fluid_viscosity_ = S->get_viscosity();
-  pressure_ = S->get_pressure();
-  lambda_ = S->get_lambda();
-  darcy_flux_ = S->get_darcy_flux();
-  darcy_velocity_ = S->get_darcy_velocity();
-
-  gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
-  for (int i = 0; i < 3; i++) (*gravity_)[i] = (*(S->get_gravity()))[i];
-
-  specific_storage_ = S->get_specific_storage();
-  specific_yield_ = S->get_specific_yield();
-
-  mesh_ = S->get_mesh_maps();
-
-  S_ = &*S;
+Flow_State::Flow_State(Teuchos::RCP<State> S) :
+    PK_State(std::string("state"), S) {
+  Construct_();
 }
 
-
-/* *******************************************************************
-* Flow state is build from state S.        
-******************************************************************* */
-Flow_State::Flow_State(State& S) : S_(NULL)
-{
-  vertical_permeability_ = S.get_vertical_permeability();
-  horizontal_permeability_ = S.get_horizontal_permeability();
-  porosity_ = S.get_porosity();
-  water_saturation_ = S.get_water_saturation();
-  prev_water_saturation_ = S.get_prev_water_saturation();
-
-  fluid_density_ = S.get_density();
-  fluid_viscosity_ = S.get_viscosity();
-  pressure_ = S.get_pressure();
-  lambda_ = S.get_lambda();
-  darcy_flux_ = S.get_darcy_flux();
-  darcy_velocity_ = S.get_darcy_velocity();
-
-  gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
-  for (int i = 0; i < 3; i++) (*gravity_)[i] = (*(S.get_gravity()))[i];
-
-  specific_storage_ = S.get_specific_storage();
-  specific_yield_ = S.get_specific_yield();
-
-  mesh_ = S.get_mesh_maps();
-
-  S_ = &S;
+Flow_State::Flow_State(State& S) :
+    PK_State(std::string("state"), S) {
+  Construct_();
 }
 
+Flow_State::Flow_State(const Flow_State& other,
+        PKStateConstructMode mode) :
+    PK_State(other, STATE_CONSTRUCT_MODE_COPY_POINTERS) {
+  if (mode == CONSTRUCT_MODE_VIEW_DATA) {
+    ghosted_ = false; // non-ghosted views
+  } else if (mode == CONSTRUCT_MODE_VIEW_DATA_GHOSTED) {
+    ghosted_ = true; // no guarantees -- if other is not ghosted, this is not
+                     // ghosted either!
+  } else if (mode == CONSTRUCT_MODE_COPY_DATA) {
+    // Not currently needed by Flow?
+    ASSERT(0);
+  } else if (mode == CONSTRUCT_MODE_COPY_DATA_GHOSTED) {
+    // Copy data, making new vector for Darcy flux with ghosted entries.
+    ghosted_ = true;
 
-/* *******************************************************************
-* mode = FLOW_STATE_VIEW (default) a view of the given state           
-* mode = FLOW_STATE_COPY allocates new memory for selected variable                    
-******************************************************************* */
-Flow_State::Flow_State(Flow_State& FS, int mode) : S_(NULL)
-{
-  vertical_permeability_ = FS.vertical_permeability();
-  horizontal_permeability_ = FS.horizontal_permeability();
-  porosity_ = FS.porosity();
-  water_saturation_ = FS.water_saturation();
-  prev_water_saturation_ = FS.prev_water_saturation();
-
-  fluid_density_ = FS.fluid_density();
-  fluid_viscosity_ = FS.fluid_viscosity();
-  pressure_ = FS.pressure();
-  lambda_ = FS.lambda();
-
-  gravity_ = FS.gravity();
-  specific_storage_ = FS.specific_storage();
-  specific_yield_ = FS.specific_yield();
-
-  mesh_ = FS.mesh();
-
-  if (mode == AmanziFlow::FLOW_STATE_VIEW) {
-    darcy_flux_ = FS.darcy_flux();
-  } else if (mode == AmanziFlow::FLOW_STATE_COPY) {
-    const Epetra_Map& fmap = mesh_->face_map(true);
-    darcy_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
-    CopyMasterFace2GhostFace(FS.ref_darcy_flux(), *darcy_flux_);
+    CompositeVectorFactory fac;
+    fac.SetMesh(mesh_);
+    fac.SetComponent("face", AmanziMesh::FACE, 1);
+    Teuchos::RCP<CompositeVector> flux = fac.CreateVector(true);
+    flux->CreateData();
+    *flux->ViewComponent("face",false) = *other.darcy_flux();
+    flux->ScatterMasterToGhosted();
+    S_->SetData("darcy_flux", name_, flux);
   }
-
-  S_ = FS.S_;
 }
 
+void Flow_State::Construct_() {
+  // for creating fields
+  std::vector<AmanziMesh::Entity_kind> locations(2);
+  std::vector<std::string> names(2);
+  std::vector<int> ndofs(2,1);
+  locations[0] = AmanziMesh::CELL; locations[1] = AmanziMesh::FACE;
+  names[0] = "cell"; names[1] = "face";
 
-/* *******************************************************************
-* Copy cell-based data from master to ghost positions.              
-* WARNING: vector v must contain ghost cells.              
-******************************************************************* */
-void Flow_State::CopyMasterCell2GhostCell(Epetra_Vector& v)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
-  Epetra_Import importer(target_cmap, source_cmap);
+  // Require data, all owned
+  S_->RequireScalar("fluid_density", name_);
+  S_->RequireScalar("fluid_viscosity", name_);
+  S_->RequireConstantVector("gravity", name_, mesh_->space_dimension());
+  
+  if (!S_->HasField("pressure")) {
+    S_->RequireField("pressure", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponents(names, locations, ndofs);
+  }
+  if (!S_->HasField("permeability")) {
+    S_->RequireField("permeability", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
+  }
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("water_saturation")) {
+    S_->RequireField("water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("prev_water_saturation")) {
+    S_->RequireField("prev_water_saturation", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("specific_storage")) {
+    S_->RequireField("specific_storage", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("specific_yield")) {
+    S_->RequireField("specific_yield", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasField("darcy_velocity")) {
+    S_->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
+  }
+};
 
-  double* vdata;
-  v.ExtractView(&vdata);
-  Epetra_Vector vv(View, source_cmap, vdata);
+void Flow_State::Initialize() {
+  if (standalone_mode_) {
+    S_->Setup();
+    S_->GetField("fluid_density",name_)->set_initialized();
+    S_->GetField("fluid_viscosity",name_)->set_initialized();
+    S_->GetField("gravity",name_)->set_initialized();
+    S_->GetField("pressure",name_)->set_initialized();
+    S_->GetField("permeability",name_)->set_initialized();
+    S_->GetField("porosity",name_)->set_initialized();
+    S_->GetField("water_saturation",name_)->set_initialized();
+    S_->GetField("prev_water_saturation",name_)->set_initialized();
+    S_->GetField("specific_storage",name_)->set_initialized();
+    S_->GetField("specific_yield",name_)->set_initialized();
+    S_->GetField("darcy_flux",name_)->set_initialized();
+    S_->GetField("darcy_velocity",name_)->set_initialized();
+    S_->Initialize();
+  } else {
+    // BEGIN REMOVE ME once flow tests pass --etc
+    S_->GetFieldData("pressure",name_)->PutScalar(-1.);
+    S_->GetFieldData("water_saturation",name_)->PutScalar(-1.);
+    S_->GetFieldData("prev_water_saturation",name_)->PutScalar(-1.);
+    S_->GetFieldData("darcy_flux",name_)->PutScalar(-1.);
+    S_->GetFieldData("darcy_velocity",name_)->PutScalar(-1.);
+    S_->GetFieldData("specific_storage",name_)->PutScalar(-1.);
+    S_->GetFieldData("specific_yield",name_)->PutScalar(-1.);
+    // END REMOVE ME
 
-  v.Import(vv, importer, Insert);
-#endif
-}
+    // secondary variables, will be initialized by the PK
+    S_->GetField("water_saturation",name_)->set_initialized();
+    S_->GetField("prev_water_saturation",name_)->set_initialized();
 
+    S_->GetField("darcy_flux",name_)->set_initialized();
+    S_->GetField("darcy_velocity",name_)->set_initialized();
 
-
-/* *******************************************************************
-* Copy cell-based data from master to ghost positions.              
-* WARNING: MultiVector v must contain ghost cells.              
-******************************************************************* */
-void Flow_State::CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
-  Epetra_Import importer(target_cmap, source_cmap);
-
-  double** vdata;
-  v.ExtractView(&vdata);
-  Epetra_MultiVector vv(View, source_cmap, vdata, v.NumVectors());
-
-  v.Import(vv, importer, Insert);
-#endif
-}
-
-
-/* *******************************************************************
-* Copy face-based data from master to ghost positions.              
-* WARNING: vector v must contain ghost cells.              
-******************************************************************* */
-void Flow_State::CopyMasterFace2GhostFace(Epetra_Vector& v)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->face_map(true);
-  Epetra_Import importer(target_cmap, source_cmap);
-
-  double* vdata;
-  v.ExtractView(&vdata);
-  Epetra_Vector vv(View, source_cmap, vdata);
-
-  v.Import(vv, importer, Insert);
-#endif
-}
-
-
-/* *******************************************************************
-* Transfers face-based data from ghost to master positions and 
-* performs the operation 'mode' there. 
-* WARNING: Vector v must contain ghost faces.              
-******************************************************************* */
-void Flow_State::CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
-  Epetra_Import importer(target_fmap, source_fmap);
-
-  double* vdata;
-  v.ExtractView(&vdata);
-  Epetra_Vector vv(View, source_fmap, vdata);
-
-  vv.Export(v, importer, mode);
-#endif
-}
-
-
-/* *******************************************************************
-* Copy face-based data from master to ghost positions.              
-* WARNING: vector vghost must contain ghost cells.              
-******************************************************************* */
-void Flow_State::CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vghost)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
-  Epetra_Import importer(target_cmap, source_cmap);
- 
-  vghost.Import(v, importer, Insert);
-#else
-  vghost = v;
-#endif
-}
-
-
-/* *******************************************************************
-* Transfers cell-based data from ghost to master positions and 
-* performs the operation 'mode' there. 
-* WARNING: Vector v must contain ghost cells.              
-******************************************************************* */
-void Flow_State::CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMode mode)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
-  const Epetra_BlockMap& target_cmap = mesh_->cell_map(true);
-  Epetra_Import importer(target_cmap, source_cmap);
-
-  double* vdata;
-  v.ExtractView(&vdata);
-  Epetra_Vector vv(View, source_cmap, vdata);
-
-  vv.Export(v, importer, mode);
-#endif
-}
-
-
-/* *******************************************************************
-* Copy face-based data from master to ghost positions.              
-* WARNING: vector vhost must contain ghost cells.              
-******************************************************************* */
-void Flow_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vghost)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
-  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
-  Epetra_Import importer(target_fmap, source_fmap);
- 
-  vghost.Import(v, importer, Insert);
-#else
-  vghost = v;
-#endif
+    // no clue how these work or where they are initialized, but it seems not
+    // in the state.
+    S_->GetField("specific_storage",name_)->set_initialized();
+    S_->GetField("specific_yield",name_)->set_initialized();
+  }
 }
 
 
@@ -313,155 +171,100 @@ void Flow_State::CombineGhostNode2MasterNode(Epetra_Vector& v, Epetra_CombineMod
 }
 
 
-/* *******************************************************************
-* Lp norm of the vector v1.    
-******************************************************************* */
-double Flow_State::normLpCell(const Epetra_Vector& v1, double p)
-{
-  int ncells = (mesh_->cell_map(false)).NumMyElements();
-
-  double Lp_norm, Lp = 0.0;
-  for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
-    Lp += volume * pow(v1[c], p);
-  }
-  v1.Comm().MaxAll(&Lp, &Lp_norm, 1);
-
-  return pow(Lp_norm, 1.0/p);
+Teuchos::RCP<AmanziGeometry::Point>
+Flow_State::gravity() {
+  Teuchos::RCP<Epetra_Vector> gvec = S_->GetConstantVectorData("gravity", name_);
+  Teuchos::RCP<AmanziGeometry::Point> gpoint =
+    Teuchos::rcp(new AmanziGeometry::Point(gvec->MyLength()));
+  for (int i=0; i!=gvec->MyLength(); ++i) (*gpoint)[i] = (*gvec)[i];
+  return gpoint;
 }
 
 
-/* *******************************************************************
-* Lp norm of the component-wise product v1 .* v2             
-******************************************************************* */
-double Flow_State::normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p)
-{
-  int ncells = (mesh_->cell_map(false)).NumMyElements();
-
-  double Lp_norm, Lp = 0.0;
-  for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
-    Lp += volume * pow(v1[c] * v2[c], p);
-  }
-  v1.Comm().MaxAll(&Lp, &Lp_norm, 1);
-
-  return pow(Lp_norm, 1.0/p);
+// debug routines
+void Flow_State::set_fluid_density(double rho) {
+  *fluid_density() = rho;
 }
 
-
-/* *******************************************************************
-* Extract cells from a supervector             
-******************************************************************* */
-Epetra_Vector* Flow_State::CreateCellView(const Epetra_Vector& u) const
-{
-  double* data;
-  u.ExtractView(&data);
-  return new Epetra_Vector(View, mesh_->cell_map(false), data);
+void Flow_State::set_fluid_viscosity(double mu) {
+  *fluid_viscosity() = mu;
 }
 
-
-/* *******************************************************************
-* Extract faces from a supervector             
-******************************************************************* */
-Epetra_Vector* Flow_State::CreateFaceView(const Epetra_Vector& u) const
-{
-  double* data;
-  u.ExtractView(&data);
-  int ncells = (mesh_->cell_map(false)).NumMyElements();
-  return new Epetra_Vector(View, mesh_->face_map(false), data+ncells);
+void Flow_State::set_porosity(double phi) {
+  porosity()->PutScalar(phi);
 }
 
-
-/* *******************************************************************
-* DEBUG: create constant fluid density. Since it is debug, we
-* do not verify that rho is positive.    
-******************************************************************* */
-void Flow_State::set_fluid_density(double rho)
-{
-  *fluid_density_ = rho;
-}
-
-
-/* *******************************************************************
-* DEBUG: create constant fluid viscosity
-******************************************************************* */
-void Flow_State::set_fluid_viscosity(double mu)
-{
-  *fluid_viscosity_ = mu;
-}
-
-
-/* *******************************************************************
-* DEBUG: create constant porosity
-******************************************************************* */
-void Flow_State::set_porosity(double phi)
-{
-  porosity_->PutScalar(phi);
-}
-
-
-/* *******************************************************************
-* DEBUG: create hydrostatic pressure with p0 at height z0.
-******************************************************************* */
-void Flow_State::set_pressure_hydrostatic(double z0, double p0)
-{
+void Flow_State::set_pressure_hydrostatic(double z0, double p0) {
   int dim = mesh_->space_dimension();
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
-  double rho = *fluid_density_;
-  double g = (*gravity_)[dim - 1];
+  double rho = *fluid_density();
+  double g = (*gravity())[dim - 1];
 
-  for (int c = 0; c < ncells; c++) {
+  Epetra_Vector& pres = ref_pressure();
+  for (int c=0; c!=ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    (*pressure_)[c] = p0 + rho * g * (xc[dim - 1] - z0);
+    pres[c] = p0 + rho * g * (xc[dim - 1] - z0);
   }
+
 }
 
-
-/* *******************************************************************
- * DEBUG: create diagonal permeability
- ****************************************************************** */
-void Flow_State::set_permeability(double Kh, double Kv)
-{
-  horizontal_permeability_->PutScalar(Kh);
-  vertical_permeability_->PutScalar(Kv);
+void Flow_State::set_permeability_2D(double Kx, double Ky) {
+  (*permeability())(0)->PutScalar(Kx);
+  (*permeability())(1)->PutScalar(Ky); 
 }
 
-void Flow_State::set_permeability(double Kh, double Kv, const string region)
-{
+void Flow_State::set_permeability_3D(double Kx, double Ky, double Kz) {
+  (*permeability())(0)->PutScalar(Kx);
+  (*permeability())(1)->PutScalar(Ky);
+  (*permeability())(2)->PutScalar(Kz);
+}
+
+void Flow_State::set_permeability_2D(double Kx, double Ky, const string region) {
+  Epetra_Vector& perm_x = *(*permeability())(0);
+  Epetra_Vector& perm_y = *(*permeability())(1);
+
   AmanziMesh::Entity_ID_List block;
   mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   int ncells = block.size();
 
-  for (int i = 0; i < ncells; i++) {
+  for (int i=0; i!=ncells; ++i) {
     int c = block[i];
-    (*horizontal_permeability_)[c] = Kh;
-    (*vertical_permeability_)[c] = Kv;
+    perm_x[c] = Kx;
+    perm_y[c] = Ky;
   }
 }
 
+void Flow_State::set_permeability_3D(double Kx, double Ky, double Kz, const string region) {
+  Epetra_Vector& perm_x = *(*permeability())(0);
+  Epetra_Vector& perm_y = *(*permeability())(1);
+  Epetra_Vector& perm_z = *(*permeability())(2);
 
-/* *******************************************************************
- * DEBUG: create constant porosity
- ****************************************************************** */
-void Flow_State::set_specific_storage(double ss)
-{
-  specific_storage_->PutScalar(ss);
+  AmanziMesh::Entity_ID_List block;
+  mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  int ncells = block.size();
+
+  for (int i=0; i!=ncells; ++i) {
+    int c = block[i];
+    perm_x[c] = Kx;
+    perm_y[c] = Ky;
+    perm_z[c] = Kz;
+  }
 }
 
-
-/* *******************************************************************
- * DEBUG: create constant gravity
- ****************************************************************** */
-void Flow_State::set_gravity(double g)
-{
+void Flow_State::set_gravity(double g) {
+  Teuchos::RCP<Epetra_Vector> gvec = S_->GetConstantVectorData("gravity",name_);
   int dim = mesh_->space_dimension();
-  for (int i = 0; i < dim-1; i++) (*gravity_)[i] = 0.0;
-  (*gravity_)[dim-1] = g;
-  (*gravity_)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
+
+  gvec->PutScalar(0.);
+  (*gvec)[dim-1] = g;
+  //  (*gvec)[2] = g;  // Waiting for Markus ticket (lipnikov@lanl.gov)
 }
 
 
-}  // namespace AmanziTransport
-}  // namespace Amanzi
+void Flow_State::set_specific_storage(double ss) {
+  specific_storage()->PutScalar(ss);
+}
 
+} // namespace
+} // namespace

@@ -64,8 +64,9 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->set_permeability(0.1, 2.0, "Material 1");
-  FS->set_permeability(0.5, 0.5, "Material 2");
+  FS->Initialize();
+  FS->set_permeability_2D(0.1, 2.0, "Material 1");
+  FS->set_permeability_2D(0.5, 0.5, "Material 2");
   FS->set_porosity(0.2);
   FS->set_fluid_viscosity(1.0);
   FS->set_fluid_density(1.0);

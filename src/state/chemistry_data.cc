@@ -106,7 +106,7 @@ void chemistry_data::store(Teuchos::RCP<Epetra_MultiVector> free_ion_concentrati
     * isotherm_freundlich_n_ = * isotherm_freundlich_n;
   }
   if ( isotherm_langmuir_b != Teuchos::null && isotherm_langmuir_b_ != Teuchos::null ) {
-    * isotherm_langmuir_b_ = * isotherm_freundlich_n;
+    * isotherm_langmuir_b_ = * isotherm_langmuir_b;
   }
 }
 
@@ -162,6 +162,6 @@ void chemistry_data::retrieve(Teuchos::RCP<Epetra_MultiVector> free_ion_concentr
     * isotherm_freundlich_n = * isotherm_freundlich_n_;
   }
   if ( isotherm_langmuir_b != Teuchos::null && isotherm_langmuir_b_ != Teuchos::null ) {
-    * isotherm_langmuir_b = * isotherm_freundlich_n_;
+    * isotherm_langmuir_b = * isotherm_langmuir_b_;
   }
 }

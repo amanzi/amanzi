@@ -43,8 +43,8 @@
 
 #include "chemistry_strings.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 enum Verbosity { 
   kSilent,
@@ -74,6 +74,6 @@ typedef std::bitset<32> VerbosityFlags;
 
 VerbosityMap CreateVerbosityMap(void);
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif     /* AMANZI_CHEMISTRY_VERBOSITY_HH_ */

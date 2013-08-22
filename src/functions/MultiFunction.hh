@@ -1,0 +1,41 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $AMANZI_DIR/COPYRIGHT
+Author Ethan Coon
+
+Function from R^d to R^n.
+
+------------------------------------------------------------------------- */
+
+#ifndef AMANZI_MULTIVECTOR_FUNCTION_HH_
+#define AMANZI_MULTIVECTOR_FUNCTION_HH_
+
+#include <vector>
+#include "Teuchos_RCP.hpp"
+#include "function.hh"
+#include "function-factory.hh"
+
+namespace Amanzi {
+
+class MultiFunction {
+
+public:
+  MultiFunction(const std::vector<Teuchos::RCP<const Function> >& functions);
+  MultiFunction(const Teuchos::RCP<const Function>& function);
+  MultiFunction(Teuchos::ParameterList& plist);
+
+  ~MultiFunction();
+
+  int size() const;
+  double* operator() (const double* xt) const;
+
+ private:
+  std::vector<Teuchos::RCP<const Function> > functions_;
+  double* values_;
+};
+
+} // namespace
+
+#endif

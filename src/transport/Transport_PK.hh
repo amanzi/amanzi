@@ -23,7 +23,8 @@ Usage:
 
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
-#include "BoundaryFunction.hh"
+#include "transport-boundary-function.hh"
+#include "transport-domain-function.hh"
 
 #include "State.hh"
 #include "Transport_State.hh"
@@ -87,7 +88,8 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // sources and sinks
   void ComputeAddSourceTerms(double Tp, double dTp, 
-                             DomainFunction* src_sink, Epetra_MultiVector& tcc);
+                             Functions::TransportDomainFunction* src_sink, 
+                             Epetra_MultiVector& tcc);
 
  private:
   // advection members
@@ -146,7 +148,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   void ProcessStringVerbosity(const std::string name, int* verbosity);
 
   // obsolete methods
-  void CreateConcentration(Teuchos::ParameterList& bcs_list);
+  //void CreateConcentration(Teuchos::ParameterList& bcs_list);
 
   // miscaleneous methods
   double TracerVolumeChangePerSecond(int idx_tracer);
@@ -181,7 +183,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> component_local_min_;
   std::vector<double> component_local_max_;
 
-  DomainFunction* src_sink;  // Source and sink terms
+  Functions::TransportDomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
@@ -201,7 +203,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   int status;
   int flow_mode;  // steady-sate or transient
 
-  std::vector<BoundaryFunction*> bcs;  // influx BCs for each components
+  std::vector<Functions::TransportBoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 
   double bc_scaling;
 

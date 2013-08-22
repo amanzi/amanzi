@@ -142,13 +142,10 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     }
 
     // create Richards process kernel
-    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-    State* S = new State(state_list, mesh);
-    S->set_time(0.0);
+    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+    FS->Initialize();
 
-    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
     Richards_PK* RPK = new Richards_PK(parameter_list, FS);
-
     RPK->InitPK();  // setup the problem
     RPK->InitSteadyState(0.0, 0.01);
 
@@ -167,7 +164,6 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     CHECK(pressure_err < 1e-1 && flux_err < 2e-1 && div_err < 1e-9);
 
     delete RPK;
-    delete S;
   }
 
   delete comm;

@@ -20,8 +20,8 @@ Authors: Neil Carlson (version 1)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "BoundaryFunction.hh"
-#include "DomainFunction.hh"
+#include "flow-boundary-function.hh"
+#include "flow-domain-function.hh"
 #include "tensor.hh"
 
 #include "Flow_PK.hh"
@@ -127,17 +127,17 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
  
-  BoundaryFunction* bc_pressure;  // Boundary conditions. 
-  BoundaryFunction* bc_head;
-  BoundaryFunction* bc_flux;
-  BoundaryFunction* bc_seepage;
+  Functions::FlowBoundaryFunction* bc_pressure;  // Boundary conditions. 
+  Functions::FlowBoundaryFunction* bc_head;
+  Functions::FlowBoundaryFunction* bc_flux;
+  Functions::FlowBoundaryFunction* bc_seepage;
 
   std::vector<int> bc_model, bc_submodel;  // Support of boundary conditions.
   std::vector<bc_tuple> bc_values;
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
   std::vector<double> rainfall_factor;
 
-  DomainFunction* src_sink;  // Source and sink terms
+  Functions::FlowDomainFunction* src_sink;  // Source and sink terms
   int src_sink_distribution; 
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability

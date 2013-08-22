@@ -6,8 +6,8 @@
 #include <iostream>
 #include <vector>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 // prototypes
 void ludcmp(double** a, int n, std::vector<int>* indx, double* d);
@@ -15,6 +15,6 @@ void lubksb(double** a, int n, const std::vector<int>& indx, std::vector<double>
 // void ludcmp(double** a, int n, int* indx, double* d);
 // void lubksb(double** a, int n, int* indx, double b[]);
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
 #endif  // AMANZI_CHEMISTRY_LU_HH_

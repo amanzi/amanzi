@@ -25,7 +25,7 @@
 #include "FrameworkTraits.hh"
 #include "Geometry.hh"
 #include "GMVMesh.hh"
-#include "Vis.hh"
+// #include "Vis.hh"
 
 int main(int argc, char *argv[]) {
   int ierr(0), aerr(0);
@@ -234,9 +234,6 @@ int main(int argc, char *argv[]) {
   std::string viz_filename("deform.gmv");
   Amanzi::GMV::create_mesh_file(*mesh,viz_filename);
 
-
-  //  Amanzi::Vis *visualization = new Amanzi::Vis(vis_parameter_list, comm);
-  //  visualization->create_files(*mesh);
 
   MPI_Finalize();
 }

@@ -53,16 +53,17 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   meshfactory.preference(pref);
   RCP<Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
   
-  // create a transport state with two component 
-  int num_components = 2;
-  State mpc_state(num_components, 0, mesh);
-  RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+  RCP<Transport_State> TS = rcp(new Transport_State(mesh, 2));
 
   Point u(1.0, 0.0, 0.0);
-  TS->AnalyticTotalComponentConcentration(f_step);
-  TS->AnalyticPorosity();
-  TS->AnalyticDarcyFlux(u);
-  TS->AnalyticWaterSaturation();
+  TS->Initialize();
+  TS->set_darcy_flux(u);
+  TS->set_porosity(0.2);
+  TS->set_water_saturation(1.0);
+  TS->set_prev_water_saturation(1.0);
+  TS->set_water_density(1000.0);
+  TS->set_total_component_concentration(f_step,0.0,0);
+  TS->set_total_component_concentration(f_step,0.0,1);
 
   ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
   Transport_PK TPK(transport_list, TS);
@@ -91,6 +92,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
       printf("T=%7.2f  C_0(x):", T);
       for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
     }
+
     *tcc = *tcc_next;
   }
 

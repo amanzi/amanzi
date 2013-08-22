@@ -1,130 +1,146 @@
-/*
-This is the flow component of the Amanzi code. 
-License: BSD
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+Amanzi Flow
 
-Routine provide basic operations with components of the flow state,
-such as density, pressure, darcy mass flux, etc. 
-Usage:
-  Flow_State FS;       // for stand-alone initialization
-  Flow_State FS(S);    // for initialization from the state S
-  Flow_State FS(FS_);  // copy constructor
-*/
+License: see COPYRIGHT
+Author: Ethan Coon
 
-#ifndef __FLOW_STATE_HH__
-#define __FLOW_STATE_HH__
+Interface layer between Flow and State, this is a harness for
+accessing the new state-dev from the old Flow PK.
 
-#include "Epetra_Vector.h"
-#include "Epetra_CombineMode.h"
-#include "Teuchos_RCP.hpp"
+ ------------------------------------------------------------------------- */
 
-#include "Mesh.hh"
-#include "State.hh"
-#include "Flow_constants.hh"
 
+#ifndef AMANZI_FLOW_STATE_NEW_HH_
+#define AMANZI_FLOW_STATE_NEW_HH_
+
+#include "PK_State.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Flow_State {
- public:
-  explicit Flow_State(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
-  explicit Flow_State(const Teuchos::RCP<State>& S);
-  explicit Flow_State(State& S);
-  Flow_State(Flow_State& S, int mode = AmanziFlow::FLOW_STATE_VIEW);
-  ~Flow_State() {};
+class Flow_State : public PK_State {
 
-  // data management
-  void CopyMasterCell2GhostCell(Epetra_Vector& v);
-  void CopyMasterCell2GhostCell(const Epetra_Vector& v, Epetra_Vector& vhost);
-  void CopyMasterFace2GhostFace(Epetra_Vector& v);
-  void CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& vhost);
-  void CopyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
-  void CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
-  void CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
+ public:
+
+  explicit Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
+  explicit Flow_State(Teuchos::RCP<State> S);
+  explicit Flow_State(State& S);
+  Flow_State(const Flow_State& other, PKStateConstructMode mode);
   void CombineGhostNode2MasterNode(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 
-  Epetra_Vector* CreateCellView(const Epetra_Vector& u) const;
-  Epetra_Vector* CreateFaceView(const Epetra_Vector& u) const;
+  void Initialize();
 
   // access methods
-  Teuchos::RCP<AmanziGeometry::Point> gravity() { return gravity_; }  // RCP pointers
+  Teuchos::RCP<AmanziGeometry::Point> gravity();
 
-  Teuchos::RCP<double> fluid_density() { return fluid_density_; }
-  Teuchos::RCP<double> fluid_viscosity() { return fluid_viscosity_; }
-  Teuchos::RCP<Epetra_Vector> pressure() { return pressure_; }
-  Teuchos::RCP<Epetra_Vector> lambda() { return lambda_; }
-  Teuchos::RCP<Epetra_Vector> darcy_flux() { return darcy_flux_; }
+  // const methods
+  Teuchos::RCP<const double> fluid_density() const { return S_->GetScalarData("fluid_density"); }
+  Teuchos::RCP<const double> fluid_viscosity() const {
+    return S_->GetScalarData("fluid_viscosity"); }
+  Teuchos::RCP<const Epetra_Vector> pressure() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("pressure")->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> lambda() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("pressure")->ViewComponent("face", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> darcy_flux() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("darcy_flux")->ViewComponent("face", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_MultiVector> darcy_velocity() const {
+    return S_->GetFieldData("darcy_velocity")->ViewComponent("face", ghosted_); }
 
-  Teuchos::RCP<Epetra_Vector> vertical_permeability() { return vertical_permeability_; }
-  Teuchos::RCP<Epetra_Vector> horizontal_permeability() { return horizontal_permeability_; }
-  Teuchos::RCP<Epetra_Vector> porosity() { return porosity_; }
-  Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
-  Teuchos::RCP<Epetra_Vector> prev_water_saturation() { return prev_water_saturation_; }
+  // non const access methods
 
-  Teuchos::RCP<Epetra_Vector> specific_storage() { return specific_storage_; }
-  Teuchos::RCP<Epetra_Vector> specific_yield() { return specific_yield_; }
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
+  // Teuchos::RCP<const Epetra_Vector> vertical_permeability() const {
+  //   return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability")->ViewComponent("cell", ghosted_))(0)); }
+  // Teuchos::RCP<const Epetra_Vector> horizontal_permeability() const {
+  //   return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability")->ViewComponent("cell", ghosted_))(1)); }
 
-  State* state() { return S_; }
+  Teuchos::RCP<const Epetra_Vector> porosity() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("porosity")->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> water_saturation() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("water_saturation")->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> prev_water_saturation() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("prev_water_saturation")->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> specific_storage() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_storage")->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> specific_yield() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_yield")->ViewComponent("cell", ghosted_))(0)); }
 
-  double ref_fluid_density() { return *fluid_density_; }  // references
-  double ref_fluid_viscosity() { return *fluid_viscosity_; }
-  Epetra_Vector& ref_pressure() { return *pressure_; }
-  Epetra_Vector& ref_lambda() { return *lambda_; }  
-  Epetra_Vector& ref_darcy_flux() { return *darcy_flux_; }
-  Epetra_MultiVector& ref_darcy_velocity() { return *darcy_velocity_; }
-  const AmanziGeometry::Point& ref_gravity() { return *gravity_; }
+  // non-const pointers
+  Teuchos::RCP<double> fluid_density() { return S_->GetScalarData("fluid_density", name_); }
+  Teuchos::RCP<double> fluid_viscosity() {
+    return S_->GetScalarData("fluid_viscosity", name_); }
+  Teuchos::RCP<Epetra_Vector> pressure() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("pressure", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_Vector> lambda() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("pressure", name_)->ViewComponent("face", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_Vector> darcy_flux() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("darcy_flux", name_)->ViewComponent("face", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_MultiVector> darcy_velocity() {
+    return S_->GetFieldData("darcy_velocity", name_)->ViewComponent("face", ghosted_); }
 
-  Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability_; }
-  Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability_; }
-  Epetra_Vector& ref_porosity() { return *porosity_; }
-  Epetra_Vector& ref_water_saturation() { return *water_saturation_; }
-  Epetra_Vector& ref_prev_water_saturation() { return *prev_water_saturation_; }
+  // Teuchos::RCP<Epetra_Vector> vertical_permeability() {
+  //   return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_))(0)); }
+  // Teuchos::RCP<Epetra_Vector> horizontal_permeability() {
+  //   return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_))(1)); }
+  Teuchos::RCP<Epetra_MultiVector> permeability() {
+    return S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_); }  
+  
+  Teuchos::RCP<Epetra_Vector> porosity() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("porosity", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_Vector> water_saturation() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("water_saturation", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_Vector> prev_water_saturation() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("prev_water_saturation", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_Vector> specific_storage() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_storage", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_Vector> specific_yield() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_yield", name_)->ViewComponent("cell", ghosted_))(0)); }
 
-  Epetra_Vector& ref_specific_storage() { return *specific_storage_; }
-  Epetra_Vector& ref_specific_yield() { return *specific_yield_; }
+  // non-const refs
+  double ref_fluid_density() { return *fluid_density(); }
+  double ref_fluid_viscosity() { return *fluid_viscosity(); }
+  Epetra_Vector& ref_pressure() { return *pressure(); }
+  Epetra_Vector& ref_lambda() { return *lambda(); }
+  Epetra_Vector& ref_darcy_flux() { return *darcy_flux(); }
+  Epetra_MultiVector& ref_darcy_velocity() { return *darcy_velocity(); }
+  const AmanziGeometry::Point& ref_gravity() { return *gravity(); }
+
+  // Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability(); }
+  // Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability(); }
+  Epetra_MultiVector& ref_permeabilty() { return *permeability(); }
+
+  Epetra_Vector& ref_porosity() { return *porosity(); }
+  Epetra_Vector& ref_water_saturation() { return *water_saturation(); }
+  Epetra_Vector& ref_prev_water_saturation() { return *prev_water_saturation(); }
+
+  Epetra_Vector& ref_specific_storage() { return *specific_storage(); }
+  Epetra_Vector& ref_specific_yield() { return *specific_yield(); }
 
   // miscaleneous
-  double get_time() { return (S_ == NULL) ? -1.0 : S_->get_time(); }
-  double normLpCell(const Epetra_Vector& v1, double p);
-  double normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p);
-  
+  double get_time() { return (S_ == Teuchos::null) ? -1.0 : S_->time(); }
+
   // debug routines
   void set_fluid_density(double rho);
   void set_fluid_viscosity(double mu);
   void set_porosity(double phi);
   void set_pressure_hydrostatic(double z0, double p0);
-  void set_permeability(double Kh, double Kv);
-  void set_permeability(double Kh, double Kv, const string region);
+  void set_permeability_2D(double Kx, double Ky);
+  void set_permeability_3D(double Kx, double Ky, double Kz); 
+  void set_permeability_2D(double Kx, double Ky, const string region);
+  void set_permeability_3D(double Kx, double Ky, double Kz, const string region);
   void set_gravity(double g);
   void set_specific_storage(double ss);
 
+ protected:
+  void Construct_();
+
  private:
-  State* S_;  
+  // not implemented
+  Flow_State(const Flow_State& other);
 
-  Teuchos::RCP<AmanziGeometry::Point> gravity_;
-
-  Teuchos::RCP<double> fluid_density_;  // fluid properties
-  Teuchos::RCP<double> fluid_viscosity_;
-  Teuchos::RCP<Epetra_Vector> pressure_;
-  Teuchos::RCP<Epetra_Vector> lambda_;
-  Teuchos::RCP<Epetra_Vector> darcy_flux_;
-  Teuchos::RCP<Epetra_MultiVector> darcy_velocity_;
-
-  Teuchos::RCP<Epetra_Vector> vertical_permeability_;  // rock properties
-  Teuchos::RCP<Epetra_Vector> horizontal_permeability_;
-  Teuchos::RCP<Epetra_Vector> porosity_;
-  Teuchos::RCP<Epetra_Vector> water_saturation_;
-  Teuchos::RCP<Epetra_Vector> prev_water_saturation_;
-
-  Teuchos::RCP<Epetra_Vector> specific_storage_;
-  Teuchos::RCP<Epetra_Vector> specific_yield_;
-
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
-}  // namespace AmanziFlow
-}  // namespace Amanzi
+} // namespace
+} // namespace
 
 #endif

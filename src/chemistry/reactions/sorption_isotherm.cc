@@ -5,8 +5,8 @@
 #include <iostream>
 #include <iomanip>
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 SorptionIsotherm::SorptionIsotherm(const std::string name,
                                    const SorptionIsothermType type)
@@ -18,5 +18,5 @@ SorptionIsotherm::SorptionIsotherm(const std::string name,
 SorptionIsotherm::~SorptionIsotherm() {
 }  // end SorptionIsotherm() destructor
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

@@ -1,8 +1,8 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "lu.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 static const double TINY = 1.0e-20;
 
@@ -122,5 +122,5 @@ void lubksb(double** a, int n, const std::vector<int>& indx, std::vector<double>
 //   }
 // }  // end lubksb()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

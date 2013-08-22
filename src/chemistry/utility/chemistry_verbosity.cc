@@ -12,8 +12,8 @@
 #include "chemistry_utilities.hh"
 #include "chemistry_strings.hh"
 
-namespace amanzi {
-namespace chemistry {
+namespace Amanzi {
+namespace AmanziChemistry {
 
 VerbosityMap CreateVerbosityMap(void)
 {
@@ -78,5 +78,5 @@ VerbosityMap CreateVerbosityMap(void)
   return verbosity_map;
 }  // end CreateVerbosityMap()
 
-}  // namespace chemistry
-}  // namespace amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi
