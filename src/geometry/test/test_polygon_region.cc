@@ -27,7 +27,7 @@ TEST(POLYGON_REGION2)
 
   // read the parameter list from input file
 
-  std::string infilename = "test/polygonregion2.xml";
+  std::string infilename = "test/polygonregion_2D.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
@@ -112,7 +112,7 @@ TEST(POLYGON_REGION3)
 
   // read the parameter list from input file
 
-  std::string infilename = "test/polygonregion3.xml";
+  std::string infilename = "test/polygonregion_3D.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
