@@ -401,7 +401,7 @@ void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetr
     for (int i = 0; i < ncells; i++){
       int c = cells[i];
       if (c >= ncells_owned) continue;
-      (*rhs_cells)[c] -= pow(-1, i)*Grav_term[f]*Krel_faces[f];  
+      (*rhs_cells)[c] -= pow(-1.0, i)*Grav_term[f]*Krel_faces[f];  
       //if ((f==84)||(f==86)) cout<<"Gravity flux "<<f<<" "<<Grav_term[f]*Krel_faces[f]<<endl;
     }
   }
