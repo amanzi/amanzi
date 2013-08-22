@@ -2242,7 +2242,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
 
       }
     }
-    else if (region->type() == AmanziGeometry::PLANE) {
+    else if (region->type() == AmanziGeometry::PLANE ||
+             region->type() == AmanziGeometry::POLYGON) {
 
       int nface = num_entities(FACE, USED);
               
@@ -2295,6 +2296,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
 
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::PLANE ||
+        region->type() == AmanziGeometry::POLYGON ||
         region->type() == AmanziGeometry::POINT) {
 
       int nnode = num_entities(NODE, USED);
