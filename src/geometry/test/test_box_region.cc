@@ -34,8 +34,6 @@ TEST(BOX_REGION_2D)
 
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
-  std::cout << reg_params;
-
   // Create a rectangular region
   
   Amanzi::AmanziGeometry::RegionPtr reg = 
