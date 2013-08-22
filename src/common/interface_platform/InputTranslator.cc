@@ -304,15 +304,15 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc) {
   xercesc::DOMNamedNodeMap* attrMap;
   char* tagName;
   char* textContent;
-  char* meshbase;
+  std::string meshbase;
 
   // This actually includes: process kernels, execution controls, and numerical controls
   // all three map back to the old exection controls
   
   if (isUnstr_) {
-    meshbase = "Unstructured Algorithm";
+    meshbase = std::string("Unstructured Algorithm");
   } else {
-    meshbase = "Structured Algorithm";
+    meshbase = std::string("Structured Algorithm");
   }
 
   // get execution contorls node
