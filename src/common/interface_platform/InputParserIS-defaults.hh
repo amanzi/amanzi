@@ -35,7 +35,7 @@
 #define ST_NONLIN_INIT_GUESS_EXTR_ORD   1
 #define ST_NONLIN_INIT_TS_FACTOR        1.0
 #define ST_NONLIN_INIT_TS_FACTOR_DAMP   1.0
-#define ST_PRECOND                      "Trilinos ML" //"Hypre AMG"
+#define ST_PRECOND                      "Hypre AMG"
 #define ST_SOLVER                       "AztecOO"
 #define ST_INIT_DARCY_BOOL              true
 #define ST_DIVERG_FACT                  1000.0
@@ -57,7 +57,7 @@
 #define TR_NONLIN_INIT_GUESS_EXTR_ORD   1
 #define TR_NONLIN_INIT_TS_FACTOR        1.0
 #define TR_NONLIN_INIT_TS_FACTOR_DAMP   1.0
-#define TR_PRECOND                      "Trilinos ML" //"Hypre AMG" 
+#define TR_PRECOND                      "Hypre AMG" 
 #define TR_SOLVER                       "AztecOO"
 #define TR_DIVERG_FACT                  1000.0
 #define TR_SP_DT_INCR_FACTOR            1.0    // this is the dt increase factor for single phase
@@ -66,7 +66,7 @@
 #define PIC_CLIP_SAT                    0.9
 #define PICARD_TOLERANCE                1.0e-8
 #define PIC_MAX_ITER                    400
-#define PIC_PRECOND                     "Trilinos ML" //"Hypre AMG"
+#define PIC_PRECOND                     "Hypre AMG"
 #define PIC_SOLVE                       "AztecOO"
 #define PIC_ERROR_METHOD                "pressure"
 #define PIC_METHOD                      "Picard"
@@ -74,7 +74,7 @@
 #define LIN_SOLVE_TOL                   1.0e-16
 #define LIN_SOLVE_MAXITER               100
 #define LIN_SOLVE_METHOD                "GMRES"
-#define LIN_SOLVE_PREC                  "Trilinos ML" //"Hypre AMG"
+#define LIN_SOLVE_PREC                  "Hypre AMG"
 
 #define ML_SMOOTHER                     "Jacobi"
 #define ML_AGG_THR                      0.0

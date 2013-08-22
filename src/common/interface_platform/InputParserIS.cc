@@ -1972,14 +1972,26 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value");
 	Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate");
 	double refval =  ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value");
-	
+
+	Teuchos::Array<double> grad_with_time(grad.size()+1);
+	grad_with_time[0] = 0.0;
+	for (int j=0; j!=grad.size(); ++j) {
+	  grad_with_time[j+1] = grad[j];
+	}
+
+	Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
+	refcoord_with_time[0] = 0.0;
+	for (int j=0; j!=refcoord.size(); ++j) {
+	  refcoord_with_time[j+1] = refcoord[j];
+	}
+
 	pressure_ic.sublist("function").sublist(*i)
 	  .set<std::string>("region",*i)
 	  .set<std::string>("component","cell")
 	  .sublist("function").sublist("function-linear")
 	  .set<double>("y0", refval)
-	  .set<Teuchos::Array<double> >("x0",refcoord)
-	  .set<Teuchos::Array<double> >("gradient",grad);
+	  .set<Teuchos::Array<double> >("x0",refcoord_with_time)
+	  .set<Teuchos::Array<double> >("gradient",grad_with_time);
 
       } else if (ic_for_region->isSublist("IC: File Pressure")) {
 	std::string file = ic_for_region->sublist("IC: File Pressure").get<std::string>("File");
