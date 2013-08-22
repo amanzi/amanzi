@@ -304,7 +304,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
       if (!mesh->valid_set_name(regions[r], AmanziMesh::CELL))
       {
         msg << "Chemistry_PK::XMLParameters(): \n";
-        msg << "  Invalid region '" << regions[r] << " given for geochemical condition '" << cond_name << "'.\n";
+        msg << "  Invalid region '" << regions[r] << "' given for geochemical condition '" << cond_name << "'.\n";
         Exceptions::amanzi_throw(msg);
       }
       conditions[regions[r]] = condition;
