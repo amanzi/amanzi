@@ -29,8 +29,9 @@ typedef enum {
   LAYER,
   SURFACE,
   POINT,
-  COLORFUNCTION,
-  LOGICAL
+  COLORFUNCTION,  
+  LOGICAL,
+  POLYGON
 } RegionType;
 
 typedef enum {
