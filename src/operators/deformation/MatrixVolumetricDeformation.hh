@@ -15,17 +15,11 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "ml_MultiLevelPreconditioner.h"
-
-#include "Ifpack.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_AdditiveSchwarz.h"
 
 #include "Mesh.hh"
 #include "composite_vector.hh"
 #include "composite_matrix.hh"
-
+#include "Matrix_PreconditionerDelegate.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -35,8 +29,7 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
  public:
 
   MatrixVolumetricDeformation(Teuchos::ParameterList& plist,
-          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-          const Teuchos::RCP<const AmanziMesh::Entity_ID_List>& fixed_nodes);
+          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   MatrixVolumetricDeformation(const MatrixVolumetricDeformation& other);
 
@@ -63,22 +56,20 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
 
   // This is a Normal equation, so we need to apply N^T to the rhs
   void ApplyRHS(const CompositeVector& x_cell,
-                const Teuchos::Ptr<CompositeVector>& x_node) const;
+                const Teuchos::Ptr<CompositeVector>& x_node,
+                const Teuchos::Ptr<const AmanziMesh::Entity_ID_List>& fixed_nodes) const;
 
+  // Sets up the solver.
+  void InitializeInverse();
+  void Assemble(const Teuchos::Ptr<const AmanziMesh::Entity_ID_List>& fixed_nodes);
 
  protected:
   void InitializeFromOptions_();
-  void Assemble_();
-  void UpdateInverse_();
+  void PreAssemble_();
 
  protected:
   // solver methods
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
-  Teuchos::ParameterList hypre_plist_;
-  int hypre_ncycles_, hypre_nsmooth_;
-  double hypre_tol_, hypre_strong_threshold_;
-  int hypre_coarsen_type_, hypre_relax_type_;
-  int hypre_verbose_, hypre_cycle_type_;
+  Teuchos::RCP<Matrix_PreconditionerDelegate> prec_;
 
   // local data
   Teuchos::RCP<CompositeVectorFactory> range_;
@@ -86,8 +77,9 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Epetra_CrsMatrix> operator_;
+  Teuchos::RCP<Epetra_CrsMatrix> operatorPre_;
   Teuchos::RCP<Epetra_CrsMatrix> dVdz_;
-  Teuchos::RCP<const AmanziMesh::Entity_ID_List> fixed_nodes_;
+  int max_nnode_neighbors_;
 
   // parameters to control optimization
   double diagonal_shift_;
