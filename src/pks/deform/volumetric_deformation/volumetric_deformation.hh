@@ -19,6 +19,7 @@
 
 #include "composite_matrix.hh"
 #include "composite_vector_function.hh"
+#include "Function.hh"
 
 #include "pk_factory.hh"
 #include "pk_default_base.hh"
@@ -62,6 +63,14 @@ class VolumetricDeformation : public PKPhysicalBase {
   Key poro_key_;
 
   // function describing d(cv)/dT
+  enum DeformMode {
+    DEFORM_MODE_DVDT,
+    DEFORM_MODE_THAW_FRONT,
+  };
+  DeformMode mode_;
+  std::string deform_region_;
+  Teuchos::RCP<Function> thaw_front_func_;
+  double min_vol_frac_;
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;
 
   // meshes
