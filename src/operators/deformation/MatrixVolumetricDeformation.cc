@@ -20,25 +20,20 @@ namespace Operators {
 
 MatrixVolumetricDeformation::MatrixVolumetricDeformation(
           Teuchos::ParameterList& plist,
-          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-          const Teuchos::RCP<const AmanziMesh::Entity_ID_List>& fixed_nodes) :
+          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     plist_(plist),
-    mesh_(mesh),
-    fixed_nodes_(fixed_nodes) {
+    mesh_(mesh) {
   InitializeFromOptions_();
-  Assemble_();
-  UpdateInverse_();
+  PreAssemble_();
 };
 
 
 MatrixVolumetricDeformation::MatrixVolumetricDeformation(
           const MatrixVolumetricDeformation& other) :
     plist_(other.plist_),
-    mesh_(other.mesh_),
-    fixed_nodes_(other.fixed_nodes_) {
+    mesh_(other.mesh_) {
   InitializeFromOptions_();
-  Assemble_();
-  UpdateInverse_();
+  PreAssemble_();
 };
 
 
@@ -53,59 +48,28 @@ void MatrixVolumetricDeformation::Apply(const CompositeVector& x,
 // Apply the inverse, x <-- A^-1 b
 void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
         const Teuchos::Ptr<CompositeVector>& x) const {
-  int ierr(0);
-
-  ierr |= IfpHypre_->ApplyInverse(*b.ViewComponent("node",false),
-				  *x->ViewComponent("node", false));
+  int ierr = prec_->ApplyInverse(*b.ViewComponent("node",false),
+          *x->ViewComponent("node", false));
   ASSERT(!ierr);
-
-  // write a measure of error
-  // Epetra_MultiVector error(*b.ViewComponent("cell",false));
-  // dVdz_->SetUseTranspose(false);
-  // dVdz_->Apply(*x->ViewComponent("node",false), error);
-  // error.Update(-1., *b.ViewComponent("cell",false), 1.);
-  // double err(0.);
-  // error.NormInf(&err);
-  // std::cout << "ERROR IN dV = " << err << std::endl;
-
 }
+
 
 void MatrixVolumetricDeformation::InitializeFromOptions_() {
   // parameters for optimization
   smoothing_ = plist_.get<double>("smoothing coefficient");
   diagonal_shift_ = plist_.get<double>("diagonal shift", 1.e-6);
 
-  if ( plist_.isSublist("HYPRE AMG Parameters") ) {
-    Teuchos::ParameterList & hypre_list = plist_.sublist("HYPRE AMG Parameters");
-
-    hypre_ncycles_ = hypre_list.get<int>("number of cycles",2);
-    hypre_nsmooth_ = hypre_list.get<int>("number of smoothing iterations",2);
-    hypre_tol_     = hypre_list.get<double>("tolerance", 1e-12);
-    hypre_strong_threshold_ = hypre_list.get<double>("strong threshold", 0.5);
-    hypre_verbose_ = hypre_list.get<int>("verbosity level",0);
-    hypre_coarsen_type_ = hypre_list.get<int>("coarsen type",0);
-    hypre_relax_type_ = hypre_list.get<int>("relax type",6);
-    hypre_cycle_type_ = hypre_list.get<int>("cycle type",1);
-
-  } else {
-    // set reasonable defaults for HYPRE AMG
-    hypre_ncycles_ = 100;
-    hypre_nsmooth_ = 2;
-    hypre_tol_ = 1e-12;
-    hypre_strong_threshold_ = 0.5;
-    hypre_verbose_ = 0;
-    hypre_coarsen_type_ = 0;
-    hypre_relax_type_ = 6;
-    hypre_cycle_type_ = 1;
-
-  }
+  // preconditioner
+  prec_ = Teuchos::rcp(new Matrix_PreconditionerDelegate(plist_));
 };
 
 
 
 // This is a Normal equation, so we need to apply N^T to the rhs
 void MatrixVolumetricDeformation::ApplyRHS(const CompositeVector& x_cell,
-        const Teuchos::Ptr<CompositeVector>& x_node) const {
+        const Teuchos::Ptr<CompositeVector>& x_node,
+        const Teuchos::Ptr<const AmanziMesh::Entity_ID_List>& fixed_nodes)
+    const {
   // Equations of the form: dVdz x = b, solved via:
   //   dVdz^T * dVdz * x = dVdz^T * b, where operator_ = dVdz^T * dVdz
   // -- form dVdz^T * b
@@ -116,13 +80,14 @@ void MatrixVolumetricDeformation::ApplyRHS(const CompositeVector& x_cell,
   // Must also apply the boundary condition, dz_bottom = 0
   // -- Fix the bottom nodes, they may not move
   Epetra_MultiVector& rhs_n = *x_node->ViewComponent("node",false);
-  for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes_->begin();
-       n!=fixed_nodes_->end(); ++n) {
+  for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes->begin();
+       n!=fixed_nodes->end(); ++n) {
     rhs_n[0][*n] = 0;
   }
 }
 
-void MatrixVolumetricDeformation::Assemble_() {
+
+void MatrixVolumetricDeformation::PreAssemble_() {
   int ierr = 0;
 
   // HARD CODED CRUFT!
@@ -223,13 +188,13 @@ void MatrixVolumetricDeformation::Assemble_() {
   ASSERT(!ierr);
 
   // dump dvdz
-  EpetraExt::RowMatrixToMatlabFile("dvdz.txt", *dVdz_);
+  //  EpetraExt::RowMatrixToMatlabFile("dvdz.txt", *dVdz_);
 
   // == Form the normal equations, dVdz^T * dVdz ==
 
   // calculate nnz
   int *nnz_op = new int[nnodes];
-  int max_nnode_neighbors = 0;
+  max_nnode_neighbors_ = 0;
   for (unsigned int no=0; no!=nnodes; ++no) {
     AmanziMesh::Entity_ID_List cells;
     mesh_->node_get_cells(no, AmanziMesh::USED,&cells);
@@ -239,32 +204,32 @@ void MatrixVolumetricDeformation::Assemble_() {
 #else
     int nnode_neighbors = 9*3;
 #endif
-    max_nnode_neighbors = std::max(nnode_neighbors, max_nnode_neighbors);
+    max_nnode_neighbors_ = std::max(nnode_neighbors, max_nnode_neighbors_);
     nnz_op[no] = nnode_neighbors;
   }
 
-  operator_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,node_map,nnz_op));
+  operatorPre_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,node_map,nnz_op));
   delete[] nnz_op;
 
   // form explicitly dVdz^T * dVdz
-  EpetraExt::MatrixMatrix::Multiply(*dVdz_,true, *dVdz_,false, *operator_);
+  EpetraExt::MatrixMatrix::Multiply(*dVdz_,true, *dVdz_,false, *operatorPre_);
 
   // dump Operator intermediate step
-  EpetraExt::RowMatrixToMatlabFile("op_normal_eq.txt", *operator_);
+  //  EpetraExt::RowMatrixToMatlabFile("op_normal_eq.txt", *operatorPre_);
 
   // == Add in optimization components ==
   // -- Add a small shift to the diagonal
   Epetra_Vector diag(node_map);
-  ierr = operator_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  ierr = operatorPre_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
   for (int n=0; n!=nnodes; ++n) diag[n] += diagonal_shift_;
-  ierr = operator_->ReplaceDiagonalValues(diag);  ASSERT(!ierr);
+  ierr = operatorPre_->ReplaceDiagonalValues(diag);  ASSERT(!ierr);
 
   // dump Operator intermediate step
-  EpetraExt::RowMatrixToMatlabFile("op_diag.txt", *operator_);
+  //  EpetraExt::RowMatrixToMatlabFile("op_diag.txt", *operatorPre_);
 
   // -- Add in a diffusive term
-  int *node_indices = new int[max_nnode_neighbors];
-  double *node_values = new double[max_nnode_neighbors];
+  int *node_indices = new int[max_nnode_neighbors_];
+  double *node_values = new double[max_nnode_neighbors_];
 
   for (int n=0; n!=nnodes; ++n) {
     // determine the set of node neighbors
@@ -302,27 +267,89 @@ void MatrixVolumetricDeformation::Assemble_() {
     }
 
     // add into the row
-    ierr = operator_->SumIntoGlobalValues(node_map.GID(n), nneighbors,
+    ierr = operatorPre_->SumIntoGlobalValues(node_map.GID(n), nneighbors,
             node_values, node_indices);
     ASSERT(!ierr);
   }
 
-  ierr = operator_->FillComplete();  ASSERT(!ierr);
+  ierr = operatorPre_->FillComplete();  ASSERT(!ierr);
 
+  // clean up
+  delete[] node_indices;
+  delete[] node_values;
+
+}
+
+
+void MatrixVolumetricDeformation::Assemble(
+    const Teuchos::Ptr<const AmanziMesh::Entity_ID_List>& fixed_nodes) {
+
+  int ierr = 0;
+
+  // HARD CODED CRUFT!
+#if MESH_TYPE
+  int nnz = 6;
+  int indices[6];
+  double values[6];
+#else
+  int nnz = 8;
+  int indices[8];
+  double values[8];
+#endif
+
+  double eps = 1.e-4;
+  int *node_indices = new int[max_nnode_neighbors_];
+  double *node_values = new double[max_nnode_neighbors_];
+
+  // Domain and Range: matrix inverse solves the problem, given dV, what is
+  // dnode_z that results in that dV.  Therefore, A * dnode_z = dV
+  const Epetra_Map& node_map = mesh_->node_epetra_map(false);
+  const Epetra_Map& node_map_wghost = mesh_->node_epetra_map(true);
+  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  // reset to non-fixed operator.
+  if (operator_ == Teuchos::null) {
+    operator_ = Teuchos::rcp(new Epetra_CrsMatrix(*operatorPre_));
+  } else {
+    *operator_ = *operatorPre_;
+  }
+
+  Epetra_Vector diag(node_map);
+  ierr = operatorPre_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  double min(0.);
+  diag.MinValue(&min);
+  std::cout << "MIN VAL OP_PRE = " << min << std::endl;
+  std::cout << "SIZE nnodes = " << nnodes << std::endl;
+  std::cout << "SIZE map = " << node_map.NumMyElements() << std::endl;
+  std::cout << "SIZE op pre Row = " << operatorPre_->RowMap().NumMyElements() << std::endl;
+  std::cout << "SIZE op pre Domain = " << operatorPre_->DomainMap().NumMyElements() << std::endl;
+  std::cout << "SIZE op pre Range = " << operatorPre_->RangeMap().NumMyElements() << std::endl;
+  std::cout << "SIZE op Row = " << operator_->RowMap().NumMyElements() << std::endl;
+  std::cout << "SIZE op Domain = " << operator_->DomainMap().NumMyElements() << std::endl;
+  std::cout << "SIZE op Range = " << operator_->RangeMap().NumMyElements() << std::endl;
+
+  ierr = operator_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  diag.MinValue(&min);
+  std::cout << "MIN VAL OP (PRE) = " << min << std::endl;
 
   // -- Fix the bottom nodes, they may not move
-  for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes_->begin();
-       n!=fixed_nodes_->end(); ++n) {
+  for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes->begin();
+       n!=fixed_nodes->end(); ++n) {
 
     // extract the row
+    ASSERT(*n < nnodes);
     int n_gid = node_map.GID(*n);
     int nneighbors;
-    ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors,
+    ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors_,
             nneighbors, node_values, node_indices); ASSERT(!ierr);
 
     // zero the row, 1 on diagonal
     for (int i=0; i!=nneighbors; ++i)
       node_values[i] = node_indices[i] == n_gid ? 1. : 0.;
+
+    double rowsum = 0.;
+    for (int i=0; i!=nneighbors; ++i) rowsum += node_indices[i];
+    ASSERT(rowsum > 0.);
 
     // replace the row
     ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
@@ -331,42 +358,26 @@ void MatrixVolumetricDeformation::Assemble_() {
 
   ierr = operator_->FillComplete();  ASSERT(!ierr);
 
+  ierr = operator_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  diag.MinValue(&min);
+  std::cout << "MIN VAL OP (POST) = " << min << std::endl;
+
   // dump Operator intermediate step
-  EpetraExt::RowMatrixToMatlabFile("op.txt", *operator_);
+  //  EpetraExt::RowMatrixToMatlabFile("op.txt", *operator_);
 
   // clean up
   delete[] node_indices;
   delete[] node_values;
+
+  // Set the operator in the precon
+  prec_->set_matrix(operator_);
 }
 
 
 
-void MatrixVolumetricDeformation::UpdateInverse_() {
-
-  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*operator_));
-  Teuchos::RCP<FunctionParameter> functs[8];
-  functs[0] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetCoarsenType, hypre_coarsen_type_));
-  functs[1] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetPrintLevel, hypre_verbose_));
-  functs[2] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth_));
-  functs[3] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles_));
-  functs[4] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetRelaxType, hypre_relax_type_));
-  functs[5] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold_));
-  functs[6] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetTol, hypre_tol_));
-  functs[7] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_BoomerAMGSetCycleType, hypre_cycle_type_));
-
-  Teuchos::ParameterList hypre_list;
-  hypre_list.set("Solver", BoomerAMG);
-  hypre_list.set("SolveOrPrecondition", Solver);
-  hypre_list.set("SetPreconditioner", false);
-  hypre_list.set("NumFunctions", 8);
-  hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
-
-  IfpHypre_->SetParameters(hypre_list);
-  IfpHypre_->Initialize();
-  IfpHypre_->Compute();
-
+void MatrixVolumetricDeformation::InitializeInverse() {
+  prec_->InitializePreconditioner();
 };
-
 
 }
 }
