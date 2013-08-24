@@ -27,10 +27,13 @@ Usage:
 #include "transport_domain_function.hh"
 
 #include "State.hh"
+#include "Reconstruction.hh"
+
+#include "Transport_constants.hh"
 #include "Transport_State.hh"
 #include "Transport_SourceFactory.hh"
-#include "Transport_constants.hh"
-#include "Reconstruction.hh"
+#include "Matrix_Dispersion.hh"
+
 
 /*
 This is Amanzi Transport Process Kernel (PK).
@@ -53,7 +56,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Transport_PK();
   Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                Teuchos::RCP<Transport_State> TS_MPC);
-  ~Transport_PK() { for (int i=0; i<bcs.size(); i++) delete bcs[i]; }
+  ~Transport_PK();
 
   // primary members
   int InitPK();
@@ -175,13 +178,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  int dispersivity_model;  // data for dispersion 
-  double dispersivity_longitudinal, dispersivity_transverse;
-
-  std::vector<AmanziGeometry::Point> harmonic_points;
-  std::vector<double> harmonic_points_weight;
-  std::vector<double> harmonic_points_value;
-  std::vector<WhetStone::Tensor> dispersion_tensor;
+  Matrix_Dispersion* dispersion_matrix; // data for dispersion
+  Dispersion_Specs dispersion_specs;
 
   double cfl_, dT, dT_debug, T_physics;  
   int number_components; 

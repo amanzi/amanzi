@@ -57,11 +57,11 @@ void Transport_PK::ProcessParameterList()
   temporal_disc_order = transport_list.get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  string dispersivity_name = transport_list.get<string>("dispersivity model", "isotropic");
-  ProcessStringDispersionModel(dispersivity_name, &dispersivity_model);
+  string dispersivity_name = transport_list.get<string>("dispersivity model", "none");
+  ProcessStringDispersionModel(dispersivity_name, &dispersion_specs.method);
 
-  dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
-  dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
+  dispersion_specs.dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
+  dispersion_specs.dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
 
   string advection_limiter_name = transport_list.get<string>("advection limiter");
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
@@ -145,9 +145,7 @@ void Transport_PK::ProcessStringDispersionModel(const std::string name, int* met
   } else if (name == "Lichtner") {
     *method = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
   } else {
-    Errors::Message msg;
-    msg << "Dispersivity model is wrong (isotropic, Bear, Lichtner).\n";
-    Exceptions::amanzi_throw(msg);
+    *method = TRANSPORT_DISPERSIVITY_MODEL_NULL;
   }
 }
 

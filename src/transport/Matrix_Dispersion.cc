@@ -17,6 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "mfd3d_vag.hh"
 #include "tensor.hh"
 
+#include "Transport_constants.hh"
 #include "Matrix_Dispersion.hh"
 
 
@@ -26,18 +27,27 @@ namespace AmanziTransport {
 /* *******************************************************************
  * 
  ****************************************************************** */
-void Matrix_Dispersion::Init()
-  // dispersivity block initialization
-  if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
-    harmonic_points.resize(nfaces_wghost);
-    for (int f = 0; f < nfaces_wghost; f++) harmonic_points[f].init(dim);
+void Matrix_Dispersion::Init(const Dispersion_Specs& specs)
+{
+  specs_ = specs;
 
-    harmonic_points_weight.resize(nfaces_wghost);
-    harmonic_points_value.resize(nfaces_wghost);
+  ncells_owned  = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::GHOST);
 
-    dispersion_tensor.resize(ncells_wghost);
-    for (int c = 0; c < ncells_wghost; c++) dispersion_tensor[c].init(dim, 2);
-  }
+  nfaces_owned  = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::GHOST);
+
+  dim = mesh_->space_dimension();
+
+  // allocate memory (do it dynamically ?)
+  harmonic_points.resize(nfaces_wghost);
+  for (int f = 0; f < nfaces_wghost; f++) harmonic_points[f].init(dim);
+
+  harmonic_points_weight.resize(nfaces_wghost);
+  harmonic_points_value.resize(nfaces_wghost);
+
+  D.resize(ncells_wghost);
+  for (int c = 0; c < ncells_wghost; c++) D[c].init(dim, 2);
 }
 
 
@@ -45,19 +55,15 @@ void Matrix_Dispersion::Init()
  * Calculate a dispersive tensor the from Darcy fluxes. The flux is
  * assumed to be scaled by face area.
  ****************************************************************** */
-void Matrix_Dispersion::CalculateDispersionTensor()
+void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flux)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
-  const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
-
   AmanziMesh::Entity_ID_List nodes, faces;
   AmanziGeometry::Point velocity(dim), flux(dim);
   WhetStone::Tensor T(dim, 2);
 
   for (int c = 0; c < ncells_owned; c++) {
-    if (dispersivity_model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-      for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) = dispersivity_longitudinal;
+    if (specs_.method == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
+      for (int i = 0; i < dim; i++) D[c](i, i) = specs_.dispersivity_longitudinal;
     } else {
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
@@ -82,20 +88,20 @@ void Matrix_Dispersion::CalculateDispersionTensor()
       velocity /= num_good_corners;
 
       double velocity_value = norm(velocity);
-      double anisotropy = dispersivity_longitudinal - dispersivity_transverse;
+      double anisotropy = specs_.dispersivity_longitudinal - specs_.dispersivity_transverse;
 
       for (int i = 0; i < dim; i++) {
-        dispersion_tensor[c](i, i) = dispersivity_transverse * velocity_value;
+        D[c](i, i) = specs_.dispersivity_transverse * velocity_value;
         for (int j = i; j < dim; j++) {
           double s = anisotropy * velocity[i] * velocity[j];
           if (velocity_value) s /= velocity_value;
-          dispersion_tensor[c](j, i) = dispersion_tensor[c](i, j) += s;
+          D[c](j, i) = D[c](i, j) += s;
         }
       }
     }
 
-    double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
-    for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) *= vol_phi_ws;
+    // double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
+    // for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) *= vol_phi_ws;
   }
 }
 
@@ -109,6 +115,7 @@ void Matrix_Dispersion::ExtractBoundaryConditions(const int component,
 {
   bc_face_id.assign(nfaces_wghost, 0);
 
+  /*
   for (int n = 0; n < bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
       for (Amanzi::Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
@@ -118,6 +125,7 @@ void Matrix_Dispersion::ExtractBoundaryConditions(const int component,
       }
     }
   }
+  */
 }
 
 
@@ -135,7 +143,7 @@ void Matrix_Dispersion::PopulateHarmonicPointsValues(int component,
 
   for (int f = 0; f < nfaces_owned; f++) {
     double weight;
-    vag.CalculateHarmonicPoints(f, dispersion_tensor, harmonic_points[f], weight);
+    vag.CalculateHarmonicPoints(f, D, harmonic_points[f], weight);
     harmonic_points_weight[f] = weight;
 
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -187,7 +195,7 @@ void Matrix_Dispersion::AddDispersiveFluxes(int component,
         corner_values.push_back(harmonic_points_value[f]);
       }
 
-      vag.DispersionCornerFluxes(v, c, dispersion_tensor[c], 
+      vag.DispersionCornerFluxes(v, c, D[c], 
                                  corner_points, value, corner_values, corner_fluxes);
 
       for (int i = 0; i < nfaces; i++) {
@@ -198,7 +206,7 @@ void Matrix_Dispersion::AddDispersiveFluxes(int component,
 
         (*tcc_next)[component][c] += corner_fluxes[i];
         int c2 = mfd.cell_get_face_adj_cell(c, f);
-        if (c2 >= 0) (*tcc_next)[component][c2] += dT * corner_fluxes[i];
+        // if (c2 >= 0) (*tcc_next)[component][c2] += dT * corner_fluxes[i];
       }
     }
   }

@@ -51,7 +51,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 
   verbosity = TRANSPORT_VERBOSITY_HIGH;
   internal_tests = 0;
-  dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   MyPID = 0;
@@ -61,6 +60,19 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
   mass_tracer_exact = 0.0;
+
+  dispersion_matrix = NULL;
+}
+
+
+/* ******************************************************************
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+Transport_PK::~Transport_PK()
+{ 
+  for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
+  if (dispersion_matrix != NULL) delete dispersion_matrix;
 }
 
 
@@ -134,6 +146,10 @@ int Transport_PK::InitPK()
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
  
+  // dispersivity model
+  if (dispersion_specs.method != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+    dispersion_matrix->Init(dispersion_specs);
+  }
   return 0;
 }
 

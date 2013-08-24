@@ -18,12 +18,28 @@ Usage:
 namespace Amanzi {
 namespace AmanziTransport {
 
+class Dispersion_Specs {
+ public:
+  Dispersion_Specs() {
+    method = TRANSPORT_DISPERSIVITY_MODEL_NULL;
+    dispersivity_longitudinal = 0.0;
+    dispersivity_transverse = 0.0;
+  }
+  ~Dispersion_Specs() {};
+
+ public:
+  int method;
+  double dispersivity_longitudinal, dispersivity_transverse;
+};
+
+
 class Matrix_Dispersion {
  public:
-  Matrix_Dispersion();
-  ~Matrix_Dispersion();
+  Matrix_Dispersion(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  ~Matrix_Dispersion() {};
 
   // primary members
+  void Init(const Dispersion_Specs& specs);
   void Apply();
   void ApplyInverse();
 
@@ -31,7 +47,7 @@ class Matrix_Dispersion {
   // void ProcessStringDispersionModel(const std::string name, int* method);
 
  private:
-  void CalculateDispersionTensor();
+  void CalculateDispersionTensor(const Epetra_Vector& darcy_flux);
   void ExtractBoundaryConditions(const int component,
                                  std::vector<int>& bc_face_id,
                                  std::vector<double>& bc_face_value);
@@ -47,6 +63,17 @@ class Matrix_Dispersion {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int dim;
+
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
+
+  Dispersion_Specs specs_;
+
+  std::vector<AmanziGeometry::Point> harmonic_points;
+  std::vector<double> harmonic_points_weight;
+  std::vector<double> harmonic_points_value;
+  std::vector<WhetStone::Tensor> D;
 };
 
 }  // namespace AmanziTransport
