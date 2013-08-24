@@ -17,7 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "transport-domain-function.hh"
+#include "transport_domain_function.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

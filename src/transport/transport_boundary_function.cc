@@ -1,12 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+This is the transport component of the Amanzi code. 
 
 License: see $AMANZI_DIR/COPYRIGHT
 Author (v1): Neil Carlson
        (v2): Ethan Coon
-------------------------------------------------------------------------- */
+*/
 
-#include "transport-boundary-function.hh"
+#include "transport_boundary_function.hh"
 
 namespace Amanzi {
 namespace Functions {

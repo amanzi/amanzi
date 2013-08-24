@@ -17,17 +17,35 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "mfd3d_vag.hh"
 #include "tensor.hh"
 
-#include "Transport_PK.hh"
+#include "Matrix_Dispersion.hh"
 
 
 namespace Amanzi {
 namespace AmanziTransport {
 
 /* *******************************************************************
+ * 
+ ****************************************************************** */
+void Matrix_Dispersion::Init()
+  // dispersivity block initialization
+  if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
+    harmonic_points.resize(nfaces_wghost);
+    for (int f = 0; f < nfaces_wghost; f++) harmonic_points[f].init(dim);
+
+    harmonic_points_weight.resize(nfaces_wghost);
+    harmonic_points_value.resize(nfaces_wghost);
+
+    dispersion_tensor.resize(ncells_wghost);
+    for (int c = 0; c < ncells_wghost; c++) dispersion_tensor[c].init(dim, 2);
+  }
+}
+
+
+/* *******************************************************************
  * Calculate a dispersive tensor the from Darcy fluxes. The flux is
  * assumed to be scaled by face area.
  ****************************************************************** */
-void Transport_PK::CalculateDispersionTensor()
+void Matrix_Dispersion::CalculateDispersionTensor()
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
@@ -85,7 +103,7 @@ void Transport_PK::CalculateDispersionTensor()
 /* *******************************************************************
  * Collect time-dependent boundary data in face-based arrays.                               
  ****************************************************************** */
-void Transport_PK::ExtractBoundaryConditions(const int component,
+void Matrix_Dispersion::ExtractBoundaryConditions(const int component,
                                              std::vector<int>& bc_face_id,
                                              std::vector<double>& bc_face_value)
 {
@@ -107,7 +125,7 @@ void Transport_PK::ExtractBoundaryConditions(const int component,
  * Calculate field values at harmonic points. For harmonic points on
  * domain boundary, we use Dirichlet boundary values.
  ****************************************************************** */
-void Transport_PK::PopulateHarmonicPointsValues(int component,
+void Matrix_Dispersion::PopulateHarmonicPointsValues(int component,
                                                 Teuchos::RCP<Epetra_MultiVector> tcc,
                                                 std::vector<int>& bc_face_id,
                                                 std::vector<double>& bc_face_values)
@@ -138,7 +156,7 @@ void Transport_PK::PopulateHarmonicPointsValues(int component,
 /* *******************************************************************
  * Calculate and add dispersive fluxes of the conservative quantatity.
  ****************************************************************** */
-void Transport_PK::AddDispersiveFluxes(int component,
+void Matrix_Dispersion::AddDispersiveFluxes(int component,
                                        Teuchos::RCP<Epetra_MultiVector> tcc,
                                        std::vector<int>& bc_face_id,
                                        std::vector<double>& bc_face_values,
@@ -185,6 +203,19 @@ void Transport_PK::AddDispersiveFluxes(int component,
     }
   }
 }
+
+/*
+    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+      CalculateDispersionTensor();
+
+      std::vector<int> bc_face_id(nfaces_wghost);  // must be allocated once (lipnikov@lanl.gov)
+      std::vector<double> bc_face_values(nfaces_wghost);
+
+      ExtractBoundaryConditions(i, bc_face_id, bc_face_values);
+      PopulateHarmonicPointsValues(i, tcc, bc_face_id, bc_face_values);
+      AddDispersiveFluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
+    }
+*/
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi

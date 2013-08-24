@@ -45,11 +45,10 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 file(GLOB transport_inc_files "*.hh")
 set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc 
-                        Transport_Limiters.cc Transport_Dispersion.cc 
-                        Transport_VandV.cc Transport_IO.cc 
+                        Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
                         Transport_BC_Factory.cc Transport_SourceFactory.cc
-                        Reconstruction.cc transport-boundary-function.cc 
-			transport-domain-function.cc)
+                        Reconstruction.cc #Matrix_Dispersion.cc
+                        transport_boundary_function.cc transport_domain_function.cc)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures time_integration ${Epetra_LIBRARIES})
@@ -89,10 +88,10 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(transport_dispersion transport_dispersion
-                    KIND unit
-                    SOURCE test/Main.cc test/transport_dispersion.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #add_amanzi_test(transport_dispersion transport_dispersion
+    #                KIND unit
+    #                SOURCE test/Main.cc test/transport_dispersion.cc
+    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
         set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions functions data_structures)

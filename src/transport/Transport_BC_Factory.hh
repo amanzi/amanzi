@@ -16,7 +16,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Mesh.hh"
-#include "transport-boundary-function.hh"
+#include "transport_boundary_function.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

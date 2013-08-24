@@ -13,8 +13,8 @@ Usage:
   TPK.advance(time_step);
 */
 
-#ifndef __Transport_PK_hpp__
-#define __Transport_PK_hpp__
+#ifndef __TRANSPORT_PK_HH__
+#define __TRANSPORT_PK_HH__
 
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -23,8 +23,8 @@ Usage:
 
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
-#include "transport-boundary-function.hh"
-#include "transport-domain-function.hh"
+#include "transport_boundary_function.hh"
+#include "transport_domain_function.hh"
 
 #include "State.hh"
 #include "Transport_State.hh"
@@ -124,21 +124,6 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   const Teuchos::RCP<Epetra_IntVector>& get_upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& get_downwind_cell() { return downwind_cell_; }  
-
-  // dispersion routines
-  void CalculateDispersionTensor();
-  void ExtractBoundaryConditions(const int component,
-                                 std::vector<int>& bc_face_id,
-                                 std::vector<double>& bc_face_value);
-  void PopulateHarmonicPointsValues(int component,
-                                    Teuchos::RCP<Epetra_MultiVector> tcc,
-                                    std::vector<int>& bc_face_id,
-                                    std::vector<double>& bc_face_values);
-  void AddDispersiveFluxes(int component,
-                           Teuchos::RCP<Epetra_MultiVector> tcc,
-                           std::vector<int>& bc_face_id,
-                           std::vector<double>& bc_face_values,
-                           Teuchos::RCP<Epetra_MultiVector> tcc_next);
 
   // I/O methods
   void ProcessParameterList();

@@ -121,18 +121,6 @@ int Transport_PK::InitPK()
   lifting.reset_field(mesh_, component_);
   lifting.Init();
 
-  // dispersivity block initialization
-  if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
-    harmonic_points.resize(nfaces_wghost);
-    for (int f = 0; f < nfaces_wghost; f++) harmonic_points[f].init(dim);
-
-    harmonic_points_weight.resize(nfaces_wghost);
-    harmonic_points_value.resize(nfaces_wghost);
-
-    dispersion_tensor.resize(ncells_wghost);
-    for (int c = 0; c < ncells_wghost; c++) dispersion_tensor[c].init(dim, 2);
-  }
-
   // boundary conditions initialization
   double time = T_physics;
   for (int i = 0; i < bcs.size(); i++) {
@@ -611,18 +599,6 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
     TVD_RK.step(T, dT, *component_, *component_next_);
 
     for (int c = 0; c < ncells_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
-
-    // DISPERSIVE FLUXES
-    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
-      CalculateDispersionTensor();
-
-      std::vector<int> bc_face_id(nfaces_wghost);  // must be allocated once (lipnikov@lanl.gov)
-      std::vector<double> bc_face_values(nfaces_wghost);
-
-      ExtractBoundaryConditions(i, bc_face_id, bc_face_values);
-      PopulateHarmonicPointsValues(i, tcc, bc_face_id, bc_face_values);
-      AddDispersiveFluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
-    }
   }
 
   if (internal_tests) {

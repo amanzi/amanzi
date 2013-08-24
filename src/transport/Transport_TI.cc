@@ -115,20 +115,6 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     }
   }
 
-  // DISPERSIVE FLUXES
-  /*
-  if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
-    calculate_dispersion_tensor();
-
-    std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated only once (lipnikov@lanl.gov)
-    std::vector<double> bc_face_values(number_wghost_faces);
-
-    extract_boundary_conditions(current_component_, bc_face_id, bc_face_values);
-    populate_harmonic_points_values(current_component_, component, bc_face_id, bc_face_values);
-    add_dispersive_fluxes(component, scalar_field, bc_face_id, bc_face_values, tcc_next);
-  }
-  */
-
   TS_nextBIG->CopyMasterCell2GhostCell(f_component);
 }
 
