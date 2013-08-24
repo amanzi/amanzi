@@ -35,7 +35,7 @@ std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_output.hh"
-extern amanzi::chemistry::ChemistryOutput* amanzi::chemistry::chem_out;
+extern Amanzi::AmanziChemistry::ChemistryOutput* Amanzi::AmanziChemistry::chem_out;
 
 #define SHOWVALARR(val)                        \
 {                                              \
@@ -174,7 +174,7 @@ PorousMedia::CleanupStatics ()
     tic_array.clear();
     tbc_array.clear();
     initialized = false;
-    delete amanzi::chemistry::chem_out;
+    delete Amanzi::AmanziChemistry::chem_out;
     delete richard_solver;
     physics_events_registered = false;
 }
@@ -5682,9 +5682,9 @@ PorousMedia::advance_chemistry (Real time,
 #else
       int threadid = 0;
 #endif
-      amanzi::chemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-      amanzi::chemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
-      amanzi::chemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
+      Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
+      Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+      Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
       
       Box thread_box(box);
       thread_box.setSmall(BL_SPACEDIM-1,tli);
@@ -5724,7 +5724,7 @@ PorousMedia::advance_chemistry (Real time,
 	TheParameter.water_density = density[0];
 	
 	chem_ok = true;
-	amanzi::chemistry::Beaker::SolverStatus stat;
+	Amanzi::AmanziChemistry::Beaker::SolverStatus stat;
 	try {
 	  
 	  //if (verbose_chemistry>0) {
@@ -5740,7 +5740,7 @@ PorousMedia::advance_chemistry (Real time,
 	    TheComponent.Display("-- after rxn step: \n");
 	  }
 	  
-	} catch (const amanzi::chemistry::ChemistryException& geochem_error) {
+	} catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error) {
 	  
 	  if (verbose_chemistry>-1) {
 	    std::cout << "CHEMSITRY FAILED on level " << level << " at " << iv << " : ";

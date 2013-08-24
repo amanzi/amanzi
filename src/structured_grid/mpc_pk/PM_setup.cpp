@@ -264,9 +264,9 @@ PorousMedia::MODEL_ID PorousMedia::model;
 std::string PorousMedia::amanzi_database_file;
 std::string PorousMedia::amanzi_activity_model;
 
-PArray<amanzi::chemistry::SimpleThermoDatabase>    PorousMedia::chemSolve(PArrayManage);
-Array<amanzi::chemistry::Beaker::BeakerComponents> PorousMedia::components;
-Array<amanzi::chemistry::Beaker::BeakerParameters> PorousMedia::parameters;
+PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase>    PorousMedia::chemSolve(PArrayManage);
+Array<Amanzi::AmanziChemistry::Beaker::BeakerComponents> PorousMedia::components;
+Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> PorousMedia::parameters;
 #endif
 //
 // Internal switches.
@@ -2659,22 +2659,22 @@ void  PorousMedia::read_chem()
   // get input file name, create SimpleThermoDatabase, process
   if (do_chem>0)
     {
-      amanzi::chemistry::SetupDefaultChemistryOutput();
+      Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
 
       ParmParse pb("prob.amanzi");
       
       std::string verbose_chemistry_init = "silent"; pb.query("verbose_chemistry_init",verbose_chemistry_init);
       
       if (verbose_chemistry_init == "silent") {
-	amanzi::chemistry::chem_out->AddLevel("silent");
+	Amanzi::AmanziChemistry::chem_out->AddLevel("silent");
       }
 
       std::string fmt = "simple"; pb.query("Thermodynamic_Database_Format",fmt);
       pb.query("chem_database_file", amanzi_database_file);
       
-      const std::string& activity_model_dh = amanzi::chemistry::ActivityModelFactory::debye_huckel;
-      const std::string& activity_model_ph = amanzi::chemistry::ActivityModelFactory::pitzer_hwm;
-      const std::string& activity_model_u  = amanzi::chemistry::ActivityModelFactory::unit;
+      const std::string& activity_model_dh = Amanzi::AmanziChemistry::ActivityModelFactory::debye_huckel;
+      const std::string& activity_model_ph = Amanzi::AmanziChemistry::ActivityModelFactory::pitzer_hwm;
+      const std::string& activity_model_u  = Amanzi::AmanziChemistry::ActivityModelFactory::unit;
       std::string activity_model = activity_model_u; pp.query("Activity_Model",activity_model);
       
       Real tolerance=1.5e-12; pp.query("Tolerance",tolerance);
@@ -2738,7 +2738,7 @@ void  PorousMedia::read_chem()
       
       for (int ithread = 0; ithread < tnum; ithread++)
         {
-	  chemSolve.set(ithread, new amanzi::chemistry::SimpleThermoDatabase());
+	  chemSolve.set(ithread, new Amanzi::AmanziChemistry::SimpleThermoDatabase());
 	  
 	  parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
 	  parameters[ithread].thermo_database_file = amanzi_database_file;
@@ -2760,7 +2760,7 @@ void  PorousMedia::read_chem()
 	    components[ithread].total_sorbed.resize(ntracers, 1.0e-40);
 	  }
 
-	  chemSolve[ithread].verbosity(amanzi::chemistry::kTerse);
+	  chemSolve[ithread].verbosity(Amanzi::AmanziChemistry::kTerse);
 	  
 	  // initialize the chemistry objects
 	  chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
