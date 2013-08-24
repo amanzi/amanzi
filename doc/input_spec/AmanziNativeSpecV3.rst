@@ -1,5 +1,5 @@
 ========================================
-Amanzi Native XML Input Specification V2
+Amanzi Native XML Input Specification V3
 ========================================
 
 .. contents:: **Table of Contents**
