@@ -236,15 +236,105 @@ The following is an example of a complete MPC list:
 
 
 
-State (incomplete)
-==================
+State
+=====
 
-State allows the user to initialize physical variables using a variety of 
-tools.
+State allows the user to initialize physical fields using a variety of 
+tools. 
+
+Initialization of constant scalars
+----------------------------------
+
+A constant scalar field is the global (with respect to the mesh) constant. 
+At the moment, the set of such fields includes fluid density 
+and fluid viscosity.
+The initialization requires to provide a named sublist with a single
+parameter `"value`".
 
 .. code-block:: xml
 
-  <ParameterList name="State">
+  <ParameterList name="fluid_density">
+    <Parameter name="value" type="double" value="998.0"/>
+  </ParameterList>
+
+
+Initialization of constant vectors
+----------------------------------
+
+A constant vector field is the global (with respect to the mesh) vector constant. 
+At the moment, the set of such vector constants includes gravity.
+The initialization requires to provide a named sublist with a single
+parameter `"Array(double)`". In two dimensions, is looks like
+
+.. code-block:: xml
+
+  <ParameterList name="gravity">
+    <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+  </ParameterList>
+
+
+Initialization of scalar fields
+-------------------------------
+
+A variable scalar field is defined by a few functions (labeled for instance,
+`"Mesh Block i`" with non-overlapping ranges. 
+The required parameters for each function are `"region`", `"component`",
+and the function itself.
+
+.. code-block:: xml
+
+  <ParameterList name="porosity"> 
+    <ParameterList name="function">
+      <ParameterList name="Mesh Block 1">
+        <Parameter name="region" type="string" value="Computational domain"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.2"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Mesh Block 2">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+Initialization of tensor fields
+-------------------------------
+
+A variable tensor (or vector) field is defined similarly to 
+a variable scalar field. 
+The difference lies in the definition of the function which
+is now a multi-values function.
+The required parameters are `"Number of DoFs`" and `"Function type`". 
+
+.. code-block:: xml
+
+  <ParameterList name="function">
+    <Parameter name="Number of DoFs" type="int" value="2"/>
+    <Parameter name="Function type" type="string" value="composite function"/>
+    <ParameterList name="DoF 1 Function">
+      <ParameterList name="function-constant">
+        <Parameter name="value" type="double" value="1.9976e-12"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="DoF 2 Function">
+      <ParameterList name="function-constant">
+        <Parameter name="value" type="double" value="1.9976e-13"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+Example
+-------
+
+The complete example of a state inialization is below.
+
+.. code-block:: xml
+
+  <ParameterList name="state">
     <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
@@ -258,7 +348,7 @@ tools.
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
 
-      <ParameterList name="porosity">
+      <ParameterList name="porosity"> <!-- pressure is done similarly -->
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -266,20 +356,6 @@ tools.
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.2"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="pressure">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> 
-                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -329,15 +405,14 @@ tools.
     </ParameterList>
   </ParameterList>
 
-Some State parameters are described below:
 
-* `"Number of component concentrations`" [int] This parameter does not have 
-  a default value. Thus if transport is not initialized, set it to zero.
+Initialization from a file
+--------------------------
 
 Some data can be initialized from files. Additional sublist has to be added to
-the `"State`" list with the file name and names of attributes. 
+the `"state`" list with the file name and names of attributes. 
 The provided data will override results of other initialization tools. 
-Here is an example:
+Here is an example (incomplete):
 
 .. code-block:: xml
 
@@ -1089,6 +1164,8 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygon"`  [U]       | `"Number of points`", `"Points`"        | int, Array double            | Number of polygon points and point coordinates in linear array         |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
@@ -1144,6 +1221,18 @@ Notes
   In order to avoid, gaps and overlaps in specifying materials, it is
   strongly recommended that regions be defined using a single color
   function file. 
+
+* `"Region: Polygon`" defines a polygonal region on which mesh faces and
+  nodes can be queried. NOTE that one cannot ask for cells in a polygonal
+  region.In 2D, the "polygonal" region is a line and is specified by 2 points
+  In 3D, the "polygonal" region is specified by an arbitrary number of points.
+  In both cases the point coordinates are given as a linear array. The polygon
+  can be non-convex.
+
+  The polygonal region can be queried for a normal. In 2D, the normal is
+  defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
+  In 3D, the normal of the polygon is defined by the order in which points 
+  are specified.
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
