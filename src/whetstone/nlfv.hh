@@ -22,9 +22,11 @@ This is the discretization package, release beta.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#include "tensor.hpp"
-#include "Point.hh"
 #include "Mesh.hh"
+#include "Point.hh"
+
+#include "tensor.hh"
+#include "mfd3d.hh"
 
 
 namespace Amanzi {
@@ -32,11 +34,14 @@ namespace WhetStone {
 
 class NLFV { 
  public:
-  NLFV(Teuchos::RCP<AmanziMesh::Mesh> mesh) { mesh_ = mesh; };
-  ~NLFV();
+  NLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  ~NLFV() {};
+
+  void HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
+                              AmanziGeometry::Point& hap, double& hap_weight);
 
  private:
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace WhetStone

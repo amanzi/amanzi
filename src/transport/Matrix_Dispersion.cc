@@ -9,12 +9,14 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "Teuchos_RCP.hpp"
+#include "Epetra_FECrsGraph.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
-#include "Teuchos_RCP.hpp"
 
 #include "mfd3d_diffusion.hh"
-#include "mfd3d_vag.hh"
+#include "nlfv.hh"
 #include "tensor.hh"
 
 #include "Transport_constants.hh"
@@ -27,24 +29,23 @@ namespace AmanziTransport {
 /* *******************************************************************
  * 
  ****************************************************************** */
-void Matrix_Dispersion::Init(const Dispersion_Specs& specs)
+void Matrix_Dispersion::Init(Dispersion_Specs& specs)
 {
-  specs_ = specs;
+  specs_ = &specs;
 
   ncells_owned  = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::GHOST);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
   nfaces_owned  = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::GHOST);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   dim = mesh_->space_dimension();
 
   // allocate memory (do it dynamically ?)
-  harmonic_points.resize(nfaces_wghost);
-  for (int f = 0; f < nfaces_wghost; f++) harmonic_points[f].init(dim);
+  hap_points_.resize(nfaces_wghost);
+  for (int f = 0; f < nfaces_wghost; f++) hap_points_[f].init(dim);
 
-  harmonic_points_weight.resize(nfaces_wghost);
-  harmonic_points_value.resize(nfaces_wghost);
+  hap_weights_.resize(nfaces_wghost);
 
   D.resize(ncells_wghost);
   for (int c = 0; c < ncells_wghost; c++) D[c].init(dim, 2);
@@ -61,9 +62,9 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
   AmanziGeometry::Point velocity(dim), flux(dim);
   WhetStone::Tensor T(dim, 2);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    if (specs_.method == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-      for (int i = 0; i < dim; i++) D[c](i, i) = specs_.dispersivity_longitudinal;
+  for (int c = 0; c < ncells_wghost; c++) {
+    if (specs_->method == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
+      for (int i = 0; i < dim; i++) D[c](i, i) = specs_->dispersivity_longitudinal;
     } else {
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
@@ -88,10 +89,10 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
       velocity /= num_good_corners;
 
       double velocity_value = norm(velocity);
-      double anisotropy = specs_.dispersivity_longitudinal - specs_.dispersivity_transverse;
+      double anisotropy = specs_->dispersivity_longitudinal - specs_->dispersivity_transverse;
 
       for (int i = 0; i < dim; i++) {
-        D[c](i, i) = specs_.dispersivity_transverse * velocity_value;
+        D[c](i, i) = specs_->dispersivity_transverse * velocity_value;
         for (int j = i; j < dim; j++) {
           double s = anisotropy * velocity[i] * velocity[j];
           if (velocity_value) s /= velocity_value;
@@ -106,9 +107,139 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
 }
 
 
+/* ******************************************************************
+* Initialize Trilinos matrices. It must be called only once. 
+* If matrix is non-symmetric, we generate transpose of the matrix 
+* block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
+****************************************************************** */
+void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
+{
+  const Epetra_Map& cmap = mesh_->cell_map(false);
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+
+  int avg_entries_row = (mesh_->space_dimension() == 2) ? TRANSPORT_QUAD_FACES : TRANSPORT_HEX_FACES;
+  Epetra_FECrsGraph pp_graph(Copy, cmap, avg_entries_row + 1);
+
+  AmanziMesh::Entity_ID_List cells;
+  int cells_GID[2];
+
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    for (int n = 0; n < ncells; n++)
+        cells_GID[n] = cmap_wghost.GID(cells[n]);
+
+    pp_graph.InsertGlobalIndices(ncells, cells_GID, ncells, cells_GID);
+  }
+  pp_graph.GlobalAssemble();  // Symbolic graph is complete.
+
+  // create global matrices
+  Dpp_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, pp_graph));
+  Dpp_->GlobalAssemble();
+}
+
+
+/* ******************************************************************
+* Calculate fluxes... 
+****************************************************************** */
+void Matrix_Dispersion::AssembleGlobalMatrix()
+{
+  AmanziMesh::Entity_ID_List cells, faces;
+  std::vector<int> dirs;
+
+  // populate transmissibilities
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
+  Epetra_Vector T(fmap_wghost);
+
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
+    mfd3d.MassMatrixInverseTPFA(c, D[c], Mff);
+   
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
+      T[f] += 1.0 / Mff(n, n);
+    }
+  }
+ 
+  // populate the global matrix
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  Dpp_->PutScalar(0.0);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    // populate face-based matrix.
+    Teuchos::SerialDenseMatrix<int, double> Bpp(1, ncells + 1);
+    int cells_GID[ncells + 1];
+
+    int c_GID = cmap_wghost.GID(c);  // diagonal entry
+    cells_GID[0] = c_GID;
+
+    for (int n = 0; n < ncells; n++) {
+      int m = n + 1;
+      cells_GID[m] = cmap_wghost.GID(cells[n]);
+
+      int f = faces[n];
+      double area = mesh_->face_area(f);
+      Bpp(0, m) = -area / T[f];
+      Bpp(0, 0) += area / T[f];
+    }
+
+    Dpp_->SumIntoGlobalValues(1, &c_GID, ncells + 1, cells_GID, Bpp.values());
+  }
+  Dpp_->GlobalAssemble();
+}
+
+
+/* ******************************************************************
+ * * Adds time derivative to the cell-based part of MFD algebraic system.                                               
+ * ****************************************************************** */
+void Matrix_Dispersion::AddTimeDerivative(
+    double dT, const Epetra_Vector& phi, const Epetra_Vector& ws)
+{
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double volume = mesh_->cell_volume(c);
+    double factor = volume * phi[c] * ws[c] / dT;
+
+    int c_GID = cmap_wghost.GID(c);
+    Dpp_->SumIntoGlobalValues(1, &c_GID, &factor);
+  }
+}
+
+
 /* *******************************************************************
- * Collect time-dependent boundary data in face-based arrays.                               
- ****************************************************************** */
+* Collect time-dependent boundary data in face-based arrays.                               
+******************************************************************* */
+void Matrix_Dispersion::Apply(const Epetra_Vector& v,  Epetra_Vector& av) const
+{
+  Dpp_->Apply(v, av);
+}
+
+
+/* *******************************************************************
+* Collect time-dependent boundary data in face-based arrays.                               
+******************************************************************* */
+void Matrix_Dispersion::ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const
+{
+  hv = v;
+}
+
+
+/* *******************************************************************
+* Collect time-dependent boundary data in face-based arrays.                               
+******************************************************************* */
 void Matrix_Dispersion::ExtractBoundaryConditions(const int component,
                                              std::vector<int>& bc_face_id,
                                              std::vector<double>& bc_face_value)
@@ -130,100 +261,17 @@ void Matrix_Dispersion::ExtractBoundaryConditions(const int component,
 
 
 /* *******************************************************************
- * Calculate field values at harmonic points. For harmonic points on
- * domain boundary, we use Dirichlet boundary values.
- ****************************************************************** */
-void Matrix_Dispersion::PopulateHarmonicPointsValues(int component,
-                                                Teuchos::RCP<Epetra_MultiVector> tcc,
-                                                std::vector<int>& bc_face_id,
-                                                std::vector<double>& bc_face_values)
+* Calculate harmonic averaging points and related weigths.
+******************************************************************* */
+void Matrix_Dispersion::PopulateHarmonicPoints()
 {
-  WhetStone::MFD3D_VAG vag(mesh_);
-  AmanziMesh::Entity_ID_List cells;
+  WhetStone::NLFV nlfv(mesh_);
 
   for (int f = 0; f < nfaces_owned; f++) {
-    double weight;
-    vag.CalculateHarmonicPoints(f, D, harmonic_points[f], weight);
-    harmonic_points_weight[f] = weight;
-
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    if (ncells == 2) {
-      harmonic_points_value[f] = weight * (*tcc)[component][cells[0]]
-                               + (1 - weight) * (*tcc)[component][cells[1]];
-    } else if (bc_face_id[f] == TRANSPORT_BC_CONSTANT_TCC) {
-      harmonic_points_value[f] = bc_face_values[f];
-    } else {
-      harmonic_points_value[f] = (*tcc)[component][cells[0]];  // ad-hoc solution (lipnikov@lanl.gov)
-    }
+    nlfv.HarmonicAveragingPoint(f, D, hap_points_[f], hap_weights_[f]);
   }
 }
 
-
-/* *******************************************************************
- * Calculate and add dispersive fluxes of the conservative quantatity.
- ****************************************************************** */
-void Matrix_Dispersion::AddDispersiveFluxes(int component,
-                                       Teuchos::RCP<Epetra_MultiVector> tcc,
-                                       std::vector<int>& bc_face_id,
-                                       std::vector<double>& bc_face_values,
-                                       Teuchos::RCP<Epetra_MultiVector> tcc_next)
-{
-  WhetStone::MFD3D_VAG vag(mesh_);
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
-
-  AmanziMesh::Entity_ID_List nodes, faces;
-  std::vector<AmanziGeometry::Point> corner_points;
-  std::vector<double> corner_values, corner_fluxes;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    double value = (*tcc)[component][c];
-
-    for (int n = 0; n < nnodes; n++) {
-      int v = nodes[n];
-      mesh_->node_get_cell_faces(v, c, AmanziMesh::USED, &faces);
-      int nfaces = faces.size();
-
-      corner_points.clear();
-      corner_values.clear();
-      for (int i = 0; i < nfaces; i++) {
-        int f = faces[i];
-        corner_points.push_back(harmonic_points[f]);
-        corner_values.push_back(harmonic_points_value[f]);
-      }
-
-      vag.DispersionCornerFluxes(v, c, D[c], 
-                                 corner_points, value, corner_values, corner_fluxes);
-
-      for (int i = 0; i < nfaces; i++) {
-        int f = faces[i];
-        if (bc_face_id[f] == TRANSPORT_BC_DISPERSION_FLUX) {
-          corner_fluxes[i] = bc_face_values[i];
-        }
-
-        (*tcc_next)[component][c] += corner_fluxes[i];
-        int c2 = mfd.cell_get_face_adj_cell(c, f);
-        // if (c2 >= 0) (*tcc_next)[component][c2] += dT * corner_fluxes[i];
-      }
-    }
-  }
-}
-
-/*
-    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
-      CalculateDispersionTensor();
-
-      std::vector<int> bc_face_id(nfaces_wghost);  // must be allocated once (lipnikov@lanl.gov)
-      std::vector<double> bc_face_values(nfaces_wghost);
-
-      ExtractBoundaryConditions(i, bc_face_id, bc_face_values);
-      PopulateHarmonicPointsValues(i, tcc, bc_face_id, bc_face_values);
-      AddDispersiveFluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
-    }
-*/
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi

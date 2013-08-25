@@ -30,14 +30,18 @@ int FindPosition(const std::vector<T>& v, const T& value) {
   return -1;
 }
 
-  Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) 
-   :  Matrix_MFD(FS, map){
 
+/* ******************************************************************
+* Constructor.                                           
+****************************************************************** */
+Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) 
+   :  Matrix_MFD(FS, map)
+{
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
   Acc_cells_.resize(ncells);
   Fc_cells_.resize(ncells);
-  
-  };
+}
+
 
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            

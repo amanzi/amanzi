@@ -13,7 +13,10 @@ Usage:
 #ifndef __MATRIX_DISPERSION_HH__
 #define __MATRIX_DISPERSION_HH__
 
+
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_Vector.h"
+
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -35,31 +38,25 @@ class Dispersion_Specs {
 
 class Matrix_Dispersion {
  public:
+  Matrix_Dispersion() {};
   Matrix_Dispersion(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
   ~Matrix_Dispersion() {};
 
   // primary members
-  void Init(const Dispersion_Specs& specs);
-  void Apply();
-  void ApplyInverse();
+  void Init(Dispersion_Specs& specs);
+  void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
+  void ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
-  // I/O methods
-  // void ProcessStringDispersionModel(const std::string name, int* method);
+  void CalculateDispersionTensor(const Epetra_Vector& darcy_flux);
+  void SymbolicAssembleGlobalMatrix();
+  void AssembleGlobalMatrix();
+  void AddTimeDerivative(double dT, const Epetra_Vector& phi, const Epetra_Vector& ws);
 
  private:
-  void CalculateDispersionTensor(const Epetra_Vector& darcy_flux);
+  void PopulateHarmonicPoints();
   void ExtractBoundaryConditions(const int component,
                                  std::vector<int>& bc_face_id,
                                  std::vector<double>& bc_face_value);
-  void PopulateHarmonicPointsValues(int component,
-                                    Teuchos::RCP<Epetra_MultiVector> tcc,
-                                    std::vector<int>& bc_face_id,
-                                    std::vector<double>& bc_face_values);
-  void AddDispersiveFluxes(int component,
-                           Teuchos::RCP<Epetra_MultiVector> tcc,
-                           std::vector<int>& bc_face_id,
-                           std::vector<double>& bc_face_values,
-                           Teuchos::RCP<Epetra_MultiVector> tcc_next);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -68,12 +65,14 @@ class Matrix_Dispersion {
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
-  Dispersion_Specs specs_;
+  Dispersion_Specs* specs_;
 
-  std::vector<AmanziGeometry::Point> harmonic_points;
-  std::vector<double> harmonic_points_weight;
-  std::vector<double> harmonic_points_value;
+  std::vector<AmanziGeometry::Point> hap_points_;
+  std::vector<double> hap_weights_;
+
   std::vector<WhetStone::Tensor> D;
+
+  Teuchos::RCP<Epetra_FECrsMatrix> Dpp_;
 };
 
 }  // namespace AmanziTransport

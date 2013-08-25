@@ -24,9 +24,11 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "Explicit_TI_RK.hh"
+#include "PCG_Operator.hh"
 
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
+#include "Matrix_Dispersion.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -60,8 +62,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
   mass_tracer_exact = 0.0;
-
-  dispersion_matrix = NULL;
 }
 
 
@@ -72,7 +72,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 Transport_PK::~Transport_PK()
 { 
   for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
-  if (dispersion_matrix != NULL) delete dispersion_matrix;
 }
 
 
@@ -148,7 +147,9 @@ int Transport_PK::InitPK()
  
   // dispersivity model
   if (dispersion_specs.method != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+    dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
     dispersion_matrix->Init(dispersion_specs);
+    dispersion_matrix->SymbolicAssembleGlobalMatrix();
   }
   return 0;
 }
@@ -390,8 +391,30 @@ void Transport_PK::Advance(double dT_MPC)
     }
   }
 
+  if (dispersion_specs.method != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+    const Epetra_Vector& phi = TS->ref_porosity();
+    const Epetra_Vector& flux = TS->ref_darcy_flux();
+
+    dispersion_matrix->CalculateDispersionTensor(flux);
+    dispersion_matrix->AssembleGlobalMatrix();
+    dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
+
+    AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
+
+    const Epetra_Map& cmap = mesh_->cell_map(false);
+    Epetra_Vector rhs(cmap);
+
+    for (int i = 0; i < number_components; i++) {
+      for (int c = 0; c < ncells_owned; c++) {
+        double factor = mesh_->cell_volume(c) * ws[c] * phi[c] / dT_MPC;
+        rhs[c] = tcc_next[i][c] * factor;
+      }
+      pcg.ApplyInverse(rhs, *(tcc_next(i)));
+    }
+  }
+
   // DEBUG
-  // writeGMVfile(TS_nextMPC);
+  WriteGMVfile(TS_nextMPC); 
 }
 
 

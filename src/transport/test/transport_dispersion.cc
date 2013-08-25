@@ -65,7 +65,7 @@ TEST(DISPERSION) {
   MeshFactory factory(comm);
   factory.preference(pref);
   int nx = 20;
-  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 1, 1, gm); 
+  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1, gm); 
 
 
   RCP<Transport_State> TS = rcp(new Transport_State(mesh,1));

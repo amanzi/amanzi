@@ -178,7 +178,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  Matrix_Dispersion* dispersion_matrix; // data for dispersion
+  Teuchos::RCP<Matrix_Dispersion> dispersion_matrix; // data for dispersion
   Dispersion_Specs dispersion_specs;
 
   double cfl_, dT, dT_debug, T_physics;  

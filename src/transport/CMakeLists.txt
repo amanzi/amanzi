@@ -28,6 +28,7 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
@@ -88,10 +89,10 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    #add_amanzi_test(transport_dispersion transport_dispersion
-    #                KIND unit
-    #                SOURCE test/Main.cc test/transport_dispersion.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(transport_dispersion transport_dispersion
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_dispersion.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
         set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions functions data_structures)

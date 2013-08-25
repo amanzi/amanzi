@@ -40,7 +40,7 @@ add_amanzi_library(whetstone
                    SOURCE mfd3d.cc
                           mfd3d_diffusion.cc mfd3d_diffusion_other.cc 
                           mfd3d_elasticity.cc 
-                          mfd3d_vag.cc tensor.cc HEADERS ${whetstone_inc_files}
+                          nlfv.cc tensor.cc HEADERS ${whetstone_inc_files}
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
