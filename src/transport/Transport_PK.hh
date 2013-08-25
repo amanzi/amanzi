@@ -131,7 +131,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   // I/O methods
   void ProcessParameterList();
   void ProcessStringFlowMode(const std::string name, int* method);
-  void ProcessStringDispersionModel(const std::string name, int* method);
+  void ProcessStringDispersionModel(const std::string name, int* model);
+  void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
 

@@ -24,14 +24,15 @@ namespace AmanziTransport {
 class Dispersion_Specs {
  public:
   Dispersion_Specs() {
-    method = TRANSPORT_DISPERSIVITY_MODEL_NULL;
+    model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
     dispersivity_longitudinal = 0.0;
     dispersivity_transverse = 0.0;
+    method = TRANSPORT_DISPERSION_METHOD_TPFA; 
   }
   ~Dispersion_Specs() {};
 
  public:
-  int method;
+  int model, method;
   double dispersivity_longitudinal, dispersivity_transverse;
 };
 
@@ -47,10 +48,13 @@ class Matrix_Dispersion {
   void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   void ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
-  void CalculateDispersionTensor(const Epetra_Vector& darcy_flux);
+  void CalculateDispersionTensor(const Epetra_Vector& darcy_flux,
+                                 const Epetra_Vector& porosity,
+                                 const Epetra_Vector& saturation);
   void SymbolicAssembleGlobalMatrix();
   void AssembleGlobalMatrix();
-  void AddTimeDerivative(double dT, const Epetra_Vector& phi, const Epetra_Vector& ws);
+  void AddTimeDerivative(double dT, const Epetra_Vector& porosity, 
+                         const Epetra_Vector& saturation);
 
  private:
   void PopulateHarmonicPoints();

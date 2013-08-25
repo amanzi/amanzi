@@ -56,37 +56,28 @@ void Matrix_Dispersion::Init(Dispersion_Specs& specs)
  * Calculate a dispersive tensor the from Darcy fluxes. The flux is
  * assumed to be scaled by face area.
  ****************************************************************** */
-void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flux)
+void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flux, 
+                                                  const Epetra_Vector& porosity, 
+                                                  const Epetra_Vector& saturation)
 {
-  AmanziMesh::Entity_ID_List nodes, faces;
-  AmanziGeometry::Point velocity(dim), flux(dim);
-  WhetStone::Tensor T(dim, 2);
-
-  for (int c = 0; c < ncells_wghost; c++) {
-    if (specs_->method == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
+  if (specs_->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
+    for (int c = 0; c < ncells_wghost; c++) {
       for (int i = 0; i < dim; i++) D[c](i, i) = specs_->dispersivity_longitudinal;
-    } else {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
+    }
+  } else {
+    WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
-      int num_good_corners = 0;
-      for (int n = 0; n < nnodes; n++) {
-        int v = nodes[n];
-        mesh_->node_get_cell_faces(v, c, AmanziMesh::USED, &faces);
-        int nfaces = faces.size();
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+    AmanziGeometry::Point velocity(dim);
 
-        for (int i = 0; i < dim; i++) {
-          int f = faces[i];
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-          T.add_row(i, normal);
-          flux[i] = darcy_flux[f];
-        }
+    for (int c = 0; c < ncells_wghost; c++) {
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();
 
-        T.inverse();
-        velocity += T * flux;
-        num_good_corners++;  // each corners is good temporary (lipnikov@lanl.gov)
-      }
-      velocity /= num_good_corners;
+      std::vector<double> flux(nfaces);
+      for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[faces[n]];
+      mfd3d.RecoverGradient_MassMatrix(c, flux, velocity);
 
       double velocity_value = norm(velocity);
       double anisotropy = specs_->dispersivity_longitudinal - specs_->dispersivity_transverse;
@@ -99,10 +90,9 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
           D[c](j, i) = D[c](i, j) += s;
         }
       }
-    }
 
-    // double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
-    // for (int i = 0; i < dim; i++) dispersion_tensor[c](i, i) *= vol_phi_ws;
+      D[c] *= porosity[c] * saturation[c];
+    }
   }
 }
 
@@ -114,12 +104,12 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
 ****************************************************************** */
 void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
 {
-  const Epetra_Map& cmap = mesh_->cell_map(false);
+  const Epetra_Map& cmap_owned = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
-  int avg_entries_row = (mesh_->space_dimension() == 2) ? TRANSPORT_QUAD_FACES : TRANSPORT_HEX_FACES;
-  Epetra_FECrsGraph pp_graph(Copy, cmap, avg_entries_row + 1);
+  int avg_entries_row = (dim == 2) ? TRANSPORT_QUAD_FACES : TRANSPORT_HEX_FACES;
+  Epetra_FECrsGraph pp_graph(Copy, cmap_owned, avg_entries_row + 1);
 
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];
@@ -171,47 +161,43 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
  
   // populate the global matrix
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  int cells_GID[2];
+  Teuchos::SerialDenseMatrix<int, double> Bpp(2, 2);
+
   Dpp_->PutScalar(0.0);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
-
-    // populate face-based matrix.
-    Teuchos::SerialDenseMatrix<int, double> Bpp(1, ncells + 1);
-    int cells_GID[ncells + 1];
-
-    int c_GID = cmap_wghost.GID(c);  // diagonal entry
-    cells_GID[0] = c_GID;
+    if (ncells < 2) continue;
 
     for (int n = 0; n < ncells; n++) {
-      int m = n + 1;
-      cells_GID[m] = cmap_wghost.GID(cells[n]);
+      cells_GID[n] = cmap_wghost.GID(cells[n]);
 
-      int f = faces[n];
-      double area = mesh_->face_area(f);
-      Bpp(0, m) = -area / T[f];
-      Bpp(0, 0) += area / T[f];
+      double coef = mesh_->face_area(f) / T[f];
+      Bpp(0, 0) =  coef;
+      Bpp(1, 1) =  coef;
+      Bpp(0, 1) = -coef;
+      Bpp(1, 0) = -coef;
     }
 
-    Dpp_->SumIntoGlobalValues(1, &c_GID, ncells + 1, cells_GID, Bpp.values());
+    Dpp_->SumIntoGlobalValues(ncells, cells_GID, Bpp.values());
   }
   Dpp_->GlobalAssemble();
 }
 
 
 /* ******************************************************************
- * * Adds time derivative to the cell-based part of MFD algebraic system.                                               
- * ****************************************************************** */
+* Adds time derivative to the cell-based part of MFD algebraic system.
+****************************************************************** */
 void Matrix_Dispersion::AddTimeDerivative(
-    double dT, const Epetra_Vector& phi, const Epetra_Vector& ws)
+    double dT, const Epetra_Vector& porosity, const Epetra_Vector& saturation)
 {
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume * phi[c] * ws[c] / dT;
+    double factor = volume * porosity[c] * saturation[c] / dT;
 
     int c_GID = cmap_wghost.GID(c);
     Dpp_->SumIntoGlobalValues(1, &c_GID, &factor);
@@ -222,7 +208,7 @@ void Matrix_Dispersion::AddTimeDerivative(
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Matrix_Dispersion::Apply(const Epetra_Vector& v,  Epetra_Vector& av) const
+void Matrix_Dispersion::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 {
   Dpp_->Apply(v, av);
 }
@@ -231,7 +217,7 @@ void Matrix_Dispersion::Apply(const Epetra_Vector& v,  Epetra_Vector& av) const
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Matrix_Dispersion::ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const
+void Matrix_Dispersion::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   hv = v;
 }

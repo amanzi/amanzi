@@ -146,7 +146,7 @@ int Transport_PK::InitPK()
   }
  
   // dispersivity model
-  if (dispersion_specs.method != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
     dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
     dispersion_matrix->Init(dispersion_specs);
     dispersion_matrix->SymbolicAssembleGlobalMatrix();
@@ -391,30 +391,40 @@ void Transport_PK::Advance(double dT_MPC)
     }
   }
 
-  if (dispersion_specs.method != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
     const Epetra_Vector& phi = TS->ref_porosity();
     const Epetra_Vector& flux = TS->ref_darcy_flux();
 
-    dispersion_matrix->CalculateDispersionTensor(flux);
+    dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
     dispersion_matrix->AssembleGlobalMatrix();
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
 
     AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
+    pcg.set_tolerance(1e-8);
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
     Epetra_Vector rhs(cmap);
 
+    double residual = 0.0;
+    int num_itrs = 0;
+    
     for (int i = 0; i < number_components; i++) {
       for (int c = 0; c < ncells_owned; c++) {
         double factor = mesh_->cell_volume(c) * ws[c] * phi[c] / dT_MPC;
         rhs[c] = tcc_next[i][c] * factor;
       }
       pcg.ApplyInverse(rhs, *(tcc_next(i)));
+      residual += pcg.residual();
+      num_itrs += pcg.num_itrs();
+    }
+    if (verbosity >= TRANSPORT_VERBOSITY_HIGH && MyPID == 0) {
+      printf("Transport PK: dispersion solver: ||r||=%10.5g itrs=%d\n",
+          residual / number_components, num_itrs / number_components);
     }
   }
 
   // DEBUG
-  WriteGMVfile(TS_nextMPC); 
+  // WriteGMVfile(TS_nextMPC); 
 }
 
 

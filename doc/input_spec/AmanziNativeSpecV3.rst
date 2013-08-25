@@ -884,6 +884,27 @@ Here is an example:
    </ParameterList>  
 
 
+Dispersivity models
+-------------------
+Two dispesivity models have been implemented: `"isotropic`" and `"Bear`". 
+The anisotropic model `"Lichtner`" is pending for a more detailed 
+description in the Process Models document.
+
+Two discretization methods that preserve the maximum principles are 
+`"two point flux approximation`" and `"nonliner finite volume`". 
+The first one may show significant numerical dispersion on unstructured meshes, 
+the second-one is more accurate but also is a few times more expensive.
+
+.. code-block:: xml
+
+   <ParameterList name="Transport">
+     <Parameter name="dispersivity model" type="string" value="Bear"/>
+     <Parameter name="dispersivity longitudinal" type="double" value="1e-2"/>
+     <Parameter name="dispersivity transverse" type="double" value="1e-5"/>
+     <Parameter name="numerical method" type="string" value="two point flux approximation"/>
+   </ParameterList>  
+ 
+
 Boundary Conditions
 -------------------
 
@@ -981,7 +1002,6 @@ Note that the source values ire set up separately for each component:
 
 Other parameters
 -----------------
-
 
 The `"Transport`" parameters useful for developers are:
 

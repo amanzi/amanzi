@@ -34,7 +34,9 @@ class PCG_Operator : public Matrix {
   ~PCG_Operator() {};
   
   void Apply(const Vector& v, Vector& mv) const { m_->Apply(v, mv); }
-  void ApplyInverse(const Vector& v, Vector& hv) const { pcg(v, hv, tol_, max_itrs_, criteria_); }
+  void ApplyInverse(const Vector& v, Vector& hv) { 
+    num_itrs_ = pcg(v, hv, tol_, max_itrs_, criteria_); 
+  }
 
   Teuchos::RCP<const VectorSpace> domain() const { return m_->domain(); }
   Teuchos::RCP<const VectorSpace> range() const { return m_->range(); }
@@ -45,14 +47,17 @@ class PCG_Operator : public Matrix {
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
   void set_criteria(int criteria) { criteria_ = criteria; }
 
+  double residual() { return residual_; }
+  int num_itrs() { return num_itrs_; }
+
  private:
-  int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+  int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria);
 
  private:
   Teuchos::RCP<const Matrix> m_;
 
-  int max_itrs_, criteria_;
-  double tol_;
+  int max_itrs_, num_itrs_, criteria_;
+  double tol_, residual_;
 };
 
 
@@ -66,7 +71,7 @@ class PCG_Operator : public Matrix {
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
-    const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
+    const Vector& f, Vector& x, double tol, int max_itrs, int criteria)
 {
   Vector r(f), p(f), v(f);  // construct empty vectors
 
@@ -80,6 +85,7 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
   r.Update(1.0, f, -1.0);
   double rnorm0;
   r.Norm2(&rnorm0);
+  residual_ = rnorm0;
 
   m_->ApplyInverse(r, p);  // gamma = (H r,r)
   double gamma0;
@@ -90,7 +96,7 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
   }
 
   if (criteria & SOLVER_CONVERGENCE_RHS)   
-    if( rnorm0 < tol * fnorm)  return 0; 
+    if( rnorm0 < tol * fnorm) return 0; 
 
   for (int i = 0; i < max_itrs; i++) {
     m_->Apply(p, v);
@@ -116,6 +122,7 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
 
     double rnorm;
     r.Norm2(&rnorm);
+    residual_ = rnorm;
  
     if (criteria & SOLVER_CONVERGENCE_RHS) 
       if (rnorm < tol * fnorm) return i+1;

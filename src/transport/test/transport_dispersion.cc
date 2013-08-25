@@ -84,7 +84,7 @@ TEST(DISPERSION) {
   Transport_PK TPK(transport_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
-  TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
+  // TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
 
   // advance the state
   int i, k, iter = 0;
