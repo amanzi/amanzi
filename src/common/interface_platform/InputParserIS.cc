@@ -321,8 +321,8 @@ Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist
     if ( plist->sublist("Output").isSublist("Checkpoint Data") ) {
       Teuchos::ParameterList rlist = plist->sublist("Output").sublist("Checkpoint Data");
 
-      restart_list.set<std::string>("file name base", rlist.get<std::string>("File Name Base"));
-      restart_list.set<int>("file name digits", rlist.get<int>("File Name Digits"));
+      restart_list.set<std::string>("file name base", rlist.get<std::string>("File Name Base",std::string("checkpoint")));
+      restart_list.set<int>("file name digits", rlist.get<int>("File Name Digits",5));
 
       // check if the cycle range is defined via a macro
       if ( rlist.isParameter("Cycle Macro") ) {
