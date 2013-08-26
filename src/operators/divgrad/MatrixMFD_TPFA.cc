@@ -354,11 +354,11 @@ void MatrixMFD_TPFA::UpdateConsistentFaceConstraints(
   Epetra_MultiVector update_f(rhs_f);
 
   Afc_->Multiply(true,*uc, update_f);  // Afc is kept in the transpose form.
-  rhs_f.Update(-1.0, update_f, 1.0);
+  update_f.Update(1.0, rhs_f, -1.0);
 
   int nfaces = rhs_f.MyLength();
   for (int f=0; f!=nfaces; ++f) {
-    uf[0][f] = rhs_f[0][f] / Dff_f[0][f];
+    uf[0][f] = update_f[0][f] / Dff_f[0][f];
   }
 }
 
