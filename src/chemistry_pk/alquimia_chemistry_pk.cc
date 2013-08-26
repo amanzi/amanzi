@@ -767,7 +767,6 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   //
   // ion exchange ref cation concentrations
   //
-std::cout << "Ref cationization\n";
   for (int i = 0; i < chemistry_state_->number_of_ion_exchange_sites(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
@@ -779,7 +778,6 @@ std::cout << "Ref cationization\n";
   // 
   if (using_sorption())
   {
-std::cout << "Complexation II\n";
     for (int i = 0; i < chemistry_state_->number_of_sorption_sites(); ++i, ++offset) 
     {
       double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
@@ -792,7 +790,6 @@ std::cout << "Complexation II\n";
   //
   if (aux_data_ != Teuchos::null) 
   {
-std::cout << "aux shiat\n";
     for (unsigned int i = 0; i < aux_names_.size(); i++) 
     {
       if (aux_names_.at(i) == "pH") 
