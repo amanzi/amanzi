@@ -61,7 +61,7 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     CONFIGURE_COMMAND 
 		                      <SOURCE_DIR>/configure
 				                  --prefix=<INSTALL_DIR> 
-						  --with-pic --disable-shared
+						  --with-pic --disable-shared --with-curl=<INSTALL_DIR>
                                                   CC=${CMAKE_C_COMPILER_USE}
                                                   CFLAGS=${CFLAGS}
                                                   CXX=${CMAKE_CXX_COMPILER_USE}
