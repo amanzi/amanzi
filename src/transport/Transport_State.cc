@@ -122,9 +122,22 @@ void Transport_State::Construct_(const int ncomp)
   }
   
   if (!S_->HasField("total_component_concentration")) {
-    S_->RequireField("total_component_concentration", name_)->SetMesh(mesh_)
-        ->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, ncomp);
+    std::vector<std::vector<std::string> > subfield_names(1);
+    if (comp_names_.size() == ncomp) {
+      for (std::vector<std::string>::const_iterator compname = comp_names_.begin();
+	   compname != comp_names_.end(); ++compname) {    
+	subfield_names[0].push_back(*compname + std::string(" conc"));
+      }
+    } else {
+      for (int icn = 0; icn != ncomp; ++icn) {
+	std::stringstream ss;
+	ss << "Component " << icn; 
+	subfield_names[0].push_back(ss.str());
+      }
+    }
+    S_->RequireField("total_component_concentration", name_, subfield_names)->SetMesh(mesh_)
+      ->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, ncomp);
   }
 }
 

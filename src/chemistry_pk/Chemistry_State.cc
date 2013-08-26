@@ -320,15 +320,17 @@ void Chemistry_State::RequireData_() {
       }
     }
 
-    // set the names for vis
-    std::vector<std::vector<std::string> > conc_names_cv(1);
-    for (std::vector<std::string>::const_iterator compname = compnames_.begin();
-         compname != compnames_.end(); ++compname) {
-      conc_names_cv[0].push_back(*compname + std::string(" conc"));
-    }
-    S_->RequireField("total_component_concentration", name_, conc_names_cv)
+    if (!S_->HasField("total_component_concentration")) {    
+      // set the names for vis
+      std::vector<std::vector<std::string> > conc_names_cv(1);
+      for (std::vector<std::string>::const_iterator compname = compnames_.begin();
+           compname != compnames_.end(); ++compname) {
+        conc_names_cv[0].push_back(*compname + std::string(" conc"));
+      }
+      S_->RequireField("total_component_concentration", name_, conc_names_cv)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_of_aqueous_components_);
+    }
 
     // now create the map
     for (int i=0; i!=number_of_aqueous_components_; ++i) {
