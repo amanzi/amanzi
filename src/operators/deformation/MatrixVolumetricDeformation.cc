@@ -80,9 +80,11 @@ void MatrixVolumetricDeformation::ApplyRHS(const CompositeVector& x_cell,
   // Must also apply the boundary condition, dz_bottom = 0
   // -- Fix the bottom nodes, they may not move
   Epetra_MultiVector& rhs_n = *x_node->ViewComponent("node",false);
+  unsigned int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes->begin();
        n!=fixed_nodes->end(); ++n) {
-    rhs_n[0][*n] = 0;
+    if (*n < nnodes_owned)
+      rhs_n[0][*n] = 0;
   }
 }
 
