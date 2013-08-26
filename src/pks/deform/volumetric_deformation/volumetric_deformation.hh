@@ -62,12 +62,24 @@ class VolumetricDeformation : public PKPhysicalBase {
  private:
   Key poro_key_;
 
+  // strategy for calculating nodal deformation from cell volume change
+  enum DeformStrategy {
+    DEFORM_STRATEGY_GLOBAL_OPTIMIZATION,
+    DEFORM_STRATEGY_MSTK,
+    DEFORM_STRATEGY_AVERAGE
+  };
+  DeformStrategy strategy_;
+
+  // fixed regions (bottom faces/nodes)
+  std::vector<std::string> fixed_regions_;
+  std::string fixed_region_type_;
+
   // function describing d(cv)/dT
   enum DeformMode {
-    DEFORM_MODE_DVDT,
     DEFORM_MODE_THAW_FRONT,
+    DEFORM_MODE_DVDT
   };
-  DeformMode mode_;
+  DeformMode deform_mode_;
   std::string deform_region_;
   Teuchos::RCP<Function> thaw_front_func_;
   double min_vol_frac_;
