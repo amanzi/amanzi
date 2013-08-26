@@ -9,7 +9,8 @@
 namespace Amanzi {
 
 Unstructured_observations::Unstructured_observations(Teuchos::ParameterList observations_plist_,
-                                                     Amanzi::ObservationData& observation_data_):
+                                                     Amanzi::ObservationData& observation_data_,
+						     Epetra_MpiComm* comm):
     observation_data(observation_data_)
 {
   // interpret paramerter list
@@ -71,7 +72,8 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
                                                     Observable(var,
                                                                observable_plist.get<string>("Region"),
                                                                observable_plist.get<string>("Functional"),
-                                                               cycles, cycle_sps, times, time_sps)));
+							       observable_plist,
+							       comm)));
     }
   }
 }
@@ -101,7 +103,7 @@ void Unstructured_observations::make_observations(State& state)
     std::stringstream ss;
     ss << label << ", " << var;
     
-    std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label];  //ss.str() ];
+    std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label]; 
     
     if ((i->second).functional == "Observation Data: Integral")  {
       if (var == "Water") {
@@ -151,87 +153,86 @@ void Unstructured_observations::make_observations(State& state)
 	    
 	    volume += state.GetMesh()->cell_volume(ic);
 	  }
+	} else if (var == "Volumetric water content") {
+	  value = 0.0;
+	  volume = 0.0;
+	  
+	  Teuchos::RCP<const Epetra_Vector> porosity = 
+	    Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));	  
+	  Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	    Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
+	  
+	  for (int i=0; i<mesh_block_size; i++) {
+	    int ic = cell_ids[i];
+	    value += (*porosity)[ic] * (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
+	    volume += state.GetMesh()->cell_volume(ic);
+	  }
+	} else if (var == "Gravimetric water content") {
+	  value = 0.0;
+	  volume = 0.0;
+	  
+	  Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	    Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
+	  double water_density =  *state.GetScalarData("fluid_density");
+	  double particle_density(1.0); // does not exist in new state, yet... TODO
+	  Teuchos::RCP<const Epetra_Vector> porosity = 
+	    Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));
+	  
+	  for (int i=0; i<mesh_block_size; i++) {
+	    int ic = cell_ids[i];
+	    value += (*porosity)[ic] * (*water_saturation)[ic] * water_density 
+	      / ( particle_density * (1.0 - (*porosity)[ic] ) )  * state.GetMesh()->cell_volume(ic);
+	    volume += state.GetMesh()->cell_volume(ic);
+	  }    
+	} else if (var == "Aqueous pressure") {
+	  value = 0.0;
+	  volume = 0.0;
+	  
+	  Teuchos::RCP<const Epetra_Vector> pressure = 
+	    Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
+	  
+	  for (int i=0; i<mesh_block_size; i++) {
+	    int ic = cell_ids[i];
+	    value += (*pressure)[ic] * state.GetMesh()->cell_volume(ic);
+	    volume += state.GetMesh()->cell_volume(ic);
+	  }
+	} else if (var == "Aqueous saturation") {
+	  value = 0.0;
+	  volume = 0.0;
+	  
+	  Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	    Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));	  
+	  
+	  for (int i=0; i<mesh_block_size; i++) {
+	    int ic = cell_ids[i];
+	    value += (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
+	    volume += state.GetMesh()->cell_volume(ic);
+	  }    
+	} else if (var == "Hydraulic Head") {
+	  value = 0.0;
+	  volume = 0.0;
+	  int dim = state.GetMesh()->space_dimension();
+	  
+	  Teuchos::RCP<const Epetra_Vector> pressure = 
+	    Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
+	  double density = *state.GetScalarData("fluid_density");
+	  double p_atm = 101325.0;
+	  Teuchos::RCP<const Epetra_Vector> gravity = state.GetConstantVectorData("gravity");
+	  
+	  for (int i=0; i<mesh_block_size; ++i) {
+	    int ic = cell_ids[i];
+	    Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
+	    value +=  ( ( (*pressure)[ic] - p_atm ) / ( density * (*gravity)[dim-1]) + p[dim-1] ) * state.GetMesh()->cell_volume(ic) ;
+	    volume += state.GetMesh()->cell_volume(ic);
+	  }
+	} else {
+	  std::stringstream ss;
+	  ss << "State::point_value: cannot make an observation for variable " << name;
+	  Errors::Message m(ss.str().c_str());
+	  Exceptions::amanzi_throw(m);
 	}
-      
-      } else if (var == "Volumetric water content") {
-	value = 0.0;
-	volume = 0.0;
-	
-	Teuchos::RCP<const Epetra_Vector> porosity = 
-	  Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));	  
-	Teuchos::RCP<const Epetra_Vector> water_saturation = 
-	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
-	
-	for (int i=0; i<mesh_block_size; i++) {
-	  int ic = cell_ids[i];
-	  value += (*porosity)[ic] * (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
-	  volume += state.GetMesh()->cell_volume(ic);
-	}
-      } else if (var == "Gravimetric water content") {
-	value = 0.0;
-	volume = 0.0;
-	
-	Teuchos::RCP<const Epetra_Vector> water_saturation = 
-	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
-	double water_density =  *state.GetScalarData("fluid_density");
-	double particle_density(1.0); // does not exist in new state, yet... TODO
-	Teuchos::RCP<const Epetra_Vector> porosity = 
-	  Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));
-	
-	for (int i=0; i<mesh_block_size; i++) {
-	  int ic = cell_ids[i];
-	  value += (*porosity)[ic] * (*water_saturation)[ic] * water_density 
-	    / ( particle_density * (1.0 - (*porosity)[ic] ) )  * state.GetMesh()->cell_volume(ic);
-	  volume += state.GetMesh()->cell_volume(ic);
-	}    
-      } else if (var == "Aqueous pressure") {
-	value = 0.0;
-	volume = 0.0;
-	
-	Teuchos::RCP<const Epetra_Vector> pressure = 
-	  Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
-	
-	for (int i=0; i<mesh_block_size; i++) {
-	  int ic = cell_ids[i];
-	  value += (*pressure)[ic] * state.GetMesh()->cell_volume(ic);
-	  volume += state.GetMesh()->cell_volume(ic);
-	}
-      } else if (var == "Aqueous saturation") {
-	value = 0.0;
-	volume = 0.0;
-	
-	Teuchos::RCP<const Epetra_Vector> water_saturation = 
-	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));	  
-	
-	for (int i=0; i<mesh_block_size; i++) {
-	  int ic = cell_ids[i];
-	  value += (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
-	  volume += state.GetMesh()->cell_volume(ic);
-	}    
-      } else if (var == "Hydraulic Head") {
-	value = 0.0;
-	volume = 0.0;
-	int dim = state.GetMesh()->space_dimension();
-	
-	Teuchos::RCP<const Epetra_Vector> pressure = 
-	  Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
-	double density = *state.GetScalarData("fluid_density");
-	double p_atm = 101325.0;
-	Teuchos::RCP<const Epetra_Vector> gravity = state.GetConstantVectorData("gravity");
-	
-	for (int i=0; i<mesh_block_size; ++i) {
-	  int ic = cell_ids[i];
-	  Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
-	  value +=  ( ( (*pressure)[ic] - p_atm ) / ( density * (*gravity)[dim-1]) + p[dim-1] ) * state.GetMesh()->cell_volume(ic) ;
-	  volume += state.GetMesh()->cell_volume(ic);
-	}
-      } else {
-	std::stringstream ss;
-	ss << "State::point_value: cannot make an observation for variable " << name;
-	Errors::Message m(ss.str().c_str());
-	Exceptions::amanzi_throw(m);
       }
-      
+
       // syncronize the result across processors
       double result;
       state.GetMesh()->get_comm()->SumAll(&value,&result,1);
