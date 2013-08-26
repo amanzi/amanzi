@@ -26,6 +26,27 @@ elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   set(CXXFLAGS "${CXXFLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 endif()
 
+# Build the build script
+set(XERCES_sh_build ${XERCES_prefix_dir}/xerces-build-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-build-step.sh.in
+               ${XERCES_sh_build}
+	       @ONLY)
+
+# Configure the CMake command file
+set(XERCES_cmake_build ${XERCES_prefix_dir}/xerces-build-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-build-step.cmake.in
+               ${XERCES_cmake_build}
+	       @ONLY)
+
+#
+#  Hopper cannot build the "samples"
+#
+if ( DEFINED ENV{NERSC_HOST})
+  set(XERCES_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${XERCES_cmake_build})	
+else()
+  set(XERCES_CMAKE_COMMAND ${MAKE})
+endif()
+
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${XERCES_BUILD_TARGET}
                     DEPENDS   ${XERCES_PACKAGE_DEPENDS}             # Package dependency target
@@ -39,14 +60,15 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     SOURCE_DIR       ${XERCES_source_dir}           # Source directory
                     CONFIGURE_COMMAND 
 		                      <SOURCE_DIR>/configure
-				                  --prefix=<INSTALL_DIR>
+				                  --prefix=<INSTALL_DIR> 
+						  --with-pic --disable-shared --with-curl=<INSTALL_DIR>
                                                   CC=${CMAKE_C_COMPILER_USE}
                                                   CFLAGS=${CFLAGS}
                                                   CXX=${CMAKE_CXX_COMPILER_USE}
                                                   CXXFLAGS=${CXXFLAGS}
                     # -- Build
                     BINARY_DIR        ${XERCES_build_dir}           # Build directory 
-		    BUILD_COMMAND     ${MAKE}                       # Build command
+		    BUILD_COMMAND     ${XERCES_CMAKE_COMMAND}
                     BUILD_IN_SOURCE   ${XERCES_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}          # Install directory
