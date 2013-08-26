@@ -931,11 +931,15 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc) {
               attrMap = curkid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("x"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      matlist.sublist("Intrinsic Permeability: Anisotropic Uniform").set<double>("Horizontal",atof(textContent2));
+	      matlist.sublist("Intrinsic Permeability: Anisotropic Uniform").set<double>("x",atof(textContent2));
+	      XMLString::release(&textContent2);
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("y"));
+              textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	      matlist.sublist("Intrinsic Permeability: Anisotropic Uniform").set<double>("y",atof(textContent2));
 	      XMLString::release(&textContent2);
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("z"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      matlist.sublist("Intrinsic Permeability: Anisotropic Uniform").set<double>("Vertical",atof(textContent2));
+	      matlist.sublist("Intrinsic Permeability: Anisotropic Uniform").set<double>("z",atof(textContent2));
 	      XMLString::release(&textContent2);
 	    } else if  (strcmp("cap_pressure",tagName)==0){
  	      //TODO: EIB - for now, van Genuchten only
@@ -1287,6 +1291,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
   xercesc::DOMNode* tmpNode;
   xercesc::DOMNode* nodeAttr;
   char* textContent;
+  char* textContent2;
 
 
   // get definitions node - this node MAY exist ONCE
@@ -1473,7 +1478,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
     if (xercesc::DOMNode::ELEMENT_NODE == curNode->getNodeType()) {
       Teuchos::ParameterList obsPL;
       xercesc::DOMElement* curElement = static_cast<xercesc::DOMElement*>(curNode);
-      // get filename element
+      // get filename element 
       tmpList = curElement->getElementsByTagName(XMLString::transcode("filename"));
       tmpNode = tmpList->item(0);
       textContent = XMLString::transcode(tmpNode->getTextContent());
@@ -1491,31 +1496,32 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
 	xercesc::DOMNamedNodeMap *attrMap = childNode->getAttributes();
 	xercesc::DOMNode* namednode = attrMap->getNamedItem(XMLString::transcode("variable"));
 	textContent = xercesc::XMLString::transcode(namednode->getNodeValue());
-	Teuchos::ParameterList obsPL(textContent);
-	obsPL.set<std::string>("Variable",textContent);
-	XMLString::release(&textContent);
+	Teuchos::ParameterList obPL(textContent);
+	obPL.set<std::string>("Variable",textContent);
 	// get assigned regions (child element)
         xercesc::DOMElement* childElement = static_cast<xercesc::DOMElement*>(childNode);
 	xercesc::DOMNodeList* kidList = childElement->getElementsByTagName(XMLString::transcode("assigned_regions"));
 	if (kidList->getLength() > 0) {
-          textContent = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
-	  obsPL.set<std::string>("Region",textContent);
-	  XMLString::release(&textContent);
+          textContent2 = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
+	  obPL.set<std::string>("Region",textContent2);
+	  XMLString::release(&textContent2);
 	}
 	// get functional (child element)
 	kidList = childElement->getElementsByTagName(XMLString::transcode("functional"));
 	if (kidList->getLength() > 0) {
-          textContent = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
-	  obsPL.set<std::string>("Functional",textContent);
-	  XMLString::release(&textContent);
+          textContent2 = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
+	  obPL.set<std::string>("Functional",textContent2);
+	  XMLString::release(&textContent2);
 	}
 	// get time_macro (child element)
 	kidList = childElement->getElementsByTagName(XMLString::transcode("time_macro"));
 	if (kidList->getLength() > 0) {
-          textContent = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
-	  obsPL.set<std::string>("Time Macro",textContent);
-	  XMLString::release(&textContent);
+          textContent2 = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
+	  obPL.set<std::string>("Time Macro",textContent2);
+	  XMLString::release(&textContent2);
 	}
+	obsPL.sublist(textContent) = obPL;
+	XMLString::release(&textContent);
       }
       list.sublist("Observation Data") = obsPL;
     }
