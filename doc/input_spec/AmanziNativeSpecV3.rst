@@ -1472,49 +1472,42 @@ Visualization Data
 ==================
 
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
-at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
+at intervals corresponding to the numerical time step values or intervals corresponding to the cycle number; writes are controlled by timestep cycle number.
 
 * `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
 
-  * `"File Name Base`" [string]
+  * `"file name base`" [string] ("amanzi_vis")
   
-  * `"cycle start period stop`" [list] this is a list of start period stop definitions for cycles, each of which must be a sublist. Currently there can only be one sublist.
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-   * CSPS [list] can accept the only the parameter `"start period stop`".
-    
-    *  `"start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
-  * `"time start period stop`" [list] this is a list of start period stop definitions, each of which must be a sublist
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
-   * TSPS [list] can accept only the parameter `"start period stop`".
+  * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-    * `"start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+  * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
 
-  * `"times`" an array of discrete times that at which a visualization dump shall be written.
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
-  * `"Regions`" [Array(string)] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
+  * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="Visualization Data">
-    <Parameter name="File Name Base" type="string" value="chk"/>
+    <Parameter name="file name base" type="string" value="chk"/>
   
-    <ParameterList name="cycle start period stop">
-      <ParameterList name="some unique name">
-        <Parameter name="start period stop" type="Array(int)" value="{0, 100, -1}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="time start period stop">
-      <ParameterList name="some unique name">
-        <Parameter name="start period stop" type="Array(double)" value="{0.0, 10.0, -1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <Parameter name="times" type="Array(double)" value="{100.0, 300.0, 450.0}"/>
-  </ParameterList>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
 
-In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
+    <Parameter name="dynamic mesh" type="bool" value="false"/>
+  </ParameterList>
 
 
 Tabulated Function File Format
