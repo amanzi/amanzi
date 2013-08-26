@@ -912,7 +912,7 @@ void MPC::cycle_driver() {
 	    force_checkpoint = true;
 
       // write restart dump if requested
-      if (force || force_checkpoint || restart->DumpRequested(iter)) {
+      if (force || force_checkpoint || restart->DumpRequested(S->time(),iter)) {
 	WriteCheckpoint(restart,S.ptr(),S->time());
       }
       Amanzi::timer_manager.stop("I/O");
