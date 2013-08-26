@@ -447,6 +447,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
       std::printf("*************************************************************\n");
     }
+
   }
 
   // Well modeling
