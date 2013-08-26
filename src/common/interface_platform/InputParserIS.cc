@@ -1912,7 +1912,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       Teuchos::ParameterList& aux2_list = 
 	darcy_flux_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
-	.set<std::string>("component","cell")
+	.set<std::string>("component","face")
 	.sublist("function");
       
       aux2_list.set<int>("Number of DoFs",3)
