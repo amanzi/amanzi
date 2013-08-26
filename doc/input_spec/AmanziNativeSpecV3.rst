@@ -1381,13 +1381,17 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     * `"Region`" [string] the label of a user-defined region
 
-    * `"time start period stop`" [list] contains possibly several sublists that contain serparate start period stop definitions.
+    * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-      * TSPS [list] user defined label, a sublist that contains one parameter, the start period stop definition
+    * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
-        * `"start period stop`" [Array(double)] the first entry is the start time, the second it the time period, and the third the stop time, or -1 for an indifinite stop time. 
+    * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
-    * `"times`" [Array(double)] an array of observation times.
+    * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+    * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
+
+    * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
@@ -1408,23 +1412,14 @@ Example:
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>
       <Parameter name="Variable" type="string" value="Volumetric water content"/>
       <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
+
       <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-      <ParameterList name="time start period stop">
-         <ParameterList name="some name">
-	    <Parameter name="start period stop" type="Array(double)" value="{0.0, 1000.0, 100000}"/>
-	 </ParameterList>
-         <ParameterList name="some other name">
-	    <Parameter name="start period stop" type="Array(double)" value="{200000.0, 2000.0, -1.0}"/>
-	 </ParameterList>
-      </ParameterList>
-      <ParameterList name="cycle start period stop">
-         <ParameterList name="some name">
-	    <Parameter name="start period stop" type="Array(int)" value="{0, 100, -1}"/>
-         </ParameterList>
-         <ParameterList name="some other name">
-	    <Parameter name="start period stop" type="Array(int)" value="{0, 51, 299999}"/>
-         </ParameterList>	 
-      </ParameterList>      
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
     </ParameterList>
   </ParameterList>
 
@@ -1438,24 +1433,38 @@ by machine round errors and randomness due to execution in a parallel computing 
 * `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] 
   used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
 
-  * `"File Name Base`" [string]
+  * `"file name base`" [string] ("checkpoint")
+  
+  * `"file name digits`" [int] (5)
 
-  * `"Cycle Data`" [list] can accept a start cycle [int], interval between check points [int], 
-    and the final cycle [int].
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+
+  * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
+
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+
+  * `"walkabout`" [bool] (false) include postprocessed output for walkabout in the checkpoint files.
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="Checkpoint Data">
-    <Parameter name="File Name Base" type="string" value="chkpoint"/>
-    <Parameter name="File Name Digits" type="int" value="5"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
+    <Parameter name="file name digits" type="int" value="5"/>
 
-    <ParameterList name="Cycle Data">
-      <Parameter name="Start" type="int" value="0"/>
-      <Parameter name="Interval" type="int" value="100"/>
-      <Parameter name="End" type="int" value="-1"/>
-    </ParameterList>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
     <Parameter name="walkabout" type="bool" value="false"/>
   </ParameterList>

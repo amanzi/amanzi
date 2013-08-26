@@ -319,23 +319,18 @@ Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist
   if ( plist->isSublist("Output") ) {
 
     if ( plist->sublist("Output").isSublist("Checkpoint Data") ) {
-      restart_list = plist->sublist("Output").sublist("Checkpoint Data");
+      Teuchos::ParameterList rlist = plist->sublist("Output").sublist("Checkpoint Data");
+
+      restart_list.set<std::string>("file name base", rlist.get<std::string>("File Name Base"));
+      restart_list.set<int>("file name digits", rlist.get<int>("File Name Digits"));
 
       // check if the cycle range is defined via a macro
-      if ( restart_list.isParameter("Cycle Macro") ) {
-        std::string cycle_macro = restart_list.get<std::string>("Cycle Macro");
+      if ( rlist.isParameter("Cycle Macro") ) {
+        std::string cycle_macro = rlist.get<std::string>("Cycle Macro");
 
         Teuchos::Array<int> range = get_Cycle_Macro(cycle_macro, plist);
-        // Teuchos::ParameterList& c_restart_list = restart_list.sublist("Cycle Data");
 
-	restart_list.set("cycles start period stop", range);
-
-        // c_restart_list.set<int>("Start", range[0]);
-        // c_restart_list.set<int>("End", range[2]);
-        // c_restart_list.set<int>("Interval", range[1]);
-        // now delete the Cycle Macro paramter
-
-        restart_list.remove("Cycle Macro");
+	restart_list.set<Teuchos::Array<int> >("cycles start period stop", range);
       }
     }
   }
@@ -434,12 +429,12 @@ Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plis
           // copy the observation data sublist into the local list
           obs_list.sublist(i->first) = olist.sublist(i->first);
 
-          if (obs_list.sublist(i->first).isParameter("Time Macro")) {
+	  if (obs_list.sublist(i->first).isParameter("Time Macro")) {
             std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
             // Create a local parameter list and store the time macro (3 doubles)
             Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
             if (time_macro_list.isParameter("Start_Period_Stop")) {
-              obs_list.sublist(i->first).sublist("time start period stop").sublist(time_macro).set("start period stop", time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+              obs_list.sublist(i->first).set("times start period stop", time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
             }
             if (time_macro_list.isParameter("Values")) {
               obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
@@ -461,7 +456,7 @@ Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plis
             }
 
             if (sps.size() == 3)
-              obs_list.sublist(i->first).sublist("cycle start period stop").sublist(cycle_macro).set("start period stop", sps);
+              obs_list.sublist(i->first).set("cycles start period stop", sps);
             if (values.size() > 0)
               obs_list.sublist(i->first).set("cycles", values);
 

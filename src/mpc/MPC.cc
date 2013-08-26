@@ -327,6 +327,7 @@ void MPC::cycle_driver() {
   Teuchos::Ptr<Amanzi::TimeStepManager> TSM = Teuchos::ptr(new TimeStepManager());
   // register visualization times with the time step manager
   visualization->RegisterWithTimeStepManager(TSM);
+  restart->RegisterWithTimeStepManager(TSM);
   // register observation times with the time step manager
   if (observations) observations->RegisterWithTimeStepManager(TSM);
   // register reset_times
@@ -460,6 +461,9 @@ void MPC::cycle_driver() {
   Amanzi::timer_manager.start("I/O");
   visualization->set_mesh(mesh_maps);
   visualization->CreateFiles();
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+  }
   if (chemistry_enabled) {
     // get the auxillary data from chemistry
     Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
@@ -471,13 +475,18 @@ void MPC::cycle_driver() {
   }
 
   // write a restart dump if requested (determined in dump_state)
-  WriteCheckpoint(restart,S.ptr(),S->time());
+  if (restart->DumpRequested(S->cycle(),S->time())) {
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+      *out << "Cycle " << S->cycle() << ": writing checkpoint" << std::endl;
+    }
+    WriteCheckpoint(restart,S.ptr(),S->time());
+  }
   Amanzi::timer_manager.stop("I/O");
 
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations) {
-      if (observations->DumpRequested(S->time(), iter)) {
+      if (observations->DumpRequested(S->cycle(), S->time())) {
 	observations->make_observations(*S);
       }
     }
@@ -869,7 +878,7 @@ void MPC::cycle_driver() {
 
       // make observations
       if (observations) {
-	if (observations->DumpRequested(S->time(), iter)) {
+	if (observations->DumpRequested(S->cycle(), S->time())) {
 	  observations->make_observations(*S);
 	}
       } 
@@ -892,11 +901,17 @@ void MPC::cycle_driver() {
       if (chemistry_enabled) {
         // get the auxillary data
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-	if (force || visualization->DumpRequested(S->time(),iter)) {
+	if (force || visualization->DumpRequested(S->cycle(), S->time())) {
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+	  }
 	  WriteVis(visualization,S.ptr());
 	}
       } else {
-	if (force || visualization->DumpRequested(S->time(), iter)) {
+	if (force || visualization->DumpRequested(S->cycle(), S->time())) {
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+	  }
 	  WriteVis(visualization,S.ptr());
 	}
       }
@@ -910,9 +925,12 @@ void MPC::cycle_driver() {
         if (!reset_times_.empty()) 
 	  if (S->time() == reset_times_.front())
 	    force_checkpoint = true;
-
+      
       // write restart dump if requested
-      if (force || force_checkpoint || restart->DumpRequested(S->time(),iter)) {
+      if (force || force_checkpoint || restart->DumpRequested(S->cycle(), S->time())) {
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	  *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+	}
 	WriteCheckpoint(restart,S.ptr(),S->time());
       }
       Amanzi::timer_manager.stop("I/O");
@@ -925,8 +943,14 @@ void MPC::cycle_driver() {
     ++iter;
     S->set_cycle(iter);
     Amanzi::timer_manager.start("I/O");
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
+    }
     WriteVis(visualization,S.ptr());
 
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+      *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
+    }
     WriteCheckpoint(restart,S.ptr(),S->time());
     Amanzi::timer_manager.stop("I/O");
   }
