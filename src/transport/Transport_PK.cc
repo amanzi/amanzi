@@ -37,12 +37,12 @@ namespace AmanziTransport {
 * We set up minimum default values and call Init() routine to 
 * complete initialization.
 ****************************************************************** */
-Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
+Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                            Teuchos::RCP<Transport_State> TS_MPC)
 {
   status = TRANSPORT_NULL;
 
-  parameter_list = parameter_list_MPC;
+  parameter_list = parameter_list_MPC.sublist("Transport");
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
   TS = Teuchos::rcp(new Transport_State(*TS_MPC, Transport_State::CONSTRUCT_MODE_COPY_POINTERS));
@@ -150,6 +150,7 @@ int Transport_PK::InitPK()
     dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
     dispersion_matrix->Init(dispersion_specs);
     dispersion_matrix->SymbolicAssembleGlobalMatrix();
+    // dispersion_matrix->InitPreconditioner();
   }
   return 0;
 }

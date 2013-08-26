@@ -80,8 +80,7 @@ TEST(DISPERSION) {
   TS->set_water_density(1.0);
 
   // create transport PK  
-  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
-  Transport_PK TPK(transport_list, TS);
+  Transport_PK TPK(parameter_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
   // TPK.verbosity = TRANSPORT_VERBOSITY_NONE;

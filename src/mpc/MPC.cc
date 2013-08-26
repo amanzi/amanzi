@@ -150,10 +150,9 @@ void MPC::mpc_init() {
  
 
   if (transport_enabled) {
-    Teuchos::ParameterList transport_parameter_list = parameter_list.sublist("Transport");
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, TS));
     TPK->InitPK();
   }
     

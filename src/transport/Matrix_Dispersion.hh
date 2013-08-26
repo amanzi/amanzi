@@ -60,6 +60,7 @@ class Matrix_Dispersion {
                          const Epetra_Vector& saturation);
 
   void UpdatePreconditioner() { preconditioner_->Update(App_); }
+  void InitPreconditioner(const Teuchos::ParameterList& list) { preconditioner_->Init(list); }
 
  private:
   void PopulateHarmonicPoints();

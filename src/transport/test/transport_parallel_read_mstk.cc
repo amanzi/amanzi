@@ -67,8 +67,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL_READ) {
   TS->set_total_component_concentration(f_step,0.0,0);
   TS->set_total_component_concentration(f_step,0.0,1);
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
-  Transport_PK TPK(transport_list, TS);
+  Transport_PK TPK(parameter_list, TS);
   TPK.InitPK();
 
   // advance the state

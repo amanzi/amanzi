@@ -78,8 +78,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     TS->set_prev_water_saturation(1.0);
     TS->set_water_density(1.0);
 
-    ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
-    Transport_PK TPK(transport_list, TS);
+    Transport_PK TPK(parameter_list, TS);
     TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
@@ -170,8 +169,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     TS->set_prev_water_saturation(1.0);
     TS->set_water_density(1.0);    
 
-    ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
-    Transport_PK TPK(transport_list, TS);
+    Transport_PK TPK(parameter_list, TS);
     TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (nx == 20) TPK.PrintStatistics();
