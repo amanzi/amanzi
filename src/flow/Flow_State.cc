@@ -140,13 +140,13 @@ void Flow_State::Initialize() {
     S_->Initialize();
   } else {
     // BEGIN REMOVE ME once flow tests pass --etc
-    S_->GetFieldData("pressure",name_)->PutScalar(-1.);
-    S_->GetFieldData("water_saturation",name_)->PutScalar(-1.);
-    S_->GetFieldData("prev_water_saturation",name_)->PutScalar(-1.);
-    S_->GetFieldData("darcy_flux",name_)->PutScalar(-1.);
-    S_->GetFieldData("darcy_velocity",name_)->PutScalar(-1.);
-    S_->GetFieldData("specific_storage",name_)->PutScalar(-1.);
-    S_->GetFieldData("specific_yield",name_)->PutScalar(-1.);
+    S_->GetFieldData("pressure",name_)->PutScalar(0.0);
+    S_->GetFieldData("water_saturation",name_)->PutScalar(1.0);
+    S_->GetFieldData("prev_water_saturation",name_)->PutScalar(1.0);
+    S_->GetFieldData("darcy_flux",name_)->PutScalar(0.0);
+    S_->GetFieldData("darcy_velocity",name_)->PutScalar(0.0);
+    S_->GetFieldData("specific_storage",name_)->PutScalar(0.0);
+    S_->GetFieldData("specific_yield",name_)->PutScalar(0.0);
     // END REMOVE ME
 
     // secondary variables, will be initialized by the PK
