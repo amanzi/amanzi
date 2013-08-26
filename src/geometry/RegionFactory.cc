@@ -22,6 +22,7 @@
 #include "ColorFunctionRegion.hh"
 #include "PointRegion.hh"
 #include "LogicalRegion.hh"
+#include "PolygonRegion.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -106,6 +107,73 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       }
       catch (Errors::Message mesg) {
         mesg << "\n" << "Cannot create region of type Box";
+        Exceptions::amanzi_throw(mesg);
+      }
+    }
+  else if (shape == "Region: Plane")
+    {
+      Teuchos::ParameterList plane_params = reg_params.sublist(shape);
+
+      Teuchos::Array<double> p_vec = plane_params.get< Teuchos::Array<double> >("Location");
+        
+      Teuchos::Array<double> n_vec = plane_params.get< Teuchos::Array<double> >("Direction");
+
+      Point p, n;
+
+      if (p_vec.size() == 3) 
+        {
+          p.init(3);
+          p.set(p_vec[0], p_vec[1], p_vec[2]);
+          n.init(3);
+          n.set(n_vec[0], n_vec[1], n_vec[2]);
+        }
+      else if (p_vec.size() == 2)
+        {
+          p.init(2);
+          p.set(p_vec[0], p_vec[1]);
+          n.init(2);
+          n.set(n_vec[0], n_vec[1]);          
+        }
+
+      try {
+        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n, lifecycle);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type Plane";
+        Exceptions::amanzi_throw(mesg);
+      }
+    }
+  else if (shape == "Region: Polygon")
+    {
+      Teuchos::ParameterList poly_params = reg_params.sublist(shape);
+
+      int num_points = poly_params.get<int>("Number of points");
+        
+      Teuchos::Array<double> pvec = poly_params.get< Teuchos::Array<double> >("Points");
+
+      if (pvec.size()%num_points != 0) {
+        Errors::Message mesg("Incorrect number of values specified for polygon point specification");
+        amanzi_throw(mesg);
+      }
+      int dim = pvec.size()/num_points;
+
+      std::vector<Point> points;
+      Point pnt(dim);
+      for (int i = 0; i < num_points; i++) {
+        if (dim == 2)
+          pnt.set(pvec[i*dim],pvec[i*dim+1]);
+        else if (dim == 3)
+          pnt.set(pvec[i*dim],pvec[i*dim+1],pvec[i*dim+2]);
+        points.push_back(pnt);
+      }
+
+      try {
+        RegionPtr regptr = new PolygonRegion(reg_name, reg_id, num_points, points, lifecycle);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type Polygon";
         Exceptions::amanzi_throw(mesg);
       }
     }

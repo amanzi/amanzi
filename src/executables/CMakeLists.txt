@@ -41,7 +41,7 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
-
+include_directories(${SOLVERS_SOURCE_DIR})
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)

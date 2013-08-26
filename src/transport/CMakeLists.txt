@@ -28,6 +28,7 @@ include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
@@ -45,11 +46,10 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 file(GLOB transport_inc_files "*.hh")
 set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc 
-                        Transport_Limiters.cc Transport_Dispersion.cc 
-                        Transport_VandV.cc Transport_IO.cc 
+                        Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
                         Transport_BC_Factory.cc Transport_SourceFactory.cc
-                        Reconstruction.cc transport-boundary-function.cc 
-			transport-domain-function.cc)
+                        Reconstruction.cc Matrix_Dispersion.cc
+                        transport_boundary_function.cc transport_domain_function.cc)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures time_integration ${Epetra_LIBRARIES})

@@ -65,7 +65,7 @@ TEST(DISPERSION) {
   MeshFactory factory(comm);
   factory.preference(pref);
   int nx = 20;
-  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 1, 1, gm); 
+  RCP<Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1, gm); 
 
 
   RCP<Transport_State> TS = rcp(new Transport_State(mesh,1));
@@ -80,11 +80,10 @@ TEST(DISPERSION) {
   TS->set_water_density(1.0);
 
   // create transport PK  
-  ParameterList transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
-  Transport_PK TPK(transport_list, TS);
+  Transport_PK TPK(parameter_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
-  TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
+  // TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
 
   // advance the state
   int i, k, iter = 0;

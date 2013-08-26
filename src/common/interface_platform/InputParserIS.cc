@@ -77,7 +77,7 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Domain") = get_Domain_List(plist);
   new_list.sublist("MPC") = create_MPC_List(plist);
   new_list.sublist("Transport") = create_Transport_List(plist);
-  new_list.sublist("state") = create_State_List(plist);
+  new_list.sublist("State") = create_State_List(plist);
   new_list.sublist("Flow") = create_Flow_List(plist);
   new_list.sublist("Preconditioners") = create_Preconditioners_List(plist);
   new_list.sublist("Solvers") = create_Solvers_List(plist);
@@ -319,23 +319,18 @@ Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist
   if ( plist->isSublist("Output") ) {
 
     if ( plist->sublist("Output").isSublist("Checkpoint Data") ) {
-      restart_list = plist->sublist("Output").sublist("Checkpoint Data");
+      Teuchos::ParameterList rlist = plist->sublist("Output").sublist("Checkpoint Data");
+
+      restart_list.set<std::string>("file name base", rlist.get<std::string>("File Name Base"));
+      restart_list.set<int>("file name digits", rlist.get<int>("File Name Digits"));
 
       // check if the cycle range is defined via a macro
-      if ( restart_list.isParameter("Cycle Macro") ) {
-        std::string cycle_macro = restart_list.get<std::string>("Cycle Macro");
+      if ( rlist.isParameter("Cycle Macro") ) {
+        std::string cycle_macro = rlist.get<std::string>("Cycle Macro");
 
         Teuchos::Array<int> range = get_Cycle_Macro(cycle_macro, plist);
-        // Teuchos::ParameterList& c_restart_list = restart_list.sublist("Cycle Data");
 
-	restart_list.set("cycles start period stop", range);
-
-        // c_restart_list.set<int>("Start", range[0]);
-        // c_restart_list.set<int>("End", range[2]);
-        // c_restart_list.set<int>("Interval", range[1]);
-        // now delete the Cycle Macro paramter
-
-        restart_list.remove("Cycle Macro");
+	restart_list.set<Teuchos::Array<int> >("cycles start period stop", range);
       }
     }
   }
@@ -434,12 +429,12 @@ Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plis
           // copy the observation data sublist into the local list
           obs_list.sublist(i->first) = olist.sublist(i->first);
 
-          if (obs_list.sublist(i->first).isParameter("Time Macro")) {
+	  if (obs_list.sublist(i->first).isParameter("Time Macro")) {
             std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
             // Create a local parameter list and store the time macro (3 doubles)
             Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
             if (time_macro_list.isParameter("Start_Period_Stop")) {
-              obs_list.sublist(i->first).sublist("time start period stop").sublist(time_macro).set("start period stop", time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+              obs_list.sublist(i->first).set("times start period stop", time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
             }
             if (time_macro_list.isParameter("Values")) {
               obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
@@ -461,7 +456,7 @@ Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plis
             }
 
             if (sps.size() == 3)
-              obs_list.sublist(i->first).sublist("cycle start period stop").sublist(cycle_macro).set("start period stop", sps);
+              obs_list.sublist(i->first).set("cycles start period stop", sps);
             if (values.size() > 0)
               obs_list.sublist(i->first).set("cycles", values);
 
@@ -1912,7 +1907,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       Teuchos::ParameterList& aux2_list = 
 	darcy_flux_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
-	.set<std::string>("component","cell")
+	.set<std::string>("component","face")
 	.sublist("function");
       
       aux2_list.set<int>("Number of DoFs",3)
@@ -1972,14 +1967,26 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value");
 	Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate");
 	double refval =  ic_for_region->sublist("IC: Linear Pressure").get<double>("Reference Value");
-	
+
+	Teuchos::Array<double> grad_with_time(grad.size()+1);
+	grad_with_time[0] = 0.0;
+	for (int j=0; j!=grad.size(); ++j) {
+	  grad_with_time[j+1] = grad[j];
+	}
+
+	Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
+	refcoord_with_time[0] = 0.0;
+	for (int j=0; j!=refcoord.size(); ++j) {
+	  refcoord_with_time[j+1] = refcoord[j];
+	}
+
 	pressure_ic.sublist("function").sublist(*i)
 	  .set<std::string>("region",*i)
 	  .set<std::string>("component","cell")
 	  .sublist("function").sublist("function-linear")
 	  .set<double>("y0", refval)
-	  .set<Teuchos::Array<double> >("x0",refcoord)
-	  .set<Teuchos::Array<double> >("gradient",grad);
+	  .set<Teuchos::Array<double> >("x0",refcoord_with_time)
+	  .set<Teuchos::Array<double> >("gradient",grad_with_time);
 
       } else if (ic_for_region->isSublist("IC: File Pressure")) {
 	std::string file = ic_for_region->sublist("IC: File Pressure").get<std::string>("File");

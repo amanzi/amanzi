@@ -1,5 +1,5 @@
 ========================================
-Amanzi Native XML Input Specification V2
+Amanzi Native XML Input Specification V3
 ========================================
 
 .. contents:: **Table of Contents**
@@ -236,15 +236,105 @@ The following is an example of a complete MPC list:
 
 
 
-State (incomplete)
-==================
+State
+=====
 
-State allows the user to initialize physical variables using a variety of 
-tools.
+State allows the user to initialize physical fields using a variety of 
+tools. 
+
+Initialization of constant scalars
+----------------------------------
+
+A constant scalar field is the global (with respect to the mesh) constant. 
+At the moment, the set of such fields includes fluid density 
+and fluid viscosity.
+The initialization requires to provide a named sublist with a single
+parameter `"value`".
 
 .. code-block:: xml
 
-  <ParameterList name="State">
+  <ParameterList name="fluid_density">
+    <Parameter name="value" type="double" value="998.0"/>
+  </ParameterList>
+
+
+Initialization of constant vectors
+----------------------------------
+
+A constant vector field is the global (with respect to the mesh) vector constant. 
+At the moment, the set of such vector constants includes gravity.
+The initialization requires to provide a named sublist with a single
+parameter `"Array(double)`". In two dimensions, is looks like
+
+.. code-block:: xml
+
+  <ParameterList name="gravity">
+    <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+  </ParameterList>
+
+
+Initialization of scalar fields
+-------------------------------
+
+A variable scalar field is defined by a few functions (labeled for instance,
+`"Mesh Block i`" with non-overlapping ranges. 
+The required parameters for each function are `"region`", `"component`",
+and the function itself.
+
+.. code-block:: xml
+
+  <ParameterList name="porosity"> 
+    <ParameterList name="function">
+      <ParameterList name="Mesh Block 1">
+        <Parameter name="region" type="string" value="Computational domain"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.2"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Mesh Block 2">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+Initialization of tensor fields
+-------------------------------
+
+A variable tensor (or vector) field is defined similarly to 
+a variable scalar field. 
+The difference lies in the definition of the function which
+is now a multi-values function.
+The required parameters are `"Number of DoFs`" and `"Function type`". 
+
+.. code-block:: xml
+
+  <ParameterList name="function">
+    <Parameter name="Number of DoFs" type="int" value="2"/>
+    <Parameter name="Function type" type="string" value="composite function"/>
+    <ParameterList name="DoF 1 Function">
+      <ParameterList name="function-constant">
+        <Parameter name="value" type="double" value="1.9976e-12"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="DoF 2 Function">
+      <ParameterList name="function-constant">
+        <Parameter name="value" type="double" value="1.9976e-13"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+Example
+-------
+
+The complete example of a state inialization is below.
+
+.. code-block:: xml
+
+  <ParameterList name="state">
     <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="998.0"/>
@@ -258,7 +348,7 @@ tools.
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
 
-      <ParameterList name="porosity">
+      <ParameterList name="porosity"> <!-- pressure is done similarly -->
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="Computational domain"/>
@@ -266,20 +356,6 @@ tools.
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.2"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="pressure">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant"> 
-                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -329,15 +405,14 @@ tools.
     </ParameterList>
   </ParameterList>
 
-Some State parameters are described below:
 
-* `"Number of component concentrations`" [int] This parameter does not have 
-  a default value. Thus if transport is not initialized, set it to zero.
+Initialization from a file
+--------------------------
 
 Some data can be initialized from files. Additional sublist has to be added to
-the `"State`" list with the file name and names of attributes. 
+the `"state`" list with the file name and names of attributes. 
 The provided data will override results of other initialization tools. 
-Here is an example:
+Here is an example (incomplete):
 
 .. code-block:: xml
 
@@ -757,8 +832,8 @@ The remaining `"Flow`" parameters are
   The first three calculate the relative permeability on mesh interfaces.
 
 * `"discretization method`" [string] helps to test new discretization methods. 
-  The available options are `"mfd`", `"optimized mfd`", `"two-point flux approximation`", 
-  `"optimized mfd experimental`" (recommended for highly anisotropic meshes), and
+  The available options are `"mfd scaled`", `"optimized mfd scaled`",
+  `"two-point flux approximation`", `"two point flux approximation`" and
   `"support operator`". The last option reproduces discretization method implemented in RC1. 
   The third option is recommended for orthogonal meshes and diagonal absolute permeability.
   The second option is still experimental (no papers were published) and produces 
@@ -808,6 +883,30 @@ Here is an example:
      </ParameterList>
    </ParameterList>  
 
+
+Dispersivity models
+-------------------
+Two dispesivity models have been implemented: `"isotropic`" and `"Bear`". 
+The anisotropic model `"Lichtner`" is pending for a more detailed 
+description in the Process Models document.
+
+Two discretization methods that preserve the maximum principles are 
+`"two point flux approximation`" and `"nonliner finite volume`". 
+The first one may show significant numerical dispersion on unstructured meshes, 
+the second-one is more accurate but also is a few times more expensive.
+
+.. code-block:: xml
+
+   <ParameterList name="Dispersivity">
+     <Parameter name="model" type="string" value="Bear"/>
+     <Parameter name="longitudinal" type="double" value="1e-2"/>
+     <Parameter name="transverse" type="double" value="1e-5"/>
+     <Parameter name="numerical method" type="string" value="two point flux approximation"/>
+     <Parameter name="prconditioner" type="string" value="Hypre AMG"/>
+   </ParameterList>  
+
+Parameter `"preconditioner`" will be replaced with more appropriate `"linear solver`".
+ 
 
 Boundary Conditions
 -------------------
@@ -907,7 +1006,6 @@ Note that the source values ire set up separately for each component:
 Other parameters
 -----------------
 
-
 The `"Transport`" parameters useful for developers are:
 
 * `"enable internal tests`" [string] various internal tests will be executed during
@@ -950,22 +1048,36 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
 
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
-          <Parameter name="deiscretization method" type="string" value="optimized mfd"/>
+          <Parameter name="deiscretization method" type="string" value="optimized mfd scaled"/>
           <ParameterList name="ML Parameters">
-            <Parameter name="ML output" type="int" value="0"/>
-            <Parameter name="aggregation: damping factor" type="double" value="1.33333"/>
             ... 
          </ParameterList>
        </ParameterList>
 
        <ParameterList name="Hypre AMG">
-          <Parameter name="deiscretization method" type="string" value="optimized mfd"/>
-          ...
+          <Parameter name="deiscretization method" type="string" value="optimized mfd scaled"/>
+          <ParameterList name="BoomerAMG Parameters">
+            ...
+          </ParameterList>
        </ParameterList>
      </ParameterList>
 
 Names `"Trilinos ML`" and `"Hypre AMG`" are selected by the user.
 They can be used by a process kernel lists to define a preconditioner.
+
+Hypre AMG
+---------
+
+Internal parameters of Boomer AMG includes
+
+.. code-block:: xml
+
+   <ParameterList name="BoomerAMG Parameters">
+     <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+     <Parameter name="smoother sweeps" type="int" value="3"/>
+     <Parameter name="cycle applications" type="int" value="5"/>
+     <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+   </ParameterList>
 
 
 Mesh
@@ -1089,6 +1201,8 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygon"`  [U]       | `"Number of points`", `"Points`"        | int, Array double            | Number of polygon points and point coordinates in linear array         |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
@@ -1144,6 +1258,18 @@ Notes
   In order to avoid, gaps and overlaps in specifying materials, it is
   strongly recommended that regions be defined using a single color
   function file. 
+
+* `"Region: Polygon`" defines a polygonal region on which mesh faces and
+  nodes can be queried. NOTE that one cannot ask for cells in a polygonal
+  region.In 2D, the "polygonal" region is a line and is specified by 2 points
+  In 3D, the "polygonal" region is specified by an arbitrary number of points.
+  In both cases the point coordinates are given as a linear array. The polygon
+  can be non-convex.
+
+  The polygonal region can be queried for a normal. In 2D, the normal is
+  defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
+  In 3D, the normal of the polygon is defined by the order in which points 
+  are specified.
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
@@ -1255,13 +1381,17 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     * `"Region`" [string] the label of a user-defined region
 
-    * `"time start period stop`" [list] contains possibly several sublists that contain serparate start period stop definitions.
+    * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-      * TSPS [list] user defined label, a sublist that contains one parameter, the start period stop definition
+    * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
-        * `"start period stop`" [Array(double)] the first entry is the start time, the second it the time period, and the third the stop time, or -1 for an indifinite stop time. 
+    * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
-    * `"times`" [Array(double)] an array of observation times.
+    * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+    * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
+
+    * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
@@ -1282,23 +1412,14 @@ Example:
       <Parameter name="Functional" type="string" value="Observation Data: Point"/>
       <Parameter name="Variable" type="string" value="Volumetric water content"/>
       <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
+
       <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-      <ParameterList name="time start period stop">
-         <ParameterList name="some name">
-	    <Parameter name="start period stop" type="Array(double)" value="{0.0, 1000.0, 100000}"/>
-	 </ParameterList>
-         <ParameterList name="some other name">
-	    <Parameter name="start period stop" type="Array(double)" value="{200000.0, 2000.0, -1.0}"/>
-	 </ParameterList>
-      </ParameterList>
-      <ParameterList name="cycle start period stop">
-         <ParameterList name="some name">
-	    <Parameter name="start period stop" type="Array(int)" value="{0, 100, -1}"/>
-         </ParameterList>
-         <ParameterList name="some other name">
-	    <Parameter name="start period stop" type="Array(int)" value="{0, 51, 299999}"/>
-         </ParameterList>	 
-      </ParameterList>      
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
     </ParameterList>
   </ParameterList>
 
@@ -1312,24 +1433,38 @@ by machine round errors and randomness due to execution in a parallel computing 
 * `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] 
   used to generate the file base name or directory base name that is used in writing Checkpoint Data. 
 
-  * `"File Name Base`" [string]
+  * `"file name base`" [string] ("checkpoint")
+  
+  * `"file name digits`" [int] (5)
 
-  * `"Cycle Data`" [list] can accept a start cycle [int], interval between check points [int], 
-    and the final cycle [int].
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
+
+  * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+
+  * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
+
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
+
+  * `"walkabout`" [bool] (false) include postprocessed output for walkabout in the checkpoint files.
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="Checkpoint Data">
-    <Parameter name="File Name Base" type="string" value="chkpoint"/>
-    <Parameter name="File Name Digits" type="int" value="5"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
+    <Parameter name="file name digits" type="int" value="5"/>
 
-    <ParameterList name="Cycle Data">
-      <Parameter name="Start" type="int" value="0"/>
-      <Parameter name="Interval" type="int" value="100"/>
-      <Parameter name="End" type="int" value="-1"/>
-    </ParameterList>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
     <Parameter name="walkabout" type="bool" value="false"/>
   </ParameterList>
@@ -1346,49 +1481,42 @@ Visualization Data
 ==================
 
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
-at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
+at intervals corresponding to the numerical time step values or intervals corresponding to the cycle number; writes are controlled by timestep cycle number.
 
 * `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
 
-  * `"File Name Base`" [string]
+  * `"file name base`" [string] ("amanzi_vis")
   
-  * `"cycle start period stop`" [list] this is a list of start period stop definitions for cycles, each of which must be a sublist. Currently there can only be one sublist.
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-   * CSPS [list] can accept the only the parameter `"start period stop`".
-    
-    *  `"start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written for such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
-  * `"time start period stop`" [list] this is a list of start period stop definitions, each of which must be a sublist
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
-   * TSPS [list] can accept only the parameter `"start period stop`".
+  * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-    * `"start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
+  * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
 
-  * `"times`" an array of discrete times that at which a visualization dump shall be written.
+  * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
-  * `"Regions`" [Array(string)] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
+  * `"dynamic mesh`" [bool] (false) write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="Visualization Data">
-    <Parameter name="File Name Base" type="string" value="chk"/>
+    <Parameter name="file name base" type="string" value="chk"/>
   
-    <ParameterList name="cycle start period stop">
-      <ParameterList name="some unique name">
-        <Parameter name="start period stop" type="Array(int)" value="{0, 100, -1}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="time start period stop">
-      <ParameterList name="some unique name">
-        <Parameter name="start period stop" type="Array(double)" value="{0.0, 10.0, -1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <Parameter name="times" type="Array(double)" value="{100.0, 300.0, 450.0}"/>
-  </ParameterList>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
 
-In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
+    <Parameter name="dynamic mesh" type="bool" value="false"/>
+  </ParameterList>
 
 
 Tabulated Function File Format

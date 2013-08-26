@@ -30,14 +30,18 @@ int FindPosition(const std::vector<T>& v, const T& value) {
   return -1;
 }
 
-  Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) 
-   :  Matrix_MFD(FS, map){
 
+/* ******************************************************************
+* Constructor.                                           
+****************************************************************** */
+Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) 
+   :  Matrix_MFD(FS, map)
+{
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
   Acc_cells_.resize(ncells);
   Fc_cells_.resize(ncells);
-  
-  };
+}
+
 
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
@@ -853,7 +857,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
       for (int i = 0; i < ncells; i++){
 	int c = cells[i];
 	if (c >= ncells_owned) continue;
-	residual[c] += pow(-1, i)*Krel_faces[f]*trans_faces[f]*(sol_gh[cells[0]] - sol_gh[cells[1]]);  
+	residual[c] += pow(-1.0, i)*Krel_faces[f]*trans_faces[f]*(sol_gh[cells[0]] - sol_gh[cells[1]]);  
 	// if (c==11) {
 	//   cout<<"Negative Res2 "<<c<<" "<<Krel_faces[f]*trans_faces[f]*(sol_gh[cells[0]] - sol_gh[cells[1]])<<" "<<Krel_faces[f]*trans_faces[f]<<" "<<(sol_gh[cells[0]] - sol_gh[cells[1]])<<endl;
 	// } 

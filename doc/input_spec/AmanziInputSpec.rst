@@ -704,7 +704,7 @@ User-defined regions are constructed using the following syntax
 
  * [U][S] "Regions" [list] can accept a number of lists for named regions (REGION)
 
-   * Shape [list] Geometric model primitive, choose exactly one of the following [see table below]: `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", `"Region: Layer`", `"Region: Surface`"
+   * Shape [list] Geometric model primitive, choose exactly one of the following [see table below]: `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", `"Region: Layer`", `"Region: Polygon`",`"Region: Surface`"
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
@@ -716,6 +716,8 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 | `"Region: Box"` [SU]           | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygon"`  [U]       | `"Number of points`", `"Points`"        | int, Array double            | Number of polygon points and point coordinates in linear array         |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
@@ -773,6 +775,18 @@ Notes
   strongly recommended that regions be defined using a single color
   function file. 
 
+* `"Region: Polygon`" defines a polygonal region on which mesh faces and
+  nodes can be queried. NOTE that one cannot ask for cells in a polygonal
+  region.In 2D, the "polygonal" region is a line and is specified by 2 points
+  In 3D, the "polygonal" region is specified by an arbitrary number of points.
+  In both cases the point coordinates are given as a linear array. The polygon
+  can be non-convex.
+
+  The polygonal region can be queried for a normal. In 2D, the normal is
+  defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
+  In 3D, the normal of the polygon is defined by the order in which points 
+  are specified.
+
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
   in the problem, including the boundaries, are `"exact`" (*i.e.* that
@@ -793,20 +807,20 @@ Example:
   <ParameterList name="Regions">
     <ParameterList name="Top Section">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 5}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 8}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 5}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 8}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Middle Section">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 3}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 5}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 3}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom Section">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 3}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 3}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Inflow Surface">
@@ -819,8 +833,8 @@ Example:
     </ParamterList>
     <ParameterList name="Outflow plane">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5, 0.5, 0.5}"/>
-        <Parameter name="Direction" type="Array double" value="{0, 0, 1}"/>
+        <Parameter name="Location" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, 0, 1}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Sand">
@@ -829,6 +843,17 @@ Example:
         <Parameter name="Value" type="int" value="25"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Flux plane">
+      <ParameterList name="Region: Polygon">
+        <Parameter name="Number of points" type="int" value="5"/>
+        <Parameter name="Points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                               0.5, -0.5, -0.5,
+                                                               0.8, 0.0, 0.0,
+                                                               0.5,  0.5, 0.5,
+                                                              -0.5, 0.5, 0.5}"/>
+      </ParameterList>
+    </ParameterList>
+  
   </ParameterList>
 
 In this example, "Top Section", "Middle Section" and "Bottom Section"

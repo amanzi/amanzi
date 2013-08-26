@@ -1241,11 +1241,11 @@ protected:
   static Array<Source> source_array;
 
 #ifdef AMANZI
-  static PArray<amanzi::chemistry::SimpleThermoDatabase> chemSolve;
+  static PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
   static std::string amanzi_database_file;
   static std::string amanzi_activity_model; 
-  static Array<amanzi::chemistry::Beaker::BeakerComponents> components;
-  static Array<amanzi::chemistry::Beaker::BeakerParameters> parameters;
+  static Array<Amanzi::AmanziChemistry::Beaker::BeakerComponents> components;
+  static Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> parameters;
 #endif
   static int  max_grid_size_chem;
   static bool no_initial_values;

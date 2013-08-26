@@ -64,6 +64,7 @@ if (BUILD_TESTS)
                           test/test_plane_region.cc
                           test/test_labeledset.cc
                           test/test_colorfunc_region.cc
+			  test/test_polygon_region.cc
                    LINK_LIBS 
                           geometry
                           ${UnitTest_LIBRARIES}

@@ -66,8 +66,7 @@ TEST(CONSTRUCTOR) {
   RCP<Transport_State> TS = rcp(new Transport_State(mesh,2));
   TS->Initialize();
 
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
-  Transport_PK TPK(transport_list, TS);
+  Transport_PK TPK(parameter_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
 

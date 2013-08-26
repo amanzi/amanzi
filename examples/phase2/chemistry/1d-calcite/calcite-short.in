@@ -97,9 +97,31 @@ END
 :=========================== constraints ======================================
 CONSTRAINT initial
   CONCENTRATIONS
-    HCO3-   1.d-5      T
-    Ca++    1.d-5      T
-    H+     -1.d-5     T
+    HCO3-   1.7348824177512681d-5      T
+    Ca++    5.2312130065730166e-5      T
+    H+      1.6290737950863135d-5      T
+  /
+  MINERALS
+    Calcite  0.2 100.0 m^2/m^3
+  /
+END
+
+CONSTRAINT west_bc
+  CONCENTRATIONS
+    HCO3-   9.9999999902971649d-4      T
+    Ca++    1.6792633971909330d-5      T
+    H+      9.6641473107457617d-4      T
+  /
+  MINERALS
+    Calcite  0.2 100.0 m^2/m^3
+  /
+END
+
+CONSTRAINT east_bc
+  CONCENTRATIONS
+    HCO3-   1.0d-20      T
+    Ca++    1.0d-20      T
+    H+      1.0d-20      T
   /
   MINERALS
     Calcite  0.2 100.0 m^2/m^3

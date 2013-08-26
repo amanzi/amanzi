@@ -1,8 +1,17 @@
+/*
+This is the transport component of the Amanzi code. 
+
+License: see $AMANZI_DIR/COPYRIGHT
+Author (v1): Neil Carlson
+       (v2): Ethan Coon, Markus Berndt, Konstantin Lipnikov
+*/
+
+
 #include <algorithm>
 #include "errors.hh"
 
 #include "Domain.hh"
-#include "transport-domain-function.hh"
+#include "transport_domain_function.hh"
 
 namespace Amanzi {
 namespace Functions {

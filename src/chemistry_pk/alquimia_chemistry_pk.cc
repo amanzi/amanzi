@@ -301,10 +301,13 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
     for (size_t r = 0; r < regions.size(); ++r)
     {
-      if (!mesh->valid_set_name(regions[r], AmanziMesh::CELL))
+      // We allow for cell-based and face-based regions to accommodate both 
+      // initial and boundary conditions.
+      if (!mesh->valid_set_name(regions[r], AmanziMesh::CELL) &&
+          !mesh->valid_set_name(regions[r], AmanziMesh::FACE))
       {
         msg << "Chemistry_PK::XMLParameters(): \n";
-        msg << "  Invalid region assigned to '" << regions[r] << " for geochemical condition '" << cond_name << "'.\n";
+        msg << "  Invalid region '" << regions[r] << "' given for geochemical condition '" << cond_name << "'.\n";
         Exceptions::amanzi_throw(msg);
       }
       conditions[regions[r]] = condition;
@@ -933,7 +936,7 @@ void Alquimia_Chemistry_PK::advance(
   int imin = -999;
   int min_iterations = 10000000;
 
-  // Now loop through all the regions and initialize.
+  // Now loop through all the regions and advance the chemistry.
   int ierr = 0;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
   for (std::map<std::string, AlquimiaGeochemicalCondition*>::iterator 
@@ -943,13 +946,24 @@ void Alquimia_Chemistry_PK::advance(
     std::string region_name = cond_iter->first;
     AlquimiaGeochemicalCondition* condition = cond_iter->second;
 
-    // Get the cells that belong to this region.
-    assert(mesh->valid_set_name(region_name, AmanziMesh::CELL));
-    unsigned int num_cells = mesh->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
-    AmanziMesh::Entity_ID_List cell_indices;
-    mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+    // Get the faces that belong to this region (since boundary conditions 
+    // are applied on faces).
+    assert(mesh->valid_set_name(region_name, AmanziMesh::FACE));
+    unsigned int num_faces = mesh->get_set_size(region_name, AmanziMesh::FACE, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List face_indices;
+    mesh->get_set_entities(region_name, AmanziMesh::FACE, AmanziMesh::OWNED, &face_indices);
 
-    for (unsigned int i = 0; i < num_cells; i++) 
+    // Now get the cells that are attached to these faces.
+    AmanziMesh::Entity_ID_List cell_indices;
+    for (unsigned int f = 0; f < num_faces; ++f)
+    {
+      AmanziMesh::Entity_ID_List cells_for_face;
+      mesh->face_get_cells(face_indices[f], AmanziMesh::OWNED, &cells_for_face);
+      for (size_t i = 0; i < cells_for_face.size(); ++i)
+        cell_indices.push_back(cells_for_face[i]);
+    }
+
+    for (size_t i = 0; i < cell_indices.size(); i++) 
     {
       int cell = cell_indices[i];
       int num_iterations = AdvanceSingleCell(delta_time, cell, condition);

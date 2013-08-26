@@ -77,8 +77,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   TS->set_total_component_concentration(0.0,0);
 
   /* initialize a transport process kernel from the transport state */
-  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
-  Transport_PK TPK(transport_list, TS);
+  Transport_PK TPK(parameter_list, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
  

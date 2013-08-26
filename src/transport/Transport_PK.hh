@@ -13,8 +13,8 @@ Usage:
   TPK.advance(time_step);
 */
 
-#ifndef __Transport_PK_hpp__
-#define __Transport_PK_hpp__
+#ifndef __TRANSPORT_PK_HH__
+#define __TRANSPORT_PK_HH__
 
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -23,14 +23,17 @@ Usage:
 
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
-#include "transport-boundary-function.hh"
-#include "transport-domain-function.hh"
+#include "transport_boundary_function.hh"
+#include "transport_domain_function.hh"
 
 #include "State.hh"
+#include "Reconstruction.hh"
+
+#include "Transport_constants.hh"
 #include "Transport_State.hh"
 #include "Transport_SourceFactory.hh"
-#include "Transport_constants.hh"
-#include "Reconstruction.hh"
+#include "Matrix_Dispersion.hh"
+
 
 /*
 This is Amanzi Transport Process Kernel (PK).
@@ -53,7 +56,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Transport_PK();
   Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                Teuchos::RCP<Transport_State> TS_MPC);
-  ~Transport_PK() { for (int i=0; i<bcs.size(); i++) delete bcs[i]; }
+  ~Transport_PK();
 
   // primary members
   int InitPK();
@@ -125,25 +128,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   const Teuchos::RCP<Epetra_IntVector>& get_upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& get_downwind_cell() { return downwind_cell_; }  
 
-  // dispersion routines
-  void CalculateDispersionTensor();
-  void ExtractBoundaryConditions(const int component,
-                                 std::vector<int>& bc_face_id,
-                                 std::vector<double>& bc_face_value);
-  void PopulateHarmonicPointsValues(int component,
-                                    Teuchos::RCP<Epetra_MultiVector> tcc,
-                                    std::vector<int>& bc_face_id,
-                                    std::vector<double>& bc_face_values);
-  void AddDispersiveFluxes(int component,
-                           Teuchos::RCP<Epetra_MultiVector> tcc,
-                           std::vector<int>& bc_face_id,
-                           std::vector<double>& bc_face_values,
-                           Teuchos::RCP<Epetra_MultiVector> tcc_next);
-
   // I/O methods
   void ProcessParameterList();
   void ProcessStringFlowMode(const std::string name, int* method);
-  void ProcessStringDispersionModel(const std::string name, int* method);
+  void ProcessStringDispersionModel(const std::string name, int* model);
+  void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
   void ProcessStringVerbosity(const std::string name, int* verbosity);
 
@@ -166,6 +155,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
   
   Teuchos::ParameterList parameter_list;
+  Teuchos::ParameterList preconditioner_list;
 
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
@@ -190,13 +180,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  int dispersivity_model;  // data for dispersion 
-  double dispersivity_longitudinal, dispersivity_transverse;
-
-  std::vector<AmanziGeometry::Point> harmonic_points;
-  std::vector<double> harmonic_points_weight;
-  std::vector<double> harmonic_points_value;
-  std::vector<WhetStone::Tensor> dispersion_tensor;
+  Teuchos::RCP<Matrix_Dispersion> dispersion_matrix; // data for dispersion
+  Dispersion_Specs dispersion_specs;
 
   double cfl_, dT, dT_debug, T_physics;  
   int number_components; 

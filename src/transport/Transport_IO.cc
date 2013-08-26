@@ -57,17 +57,26 @@ void Transport_PK::ProcessParameterList()
   temporal_disc_order = transport_list.get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  string dispersivity_name = transport_list.get<string>("dispersivity model", "isotropic");
-  ProcessStringDispersionModel(dispersivity_name, &dispersivity_model);
-
-  dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
-  dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
-
   string advection_limiter_name = transport_list.get<string>("advection limiter");
   ProcessStringAdvectionLimiter(advection_limiter_name, &advection_limiter);
 
   std::string flow_mode_name = transport_list.get<string>("flow mode", "transient");
   ProcessStringFlowMode(flow_mode_name, &flow_mode);
+
+  // transport dispersion (default is none)
+  if (transport_list.isSublist("dispersivity")) {
+    Teuchos::ParameterList& dispersivity = transport_list.sublist("dispersivity");
+    string model_name = dispersivity.get<string>("model", "none");
+    ProcessStringDispersionModel(model_name, &dispersion_specs.model);
+
+    dispersion_specs.dispersivity_longitudinal = dispersivity.get<double>("longitudinal", 0.0);
+    dispersion_specs.dispersivity_transverse = dispersivity.get<double>("transverse", 0.0);
+
+    string method_name = dispersivity.get<string>("numerical method", "none");
+    ProcessStringDispersionMethod(method_name, &dispersion_specs.method);
+
+    dispersion_specs.preconditioner = dispersivity.get<string>("preconditioner", "identity");
+  }
 
   // control parameter
   internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";
@@ -133,21 +142,35 @@ void Transport_PK::ProcessStringFlowMode(const std::string name, int* method)
 
 
 /* ****************************************************************
-* Process string for the discretization method.
+* Process string for the dispersivity model.
 **************************************************************** */
-void Transport_PK::ProcessStringDispersionModel(const std::string name, int* method)
+void Transport_PK::ProcessStringDispersionModel(const std::string name, int* model)
 {
   Errors::Message msg;
   if (name == "isotropic") {
-    *method = TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC;
+    *model = TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC;
   } else if (name == "Bear") {
-    *method = TRANSPORT_DISPERSIVITY_MODEL_BEAR;
+    *model = TRANSPORT_DISPERSIVITY_MODEL_BEAR;
   } else if (name == "Lichtner") {
-    *method = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
+    *model = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
   } else {
-    Errors::Message msg;
-    msg << "Dispersivity model is wrong (isotropic, Bear, Lichtner).\n";
-    Exceptions::amanzi_throw(msg);
+    *model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
+  }
+}
+
+
+/* ****************************************************************
+* Process string for the dispersion numerical approximation.
+**************************************************************** */
+void Transport_PK::ProcessStringDispersionMethod(const std::string name, int* method)
+{
+  Errors::Message msg;
+  if (name == "two point flux approximation") {
+    *method = TRANSPORT_DISPERSION_METHOD_TPFA;
+  } else if (name == "nonlinear finite volume") {
+    *method = TRANSPORT_DISPERSION_METHOD_NLFV;
+  } else {
+    *method = TRANSPORT_DISPERSION_METHOD_TPFA;
   }
 }
 

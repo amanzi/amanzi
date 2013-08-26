@@ -11,11 +11,11 @@
 namespace Amanzi {
 
 
-class Unstructured_observations : public IOEvent {
+class Unstructured_observations {
 
  public:
 
-  struct Observable
+  struct Observable : public IOEvent
   {
     Observable (std::string variable_,
                 std::string region_,
@@ -46,6 +46,13 @@ class Unstructured_observations : public IOEvent {
   }
 
   void make_observations(State& state);
+
+  bool DumpRequested(const int);
+  bool DumpRequested(const double);
+  bool DumpRequested(const int, const double);
+     
+  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  
 
  private:
 

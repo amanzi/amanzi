@@ -24,9 +24,11 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "Explicit_TI_RK.hh"
+#include "PCG_Operator.hh"
 
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
+#include "Matrix_Dispersion.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -35,12 +37,14 @@ namespace AmanziTransport {
 * We set up minimum default values and call Init() routine to 
 * complete initialization.
 ****************************************************************** */
-Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
+Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                            Teuchos::RCP<Transport_State> TS_MPC)
 {
   status = TRANSPORT_NULL;
 
-  parameter_list = parameter_list_MPC;
+  parameter_list = parameter_list_MPC.sublist("Transport");
+  preconditioner_list = parameter_list_MPC.sublist("Preconditioners");
+
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
   TS = Teuchos::rcp(new Transport_State(*TS_MPC, Transport_State::CONSTRUCT_MODE_COPY_POINTERS));
@@ -51,7 +55,6 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 
   verbosity = TRANSPORT_VERBOSITY_HIGH;
   internal_tests = 0;
-  dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   MyPID = 0;
@@ -61,6 +64,16 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
   mass_tracer_exact = 0.0;
+}
+
+
+/* ******************************************************************
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+Transport_PK::~Transport_PK()
+{ 
+  for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
 }
 
 
@@ -121,18 +134,6 @@ int Transport_PK::InitPK()
   lifting.reset_field(mesh_, component_);
   lifting.Init();
 
-  // dispersivity block initialization
-  if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
-    harmonic_points.resize(nfaces_wghost);
-    for (int f = 0; f < nfaces_wghost; f++) harmonic_points[f].init(dim);
-
-    harmonic_points_weight.resize(nfaces_wghost);
-    harmonic_points_value.resize(nfaces_wghost);
-
-    dispersion_tensor.resize(ncells_wghost);
-    for (int c = 0; c < ncells_wghost; c++) dispersion_tensor[c].init(dim, 2);
-  }
-
   // boundary conditions initialization
   double time = T_physics;
   for (int i = 0; i < bcs.size(); i++) {
@@ -146,6 +147,13 @@ int Transport_PK::InitPK()
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
  
+  // dispersivity model
+  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+    dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
+    dispersion_matrix->Init(dispersion_specs);
+    dispersion_matrix->SymbolicAssembleGlobalMatrix();
+    // dispersion_matrix->InitPreconditioner();
+  }
   return 0;
 }
 
@@ -386,8 +394,41 @@ void Transport_PK::Advance(double dT_MPC)
     }
   }
 
+  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+    const Epetra_Vector& phi = TS->ref_porosity();
+    const Epetra_Vector& flux = TS->ref_darcy_flux();
+
+    dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
+    dispersion_matrix->AssembleGlobalMatrix();
+    dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
+    dispersion_matrix->UpdatePreconditioner();
+
+    AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
+    pcg.set_tolerance(1e-8);
+
+    const Epetra_Map& cmap = mesh_->cell_map(false);
+    Epetra_Vector rhs(cmap);
+
+    double residual = 0.0;
+    int num_itrs = 0;
+    
+    for (int i = 0; i < number_components; i++) {
+      for (int c = 0; c < ncells_owned; c++) {
+        double factor = mesh_->cell_volume(c) * ws[c] * phi[c] / dT_MPC;
+        rhs[c] = tcc_next[i][c] * factor;
+      }
+      pcg.ApplyInverse(rhs, *(tcc_next(i)));
+      residual += pcg.residual();
+      num_itrs += pcg.num_itrs();
+    }
+    if (verbosity >= TRANSPORT_VERBOSITY_MEDIUM && MyPID == 0) {
+      printf("Transport PK: dispersion solver: ||r||=%10.5g itrs=%d\n",
+          residual / number_components, num_itrs / number_components);
+    }
+  }
+
   // DEBUG
-  // writeGMVfile(TS_nextMPC);
+  // WriteGMVfile(TS_nextMPC); 
 }
 
 
@@ -611,18 +652,6 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
     TVD_RK.step(T, dT, *component_, *component_next_);
 
     for (int c = 0; c < ncells_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
-
-    // DISPERSIVE FLUXES
-    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
-      CalculateDispersionTensor();
-
-      std::vector<int> bc_face_id(nfaces_wghost);  // must be allocated once (lipnikov@lanl.gov)
-      std::vector<double> bc_face_values(nfaces_wghost);
-
-      ExtractBoundaryConditions(i, bc_face_id, bc_face_values);
-      PopulateHarmonicPointsValues(i, tcc, bc_face_id, bc_face_values);
-      AddDispersiveFluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
-    }
   }
 
   if (internal_tests) {

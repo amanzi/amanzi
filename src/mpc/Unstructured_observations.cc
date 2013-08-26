@@ -58,6 +58,7 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
           }
         }
       }
+
       if (observable_plist.isParameter("cycles")) {
         Teuchos::Array<int> vcycles = observable_plist.get<Teuchos::Array<int> >("cycles");
         cycles = vcycles.toVector();
@@ -251,6 +252,37 @@ void Unstructured_observations::make_observations(State& state)
   }
 }
 
+
+
+bool Unstructured_observations::DumpRequested(const double time) {
+  bool result = false;
+  for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
+    result = result || (i->second).DumpRequested(time);
+  }  
+  return result;
+}
+
+
+bool Unstructured_observations::DumpRequested(const int cycle) {
+  bool result = false;
+  for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
+    result = result || (i->second).DumpRequested(cycle);
+  }  
+  return result;  
+}
+
+
+bool Unstructured_observations::DumpRequested(const int cycle, const double time) {
+  return DumpRequested(time) || DumpRequested(cycle);
+}
+
+
+void Unstructured_observations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) {
+  // loop over all observations and register each of them with the time step manager...
+  for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
+    (i->second).RegisterWithTimeStepManager(tsm);
+  }  
+}
 
 
 
