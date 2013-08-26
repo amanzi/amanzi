@@ -43,6 +43,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
   status = TRANSPORT_NULL;
 
   parameter_list = parameter_list_MPC.sublist("Transport");
+  preconditioner_list = parameter_list_MPC.sublist("Preconditioners");
+
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
   TS = Teuchos::rcp(new Transport_State(*TS_MPC, Transport_State::CONSTRUCT_MODE_COPY_POINTERS));

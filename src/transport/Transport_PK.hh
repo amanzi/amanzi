@@ -155,6 +155,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
   
   Teuchos::ParameterList parameter_list;
+  Teuchos::ParameterList preconditioner_list;
 
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
