@@ -119,8 +119,9 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
     // Determine the size of the overlap region, a smooth transition region
     // near zero flux
-    double flow_eps = ( 1.0 - std::abs(coefs[0] - coefs[1]) )
-        * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor;
+    double flow_eps = std::max(( 1.0 - std::abs(coefs[0] - coefs[1]) )
+            * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor,
+            1.e-8);
 
     // Determine the coefficient
     if (abs(flux_v[0][f]) >= flow_eps) {
