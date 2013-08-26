@@ -892,11 +892,11 @@ void MPC::cycle_driver() {
       if (chemistry_enabled) {
         // get the auxillary data
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-	if (force || visualization->DumpRequested(S->time())) {
+	if (force || visualization->DumpRequested(S->time(),iter)) {
 	  WriteVis(visualization,S.ptr());
 	}
       } else {
-	if (force || visualization->DumpRequested(S->time())) {
+	if (force || visualization->DumpRequested(S->time(), iter)) {
 	  WriteVis(visualization,S.ptr());
 	}
       }
