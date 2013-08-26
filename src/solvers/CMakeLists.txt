@@ -31,14 +31,17 @@ include_directories(${NOX_INCLUDE_DIRS})
 #
 # Library: solvers
 #
-file(GLOB solvers_source_files "*.cc")
 file(GLOB solver_inc_files "*.hh")
+set(solvers_source_files NKA.cc NKADirection.cc NKADirFactory.cc 
+                         PreconditionerFactory.cc PreconditionerHypre.cc)
+
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
 add_amanzi_library(solvers
-                   SOURCE ${solvers_source_files} HEADERS ${solvers_inc_files}
+                   SOURCE 
+${solvers_source_files} HEADERS ${solvers_inc_files}
                    LINK_LIBS error_handling ${solvers_tpl_libs})
 
 if (BUILD_TESTS)

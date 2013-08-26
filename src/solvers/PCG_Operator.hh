@@ -11,11 +11,9 @@ Usage:
 #ifndef __PCG_OPERATOR_HH__
 #define __PCG_OPERATOR_HH__
 
-
 #include "Teuchos_RCP.hpp"
 
 #include "exceptions.hh"
-
  
 namespace Amanzi {
 namespace AmanziSolvers {

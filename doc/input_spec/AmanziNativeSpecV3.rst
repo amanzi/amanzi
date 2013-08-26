@@ -832,8 +832,8 @@ The remaining `"Flow`" parameters are
   The first three calculate the relative permeability on mesh interfaces.
 
 * `"discretization method`" [string] helps to test new discretization methods. 
-  The available options are `"mfd`", `"optimized mfd`", `"two-point flux approximation`", 
-  `"optimized mfd experimental`" (recommended for highly anisotropic meshes), and
+  The available options are `"mfd scaled`", `"optimized mfd scaled`",
+  `"two-point flux approximation`", `"two point flux approximation`" and
   `"support operator`". The last option reproduces discretization method implemented in RC1. 
   The third option is recommended for orthogonal meshes and diagonal absolute permeability.
   The second option is still experimental (no papers were published) and produces 
@@ -897,12 +897,15 @@ the second-one is more accurate but also is a few times more expensive.
 
 .. code-block:: xml
 
-   <ParameterList name="Transport">
-     <Parameter name="dispersivity model" type="string" value="Bear"/>
-     <Parameter name="dispersivity longitudinal" type="double" value="1e-2"/>
-     <Parameter name="dispersivity transverse" type="double" value="1e-5"/>
+   <ParameterList name="Dispersivity">
+     <Parameter name="model" type="string" value="Bear"/>
+     <Parameter name="longitudinal" type="double" value="1e-2"/>
+     <Parameter name="transverse" type="double" value="1e-5"/>
      <Parameter name="numerical method" type="string" value="two point flux approximation"/>
+     <Parameter name="prconditioner" type="string" value="Hypre AMG"/>
    </ParameterList>  
+
+Parameter `"preconditioner`" will be replaced with more appropriate `"linear solver`".
  
 
 Boundary Conditions
@@ -1045,22 +1048,36 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
 
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
-          <Parameter name="deiscretization method" type="string" value="optimized mfd"/>
+          <Parameter name="deiscretization method" type="string" value="optimized mfd scaled"/>
           <ParameterList name="ML Parameters">
-            <Parameter name="ML output" type="int" value="0"/>
-            <Parameter name="aggregation: damping factor" type="double" value="1.33333"/>
             ... 
          </ParameterList>
        </ParameterList>
 
        <ParameterList name="Hypre AMG">
-          <Parameter name="deiscretization method" type="string" value="optimized mfd"/>
-          ...
+          <Parameter name="deiscretization method" type="string" value="optimized mfd scaled"/>
+          <ParameterList name="BoomerAMG Parameters">
+            ...
+          </ParameterList>
        </ParameterList>
      </ParameterList>
 
 Names `"Trilinos ML`" and `"Hypre AMG`" are selected by the user.
 They can be used by a process kernel lists to define a preconditioner.
+
+Hypre AMG
+---------
+
+Internal parameters of Boomer AMG includes
+
+.. code-block:: xml
+
+   <ParameterList name="BoomerAMG Parameters">
+     <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+     <Parameter name="smoother sweeps" type="int" value="3"/>
+     <Parameter name="cycle applications" type="int" value="5"/>
+     <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+   </ParameterList>
 
 
 Mesh

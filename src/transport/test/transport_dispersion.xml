@@ -25,9 +25,14 @@
     <Parameter name="CFL" type="double" value="0.5"/>   
     <Parameter name="spatial discretization order" type="int" value="1"/>   
     <Parameter name="temporal discretization order" type="int" value="1"/>   
-    <Parameter name="dispersivity model" type="string" value="Bear"/>
-    <Parameter name="dispersivity longitudinal" type="double" value="0.1"/>
-    <Parameter name="dispersivity transverse" type="double" value="0.01"/>
+    <ParameterList name="dispersivity">
+      <Parameter name="model" type="string" value="Bear"/>
+      <Parameter name="longitudinal" type="double" value="0.1"/>
+      <Parameter name="transverse" type="double" value="0.01"/>
+      <Parameter name="numerical method" type="string" value="two point flux approximation"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+    </ParameterList>
+
     <Parameter name="advection limiter" type="string" value="Tensorial"/>
     <!-- developers parameters --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
@@ -35,7 +40,7 @@
     <!-- end of developers parameters -->
 
     <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="medium"/>
+      <Parameter name="Verbosity Level" type="string" value="high"/>
     </ParameterList>
 
     <ParameterList name="boundary conditions">

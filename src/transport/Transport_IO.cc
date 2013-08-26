@@ -63,15 +63,20 @@ void Transport_PK::ProcessParameterList()
   std::string flow_mode_name = transport_list.get<string>("flow mode", "transient");
   ProcessStringFlowMode(flow_mode_name, &flow_mode);
 
-  // transport dispersion
-  string model_name = transport_list.get<string>("dispersivity model", "none");
-  ProcessStringDispersionModel(model_name, &dispersion_specs.model);
+  // transport dispersion (default is none)
+  if (transport_list.isSublist("dispersivity")) {
+    Teuchos::ParameterList& dispersivity = transport_list.sublist("dispersivity");
+    string model_name = dispersivity.get<string>("model", "none");
+    ProcessStringDispersionModel(model_name, &dispersion_specs.model);
 
-  dispersion_specs.dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
-  dispersion_specs.dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
+    dispersion_specs.dispersivity_longitudinal = dispersivity.get<double>("longitudinal", 0.0);
+    dispersion_specs.dispersivity_transverse = dispersivity.get<double>("transverse", 0.0);
 
-  string method_name = transport_list.get<string>("numerical method", "none");
-  ProcessStringDispersionMethod(method_name, &dispersion_specs.method);
+    string method_name = dispersivity.get<string>("numerical method", "none");
+    ProcessStringDispersionMethod(method_name, &dispersion_specs.method);
+
+    dispersion_specs.preconditioner = dispersivity.get<string>("preconditioner", "identity");
+  }
 
   // control parameter
   internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";

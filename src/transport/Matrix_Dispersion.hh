@@ -13,10 +13,11 @@ Usage:
 #ifndef __MATRIX_DISPERSION_HH__
 #define __MATRIX_DISPERSION_HH__
 
-
+#include "Teuchos_RCP.hpp"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_Vector.h"
 
+#include "Preconditioner.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -28,12 +29,14 @@ class Dispersion_Specs {
     dispersivity_longitudinal = 0.0;
     dispersivity_transverse = 0.0;
     method = TRANSPORT_DISPERSION_METHOD_TPFA; 
+    preconditioner = "identity";
   }
   ~Dispersion_Specs() {};
 
  public:
   int model, method;
   double dispersivity_longitudinal, dispersivity_transverse;
+  string preconditioner;
 };
 
 
@@ -56,6 +59,8 @@ class Matrix_Dispersion {
   void AddTimeDerivative(double dT, const Epetra_Vector& porosity, 
                          const Epetra_Vector& saturation);
 
+  void UpdatePreconditioner() { preconditioner_->Update(App_); }
+
  private:
   void PopulateHarmonicPoints();
   void ExtractBoundaryConditions(const int component,
@@ -76,7 +81,8 @@ class Matrix_Dispersion {
 
   std::vector<WhetStone::Tensor> D;
 
-  Teuchos::RCP<Epetra_FECrsMatrix> Dpp_;
+  Teuchos::RCP<Epetra_FECrsMatrix> App_;
+  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 };
 
 }  // namespace AmanziTransport

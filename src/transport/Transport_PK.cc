@@ -398,6 +398,7 @@ void Transport_PK::Advance(double dT_MPC)
     dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
     dispersion_matrix->AssembleGlobalMatrix();
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
+    dispersion_matrix->UpdatePreconditioner();
 
     AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
     pcg.set_tolerance(1e-8);
@@ -417,7 +418,7 @@ void Transport_PK::Advance(double dT_MPC)
       residual += pcg.residual();
       num_itrs += pcg.num_itrs();
     }
-    if (verbosity >= TRANSPORT_VERBOSITY_HIGH && MyPID == 0) {
+    if (verbosity >= TRANSPORT_VERBOSITY_MEDIUM && MyPID == 0) {
       printf("Transport PK: dispersion solver: ||r||=%10.5g itrs=%d\n",
           residual / number_components, num_itrs / number_components);
     }

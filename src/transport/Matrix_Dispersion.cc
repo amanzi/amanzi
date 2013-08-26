@@ -18,6 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "mfd3d_diffusion.hh"
 #include "nlfv.hh"
 #include "tensor.hh"
+#include "PreconditionerFactory.hh"
 
 #include "Transport_constants.hh"
 #include "Matrix_Dispersion.hh"
@@ -49,6 +50,9 @@ void Matrix_Dispersion::Init(Dispersion_Specs& specs)
 
   D.resize(ncells_wghost);
   for (int c = 0; c < ncells_wghost; c++) D[c].init(dim, 2);
+
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(specs.preconditioner);
 }
 
 
@@ -127,8 +131,8 @@ void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
   pp_graph.GlobalAssemble();  // Symbolic graph is complete.
 
   // create global matrices
-  Dpp_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, pp_graph));
-  Dpp_->GlobalAssemble();
+  App_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, pp_graph));
+  App_->GlobalAssemble();
 }
 
 
@@ -164,7 +168,7 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
   int cells_GID[2];
   Teuchos::SerialDenseMatrix<int, double> Bpp(2, 2);
 
-  Dpp_->PutScalar(0.0);
+  App_->PutScalar(0.0);
 
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -181,9 +185,9 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
       Bpp(1, 0) = -coef;
     }
 
-    Dpp_->SumIntoGlobalValues(ncells, cells_GID, Bpp.values());
+    App_->SumIntoGlobalValues(ncells, cells_GID, Bpp.values());
   }
-  Dpp_->GlobalAssemble();
+  App_->GlobalAssemble();
 }
 
 
@@ -200,7 +204,7 @@ void Matrix_Dispersion::AddTimeDerivative(
     double factor = volume * porosity[c] * saturation[c] / dT;
 
     int c_GID = cmap_wghost.GID(c);
-    Dpp_->SumIntoGlobalValues(1, &c_GID, &factor);
+    App_->SumIntoGlobalValues(1, &c_GID, &factor);
   }
 }
 
@@ -210,7 +214,7 @@ void Matrix_Dispersion::AddTimeDerivative(
 ******************************************************************* */
 void Matrix_Dispersion::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 {
-  Dpp_->Apply(v, av);
+  App_->Apply(v, av);
 }
 
 
@@ -219,7 +223,7 @@ void Matrix_Dispersion::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 ******************************************************************* */
 void Matrix_Dispersion::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
-  hv = v;
+  preconditioner_->ApplyInverse(v, hv);
 }
 
 
