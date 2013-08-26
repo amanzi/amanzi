@@ -907,6 +907,7 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   //  std::vector<int> flag(nfaces_wghost, 0);
+  //cout.precision(10);
 
   AmanziMesh::Entity_ID_List cells;
 
@@ -924,7 +925,7 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
 	// cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<endl;
 	// cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
 	// cout<<"Boundary gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
-	// cout<<"Dirichler BC flux "<<darcy_mass_flux[f] <<endl;
+	// cout<<"Dirichler BC flux "<<darcy_mass_flux[f] <<endl<<endl;
       }
       else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
 	double value = bc_values[f][0];
@@ -933,18 +934,38 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
       else {
 	if (f < nfaces_owned) {
 	  mesh_->face_get_cells(f,  AmanziMesh::USED, &cells);
-	  // if (fabs(Grav_term[f]) > 1e-12){
+	  if (cells.size() < 2){
+	    Errors::Message msg("Flow PK: Matrix_MFD_TPFA. These boundary conditions are not supported by TPFA discratization.");
+	    Exceptions::amanzi_throw(msg);
+	  }
+
+	  // if ((fabs(Grav_term[f]) > 1e-12 )&&(dirs[n]>0)){
+	  //   cout<<"FACE "<<f<<endl;
 	  //   cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<" "<<" Krel "<<Krel_faces[f]<<endl;
 	  //   //cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
 	  //   cout<<"gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
+	  //   cout<<"Grav_term "<<Grav_term[f]<<endl;
+	  //   //if (f == 49) {
+	  //   if (dirs[n]>0) {
+	  //     cout<<"cells: "<<c<<" "<<c+1<<" --- "<<solution[c]<<" "<<solution[c+1]<<endl;
+	  //     cout<<"Diff "<< Krel_faces[f]*Trans_faces[f]*(solution[c] - solution[c+1])<<endl;
+	  //   }
+	  //   //}
 	  // }
-	  //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
-	  double s = Trans_faces[f]*solution[c];
-	  darcy_mass_flux[f] += s * dirs[n];
-	  if (cells[0] == c) darcy_mass_flux[f] += dirs[n]*Grav_term[f]*0.5;
-	  else darcy_mass_flux[f] -= dirs[n]*Grav_term[f]*0.5;  
-	  darcy_mass_flux[f] *= Krel_faces[f];
-	  //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
+
+
+	  // double s = Trans_faces[f]*solution[c];
+	  // darcy_mass_flux[f] += s * dirs[n];
+	  // if (cells[0] == c) darcy_mass_flux[f] += dirs[n]*Grav_term[f]*0.5;
+	  // else darcy_mass_flux[f] -= dirs[n]*Grav_term[f]*0.5;  
+	  // darcy_mass_flux[f] *= Krel_faces[f];
+	  // //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
+	  // //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
+	  // //exit(0);
+	  if (dirs[n] > 0){
+	    darcy_mass_flux[f] = Trans_faces[f]*(solution[cells[0]] - solution[cells[1]]) + Grav_term[f];
+	    darcy_mass_flux[f] *= Krel_faces[f];
+	  }
 	}
       }
     }

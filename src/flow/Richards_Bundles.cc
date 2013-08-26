@@ -186,13 +186,13 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
 
     // cout<<"After DeriveDarcyMassFlux\n"<<endl;
     // for (int f = 48; f < nfaces_owned; f++){
-    //   cout<<"flux "<<f<<" - "<<flux[f]<<endl;
+    //   cout<<"flux "<<f<<":   "<<flux[f]<<endl;
     // }
   }
 
   rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
-
+  //exit(0);
   //Amanzi::timer_manager.start("Update precon");
 
   // setup a new algebraic problem
