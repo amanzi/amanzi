@@ -23,7 +23,7 @@ CHEMISTRY
   /
   MINERAL_KINETICS
     Calcite
-      RATE_CONSTANT 1.d-13
+      RATE_CONSTANT 1.d-13 mol/cm^2-sec
     /
   /
   DATABASE ./calcite.dat
