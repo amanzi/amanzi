@@ -93,7 +93,7 @@ void MPC::mpc_init() {
   }
 
   if (transport_enabled || flow_enabled || chemistry_enabled) {
-    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("state");
+    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
     S = Teuchos::rcp(new State(state_parameter_list));
     S->RegisterMesh("domain",mesh_maps);
   }

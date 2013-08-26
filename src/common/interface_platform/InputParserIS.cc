@@ -77,7 +77,7 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Domain") = get_Domain_List(plist);
   new_list.sublist("MPC") = create_MPC_List(plist);
   new_list.sublist("Transport") = create_Transport_List(plist);
-  new_list.sublist("state") = create_State_List(plist);
+  new_list.sublist("State") = create_State_List(plist);
   new_list.sublist("Flow") = create_Flow_List(plist);
   new_list.sublist("Preconditioners") = create_Preconditioners_List(plist);
   new_list.sublist("Solvers") = create_Solvers_List(plist);
