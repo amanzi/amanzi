@@ -939,6 +939,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
 	  darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 	  darcy_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
+	  darcy_problem.set<std::string>("discretization method", "optimized mfd scaled");
 	  
 	  flow_list = &darcy_problem; // we use this below to insert sublists that are shared by Richards and Darcy	
 	} else if (flow_model == "Richards") {
@@ -947,6 +948,7 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  // this one should come from the input file...
 	  richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 	  richards_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
+	  richards_problem.set<std::string>("discretization method", "optimized mfd scaled");
 	  // see if we need to generate a Picard list
 	  
 	  flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
@@ -1372,6 +1374,8 @@ Teuchos::ParameterList create_WRM_List(Teuchos::ParameterList* plist)
 Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList dpc_list;
+  
+  dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
 
   double aggthr(ML_AGG_THR);
   std::string smthtyp(ML_SMOOTHER);
@@ -1431,6 +1435,8 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList bilu_list;
 
+  bilu_list.set<std::string>("discretization method", "optimized mfd scaled");
+
   double bilu_relax_value(ILU_RLXVAL);
   double bilu_abs_thresh(ILU_ABSTHR);
   double bilu_rel_thresh(ILU_RELTHR);
@@ -1485,7 +1491,7 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
 {
   Teuchos::ParameterList dpc_list;
 
-  dpc_list.set<std::string>("discretization method", "optimized mfd");
+  dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
 
   double tol(AMG_TOL);
   int ncycles(AMG_NCYC);
