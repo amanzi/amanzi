@@ -371,6 +371,14 @@ For geochemisty simulated through PFLOTRAN, the user defines a reaction network 
 
 `"constraint`" defines a file containing a PFLOTRAN CONSTRAINT block.
 
+.. code-block:: xml
+
+  <geochemistry>
+      <reaction_network file="calcite_flow_and_tran.in" format="simple"/>
+      <constraint name="Initial" filename="calcite_flow_and_tran.in"/>
+      <constraint name="Inlet" filename="calcite_flow_and_tran.in"/>
+  </geochemistry>
+
 Material
 ========
 
