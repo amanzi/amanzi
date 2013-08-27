@@ -140,21 +140,22 @@ void Unstructured_observations::make_observations(State& state)
 	for (comp_index = 0; comp_index != comp_names_.size(); ++comp_index) {
 	  if ( comp_names_[comp_index] == var ) break;
 	}
-      }
-      if (comp_index != comp_names_.size() ) {
-	value = 0.0;
-	volume = 0.0;
-	
-	Teuchos::RCP<const Epetra_MultiVector> total_component_concentration = 
-	  state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
-	
-	for (int i=0; i<mesh_block_size; i++) {
-	  int ic = cell_ids[i];
-	  value += (*(*total_component_concentration)(comp_index))[ic] * state.GetMesh()->cell_volume(ic);
+	if (comp_index != comp_names_.size() ) {
+	  value = 0.0;
+	  volume = 0.0;
 	  
-	  volume += state.GetMesh()->cell_volume(ic);
+	  Teuchos::RCP<const Epetra_MultiVector> total_component_concentration = 
+	    state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
+	  
+	  for (int i=0; i<mesh_block_size; i++) {
+	    int ic = cell_ids[i];
+	    value += (*(*total_component_concentration)(comp_index))[ic] * state.GetMesh()->cell_volume(ic);
+	    
+	    volume += state.GetMesh()->cell_volume(ic);
+	  }
 	}
-      } else if (var == "Volumetric water content") {
+      }
+      if (var == "Volumetric water content") {
 	value = 0.0;
 	volume = 0.0;
 	
