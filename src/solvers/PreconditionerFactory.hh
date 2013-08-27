@@ -5,7 +5,7 @@ License: BSD
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 Conjugate gradient method.
-Usage: 
+Usage: Create("Hypre AMG", preconditioner_list);
 */
 
 #ifndef __PRECONDITIONER_FACTORY_HH__
@@ -17,7 +17,6 @@ Usage:
 
 #include "Preconditioner.hh"
 #include "PreconditionerFactory.hh"
-#include "PreconditionerHypre.hh"
  
 namespace Amanzi {
 namespace AmanziPreconditioners {
@@ -27,7 +26,8 @@ class PreconditionerFactory {
   PreconditionerFactory() {};
   ~PreconditionerFactory() {};
 
-  Teuchos::RCP<Preconditioner> Create(const string& name);
+  Teuchos::RCP<Preconditioner> Create(const string& name, 
+                                      const Teuchos::ParameterList& prec_list);
 };
 
 }  // namespace AmanziPreconditioners

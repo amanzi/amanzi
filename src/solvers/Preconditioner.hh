@@ -26,7 +26,7 @@ class Preconditioner {
   Preconditioner() {};
   ~Preconditioner() {};
 
-  virtual void Init(const Teuchos::ParameterList& list) = 0;
+  virtual void Init(const std::string& name, const Teuchos::ParameterList& list) = 0;
   virtual void Update(Teuchos::RCP<Epetra_FECrsMatrix> A) = 0;
   virtual void Destroy() = 0;
 

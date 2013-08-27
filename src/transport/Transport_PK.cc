@@ -150,9 +150,8 @@ int Transport_PK::InitPK()
   // dispersivity model
   if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
     dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
-    dispersion_matrix->Init(dispersion_specs);
+    dispersion_matrix->Init(dispersion_specs, preconditioner_list);
     dispersion_matrix->SymbolicAssembleGlobalMatrix();
-    // dispersion_matrix->InitPreconditioner();
   }
   return 0;
 }

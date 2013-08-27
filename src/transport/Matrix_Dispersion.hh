@@ -14,6 +14,7 @@ Usage:
 #define __MATRIX_DISPERSION_HH__
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_Vector.h"
 
@@ -47,7 +48,7 @@ class Matrix_Dispersion {
   ~Matrix_Dispersion() {};
 
   // primary members
-  void Init(Dispersion_Specs& specs);
+  void Init(Dispersion_Specs& specs, const Teuchos::ParameterList& prec_list);
   void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   void ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
@@ -60,7 +61,6 @@ class Matrix_Dispersion {
                          const Epetra_Vector& saturation);
 
   void UpdatePreconditioner() { preconditioner_->Update(App_); }
-  void InitPreconditioner(const Teuchos::ParameterList& list) { preconditioner_->Init(list); }
 
  private:
   void PopulateHarmonicPoints();

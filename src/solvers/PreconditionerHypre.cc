@@ -29,9 +29,10 @@ void PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv
 /* ******************************************************************
 * Initialize the preconditioner.                                                 
 ****************************************************************** */
-void PreconditionerHypre::Init(const Teuchos::ParameterList& list)
+void PreconditionerHypre::Init(const std::string& name, const Teuchos::ParameterList& list)
 {
   list_ = list;
+cout << list_ << endl;
 #ifdef HAVE_HYPRE
   ncycles = list_.get<int>("cycle applications", 5);  // Boomer AMG parameters
   nsmooth = list_.get<int>("smoother sweeps", 3);
@@ -47,12 +48,6 @@ void PreconditionerHypre::Init(const Teuchos::ParameterList& list)
 ****************************************************************** */
 void PreconditionerHypre::Update(Teuchos::RCP<Epetra_FECrsMatrix> A)
 {
-  ncycles = 3;
-  nsmooth = 3;
-  tol = 0.0;
-  strong_threshold = 0.0;
-  verbosity = 0;
-
 #ifdef HAVE_HYPRE
   IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
 

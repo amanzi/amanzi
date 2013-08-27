@@ -27,7 +27,7 @@ class PreconditionerIdentity : public Preconditioner {
   PreconditionerIdentity() {};
   ~PreconditionerIdentity() {};
 
-  void Init(const Teuchos::ParameterList& list) {};
+  void Init(const std::string& name, const Teuchos::ParameterList& list) {};
   void Update(Teuchos::RCP<Epetra_FECrsMatrix> A) {};
   void Destroy() {};
 

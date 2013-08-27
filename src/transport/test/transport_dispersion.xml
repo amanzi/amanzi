@@ -30,7 +30,7 @@
       <Parameter name="longitudinal" type="double" value="0.1"/>
       <Parameter name="transverse" type="double" value="0.01"/>
       <Parameter name="numerical method" type="string" value="two point flux approximation"/>
-      <Parameter name="preconditioner" type="string" value="hypre"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
     </ParameterList>
 
     <Parameter name="advection limiter" type="string" value="Tensorial"/>
