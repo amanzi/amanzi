@@ -419,7 +419,7 @@ public:
 					    bool  do_recursive,
                                             bool  use_cached_sat);
 
-  void set_saturated_velocity(Real t_this, Real t_crse);
+  void set_saturated_velocity();
 
   void advance_tracer  (Real time,
 			Real dt);
@@ -485,10 +485,10 @@ public:
   static void setup_list ();
   static void read_params ();   // Read input file
   static void read_geometry ();
-  static void read_rock (int do_chem);
+  static void read_rock ();
   static void read_prob ();
   static void read_comp (); 
-  static void read_tracer (int do_chem); 
+  static void read_tracer (); 
   static void read_source (); 
   static void read_observation (); 
   static void read_chem (); 
@@ -1370,10 +1370,11 @@ protected:
   //  
   // Chemistry parameters 
   //
-  static int  do_chem;
+  static int  do_tracer_chemistry; // Does the user want to react tracers
   static bool do_tracer_transport; // Does the user want to transport tracers
   static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized
   static int  transport_tracers; // Should the tracers be transported now
+  static int  react_tracers; // Should the tracers be reacted now
   static bool diffuse_tracers;
   static int  do_full_strang;
   static int  n_chem_interval;
@@ -1401,6 +1402,7 @@ protected:
   static int nGrowHYP;
   static int nGrowMG;
   static int nGrowEIGEST;
+  static bool do_constant_vel;
 
   static int  richard_solver_verbose;
 

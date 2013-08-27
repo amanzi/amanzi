@@ -2133,7 +2133,6 @@ namespace Amanzi {
             }
         }
 
-
         void convert_ICHydrostatic(const ParameterList& fPLin,
                                    const std::string&   Amanzi_type,
                                    ParameterList&       fPLout)
@@ -2144,6 +2143,18 @@ namespace Amanzi {
             
             fPLout.set<double>("water_table_height",fPLin.get<double>(ref_name));
             fPLout.set<std::string>("type","hydrostatic");
+        }
+
+        void convert_ICVel(const ParameterList& fPLin,
+			   const std::string&   Amanzi_type,
+			   ParameterList&       fPLout)
+        {
+            Array<std::string> reqP, nullList;
+            const std::string vel_name="Velocity Vector"; reqP.push_back(vel_name);
+            PLoptions opt(fPLin,nullList,reqP,true,true);  
+            
+            fPLout.set<Array<double> >(underscore(vel_name),fPLin.get<Array<double> >(vel_name));
+            fPLout.set<std::string>("type","constant_velocity");
         }
 
         void convert_solute_ICConcentration(const ICBCFunc& solute_ic,
@@ -2239,6 +2250,10 @@ namespace Amanzi {
                 else if ( Amanzi_type == "IC: Flow" )
                 {
 		     convert_ICFlow(fPLin,Amanzi_type,fPLout);
+                }
+                else if ( Amanzi_type == "IC: Uniform Velocity" )
+                {
+		     convert_ICVel(fPLin,Amanzi_type,fPLout);
                 }
                 else {
                     std::cerr << "Unsupported IC: " << Amanzi_type << std::endl;

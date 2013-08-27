@@ -475,11 +475,6 @@ PMAmr::coarseTimeStep (Real _stop_time)
 
     Real strt_time = startTime();
 
-    if (cumtime<strt_time+.001*dt_level[0]  && verbose > 0 && ParallelDescriptor::IOProcessor())
-    {
-        std::cout << "\nBEGIN INTEGRATION, TIME = " << cumtime << '\n' << std::endl;
-    }
-
     bool write_plot, write_check, begin_tpc;
     Array<int> observations_to_process;
 

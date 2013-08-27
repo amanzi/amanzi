@@ -203,7 +203,7 @@ PorousMedia::variableCleanUp ()
 
   source_array.clear();
 
-  if (do_chem>0) {
+  if (do_tracer_chemistry>0) {
     chemSolve.clear();
     components.clear();
     parameters.clear();
@@ -1123,14 +1123,14 @@ PorousMedia::initData ()
 		  P_new[mfi].mult(-1.0);
 		}
 	    }
+            else if (type == "constant_velocity")
+	    {
+	      set_saturated_velocity();
+	    }
             else
 	    {
-                std::cerr << "IC based on FORT_INITDATA no longer supported\n";
+	        std::cerr << "Unrecognized IC type: " << type << "\n";
                 BoxLib::Abort("PorousMedia::initData()");
-
-                FORT_INITDATA(&level,&cur_time,
-                              s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-                              density.dataPtr(), &ncomps, dx);
 	    }
 	}
         
@@ -1172,7 +1172,7 @@ PorousMedia::initData ()
         }
     }
 
-    if (do_chem>0) 
+    if (do_tracer_chemistry>0) 
     {
         if (ntracers>0)
         {
@@ -1296,7 +1296,7 @@ PorousMedia::initData ()
             }
         }
 
-        // These always get set if do_chem>0
+        // These always get set if do_tracer_chemistry>0
         {
             const Real* dx = geom.CellSize();
             MultiFab& AuxChem_new = get_new_data(Aux_Chem_Type);
@@ -1358,7 +1358,7 @@ PorousMedia::initData ()
         }
     }
 
-    if (do_chem!=0) {
+    if (do_tracer_chemistry!=0) {
         get_new_data(FuncCount_Type).setVal(1);
     }
 
@@ -1418,7 +1418,7 @@ PorousMedia::initData ()
         
     // Call chemistry to relax initial data to equilibrium
     bool chem_relax_ics = false;
-    if (do_chem>0  &&  ic_chem_relax_dt>0) {
+    if (do_tracer_chemistry>0  &&  ic_chem_relax_dt>0) {
       MultiFab& Fcnt = get_new_data(FuncCount_Type);
       Fcnt.setVal(1);
       int nGrow = 0;
@@ -2261,7 +2261,7 @@ PorousMedia::init (AmrLevel& old)
   // Get best cell-centered velocity data: from old.
   //
 
-  if (do_chem>0) {
+  if (do_tracer_chemistry>0) {
       
     MultiFab& Aux_new = get_new_data(Aux_Chem_Type);
     MultiFab& Aux_old = oldns->get_new_data(Aux_Chem_Type);
@@ -2340,7 +2340,7 @@ PorousMedia::init ()
   }  
 
 
-  if (do_chem>0) {
+  if (do_tracer_chemistry>0) {
     FillCoarsePatch(get_new_data(FuncCount_Type),0,cur_time,FuncCount_Type,0,1);
   }
 
@@ -2531,7 +2531,7 @@ PorousMedia::advance_setup (Real time,
   //
   std::swap(u_mac_curr,u_mac_prev);
 
-  if (do_chem>0) {
+  if (do_tracer_chemistry>0) {
     aux_boundary_data_old.setVal(1.e30);
   }
 
@@ -2563,7 +2563,7 @@ static std::string mode_steady = "STEADY";
 static std::string mode_transient = "TRANSIENT";
 
 bool 
-PorousMedia::ml_step_driver(Real  t,
+PorousMedia::ml_step_driver(Real  time,
 			    int   amr_iteration,
 			    int   amr_ncycle,
                             Real  dt_try,
@@ -2583,29 +2583,38 @@ PorousMedia::ml_step_driver(Real  t,
     
     while (continue_dt_iteration) {
 
-      if (execution_mode==INIT_TO_STEADY) {
-        if (ntracers>0 && do_tracer_transport) {
-          transport_tracers = t >= switch_time;
-        }
-
-        if (t < switch_time) {
-          if (mode_status != mode_steady) {
-            mode_status = mode_steady;
-            if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
-              std::cout << "init-to-steady mode: " << mode_status << ", switch to transient at t=" << switch_time << "\n\n";
-            }
-          }
-        } else {
-          if (mode_status != mode_transient) {
-            mode_status = mode_transient;
-            if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
-              std::cout << "init-to-steady mode: " << mode_status << "\n\n";
-            }
-          }
-        }
+      if (ntracers>0) {
+	transport_tracers = do_tracer_transport;
+	react_tracers = do_tracer_chemistry;
+	
+	if (execution_mode==INIT_TO_STEADY) {
+	  transport_tracers &= (time >= switch_time);
+	  react_tracers &= (time >= switch_time);
+	} else {
+	  transport_tracers = do_tracer_transport;
+	  react_tracers = do_tracer_chemistry;
+	}
+      } else {
+	transport_tracers = react_tracers = false;
       }
 
-      step_ok = multilevel_advance(t,dt_this_attempt,amr_iteration,amr_ncycle,dt_suggest);
+      if (time < switch_time) {
+	if (mode_status != mode_steady) {
+	  mode_status = mode_steady;
+	  if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
+	    std::cout << "init-to-steady mode: " << mode_status << ", switch to transient at t=" << switch_time << "\n\n";
+	  }
+	}
+      } else {
+	if (mode_status != mode_transient) {
+	  mode_status = mode_transient;
+	  if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
+	    std::cout << "init-to-steady mode: " << mode_status << "\n\n";
+	  }
+	}
+      }
+
+      step_ok = multilevel_advance(time,dt_this_attempt,amr_iteration,amr_ncycle,dt_suggest);
       if (step_ok) {
 	dt_taken = dt_this_attempt;
       } else {
@@ -2629,9 +2638,16 @@ PorousMedia::advance (Real time,
 
   Real dt_return = -1.e20;
 
-  if (ntracers>0 && do_tracer_transport && execution_mode==INIT_TO_STEADY)
-  {
-      transport_tracers = time >= switch_time;
+  if (ntracers>0) {
+    transport_tracers = do_tracer_transport;
+    react_tracers = do_tracer_chemistry;
+
+    if (execution_mode==INIT_TO_STEADY) {
+      transport_tracers &= (time >= switch_time);
+      react_tracers &= (time >= switch_time);
+    }
+  } else {
+    transport_tracers = react_tracers = false;
   }
 
   if (do_multilevel_full) 
@@ -2677,14 +2693,14 @@ PorousMedia::advance (Real time,
     FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
     FillStateBndry (pcTime,Press_Type,0,1);
 
-    if (do_chem && ntracers > 0)
+    if (do_tracer_chemistry && ntracers > 0)
     {
       MultiFab& A_new = get_new_data(Aux_Chem_Type);
       MultiFab& A_old = get_old_data(Aux_Chem_Type);
       MultiFab::Copy(A_new,A_old,0,0,A_new.nComp(),A_new.nGrow());
     }
 
-    if (do_chem>0)
+    if (do_tracer_chemistry>0)
       {
 	if (do_full_strang)
 	  {
@@ -2724,7 +2740,7 @@ PorousMedia::advance (Real time,
     is_grid_changed_after_regrid = false;
     
     // second half of the strang splitting
-    if (do_chem>0)
+    if (do_tracer_chemistry>0)
       {      
 	if (do_full_strang)
 	  {
@@ -2821,7 +2837,7 @@ PorousMedia::multilevel_advance (Real  time,
     }
 
     Real dt_suggest_tc = dt_new;
-    if (transport_tracers > 0) {
+    if (transport_tracers > 0  ||  react_tracers > 0) {
 
       bool use_cached_sat = true;
 
@@ -2853,7 +2869,7 @@ PorousMedia::multilevel_advance (Real  time,
   else if (model == PM_STEADY_SATURATED) {
 
     // Saturated flow
-    //   Flow: Set velocity from boundary data at each time step
+    //   Flow: Velocity set from IC directly
     //   Transport: Explicit Godunov
     //   Chemistry: Amanzi's chemistry PK
     //
@@ -2866,13 +2882,16 @@ PorousMedia::multilevel_advance (Real  time,
     // Initialize velocity field, set "new time" for state the same across levels, copy over saturation/pressure
     
     advance_flow_nochange(time,dt);
-    advance_saturated_transport_dt(); // FIXME: If u is really time-dependent, this must be done through the subcycle
-    bool use_cached_sat = false;
-    bool do_subcycle_tc = false;
-    bool do_recursive = true;
-    step_ok = advance_richards_transport_chemistry(time,dt,iteration,dt_new,do_subcycle_tc,do_recursive,use_cached_sat);
+    dt_new = dt;
+    step_ok = true;
+    if (transport_tracers > 0  ||  react_tracers > 0) {
+      advance_saturated_transport_dt(); // FIXME: If u is really time-dependent, this must be done through the subcycle
+      bool use_cached_sat = false;
+      bool do_subcycle_tc = false;
+      bool do_recursive = true;
+      step_ok = advance_richards_transport_chemistry(time,dt,iteration,dt_new,do_subcycle_tc,do_recursive,use_cached_sat);
+    }
   }
-
   return step_ok;
 }
 
@@ -2988,23 +3007,39 @@ PorousMedia::advance_richards_transport_dt(Real t)
 }
 
 void
-PorousMedia::set_saturated_velocity(Real t_this, Real t_crse)
+PorousMedia::set_saturated_velocity()
 {
-  // Set velocity (u_mac_curr) from bc, then set u_macG_curr (and u_macG_trac)
-  set_vel_from_bcs(t_this,u_mac_curr);
+  BL_ASSERT(model == PM_STEADY_SATURATED);
+  BL_ASSERT(do_constant_vel);
 
+  if (u_macG_curr == 0) {
+    u_macG_curr = AllocateUMacG();
+  }
+
+  for (int i=0; i<ic_array.size(); ++i) {
+    const RegionData& ic = ic_array[i];
+    const PArray<Region>& ic_regions = ic.Regions();
+    const std::string& type = ic.Type();
+    if (type == "constant_velocity") {
+      Array<Real> vals = ic();
+      BL_ASSERT(vals.size() >= BL_SPACEDIM);
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+	u_mac_curr[d].setVal(vals[d]);
+      }
+    }
+  }
+
+  // then set u_macG_curr
   if (level == 0) {
     create_umac_grown(u_mac_curr,u_macG_trac);
   } else {
     PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
     const PorousMedia* pm = dynamic_cast<const PorousMedia*>(&parent->getLevel(level-1));
-    GetCrseUmac(u_macG_crse,t_crse);
+    GetCrseUmac(u_macG_crse,PMParent()->startTime());
     create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac);
   }
-  if (u_macG_curr == 0) {
-    u_macG_curr = AllocateUMacG();
-  }
 
+  // Copy to u_macG_trac
   for (int d=0; d<BL_SPACEDIM; ++d) {
     MultiFab::Copy(u_macG_curr[d],u_macG_trac[d],0,0,1,0);
   }
@@ -3018,8 +3053,8 @@ PorousMedia::advance_flow_nochange(Real time, Real dt)
     PorousMedia& pml = getLevel(lev);
     StateData& sd = pml.get_state_data(State_Type);
     sd.setNewTimeLevel(time+dt);
-    pml.set_saturated_velocity(time+dt,time+dt);
-    
+    pml.set_saturated_velocity();
+
     sd.allocOldData();
     sd.setOldTimeLevel(time);
     MultiFab::Copy(sd.oldData(),sd.newData(),0,0,ncomps,0);
@@ -3070,15 +3105,19 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
   const Real strt_time = ParallelDescriptor::second();
   Real run_time_chem = 0;
 
-  if (transport_tracers > 0) {
+  if (transport_tracers > 0 || react_tracers > 0) {
 
-    Real dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
-    Real t_eps = 1.e-6*dt_cfl;
-    if (!do_subcycle && dt-dt_cfl > t_eps) {
-      dt_new = dt_cfl;
-      //std::cout<< "NOT HERE "<<  dt << " " << dt_cfl << " " << t_eps << std::endl;
-      return false;
+    Real dt_cfl = dt;
+    if (transport_tracers) {
+      dt_cfl = (cfl>0 ? cfl : 1)*dt_eig;
+      Real t_eps = 1.e-6*dt_cfl;
+      if (!do_subcycle && dt-dt_cfl > t_eps) {
+	dt_new = dt_cfl;
+	return false;
+      }
     }
+    Real t_eps = 1.e-6*dt_cfl;
+
     Real t_subtr = t;
     Real tmax_subtr = t+dt;
     Real dt_subtr = std::min(dt_cfl,dt);
@@ -3096,7 +3135,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         }
       }
 
-      if (do_chem>0  &&  do_full_strang) {
+      if (react_tracers  &&  do_full_strang) {
 	const Real strt_time_chem = ParallelDescriptor::second();
 	if (verbose > 0 &&  ParallelDescriptor::IOProcessor() && n_subtr>1) {
 	  for (int lev=0; lev<=level; ++lev) {
@@ -3140,19 +3179,20 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       int first_tracer = ncomps;
       MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
 
-
-      //
-      // Initialize flux registers
-      //
-      if (do_reflux && level < parent->finestLevel()) {
-        getAdvFluxReg(level+1).setVal(0);
-        // getViscFluxReg(level+1).setVal(0); Currently unused
+      if (transport_tracers) {
+	//
+	// Initialize flux registers
+	//
+	if (do_reflux && level < parent->finestLevel()) {
+	  getAdvFluxReg(level+1).setVal(0);
+	  // getViscFluxReg(level+1).setVal(0); Currently unused
+	}
+	bool do_reflux_this_call = true;
+	tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat);
       }
-      bool do_reflux_this_call = true;
-      tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat);
 
       bool step_ok_chem = true;
-      if (do_chem>0) {
+      if (react_tracers > 0) {
 	const Real strt_time_chem = ParallelDescriptor::second();
 	bool do_write = verbose > 0 &&  ParallelDescriptor::IOProcessor();
 	if (do_write) {
@@ -3195,7 +3235,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	}
 	run_time_chem = run_time_chem + ParallelDescriptor::second() - strt_time_chem;
       }
-      
 
       // Do AMR recursive timestep
       bool fine_step_ok = true;
@@ -3290,6 +3329,7 @@ PorousMedia::advance_incompressible (Real time,
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::advance_incompressible()");
   BL_ASSERT(model != PM_RICHARDS);
   BL_ASSERT(model != PM_STEADY_SATURATED);
+  react_tracers = do_tracer_chemistry;
 
   const Real cur_time = state[State_Type].curTime();
   MultiFab& S_new     = get_new_data(State_Type);
@@ -3373,7 +3413,7 @@ PorousMedia::advance_incompressible (Real time,
       // Add the advective and other terms to get scalars at t^{n+1}.
       scalar_update(dt,0,ncomps,corrector);
 
-      if (do_chem>0)
+      if (react_tracers>0)
 	{
 	  if (do_full_strang) {
 	    bool chem_ok = advance_chemistry(time,dt/2.0,nGrowHYP);
@@ -5019,6 +5059,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
 
   BL_ASSERT(transport_tracers > 0);
+  BL_ASSERT(ntracers > 0);
 
   const Array<int>& idx_total = group_map["Total"];
   const int   first_tracer = ncomps;
@@ -8458,9 +8499,7 @@ void
 PorousMedia::post_init_state ()
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::post_init_state()");
-  //
-  // Richard initialization
-  //
+
   int  finest_level = parent->finestLevel();
   for (int lev=0;lev<= finest_level;lev++)
   {
@@ -8474,8 +8513,14 @@ PorousMedia::post_init_state ()
     }
   }
 
-  if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
+  if (model == PM_STEADY_SATURATED && do_constant_vel) {
+    return;
+  }
 
+  // Multilevel initialization for Richards or for saturated
+  // if flow specified by pressure boundary conditions
+  if (model == PM_RICHARDS || model == PM_STEADY_SATURATED) {
+    
     PMAmr* pmamr = PMParent();
     int  finest_level = parent->finestLevel();
 
@@ -8484,7 +8529,6 @@ PorousMedia::post_init_state ()
     }
     else 
     {
-        
       if (steady_use_PETSc_snes) {
         // Compute initial velocity field
         RSParams rsparams;
@@ -9985,7 +10029,7 @@ PorousMedia::avgDown ()
   if (do_reflux && u_macG_curr != 0 && fine_lev.u_macG_curr !=0)
     SyncEAvgDown(u_macG_curr,level,fine_lev.u_macG_curr,level+1);
  
-  if (do_chem>0) {
+  if (do_tracer_chemistry>0) {
     MultiFab& Aux_crse = get_new_data(Aux_Chem_Type);
     MultiFab& Aux_fine = fine_lev.get_new_data(Aux_Chem_Type);
     avgDown(grids,fgrids,Aux_crse,Aux_fine,volume,fvolume,
