@@ -9,7 +9,8 @@
 namespace Amanzi {
 
 Unstructured_observations::Unstructured_observations(Teuchos::ParameterList observations_plist_,
-                                                     Amanzi::ObservationData& observation_data_):
+                                                     Amanzi::ObservationData& observation_data_,
+						     Epetra_MpiComm* comm):
     observation_data(observation_data_)
 {
   // interpret paramerter list
@@ -71,7 +72,8 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList obse
                                                     Observable(var,
                                                                observable_plist.get<string>("Region"),
                                                                observable_plist.get<string>("Functional"),
-                                                               cycles, cycle_sps, times, time_sps)));
+							       observable_plist,
+							       comm)));
     }
   }
 }
@@ -101,7 +103,7 @@ void Unstructured_observations::make_observations(State& state)
     std::stringstream ss;
     ss << label << ", " << var;
     
-    std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label];  //ss.str() ];
+    std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label]; 
     
     if ((i->second).functional == "Observation Data: Integral")  {
       if (var == "Water") {
@@ -152,8 +154,8 @@ void Unstructured_observations::make_observations(State& state)
 	    volume += state.GetMesh()->cell_volume(ic);
 	  }
 	}
-      
-      } else if (var == "Volumetric water content") {
+      }
+      if (var == "Volumetric water content") {
 	value = 0.0;
 	volume = 0.0;
 	
@@ -226,12 +228,12 @@ void Unstructured_observations::make_observations(State& state)
 	  volume += state.GetMesh()->cell_volume(ic);
 	}
       } else {
-	std::stringstream ss;
-	ss << "State::point_value: cannot make an observation for variable " << name;
-	Errors::Message m(ss.str().c_str());
-	Exceptions::amanzi_throw(m);
+	  std::stringstream ss;
+	  ss << "State::point_value: cannot make an observation for variable " << name;
+	  Errors::Message m(ss.str().c_str());
+	  Exceptions::amanzi_throw(m);
       }
-      
+
       // syncronize the result across processors
       double result;
       state.GetMesh()->get_comm()->SumAll(&value,&result,1);

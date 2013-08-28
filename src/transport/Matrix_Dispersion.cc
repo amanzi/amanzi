@@ -28,9 +28,10 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 /* *******************************************************************
- * 
- ****************************************************************** */
-void Matrix_Dispersion::Init(Dispersion_Specs& specs)
+* 
+******************************************************************* */
+void Matrix_Dispersion::Init(Dispersion_Specs& specs,
+                             const Teuchos::ParameterList& prec_list)
 {
   specs_ = &specs;
 
@@ -52,7 +53,7 @@ void Matrix_Dispersion::Init(Dispersion_Specs& specs)
   for (int c = 0; c < ncells_wghost; c++) D[c].init(dim, 2);
 
   AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(specs.preconditioner);
+  preconditioner_ = factory.Create(specs.preconditioner, prec_list);
 }
 
 

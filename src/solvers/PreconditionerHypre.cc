@@ -29,7 +29,7 @@ void PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv
 /* ******************************************************************
 * Initialize the preconditioner.                                                 
 ****************************************************************** */
-void PreconditionerHypre::Init(const Teuchos::ParameterList& list)
+void PreconditionerHypre::Init(const std::string& name, const Teuchos::ParameterList& list)
 {
   list_ = list;
 #ifdef HAVE_HYPRE
@@ -47,12 +47,6 @@ void PreconditionerHypre::Init(const Teuchos::ParameterList& list)
 ****************************************************************** */
 void PreconditionerHypre::Update(Teuchos::RCP<Epetra_FECrsMatrix> A)
 {
-  ncycles = 3;
-  nsmooth = 3;
-  tol = 0.0;
-  strong_threshold = 0.0;
-  verbosity = 0;
-
 #ifdef HAVE_HYPRE
   IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
 

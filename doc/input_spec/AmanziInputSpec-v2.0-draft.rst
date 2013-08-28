@@ -354,7 +354,30 @@ Some discussion of reading a region file goes here. Talk about the color functio
 Geochemistry
 ============
 
-SKIPPING FOR NOW!!!
+Geochemistry allows users to define a reaction network and constraints to be associated with solutes defined under the `"dissolved_components`" section of the `"phases`" block. 
+
+.. code-block:: xml
+
+  <geochemistry>
+      Required Elements: reaction_network, constraint
+  </geochemistry>
+
+PFLOTRAN Chemistry
+------------------
+
+For geochemisty simulated through PFLOTRAN, the user defines a reaction network and constraints.  These are defined within the same or separate text files through PFLOTRAN's input specification (see the CHEMISTRY and CONSTRAINT card definitions at https://bitbucket.org/pflotran/pflotran-dev/wiki/Documentation/QuickGuide).
+
+`"reaction_network`" defines a file containing a PFLOTRAN CHEMISTRY block.
+
+`"constraint`" defines a file containing a PFLOTRAN CONSTRAINT block.
+
+.. code-block:: xml
+
+  <geochemistry>
+      <reaction_network file="calcite_flow_and_tran.in" format="simple"/>
+      <constraint name="Initial" filename="calcite_flow_and_tran.in"/>
+      <constraint name="Inlet" filename="calcite_flow_and_tran.in"/>
+  </geochemistry>
 
 Material
 ========

@@ -1,0 +1,95 @@
+diff -rupN packages/ifpack/src/Ifpack_Hypre.cpp ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp
+--- packages/ifpack/src/Ifpack_Hypre.cpp	2013-08-20 18:52:23.221136553 -0600
++++ ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp	2012-10-25 09:57:29.000000000 -0600
+@@ -68,46 +68,23 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
+   MPI_Comm comm = GetMpiComm();
+   int ilower = A_->RowMatrixRowMap().MinMyGID();
+   int iupper = A_->RowMatrixRowMap().MaxMyGID();
+-  // Need to check if the RowMap is the GID-contiguous, as expected by Hypre
++  // Need to check if the RowMap is the way Hypre expects (if not more difficult)
+   std::vector<int> ilowers; ilowers.resize(Comm().NumProc());
+   std::vector<int> iuppers; iuppers.resize(Comm().NumProc());
+   int myLower[1]; myLower[0] = ilower;
+   int myUpper[1]; myUpper[0] = iupper;
+   Comm().GatherAll(myLower, &ilowers[0], 1);
+   Comm().GatherAll(myUpper, &iuppers[0], 1);
+-
+   for(int i = 0; i < Comm().NumProc()-1; i++){
+     NiceRowMap_ = (NiceRowMap_ && iuppers[i]+1 == ilowers[i+1]);
+   }
+-
+-  if (!NiceRowMap_) {
+-    // Must create simple ColumnMap to map indices via LID.
+-    //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+-    //           via RowMap.LID()       via SimpleColumnMap.GID()
+-    MySimpleMap_ = rcp(new Epetra_Map(-1, A_->RowMatrixRowMap().NumMyElements(),
+-            0, Comm()));
+-
+-    Epetra_Import importer(A_->RowMatrixColMap(), A_->RowMatrixRowMap());
+-    Epetra_IntVector MyGIDsHYPRE(A_->RowMatrixRowMap());
+-    for (int i=0; i!=A_->RowMatrixRowMap().NumMyElements(); ++i)
+-      MyGIDsHYPRE[i] = MySimpleMap_->GID(i);
+-
+-    // import the HYPRE GIDs
+-    Epetra_IntVector ColGIDsHYPRE(A_->RowMatrixColMap());
+-    IFPACK_CHK_ERRV(ColGIDsHYPRE.Import(MyGIDsHYPRE, importer, Insert, 0));
+-
+-    // Make a HYPRE numbering-based column map.
+-    MySimpleColumnMap_ = rcp(new Epetra_Map(-1,ColGIDsHYPRE.MyLength(),
+-            &ColGIDsHYPRE[0], 0, Comm()));
+-
+-  } else {
+-    MySimpleMap_ = rcp(new Epetra_Map(A_->RowMatrixRowMap()));
+-    MySimpleColumnMap_ = rcp(new Epetra_Map(A_->RowMatrixColMap()));
+-  }
+-
+-  // ilower and iupper are now valid for either NiceRowMap_ or not
+-  ilower = MySimpleMap_->GID(0);
+-  iupper = MySimpleMap_->GID(A_->RowMatrixRowMap().NumMyElements()-1);
++  if(!NiceRowMap_){
++    ilower = (A_->NumGlobalRows() / Comm().NumProc())*Comm().MyPID();
++    iupper = (A_->NumGlobalRows() / Comm().NumProc())*(Comm().MyPID()+1)-1;
++    if(Comm().MyPID() == Comm().NumProc()-1){
++      iupper = A_-> NumGlobalRows()-1;
++    }
++  }
+ 
+   // Next create vectors that will be used when ApplyInverse() is called
+   IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
+@@ -127,6 +104,11 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
+ 
+   YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
+   YLocal_ = hypre_ParVectorLocalVector(YVec_);
++  std::vector<int> rows; rows.resize(iupper - ilower +1);
++  for(int i = ilower; i <= iupper; i++){
++    rows[i-ilower] = i;
++  }
++  MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
+ } //Constructor
+ 
+ //==============================================================================
+@@ -163,10 +145,10 @@ int Ifpack_Hypre::Initialize(){
+     int numEntries;
+     IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]));
+     for(int j = 0; j < numEntries; j++){
+-      indices[j] = MySimpleColumnMap_->GID(indices[j]);
++      indices[j] = A_->RowMatrixColMap().GID(indices[j]);
+     }
+     int GlobalRow[1];
+-    GlobalRow[0] = MySimpleMap_->GID(i);
++    GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
+     IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
+   }
+   IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
+diff -rupN packages/ifpack/src/Ifpack_Hypre.h ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h
+--- packages/ifpack/src/Ifpack_Hypre.h	2013-08-20 18:25:18.596157098 -0600
++++ ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h	2012-10-25 09:57:28.000000000 -0600
+@@ -648,8 +648,6 @@ private:
+   Hypre_Chooser SolveOrPrec_;
+   //! This is a linear map used the way it is in Hypre
+   Teuchos::RefCountPtr<Epetra_Map> MySimpleMap_;
+-  //! This is a linear map used the way it is in Hypre
+-  Teuchos::RefCountPtr<Epetra_Map> MySimpleColumnMap_;
+   //! Counter of the number of parameters set
+   int NumFunsToCall_;
+   //! Which solver was chosen

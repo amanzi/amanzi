@@ -199,7 +199,7 @@ void MPC::mpc_init() {
   // create the observations
   if (parameter_list.isSublist("Observation Data")) {
     Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data");
-    observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
+    observations = new Amanzi::Unstructured_observations(observation_plist, output_observations, comm);
 
     if (mpc_parameter_list.isParameter("component names")) {
       Teuchos::Array<std::string> comp_names;
@@ -486,6 +486,8 @@ void MPC::cycle_driver() {
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations) {
+      std::cout << S->cycle() << " " << S->time() << " " << observations->DumpRequested(S->cycle(), S->time()) << std::endl;
+
       if (observations->DumpRequested(S->cycle(), S->time())) {
 	observations->make_observations(*S);
       }

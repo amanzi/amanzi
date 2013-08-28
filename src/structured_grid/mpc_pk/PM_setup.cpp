@@ -86,7 +86,7 @@ int PorousMedia::echo_inputs;
 //
 // The num_state_type actually varies with model.
 //
-// Add 2 if do_chem>0 later.
+// Add 2 if do_tracer_chemistry>0 later.
 //
 int PorousMedia::num_state_type;
 //
@@ -240,7 +240,8 @@ bool PorousMedia::solute_transport_limits_dt;
 //
 // Chemistry flag.
 //
-int  PorousMedia::do_chem;
+int  PorousMedia::do_tracer_chemistry;
+int  PorousMedia::react_tracers;
 int  PorousMedia::do_full_strang;
 int  PorousMedia::n_chem_interval;
 int  PorousMedia::it_chem;
@@ -285,6 +286,7 @@ Real PorousMedia::ic_chem_relax_dt;
 int  PorousMedia::nGrowHYP;
 int  PorousMedia::nGrowMG;
 int  PorousMedia::nGrowEIGEST;
+bool PorousMedia::do_constant_vel;
 
 int  PorousMedia::richard_solver_verbose;
 //
@@ -589,7 +591,7 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::variable_scal_diff = 1; 
 
-  PorousMedia::do_chem            = 0;
+  PorousMedia::do_tracer_chemistry            = 0;
   PorousMedia::do_tracer_transport = false;
   PorousMedia::setup_tracer_transport = false;
   PorousMedia::transport_tracers  = 0;
@@ -617,6 +619,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
   PorousMedia::solute_transport_limits_dt = false;
+  PorousMedia::do_constant_vel = false;
   PorousMedia::nGrowHYP = 3;
   PorousMedia::nGrowMG = 1;
   PorousMedia::nGrowEIGEST = 1;
@@ -876,7 +879,7 @@ PorousMedia::variableSetUp ()
       is_diffusive[i] = false;
     }
 
-  if (do_chem && ntracers > 0)
+  if (do_tracer_chemistry && ntracers > 0)
   {
       // NOTE: aux_chem_variables is setup by read_rock and read_chem as data is
       // parsed in.  By the time we get here, we have figured out all the variables
@@ -934,7 +937,7 @@ PorousMedia::variableSetUp ()
 #endif
 
 #if defined(AMANZI)
-  if (do_chem>0)
+  if (do_tracer_chemistry>0)
     {
       // add function count
       int nfunccountghost = 0;
@@ -1218,7 +1221,7 @@ OpenMaterialDataPltFile(const std::string& filename,
 }
 
 void
-PorousMedia::read_rock(int do_chem)
+PorousMedia::read_rock()
 {
     //
     // Get parameters related to rock
@@ -1422,7 +1425,7 @@ PorousMedia::read_rock(int do_chem)
     using_sorption = false;
     aux_chem_variables.clear();
 
-    if (do_chem>0)
+    if (do_tracer_chemistry>0)
       {
         ParmParse ppm("mineral");
         nminerals = ppm.countval("minerals");
@@ -1995,6 +1998,7 @@ void  PorousMedia::read_comp()
       Array<std::string> ic_names;
       cp.getarr("ic_labels",ic_names,0,n_ics);
       ic_array.resize(n_ics,PArrayManage);
+      do_constant_vel = false;
       for (int i = 0; i<n_ics; i++)
       {
           const std::string& icname = ic_names[i];
@@ -2006,7 +2010,8 @@ void  PorousMedia::read_comp()
 	  ppr.getarr("regions",region_names,0,n_ic_regions);
           PArray<Region> ic_regions = build_region_PArray(region_names);
 
-          std::string ic_type; ppr.get("type",ic_type);          
+          std::string ic_type; ppr.get("type",ic_type);
+	  BL_ASSERT(!do_constant_vel); // If this is ever set, it must be the only IC so we should never see this true here
           if (ic_type == "pressure")
           {
               int nPhase = pNames.size();
@@ -2064,7 +2069,9 @@ void  PorousMedia::read_comp()
 
               int nref = ppr.countval("ref_coord");
               if (nref<BL_SPACEDIM) {
-                std::cerr << "Insufficient number of components given for pressure refernce location" << std::endl;
+		if (ParallelDescriptor::IOProcessor()) {
+		  std::cerr << "Insufficient number of components given for pressure refernce location" << std::endl;
+		}
                 BoxLib::Abort();
               }
               Array<Real> pref(BL_SPACEDIM);
@@ -2087,6 +2094,20 @@ void  PorousMedia::read_comp()
                   vals[j] *= density[j];
               }
               std::string generic_type = "scalar";
+              ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
+          }
+          else if (ic_type == "constant_velocity")
+          {
+	      if (model != PM_STEADY_SATURATED) {
+	          if (ParallelDescriptor::IOProcessor()) {
+		    std::cerr << "constant-velocity settings may only be used with steady-saturated flow" << std::endl;
+		    BoxLib::Abort();
+		  }
+	      }
+              Array<Real> vals(BL_SPACEDIM);
+	      ppr.getarr("Velocity_Vector",vals,0,BL_SPACEDIM);
+              std::string generic_type = "constant_velocity";
+	      do_constant_vel = true;
               ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
           }
           else if (ic_type == "hydrostatic")
@@ -2192,17 +2213,11 @@ void  PorousMedia::read_comp()
           }
           else if (bc_type == "pressure_head")
           {              
-            Array<Real> vals, times;
-            Array<std::string> forms;
+            Array<Real> vals;
             std::string val_name = "vals";
             int nv = ppr.countval(val_name.c_str());
             if (nv) {
               ppr.getarr(val_name.c_str(),vals,0,nv);
-              times.resize(nv,0);
-              if (nv>1) {
-                ppr.getarr("times",times,0,nv);
-                ppr.getarr("forms",forms,0,nv-1);
-              }
             }
 
             is_inflow = false;
@@ -2212,7 +2227,10 @@ void  PorousMedia::read_comp()
               component_bc = 1;
             }
             pressure_bc = 2;
-            bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals[0]));//Fixme, support t-dependent
+
+	    Array<Real> times(1,0);
+	    Array<std::string> forms(0);
+	    bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
           }
           else if (bc_type == "linear_pressure")
           {
@@ -2239,7 +2257,10 @@ void  PorousMedia::read_comp()
               component_bc = 1;
             }
             pressure_bc = 2;
-            bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals));//Fixme, support t-dependent
+
+	    Array<Real> times(1,0);
+	    Array<std::string> forms(0);
+	    bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -2365,7 +2386,7 @@ void  PorousMedia::read_comp()
 }
 
 
-void  PorousMedia::read_tracer(int do_chem)
+void  PorousMedia::read_tracer()
 {
   //
   // Read in parameters for tracers
@@ -2384,7 +2405,7 @@ void  PorousMedia::read_tracer(int do_chem)
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          if (do_chem>0  ||  do_tracer_transport) {
+          if (do_tracer_chemistry>0  ||  do_tracer_transport) {
               setup_tracer_transport = true;
               std::string g="Total"; ppr.query("group",g); // FIXME: is this relevant anymore?
               group_map[g].push_back(i+ncomps);
@@ -2645,7 +2666,7 @@ void  PorousMedia::read_chem()
   ParmParse pp("prob");
 
   // get Chemistry stuff
-  pp.query("do_chem",do_chem);
+  pp.query("do_chem",do_tracer_chemistry);
   pp.query("do_full_strang",do_full_strang);
   pp.query("n_chem_interval",n_chem_interval);
   pp.query("ic_chem_relax_dt",ic_chem_relax_dt);
@@ -2657,7 +2678,7 @@ void  PorousMedia::read_chem()
 #ifdef AMANZI
 
   // get input file name, create SimpleThermoDatabase, process
-  if (do_chem>0)
+  if (do_tracer_chemistry>0)
     {
       Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
 
@@ -2690,7 +2711,7 @@ void  PorousMedia::read_chem()
 	  aux_chem_variables[tmpaux[i]] = i;
       }
 
-      if (do_chem)
+      if (do_tracer_chemistry)
       {
 	  ICParmPair solute_chem_options;
 	  solute_chem_options["Free_Ion_Guess"] = 1.e-9;
@@ -2828,19 +2849,19 @@ void PorousMedia::read_params()
     std::cout << "Read components."<< std::endl;
   
   // chem requires the number of tracers and rocks be setup before we
-  // can do anything, but read_tracer and read_rock depend on do_chem
+  // can do anything, but read_tracer and read_rock depend on do_tracer_chemistry
   // already being set. We'll query that now and do the remaining
   // chemistry after everything else has been read
   ParmParse pp("prob");
-  pp.query("do_chem",do_chem);
+  pp.query("do_chem",do_tracer_chemistry);
 
   // tracers
-  read_tracer(do_chem);
+  read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
 
   // rock
-  read_rock(do_chem);
+  read_rock();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read rock."<< std::endl;
 

@@ -8,14 +8,14 @@ Conjugate gradient method.
 Usage: 
 */
 
-#ifndef __PRECONDITIONER_HYPRE_HH__
-#define __PRECONDITIONER_HYPRE_HH__
+#ifndef __PRECONDITIONER_ML_HH__
+#define __PRECONDITIONER_ML_HH__
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_FECrsMatrix.h"
-#include "Ifpack.h" 
+#include "ml_MultiLevelPreconditioner.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
@@ -23,23 +23,22 @@ Usage:
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerHypre : public Preconditioner {
+class PreconditionerML : public Preconditioner {
  public:
-  PreconditionerHypre() {};
-  ~PreconditionerHypre() {};
+  PreconditionerML() {};
+  ~PreconditionerML() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& list);
   void Update(Teuchos::RCP<Epetra_FECrsMatrix> A);
-  void Destroy() {};
+  void Destroy();
 
   void ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv);
 
  private:
   Teuchos::ParameterList list_;
+  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ML_;
 
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
-  double tol, strong_threshold;
-  int nsmooth, ncycles, verbosity;
+  bool initialized;
 };
 
 }  // namespace AmanziPreconditioners

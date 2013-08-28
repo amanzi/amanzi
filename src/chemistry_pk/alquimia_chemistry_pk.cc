@@ -767,7 +767,6 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   //
   // ion exchange ref cation concentrations
   //
-std::cout << "Ref cationization\n";
   for (int i = 0; i < chemistry_state_->number_of_ion_exchange_sites(); ++i, ++offset) 
   {
     double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
@@ -779,7 +778,6 @@ std::cout << "Ref cationization\n";
   // 
   if (using_sorption())
   {
-std::cout << "Complexation II\n";
     for (int i = 0; i < chemistry_state_->number_of_sorption_sites(); ++i, ++offset) 
     {
       double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
@@ -792,7 +790,6 @@ std::cout << "Complexation II\n";
   //
   if (aux_data_ != Teuchos::null) 
   {
-std::cout << "aux shiat\n";
     for (unsigned int i = 0; i < aux_names_.size(); i++) 
     {
       if (aux_names_.at(i) == "pH") 
@@ -851,6 +848,11 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_total_component_conc
 int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, int cellIndex, AlquimiaGeochemicalCondition* condition) 
 {
 
+  // Copy the state and material information from Amanzi's state within 
+  // this cell to Alquimia.
+  CopyAmanziStateToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
+  CopyAmanziMaterialPropertiesToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
+
   // Apply the geochemical condition for this cell.
   int ierr = 0;
   chem_.ProcessCondition(&chem_data_.engine_state,
@@ -883,6 +885,10 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, int cellIndex, A
       &chem_data_.aux_data,
       &chem_data_.aux_output,
       &chem_status_);
+
+  // Copy the state information back out.
+  CopyAlquimiaStateToAmanzi(cellIndex);
+  CopyAlquimiaMaterialPropertiesToAmanzi(cellIndex);
 
   return num_iterations;
 }

@@ -97,9 +97,7 @@ void Transport_PK::ProcessParameterList()
       bcs_tcc_index.push_back(TS->get_component_number(bcs_tcc_name[i]));
     }
   } else {
-    Errors::Message msg;
-    msg << "Transport PK: does not have boundary conditions.\n";
-    Exceptions::amanzi_throw(msg);  
+    printf("Transport PK: does not have boundary conditions.\n");
   }
 
   // Create the source object if any

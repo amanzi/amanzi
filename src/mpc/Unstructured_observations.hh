@@ -8,6 +8,8 @@
 #include "State.hh"
 #include "io_event.hh"
 
+#include "TimeStepManager.hh"
+
 namespace Amanzi {
 
 
@@ -20,26 +22,25 @@ class Unstructured_observations {
     Observable (std::string variable_,
                 std::string region_,
                 std::string functional_,
-                std::vector<int> cycles_,
-                std::vector<std::vector<int> > csps_,
-                std::vector<double> times_,
-                std::vector<std::vector<double> > sps_):
+                Teuchos::ParameterList &plist,
+		Epetra_MpiComm* comm):
         variable(variable_), region(region_),
-        functional(functional_), times(times_),
-        sps(sps_), cycles(cycles_), csps(csps_) {}
+        functional(functional_), plist_(plist),
+	IOEvent(plist, comm)
+    {
+      ReadParameters_();
+    }
 
     std::string variable;
     std::string region;
     std::string functional;
-    std::vector<double> times;
-    std::vector<int> cycles;
-    std::vector<std::vector<double> > sps;   // time start period stop
-    std::vector<std::vector<int> > csps;  // cycle start period stop
+    const Teuchos::ParameterList & plist_;
   };
 
 
   Unstructured_observations (Teuchos::ParameterList observations_plist_,
-                             Amanzi::ObservationData& observation_data_);
+                             Amanzi::ObservationData& observation_data_,
+			     Epetra_MpiComm* comm);
   
   void register_component_names(std::vector<std::string> comp_names) {
     comp_names_ = comp_names;
