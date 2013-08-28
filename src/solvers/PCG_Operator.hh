@@ -14,12 +14,11 @@ Usage:
 #include "Teuchos_RCP.hpp"
 
 #include "exceptions.hh"
+#include "errors.hh"
+#include "Solver_constants.hh"
  
 namespace Amanzi {
 namespace AmanziSolvers {
-
-const int SOLVER_CONVERGENCE_RHS = 1;
-const int SOLVER_CONVERGENCE_RESIDUAL = 2;
 
 template<class Matrix, class Vector, class VectorSpace>
 class PCG_Operator : public Matrix {
@@ -32,7 +31,7 @@ class PCG_Operator : public Matrix {
   ~PCG_Operator() {};
   
   void Apply(const Vector& v, Vector& mv) const { m_->Apply(v, mv); }
-  void ApplyInverse(const Vector& v, Vector& hv) { 
+  void ApplyInverse(const Vector& v, Vector& hv) const { 
     num_itrs_ = pcg(v, hv, tol_, max_itrs_, criteria_); 
   }
 
@@ -49,18 +48,20 @@ class PCG_Operator : public Matrix {
   int num_itrs() { return num_itrs_; }
 
  private:
-  int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria);
+  int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:
   Teuchos::RCP<const Matrix> m_;
 
-  int max_itrs_, num_itrs_, criteria_;
-  double tol_, residual_;
+  int max_itrs_, criteria_;
+  double tol_;
+  mutable int num_itrs_;
+  mutable double residual_;
 };
 
 
 /* ******************************************************************
-* PCG input outut data:
+* PCG input/output data:
 *  f [input]         the right-hand side
 *  x [input/output]  initial guess / final solution
 *  tol [input]       convergence tolerance
@@ -69,7 +70,7 @@ class PCG_Operator : public Matrix {
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
-    const Vector& f, Vector& x, double tol, int max_itrs, int criteria)
+    const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector r(f), p(f), v(f);  // construct empty vectors
 
