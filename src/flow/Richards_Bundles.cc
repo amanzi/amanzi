@@ -179,8 +179,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
       Exceptions::amanzi_throw(msg);
     }
 
-    matrix_tpfa->DeriveDarcyMassFlux(*
-        u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa->DeriveDarcyMassFlux(*u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
 
     for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
 

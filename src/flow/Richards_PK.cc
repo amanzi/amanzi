@@ -507,7 +507,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       Exceptions::amanzi_throw(msg);
     }
     matrix_tpfa->DeriveDarcyMassFlux(
-        *solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
@@ -649,7 +649,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
       Exceptions::amanzi_throw(msg);
     }
     matrix_tpfa->DeriveDarcyMassFlux(
-        *solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;

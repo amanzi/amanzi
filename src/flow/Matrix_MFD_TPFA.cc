@@ -625,7 +625,7 @@ void Matrix_MFD_TPFA::UpdatePreconditioner()
     IfpHypre_Spp_ = Teuchos::rcp(new Ifpack_Hypre(&*Spp_));
     Teuchos::RCP<FunctionParameter> functs[8];
     functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 1));
+    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
     functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
     functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
     functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
@@ -887,7 +887,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
   return norm_residual;
 }
 
-void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
+  void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution_cells,
 					  const Epetra_Vector& Krel_faces,
 					  const Epetra_Vector& Trans_faces,
 					  const Epetra_Vector& Grav_term,
@@ -903,6 +903,13 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
 //   Epetra_Vector& solution_cell_wghost = *solution_cell;
 // #endif
   
+#ifdef HAVE_MPI
+  Epetra_Vector solution_cell_wghost(mesh_->cell_map(true));
+  FS_->CopyMasterCell2GhostCell(solution_cells, solution_cell_wghost);
+#else
+  Epetra_Vector& solution_cell_wghost = *solution_cells;
+#endif
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
   std::vector<int> dirs;
@@ -925,7 +932,7 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
       int f = faces[n];
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
-	darcy_mass_flux[f] = dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value) + Grav_term[f]);
+	darcy_mass_flux[f] = dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution_cell_wghost[c] - value) + Grav_term[f]);
 	// cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<endl;
 	// cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
 	// cout<<"Boundary gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
@@ -967,7 +974,12 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
 	  // //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
 	  // //exit(0);
 	  if (dirs[n] > 0){
-	    darcy_mass_flux[f] = Trans_faces[f]*(solution[cells[0]] - solution[cells[1]]) + Grav_term[f];
+	    if (c == cells[0]){
+	      darcy_mass_flux[f] = Trans_faces[f]*(solution_cell_wghost[cells[0]] - solution_cell_wghost[cells[1]]) + Grav_term[f];
+	    }
+	    else {
+	      darcy_mass_flux[f] = Trans_faces[f]*(solution_cell_wghost[cells[1]] - solution_cell_wghost[cells[0]]) + Grav_term[f];
+	    }	    
 	    darcy_mass_flux[f] *= Krel_faces[f];
 	  }
 	}
