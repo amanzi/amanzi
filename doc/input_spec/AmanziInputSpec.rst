@@ -875,16 +875,6 @@ the following set of physical properties using the supported models described be
 
 * [SU] "Material Properties" [list] can accept multiple lists for named material types (MATERIAL)
 
- * [S] "Permeability Output File" [string] Name of file used to cache intrinsic permeabilities precomputed on a uniform grid at the finest resolution covering the entire domain
-
- * [S] "Permeability Output PlotFile" [string] Name of file used to cache intrinsic permeabilities precomputed over the entire domain for all levels of refinement
-
- * [S] "Porosity Output File" [string] Name of file used to cache porosity precomputed on a uniform grid at the finest resolution covering the entire domain
-
- * [S] "Porosity Output PlotFile" [string] Name of file used to cache porosity precomputed over the entire domain for all levels of refinement
-
- * [S] "Porosity Input PlotFile" [string] Name of file that contains cached porosity precomputed over the entire domain for all levels of refinement
-
  * [S] "Saturation Threshold For Kr" [double] Global threshold in saturation above which the analytic forms for van Genuchten are replaced with a Hermite polynomial fit 
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
@@ -900,6 +890,13 @@ the following set of physical properties using the supported models described be
   * [U] Specific Storage [list] Parameterized model for Specific Storage [L^-1]. Choose exactly one of the following: `"Specific Storage: Uniform`".
 
   * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
+
+  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
+
+  * [SU] Effective Molecular Diffusion [list] Parameterized model for
+    the effective molecular diffusion for all primary species [L^2 / time = m^2 / s]. Choose exactly one of the following: `"Effective Molecular Diffusion: Uniform`".
+
+  * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. Choose exactly one of the following: `"Tortuosity: Uniform`".
 
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
@@ -944,22 +941,7 @@ The following models can be specified for the intrinsic permeability of the mate
 
  where the directions refer to the global cartesian coordinates.
 
-* `"Intrinsic Permeability: GSLib`" [list] requires 
- 
- * `"File`" [string] to specify the name of a gslib input file. 
-
-* `"Intrinsic Permeability: File`" [list] requires 
- 
- * `"File`" [string] to specify name of a file;
- 
- * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
-
- * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
-
- * `"Format`" [string] to specify the format of the file.  (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
-
 Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
-
 
 The following models are currently supported for capillary pressure (Section 3.3.2):
 
@@ -995,6 +977,7 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
 
+
 The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
 
 * [U] `"Particle Density: Uniform`" [list] requires 
@@ -1014,6 +997,26 @@ The following models are currently supported for Specific Storage.
 * [U] `"Specific Storage: Uniform`" [list] requires
 
  * [U] `"Value`" [double] to specify specific storage.
+
+The following models are currently supported for the dispersion tensor
+in transport
+
+* [SU] `"Dispersion Tensor: Uniform Isotropic`" (see Equation 4.9) [list] requires
+
+ * [SU] `"alphaL`" [m]  the longitudinal dispersion  (default 0)
+ * [SU] `"alphaT`" [m]  the transverse dispersion    (default 0)
+
+The following models are currently supported for (effective) Molecular Diffusion.
+
+* [SU] `"Effective Molecular Diffusion: Uniform`" [list] requires
+
+ * [SU] `"Value`" [double] to specify diffusion coefficient [m^2/s] (see Equation 4.15).
+
+The following models are currently supported for Tortuosity.
+
+* [SU] `"Tortuosity: Uniform`" [list] requires
+
+ * [SU] `"Value`" [double] to specify Tortuosity [-] (see Equation 4.18).
 
 
 Example:
