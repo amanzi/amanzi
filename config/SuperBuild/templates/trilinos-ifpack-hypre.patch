@@ -1,6 +1,6 @@
-diff -rupN packages/ifpack/src/Ifpack_Hypre.cpp ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp
---- packages/ifpack/src/Ifpack_Hypre.cpp	2013-08-20 18:52:23.221136553 -0600
-+++ ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp	2012-10-25 09:57:29.000000000 -0600
+diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp
+--- trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.cpp	2013-08-27 16:31:15.422156715 -0600
++++ trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp	2013-08-29 09:53:24.665539070 -0600
 @@ -68,46 +68,23 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
    MPI_Comm comm = GetMpiComm();
    int ilower = A_->RowMatrixRowMap().MinMyGID();
@@ -81,9 +81,9 @@ diff -rupN packages/ifpack/src/Ifpack_Hypre.cpp ../../../../tpls/build-debug-ser
      IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
    }
    IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
-diff -rupN packages/ifpack/src/Ifpack_Hypre.h ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h
---- packages/ifpack/src/Ifpack_Hypre.h	2013-08-20 18:25:18.596157098 -0600
-+++ ../../../../tpls/build-debug-serrano/trilinos/trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h	2012-10-25 09:57:28.000000000 -0600
+diff -rupN trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.h
+--- trilinos-11.0.3-source/packages/ifpack/src/Ifpack_Hypre.h	2013-08-27 16:31:15.422156715 -0600
++++ trilinos-11.0.3-source-patch/packages/ifpack/src/Ifpack_Hypre.h	2013-08-29 09:53:24.961527532 -0600
 @@ -648,8 +648,6 @@ private:
    Hypre_Chooser SolveOrPrec_;
    //! This is a linear map used the way it is in Hypre
