@@ -708,26 +708,26 @@ User-defined regions are constructed using the following syntax
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-|  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
-+================================+=========================================+==============================+========================================================================+
-| `"Region: Point"`  [SU]        | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"` [SU]           | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygon"`  [U]       | `"Number of points`", `"Points`"        | int, Array double            | Number of polygon points and point coordinates in linear array         |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
-|                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Color Function"` [S] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Surface"`            | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+|  shape functional name          | parameters                              | type(s)                      | Comment                                                                |
++=================================+=========================================+==============================+========================================================================+
+| `"Region: Point"`  [SU]         | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Box"` [SU]            | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Plane"`  [SU]         | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygon"`  [U]        | `"Number of points`", `"Points`"        | int, Array double            | Number of polygon points and point coordinates in linear array         |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Labeled Set"`         | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+|                                 | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Color Function"` [SU] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Layer"`               | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Surface"`             | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 Notes
 
@@ -893,8 +893,8 @@ the following set of physical properties using the supported models described be
 
   * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
 
-  * [SU] Effective Molecular Diffusion [list] Parameterized model for
-    the effective molecular diffusion for all primary species [L^2 / time = m^2 / s]. Choose exactly one of the following: `"Effective Molecular Diffusion: Uniform`".
+  * [SU] Molecular Diffusion [list] Parameterized model for
+    a single molecular diffusion coefficient for all primary species [L^2 / time = m^2 / s]. Choose exactly one of the following: `"Molecular Diffusion: Uniform`".
 
   * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. Choose exactly one of the following: `"Tortuosity: Uniform`".
 
@@ -987,9 +987,10 @@ in transport
  * [SU] `"alphaL`" [m]  the longitudinal dispersion  (default 0)
  * [SU] `"alphaT`" [m]  the transverse dispersion    (default 0)
 
-The following models are currently supported for (effective) Molecular Diffusion.
+The following models are currently supported for the Molecular
+Diffusion coefficient.
 
-* [SU] `"Effective Molecular Diffusion: Uniform`" [list] requires
+* [SU] `"Molecular Diffusion: Uniform`" [list] requires
 
  * [SU] `"Value`" [double] to specify diffusion coefficient [m^2/s] (see Equation 4.15).
 
