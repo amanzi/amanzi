@@ -30,8 +30,8 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
 {
   int d = mesh_->space_dimension();
 
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(face, AmanziMesh::USED, &cells);
+  Entity_ID_List cells;
+  mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);
   int ncells = cells.size();
 
   if (ncells == 1) {

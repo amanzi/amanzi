@@ -1,0 +1,46 @@
+/*
+This is the flow component of the Amanzi code. 
+
+Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+Amanzi is released under the three-clause BSD License. 
+The terms of use and "as is" disclaimer for this license are 
+provided in the top-level COPYRIGHT file.
+
+Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+#ifndef __WHETSTONE_TYPEDEFS_HH__
+#define __WHETSTONE_TYPEDEFS_HH__
+
+#include <vector>
+#include <boost/array.hpp>
+
+#define AMANZI_CODE
+
+namespace Amanzi {
+namespace WhetStone {
+
+#ifdef AMANZI_CODE
+typedef AmanziMesh::Entity_ID Entity_ID;
+typedef std::vector<Entity_ID> Entity_ID_List;
+typedef AmanziMesh::Parallel_type ParallelTypeCast;
+
+const int OWNED = AmanziMesh::USED;   // Owned by this processor
+const int GHOST = AmanziMesh::GHOST;  // Owned by another processor
+const int USED  = AmanziMesh::USED;   // OWNED + GHOST
+
+#else
+typedef long long int Entity_ID;
+typedef std::vector<Entity_ID> Entity_ID_List;
+typedef int ParallelTypeCast;
+
+const int OWNED = 1;  // Owned by this processor
+const int GHOST = 2;  // Owned by another processor
+const int USED  = 3;  // OWNED + GHOST
+#endif
+
+}  // namespace WhetStone
+}  // namespace Amanzi
+
+#endif
+

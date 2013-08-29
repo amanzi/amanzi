@@ -34,6 +34,7 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "WhetStone_typedefs.hh"
 #include "DenseMatrix.hh"
 #include "tensor.hh"
 
@@ -97,7 +98,7 @@ class MFD3D {
   void GrammSchmidt(DenseMatrix& N);
 
  protected:
-  int FindPosition_(int v, AmanziMesh::Entity_ID_List nodes);
+  int FindPosition_(int v, Entity_ID_List nodes);
 
   int stability_method_;  // stability parameters
   double scalar_stability_, scaling_factor_;

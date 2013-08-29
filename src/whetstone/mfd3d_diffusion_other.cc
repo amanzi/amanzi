@@ -35,7 +35,7 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
 
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
   int nfaces = faces.size();
@@ -65,7 +65,7 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int cell, const Tensor& permeabil
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
 
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
   int nfaces = faces.size();
@@ -88,11 +88,11 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
 {
   int d = mesh_->space_dimension();
 
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> fdirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &fdirs);
 
-  AmanziMesh::Entity_ID_List nodes, corner_faces;
+  Entity_ID_List nodes, corner_faces;
   mesh_->cell_get_nodes(cell, &nodes);
   int nnodes = nodes.size();
 
@@ -107,7 +107,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, cell, AmanziMesh::USED, &corner_faces);
+    mesh_->node_get_cell_faces(v, cell, (ParallelTypeCast)WhetStone::USED, &corner_faces);
     int nfaces = corner_faces.size();
     if (nfaces < d) {
       Errors::Message msg;
@@ -146,7 +146,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, cell, AmanziMesh::USED, &corner_faces);
+    mesh_->node_get_cell_faces(v, cell, (ParallelTypeCast)WhetStone::USED, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d; i++) {

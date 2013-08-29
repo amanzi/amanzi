@@ -265,8 +265,8 @@ void MFD3D::GrammSchmidt(DenseMatrix& N)
 ****************************************************************** */
 int MFD3D::cell_get_face_adj_cell(const int cell, const int face)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(face, AmanziMesh::USED, &cells);
+  Entity_ID_List cells;
+  mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);
   int ncells = cells.size();
 
   if (ncells == 2) {
@@ -281,7 +281,7 @@ int MFD3D::cell_get_face_adj_cell(const int cell, const int face)
 /* ******************************************************************
 * Returns position of the number v in the list of nodes.  
 ****************************************************************** */
-int MFD3D::FindPosition_(int v, AmanziMesh::Entity_ID_List nodes)
+int MFD3D::FindPosition_(int v, Entity_ID_List nodes)
 {
   for (int i = 0; i < nodes.size(); i++) {
     if (nodes[i] == v) return i;
