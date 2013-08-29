@@ -51,7 +51,7 @@ void Stiffness_MFD::CreateMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Avv(nnodes, nnodes);
+    WhetStone::DenseMatrix Avv(nnodes, nnodes);
     int ok = mfd.StiffnessMatrix(c, K[c], Avv);
 
     Avv_cells_.push_back(Avv);
@@ -98,7 +98,7 @@ void Stiffness_MFD::ApplyBoundaryConditions(
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Bvv = Avv_cells_[c];  // B means elemental.
+    WhetStone::DenseMatrix& Bvv = Avv_cells_[c];  // B means elemental.
     Epetra_SerialDenseVector& Fv = Fv_cells_[c];
 
     for (int n = 0; n < nnodes; n++) {
@@ -178,7 +178,7 @@ void Stiffness_MFD::AssembleGlobalMatrices()
       nodes_LID[n] = nodes[n];
       nodes_GID[n] = vmap_wghost.GID(nodes_LID[n]);
     }
-    Avv_->SumIntoGlobalValues(nnodes, nodes_GID, Avv_cells_[c].values());
+    Avv_->SumIntoGlobalValues(nnodes, nodes_GID, Avv_cells_[c].Values());
   }
   Avv_->GlobalAssemble();
 

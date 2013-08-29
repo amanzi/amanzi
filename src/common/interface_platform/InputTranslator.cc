@@ -1510,7 +1510,13 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
 	kidList = childElement->getElementsByTagName(XMLString::transcode("functional"));
 	if (kidList->getLength() > 0) {
           textContent2 = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
-	  obPL.set<std::string>("Functional",textContent2);
+	  if (strcmp(textContent2,"point")==0) {
+	    obPL.set<std::string>("Functional","Observation Data: Point");
+	  } else if (strcmp(textContent2,"integral")==0) {
+	    obPL.set<std::string>("Functional","Observation Data: Integral");
+	  } else if (strcmp(textContent2,"mean")==0) {
+	    obPL.set<std::string>("Functional","Observation Data: Mean");
+	  }
 	  XMLString::release(&textContent2);
 	}
 	// get time_macro (child element)

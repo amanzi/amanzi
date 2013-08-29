@@ -67,7 +67,7 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
+    WhetStone::DenseMatrix Mff(nfaces, nfaces);
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_POLYHEDRA_SCALED) {
       ok = mfd.MassMatrixInverseScaled(c, K[c], Mff);
@@ -133,7 +133,7 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
+    WhetStone::DenseMatrix Mff(nfaces, nfaces);
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
@@ -189,12 +189,12 @@ void Matrix_MFD::CreateMFDstiffnessMatrices()
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    WhetStone::DenseMatrix& Mff = Mff_cells_[c];
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces);
 
     double* braw = Bff.values();
-    double* mraw = Mff.values();
+    double* mraw = Mff.Values();
     for (int n = 0; n < nfaces * nfaces; n++) braw[n] = mraw[n];
 
     double matsum = 0.0;  // elimination of mass matrix
@@ -238,13 +238,13 @@ void Matrix_MFD::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    WhetStone::DenseMatrix& Mff = Mff_cells_[c];
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
     if (method == FLOW_RELATIVE_PERM_NONE) {
       double* braw = Bff.values();
-      double* mraw = Mff.values();
+      double* mraw = Mff.Values();
       for (int n = 0; n < nfaces * nfaces; n++) braw[n] = mraw[n];
 
     } else if (method == FLOW_RELATIVE_PERM_CENTERED) {  // centered permeability for diffusion

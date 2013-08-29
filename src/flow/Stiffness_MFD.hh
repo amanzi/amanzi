@@ -72,7 +72,7 @@ class Stiffness_MFD : public Epetra_Operator {
   bool HasNormInf() const { return false; }
 
   // access methods
-  std::vector<Teuchos::SerialDenseMatrix<int, double> >& Avv_cells() { return Avv_cells_; }
+  std::vector<WhetStone::DenseMatrix>& Avv_cells() { return Avv_cells_; }
   std::vector<Epetra_SerialDenseVector>& Fv_cells() { return Fv_cells_; }
 
   Teuchos::RCP<Epetra_FECrsMatrix>& Avv() { return Avv_; }
@@ -87,7 +87,7 @@ class Stiffness_MFD : public Epetra_Operator {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Epetra_Map map_;
 
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > Avv_cells_;
+  std::vector<WhetStone::DenseMatrix> Avv_cells_;
   std::vector<Epetra_SerialDenseVector> Fv_cells_;
 
   Teuchos::RCP<Epetra_FECrsMatrix> Avv_;

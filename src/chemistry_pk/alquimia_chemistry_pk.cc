@@ -848,6 +848,11 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_total_component_conc
 int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, int cellIndex, AlquimiaGeochemicalCondition* condition) 
 {
 
+  // Copy the state and material information from Amanzi's state within 
+  // this cell to Alquimia.
+  CopyAmanziStateToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
+  CopyAmanziMaterialPropertiesToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
+
   // Apply the geochemical condition for this cell.
   int ierr = 0;
   chem_.ProcessCondition(&chem_data_.engine_state,
@@ -880,6 +885,10 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, int cellIndex, A
       &chem_data_.aux_data,
       &chem_data_.aux_output,
       &chem_status_);
+
+  // Copy the state information back out.
+  CopyAlquimiaStateToAmanzi(cellIndex);
+  CopyAlquimiaMaterialPropertiesToAmanzi(cellIndex);
 
   return num_iterations;
 }

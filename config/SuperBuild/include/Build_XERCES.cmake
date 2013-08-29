@@ -61,7 +61,7 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     CONFIGURE_COMMAND 
 		                      <SOURCE_DIR>/configure
 				                  --prefix=<INSTALL_DIR> 
-						  --with-pic --disable-shared --without-curl
+						  --with-pic --disable-shared --disable-network
                                                   CC=${CMAKE_C_COMPILER_USE}
                                                   CFLAGS=${CFLAGS}
                                                   CXX=${CMAKE_CXX_COMPILER_USE}
@@ -77,6 +77,7 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     ${XERCES_logging_args})
 
 include(BuildLibraryName)
+
 build_library_name(xerces-c XERCES_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(XERCES_LIBRARIES ${XERCES_LIBRARY})
 set(XERCES_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)

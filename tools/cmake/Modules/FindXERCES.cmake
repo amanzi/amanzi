@@ -174,8 +174,34 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
         set(XERCES_LIBRARY XERCES_LIBRARY-NOTFOUND)
         message(SEND_ERROR "Can not locate XERCES library")
     endif()    
-    
-   
+
+    if ( NOT APPLE )
+
+      # Grab the library dependencies from the libtool files lib*.la
+      STRING(REGEX REPLACE "\\.a" ".la" XERCES_LIBTOOL_FILE ${XERCES_LIBRARY})
+      file (STRINGS ${XERCES_LIBTOOL_FILE} XERCES_LIBRARY_DEPS REGEX "dependency_libs=.*")
+      STRING(REGEX REPLACE "^dependency_libs=' " "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
+      STRING(REGEX REPLACE "'$" "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
+      STRING(REPLACE " " ";" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
+      message(STATUS "JDM>> XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS}")
+      
+      # For now we don't recurse on *.la files
+      set(XERCES_ICU_LIBRARIES "")
+      foreach(ln ${XERCES_LIBRARY_DEPS})
+	STRING(REGEX MATCH "\\.la" OUTSTRING ${ln})
+	if ( NOT OUTSTRING ) 
+	  list(APPEND XERCES_ICU_LIBRARIES ${ln})
+	endif()
+      endforeach()
+      message(STATUS "JDM>> XERCES_ICU_LIBRARIES ${XERCES_ICU_LIBRARIES}")
+
+    else()
+
+      # This worked for Jeff, let's try it here.
+      set(XERCES_ICU_LIBRARIES "-framework CoreServices")
+
+    endif()
+  
     # Define the LIBRARIES and INCLUDE_DORS
     set(XERCES_INCLUDE_DIRS ${XERCES_INCLUDE_DIR})
     set(XERCES_LIBRARIES    ${XERCES_LIBRARY})
@@ -203,4 +229,5 @@ mark_as_advanced(
   XERCES_LIBRARY
   XERCES_LIBRARIES
   XERCES_LIBRARY_DIR
+  XERCES_ICU_LIBRARIES
 )
