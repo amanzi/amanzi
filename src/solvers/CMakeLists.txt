@@ -22,6 +22,7 @@ project(SOLVERS)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -40,10 +41,26 @@ list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
 add_amanzi_library(solvers
-                   SOURCE 
-${solvers_source_files} HEADERS ${solvers_inc_files}
+                   SOURCE ${solvers_source_files} 
+                   HEADERS ${solvers_inc_files}
                    LINK_LIBS error_handling ${solvers_tpl_libs})
 
 if (BUILD_TESTS)
+    # Add UnitTest include directoy
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Copy test directory files if an out of source build
+    if (NOT (${SOLVERS_SOURCE_DIR} EQUAL ${SOLVERS_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E
+          copy_directory ${SOLVERS_SOURCE_DIR}/test ${SOLVERS_BINARY_DIR}/test)
+    endif()
+
+    # Add the time_integration directory to the include paths
+    include_directories(${SOLVERS_SOURCE_DIR})
+
+    add_amanzi_test(solver_linear_operators solver_linear_operators
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_linear_operators.cc
+                    LINK_LIBS error_handling ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 endif()

@@ -42,9 +42,9 @@ MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
 /* ******************************************************************
 * Calculate stability factor using matrix and optional scaling.
 ****************************************************************** */
-double MFD3D::CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc)
+double MFD3D::CalculateStabilityScalar(DenseMatrix& Mc)
 {
-  int nrows = Mc.numRows();
+  int nrows = Mc.NumRows();
 
   scalar_stability_ = 0.0;
   for (int i = 0; i < nrows; i++) scalar_stability_ += Mc(i, i);
@@ -74,16 +74,14 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 /* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
-void MFD3D::StabilityScalar(int cell,
-                            Teuchos::SerialDenseMatrix<int, double>& N,
-                            Teuchos::SerialDenseMatrix<int, double>& Mc,
-                            Teuchos::SerialDenseMatrix<int, double>& M)
+void MFD3D::StabilityScalar(int cell, DenseMatrix& N,
+                            DenseMatrix& Mc, DenseMatrix& M)
 {
   GrammSchmidt(N);
   CalculateStabilityScalar(Mc);
 
-  int nrows = Mc.numRows();
-  int ncols = N.numCols();
+  int nrows = Mc.NumRows();
+  int ncols = N.NumCols();
 
   for (int i = 0; i < nrows; i++) {
     for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
@@ -111,14 +109,12 @@ void MFD3D::StabilityScalar(int cell,
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 * WARNING: the routine is used for inverse of mass matrix only.
 ****************************************************************** */
-int MFD3D::StabilityOptimized(const Tensor& T,
-                              Teuchos::SerialDenseMatrix<int, double>& N,
-                              Teuchos::SerialDenseMatrix<int, double>& Mc,
-                              Teuchos::SerialDenseMatrix<int, double>& M)
+int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
+                              DenseMatrix& Mc, DenseMatrix& M)
 {
   int d = mesh_->space_dimension();
-  int nrows = N.numRows();
-  int ncols = N.numCols();
+  int nrows = N.NumRows();
+  int ncols = N.NumCols();
 
   // find correct scaling of a stability term
   double lower, upper, eigmin = Mc(0, 0);
@@ -131,7 +127,7 @@ int MFD3D::StabilityOptimized(const Tensor& T,
   double V, S[nrows], work[size];
 
   Teuchos::LAPACK<int, double> lapack;
-  lapack.GESVD('A', 'N', nrows, ncols, N.values(), nrows,  // N = u s v
+  lapack.GESVD('A', 'N', nrows, ncols, N.Values(), nrows,  // N = u s v
                S, U.values(), nrows, &V, 1, work, size, 
                NULL, &info);
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
@@ -245,10 +241,10 @@ int MFD3D::StabilityOptimized(const Tensor& T,
 /* ******************************************************************
 * Conventional Gramm-Schimdt orthogonalization of colums of matrix N. 
 ****************************************************************** */
-void MFD3D::GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N)
+void MFD3D::GrammSchmidt(DenseMatrix& N)
 {
-  int nrows = N.numRows();
-  int ncols = N.numCols();
+  int nrows = N.NumRows();
+  int ncols = N.NumCols();
 
   int i, j, k;
   for (i = 0; i < ncols; i++) {

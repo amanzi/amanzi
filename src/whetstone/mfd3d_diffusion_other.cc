@@ -14,8 +14,6 @@ Usage:
 #include <cmath>
 #include <vector>
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_LAPACK.hpp"
 
@@ -35,7 +33,7 @@ namespace WhetStone {
 * general meshes.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
-                                           Teuchos::SerialDenseMatrix<int, double>& W)
+                                           DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
@@ -47,7 +45,7 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
-  W.putScalar(0.0);
+  W.PutScalar(0.0);
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -65,7 +63,7 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
 * and an orthogonal brick element.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseDiagonal(int cell, const Tensor& permeability,
-                                               Teuchos::SerialDenseMatrix<int, double>& W)
+                                               DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
@@ -75,7 +73,7 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int cell, const Tensor& permeabil
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
   int nfaces = faces.size();
 
-  W.putScalar(0.0);
+  W.PutScalar(0.0);
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     double area = mesh_->face_area(f);
@@ -89,7 +87,7 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int cell, const Tensor& permeabil
 * Second-generation MFD method as inlemented in RC1.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
-                                         Teuchos::SerialDenseMatrix<int, double>& W)
+                                         DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
 
@@ -148,7 +146,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
   for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
 
   // assemble corner matrices
-  W.putScalar(0.0);
+  W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
     mesh_->node_get_cell_faces(v, cell, AmanziMesh::USED, &corner_faces);
@@ -166,13 +164,13 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
  
   // invert matrix W
   Teuchos::LAPACK<int, double> lapack;
-  int info, size = W.numRows();
+  int info, size = W.NumRows();
 
   int ipiv[size];
   double work[size];
 
-  lapack.GETRF(size, size, W.values(), size, ipiv, &info);
-  lapack.GETRI(size, W.values(), size, ipiv, work, size, &info);
+  lapack.GETRF(size, size, W.Values(), size, ipiv, &info);
+  lapack.GETRI(size, W.Values(), size, ipiv, work, size, &info);
   if (info != 0) {
     Errors::Message msg;
     msg << "WhetStone MFD3D_Diffusion: support operator generated bad elemental mass matrix.";

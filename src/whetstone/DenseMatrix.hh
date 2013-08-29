@@ -25,52 +25,52 @@ Usage:
 namespace Amanzi {
 namespace WhetStone {
 
+const int WHETSTONE_DATA_ACCESS_COPY = 2;
+const int WHETSTONE_DATA_ACCESS_VIEW = 2;
+
 class DenseMatrix {
  public:
-  DenseMatrix() { 
-    n_ = 0;
-    m_ = 0;
-    data_ = NULL;
-  }
-  DenseMatrix(int nrow, int ncol) { Init(nrow, ncol); }
+  DenseMatrix(int mrow, int ncol);
+  DenseMatrix(int mrow, int ncol, double* data, int data_access = WHETSTONE_DATA_ACCESS_COPY);
+  DenseMatrix(const DenseMatrix& B);
   ~DenseMatrix() { delete[] data_; }
 
   // primary members 
-  void clear() { for (int i = 0; i < n_ * m_; i++) data_[i] = (double)0; } 
+  void clear() { for (int i = 0; i < m_ * n_; i++) data_[i] = 0.0; } 
 
-  double& operator()(int i, int j) { return data_[j * n_ + i]; }
-  const double& operator()(int i, int j) const { return data_[j * n_ + i]; }
+  double& operator()(int i, int j) { return data_[j * m_ + i]; }
+  const double& operator()(int i, int j) const { return data_[j * m_ + i]; }
 
-  DenseMatrix& operator=(const DenseMatrix& m) {        
+  DenseMatrix& operator=(const DenseMatrix& B) {        
     double *a = (*this).Values();
-    const double *b = m.Values();
+    const double *b = B.Values();
 
-    for (int i = 0; i < n_ * m_; i++) a[i] = b[i];
+    for (int i = 0; i < m_ * n_; i++) a[i] = b[i];
     return (*this);
   }
 
   DenseMatrix& operator*=(double val) {
-    for (int i = 0; i < n_ * m_; i++) data_[i] *= val;
+    for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
     return *this;
   }
 
   void PutScalar(double val) {
-    for (int i = 0; i < n_ * m_; i++) data_[i] = val;
+    for (int i = 0; i < m_ * n_; i++) data_[i] = val;
   }
 
   // access
-  int NumCols() { return n_; }
-  int NumRows() { return m_; }
+  int NumRows() const { return m_; }
+  int NumCols() const { return n_; }
 
   double* Values() { return data_; }
-  double* Value(int i, int j)  { return data_ + j * n_ + i; } 
+  double* Value(int i, int j)  { return data_ + j * m_ + i; } 
   const double* Values() const { return data_; }
 
   // output 
-  friend std::ostream& operator << (std::ostream& os, DenseMatrix& m) {
-    for (int i = 0; i < m.NumRows(); i++) {
-      for (int j = 0; j < m.NumCols(); j++) {
-        os << std::setw(12) << std::setprecision(12) << m(i, j) << " ";
+  friend std::ostream& operator << (std::ostream& os, DenseMatrix& A) {
+    for (int i = 0; i < A.NumRows(); i++) {
+      for (int j = 0; j < A.NumCols(); j++) {
+        os << std::setw(12) << std::setprecision(12) << A(i, j) << " ";
       }
       os << "\n";
     }
@@ -81,14 +81,7 @@ class DenseMatrix {
   int Inverse();
 
  private:
-  void Init(int nrow, int ncol) { 
-    n_ = nrow;
-    m_ = ncol;
-    data_ = new double[n_ * m_]; 
-  }
-
- private:
-  int n_, m_;
+  int m_, n_, access_;
   double* data_;                       
 };
 

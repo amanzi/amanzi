@@ -20,7 +20,6 @@ This is the discretization package, release beta.
 */
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"

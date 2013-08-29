@@ -1,8 +1,8 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-   ATS
+   Amanzi
 
-   License: see $ATS_DIR/COPYRIGHT
+   License: see $AMANZI_DIR/COPYRIGHT
    Author: Ethan Coon
 
    Interface for CompositeVector, an implementation of a slightly improved

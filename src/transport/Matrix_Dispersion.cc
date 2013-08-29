@@ -155,7 +155,7 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
+    WhetStone::DenseMatrix Mff(nfaces, nfaces);
     mfd3d.MassMatrixInverseTPFA(c, D[c], Mff);
    
     for (int n = 0; n < nfaces; n++) {
@@ -167,7 +167,7 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
   // populate the global matrix
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   int cells_GID[2];
-  Teuchos::SerialDenseMatrix<int, double> Bpp(2, 2);
+  WhetStone::DenseMatrix Bpp(2, 2);
 
   App_->PutScalar(0.0);
 
@@ -186,7 +186,7 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
       Bpp(1, 0) = -coef;
     }
 
-    App_->SumIntoGlobalValues(ncells, cells_GID, Bpp.values());
+    App_->SumIntoGlobalValues(ncells, cells_GID, Bpp.Values());
   }
   App_->GlobalAssemble();
 }
