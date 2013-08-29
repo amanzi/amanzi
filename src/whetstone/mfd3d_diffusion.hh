@@ -30,11 +30,11 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 */
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "DenseMatrix.hh"
 #include "tensor.hh"
 #include "mfd3d.hh"
 
@@ -48,52 +48,45 @@ class MFD3D_Diffusion : public MFD3D {
   ~MFD3D_Diffusion() {};
 
   int L2consistency(int cell, const Tensor& T,
-                    Teuchos::SerialDenseMatrix<int, double>& N,
-                    Teuchos::SerialDenseMatrix<int, double>& Mc);
+                    DenseMatrix& N, DenseMatrix& Mc);
 
   int L2consistencyInverse(int cell, const Tensor& permeability,
-                           Teuchos::SerialDenseMatrix<int, double>& R,
-                           Teuchos::SerialDenseMatrix<int, double>& Wc);
+                           DenseMatrix& R, DenseMatrix& Wc);
 
-  int H1consistency(int cell, const Tensor& T,
-                    Teuchos::SerialDenseMatrix<int, double>& N,
-                    Teuchos::SerialDenseMatrix<int, double>& Mc);
+  int H1consistency(int cell, const Tensor& T, 
+                    DenseMatrix& N, DenseMatrix& Mc);
 
-  int MassMatrix(int cell, const Tensor& permeability,
-                 Teuchos::SerialDenseMatrix<int, double>& M);
+  int MassMatrix(int cell, const Tensor& permeability, DenseMatrix& M);
 
-  int MassMatrixInverse(int cell, const Tensor& permeability,
-                        Teuchos::SerialDenseMatrix<int, double>& W);
+  int MassMatrixInverse(int cell, const Tensor& permeability, DenseMatrix& W);
 
-  int StiffnessMatrix(int cell, const Tensor& permeability,
-                      Teuchos::SerialDenseMatrix<int, double>& A);
+  int StiffnessMatrix(int cell, const Tensor& permeability, DenseMatrix& A);
 
   // experimental methods
   int L2consistencyInverseScaled(int cell, const Tensor& permeability,
-                                 Teuchos::SerialDenseMatrix<int, double>& R,
-                                 Teuchos::SerialDenseMatrix<int, double>& Wc);
+                                 DenseMatrix& R, DenseMatrix& Wc);
 
   int MassMatrixInverseScaled(int cell, const Tensor& permeability,
-                              Teuchos::SerialDenseMatrix<int, double>& W);
+                              DenseMatrix& W);
 
   int MassMatrixInverseOptimized(int cell, const Tensor& permeability,
-                                 Teuchos::SerialDenseMatrix<int, double>& W);
+                                 DenseMatrix& W);
 
   int MassMatrixInverseOptimizedScaled(int cell, const Tensor& permeability,
-                                       Teuchos::SerialDenseMatrix<int, double>& W);
+                                       DenseMatrix& W);
 
   // primary related discetization methods
   int MassMatrixInverseHex(int cell, const Tensor& permeability,
-                           Teuchos::SerialDenseMatrix<int, double>& W);
+                           DenseMatrix& W);
 
   int MassMatrixInverseSO(int cell, const Tensor& permeability,
-                          Teuchos::SerialDenseMatrix<int, double>& W);
+                          DenseMatrix& W);
 
   int MassMatrixInverseTPFA(int cell, const Tensor& permeability,
-                            Teuchos::SerialDenseMatrix<int, double>& W);
+                            DenseMatrix& W);
 
   int MassMatrixInverseDiagonal(int cell, const Tensor& permeability,
-                                Teuchos::SerialDenseMatrix<int, double>& W);
+                                DenseMatrix& W);
 
   // a posteriori error estimate
   int RecoverGradient_MassMatrix(int cell,
@@ -108,11 +101,10 @@ class MFD3D_Diffusion : public MFD3D {
  private:  
   // supporting stability methods (add matrix Ms in M = Mc + Ms)
   int StabilityMonotoneHex(int cell, const Tensor& T,
-                           Teuchos::SerialDenseMatrix<int, double>& Mc,
-                           Teuchos::SerialDenseMatrix<int, double>& M);
+                           DenseMatrix& Mc, DenseMatrix& M);
 
  private:
-  void RescaleMassMatrixInverse_(int cell, Teuchos::SerialDenseMatrix<int, double>& W);
+  void RescaleMassMatrixInverse_(int cell, DenseMatrix& W);
 };
 
 }  // namespace WhetStone

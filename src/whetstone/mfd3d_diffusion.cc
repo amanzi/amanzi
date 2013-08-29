@@ -14,8 +14,6 @@ Usage:
 #include <cmath>
 #include <vector>
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_LAPACK.hpp"
 
@@ -36,15 +34,14 @@ namespace WhetStone {
 * Darcy flux is scaled by area!
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
-                                   Teuchos::SerialDenseMatrix<int, double>& N,
-                                   Teuchos::SerialDenseMatrix<int, double>& Mc)
+                                   DenseMatrix& N, DenseMatrix& Mc)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
   int nfaces = faces.size();
-  if (nfaces != N.numRows()) return nfaces;  // matrix was not reshaped
+  if (nfaces != N.NumRows()) return nfaces;  // matrix was not reshaped
 
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
@@ -83,8 +80,7 @@ int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
 * Darcy flux is scaled by area!
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverse(int cell, const Tensor& T,
-                                          Teuchos::SerialDenseMatrix<int, double>& R,
-                                          Teuchos::SerialDenseMatrix<int, double>& Wc)
+                                          DenseMatrix& R, DenseMatrix& Wc)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -92,7 +88,7 @@ int MFD3D_Diffusion::L2consistencyInverse(int cell, const Tensor& T,
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
   int num_faces = faces.size();
-  if (num_faces != R.numRows()) return num_faces;  // matrix was not reshaped
+  if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
 
   int d = mesh_->space_dimension();
   AmanziGeometry::Point v1(d);
@@ -128,15 +124,14 @@ int MFD3D_Diffusion::L2consistencyInverse(int cell, const Tensor& T,
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int MFD3D_Diffusion::H1consistency(int cell, const Tensor& T,
-                                   Teuchos::SerialDenseMatrix<int, double>& N,
-                                   Teuchos::SerialDenseMatrix<int, double>& Ac)
+                                   DenseMatrix& N, DenseMatrix& Ac)
 {
   AmanziMesh::Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(cell, &nodes);
   int num_nodes = nodes.size();
-  if (num_nodes != N.numRows()) return num_nodes;  // matrix was not reshaped
+  if (num_nodes != N.NumRows()) return num_nodes;  // matrix was not reshaped
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
@@ -145,7 +140,7 @@ int MFD3D_Diffusion::H1consistency(int cell, const Tensor& T,
   AmanziGeometry::Point p(d), pnext(d), pprev(d), v1(d), v2(d), v3(d);
 
   /* to calculate matrix R, we use temporary matrix N */
-  N = 0;
+  N.PutScalar(0.0);
 
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
@@ -210,14 +205,13 @@ int MFD3D_Diffusion::H1consistency(int cell, const Tensor& T,
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrix(int cell, const Tensor& permeability,
-                                Teuchos::SerialDenseMatrix<int, double>& M)
+int MFD3D_Diffusion::MassMatrix(int cell, const Tensor& permeability, DenseMatrix& M)
 {
   int d = mesh_->space_dimension();
-  int nfaces = M.numRows();
+  int nfaces = M.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> N(nfaces, d);
-  Teuchos::SerialDenseMatrix<int, double> Mc(nfaces, nfaces);
+  DenseMatrix N(nfaces, d);
+  DenseMatrix Mc(nfaces, nfaces);
 
   Tensor permeability_inv(permeability);
   permeability_inv.inverse();
@@ -233,14 +227,14 @@ int MFD3D_Diffusion::MassMatrix(int cell, const Tensor& permeability,
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverse(int cell, const Tensor& permeability,
-                                       Teuchos::SerialDenseMatrix<int, double>& W)
+int MFD3D_Diffusion::MassMatrixInverse(int cell, const Tensor& permeability, 
+                                       DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
-  int nfaces = W.numRows();
+  int nfaces = W.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
-  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+  DenseMatrix R(nfaces, d);
+  DenseMatrix Wc(nfaces, nfaces);
 
   int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -253,14 +247,14 @@ int MFD3D_Diffusion::MassMatrixInverse(int cell, const Tensor& permeability,
 /* ******************************************************************
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
-int MFD3D_Diffusion::StiffnessMatrix(int cell, const Tensor& permeability,
-                                     Teuchos::SerialDenseMatrix<int, double>& A)
+int MFD3D_Diffusion::StiffnessMatrix(int cell, const Tensor& permeability, 
+                                     DenseMatrix& A)
 {
   int d = mesh_->space_dimension();
-  int nnodes = A.numRows();
+  int nnodes = A.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> N(nnodes, d + 1);
-  Teuchos::SerialDenseMatrix<int, double> Ac(nnodes, nnodes);
+  DenseMatrix N(nnodes, d + 1);
+  DenseMatrix Ac(nnodes, nnodes);
 
   int ok = H1consistency(cell, permeability, N, Ac);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -323,9 +317,10 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
 
   // populate matrix R (should be a separate routine lipnikov@lanl.gv)
   int d = mesh_->space_dimension();
-  Teuchos::SerialDenseMatrix<int, double> R(num_nodes, d);
+  DenseMatrix R(num_nodes, d);
   AmanziGeometry::Point p(d), pnext(d), pprev(d), v1(d), v2(d), v3(d);
 
+  R.PutScalar(0.0);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -385,8 +380,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
 * fluxes. Only the upper triangular part of Wc is calculated.
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverseScaled(int cell, const Tensor& T,
-                                                Teuchos::SerialDenseMatrix<int, double>& R,
-                                                Teuchos::SerialDenseMatrix<int, double>& Wc)
+                                                DenseMatrix& R, DenseMatrix& Wc)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -394,7 +388,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaled(int cell, const Tensor& T,
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
   int num_faces = faces.size();
-  if (num_faces != R.numRows()) return num_faces;  // matrix was not reshaped
+  if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
 
   // calculate areas of possibly curved faces
   std::vector<double> areas(num_faces, 0.0);
@@ -431,7 +425,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaled(int cell, const Tensor& T,
   }
 
   /* Internal verification 
-  Teuchos::SerialDenseMatrix<int, double> NtR(d, d);
+  DenseMatrix NtR(d, d);
   for (int i = 0; i < d; i++) {
     for (int j = 0; j < d; j++) {
       NtR(i, j) = 0.0;
@@ -451,13 +445,13 @@ int MFD3D_Diffusion::L2consistencyInverseScaled(int cell, const Tensor& T,
 * Darcy inverse mass matrix via optimization, experimental.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseScaled(int cell, const Tensor& permeability,
-                                             Teuchos::SerialDenseMatrix<int, double>& W)
+                                             DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
-  int nfaces = W.numRows();
+  int nfaces = W.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
-  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+  DenseMatrix R(nfaces, d);
+  DenseMatrix Wc(nfaces, nfaces);
 
   int ok = L2consistencyInverseScaled(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -473,13 +467,13 @@ int MFD3D_Diffusion::MassMatrixInverseScaled(int cell, const Tensor& permeabilit
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseHex(int cell, const Tensor& permeability,
-                                          Teuchos::SerialDenseMatrix<int, double>& W)
+                                          DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
-  int nfaces = W.numRows();
+  int nfaces = W.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
-  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+  DenseMatrix R(nfaces, d);
+  DenseMatrix Wc(nfaces, nfaces);
 
   int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -494,13 +488,13 @@ int MFD3D_Diffusion::MassMatrixInverseHex(int cell, const Tensor& permeability,
 * Darcy inverse mass matrix via optimziation.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseOptimized(int cell, const Tensor& permeability,
-                                                Teuchos::SerialDenseMatrix<int, double>& W)
+                                                DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
-  int nfaces = W.numRows();
+  int nfaces = W.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
-  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+  DenseMatrix R(nfaces, d);
+  DenseMatrix Wc(nfaces, nfaces);
 
   int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -514,13 +508,13 @@ int MFD3D_Diffusion::MassMatrixInverseOptimized(int cell, const Tensor& permeabi
 * Darcy inverse mass matrix via optimization, experimental.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseOptimizedScaled(int cell, const Tensor& permeability,
-                                                      Teuchos::SerialDenseMatrix<int, double>& W)
+                                                      DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
-  int nfaces = W.numRows();
+  int nfaces = W.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
-  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+  DenseMatrix R(nfaces, d);
+  DenseMatrix Wc(nfaces, nfaces);
 
   int ok = L2consistencyInverseScaled(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -535,7 +529,7 @@ int MFD3D_Diffusion::MassMatrixInverseOptimizedScaled(int cell, const Tensor& pe
 /* ******************************************************************
 * Rescale matrix to area-weighted fluxes.
 ****************************************************************** */
-void MFD3D_Diffusion::RescaleMassMatrixInverse_(int cell, Teuchos::SerialDenseMatrix<int, double>& W)
+void MFD3D_Diffusion::RescaleMassMatrixInverse_(int cell, DenseMatrix& W)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -561,8 +555,7 @@ void MFD3D_Diffusion::RescaleMassMatrixInverse_(int cell, Teuchos::SerialDenseMa
 * A simple monotone stability term for a 2D or 3D brick element. 
 ****************************************************************** */
 int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
-                                          Teuchos::SerialDenseMatrix<int, double>& Mc,
-                                          Teuchos::SerialDenseMatrix<int, double>& M)
+                                          DenseMatrix& Mc, DenseMatrix& M)
 {
   int d = mesh_->space_dimension();
   int nrows = 2 * d;
