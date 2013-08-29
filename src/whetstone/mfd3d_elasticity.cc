@@ -14,9 +14,6 @@ Usage:
 #include <cmath>
 #include <vector>
 
-#include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_LAPACK.hpp"
-
 #include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"

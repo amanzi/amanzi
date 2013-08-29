@@ -14,7 +14,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -120,13 +119,15 @@ TEST(DARCY_INVERSE_MASS) {
   T(0, 0) = 1;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 3; method++) {
+  for (int method = 0; method < 4; method++) {
     if (method == 0) 
       mfd.MassMatrixInverse(cell, T, W);
     else if (method == 1)
       mfd.MassMatrixInverseScaled(cell, T, W);
     else if (method == 2)
       mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
+    else if (method == 3)
+      mfd.MassMatrixInverseSO(cell, T, W);
 
     printf("Inverse of mass matrix for method=%d\n", method);
     for (int i=0; i<6; i++) {
@@ -138,12 +139,7 @@ TEST(DARCY_INVERSE_MASS) {
     for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
 
     // verify exact integration property
-    Teuchos::LAPACK<int, double> lapack;
-    int info, ipiv[nfaces];
-    double work[nfaces];
-
-    lapack.GETRF(nfaces, nfaces, W.Values(), nfaces, ipiv, &info);
-    lapack.GETRI(nfaces, W.Values(), nfaces, ipiv, work, nfaces, &info);
+    W.Inverse();
 
     Entity_ID_List faces;
     std::vector<int> dirs;

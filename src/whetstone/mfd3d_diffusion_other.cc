@@ -14,9 +14,6 @@ Usage:
 #include <cmath>
 #include <vector>
 
-#include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_LAPACK.hpp"
-
 #include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
@@ -163,15 +160,8 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
   }
  
   // invert matrix W
-  Teuchos::LAPACK<int, double> lapack;
-  int info, size = W.NumRows();
-
-  int ipiv[size];
-  double work[size];
-
-  lapack.GETRF(size, size, W.Values(), size, ipiv, &info);
-  lapack.GETRI(size, W.Values(), size, ipiv, work, size, &info);
-  if (info != 0) {
+  int ierr = W.Inverse();
+  if (ierr != 0) {
     Errors::Message msg;
     msg << "WhetStone MFD3D_Diffusion: support operator generated bad elemental mass matrix.";
     Exceptions::amanzi_throw(msg);

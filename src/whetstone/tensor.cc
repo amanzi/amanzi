@@ -16,11 +16,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <iostream>
 #include <cmath>
 
-#include "Teuchos_LAPACK.hpp"
-
 #include "Point.hh"
+#include "lapack.hh"
 #include "tensor.hh"
-
 
 namespace Amanzi {
 namespace WhetStone {
@@ -114,12 +112,10 @@ void Tensor::inverse()
     data_[2] /= -det;
 
   } else {
-    Teuchos::LAPACK<int, double> lapack;
-    int info;
-    int ipiv[size_];
+    int info, ipiv[size_];
     double work[size_];
-    lapack.GETRF(size_, size_, data_, size_, ipiv, &info);
-    lapack.GETRI(size_, data_, size_, ipiv, work, size_, &info);
+    DGETRF_F77(&size_, &size_, data_, &size_, ipiv, &info);
+    DGETRI_F77(&size_, data_, &size_, ipiv, work, &size_, &info);
   }
 }
 
@@ -187,14 +183,14 @@ void Tensor::spectral_bounds(double* lower, double* upper) const
     *lower = (trace - D) / 2;
     *upper = (trace + D) / 2;
   } else if (rank_ <= 2) {
-    Teuchos::LAPACK<int, double> lapack;
-    int ipiv[size_], lwork(3*size_), info;
-    double S[size_], work[lwork];
+    int n = size_; 
+    int ipiv[n], lwork(3 * n), info;
+    double S[n], work[lwork];
     
     Tensor T(*this);
-    lapack.SYEV('N', 'U', size_, T.data(), size_, S, work, lwork, &info);
+    DSYEV_F77("N", "U", &n, T.data(), &n, S, work, &lwork, &info);
     *lower = S[0];
-    *upper = S[size_ - 1];
+    *upper = S[n - 1];
   }
 }
 

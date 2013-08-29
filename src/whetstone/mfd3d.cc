@@ -14,11 +14,6 @@ Usage:
 #include <cmath>
 #include <vector>
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_LAPACK.hpp"
-
 #include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
@@ -123,13 +118,12 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
 
   // find null space of N^T
   DenseMatrix U(nrows, nrows);
-  int info, size = 5 * d + 3 * nrows;
+  int info, ldv = 1, size = 5 * d + 3 * nrows;
   double V, S[nrows], work[size];
 
-  Teuchos::LAPACK<int, double> lapack;
-  lapack.GESVD('A', 'N', nrows, ncols, N.Values(), nrows,  // N = u s v
-               S, U.Values(), nrows, &V, 1, work, size, 
-               NULL, &info);
+  DGESVD_F77("A", "N", &nrows, &ncols, N.Values(), &nrows,  // N = u s v
+             S, U.Values(), &nrows, &V, &ldv, work, &size, &info);
+
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // calculate vectors C and C0
@@ -173,7 +167,8 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
   C.Multiply(F, G, true);
 
   // Find parameters
-  lapack.POSV('U', nparam, 1, A.Values(), nparam, G.Values(), nparam, &info);
+  int nrhs = 1;
+  DPOSV_F77("U", &nparam, &nrhs, A.Values(), &nparam, G.Values(), &nparam, &info);
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // project solution on the positive quadrant and convert to matrix
@@ -204,7 +199,7 @@ int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
 
     // check SPD property (we use allocated memory)
     DenseMatrix Ptmp(P);
-    lapack.SYEV('N', 'U', mcols, Ptmp.Values(), mcols, S, work, size, &info); 
+    DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S, work, &size, &info); 
     if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
     if (S[0] > eigmin) {
