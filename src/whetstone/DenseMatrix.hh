@@ -21,6 +21,7 @@ Usage:
 #include <iomanip>
 
 #include "lapack.hh"
+#include "DenseVector.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -53,6 +54,9 @@ class DenseMatrix {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
     return *this;
   }
+
+  int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
+  int Multiply(const DenseVector& A, DenseVector& B, bool transpose);
 
   void PutScalar(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] = val;
