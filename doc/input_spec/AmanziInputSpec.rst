@@ -879,9 +879,9 @@ the following set of physical properties using the supported models described be
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`", `"Porosity: Random`", `"Porosity: GSLib`", `"Porosity: File`" (see below)
+  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
-  * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`", `"Intrinsic Permeability: GSLib`", `"Intrinsic Permeability: File`" (see below)
+  * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`" (see below)
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
@@ -905,25 +905,6 @@ The following models can be specified for porosity (only `"Porosity: Uniform`" i
 * [SU] `"Porosity: Uniform`" [list] requires 
  
  * [SU] `"Value`" [double] to specify the constant value of porosity.
-
-* `"Porosity: Random`" [list] requires
- 
- * `"Mean And RMS Value`" [Array double] to specify the mean value.
-
-* `"Porosity: GSLib`" [list] requires 
- 
- * `"File`" [string] to specify the name of a gslib input file.
-
-* `"Porosity: File`" [list] requires 
- 
- * `"File`" [string] to specify name of a file;
- 
- * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
-
- * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
-
- * `"Framework`" [string] (if the mesh framework with which the file was written is different from current) will indicate the format of the file; optional. (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
-
 
 The following models can be specified for the intrinsic permeability of the material (only `"Intrinsic Permeability: Uniform`" and `"Intrinsic Permeability: Anisotropic Uniform`" are supported at the moment):
 
