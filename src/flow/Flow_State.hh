@@ -22,7 +22,6 @@ class Flow_State : public PK_State {
   explicit Flow_State(Teuchos::RCP<State> S);
   explicit Flow_State(State& S);
   Flow_State(const Flow_State& other, PKStateConstructMode mode);
-  void CombineGhostNode2MasterNode(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 
   void Initialize();
 
