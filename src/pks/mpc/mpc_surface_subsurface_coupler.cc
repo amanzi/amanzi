@@ -104,13 +104,11 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
   }
   preconditioner_ = mfd_preconditioner_;
 
-  if (surface_op_plist.get<bool>("scaled constraint equation", false)) {
-    surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(
-        surface_pc_plist, surf_mesh_));
-  } else {
-    surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(
-        surface_pc_plist, surf_mesh_));
-  }
+  // CLEAN UP THIS CRUFT!  surf precon should ALWAYS be ScaledConstraint... we
+  // should impose this from above, not backhandedly
+  surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(
+      surface_pc_plist, surf_mesh_));
+
 
   // set the surface A in the MFD_Surf.
   mfd_preconditioner_->SetSurfaceOperator(surf_preconditioner_);

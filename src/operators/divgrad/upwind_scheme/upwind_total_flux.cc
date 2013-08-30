@@ -119,8 +119,9 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
     // Determine the size of the overlap region, a smooth transition region
     // near zero flux
-    double flow_eps = ( 1.0 - std::abs(coefs[0] - coefs[1]) )
-        * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor;
+    double flow_eps = std::max(( 1.0 - std::abs(coefs[0] - coefs[1]) )
+            * std::sqrt(coefs[0] * coefs[1]) * flow_eps_factor,
+            1.e-8);
 
     // Determine the coefficient
     if (abs(flux_v[0][f]) >= flow_eps) {
@@ -129,7 +130,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       // Parameterization of a linear scaling between upwind and downwind.
       double param = abs(flux_v[0][f]) / (2*flow_eps) + 0.5;
       if (!(param >= 0.5) || !(param <= 1.0)) {
-        std::cout << "BAD FLUX!" << std::endl;
+        std::cout << "BAD FLUX! on face " << f << std::endl;
         std::cout << "  flux = " << flux_v[0][f] << std::endl;
         std::cout << "  param = " << param << std::endl;
         std::cout << "  flow_eps = " << flow_eps << std::endl;

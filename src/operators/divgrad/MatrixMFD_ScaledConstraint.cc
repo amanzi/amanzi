@@ -40,6 +40,7 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
 
   if (Krel == Teuchos::null || !Krel->has_component("face")) {
     MatrixMFD::CreateMFDstiffnessMatrices(Krel);
+    Krel_->PutScalar(1.);
 
   } else {
     // tag global matrices as invalid
