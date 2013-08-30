@@ -236,7 +236,13 @@ bool WRMImplicitPermafrostModel::DetermineSplineCutoff_(double pc_liq, double pc
   cutoff = std::exp(std::floor(std::log(pc_liq)));
   bool done(false);
   while (!done) {
-    si = si_frozen_unsaturated_nospline_(cutoff, pc_ice);
+    try {
+      si = si_frozen_unsaturated_nospline_(cutoff, pc_ice, true); // use the version that throws on error
+    } catch (const Errors::CutTimeStep& e) {
+      cutoff = std::exp(std::log(cutoff) + 1.);
+      continue;
+    }
+
     double sstar = wrm_->saturation(cutoff);
     if ((1. - si) * sstar + si < (1. - 1.e-16)) {
       done = true;
@@ -296,7 +302,7 @@ bool WRMImplicitPermafrostModel::FitSpline_(double pc_ice, double cutoff,
 
 // -- si calculation, outside of the splined region
 double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq,
-        double pc_ice) {
+        double pc_ice, bool throw_ok) {
   // solve implicit equation for s_i
   SatIceFunctor_ func(pc_liq, pc_ice, wrm_);
   Tol_ tol(eps_);
@@ -309,8 +315,11 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
     result =
         boost::math::tools::toms748_solve(func, left, right, tol, max_it);
   } catch (const std::exception& e) {
-    std::cout << "WRMImplicitPermafrostModel failed: " << e.what() << std::endl;
-    Exceptions::amanzi_throw(Errors::CutTimeStep());
+    // this throw should not be caught
+    std::stringstream estream;
+    estream << "WRMImplicitPermafrostModel failed: " << e.what() << std::endl;
+    Errors::Message emsg(estream.str());
+    Exceptions::amanzi_throw(emsg);
   }
 
   double si = (result.first + result.second) / 2.;
@@ -318,7 +327,14 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
 
   if (max_it >= max_it_) {
     // did not converge?  May be ABS converged but not REL converged!
-    ASSERT(tol(func(si),0.));
+    if (!tol(func(si),0.)) {
+      std::cout << "WRMImplicitPermafrostModel did not converge, " << max_it
+                << " iterations, error = " << func(si) << ", s_i = " << si
+                << ", PC_{lg,il} = " << pc_liq << "," << pc_ice << std::endl;
+      if (throw_ok) {
+        Exceptions::amanzi_throw(Errors::CutTimeStep());
+      }
+    }
   }
   return si;
 }

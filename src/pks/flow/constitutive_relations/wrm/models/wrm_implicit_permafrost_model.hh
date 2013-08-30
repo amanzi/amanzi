@@ -53,7 +53,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   double dsi_dpc_liq_frozen_unsaturated_(double pc_liq, double pc_ice, double si);
   double dsi_dpc_ice_frozen_unsaturated_(double pc_liq, double pc_ice, double si);
 
-  double si_frozen_unsaturated_nospline_(double pc_liq, double pc_ice);
+  double si_frozen_unsaturated_nospline_(double pc_liq, double pc_ice, bool throw_ok=false);
   double dsi_dpc_liq_frozen_unsaturated_nospline_(double pc_liq, double pc_ice,
           double si);
   double dsi_dpc_ice_frozen_unsaturated_nospline_(double pc_liq, double pc_ice,
