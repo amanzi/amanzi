@@ -68,6 +68,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
   if (specs_->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
     for (int c = 0; c < ncells_wghost; c++) {
       for (int i = 0; i < dim; i++) D[c](i, i) = specs_->alphaL;
+      D[c] *= porosity[c] * saturation[c];
     }
   } else {
     WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -179,7 +180,7 @@ void Matrix_Dispersion::AssembleGlobalMatrixTPFA()
     for (int n = 0; n < ncells; n++) {
       cells_GID[n] = cmap_wghost.GID(cells[n]);
 
-      double coef = mesh_->face_area(f) / T[f];
+      double coef = 1.0 / T[f];
       Bpp(0, 0) =  coef;
       Bpp(1, 1) =  coef;
       Bpp(0, 1) = -coef;
