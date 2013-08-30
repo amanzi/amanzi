@@ -280,6 +280,7 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
   S->GetField("surface_flux", name_)->set_initialized();
   if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
+    S->GetFieldData("surface_flux_direction", name_)->PutScalar(0.);
     S->GetField("surface_flux_direction", name_)->set_initialized();
   S->GetField("surface_velocity", name_)->set_initialized();
 };

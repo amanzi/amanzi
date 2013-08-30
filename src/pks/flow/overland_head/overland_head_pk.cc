@@ -544,13 +544,29 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Update the perm only if needed.
     perm_update_required_ = false;
 
+    // get upwind conductivity data
+    Teuchos::RCP<CompositeVector> uw_cond =
+        S->GetFieldData("upwind_overland_conductivity", name_);
+
+    // update the direction
     if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData("surface_flux_direction", name_);
+      const Epetra_MultiVector& n_liq =
+          *S->GetFieldData("surface_molar_density_liquid")
+              ->ViewComponent("cell",false);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
-      matrix_->CreateMFDstiffnessMatrices(Teuchos::null);
+      {
+        Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
+        int ncells = uw_cond_c.MyLength();
+        for (unsigned int c=0; c!=ncells; ++c) {
+          uw_cond_c[0][c] = n_liq[0][c];
+        }
+      }
+      uw_cond->ViewComponent("face",false)->PutScalar(1.);
+      matrix_->CreateMFDstiffnessMatrices(uw_cond.ptr());
 
       // Derive the flux
       Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
@@ -562,9 +578,6 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     const Epetra_MultiVector& cond_bf = *cond->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& cond_c = *cond->ViewComponent("cell",false);
 
-    // get upwind conductivity data
-    Teuchos::RCP<CompositeVector> uw_cond =
-        S->GetFieldData("upwind_overland_conductivity", name_);
 
     { // place boundary_faces on faces
       Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
@@ -595,6 +608,7 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& uw_cond_c = *uw_cond->ViewComponent("cell",false);
       int ncells = uw_cond_c.MyLength();
       for (unsigned int c=0; c!=ncells; ++c) {
+        ASSERT(uw_cond_c[0][c] == 1.); // REMOVE ME!
         uw_cond_c[0][c] *= n_liq[0][c];
       }
     }

@@ -342,6 +342,10 @@ bool VolumetricDeformation::advance(double dt) {
           *S_->GetFieldData("initial_cell_volume")->ViewComponent("cell",false);
 
       double thaw_height = (*thaw_front_func_)(&ss);
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
+        *out_ << "Thaw Height = " << thaw_height << std::endl;
+      }
+
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
 
       double smallest_cv = 1.e10;
@@ -371,16 +375,18 @@ bool VolumetricDeformation::advance(double dt) {
         ASSERT(my_up_n >= 0);
         ASSERT(my_down_n >= 0);
 
-        double cv_frac = std::min(std::max(
-            (thaw_height - face_height[0][faces[my_down_n]]) /
-            (face_height[0][faces[my_up_n]] - face_height[0][faces[my_down_n]]),
-            min_vol_frac_), 1.);
+        // ranges from 0 - 1
+        double frac = (thaw_height - face_height[0][faces[my_down_n]]) /
+            (face_height[0][faeces[my_up_n]] - face_height[0][faces[my_down_n]]);
+
+        // renormalize to min_vol_frac - 1
+        double cv_frac = frac * (1.-min_vol_frac_) + min_vol_frac_;
+        cv_frac = std::min(cv_frac,1.);
+
         smallest_cv_frac = std::min(smallest_cv_frac, cv_frac);
         smallest_cv = std::min(smallest_cv, cv_frac * cv0[0][*c]);
         dcell_vol_c[0][*c] = cv_frac*cv0[0][*c] - cv[0][*c];
       }
-
-      std::cout << " Smallest cv_frac, cv = " << smallest_cv_frac << ", " << smallest_cv << std::endl;
 
       if (strategy_ == DEFORM_STRATEGY_GLOBAL_OPTIMIZATION ||
           strategy_ == DEFORM_STRATEGY_MSTK) {
@@ -399,6 +405,18 @@ bool VolumetricDeformation::advance(double dt) {
     }
     default:
       ASSERT(0);
+  }
+
+
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+    const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
+        ->ViewComponent("cell",true);
+
+    Teuchos::OSTab tab = getOSTab();
+    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+      *out_ << "  CV0(" << *c0 << ")  = " << cv[0][*c0] << std::endl;
+      *out_ << "  dCV(" << *c0 << ")  = " << (*dcell_vol_vec)("cell",*c0) << std::endl;
+    }
   }
 
 

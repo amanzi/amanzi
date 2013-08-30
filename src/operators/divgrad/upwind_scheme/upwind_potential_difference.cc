@@ -49,6 +49,11 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
         const CompositeVector& overlap,
         const Teuchos::Ptr<CompositeVector>& face_coef) {
 
+  // initialize the cell coefficients
+  if (face_coef->has_component("cell")) {
+    face_coef->ViewComponent("cell",true)->PutScalar(1.0);
+  }
+
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
