@@ -399,7 +399,11 @@ void Transport_PK::Advance(double dT_MPC)
     const Epetra_Vector& flux = TS->ref_darcy_flux();
 
     dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
-    dispersion_matrix->AssembleGlobalMatrix();
+    if (dispersion_specs.method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
+      dispersion_matrix->AssembleGlobalMatrixTPFA();
+    } else if (dispersion_specs.method == TRANSPORT_DISPERSION_METHOD_NLFV) {
+      dispersion_matrix->AssembleGlobalMatrixNLFV();
+    }
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
     dispersion_matrix->UpdatePreconditioner();
 

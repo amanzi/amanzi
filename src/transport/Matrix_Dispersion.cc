@@ -67,7 +67,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
 {
   if (specs_->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
     for (int c = 0; c < ncells_wghost; c++) {
-      for (int i = 0; i < dim; i++) D[c](i, i) = specs_->dispersivity_longitudinal;
+      for (int i = 0; i < dim; i++) D[c](i, i) = specs_->alphaL;
     }
   } else {
     WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -85,10 +85,10 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
       mfd3d.RecoverGradient_MassMatrix(c, flux, velocity);
 
       double velocity_value = norm(velocity);
-      double anisotropy = specs_->dispersivity_longitudinal - specs_->dispersivity_transverse;
+      double anisotropy = specs_->alphaL - specs_->alphaT;
 
       for (int i = 0; i < dim; i++) {
-        D[c](i, i) = specs_->dispersivity_transverse * velocity_value;
+        D[c](i, i) = specs_->D + specs_->alphaT * velocity_value;
         for (int j = i; j < dim; j++) {
           double s = anisotropy * velocity[i] * velocity[j];
           if (velocity_value) s /= velocity_value;
@@ -138,9 +138,9 @@ void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
 
 
 /* ******************************************************************
-* Calculate fluxes... 
+* Calculate and assemble fluxes using the TPFA scheme.
 ****************************************************************** */
-void Matrix_Dispersion::AssembleGlobalMatrix()
+void Matrix_Dispersion::AssembleGlobalMatrixTPFA()
 {
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -189,6 +189,23 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
     App_->SumIntoGlobalValues(ncells, cells_GID, Bpp.Values());
   }
   App_->GlobalAssemble();
+}
+
+
+/* ******************************************************************
+* Calculate and assemble fluxes using the NLFV scheme.
+****************************************************************** */
+void Matrix_Dispersion::AssembleGlobalMatrixNLFV()
+{
+  // calculate harmonic averaging points
+  WhetStone::NLFV nlfv(mesh_);
+
+  std::vector<AmanziGeometry::Point> pts(nfaces_wghost);
+  std::vector<double> weights(nfaces_wghost);
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    nlfv.HarmonicAveragingPoint(f, D, pts[f], weights[f]);
+  }
 }
 
 
