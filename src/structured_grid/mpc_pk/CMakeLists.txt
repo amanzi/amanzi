@@ -17,6 +17,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})
+include_directories(${PETSC_INCLUDE_DIRS})
 
 set(CXX_source_files Diffusion.cpp Godunov.cpp MacOperator.cpp
 MacProj.cpp Observation.cpp PMBld.cpp PM_setup.cpp PorousMedia.cpp
