@@ -33,6 +33,7 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
     PKDefaultBase(plist,solution),
     PKPhysicalBase(plist,solution) {
   poro_key_ = plist_.get<std::string>("porosity key","porosity");
+  dt_ = plist_.get<double>("initial time step");
 
   // The deformation mode describes how to calculate new cell volume from a
   // provided function and the old cell volume.
@@ -112,6 +113,8 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
 
       // Create storage for the initial cell volumes
       S->RequireField("initial_cell_volume", name_)->SetMesh(mesh_)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireField("integrated_cell_volume", name_)->SetMesh(mesh_)
           ->SetComponent("cell", AmanziMesh::CELL, 1);
 
       // create the function to determine the front location
@@ -217,7 +220,10 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
         for (unsigned int c=0; c!=ncells; ++c) {
           cv[0][c] = mesh_->cell_volume(c);
         }
+        *S->GetFieldData("integrated_cell_volume", name_)
+            ->ViewComponent("cell",false) = cv;
 
+        S->GetField("integrated_cell_volume",name_)->set_initialized();
         S->GetField("initial_cell_volume",name_)->set_initialized();
       }
       break;
@@ -334,12 +340,14 @@ bool VolumetricDeformation::advance(double dt) {
     }
 
     case (DEFORM_MODE_THAW_FRONT): {
-      const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
+      const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")
           ->ViewComponent("cell",true);
       const Epetra_MultiVector& face_height =
-          *S_->GetFieldData("initial_face_height")->ViewComponent("face",true);
+          *S_next_->GetFieldData("initial_face_height")->ViewComponent("face",true);
       const Epetra_MultiVector& cv0 =
-          *S_->GetFieldData("initial_cell_volume")->ViewComponent("cell",false);
+          *S_next_->GetFieldData("initial_cell_volume")->ViewComponent("cell",false);
+      Epetra_MultiVector& cv1 = *S_next_->GetFieldData("integrated_cell_volume",name_)
+          ->ViewComponent("cell",false);
 
       double thaw_height = (*thaw_front_func_)(&ss);
       if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
@@ -376,8 +384,8 @@ bool VolumetricDeformation::advance(double dt) {
         ASSERT(my_down_n >= 0);
 
         // ranges from 0 - 1
-        double frac = (thaw_height - face_height[0][faces[my_down_n]]) /
-            (face_height[0][faeces[my_up_n]] - face_height[0][faces[my_down_n]]);
+        double frac = std::max((thaw_height - face_height[0][faces[my_down_n]]) /
+                (face_height[0][faces[my_up_n]] - face_height[0][faces[my_down_n]]), 0.);
 
         // renormalize to min_vol_frac - 1
         double cv_frac = frac * (1.-min_vol_frac_) + min_vol_frac_;
@@ -385,7 +393,12 @@ bool VolumetricDeformation::advance(double dt) {
 
         smallest_cv_frac = std::min(smallest_cv_frac, cv_frac);
         smallest_cv = std::min(smallest_cv, cv_frac * cv0[0][*c]);
-        dcell_vol_c[0][*c] = cv_frac*cv0[0][*c] - cv[0][*c];
+        if (*c == 44) {
+          std::cout << "cvfrac = " << cv_frac << std::endl;
+          std::cout << "cv0,1 = " << cv0[0][*c] << ", " << cv1[0][*c] << std::endl;
+        }
+        dcell_vol_c[0][*c] = cv_frac*cv0[0][*c] - cv1[0][*c];
+        cv1[0][*c] = cv_frac*cv0[0][*c];
       }
 
       if (strategy_ == DEFORM_STRATEGY_GLOBAL_OPTIMIZATION ||
@@ -409,12 +422,18 @@ bool VolumetricDeformation::advance(double dt) {
 
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    const Epetra_MultiVector& cv = *S_->GetFieldData("cell_volume")
+    const Epetra_MultiVector& cv0 = *S_next_->GetFieldData("initial_cell_volume")
+        ->ViewComponent("cell",true);
+    const Epetra_MultiVector& cv1 = *S_next_->GetFieldData("integrated_cell_volume")
+        ->ViewComponent("cell",true);
+    const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")
         ->ViewComponent("cell",true);
 
     Teuchos::OSTab tab = getOSTab();
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      *out_ << "  CV0(" << *c0 << ")  = " << cv[0][*c0] << std::endl;
+      *out_ << "  CV(" << *c0 << ")  = " << cv[0][*c0] << std::endl;
+      *out_ << "  CV0(" << *c0 << ")  = " << cv0[0][*c0] << std::endl;
+      *out_ << "  CV1(" << *c0 << ")  = " << cv1[0][*c0] << std::endl;
       *out_ << "  dCV(" << *c0 << ")  = " << (*dcell_vol_vec)("cell",*c0) << std::endl;
     }
   }
@@ -511,6 +530,14 @@ bool VolumetricDeformation::advance(double dt) {
         }
       }
 
+
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+        Teuchos::OSTab tab = getOSTab();
+        for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+          *out_ << "  f_above_def(" << *c0 << ")  = " << (*face_above_def_vec)("cell",*c0) << std::endl;
+        }
+      }
+
       // loop over cells, calculating node changes as the average of the
       // neighboring face changes.
       face_above_def_vec->ScatterMasterToGhosted("cell");
@@ -557,6 +584,20 @@ bool VolumetricDeformation::advance(double dt) {
           if (nodal_dz_l[1][n] > 0.) {
             nodal_dz_l[0][n] /= nodal_dz_l[1][n];
           }
+        }
+      }
+
+      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
+        Teuchos::OSTab tab = getOSTab();
+        for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+          AmanziMesh:Entity_ID_List nodes;
+          mesh_->cell_get_nodes(*c0, &nodes);
+          *out_ << "  nodal_dz(" << *c0 << ")  = ";
+          for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
+               n!=nodes.end(); ++n) {
+            *out_ << " (" << *n << ", " << (*nodal_dz_vec)("node", *n) << ")";
+          }
+          *out_ << std::endl;
         }
       }
 
