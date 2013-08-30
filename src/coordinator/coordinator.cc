@@ -58,30 +58,40 @@ void Coordinator::coordinator_init() {
   coordinator_plist_ = parameter_list_.sublist("coordinator");
   read_parameter_list();
 
-  // checkpointing for the state
-  Teuchos::ParameterList chkp_plist = parameter_list_.sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
-
   // create the top level PK
   Teuchos::ParameterList pks_list = parameter_list_.sublist("PKs");
   Teuchos::ParameterList::ConstIterator pk_item = pks_list.begin();
   const std::string &pk_name = pks_list.name(pk_item);
 
-  // -- create the solution
+  // create the solution
   soln_ = Teuchos::rcp(new TreeVector(pk_name));
 
-  // -- create the pk
+  // create the pk
   PKFactory pk_factory;
   Teuchos::ParameterList pk_list = pks_list.sublist(pk_name);
   pk_list.set("PK name", pk_name);
   pk_ = pk_factory.CreatePK(pk_list, soln_);
   pk_->setup(S_.ptr());
 
-  // // create the observations
+  // create the checkpointing
+  Teuchos::ParameterList chkp_plist = parameter_list_.sublist("checkpoint");
+  checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
+
+  // create the observations
   Teuchos::ParameterList observation_plist = parameter_list_.sublist("observations");
   Teuchos::writeParameterListToXmlOStream(observation_plist, std::cout);
   observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
           Teuchos::null, comm_));
+
+  // check whether meshes are deformable, and if so require a nodal position
+  for (State::mesh_iterator mesh=S_->mesh_begin();
+       mesh!=S_->mesh_end(); ++mesh) {
+    if (mesh->second.second) { // deformable!
+      std::string node_key = std::string("vertex_coordinate_")+mesh->first;
+      S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
+          ->AddComponent("node", AmanziMesh::NODE, mesh->second.first->space_dimension());
+    }
+  }
 }
 
 void Coordinator::initialize() {
@@ -156,7 +166,7 @@ void Coordinator::initialize() {
       Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
       Teuchos::RCP<Visualization> vis =
         Teuchos::rcp(new Visualization(vis_plist, comm_));
-      vis->set_mesh(mesh->second);
+      vis->set_mesh(mesh->second.first);
       vis->CreateFiles();
       visualization_.push_back(vis);
     }
@@ -343,6 +353,44 @@ void Coordinator::cycle_driver() {
       } else {
         // Failed the timestep.  The timestep sizes have been updated, so we can
         // try again.
+
+        // un-deform the mesh
+        for (State::mesh_iterator mesh=S_->mesh_begin();
+             mesh!=S_->mesh_end(); ++mesh) {
+          if (mesh->second.second) { // deformable!
+            std::string node_key = std::string("vertex_coordinate_")+mesh->first;
+            Teuchos::RCP<const CompositeVector> vert_pos =
+                S_->GetFieldData(node_key);
+            vert_pos->ScatterMasterToGhosted(); // required by a bug in MSTK! --etc
+            const Epetra_MultiVector& vert_pos_n =
+                *vert_pos->ViewComponent("node",true);
+
+            // set up the data for new position and ids
+            unsigned int nnodes = mesh->second.first->num_entities(AmanziMesh::NODE,
+                    AmanziMesh::USED);
+            AmanziMesh::Entity_ID_List nodeids(nnodes,-1);
+            AmanziGeometry::Point_List newlocs(nnodes);
+            int dim = mesh->second.first->space_dimension();
+
+            for (AmanziMesh::Entity_ID n=0; n!=nnodes; ++n) {
+              nodeids[n] = n;
+              if (dim == 2) {
+                newlocs[n].init(dim);
+                newlocs[n].set(vert_pos_n[0][n],vert_pos_n[1][n]);
+              } else if (dim == 3) {
+                newlocs[n].init(dim);
+                newlocs[n].set(vert_pos_n[0][n],vert_pos_n[1][n],vert_pos_n[2][n]);
+              } else {
+                ASSERT(0);
+              }
+            }
+
+            // un-deform
+            AmanziGeometry::Point_List final_locs;
+            mesh->second.first->deform(nodeids, newlocs, false, &final_locs);
+          }
+        }
+
         *S_next_ = *S_;
       }
     } // while not finished

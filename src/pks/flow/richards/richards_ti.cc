@@ -30,7 +30,6 @@ void Richards::fun(double t_old,
                    Teuchos::RCP<TreeVector> g) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = getOSTab();
-
   niter_++;
 
   double h = t_new - t_old;
