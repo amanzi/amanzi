@@ -56,7 +56,7 @@ class VolumetricDeformation : public PKPhysicalBase {
   virtual bool advance(double dt);
 
   virtual double get_dt() {
-    return 1.0e99;
+    return dt_;
   }
 
  private:
@@ -84,6 +84,7 @@ class VolumetricDeformation : public PKPhysicalBase {
   Teuchos::RCP<Function> thaw_front_func_;
   double min_vol_frac_;
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;
+  double dt_;
 
   // meshes
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
