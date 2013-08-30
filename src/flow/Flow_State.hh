@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 Amanzi Flow
 
@@ -7,9 +6,7 @@ Author: Ethan Coon
 
 Interface layer between Flow and State, this is a harness for
 accessing the new state-dev from the old Flow PK.
-
- ------------------------------------------------------------------------- */
-
+------------------------------------------------------------------------- */
 
 #ifndef AMANZI_FLOW_STATE_NEW_HH_
 #define AMANZI_FLOW_STATE_NEW_HH_
@@ -46,7 +43,6 @@ class Flow_State : public PK_State {
     return S_->GetFieldData("darcy_velocity")->ViewComponent("face", ghosted_); }
 
   // non const access methods
-
   // Teuchos::RCP<const Epetra_Vector> vertical_permeability() const {
   //   return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability")->ViewComponent("cell", ghosted_))(0)); }
   // Teuchos::RCP<const Epetra_Vector> horizontal_permeability() const {

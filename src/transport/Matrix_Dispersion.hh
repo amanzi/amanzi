@@ -19,6 +19,7 @@ Usage:
 #include "Epetra_Vector.h"
 
 #include "Preconditioner.hh"
+#include "Transport_State.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -57,8 +58,8 @@ class Matrix_Dispersion {
                                  const Epetra_Vector& porosity,
                                   const Epetra_Vector& saturation);
   void SymbolicAssembleGlobalMatrix();
-  void AssembleGlobalMatrixTPFA();
-  void AssembleGlobalMatrixNLFV();
+  void AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS);
+  void AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_State>& TS);
   void AddTimeDerivative(double dT, const Epetra_Vector& porosity, 
                          const Epetra_Vector& saturation);
 

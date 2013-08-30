@@ -23,12 +23,11 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_constants.hh"
 #include "Matrix_Dispersion.hh"
 
-
 namespace Amanzi {
 namespace AmanziTransport {
 
 /* *******************************************************************
-* 
+* Initiaziation of a class.
 ******************************************************************* */
 void Matrix_Dispersion::Init(Dispersion_Specs& specs,
                              const Teuchos::ParameterList& prec_list)
@@ -49,8 +48,8 @@ void Matrix_Dispersion::Init(Dispersion_Specs& specs,
 
   hap_weights_.resize(nfaces_wghost);
 
-  D.resize(ncells_wghost);
-  for (int c = 0; c < ncells_wghost; c++) D[c].init(dim, 2);
+  D.resize(ncells_owned);
+  for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
 
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(specs.preconditioner, prec_list);
@@ -66,7 +65,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
                                                   const Epetra_Vector& saturation)
 {
   if (specs_->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-    for (int c = 0; c < ncells_wghost; c++) {
+    for (int c = 0; c < ncells_owned; c++) {
       for (int i = 0; i < dim; i++) D[c](i, i) = specs_->alphaL;
       D[c] *= porosity[c] * saturation[c];
     }
@@ -77,7 +76,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
     std::vector<int> dirs;
     AmanziGeometry::Point velocity(dim);
 
-    for (int c = 0; c < ncells_wghost; c++) {
+    for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
@@ -141,7 +140,7 @@ void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
 ****************************************************************** */
-void Matrix_Dispersion::AssembleGlobalMatrixTPFA()
+void Matrix_Dispersion::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS)
 {
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -152,7 +151,7 @@ void Matrix_Dispersion::AssembleGlobalMatrixTPFA()
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   Epetra_Vector T(fmap_wghost);
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -164,6 +163,7 @@ void Matrix_Dispersion::AssembleGlobalMatrixTPFA()
       T[f] += 1.0 / Mff(n, n);
     }
   }
+  TS->CombineGhostFace2MasterFace(T, Add);
  
   // populate the global matrix
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -196,7 +196,7 @@ void Matrix_Dispersion::AssembleGlobalMatrixTPFA()
 /* ******************************************************************
 * Calculate and assemble fluxes using the NLFV scheme.
 ****************************************************************** */
-void Matrix_Dispersion::AssembleGlobalMatrixNLFV()
+void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_State>& TS)
 {
   // calculate harmonic averaging points
   WhetStone::NLFV nlfv(mesh_);
