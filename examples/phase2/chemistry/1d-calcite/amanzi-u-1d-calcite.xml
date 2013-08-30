@@ -274,10 +274,6 @@
         <Parameter name="PFloTran Constraint" type="string" value="west"/>
         <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
       </ParameterList> <!-- west_bc -->
-      <ParameterList name="east_bc">
-        <Parameter name="PFloTran Constraint" type="string" value="east"/>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{East}"/>
-      </ParameterList> <!-- east_bc -->
     </ParameterList> <!-- Boundary Conditions -->
   </ParameterList> <!-- Chemistry -->
 </ParameterList>

@@ -279,6 +279,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
       msg << "  (Must be of type Array(string).)\n";
       Exceptions::amanzi_throw(msg);
     }
+    std::string constraint_name = cond_sublist.get<std::string>(engine_constraint);
 
     // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
     // NOTE: the backend engine's input file. 
@@ -286,7 +287,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
     all_chem_conditions_.push_back(condition);
     int num_aq = 0, num_min = 0;
     AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
-    strcpy(condition->name, cond_name.c_str());
+    strcpy(condition->name, constraint_name.c_str());
 
     // Append this condition to our list of managed geochemical conditions.
 
@@ -446,6 +447,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     Exceptions::amanzi_throw(msg);
   }
 
+  // Other settings.
+  set_max_time_step(parameter_list_.get<double>("Max Time Step (s)", 9.9e9));
+
 }  // end XMLParameters()
 
 void Alquimia_Chemistry_PK::SetupAuxiliaryOutput(void) 
@@ -560,6 +564,7 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
     }
   }
 
+#if 0 // Unnecessary--Alquimia/PFlotran don't need these as inputs.
   // Free ion concentrations, activity coefficients, ion exchange 
   // ref cation sorbed concentrations, and surface complexation free 
   // site concentrations are stored as auxiliary variables internally within
@@ -622,6 +627,7 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
       chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
     }
   }
+#endif
 
 }  // end CopyAmanziStateToAlquimia()
 
@@ -1013,7 +1019,8 @@ void Alquimia_Chemistry_PK::advance(
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) 
   {
-    msg << "Error in Alquimia_Chemistry_PK::advance";
+    msg << "Error in Alquimia_Chemistry_PK::advance: ";
+    msg << chem_status_.message;
     Exceptions::amanzi_throw(msg); 
   }  
   
@@ -1030,15 +1037,6 @@ void Alquimia_Chemistry_PK::advance(
   }
 #endif
 
-#if 0
-  if (debug() == kDebugChemistryProcessKernel) 
-  {
-    // dumping the values of the final cell. not very helpful by itself,
-    // but can be move up into the loops....
-    chem_->DisplayTotalColumnHeaders(display_free_columns_);
-    chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
-  }
-#endif
 }  // end advance()
 
 
