@@ -80,13 +80,13 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBase::setup(S);
 
   // save the meshes
-  mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh_);
+  mesh_nc_ = S->GetDeformableMesh("domain");
 
   if (S->HasMesh("surface")) {
     surf_mesh_ = S->GetMesh("surface");
     surf3d_mesh_ = S->GetMesh("surface_3d");
-    surf_mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(surf_mesh_);
-    surf3d_mesh_nc_ = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(surf3d_mesh_);
+    surf_mesh_nc_ = S->GetDeformableMesh("surface");
+    surf3d_mesh_nc_ = S->GetDeformableMesh("surface_3d");
   }
 
   // create storage for primary variable, rock volume
@@ -133,8 +133,17 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   // we need to checkpoint those to be able to create
   // the deformed mesh after restart
   int dim = mesh_->space_dimension();
-  S->RequireField("vertex coordinate", name_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField("vertex_coordinate_domain", name_)
+      ->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("node", AmanziMesh::NODE, dim);
+  if (S->HasMesh("surface")) {
+    S->RequireField("vertex_coordinate_surface_3d", name_)
+        ->SetMesh(surf3d_mesh_)->SetGhosted()
+        ->SetComponent("node", AmanziMesh::NODE, dim);
+    S->RequireField("vertex_coordinate_surface", name_)
+        ->SetMesh(surf_mesh_)->SetGhosted()
+        ->SetComponent("node", AmanziMesh::NODE, dim-1);
+  }
 
   S->RequireFieldEvaluator("cell_volume");
   S->RequireFieldEvaluator("porosity");
@@ -256,17 +265,52 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
     int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
             Amanzi::AmanziMesh::OWNED);
 
-    Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate",name_)
+    Epetra_MultiVector& vc = *S->GetFieldData("vertex_coordinate_domain",name_)
         ->ViewComponent("node",false);
-
-    // search the id of the mid point on the top
     for (int iV=0; iV!=nnodes; ++iV) {
       // get the coords of the node
       mesh_->node_get_coordinates(iV,&coords);
       for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
     }
+    S->GetField("vertex_coordinate_domain",name_)->set_initialized();
   }
-  S->GetField("vertex coordinate",name_)->set_initialized();
+
+  if (S->HasMesh("surface")) {
+    // initialize the vertex coordinates of the surface meshes
+    int dim = surf_mesh_->space_dimension();
+    AmanziGeometry::Point coords;
+    coords.init(dim);
+    int nnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+            Amanzi::AmanziMesh::OWNED);
+
+    Epetra_MultiVector& vc = *S->GetFieldData("vertex_coordinate_surface",name_)
+        ->ViewComponent("node",false);
+    for (int iV=0; iV!=nnodes; ++iV) {
+      // get the coords of the node
+      surf_mesh_->node_get_coordinates(iV,&coords);
+      for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
+    }
+    S->GetField("vertex_coordinate_surface",name_)->set_initialized();
+  }
+
+  if (S->HasMesh("surface_3d")) {
+    // initialize the vertex coordinates of the surface meshes
+    int dim = surf3d_mesh_->space_dimension();
+    AmanziGeometry::Point coords;
+    coords.init(dim);
+    int nnodes = surf3d_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+            Amanzi::AmanziMesh::OWNED);
+
+    Epetra_MultiVector& vc = *S->GetFieldData("vertex_coordinate_surface_3d",name_)
+        ->ViewComponent("node",false);
+    for (int iV=0; iV!=nnodes; ++iV) {
+      // get the coords of the node
+      surf3d_mesh_->node_get_coordinates(iV,&coords);
+      for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
+    }
+    S->GetField("vertex_coordinate_surface_3d",name_)->set_initialized();
+  }
+
 }
 
 
@@ -393,10 +437,6 @@ bool VolumetricDeformation::advance(double dt) {
 
         smallest_cv_frac = std::min(smallest_cv_frac, cv_frac);
         smallest_cv = std::min(smallest_cv, cv_frac * cv0[0][*c]);
-        if (*c == 44) {
-          std::cout << "cvfrac = " << cv_frac << std::endl;
-          std::cout << "cv0,1 = " << cv0[0][*c] << ", " << cv1[0][*c] << std::endl;
-        }
         dcell_vol_c[0][*c] = cv_frac*cv0[0][*c] - cv1[0][*c];
         cv1[0][*c] = cv_frac*cv0[0][*c];
       }
@@ -431,7 +471,8 @@ bool VolumetricDeformation::advance(double dt) {
 
     Teuchos::OSTab tab = getOSTab();
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      *out_ << "  CV(" << *c0 << ")  = " << cv[0][*c0] << std::endl;
+      *out_ << "  CV_mesh(" << *c0 << ")  = " << mesh_->cell_volume(*c0) << std::endl;
+      *out_ << "  CV_vec(" << *c0 << ")  = " << cv[0][*c0] << std::endl;
       *out_ << "  CV0(" << *c0 << ")  = " << cv0[0][*c0] << std::endl;
       *out_ << "  CV1(" << *c0 << ")  = " << cv1[0][*c0] << std::endl;
       *out_ << "  dCV(" << *c0 << ")  = " << (*dcell_vol_vec)("cell",*c0) << std::endl;
@@ -703,14 +744,43 @@ bool VolumetricDeformation::advance(double dt) {
     surf3d_mesh_nc_->deform(surface3d_nodeids, surface3d_newpos, false, &surface_finpos);
   }
 
-  {  // update vertex coordinates in state (for checkpointing)
-    Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
+  {  // update vertex coordinates in state (for checkpointing and error recovery)
+    Epetra_MultiVector& vc =
+        *S_next_->GetFieldData("vertex_coordinate_domain",name_)
         ->ViewComponent("node",false);
     int dim = mesh_->space_dimension();
     int nnodes = vc.MyLength();
     for (int i=0; i!=nnodes; ++i) {
       AmanziGeometry::Point coords(dim);
       mesh_->node_get_coordinates(i,&coords);
+      for (int s=0; s!=dim; ++s) vc[s][i] = coords[s];
+    }
+  }
+
+  if (S_next_->HasMesh("surface")) {
+    // update vertex coordinates in state (for checkpointing and error recovery)
+    Epetra_MultiVector& vc =
+        *S_next_->GetFieldData("vertex_coordinate_surface",name_)
+        ->ViewComponent("node",false);
+    int dim = surf_mesh_->space_dimension();
+    int nnodes = vc.MyLength();
+    for (int i=0; i!=nnodes; ++i) {
+      AmanziGeometry::Point coords(dim);
+      surf_mesh_->node_get_coordinates(i,&coords);
+      for (int s=0; s!=dim; ++s) vc[s][i] = coords[s];
+    }
+  }
+
+  if (S_next_->HasMesh("surface_3d")) {
+    // update vertex coordinates in state (for checkpointing and error recovery)
+    Epetra_MultiVector& vc =
+        *S_next_->GetFieldData("vertex_coordinate_surface_3d",name_)
+        ->ViewComponent("node",false);
+    int dim = surf3d_mesh_->space_dimension();
+    int nnodes = vc.MyLength();
+    for (int i=0; i!=nnodes; ++i) {
+      AmanziGeometry::Point coords(dim);
+      surf3d_mesh_->node_get_coordinates(i,&coords);
       for (int s=0; s!=dim; ++s) vc[s][i] = coords[s];
     }
   }
