@@ -51,7 +51,7 @@ void OverlandHeadFlow::setup(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
     ASSERT(domain->space_dimension() == 2);
     standalone_mode_ = true;
-    S->RegisterMesh("surface", domain);
+    S->AliasMesh("domain", "surface");
   } else {
     standalone_mode_ = false;
   }

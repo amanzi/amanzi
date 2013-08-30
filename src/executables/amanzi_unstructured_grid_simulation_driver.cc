@@ -326,9 +326,14 @@ Amanzi::Simulator::ReturnType AmanziUnstructuredGridSimulationDriver::Run(
   // Create the state.
   Teuchos::ParameterList state_plist = params_copy.sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
-  S->RegisterDomainMesh(mesh);
-  if (surface3D_mesh != Teuchos::null) S->RegisterMesh("surface_3d", surface3D_mesh);
-  if (surface_mesh != Teuchos::null) S->RegisterMesh("surface", surface_mesh);
+
+  // register meshes with state
+  bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+  S->RegisterDomainMesh(mesh, deformable);
+  if (surface3D_mesh != Teuchos::null)
+    S->RegisterMesh("surface_3d", surface3D_mesh, deformable);
+  if (surface_mesh != Teuchos::null)
+    S->RegisterMesh("surface", surface_mesh, deformable);
 
   // create the top level Coordinator
   Amanzi::Coordinator coordinator(params_copy, S, comm);
