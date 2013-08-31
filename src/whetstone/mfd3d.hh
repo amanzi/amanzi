@@ -30,13 +30,13 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 */
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "WhetStone_typedefs.hh"
+#include "DenseMatrix.hh"
 #include "tensor.hh"
-
 
 namespace Amanzi {
 namespace WhetStone {
@@ -59,62 +59,49 @@ class MFD3D {
   ~MFD3D() {};
 
   virtual int L2consistency(int cell, const Tensor& T,
-                            Teuchos::SerialDenseMatrix<int, double>& N,
-                            Teuchos::SerialDenseMatrix<int, double>& Mc) = 0;
+                            DenseMatrix& N, DenseMatrix& Mc) = 0;
 
   virtual int L2consistencyInverse(int cell, const Tensor& T,
-                                   Teuchos::SerialDenseMatrix<int, double>& R,
-                                   Teuchos::SerialDenseMatrix<int, double>& Wc) = 0;
+                                   DenseMatrix& R, DenseMatrix& Wc) = 0;
 
   virtual int H1consistency(int cell, const Tensor& T,
-                            Teuchos::SerialDenseMatrix<int, double>& N,
-                            Teuchos::SerialDenseMatrix<int, double>& Mc) = 0;
+                            DenseMatrix& N, DenseMatrix& Mc) = 0;
 
-  virtual int MassMatrix(int cell, const Tensor& T,
-                         Teuchos::SerialDenseMatrix<int, double>& M) = 0; 
+  virtual int MassMatrix(int cell, const Tensor& T, DenseMatrix& M) = 0; 
 
-  virtual int MassMatrixInverse(int cell, const Tensor& T,
-                                Teuchos::SerialDenseMatrix<int, double>& W) = 0; 
+  virtual int MassMatrixInverse(int cell, const Tensor& T, DenseMatrix& W) = 0; 
 
-  virtual int StiffnessMatrix(int cell, const Tensor& T,
-                              Teuchos::SerialDenseMatrix<int, double>& A) = 0; 
+  virtual int StiffnessMatrix(int cell, const Tensor& T, DenseMatrix& A) = 0; 
 
   // experimental methods (for stability region analysis; unit test)
-  double CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc);
+  double CalculateStabilityScalar(DenseMatrix& Mc);
   void ModifyStabilityScalingFactor(double factor);
 
   // access members
   double scaling_factor() { return scaling_factor_; }
   double scalar_stability() { return scalar_stability_; }
-  Teuchos::SerialDenseMatrix<int, double>& matrix_stability() { return matrix_stability_; }
 
   // expension of mesh API (must be removed from this class lipnikov@lanl.gov)
   int cell_get_face_adj_cell(const int cell, const int face);
 
  protected:
   // supporting stability methods (add matrix Ms in M = Mc + Ms)
-  void StabilityScalar(int cell,
-                       Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, W for the inverse matrix
-                       Teuchos::SerialDenseMatrix<int, double>& Mc,
-                       Teuchos::SerialDenseMatrix<int, double>& M);
+  void StabilityScalar(int cell, DenseMatrix& N,  // use R, Wc, W for the inverse matrix
+                       DenseMatrix& Mc, DenseMatrix& M);
 
-  int StabilityOptimized(const Tensor& T,
-                         Teuchos::SerialDenseMatrix<int, double>& N,
-                         Teuchos::SerialDenseMatrix<int, double>& Mc,
-                         Teuchos::SerialDenseMatrix<int, double>& M);
+  int StabilityOptimized(const Tensor& T, DenseMatrix& N, 
+                         DenseMatrix& Mc, DenseMatrix& M);
 
   int StabilityMonotoneHex(int cell, const Tensor& T,
-                           Teuchos::SerialDenseMatrix<int, double>& Mc,
-                           Teuchos::SerialDenseMatrix<int, double>& M);
+                           DenseMatrix& Mc, DenseMatrix& M);
 
-  void GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N);
+  void GrammSchmidt(DenseMatrix& N);
 
  protected:
-  int FindPosition_(int v, AmanziMesh::Entity_ID_List nodes);
+  int FindPosition_(int v, Entity_ID_List nodes);
 
   int stability_method_;  // stability parameters
   double scalar_stability_, scaling_factor_;
-  Teuchos::SerialDenseMatrix<int, double> matrix_stability_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };

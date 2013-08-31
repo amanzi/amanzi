@@ -117,7 +117,7 @@ get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
 set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
 set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
-set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${XERCES_LIBRARIES})
+set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
 if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})

@@ -32,6 +32,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "DenseMatrix.hh"
 #include "boundary_function.hh"
 
 #include "Flow_State.hh"
@@ -127,7 +128,7 @@ class Matrix_MFD : public Epetra_Operator {
   bool flag_symmetry_;
   int actions_;  // applly, apply inverse, or both
 
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
+  std::vector<WhetStone::DenseMatrix> Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
   std::vector<double> Acc_cells_;  // duplication may be useful later

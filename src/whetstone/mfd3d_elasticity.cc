@@ -14,17 +14,13 @@ Usage:
 #include <cmath>
 #include <vector>
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_LAPACK.hpp"
-
 #include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
-#include "mfd3d_elasticity.hh"
+#include "DenseMatrix.hh"
 #include "tensor.hh"
+#include "mfd3d_elasticity.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -35,10 +31,9 @@ namespace WhetStone {
 * Requires mesh_get_edges to complete implementation.
 ****************************************************************** */
 int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
-                                    Teuchos::SerialDenseMatrix<int, double>& N,
-                                    Teuchos::SerialDenseMatrix<int, double>& Mc)
+                                    DenseMatrix& N, DenseMatrix& Mc)
 {
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
@@ -72,12 +67,11 @@ int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
-                                    Teuchos::SerialDenseMatrix<int, double>& N,
-                                    Teuchos::SerialDenseMatrix<int, double>& Ac)
+                                    DenseMatrix& N, DenseMatrix& Ac)
 {
-  int nrows = N.numRows();
+  int nrows = N.NumRows();
 
-  AmanziMesh::Entity_ID_List nodes, faces;
+  Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(cell, &nodes);
@@ -107,7 +101,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
   int nd = TE.size();
 
   // to calculate matrix R, we use temporary matrix N
-  N = 0;
+  N.PutScalar(0.0);
 
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
@@ -116,7 +110,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    AmanziMesh::Entity_ID_List face_nodes;
+    Entity_ID_List face_nodes;
     mesh_->face_get_nodes(f, &face_nodes);
     int num_face_nodes = face_nodes.size();
 
@@ -158,20 +152,23 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
   double volume = mesh_->cell_volume(cell);
   Tinv *= 1.0 / volume;
 
-  Teuchos::SerialDenseMatrix<int, double> RT(nrows, nd);  // R = N at this point
+  DenseMatrix RT(nrows, nd);  // R = N at this point
   if (Tinv.rank() == 1) {
-    double* data_N = N.values();
-    double* data_RT = RT.values();
+    double* data_N = N.Values();
+    double* data_RT = RT.Values();
     double s = Tinv(0, 0);
     for (int i = 0; i < nrows * nd; i++) data_RT[i] = data_N[i] * s;
   } else if (Tinv.rank() == 4) {
-    Teuchos::SerialDenseMatrix<int, double> Ttmp(Teuchos::View, Tinv.data(), nd, nd, nd);
+    DenseMatrix Ttmp(nd, nd, Tinv.data(), WHETSTONE_DATA_ACCESS_VIEW);
     MatrixMatrixProduct_(N, Ttmp, false, RT);
   }
-  MatrixMatrixProduct_(RT, N, true, Ac); 
+  DenseMatrix AcAc(nrows, nrows);
+  MatrixMatrixProduct_(RT, N, true, AcAc);
+  for (int i = 0; i < nrows; i++)
+  for (int j = 0; j < nrows; j++) Ac(i, j) = AcAc(i, j);
 
   // calculate matrix N
-  N = 0.0;
+  N.PutScalar(0.0);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
   for (int i = 0; i < num_nodes; i++) {
@@ -211,14 +208,14 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
 * Darcy mass matrix: a wrapper for other low-level routines
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
-                                      Teuchos::SerialDenseMatrix<int, double>& A)
+                                      DenseMatrix& A)
 {
   int d = mesh_->space_dimension();
   int nd = d * (d + 1);
-  int nrows = A.numRows();
+  int nrows = A.NumRows();
 
-  Teuchos::SerialDenseMatrix<int, double> N(nrows, nd);
-  Teuchos::SerialDenseMatrix<int, double> Ac(nrows, nrows);
+  DenseMatrix N(nrows, nd);
+  DenseMatrix Ac(nrows, nrows);
 
   int ok = H1consistency(cell, deformation, N, Ac);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -232,15 +229,14 @@ int MFD3D_Elasticity::StiffnessMatrix(int cell, const Tensor& deformation,
 * Classical matrix-matrix product
 ****************************************************************** */
 void MFD3D_Elasticity::MatrixMatrixProduct_(
-    const Teuchos::SerialDenseMatrix<int, double>& A,
-    const Teuchos::SerialDenseMatrix<int, double>& B, bool transposeB,
-    Teuchos::SerialDenseMatrix<int, double>& AB)
+    const DenseMatrix& A, const DenseMatrix& B, bool transposeB,
+    DenseMatrix& AB)
 {
-  int nrows = A.numRows();
-  int ncols = A.numCols();
+  int nrows = A.NumRows();
+  int ncols = A.NumCols();
 
-  int mrows = B.numRows();
-  int mcols = B.numCols();
+  int mrows = B.NumRows();
+  int mcols = B.NumCols();
 
   if (transposeB) {
     for (int i = 0; i < nrows; i++) {

@@ -66,7 +66,7 @@ void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    WhetStone::DenseMatrix& Mff = Mff_cells_[c];
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 

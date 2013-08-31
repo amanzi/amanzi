@@ -15,18 +15,13 @@ Usage:
 #ifndef __NLFV_HH__
 #define __NLFV_HH__
 
-/*
-This is the discretization package, release beta.
-*/
-
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "WhetStone_typedefs.hh"
 #include "tensor.hh"
-#include "mfd3d.hh"
 
 
 namespace Amanzi {
@@ -38,7 +33,11 @@ class NLFV {
   ~NLFV() {};
 
   void HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
-                              AmanziGeometry::Point& hap, double& hap_weight);
+                              AmanziGeometry::Point& p, double& weight);
+
+  void PositiveDecomposition(const AmanziGeometry::Point& conormal, 
+                             const std::vector<AmanziGeometry::Point>& tau,
+                             double* w1, double* w2, int* i1, int* i2);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

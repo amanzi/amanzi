@@ -14,11 +14,6 @@ Usage:
 #include <cmath>
 #include <vector>
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_BLAS_types.hpp"
-#include "Teuchos_LAPACK.hpp"
-
 #include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
@@ -42,9 +37,9 @@ MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
 /* ******************************************************************
 * Calculate stability factor using matrix and optional scaling.
 ****************************************************************** */
-double MFD3D::CalculateStabilityScalar(Teuchos::SerialDenseMatrix<int, double>& Mc)
+double MFD3D::CalculateStabilityScalar(DenseMatrix& Mc)
 {
-  int nrows = Mc.numRows();
+  int nrows = Mc.NumRows();
 
   scalar_stability_ = 0.0;
   for (int i = 0; i < nrows; i++) scalar_stability_ += Mc(i, i);
@@ -74,16 +69,14 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 /* ******************************************************************
 * Simplest stability term is added to the consistency term. 
 ****************************************************************** */
-void MFD3D::StabilityScalar(int cell,
-                            Teuchos::SerialDenseMatrix<int, double>& N,
-                            Teuchos::SerialDenseMatrix<int, double>& Mc,
-                            Teuchos::SerialDenseMatrix<int, double>& M)
+void MFD3D::StabilityScalar(int cell, DenseMatrix& N,
+                            DenseMatrix& Mc, DenseMatrix& M)
 {
   GrammSchmidt(N);
   CalculateStabilityScalar(Mc);
 
-  int nrows = Mc.numRows();
-  int ncols = N.numCols();
+  int nrows = Mc.NumRows();
+  int ncols = N.NumCols();
 
   for (int i = 0; i < nrows; i++) {
     for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
@@ -111,14 +104,12 @@ void MFD3D::StabilityScalar(int cell,
 * The algorithm minimizes off-diagonal entries in the mass matrix.
 * WARNING: the routine is used for inverse of mass matrix only.
 ****************************************************************** */
-int MFD3D::StabilityOptimized(const Tensor& T,
-                              Teuchos::SerialDenseMatrix<int, double>& N,
-                              Teuchos::SerialDenseMatrix<int, double>& Mc,
-                              Teuchos::SerialDenseMatrix<int, double>& M)
+int MFD3D::StabilityOptimized(const Tensor& T, DenseMatrix& N,
+                              DenseMatrix& Mc, DenseMatrix& M)
 {
   int d = mesh_->space_dimension();
-  int nrows = N.numRows();
-  int ncols = N.numCols();
+  int nrows = N.NumRows();
+  int ncols = N.NumCols();
 
   // find correct scaling of a stability term
   double lower, upper, eigmin = Mc(0, 0);
@@ -126,22 +117,21 @@ int MFD3D::StabilityOptimized(const Tensor& T,
   for (int k = 1; k < nrows; k++) eigmin = std::min(eigmin, Mc(k, k));
 
   // find null space of N^T
-  Teuchos::SerialDenseMatrix<int, double> U(nrows, nrows);
-  int info, size = 5 * d + 3 * nrows;
+  DenseMatrix U(nrows, nrows);
+  int info, ldv = 1, size = 5 * d + 3 * nrows;
   double V, S[nrows], work[size];
 
-  Teuchos::LAPACK<int, double> lapack;
-  lapack.GESVD('A', 'N', nrows, ncols, N.values(), nrows,  // N = u s v
-               S, U.values(), nrows, &V, 1, work, size, 
-               NULL, &info);
+  DGESVD_F77("A", "N", &nrows, &ncols, N.Values(), &nrows,  // N = u s v
+             S, U.Values(), &nrows, &V, &ldv, work, &size, &info);
+
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // calculate vectors C and C0
   int mrows = nrows * (nrows - 1) / 2;
   int mcols = nrows - ncols;
   int nparam = (mcols + 1) * mcols / 2;
-  Teuchos::SerialDenseMatrix<int, double> C(mrows, nparam);
-  Teuchos::SerialDenseVector<int, double> F(mrows);
+  DenseMatrix C(mrows, nparam);
+  DenseVector F(mrows);
 
   int m, n = 0;
   for (int k = ncols; k < nrows; k++) {
@@ -170,18 +160,20 @@ int MFD3D::StabilityOptimized(const Tensor& T,
   }
 
   // Form a linear system for parameters
-  Teuchos::SerialDenseMatrix<int, double> A(nparam, nparam);
-  Teuchos::SerialDenseVector<int, double> G(nparam);
+  DenseMatrix A(nparam, nparam);
+  DenseVector G(nparam);
 
-  A.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, C, C, 0.0);
-  G.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, C, F, 0.0);
+  A.Multiply(C, C, true);  // A = C^T C
+  C.Multiply(F, G, true);
 
   // Find parameters
-  lapack.POSV('U', nparam, 1, A.values(), nparam, G.values(), nparam, &info);
+  int nrhs = 1;
+  DPOSV_F77("U", &nparam, &nrhs, A.Values(), &nparam, G.Values(), &nparam, &info);
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // project solution on the positive quadrant and convert to matrix
-  Teuchos::SerialDenseMatrix<int, double> P(mcols, mcols);
+  DenseMatrix P(mcols, mcols);
+  P.PutScalar(0.0);
 
   int status = WHETSTONE_ELEMENTAL_MATRIX_OK;
   for (int loop = 0; loop < 3; loop++) {
@@ -206,8 +198,8 @@ int MFD3D::StabilityOptimized(const Tensor& T,
     }
 
     // check SPD property (we use allocated memory)
-    Teuchos::SerialDenseMatrix<int, double> Ptmp(P);
-    lapack.SYEV('N', 'U', mcols, Ptmp.values(), mcols, S, work, size, &info); 
+    DenseMatrix Ptmp(P);
+    DSYEV_F77("N", "U", &mcols, Ptmp.Values(), &mcols, S, work, &size, &info); 
     if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
     if (S[0] > eigmin) {
@@ -222,7 +214,8 @@ int MFD3D::StabilityOptimized(const Tensor& T,
     for (int j = i; j < nrows; j++) M(i, j) = Mc(i, j);
   }
 
-  Teuchos::SerialDenseMatrix<int, double> UP(nrows, mcols);
+  DenseMatrix UP(nrows, mcols);
+  UP.PutScalar(0.0);
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < mcols; j++) {
       double& entry = UP(i, j);
@@ -245,10 +238,10 @@ int MFD3D::StabilityOptimized(const Tensor& T,
 /* ******************************************************************
 * Conventional Gramm-Schimdt orthogonalization of colums of matrix N. 
 ****************************************************************** */
-void MFD3D::GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N)
+void MFD3D::GrammSchmidt(DenseMatrix& N)
 {
-  int nrows = N.numRows();
-  int ncols = N.numCols();
+  int nrows = N.NumRows();
+  int ncols = N.NumCols();
 
   int i, j, k;
   for (i = 0; i < ncols; i++) {
@@ -272,8 +265,8 @@ void MFD3D::GrammSchmidt(Teuchos::SerialDenseMatrix<int, double>& N)
 ****************************************************************** */
 int MFD3D::cell_get_face_adj_cell(const int cell, const int face)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(face, AmanziMesh::USED, &cells);
+  Entity_ID_List cells;
+  mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);
   int ncells = cells.size();
 
   if (ncells == 2) {
@@ -288,7 +281,7 @@ int MFD3D::cell_get_face_adj_cell(const int cell, const int face)
 /* ******************************************************************
 * Returns position of the number v in the list of nodes.  
 ****************************************************************** */
-int MFD3D::FindPosition_(int v, AmanziMesh::Entity_ID_List nodes)
+int MFD3D::FindPosition_(int v, Entity_ID_List nodes)
 {
   for (int i = 0; i < nodes.size(); i++) {
     if (nodes[i] == v) return i;

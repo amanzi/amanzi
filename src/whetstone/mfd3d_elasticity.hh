@@ -29,11 +29,11 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 */
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "DenseMatrix.hh"
 #include "tensor.hh"
 #include "mfd3d.hh"
 
@@ -48,31 +48,27 @@ class MFD3D_Elasticity : public MFD3D {
 
   // required implementation of two consistency conditions
   int L2consistency(int cell, const Tensor& deformation,
-                    Teuchos::SerialDenseMatrix<int, double>& N,
-                    Teuchos::SerialDenseMatrix<int, double>& Mc);
+                    DenseMatrix& N, DenseMatrix& Mc);
 
   int L2consistencyInverse(int cell, const Tensor& deformation,
-                           Teuchos::SerialDenseMatrix<int, double>& R,
-                           Teuchos::SerialDenseMatrix<int, double>& Wc) { return WHETSTONE_ELEMENTAL_MATRIX_OK; }
+                           DenseMatrix& R, DenseMatrix& Wc) { return WHETSTONE_ELEMENTAL_MATRIX_OK; }
 
   int H1consistency(int cell, const Tensor& deformation,
-                    Teuchos::SerialDenseMatrix<int, double>& N,
-                    Teuchos::SerialDenseMatrix<int, double>& Mc);
+                    DenseMatrix& N, DenseMatrix& Mc);
 
   int MassMatrix(int cell, const Tensor& deformation,
-                 Teuchos::SerialDenseMatrix<int, double>& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+                 DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
   int MassMatrixInverse(int cell, const Tensor& deformation,
-                        Teuchos::SerialDenseMatrix<int, double>& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+                        DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
   int StiffnessMatrix(int cell, const Tensor& deformation,
-                      Teuchos::SerialDenseMatrix<int, double>& A);
+                      DenseMatrix& A);
 
  private:
   void MatrixMatrixProduct_(
-      const Teuchos::SerialDenseMatrix<int, double>& A,
-      const Teuchos::SerialDenseMatrix<int, double>& B, bool transposeB,
-      Teuchos::SerialDenseMatrix<int, double>& AB);
+      const DenseMatrix& A, const DenseMatrix& B, bool transposeB,
+      DenseMatrix& AB);
 };
 
 }  // namespace WhetStone

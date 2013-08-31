@@ -14,5 +14,5 @@ if [ ! -e "${patch_file}" ] ; then
 fi
 
 cd ${trilinos_src_dir}
-patch -p0 -R < ${patch_file}
+patch -p1 < ${patch_file}
 exit $?

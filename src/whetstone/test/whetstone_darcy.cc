@@ -14,8 +14,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -54,7 +52,7 @@ TEST(DARCY_MASS) {
   Tensor T(3, 1);
   T(0, 0) = 1;
 
-  Teuchos::SerialDenseMatrix<int, double> M(nfaces, nfaces);
+  DenseMatrix M(nfaces, nfaces);
   for (int method = 0; method < 1; method++) {
     mfd.MassMatrix(cell, T, M);
 
@@ -120,14 +118,16 @@ TEST(DARCY_INVERSE_MASS) {
   Tensor T(3, 1);  // tensor of rank 1
   T(0, 0) = 1;
 
-  Teuchos::SerialDenseMatrix<int, double> W(nfaces, nfaces);
-  for (int method = 0; method < 3; method++) {
+  DenseMatrix W(nfaces, nfaces);
+  for (int method = 0; method < 4; method++) {
     if (method == 0) 
       mfd.MassMatrixInverse(cell, T, W);
     else if (method == 1)
       mfd.MassMatrixInverseScaled(cell, T, W);
     else if (method == 2)
       mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
+    else if (method == 3)
+      mfd.MassMatrixInverseSO(cell, T, W);
 
     printf("Inverse of mass matrix for method=%d\n", method);
     for (int i=0; i<6; i++) {
@@ -139,12 +139,7 @@ TEST(DARCY_INVERSE_MASS) {
     for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
 
     // verify exact integration property
-    Teuchos::LAPACK<int, double> lapack;
-    int info, ipiv[nfaces];
-    double work[nfaces];
-
-    lapack.GETRF(nfaces, nfaces, W.values(), nfaces, ipiv, &info);
-    lapack.GETRI(nfaces, W.values(), nfaces, ipiv, work, nfaces, &info);
+    W.Inverse();
 
     Entity_ID_List faces;
     std::vector<int> dirs;
@@ -199,7 +194,7 @@ TEST(DARCY_STIFFNESS_2D) {
   Tensor T(2, 1);
   T(0, 0) = 1;
 
-  Teuchos::SerialDenseMatrix<int, double> A(nnodes, nnodes);
+  DenseMatrix A(nnodes, nnodes);
   mfd.StiffnessMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
@@ -270,7 +265,7 @@ TEST(DARCY_STIFFNESS_3D) {
   Tensor T(3, 1);
   T(0, 0) = 1;
 
-  Teuchos::SerialDenseMatrix<int, double> A(nnodes, nnodes);
+  DenseMatrix A(nnodes, nnodes);
   mfd.StiffnessMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);

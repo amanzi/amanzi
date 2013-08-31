@@ -14,7 +14,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #include "MeshFactory.hh"
@@ -52,7 +51,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
   MFD3D_Elasticity mfd(mesh);
 
   int nnodes = 4, nrows = 8, cell = 0;
-  Teuchos::SerialDenseMatrix<int, double> A(nrows, nrows);
+  DenseMatrix A(nrows, nrows);
 
   for (int method = 0; method < 2; method++) {
     Tensor T;
@@ -139,7 +138,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   Tensor T(3, 1);
   T(0, 0) = 1;
 
-  Teuchos::SerialDenseMatrix<int, double> A(nrows, nrows);
+  DenseMatrix A(nrows, nrows);
   mfd.StiffnessMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);

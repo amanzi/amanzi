@@ -704,30 +704,31 @@ User-defined regions are constructed using the following syntax
 
  * [U][S] "Regions" [list] can accept a number of lists for named regions (REGION)
 
-   * Shape [list] Geometric model primitive, choose exactly one of the following [see table below]: `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", `"Region: Layer`", `"Region: Polygon`",`"Region: Surface`"
+   * Shape [list] Geometric model primitive, choose exactly one of the
+     following [see table below]: `"Region: Point`", `"Region: Box`",
+     `"Region: Plane`", `"Region: Layer`", `"Region: Polygon`", `"Region: Logical`"
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-|  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
-+================================+=========================================+==============================+========================================================================+
-| `"Region: Point"`  [SU]        | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"` [SU]           | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Plane"`  [SU]        | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygon"`  [U]       | `"Number of points`", `"Points`"        | int, Array double            | Number of polygon points and point coordinates in linear array         |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
-|                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Color Function"` [S] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Surface"`            | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
-+--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+|  shape functional name          | parameters                              | type(s)                      | Comment                                                                |
++=================================+=========================================+==============================+========================================================================+
+| `"Region: Point"`  [SU]         | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Box"` [SU]            | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Plane"`  [SU]         | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Polygon"`  [U]        | `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
+|                                 |                                         |                              | provides a set of faces with a normal for computing flux               |    
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Logical"` [U]         | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Labeled Set"`         | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+|                                 | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Color Function"` [SU] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
++---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 Notes
 
@@ -760,6 +761,37 @@ Notes
 
   Currently, Amanzi-U only supports mesh files in the Exodus II format.
 
+* `"Region: Polygon`" defines a polygonal region on which mesh faces and
+  nodes can be queried. NOTE that one cannot ask for cells in a polygonal
+  region. In 2D, the "polygonal" region is a line and is specified by 2 points
+  In 3D, the "polygonal" region is specified by an arbitrary number of points.
+  In both cases the point coordinates are given as a linear array. The polygon
+  can be non-convex.
+
+  The polygonal region can be queried for a normal. In 2D, the normal is
+  defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
+  In 3D, the normal of the polygon is defined by the order in which points 
+  are specified.
+
+* `"Region: Logical`" Logical operations on regions allow for more
+  advanced region definitions. At this time the Logical Region allows
+  for logical operations on a list of regions.  In the case of Union
+  the result is obvious, it is the union of all regions.  Similarly
+  for Intersection. In the case of Subtraction, subtraction is
+  performed from the first region in the list.  The Complement is a
+  special case in that it is the only case that operates on single
+  region, and returns the complement to it within the domain 'Entire
+  Domain'.  Currently, multi-region booleans are not supported in the same expression.
+
+.. code-block:: xml
+
+  <ParameterList name="Lower Layers">
+    <ParameterList name="Region: Logical">
+      <Parameter name="Operation" type="string" value="Union"/>
+      <Parameter name="RegionList" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
+    </ParameterList>
+  </ParameterList>
+
 * `"Region: Color Function`" defines a region based a specified
   integer color, `"Value`", in a structured color function file,
   `"File`". The format of the color function file is given below in
@@ -774,29 +806,6 @@ Notes
   In order to avoid, gaps and overlaps in specifying materials, it is
   strongly recommended that regions be defined using a single color
   function file. 
-
-* `"Region: Polygon`" defines a polygonal region on which mesh faces and
-  nodes can be queried. NOTE that one cannot ask for cells in a polygonal
-  region.In 2D, the "polygonal" region is a line and is specified by 2 points
-  In 3D, the "polygonal" region is specified by an arbitrary number of points.
-  In both cases the point coordinates are given as a linear array. The polygon
-  can be non-convex.
-
-  The polygonal region can be queried for a normal. In 2D, the normal is
-  defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
-  In 3D, the normal of the polygon is defined by the order in which points 
-  are specified.
-
-* Surface files contain labeled triangulated face sets.  The user is
-  responsible for ensuring that the intersections with other surfaces
-  in the problem, including the boundaries, are `"exact`" (*i.e.* that
-  surface intersections are `"watertight`" where applicable), and that
-  the surfaces are contained within the computational domain.  If
-  nodes in the surface fall outside the domain, the elements they
-  define are ignored.
-
-  Examples of surface files are given in the `"Exodus II`" file 
-  format here.
 
 * Region names must NOT be repeated
 
@@ -875,23 +884,13 @@ the following set of physical properties using the supported models described be
 
 * [SU] "Material Properties" [list] can accept multiple lists for named material types (MATERIAL)
 
- * [S] "Permeability Output File" [string] Name of file used to cache intrinsic permeabilities precomputed on a uniform grid at the finest resolution covering the entire domain
-
- * [S] "Permeability Output PlotFile" [string] Name of file used to cache intrinsic permeabilities precomputed over the entire domain for all levels of refinement
-
- * [S] "Porosity Output File" [string] Name of file used to cache porosity precomputed on a uniform grid at the finest resolution covering the entire domain
-
- * [S] "Porosity Output PlotFile" [string] Name of file used to cache porosity precomputed over the entire domain for all levels of refinement
-
- * [S] "Porosity Input PlotFile" [string] Name of file that contains cached porosity precomputed over the entire domain for all levels of refinement
-
  * [S] "Saturation Threshold For Kr" [double] Global threshold in saturation above which the analytic forms for van Genuchten are replaced with a Hermite polynomial fit 
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`", `"Porosity: Random`", `"Porosity: GSLib`", `"Porosity: File`" (see below)
+  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
-  * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`", `"Intrinsic Permeability: GSLib`", `"Intrinsic Permeability: File`" (see below)
+  * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`" (see below)
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
@@ -901,6 +900,13 @@ the following set of physical properties using the supported models described be
 
   * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
 
+  * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
+
+  * [SU] Molecular Diffusion [list] Parameterized model for
+    a single molecular diffusion coefficient for all primary species [L^2 / time = m^2 / s]. Choose exactly one of the following: `"Molecular Diffusion: Uniform`".
+
+  * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. Choose exactly one of the following: `"Tortuosity: Uniform`".
+
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
 The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
@@ -908,25 +914,6 @@ The following models can be specified for porosity (only `"Porosity: Uniform`" i
 * [SU] `"Porosity: Uniform`" [list] requires 
  
  * [SU] `"Value`" [double] to specify the constant value of porosity.
-
-* `"Porosity: Random`" [list] requires
- 
- * `"Mean And RMS Value`" [Array double] to specify the mean value.
-
-* `"Porosity: GSLib`" [list] requires 
- 
- * `"File`" [string] to specify the name of a gslib input file.
-
-* `"Porosity: File`" [list] requires 
- 
- * `"File`" [string] to specify name of a file;
- 
- * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
-
- * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
-
- * `"Framework`" [string] (if the mesh framework with which the file was written is different from current) will indicate the format of the file; optional. (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
-
 
 The following models can be specified for the intrinsic permeability of the material (only `"Intrinsic Permeability: Uniform`" and `"Intrinsic Permeability: Anisotropic Uniform`" are supported at the moment):
 
@@ -944,22 +931,7 @@ The following models can be specified for the intrinsic permeability of the mate
 
  where the directions refer to the global cartesian coordinates.
 
-* `"Intrinsic Permeability: GSLib`" [list] requires 
- 
- * `"File`" [string] to specify the name of a gslib input file. 
-
-* `"Intrinsic Permeability: File`" [list] requires 
- 
- * `"File`" [string] to specify name of a file;
- 
- * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
-
- * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
-
- * `"Format`" [string] to specify the format of the file.  (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
-
 Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
-
 
 The following models are currently supported for capillary pressure (Section 3.3.2):
 
@@ -995,6 +967,7 @@ The following models are currently supported for capillary pressure (Section 3.3
 
  * [U] `"krel smoothing interval`" [double] (default value gives no relative permeability smoothing).
 
+
 The following models can be specified for particle density (only `"Particle Density: Uniform`" is supported at the moment):
 
 * [U] `"Particle Density: Uniform`" [list] requires 
@@ -1014,6 +987,27 @@ The following models are currently supported for Specific Storage.
 * [U] `"Specific Storage: Uniform`" [list] requires
 
  * [U] `"Value`" [double] to specify specific storage.
+
+The following models are currently supported for the dispersion tensor
+in transport
+
+* [SU] `"Dispersion Tensor: Uniform Isotropic`" (see Equation 4.9) [list] requires
+
+ * [SU] `"alphaL`" [m]  the longitudinal dispersion  (default 0)
+ * [SU] `"alphaT`" [m]  the transverse dispersion    (default 0)
+
+The following models are currently supported for the Molecular
+Diffusion coefficient.
+
+* [SU] `"Molecular Diffusion: Uniform`" [list] requires
+
+ * [SU] `"Value`" [double] to specify diffusion coefficient [m^2/s] (see Equation 4.15).
+
+The following models are currently supported for Tortuosity.
+
+* [SU] `"Tortuosity: Uniform`" [list] requires
+
+ * [SU] `"Value`" [double] to specify Tortuosity [-] (see Equation 4.18).
 
 
 Example:
