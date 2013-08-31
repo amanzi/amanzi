@@ -231,6 +231,8 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
 {
   double max_sat_pert = 0.125;
   bool ret_val = false;
+  double dumping_factor = 0.6;
+  double reference_pressure = 101325.;
 
   int ncells_clipped(0);
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 
@@ -257,11 +259,26 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
       if (du[c] >= 0.0) du[c] = fabs(du_pert_max);
       else du[c] = -fabs(du_pert_max);
 
-      //cout<<"old "<<u[c]<<" new "<<u[c]-du[c]<<" dp "<<du[c]<<" old dp "<<tmp<<endl;
-
       ncells_clipped++;
       ret_val = true;
     }    
+  }
+
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double unew = u[c] - du[c];
+    if      ((u[c] < reference_pressure) && (unew > reference_pressure)){
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
+	cout << "Flow PK: U --> S\n";
+      }
+      du[c] = dumping_factor * du[c];
+    }
+    else if ((u[c] > reference_pressure) && (unew < reference_pressure)){
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
+	cout << "Flow PK: S --> U\n";
+      }
+    }
+
   }
 
   if (verbosity >= FLOW_VERBOSITY_HIGH) {
