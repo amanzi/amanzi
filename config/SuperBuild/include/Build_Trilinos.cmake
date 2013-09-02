@@ -153,24 +153,18 @@ set(Trilinos_CMAKE_LANG_ARGS
 #
 
 # Trilinos patch to make Ifpack use Hypre correctly
-set(ENABLE_Trilinos_Patch ON)
-set(Trilinos_PATCH_COMMAND)
+set(ENABLE_Trilinos_Patch OFF)
 if (ENABLE_Trilinos_Patch)
   set(Trilinos_patch_file trilinos-ifpack-hypre.patch)
-endif()
-
-if (Trilinos_patch_file)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)
   set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
+  message(STATUS "Applying patch to Ifpack to use Hypre with non-contiguous global ids")
 else()
-  message(WARNING "ENABLE_Trilinos_Patch is ON but no patch file found for "
-                  "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} "
-                  "Will not patch Trilinos.")
+  set(Trilinos_PATCH_COMMAND)
+  message(STATUS "Patch NOT APPLIED for Ifpack to use Hypre with non-contiguous global ids")
 endif()
-
-
 
 # Trilinos needs a patch for GNU versions > 4.6
 #LPRITCHif ( CMAKE_CXX_COMPILER_VERSION )
