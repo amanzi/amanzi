@@ -899,8 +899,9 @@ the second-one is more accurate but also is a few times more expensive.
 
    <ParameterList name="Dispersivity">
      <Parameter name="model" type="string" value="Bear"/>
-     <Parameter name="longitudinal" type="double" value="1e-2"/>
-     <Parameter name="transverse" type="double" value="1e-5"/>
+     <Parameter name="alphaL" type="double" value="1e-2"/>
+     <Parameter name="alphaT" type="double" value="1e-5"/>
+     <Parameter name="D" type="double" value="1e-8"/>
      <Parameter name="numerical method" type="string" value="two point flux approximation"/>
      <Parameter name="prconditioner" type="string" value="Hypre AMG"/>
    </ParameterList>  

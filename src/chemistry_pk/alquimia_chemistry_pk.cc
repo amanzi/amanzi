@@ -2,6 +2,7 @@
 
 #include "alquimia_chemistry_pk.hh"
 
+#include <set>
 #include <string>
 #include <algorithm>
 
@@ -279,6 +280,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
       msg << "  (Must be of type Array(string).)\n";
       Exceptions::amanzi_throw(msg);
     }
+    std::string constraint_name = cond_sublist.get<std::string>(engine_constraint);
 
     // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
     // NOTE: the backend engine's input file. 
@@ -286,7 +288,7 @@ void Alquimia_Chemistry_PK::ParseChemicalConditions(const std::string& sublist_n
     all_chem_conditions_.push_back(condition);
     int num_aq = 0, num_min = 0;
     AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, condition);
-    strcpy(condition->name, cond_name.c_str());
+    strcpy(condition->name, constraint_name.c_str());
 
     // Append this condition to our list of managed geochemical conditions.
 
@@ -446,6 +448,9 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     Exceptions::amanzi_throw(msg);
   }
 
+  // Other settings.
+  set_max_time_step(parameter_list_.get<double>("Max Time Step (s)", 9.9e9));
+
 }  // end XMLParameters()
 
 void Alquimia_Chemistry_PK::SetupAuxiliaryOutput(void) 
@@ -560,6 +565,7 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
     }
   }
 
+#if 0 // Unnecessary--Alquimia/PFlotran don't need these as inputs.
   // Free ion concentrations, activity coefficients, ion exchange 
   // ref cation sorbed concentrations, and surface complexation free 
   // site concentrations are stored as auxiliary variables internally within
@@ -622,6 +628,7 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
       chem_data_.aux_data.aux_doubles.data[offset] = cells[cell_id];
     }
   }
+#endif
 
 }  // end CopyAmanziStateToAlquimia()
 
@@ -847,22 +854,25 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_total_component_conc
 // or -1 if an error occurred.
 int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, int cellIndex, AlquimiaGeochemicalCondition* condition) 
 {
-
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
   CopyAmanziStateToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
   CopyAmanziMaterialPropertiesToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
 
-  // Apply the geochemical condition for this cell.
   int ierr = 0;
-  chem_.ProcessCondition(&chem_data_.engine_state,
-                         condition,
-                         &chem_data_.material_properties,
-                         &chem_data_.state,
-                         &chem_data_.aux_data,
-                         &chem_status_);
-  if (chem_status_.error != 0)
-    return -1;
+
+  // Apply the geochemical condition for this cell.
+  if (condition != NULL)
+  {
+    chem_.ProcessCondition(&chem_data_.engine_state,
+        condition,
+        &chem_data_.material_properties,
+        &chem_data_.state,
+        &chem_data_.aux_data,
+        &chem_status_);
+    if (chem_status_.error != 0)
+      return -1;
+  }
 
   // create a backup copy of the components
   //      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
@@ -944,7 +954,10 @@ void Alquimia_Chemistry_PK::advance(
 
   // Now loop through all the regions and advance the chemistry.
   int ierr = 0;
+
+  // First, we advance all cells for which we have boundary conditions.
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
+  std::set<int> boundary_cells; // Keep track of boundary cells.
   for (std::map<std::string, AlquimiaGeochemicalCondition*>::iterator 
        cond_iter = chem_boundary_conditions_.begin(); 
        cond_iter != chem_boundary_conditions_.end(); ++cond_iter)
@@ -966,7 +979,10 @@ void Alquimia_Chemistry_PK::advance(
       AmanziMesh::Entity_ID_List cells_for_face;
       mesh->face_get_cells(face_indices[f], AmanziMesh::OWNED, &cells_for_face);
       for (size_t i = 0; i < cells_for_face.size(); ++i)
+      {
         cell_indices.push_back(cells_for_face[i]);
+        boundary_cells.insert(cells_for_face[i]);
+      }
     }
 
     for (size_t i = 0; i < cell_indices.size(); i++) 
@@ -1009,13 +1025,56 @@ void Alquimia_Chemistry_PK::advance(
 #endif
     }  // for(cells)
   }
+
   int recv(0);
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) 
   {
-    msg << "Error in Alquimia_Chemistry_PK::advance";
+    msg << "Error in Alquimia_Chemistry_PK::advance: ";
+    msg << chem_status_.message;
     Exceptions::amanzi_throw(msg); 
-  }  
+  }
+  
+  // Now do the interior cells.
+  for (int cell = 0; cell < num_cells; ++cell)
+  {
+    // If this cell belongs to the boundary, skip it.
+    if (boundary_cells.find(cell) != boundary_cells.end()) continue;
+
+    int num_iterations = AdvanceSingleCell(delta_time, cell, NULL);
+    if (num_iterations > 0)
+    {
+      //std::stringstream message;
+      //message << "--- " << cell << "\n";
+      //beaker_components_.Display(message.str().c_str());
+      if (max_iterations < num_iterations) 
+      {
+        max_iterations = num_iterations;
+        imax = cell;
+      }
+      if (min_iterations > num_iterations) 
+      {
+        min_iterations = num_iterations;
+        imin = cell;
+      }
+      ave_iterations += num_iterations;
+    } 
+    else
+    {
+      ierr = 1;
+    }
+
+    // update this cell's data in the arrays
+    if (ierr == 0) CopyAlquimiaStateToAmanzi(cell);
+  }
+
+  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  if (recv != 0) 
+  {
+    msg << "Error in Alquimia_Chemistry_PK::advance: ";
+    msg << chem_status_.message;
+    Exceptions::amanzi_throw(msg); 
+  }
   
 #ifdef GLENN_DEBUG
   if (debug() == kDebugChemistryProcessKernel) 
@@ -1030,15 +1089,6 @@ void Alquimia_Chemistry_PK::advance(
   }
 #endif
 
-#if 0
-  if (debug() == kDebugChemistryProcessKernel) 
-  {
-    // dumping the values of the final cell. not very helpful by itself,
-    // but can be move up into the loops....
-    chem_->DisplayTotalColumnHeaders(display_free_columns_);
-    chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
-  }
-#endif
 }  // end advance()
 
 

@@ -200,6 +200,27 @@ void PK_State::CopyMasterFace2GhostFace(const Epetra_Vector& v, Epetra_Vector& v
 
 
 /* *******************************************************************
+* Transfers node-based data from ghost to master positions and 
+* performs the operation 'mode' there. 
+* WARNING: Vector v must contain ghost nodes.              
+******************************************************************* */
+void PK_State::CombineGhostNode2MasterNode(Epetra_Vector& v, Epetra_CombineMode mode)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_vmap = mesh_->node_map(false);
+  const Epetra_BlockMap& target_vmap = mesh_->node_map(true);
+  Epetra_Import importer(target_vmap, source_vmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vv(View, source_vmap, vdata);
+
+  vv.Export(v, importer, mode);
+#endif
+}
+
+
+/* *******************************************************************
 * Lp norm of the vector v1.    
 ******************************************************************* */
 double PK_State::normLpCell(const Epetra_Vector& v1, double p)

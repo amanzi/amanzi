@@ -19,6 +19,7 @@ Usage:
 #include "Epetra_Vector.h"
 
 #include "Preconditioner.hh"
+#include "Transport_State.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -27,8 +28,9 @@ class Dispersion_Specs {
  public:
   Dispersion_Specs() {
     model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
-    dispersivity_longitudinal = 0.0;
-    dispersivity_transverse = 0.0;
+    alphaL = 0.0;
+    alphaT = 0.0;
+    D = 0.0;
     method = TRANSPORT_DISPERSION_METHOD_TPFA; 
     preconditioner = "identity";
   }
@@ -36,7 +38,7 @@ class Dispersion_Specs {
 
  public:
   int model, method;
-  double dispersivity_longitudinal, dispersivity_transverse;
+  double alphaL, alphaT, D;
   string preconditioner;
 };
 
@@ -54,9 +56,10 @@ class Matrix_Dispersion {
 
   void CalculateDispersionTensor(const Epetra_Vector& darcy_flux,
                                  const Epetra_Vector& porosity,
-                                 const Epetra_Vector& saturation);
+                                  const Epetra_Vector& saturation);
   void SymbolicAssembleGlobalMatrix();
-  void AssembleGlobalMatrix();
+  void AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS);
+  void AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_State>& TS);
   void AddTimeDerivative(double dT, const Epetra_Vector& porosity, 
                          const Epetra_Vector& saturation);
 

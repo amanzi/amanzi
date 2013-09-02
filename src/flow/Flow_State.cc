@@ -164,27 +164,6 @@ void Flow_State::Initialize() {
 }
 
 
-/* *******************************************************************
-* Transfers node-based data from ghost to master positions and 
-* performs the operation 'mode' there. 
-* WARNING: Vector v must contain ghost nodes.              
-******************************************************************* */
-void Flow_State::CombineGhostNode2MasterNode(Epetra_Vector& v, Epetra_CombineMode mode)
-{
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_vmap = mesh_->node_map(false);
-  const Epetra_BlockMap& target_vmap = mesh_->node_map(true);
-  Epetra_Import importer(target_vmap, source_vmap);
-
-  double* vdata;
-  v.ExtractView(&vdata);
-  Epetra_Vector vv(View, source_vmap, vdata);
-
-  vv.Export(v, importer, mode);
-#endif
-}
-
-
 /* ****************************************************************
 * TBW.
 **************************************************************** */

@@ -26,16 +26,17 @@ namespace WhetStone {
 * prossures.
 ****************************************************************** */
 void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
-                                  AmanziGeometry::Point& hap, double& hap_weight)
+                                  AmanziGeometry::Point& p, double& weight)
 {
   int d = mesh_->space_dimension();
 
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(face, AmanziMesh::USED, &cells);
+  Entity_ID_List cells;
+  mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);
   int ncells = cells.size();
 
   if (ncells == 1) {
-    hap = mesh_->face_centroid(face);
+    p = mesh_->face_centroid(face);
+    weight = 0.5;
   } else {
     const AmanziGeometry::Point& fm = mesh_->face_centroid(face);
     const AmanziGeometry::Point& normal = mesh_->face_normal(face);
@@ -53,15 +54,50 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
     double t2 = fabs(normal * Tn2);
 
     double det = t1 * d2 + t2 * d1;
-    hap_weight = t1 * d2 / det;
+    weight = t1 * d2 / det;
 
     AmanziGeometry::Point v1(d), v2(d);
     double area = mesh_->face_area(face);
     v1 = area * Tn1 - t1 * normal / area;
     v2 = area * Tn2 - t2 * normal / area;
-    hap = hap_weight * cm1 + (1 - hap_weight) * cm2 + (d1 * d2 / det) * (v2 - v1);
+    p = weight * cm1 + (1 - weight) * cm2 + (d1 * d2 / det) * (v2 - v1);
   }
 }
+
+
+/* ******************************************************************
+ * Decompose: conormal = w1 * tau[i1] + w2 * tau[i2],  w1,w2 >= 0.
+****************************************************************** */
+void NLFV::PositiveDecomposition(const AmanziGeometry::Point& conormal, 
+                                 const std::vector<AmanziGeometry::Point>& tau,
+                                 double* w1, double* w2, int* i1, int* i2)
+{
+  int n = tau.size();
+
+  // calculate non-negative projections
+  std::vector<int> prj_id;
+  std::vector<double> prj_w;
+  
+  for (int i = 0; i < n; i++) {
+    double a = conormal * tau[i];
+    if (a >= 0.0) {
+      prj_id.push_back(i);
+      prj_w.push_back(i);
+    }
+  }
+
+  // find extrema for these projections
+  *i1 = prj_id[0];
+  *i2 = *i1;
+
+  int m = prj_id.size();
+  for (int i = 1; i < m; i++) {
+  }
+
+  *w1 = prj_w[*i1];
+  *w2 = prj_w[*i2];
+}
+
 
 }  // namespace WhetStone
 }  // namespace Amanzi
