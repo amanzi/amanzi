@@ -2080,27 +2080,31 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       
       // write initial conditions for Darcy flux
       if (ic_for_region->isSublist("IC: Uniform Velocity")) { 
+	Teuchos::Array<double> vel_vec = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
+	
+	if (vel_vec.size() != spatial_dimension_) {
+	  Exceptions::amanzi_throw(Errors::Message("The velocity vector defined in in the IC: Uniform Velocity list does not match the spatial dimension of the problem."));
+	}
 
+	Teuchos::ParameterList& d_list = 
+	  darcy_flux_ic.set<bool>("dot with normal", true)
+	  .sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","face")
+	  .sublist("function");
+
+	d_list.set<int>("Number of DoFs",vel_vec.size())
+	  .set<std::string>("Function type","composite function");
+	
+	for (int ii=0; ii != vel_vec.size(); ++ii) {
+	  std::stringstream ss;
+	  ss << "DoF " << ii+1 << " Function";
+
+	  d_list.sublist(ss.str()).sublist("function-constant")
+	    .set<double>("value", vel_vec[ii]);
+	}
+	
       } else { // write zero Darcy flux by default
-	// Teuchos::ParameterList& aux2_list = 
-	//   darcy_flux_ic.sublist("function").sublist(*i)
-	//   .set<std::string>("region",*i)
-	//   .set<std::string>("component","face")
-	//   .sublist("function");
-	
-	// aux2_list.set<int>("Number of DoFs",3)
-	//   .set<std::string>("Function type","composite function");
-	
-	// aux2_list.sublist("DoF 1 Function").sublist("function-constant")
-	//   .set<double>("value", 0.0);
-	
-	// aux2_list.sublist("DoF 2 Function").sublist("function-constant")
-	//   .set<double>("value", 0.0);     
-	
-	// aux2_list.sublist("DoF 3 Function").sublist("function-constant")
-	//   .set<double>("value", 0.0);     
-
-	
 	darcy_flux_ic.sublist("function").sublist(*i)
 	  .set<std::string>("region",*i)
 	  .set<std::string>("component","face")
