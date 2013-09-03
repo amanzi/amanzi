@@ -66,38 +66,37 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
 
 
 /* ******************************************************************
- * Decompose: conormal = w1 * tau[i1] + w2 * tau[i2],  w1,w2 >= 0.
+* Decompose: conormal = w1 * tau[i1] + w2 * tau[i2],  w1,w2 >= 0.
+* Requires some modification.
 ****************************************************************** */
-void NLFV::PositiveDecomposition(const AmanziGeometry::Point& conormal, 
-                                 const std::vector<AmanziGeometry::Point>& tau,
-                                 double* w1, double* w2, int* i1, int* i2)
+void NLFV::MaximumDecomposition(const AmanziGeometry::Point& conormal, 
+                                const std::vector<AmanziGeometry::Point>& tau,
+                                double* w1, double* w2, int* i1, int* i2)
 {
-  int n = tau.size();
-
-  // calculate non-negative projections
-  std::vector<int> prj_id;
-  std::vector<double> prj_w;
+  // calculate all projections
+  int ntau = tau.size();
+  double cs[ntau];
   
-  for (int i = 0; i < n; i++) {
-    double a = conormal * tau[i];
-    if (a >= 0.0) {
-      prj_id.push_back(i);
-      prj_w.push_back(i);
-    }
+  for (int i = 0; i < ntau; i++) {
+    cs[i] = conormal * tau[i];
   }
 
-  // find extrema for these projections
-  *i1 = prj_id[0];
-  *i2 = *i1;
-
-  int m = prj_id.size();
-  for (int i = 1; i < m; i++) {
+  // find the largest value in these projections
+  int k = 0;
+  for (int i = 1; i < ntau; i++) {
+    if (cs[i] > cs[k]) k = i;
   }
+  *i1 = k;
+  *w1 = cs[k];
 
-  *w1 = prj_w[*i1];
-  *w2 = prj_w[*i2];
+  // find the closest to zero in these projections
+  k = 0;
+  for (int i = 1; i < ntau; i++) {
+    if (fabs(cs[i]) < fabs(cs[k])) k = i;
+  }
+  *i2 = k;
+  *w2 = cs[k];
 }
-
 
 }  // namespace WhetStone
 }  // namespace Amanzi
