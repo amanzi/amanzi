@@ -22,10 +22,11 @@
 #   0.90.9       - update MSTK to version 2.02
 #
 #   0.91.0       - Added PFLOTRAN and Alquimia (updates from Jeff Johnson's work on state-branch)
+#   0.91.1       - updated CCSE 1.1.7
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 0)
+set (AMANZI_TPLS_VERSION_PATCH 1)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -89,12 +90,12 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 1)
-set(CCSE_VERSION_PATCH 6)
+set(CCSE_VERSION_PATCH 7)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        48a5dfac4ce8026175234956c2deabd3)
+set(CCSE_MD5_SUM        7aa3a679c58e573f91ac292efbd62808)
 
 #
 # TPL: UnitTest
