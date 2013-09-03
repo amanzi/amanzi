@@ -1915,22 +1915,12 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     Teuchos::ParameterList &darcy_flux_ic =  stt_ic.sublist("darcy_flux");
 
     for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
-      // std::stringstream sss;
-      // sss << "Mesh block " << *i;
-      // Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
-
+ 
       porosity_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
 	.set<std::string>("component","cell")
 	.sublist("function").sublist("function-constant")
 	.set<double>("value", porosity);
-
-
-      saturation_ic.sublist("function").sublist(*i)
-	.set<std::string>("region",*i)
-	.set<std::string>("component","cell")
-	.sublist("function").sublist("function-constant")
-	.set<double>("value", 1.0);
 
       prev_saturation_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
@@ -1967,24 +1957,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	aux_list.sublist("DoF 3 Function").sublist("function-constant")
 	  .set<double>("value", perm_z);
       }
-      
-      Teuchos::ParameterList& aux2_list = 
-	darcy_flux_ic.sublist("function").sublist(*i)
-	.set<std::string>("region",*i)
-	.set<std::string>("component","face")
-	.sublist("function");
-      
-      aux2_list.set<int>("Number of DoFs",3)
-	.set<std::string>("Function type","composite function");
-      
-      aux2_list.sublist("DoF 1 Function").sublist("function-constant")
-	.set<double>("value", 0.0);
-      
-      aux2_list.sublist("DoF 2 Function").sublist("function-constant")
-	.set<double>("value", 0.0);     
-      
-      aux2_list.sublist("DoF 3 Function").sublist("function-constant")
-	.set<double>("value", 0.0);     
+
 
 
       // find the initial conditions for the current region
@@ -2014,8 +1987,6 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
       }
       // at this point ic_for_region is the list that defines the inital conditions for the current region
-      
-
       
       // write the initial conditions for pressure
       if ( ic_for_region->isSublist("IC: Uniform Pressure")) {
@@ -2064,8 +2035,78 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       } else {
 	Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, IC: Linear Pressure, or IC: File Pressure."));
       }
+
+      // write initial conditions for saturation
+      if ( ic_for_region->isSublist("IC: Uniform Saturation")) {      
+	double s = ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value");
+	saturation_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","cell")
+	  .sublist("function").sublist("function-constant")
+	  .set<double>("value", s);	
+      } else if ( ic_for_region->isSublist("IC: Linear Saturation")) {      
+	Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Saturation").get<Teuchos::Array<double> >("Gradient Value");
+	Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Saturation").get<Teuchos::Array<double> >("Reference Coordinate");
+	double refval =  ic_for_region->sublist("IC: Linear Saturation").get<double>("Reference Value");
+	
+	Teuchos::Array<double> grad_with_time(grad.size()+1);
+	grad_with_time[0] = 0.0;
+	for (int j=0; j!=grad.size(); ++j) {
+	  grad_with_time[j+1] = grad[j];
+	}
+	
+	Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
+	refcoord_with_time[0] = 0.0;
+	for (int j=0; j!=refcoord.size(); ++j) {
+	  refcoord_with_time[j+1] = refcoord[j];
+	}
+	
+	saturation_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","cell")
+	  .sublist("function").sublist("function-linear")
+	  .set<double>("y0", refval)
+	  .set<Teuchos::Array<double> >("x0",refcoord_with_time)
+	  .set<Teuchos::Array<double> >("gradient",grad_with_time);
+      } else if (ic_for_region->isSublist("IC: File Saturation")) {
+	Exceptions::amanzi_throw(Errors::Message("IC: File Saturation cannot currently be used to initialize saturation in a region."));
+      } else { // write uniform saturation = 1.0 as default
+	saturation_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","cell")
+	  .sublist("function").sublist("function-constant")
+	  .set<double>("value", 1.0);
+      }
       
-     
+      // write initial conditions for Darcy flux
+      if (ic_for_region->isSublist("IC: Uniform Velocity")) { 
+
+      } else { // write zero Darcy flux by default
+	// Teuchos::ParameterList& aux2_list = 
+	//   darcy_flux_ic.sublist("function").sublist(*i)
+	//   .set<std::string>("region",*i)
+	//   .set<std::string>("component","face")
+	//   .sublist("function");
+	
+	// aux2_list.set<int>("Number of DoFs",3)
+	//   .set<std::string>("Function type","composite function");
+	
+	// aux2_list.sublist("DoF 1 Function").sublist("function-constant")
+	//   .set<double>("value", 0.0);
+	
+	// aux2_list.sublist("DoF 2 Function").sublist("function-constant")
+	//   .set<double>("value", 0.0);     
+	
+	// aux2_list.sublist("DoF 3 Function").sublist("function-constant")
+	//   .set<double>("value", 0.0);     
+
+	
+	darcy_flux_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","face")
+	  .sublist("function").sublist("function-constant")
+	  .set<double>("value", 0.0);
+      }
 
       if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
 	  plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off") ) {
