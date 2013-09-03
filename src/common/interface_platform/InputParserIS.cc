@@ -304,8 +304,30 @@ void init_global_info(Teuchos::ParameterList* plist) {
     } else {
       Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
     }
-
   }
+
+  // dispersion (this is going to be used to translate to the transport list as well as the state list)
+  // check if we need to write a dispersivity sublist
+  need_dispersion_ = false;
+  if (plist->isSublist("Material Properties")) {
+    for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
+	 it != plist->sublist("Material Properties").end(); ++it) {
+      if ( (it->second).isList()) {
+	Teuchos::ParameterList & mat_sublist = plist->sublist("Material Properties").sublist(it->first);
+	for (Teuchos::ParameterList::ConstIterator jt = mat_sublist.begin(); jt != mat_sublist.end(); ++jt) {
+	  if ( (jt->second).isList() ) {
+	    const std::string pname = jt->first;
+	    if ( pname.find("Dispersion Tensor") == 0 || 
+		 pname.find("Molecular Diffusion") == 0 || 
+		 pname.find("Tortuosity") == 0 ) {
+	      need_dispersion_ = true;
+	    }
+	  }
+	}
+      } 
+    }
+  }
+
 }
 
 
@@ -778,6 +800,42 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
     }
   }
 
+  // now write the dispersion lists if needed
+  if (need_dispersion_) { 
+    Teuchos::ParameterList &disp_list = trp_list.sublist("Dispersivity");
+    
+    if (plist->isSublist("Material Properties")) {
+      for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
+	   it != plist->sublist("Material Properties").end(); ++it) {
+	disp_list.set<std::string>("numerical method","two point flux approximation");
+	disp_list.set<std::string>("preconditioner","Hypre AMG");
+
+	if ( (it->second).isList()) {
+	  std::string mat_name = it->first;
+	  Teuchos::ParameterList & mat_sublist = plist->sublist("Material Properties").sublist(mat_name);
+	  Teuchos::ParameterList & disp_sublist = disp_list.sublist(mat_name);
+	  // set a few default paramters
+	  disp_sublist.set<std::string>("model","Bear");
+	  // translate the other paramters
+	  disp_sublist.set<Teuchos::Array<std::string> >("regions",mat_sublist.get<Teuchos::Array<std::string> >("Assigned Regions"));
+	  if (!mat_sublist.isSublist("Dispersion Tensor: Uniform Isotropic")) {
+	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Dispersion Tensor: Uniform Isotropic for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+	  }
+	  disp_sublist.set<double>("alphaL", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
+	  disp_sublist.set<double>("alphaT", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
+	  if (!mat_sublist.isSublist("Molecular Diffusion: Uniform")) {
+	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Molecular Diffusion: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+	  }	  
+	  disp_sublist.set<double>("D", mat_sublist.sublist("Molecular Diffusion: Uniform").get<double>("Value"));
+	  if (!mat_sublist.isSublist("Tortuosity: Uniform")) {
+	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Tortuosity: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+	  }	  
+	  disp_sublist.set<double>("tortuosity", mat_sublist.sublist("Tortuosity: Uniform").get<double>("Value"));
+	}
+      } 
+    }       
+  }
+  
   // now generate the boundary conditions
   // loop over the boundary condition sublists and extract the relevant data
 
