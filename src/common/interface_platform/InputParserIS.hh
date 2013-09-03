@@ -54,5 +54,7 @@ static Teuchos::Array<std::string> sorption_site_names_;
 static std::string verbosity_level("low");
 static int numproc_;
 static int spatial_dimension_;  
+
+static bool need_dispersion_;
 }
 }
