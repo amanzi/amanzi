@@ -396,16 +396,23 @@ void Transport_PK::Advance(double dT_MPC)
 
   if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
     const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
+    const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
     dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
-    dispersion_matrix->AssembleGlobalMatrix();
+
+    int method = dispersion_specs.method;
+    if (method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
+      dispersion_matrix->AssembleGlobalMatrixTPFA(TS);
+    } else if (method == TRANSPORT_DISPERSION_METHOD_NLFV) {
+      dispersion_matrix->AssembleGlobalMatrixNLFV(TS);
+    }
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
     dispersion_matrix->UpdatePreconditioner();
 
     AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
     // AmanziSolvers::GMRES_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
     pcg.set_tolerance(1e-8);
+    // pcg.set_krylov_dim(18);
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
     Epetra_Vector rhs(cmap);
@@ -418,7 +425,12 @@ void Transport_PK::Advance(double dT_MPC)
         double factor = mesh_->cell_volume(c) * ws[c] * phi[c] / dT_MPC;
         rhs[c] = tcc_next[i][c] * factor;
       }
-      pcg.ApplyInverse(rhs, *(tcc_next(i)));
+
+      double* data;  // convert ghosted vector to owned vector
+      tcc_next(i)->ExtractView(&data);
+      Epetra_Vector sol(View, cmap, data);
+
+      pcg.ApplyInverse(rhs, sol);
       residual += pcg.residual();
       num_itrs += pcg.num_itrs();
     }

@@ -1,14 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-   ATS
+ Amanzi
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+ License: see $Amanzi_DIR/COPYRIGHT
+ Author: Ethan Coon
 
-   Interface for CompositeVector, an implementation of a slightly improved
-   Epetra_MultiVector which spans multiple simplices and knows how to
-   communicate itself.
-   ------------------------------------------------------------------------- */
+ Interface for CompositeVector, an implementation of a slightly improved
+ Epetra_MultiVector which spans multiple simplices and knows how to
+ communicate itself.
+------------------------------------------------------------------------- */
 
 #ifndef COMPOSITEVECTOR_HH_
 #define COMPOSITEVECTOR_HH_

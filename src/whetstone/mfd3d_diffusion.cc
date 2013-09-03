@@ -33,7 +33,7 @@ namespace WhetStone {
 int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
                                    DenseMatrix& N, DenseMatrix& Mc)
 {
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 
@@ -79,7 +79,7 @@ int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
 int MFD3D_Diffusion::L2consistencyInverse(int cell, const Tensor& T,
                                           DenseMatrix& R, DenseMatrix& Wc)
 {
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
@@ -123,7 +123,7 @@ int MFD3D_Diffusion::L2consistencyInverse(int cell, const Tensor& T,
 int MFD3D_Diffusion::H1consistency(int cell, const Tensor& T,
                                    DenseMatrix& N, DenseMatrix& Ac)
 {
-  AmanziMesh::Entity_ID_List nodes, faces;
+  Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(cell, &nodes);
@@ -146,7 +146,7 @@ int MFD3D_Diffusion::H1consistency(int cell, const Tensor& T,
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    AmanziMesh::Entity_ID_List face_nodes;
+    Entity_ID_List face_nodes;
     mesh_->face_get_nodes(f, &face_nodes);
     int num_face_nodes = face_nodes.size();
 
@@ -273,7 +273,7 @@ int MFD3D_Diffusion::RecoverGradient_MassMatrix(int cell,
   int d = mesh_->space_dimension();
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
@@ -303,7 +303,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
                                                      const std::vector<double>& solution, 
                                                      AmanziGeometry::Point& gradient)
 {
-  AmanziMesh::Entity_ID_List nodes, faces;
+  Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(cell, &nodes);
@@ -324,7 +324,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    AmanziMesh::Entity_ID_List face_nodes;
+    Entity_ID_List face_nodes;
     mesh_->face_get_nodes(f, &face_nodes);
     int num_face_nodes = face_nodes.size();
 
@@ -379,7 +379,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(int cell,
 int MFD3D_Diffusion::L2consistencyInverseScaled(int cell, const Tensor& T,
                                                 DenseMatrix& R, DenseMatrix& Wc)
 {
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
@@ -528,7 +528,7 @@ int MFD3D_Diffusion::MassMatrixInverseOptimizedScaled(int cell, const Tensor& pe
 ****************************************************************** */
 void MFD3D_Diffusion::RescaleMassMatrixInverse_(int cell, DenseMatrix& W)
 {
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
@@ -565,7 +565,7 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
   int map[nrows];
   for (int i = 0; i < nrows; i++) map[i] = i;
 
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
 

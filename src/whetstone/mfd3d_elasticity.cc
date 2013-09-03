@@ -33,7 +33,7 @@ namespace WhetStone {
 int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc)
 {
-  AmanziMesh::Entity_ID_List faces;
+  Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
@@ -71,7 +71,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
 {
   int nrows = N.NumRows();
 
-  AmanziMesh::Entity_ID_List nodes, faces;
+  Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(cell, &nodes);
@@ -110,7 +110,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    AmanziMesh::Entity_ID_List face_nodes;
+    Entity_ID_List face_nodes;
     mesh_->face_get_nodes(f, &face_nodes);
     int num_face_nodes = face_nodes.size();
 

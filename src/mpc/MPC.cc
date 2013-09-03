@@ -813,6 +813,7 @@ void MPC::cycle_driver() {
 
             // the the user know that we're backing up due to a chemistry failure
             if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+              *out << chem_error.what() << std::endl;
               *out << "Chemistry step failed, reducing chemistry subcycling time step." << std::endl;
               *out << "  new chemistry subcycling time step = " << tc_dT << std::endl;
             }

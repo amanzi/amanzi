@@ -1,14 +1,13 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-Amanzi Flow
+Amanzi Interface
 
 License: see COPYRIGHT
 Author: Ethan Coon
 
-Interface layer between Flow and State, this is a harness for
+Interface layer between Flow/Transport and State, this is a harness for
 accessing the new state-dev from the old Flow PK.
-
- ------------------------------------------------------------------------- */
+------------------------------------------------------------------------- */
 
 #ifndef AMANZI_PK_STATE_HH_
 #define AMANZI_PK_STATE_HH_
@@ -22,8 +21,7 @@ accessing the new state-dev from the old Flow PK.
 namespace Amanzi {
 
 class PK_State {
-
-public:
+ public:
   enum PKStateConstructMode {
     CONSTRUCT_MODE_COPY_POINTERS,
     CONSTRUCT_MODE_VIEW_DATA,
@@ -49,6 +47,7 @@ public:
           Epetra_MultiVector& vv, int parallel_comm = 1);
   void CombineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
   void CombineGhostCell2MasterCell(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
+  void CombineGhostNode2MasterNode(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 
   Epetra_Vector* CreateCellView(const Epetra_Vector& u) const;
   Epetra_Vector* CreateFaceView(const Epetra_Vector& u) const;
@@ -61,7 +60,6 @@ public:
   void MaxValueMasterCells(Epetra_MultiVector& v, double* vmax);
 
  protected:
-
   Teuchos::RCP<State> S_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::string name_;
@@ -71,10 +69,9 @@ public:
  private:
   // un-defined!
   PK_State(const PK_State& other);
-
 };
 
-
-} // namespace
+}  // namespace Amanzi
 
 #endif
+

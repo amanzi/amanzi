@@ -23,12 +23,11 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_constants.hh"
 #include "Matrix_Dispersion.hh"
 
-
 namespace Amanzi {
 namespace AmanziTransport {
 
 /* *******************************************************************
-* 
+* Initiaziation of a class.
 ******************************************************************* */
 void Matrix_Dispersion::Init(Dispersion_Specs& specs,
                              const Teuchos::ParameterList& prec_list)
@@ -49,8 +48,8 @@ void Matrix_Dispersion::Init(Dispersion_Specs& specs,
 
   hap_weights_.resize(nfaces_wghost);
 
-  D.resize(ncells_wghost);
-  for (int c = 0; c < ncells_wghost; c++) D[c].init(dim, 2);
+  D.resize(ncells_owned);
+  for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
 
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(specs.preconditioner, prec_list);
@@ -66,8 +65,9 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
                                                   const Epetra_Vector& saturation)
 {
   if (specs_->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-    for (int c = 0; c < ncells_wghost; c++) {
-      for (int i = 0; i < dim; i++) D[c](i, i) = specs_->dispersivity_longitudinal;
+    for (int c = 0; c < ncells_owned; c++) {
+      for (int i = 0; i < dim; i++) D[c](i, i) = specs_->alphaL;
+      D[c] *= porosity[c] * saturation[c];
     }
   } else {
     WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -76,7 +76,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
     std::vector<int> dirs;
     AmanziGeometry::Point velocity(dim);
 
-    for (int c = 0; c < ncells_wghost; c++) {
+    for (int c = 0; c < ncells_owned; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
@@ -85,10 +85,10 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
       mfd3d.RecoverGradient_MassMatrix(c, flux, velocity);
 
       double velocity_value = norm(velocity);
-      double anisotropy = specs_->dispersivity_longitudinal - specs_->dispersivity_transverse;
+      double anisotropy = specs_->alphaL - specs_->alphaT;
 
       for (int i = 0; i < dim; i++) {
-        D[c](i, i) = specs_->dispersivity_transverse * velocity_value;
+        D[c](i, i) = specs_->D + specs_->alphaT * velocity_value;
         for (int j = i; j < dim; j++) {
           double s = anisotropy * velocity[i] * velocity[j];
           if (velocity_value) s /= velocity_value;
@@ -138,9 +138,9 @@ void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
 
 
 /* ******************************************************************
-* Calculate fluxes... 
+* Calculate and assemble fluxes using the TPFA scheme.
 ****************************************************************** */
-void Matrix_Dispersion::AssembleGlobalMatrix()
+void Matrix_Dispersion::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS)
 {
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -151,7 +151,7 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   Epetra_Vector T(fmap_wghost);
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -163,6 +163,7 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
       T[f] += 1.0 / Mff(n, n);
     }
   }
+  TS->CombineGhostFace2MasterFace(T, Add);
  
   // populate the global matrix
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -179,7 +180,7 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
     for (int n = 0; n < ncells; n++) {
       cells_GID[n] = cmap_wghost.GID(cells[n]);
 
-      double coef = mesh_->face_area(f) / T[f];
+      double coef = 1.0 / T[f];
       Bpp(0, 0) =  coef;
       Bpp(1, 1) =  coef;
       Bpp(0, 1) = -coef;
@@ -189,6 +190,124 @@ void Matrix_Dispersion::AssembleGlobalMatrix()
     App_->SumIntoGlobalValues(ncells, cells_GID, Bpp.Values());
   }
   App_->GlobalAssemble();
+}
+
+
+/* ******************************************************************
+* Calculate and assemble fluxes using the NLFV scheme.
+****************************************************************** */
+void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_State>& TS)
+{
+  // calculate harmonic averaging points
+  WhetStone::NLFV nlfv(mesh_);
+  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+
+  std::vector<AmanziGeometry::Point> pts(nfaces_wghost);
+  std::vector<double> weights(nfaces_wghost);
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    nlfv.HarmonicAveragingPoint(f, D, pts[f], weights[f]);
+  }
+
+  // calculate coefficients in positive decompositions of conormals
+  int d = mesh_->space_dimension();
+  AmanziMesh::Entity_ID_List cells, faces;
+  std::vector<int> dirs;
+
+  AmanziGeometry::Point conormal(d), v(d);
+  std::vector<AmanziGeometry::Point> tau;
+
+  double coefs[nfaces_wghost][2 * d];
+  int  stencil[nfaces_wghost][2 * d];
+
+  int fid[nfaces_wghost];
+  for (int f = 0; f < nfaces_wghost; f++) fid[f] = 0;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+    // calculate local directions
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    tau.clear();
+    for (int i = 0; i < nfaces; i++) {
+      v = pts[faces[i]] - xc;
+      tau.push_back(v);
+    }
+
+    // calculate positive decomposition of the conormals
+    int i1, i2;
+    double w1, w2;
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      conormal = (D[c] * normal) * dirs[i];
+
+      nlfv.MaximumDecomposition(conormal, tau, &w1, &w2, &i1, &i2);
+      if (fid[f] == 0) {
+        coefs[f][0] = w1;
+        coefs[f][1] = w2;
+        stencil[f][0] = mfd3d.cell_get_face_adj_cell(c, faces[i1]);
+        stencil[f][1] = mfd3d.cell_get_face_adj_cell(c, faces[i2]);
+        fid[f] = 1;
+      } else {
+        coefs[f][2] = w1;
+        coefs[f][3] = w2;
+        stencil[f][2] = mfd3d.cell_get_face_adj_cell(c, faces[i1]);
+        stencil[f][3] = mfd3d.cell_get_face_adj_cell(c, faces[i2]);
+        fid[f] = 2;
+      }
+    }
+  }
+
+  // calculate fluxes (loop over faces)
+
+  // populate the matrix (loop over faces)
+  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  int cells_GID[3];
+  double Bpp[3];
+
+  App_->PutScalar(0.0);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    if (ncells < 2) continue;
+
+    int c1 = cmap_wghost.GID(cells[0]);
+    int c2 = cmap_wghost.GID(cells[1]);
+
+    if (c1 > c2) {
+      int c = c1;
+      c1 = c2;
+      c2 = c;
+    }
+
+    cells_GID[0] = c1;
+    cells_GID[1] = cmap_wghost.GID(stencil[f][0]);
+    cells_GID[2] = cmap_wghost.GID(stencil[f][1]);
+
+    double factor = mesh_->face_area(f) / mesh_->cell_volume(c1);
+    Bpp[0] = (coefs[f][0] + coefs[f][1]) * factor;
+    Bpp[1] = -coefs[f][0] * factor;
+    Bpp[2] = -coefs[f][1] * factor;
+
+    App_->SumIntoGlobalValues(1, &c1, 3, cells_GID, Bpp);
+
+    factor = mesh_->face_area(f) / mesh_->cell_volume(c2);
+    cells_GID[0] = c2;
+    cells_GID[1] = cmap_wghost.GID(stencil[f][2]);
+    cells_GID[2] = cmap_wghost.GID(stencil[f][3]);
+
+    Bpp[0] = (coefs[f][2] + coefs[f][3]) * factor;
+    Bpp[1] = -coefs[f][2] * factor;
+    Bpp[2] = -coefs[f][3] * factor;
+
+    App_->SumIntoGlobalValues(1, &c2, 3, cells_GID, Bpp);
+  }
+  App_->GlobalAssemble();
+cout << *App_ << endl;
 }
 
 

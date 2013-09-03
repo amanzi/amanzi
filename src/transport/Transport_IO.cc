@@ -69,8 +69,9 @@ void Transport_PK::ProcessParameterList()
     string model_name = dispersivity.get<string>("model", "none");
     ProcessStringDispersionModel(model_name, &dispersion_specs.model);
 
-    dispersion_specs.dispersivity_longitudinal = dispersivity.get<double>("longitudinal", 0.0);
-    dispersion_specs.dispersivity_transverse = dispersivity.get<double>("transverse", 0.0);
+    dispersion_specs.alphaL = dispersivity.get<double>("alphaL", 0.0);
+    dispersion_specs.alphaT = dispersivity.get<double>("alphaT", 0.0);
+    dispersion_specs.D = dispersivity.get<double>("D", 0.0);
 
     string method_name = dispersivity.get<string>("numerical method", "none");
     ProcessStringDispersionMethod(method_name, &dispersion_specs.method);

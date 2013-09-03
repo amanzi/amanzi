@@ -1,14 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-Amanzi Flow
+Amanzi Transport
 
 License: see COPYRIGHT
 Author: Ethan Coon
 
 Interface layer between Flow and State, this is a harness for
 accessing the new state-dev from the old Flow PK.
-
- ------------------------------------------------------------------------- */
+------------------------------------------------------------------------- */
 
 #ifndef AMANZI_TRANSPORT_STATE_NEW_HH_
 #define AMANZI_TRANSPORT_STATE_NEW_HH_
@@ -20,15 +18,13 @@ namespace AmanziTransport {
 
 class Transport_State : public PK_State {
 
+  // functions used in unit tests
   typedef AmanziGeometry::Point f_flux_t(const AmanziGeometry::Point&, const double);
   typedef double f_conc_t(const AmanziGeometry::Point&, const double);
 
-
  public:
-
   Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int);
   Transport_State(Teuchos::RCP<State> S, const int);
-  // Transport_State(State& S, const int);
   Transport_State(Teuchos::RCP<State> S, std::vector<std::string> comp_names);
   Transport_State(Transport_State& other, PKStateConstructMode mode);
 
@@ -72,7 +68,6 @@ class Transport_State : public PK_State {
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux(); }
   double& ref_water_density() { return *water_density(); }
 
-
   // component name and number accessors
   int get_component_number(const std::string component_name);
   std::string get_component_name(const int component_number);
@@ -105,7 +100,6 @@ class Transport_State : public PK_State {
  private:
   Teuchos::RCP<State> S_time_;
 
-
  private:
   // not implemented
   Transport_State(const Transport_State& other);
@@ -113,8 +107,8 @@ class Transport_State : public PK_State {
  protected:
   std::map<std::string,int> comp_numbers_;
   std::vector<std::string> comp_names_;
-
 };
+
 } // namespace
 } // namespace
 

@@ -532,17 +532,17 @@ if ( ENABLE_HYPRE )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
 endif()
 
+# METIS -- needs to go before PETSc because PETSc needs it.
+include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS 
+           -DMETIS_DIR:FILEPATH=${METIS_DIR})
+
 # PETSc
 option(ENABLE_PETSC "Build the PETSc package" FALSE)
 if (ENABLE_PETSC OR ENABLE_Structured)
   set(ENABLE_PETSC TRUE)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
 endif()
-
-# METIS  
-include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
-append_set(Amanzi_TPL_CMAKE_ARGS 
-           -DMETIS_DIR:FILEPATH=${METIS_DIR})
 
 # Trilinos  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
