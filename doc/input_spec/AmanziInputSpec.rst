@@ -1524,8 +1524,7 @@ Example:
   <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <Parameter name="Cycle Macro" type="string" value="Every-10"}>
-    <Parameter name="Variable Macro" type="string" value="{Aqueous Pressure, Moisture Content"}>
+    <Parameter name="Cycle Macro" type="string" value="Every-10">
   </ParameterList>
 
 In this example, the liquid pressure and moisture content are written when the cycle number is evenly divisble by 5.
