@@ -900,5 +900,35 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   matrix_->UpdateConsistentFaceConstraints(u.ptr());
 }
 
+// -----------------------------------------------------------------------------
+// Check admissibility of the solution guess.
+// -----------------------------------------------------------------------------
+bool Richards::is_admissible(Teuchos::RCP<const TreeVector> up) {
+  Teuchos::OSTab tab = getOSTab();
+  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
+    *out_ << "  Checking admissibility..." << std::endl;
+
+  // For some reason, wandering PKs break most frequently with an unreasonable
+  // presure.  This simply tries to catch that before it happens.
+  Teuchos::RCP<const CompositeVector> pres = up->data();
+
+  const Epetra_MultiVector& pres_v = *pres->ViewComponent("cell",false);
+  double minp(0.), maxp(0.);
+  int ierr = pres_v.MinValue(&minp);
+  ierr |= pres_v.MaxValue(&maxp);
+
+  if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
+    *out_ << "    Admissible p? (min/max): " << minp << ",  " << maxp << std::endl;
+  }
+
+  if (ierr || minp < -1.e8 || maxp > 1.e8) {
+    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_MEDIUM,true)) {
+      *out_ << " is not admissible, as it is not within bounds of constitutive models: min(p) = " << minp << ", max(p) = " << maxp << std::endl;
+    }
+    return false;
+  }
+  return true;
+}
+
 } // namespace
 } // namespace
