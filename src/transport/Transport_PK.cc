@@ -399,9 +399,11 @@ void Transport_PK::Advance(double dT_MPC)
     const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
     dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
-    if (dispersion_specs.method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
+
+    int method = dispersion_specs.method;
+    if (method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
       dispersion_matrix->AssembleGlobalMatrixTPFA(TS);
-    } else if (dispersion_specs.method == TRANSPORT_DISPERSION_METHOD_NLFV) {
+    } else if (method == TRANSPORT_DISPERSION_METHOD_NLFV) {
       dispersion_matrix->AssembleGlobalMatrixNLFV(TS);
     }
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
@@ -410,6 +412,7 @@ void Transport_PK::Advance(double dT_MPC)
     AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
     // AmanziSolvers::GMRES_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
     pcg.set_tolerance(1e-8);
+    // pcg.set_krylov_dim(18);
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
     Epetra_Vector rhs(cmap);

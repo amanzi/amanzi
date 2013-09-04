@@ -304,8 +304,30 @@ void init_global_info(Teuchos::ParameterList* plist) {
     } else {
       Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
     }
-
   }
+
+  // dispersion (this is going to be used to translate to the transport list as well as the state list)
+  // check if we need to write a dispersivity sublist
+  need_dispersion_ = false;
+  if (plist->isSublist("Material Properties")) {
+    for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
+	 it != plist->sublist("Material Properties").end(); ++it) {
+      if ( (it->second).isList()) {
+	Teuchos::ParameterList & mat_sublist = plist->sublist("Material Properties").sublist(it->first);
+	for (Teuchos::ParameterList::ConstIterator jt = mat_sublist.begin(); jt != mat_sublist.end(); ++jt) {
+	  if ( (jt->second).isList() ) {
+	    const std::string pname = jt->first;
+	    if ( pname.find("Dispersion Tensor") == 0 || 
+		 pname.find("Molecular Diffusion") == 0 || 
+		 pname.find("Tortuosity") == 0 ) {
+	      need_dispersion_ = true;
+	    }
+	  }
+	}
+      } 
+    }
+  }
+
 }
 
 
@@ -778,6 +800,42 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
     }
   }
 
+  // now write the dispersion lists if needed
+  if (need_dispersion_) { 
+    Teuchos::ParameterList &disp_list = trp_list.sublist("Dispersivity");
+    
+    if (plist->isSublist("Material Properties")) {
+      for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
+	   it != plist->sublist("Material Properties").end(); ++it) {
+	disp_list.set<std::string>("numerical method","two point flux approximation");
+	disp_list.set<std::string>("preconditioner","Hypre AMG");
+
+	if ( (it->second).isList()) {
+	  std::string mat_name = it->first;
+	  Teuchos::ParameterList & mat_sublist = plist->sublist("Material Properties").sublist(mat_name);
+	  Teuchos::ParameterList & disp_sublist = disp_list.sublist(mat_name);
+	  // set a few default paramters
+	  disp_sublist.set<std::string>("model","Bear");
+	  // translate the other paramters
+	  disp_sublist.set<Teuchos::Array<std::string> >("regions",mat_sublist.get<Teuchos::Array<std::string> >("Assigned Regions"));
+	  if (!mat_sublist.isSublist("Dispersion Tensor: Uniform Isotropic")) {
+	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Dispersion Tensor: Uniform Isotropic for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+	  }
+	  disp_sublist.set<double>("alphaL", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
+	  disp_sublist.set<double>("alphaT", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
+	  if (!mat_sublist.isSublist("Molecular Diffusion: Uniform")) {
+	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Molecular Diffusion: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+	  }	  
+	  disp_sublist.set<double>("D", mat_sublist.sublist("Molecular Diffusion: Uniform").get<double>("Value"));
+	  if (!mat_sublist.isSublist("Tortuosity: Uniform")) {
+	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Tortuosity: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+	  }	  
+	  disp_sublist.set<double>("tortuosity", mat_sublist.sublist("Tortuosity: Uniform").get<double>("Value"));
+	}
+      } 
+    }       
+  }
+  
   // now generate the boundary conditions
   // loop over the boundary condition sublists and extract the relevant data
 
@@ -1857,22 +1915,12 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     Teuchos::ParameterList &darcy_flux_ic =  stt_ic.sublist("darcy_flux");
 
     for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
-      // std::stringstream sss;
-      // sss << "Mesh block " << *i;
-      // Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
-
+ 
       porosity_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
 	.set<std::string>("component","cell")
 	.sublist("function").sublist("function-constant")
 	.set<double>("value", porosity);
-
-
-      saturation_ic.sublist("function").sublist(*i)
-	.set<std::string>("region",*i)
-	.set<std::string>("component","cell")
-	.sublist("function").sublist("function-constant")
-	.set<double>("value", 1.0);
 
       prev_saturation_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
@@ -1909,24 +1957,7 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	aux_list.sublist("DoF 3 Function").sublist("function-constant")
 	  .set<double>("value", perm_z);
       }
-      
-      Teuchos::ParameterList& aux2_list = 
-	darcy_flux_ic.sublist("function").sublist(*i)
-	.set<std::string>("region",*i)
-	.set<std::string>("component","face")
-	.sublist("function");
-      
-      aux2_list.set<int>("Number of DoFs",3)
-	.set<std::string>("Function type","composite function");
-      
-      aux2_list.sublist("DoF 1 Function").sublist("function-constant")
-	.set<double>("value", 0.0);
-      
-      aux2_list.sublist("DoF 2 Function").sublist("function-constant")
-	.set<double>("value", 0.0);     
-      
-      aux2_list.sublist("DoF 3 Function").sublist("function-constant")
-	.set<double>("value", 0.0);     
+
 
 
       // find the initial conditions for the current region
@@ -1956,8 +1987,6 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
       }
       // at this point ic_for_region is the list that defines the inital conditions for the current region
-      
-
       
       // write the initial conditions for pressure
       if ( ic_for_region->isSublist("IC: Uniform Pressure")) {
@@ -2006,8 +2035,82 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       } else {
 	Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, IC: Linear Pressure, or IC: File Pressure."));
       }
+
+      // write initial conditions for saturation
+      if ( ic_for_region->isSublist("IC: Uniform Saturation")) {      
+	double s = ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value");
+	saturation_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","cell")
+	  .sublist("function").sublist("function-constant")
+	  .set<double>("value", s);	
+      } else if ( ic_for_region->isSublist("IC: Linear Saturation")) {      
+	Teuchos::Array<double> grad = ic_for_region->sublist("IC: Linear Saturation").get<Teuchos::Array<double> >("Gradient Value");
+	Teuchos::Array<double> refcoord = ic_for_region->sublist("IC: Linear Saturation").get<Teuchos::Array<double> >("Reference Coordinate");
+	double refval =  ic_for_region->sublist("IC: Linear Saturation").get<double>("Reference Value");
+	
+	Teuchos::Array<double> grad_with_time(grad.size()+1);
+	grad_with_time[0] = 0.0;
+	for (int j=0; j!=grad.size(); ++j) {
+	  grad_with_time[j+1] = grad[j];
+	}
+	
+	Teuchos::Array<double> refcoord_with_time(refcoord.size()+1);
+	refcoord_with_time[0] = 0.0;
+	for (int j=0; j!=refcoord.size(); ++j) {
+	  refcoord_with_time[j+1] = refcoord[j];
+	}
+	
+	saturation_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","cell")
+	  .sublist("function").sublist("function-linear")
+	  .set<double>("y0", refval)
+	  .set<Teuchos::Array<double> >("x0",refcoord_with_time)
+	  .set<Teuchos::Array<double> >("gradient",grad_with_time);
+      } else if (ic_for_region->isSublist("IC: File Saturation")) {
+	Exceptions::amanzi_throw(Errors::Message("IC: File Saturation cannot currently be used to initialize saturation in a region."));
+      } else { // write uniform saturation = 1.0 as default
+	saturation_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","cell")
+	  .sublist("function").sublist("function-constant")
+	  .set<double>("value", 1.0);
+      }
       
-     
+      // write initial conditions for Darcy flux
+      if (ic_for_region->isSublist("IC: Uniform Velocity")) { 
+	Teuchos::Array<double> vel_vec = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
+	
+	if (vel_vec.size() != spatial_dimension_) {
+	  Exceptions::amanzi_throw(Errors::Message("The velocity vector defined in in the IC: Uniform Velocity list does not match the spatial dimension of the problem."));
+	}
+
+	Teuchos::ParameterList& d_list = 
+	  darcy_flux_ic.set<bool>("dot with normal", true)
+	  .sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","face")
+	  .sublist("function");
+
+	d_list.set<int>("Number of DoFs",vel_vec.size())
+	  .set<std::string>("Function type","composite function");
+	
+	for (int ii=0; ii != vel_vec.size(); ++ii) {
+	  std::stringstream ss;
+	  ss << "DoF " << ii+1 << " Function";
+
+	  d_list.sublist(ss.str()).sublist("function-constant")
+	    .set<double>("value", vel_vec[ii]);
+	}
+	
+      } else { // write zero Darcy flux by default
+	darcy_flux_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	  .set<std::string>("component","face")
+	  .sublist("function").sublist("function-constant")
+	  .set<double>("value", 0.0);
+      }
 
       if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
 	  plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off") ) {

@@ -369,6 +369,10 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc) {
     }
   }
 
+  // set so we don't have to reread transport and chemisty list later
+  Teuchos::ParameterList tpkPL, cpkPL;
+  bool transportON=false;
+  bool chemistryON=false;
   // get process kernels node
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("process_kernels"));
   for (int i=0; i<nodeList->getLength(); i++) {
@@ -387,16 +391,13 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc) {
         XMLString::release(&textContent);
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	if (strcmp(textContent,"saturated")==0) {
-          //TODO: EIB - verify this is the correct translation!!!!!
           list.set<std::string>("Flow Model","Single Phase");
 	} else {
           list.set<std::string>("Flow Model",textContent);
 	}
-        XMLString::release(&textContent);
       }
-		    
-      // get transport - TODO: EIB - assuming this will be set to OFF!!!!!
-      // NOTE: EIB - old spec options seem to be ON/OFF, algorithm option goes under Numerical Control Parameters
+      XMLString::release(&textContent);
+      // get transport
       tmpList = pkElement->getElementsByTagName(XMLString::transcode("transport"));
       attrMap = tmpList->item(0)->getAttributes();
       nodeAttr = attrMap->getNamedItem(XMLString::transcode("state"));
@@ -405,8 +406,10 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc) {
         list.set<std::string>("Transport Model","Off");
       } else {
         list.set<std::string>("Transport Model","On");
+	transportON=true;
+	//TODO: EIB - now get algorithm option
       }
-      //list.set<std::string>("Transport Model",textContent);
+      XMLString::release(&textContent);
       // get chemisty - TODO: EIB - assuming this will be set to OFF!!!!!
       // NOTE: EIB - old spec options seem to be ON/OFF, algorithm option goes under Numerical Control Parameters
       tmpList = pkElement->getElementsByTagName(XMLString::transcode("transport"));
@@ -417,8 +420,10 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc) {
         list.set<std::string>("Chemistry Model","Off");
       } else {
         list.set<std::string>("Chemistry Model","On");
+	chemistryON=true;
+	//TODO: EIB - now get process model option
       }
-      //list.set<std::string>("Chemistry Model",textContent);
+      XMLString::release(&textContent);
     }
   }
   // get numerical controls node
@@ -623,16 +628,22 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc) {
                         textContent = XMLString::transcode(currentNode->getTextContent());
                         //pcPL.set<>("",textContent);
                         XMLString::release(&textContent);
-                } else if (strcmp(tagname,"transport_sub_cycling")==0) {
-                        //TODO: EIB - don't know where this goes
+                } else if (strcmp(tagname,"transport_sub_cycling")==0 && transportON) {
+                        // add this to tpkPL
                         textContent = XMLString::transcode(currentNode->getTextContent());
-                        //pcPL.set<>("",textContent);
+			if(strcmp(textContent,"true")) {
+                            tpkPL.set<bool>("transport subcycling",true);
+			} else {
+                            tpkPL.set<bool>("transport subcycling",false);
+			}
                         XMLString::release(&textContent);
                 }
               }
             }
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Linear Solver") = lsPL;
             list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Preconditioners") = pcPL;
+	    if (transportON) list.sublist("Numerical Control Parameters").sublist(meshbase) = tpkPL;
+	    if (chemistryON) list.sublist("Numerical Control Parameters").sublist(meshbase) = cpkPL;
           }
         }
       }
@@ -1526,7 +1537,9 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
 	  obPL.set<std::string>("Time Macro",textContent2);
 	  XMLString::release(&textContent2);
 	}
-	obsPL.sublist(textContent) = obPL;
+	std::stringstream listName;
+	listName << "observation-"<<j+1<<":"<<textContent;
+	obsPL.sublist(listName.str()) = obPL;
 	XMLString::release(&textContent);
       }
       list.sublist("Observation Data") = obsPL;

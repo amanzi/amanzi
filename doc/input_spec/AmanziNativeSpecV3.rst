@@ -898,12 +898,26 @@ the second-one is more accurate but also is a few times more expensive.
 .. code-block:: xml
 
    <ParameterList name="Dispersivity">
-     <Parameter name="model" type="string" value="Bear"/>
-     <Parameter name="alphaL" type="double" value="1e-2"/>
-     <Parameter name="alphaT" type="double" value="1e-5"/>
-     <Parameter name="D" type="double" value="1e-8"/>
      <Parameter name="numerical method" type="string" value="two point flux approximation"/>
-     <Parameter name="prconditioner" type="string" value="Hypre AMG"/>
+     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+     <ParameterList name="Brown Soil">
+       <Parameter name="regions" type="Array(string)" value="{top region, bottom region}"/>
+       <Parameter name="model" type="string" value="Bear"/>
+       <Parameter name="alphaL" type="double" value="1e-2"/>
+       <Parameter name="alphaT" type="double" value="1e-5"/>
+       <Parameter name="D" type="double" value="1e-8"/>
+       <Parameter name="tortuosity" type="double" value="1e-4"/>       
+     </ParameterList>  
+     
+     <ParameterList name="Grey Soil">
+       <Parameter name="regions" type="Array(string)" value="{middle region}"/>
+       <Parameter name="model" type="string" value="Bear"/>
+       <Parameter name="alphaL" type="double" value="1e-2"/>
+       <Parameter name="alphaT" type="double" value="1e-5"/>
+       <Parameter name="D" type="double" value="1e-8"/>
+       <Parameter name="tortuosity" type="double" value="1e-4"/>
+     </ParameterList>  
    </ParameterList>  
 
 Parameter `"preconditioner`" will be replaced with more appropriate `"linear solver`".

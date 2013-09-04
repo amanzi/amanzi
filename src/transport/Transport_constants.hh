@@ -45,7 +45,7 @@ const int TRANSPORT_QUAD_NODES = 4;
 const int TRANSPORT_QUAD_EDGES = 4;
 
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
-const int TRANSPORT_MAX_NODES = 47;  // These olyhedron parameters must
+const int TRANSPORT_MAX_NODES = 47;  // These polyhedron parameters must
 const int TRANSPORT_MAX_EDGES = 60;  // be calculated in Init().
 
 const int TRANSPORT_DISPERSIVITY_MODEL_NULL = 1;
