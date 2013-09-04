@@ -68,6 +68,9 @@ public:
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
 
+  // problems with pressures -- setting a range of admissible pressures
+  virtual bool is_admissible(Teuchos::RCP<const TreeVector> up);
+
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
