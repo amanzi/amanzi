@@ -765,6 +765,10 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& wc_old = *S_next_->GetFieldData("water_content")->ViewComponent("cell",false);
   const Epetra_MultiVector& e_old = *S_next_->GetFieldData("energy")->ViewComponent("cell",false);
 
+  // min change values... ewc is not useful near convergence
+  double dT_min = 0.01;
+  double dp_min = 100.;
+
   int ncells = base_poro.MyLength();
   for (int c=0; c!=ncells; ++c) {
     bool debug_c = false;
@@ -780,7 +784,7 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
     }
 
     // only do EWC if corrections are large, ie not clearly converging
-    if (std::abs(dT_std[0][c]) > 0.01 || std::abs(dp_std[0][c]) > 10.) {
+    if (std::abs(dT_std[0][c]) > dT_min || std::abs(dp_std[0][c]) > dp_min) {
       if (-dT_std[0][c] < 0.) {  // decreasing, freezing
         if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
           if (debug_c)
@@ -833,14 +837,25 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
 
             // Check if our energy projection is before the 2nd inflection point
             if ( s_i / (s_l + s_i) < 0.99) {
+              double dT_ewc = T_old[0][c] - T;
+              double dp_ewc = p_old[0][c] - p;
+
               if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
                 if (debug_c) {
                   *out_ << "     kept within the transition zone." << std::endl;
                   *out_ << "   p,T_ewc = " << p << ", " << T << std::endl;
+                  *out_ << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
+                  if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                    *out_ << "  sufficient change" << std::endl;
+                  } else {
+                    *out_ << "  insufficient change" << std::endl;
+                  }
                 }
               }
-              dT_std[0][c] = T_old[0][c] - T;
-              dp_std[0][c] = p_old[0][c] - p;
+              if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                dT_std[0][c] = dT_ewc;
+                dp_std[0][c] = dp_ewc;
+              }
             } else {
               // pass, past the transition and we are just chilling ice
               if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
@@ -890,14 +905,25 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
                     base_poro[0][c], T, p);
 
             if (!ierr && T < 273.15) {
+              double dT_ewc = T_old[0][c] - T;
+              double dp_ewc = p_old[0][c] - p;
+
               if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
                 if (debug_c) {
                   *out_ << "     kept within the transition zone." << std::endl;
                   *out_ << "   p,T_ewc = " << p << ", " << T << std::endl;
+                  *out_ << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
+                  if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                    *out_ << "  sufficient change" << std::endl;
+                  } else {
+                    *out_ << "  insufficient change" << std::endl;
+                  }
                 }
               }
-              dT_std[0][c] = T_old[0][c] - T;
-              dp_std[0][c] = p_old[0][c] - p;
+              if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                dT_std[0][c] = dT_ewc;
+                dp_std[0][c] = dp_ewc;
+              }
 
             } else {
               // pass, past the transition zone and onto the upper branch
