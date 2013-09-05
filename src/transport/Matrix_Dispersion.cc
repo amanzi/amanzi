@@ -29,7 +29,8 @@ namespace AmanziTransport {
 /* *******************************************************************
 * Initiaziation of a class.
 ******************************************************************* */
-void Matrix_Dispersion::Init(Dispersion_Specs& specs,
+void Matrix_Dispersion::Init(std::vector<Teuchos::RCP<DispersionModel> >& specs, 
+                             const std::string& preconditioner, 
                              const Teuchos::ParameterList& prec_list)
 {
   specs_ = &specs;
@@ -52,7 +53,7 @@ void Matrix_Dispersion::Init(Dispersion_Specs& specs,
   for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
 
   AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(specs.preconditioner, prec_list);
+  preconditioner_ = factory.Create(preconditioner, prec_list);
 }
 
 
@@ -64,39 +65,48 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
                                                   const Epetra_Vector& porosity, 
                                                   const Epetra_Vector& saturation)
 {
-  if (specs_->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-    for (int c = 0; c < ncells_owned; c++) {
-      for (int i = 0; i < dim; i++) D[c](i, i) = specs_->alphaL;
-      D[c] *= porosity[c] * saturation[c];
-    }
-  } else {
-    WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+  for (int mb = 0; mb < specs_->size(); mb++) {
+    Teuchos::RCP<DispersionModel> spec = (*specs_)[mb]; 
 
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-    AmanziGeometry::Point velocity(dim);
+    std::vector<AmanziMesh::Entity_ID> block;
+    for (int r = 0; r < (spec->regions).size(); r++) {
+      std::string region = (spec->regions)[r];
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
-    for (int c = 0; c < ncells_owned; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int nfaces = faces.size();
+      AmanziMesh::Entity_ID_List::iterator c;
+      for (c = block.begin(); c != block.end(); c++) {
+        if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
+          for (int i = 0; i < dim; i++) D[*c](i, i) = spec->alphaL;
+          D[*c] *= porosity[*c] * saturation[*c];
+        } else {
+          WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
-      std::vector<double> flux(nfaces);
-      for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[faces[n]];
-      mfd3d.RecoverGradient_MassMatrix(c, flux, velocity);
+          AmanziMesh::Entity_ID_List faces;
+          std::vector<int> dirs;
+          AmanziGeometry::Point velocity(dim);
 
-      double velocity_value = norm(velocity);
-      double anisotropy = specs_->alphaL - specs_->alphaT;
+          mesh_->cell_get_faces_and_dirs(*c, &faces, &dirs);
+          int nfaces = faces.size();
 
-      for (int i = 0; i < dim; i++) {
-        D[c](i, i) = specs_->D + specs_->alphaT * velocity_value;
-        for (int j = i; j < dim; j++) {
-          double s = anisotropy * velocity[i] * velocity[j];
-          if (velocity_value) s /= velocity_value;
-          D[c](j, i) = D[c](i, j) += s;
+          std::vector<double> flux(nfaces);
+          for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[faces[n]];
+          mfd3d.RecoverGradient_MassMatrix(*c, flux, velocity);
+
+          double velocity_value = norm(velocity);
+          double anisotropy = spec->alphaL - spec->alphaT;
+
+          for (int i = 0; i < dim; i++) {
+            D[*c](i, i) = spec->D + spec->alphaT * velocity_value;
+            for (int j = i; j < dim; j++) {
+              double s = anisotropy * velocity[i] * velocity[j];
+              if (velocity_value) s /= velocity_value;
+              D[*c](j, i) = D[*c](i, j) += s;
+            }
+          }
+
+          D[*c] *= porosity[*c] * saturation[*c];
         }
       }
-
-      D[c] *= porosity[c] * saturation[c];
     }
   }
 }

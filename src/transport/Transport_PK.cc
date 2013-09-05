@@ -54,6 +54,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
   double time = TS->initial_time();
   if (time >= 0.0) T_physics = time;
 
+  dispersion_method = TRANSPORT_DISPERSION_METHOD_TPFA; 
+  dispersion_preconditioner = "identity";
+
   verbosity = TRANSPORT_VERBOSITY_HIGH;
   internal_tests = 0;
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
@@ -148,10 +151,10 @@ int Transport_PK::InitPK()
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
  
-  // dispersivity model
-  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+  // dispersivity models
+  if (dispersion_models.size() != 0) {
     dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
-    dispersion_matrix->Init(dispersion_specs, preconditioner_list);
+    dispersion_matrix->Init(dispersion_models, dispersion_preconditioner, preconditioner_list);
     dispersion_matrix->SymbolicAssembleGlobalMatrix();
   }
   return 0;
@@ -394,16 +397,15 @@ void Transport_PK::Advance(double dT_MPC)
     }
   }
 
-  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+  if (dispersion_models.size() != 0) {
     const Epetra_Vector& phi = TS->ref_porosity();
     const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
     dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
 
-    int method = dispersion_specs.method;
-    if (method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
+    if (dispersion_method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
       dispersion_matrix->AssembleGlobalMatrixTPFA(TS);
-    } else if (method == TRANSPORT_DISPERSION_METHOD_NLFV) {
+    } else if (dispersion_method == TRANSPORT_DISPERSION_METHOD_NLFV) {
       dispersion_matrix->AssembleGlobalMatrixNLFV(TS);
     }
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);

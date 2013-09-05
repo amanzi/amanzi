@@ -1,11 +1,10 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-
 
 License: see $AMANZI_DIR/COPYRIGHT
 Author: Ethan Coon
 
-A MeshPartition is a collection of non-overlapping Regions which cover a mesh.
+A MeshPartition is a collection of non-overlapping Regions which cover 
+(otionally) a mesh.
 
 ------------------------------------------------------------------------- */
 
@@ -25,20 +24,23 @@ class MeshPartition {
   MeshPartition(AmanziMesh::Entity_kind kind,
                 const std::vector<std::string>& regions);
 
-  bool initialized() { return initialized_; }
-  void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                  const int default_value);
+  void Verify() const;
 
-  int operator[](AmanziMesh::Entity_ID id) { return (*map_)[id]; }
+  // access
+  int operator[](AmanziMesh::Entity_ID id) const { return (*map_)[id]; }
+  bool initialized() { return initialized_; }
 
  protected:
   AmanziMesh::Entity_kind kind_;
   std::vector<std::string> regions_;
   bool initialized_;
+  int default_value_;
   Teuchos::RCP<Epetra_IntVector> map_;
-
 };
 
-} // namespace
-} // namespace
+}  // namespace Functions
+}  // namespace Amanzi
 
 #endif

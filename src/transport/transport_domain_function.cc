@@ -70,7 +70,7 @@ void TransportDomainFunction::Compute(double time)
  
   for (SpecAndIDsList::const_iterator
            spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+           spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
     
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
     for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {

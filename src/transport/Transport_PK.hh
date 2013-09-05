@@ -181,7 +181,9 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> face_importer;
 
   Teuchos::RCP<Matrix_Dispersion> dispersion_matrix; // data for dispersion
-  Dispersion_Specs dispersion_specs;
+  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models;
+  int dispersion_method;
+  std::string dispersion_preconditioner;
 
   double cfl_, dT, dT_debug, T_physics;  
   int number_components; 

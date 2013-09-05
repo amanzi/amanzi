@@ -65,18 +65,39 @@ void Transport_PK::ProcessParameterList()
 
   // transport dispersion (default is none)
   if (transport_list.isSublist("dispersivity")) {
-    Teuchos::ParameterList& dispersivity = transport_list.sublist("dispersivity");
-    string model_name = dispersivity.get<string>("model", "none");
-    ProcessStringDispersionModel(model_name, &dispersion_specs.model);
+    Teuchos::ParameterList& dlist = transport_list.sublist("dispersivity");
 
-    dispersion_specs.alphaL = dispersivity.get<double>("alphaL", 0.0);
-    dispersion_specs.alphaT = dispersivity.get<double>("alphaT", 0.0);
-    dispersion_specs.D = dispersivity.get<double>("D", 0.0);
+    dispersion_preconditioner = dlist.get<string>("preconditioner", "identity");
 
-    string method_name = dispersivity.get<string>("numerical method", "none");
-    ProcessStringDispersionMethod(method_name, &dispersion_specs.method);
+    string method_name = dlist.get<string>("numerical method", "none");
+    ProcessStringDispersionMethod(method_name, &dispersion_method);
 
-    dispersion_specs.preconditioner = dispersivity.get<string>("preconditioner", "identity");
+    int nblocks = 0; 
+    for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
+      if (dlist.isSublist(dlist.name(i))) nblocks++;
+    }
+
+    dispersion_models.resize(nblocks);
+
+    int iblock = 0;
+    for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
+      if (dlist.isSublist(dlist.name(i))) {
+        dispersion_models[iblock] = Teuchos::rcp(new DispersionModel());
+
+        Teuchos::ParameterList& model_list = dlist.sublist(dlist.name(i));
+
+        string model_name = model_list.get<string>("model", "none");
+        ProcessStringDispersionModel(model_name, &(dispersion_models[iblock]->model));
+
+        dispersion_models[iblock]->alphaL = model_list.get<double>("alphaL", 0.0);
+        dispersion_models[iblock]->alphaT = model_list.get<double>("alphaT", 0.0);
+        dispersion_models[iblock]->D = model_list.get<double>("D", 0.0);
+        dispersion_models[iblock]->tau = model_list.get<double>("tortuosity", 0.0);
+        dispersion_models[iblock]->regions = model_list.get<Teuchos::Array<std::string> >("regions").toVector();
+
+        iblock++;
+      }
+    }
   }
 
   // control parameter
@@ -136,7 +157,6 @@ void Transport_PK::ProcessStringFlowMode(const std::string name, int* method)
     msg << "Trasnport PK: flow mode is wrong (steady-state, transient)." << "\n";
     Exceptions::amanzi_throw(msg);
   }
-
 }
 
 
