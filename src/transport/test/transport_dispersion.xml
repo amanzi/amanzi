@@ -26,11 +26,16 @@
     <Parameter name="spatial discretization order" type="int" value="1"/>   
     <Parameter name="temporal discretization order" type="int" value="1"/>   
     <ParameterList name="dispersivity">
-      <Parameter name="model" type="string" value="Bear"/>
-      <Parameter name="longitudinal" type="double" value="0.1"/>
-      <Parameter name="transverse" type="double" value="0.01"/>
       <Parameter name="numerical method" type="string" value="two point flux approximation"/>
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <ParameterList name="Brown soild">
+        <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+        <Parameter name="model" type="string" value="Bear"/>
+        <Parameter name="alphaL" type="double" value="0.1"/>
+        <Parameter name="alphaT" type="double" value="0.01"/>
+        <Parameter name="D" type="double" value="0.0"/>
+        <Parameter name="tortuosity" type="double" value="0.0"/>
+      </ParameterList>
     </ParameterList>
 
     <Parameter name="advection limiter" type="string" value="Tensorial"/>
