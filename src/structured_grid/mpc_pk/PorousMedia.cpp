@@ -5493,31 +5493,67 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
   MultiFab* alpha = 0;
   int op_maxOrder = 3;
   
-  ViscBndry bd(grids,ntracers,geom);
-  SetTracerDiffusionBndryData(bd,time);
-    
-  MultiFab* beta[BL_SPACEDIM];
+  TensorDiffusionBndry bd(grids,1,geom);
+  MultiFab *beta[BL_SPACEDIM], *beta1[BL_SPACEDIM];
   for (int d = 0; d < BL_SPACEDIM; d++) {
     const BoxArray eba = BoxArray(grids).surroundingNodes(d);
     beta[d] = new MultiFab(eba,1,0);
+    beta1[d] = new MultiFab(eba,1,0);
   }
   
   Real a = 0;
   Real b = -1;
-  getDiffusivity(beta, time, first_tracer, 0, 1);
-  ABecHelper* op = getOp(a,b,bd,0,0,0,0,Whalf,0,Wflag,beta,0,1,volume,area,alpha,0,ntracers);
-  op->maxOrder(op_maxOrder);
+  getTensorDiffusivity(beta,beta1,time);
+
+  // Non-tensor version, for posterity...
+  //getDiffusivity(beta, time, first_tracer, 0, 1);
+  //ViscBndry bd(grids,ntracers,geom);
+  //SetTracerDiffusionBndryData(bd,time);
+  //ABecHelper* op = getOp(a,b,bd,0,0,0,0,Whalf,0,Wflag,beta,0,1,volume,area,alpha,0,ntracers);
+  //op->maxOrder(op_maxOrder);
+
+  FillStateBndry(time,State_Type,first_tracer,ntracers);
+  MultiFab Sc;
+  BoxArray cgrids;
+  if (level > 0) {
+    cgrids = BoxArray(grids).coarsen(crse_ratio);
+    PorousMedia& pmc = getLevel(level-1);
+    int nGrowDiffC = 2; // To accomodate sliding stencil (if max_order==3)
+    Sc.define(pmc.boxArray(),ntracers,nGrowDiffC,Fab_allocate);
+    for (FillPatchIterator fpi(pmc,Sc,nGrowDiffC,time,State_Type,
+                               first_tracer,ntracers); fpi.isValid(); ++fpi) {
+      Sc[fpi].copy(fpi(),0,0,ntracers);
+    }
+  }
 
   MultiFab& S = get_data(State_Type,time);
+
+  MFVector phi(*rock_phi);
+  MFVector sphi(S,0,1,1); sphi.MULTAY(phi,1);
+  MFVector Volume(volume);
+
+  int nBndComp = MCLinOp::bcComponentsNeeded(1);
+  Array<BCRec> tracer_bc(nBndComp,defaultBC());
+  
   MultiFab volInv(grids,1,0);
   MultiFab::Copy(volInv,volume,0,0,1,0);
   volInv.invert(1,0);
 
-  op->set_alphaComp(0);
-  op->set_betaComp(0);
   for (int n=0; n<ntracers; ++n) {
-    op->set_bndryComp(n);
-    op->apply(D,S,0,LinOp::Inhomogeneous_BC,true,first_tracer+n,n,1,n);
+    tracer_bc[0] = get_desc_lst()[State_Type].getBC(first_tracer+n);
+    if (level == 0) {
+      bd.setBndryValues(S,first_tracer+n,0,1,tracer_bc);
+    } else {
+      BndryRegister crse_br(cgrids,0,1,2,1);
+      crse_br.copyFrom(Sc,Sc.nGrow(),n,0,1);
+      bd.setBndryValues(crse_br,0,S,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
+    }
+
+    TensorOp* op = getOp(a,b,bd,0,1,&(sphi.multiFab()),0,1,Whalf,0,
+                         Wflag,beta,0,1,beta1,0,1,volume,area,alpha,0);
+    op->maxOrder(op_maxOrder);
+
+    op->apply(D,S,0,MCInhomogeneous_BC,true,first_tracer+n,n,1,0);
     MultiFab::Multiply(D,volInv,0,n,1,0);
   }
   //
