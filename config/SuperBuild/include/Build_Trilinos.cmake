@@ -153,7 +153,7 @@ set(Trilinos_CMAKE_LANG_ARGS
 #
 
 # Trilinos patch to make Ifpack use Hypre correctly
-set(ENABLE_Trilinos_Patch OFF)
+set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
   set(Trilinos_patch_file trilinos-ifpack-hypre.patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in

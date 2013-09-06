@@ -22,11 +22,12 @@
 #   0.90.9       - update MSTK to version 2.02
 #
 #   0.91.0       - Added PFLOTRAN and Alquimia (updates from Jeff Johnson's work on state-branch)
-#   0.91.1       - updated CCSE 1.1.7
+#   0.91.1       - updated CCSE 1.1.7 (and added patch)
+#   0.91.2       - turned on patch for IfPack support of noncontiguous global ids with HYPRE
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 1)
+set (AMANZI_TPLS_VERSION_PATCH 2)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
