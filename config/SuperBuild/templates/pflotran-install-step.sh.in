@@ -10,7 +10,7 @@ pflotran_dir=@TPL_INSTALL_PREFIX@/pflotran
 tpl_lib_dir=@TPL_INSTALL_PREFIX@/lib
 if [ ! -e ${pflotran_dir} ]; then mkdir -p ${pflotran_dir} ; fi
 
-cp -R * ${pflotran_dir}
+rsync -aH * ${pflotran_dir}
 rc=$?
 if [ "$rc" -ne "0" ]; then
   exit $rc
