@@ -208,7 +208,7 @@ c ::: internal variables
      &     vedge, DIMS(vedge), ystate, DIMS(ystate),
 
      &     DIMS(work),
-     &     bc,lo,hi,dt,dx,n,use_minion,iconserv)
+     &     bc,lo,hi,dt,dx,n,use_minion,iconserv,seps)
       implicit none
 c
 c     This subroutine computes edges states, right now it uses
@@ -246,7 +246,7 @@ c
       REAL_T  sy(DIMV(work))
       REAL_T tforces(DIMV(work))
       REAL_T divu(DIMV(work))
-
+      REAL_T seps
      
       REAL_T spx,smx,spy,smy,st
 
@@ -268,7 +268,7 @@ c
       call FORT_SLOPES(
      &     s,DIMS(s),
      &     sx,sy,DIMS(work),
-     &     lo,hi,slxscr,slyscr,bc)
+     &     lo,hi,slxscr,slyscr,bc,seps)
 c
 c     trace the state to the cell edges
 c
@@ -503,7 +503,7 @@ c
      &     sy, slyscr,
      &     vedge, DIMS(vedge), ystate, DIMS(ystate), 
      &     DIMS(work),
-     &     bc,lo,hi,dt,dx,nscal)
+     &     bc,lo,hi,dt,dx,nscal,seps)
       
 c
 c ::: This subroutine computes edges states and fluxes. 
@@ -537,6 +537,7 @@ c ::: internal variables
       REAL_T, ALLOCATABLE :: xlo(:,:,:), xhi(:,:,:)
       REAL_T, ALLOCATABLE :: ylo(:,:,:), yhi(:,:,:)
       REAL_T  gravx, gravy
+      REAL_T seps
       integer nc
       
       gravx = zero
@@ -555,7 +556,7 @@ c ::: compute the slopes
          call FORT_SLOPES(s(ARG_L1(s),ARG_L2(s),nc),DIMS(s),
      &        sx(ARG_L1(work),ARG_L2(work),nc),
      &        sy(ARG_L1(work),ARG_L2(work),nc),DIMS(work),
-     &        lo,hi,slxscr,slyscr,bc)
+     &        lo,hi,slxscr,slyscr,bc,seps)
       end do 
 
 c ::: initial trace
@@ -605,7 +606,7 @@ c ::: compute fluxes based on final edge states
      &     DIMS(work),
      &     krcoef, DIMS(krcoef), nkrcoef,
      &     bc,lo,hi,dt,dx,
-     &     use_minion,iconserv,nscal)
+     &     use_minion,iconserv,nscal,seps)
       
 c
 c ::: This subroutine computes edges states and fluxes. 
@@ -653,6 +654,7 @@ c ::: internal variables
       REAL_T, ALLOCATABLE :: xlo(:,:,:), xhi(:,:,:)
       REAL_T, ALLOCATABLE :: ylo(:,:,:), yhi(:,:,:)
       REAL_T  gravx, gravy
+      REAL_T  seps
       integer nc, corrector
       
       gravx = zero
@@ -679,7 +681,7 @@ c ::: compute the slopes
          call FORT_SLOPES(s(ARG_L1(s),ARG_L2(s),nc),DIMS(s),
      &        sx(ARG_L1(work),ARG_L2(work),nc),
      &        sy(ARG_L1(work),ARG_L2(work),nc),DIMS(work),
-     &        lo,hi,slxscr,slyscr,bc)
+     &        lo,hi,slxscr,slyscr,bc,seps)
       end do 
 
 c ::: initial step
@@ -745,7 +747,7 @@ c ::: compute fluxes based on final edge states
      &     DIMS(work),
      &     krcoef, DIMS(krcoef), nkrcoef,
      &     bc,lo,hi,dt,dx,
-     &     use_minion,iconserv,nscal)
+     &     use_minion,iconserv,nscal,seps)
       
 c
 c ::: This subroutine computes edges states and fluxes. 
@@ -797,6 +799,7 @@ c ::: internal variables
       REAL_T, ALLOCATABLE :: xlo(:,:,:), xhi(:,:,:)
       REAL_T, ALLOCATABLE :: ylo(:,:,:), yhi(:,:,:)
       REAL_T  gravx, gravy
+      REAL_T  seps
       integer nc, corrector
       
       gravx = zero
@@ -823,7 +826,7 @@ c ::: compute the slopes
          call FORT_SLOPES(s(ARG_L1(s),ARG_L2(s),nc),DIMS(s),
      &        sx(ARG_L1(work),ARG_L2(work),nc),
      &        sy(ARG_L1(work),ARG_L2(work),nc),DIMS(work),
-     &        lo,hi,slxscr,slyscr,bc)
+     &        lo,hi,slxscr,slyscr,bc,seps)
       end do 
 
 c ::: initial step
@@ -887,7 +890,7 @@ c ::: compute fluxes based on final edge states
      &     strucy, eigvy, eigly, eigry, 
      &     DIMS(work),
      &     bc,lo,hi,dt,dx,
-     &     use_minion,iconserv,grav,eigmax)
+     &     use_minion,iconserv,grav,eigmax,seps)
       implicit none
 c
 c     This subroutine computes edges states and fluxes for the polymer problem
@@ -935,6 +938,7 @@ c ::: arguments
       REAL_T  eigry(DIMV(work),ncomps-1,ncomps-1)
       REAL_T  strucx(DIMV(work),ncomps-1,ncomps-1)
       REAL_T  strucy(DIMV(work),ncomps-1,ncomps-1)
+      REAL_T  seps
 
 c ::: internal variables
       integer i,j
@@ -1044,6 +1048,293 @@ c ::: convert the second auxiliary variable to c instead of c*s
 
       end
 
+#if 0
+      subroutine FORT_ESTATE_TRACER(s, sphi, tforces, DIMS(s),
+     &     xlo, xhi, sx, slxscr, stxlo, stxhi,
+     &     uedge, DIMS(uedge), xstate, DIMS(xstate),
+
+     &     ylo, yhi, sy, slyscr, stylo, styhi,
+     &     vedge, DIMS(vedge), ystate, DIMS(ystate),
+
+     &     DIMS(work),
+     &     bc,lo,hi,dt,dx,n,use_minion,iconserv,seps)
+      implicit none
+
+      integer i,j,n
+      integer lo(SDIM),hi(SDIM),bc(SDIM,2)
+      integer imin,jmin,imax,jmax
+      REAL_T hx, hy, dt, dth, dthx, dthy, hxi, hyi
+      REAL_T tr,ubar,vbar,stx,sty,fu,fv,dx(SDIM)
+      REAL_T eps,eps_for_bc,spi,divum,divup
+      parameter( eps        = zero )
+      parameter( eps_for_bc = zero )
+
+      integer DIMDEC(s)
+      integer DIMDEC(sphi)
+      integer DIMDEC(work)
+      integer DIMDEC(uedge)
+      integer DIMDEC(xstate)
+      integer DIMDEC(vedge)
+      integer DIMDEC(ystate)
+
+      REAL_T s(DIMV(s))
+      REAL_T sphi(DIMV(s))
+      REAL_T stxlo(DIM1(s)),stxhi(DIM1(s)),slxscr(DIM1(s),4)
+      REAL_T stylo(DIM2(s)),styhi(DIM2(s)),slyscr(DIM2(s),4)
+
+      REAL_T uedge(DIMV(uedge)), xstate(DIMV(xstate))
+      REAL_T vedge(DIMV(vedge)), ystate(DIMV(ystate))
+
+      REAL_T xlo(DIMV(work)), xhi(DIMV(work))
+      REAL_T ylo(DIMV(work)), yhi(DIMV(work))
+      REAL_T  sx(DIMV(work))
+      REAL_T  sy(DIMV(work))
+      REAL_T tforces(DIMV(work))
+      REAL_T seps
+     
+      REAL_T spx,smx,spy,smy,strans,spip,spim
+
+      integer use_minion, iconserv
+      integer inc
+
+      dth  = half*dt
+      dthx = half*dt / dx(1)
+      dthy = half*dt / dx(2)
+      hx   = dx(1)
+      hy   = dx(2)
+      imin = lo(1)
+      jmin = lo(2)
+      imax = hi(1)
+      jmax = hi(2)
+      hxi = 1.d0 / hx
+      hyi = 1.d0 / hy
+c
+c     compute the slopes
+c
+      call FORT_SLOPES(
+     &     s,DIMS(s),
+     &     sx,sy,DIMS(work),
+     &     lo,hi,slxscr,slyscr,bc,seps)
+
+c
+c     trace the state to the cell edges
+c
+      do j = jmin-1,jmax+1
+         do i = imin,  imax+1
+            xlo(i,j) = s(i-1,j) + (half  - dthx*uedge(i,j))*sx(i-1,j)/sphi(i-1,j)
+            xhi(i,j) = s(i,  j) + (-half - dthx*uedge(i,j))*sx(i,  j)/sphi(i,j)
+         end do
+      end do
+
+      if(use_minion.eq.1)then
+         do j = jmin-1,jmax+1
+            do i = imin,  imax+1
+               xlo(i,j) = xlo(i,j) + dth*tforces(i-1,j)/sphi(i-1,j)
+               xhi(i,j) = xhi(i,j) + dth*tforces(i,  j)/sphi(i,j)
+            end do
+         end do
+         if (iconserv .eq. 1) then
+           do j = jmin-1,jmax+1
+            do i = imin,  imax+1
+               divup = (uedge(i+1,j)-uedge(i,j))*hxi
+     &              +  (vedge(i,j+1)-vedge(i,j))*hyi
+               divum = (uedge(i,j)-uedge(i-1,j))*hxi
+     &              +  (vedge(i-1,j+1)-vedge(i-1,j))*hyi
+               xlo(i,j) = xlo(i,j) - dth*s(i-1,j)*divum/sphi(i-1,j)
+               xhi(i,j) = xhi(i,j) - dth*s(i  ,j)*divup/sphi(i,j)
+            end do
+           end do
+         end if
+      end if
+
+      call trans_xbc(
+     &     s,DIMS(s),
+     &     xlo,xhi,DIMS(work),uedge,DIMS(uedge),
+     &     lo,hi,n,bc,eps_for_bc)
+
+      do j = jmin-1,jmax+1
+         do i = imin,  imax+1
+            fu  = merge(zero,one,abs(uedge(i,j)).lt.eps)
+            stx = merge(xlo(i,j),xhi(i,j),uedge(i,j)>=zero)
+            xlo(i,j) = fu*stx + (one - fu)*half*(xhi(i,j)+xlo(i,j))
+         end do
+      end do
+
+      do j = jmin,  jmax+1
+         do i = imin-1,imax+1
+            spip = 1.d0 
+            ylo(i,j) = s(i,j-1) + (half  - dthy*vedge(i,j))*sy(i,j-1)/sphi(i,j-1)
+            yhi(i,j) = s(i,j)   + (-half - dthy*vedge(i,j))*sy(i,j)/sphi(i,j)
+         end do
+      end do
+
+      if (use_minion.eq.1)then
+         do j = jmin, jmax+1
+            do i = imin-1,  imax+1
+               ylo(i,j) = ylo(i,j) + dth*tforces(i,j-1)/sphi(i,j-1)
+               yhi(i,j) = yhi(i,j) + dth*tforces(i,j  )/sphi(i,j)
+            end do
+         end do
+         if (iconserv .eq. 1) then
+           do j = jmin-1,jmax+1
+            do i = imin,  imax+1
+               divup = (uedge(i+1,j+1)-uedge(i,j+1))*hxi
+     &              +  (vedge(i,j+1)-vedge(i,j))*hyi
+               divum = (uedge(i+1,j)-uedge(i,j))*hxi
+     &              +  (vedge(i,j)-vedge(i,j-1))*hyi
+               ylo(i,j) = ylo(i,j) - dth*spim*s(i,j-1)*divum/sphi(i,j-1)
+               yhi(i,j) = yhi(i,j) - dth*spip*s(i,j  )*divup/sphi(i,j)
+            end do
+           end do
+         end if
+      end if
+
+      call trans_ybc(
+     &     s,DIMS(s),
+     &     ylo,yhi,DIMS(work),vedge,DIMS(vedge),
+     &     lo,hi,n,bc,eps_for_bc)
+
+      do j = jmin,  jmax+1
+         do i = imin-1,imax+1
+            fv  = merge(zero,one,abs(vedge(i,j)).lt.eps)
+            sty = merge(ylo(i,j),yhi(i,j),vedge(i,j)>=zero)
+            ylo(i,j) = fv*sty + (one - fv)*half*(yhi(i,j)+ylo(i,j))
+         end do
+      end do
+
+c
+c     compute the xedge states
+c
+      do j = jmin,jmax
+
+            do i = imin-1,imax+1
+               spx = s(i,j) + half * sx(i,j)
+               smx = s(i,j) - half * sx(i,j)
+
+               if (iconserv.eq.1) then
+                  strans = -(vedge(i,j+1)*ylo(i,j+1) - vedge(i,j)*ylo(i,j))*hyi
+     &                 + s(i,j)*(vedge(i,j+1)-vedge(i,j))/hy
+               else
+                  if (vedge(i,j)*vedge(i,j+1).le.0.d0) then
+                     vbar = 0.5d0*(vedge(i,j)+vedge(i,j+1))
+                     if (vbar.lt.0.d0) then
+                        inc = 1
+                     else
+                        inc = 0
+                     endif
+                     tr = vbar*(s(i,j+inc)-s(i,j+inc-1))*hyi
+                  else
+                     tr = half*(vedge(i,j+1) + vedge(i,j)) *
+     &                    (  ylo(i,j+1) - ylo(i,j)  ) * hyi
+                  endif
+                  strans =  -tr
+               endif
+
+               spi = 1.d0/sphi(i,j)
+               stxlo(i+1)= spx - dthx*spi*uedge(i+1,j)*sx(i,j) + dth*spi*(strans + tforces(i,j))
+               stxhi(i  )= smx - dthx*spi*uedge(i  ,j)*sx(i,j) + dth*spi*(strans + tforces(i,j))
+
+            end do
+
+            if (bc(1,1).eq.EXT_DIR .and. uedge(imin,j).ge.zero) then
+               stxhi(imin) = s(imin-1,j)
+               stxlo(imin) = s(imin-1,j)
+            else if (bc(1,1).eq.EXT_DIR .and. uedge(imin,j).lt.zero) then
+               stxlo(imin) = stxhi(imin)
+            else if (bc(1,1).eq.FOEXTRAP.or.bc(1,1).eq.HOEXTRAP
+     &              .or.bc(1,1).eq.REFLECT_EVEN) then
+               stxlo(imin) = stxhi(imin)
+            else if (bc(1,1).eq.REFLECT_ODD) then
+               stxhi(imin) = zero
+               stxlo(imin) = zero
+            end if
+            if (bc(1,2).eq.EXT_DIR .and. uedge(imax+1,j).le.zero) then
+               stxlo(imax+1) = s(imax+1,j)
+               stxhi(imax+1) = s(imax+1,j)
+            else if (bc(1,2).eq.EXT_DIR .and. uedge(imax+1,j).gt.zero) then
+               stxhi(imax+1) = stxlo(imax+1)
+            else if (bc(1,2).eq.FOEXTRAP.or.bc(1,2).eq.HOEXTRAP
+     &              .or.bc(1,2).eq.REFLECT_EVEN) then
+               stxhi(imax+1) = stxlo(imax+1)
+            else if (bc(1,2).eq.REFLECT_ODD) then
+               stxlo(imax+1) = zero
+               stxhi(imax+1) = zero
+            end if
+            
+            do i = imin, imax+1
+               xstate(i,j) = merge(stxlo(i),stxhi(i),uedge(i,j)>=zero)
+               xstate(i,j) = merge(half*(stxlo(i)+stxhi(i)),xstate(i,j)
+     &              ,abs(uedge(i,j)).lt.eps)
+            end do
+      end do
+c
+c     compute the yedge states
+c
+      do i = imin,imax
+            
+            do j = jmin-1,jmax+1
+               spy = s(i,j) + half * sy(i,j)
+               smy = s(i,j) - half * sy(i,j)
+
+               if (iconserv.eq.1) then
+                  strans = -(uedge(i+1,j)*xlo(i+1,j) - uedge(i,j)*xlo(i,j))*hxi
+     &                 + s(i,j)*(uedge(i+1,j)-uedge(i,j))*hxi
+               else
+                  if (uedge(i,j)*uedge(i+1,j).le.0.d0) then
+                     ubar = 0.5d0*(uedge(i,j)+uedge(i+1,j))
+                     if (ubar.lt.0.d0) then
+                        inc = 1
+                     else
+                        inc = 0
+                     endif
+                     tr = ubar*(s(i+inc,j)-s(i+inc-1,j))/hx
+                  else
+                     tr = half*(uedge(i+1,j) + uedge(i,j)) *
+     &                           (xlo(i+1,j) -   xlo(i,j)  ) / hx
+                  endif
+                  strans = -tr
+
+               endif
+
+               spi = 1.d0/sphi(i,j)
+               stylo(j+1)= spy - dthy*spi*vedge(i,j+1)*sy(i,j) + dth*spi*(strans + tforces(i,j))
+               styhi(j  )= smy - dthy*spi*vedge(i,j  )*sy(i,j) + dth*spi*(strans + tforces(i,j))
+            end do
+            
+            if (bc(2,1).eq.EXT_DIR .and. vedge(i,jmin).ge.zero) then
+               styhi(jmin) = s(i,jmin-1)
+               stylo(jmin) = s(i,jmin-1)
+            else if (bc(2,1).eq.EXT_DIR .and. vedge(i,jmin).lt.zero) then
+               stylo(jmin) = styhi(jmin)
+            else if (bc(2,1).eq.FOEXTRAP.or.bc(2,1).eq.HOEXTRAP
+     &              .or.bc(2,1).eq.REFLECT_EVEN) then
+               stylo(jmin) = styhi(jmin)
+            else if (bc(2,1).eq.REFLECT_ODD) then
+               styhi(jmin) = zero
+               stylo(jmin) = zero
+            end if
+            
+            if (bc(2,2).eq.EXT_DIR .and. vedge(i,jmax+1).le.zero) then
+               stylo(jmax+1) = s(i,jmax+1)
+               styhi(jmax+1) = s(i,jmax+1)
+            else if (bc(2,2).eq.EXT_DIR .and. vedge(i,jmax+1).gt.zero) then
+               styhi(jmax+1) = stylo(jmax+1)
+            else if (bc(2,2).eq.FOEXTRAP.or.bc(2,2).eq.HOEXTRAP
+     &              .or.bc(2,2).eq.REFLECT_EVEN) then
+               styhi(jmax+1) = stylo(jmax+1)
+            else if (bc(2,2).eq.REFLECT_ODD) then
+               stylo(jmax+1) = zero
+               styhi(jmax+1) = zero
+            end if
+            do j=jmin,jmax+1
+               ystate(i,j) = merge(stylo(j),styhi(j),vedge(i,j)>=zero)
+               ystate(i,j) = merge(half*(stylo(j)+styhi(j)),ystate(i,j),
+     &              abs(vedge(i,j)).lt.eps)
+            end do
+      end do
+      
+      end
+#else
       subroutine FORT_ESTATE_TRACER (s, DIMS(s),
      &     sn, DIMS(sn), 
      &     st, DIMS(st), stn, DIMS(stn),
@@ -1052,7 +1343,7 @@ c ::: convert the second auxiliary variable to c instead of c*s
      &     sy, slyscr, ylo, yhi,
      &     vedge, DIMS(vedge), ystate, DIMS(ystate), 
      &     rphi,  DIMS(rphi),DIMS(work),
-     &     bc,lo,hi,dt,dx,nscal)
+     &     bc,lo,hi,dt,dx,nscal,seps)
       implicit none
 c
 c ::: This subroutine computes tracers' fluxes at edges
@@ -1089,6 +1380,7 @@ c ::: internal variables
       REAL_T  ylo(DIMV(vedge),nscal)
       REAL_T  xhi(DIMV(uedge),nscal)
       REAL_T  yhi(DIMV(vedge),nscal) 
+      REAL_T  seps
       REAL_T hx, hy, dt, dth, dthx, dthy
       integer nc
       
@@ -1103,7 +1395,7 @@ c ::: compute the slopes
          call FORT_SLOPES(s(ARG_L1(s),ARG_L2(s),nc),DIMS(s),
      &        sx(ARG_L1(work),ARG_L2(work),nc),
      &        sy(ARG_L1(work),ARG_L2(work),nc),DIMS(work),
-     &        lo,hi,slxscr,slyscr,bc)
+     &        lo,hi,slxscr,slyscr,bc,seps)
       end do 
 
       call trace_tracers(s,DIMS(s),sn,DIMS(sn),
@@ -1119,6 +1411,7 @@ c ::: predictor step: determine final edge states
      &     0,1,lo,hi,nscal)
 
       end
+#endif
 
 
       subroutine FORT_SYNC_RMN (s, DIMS(s), sn, DIMS(sn), 
@@ -1133,7 +1426,7 @@ c ::: predictor step: determine final edge states
      &     DIMS(work),
      &     krcoef, DIMS(krcoef), nkrcoef,
      &     bc,lo,hi,dt,dx,
-     &     use_minion,iconserv,nscal)
+     &     use_minion,iconserv,nscal,seps)
       
 c
 c ::: This subroutine computes edges states and fluxes.  It only makes sense 
@@ -1172,6 +1465,7 @@ c ::: arguments
       REAL_T  dlbd_cc(DIMV(work),3)
       REAL_T  krcoef(DIMV(krcoef),nkrcoef)
       REAL_T  dx(SDIM)
+      REAL_T  seps
 
 c ::: internal variables
       REAL_T eigvx(DIMV(work),2*nscal),eigvy(DIMV(work),2*nscal)
@@ -1213,7 +1507,7 @@ c ::: compute the slopes
          call FORT_SLOPES(s(ARG_L1(s),ARG_L2(s),nc),DIMS(s),
      &        sx(ARG_L1(work),ARG_L2(work),nc),
      &        sy(ARG_L1(work),ARG_L2(work),nc),DIMS(work),
-     &        lo,hi,slxscr,slyscr,bc)
+     &        lo,hi,slxscr,slyscr,bc,seps)
       end do 
 
 c ::: initial step
@@ -1263,7 +1557,6 @@ c ::: compute fluxes based on final edge states
       DEALLOCATE(xlo,xhi,ylo,yhi)
 
       end
-
 
       subroutine trace_lin(s,DIMS(s),sn,DIMS(sn),
      &     rphi,DIMS(rphi),
@@ -4362,7 +4655,7 @@ c
       end
       
       subroutine FORT_SLOPES (s,DIMS(s),slx,sly,DIMS(sl),
-     &     lo,hi,slxscr,slyscr,bc)
+     &     lo,hi,slxscr,slyscr,bc,seps)
 c 
 c     this subroutine computes first, second or forth order slopes of
 c     a 2D scalar field.
@@ -4387,6 +4680,7 @@ c
       REAL_T   sly(DIMV(sl))
       REAL_T slxscr(DIM1(s), 4)
       REAL_T slyscr(DIM2(s), 4)
+      REAL_T  seps
 
       integer cen,lim,flag,fromm
       parameter( cen = 1 )
@@ -4410,7 +4704,7 @@ c ::: ::::: added to prevent underflow for small s values
 c
       do j = lo(2)-ng, hi(2)+ng
         do i = lo(1)-ng, hi(1)+ng
-	  s(i,j) = merge(s(i,j), zero, abs(s(i,j)).gt.1.0D-20)
+c	  s(i,j) = merge(s(i,j), zero, abs(s(i,j)).gt.seps)
         end do
       end do
 c
@@ -4562,7 +4856,7 @@ c     COMPUTE 4TH order slopes
 c
       if (slope_order.eq.4) then
          if (ng .lt. 3) then
-            call bl_abort("SLOPE_2D: not enough bndry cells for 4th order")
+            call bl_abort("SLOPE_2D: not enough bndry for 4th order")
          end if
 c         
 c     ------------------------ x slopes
@@ -5104,7 +5398,7 @@ c     COMPUTE 0TH order slopes
 c
       if (slope_order.eq.1) then
         if (ng .lt. 1) then
-	   call bl_abort("FORT_SLOPES: not enough bndry cells for 1st order")
+	   call bl_abort("FORT_SLOPES: not enough bndry for 1st order")
         end if
         do j = jmin-1,jmax+1
            do i = imin-1,imax+1
@@ -5118,7 +5412,7 @@ c     COMPUTE 0TH order slopes
 c
       if (slope_order .eq. 4) then
          if (ng .lt. 3) then
-            call bl_abort("SLOPE_2D: not enough bndry cells for 4th order")
+            call bl_abort("SLOPE_2D: not enough bndry for 4th order")
          end if
 c     ::: added to prevent underflow for small s values
          do n = 1,ncomps

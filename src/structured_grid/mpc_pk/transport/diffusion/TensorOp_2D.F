@@ -4,7 +4,7 @@
 #include <LO_BCTYPES.H>
 #include "ArrayLim.H"
 
-      subroutine FORT_APPLY(
+      subroutine FORT_TOAPPLY(
      $     u, DIMS(u),
      $     alpha, beta,
      $     a, DIMS(a),
@@ -326,7 +326,6 @@ c     ::: case 3c: south-west corner, minus i, minus j
       
       out(i,j) = alpha*a(i,j)*U(i,j) + beta*(hx*(xfluxe-xfluxw)+hy*(yfluxn-yfluxs))
 
-
 c     ::: case 3d: north-west corner, minus i, plus j
       j=hi(2)
       i=lo(1)
@@ -360,7 +359,7 @@ c     ::: case 3d: north-west corner, minus i, plus j
       end
 
 
-      subroutine FORT_FLUX(
+      subroutine FORT_TOFLUX(
      $     u, DIMS(u),
      $     muX, DIMS(muX),
      $     mu1X, DIMS(mu1X),
@@ -595,7 +594,7 @@ c ::: case 3d: north-west corner, , do fluxes at (i-1/2,j), (i,j-1/2), (i+1/2,j)
 
       end
 
-      subroutine FORT_GSRB (
+      subroutine FORT_TOGSRB (
      $     u, DIMS(u),
      $     rhs, DIMS(rhs),
      $     alpha, beta,
@@ -698,7 +697,7 @@ c ::: convert phase flag into modx and mody
          modx = 1
          mody = 1
       else
-         write(6,*)'FORT_GSRB: bad phaseflag', phaseflag
+         write(6,*)'FORT_TOGSRB: bad phaseflag', phaseflag
          stop
       endif
 

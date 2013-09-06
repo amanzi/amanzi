@@ -61,6 +61,10 @@ ViscBndry::setBndryConds (const BCRec&   bc,
                 // Internal bndry.
                 //
                 const Real delta = dx[dir]*ratio[dir];
+                if (delta < 0) {
+                  std::cout << "hello" << std::endl;
+                }
+                BL_ASSERT(delta >= 0);
 
                 bctag[face][comp] = LO_DIRICHLET;
                 bloc[face]        = 0.5*delta;
@@ -71,7 +75,7 @@ ViscBndry::setBndryConds (const BCRec&   bc,
 
 void
 ViscBndry::setHomogValues (const BCRec& bc,
-                           IntVect& ratio)
+                           const IntVect& ratio)
 {
     setBndryConds(bc, ratio);
 

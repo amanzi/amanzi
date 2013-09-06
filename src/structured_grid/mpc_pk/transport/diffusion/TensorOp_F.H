@@ -4,71 +4,39 @@
 #include <REAL.H>
 
 #if defined(BL_LANG_FORT)
-#  define FORT_APPLY            toapply
-#  define FORT_FLUX             toflux
-#  define FORT_GSRB             togsrb
-#  define FORT_RESIDL           toresid
-#  define FORT_AVERAGECC        toaveragecc
-#  define FORT_AVERAGEEC        toaverageec
-#  define FORT_HARMONIC_AVERAGEEC toharaverageec
+#  define FORT_TOAPPLY            toapply
+#  define FORT_TOFLUX             toflux
+#  define FORT_TOGSRB             togsrb
+#  define FORT_TORESIDL           toresid
 #else
 # if defined(BL_FORT_USE_UPPERCASE)
-#  define FORT_APPLY            TOAPPLY
-#  define FORT_FLUX             TOFLUX
-#  define FORT_GSRB             GSRBVISC
-#  define FORT_RESIDL           TORESID
-#  define FORT_AVERAGECC        TOAVERAGECC
-#  define FORT_AVERAGEEC        TOAVERAGEEC
-#  define FORT_HARMONIC_AVERAGEEC TOHARAVERAGEEC
+#  define FORT_TOAPPLY            TOAPPLY
+#  define FORT_TOFLUX             TOFLUX
+#  define FORT_TOGSRB             TOGSRB
+#  define FORT_TORESIDL           TORESID
 # elif defined(BL_FORT_USE_LOWERCASE)
-#  define FORT_APPLY            toapply
-#  define FORT_FLUX             toflux
-#  define FORT_GSRB             togsrb
-#  define FORT_RESIDL           toresid
-#  define FORT_AVERAGECC        toaveragecc
-#  define FORT_AVERAGEEC        toaverageec
-#  define FORT_HARMONIC_AVERAGEEC toharaverageec
+#  define FORT_TOAPPLY            toapply
+#  define FORT_TOFLUX             toflux
+#  define FORT_TOGSRB             togsrb
+#  define FORT_TORESIDL           toresid
 # elif defined(BL_FORT_USE_UNDERSCORE)
-#  define FORT_APPLY            toapply_
-#  define FORT_FLUX             toflux_
-#  define FORT_GSRB             togsrb_
-#  define FORT_RESIDL           toresid_
-#  define FORT_AVERAGECC        toaveragecc_
-#  define FORT_AVERAGEEC        toaverageec_
-#  define FORT_HARMONIC_AVERAGEEC toharaverageec_
+#  define FORT_TOAPPLY            toapply_
+#  define FORT_TOFLUX             toflux_
+#  define FORT_TOGSRB             togsrb_
+#  define FORT_TORESIDL           toresid_
 # endif
 
 #include <ArrayLim.H>
 
 extern "C"
 {
-  void FORT_AVERAGECC (
-    Real* crseX,       ARLIM_P(crseX_lo), ARLIM_P(crseX_hi),
-    const Real* fineX, ARLIM_P(fineX_lo), ARLIM_P(fineX_hi),
-    const int *tlo, const int *thi, const int *nc
-    );
-
-  void FORT_RESIDL (
+  void FORT_TORESIDL (
     Real* res      , ARLIM_P(res_lo), ARLIM_P(res_hi),
     const Real* rhs, ARLIM_P(rhs_lo), ARLIM_P(rhs_hi),
     const Real* phi, ARLIM_P(phi_lo), ARLIM_P(phi_hi),
     const int* lo, const int* hi, const int* nc
     );
-  void FORT_AVERAGEEC (
-    Real* crseX,       ARLIM_P(crseX_lo), ARLIM_P(crseX_hi),
-    const Real* fineX, ARLIM_P(fineX_lo), ARLIM_P(fineX_hi),
-    const int *tlo, const int *thi, const int *nc,
-    const int *axis
-    );
-
-  void FORT_HARMONIC_AVERAGEEC (
-    Real* crseX,       ARLIM_P(crseX_lo), ARLIM_P(crseX_hi),
-    const Real* fineX, ARLIM_P(fineX_lo), ARLIM_P(fineX_hi),
-    const int *tlo, const int *thi, const int *nc,
-    const int *axis
-    );
-
-  void FORT_APPLY(
+  void FORT_TOAPPLY(
     const Real*u, ARLIM_P(ulo), ARLIM_P(uhi),
     const Real*alpha, const Real*beta,
     const Real*a, ARLIM_P(alo),   ARLIM_P(ahi),
@@ -105,7 +73,7 @@ extern "C"
 #endif
     const int* lo, const int* hi, const Real* h);
 
-  void FORT_FLUX(
+  void FORT_TOFLUX(
     const Real*u, ARLIM_P(ulo), ARLIM_P(uhi),
     const Real*muX, ARLIM_P(muXlo), ARLIM_P(muXhi),
     const Real*mu1X, ARLIM_P(mu1Xlo), ARLIM_P(mu1Xhi),
@@ -144,7 +112,7 @@ extern "C"
 #endif
     const int* lo, const int* hi, const Real* h);
 
-  void FORT_GSRB(
+  void FORT_TOGSRB(
     Real* u, ARLIM_P(ulo), ARLIM_P(uhi),
     const Real* rhs, ARLIM_P(rhslo), ARLIM_P(rhshi),
     Real* alpha, Real* beta,

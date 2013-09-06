@@ -21,8 +21,8 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(CXX_header_files TensorDiffusionBndry.H TensorDiffusion_PK.H TensorOp_F.H TensorOp.H Diffuser.H MFVector.H)
-set(CXX_source_files TensorDiffusionBndry.cpp TensorDiffusion_PK.cpp TensorOp.cpp MFVector.cpp)
+set(CXX_header_files TensorDiffusionBndry.H TensorDiffusion_PK.H TensorOp_F.H TensorOp.H Diffuser.H MFVector.H ABecHelper.H)
+set(CXX_source_files TensorDiffusionBndry.cpp TensorDiffusion_PK.cpp TensorOp.cpp MFVector.cpp ABecHelper.cpp)
 set(F90_source_files )
 set(F77_source_files )
 set(FPP_source_files TensorOp_${AMANZI_SPACEDIM}D.F)

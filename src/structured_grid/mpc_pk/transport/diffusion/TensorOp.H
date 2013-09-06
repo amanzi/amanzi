@@ -21,6 +21,14 @@ public:
   TensorOp (const BndryData& bd,
 	    const Real*      _h,
             int              _nc = 1);
+  void set_bndryComp(int comp) {default_bndryComp = comp;}
+  void set_alphaComp(int comp) {default_alphaComp = comp;}
+  void set_betaComp(int comp) {default_betaComp = comp;}
+  void set_beta1Comp(int comp) {default_beta1Comp = comp;}
+  int bndryComp() const {return default_bndryComp;}
+  int alphaComp() const {return default_alphaComp;}
+  int betaComp() const {return default_betaComp;}
+  int beta1Comp() const {return default_beta1Comp;}
   //
   // The destructor.
   //
@@ -110,26 +118,71 @@ public:
   //
   virtual void compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
                          MultiFab& in, const MCBC_Mode& bc_mode=MCInhomogeneous_BC,
-                         int sComp=0, int dComp=0, int nComp=1, int bndComp=0);
-    
+                         int src_comp=0, int dst_comp=0, int num_comp=1, int bnd_comp=-1);
+  
+  void compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
+                 MultiFab& in, bool do_ApplyBC, const MCBC_Mode& bc_mode=MCInhomogeneous_BC,
+                 int src_comp=0, int dst_comp=0, int num_comp=1, int bnd_comp=-1);
+
+  virtual void apply (MultiFab&      out,
+                      MultiFab&      in,
+                      int            level   = 0,
+                      MCBC_Mode      bc_mode = MCInhomogeneous_BC,
+                      bool           local   = false,
+                      int            src_comp = 0,
+                      int            dst_comp = 0,
+                      int            num_comp = 1,
+                      int            bndry_comp = -1);
+
+  //
+  // Fills level boundary cells using BC_mode flag, int. BC data if reqd.
+  //
+  void applyBC (MultiFab& inout,
+                int       level,
+                MCBC_Mode bc_mode);
+
+  virtual void applyBC (MultiFab&      inout,
+                        int            src_comp,
+                        int            num_comp,
+                        int            level   = 0,
+                        MCBC_Mode      bc_mode = MCInhomogeneous_BC,
+                        bool           local   = false,
+                        int            bndryComp = -1);
+  //
+  // Compute the level residual = rhsL - L(solnL).
+  //
+  virtual void residual (MultiFab&       residL,
+                         const MultiFab& rhsL,
+                         MultiFab&       solnL,
+                         int             level   = 0,
+                         MCBC_Mode       bc_mode = MCInhomogeneous_BC,
+                         bool            local   = false);
+
+protected:
+  //
+  // compute out=L(in) at level=level
+  //
+  virtual void Fapply (MultiFab&       out,
+                       const MultiFab& in,
+                       int             level);
+  virtual void Fapply (MultiFab&       out,
+                       int             dst_comp,
+                       const MultiFab& in,
+                       int             src_comp,
+                       int             num_comp,
+                       int             level);
+  //
+  // apply GSRB smoother to improve residual to L(solnL)=rhsL
+  //
+  virtual void Fsmooth (MultiFab&       solnL,
+                        const MultiFab& rhsL,
+                        int             level,
+                        int             rgbflag);
 protected:
   //
   // Initialize a full set (a,b) of coefficients on the box array.
   //
   void initCoefficients (const BoxArray &_ba);
-  //
-  // Compute out=L (in) at level=level.
-  //
-  virtual void Fapply (MultiFab&       out,
-                       const MultiFab& in,
-                       int             level);
-  //
-  // Apply smoother to improve residual to L(solnL)=rhsL.
-  //
-  virtual void Fsmooth (MultiFab&       solnL,
-                        const MultiFab& rhsL,
-                        int             level,
-                        int             phaseflag);
   //
   // Return number of components.  This is virtual since only the derived knows.
   //
@@ -193,6 +246,12 @@ private:
   //
   TensorOp (const TensorOp&);
   TensorOp& operator = (const TensorOp&);
+
+protected:
+  int default_bndryComp;
+  int default_alphaComp;
+  int default_betaComp;
+  int default_beta1Comp;
 };
 
 inline

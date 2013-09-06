@@ -2,60 +2,65 @@
 
 namespace Amanzi {
 
-  MFVector::MFVector(MultiFab& mf, int scomp, int ncomp, int ngrow)
+  MFVector::MFVector()
+    : MultiFab() {}
+
+  MFVector::MFVector(const MultiFab& mf, int scomp, int ncomp, int ngrow)
     : MultiFab(), srccomp(scomp) {
-    int num_comp = (ncomp < 0 ? mf.nComp() : std::min(ncomp,mf.nComp()));
-    int num_grow = (ngrow < 0 ? mf.nGrow() : std::min(ngrow,mf.nGrow()));
-    define(mf.boxArray(),num_comp,num_grow,mf.DistributionMap(),Fab_allocate);
+    numcomp = (ncomp < 0 ? mf.nComp() : std::min(ncomp,mf.nComp()));
+    numgrow = (ngrow < 0 ? mf.nGrow() : std::min(ngrow,mf.nGrow()));
+    srccomp = (scomp < 0 ? 0 : std::min(mf.nComp()-1,scomp));
+    define(mf.boxArray(),numcomp,numgrow,mf.DistributionMap(),Fab_allocate);
+    MultiFab::Copy(this->multiFab(),mf,srccomp,0,numcomp,numgrow);
   }
-
-  MFVector*
-  MFVector::Clone(int scomp, int ncomp, int ngrow) const {
-    MultiFab *newmf = new MultiFab();
-    int num_comp = (ncomp < 0 ? nComp() : std::max(ncomp,nComp()));
-    int num_grow = (ngrow < 0 ? nGrow() : std::max(ngrow,nGrow()));
-    newmf->define(boxArray(),num_comp,num_grow,DistributionMap(),Fab_allocate);
-    return new MFVector(*newmf,scomp,ncomp,ngrow);
+  
+  MFVector::MFVector(const MFVector& vec, int scomp, int ncomp, int ngrow)
+    : MultiFab(), srccomp(scomp) {
+    numcomp = (ncomp < 0 ? vec.nComp() : std::min(ncomp,vec.nComp()));
+    numgrow = (ngrow < 0 ? vec.nGrow() : std::min(ngrow,vec.nGrow()));
+    srccomp = (scomp < 0 ? 0 : std::min(vec.nComp()-1,scomp));
+    define(vec.boxArray(),numcomp,numgrow,vec.DistributionMap(),Fab_allocate);
+    MultiFab::Copy(this->multiFab(),vec.multiFab(),srccomp,0,numcomp,numgrow);
   }
-
+  
   void
   MFVector::AXPBY(const MFVector& Y, Real a, Real b) {// this = a * X  +  b * Y compoenentwise
-    BL_ASSERT(nComp()==Y.numComp());
+    BL_ASSERT(nComp()==Y.nComp());
     BL_ASSERT(boxArray()==Y.boxArray());
     FArrayBox t;
     for (MFIter mfi(*this); mfi.isValid(); ++mfi) {
       FArrayBox& fabX = (*this)[mfi];
       const FArrayBox& fabY = Y[mfi];
       if (a!=1) {
-        fabX.mult(a,srcComp(),numComp());
+        fabX.mult(a,0,nComp());
       }
       if (b!=0) {
-        t.resize(fabX.box(),numComp());
-        t.copy(fabY,Y.srcComp(),0,numComp());
+        t.resize(fabX.box(),nComp());
+        t.copy(fabY,0,0,nComp());
         if (b!=1) {
-          t.mult(b,srcComp(),numComp());
+          t.mult(b,0,nComp());
         }
-        fabX.plus(t,0,srcComp(),numComp());
+        fabX.plus(t,0,0,nComp());
       }
     }
   }
 
   void
   MFVector::AXPBYI(const MFVector& Y, Real a, Real b) {// this = a * X  +  b * (1/Y) compoenentwise
-    BL_ASSERT(nComp()==Y.numComp());
+    BL_ASSERT(nComp()<=Y.nComp());
     BL_ASSERT(boxArray()==Y.boxArray());
     FArrayBox t;
     for (MFIter mfi(*this); mfi.isValid(); ++mfi) {
       FArrayBox& fabX = (*this)[mfi];
       const FArrayBox& fabY = Y[mfi];
       if (a!=1) {
-        fabX.mult(a,srcComp(),numComp());
+        fabX.mult(a,0,nComp());
       }
       if (b!=0) {
-        t.resize(fabX.box(),numComp());
-        t.copy(fabY,Y.srcComp(),0,numComp());
-        t.invert(b,0,numComp());
-        fabX.plus(t,0,srcComp(),numComp());
+        t.resize(fabX.box(),nComp());
+        t.copy(fabY,0,0,nComp());
+        t.invert(b,0,nComp());
+        fabX.plus(t,0,0,nComp());
       }
     }
   }
@@ -63,26 +68,28 @@ namespace Amanzi {
   void
   MFVector::SCALE(Real a) { // this *= a  componentwise
     if (a!=1) {
-      this->mult(a,srcComp(),numComp(),numGrow());
+      this->mult(a,0,nComp(),nGrow());
     }
   }
 
   void
   MFVector::MULTAY(const MFVector& Y, Real a) { // this *= a * Y componentwise
     if (a!=0) {
+      BL_ASSERT(nComp()<=Y.nComp());
+      BL_ASSERT(boxArray()==Y.boxArray());
       if (a==1) {
-        MultiFab::Multiply(*this,Y,Y.srcComp(),srcComp(),numComp(),numGrow());
+        MultiFab::Multiply(*this,Y,0,0,nComp(),nGrow());
       } else {
         FArrayBox t;
         for (MFIter mfi(*this); mfi.isValid(); ++mfi) {
           FArrayBox& fabX = (*this)[mfi];
           const FArrayBox& fabY = Y[mfi];
-          t.resize(fabX.box(),numComp());
-          t.copy(fabY,Y.srcComp(),0,numComp());
+          t.resize(fabX.box(),nComp());
+          t.copy(fabY,0,0,nComp());
           if (a!=1) {
-            t.mult(a,0,numComp());
+            t.mult(a,0,nComp());
           }
-          fabX.plus(t,0,srcComp(),numComp());
+          fabX.mult(t,0,0,nComp());
         }
       }
     }
@@ -95,22 +102,22 @@ namespace Amanzi {
       for (MFIter mfi(*this); mfi.isValid(); ++mfi) {
         FArrayBox& fabX = (*this)[mfi];
         const FArrayBox& fabY = Y[mfi];
-        t.resize(fabX.box(),numComp());
-        t.copy(fabY,Y.srcComp(),0,numComp());
-        t.invert(a,0,numComp());
-        fabX.mult(t,0,srcComp(),numComp());
+        t.resize(fabX.box(),nComp());
+        t.copy(fabY,0,0,nComp());
+        t.invert(a,0,nComp());
+        fabX.mult(t,0,0,nComp());
       }
     }
   }
 
   void
   MFVector::COPY(const MFVector& rhs) {
-    MultiFab::Copy(*this,rhs,rhs.srcComp(),srcComp(),numComp(),numGrow());
+    MultiFab::Copy(*this,rhs,0,0,nComp(),nGrow());
   }
 
   void
   MFVector::INVERT(Real a) {
-    this->invert(a,srcComp(),numGrow());
+    this->invert(a,0,nGrow());
   }
 
 } /* namespace Amanzi */

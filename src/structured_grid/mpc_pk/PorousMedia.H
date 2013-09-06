@@ -12,6 +12,7 @@
 #include <ErrorList.H>
 #include <FluxRegister.H>
 #include <ViscBndry.H>
+#include <TensorDiffusionBndry.H>
 #include <Godunov.H>
 #include <Diffusion.H>
 #include <MacProj.H> 
@@ -581,7 +582,12 @@ public:
 
   void tracer_advection (MultiFab* u_mac,
 			 bool reflux_on_this_call,
-                         bool use_cached_sat);
+                         bool use_cached_sat,
+                         const MultiFab* F = 0);
+
+  void tracer_diffusion (bool reflux_on_this_call,
+                         bool use_cached_sat,
+                         const MultiFab& F);
 
   void cache_component_saturations(int nGrow);
   void reinstate_component_saturations();
@@ -614,6 +620,9 @@ public:
 
   void SetTracerDiffusionBndryData(ViscBndry& bndry,
 				   Real       time);
+
+  void SetTracerDiffusionBndryData(TensorDiffusionBndry& bndry,
+				   Real                  time);
 
   void getTracerViscTerms(MultiFab&  D,
 			  Real       time,
@@ -926,10 +935,14 @@ public:
   void calcDLambda (const Real time,MultiFab* dlbd_cc = 0);
   
   void getDiffusivity (MultiFab*  diffusivity[BL_SPACEDIM],
-			       const Real time,
-			       const int  state_comp,
-			       const int  dst_comp,
-			       const int  num_comp);
+                       const Real time,
+                       const int  state_comp,
+                       const int  dst_comp,
+                       const int  num_comp);
+
+  void getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
+                             MultiFab*  off_diagonal_diffusivity[BL_SPACEDIM],
+                             const Real time);
 
   void center_to_edge_plain (const FArrayBox& ccfab,
 			     FArrayBox&       ecfab,
@@ -1073,7 +1086,6 @@ public:
 			MultiFab* vel);
 
   Real GetUserInputInitDt();
-  static DataServices* PhiData() {return phi_dataServices;}
   static int NGrowHYP() {return nGrowHYP;}
 
   void derive_Material_ID(Real      time,
@@ -1121,9 +1133,18 @@ public:
                                      int       dcomp,
                                      int       dir);
 
-  void derive_Effective_Diffusion_Coefficient(Real      time,
+  void derive_Molecular_Diffusion_Coefficient(Real      time,
                                               MultiFab& mf,
                                               int       dcomp);
+  
+  void derive_Tortuosity(Real      time,
+                         MultiFab& mf,
+                         int       dcomp);
+
+  void derive_Dispersivity(Real      time,
+                           MultiFab& mf,
+                           int       dcomp,
+                           int       dir);
 
 protected:
 
@@ -1149,12 +1170,6 @@ protected:
   static std::map<std::string, int> rock_to_int; // hack to support user output
   static MultiFab*   kappadata;
   static MultiFab*   phidata;
-  static DataServices* phi_dataServices;
-  static DataServices* kappa_dataServices;
-  static std::string phi_plotfile_varname;
-  static Array<std::string> kappa_plotfile_varnames;
-  static bool        porosity_from_fine;
-  static bool        permeability_from_fine;
   static Real        saturation_threshold_for_vg_Kr;
   static int         use_shifted_Kr_eval;
 
@@ -1370,22 +1385,25 @@ protected:
   //  
   // Chemistry parameters 
   //
-  static int  do_tracer_chemistry; // Does the user want to react tracers
-  static bool do_tracer_transport; // Does the user want to transport tracers
+  static bool do_tracer_chemistry; // Does the user want to react tracers
+  static bool do_tracer_advection; // Does the user want to advect tracers
+  static bool do_tracer_diffusion; // Does the user want to diffuse tracers
   static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized
-  static int  transport_tracers; // Should the tracers be transported now
-  static int  react_tracers; // Should the tracers be reacted now
-  static bool diffuse_tracers;
+  static bool advect_tracers; // Should the tracers be transported now
+  static bool react_tracers; // Should the tracers be reacted now
+  static bool diffuse_tracers; // Should the tracers be diffused now
   static int  do_full_strang;
   static int  n_chem_interval;
   static int  it_chem;
   static Real dt_chem;
+  static Real be_cn_theta_trac;
   //
   // Internal switches.
   //
   static int  do_simple;
   static int  do_sync_proj;
   static int  do_multilevel_full;
+  static bool use_PETSc_snes_for_evolution;
   static int  do_reflux;
   static int  do_correct;
   static int  no_corrector;

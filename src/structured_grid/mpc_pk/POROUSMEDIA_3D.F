@@ -3207,3 +3207,116 @@ c     x-faces
 #undef ZHI
 
       end
+
+#define NCROSS 3
+#define DXY 1
+#define DXZ 2
+#define DYZ 3
+
+      subroutine FORT_TENSORDIFF(lo, hi, a,DIMS(a), Dcc, DIMS(Dcc),
+     &                      u, DIMS(u), bx, DIMS(bx), b1x, DIMS(b1x),
+     &                      v, DIMS(v), by, DIMS(by), b1y, DIMS(b1y),
+     &                      w, DIMS(w), bz, DIMS(bz), b1z, DIMS(b1z),
+     &                      bc)
+
+      implicit none
+
+      integer nc, lo(SDIM), hi(SDIM), bc(SDIM,2)
+      integer DIMDEC(a)
+      integer DIMDEC(Dcc)
+      integer DIMDEC(u)
+      integer DIMDEC(bx)
+      integer DIMDEC(b1x)
+      integer DIMDEC(v)
+      integer DIMDEC(by)
+      integer DIMDEC(b1y)
+      integer DIMDEC(w)
+      integer DIMDEC(bz)
+      integer DIMDEC(b1z)
+      REAL_T  a(DIMV(a),2)
+      REAL_T  Dcc(DIMV(Dcc))
+      REAL_T  u(DIMV(u))
+      REAL_T  bx(DIMV(bx))
+      REAL_T  b1x(DIMV(b1x),NCROSS)
+      REAL_T  v(DIMV(v))
+      REAL_T  by(DIMV(by))
+      REAL_T  b1y(DIMV(b1y),NCROSS)
+      REAL_T  w(DIMV(w))
+      REAL_T  bz(DIMV(bz))
+      REAL_T  b1z(DIMV(b1z),NCROSS)
+      
+      integer i,j
+      REAL_T uface, vface, wface, velInv, vel, aLface, aTface, Dface
+
+      do k = lo(3), hi(3)
+         do j = lo(2), hi(2)
+            do i = lo(1), hi(1)+1
+               uface = u(i,j,k)
+               vface = 0.25d0*(v(i-1,j+1,k)+v(i,j+1,k)+v(i-1,j,k)+v(i,j,k)
+               wface = 0.25d0*(w(i-1,j,k+1)+w(i,j,k+1)+w(i-1,j,k)+w(i,j,k)
+               aLface = 0.5d0*(a(i,j,k,1)+a(i-1,j,k,1))
+               aTface = 0.5d0*(a(i,j,k,2)+a(i-1,j,k,2))
+               Dface = 0.5d0*(Dcc(i,j,k)+Dcc(i-1,j,k))
+               vel = sqrt(uface*uface + vface*vface + wface*wface)
+               if (vel .ne. 0.d0) then
+                  velInv = 1.d0 / vel
+               else
+                  velInv = 0.d0
+               endif
+               bx(i,j,k) = Dface + aTface*vel + (aLface - aTface)*uface*uface*velInv
+               b1x(i,j,k,DXY) = (aLface - aTface)*uface*vface*velInv
+               b1x(i,j,k,DXZ) = (aLface - aTface)*uface*wface*velInv
+               b1x(i,j,k,DYZ) = (aLface - aTface)*vface*wface*velInv
+            enddo
+         enddo
+      enddo
+
+      do k = lo(3), hi(3)
+         do j = lo(2), hi(2)+1
+            do i = lo(1), hi(1)
+               uface = 0.25d0*(u(i,j,k)+u(i+1,j,k)+u(i,j-1,k)+u(i+1,j-1,k)
+               vface = v(i,j,k)
+               wface = 0.25d0*(w(i,j,k)+w(i,j,k+1)+w(i,j-1,k)+w(i,j-1,k+1)
+               aLface = 0.5d0*(a(i,j,k,1)+a(i,j-1,k,1))
+               aTface = 0.5d0*(a(i,j,k,2)+a(i,j-1,k,2))
+               Dface = 0.5d0*(Dcc(i,j,k)+Dcc(i,j-1,k))
+               vel = sqrt(uface*uface + vface*vface + wface*wface)
+               if (vel .ne. 0.d0) then
+                  velInv = 1.d0 / vel
+               else
+                  velInv = 0.d0
+               endif
+               bx(i,j,k) = Dface + aTface*vel + (aLface - aTface)*vface*vface*velInv
+               b1y(i,j,k,DXY) = (aLface - aTface)*uface*vface*velInv
+               b1y(i,j,k,DXZ) = (aLface - aTface)*uface*wface*velInv
+               b1y(i,j,k,DYZ) = (aLface - aTface)*vface*wface*velInv
+            enddo
+         enddo
+      enddo
+
+      do k = lo(3), hi(3)+1
+         do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+               uface = 0.25d0*(u(i,j,k)+u(i+1,j,k)+u(i,j,k-1)+u(i+1,j,k-1)
+               vface = 0.25d0*(v(i,j,k)+v(i,j+1,k)+v(i,j,k-1)+v(i,j+1,k11)
+               wface = w(i,j,k)
+               aLface = 0.5d0*(a(i,j,k,1)+a(i,j,k-1,1))
+               aTface = 0.5d0*(a(i,j,k,2)+a(i,j,k-1,2))
+               Dface = 0.5d0*(Dcc(i,j,k)+Dcc(i,j,k-1))
+               vel = sqrt(uface*uface + vface*vface + wface*wface)
+               if (vel .ne. 0.d0) then
+                  velInv = 1.d0 / vel
+               else
+                  velInv = 0.d0
+               endif
+               bx(i,j,k) = Dface + aTface*vel + (aLface - aTface)*wface*wface*velInv
+               b1z(i,j,k,DXY) = (aLface - aTface)*uface*vface*velInv
+               b1z(i,j,k,DXZ) = (aLface - aTface)*uface*wface*velInv
+               b1z(i,j,k,DYZ) = (aLface - aTface)*vface*wface*velInv
+            enddo
+         enddo
+      enddo
+
+      end
+
+

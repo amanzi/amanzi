@@ -1,6 +1,7 @@
 #include <winstd.H>
 #include <TensorOp.H>
 #include <TensorOp_F.H>
+#include <MCLO_F.H>
 
 Real TensorOp::a_def     = 0.0;
 Real TensorOp::b_def     = 1.0;
@@ -26,7 +27,8 @@ TensorOp::TensorOp (const BndryData& _bd,
   :
   MCLinOp(_bd, _h, _nc),
   alpha(alpha_def),
-  beta(beta_def)
+  beta(beta_def),
+  default_bndryComp(0), default_alphaComp(0), default_betaComp(0), default_beta1Comp(0)
 {
   Real __h[BL_SPACEDIM];
 
@@ -41,7 +43,8 @@ TensorOp::TensorOp (const BndryData& _bd,
   :
   MCLinOp(_bd, _h, _nc),
   alpha(alpha_def),
-  beta(beta_def)
+  beta(beta_def),
+  default_bndryComp(0), default_alphaComp(0), default_betaComp(0), default_beta1Comp(0)
 {
   initConstruct(_h);
 }
@@ -290,6 +293,179 @@ TensorOp::b1Coefficients (int dir,
   return *b1coefs[level][dir];
 }
 
+void
+TensorOp::apply (MultiFab&      out,
+                 MultiFab&      in,
+                 int            level,
+                 MCBC_Mode      bc_mode,
+                 bool           local,
+                 int            src_comp,
+                 int            dst_comp,
+                 int            num_comp,
+                 int            bndry_comp)
+{
+  int bndryComp = (bndry_comp < 0 ? default_bndryComp : bndry_comp);
+  applyBC (in,src_comp,num_comp,level,bc_mode,local,bndryComp);
+  Fapply(out,dst_comp,in,src_comp,num_comp,level);
+}
+
+//
+// Fills level boundary cells using BC_mode flag, int. BC data if reqd.
+//
+void
+TensorOp::applyBC (MultiFab& inout,
+                   int       level,
+                   MCBC_Mode bc_mode)
+{
+  int sComp = 0;
+  int nComp = 1;
+  bool local = false;
+  int bndryComp = default_bndryComp;
+  applyBC (inout,sComp,nComp,level,bc_mode,local,bndryComp);
+}
+
+void
+TensorOp::applyBC (MultiFab&      inout,
+                   int            src_comp,
+                   int            num_comp,
+                   int            level,
+                   MCBC_Mode      bc_mode,
+                   bool           local,
+                   int            bndry_comp)
+{
+  int bndryComp = (bndry_comp < 0 ? default_bndryComp : bndry_comp);
+  //
+  // No coarsened boundary values, cannot apply inhomog at lev>0.
+  //
+  BL_ASSERT(!(level>0 && bc_mode == MCInhomogeneous_BC));
+    
+  int flagden = 1;	// fill in the bndry data and undrrelxr
+  int flagbc  = 1;	// with values
+  if (bc_mode == MCHomogeneous_BC)
+    flagbc = 0; // nodata if homog
+  BL_ASSERT(num_comp==1);
+
+  const bool cross = false;
+  inout.FillBoundary(src_comp,num_comp,local,cross);
+  prepareForLevel(level);
+
+  geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,false,local);
+  //
+  // Fill boundary cells.
+  //
+  const int N = inout.IndexMap().size();
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (int i = 0; i < N; i++)
+  {
+    const int gn = inout.IndexMap()[i];
+
+    BL_ASSERT(gbox[level][gn] == inout.box(gn));
+
+    const BndryData::RealTuple&      bdl = bgb.bndryLocs(gn);
+    const Array< Array<BoundCond> >& bdc = bgb.bndryConds(gn);
+    const MaskTuple&                 msk = maskvals[level][gn];
+
+    for (OrientationIter oitr; oitr; ++oitr)
+    {
+      const Orientation face = oitr();
+      FabSet& f  = (*undrrelxr[level])[face];
+      FabSet& td = (*tangderiv[level])[face];
+      int cdr(face);
+      const FabSet& fs = bgb.bndryValues(face);
+      Real bcl = bdl[face];
+      const Array<BoundCond>& bc = bdc[face];
+      const int *bct = (const int*) bc.dataPtr();
+      const FArrayBox& fsfab = fs[gn];
+      const Real* bcvalptr = fsfab.dataPtr(bndryComp);
+      //
+      // Way external derivs stored.
+      //
+      const Real* exttdptr = fsfab.dataPtr(numcomp); 
+      const int* fslo      = fsfab.loVect();
+      const int* fshi      = fsfab.hiVect();
+      FArrayBox& inoutfab  = inout[gn];
+      FArrayBox& denfab    = f[gn];
+      FArrayBox& tdfab     = td[gn];
+#if BL_SPACEDIM==2
+      int cdir = face.coordDir(), perpdir = -1;
+      if (cdir == 0)
+        perpdir = 1;
+      else if (cdir == 1)
+        perpdir = 0;
+      else
+        BoxLib::Abort("MCLinOp::applyBC(): bad logic");
+
+      const Mask& m    = *msk[face];
+      const Mask& mphi = *msk[Orientation(perpdir,Orientation::high)];
+      const Mask& mplo = *msk[Orientation(perpdir,Orientation::low)];
+      FORT_APPLYBC(
+        &flagden, &flagbc, &maxorder,
+        inoutfab.dataPtr(src_comp), 
+        ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()),
+        &cdr, bct, &bcl,
+        bcvalptr, ARLIM(fslo), ARLIM(fshi),
+        m.dataPtr(),    ARLIM(m.loVect()),    ARLIM(m.hiVect()),
+        mphi.dataPtr(), ARLIM(mphi.loVect()), ARLIM(mphi.hiVect()),
+        mplo.dataPtr(), ARLIM(mplo.loVect()), ARLIM(mplo.hiVect()),
+        denfab.dataPtr(), 
+        ARLIM(denfab.loVect()), ARLIM(denfab.hiVect()),
+        exttdptr, ARLIM(fslo), ARLIM(fshi),
+        tdfab.dataPtr(bndryComp),ARLIM(tdfab.loVect()),ARLIM(tdfab.hiVect()),
+        inout.box(gn).loVect(), inout.box(gn).hiVect(),
+        &num_comp, h[level]);
+#elif BL_SPACEDIM==3
+      const Mask& mn = *msk[Orientation(1,Orientation::high)];
+      const Mask& me = *msk[Orientation(0,Orientation::high)];
+      const Mask& mw = *msk[Orientation(0,Orientation::low)];
+      const Mask& ms = *msk[Orientation(1,Orientation::low)];
+      const Mask& mt = *msk[Orientation(2,Orientation::high)];
+      const Mask& mb = *msk[Orientation(2,Orientation::low)];
+      FORT_APPLYBC(
+        &flagden, &flagbc, &maxorder,
+        inoutfab.dataPtr(src_comp), 
+        ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()),
+        &cdr, bct, &bcl,
+        bcvalptr, ARLIM(fslo), ARLIM(fshi),
+        mn.dataPtr(),ARLIM(mn.loVect()),ARLIM(mn.hiVect()),
+        me.dataPtr(),ARLIM(me.loVect()),ARLIM(me.hiVect()),
+        mw.dataPtr(),ARLIM(mw.loVect()),ARLIM(mw.hiVect()),
+        ms.dataPtr(),ARLIM(ms.loVect()),ARLIM(ms.hiVect()),
+        mt.dataPtr(),ARLIM(mt.loVect()),ARLIM(mt.hiVect()),
+        mb.dataPtr(),ARLIM(mb.loVect()),ARLIM(mb.hiVect()),
+        denfab.dataPtr(), 
+        ARLIM(denfab.loVect()), ARLIM(denfab.hiVect()),
+        exttdptr, ARLIM(fslo), ARLIM(fshi),
+        tdfab.dataPtr(bndryComp),ARLIM(tdfab.loVect()),ARLIM(tdfab.hiVect()),
+        inout.box(gn).loVect(), inout.box(gn).hiVect(),
+        &nc, h[level]);
+#endif
+    }
+  }
+}
+
+
+//
+// Compute the level residual = rhsL - L(solnL).
+//
+void
+TensorOp::residual (MultiFab&       residL,
+                    const MultiFab& rhsL,
+                    MultiFab&       solnL,
+                    int             level,
+                    MCBC_Mode       bc_mode,
+                    bool            local)
+{
+  int srcComp = 0;
+  int destComp = 0;
+  int numComp = 1;
+  int rhsComp = 0;
+  int bndryComp = default_bndryComp;
+  apply(residL, solnL, level, bc_mode, local, srcComp, destComp, numComp, bndryComp);
+}
+
 //
 // Must be defined for MultiGrid/CGSolver to work.
 //
@@ -299,6 +475,13 @@ TensorOp::Fsmooth (MultiFab&       solnL,
                    int             level,
                    int             phaseflag)
 {
+  int alphaComp = default_alphaComp;
+  int betaComp = default_betaComp;
+  int beta1Comp = default_beta1Comp;
+  int bndryComp = default_bndryComp;
+  int rhsComp = 0;
+  int solnComp = 0;
+
   OrientationIter oitr;
 
   const FabSet& fw  = (*undrrelxr[level])[oitr()]; 
@@ -380,26 +563,26 @@ TensorOp::Fsmooth (MultiFab&       solnL,
            const FArrayBox& b1yfab = b1Y[gn];,
            const FArrayBox& b1zfab = b1Z[gn];);
 
-    FORT_GSRB(
-      solfab.dataPtr(), 
+    FORT_TOGSRB(
+      solfab.dataPtr(solnComp), 
       ARLIM(solfab.loVect()),ARLIM(solfab.hiVect()),
-      rhsfab.dataPtr(),
+      rhsfab.dataPtr(rhsComp),
       ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
       &alpha, &beta,
-      afab.dataPtr(),
+      afab.dataPtr(alphaComp),
       ARLIM(afab.loVect()),    ARLIM(afab.hiVect()),
-      bxfab.dataPtr(),
+      bxfab.dataPtr(betaComp),
       ARLIM(bxfab.loVect()),   ARLIM(bxfab.hiVect()),
-      b1xfab.dataPtr(),
+      b1xfab.dataPtr(beta1Comp),
       ARLIM(b1xfab.loVect()),   ARLIM(b1xfab.hiVect()),
-      byfab.dataPtr(),
+      byfab.dataPtr(betaComp),
       ARLIM(byfab.loVect()),   ARLIM(byfab.hiVect()),
-      b1yfab.dataPtr(),
+      b1yfab.dataPtr(beta1Comp),
       ARLIM(b1yfab.loVect()),   ARLIM(b1yfab.hiVect()),
 #if BL_SPACEDIM>2
-      bzfab.dataPtr(),
+      bzfab.dataPtr(betaComp),
       ARLIM(bzfab.loVect()),   ARLIM(bzfab.hiVect()),
-      b1zfab.dataPtr(),
+      b1zfab.dataPtr(beta1Comp),
       ARLIM(b1zfab.loVect()),   ARLIM(b1zfab.hiVect()),
 #endif
       mn.dataPtr(),
@@ -428,18 +611,18 @@ TensorOp::Fsmooth (MultiFab&       solnL,
       fbfab.dataPtr(),
       ARLIM(fbfab.loVect()),   ARLIM(fbfab.hiVect()),
 #endif
-      tdnfab.dataPtr(),
+      tdnfab.dataPtr(bndryComp),
       ARLIM(tdnfab.loVect()),ARLIM(tdnfab.hiVect()),
-      tdefab.dataPtr(),
+      tdefab.dataPtr(bndryComp),
       ARLIM(tdefab.loVect()),ARLIM(tdefab.hiVect()),
-      tdwfab.dataPtr(),
+      tdwfab.dataPtr(bndryComp),
       ARLIM(tdwfab.loVect()),ARLIM(tdwfab.hiVect()),
-      tdsfab.dataPtr(),
+      tdsfab.dataPtr(bndryComp),
       ARLIM(tdsfab.loVect()),ARLIM(tdsfab.hiVect()),
 #if BL_SPACEDIM>2
-      tdtfab.dataPtr(),
+      tdtfab.dataPtr(bndryComp),
       ARLIM(tdtfab.loVect()),ARLIM(tdtfab.hiVect()),
-      tdbfab.dataPtr(),
+      tdbfab.dataPtr(bndryComp),
       ARLIM(tdbfab.loVect()),ARLIM(tdbfab.hiVect()),
 #endif
       solnLmfi.validbox().loVect(), solnLmfi.validbox().hiVect(),
@@ -520,7 +703,7 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
            FArrayBox& yfluxfab = yflux[gn];,
            FArrayBox& zfluxfab = zflux[gn];);
 
-    FORT_FLUX(
+    FORT_TOFLUX(
       xfab.dataPtr(sComp), 
       ARLIM(xfab.loVect()), ARLIM(xfab.hiVect()),
       bxfab.dataPtr(bndComp), 
@@ -583,9 +766,27 @@ TensorOp::Fapply (MultiFab&       y,
                   const MultiFab& x,
                   int             level)
 {
-  BL_ASSERT(y.nComp()>=nComp());
-  BL_ASSERT(x.nComp()>=nComp());
+  int num_comp = 1;
+  int src_comp = 0;
+  int dst_comp = 0;
+  Fapply(y,dst_comp,x,src_comp,num_comp,level);
+}
+
+void
+TensorOp::Fapply (MultiFab&       y,
+                  int             dst_comp,
+                  const MultiFab& x,
+                  int             src_comp,
+                  int             num_comp,
+                  int             level)
+{
+  BL_ASSERT(y.nComp()>=dst_comp+y.nComp());
+  BL_ASSERT(x.nComp()>=src_comp+x.nComp());
   BL_ASSERT(nComp()==1);
+  int alphaComp = default_alphaComp;
+  int betaComp = default_betaComp;
+  int beta1Comp = default_beta1Comp;
+  int bndryComp = default_bndryComp;
 
   const MultiFab& a = aCoefficients(level);
 
@@ -644,27 +845,27 @@ TensorOp::Fapply (MultiFab&       y,
            const FArrayBox& b1yfab = b1Y[gn];,
            const FArrayBox& b1zfab = b1Z[gn];);
 
-    FORT_APPLY(
-      xfab.dataPtr(), 
+    FORT_TOAPPLY(
+      xfab.dataPtr(src_comp), 
       ARLIM(xfab.loVect()), ARLIM(xfab.hiVect()),
       &alpha, &beta,
-      afab.dataPtr(), 
+      afab.dataPtr(alphaComp), 
       ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
-      bxfab.dataPtr(), 
+      bxfab.dataPtr(betaComp), 
       ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
-      b1xfab.dataPtr(), 
+      b1xfab.dataPtr(beta1Comp), 
       ARLIM(b1xfab.loVect()), ARLIM(b1xfab.hiVect()),
-      byfab.dataPtr(), 
+      byfab.dataPtr(betaComp), 
       ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
-      b1yfab.dataPtr(), 
+      b1yfab.dataPtr(beta1Comp), 
       ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
 #if BL_SPACEDIM>2
-      bzfab.dataPtr(), 
+      bzfab.dataPtr(betaComp), 
       ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
-      b1zfab.dataPtr(), 
+      b1zfab.dataPtr(beta1Comp), 
       ARLIM(b1zfab.loVect()), ARLIM(b1zfab.hiVect()),
 #endif
-      yfab.dataPtr(), 
+      yfab.dataPtr(dst_comp), 
       ARLIM(yfab.loVect()), ARLIM(yfab.hiVect()),
       mn.dataPtr(),
       ARLIM(mn.loVect()),ARLIM(mn.hiVect()),
@@ -680,18 +881,18 @@ TensorOp::Fapply (MultiFab&       y,
       mb.dataPtr(),
       ARLIM(mb.loVect()),ARLIM(mb.hiVect()),
 #endif
-      tdnfab.dataPtr(),
+      tdnfab.dataPtr(bndryComp),
       ARLIM(tdnfab.loVect()),ARLIM(tdnfab.hiVect()),
-      tdefab.dataPtr(),
+      tdefab.dataPtr(bndryComp),
       ARLIM(tdefab.loVect()),ARLIM(tdefab.hiVect()),
-      tdwfab.dataPtr(),
+      tdwfab.dataPtr(bndryComp),
       ARLIM(tdwfab.loVect()),ARLIM(tdwfab.hiVect()),
-      tdsfab.dataPtr(),
+      tdsfab.dataPtr(bndryComp),
       ARLIM(tdsfab.loVect()),ARLIM(tdsfab.hiVect()),
 #if BL_SPACEDIM>2
-      tdtfab.dataPtr(),
+      tdtfab.dataPtr(bndryComp),
       ARLIM(tdtfab.loVect()),ARLIM(tdtfab.hiVect()),
-      tdbfab.dataPtr(),
+      tdbfab.dataPtr(bndryComp),
       ARLIM(tdbfab.loVect()),ARLIM(tdbfab.hiVect()),
 #endif
       xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
