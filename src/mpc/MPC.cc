@@ -486,8 +486,6 @@ void MPC::cycle_driver() {
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations) {
-      std::cout << S->cycle() << " " << S->time() << " " << observations->DumpRequested(S->cycle(), S->time()) << std::endl;
-
       if (observations->DumpRequested(S->cycle(), S->time())) {
 	observations->make_observations(*S);
       }

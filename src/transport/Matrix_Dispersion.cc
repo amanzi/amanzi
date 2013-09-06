@@ -93,6 +93,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
           std::vector<double> flux(nfaces);
           for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[faces[n]];
           mfd3d.RecoverGradient_MassMatrix(*c, flux, velocity);
+          velocity /= porosity[*c];  // pore velocity
 
           double velocity_value = norm(velocity);
           double anisotropy = spec->alphaL - spec->alphaT;
