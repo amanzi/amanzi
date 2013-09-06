@@ -27,7 +27,7 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 /* *******************************************************************
-* Initiaziation of a class.
+* Initialization of a class.
 ******************************************************************* */
 void Matrix_Dispersion::Init(std::vector<Teuchos::RCP<DispersionModel> >& specs, 
                              const std::string& preconditioner, 

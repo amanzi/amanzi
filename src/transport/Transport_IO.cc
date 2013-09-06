@@ -67,7 +67,15 @@ void Transport_PK::ProcessParameterList()
   if (transport_list.isSublist("dispersivity")) {
     Teuchos::ParameterList& dlist = transport_list.sublist("dispersivity");
 
-    dispersion_preconditioner = dlist.get<string>("preconditioner", "identity");
+    dispersion_solver = dlist.get<string>("solver", "missing");
+    if (solvers_list.isSublist(dispersion_solver)) {
+      Teuchos::ParameterList& slist = solvers_list.sublist(dispersion_solver);
+      dispersion_preconditioner = slist.get<string>("preconditioner", "identity");
+    } else {
+      Errors::Message msg;
+      msg << "Transport PK: dispersivity solver does not exist.\n";
+      Exceptions::amanzi_throw(msg);  
+    }
 
     string method_name = dlist.get<string>("numerical method", "none");
     ProcessStringDispersionMethod(method_name, &dispersion_method);

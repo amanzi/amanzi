@@ -12,6 +12,7 @@ Usage:
 #define __PCG_OPERATOR_HH__
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "exceptions.hh"
 #include "errors.hh"
@@ -29,7 +30,9 @@ class PCG_Operator : public Matrix {
     criteria_ = SOLVER_CONVERGENCE_RHS;
   }
   ~PCG_Operator() {};
-  
+
+  void Init(Teuchos::ParameterList& plist);  
+
   void Apply(const Vector& v, Vector& mv) const { m_->Apply(v, mv); }
   void ApplyInverse(const Vector& v, Vector& hv) const { 
     num_itrs_ = pcg(v, hv, tol_, max_itrs_, criteria_); 
@@ -136,6 +139,41 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
 
   return max_itrs;
 };
+
+
+/* ******************************************************************
+* Initialization from a parameter list. Available parameters:
+* "error tolerance" [double] default = 1e-6
+* "maximum number of iterations" [int] default = 100
+* "convergence criteria" Array(string) default = "{relative rhs}"
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+void PCG_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+{
+  double tol = plist.get<double>("error tolerance", 1e-6);
+  set_tolerance(tol);
+
+  double max_itrs = plist.get<int>("maximum number of iterations", 100);
+  set_max_itrs(max_itrs);
+
+  int criteria(0);
+  if (plist.isParameter("convergence criteria")) {
+    std::vector<std::string> names;
+    names = plist.get<Teuchos::Array<std::string> > ("convergence criteria").toVector();
+
+    for (int i = 0; i < names.size(); i++) {
+      if (names[i] == "relative rhs") {
+        criteria += SOLVER_CONVERGENCE_RHS;
+      } else if (names[i] == "relative residual") {
+        criteria += SOLVER_CONVERGENCE_RESIDUAL;
+      }
+    }
+  } else {
+    criteria = SOLVER_CONVERGENCE_RHS;
+  }
+
+  set_criteria(criteria);
+}
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

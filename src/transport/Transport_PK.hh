@@ -155,7 +155,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
   
   Teuchos::ParameterList parameter_list;
-  Teuchos::ParameterList preconditioner_list;
+  Teuchos::ParameterList preconditioners_list;
+  Teuchos::ParameterList solvers_list;
 
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
@@ -184,6 +185,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<Teuchos::RCP<DispersionModel> > dispersion_models;
   int dispersion_method;
   std::string dispersion_preconditioner;
+  std::string dispersion_solver;
 
   double cfl_, dT, dT_debug, T_physics;  
   int number_components; 

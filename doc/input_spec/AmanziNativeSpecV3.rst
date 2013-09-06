@@ -899,9 +899,9 @@ the second-one is more accurate but also is a few times more expensive.
 
    <ParameterList name="Dispersivity">
      <Parameter name="numerical method" type="string" value="two point flux approximation"/>
-     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+     <Parameter name="solver" type="string" value="Dispersive Solver"/>
 
-     <ParameterList name="Brown Soil">
+     <ParameterList name="Brown Sugar">
        <Parameter name="regions" type="Array(string)" value="{top region, bottom region}"/>
        <Parameter name="model" type="string" value="Bear"/>
        <Parameter name="alphaL" type="double" value="1e-2"/>
@@ -1030,26 +1030,43 @@ The `"Transport`" parameters useful for developers are:
   divergence-free condition. The defult value is 1e-6.
 
 
-Linear and Nonlinear Solvers
-============================
+Linear Solvers
+==============
 
-Version 2 of the native input spec introduces this list.
-At the moment it constans sublists for various linear an nonlinear solvers such as AztecOO.
+This list constans sublists for various linear solvers such as PCG and GMRES.
 Here is and example:
 
 .. code-block:: xml
 
      <ParameterList name="Solvers">
        <ParameterList name="GMRES with HypreAMG">
-         <Parameter name="error tolerance" type="double" value="1e-12"/>
          <Parameter name="iterative method" type="string" value="GMRES"/>
-         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+         <Parameter name="error tolerance" type="double" value="1e-12"/>
          <Parameter name="maximum number of iterations" type="int" value="400"/>
+         <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
        </ParameterList>
      </ParameterList>
 
 The name `"GMRES with Hypre AMG`" is selected by the user.
 It can be used by a process kernel lists to define a solver.
+
+* `"interative method`" [string] is not supported yet.
+
+* `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
+
+* `"maximum number of iterations`" [int] is used in the convergence test. The default is 100.
+
+* `"convergence criteria`" [Array(string)] specifies multiple convergence criteria. The list
+  may include `"relative residual`", `"relative rhs`" (default), and `"absolute residual`".
+
+* `"preconditioner`" [string] is name in the list of preconditioners. If missing, the identity
+  preconditioner will be employed. Support of the identity preconditioner is the work in progress.
+
+
+Nonlinear Solvers
+=================
+This list does not exist yet.
 
 
 Preconditioners
@@ -1093,6 +1110,10 @@ Internal parameters of Boomer AMG includes
      <Parameter name="cycle applications" type="int" value="5"/>
      <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
    </ParameterList>
+
+Trilinos ML
+-----------
+Missing.
 
 
 Mesh
