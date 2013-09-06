@@ -76,7 +76,9 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
       AmanziMesh::Entity_ID_List::iterator c;
       for (c = block.begin(); c != block.end(); c++) {
         if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-          for (int i = 0; i < dim; i++) D[*c](i, i) = spec->alphaL;
+          for (int i = 0; i < dim; i++) {
+            D[*c](i, i) = spec->alphaL + spec->D * spec->tau;
+          }
           D[*c] *= porosity[*c] * saturation[*c];
         } else {
           WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -96,7 +98,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
           double anisotropy = spec->alphaL - spec->alphaT;
 
           for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->D + spec->alphaT * velocity_value;
+            D[*c](i, i) = spec->D * spec->tau + spec->alphaT * velocity_value;
             for (int j = i; j < dim; j++) {
               double s = anisotropy * velocity[i] * velocity[j];
               if (velocity_value) s /= velocity_value;
