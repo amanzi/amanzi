@@ -219,8 +219,9 @@ void Flow_PK::CalculateShiftWaterTable(
   if (sendbuf != NULL) delete [] sendbuf;
 #endif
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    printf("Flow PK: found %5d boundary edges for side set \"%s\"\n", nedges/2, region.c_str());
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "found " << nedges/2 << " boundary edges for side set " << region.c_str() << endl;
   }
 }
 

@@ -82,7 +82,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.PrintStatistics();
-    TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
+    Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
  
     // advance the state
     int i, k, iter = 0;
@@ -173,7 +173,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     TPK.InitPK();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
     if (nx == 20) TPK.PrintStatistics();
-    TPK.verbosity = TRANSPORT_VERBOSITY_NONE;
+    Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
     // advance the state
     int i, k, iter = 0;

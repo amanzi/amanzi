@@ -21,6 +21,8 @@ Usage:
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
+#include "VerboseObject.hh"
+
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
 #include "transport_boundary_function.hh"
@@ -134,7 +136,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   void ProcessStringDispersionModel(const std::string name, int* model);
   void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
-  void ProcessStringVerbosity(const std::string name, int* verbosity);
 
   // obsolete methods
   //void CreateConcentration(Teuchos::ParameterList& bcs_list);
@@ -146,8 +147,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
-  int verbosity, internal_tests;  // output information
+  int internal_tests;  // output information
   double tests_tolerance;
+
+ private:
+  VerboseObject* vo_;
 
  private:
   Teuchos::RCP<Transport_State> TS;

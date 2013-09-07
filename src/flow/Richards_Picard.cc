@@ -80,11 +80,13 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     solution_diff.Update(-1.0, *solution_new_cells, 1.0);
     double error = ErrorNormPicardExperimental(*solution_old_cells, solution_diff);
 
-    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       int num_itrs = solver->NumIters();
       double linear_residual = solver->ScaledResidual();
-      std::printf("Picard:%4d   Pressure(error=%9.4e)  solver(%8.3e, %4d)\n",
-          itrs, error, linear_residual, num_itrs);
+
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "Picard:" << itrs << " Pressure(error=" << error 
+                   << ")  solver(" << linear_residual << ", " << num_itrs << ")" << endl;
     }
 
     if (error < 1e-5 && itrs > 0) 

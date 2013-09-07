@@ -21,6 +21,7 @@ Usage:
 #include "flow-domain-function.hh"
 #include "unique_mesh_function.hh"
 #include "BDF_FnBase.hh"
+#include "VerboseObject.hh"
 
 #include "Flow_State.hh"
 #include "Flow_constants.hh"
@@ -119,7 +120,6 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStringSourceDistribution(const std::string name, int* method);
   void ProcessStringMFD3D(const std::string name, int* method);
   void ProcessStringTimeIntegration(const std::string name, int* method);
-  void ProcessStringVerbosity(const std::string name, int* verbosity);
   void ProcessStringLinearSolver(const std::string& name, LinearSolver_Specs* ls_specs);
   void ProcessStringPreconditioner(const std::string& name, int* preconditioner);
 
@@ -149,7 +149,7 @@ public:
   int nfaces_owned, nfaces_wghost;
 
   int MyPID;  // parallel information: will be moved to private
-  int verbosity, verbosity_AztecOO;  // output information
+  int verbosity_AztecOO;  // output information
   int missed_bc_faces_;
 
   Teuchos::RCP<Flow_State> FS;
@@ -160,7 +160,10 @@ public:
   int flow_status_;
   int dim;
 
-protected:
+ protected:
+  VerboseObject* vo_;
+
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   Teuchos::ParameterList solver_list_;

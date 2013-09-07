@@ -176,23 +176,26 @@ double Richards_PK::ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& 
 #endif
 
   // maximum error is printed out only on one processor
-  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     if (error == buf) {
       int c = functional_max_cell;
       const AmanziGeometry::Point& xp = mesh_->cell_centroid(c);
 
-      printf("\nFlow PK: residual = %9.3g at point", functional_max_norm);
-      for (int i = 0; i < dim; i++) printf(" %8.3g", xp[i]);
-      printf("\n");
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "residual=" << functional_max_norm << " at point";
+      for (int i = 0; i < dim; i++) *(vo_->os()) << " " << xp[i];
+      *(vo_->os()) << endl;
  
       c = cell_p;
       const AmanziGeometry::Point& yp = mesh_->cell_centroid(c);
-      printf("   pressure error = %9.3g at point", error_p);
-      for (int i = 0; i < dim; i++) printf(" %8.3g", yp[i]);
+
+      *(vo_->os()) << "pressure err=" << error_p << " at point";
+      for (int i = 0; i < dim; i++) *(vo_->os()) << " " << yp[i];
+      *(vo_->os()) << endl;
 
       int mb = (rel_perm->map_c2mb())[c];
       double s = (rel_perm->WRM())[mb]->saturation(atm_pressure - u[c]);
-      printf(",  saturation = %5.3g,  pressure = %9.3g\n", s, u[c]);
+      *(vo_->os()) << "saturation=" << s << " pressure=" << u[c] << endl;
     }
   }
 
@@ -247,9 +250,10 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
     double du_pert_max = fabs(u[c] - press_pert); 
 
     if (fabs(du[c]) > du_pert_max) {
-      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_EXTREME) {
-        cout << "Flow PK: saturation clipping in cell " << c << 
-                " pressure change: " << du[c] << " -> " << du_pert_max << endl;
+      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << "saturation clipping in cell " << c 
+                     << " pressure change: " << du[c] << " -> " << du_pert_max << endl;
       }
 
       double tmp = du[c];
@@ -264,11 +268,13 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
     }    
   }
 
-  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int ncells_tmp = ncells_clipped;
     du.Comm().SumAll(&ncells_tmp, &ncells_clipped, 1);
-    if (MyPID == 0 && ncells_clipped > 0)
-        printf("Flow PK: saturation was clipped in %d cells\n", ncells_clipped); 
+    if (MyPID == 0 && ncells_clipped > 0) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "saturation was clipped in " << ncells_clipped << " cells" << endl;
+    }
   }
 
   return ret_val;

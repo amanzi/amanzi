@@ -52,7 +52,8 @@ set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc
                         transport_boundary_function.cc transport_domain_function.cc)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
-                   LINK_LIBS geometry mesh error_handling state data_structures time_integration ${Epetra_LIBRARIES})
+                   LINK_LIBS geometry mesh error_handling state data_structures 
+                             time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes

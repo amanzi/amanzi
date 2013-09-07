@@ -106,27 +106,6 @@ void Flow_PK::ProcessStringTimeIntegration(const std::string name, int* method)
 
 
 /* ****************************************************************
-* Process verbosity string.
-**************************************************************** */
-void Flow_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
-{
-  verbosity_AztecOO = AZ_none;
-  if (name == "none") {
-    *verbosity = FLOW_VERBOSITY_NONE;
-  } else if (name == "low") {
-    *verbosity = FLOW_VERBOSITY_LOW;
-  } else if (name == "medium") {
-    *verbosity = FLOW_VERBOSITY_MEDIUM;
-  } else if (name == "high") {
-    *verbosity = FLOW_VERBOSITY_HIGH;
-  } else if (name == "extreme") {
-    *verbosity = FLOW_VERBOSITY_EXTREME;
-    verbosity_AztecOO = AZ_all;
-  }
-}
-
-
-/* ****************************************************************
 * Process string for the linear solver.
 **************************************************************** */
 void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* method)
@@ -274,8 +253,9 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
 **************************************************************** */
 void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
 {
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    printf("Flow PK: saving time history in file flow_dt_history.txt...\n");
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "saving time history in file flow_dt_history.txt..." << endl;
 
     char file_name[30];
     sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);
@@ -287,9 +267,7 @@ void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
       ofile << setprecision(10) << dT_history[n].first / FLOW_YEAR << " " << dT_history[n].second << endl;
     }
     ofile.close();
-    printf("Flow PK: saving time history in file flow_dt_history.txt...done\n");
   }
-  
 }
 
 

@@ -50,21 +50,19 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, Linear
   solver_tmp->SetRHS(&b);
   solver_tmp->SetLHS(&u);
 
-  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
   solver_tmp->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
-  if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
   // Matrix_Audit audit(mesh_, matrix_);
   // audit.InitAudit();
   // audit.RunAudit();
 
-  if (verbosity >= FLOW_VERBOSITY_HIGH) {
-    if (MyPID == 0) {
-      int num_itrs = solver_tmp->NumIters();
-      double linear_residual = solver_tmp->ScaledResidual();
-      std::printf("Flow PK: saturated solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
-    }
-    PrintStatisticsCPU();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    int num_itrs = solver_tmp->NumIters();
+    double linear_residual = solver_tmp->ScaledResidual();
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "saturated solver: ||r||=" << linear_residual 
+                 << " itr=" << num_itrs << endl;
   }
 
   delete solver_tmp;
@@ -111,10 +109,13 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   solver_tmp->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
   *u_faces = *utmp_faces;
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver_tmp->NumIters();
     double linear_residual = solver_tmp->ScaledResidual();
-    std::printf("Flow PK: constraints solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "constraints solver: ||r||=" << linear_residual
+                 << " itr=" << num_itrs << endl;
   }
 
   delete solver_tmp;
