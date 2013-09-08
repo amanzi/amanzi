@@ -63,7 +63,7 @@ Syntax of the Specification
   * Z [list] Model for Z, choose exactly one of the following: (1) `"Z: z1`", or (2) `"Z: z2`" (see below) 
 
 Here, an `"X`" is defined by a `"Y`" and a `"Z`".  The `"Y`" is a string parameter but the `"Z`" is given by a model (which will require its own set of parameters).
-The optoins for `"Z`" will then be described:
+The options for `"Z`" will then be described:
 
  * `"Z: z1`" applies model z1.  Requires `"z1a`" [string]
 
@@ -108,7 +108,7 @@ To turn a particular process kernel on or off use these options:
 To select a particular flow model, use this option:
 
  * `"Flow model`" [string], valid options are `"Darcy`", `"Steady State Saturated`" 
-   (both will cause the instatiation of a Darcy_PK process kernel), `"Richards`", 
+   (both will cause the instantiation of a Darcy_PK process kernel), `"Richards`", 
    `"Steady State Richards`" (both will cause the instantiation of a Richards_PK 
    process kernel.
 
@@ -116,7 +116,7 @@ The following parameters control MPC options related to particular process kerne
 
  * `"transport subcycling`" [bool], default is `"false`".
 
- * `"max chemistry to transport timestep ratio`" [double], default is 1.0.
+ * `"max chemistry to transport time step ratio`" [double], default is 1.0.
 
 Time Integration Mode
 ---------------------
@@ -162,7 +162,7 @@ Restart from Checkpoint Data File
 
 A user may request a restart from a Checkpoint Data file by including the MPC sublist 
 `"Restart from Checkpoint Data File`". This mode of restarting
-will overwrite all other initializations of data that are called out in the input file.
+will overwrite all other initialization of data that are called out in the input file.
 The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
 terminated because its allocation of time ran out.
 
@@ -192,18 +192,6 @@ In this example, Amanzi is restarted with all state data initialized from the Ch
 Data file named chk00123.h5. All other initialization of field variables that might be called 
 out in the input file is ignored.  Recall that the value for the current time and current cycle
 is read from the checkpoint. 
-
-Verbosity
----------
-
-The MPC's verbosity is controlled by a standard verbose object sublist, for example
-
-.. code-block:: xml
-
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
-    </ParameterList>
-
 
 Example for a complete MPC list
 -------------------------------
@@ -330,7 +318,7 @@ The required parameters are `"Number of DoFs`" and `"Function type`".
 Example
 -------
 
-The complete example of a state inialization is below.
+The complete example of a state initialization is below.
 
 .. code-block:: xml
 
@@ -440,9 +428,9 @@ User defines water retention models in sublist `"Water retention models`".
 It contains as many sublists, 
 e.g. `"Soil 1`", `"Soil 2`", etc, as there are different soils. 
 These models are associated with non-overlapping regions. Each of the sublists `"Model N`" 
-inludes a few mandatory parameters: a region name, model name, and parameters for the selected model.
+includes a few mandatory parameters: a region name, model name, and parameters for the selected model.
 The available models are `"van Genuchten`", `"Brooks Corey`", and `"fake`". 
-The later is used to set up an analytical solution for convergence study. 
+The later is used to set up an analytic solution for convergence study. 
 The available models for the relative permeability are `"Mualem`" (default) and `"Burdine`".
 An example of the van Genuchten model specification is:
 
@@ -481,7 +469,7 @@ and krel_sat.txt using the following optional commands (that go to `"Water Reten
 
 The triple of doubles means the starting capillary pressure (resp., saturation), the period, and 
 the final capillary pressure (resp., saturation).
-Each line in the output file will contain the capilalry pressure (resp., saturation) and relative 
+Each line in the output file will contain the capillary pressure (resp., saturation) and relative 
 permeability values for all water retention models in the order they appear in the input spec.
 
 
@@ -494,7 +482,7 @@ conditions are supported:
 * `"pressure`" [list] Dirichlet boundary condition, a pressure is prescribed on a surface region. 
 
 * `"mass flux`" [list] Neumann boundary condition, an outward mass flux is prescribed on a surface region.
-  This is the default boundary condtion. If no condition is specified on a mesh face, zero flux 
+  This is the default boundary condition. If no condition is specified on a mesh face, zero flux 
   boundary condition is used implicitly. 
 
 * `"static head`" [list] Dirichlet boundary condition, the hydrostatic pressure is prescribed on a surface region.
@@ -504,7 +492,7 @@ conditions are supported:
   The atmospheric pressure is prescribed if internal pressure is higher. Otherwise, the outward mass flux is prescribed. 
 
 The following example includes all four types of boundary conditions. The boundary of a square domain 
-is split into six pieces. Constant finction is used for simplicity and can be replaced by any
+is split into six pieces. Constant function is used for simplicity and can be replaced by any
 of the other available functions:
 
 .. code-block:: xml
@@ -566,18 +554,18 @@ parameters described below. Mix and match of parameters is allowed.
 
 * `"relative to top`" [bool] indicates that the static head is defined with respect
   to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
-  Default falue is `"false`". 
+  Default value is `"false`". 
 
 * `"submodel`" [string] indicates different models for the seepage face boundary condition.
   It can take values `"PFloTran`", `"FACT`", and `"Amanzi`". The first option leads to a 
-  discontinous change of the boundary condition type from the infiltration to pressure. 
+  discontinuous change of the boundary condition type from the infiltration to pressure. 
   The second option is described
-  in the document on mathematical models. It employes a smooth transition from the infiltration 
-  to mixed boundary condition. The third option combines the above two. Is uses a smooth transisiton
+  in the document on mathematical models. It employs a smooth transition from the infiltration 
+  to mixed boundary condition. The third option combines the above two. Is uses a smooth transition
   from the infiltration to pressure boundary condition. 
   Default value is `"Amanzi`".
 
-Here is an examle:
+Here is an example:
 
 .. code-block:: xml
 
@@ -634,10 +622,10 @@ Again, constant functions can be replaced by any of the available time-functions
   Default is `"none`".
 
 
-Initial Guess Pseudo Time Integratior
+Initial Guess Pseudo Time Integrator
 -------------------------------------
 
-The sublist `"initial guess pseudo time integrator`" defines parameters controling linear and 
+The sublist `"initial guess pseudo time integrator`" defines parameters controlling linear and 
 nonlinear solvers during calculation of the initial guess time integration. Here is an example:
 
 .. code-block:: xml
@@ -669,10 +657,10 @@ nonlinear solvers during calculation of the initial guess time integration. Here
 Detailed description of parameters is in the next two subsection.
 
 
-Steady State Time Integratior
------------------------------
+Steady State Time Integrator
+----------------------------
 
-The sublist `"steady state time integrator`" defines parameters controling linear and 
+The sublist `"steady state time integrator`" defines parameters controlling linear and 
 nonlinear solvers during steady state time integration. Here is an example:
 
 .. code-block:: xml
@@ -719,8 +707,6 @@ nonlinear solvers during steady state time integration. Here is an example:
        <Parameter name="maximal number of iterations" type="int" value="200"/>
        <Parameter name="start time" type="double" value="0.0"/>
        <Parameter name="end time" type="double" value="100.0"/>
-       <Parameter name="initial time step" type="double" value="0.1"/>
-       <Parameter name="maximum time step" type="double" value="1.0"/>
      </ParameterList>
    </ParameterList>
 
@@ -741,7 +727,7 @@ The parameters used here are
 * `"time stepping strategy`" [string] allows one to define an adaptive time step increment 
   through an error estimator. The only available option is `"adaptive`". It is supported
   for the Darcy flow only. 
-  The error estimator can be controled via two parameters in the list `"time integration method`" 
+  The error estimator can be controlled via two parameters in the list `"time integration method`" 
   called `"absolute error tolerance`" and `"relative error tolerance`". The default values
   for these parameters are 0.001. 
 
@@ -758,10 +744,10 @@ The parameters used here are
   It can be used to obtain pressure field which is consistent with the boundary conditions.
   Default is empty list.
 
-  * `"method`" [string] refferes to a constraint enforcement method. The only 
+  * `"method`" [string] refers to a constraint enforcement method. The only 
     available option is `"projection`" which is default.
 
-  * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
+  * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
   * `"clipping saturation value`" [double] is an experimental option. It is used 
     after pressure initialization to cut-off small values of pressure. By default, the 
@@ -776,20 +762,20 @@ The parameters used here are
   restarted, we may re-enforce the pressure-lambda relationship for new boundary conditions. 
   Default is empty list.
 
-  * `"method`" [string] refferes to a constraint enforcement method. The only 
+  * `"method`" [string] refers to a constraint enforcement method. The only 
     available option is `"projection`" which is default.
 
-  * `"linear solver`" [string] refferes to a solver sublist of the list `"Solvers`".
+  * `"linear solver`" [string] refers to a solver sublist of the list `"Solvers`".
 
 * `"BFD1`" [list] the named list used to control the nonlinear solver.
 
 
-Transient Time Integratior
------------------------------
+Transient Time Integrator
+-------------------------
 
-The sublist `"transient time integrator`" defines parameters controling linear and 
+The sublist `"transient time integrator`" defines parameters controlling linear and 
 nonlinear solvers during transient time integration. Its parameters are similar to 
-that in the sublist `"steady state time integrator`" except for parameters controling
+that in the sublist `"steady state time integrator`" except for parameters controlling
 pressure re-initialization. Here is an example:
 
 .. code-block:: xml
@@ -824,7 +810,7 @@ Other Parameters
 
 The remaining `"Flow`" parameters are
 
-* `"atmospheric pressure`" [double] defines the atmosperic pressure, [Pa].
+* `"atmospheric pressure`" [double] defines the atmospheric pressure, [Pa].
 
 * `"relative permeability`" [string] defines a method for calculating relative
   permeability. The available self-explanatory options `"upwind with gravity`",
@@ -862,7 +848,7 @@ and temporal accuracy, and verbosity:
 * `"spatial discretization order`" [int] the order of the spatial discretization, either
   1 or 2. The default is 1. 
   
-* `"temporal discretization order`" [int] the order of temporar discretization, either
+* `"temporal discretization order`" [int] the order of temporal discretization, either
   1 or 2. The default is 1.
 
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
@@ -886,7 +872,7 @@ Here is an example:
 
 Dispersivity models
 -------------------
-Two dispesivity models have been implemented: `"isotropic`" and `"Bear`". 
+Two dispersivity models have been implemented: `"isotropic`" and `"Bear`". 
 The anisotropic model `"Lichtner`" is pending for a more detailed 
 description in the Process Models document.
 
@@ -929,7 +915,7 @@ Boundary Conditions
 The boundary conditions sublist differs from a similar specification of the boundary conditions 
 in `"Flow`". Its structure will be changed in the nearest future. 
 For the advective transport, the boundary conditions must be specified on inflow parts of the
-boundary. If no value is prescribed through the XML input, the zero inlux boundary condition
+boundary. If no value is prescribed through the XML input, the zero influx boundary condition
 is used. Note that the boundary condition is set up separately for each component:
 
 .. code-block:: xml
@@ -953,7 +939,7 @@ is used. Note that the boundary condition is set up separately for each componen
 
 The new structure of boundary conditions is aligned with that used for Flow.
 It allows the use to define spatially variable boundary conditions. 
-Temporary, both approaches to specifying boundary condtions are supported.
+Temporary, both approaches to specifying boundary conditions are supported.
 
 .. code-block:: xml
 
@@ -971,17 +957,17 @@ Temporary, both approaches to specifying boundary condtions are supported.
 
        <ParameterList name="Tc-99"> <!-- Next component --> 
        ...
-       </ParameteList>
-     </ParameteList>
+       </ParameterList>
+     </ParameterList>
 
      <ParameterList name="outward flux">  <!-- Future boundary conditions -->
-     </ParameteList>
+     </ParameterList>
    </ParameterList>
 
 Sources and Sinks
 -----------------
 
-The external sources are typicaly located at pumping wells. The structure
+The external sources are typically located at pumping wells. The structure
 of sublist `"source terms`" includes only sublists named after components. 
 Again, constant functions can be replaced by any available time-function:
 Note that the source values ire set up separately for each component:
@@ -1027,13 +1013,13 @@ The `"Transport`" parameters useful for developers are:
   the run time. The default value is `no`.
    
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
-  divergence-free condition. The defult value is 1e-6.
+  divergence-free condition. The default value is 1e-6.
 
 
 Linear Solvers
 ==============
 
-This list constans sublists for various linear solvers such as PCG and GMRES.
+This list contains sublists for various linear solvers such as PCG and GMRES.
 Here is and example:
 
 .. code-block:: xml
@@ -1046,13 +1032,18 @@ Here is and example:
          <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
          <Parameter name="size of Krylov space" type="int" value="10"/>
+
+         <ParameterList name="VerboseObject">
+           <Parameter name="Verbosity Level" type="string" value="high"/>
+         </ParameterList>
        </ParameterList>
      </ParameterList>
 
 The name `"GMRES with Hypre AMG`" is selected by the user.
 It can be used by a process kernel lists to define a solver.
+The verbose object is discussed below.
 
-* `"interative method`" [string] defines a type of Krylov-based method. The parameters
+* `"iterative method`" [string] defines a type of Krylov-based method. The parameters
   include `"pcg'" and `"gmres`".
 
 * `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
@@ -1084,14 +1075,14 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
 
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
-          <Parameter name="deiscretization method" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
           <ParameterList name="ML Parameters">
             ... 
          </ParameterList>
        </ParameterList>
 
        <ParameterList name="Hypre AMG">
-          <Parameter name="deiscretization method" type="string" value="optimized mfd scaled"/>
+          <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
           <ParameterList name="BoomerAMG Parameters">
             ...
           </ParameterList>
@@ -1109,21 +1100,72 @@ Internal parameters of Boomer AMG includes
 .. code-block:: xml
 
    <ParameterList name="BoomerAMG Parameters">
-     <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+     <Parameter name="tolerance" type="double" value="0.0"/>
      <Parameter name="smoother sweeps" type="int" value="3"/>
      <Parameter name="cycle applications" type="int" value="5"/>
-     <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+     <Parameter name="strong threshold" type="double" value="0.5"/>
    </ParameterList>
 
 Trilinos ML
 -----------
-Missing.
+
+Internal parameters of Trilinos ML includes
+
+.. code-block:: xml
+
+   <ParameterList name="ML Parameters">
+     <Parameter name="ML output" type="int" value="0"/>
+     <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
+     <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+     <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+     <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+     <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+     <Parameter name="coarse: max size" type="int" value="128"/>
+     <Parameter name="coarse: damping factor" type="double" value="1.0"/>
+     <Parameter name="cycle applications" type="int" value="2"/>
+     <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+     <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+     <Parameter name="max levels" type="int" value="40"/>
+     <Parameter name="prec type" type="string" value="MGW"/>
+     <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+     <Parameter name="smoother: pre or post" type="string" value="both"/>
+     <Parameter name="smoother: sweeps" type="int" value="2"/>
+     <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+   </ParameterList>
+
+
+Block ILU
+---------
+
+The internal parameters of the block ILU are as follows:
+
+.. code-block:: xml
+
+   <ParameterList name="Block ILU Parameters">
+     <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
+     <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
+     <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
+     <Parameter name="fact: level-of-fill" type="int" value="0"/>
+     <Parameter name="overlap" type="int" value="0"/>
+     <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+   </ParameterList>
+
+
+Indentity
+---------
+
+The identity preconditioner is instantiated if either no preconditioner is
+pecified or the specified preconditoner list does not exists.
 
 
 Mesh
 ====
 
-Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface.  "Mesh`" is used to select between the following options:
+Amanzi supports both structured and unstructured numerical solution approaches.
+This flexibility has a direct impact on the selection and design of the underlying 
+numerical algorithms, the style of the software implementations, and, ultimately, 
+the complexity of the user-interface.  
+`"Mesh`" is used to select between the following options:
 
 * `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures.
 
@@ -1209,7 +1251,7 @@ Example of `"Unstructured`" mesh read from an external file:
 
 
 Regions
-=======================================
+=======
 
 Regions are geometrical constructs used in Amanzi to define subsets of the computational domain in order to specify the problem
 to be solved, and the output desired.  Regions may represents zero-, one-, two- or three-dimensional subsets of physical space.
@@ -1221,7 +1263,7 @@ entire simulation domain. Currently, the unstructured framework does
 not support the `"All`" region, but it is expected to do so in the
 near future.
 
-Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinat-aligned planes that bound the domain,
+Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain,
 using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`"
 
 User-defined regions are constructed using the following syntax
@@ -1354,7 +1396,7 @@ Example:
 	<Parameter name="Format" type="string" value="Exodus II"/>
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
-    </ParamterList>
+    </ParameterList>
     <ParameterList name="Outflow plane">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
@@ -1376,8 +1418,26 @@ file and "Outflow plane" is a planar region. "Sand" is a volumetric
 region defined by the value 25 in color function file.
 
 
+Output
+======
+
+VerboseObject
+-------------
+
+Output of all components of Amanzi is controlled by a standard verbose 
+object sublist. If this list is not specified, the default verbosity
+value is used.
+
+.. code-block:: xml
+
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
+    </ParameterList>
+
+
+
 Time Functions
-==============
+--------------
 
 Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
 
@@ -1389,13 +1449,12 @@ Boundary condition functions utilize a parameterized model for time variations t
 
 
 This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
-two intervals are speicified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
+two intervals are specified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
 20 over the interval t=2 to t=3, and then is constant at 30 for t>3.
 
 
-
 Observation Data
-================
+----------------
 
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
@@ -1412,7 +1471,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * Volumetric water content [volume water / bulk volume]
       * Aqueous saturation [volume water / volume pore space]
       * Aqueous pressure [Pa]
-      * Hydrolic Head [m] 
+      * Hydraulic Head [m] 
       * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
       * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
       * MaterialID
@@ -1423,13 +1482,13 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-    * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+    * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
     * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
     * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-    * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
+    * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
 
     * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
@@ -1465,7 +1524,7 @@ Example:
 
 
 Checkpoint Data
-===============
+---------------
 
 A user may request periodic dumps of Amanzi Checkpoint Data.  The user has no explicit control over the content of these files, but has the guarantee that the Amanzi run will be reproducible (with accuracies determined
 by machine round errors and randomness due to execution in a parallel computing environment).  Therefore, output controls for Checkpoint Data are limited to file name generation and writing frequency, by numerical cycle number.
@@ -1479,13 +1538,13 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
   * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
   * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-  * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
+  * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
 
   * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
@@ -1516,12 +1575,11 @@ Additional data are written to this file when parameter `"walkabout`"
 is set to true.  
 
 
-
 Visualization Data
-==================
+------------------
 
 A user may request periodic writes of field data for the purposes of visualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
-at intervals corresponding to the numerical time step values or intervals corresponding to the cycle number; writes are controlled by timestep cycle number.
+at intervals corresponding to the numerical time step values or intervals corresponding to the cycle number; writes are controlled by time step cycle number.
 
 * `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which field quantities to write
 
@@ -1529,13 +1587,13 @@ at intervals corresponding to the numerical time step values or intervals corres
   
   * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, the second is the cycle period, and the third is the stop cycle or -1 in which case there is no stop cycle. A visualization dump shall be written at such cycles that satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
-  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop paramters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start period stop parameters are needed, then use these parameters with n=0,1,2,..., and not the single `"cycles start period stop`" parameter.
 
   * `"cycles`" [Array(int)] an array of discrete cycles that at which a visualization dump shall be written. 
 
   * `"times start period stop`" [Array(double)] the first entry is the start time, the second is the time period, and the third is the stop time or -1 in which case there is no stop time. A visualization dump shall be written at such times that satisfy time = start + n*period, for n=0,1,2,... and time < stop if stop != -1.0.
 
-  * `"times start period stop n`" [Array(double) if multiple start period stop paramters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" paramter.
+  * `"times start period stop n`" [Array(double) if multiple start period stop parameters are needed, then use this these parameters with n=0,1,2,..., and not the single  `"times start period stop`" parameter.
 
   * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
