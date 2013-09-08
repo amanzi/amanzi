@@ -79,7 +79,6 @@ class Darcy_PK : public Flow_PK {
   void ProcessStringLinearSolver(const std::string name, int* max_itrs, double* tolerance);
 
   // control methods
-  void PrintStatistics() const;
   void ResetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list_ = dp_list_new; }
 
   // access methods

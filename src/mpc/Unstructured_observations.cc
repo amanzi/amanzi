@@ -134,28 +134,28 @@ void Unstructured_observations::make_observations(State& state)
 	var = name;
       }
       
-      // extract the value if it is a component
+      // is the user asking for a component concentration?
+      int comp_index(0);
       if (comp_names_.size() > 0) {
-	int comp_index(0);
 	for (comp_index = 0; comp_index != comp_names_.size(); ++comp_index) {
 	  if ( comp_names_[comp_index] == var ) break;
 	}
-	if (comp_index != comp_names_.size() ) {
-	  value = 0.0;
-	  volume = 0.0;
-	  
-	  Teuchos::RCP<const Epetra_MultiVector> total_component_concentration = 
-	    state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
-	  
-	  for (int i=0; i<mesh_block_size; i++) {
-	    int ic = cell_ids[i];
-	    value += (*(*total_component_concentration)(comp_index))[ic] * state.GetMesh()->cell_volume(ic);
-	    
-	    volume += state.GetMesh()->cell_volume(ic);
-	  }
-	}
       }
-      if (var == "Volumetric water content") {
+
+      if (comp_names_.size() > 0 && comp_index != comp_names_.size() ) { // the user is asking to for an observation on tcc
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_MultiVector> total_component_concentration = 
+	  state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = cell_ids[i];
+	  value += (*(*total_component_concentration)(comp_index))[ic] * state.GetMesh()->cell_volume(ic);
+	  
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else if (var == "Volumetric water content") {
 	value = 0.0;
 	volume = 0.0;
 	

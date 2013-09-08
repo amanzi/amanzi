@@ -44,7 +44,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
   status = TRANSPORT_NULL;
 
   parameter_list = parameter_list_MPC.sublist("Transport");
-  preconditioner_list = parameter_list_MPC.sublist("Preconditioners");
+  preconditioners_list = parameter_list_MPC.sublist("Preconditioners");
+  solvers_list = parameter_list_MPC.sublist("Solvers");
 
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
@@ -54,7 +55,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
   double time = TS->initial_time();
   if (time >= 0.0) T_physics = time;
 
-  verbosity = TRANSPORT_VERBOSITY_HIGH;
+  dispersion_method = TRANSPORT_DISPERSION_METHOD_TPFA; 
+  dispersion_preconditioner = "identity";
+
   internal_tests = 0;
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
@@ -74,6 +77,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
 ****************************************************************** */
 Transport_PK::~Transport_PK()
 { 
+  delete vo_;
   for (int i=0; i<bcs.size(); i++) delete bcs[i]; 
 }
 
@@ -148,10 +152,10 @@ int Transport_PK::InitPK()
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
  
-  // dispersivity model
-  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+  // dispersivity models
+  if (dispersion_models.size() != 0) {
     dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
-    dispersion_matrix->Init(dispersion_specs, preconditioner_list);
+    dispersion_matrix->Init(dispersion_models, dispersion_preconditioner, preconditioners_list);
     dispersion_matrix->SymbolicAssembleGlobalMatrix();
   }
   return 0;
@@ -233,7 +237,7 @@ double Transport_PK::CalculateTransportDt()
   dT *= cfl_;
 
   // print optional diagnostics using maximum cell id as the filter
-  if (verbosity >= TRANSPORT_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int cmin_dT_unique = (fabs(dT_tmp * cfl_ - dT) < 1e-6 * dT) ? cmin_dT : -1;
  
 #ifdef HAVE_MPI
@@ -242,11 +246,11 @@ double Transport_PK::CalculateTransportDt()
 #endif
     if (cmin_dT == cmin_dT_unique) {
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dT);
-      printf("Transport PK: cell %d has smallest dT, (%9.6f, %9.6f", cmin_dT, p[0], p[1]);
-      if (p.dim() == 3) 
-        printf(", %9.6f)\n", p[2]);
-      else
-        printf(")\n"); 
+
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "cell id=" << cmin_dT << " has smallest dT, (" << p[0] << ", " << p[1];
+      if (p.dim() == 3) *(vo_->os()) << ", ", p[2];
+      *(vo_->os()) << ")" << endl;
     }
   }
   return dT;
@@ -360,12 +364,11 @@ void Transport_PK::Advance(double dT_MPC)
 
   dT = dT_original;  // restore the original dT (just in case)
 
-  if (MyPID == 0 && verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
-    printf("Transport PK: %d sub-cycles, dT_stable: %10.5g [sec]  dT_MPC: %10.5g [sec]\n", 
-        ncycles, dT_original, dT_MPC);
-  }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << ncycles << " sub-cycles, dT_stable=" << dT_original 
+                 << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << endl;
 
-  if (verbosity >= TRANSPORT_VERBOSITY_MEDIUM) {
     double tccmin_vec[number_components];
     double tccmax_vec[number_components];
 
@@ -387,32 +390,27 @@ void Transport_PK::Advance(double dT_MPC)
     mesh_->get_comm()->SumAll(&mass_tracer_tmp, &mass_tracer, 1);
     mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
 
-    if (MyPID == 0) {
-      double mass_loss = mass_exact - mass_tracer;
-      printf("Transport PK: tracer: %9.6g to %9.6g  at %12.7g [sec]\n", tccmin, tccmax, T_physics);
-      printf("        mass: %10.5e [kg], mass left domain: %10.5e [kg]\n", mass_tracer, mass_loss);
-    }
+    double mass_loss = mass_exact - mass_tracer;
+    *(vo_->os()) << "tracer: " << tccmin << " to " << tccmax << " at " << T_physics << "[sec]" << endl;
+    *(vo_->os()) << "mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
   }
 
-  if (dispersion_specs.model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+  if (dispersion_models.size() != 0) {
     const Epetra_Vector& phi = TS->ref_porosity();
     const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
     dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
 
-    int method = dispersion_specs.method;
-    if (method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
+    if (dispersion_method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
       dispersion_matrix->AssembleGlobalMatrixTPFA(TS);
-    } else if (method == TRANSPORT_DISPERSION_METHOD_NLFV) {
+    } else if (dispersion_method == TRANSPORT_DISPERSION_METHOD_NLFV) {
       dispersion_matrix->AssembleGlobalMatrixNLFV(TS);
     }
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
     dispersion_matrix->UpdatePreconditioner();
 
     AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
-    // AmanziSolvers::GMRES_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
-    pcg.set_tolerance(1e-8);
-    // pcg.set_krylov_dim(18);
+    pcg.Init(solvers_list.sublist(dispersion_solver));
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
     Epetra_Vector rhs(cmap);
@@ -434,9 +432,10 @@ void Transport_PK::Advance(double dT_MPC)
       residual += pcg.residual();
       num_itrs += pcg.num_itrs();
     }
-    if (verbosity >= TRANSPORT_VERBOSITY_MEDIUM && MyPID == 0) {
-      printf("Transport PK: dispersion solver: ||r||=%10.5g itrs=%d\n",
-          residual / number_components, num_itrs / number_components);
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "dispersion solver: ||r||=" << residual / number_components
+                   << " itrs=" << num_itrs / number_components << endl;
     }
   }
 

@@ -21,16 +21,31 @@
     </ParameterList>
   </ParameterList>
  
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="Dispersion Solver">
+      <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="maximum number of iterations" type="int" value="400"/>
+      <Parameter name="preconditioner" type="string" value="identity"/>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
     <Parameter name="spatial discretization order" type="int" value="1"/>   
     <Parameter name="temporal discretization order" type="int" value="1"/>   
-    <ParameterList name="dispersivity">
-      <Parameter name="model" type="string" value="Bear"/>
-      <Parameter name="longitudinal" type="double" value="0.1"/>
-      <Parameter name="transverse" type="double" value="0.01"/>
+    <ParameterList name="Dispersivity">
       <Parameter name="numerical method" type="string" value="two point flux approximation"/>
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="solver" type="string" value="Dispersion Solver"/>
+      <ParameterList name="Brown soild">
+        <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+        <Parameter name="model" type="string" value="Bear"/>
+        <Parameter name="alphaL" type="double" value="0.1"/>
+        <Parameter name="alphaT" type="double" value="0.01"/>
+        <Parameter name="D" type="double" value="0.0"/>
+        <Parameter name="tortuosity" type="double" value="0.0"/>
+      </ParameterList>
     </ParameterList>
 
     <Parameter name="advection limiter" type="string" value="Tensorial"/>

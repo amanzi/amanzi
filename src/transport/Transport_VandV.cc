@@ -70,7 +70,7 @@ void Transport_PK::CheckDivergenceProperty()
       flag = 1;
     }
 
-    if (flag && verbosity > TRANSPORT_VERBOSITY_LOW) {
+    if (flag && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
       cout << "    MyPID = " << MyPID << endl;
       cout << "    cell  = " << c << endl;
       cout << "    divergence = " << div << endl;
@@ -82,7 +82,7 @@ void Transport_PK::CheckDivergenceProperty()
   }
   error_avg /= ncells_owned;
 
-  if (verbosity > TRANSPORT_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
 #ifdef HAVE_MPI
     double global_max;
     const Epetra_Comm& comm = darcy_flux.Comm();

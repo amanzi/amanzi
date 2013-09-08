@@ -28,18 +28,9 @@ void Darcy_PK::ProcessParameterList()
 {
   Errors::Message msg;
 
-  // create verbosity list if it does not exist
-  if (! dp_list_.isSublist("VerboseObject")) {
-    Teuchos::ParameterList verbosity_list;
-    verbosity_list.set<std::string>("Verbosity Level", "none");
-    dp_list_.set("VerboseObject", verbosity_list);
-  }
+  // create verbosity object
+  vo_ = new VerboseObject("Amanzi::Darcy", dp_list_); 
 
-  // extract verbosity level
-  Teuchos::ParameterList verbosity_list = dp_list_.get<Teuchos::ParameterList>("VerboseObject");
-  std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
-  ProcessStringVerbosity(verbosity_name, &verbosity);
- 
   atm_pressure = dp_list_.get<double>("atmospheric pressure", 101325.0);
 
   // Create the BC objects.
@@ -133,17 +124,6 @@ void Darcy_PK::ProcessStringLinearSolver(
   *convergence_tol = tmp_list.get<double>("error tolerance", 1e-12);
 }
 
-
-/* ******************************************************************
-* Prints information about status of this PK.                                                     
-****************************************************************** */
-void Darcy_PK::PrintStatistics() const
-{
-  if (MyPID == 0) {
-    cout << "Flow PK:" << endl;
-    cout << "    Verbosity level = " << verbosity << endl;
-  }
-}
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

@@ -107,7 +107,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
   mfd3d_method_preconditioner_ = FLOW_MFD3D_OPTIMIZED;
 
-  verbosity = FLOW_VERBOSITY_NONE;
   src_sink = NULL;
   src_sink_distribution = 0;
   experimental_solver_ = FLOW_SOLVER_NKA;
@@ -226,12 +225,6 @@ void Richards_PK::InitPK()
   // injected water mass
   mass_bc = 0.0;
 
-  // CPU statistcs
-  if (verbosity >= FLOW_VERBOSITY_HIGH) {
-    timer.add("Mass matrix generation", Amanzi::Timer::ACCUMULATE);
-    timer.add("AztecOO solver", Amanzi::Timer::ACCUMULATE);
-  }
-
   flow_status_ = FLOW_STATUS_INIT;
 }
 
@@ -265,8 +258,9 @@ void Richards_PK::InitializeAuxiliaryData()
 ****************************************************************** */
 void Richards_PK::InitializeSteadySaturated()
 { 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    std::printf("Flow PK: initializing with a saturated steady state...\n");
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "initializing with a saturated steady state..." << endl;
   }
   double T = FS->get_time();
   SolveFullySaturatedProblem(T, *solution, ti_specs->ls_specs_ini);
@@ -298,8 +292,6 @@ void Richards_PK::InitPicard(double T0)
   ws_prev = ws;
 
   flow_status_ = FLOW_STATUS_INITIAL_GUESS;
-
-  PrintStatisticsCPU();
 }
 
 
@@ -352,7 +344,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   ResetPKtimes(T0, dT0);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+  if (MyPID == 0 && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     LinearSolver_Specs& ls = ti_specs.ls_specs;
     std::printf("*************************************************************\n");
     std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
@@ -426,13 +418,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   for (int c = 0; c < ncells_wghost; c++) K[c] *= rho_ / mu_;
 
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
-    if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("Mass matrix generation");  
     matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
-    if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("Mass matrix generation");  
     preconditioner_->CreateMFDmassMatrices(mfd3d_method_preconditioner_, K);
   }
 
-  if (verbosity >= FLOW_VERBOSITY_MEDIUM) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int missed_tmp = missed_bc_faces_;
 #ifdef HAVE_MPI
     mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
@@ -616,7 +606,6 @@ int Richards_PK::Advance(double dT_MPC)
   ti_specs->dT_history.push_back(times);
 
   ti_specs->num_itrs++;
-  if (ti_specs->num_itrs % 100 == 0) PrintStatisticsCPU();
 
   return 0;
 }
@@ -669,7 +658,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   // update mass balance
   // ImproveAlgebraicConsistency(flux, ws_prev, ws);
   
-  if (verbosity >= FLOW_VERBOSITY_HIGH && flow_status_ >= FLOW_STATUS_TRANSIENT_STATE) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && flow_status_ >= FLOW_STATUS_TRANSIENT_STATE) {
     Epetra_Vector& phi = FS_MPC->ref_porosity();
     double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dT;
 
@@ -683,8 +672,10 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
     mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
 
     mass_bc += mass_bc_dT;
-    if (MyPID == 0)
-        std::printf("Flow PK: water mass =%10.5e [kg], total boundary flux = %10.5e [kg]\n", mass_amanzi, mass_bc);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "water mass=" << mass_amanzi 
+                 << " [kg], total boundary flux=" << mass_bc << " [kg]" << endl;
   }
 
   dT = dTnext;

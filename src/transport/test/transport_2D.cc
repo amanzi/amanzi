@@ -64,6 +64,8 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
 
   /* create a transport state from the MPC state and populate it */
+  Amanzi::VerboseObject::hide_line_prefix = true;
+
   RCP<Transport_State> TS = rcp(new Transport_State(mesh,2));
   TS->Initialize();
   TS->set_darcy_flux(f_velocity, 0.0);

@@ -238,10 +238,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess
 
-    if (verbosity >= FLOW_VERBOSITY_HIGH) timer.start("AztecOO solver");
     double tol_dynamic = std::max(ls_specs.convergence_tol, L2error * 1e-18);
     solver->Iterate(ls_specs.max_itrs, tol_dynamic);
-    if (verbosity >= FLOW_VERBOSITY_HIGH) timer.stop("AztecOO solver");
 
     int num_itrs_linear = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
@@ -250,9 +248,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     double relaxation;
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
-    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("%5s Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
-          "", itrs, L2error, relaxation, linear_residual, num_itrs_linear);
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
+                   << " solver(" << linear_residual << ", " << num_itrs_linear << endl;
     }
 
 // Epetra_Vector& pressure = FS->ref_pressure();
@@ -367,9 +366,10 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     double relaxation;
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
-    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("%5s Picard:%4d  ||r||=%9.4e relax=%8.3e  solver(%9.4e,%4d)\n",
-          "", itrs, L2error, relaxation, linear_residual, num_itrs_linear);
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
+                   << " solver(" << linear_residual << ", " << num_itrs_linear << endl;
     }
 
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux_new);

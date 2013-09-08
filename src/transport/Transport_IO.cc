@@ -35,19 +35,10 @@ void Transport_PK::ProcessParameterList()
   Teuchos::ParameterList transport_list;
   transport_list = parameter_list;
 
-  // create verbosity list if it does not exist
-  if (! transport_list.isSublist("VerboseObject")) {
-    Teuchos::ParameterList verbosity_list;
-    verbosity_list.set<std::string>("Verbosity Level", "none");
-    transport_list.set("VerboseObject", verbosity_list);
-  }
-
-  // extract verbosity level
-  Teuchos::ParameterList verbosity_list = transport_list.get<Teuchos::ParameterList>("VerboseObject");
-  std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
-  ProcessStringVerbosity(verbosity_name, &verbosity);
-
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
+
+  // create verbosity object
+  vo_ = new VerboseObject("Amanzi::Transport", transport_list); 
 
   // global transport parameters
   cfl_ = transport_list.get<double>("CFL", 1.0);
@@ -64,19 +55,48 @@ void Transport_PK::ProcessParameterList()
   ProcessStringFlowMode(flow_mode_name, &flow_mode);
 
   // transport dispersion (default is none)
-  if (transport_list.isSublist("dispersivity")) {
-    Teuchos::ParameterList& dispersivity = transport_list.sublist("dispersivity");
-    string model_name = dispersivity.get<string>("model", "none");
-    ProcessStringDispersionModel(model_name, &dispersion_specs.model);
+  if (transport_list.isSublist("Dispersivity")) {
+    Teuchos::ParameterList& dlist = transport_list.sublist("Dispersivity");
 
-    dispersion_specs.alphaL = dispersivity.get<double>("alphaL", 0.0);
-    dispersion_specs.alphaT = dispersivity.get<double>("alphaT", 0.0);
-    dispersion_specs.D = dispersivity.get<double>("D", 0.0);
+    dispersion_solver = dlist.get<string>("solver", "missing");
+    if (solvers_list.isSublist(dispersion_solver)) {
+      Teuchos::ParameterList& slist = solvers_list.sublist(dispersion_solver);
+      dispersion_preconditioner = slist.get<string>("preconditioner", "identity");
+    } else {
+      Errors::Message msg;
+      msg << "Transport PK: dispersivity solver does not exist.\n";
+      Exceptions::amanzi_throw(msg);  
+    }
 
-    string method_name = dispersivity.get<string>("numerical method", "none");
-    ProcessStringDispersionMethod(method_name, &dispersion_specs.method);
+    string method_name = dlist.get<string>("numerical method", "none");
+    ProcessStringDispersionMethod(method_name, &dispersion_method);
 
-    dispersion_specs.preconditioner = dispersivity.get<string>("preconditioner", "identity");
+    int nblocks = 0; 
+    for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
+      if (dlist.isSublist(dlist.name(i))) nblocks++;
+    }
+
+    dispersion_models.resize(nblocks);
+
+    int iblock = 0;
+    for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
+      if (dlist.isSublist(dlist.name(i))) {
+        dispersion_models[iblock] = Teuchos::rcp(new DispersionModel());
+
+        Teuchos::ParameterList& model_list = dlist.sublist(dlist.name(i));
+
+        string model_name = model_list.get<string>("model", "none");
+        ProcessStringDispersionModel(model_name, &(dispersion_models[iblock]->model));
+
+        dispersion_models[iblock]->alphaL = model_list.get<double>("alphaL", 0.0);
+        dispersion_models[iblock]->alphaT = model_list.get<double>("alphaT", 0.0);
+        dispersion_models[iblock]->D = model_list.get<double>("D", 0.0);
+        dispersion_models[iblock]->tau = model_list.get<double>("tortuosity", 0.0);
+        dispersion_models[iblock]->regions = model_list.get<Teuchos::Array<std::string> >("regions").toVector();
+
+        iblock++;
+      }
+    }
   }
 
   // control parameter
@@ -136,7 +156,6 @@ void Transport_PK::ProcessStringFlowMode(const std::string name, int* method)
     msg << "Trasnport PK: flow mode is wrong (steady-state, transient)." << "\n";
     Exceptions::amanzi_throw(msg);
   }
-
 }
 
 
@@ -175,29 +194,6 @@ void Transport_PK::ProcessStringDispersionMethod(const std::string name, int* me
 
 
 /* ****************************************************************
-* Process string for the discretization method.
-**************************************************************** */
-void Transport_PK::ProcessStringVerbosity(const std::string name, int* verbosity)
-{
-  Errors::Message msg;
-  if (name == "none") {
-    *verbosity = TRANSPORT_VERBOSITY_NONE;
-  } else if (name == "low") {
-    *verbosity = TRANSPORT_VERBOSITY_LOW;
-  } else if (name == "medium") {
-    *verbosity = TRANSPORT_VERBOSITY_MEDIUM;
-  } else if (name == "high") {
-    *verbosity = TRANSPORT_VERBOSITY_HIGH;
-  } else if (name == "extreme") {
-    *verbosity = TRANSPORT_VERBOSITY_EXTREME;
-  } else {
-    msg << "Transport PK: unknown verbosity level.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-/* ****************************************************************
 * Process time integration sublist.
 **************************************************************** */
 void Transport_PK::ProcessStringAdvectionLimiter(const std::string name, int* method)
@@ -221,10 +217,10 @@ void Transport_PK::ProcessStringAdvectionLimiter(const std::string name, int* me
 /* ************************************************************* */
 void Transport_PK::PrintStatistics() const
 {
-  if (!MyPID && verbosity > TRANSPORT_VERBOSITY_NONE) {
+  if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
     cout << "Transport PK: CFL = " << cfl_ << endl;
     cout << "    Total number of components = " << number_components << endl;
-    cout << "    Verbosity level = " << verbosity << endl;
+    cout << "    Verbosity level = " << vo_->getVerbLevel() << endl;
     cout << "    Spatial/temporal discretication orders = " << spatial_disc_order
          << " " << temporal_disc_order << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;

@@ -35,7 +35,7 @@ Authors: Neil Carlson (version 1)
 #include "RelativePermeability.hh"
 #include "TI_Specs.hh"
 
-#include "TimerManager.hh"
+// #include "TimerManager.hh"
 
 
 namespace Amanzi {
@@ -126,8 +126,6 @@ class Richards_PK : public Flow_PK {
   // control method
   void ResetErrorControl(int error) { error_control_ = error; }
   void ResetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list_ = rp_list_new; }
-  void PrintStatistics() const;
-  void PrintStatisticsCPU();
   
   // access methods
   const Epetra_Map& super_map() { return *super_map_; }
@@ -202,7 +200,7 @@ class Richards_PK : public Flow_PK {
   double mass_bc, mass_amanzi;
 
   // CPU statistics
-  TimerManager timer;
+  // TimerManager timer;
 
  private:
   void operator=(const Richards_PK& RPK);

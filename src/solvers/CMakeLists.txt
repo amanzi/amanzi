@@ -34,7 +34,8 @@ include_directories(${NOX_INCLUDE_DIRS})
 #
 file(GLOB solver_inc_files "*.hh")
 set(solvers_source_files NKA.cc NKADirection.cc NKADirFactory.cc 
-                         PreconditionerFactory.cc PreconditionerHypre.cc PreconditionerML.cc)
+                         PreconditionerFactory.cc PreconditionerHypre.cc PreconditionerML.cc
+                         PreconditionerBlockILU.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE solvers_tpl_libs)

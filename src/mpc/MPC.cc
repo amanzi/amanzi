@@ -486,8 +486,6 @@ void MPC::cycle_driver() {
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     if (observations) {
-      std::cout << S->cycle() << " " << S->time() << " " << observations->DumpRequested(S->cycle(), S->time()) << std::endl;
-
       if (observations->DumpRequested(S->cycle(), S->time())) {
 	observations->make_observations(*S);
       }
@@ -503,7 +501,7 @@ void MPC::cycle_driver() {
 
       // log that we are starting a time step
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-        *out << setprecision(5);
+        *out << setprecision(5) << std::endl;
         *out << "Cycle " << iter;
         *out << ": starting time step at time(y) = "<< scientific << S->time() / (365.25*60*60*24);
         *out << std::endl;

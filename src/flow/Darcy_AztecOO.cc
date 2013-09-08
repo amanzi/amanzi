@@ -67,8 +67,9 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   int num_itrs = solver->NumIters();
   double linear_residual = solver->ScaledResidual();
 
-  if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "pressure solver: ||r||=" << linear_residual << " itr=" << num_itrs << endl;
   }
 
   delete solver;
@@ -97,10 +98,12 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, E
 
   solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
 
-  if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
-    std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "pressure solver: ||r||=" << linear_residual << " itr=" << num_itrs << endl;
   }
 
   delete solver;

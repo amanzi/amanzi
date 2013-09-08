@@ -15,6 +15,7 @@ Usage:
 #include "PreconditionerIdentity.hh"
 #include "PreconditionerHypre.hh"
 #include "PreconditionerML.hh"
+#include "PreconditionerBlockILU.hh"
  
 namespace Amanzi {
 namespace AmanziPreconditioners {
@@ -37,6 +38,10 @@ Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
       Teuchos::RCP<PreconditionerML> prec = Teuchos::rcp(new PreconditionerML());
       prec->Init(name, ml_list);
       return prec;
+    } else if (slist.isSublist("Block ILU Parameters")) {
+      Teuchos::ParameterList ilu_list = slist.sublist("Block ILU Parameters");
+      Teuchos::RCP<PreconditionerBlockILU> prec = Teuchos::rcp(new PreconditionerBlockILU());
+      prec->Init(name, ilu_list);
     } else {
       Teuchos::RCP<PreconditionerIdentity> prec = Teuchos::rcp(new PreconditionerIdentity());
       prec->Init(name, prec_list);

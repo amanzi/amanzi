@@ -21,6 +21,8 @@ Usage:
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
+#include "VerboseObject.hh"
+
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
 #include "transport_boundary_function.hh"
@@ -134,7 +136,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   void ProcessStringDispersionModel(const std::string name, int* model);
   void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
-  void ProcessStringVerbosity(const std::string name, int* verbosity);
 
   // obsolete methods
   //void CreateConcentration(Teuchos::ParameterList& bcs_list);
@@ -146,8 +147,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
-  int verbosity, internal_tests;  // output information
+  int internal_tests;  // output information
   double tests_tolerance;
+
+ private:
+  VerboseObject* vo_;
 
  private:
   Teuchos::RCP<Transport_State> TS;
@@ -155,7 +159,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
   
   Teuchos::ParameterList parameter_list;
-  Teuchos::ParameterList preconditioner_list;
+  Teuchos::ParameterList preconditioners_list;
+  Teuchos::ParameterList solvers_list;
 
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
@@ -181,7 +186,10 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> face_importer;
 
   Teuchos::RCP<Matrix_Dispersion> dispersion_matrix; // data for dispersion
-  Dispersion_Specs dispersion_specs;
+  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models;
+  int dispersion_method;
+  std::string dispersion_preconditioner;
+  std::string dispersion_solver;
 
   double cfl_, dT, dT_debug, T_physics;  
   int number_components; 

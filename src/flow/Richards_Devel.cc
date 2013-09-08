@@ -104,20 +104,26 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess.
       dT /= 10;
       solution_new = solution_old;
-      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
         double linear_residual = solver->ScaledResidual();
-        std::printf("Fail:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
-            itrs, L2error, sol_norm, linear_residual, num_itrs, T_physics, dT);
+
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << "Fail:" << itrs << " Pressure(diff=" << L2error << ", sol=" 
+                     << sol_norm << ")  solver(" << linear_residual << ", " << num_itrs 
+                     << "), T=" << T_physics << " dT=" << dT << endl;
       }
       ifail++;
     } else {
       T_physics += dT;
       solution_old = solution_new;
 
-      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
         double linear_residual = solver->ScaledResidual();
-        std::printf("Step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n",
-            itrs, L2error, sol_norm, linear_residual, num_itrs, T_physics, dT);
+
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << "Step:" << itrs << " Pressure(diff=" << L2error << ", sol=" 
+                     << sol_norm << ")  solver(" << linear_residual << ", " << num_itrs 
+                     << "), T=" << T_physics << " dT=" << dT << endl;
       }
 
       ifail = 0;

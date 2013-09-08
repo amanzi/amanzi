@@ -92,7 +92,7 @@ void FlowDomainFunction::ComputeDistribute(double time)
 
   for (SpecAndIDsList::const_iterator
            spec_and_ids = specs_and_ids_[AmanziMesh::CELL]->begin();
-       spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
+           spec_and_ids != specs_and_ids_[AmanziMesh::CELL]->end(); ++spec_and_ids) {
 
     double domain_volume = 0.0;
     Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;

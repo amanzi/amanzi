@@ -24,22 +24,21 @@ Usage:
 namespace Amanzi {
 namespace AmanziTransport {
 
-class Dispersion_Specs {
+class DispersionModel {
  public:
-  Dispersion_Specs() {
+  DispersionModel() {
     model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
     alphaL = 0.0;
     alphaT = 0.0;
     D = 0.0;
-    method = TRANSPORT_DISPERSION_METHOD_TPFA; 
-    preconditioner = "identity";
+    tau = 0.0;
   }
-  ~Dispersion_Specs() {};
+  ~DispersionModel() {};
 
  public:
-  int model, method;
-  double alphaL, alphaT, D;
-  string preconditioner;
+  int model;
+  double alphaL, alphaT, D, tau;
+  std::vector<std::string> regions;
 };
 
 
@@ -50,7 +49,9 @@ class Matrix_Dispersion {
   ~Matrix_Dispersion() {};
 
   // primary members
-  void Init(Dispersion_Specs& specs, const Teuchos::ParameterList& prec_list);
+  void Init(std::vector<Teuchos::RCP<DispersionModel> >& specs, 
+            const std::string& preconditioner, 
+            const Teuchos::ParameterList& prec_list);
   void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   void ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
@@ -78,7 +79,7 @@ class Matrix_Dispersion {
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
-  Dispersion_Specs* specs_;
+  std::vector<Teuchos::RCP<DispersionModel> >* specs_;
 
   std::vector<AmanziGeometry::Point> hap_points_;
   std::vector<double> hap_weights_;

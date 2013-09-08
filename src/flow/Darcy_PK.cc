@@ -94,7 +94,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   // miscalleneous
   ti_specs = NULL;
   mfd3d_method_ = FLOW_MFD3D_OPTIMIZED;
-  verbosity = FLOW_VERBOSITY_NONE;
   src_sink = NULL;
   src_sink_distribution = 0;
 }
@@ -217,8 +216,9 @@ void Darcy_PK::InitializeAuxiliaryData()
 ****************************************************************** */
 void Darcy_PK::InitializeSteadySaturated()
 { 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
-    std::printf("Flow PK: initializing with a saturated steady state...\n");
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "initializing with a saturated steady state..." << endl;
   }
   double T = FS->get_time();
   SolveFullySaturatedProblem(T, *solution);
@@ -267,7 +267,7 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 ****************************************************************** */
 void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 {
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+  if (MyPID == 0 && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     std::printf("***********************************************************\n");
     std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
     std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
@@ -309,9 +309,10 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
   for (int c = 0; c < K.size(); c++) K[c] *= rho_ / mu_;
   matrix_->CreateMFDmassMatrices(mfd3d_method_, K);
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_MEDIUM) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
+
     std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
     std::printf("***********************************************************\n");
   }
@@ -416,10 +417,12 @@ int Darcy_PK::Advance(double dT_MPC)
   solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
   ti_specs->num_itrs++;
 
-  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int num_itrs = solver->NumIters();
     double linear_residual = solver->ScaledResidual();
-    std::printf("Flow PK: pressure solver: ||r||=%8.3e itr=%d\n", linear_residual, num_itrs);
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "pressure solver: ||r||=" << linear_residual << " itr=" << num_itrs << endl;
   }
 
   // calculate time derivative and 2nd-order solution approximation
