@@ -24,10 +24,11 @@
 #   0.91.0       - Added PFLOTRAN and Alquimia (updates from Jeff Johnson's work on state-branch)
 #   0.91.1       - updated CCSE 1.1.7 (and added patch)
 #   0.91.2       - turned on patch for IfPack support of noncontiguous global ids with HYPRE
+#   0.91.3       - Updated Xerces-C++ build/find to use OSX CoreServices framework
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 2)
+set (AMANZI_TPLS_VERSION_PATCH 3)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
