@@ -15,10 +15,11 @@ Usage:
 
 #include "Teuchos_RCP.hpp"
 #include "exceptions.hh"
-#include "DenseMatrix.hh"
+#include "VerboseObject.hh"
 
-#include "Solver_constants.hh"
+#include "DenseMatrix.hh"
 #include "LinearOperator.hh"
+#include "Solver_constants.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -51,6 +52,9 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
 
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
+
+ public:
+  Teuchos::RCP<VerboseObject> vo_;
 
  private:
   int gmres_restart(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
@@ -182,6 +186,8 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
 template<class Matrix, class Vector, class VectorSpace>
 void GMRES_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
+
   double tol = plist.get<double>("error tolerance", 1e-6);
   set_tolerance(tol);
 

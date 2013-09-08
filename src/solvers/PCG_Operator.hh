@@ -16,6 +16,8 @@ Usage:
 
 #include "exceptions.hh"
 #include "errors.hh"
+#include "VerboseObject.hh"
+
 #include "Solver_constants.hh"
 #include "LinearOperator.hh"
  
@@ -30,6 +32,7 @@ class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
     tol_ = 1e-6; 
     max_itrs_ = 100;
     criteria_ = SOLVER_CONVERGENCE_RHS;
+    initialized_ = false;
   }
   ~PCG_Operator() {};
 
@@ -49,6 +52,9 @@ class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
 
+ public:
+  Teuchos::RCP<VerboseObject> vo_;
+
  private:
   int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
@@ -60,6 +66,7 @@ class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
   double tol_;
   mutable int num_itrs_;
   mutable double residual_;
+  mutable bool initialized_;
 };
 
 
@@ -126,6 +133,12 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
     r.Norm2(&rnorm);
     residual_ = rnorm;
  
+    if (initialized_) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << i << " ||r||=" << residual_ << endl;
+      }
+    }
     if (criteria & SOLVER_CONVERGENCE_RHS) 
       if (rnorm < tol * fnorm) return i+1;
     if (criteria & SOLVER_CONVERGENCE_RESIDUAL) 
@@ -150,6 +163,8 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
 template<class Matrix, class Vector, class VectorSpace>
 void PCG_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
+
   double tol = plist.get<double>("error tolerance", 1e-6);
   set_tolerance(tol);
 
@@ -173,6 +188,7 @@ void PCG_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& pli
   }
 
   set_criteria(criteria);
+  initialized_ = true;
 }
 
 }  // namespace AmanziSolvers
