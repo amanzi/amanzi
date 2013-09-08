@@ -411,7 +411,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       state.currentpclag = 0;
       throw itr;
     }
-
+    exit(0);
     // update the preconditioner if necessary
     int errc(0);
     if (itr%(state.currentpclag+1) == 0) {

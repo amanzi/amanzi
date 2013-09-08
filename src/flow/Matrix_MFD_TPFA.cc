@@ -930,6 +930,9 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
+
+      //      cout<<"Trans "<<Trans_faces[f]<<endl;
+
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
 	darcy_mass_flux[f] = dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution_cell_wghost[c] - value) + Grav_term[f]);
