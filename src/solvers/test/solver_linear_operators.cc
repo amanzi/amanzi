@@ -6,7 +6,9 @@
 #include "Epetra_Vector.h"
 
 #include "exceptions.hh"
+#include "LinearOperatorFactory.hh"
 #include "PCG_Operator.hh"
+#include "GMRES_Operator.hh"
 
 using namespace Amanzi;
 
@@ -66,6 +68,34 @@ SUITE(SOLVERS) {
     // solve
     Epetra_Vector v(*map);
     gmres.ApplyInverse(u, v);
+    CHECK_CLOSE(-0.33333333e+0, v[0], 1e-6);
+    CHECK_CLOSE( 0.33333333e+0, v[1], 1e-6);
+  };
+
+  TEST(SOLVER_FACTOR) {
+    std::cout << "SOLVER FACTORY..." << std::endl;
+
+    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+    Epetra_Map* map = new Epetra_Map(2, 0, *comm);
+
+    Teuchos::ParameterList plist;
+    Teuchos::ParameterList& slist = plist.sublist("pcg");
+    slist.set<string>("iterative method", "pcg");
+
+    // create the pcg operator
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
+    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
+        solver = factory.Create("pcg", plist, m);
+
+    // initial guess
+    Epetra_Vector u(*map);
+    u[0] = -1.0;
+    u[1] =  1.0;
+
+    // solve
+    Epetra_Vector v(*map);
+    solver->ApplyInverse(u, v);
     CHECK_CLOSE(-0.33333333e+0, v[0], 1e-6);
     CHECK_CLOSE( 0.33333333e+0, v[1], 1e-6);
   };

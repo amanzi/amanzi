@@ -16,7 +16,6 @@ Usage: Create("Hypre AMG", preconditioner_list);
 #include "Epetra_Vector.h"
 
 #include "Preconditioner.hh"
-#include "PreconditionerFactory.hh"
  
 namespace Amanzi {
 namespace AmanziPreconditioners {

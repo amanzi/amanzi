@@ -62,6 +62,6 @@ if (BUILD_TESTS)
     add_amanzi_test(solver_linear_operators solver_linear_operators
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_operators.cc
-                    LINK_LIBS error_handling ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    LINK_LIBS error_handling whetstone ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 endif()

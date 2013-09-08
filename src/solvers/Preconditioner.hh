@@ -8,16 +8,14 @@ Conjugate gradient method.
 Usage: 
 */
 
-#ifndef __PRECONDITIONER_HH__
-#define __PRECONDITIONER_HH__
+#ifndef AMANZI_PRECONDITIONER_HH_
+#define AMANZI_PRECONDITIONER_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_FECrsMatrix.h"
 
-#include "exceptions.hh"
- 
 namespace Amanzi {
 namespace AmanziPreconditioners {
 

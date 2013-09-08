@@ -1040,18 +1040,20 @@ Here is and example:
 
      <ParameterList name="Solvers">
        <ParameterList name="GMRES with HypreAMG">
-         <Parameter name="iterative method" type="string" value="GMRES"/>
+         <Parameter name="iterative method" type="string" value="gmres"/>
          <Parameter name="error tolerance" type="double" value="1e-12"/>
          <Parameter name="maximum number of iterations" type="int" value="400"/>
          <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
          <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+         <Parameter name="size of Krylov space" type="int" value="10"/>
        </ParameterList>
      </ParameterList>
 
 The name `"GMRES with Hypre AMG`" is selected by the user.
 It can be used by a process kernel lists to define a solver.
 
-* `"interative method`" [string] is not supported yet.
+* `"interative method`" [string] defines a type of Krylov-based method. The parameters
+  include `"pcg'" and `"gmres`".
 
 * `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
 
@@ -1062,6 +1064,8 @@ It can be used by a process kernel lists to define a solver.
 
 * `"preconditioner`" [string] is name in the list of preconditioners. If missing, the identity
   preconditioner will be employed. Support of the identity preconditioner is the work in progress.
+
+* `"size of Krylov space`" [int] is used in GMRES iterative method. The default value is 10.
 
 
 Nonlinear Solvers

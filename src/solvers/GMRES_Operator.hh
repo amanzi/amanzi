@@ -18,14 +18,16 @@ Usage:
 #include "DenseMatrix.hh"
 
 #include "Solver_constants.hh"
+#include "LinearOperator.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class GMRES_Operator : public Matrix {
+class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  GMRES_Operator(Teuchos::RCP<const Matrix> m) : m_(m) { 
+  GMRES_Operator(Teuchos::RCP<const Matrix> m) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m) { 
     tol_ = 1e-6; 
     max_itrs_ = 100;
     krylov_dim_ = 10;
@@ -33,13 +35,12 @@ class GMRES_Operator : public Matrix {
   }
   ~GMRES_Operator() {};
 
-  void Apply(const Vector& v, Vector& mv) const { m_->Apply(v, mv); }
+  void Init(Teuchos::ParameterList& plist);  
+
   void ApplyInverse(const Vector& v, Vector& hv) const { 
-    num_itrs_ = gmres(v, hv, tol_, max_itrs_, criteria_); 
+    num_itrs_ = gmres_restart(v, hv, tol_, max_itrs_, criteria_); 
   }
 
-  Teuchos::RCP<const VectorSpace> domain() const { return m_->domain(); }
-  Teuchos::RCP<const VectorSpace> range() const { return m_->range(); }
   Teuchos::RCP<GMRES_Operator> Clone() const {};
 
   // access members
@@ -52,19 +53,47 @@ class GMRES_Operator : public Matrix {
   int num_itrs() { return num_itrs_; }
 
  private:
+  int gmres_restart(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
   int gmres(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
-  void UpdateSolution(Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector** v) const;
+  void ComputeSolution(Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector** v) const;
   void InitGivensRotation( double& dx, double& dy, double& cs, double& sn) const;
   void ApplyGivensRotation(double& dx, double& dy, double& cs, double& sn) const;
 
  private:
-  Teuchos::RCP<const Matrix> m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   int max_itrs_, criteria_, krylov_dim_;
   double tol_;
   mutable int num_itrs_;
   mutable double residual_;
 };
+
+
+/* ******************************************************************
+* GMRES with restart input/output data:
+*  f [input]         the right-hand side
+*  x [input/output]  initial guess / final solution
+*  tol [input]       convergence tolerance
+*  max_itrs [input]  maximum number of iterations
+*  criteria [input]  sum of termination critaria
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres_restart(
+    const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
+{
+  int num_itrs = 0;
+  int max_itrs_left = max_itrs;
+
+  int i = krylov_dim_;
+  while (i == krylov_dim_ && max_itrs_left > 0) {
+    i = gmres(f, x, tol, max_itrs_left, criteria); 
+    num_itrs += i;
+    max_itrs_left -= i;
+  }
+
+  return num_itrs;
+}
 
 
 /* ******************************************************************
@@ -116,6 +145,7 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
     }
     w.Norm2(&tmp);
     T(i + 1, i) = tmp;
+    s[i + 1] = 0.0;
 
     v[i + 1] = new Vector(w);
     v[i + 1]->Update(0.0, r, 1.0 / tmp);
@@ -128,21 +158,57 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
     ApplyGivensRotation(T(i, i), T(i + 1, i), cs[i], sn[i]);
     ApplyGivensRotation(s[i],    s[i + 1],    cs[i], sn[i]);
 
-    // cout << "itr = " << i+1 << "  residual = " << fabs(s(i+1)) << endl;
-    
     if (criteria_ & SOLVER_CONVERGENCE_RHS || 
         criteria_ & SOLVER_CONVERGENCE_RESIDUAL) {
       if ((residual_ = fabs(s[i + 1]) / fnorm) < tol_) { 
-        UpdateSolution(x, i, T, s, v);
+        ComputeSolution(x, i, T, s, v);  // vector s is overwritten
         return i;
       }
     }
   }
 
-  UpdateSolution(x, krylov_dim_ - 1, T, s, v);
+  ComputeSolution(x, krylov_dim_ - 1, T, s, v);  // vector s is overwritten
   return krylov_dim_;
 }
 
+
+
+/* ******************************************************************
+* Initialization from a parameter list. Available parameters:
+* "error tolerance" [double] default = 1e-6
+* "maximum number of iterations" [int] default = 100
+* "convergence criteria" Array(string) default = "{relative rhs}"
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+void GMRES_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+{
+  double tol = plist.get<double>("error tolerance", 1e-6);
+  set_tolerance(tol);
+
+  double max_itrs = plist.get<int>("maximum number of iterations", 100);
+  set_max_itrs(max_itrs);
+
+  double krylov_dim = plist.get<int>("size of Krylov space", 10);
+  set_krylov_dim(krylov_dim);
+
+  int criteria(0);
+  if (plist.isParameter("convergence criteria")) {
+    std::vector<std::string> names;
+    names = plist.get<Teuchos::Array<std::string> > ("convergence criteria").toVector();
+
+    for (int i = 0; i < names.size(); i++) {
+      if (names[i] == "relative rhs") {
+        criteria += SOLVER_CONVERGENCE_RHS;
+      } else if (names[i] == "relative residual") {
+        criteria += SOLVER_CONVERGENCE_RESIDUAL;
+      }
+    }
+  } else {
+    criteria = SOLVER_CONVERGENCE_RHS;
+  }
+
+  set_criteria(criteria);
+}
 
 
 /* ******************************************************************
@@ -181,24 +247,22 @@ void GMRES_Operator<Matrix, Vector, VectorSpace>::ApplyGivensRotation(
 
 
 /* ******************************************************************
-* Backward solve
+* Computation of the solution destroys vector s.
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void GMRES_Operator<Matrix, Vector, VectorSpace>::UpdateSolution(
+void GMRES_Operator<Matrix, Vector, VectorSpace>::ComputeSolution(
     Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector** v) const
 {
-  double y[k + 1];
-
   for (int i = k; i >= 0; i--) {
-    y[i] = s[i] / T(i, i);
+    s[i] /= T(i, i);
 
     for (int j = i - 1; j >= 0; j--) {
-      y[j] -= T(j, i) * y[i];
+      s[j] -= T(j, i) * s[i];
     }
   }
 
   for (int j = 0; j <= k; j++) {
-    x.Update(y[j], *(v[j]), 1.0);
+    x.Update(s[j], *(v[j]), 1.0);
   }
 }
 

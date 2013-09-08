@@ -8,8 +8,8 @@ Conjugate gradient method.
 Usage: 
 */
 
-#ifndef __PCG_OPERATOR_HH__
-#define __PCG_OPERATOR_HH__
+#ifndef AMANZI_PCG_OPERATOR_HH_
+#define AMANZI_PCG_OPERATOR_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -17,14 +17,16 @@ Usage:
 #include "exceptions.hh"
 #include "errors.hh"
 #include "Solver_constants.hh"
+#include "LinearOperator.hh"
  
 namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class PCG_Operator : public Matrix {
+class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  PCG_Operator(Teuchos::RCP<const Matrix> m) : m_(m) { 
+  PCG_Operator(Teuchos::RCP<const Matrix> m) : 
+      LinearOperator<Matrix, Vector, VectorSpace>(m) { 
     tol_ = 1e-6; 
     max_itrs_ = 100;
     criteria_ = SOLVER_CONVERGENCE_RHS;
@@ -33,13 +35,10 @@ class PCG_Operator : public Matrix {
 
   void Init(Teuchos::ParameterList& plist);  
 
-  void Apply(const Vector& v, Vector& mv) const { m_->Apply(v, mv); }
   void ApplyInverse(const Vector& v, Vector& hv) const { 
     num_itrs_ = pcg(v, hv, tol_, max_itrs_, criteria_); 
   }
 
-  Teuchos::RCP<const VectorSpace> domain() const { return m_->domain(); }
-  Teuchos::RCP<const VectorSpace> range() const { return m_->range(); }
   Teuchos::RCP<PCG_Operator> Clone() const {};
 
   // access members
@@ -54,7 +53,8 @@ class PCG_Operator : public Matrix {
   int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:
-  Teuchos::RCP<const Matrix> m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   int max_itrs_, criteria_;
   double tol_;
