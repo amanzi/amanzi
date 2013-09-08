@@ -261,7 +261,7 @@ c     ::: case 3a: north-east corner
       xfluxe = - dudxe*muX(i+1,j) - dudye*mu1X(i+1,j)
       yfluxs = - dudys*muY(i  ,j) - dudxs*mu1Y(i,j  )
       yfluxn = - dudyn*muY(i,j+1) - dudxn*mu1Y(i,j+1)
-      
+
       out(i,j) = alpha*a(i,j)*U(i,j) + beta*(hx*(xfluxe-xfluxw)+hy*(yfluxn-yfluxs))
 
 c     ::: case 3b: south-east corner, plus i, minus j, plus i, plus j

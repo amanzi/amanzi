@@ -1383,7 +1383,7 @@ protected:
   static int         variable_scal_diff;
   static int         have_capillary;
   //  
-  // Chemistry parameters 
+  // Chemistry/solute/tracer parameters 
   //
   static bool do_tracer_chemistry; // Does the user want to react tracers
   static bool do_tracer_advection; // Does the user want to advect tracers
@@ -1392,6 +1392,7 @@ protected:
   static bool advect_tracers; // Should the tracers be transported now
   static bool react_tracers; // Should the tracers be reacted now
   static bool diffuse_tracers; // Should the tracers be diffused now
+  static bool tensor_tracer_diffusion; // Use tensor operator (includes dispersion) rather than diffusion-only ABec
   static int  do_full_strang;
   static int  n_chem_interval;
   static int  it_chem;

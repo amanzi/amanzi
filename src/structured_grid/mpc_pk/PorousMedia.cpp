@@ -50,6 +50,27 @@ extern Amanzi::AmanziChemistry::ChemistryOutput* Amanzi::AmanziChemistry::chem_o
 #define SHOWVAL(val) { std::cout << #val << " = " << val << std::endl;}
 #define SHOWVALA(val) { SHOWVAL(val); BoxLib::Abort();}
 
+static void
+verify_is_clean(const std::string& note, const MultiFab& mf,int sComp=0, int nComp=-1, int nGrow=0, bool dump=false)
+{
+#ifndef NDEBUG
+  int num_comp = nComp<0 ? mf.nComp() : nComp;
+  if (mf.contains_nan(sComp,num_comp,nGrow)) {
+    if (dump) {
+      for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
+        Box box = Box(mfi.validbox()).grow(nGrow);
+        if (mf[mfi].contains_nan(box,sComp,num_comp)) {
+          std::cout << mf[mfi] << std::endl;
+        }
+      }
+    }
+    std::cout << "Data contains nans: " << note << std::endl;
+    std::cout << "sComp, nComp, nGrow: " << sComp << ", " << num_comp << ", " << nGrow << std::endl;
+    BoxLib::Abort();
+  }
+#endif
+}
+
 #define DEF_LIMITS(fab,fabdat,fablo,fabhi)	\
   const int* fablo = (fab).loVect();		\
   const int* fabhi = (fab).hiVect();		\
@@ -5091,7 +5112,9 @@ LinSolver<MFVector,DiffuserOp<MFVector,TensorOp> >::Solve(MFVector& X, const MFV
     MCMultiGrid mg(diffuse_op.LinOp());
     //mg.setVerbose(2);
     Real abs_tol_Rhs = get_scaled_abs_tol(Rhs,rel_tol);
+    verify_is_clean("X into solve",X,0,1,1,true);
     mg.solve(X,Rhs,rel_tol,std::min(abs_tol,abs_tol_Rhs));
+    verify_is_clean("X out of solve",X,0,1,X.nGrow());
   }
 }
 
@@ -5108,6 +5131,8 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_diffusion()");
   BL_ASSERT(diffuse_tracers);
+
+  // FIXME: incorporate "tensor_tracer_diffusion" to select more efficient solver if appropriate
 
   if (verbose > 2 && ParallelDescriptor::IOProcessor())
     std::cout << "... diffuse scalars\n";
@@ -5153,17 +5178,26 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
   
   MultiFab *bn[BL_SPACEDIM], *b1n[BL_SPACEDIM];
   MultiFab *bnp1[BL_SPACEDIM], *b1np1[BL_SPACEDIM];
+  PArray<MultiFab> flux(BL_SPACEDIM,PArrayManage);
   for (int d = 0; d < BL_SPACEDIM; d++) {
     const BoxArray eba = BoxArray(grids).surroundingNodes(d);
+    flux.set(d, new MultiFab(eba,1,0));
     bn[d] = new MultiFab(eba,1,0);
-    b1n[d] = new MultiFab(eba,1,0);
     bnp1[d] = new MultiFab(eba,1,0);
-    b1np1[d] = new MultiFab(eba,1,0);
+    if (tensor_tracer_diffusion) {
+      b1n[d] = new MultiFab(eba,1,0);
+      b1np1[d] = new MultiFab(eba,1,0);
+    }
   }
   calcDiffusivity(prev_time,first_tracer,1);
   calcDiffusivity(cur_time,first_tracer,1);
-  getTensorDiffusivity(bn,b1n,prev_time);
-  getTensorDiffusivity(bnp1,b1np1,cur_time);
+  if (tensor_tracer_diffusion) {
+    getTensorDiffusivity(bn,b1n,prev_time);
+    getTensorDiffusivity(bnp1,b1np1,cur_time);
+  } else {
+    getDiffusivity(bn,   prev_time, first_tracer, 0, 1);
+    getDiffusivity(bnp1, cur_time,  first_tracer, 0, 1);
+  }
 
   FillStateBndry(prev_time,State_Type,first_tracer,ntracers);
   FillStateBndry(cur_time,State_Type,first_tracer,ntracers);
@@ -5171,6 +5205,8 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
   MultiFab Sc_old;
   MultiFab Sc_new;
   BoxArray cgrids;
+  MultiFab& S_old = get_old_data(State_Type);
+  MultiFab& S_new = get_new_data(State_Type);
   if (level > 0) {
     cgrids = BoxArray(grids).coarsen(crse_ratio);
     PorousMedia& pmc = getLevel(level-1);
@@ -5204,79 +5240,137 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
   Real a_new = 1;
   Real b_old = -(1-be_cn_theta_trac)*dt;
   Real b_new = be_cn_theta_trac*dt;
-  
-  TensorDiffusionBndry bd_old(grids,1,geom);
-  TensorDiffusionBndry bd_new(grids,1,geom);
 
-  MultiFab& S_old = get_old_data(State_Type);
-  MultiFab& S_new = get_new_data(State_Type);
+  Diffuser<MFVector,ABecHelper>* scalar_diffuser = 0;
+  Diffuser<MFVector,TensorOp>* tensor_diffuser = 0;
+  ABecHelper *scalar_linop_old, *scalar_linop_new; scalar_linop_old = scalar_linop_new = 0;
+  TensorOp *tensor_linop_old, *tensor_linop_new; tensor_linop_old = tensor_linop_new = 0;
 
   MFVector old_state(S_old,first_tracer,1,1);
   MFVector new_state(S_new,first_tracer,1,1);
   MFVector Rhs(F,0,1,0);
 
   for (int n=0; n<ntracers; ++n) {
+
+    verify_is_clean("S_new before tracer diffusion",S_new,first_tracer+n,1,S_new.nGrow());
+    verify_is_clean("S_old before tracer diffusion",S_old,first_tracer+n,1,S_old.nGrow());
     tracer_bc[0] = get_desc_lst()[State_Type].getBC(first_tracer+n);
+
+    TensorDiffusionBndry *tbd_old, *tbd_new; tbd_old = tbd_new = 0;
+    ViscBndry *vbd_old, *vbd_new; vbd_old = vbd_new = 0;
+    if (tensor_tracer_diffusion) {  
+      tbd_old = new TensorDiffusionBndry(grids,1,geom);
+      tbd_new = new TensorDiffusionBndry(grids,1,geom);
+    }
+    else {
+      vbd_old = new ViscBndry(grids,1,geom);
+      vbd_new = new ViscBndry(grids,1,geom);
+    }
+
     if (level == 0) {
-      bd_old.setBndryValues(S_old,first_tracer+n,0,1,tracer_bc);
-      bd_new.setBndryValues(S_new,first_tracer+n,0,1,tracer_bc);
+      if (tensor_tracer_diffusion) {  
+        tbd_old->setBndryValues(S_old,first_tracer+n,0,1,tracer_bc);
+        tbd_new->setBndryValues(S_new,first_tracer+n,0,1,tracer_bc);
+      } else {
+        vbd_old->setBndryValues(S_old,first_tracer+n,0,1,tracer_bc[0]);
+        vbd_new->setBndryValues(S_new,first_tracer+n,0,1,tracer_bc[0]);
+      }
     } else {
       BndryRegister crse_br(cgrids,0,1,2,1);
       crse_br.copyFrom(Sc_old,Sc_old.nGrow(),n,0,1);
-      bd_old.setBndryValues(crse_br,0,S_old,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
       crse_br.copyFrom(Sc_new,Sc_new.nGrow(),n,0,1);
-      bd_new.setBndryValues(crse_br,0,S_new,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
+      if (tensor_tracer_diffusion) {  
+        tbd_old->setBndryValues(crse_br,0,S_old,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
+        tbd_new->setBndryValues(crse_br,0,S_new,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
+      } else {
+        vbd_old->setBndryValues(crse_br,0,S_old,first_tracer+n,0,1,crse_ratio[0],tracer_bc[0]);
+        vbd_new->setBndryValues(crse_br,0,S_new,first_tracer+n,0,1,crse_ratio[0],tracer_bc[0]);
+      }
     }
 
-    TensorOp* op_old = getOp(a_old,b_old,bd_old,0,1,&(sphi_old.multiFab()),0,1,Whalf,0,
-                             Wflag,bn,0,1,b1n,0,1,volume,area,alpha,0);
-    TensorOp* op_new = getOp(a_new,b_new,bd_new,0,1,&(sphi_new.multiFab()),0,1,Whalf,0,
-                             Wflag,bnp1,0,1,b1np1,0,1,volume,area,alpha,0);
-    
-    op_old->maxOrder(op_maxOrder);
-    op_new->maxOrder(op_maxOrder);
+    if (tensor_tracer_diffusion) {  
+      tensor_linop_old = getOp(a_old,b_old,*tbd_old,0,1,&(sphi_old.multiFab()),0,1,Whalf,0,
+                               Wflag,bn,0,1,b1n,0,1,volume,area,alpha,0);
+      tensor_linop_new = getOp(a_new,b_new,*tbd_new,0,1,&(sphi_new.multiFab()),0,1,Whalf,0,
+                               Wflag,bnp1,0,1,b1np1,0,1,volume,area,alpha,0);
+      tensor_linop_old->maxOrder(op_maxOrder);
+      tensor_linop_new->maxOrder(op_maxOrder);
+      tensor_diffuser = new Diffuser<MFVector,TensorOp>(tensor_linop_old,tensor_linop_new,Volume,&sphi_old,&sphi_new);
+    } else {
+      scalar_linop_old = getOp(a_old,b_old,*vbd_old,0,&(sphi_old.multiFab()),0,1,Whalf,0,
+                               Wflag,bn,0,1,volume,area,alpha,0,1);
+      scalar_linop_new = getOp(a_new,b_new,*vbd_new,0,&(sphi_new.multiFab()),0,1,Whalf,0,
+                               Wflag,bnp1,0,1,volume,area,alpha,0,1);
+      scalar_linop_old->maxOrder(op_maxOrder);
+      scalar_linop_new->maxOrder(op_maxOrder);
+      scalar_diffuser = new Diffuser<MFVector,ABecHelper>(scalar_linop_old,scalar_linop_new,Volume,&sphi_old,&sphi_new);
+    }
 
     MultiFab::Copy(old_state,S_old,first_tracer+n,0,1,0);
     MultiFab::Copy(new_state,S_new,first_tracer+n,0,1,0);
     MultiFab::Copy(Rhs,F,n,0,1,0);
 
-    Diffuser<MFVector,TensorOp> diffuser(op_old,op_new,Volume,&sphi_old,&sphi_new);
-    diffuser.Diffuse(&old_state,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
+    if (tensor_tracer_diffusion) {
+      tensor_diffuser->Diffuse(&old_state,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
+    }
+    else {
+      scalar_diffuser->Diffuse(&old_state,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
+    }
     MultiFab::Copy(S_new,new_state,0,first_tracer+n,1,0);
+    verify_is_clean("S_new after tracer diffusion",S_new,first_tracer+n,1,S_new.nGrow());
 
     if (reflux_on_this_call) {
-      op_old->compFlux(D_DECL(*bn[0],*bn[1],*bn[2]),S_old,MCInhomogeneous_BC,first_tracer+n,0,1,0);
+      if (tensor_tracer_diffusion) {  
+        tensor_linop_old->compFlux(D_DECL(flux[0],flux[1],flux[2]),S_old,MCInhomogeneous_BC,first_tracer+n,0,1,0);
+      }
+      else {
+        scalar_linop_old->compFlux(D_DECL(flux[0],flux[1],flux[2]),S_old,LinOp::Inhomogeneous_BC,first_tracer+n,0,1,0);
+      }
       for (int d = 0; d < BL_SPACEDIM; d++) {
-        bn[d]->mult((1-be_cn_theta_trac)/geom.CellSize()[d]);
+        flux[d].mult((1-be_cn_theta_trac)/geom.CellSize()[d]);
         if (level > 0) {
           for (MFIter mfi(*bn[d]); mfi.isValid(); ++mfi) {
-            getViscFluxReg().FineAdd((*bn[d])[mfi],d,mfi.index(),0,first_tracer+n,1,dt);
+            getViscFluxReg().FineAdd(flux[d][mfi],d,mfi.index(),0,first_tracer+n,1,dt);
           }
         }
         if (level < parent->finestLevel()) {
-          getLevel(level+1).getViscFluxReg().CrseInit(*bn[d],d,0,first_tracer+n,1,-dt,FluxRegister::COPY);
+          getLevel(level+1).getViscFluxReg().CrseInit(flux[d],d,0,first_tracer+n,1,-dt,FluxRegister::COPY);
         }
       }
 
-      op_new->compFlux(D_DECL(*bnp1[0],*bnp1[1],*bnp1[2]),S_new,MCInhomogeneous_BC,first_tracer+n,0,1,0);
+      if (tensor_tracer_diffusion) {
+        tensor_linop_new->compFlux(D_DECL(flux[0],flux[1],flux[2]),S_new,MCInhomogeneous_BC,first_tracer+n,0,1,0);
+      }
+      else {
+        scalar_linop_new->compFlux(D_DECL(flux[0],flux[1],flux[2]),S_new,LinOp::Inhomogeneous_BC,first_tracer+n,0,1,0);
+      }
       for (int d = 0; d < BL_SPACEDIM; d++) {
-        bnp1[d]->mult(be_cn_theta_trac/geom.CellSize()[d]);
+        flux[d].mult(be_cn_theta_trac/geom.CellSize()[d]);
         if (level > 0) {
           for (MFIter mfi(*bnp1[d]); mfi.isValid(); ++mfi) {
-            getViscFluxReg().FineAdd((*bnp1[d])[mfi],d,mfi.index(),0,first_tracer+n,1,dt);
+            getViscFluxReg().FineAdd(flux[d][mfi],d,mfi.index(),0,first_tracer+n,1,dt);
           }
         }
         if (level < parent->finestLevel()) {
-          getLevel(level+1).getViscFluxReg().CrseInit(*bnp1[d],d,0,first_tracer+n,1,-dt,FluxRegister::ADD);
+          getLevel(level+1).getViscFluxReg().CrseInit(flux[d],d,0,first_tracer+n,1,-dt,FluxRegister::ADD);
         }
       }
     }
-    delete op_old, op_new;
+    
+    delete tensor_diffuser, scalar_diffuser;
+    delete scalar_linop_old, scalar_linop_new, tensor_linop_old, tensor_linop_new;
+  }
+  for (int d = 0; d < BL_SPACEDIM; d++) {
+    delete bn[d], bnp1[d], flux[d];
+    if (tensor_tracer_diffusion) {
+      delete b1n[d], b1np1[d];
+    }
   }
 
-  for (int d = 0; d < BL_SPACEDIM; d++) {
-    delete bn[d], b1n[d], bnp1[d], b1np1[d];
-  }
+#ifndef NDEBUG
+  FillStateBndry(prev_time,State_Type,first_tracer,ntracers);
+  FillStateBndry(cur_time,State_Type,first_tracer,ntracers);
+#endif
 
   if (show_selected_runtimes > 0)
   {
@@ -5364,6 +5458,17 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     int Cidx, Sidx, SRCidx, Didx, DUidx;
     Cidx = Sidx = SRCidx = Didx = DUidx = 0;
     int use_conserv_diff = (advectionType[first_tracer] == Conservative);
+
+#ifndef NDEBUG
+    for (FillPatchIterator C_new_fpi(*this,get_old_data(State_Type),nGrowHYP,
+                                     prev_time,State_Type,first_tracer,ntracers);
+         C_new_fpi.isValid();  ++C_new_fpi) {
+      if (C_new_fpi().contains_nan()) {
+        std::cout << C_new_fpi() << std::endl;
+        BoxLib::Abort("C_new has nans");
+      }
+    }
+#endif
    
     FArrayBox SRCext, divu;
     for (FillPatchIterator C_old_fpi(*this,get_old_data(State_Type),nGrowHYP,
@@ -5488,10 +5593,6 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
 				PArray<MultiFab>& Dflux)
 {
   int first_tracer = ncomps;
-  int Wflag = 2;
-  MultiFab* Whalf = 0;
-  MultiFab* alpha = 0;
-  int op_maxOrder = 3;
   
   TensorDiffusionBndry bd(grids,1,geom);
   MultiFab *beta[BL_SPACEDIM], *beta1[BL_SPACEDIM];
@@ -5501,20 +5602,17 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
     beta1[d] = new MultiFab(eba,1,0);
   }
   
-  Real a = 0;
-  Real b = -1;
-  getTensorDiffusivity(beta,beta1,time);
-
-  // Non-tensor version, for posterity...
-  //getDiffusivity(beta, time, first_tracer, 0, 1);
-  //ViscBndry bd(grids,ntracers,geom);
-  //SetTracerDiffusionBndryData(bd,time);
-  //ABecHelper* op = getOp(a,b,bd,0,0,0,0,Whalf,0,Wflag,beta,0,1,volume,area,alpha,0,ntracers);
-  //op->maxOrder(op_maxOrder);
-
+  calcDiffusivity(time,first_tracer,1);
+  if (tensor_tracer_diffusion) {
+    getTensorDiffusivity(beta,beta1,time);
+  } else {
+    getDiffusivity(beta,time,first_tracer,0,1);
+  }
   FillStateBndry(time,State_Type,first_tracer,ntracers);
+
   MultiFab Sc;
   BoxArray cgrids;
+  MultiFab& S = get_data(State_Type,time);
   if (level > 0) {
     cgrids = BoxArray(grids).coarsen(crse_ratio);
     PorousMedia& pmc = getLevel(level-1);
@@ -5526,35 +5624,70 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
     }
   }
 
-  MultiFab& S = get_data(State_Type,time);
-
-  MFVector phi(*rock_phi);
-  MFVector sphi(S,0,1,1); sphi.MULTAY(phi,1);
-  MFVector Volume(volume);
-
   int nBndComp = MCLinOp::bcComponentsNeeded(1);
   Array<BCRec> tracer_bc(nBndComp,defaultBC());
   
+  int Wflag = 2;
+  MultiFab* Whalf = 0;
+  MultiFab* alpha = 0;
+  int op_maxOrder = 3;
+  
+  Real a = 0;
+  Real b = -1;
+
+  Diffuser<MFVector,ABecHelper>* scalar_diffuser = 0;
+  Diffuser<MFVector,TensorOp>* tensor_diffuser = 0;
+  ABecHelper *scalar_linop; scalar_linop = 0;
+  TensorOp *tensor_linop; tensor_linop = 0;
+
   MultiFab volInv(grids,1,0);
   MultiFab::Copy(volInv,volume,0,0,1,0);
   volInv.invert(1,0);
 
   for (int n=0; n<ntracers; ++n) {
     tracer_bc[0] = get_desc_lst()[State_Type].getBC(first_tracer+n);
+
+    TensorDiffusionBndry *tbd = 0;
+    ViscBndry *vbd = 0;
+    if (tensor_tracer_diffusion) {  
+      tbd = new TensorDiffusionBndry(grids,1,geom);
+    } else {
+      vbd = new ViscBndry(grids,1,geom);
+    }
+
     if (level == 0) {
-      bd.setBndryValues(S,first_tracer+n,0,1,tracer_bc);
+      if (tensor_tracer_diffusion) {  
+        tbd->setBndryValues(S,first_tracer+n,0,1,tracer_bc);
+      } else {
+        vbd->setBndryValues(S,first_tracer+n,0,1,tracer_bc[0]);
+      }
     } else {
       BndryRegister crse_br(cgrids,0,1,2,1);
       crse_br.copyFrom(Sc,Sc.nGrow(),n,0,1);
-      bd.setBndryValues(crse_br,0,S,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
+      if (tensor_tracer_diffusion) {  
+        tbd->setBndryValues(crse_br,0,S,first_tracer+n,0,1,crse_ratio[0],tracer_bc);
+      } else {
+        vbd->setBndryValues(crse_br,0,S,first_tracer+n,0,1,crse_ratio[0],tracer_bc[0]);
+      }
     }
 
-    TensorOp* op = getOp(a,b,bd,0,1,&(sphi.multiFab()),0,1,Whalf,0,
-                         Wflag,beta,0,1,beta1,0,1,volume,area,alpha,0);
-    op->maxOrder(op_maxOrder);
-
-    op->apply(D,S,0,MCInhomogeneous_BC,true,first_tracer+n,n,1,0);
+    if (tensor_tracer_diffusion) {  
+      tensor_linop = getOp(a,b,*tbd,0,1,0,0,0,Whalf,0,Wflag,beta,0,1,beta1,0,1,volume,area,alpha,0);
+      tensor_linop->maxOrder(op_maxOrder);
+      tensor_linop->apply(D,S,0,MCInhomogeneous_BC,true,first_tracer+n,n,1,0);
+    } else {
+      scalar_linop = getOp(a,b,*vbd,0,0,0,0,Whalf,0,Wflag,beta,0,1,volume,area,alpha,0,1);
+      scalar_linop->maxOrder(op_maxOrder);
+      scalar_linop->apply(D,S,0,LinOp::Inhomogeneous_BC,true,first_tracer+n,n,1,0);
+    }
     MultiFab::Multiply(D,volInv,0,n,1,0);
+    delete scalar_linop, tensor_linop;
+  }
+  for (int d = 0; d < BL_SPACEDIM; d++) {
+    delete beta[d];
+    if (tensor_tracer_diffusion) {
+      delete beta1[d];
+    }
   }
   //
   // Ensure consistent grow cells
@@ -5566,9 +5699,17 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
       FORT_VISCEXTRAP(vt.dataPtr(),ARLIM(vt.loVect()),ARLIM(vt.hiVect()),
 		      box.loVect(),box.hiVect(),&ntracers);
     }
-    D.FillBoundary(0,ntracers);
-    geom.FillPeriodicBoundary(D,0,ntracers,true);
+    bool local = false;
+    bool do_corners = true;
+    bool cross = false;
+    D.FillBoundary(0,ntracers,local,cross);
+    geom.FillPeriodicBoundary(D,0,ntracers,do_corners,local);
   }
+#ifndef NDEBUG
+  if (D.contains_nan(0,ntracers,D.nGrow())) {
+    BoxLib::Abort("D has nans");
+  }
+#endif
 
   for (int d=0; d<BL_SPACEDIM; ++d) {
     Dflux[d].setVal(0);
@@ -9837,7 +9978,7 @@ PorousMedia::mac_sync ()
       }
     
       delete p_corr;
-      delete alpha;
+     delete alpha;
       //
       // Add the sync correction to the state.
       //
@@ -9872,12 +10013,15 @@ PorousMedia::mac_sync ()
         }
       }
 
-      MultiFab *betanp1[BL_SPACEDIM];
+      MultiFab *betanp1[BL_SPACEDIM], *beta1np1[BL_SPACEDIM];
       for (int d = 0; d < BL_SPACEDIM; d++) {
         const BoxArray eba = BoxArray(grids).surroundingNodes(d);
         betanp1[d] = new MultiFab(eba,1,0);
+        if (tensor_tracer_diffusion) {
+          beta1np1[d] = new MultiFab(eba,1,0);
+        }
       }
-  
+
       int first_tracer = ncomps;
       MFVector phi(*rock_phi);
       MFVector sphi_new(sat_new,0,1,1); sphi_new.MULTAY(phi,1);
@@ -9890,54 +10034,64 @@ PorousMedia::mac_sync ()
   
       Real a_new = 1;
       Real b_new = be_cn_theta_trac*dt;
-      ViscBndry bd_new(grids,1,geom);
-      const BCRec& tracer_bc = get_desc_lst()[State_Type].getBC(first_tracer);
       IntVect rat = level == 0 ? IntVect(D_DECL(1,1,1)) : crse_ratio;
-      bd_new.setHomogValues(tracer_bc,rat);
-      getDiffusivity(betanp1, cur_time, first_tracer, 0, 1); // Get just one component, all same
-      ABecHelper* op_new = getOp(a_new,b_new,bd_new,0,&(sphi_new.multiFab()),0,1,Whalf,0,
-                                 Wflag,betanp1,0,1,volume,area,alpha,0,ntracers);
-      op_new->maxOrder(op_maxOrder);
+      Array<BCRec> tracer_bc(1, get_desc_lst()[State_Type].getBC(first_tracer));
+
+      Diffuser<MFVector,ABecHelper>* scalar_diffuser = 0;
+      Diffuser<MFVector,TensorOp>* tensor_diffuser = 0;
+      ABecHelper *scalar_linop = 0;
+      TensorOp *tensor_linop = 0;
+
+      if (tensor_tracer_diffusion) {
+        int rati = rat[0];
+        for (int d=1; d<BL_SPACEDIM; ++d) {
+          BL_ASSERT(rat[d] == rati);
+        }
+        TensorDiffusionBndry tbd(grids,1,geom);
+        tbd.setHomogValues(tracer_bc,rati);
+        tensor_linop = getOp(a_new,b_new,tbd,0,1,&(sphi_new.multiFab()),0,1,Whalf,0,
+                             Wflag,betanp1,0,1,beta1np1,0,1,volume,area,alpha,0);
+        tensor_linop->maxOrder(op_maxOrder);
+        tensor_diffuser = new Diffuser<MFVector,TensorOp>(0,tensor_linop,Volume,0,&sphi_new);
+      }
+      else {
+        ViscBndry vbd(grids,1,geom);
+        vbd.setHomogValues(tracer_bc[0],rat);
+        getDiffusivity(betanp1, cur_time, first_tracer, 0, 1); // Get just one component, all same
+        scalar_linop = getOp(a_new,b_new,vbd,0,&(sphi_new.multiFab()),0,1,Whalf,0,
+                             Wflag,betanp1,0,1,volume,area,alpha,0,ntracers);
+        scalar_linop->maxOrder(op_maxOrder);
+        scalar_diffuser = new Diffuser<MFVector,ABecHelper>(0,scalar_linop,Volume,0,&sphi_new);
+      }
 
       Ssync->mult(-1,first_tracer,ntracers);
-      Diffuser<MFVector,ABecHelper> diffuser(0,op_new,Volume,0,&sphi_new);
+
       MFVector new_state(*Ssync,first_tracer,1,1);
       MFVector Rhs(*Ssync,first_tracer,1,1);
-
-      op_new->set_alphaComp(0);
-      op_new->set_betaComp(0);
-      op_new->set_bndryComp(0);
-
-      IntVect ivc(D_DECL(9,0,0));
       MultiFab& S_new = get_new_data(State_Type);
       MultiFab& S_old = get_old_data(State_Type);
-
       for (int n=0; n<ntracers; ++n) {
         new_state.setVal(0);
         MultiFab::Copy(Rhs,*Ssync,first_tracer+n,0,1,0);
-        diffuser.Diffuse(0,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
+        if (tensor_tracer_diffusion) {
+          tensor_diffuser->Diffuse(0,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
+        }
+        else {
+          scalar_diffuser->Diffuse(0,new_state,Rhs,prev_time,cur_time,visc_abs_tol,visc_tol);
+        }
+
         MultiFab::Copy(*Ssync,new_state,0,first_tracer+n,1,0);
-        op_new->compFlux(D_DECL(*betanp1[0],*betanp1[1],*betanp1[2]),*Ssync,
-                         LinOp::Inhomogeneous_BC,first_tracer+n,0,1,0);
+
+        if (tensor_tracer_diffusion) {
+          tensor_linop->compFlux(D_DECL(*betanp1[0],*betanp1[1],*betanp1[2]),*Ssync,
+                                 MCInhomogeneous_BC,first_tracer+n,0,1,0);
+        }
+        else {
+          scalar_linop->compFlux(D_DECL(*betanp1[0],*betanp1[1],*betanp1[2]),*Ssync,
+                                 LinOp::Inhomogeneous_BC,first_tracer+n,0,1,0);
+        }
         for (int d = 0; d < BL_SPACEDIM; d++) {
           betanp1[d]->mult(be_cn_theta_trac/geom.CellSize()[d]);
-
-          // if (d==0 && n==0 && level==0) {
-          //   std::cout << "0 sync flux at 9: " << dt*(*betanp1[0])[0](IntVect(9,0),0) << std::endl;
-          //   std::cout << "0 Div(sync flux) at 9: " << dt*((*betanp1[0])[0](IntVect(10,0),0) -(*betanp1[0])[0](IntVect(9,0),0)) << std::endl;
-          //   std::cout << "0 dC: " << (*Ssync)[0](IntVect(9,0),first_tracer) << std::endl;
-          //   std::cout << "0 phi.s.dC: " << (*Ssync)[0](IntVect(9,0),first_tracer)*.38 << std::endl;
-
-          //   Rhs.mult(dt);
-          //   MultiFab::Multiply(Rhs,volume,0,0,1,0);
-          //   std::cout << "0 Rhs.V.dt: " << Rhs[0](IntVect(9,0),0) << std::endl;
-
-          //   op_new->apply(Rhs,new_state);
-          //   std::cout << "0 phi.s.dC+ L(dC): " << Rhs[0](IntVect(9,0),0) << std::endl;
-
-          // }
-
-
           if (level > 0) {
             for (MFIter mfi(*betanp1[d]); mfi.isValid(); ++mfi) {
               getViscFluxReg().FineAdd((*betanp1[d])[mfi],d,mfi.index(),0,first_tracer+n,1,dt);
@@ -9945,12 +10099,17 @@ PorousMedia::mac_sync ()
           }
         }
       }
-#if 1
       for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
         S_new[mfi].plus((*Ssync)[mfi],first_tracer,first_tracer,ntracers);
       }
-#endif
-      delete op_new;
+      delete tensor_diffuser, scalar_diffuser;
+      delete scalar_linop, tensor_linop;
+      for (int d = 0; d < BL_SPACEDIM; d++) {
+        delete betanp1[d];
+        if (tensor_tracer_diffusion) {
+          delete beta1np1[d];
+        }
+      }
     }
   }
     
@@ -11915,25 +12074,19 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
 	dirichletTracerBC(dest,time,s_t,dest_comp+n_c,n_t);
       }
 
-      //if (n_t>0 && level==1) {
-        if (dest.contains_nan(dest.box(),dest_comp,num_comp)) {
-          std::cout << "PorousMedia::setPhysBoundaryValues:  finished, but still contains nans" << std::endl;
-          std::cout << "time,src_comp: " << time << ", " << src_comp << std::endl;
-          std::cout << "level,destbox,destcomp,numcomp: " << level << ", " << dest.box() << ", " << dest_comp << ", " << num_comp << std::endl;
-          std::cout << dest << std::endl;
-          BoxLib::Abort();
-        }
-        //}
-
+#ifndef NDEBUG
+      if (dest.contains_nan(dest.box(),dest_comp,num_comp)) {
+        std::cout << "PorousMedia::setPhysBoundaryValues:  finished, but still contains nans" << std::endl;
+        std::cout << "time,src_comp: " << time << ", " << src_comp << std::endl;
+        std::cout << "level,destbox,destcomp,numcomp: " << level << ", " << dest.box() << ", " << dest_comp << ", " << num_comp << std::endl;
+        std::cout << dest << std::endl;
+        BoxLib::Abort();
+      }
+#endif
     }
     else if (state_indx==Press_Type) {
       dirichletPressBC(dest,time);
     }
-    // FIXME: This does not seem to be working.  Used the fortran FORT_XXX_A_FILL function instead 
-    // to enhance FOEXTRAP boundaries for all.
-    //else  {
-    //  dirichletDefaultBC(dest,time);
-    //}
 }
 
 void
@@ -12924,8 +13077,9 @@ PorousMedia::GetCrseUmac(PArray<MultiFab>& u_mac_crse,
       for (MFIter mfi(emfG); mfi.isValid(); ++mfi) {
 	u_mac_crse[i][mfi].copy(emfG[mfi]);
       }
+      bool do_corners = true;
       u_mac_crse[i].FillBoundary();
-      cgeom.FillPeriodicBoundary(u_mac_crse[i],false);
+      cgeom.FillPeriodicBoundary(u_mac_crse[i],do_corners);
     }
 }
 

@@ -1,6 +1,6 @@
  $fortin
-   aT = 1
-   aL = 0
-   u = -1
+   aT = 0
+   aL = 1
+   u = 1
    v = 1
  $end

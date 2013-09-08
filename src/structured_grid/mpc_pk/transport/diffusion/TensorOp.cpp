@@ -294,6 +294,20 @@ TensorOp::b1Coefficients (int dir,
 }
 
 void
+TensorOp::apply (MultiFab& out,
+                 MultiFab& in,
+                 int       level,
+                 MCBC_Mode bc_mode)
+{
+  bool local = false;
+  int src_comp = 0;
+  int dst_comp = 0;
+  int num_comp = 1;
+  int bndry_comp = default_bndryComp;
+  apply(out,in,level,bc_mode,local,src_comp,dst_comp,num_comp,bndry_comp);
+}
+
+void
 TensorOp::apply (MultiFab&      out,
                  MultiFab&      in,
                  int            level,
@@ -307,6 +321,18 @@ TensorOp::apply (MultiFab&      out,
   int bndryComp = (bndry_comp < 0 ? default_bndryComp : bndry_comp);
   applyBC (in,src_comp,num_comp,level,bc_mode,local,bndryComp);
   Fapply(out,dst_comp,in,src_comp,num_comp,level);
+}
+
+void
+TensorOp::smooth (MultiFab&       solnL,
+                  const MultiFab& rhsL,
+                  int             level,
+                  MCBC_Mode       bc_mode)
+{
+  for (int phaseflag = 0; phaseflag < numphase; phaseflag++) {
+    applyBC(solnL, level, bc_mode);
+    Fsmooth(solnL, rhsL, level, phaseflag);
+  }
 }
 
 //
@@ -346,10 +372,11 @@ TensorOp::applyBC (MultiFab&      inout,
   BL_ASSERT(num_comp==1);
 
   const bool cross = false;
+  const bool do_corners = true;
   inout.FillBoundary(src_comp,num_comp,local,cross);
   prepareForLevel(level);
 
-  geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,false,local);
+  geomarray[level].FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
   //
   // Fill boundary cells.
   //
@@ -396,26 +423,23 @@ TensorOp::applyBC (MultiFab&      inout,
       else if (cdir == 1)
         perpdir = 0;
       else
-        BoxLib::Abort("MCLinOp::applyBC(): bad logic");
+        BoxLib::Abort("TensorOp::applyBC(): bad logic");
 
       const Mask& m    = *msk[face];
       const Mask& mphi = *msk[Orientation(perpdir,Orientation::high)];
       const Mask& mplo = *msk[Orientation(perpdir,Orientation::low)];
-      FORT_APPLYBC(
-        &flagden, &flagbc, &maxorder,
-        inoutfab.dataPtr(src_comp), 
-        ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()),
-        &cdr, bct, &bcl,
-        bcvalptr, ARLIM(fslo), ARLIM(fshi),
-        m.dataPtr(),    ARLIM(m.loVect()),    ARLIM(m.hiVect()),
-        mphi.dataPtr(), ARLIM(mphi.loVect()), ARLIM(mphi.hiVect()),
-        mplo.dataPtr(), ARLIM(mplo.loVect()), ARLIM(mplo.hiVect()),
-        denfab.dataPtr(), 
-        ARLIM(denfab.loVect()), ARLIM(denfab.hiVect()),
-        exttdptr, ARLIM(fslo), ARLIM(fshi),
-        tdfab.dataPtr(bndryComp),ARLIM(tdfab.loVect()),ARLIM(tdfab.hiVect()),
+      FORT_APPLYBC( &flagden, &flagbc, &maxorder,
+        inoutfab.dataPtr(src_comp),  ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()), &cdr, bct, &bcl,
+        bcvalptr,                    ARLIM(fslo),              ARLIM(fshi),
+        m.dataPtr(),                 ARLIM(m.loVect()),        ARLIM(m.hiVect()),
+        mphi.dataPtr(),              ARLIM(mphi.loVect()),     ARLIM(mphi.hiVect()),
+        mplo.dataPtr(),              ARLIM(mplo.loVect()),     ARLIM(mplo.hiVect()),
+        denfab.dataPtr(),            ARLIM(denfab.loVect()),   ARLIM(denfab.hiVect()),
+        exttdptr,                    ARLIM(fslo),              ARLIM(fshi),
+        tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
         &num_comp, h[level]);
+
 #elif BL_SPACEDIM==3
       const Mask& mn = *msk[Orientation(1,Orientation::high)];
       const Mask& me = *msk[Orientation(0,Orientation::high)];
@@ -423,47 +447,81 @@ TensorOp::applyBC (MultiFab&      inout,
       const Mask& ms = *msk[Orientation(1,Orientation::low)];
       const Mask& mt = *msk[Orientation(2,Orientation::high)];
       const Mask& mb = *msk[Orientation(2,Orientation::low)];
-      FORT_APPLYBC(
-        &flagden, &flagbc, &maxorder,
-        inoutfab.dataPtr(src_comp), 
-        ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()),
-        &cdr, bct, &bcl,
-        bcvalptr, ARLIM(fslo), ARLIM(fshi),
-        mn.dataPtr(),ARLIM(mn.loVect()),ARLIM(mn.hiVect()),
-        me.dataPtr(),ARLIM(me.loVect()),ARLIM(me.hiVect()),
-        mw.dataPtr(),ARLIM(mw.loVect()),ARLIM(mw.hiVect()),
-        ms.dataPtr(),ARLIM(ms.loVect()),ARLIM(ms.hiVect()),
-        mt.dataPtr(),ARLIM(mt.loVect()),ARLIM(mt.hiVect()),
-        mb.dataPtr(),ARLIM(mb.loVect()),ARLIM(mb.hiVect()),
-        denfab.dataPtr(), 
-        ARLIM(denfab.loVect()), ARLIM(denfab.hiVect()),
-        exttdptr, ARLIM(fslo), ARLIM(fshi),
-        tdfab.dataPtr(bndryComp),ARLIM(tdfab.loVect()),ARLIM(tdfab.hiVect()),
+      FORT_APPLYBC( &flagden, &flagbc, &maxorder,
+        inoutfab.dataPtr(src_comp),  ARLIM(inoutfab.loVect()), ARLIM(inoutfab.hiVect()), &cdr, bct, &bcl,
+        bcvalptr,                    ARLIM(fslo),              ARLIM(fshi),
+        mn.dataPtr(),                ARLIM(mn.loVect()),       ARLIM(mn.hiVect()),
+        me.dataPtr(),                ARLIM(me.loVect()),       ARLIM(me.hiVect()),
+        mw.dataPtr(),                ARLIM(mw.loVect()),       ARLIM(mw.hiVect()),
+        ms.dataPtr(),                ARLIM(ms.loVect()),       ARLIM(ms.hiVect()),
+        mt.dataPtr(),                ARLIM(mt.loVect()),       ARLIM(mt.hiVect()),
+        mb.dataPtr(),                ARLIM(mb.loVect()),       ARLIM(mb.hiVect()),
+        denfab.dataPtr(),            ARLIM(denfab.loVect()),   ARLIM(denfab.hiVect()),
+        exttdptr,                    ARLIM(fslo),              ARLIM(fshi),
+        tdfab.dataPtr(bndryComp),    ARLIM(tdfab.loVect()),    ARLIM(tdfab.hiVect()),
         inout.box(gn).loVect(), inout.box(gn).hiVect(),
         &nc, h[level]);
 #endif
     }
   }
-}
 
+  // Clean up corners:
+  // The problem here is that APPLYBC fills only grow cells normal to the boundary.
+  // As a result, any corner cell on the boundary (either coarse-fine or fine-fine)
+  // is not filled.  For coarse-fine, the operator adjusts itself, sliding away from
+  // the box edge to avoid referencing that corner point.  On the physical boundary
+  // though, the corner point is needed.  Particularly if a fine-fine boundary intersects
+  // the physical boundary, since we want the stencil to be independent of the box
+  // blocking.  FillBoundary operations wont fix the problem because the "good"
+  // data we need is living in the grow region of adjacent fabs.  So, here we play 
+  // the usual games to treat the newly filled grow cells as "valid" data.
 
-//
-// Compute the level residual = rhsL - L(solnL).
-//
-void
-TensorOp::residual (MultiFab&       residL,
-                    const MultiFab& rhsL,
-                    MultiFab&       solnL,
-                    int             level,
-                    MCBC_Mode       bc_mode,
-                    bool            local)
-{
-  int srcComp = 0;
-  int destComp = 0;
-  int numComp = 1;
-  int rhsComp = 0;
-  int bndryComp = default_bndryComp;
-  apply(residL, solnL, level, bc_mode, local, srcComp, destComp, numComp, bndryComp);
+  // Note that we only need to do something where the grids touch the physical boundary.
+
+  // First sync up internal "regular" grow cells
+  inout.FillBoundary(src_comp,num_comp,local,cross);
+  const Geometry& geom = bndryData().getGeom();
+  geom.FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
+
+  // Now sync up APPLYBC-filled corner cells
+  const BoxArray& grids = bndryData().boxes();
+  const Box& domain = geom.Domain();
+  int nGrow = 1;
+
+  // Lets do a quick check to see if we need to do anything at all here
+  BoxArray gba = BoxArray(grids).grow(nGrow);
+  if (! (domain.contains(gba.minimalBox())) ) {
+
+    // Build grown MF with best data so far
+    MultiFab inoutg(gba,num_comp,0);
+    for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
+      inoutg[mfi].copy(inout[mfi],src_comp,0,num_comp);
+    }
+
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+      if (! (geom.isPeriodic(d)) ) {
+        Box gDomain = Box(domain).grow(d,nGrow);
+        BoxArray growDomain = BoxLib::boxComplement(gDomain,domain);
+        BoxArray growCells = BoxLib::intersect(gba,growDomain);
+        if (growCells.size()>0) {      
+          MultiFab growMF(BoxArray(growCells).grow(nGrow),num_comp,0);
+          growMF.copy(inoutg,0,0,num_comp); // parallel copy
+          MultiFab growMFg(growCells,num_comp,nGrow);
+          for (MFIter mfi(growMFg); mfi.isValid(); ++mfi) {
+            growMFg[mfi].copy(growMF[mfi],0,0,num_comp);
+          }
+          growMFg.FillBoundary(); // Skip periodic, since all these "valid" cells are outside the domain
+          for (MFIter mfi(growMFg); mfi.isValid(); ++mfi) {
+            growMF[mfi].copy(growMFg[mfi],0,0,num_comp);
+          }
+          inoutg.copy(growMF); // Another parallel copy
+          for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
+            inout[mfi].copy(inout[mfi],0,src_comp,num_comp);
+          }
+        }
+      }
+    }
+  }
 }
 
 //
@@ -563,70 +621,63 @@ TensorOp::Fsmooth (MultiFab&       solnL,
            const FArrayBox& b1yfab = b1Y[gn];,
            const FArrayBox& b1zfab = b1Z[gn];);
 
+#if BL_SPACEDIM==2
     FORT_TOGSRB(
-      solfab.dataPtr(solnComp), 
-      ARLIM(solfab.loVect()),ARLIM(solfab.hiVect()),
-      rhsfab.dataPtr(rhsComp),
-      ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
+      solfab.dataPtr(solnComp),  ARLIM(solfab.loVect()), ARLIM(solfab.hiVect()),
+      rhsfab.dataPtr(rhsComp),   ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
       &alpha, &beta,
-      afab.dataPtr(alphaComp),
-      ARLIM(afab.loVect()),    ARLIM(afab.hiVect()),
-      bxfab.dataPtr(betaComp),
-      ARLIM(bxfab.loVect()),   ARLIM(bxfab.hiVect()),
-      b1xfab.dataPtr(beta1Comp),
-      ARLIM(b1xfab.loVect()),   ARLIM(b1xfab.hiVect()),
-      byfab.dataPtr(betaComp),
-      ARLIM(byfab.loVect()),   ARLIM(byfab.hiVect()),
-      b1yfab.dataPtr(beta1Comp),
-      ARLIM(b1yfab.loVect()),   ARLIM(b1yfab.hiVect()),
-#if BL_SPACEDIM>2
-      bzfab.dataPtr(betaComp),
-      ARLIM(bzfab.loVect()),   ARLIM(bzfab.hiVect()),
-      b1zfab.dataPtr(beta1Comp),
-      ARLIM(b1zfab.loVect()),   ARLIM(b1zfab.hiVect()),
-#endif
-      mn.dataPtr(),
-      ARLIM(mn.loVect()),ARLIM(mn.hiVect()),
-      fnfab.dataPtr(),
-      ARLIM(fnfab.loVect()),   ARLIM(fnfab.hiVect()),
-      me.dataPtr(),
-      ARLIM(me.loVect()),ARLIM(me.hiVect()),
-      fefab.dataPtr(),
-      ARLIM(fefab.loVect()),   ARLIM(fefab.hiVect()),
-      mw.dataPtr(),
-      ARLIM(mw.loVect()),ARLIM(mw.hiVect()),
-      fwfab.dataPtr(),
-      ARLIM(fwfab.loVect()),   ARLIM(fwfab.hiVect()),
-      ms.dataPtr(),
-      ARLIM(ms.loVect()),ARLIM(ms.hiVect()),
-      fsfab.dataPtr(),
-      ARLIM(fsfab.loVect()),   ARLIM(fsfab.hiVect()),
-#if BL_SPACEDIM>2
-      mt.dataPtr(),
-      ARLIM(mt.loVect()),ARLIM(mt.hiVect()),
-      ftfab.dataPtr(),
-      ARLIM(ftfab.loVect()),   ARLIM(ftfab.hiVect()),
-      mb.dataPtr(),
-      ARLIM(mb.loVect()),ARLIM(mb.hiVect()),
-      fbfab.dataPtr(),
-      ARLIM(fbfab.loVect()),   ARLIM(fbfab.hiVect()),
-#endif
-      tdnfab.dataPtr(bndryComp),
-      ARLIM(tdnfab.loVect()),ARLIM(tdnfab.hiVect()),
-      tdefab.dataPtr(bndryComp),
-      ARLIM(tdefab.loVect()),ARLIM(tdefab.hiVect()),
-      tdwfab.dataPtr(bndryComp),
-      ARLIM(tdwfab.loVect()),ARLIM(tdwfab.hiVect()),
-      tdsfab.dataPtr(bndryComp),
-      ARLIM(tdsfab.loVect()),ARLIM(tdsfab.hiVect()),
-#if BL_SPACEDIM>2
-      tdtfab.dataPtr(bndryComp),
-      ARLIM(tdtfab.loVect()),ARLIM(tdtfab.hiVect()),
-      tdbfab.dataPtr(bndryComp),
-      ARLIM(tdbfab.loVect()),ARLIM(tdbfab.hiVect()),
-#endif
+      afab.dataPtr(alphaComp),   ARLIM(afab.loVect()),   ARLIM(afab.hiVect()),
+      bxfab.dataPtr(betaComp),   ARLIM(bxfab.loVect()),  ARLIM(bxfab.hiVect()),
+      b1xfab.dataPtr(beta1Comp), ARLIM(b1xfab.loVect()), ARLIM(b1xfab.hiVect()),
+      byfab.dataPtr(betaComp),   ARLIM(byfab.loVect()),  ARLIM(byfab.hiVect()),
+      b1yfab.dataPtr(beta1Comp), ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
+      mn.dataPtr(),              ARLIM(mn.loVect()),     ARLIM(mn.hiVect()),
+      fnfab.dataPtr(),           ARLIM(fnfab.loVect()),  ARLIM(fnfab.hiVect()),
+      me.dataPtr(),              ARLIM(me.loVect()),     ARLIM(me.hiVect()),
+      fefab.dataPtr(),           ARLIM(fefab.loVect()),  ARLIM(fefab.hiVect()),
+      mw.dataPtr(),              ARLIM(mw.loVect()),     ARLIM(mw.hiVect()),
+      fwfab.dataPtr(),           ARLIM(fwfab.loVect()),  ARLIM(fwfab.hiVect()),
+      ms.dataPtr(),              ARLIM(ms.loVect()),     ARLIM(ms.hiVect()),
+      fsfab.dataPtr(),           ARLIM(fsfab.loVect()),  ARLIM(fsfab.hiVect()),
+      tdnfab.dataPtr(bndryComp), ARLIM(tdnfab.loVect()), ARLIM(tdnfab.hiVect()),
+      tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
+      tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
+      tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
       solnLmfi.validbox().loVect(), solnLmfi.validbox().hiVect(),
       h[level], phaseflag);
+#else
+    FORT_TOGSRB(
+      solfab.dataPtr(solnComp),  ARLIM(solfab.loVect()), ARLIM(solfab.hiVect()),
+      rhsfab.dataPtr(rhsComp),   ARLIM(rhsfab.loVect()), ARLIM(rhsfab.hiVect()),
+      &alpha, &beta,
+      afab.dataPtr(alphaComp),   ARLIM(afab.loVect()),   ARLIM(afab.hiVect()),
+      bxfab.dataPtr(betaComp),   ARLIM(bxfab.loVect()),  ARLIM(bxfab.hiVect()),
+      b1xfab.dataPtr(beta1Comp), ARLIM(b1xfab.loVect()), ARLIM(b1xfab.hiVect()),
+      byfab.dataPtr(betaComp),   ARLIM(byfab.loVect()),  ARLIM(byfab.hiVect()),
+      b1yfab.dataPtr(beta1Comp), ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
+      bzfab.dataPtr(betaComp),   ARLIM(bzfab.loVect()),  ARLIM(bzfab.hiVect()),
+      b1zfab.dataPtr(beta1Comp), ARLIM(b1zfab.loVect()), ARLIM(b1zfab.hiVect()),
+      mn.dataPtr(),              ARLIM(mn.loVect()),     ARLIM(mn.hiVect()),
+      fnfab.dataPtr(),           ARLIM(fnfab.loVect()),  ARLIM(fnfab.hiVect()),
+      me.dataPtr(),              ARLIM(me.loVect()),     ARLIM(me.hiVect()),
+      fefab.dataPtr(),           ARLIM(fefab.loVect()),  ARLIM(fefab.hiVect()),
+      mw.dataPtr(),              ARLIM(mw.loVect()),     ARLIM(mw.hiVect()),
+      fwfab.dataPtr(),           ARLIM(fwfab.loVect()),  ARLIM(fwfab.hiVect()),
+      ms.dataPtr(),              ARLIM(ms.loVect()),     ARLIM(ms.hiVect()),
+      fsfab.dataPtr(),           ARLIM(fsfab.loVect()),  ARLIM(fsfab.hiVect()),
+      mt.dataPtr(),              ARLIM(mt.loVect()),     ARLIM(mt.hiVect()),
+      ftfab.dataPtr(),           ARLIM(ftfab.loVect()),  ARLIM(ftfab.hiVect()),
+      mb.dataPtr(),              ARLIM(mb.loVect()),     ARLIM(mb.hiVect()),
+      fbfab.dataPtr(),           ARLIM(fbfab.loVect()),  ARLIM(fbfab.hiVect()),
+      tdnfab.dataPtr(bndryComp), ARLIM(tdnfab.loVect()), ARLIM(tdnfab.hiVect()),
+      tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
+      tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
+      tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
+      tdtfab.dataPtr(bndryComp), ARLIM(tdtfab.loVect()), ARLIM(tdtfab.hiVect()),
+      tdbfab.dataPtr(bndryComp), ARLIM(tdbfab.loVect()), ARLIM(tdbfab.hiVect()),
+      solnLmfi.validbox().loVect(), solnLmfi.validbox().hiVect(),
+      h[level], phaseflag);
+#endif
   }
 }
 
@@ -703,61 +754,53 @@ TensorOp::compFlux (D_DECL(MultiFab &xflux, MultiFab &yflux, MultiFab &zflux),
            FArrayBox& yfluxfab = yflux[gn];,
            FArrayBox& zfluxfab = zflux[gn];);
 
+#if BL_SPACEDIM==2
     FORT_TOFLUX(
-      xfab.dataPtr(sComp), 
-      ARLIM(xfab.loVect()), ARLIM(xfab.hiVect()),
-      bxfab.dataPtr(bndComp), 
-      ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
-      b1xfab.dataPtr(bndComp), 
-      ARLIM(b1xfab.loVect()), ARLIM(b1xfab.hiVect()),
-      byfab.dataPtr(bndComp), 
-      ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
-      b1yfab.dataPtr(bndComp), 
-      ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
-#if BL_SPACEDIM>2
-      bzfab.dataPtr(bndComp), 
-      ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
-      b1zfab.dataPtr(bndComp), 
-      ARLIM(b1zfab.loVect()), ARLIM(b1zfab.hiVect()),
-#endif
-      xfluxfab.dataPtr(dComp), 
-      ARLIM(xfluxfab.loVect()), ARLIM(xfluxfab.hiVect()),
-      yfluxfab.dataPtr(dComp), 
-      ARLIM(yfluxfab.loVect()), ARLIM(yfluxfab.hiVect()),
-#if BL_SPACEDIM>2
-      zfluxfab.dataPtr(dComp), 
-      ARLIM(zfluxfab.loVect()), ARLIM(zfluxfab.hiVect()),
-#endif
-      mn.dataPtr(),
-      ARLIM(mn.loVect()),ARLIM(mn.hiVect()),
-      me.dataPtr(),
-      ARLIM(me.loVect()),ARLIM(me.hiVect()),
-      mw.dataPtr(),
-      ARLIM(mw.loVect()),ARLIM(mw.hiVect()),
-      ms.dataPtr(),
-      ARLIM(ms.loVect()),ARLIM(ms.hiVect()),
-#if BL_SPACEDIM>2
-      mt.dataPtr(),
-      ARLIM(mt.loVect()),ARLIM(mt.hiVect()),
-      mb.dataPtr(),
-      ARLIM(mb.loVect()),ARLIM(mb.hiVect()),
-#endif
-      tdnfab.dataPtr(bndComp),
-      ARLIM(tdnfab.loVect()),ARLIM(tdnfab.hiVect()),
-      tdefab.dataPtr(bndComp),
-      ARLIM(tdefab.loVect()),ARLIM(tdefab.hiVect()),
-      tdwfab.dataPtr(bndComp),
-      ARLIM(tdwfab.loVect()),ARLIM(tdwfab.hiVect()),
-      tdsfab.dataPtr(bndComp),
-      ARLIM(tdsfab.loVect()),ARLIM(tdsfab.hiVect()),
-#if BL_SPACEDIM>2
-      tdtfab.dataPtr(bndComp),
-      ARLIM(tdtfab.loVect()),ARLIM(tdtfab.hiVect()),
-      tdbfab.dataPtr(bndComp),
-      ARLIM(tdbfab.loVect()),ARLIM(tdbfab.hiVect()),
-#endif
+      xfab.dataPtr(sComp),     ARLIM(xfab.loVect()),     ARLIM(xfab.hiVect()),
+      bxfab.dataPtr(bndComp),  ARLIM(bxfab.loVect()),    ARLIM(bxfab.hiVect()),
+      b1xfab.dataPtr(bndComp), ARLIM(b1xfab.loVect()),   ARLIM(b1xfab.hiVect()),
+      byfab.dataPtr(bndComp),  ARLIM(byfab.loVect()),    ARLIM(byfab.hiVect()),
+      b1yfab.dataPtr(bndComp), ARLIM(b1yfab.loVect()),   ARLIM(b1yfab.hiVect()),
+      xfluxfab.dataPtr(dComp), ARLIM(xfluxfab.loVect()), ARLIM(xfluxfab.hiVect()),
+      yfluxfab.dataPtr(dComp), ARLIM(yfluxfab.loVect()), ARLIM(yfluxfab.hiVect()),
+      mn.dataPtr(),            ARLIM(mn.loVect()),       ARLIM(mn.hiVect()),
+      me.dataPtr(),            ARLIM(me.loVect()),       ARLIM(me.hiVect()),
+      mw.dataPtr(),            ARLIM(mw.loVect()),       ARLIM(mw.hiVect()),
+      ms.dataPtr(),            ARLIM(ms.loVect()),       ARLIM(ms.hiVect()),
+      tdnfab.dataPtr(bndComp), ARLIM(tdnfab.loVect()),   ARLIM(tdnfab.hiVect()),
+      tdefab.dataPtr(bndComp), ARLIM(tdefab.loVect()),   ARLIM(tdefab.hiVect()),
+      tdwfab.dataPtr(bndComp), ARLIM(tdwfab.loVect()),   ARLIM(tdwfab.hiVect()),
+      tdsfab.dataPtr(bndComp), ARLIM(tdsfab.loVect()),   ARLIM(tdsfab.hiVect()),
       xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
       h[level]);
+
+#else
+    FORT_TOFLUX(
+      xfab.dataPtr(sComp),     ARLIM(xfab.loVect()),     ARLIM(xfab.hiVect()),
+      bxfab.dataPtr(bndComp),  ARLIM(bxfab.loVect()),    ARLIM(bxfab.hiVect()),
+      b1xfab.dataPtr(bndComp), ARLIM(b1xfab.loVect()),   ARLIM(b1xfab.hiVect()),
+      byfab.dataPtr(bndComp),  ARLIM(byfab.loVect()),    ARLIM(byfab.hiVect()),
+      b1yfab.dataPtr(bndComp), ARLIM(b1yfab.loVect()),   ARLIM(b1yfab.hiVect()),
+      bzfab.dataPtr(bndComp),  ARLIM(bzfab.loVect()),    ARLIM(bzfab.hiVect()),
+      b1zfab.dataPtr(bndComp), ARLIM(b1zfab.loVect()),   ARLIM(b1zfab.hiVect()),
+      xfluxfab.dataPtr(dComp), ARLIM(xfluxfab.loVect()), ARLIM(xfluxfab.hiVect()),
+      yfluxfab.dataPtr(dComp), ARLIM(yfluxfab.loVect()), ARLIM(yfluxfab.hiVect()),
+      zfluxfab.dataPtr(dComp), ARLIM(zfluxfab.loVect()), ARLIM(zfluxfab.hiVect()),
+      mn.dataPtr(),            ARLIM(mn.loVect()),       ARLIM(mn.hiVect()),
+      me.dataPtr(),            ARLIM(me.loVect()),       ARLIM(me.hiVect()),
+      mw.dataPtr(),            ARLIM(mw.loVect()),       ARLIM(mw.hiVect()),
+      ms.dataPtr(),            ARLIM(ms.loVect()),       ARLIM(ms.hiVect()),
+      mt.dataPtr(),            ARLIM(mt.loVect()),       ARLIM(mt.hiVect()),
+      mb.dataPtr(),            ARLIM(mb.loVect()),       ARLIM(mb.hiVect()),
+      tdnfab.dataPtr(bndComp), ARLIM(tdnfab.loVect()),   ARLIM(tdnfab.hiVect()),
+      tdefab.dataPtr(bndComp), ARLIM(tdefab.loVect()),   ARLIM(tdefab.hiVect()),
+      tdwfab.dataPtr(bndComp), ARLIM(tdwfab.loVect()),   ARLIM(tdwfab.hiVect()),
+      tdsfab.dataPtr(bndComp), ARLIM(tdsfab.loVect()),   ARLIM(tdsfab.hiVect()),
+      tdtfab.dataPtr(bndComp), ARLIM(tdtfab.loVect()),   ARLIM(tdtfab.hiVect()),
+      tdbfab.dataPtr(bndComp), ARLIM(tdbfab.loVect()),   ARLIM(tdbfab.hiVect()),
+      xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
+      h[level]);
+#endif
   }
 }
 
@@ -845,57 +888,52 @@ TensorOp::Fapply (MultiFab&       y,
            const FArrayBox& b1yfab = b1Y[gn];,
            const FArrayBox& b1zfab = b1Z[gn];);
 
+#if BL_SPACEDIM==2
     FORT_TOAPPLY(
-      xfab.dataPtr(src_comp), 
-      ARLIM(xfab.loVect()), ARLIM(xfab.hiVect()),
+      xfab.dataPtr(src_comp),    ARLIM(xfab.loVect()),   ARLIM(xfab.hiVect()),
       &alpha, &beta,
-      afab.dataPtr(alphaComp), 
-      ARLIM(afab.loVect()), ARLIM(afab.hiVect()),
-      bxfab.dataPtr(betaComp), 
-      ARLIM(bxfab.loVect()), ARLIM(bxfab.hiVect()),
-      b1xfab.dataPtr(beta1Comp), 
-      ARLIM(b1xfab.loVect()), ARLIM(b1xfab.hiVect()),
-      byfab.dataPtr(betaComp), 
-      ARLIM(byfab.loVect()), ARLIM(byfab.hiVect()),
-      b1yfab.dataPtr(beta1Comp), 
-      ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
-#if BL_SPACEDIM>2
-      bzfab.dataPtr(betaComp), 
-      ARLIM(bzfab.loVect()), ARLIM(bzfab.hiVect()),
-      b1zfab.dataPtr(beta1Comp), 
-      ARLIM(b1zfab.loVect()), ARLIM(b1zfab.hiVect()),
-#endif
-      yfab.dataPtr(dst_comp), 
-      ARLIM(yfab.loVect()), ARLIM(yfab.hiVect()),
-      mn.dataPtr(),
-      ARLIM(mn.loVect()),ARLIM(mn.hiVect()),
-      me.dataPtr(),
-      ARLIM(me.loVect()),ARLIM(me.hiVect()),
-      mw.dataPtr(),
-      ARLIM(mw.loVect()),ARLIM(mw.hiVect()),
-      ms.dataPtr(),
-      ARLIM(ms.loVect()),ARLIM(ms.hiVect()),
-#if BL_SPACEDIM>2
-      mt.dataPtr(),
-      ARLIM(mt.loVect()),ARLIM(mt.hiVect()),
-      mb.dataPtr(),
-      ARLIM(mb.loVect()),ARLIM(mb.hiVect()),
-#endif
-      tdnfab.dataPtr(bndryComp),
-      ARLIM(tdnfab.loVect()),ARLIM(tdnfab.hiVect()),
-      tdefab.dataPtr(bndryComp),
-      ARLIM(tdefab.loVect()),ARLIM(tdefab.hiVect()),
-      tdwfab.dataPtr(bndryComp),
-      ARLIM(tdwfab.loVect()),ARLIM(tdwfab.hiVect()),
-      tdsfab.dataPtr(bndryComp),
-      ARLIM(tdsfab.loVect()),ARLIM(tdsfab.hiVect()),
-#if BL_SPACEDIM>2
-      tdtfab.dataPtr(bndryComp),
-      ARLIM(tdtfab.loVect()),ARLIM(tdtfab.hiVect()),
-      tdbfab.dataPtr(bndryComp),
-      ARLIM(tdbfab.loVect()),ARLIM(tdbfab.hiVect()),
-#endif
+      afab.dataPtr(alphaComp),   ARLIM(afab.loVect()),   ARLIM(afab.hiVect()),
+      bxfab.dataPtr(betaComp),   ARLIM(bxfab.loVect()),  ARLIM(bxfab.hiVect()),
+      b1xfab.dataPtr(beta1Comp), ARLIM(b1xfab.loVect()), ARLIM(b1xfab.hiVect()),
+      byfab.dataPtr(betaComp),   ARLIM(byfab.loVect()),  ARLIM(byfab.hiVect()),
+      b1yfab.dataPtr(beta1Comp), ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
+      yfab.dataPtr(dst_comp),    ARLIM(yfab.loVect()),   ARLIM(yfab.hiVect()),
+      mn.dataPtr(),              ARLIM(mn.loVect()),     ARLIM(mn.hiVect()),
+      me.dataPtr(),              ARLIM(me.loVect()),     ARLIM(me.hiVect()),
+      mw.dataPtr(),              ARLIM(mw.loVect()),     ARLIM(mw.hiVect()),
+      ms.dataPtr(),              ARLIM(ms.loVect()),     ARLIM(ms.hiVect()),
+      tdnfab.dataPtr(bndryComp), ARLIM(tdnfab.loVect()), ARLIM(tdnfab.hiVect()),
+      tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
+      tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
+      tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
       xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
       h[level]);
+#else
+    FORT_TOAPPLY(
+      xfab.dataPtr(src_comp),    ARLIM(xfab.loVect()),   ARLIM(xfab.hiVect()),
+      &alpha, &beta,
+      afab.dataPtr(alphaComp),   ARLIM(afab.loVect()),   ARLIM(afab.hiVect()),
+      bxfab.dataPtr(betaComp),   ARLIM(bxfab.loVect()),  ARLIM(bxfab.hiVect()),
+      b1xfab.dataPtr(beta1Comp), ARLIM(b1xfab.loVect()), ARLIM(b1xfab.hiVect()),
+      byfab.dataPtr(betaComp),   ARLIM(byfab.loVect()),  ARLIM(byfab.hiVect()),
+      b1yfab.dataPtr(beta1Comp), ARLIM(b1yfab.loVect()), ARLIM(b1yfab.hiVect()),
+      bzfab.dataPtr(betaComp),   ARLIM(bzfab.loVect()),  ARLIM(bzfab.hiVect()),
+      b1zfab.dataPtr(beta1Comp), ARLIM(b1zfab.loVect()), ARLIM(b1zfab.hiVect()),
+      yfab.dataPtr(dst_comp),    ARLIM(yfab.loVect()),   ARLIM(yfab.hiVect()),
+      mn.dataPtr(),              ARLIM(mn.loVect()),     ARLIM(mn.hiVect()),
+      me.dataPtr(),              ARLIM(me.loVect()),     ARLIM(me.hiVect()),
+      mw.dataPtr(),              ARLIM(mw.loVect()),     ARLIM(mw.hiVect()),
+      ms.dataPtr(),              ARLIM(ms.loVect()),     ARLIM(ms.hiVect()),
+      mt.dataPtr(),              ARLIM(mt.loVect()),     ARLIM(mt.hiVect()),
+      mb.dataPtr(),              ARLIM(mb.loVect()),     ARLIM(mb.hiVect()),
+      tdnfab.dataPtr(bndryComp), ARLIM(tdnfab.loVect()), ARLIM(tdnfab.hiVect()),
+      tdefab.dataPtr(bndryComp), ARLIM(tdefab.loVect()), ARLIM(tdefab.hiVect()),
+      tdwfab.dataPtr(bndryComp), ARLIM(tdwfab.loVect()), ARLIM(tdwfab.hiVect()),
+      tdsfab.dataPtr(bndryComp), ARLIM(tdsfab.loVect()), ARLIM(tdsfab.hiVect()),
+      tdtfab.dataPtr(bndryComp), ARLIM(tdtfab.loVect()), ARLIM(tdtfab.hiVect()),
+      tdbfab.dataPtr(bndryComp), ARLIM(tdbfab.loVect()), ARLIM(tdbfab.hiVect()),
+      xmfi.validbox().loVect(), xmfi.validbox().hiVect(),
+      h[level]);
+#endif
   }
 }

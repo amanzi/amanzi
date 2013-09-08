@@ -124,20 +124,33 @@ public:
                  MultiFab& in, bool do_ApplyBC, const MCBC_Mode& bc_mode=MCInhomogeneous_BC,
                  int src_comp=0, int dst_comp=0, int num_comp=1, int bnd_comp=-1);
 
+  virtual void apply (MultiFab& out,
+		MultiFab& in,
+		int       level = 0,
+		MCBC_Mode bc_mode = MCInhomogeneous_BC);
+
   virtual void apply (MultiFab&      out,
                       MultiFab&      in,
-                      int            level   = 0,
-                      MCBC_Mode      bc_mode = MCInhomogeneous_BC,
-                      bool           local   = false,
+                      int            level,
+                      MCBC_Mode      bc_mode,
+                      bool           local,
                       int            src_comp = 0,
                       int            dst_comp = 0,
                       int            num_comp = 1,
                       int            bndry_comp = -1);
 
   //
+  // smooth the level system L(solnL)=rhsL
+  //
+  virtual void smooth (MultiFab&       solnL,
+               const MultiFab& rhsL,
+               int             level = 0,
+               MCBC_Mode       bc_mode = MCInhomogeneous_BC);
+  
+  //
   // Fills level boundary cells using BC_mode flag, int. BC data if reqd.
   //
-  void applyBC (MultiFab& inout,
+  virtual void applyBC (MultiFab& inout,
                 int       level,
                 MCBC_Mode bc_mode);
 
@@ -148,16 +161,6 @@ public:
                         MCBC_Mode      bc_mode = MCInhomogeneous_BC,
                         bool           local   = false,
                         int            bndryComp = -1);
-  //
-  // Compute the level residual = rhsL - L(solnL).
-  //
-  virtual void residual (MultiFab&       residL,
-                         const MultiFab& rhsL,
-                         MultiFab&       solnL,
-                         int             level   = 0,
-                         MCBC_Mode       bc_mode = MCInhomogeneous_BC,
-                         bool            local   = false);
-
 protected:
   //
   // compute out=L(in) at level=level

@@ -230,6 +230,7 @@ bool PorousMedia::do_tracer_diffusion;
 bool PorousMedia::setup_tracer_transport;
 bool PorousMedia::advect_tracers;
 bool PorousMedia::diffuse_tracers;
+bool PorousMedia::tensor_tracer_diffusion;
 bool PorousMedia::solute_transport_limits_dt;
 
 //
@@ -588,6 +589,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::setup_tracer_transport = false;
   PorousMedia::advect_tracers     = false;
   PorousMedia::diffuse_tracers    = false;
+  PorousMedia::tensor_tracer_diffusion = false;
   PorousMedia::do_full_strang     = 0;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -1138,6 +1140,7 @@ PorousMedia::read_rock()
 
     diffuse_tracers = do_tracer_diffusion
       && ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
+    tensor_tracer_diffusion = diffuse_tracers && user_specified_dispersivity;
 
     for (int i = 0; i<nrock; i++)
     {

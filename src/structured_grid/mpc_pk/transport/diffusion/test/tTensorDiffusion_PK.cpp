@@ -8,6 +8,8 @@
 
 #include <VisMF.H>
 #include <Utility.H>
+#include <MCCGSolver.H>
+#include <MCMultiGrid.H>
 
 enum bc_t {Periodic = 0,
 	   Dirichlet = LO_DIRICHLET, 
@@ -28,6 +30,15 @@ namespace Amanzi {
 
     enum SolveMode {PREDICTOR, CORRECTOR, ONEPASS};
 
+    Real get_scaled_abs_tol (const MultiFab& rhs,
+                             Real            reduction)
+    {
+      Real norm_est = 0;
+      for (MFIter Rhsmfi(rhs); Rhsmfi.isValid(); ++Rhsmfi)
+        norm_est = std::max(norm_est, rhs[Rhsmfi].norm(0));
+      ParallelDescriptor::ReduceRealMax(norm_est);
+      return norm_est * reduction;
+    }
 
     void
     loadBndryData (MCInterpBndryData&  bd,
@@ -73,7 +84,6 @@ namespace Amanzi {
                    int                    max_order,
                    bool                   add_old_time_divFlux)
     {
-#if 0
       const BoxArray& grids = S_old.boxArray();
       BL_ASSERT(solve_mode==ONEPASS || (delta_rhs && delta_rhs->boxArray()==grids));
       if (alpha_in) {
@@ -90,9 +100,8 @@ namespace Amanzi {
       //
       MultiFab Rhs(grids,nComp,0), Soln(grids,nComp,MCLinOp_grow);
       MultiFab volume; geom.GetVolume(volume,grids,Geom_Grow);
-      PArray<MultiFab> area(BL_SPACEDIM);
+      MultiFab area[BL_SPACEDIM];
       for (int d = 0; d < BL_SPACEDIM; d++) {
-        area.set(d, new MultiFab());
         geom.GetFaceArea(area[d],grids,d,0);
       }
 
@@ -101,8 +110,8 @@ namespace Amanzi {
         Real a = 0.0;
         Real b = -(1.0-be_cn_theta)*dt;
         Real scale_old = 0;
-        TensorOp* op_old = getOp(a,b,bd_old,sComp_bd_old,W_old,sComp_W_old,W_half,sComp_W_half,W_flag,scale_old,
-                                 betan,sComp_betan,beta1n,sComp_beta1n,volume,area,alpha_in,sComp_alpha_in,nComp);
+        TensorOp* op_old = getOp(a,b,bd_old,sComp_bd_old,1,W_old,sComp_W_old,1,W_half,sComp_W_half,W_flag,
+                                 betan,sComp_betan,1,beta1n,sComp_beta1n,1,volume,area,alpha_in,sComp_alpha_in);
         op_old->maxOrder(max_order);
 
         MultiFab::Copy(Soln,S_old,sComp_S_old,0,nComp,0);
@@ -221,8 +230,8 @@ namespace Amanzi {
       Real a = 1.0;
       Real b = be_cn_theta*dt;
       Real scale_new = 1;
-      TensorOp* op_new = getOp(a,b,bd_new,sComp_bd_new,W_new,sComp_W_new,W_half,sComp_W_half,W_flag,scale_new,
-                               betanp1,sComp_betanp1,beta1np1,sComp_beta1np1,volume,area,alpha_in,sComp_alpha_in,nComp);
+      TensorOp* op_new = getOp(a,b,bd_new,sComp_bd_new,1,W_new,sComp_W_new,1,W_half,sComp_W_half,W_flag,
+                               betanp1,sComp_betanp1,1,beta1np1,sComp_beta1np1,1,volume,area,alpha_in,sComp_alpha_in);
       op_new->maxOrder(max_order);
       Rhs.mult(scale_new,0,nComp);
 
@@ -266,7 +275,6 @@ namespace Amanzi {
           }
         }
       }
-#endif
     }
 
     void
