@@ -27,8 +27,10 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 
 
 add_amanzi_library(atk
-                   SOURCE Timer.cc TimerManager.cc TimeStepManager.cc XMLParameterListWriter.cc
+                   SOURCE Timer.cc TimerManager.cc TimeStepManager.cc XMLParameterListWriter.cc 
+                           VerboseObject.cc
                    HEADERS Utils.hh Timer.hh TimerManager.hh TimeStepManager.hh XMLParameterListWriter.hh
+                           VerboseObject.hh
                    )
 if (BUILD_TESTS)
   
@@ -48,6 +50,11 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/test_time_step_manager.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES} )
+
+    ADD_AMANZI_TEST(test_verbosity test_verbosity
+                    KIND unit
+                    SOURCE test/Main.cc test/test_verboseobject.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
 
 endif()
 

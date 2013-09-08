@@ -29,6 +29,10 @@ void RelativePermeability::ProcessParameterList()
 {
   Errors::Message msg;
 
+  // create verbosity object
+  Teuchos::ParameterList plist;
+  vo_ = new VerboseObject("Flow::RelativePerm", plist); 
+
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = list_.begin(); i != list_.end(); i++) {
     if (list_.isSublist(list_.name(i))) nblocks++;
@@ -153,7 +157,8 @@ void RelativePermeability::PlotWRMcurves()
 
   if (MyPID == 0) {
     if (list_.isParameter("plot krel-pc curves")) {
-      std::printf("Flow PK: saving krel-pc curves in file flow_krel_pc.txt...\n");
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "saving krel-pc curves in file flow_krel_pc.txt..." << endl;
       std::ofstream ofile;
       ofile.open("flow_krel_pc.txt");
 
@@ -172,7 +177,7 @@ void RelativePermeability::PlotWRMcurves()
     }
 
     if (list_.isParameter("plot krel-sat curves")) {
-      std::printf("Flow PK: saving krel-sat curves in file flow_krel_sat.txt...\n");
+      *(vo_->os()) << "saving krel-sat curves in file flow_krel_sat.txt..." << endl;
       std::ofstream ofile;
       ofile.open("flow_krel_sat.txt");
 
@@ -193,7 +198,7 @@ void RelativePermeability::PlotWRMcurves()
     }
 
     if (list_.isParameter("plot sat-pc curves")) {
-      std::printf("Flow PK: saving sat-pc curves in file flow_sat_pc.txt...\n");
+      *(vo_->os()) << "saving sat-pc curves in file flow_sat_pc.txt..." << endl;
       std::ofstream ofile;
       ofile.open("flow_sat_pc.txt");
 

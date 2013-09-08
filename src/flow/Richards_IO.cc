@@ -30,17 +30,8 @@ void Richards_PK::ProcessParameterList()
 {
   Errors::Message msg;
 
-  // create verbosity list if it does not exist
-  if (! rp_list_.isSublist("VerboseObject")) {
-    Teuchos::ParameterList verbosity_list;
-    verbosity_list.set<std::string>("Verbosity Level", "none");
-    rp_list_.set("VerboseObject", verbosity_list);
-  }
-
-  // extract verbosity level
-  Teuchos::ParameterList verbosity_list = rp_list_.get<Teuchos::ParameterList>("VerboseObject");
-  std::string verbosity_name = verbosity_list.get<std::string>("Verbosity Level");
-  ProcessStringVerbosity(verbosity_name, &verbosity);
+  // create verbosity object
+  vo_ = new VerboseObject("Amanzi::Richards", rp_list_); 
 
   // check for mandatory sublists
   if (! rp_list_.isSublist("Water retention models")) {
@@ -119,8 +110,9 @@ void Richards_PK::ProcessParameterList()
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);
 
-  } else if (verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("Flow PK: mandatory sublist for steady-state calculations is missing.\n");
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "mandatory sublist for steady-state calculations is missing." << endl;
   }
 
   // Time integrator for period III, called transient time integrator
@@ -141,16 +133,13 @@ void Richards_PK::ProcessParameterList()
     ProcessStringPreconditioner(ti_specs_trs_.preconditioner_name, &ti_specs_trs_.preconditioner_method);
     ProcessStringErrorOptions(trs_list, &ti_specs_trs_.error_control_options);
 
-  } else if (verbosity >= FLOW_VERBOSITY_LOW) {
-    printf("Flow PK: missing sublist \"transient time integrator\".\n");
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "missing sublist '\"transient time integrator'\"" << endl;
   }
 
   // allowing developer to use non-standard simulation modes
   if (! rp_list_.isParameter("developer access granted")) AnalysisTI_Specs();
-
-  if (verbosity >= FLOW_VERBOSITY_EXTREME) {
-    if (MyPID == 0) rp_list_.unused(std::cout);
-  }
 }
 
 
@@ -222,31 +211,6 @@ void Richards_PK::AnalysisTI_Specs()
   }
 }
 
-
-/* ****************************************************************
-* Prints information about status of this PK. 
-**************************************************************** */
-void Richards_PK::PrintStatistics() const
-{
-  int method = rel_perm->method();
-  if (MyPID == 0) {
-    cout << "Flow PK:" << endl;
-    cout << "  Verbosity level = " << verbosity << endl;
-    cout << "  Upwind = " << ((method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
-  }
-}
-
-
-/* ****************************************************************
-* Prints information about CPU spend by this PK. 
-**************************************************************** */
-void Richards_PK::PrintStatisticsCPU()
-{
-  if (verbosity >= FLOW_VERBOSITY_HIGH) {
-    timer.parSync(MPI_COMM_WORLD);
-    if (MyPID == 0) timer.print();
-  }
-}
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

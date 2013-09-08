@@ -255,12 +255,12 @@ void Flow_PK::ProcessBoundaryConditions(
   int flag = flag_essential_bc;
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
-  if (! flag_essential_bc && MyPID == 0 && verbosity >= FLOW_VERBOSITY_LOW) {
-    std::printf("Flow PK: WARNING: no essential boundary conditions, solver may fail\n");
+  if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "WARNING: no essential boundary conditions, solver may fail" << endl;
   }
 
-  // verbose output
-  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
 #ifdef HAVE_MPI
     int nseepage_tmp = nseepage;
     double area_tmp = area_seepage;
@@ -268,7 +268,8 @@ void Flow_PK::ProcessBoundaryConditions(
     mesh_->get_comm()->SumAll(&nseepage_tmp, &nseepage, 1);
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
-      std::printf("Flow PK: seepage face has changed: %9.4e [m^2]\n", area_seepage);
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "seepage face has changed: " << area_seepage << " [m^2]n" << endl;
     }
   }
   nseepage_prev = nseepage;

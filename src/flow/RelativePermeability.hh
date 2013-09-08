@@ -20,6 +20,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "VerboseObject.hh"
 #include "Mesh.hh"
 #include "tensor.hh"
 
@@ -96,6 +97,9 @@ class RelativePermeability {
   void DerivativeFaceUpwindFlux_(
       const Epetra_Vector& p, const Epetra_Vector& flux,
       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+
+ protected:
+  VerboseObject* vo_;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

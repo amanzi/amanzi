@@ -71,7 +71,6 @@ TEST(FLOW_3D_RICHARDS) {
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 1e-7);  // dT0 is not used
-  RPK->PrintStatistics();
 
   // solve the problem
   S.set_time(0.0);

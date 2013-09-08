@@ -56,7 +56,7 @@
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 
       <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
+        <Parameter name="Verbosity Level" type="string" value="high"/>
       </ParameterList>
 
       <ParameterList name="steady state time integrator">
