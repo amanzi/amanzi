@@ -78,7 +78,7 @@ file(GLOB flow_inc_files "*.hh")
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-    register_evaluators(tests_flow_evaluator_reg.hh FACTORY_REG_LIST)
+    generate_evaluators_registration_header(tests_flow_evaluator_reg.hh FACTORY_REG_LIST)
 
 #if (0)
     # Add UnitTest include directoy

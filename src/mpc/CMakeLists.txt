@@ -68,7 +68,7 @@ add_amanzi_library(mpc
 if (BUILD_TESTS)
 #if (0)
 
-  register_evaluators(tests_mpc_evaluator_reg.hh FACTORY_REG_LIST)
+  generate_evaluators_registration_header(tests_mpc_evaluator_reg.hh FACTORY_REG_LIST)
 
   include_directories(${MESH_FACTORY_SOURCE_DIR})
 

@@ -127,10 +127,7 @@ if (ENABLE_Structured)
 endif()
 
 
-if(ENABLE_Unstructured)
-  register_evaluators(evaluator_reg.hh FACTORY_REG_LIST)
-endif()
-
+generate_evaluators_registration_header(evaluator_reg.hh FACTORY_REG_LIST)
 
 # 
 # Main: Amanzi

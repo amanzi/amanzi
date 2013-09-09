@@ -83,7 +83,7 @@ register_evaluator_with_factory(rank_evaluator_reg.hh FACTORY_REG_LIST)
 
 if (BUILD_TESTS)
 
-    register_evaluators(tests_state_evaluator_reg.hh FACTORY_REG_LIST)
+    generate_evaluators_registration_header(tests_state_evaluator_reg.hh FACTORY_REG_LIST)
   
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
