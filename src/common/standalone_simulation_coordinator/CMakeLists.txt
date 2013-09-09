@@ -127,7 +127,7 @@ if (ENABLE_Structured)
 endif()
 
 
-generate_evaluators_registration_header(evaluator_reg.hh FACTORY_REG_LIST)
+generate_evaluators_registration_header(HEADERFILE evaluator_reg.hh LISTNAME FACTORY_REG_LIST  INSTALL TRUE)
 
 # 
 # Main: Amanzi

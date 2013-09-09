@@ -60,7 +60,12 @@ set(mpc_tpl_libs ${boost_libs_used} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} )
 list(REVERSE mpc_tpl_libs)
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 list(REVERSE mpc_tpl_libs)
-file(GLOB mpc_inc_files "*.h")
+
+set(mpc_inc_files
+  MPC.hh
+  Unstructured_observations.hh
+)
+
 add_amanzi_library(mpc 
                    SOURCE MPC.cc Unstructured_observations.cc HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
@@ -68,7 +73,7 @@ add_amanzi_library(mpc
 if (BUILD_TESTS)
 #if (0)
 
-  generate_evaluators_registration_header(tests_mpc_evaluator_reg.hh FACTORY_REG_LIST)
+  generate_evaluators_registration_header(HEADERFILE tests_mpc_evaluator_reg.hh  LISTNAME FACTORY_REG_LIST)
 
   include_directories(${MESH_FACTORY_SOURCE_DIR})
 
