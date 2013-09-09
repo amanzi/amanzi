@@ -32,7 +32,8 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
     tol_ = 1e-6; 
     max_itrs_ = 100;
     krylov_dim_ = 10;
-    criteria_ = SOLVER_CONVERGENCE_RHS;
+    criteria_ = SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
+    initialized_ = false;
   }
   ~GMRES_Operator() {};
 
@@ -71,6 +72,7 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
   double tol_;
   mutable int num_itrs_;
   mutable double residual_;
+  mutable bool initialized_;
 };
 
 
@@ -126,16 +128,26 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
   p.Update(1.0, f, -1.0);
 
   m_->ApplyInverse(p, r);
-  double beta;
-  r.Norm2(&beta);
+  double rnorm0;
+  r.Norm2(&rnorm0);
+  residual_ = rnorm0;
   
-  if (fabs(fnorm) < 1.0e-30) fnorm = 1.0;
-  if ((residual_ = beta / fnorm) <= tol_) return 0;
+  if (fnorm == 0.0) {
+    x.PutScalar(0.0);
+    return 0;
+  }
+  if (! (criteria & SOLVER_MAKE_ONE_ITERATION)) {
+    if (criteria & SOLVER_CONVERGENCE_RELATIVE_RHS) {
+      if (rnorm0 < tol * fnorm) return 0; 
+    } else if (criteria & SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL) {
+      if (rnorm0 < tol) return 0;
+    }
+  }
 
   v[0] = new Vector(r);
-  v[0]->Update(0.0, r, 1.0 / beta);
+  v[0]->Update(0.0, r, 1.0 / rnorm0);
 
-  s[0] = beta;
+  s[0] = rnorm0;
     
   for (int i = 0; i < krylov_dim_; i++) {
     m_->Apply(*(v[i]), p);
@@ -161,10 +173,26 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
     InitGivensRotation( T(i, i), T(i + 1, i), cs[i], sn[i]);
     ApplyGivensRotation(T(i, i), T(i + 1, i), cs[i], sn[i]);
     ApplyGivensRotation(s[i],    s[i + 1],    cs[i], sn[i]);
+    residual_ = fabs(s[i + 1]);
 
-    if (criteria_ & SOLVER_CONVERGENCE_RHS || 
-        criteria_ & SOLVER_CONVERGENCE_RESIDUAL) {
-      if ((residual_ = fabs(s[i + 1]) / fnorm) < tol_) { 
+    if (initialized_) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << i << " ||r||=" << residual_ << endl;
+      }
+    }
+    if (criteria_ & SOLVER_CONVERGENCE_RELATIVE_RHS) {
+      if (residual_ < tol * fnorm) { 
+        ComputeSolution(x, i, T, s, v);  // vector s is overwritten
+        return i;
+      }
+    } else if (criteria_ & SOLVER_CONVERGENCE_RELATIVE_RESIDUAL) {
+      if (residual_ < tol * rnorm0) { 
+        ComputeSolution(x, i, T, s, v);  // vector s is overwritten
+        return i;
+      }
+    } else if (criteria_ & SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL) {
+      if (residual_ < tol) { 
         ComputeSolution(x, i, T, s, v);  // vector s is overwritten
         return i;
       }
@@ -174,7 +202,6 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
   ComputeSolution(x, krylov_dim_ - 1, T, s, v);  // vector s is overwritten
   return krylov_dim_;
 }
-
 
 
 /* ******************************************************************
@@ -204,13 +231,17 @@ void GMRES_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& p
 
     for (int i = 0; i < names.size(); i++) {
       if (names[i] == "relative rhs") {
-        criteria += SOLVER_CONVERGENCE_RHS;
+        criteria += SOLVER_CONVERGENCE_RELATIVE_RHS;
       } else if (names[i] == "relative residual") {
-        criteria += SOLVER_CONVERGENCE_RESIDUAL;
+        criteria += SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
+      } else if (names[i] == "absolute residual") {
+        criteria += SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL;
+      } else if (names[i] == "make one iteration") {
+        criteria += SOLVER_MAKE_ONE_ITERATION;
       }
     }
   } else {
-    criteria = SOLVER_CONVERGENCE_RHS;
+    criteria = SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
   }
 
   set_criteria(criteria);

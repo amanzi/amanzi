@@ -31,7 +31,7 @@ class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
       LinearOperator<Matrix, Vector, VectorSpace>(m) { 
     tol_ = 1e-6; 
     max_itrs_ = 100;
-    criteria_ = SOLVER_CONVERGENCE_RHS;
+    criteria_ = SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
     initialized_ = false;
   }
   ~PCG_Operator() {};
@@ -84,11 +84,12 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
 {
   Vector r(f), p(f), v(f);  // construct empty vectors
 
-  double fnorm, xnorm;
+  double fnorm;
   f.Norm2(&fnorm);
-  x.Norm2(&xnorm);
-  if (xnorm == 0) xnorm = fnorm;
-  if (xnorm == 0) return 0;
+  if (fnorm == 0.0) {
+    x.PutScalar(0.0);
+    return 0;
+  }
 
   m_->Apply(x, r);  // r = f - M * x
   r.Update(1.0, f, -1.0);
@@ -104,8 +105,13 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
     Exceptions::amanzi_throw(msg);
   }
 
-  if (criteria & SOLVER_CONVERGENCE_RHS)   
-    if( rnorm0 < tol * fnorm) return 0; 
+  if (! (criteria & SOLVER_MAKE_ONE_ITERATION)) {
+    if (criteria & SOLVER_CONVERGENCE_RELATIVE_RHS) {
+      if (rnorm0 < tol * fnorm) return 0; 
+    } else if (criteria & SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL) {
+      if (rnorm0 < tol) return 0;
+    }
+  }
 
   for (int i = 0; i < max_itrs; i++) {
     m_->Apply(p, v);
@@ -139,10 +145,13 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
         *(vo_->os()) << i << " ||r||=" << residual_ << endl;
       }
     }
-    if (criteria & SOLVER_CONVERGENCE_RHS) 
-      if (rnorm < tol * fnorm) return i+1;
-    if (criteria & SOLVER_CONVERGENCE_RESIDUAL) 
-      if (rnorm < tol * rnorm0) return i+1;
+    if (criteria & SOLVER_CONVERGENCE_RELATIVE_RHS) {
+      if (rnorm < tol * fnorm) return i + 1;
+    } else if (criteria & SOLVER_CONVERGENCE_RELATIVE_RESIDUAL) {
+      if (rnorm < tol * rnorm0) return i + 1;
+    } else if (criteria & SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL) {
+      if (rnorm < tol) return i + 1;
+    }
 
     double beta = gamma1 / gamma0;
     gamma0 = gamma1;
@@ -178,13 +187,17 @@ void PCG_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& pli
 
     for (int i = 0; i < names.size(); i++) {
       if (names[i] == "relative rhs") {
-        criteria += SOLVER_CONVERGENCE_RHS;
+        criteria += SOLVER_CONVERGENCE_RELATIVE_RHS;
       } else if (names[i] == "relative residual") {
-        criteria += SOLVER_CONVERGENCE_RESIDUAL;
+        criteria += SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
+      } else if (names[i] == "absolute residual") {
+        criteria += SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL;
+      } else if (names[i] == "make one iteration") {
+        criteria += SOLVER_MAKE_ONE_ITERATION;
       }
     }
   } else {
-    criteria = SOLVER_CONVERGENCE_RHS;
+    criteria = SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
   }
 
   set_criteria(criteria);
