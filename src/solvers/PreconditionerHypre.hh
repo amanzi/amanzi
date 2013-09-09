@@ -1,25 +1,25 @@
 /*
-This is the Linear Solver component of the Amanzi code.
- 
-License: BSD
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  This is the Linear Solver component of the Amanzi code.
 
-Conjugate gradient method.
-Usage: 
+  License: BSD
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  HYPRE preconditioner.
+  Usage:
 */
 
-#ifndef __PRECONDITIONER_HYPRE_HH__
-#define __PRECONDITIONER_HYPRE_HH__
+#ifndef AMANZI_PRECONDITIONER_HYPRE_HH_
+#define AMANZI_PRECONDITIONER_HYPRE_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Ifpack.h" 
+#include "Epetra_MultiVector.h"
+#include "Epetra_RowMatrix.h"
+#include "Ifpack.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
- 
+
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
@@ -29,17 +29,17 @@ class PreconditionerHypre : public Preconditioner {
   ~PreconditionerHypre() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(Teuchos::RCP<Epetra_FECrsMatrix> A);
+  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
   void Destroy() {};
 
-  void ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv);
+  void ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
 
  private:
   Teuchos::ParameterList list_;
 
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
-  double tol, strong_threshold;
-  int nsmooth, ncycles, verbosity;
+  double tol_, strong_threshold_;
+  int nsmooth_, ncycles_, verbosity_;
 };
 
 }  // namespace AmanziPreconditioners
@@ -48,5 +48,3 @@ class PreconditionerHypre : public Preconditioner {
 
 
 #endif
-
-
