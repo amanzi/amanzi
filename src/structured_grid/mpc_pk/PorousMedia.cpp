@@ -1898,11 +1898,15 @@ PorousMedia::richard_init_to_steady()
 
       int grid_seq_init_fine = (steady_do_grid_sequence ? 0 : finest_level);
 
+      Array<Real> new_level_dt_factor;
       if (steady_do_grid_sequence) {
         BL_ASSERT(steady_grid_sequence_new_level_dt_factor.size()>0);
-        Array<Real> new_level_dt_factor(finest_level,steady_grid_sequence_new_level_dt_factor[0]);
+        new_level_dt_factor.resize(finest_level+1,steady_grid_sequence_new_level_dt_factor[0]);
         if (steady_grid_sequence_new_level_dt_factor.size()>1) {
-          new_level_dt_factor = steady_grid_sequence_new_level_dt_factor;
+	  int num = std::min(steady_grid_sequence_new_level_dt_factor.size(),new_level_dt_factor.size());
+	  for (int i=0; i<num; ++i) {
+	    new_level_dt_factor[i] = steady_grid_sequence_new_level_dt_factor[i];
+	  }
         }
         if (new_level_dt_factor.size()<finest_level-1) {
           BoxLib::Abort("steady_grid_sequence_new_level_dt_factor requires either 1 or max_level entries");
@@ -1930,7 +1934,7 @@ PorousMedia::richard_init_to_steady()
         }
 
         if (num_active_levels > 1) {
-          dt *= steady_grid_sequence_new_level_dt_factor[num_active_levels-2];
+          dt *= new_level_dt_factor[num_active_levels-2];
         }
 
         Layout layout_sub(parent,num_active_levels);	  
@@ -2167,8 +2171,11 @@ PorousMedia::richard_init_to_steady()
           }
           pmf.FillCoarsePatch(pmf.get_new_data(Press_Type),0,t+dt,Press_Type,0,ncomps);
           pmf.FillStateBndry(t,Press_Type,0,1); // Set boundary data (FIXME: If t-dep, this will set at t_final)
-          pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type));
-
+	  if (model == PM_STEADY_SATURATED) {
+	    pmf.get_new_data(State_Type).setVal(0,0,ncomps);
+	  } else {
+	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type));
+	  }
           solved = false;
           ParallelDescriptor::Barrier();
         }
@@ -3057,7 +3064,20 @@ PorousMedia::advance_flow_nochange(Real time, Real dt)
     PorousMedia& pml = getLevel(lev);
     StateData& sd = pml.get_state_data(State_Type);
     sd.setNewTimeLevel(time+dt);
-    pml.set_saturated_velocity();
+    if (do_constant_vel) {
+      pml.set_saturated_velocity();
+    }
+    else {
+      for (int d=0; d<BL_SPACEDIM; ++d) {
+	for (MFIter mfi(u_mac_curr[d]); mfi.isValid(); ++mfi) {
+	  u_mac_curr[d][mfi].copy(u_macG_curr[d][mfi.index()],0,0,1);
+
+	  std::cout << u_macG_curr[d][mfi.index()] << std::endl;
+	}
+	MultiFab::Copy(u_macG_prev[d],u_macG_curr[d],0,0,1,0);
+	MultiFab::Copy(u_macG_trac[d],u_macG_curr[d],0,0,1,0);
+      }
+    }
 
     sd.allocOldData();
     sd.setOldTimeLevel(time);
@@ -8126,83 +8146,92 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   
   Real eigmax[BL_SPACEDIM] = { D_DECL(0,0,0) };
 
-  for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowEIGEST,
-			       t_eval,State_Type,0,ncomps);
-       S_fpi.isValid();
-       ++S_fpi)
-    {
-      const int i = S_fpi.index();
+  MultiFab RhoSat(grids,ncomps,nGrowEIGEST);
+  if (model == PM_RICHARDS) {
+    MultiFab P(grids,ncomps,nGrowEIGEST);
+    for (FillPatchIterator P_fpi(*this,RhoSat,nGrowEIGEST,
+				 t_eval,State_Type,0,ncomps); P_fpi.isValid(); ++P_fpi)
+      {P[P_fpi].copy(P_fpi());}
+    calcInvPressure(RhoSat,P);
+  }
+  else if (model == PM_STEADY_SATURATED) {
+    for (int n=0; n<ncomps; ++n) {
+      RhoSat.setVal(density[n],n,1,nGrowEIGEST);
+    }
+  }
+  else {
+    for (FillPatchIterator S_fpi(*this,RhoSat,nGrowEIGEST,
+				 t_eval,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi)
+      {RhoSat[S_fpi].copy(S_fpi());}
+  }
 
-      Array<int> state_bc;
-      state_bc = getBCArray(State_Type,i,0,1);
+  for (MFIter mfi(RhoSat); mfi.isValid(); ++mfi) {
+    const int i = mfi.index();
 
-      Real eigmax_m[BL_SPACEDIM] = {D_DECL(0,0,0)};
-      
-      if (model == PM_SINGLE_PHASE)
-	{
-	  godunov->esteig_lin (grids[i], D_DECL(u_macG[0][i],
-                                                u_macG[1][i],
-                                                u_macG[2][i]),
-			       (*rock_phi)[i], eigmax_m);
-	}
-      else if (model == PM_TWO_PHASE)
-	{
-	  const int n_kr_coef = kr_coef->nComp();
-	  if (do_cpl_advect)
-	    {
-	      godunov->esteig_cpl (grids[i], dx, u_macG[0][i], kpedge[0][i],
-                                                 u_macG[1][i], kpedge[1][i],
+    Array<int> state_bc;
+    state_bc = getBCArray(State_Type,i,0,1);
+    
+    Real eigmax_m[BL_SPACEDIM] = {D_DECL(0,0,0)};
+    
+    if (model == PM_SINGLE_PHASE) {
+      godunov->esteig_lin (grids[i], D_DECL(u_macG[0][i],u_macG[1][i],u_macG[2][i]),(*rock_phi)[i], eigmax_m);
+    }
+    else if (model == PM_TWO_PHASE) {
+
+      const int n_kr_coef = kr_coef->nComp();
+      if (do_cpl_advect) {
+	godunov->esteig_cpl (grids[i], dx, 
+			     u_macG[0][i], kpedge[0][i],
+			     u_macG[1][i], kpedge[1][i],
 #if BL_SPACEDIM == 3
-                                                 u_macG[2][i], kpedge[2][i],
+			     u_macG[2][i], kpedge[2][i],
 #endif
-				   S_fpi(), (*pcnp1_cc)[i],
-				   (*rock_phi)[i], 
-				   (*kr_coef)[i], n_kr_coef,
-				   state_bc.dataPtr(),eigmax_m);
-	    }
-	  else
-	    godunov->esteig (grids[i], dx, u_macG[0][i], kpedge[0][i],
-                                           u_macG[1][i], kpedge[1][i],
-#if BL_SPACEDIM==3
-                                           u_macG[2][i],kpedge[2][i],
-#endif
-			     S_fpi(),(*rock_phi)[i], 
+			     RhoSat[mfi], (*pcnp1_cc)[i],
+			     (*rock_phi)[i], 
 			     (*kr_coef)[i], n_kr_coef,
 			     state_bc.dataPtr(),eigmax_m);
-	}
-    
-      if (advect_tracers > 0)
-	{
-
-	  godunov->esteig_trc (grids[i], D_DECL(u_macG[0][i],
-                                                u_macG[1][i],
-                                                u_macG[2][i]),
-			       S_fpi(),1,(*rock_phi)[i] ,eigmax_m);
-	}
-
-      for (int dir = 0; dir < BL_SPACEDIM; dir++)
-	{
-	  eigmax[dir] = std::max(eigmax[dir],eigmax_m[dir]);
-	  if (eigmax_m[dir] > 1.e-15) 
-	    dt_eig = std::min(dt_eig,dx[dir]/eigmax_m[dir]);
-	}
+      } else {
+	godunov->esteig (grids[i], dx, 
+			 u_macG[0][i], kpedge[0][i],
+			 u_macG[1][i], kpedge[1][i],
+#if BL_SPACEDIM==3
+			 u_macG[2][i],kpedge[2][i],
+#endif
+			 RhoSat[mfi],(*rock_phi)[i], 
+			 (*kr_coef)[i], n_kr_coef,
+			 state_bc.dataPtr(),eigmax_m);
+      }
     }
+
+    if (advect_tracers > 0) {
+      godunov->esteig_trc (grids[i], D_DECL(u_macG[0][i],
+					    u_macG[1][i],
+					    u_macG[2][i]),
+			   RhoSat[mfi],1,(*rock_phi)[i] ,eigmax_m);
+    }
+
+    for (int dir = 0; dir < BL_SPACEDIM; dir++) {
+      eigmax[dir] = std::max(eigmax[dir],eigmax_m[dir]);
+      if (eigmax_m[dir] > 1.e-15) {
+	dt_eig = std::min(dt_eig,dx[dir]/eigmax_m[dir]);
+      }
+    }
+  }
 
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
-  if (verbose > 3)
-    {
-      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
-      ParallelDescriptor::ReduceRealMax(&eigmax[0], BL_SPACEDIM, IOProc);
+  if (verbose > 3) {
+    const int IOProc   = ParallelDescriptor::IOProcessorNumber();
+    ParallelDescriptor::ReduceRealMax(&eigmax[0], BL_SPACEDIM, IOProc);
 
-      if (ParallelDescriptor::IOProcessor())
-	{
-	  for (int dir = 0; dir < BL_SPACEDIM; dir++)
-	    std::cout << "Max Eig in dir " << dir << " = " << eigmax[dir] << '\n';
-	  std::cout << "Max timestep = " << dt_eig << '\n';
-	}
+    if (ParallelDescriptor::IOProcessor()) {
+      for (int dir = 0; dir < BL_SPACEDIM; dir++)
+	std::cout << "Max Eig in dir " << dir << " = " << eigmax[dir] << '\n';
+      std::cout << "Max timestep = " << dt_eig << '\n';
     }
+  }
 }
+
 Real
 PorousMedia::predictDT_diffusion_explicit (Real t_eval)
 {
