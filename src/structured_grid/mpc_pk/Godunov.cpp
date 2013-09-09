@@ -23,6 +23,9 @@ namespace
     bool initialized = false;
 
     const int use_unlimited_slopes_DEF = 0;
+
+    const Real state_eps = 1.e-20;
+    const Real tracer_eps = 1.e-30;
 }
 //
 // Set defaults in Initialize()!!!
@@ -423,7 +426,7 @@ Godunov::edge_states (const Box&  grd,
 #endif
 		  ARLIM(ww_lo), ARLIM(ww_hi),
 		  bc, lo, hi, &dt, dx, &fort_ind,
-		  &use_forces_in_trans, &iconserv);
+		  &use_forces_in_trans, &iconserv, &state_eps);
 }
 
 void
@@ -520,7 +523,7 @@ Godunov::edge_states_lin (const Box&  grd,
 		  stz.dataPtr(),ARLIM(stz.loVect()),ARLIM(stz.hiVect()),
 #endif
 		  ARLIM(ww_lo), ARLIM(ww_hi),
-		  bc, lo, hi, &dt, dx, &nscal);
+		  bc, lo, hi, &dt, dx, &nscal, &state_eps);
 }
 
 void
@@ -657,7 +660,7 @@ Godunov::edge_states_rmn (const Box&  grd,
 		  ARLIM(ww_lo), ARLIM(ww_hi),
 		  kr_dat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
 		  bc, lo, hi, &dt, dx, 
-		  &use_forces_in_trans, &iconserv, &nscal);
+		  &use_forces_in_trans, &iconserv, &nscal, &state_eps);
 
 }
 
@@ -808,7 +811,7 @@ Godunov::edge_states_cpl (const Box&  grd,
 		  ARLIM(ww_lo), ARLIM(ww_hi),
 		  kr_dat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
 		  bc, lo, hi, &dt, dx, 
-		  &use_forces_in_trans, &iconserv, &nscal);
+		  &use_forces_in_trans, &iconserv, &nscal, &state_eps);
 }
 
 void
@@ -935,7 +938,7 @@ Godunov::edge_states_pmr (const Box&  grd,
 #endif
 		  ARLIM(ww_lo), ARLIM(ww_hi),
 		  bc, lo, hi, &dt, dx, 
-		  &use_forces_in_trans, &iconserv, &gravity, eigmax);
+		  &use_forces_in_trans, &iconserv, &gravity, eigmax, &state_eps);
 
 }
 
@@ -1015,6 +1018,33 @@ Godunov::edge_states_tracer (const Box&  grd,
   //
   // C component indices starts from 0, Fortran from 1
   //
+#if 0
+  void FORT_ESTATE_TRACER(const Real* s_dat, const Real* sphi_dat, const Real* tfr_dat, 
+                          ARLIM_P(s_lo),ARLIM_P(s_hi),
+                          const Real* xlo_dat, 
+                          const Real* xhi_dat, const Real* slx_dat, 
+                          Real* slxscr, Real* stxlo, Real* stxhi,
+                          const Real* uedge_dat, ARLIM_P(ue_lo), ARLIM_P(ue_hi),
+                          const Real* stx,       ARLIM_P(stx_lo),ARLIM_P(stx_hi),
+                          const Real* ylo_dat, 
+                          const Real* yhi_dat, const Real* sly_dat, 
+                          Real* slyscr, Real* stylo, Real* styhi,
+                          const Real* vedge_dat, ARLIM_P(ve_lo), ARLIM_P(ve_hi),
+                          const Real* sty,       ARLIM_P(sty_lo),ARLIM_P(sty_hi),
+#if (BL_SPACEDIM == 3)
+                          const Real* zlo_dat, 
+                          const Real* zhi_dat, const Real* slz_dat, 
+                          Real* slzscr, Real* stzlo, Real* stzhi,
+                          const Real* wedge_dat, ARLIM_P(we_lo), ARLIM_P(we_hi),
+                          const Real* stz,       ARLIM_P(stz_lo),ARLIM_P(stz_hi),
+#endif
+                          ARLIM_P(ww_lo),ARLIM_P(ww_hi),
+                          const int* bc, const int* lo, const int* hi, 
+                          Real* dt, const Real* dx, int* fort_ind, 
+                          int* use_forces_in_trans, int* iconserv, const Real* eps);
+#endif
+
+
   FORT_ESTATE_TRACER(co_dat, ARLIM(co_lo), ARLIM(co_hi),
 		     cn_dat, ARLIM(cn_lo), ARLIM(cn_hi), 
 		     so_dat, ARLIM(so_lo), ARLIM(so_hi),
@@ -1032,8 +1062,7 @@ Godunov::edge_states_tracer (const Box&  grd,
 #endif
 		     rock_phi.dataPtr(),ARLIM(rock_phi.loVect()),ARLIM(rock_phi.hiVect()),
 		     ARLIM(ww_lo), ARLIM(ww_hi),
-		     bc, lo, hi, &dt, dx, &nCompC);
-
+		     bc, lo, hi, &dt, dx, &nCompC, &tracer_eps);
 }
 
 
@@ -1042,7 +1071,7 @@ Godunov::edge_sync_rmn (const Box&  grd,
 			const Real* dx,
 			Real        dt,
 			FArrayBox&  uedge,
-			FArrayBox&  stx,
+ 			FArrayBox&  stx,
 			FArrayBox&  kappax,
 			FArrayBox&  vedge,
 			FArrayBox&  sty,
@@ -1163,7 +1192,7 @@ Godunov::edge_sync_rmn (const Box&  grd,
 		ARLIM(ww_lo), ARLIM(ww_hi),
 		kr_dat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
 		bc, lo, hi, &dt, dx, 
-		&use_forces_in_trans, &iconserv, &nscal);
+		&use_forces_in_trans, &iconserv, &nscal, &state_eps);
 
 }
 
@@ -1491,7 +1520,7 @@ Godunov::AdvectTracer (const Box&  grd,
 		       FArrayBox&  Sat_old,
 		       FArrayBox&  Sat_new,
                        int         sCompS,
-		       FArrayBox&  tforces,
+		       const FArrayBox&  tforces,
                        int         sCompF,
 		       FArrayBox&  divu,
 		       int         fab_ind,
@@ -1514,7 +1543,6 @@ Godunov::AdvectTracer (const Box&  grd,
 #endif
 		     C_old, C_new, sCompC, Sat_old, Sat_new, sCompS, rock_phi, 
 		     bc, nscal);
-
   //
   // Compute the advective tendency.
   //

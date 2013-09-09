@@ -27,7 +27,7 @@ public:
 				int            comp=0);
 
     void setHomogValues (const BCRec& bc,
-                         IntVect& ratio);
+                         const IntVect& ratio);
 
     void setScalarValues (const BCRec& bc,
 			     IntVect& ratio,

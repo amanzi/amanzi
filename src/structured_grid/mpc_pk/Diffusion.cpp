@@ -177,73 +177,54 @@ Diffusion::Diffusion (Amr*               Parent,
   pm_parent = dynamic_cast<PMAmr*>(parent);
   pm_caller = dynamic_cast<PorousMedia*>(caller);
 
-  if (!initialized)
-    {
-      Initialize();
-
-      ParmParse ppdiff("diffuse");
-
-      ppdiff.query("v",            verbose);
-      ppdiff.query("use_cg_solve", use_cg_solve);
+  if (!initialized) {
+    Initialize();
+    
+    ParmParse ppdiff("diffuse");
+    
+    ppdiff.query("v",            verbose);
+    ppdiff.query("use_cg_solve", use_cg_solve);
 
 #ifdef MG_USE_FBOXLIB
-      ppdiff.query("use_fboxlib_mg", use_fboxlib_mg);
-      if ( use_cg_solve && use_fboxlib_mg )
-	{
-	  BoxLib::Error("Diffusion::read_params: cg_solve && .not. fboxlib_solve");
-	}
+    ppdiff.query("use_fboxlib_mg", use_fboxlib_mg);
+    if ( use_cg_solve && use_fboxlib_mg ) {
+      BoxLib::Error("Diffusion::read_params: cg_solve && .not. fboxlib_solve");
+    }
 #endif
-      int use_mg_precond = 0;
+    int use_mg_precond = 0;
 
-      ppdiff.query("max_order",      max_order);
-      ppdiff.query("scale_abec",     scale_abec);
-      ppdiff.query("use_mg_precond", use_mg_precond);
+    ppdiff.query("max_order",      max_order);
+    ppdiff.query("scale_abec",     scale_abec);
+    ppdiff.query("use_mg_precond", use_mg_precond);
+    
+    use_mg_precond_flag = (use_mg_precond ? true : false);
 
-      use_mg_precond_flag = (use_mg_precond ? true : false);
+    ParmParse pp("prob");
+    pp.query("visc_tol",     visc_tol);
+    pp.query("do_reflux",    do_reflux);
+    pp.query("visc_abs_tol", visc_abs_tol);
 
-      ParmParse pp("prob");
+    do_reflux = (do_reflux ? 1 : 0);
 
-      pp.query("visc_tol",     visc_tol);
-      pp.query("do_reflux",    do_reflux);
-      pp.query("visc_abs_tol", visc_abs_tol);
-
-      do_reflux = (do_reflux ? 1 : 0);
-
-      const int n_visc = _visc_coef.size();
-      const int n_diff = _is_diffusive.size();
-      //
-      // Check whether number of diffusion coefficients is sufficient.  
-      // Coefficients defined for i > NUM_SCALARS are ignored.
-      //
-      if (n_diff < NUM_SCALARS){
-	BoxLib::Abort("Diffusion::Diffusion(): is_diffusive array is not long enough");
-      }
-
-      if (n_visc < NUM_SCALARS){
-	std::cout << n_visc << std::endl;
-	std::cout << NUM_SCALARS << std::endl ;
-	BoxLib::Abort("Diffusion::Diffusion(): visc_coef array is not long enough");
-      }
-      visc_coef.resize(NUM_SCALARS);
-      is_diffusive.resize(NUM_SCALARS);
-      for (int i = 0; i < NUM_SCALARS; i++)
-        {
-	  is_diffusive[i] = _is_diffusive[i];
-	  visc_coef[i] = _visc_coef[i];
-        }
-
-      echo_settings();
+    visc_coef.resize(NUM_SCALARS,-1);
+    is_diffusive.resize(NUM_SCALARS,false);
+    for (int i = 0; i < _visc_coef.size(); i++) {
+      visc_coef[i] = _visc_coef[i];
     }
-
-  if (level > 0)
-    {
-      crse_ratio = parent->refRatio(level-1);
-      coarser->finer = this;
+    for (int i = 0; i < _is_diffusive.size(); i++) {
+      is_diffusive[i] = _is_diffusive[i];
     }
+    
+    echo_settings();
+  }
+  
+  if (level > 0) {
+    crse_ratio = parent->refRatio(level-1);
+    coarser->finer = this;
+  }
 
   rho = new MultiFab(grids,1,1);  
   rho->setVal(1.);
-
 }
 
 Diffusion::Diffusion (Amr*               Parent,

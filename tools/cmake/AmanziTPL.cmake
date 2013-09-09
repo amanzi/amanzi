@@ -394,7 +394,8 @@ endif()
 # PETSc - http://www.mcs.anl.gov/petsc
 ##############################################################################
 
-option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" FALSE)
+#option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" FALSE)
+option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" ON)
 message("enable petsc: ${ENABLE_PETSC}")
 if ( ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC ) # FIXME: Sloppy.
   find_package(PETSc)

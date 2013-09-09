@@ -282,19 +282,25 @@ MatFiller::SetProperty(Real               t,
   }
   unfilled.grow(nGrow);
 
+  // Find number of comps for this property, but also use this to decide
+  // if we know about this property at all.
+  std::map<std::string,int>::const_iterator it=property_nComps.find(pname);
+  if (it==property_nComps.end()) {
+    return false;
+  }
+  int nComp = it->second;
+  BL_ASSERT(mf.nComp() >= dComp + nComp);
+  MultiFab tmf(unfilled,nComp,0);
+
   // Make a handy data structure
   std::vector<const Property*> props(materials.size());
   for (int i=0; i<materials.size(); ++i) {
     const Property* p = materials[i].Prop(pname);
-    if (p==0) return false;
+    if (p==0) {
+      return false;
+    }
     props[i] = p;
   }
-
-  std::map<std::string,int>::const_iterator it=property_nComps.find(pname);
-  BL_ASSERT(it!=property_nComps.end());
-  int nComp = it->second;
-  BL_ASSERT(mf.nComp() >= dComp + nComp);
-  MultiFab tmf(unfilled,nComp,0);
   
   BoxArray baM;
   if (level<ba_mixed.size() && ba_mixed[level].size()>0) {

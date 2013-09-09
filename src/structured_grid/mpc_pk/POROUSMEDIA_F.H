@@ -43,6 +43,7 @@
 #    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
 #    define FORT_MAX_TRACDIFF_DT   maxtracdiff
+#    define FORT_TENSORDIFF        tensordiff
 #else
 #  if defined(BL_FORT_USE_UPPERCASE)
 #    define FORT_FILCC             FILCC
@@ -86,6 +87,7 @@
 #    define FORT_STEADYSTATE_FAB   STEADYSTATEFAB
 #    define FORT_PATCH_GHOST       PATCH_GHOST
 #    define FORT_MAX_TRACDIFF_DT   MAXTRACDIFF
+#    define FORT_TENSORDIFF        TENSORDIFF
 #  elif defined(BL_FORT_USE_LOWERCASE)
 #    define FORT_FILCC             filcc
 #    define FORT_AVGDOWN           avgdown
@@ -128,6 +130,7 @@
 #    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
 #    define FORT_MAX_TRACDIFF_DT   maxtracdiff
+#    define FORT_TENSORDIFF        tensordiff
 #  elif defined(BL_FORT_USE_UNDERSCORE)
 #    define FORT_FILCC             filcc_
 #    define FORT_AVGDOWN           avgdown_
@@ -170,6 +173,7 @@
 #    define FORT_STEADYSTATE_FAB   steadystatefab_
 #    define FORT_PATCH_GHOST       patch_ghost_
 #    define FORT_MAX_TRACDIFF_DT   maxtracdiff_
+#    define FORT_TENSORDIFF        tensordiff_
 #  endif
 
 #include <ArrayLim.H>
@@ -548,6 +552,24 @@ extern "C" {
 			const int* ncomp, int* face, 
 			const int* domlo, const int* domhi);
 
+  void FORT_TENSORDIFF(const int* lo, const int* hi,
+                       const Real* a, ARLIM_P(alo), ARLIM_P(ahi),
+                       const Real* Dcc, ARLIM_P(Dcclo), ARLIM_P(Dcchi),
+
+                       const Real* u, ARLIM_P(ulo), ARLIM_P(uhi),
+                       const Real* bx, ARLIM_P(bxlo), ARLIM_P(bxhi),
+                       const Real* b1x, ARLIM_P(b1xlo), ARLIM_P(b1xhi),
+
+                       const Real* v, ARLIM_P(vlo), ARLIM_P(vhi),
+                       const Real* by, ARLIM_P(bylo), ARLIM_P(byhi),
+                       const Real* b1y, ARLIM_P(b1ylo), ARLIM_P(b1yhi),
+
+#if BL_SPACEDIM>2
+                       const Real* w, ARLIM_P(wlo), ARLIM_P(whi)
+                       const Real* bz, ARLIM_P(bzlo), ARLIM_P(bzhi)
+                       const Real* b1z, ARLIM_P(b1zlo), ARLIM_P(b1zhi),
+#endif
+                       const int* bc);
 }
     
 #endif

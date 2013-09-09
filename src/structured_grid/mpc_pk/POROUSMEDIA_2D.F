@@ -3055,3 +3055,73 @@ c     dummy
       end
 
 #endif
+
+#define NCROSS 1
+#define DXY 1
+
+      subroutine FORT_TENSORDIFF(lo, hi, a,DIMS(a), Dcc, DIMS(Dcc),
+     &                      u, DIMS(u), bx, DIMS(bx), b1x, DIMS(b1x),
+     &                      v, DIMS(v), by, DIMS(by), b1y, DIMS(b1y),
+     &                      bc)
+
+      implicit none
+
+      integer nc, lo(SDIM), hi(SDIM), bc(SDIM,2)
+      integer DIMDEC(a)
+      integer DIMDEC(Dcc)
+      integer DIMDEC(u)
+      integer DIMDEC(bx)
+      integer DIMDEC(b1x)
+      integer DIMDEC(v)
+      integer DIMDEC(by)
+      integer DIMDEC(b1y)
+      REAL_T  a(DIMV(a),2)
+      REAL_T  Dcc(DIMV(Dcc))
+      REAL_T  u(DIMV(u))
+      REAL_T  bx(DIMV(bx))
+      REAL_T  b1x(DIMV(b1x),NCROSS)
+      REAL_T  v(DIMV(v))
+      REAL_T  by(DIMV(by))
+      REAL_T  b1y(DIMV(b1y),NCROSS)
+      
+      integer i,j
+      REAL_T uface, vface, velInv, vel, aLface, aTface, Dface
+
+      do j = lo(2), hi(2)
+         do i = lo(1), hi(1)+1
+            uface = u(i,j)
+            vface = 0.25d0*(v(i-1,j+1)+v(i,j+1)+v(i-1,j)+v(i,j))
+            aLface = 0.5d0*(a(i,j,1)+a(i-1,j,1))
+            aTface = 0.5d0*(a(i,j,2)+a(i-1,j,2))
+            Dface = 0.5d0*(Dcc(i,j)+Dcc(i-1,j))
+            vel = sqrt(uface*uface + vface*vface)
+            if (vel .ne. 0.d0) then
+               velInv = 1.d0 / vel
+            else
+               velInv = 0.d0
+            endif
+            bx(i,j) = Dface + aTface*vel + (aLface - aTface)*uface*uface*velInv
+            b1x(i,j,DXY) = (aLface - aTface)*uface*vface*velInv
+         enddo
+      enddo
+
+      do j = lo(2), hi(2)+1
+         do i = lo(1), hi(1)
+            uface = 0.25d0*(u(i+1,j)+u(i+1,j-1)+u(i,j-1)+u(i,j))
+            vface = v(i,j)
+            aLface = 0.5d0*(a(i,j,1)+a(i,j-1,1))
+            aTface = 0.5d0*(a(i,j,2)+a(i,j-1,2))
+            Dface = 0.5d0*(Dcc(i,j)+Dcc(i,j-1))
+            vel = sqrt(uface*uface + vface*vface)
+            if (vel .ne. 0.d0) then
+               velInv = 1.d0 / vel
+            else
+               velInv = 0.d0
+            endif
+            by(i,j) = Dface + aTface*vel + (aLface - aTface)*vface*vface*velInv
+            b1y(i,j,DXY) = (aLface - aTface)*uface*vface*velInv
+         enddo
+      enddo
+      end
+
+

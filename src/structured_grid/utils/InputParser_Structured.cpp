@@ -260,7 +260,8 @@ namespace Amanzi {
             //
             std::string transport_mode = ec_list.get<std::string>(trans_str);
             do_tracer_transport = (transport_mode == "Off"  ?  0  :  1);
-            prob_out_list.set<int>("do_tracer_transport",do_tracer_transport);
+            prob_out_list.set<int>("do_tracer_advection",do_tracer_transport);
+            prob_out_list.set<int>("do_tracer_diffusion",do_tracer_transport);
 
             //
             // Set chemistry model
@@ -518,7 +519,7 @@ namespace Amanzi {
             // Basic Algorithm Defaults
             //
             double visc_abs_tol = 1.e-12; prob_out_list.set<double>("visc_abs_tol",visc_abs_tol);
-            double visc_tol = 1.e-6; prob_out_list.set<double>("visc_tol",visc_tol);
+            double visc_tol = 1.e-12; prob_out_list.set<double>("visc_tol",visc_tol);
 
             //
             // Verbosity Default
@@ -1277,7 +1278,7 @@ namespace Amanzi {
         }
       }
 
-      void convert_EffectiveDiffusionUniform(const ParameterList& fPLin,
+      void convert_MolecularDiffusionUniform(const ParameterList& fPLin,
                                              ParameterList&       fPLout)
       {
         Array<std::string> nullList, reqP;
@@ -1288,9 +1289,40 @@ namespace Amanzi {
           fPLout.set<double>("val",val);
         }
         else {
-          std::string str = "Unrecognized effective diffusion coefficient parameters";
+          std::string str = "Unrecognized molecular diffusion parameters";
           std::cout << fPLin << std::endl;
           BoxLib::Abort(str.c_str());
+        }
+      }
+
+      void convert_TortuosityUniform(const ParameterList& fPLin,
+                                     ParameterList&       fPLout)
+      {
+        Array<std::string> nullList, reqP;
+        if (fPLin.isParameter("Value")) {
+          const std::string val_name="Value"; reqP.push_back(val_name);
+          PLoptions opt(fPLin,nullList,reqP,true,true);
+          double val = fPLin.get<double>(val_name);
+          fPLout.set<double>("val",val);
+        }
+        else {
+          std::string str = "Unrecognized tortuosity parameters";
+          std::cout << fPLin << std::endl;
+          BoxLib::Abort(str.c_str());
+        }
+      }
+
+      void convert_DispersionTensorUniform(const ParameterList& fPLin,
+                                           ParameterList&       fPLout)
+      {
+        const std::string alphaL_str = "alphaL";
+        const std::string alphaT_str = "alphaT";
+        Array<std::string> nullList, reqP;
+        reqP.push_back(alphaL_str);
+        reqP.push_back(alphaT_str);
+        PLoptions opt(fPLin,nullList,reqP,true,true);
+        for (int i=0; i<reqP.size(); ++i) {
+          fPLout.set<double>(reqP[i],fPLin.get<double>(reqP[i]));
         }
       }
 
@@ -1326,7 +1358,9 @@ namespace Amanzi {
             const std::string perm_file_str = "Intrinsic Permeability: Input File";
             const std::string perm_uniform_str = "Intrinsic Permeability: Uniform";
             const std::string perm_anisotropic_uniform_str = "Intrinsic Permeability: Anisotropic Uniform";
-            const std::string diff_effective_uniform_str = "Effective Diffusion Coefficient: Uniform";
+            const std::string molec_diff_uniform_str = "Molecular Diffusion: Uniform";
+            const std::string tortuosity_str = "Tortuosity: Uniform";
+            const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
 
             std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
 	    std::string porosity_plotfile_in, porosity_plotfile_out;
@@ -1385,10 +1419,20 @@ namespace Amanzi {
                               rsublist.set("permeability_dist","uniform");
                               mtest["Intrinsic_Permeability"] = true;
                             }
-                            else if (rlabel==diff_effective_uniform_str) {
+                            else if (rlabel==molec_diff_uniform_str) {
                               ParameterList dsublist;
-                              convert_EffectiveDiffusionUniform(rsslist,dsublist);
-                              rsublist.set("effective_diffusion_coefficient",dsublist);
+                              convert_MolecularDiffusionUniform(rsslist,dsublist);
+                              rsublist.set("molecular_diffusion",dsublist);
+                            }
+                            else if (rlabel==tortuosity_str) {
+                              ParameterList dsublist;
+                              convert_TortuosityUniform(rsslist,dsublist);
+                              rsublist.set("tortuosity",dsublist);
+                            }
+                            else if (rlabel==dispersivity_str) {
+                              ParameterList dsublist;
+                              convert_DispersionTensorUniform(rsslist,dsublist);
+                              rsublist.set("dispersivity",dsublist);
                             }
                             else if (rlabel=="Capillary Pressure: van Genuchten") {
                                 int cpl_type = 3;
@@ -3015,9 +3059,11 @@ namespace Amanzi {
             user_derive_list.push_back(underscore("Aqueous Volumetric Flux Z"));
 #endif
 
-#if 0
-            user_derive_list.push_back(underscore("Effective Diffusion Coefficient"));
-#endif
+            user_derive_list.push_back(underscore("Molecular Diffusion Coefficient"));
+            user_derive_list.push_back(underscore("Dispersivity_L"));
+            user_derive_list.push_back(underscore("Dispersivity_T"));
+            user_derive_list.push_back(underscore("Tortuosity"));
+
             user_derive_list.push_back(underscore("Intrinsic Permeability X"));
             user_derive_list.push_back(underscore("Intrinsic Permeability Y"));
 #if BL_SPACEDIM==3

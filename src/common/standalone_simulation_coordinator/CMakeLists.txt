@@ -91,7 +91,7 @@ else()
 endif()
 
 if(ENABLE_Structured)
-  set(structured_grid_libs pmamr boxprob boxdriv structutils structmat ${CCSE_LIBRARIES})
+  set(structured_grid_libs pmamr boxprob boxdriv structutils structmat strans ${CCSE_LIBRARIES})
   link_directories(${CCSE_EXT_LIBRARY_DIRS})
   if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
     #message(">>>>>> using darwin ld flags")

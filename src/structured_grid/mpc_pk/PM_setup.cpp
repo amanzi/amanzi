@@ -100,14 +100,8 @@ PArray<Material> PorousMedia::materials;
 //
 MultiFab*   PorousMedia::kappadata;
 MultiFab*   PorousMedia::phidata;
-bool        PorousMedia::porosity_from_fine;
-bool        PorousMedia::permeability_from_fine;
 Real        PorousMedia::saturation_threshold_for_vg_Kr;
 int         PorousMedia::use_shifted_Kr_eval;
-DataServices* PorousMedia::phi_dataServices;
-DataServices* PorousMedia::kappa_dataServices;
-std::string PorousMedia::phi_plotfile_varname;
-Array<std::string> PorousMedia::kappa_plotfile_varnames;
 //
 // Source.
 //
@@ -231,17 +225,19 @@ Array<Real> PorousMedia::diff_coef;
 //
 // Transport flags
 //
-bool PorousMedia::do_tracer_transport;
+bool PorousMedia::do_tracer_advection;
+bool PorousMedia::do_tracer_diffusion;
 bool PorousMedia::setup_tracer_transport;
-int  PorousMedia::transport_tracers;
+bool PorousMedia::advect_tracers;
 bool PorousMedia::diffuse_tracers;
+bool PorousMedia::tensor_tracer_diffusion;
 bool PorousMedia::solute_transport_limits_dt;
 
 //
 // Chemistry flag.
 //
-int  PorousMedia::do_tracer_chemistry;
-int  PorousMedia::react_tracers;
+bool  PorousMedia::do_tracer_chemistry;
+bool  PorousMedia::react_tracers;
 int  PorousMedia::do_full_strang;
 int  PorousMedia::n_chem_interval;
 int  PorousMedia::it_chem;
@@ -274,6 +270,7 @@ Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> PorousMedia::parameters
 //
 int  PorousMedia::do_simple;
 int  PorousMedia::do_multilevel_full;
+bool PorousMedia::use_PETSc_snes_for_evolution;
 int  PorousMedia::do_reflux;
 int  PorousMedia::do_correct;
 int  PorousMedia::no_corrector;
@@ -287,6 +284,7 @@ int  PorousMedia::nGrowHYP;
 int  PorousMedia::nGrowMG;
 int  PorousMedia::nGrowEIGEST;
 bool PorousMedia::do_constant_vel;
+Real PorousMedia::be_cn_theta_trac;
 
 int  PorousMedia::richard_solver_verbose;
 //
@@ -352,7 +350,6 @@ namespace
 {
     static void PM_Setup_CleanUpStatics() 
     {
-	DataServices* phids = PorousMedia::PhiData(); delete phids; phids=0;
     }
 }
 
@@ -517,11 +514,6 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::kappadata = 0;
   PorousMedia::phidata   = 0;
-  PorousMedia::phi_dataServices = 0;
-  PorousMedia::kappa_dataServices = 0;
-
-  PorousMedia::porosity_from_fine     = false;
-  PorousMedia::permeability_from_fine = false;
 
   PorousMedia::do_source_term = false;
 
@@ -591,11 +583,13 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::variable_scal_diff = 1; 
 
-  PorousMedia::do_tracer_chemistry            = 0;
-  PorousMedia::do_tracer_transport = false;
+  PorousMedia::do_tracer_chemistry = false;
+  PorousMedia::do_tracer_advection = false;
+  PorousMedia::do_tracer_diffusion = false;
   PorousMedia::setup_tracer_transport = false;
-  PorousMedia::transport_tracers  = 0;
+  PorousMedia::advect_tracers     = false;
   PorousMedia::diffuse_tracers    = false;
+  PorousMedia::tensor_tracer_diffusion = false;
   PorousMedia::do_full_strang     = 0;
   PorousMedia::n_chem_interval    = 0;
   PorousMedia::it_chem            = 0;
@@ -606,6 +600,7 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::do_simple           = 0;
   PorousMedia::do_multilevel_full  = 1;
+  PorousMedia::use_PETSc_snes_for_evolution = true;
   PorousMedia::do_reflux           = 1;
   PorousMedia::do_correct          = 0;
   PorousMedia::no_corrector        = 0;
@@ -628,6 +623,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::verbose_chemistry = 0;
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = 0;
+  //PorousMedia::be_cn_theta_trac = 0.5;
+  PorousMedia::be_cn_theta_trac = 1;
 
   PorousMedia::richard_solver_verbose = 2;
 
@@ -848,9 +845,9 @@ PorousMedia::variableSetUp ()
 			  bc,BndryFunc(FORT_ONE_N_FILL));
   }
 
-  is_diffusive.resize(NUM_SCALARS);
-  advectionType.resize(NUM_SCALARS);
-  diffusionType.resize(NUM_SCALARS);
+  is_diffusive.resize(NUM_SCALARS,false);
+  advectionType.resize(NUM_SCALARS,Conservative);
+  diffusionType.resize(NUM_SCALARS,Laplacian_S);
 
   // For components.
   for (int i=0; i<ncomps; i++) 
@@ -949,7 +946,7 @@ PorousMedia::variableSetUp ()
     }
 #endif
 
-  // "User defined" - atthough these must correspond to those in PorousMedia::derive
+  // "User defined" - although these must correspond to those in PorousMedia::derive
   IndexType regionIDtype(IndexType::TheCellType());
   int nCompRegion = 1;
   std::string amr_prefix = "amr";
@@ -958,7 +955,8 @@ PorousMedia::variableSetUp ()
   Array<std::string> user_derive_list(num_user_derives);
   pp.getarr("user_derive_list",user_derive_list,0,num_user_derives);
   for (int i=0; i<num_user_derives; ++i) {
-      derive_lst.add(user_derive_list[i], regionIDtype, nCompRegion);
+    int nCompThis = (user_derive_list[i] == "Dispersivity" ? 2 : 1);
+    derive_lst.add(user_derive_list[i], regionIDtype, nCompThis);
   }
 
   //
@@ -1108,118 +1106,6 @@ void PorousMedia::read_geometry()
     }
 }
 
-//using AmanziS::WritePlotfile;
-void
-WriteMaterialPltFile(int max_level,const Array<int>& n_cell,const Array<int>& fRatio,
-		     const Real* problo, const Real* probhi, MultiFab* data,
-		     const std::string& filename, int nGrow, const Array<int>& harmDir,
-                     const Array<std::string>& names)
-{
-  int nLevs = max_level + 1;
-  Array<MultiFab*> mlData(nLevs);
-  mlData[max_level] = (MultiFab*) data; // will not change this one
-
-  Array<Box> pd(nLevs), gpd(nLevs);
-  Array<Array<Real> > dxLevel(nLevs,Array<Real>(BL_SPACEDIM));
-
-  pd[0] = Box(IntVect::TheZeroVector(),
-	      IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
-
-  int fineRatio = 1;
-  for (int lev=0; lev<=max_level; ++lev) {
-    if (lev>0) {
-      pd[lev] = Box(pd[lev-1]).refine(fRatio[lev-1]);
-      fineRatio *= fRatio[lev-1];
-    }
-    for (int d=0; d<BL_SPACEDIM; ++d) {
-      dxLevel[lev][d] = (Real)(probhi[d]-problo[d])/pd[lev].length(d);
-    }
-    gpd[lev] = Box(pd[lev]).grow(fineRatio*nGrow);
-  }
-  int nGrowFINE = fineRatio * nGrow;
-
-  Real gplo[BL_SPACEDIM], gphi[BL_SPACEDIM];
-  for (int d=0; d<BL_SPACEDIM; ++d) {
-    gplo[d] = problo[d] - dxLevel[0][d]*nGrow;
-    gphi[d] = probhi[d] + dxLevel[0][d]*nGrow;
-  }
-
-  int max_size = 64;
-  int ratioToFinest = 1;
-  int nComp = harmDir.size(); BL_ASSERT(data->nComp()>=nComp);
-  
-  for (int lev=max_level-1; lev>=0; --lev) {
-    ratioToFinest *= fRatio[lev];
-    
-    BoxArray bac(gpd[lev]);
-    bac.maxSize(max_size);
-    BoxArray baf = BoxArray(bac).refine(ratioToFinest);
-    BoxArray bafg = BoxArray(baf).grow(nGrowFINE);
-    MultiFab mffine_ng(bafg,nComp,0);      
-    mffine_ng.copy(*mlData[max_level],0,0,nComp); // parallel copy
-    
-    mlData[lev] = new MultiFab(bac,nComp,nGrow);    
-    for (MFIter mfi(*mlData[lev]); mfi.isValid(); ++mfi) {
-      const int* lo    = mfi.validbox().loVect();
-      const int* hi    = mfi.validbox().hiVect();
-      const FArrayBox& fine = mffine_ng[mfi];
-      FArrayBox& crse       = (*mlData[lev])[mfi];
-      
-      for (int d=0; d<nComp; ++d) {
-        FORT_CRSENMAT (fine.dataPtr(d), ARLIM(fine.loVect()), ARLIM(fine.hiVect()),
-                       crse.dataPtr(d), ARLIM(crse.loVect()), ARLIM(crse.hiVect()),
-                       lo, hi, &ratioToFinest, &(harmDir[d]));
-      }
-    }    
-  }
-
-  std::string pfversion = "MaterialData-0.1";
-  Real t = 0;
-  int coordSys = 0;
-  bool plt_verbose = false;
-  bool isCartGrid = false;
-  Real vfeps = 1.e-12;
-  int levelSteps = 0;
-  WritePlotfile(pfversion,mlData,t,gplo,gphi,fRatio,gpd,dxLevel,coordSys,
-		filename,names,plt_verbose,isCartGrid,&vfeps,&levelSteps);
-
-  for (int lev=0; lev<max_level-1; ++lev) {
-    delete mlData[lev];
-  }
-}
-
-static DataServices*
-OpenMaterialDataPltFile(const std::string& filename,
-                        int                max_level,
-                        const Array<int>&  ratio,
-                        const Array<int>&  n_cell,
-                        int                nGrowMAX)
-{
-  DataServices::SetBatchMode();
-  Amrvis::FileType fileType(Amrvis::NEWPLT);
-  DataServices* ret = new DataServices(filename, fileType);
-  if (!ret->AmrDataOk())
-    DataServices::Dispatch(DataServices::ExitRequest, NULL);
-  AmrData& amrData = ret->AmrDataRef();
-
-  // Verify kappa data is compatible with current run
-  bool is_compatible = amrData.FinestLevel()>=max_level;
-  BL_ASSERT(ratio.size()<max_level);
-  for (int lev=0; lev<max_level && is_compatible; ++lev) {
-    is_compatible &= amrData.RefRatio()[lev] == ratio[lev];
-  }
-  if (is_compatible) {
-    Box probDomain=Box(IntVect::TheZeroVector(),
-                       IntVect(n_cell.dataPtr())-IntVect::TheUnitVector());
-    probDomain.grow(nGrowMAX);
-    is_compatible &= amrData.ProbDomain()[0].contains(probDomain);
-  }
-  if (!is_compatible) {
-    delete ret;
-    ret = 0;
-  }
-}
-
 void
 PorousMedia::read_rock()
 {
@@ -1236,6 +1122,26 @@ PorousMedia::read_rock()
     materials.clear();
     materials.resize(nrock,PArrayManage);
     Array<std::string> material_regions;
+
+    // Scan materials for properties that must be defined for all
+    //   if defined for one. 
+    bool user_specified_molecular_diffusion_coefficient = false;
+    bool user_specified_dispersivity = false;
+    bool user_specified_tortuosity = false;
+    for (int i = 0; i<nrock; i++)
+    {
+        const std::string& rname = r_names[i];
+        const std::string prefix("rock." + rname);
+        ParmParse ppr(prefix.c_str());
+        user_specified_molecular_diffusion_coefficient = ppr.countval("molecular_diffusion.val");
+        user_specified_tortuosity = ppr.countval("tortuosity.val");
+        user_specified_dispersivity = ppr.countval("dispersivity.alphaL");
+    }
+
+    diffuse_tracers = do_tracer_diffusion
+      && ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
+    tensor_tracer_diffusion = diffuse_tracers && user_specified_dispersivity;
+
     for (int i = 0; i<nrock; i++)
     {
         const std::string& rname = r_names[i];
@@ -1248,13 +1154,30 @@ PorousMedia::read_rock()
 
         Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
 
-        Real rDeff = -1;
-        if (ppr.countval("effective_diffusion_coefficient.val")) {
-          ppr.get("effective_diffusion_coefficient.val",rDeff);
-          diffuse_tracers = true;
+        Real rDmolec = 0;
+        Property* Dmolec_func = 0;
+        if (user_specified_molecular_diffusion_coefficient) {
+          ppr.query("molecular_diffusion.val",rDmolec);
+          std::string Dmolec_str = "molecular_diffusion_coefficient";
+          Dmolec_func = new ConstantProperty(Dmolec_str,rDmolec,harm_crsn,pc_refine);
         }
-        std::string Deff_str = "Deff";
-        Property* Deff_func = new ConstantProperty(Deff_str,rDeff,harm_crsn,pc_refine);
+
+        Array<Real> rDispersivity(2,0);
+        Property* Dispersivity_func = 0;
+        if (user_specified_dispersivity) {
+          ppr.query("dispersivity.alphaL",rDispersivity[0]);
+          ppr.query("dispersivity.alphaT",rDispersivity[1]);
+          std::string Dispersivity_str = "dispersivity";
+          Dispersivity_func = new ConstantProperty(Dispersivity_str,rDispersivity,harm_crsn,pc_refine);
+        }
+
+        Real rTortuosity = 1;
+        Property* Tortuosity_func = 0;
+        if (user_specified_tortuosity) {
+          ppr.query("tortuosity.val",rTortuosity);
+          std::string Tortuosity_str = "tortuosity";
+          Tortuosity_func = new ConstantProperty(Tortuosity_str,rTortuosity,harm_crsn,pc_refine);
+        }
 
         Property* phi_func = 0;
         std::string phi_str = "porosity";
@@ -1410,13 +1333,22 @@ PorousMedia::read_rock()
         std::vector<Property*> properties;
         properties.push_back(phi_func);
         properties.push_back(kappa_func);
-        properties.push_back(Deff_func);
+        if (Dmolec_func) {
+          properties.push_back(Dmolec_func);
+        }
+        if (Dispersivity_func) {
+          properties.push_back(Dispersivity_func);
+        }
+        if (Tortuosity_func) {
+          properties.push_back(Tortuosity_func);
+        }
         properties.push_back(krel_func);
         properties.push_back(cpl_func);
         materials.set(i,new Material(rname,rregions,properties));
         delete phi_func;
         delete kappa_func;
-        delete Deff_func;
+        delete Dmolec_func;
+        delete Tortuosity_func;
         delete krel_func;
         delete cpl_func;
     }
@@ -1657,18 +1589,22 @@ void PorousMedia::read_prob()
       solute_transport_limits_dt = true;
       do_multilevel_full = true;
       do_richard_init_to_steady = true;
+      use_PETSc_snes_for_evolution = true;
   }
 
-  pb.query("do_tracer_transport",do_tracer_transport);
-  if (do_tracer_transport) {
+  pb.query("do_tracer_advection",do_tracer_advection);
+  pb.query("do_tracer_diffusion",do_tracer_diffusion);
+  if (do_tracer_advection || do_tracer_diffusion) {
       setup_tracer_transport = true; // NOTE: May want these data structures regardless...
   }
 
   if (setup_tracer_transport && 
       ( model==PM_STEADY_SATURATED
         || (execution_mode==INIT_TO_STEADY && switch_time<=0)
-        || (execution_mode!=INIT_TO_STEADY && do_tracer_transport) ) ) {
-      transport_tracers = true;
+        || (execution_mode!=INIT_TO_STEADY) ) ) {
+      advect_tracers = do_tracer_advection;
+      diffuse_tracers = do_tracer_diffusion;
+      react_tracers = do_tracer_chemistry;
   }
     
   // Verbosity
@@ -1760,6 +1696,8 @@ void PorousMedia::read_prob()
   pb.query("full_cycle", full_cycle);
   //pb.query("algorithm", algorithm);
   pb.query("do_multilevel_full",  do_multilevel_full );
+  use_PETSc_snes_for_evolution = do_multilevel_full;
+  pb.query("use_PETSc_snes_for_evolution", use_PETSc_snes_for_evolution);
   pb.query("do_simple",  do_simple );
   pb.query("do_reflux",  do_reflux );
   pb.query("do_correct", do_correct);
@@ -1773,7 +1711,10 @@ void PorousMedia::read_prob()
   pb.query("visc_abs_tol",visc_abs_tol);
   pb.query("be_cn_theta",be_cn_theta);
   if (be_cn_theta > 1.0 || be_cn_theta < .5)
-    BoxLib::Abort("PorousMedia::read_prob():Must have be_cn_theta <= 1.0 && >= .5");   
+    BoxLib::Abort("PorousMedia::Must have be_cn_theta <= 1.0 && >= .5");   
+  pb.query("be_cn_theta_trac",be_cn_theta_trac);
+  if (be_cn_theta > 1.0 || be_cn_theta < 0)
+    BoxLib::Abort("PorousMedia::Must have be_cn_theta_trac <= 1.0 && >= 0");   
   pb.query("harm_avg_cen2edge", def_harm_avg_cen2edge);
 
   // if capillary pressure flag is true, then we make sure 
@@ -2405,7 +2346,7 @@ void  PorousMedia::read_tracer()
       {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-          if (do_tracer_chemistry>0  ||  do_tracer_transport) {
+          if (do_tracer_chemistry>0  ||  do_tracer_advection  ||  do_tracer_diffusion) {
               setup_tracer_transport = true;
               std::string g="Total"; ppr.query("group",g); // FIXME: is this relevant anymore?
               group_map[g].push_back(i+ncomps);
@@ -2551,9 +2492,7 @@ void  PorousMedia::read_tracer()
               set_tracer_bc(trac_bc,phys_bc_trac);
           }
       }
-      if (diffuse_tracers) {
-        ndiff += ntracers;
-      }
+      ndiff += ntracers;
   }
 }
 
