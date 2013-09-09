@@ -15,6 +15,9 @@ Usage: Create("GMRES with Hypre AMG", solvers_list);
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 
+#include "errors.hh"
+#include "exceptions.hh"
+
 #include "LinearOperator.hh"
 #include "PCG_Operator.hh"
 #include "GMRES_Operator.hh"
