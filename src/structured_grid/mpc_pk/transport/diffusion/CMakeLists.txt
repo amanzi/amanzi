@@ -87,8 +87,6 @@ if (BUILD_TESTS)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${TRANSTEST}/probin ${STRUCTUREDTRANS_BINARY_DIR})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E
                     copy ${TRANSTEST}/tTensorDiffusion_TestRes_H ${STRUCTUREDTRANS_BINARY_DIR})
     execute_process(COMMAND ${CMAKE_COMMAND} -E
                     copy ${TRANSTEST}/tTensorDiffusion_TestRes_D ${STRUCTUREDTRANS_BINARY_DIR})
