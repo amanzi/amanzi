@@ -648,7 +648,7 @@ Example of `"Structured`" mesh:
 .. code-block:: xml
 
    <ParameterList name="Mesh">
-     <ParameterList name="Structured"/>
+     <ParameterList name="Structured">
        <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
        <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
        <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
@@ -660,9 +660,9 @@ Example of `"Unstructured`" mesh generated internally:
 .. code-block:: xml
 
    <ParameterList name="Mesh">
-     <ParameterList name="Unstructured"/>
-       <ParameterList name="Generate Mesh"/>
-         <ParameterList name="Uniform Structured"/>
+     <ParameterList name="Unstructured">
+       <ParameterList name="Generate Mesh">
+         <ParameterList name="Uniform Structured">
            <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
            <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
            <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
