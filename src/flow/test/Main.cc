@@ -6,6 +6,8 @@
 #include "VerboseObject_objs.hh"
 
 
+#include "tests_flow_evaluator_reg.hh"
+
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

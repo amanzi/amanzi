@@ -78,6 +78,8 @@ file(GLOB flow_inc_files "*.hh")
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
+    register_evaluators(tests_flow_evaluator_reg.hh FACTORY_REG_LIST)
+
 #if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -94,7 +96,8 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
+ 
+       set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
  
         # Test: miscaleneous Darcy flow routines
         add_amanzi_test(flow_darcy_misc flow_darcy_misc 

@@ -49,6 +49,13 @@
 #endif
 #endif
 
+
+#ifdef ENABLE_Unstructured
+#include "evaluator_reg.hh"
+#endif
+
+
+
 struct RunLog
     : public std::ostream
 {

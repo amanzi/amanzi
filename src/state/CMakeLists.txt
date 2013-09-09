@@ -78,8 +78,12 @@ set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 #
 add_install_include_file(${state_inc_files})
 
+register_evaluator_with_factory(cell_volume_evaluator_reg.hh FACTORY_REG_LIST)
+register_evaluator_with_factory(rank_evaluator_reg.hh FACTORY_REG_LIST)
 
 if (BUILD_TESTS)
+
+    register_evaluators(tests_state_evaluator_reg.hh FACTORY_REG_LIST)
   
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
