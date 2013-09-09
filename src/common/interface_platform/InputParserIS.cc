@@ -734,7 +734,7 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
     if ( exe_sublist.isParameter("Flow Model") ) {
       if ( exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off") {
         mpc_list.set<std::string>("disable Flow_PK", "yes");
-      } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" || exe_sublist.get<std::string>("Flow Model") == "richards") {
+      } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" ) {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Richards");
       } else if (exe_sublist.get<std::string>("Flow Model") == "Single Phase") {

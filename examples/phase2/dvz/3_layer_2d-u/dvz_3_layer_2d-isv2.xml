@@ -111,11 +111,11 @@
 		           can be used instead. Execution control defaults can be overridden as shown on 0.0 time line.
 			   Use named time period as defined above, or actual times.</comments>
                            <execution_control_defaults                         init_dt= "3.168E-08"   max_dt="0.01"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-			   <execution_control  start="0.0;y"   end="1956.0"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
+			   <execution_control  start="0.0;y"   end="1956.0,y"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
 			   <execution_control  start="B-17_release_begin" />
 			   <execution_control  start="B-17_release_end" />
 			   <execution_control  start="B-18_release_begin" />
-			   <execution_control  start="B-18_release_end" />
+			   <execution_control  start="B-18_release_end" end="3000.0,y"/>
 			   <!-- OR specify times
 			   <execution_control  start="0.0;y"   end="1956.0"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
 			   <execution_control  start="1956.0;y"  />
@@ -264,7 +264,7 @@
 		<comments>Format was changed because it is more readable for long time series</comments>
 		<boundary_condition name = "Recharge at top of the domain">
 			<comments>Would be nice to have comments section for each boundary_condition but its not clear how it maps to UI</comments>
-			<assigned_regions>Recharge_Boundary_WestofCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastofCribs0</assigned_regions>
+			<assigned_regions>Recharge_Boundary_WestofCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastofCribs</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
 					<inward_mass_flux start="start"    function= "constant"  value="pre_1956_recharge"/>
@@ -330,14 +330,15 @@
 					<!--TDS Deleted type="Uniform Pressure" as that is redundant information -->
 					<!--TODO THIS needs to be reworked uniform vs. constant, time-function vs. spatial -->
 					<uniform_pressure name = "1" start="0.0"        function= "constant" value="101325.0"/>
-					<uniform_pressure name = "2" start="3000.0,yr"  function= "constant" value="101325.0"/>
+					<uniform_pressure name = "2" start="3000.0,y"  function= "constant" value="101325.0"/>
 				</liquid_component>
 				<solute_component name = "solute">
 					<aqueous_conc name = "Tc-99" start="0.0"        function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,yr"  function= "constant"    value="0.0"/>
+					<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"    value="0.0"/>
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
+
 	</boundary_conditions>
 
 	<output>
