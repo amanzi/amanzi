@@ -630,6 +630,8 @@
       <Parameter name="Format" type="string" value="simple" />
       <Parameter name="File" type="string" value="ascem-2012-farea.bgd" />
     </ParameterList>
+    <Parameter name="Engine" type="string" value="PFloTran"/>
+    <Parameter name="Engine Input File" type="string" value="ascem-2012-1d-farea-full.in"/>
     <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
@@ -643,6 +645,22 @@
 <!--    <Parameter name="Max Time Step (s)" type="double" value="1577846.3"/> -->
     <!-- 0.01 yr -->
 <!--    <Parameter name="Max Time Step (s)" type="double" value="315569.260"/> -->
+    <ParameterList name="Initial Conditions">
+      <ParameterList name="initial">
+        <Parameter name="PFloTran Constraint" type="string" value="initial"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
+      </ParameterList> <!-- initial -->
+    </ParameterList> <!-- Initial Conditions -->
+    <ParameterList name="Boundary Conditions">
+      <ParameterList name="East BC">
+        <Parameter name="PFloTran Constraint" type="string" value="east"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{East}"/>
+      </ParameterList> <!-- East BC -->
+      <ParameterList name="West BC">
+        <Parameter name="PFloTran Constraint" type="string" value="west"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
+      </ParameterList> <!-- West BC -->
+    </ParameterList> <!-- Boundary Conditions -->
   </ParameterList> <!-- Chemistry -->
 
 </ParameterList> <!-- Main -->

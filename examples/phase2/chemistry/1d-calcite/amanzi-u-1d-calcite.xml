@@ -270,10 +270,10 @@
       </ParameterList> <!-- initial -->
     </ParameterList> <!-- Initial Conditions -->
     <ParameterList name="Boundary Conditions">
-      <ParameterList name="west_bc">
+      <ParameterList name="West BC">
         <Parameter name="PFloTran Constraint" type="string" value="west"/>
         <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
-      </ParameterList> <!-- west_bc -->
+      </ParameterList> <!-- West BC -->
     </ParameterList> <!-- Boundary Conditions -->
   </ParameterList> <!-- Chemistry -->
 </ParameterList>

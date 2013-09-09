@@ -258,10 +258,28 @@
       <Parameter name="Format" type="string" value="simple" />
       <Parameter name="File" type="string" value="ABC-decay-linear-sorption.bgd" />
     </ParameterList> <!-- Thermodynamic Database -->
+    <Parameter name="Engine" type="string" value="PFloTran"/>
+    <Parameter name="Engine Input File" type="string" value="ABC_decay_linear_sorption.in"/>
     <Parameter name="Verbosity" type="Array(string)" value="{verbose, debug}" />
     <Parameter name="Activity Model" type="string" value="unit" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
+    <ParameterList name="Initial Conditions">
+      <ParameterList name="initial">
+        <Parameter name="PFloTran Constraint" type="string" value="initial"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
+      </ParameterList> <!-- initial -->
+    </ParameterList> <!-- Initial Conditions -->
+    <ParameterList name="Boundary Conditions">
+      <ParameterList name="East BC">
+        <Parameter name="PFloTran Constraint" type="string" value="initial"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{East}"/>
+      </ParameterList> <!-- East BC -->
+      <ParameterList name="West BC">
+        <Parameter name="PFloTran Constraint" type="string" value="inlet"/>
+        <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
+      </ParameterList> <!-- West BC -->
+    </ParameterList> <!-- Boundary Conditions -->
   </ParameterList> <!-- Chemistry -->
 </ParameterList>
