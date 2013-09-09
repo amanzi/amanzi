@@ -13,8 +13,8 @@ Usage:
   TPK.advance(time_step);
 */
 
-#ifndef __TRANSPORT_PK_HH__
-#define __TRANSPORT_PK_HH__
+#ifndef AMANZI_TRANSPORT_PK_HH_
+#define AMANZI_TRANSPORT_PK_HH_
 
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"

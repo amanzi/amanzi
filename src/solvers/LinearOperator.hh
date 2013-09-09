@@ -4,7 +4,7 @@ License: BSD
 Authors: Ethan Coon (ecoon@lanl.gov)
          Konstantin Lipnikov (lipnikov@lanl.gov)
 
-Conjugate gradient method.
+Base class for linear solvers.
 Usage: 
 */
 
@@ -19,7 +19,7 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class LinearOperator {
+class LinearOperator : public Matrix {
  public:
   LinearOperator(Teuchos::RCP<const Matrix> m) : m_(m) {};
   ~LinearOperator() {};
@@ -27,7 +27,7 @@ class LinearOperator {
   virtual void Init(Teuchos::ParameterList& plist) = 0;  
 
   void Apply(const Vector& v, Vector& mv) { m_->Apply(v, mv); }
-  virtual void ApplyInverse(const Vector& v, Vector& hv) const = 0;
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
 
   Teuchos::RCP<const VectorSpace> domain() const { return m_->domain(); }
   Teuchos::RCP<const VectorSpace> range() const { return m_->range(); }
