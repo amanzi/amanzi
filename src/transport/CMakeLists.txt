@@ -44,7 +44,17 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: transport
 #
-file(GLOB transport_inc_files "*.hh")
+set(transport_inc_files
+  Matrix_Dispersion.hh
+  Reconstruction.hh
+  Transport_BC_Factory.hh
+  transport_boundary_function.hh
+  Transport_constants.hh
+  transport_domain_function.hh
+  Transport_PK.hh
+  Transport_SourceFactory.hh
+  Transport_State.hh)
+
 set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc 
                         Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
                         Transport_BC_Factory.cc Transport_SourceFactory.cc
@@ -56,7 +66,7 @@ add_amanzi_library(transport
                              time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
-    register_evaluators(tests_transport_evaluator_reg.hh FACTORY_REG_LIST)
+    generate_evaluators_registration_header(HEADERFILE tests_transport_evaluator_reg.hh  LISTNAME FACTORY_REG_LIST)
 
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})

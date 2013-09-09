@@ -393,6 +393,8 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       }
 
       // Time Macro
+      Teuchos::Array<double> all_times;
+      all_times.clear();
       if ( vis_list.isParameter("Time Macro") ) {
         std::vector<std::string> time_macros;
         time_macros = vis_list.get<Teuchos::Array<std::string> >("Time Macro").toVector();
@@ -403,15 +405,37 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
           Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macros[i], plist);
           if (time_macro_list.isParameter("Start_Period_Stop")) {
             std::stringstream ss;
-            ss << "times start period stop " << i;            
+            ss << "times start period stop " << j;            
             vis_list.set(ss.str(),time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
             ++j;
           }
           if (time_macro_list.isParameter("Values")) {
-            vis_list.set("times",time_macro_list.get<Teuchos::Array<double> >("Values"));
+	    Teuchos::Array<double> times;
+	    times = time_macro_list.get<Teuchos::Array<double> >("Values");
+	    
+	    std::list<double> all_list, cur_list;
+	    for (Teuchos::Array<double>::iterator at = all_times.begin(); at != all_times.end(); ++at) {
+	      all_list.push_back(*at);
+	    }
+	    for (Teuchos::Array<double>::iterator t = times.begin(); t != times.end(); ++t) {
+	      cur_list.push_back(*t);
+	    }
+	    all_list.sort();
+	    cur_list.sort();
+	    
+	    all_list.merge(cur_list);
+	    all_list.unique();
+	    
+	    all_times.clear();
+	    for (std::list<double>::iterator al = all_list.begin(); al != all_list.end(); ++al) {
+	      all_times.push_back(*al);
+	    }
           }
         }
         vis_list.remove("Time Macro");
+      }
+      if (all_times.size() != 0) {
+	vis_list.set("times", all_times);
       }
     }
   }
