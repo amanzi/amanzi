@@ -13,7 +13,7 @@ ENDMACRO(WHOLE_ARCHIVE inlib)
 include(PrintVariable)
 include(TestManager)
 include(LibraryManager)
-include(RegistryManager)
+#include(RegistryManager)
 
 
 #
@@ -37,15 +37,6 @@ include_directories(${Epetra_INCLUDE_DIRS})
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
-
-# register to factories
-register_to_factory(SOURCE linear-function_reg.hh
-                    PATH   ${FUNCS_SOURCE_DIR})
-register_to_factory(SOURCE constant-function_reg.hh
-                    PATH   ${FUNCS_SOURCE_DIR})
-
-
-create_reg_source(FILENAME registry.cc)
 
 #
 # Library: functions

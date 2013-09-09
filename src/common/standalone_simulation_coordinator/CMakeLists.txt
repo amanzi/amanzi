@@ -50,6 +50,9 @@ include_directories(${CHEM_INCLUDES_DIR})
 if ( ENABLE_Unstructured )
   include_directories(${ATK_SOURCE_DIR})
   include_directories(${MESH_FACTORY_SOURCE_DIR})
+  include_directories(${MESH_SOURCE_DIR})
+  include_directories(${MESH_DATA_SOURCE_DIR})
+  include_directories(${DATA_STRUCTURES_SOURCE_DIR})
   include_directories(${GEOMETRY_SOURCE_DIR})
   include_directories(${OUTPUT_SOURCE_DIR})
   include_directories(${STATE_SOURCE_DIR})
@@ -121,6 +124,11 @@ set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${
 
 if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
+endif()
+
+
+if(ENABLE_Unstructured)
+  register_evaluators(evaluator_reg.hh FACTORY_REG_LIST)
 endif()
 
 

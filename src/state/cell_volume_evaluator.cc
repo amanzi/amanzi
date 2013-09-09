@@ -15,9 +15,6 @@ A field evaluator for an unchanging cell volume.
 
 namespace Amanzi {
 
-Utils::RegisteredFactory<FieldEvaluator,CellVolumeEvaluator>
-CellVolumeEvaluator::fac_("cell volume");
-
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------

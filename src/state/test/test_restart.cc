@@ -10,6 +10,7 @@
 #include "checkpoint.hh"
 
 
+
 SUITE(RESTART) {
 
   TEST(RESTART_DUMP_REQUIRED_INTERVAL) {

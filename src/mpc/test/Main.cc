@@ -3,6 +3,7 @@
 #include <mpi.h>
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "tests_mpc_evaluator_reg.hh"
 
 int main(int argc, char *argv[])
 {
