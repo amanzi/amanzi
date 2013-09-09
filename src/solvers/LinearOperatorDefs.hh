@@ -11,6 +11,10 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace AmanziSolvers {
 
+// Note: these are powers of 2 to allow multiple convergence criteria, each of
+// which can be turned on or off.  Currently convergence is met if any of the
+// enabled criteria match.  The exception to this is ONE_ITERATION, which
+// requires at least one iteration independent of the initial residual.
 const int SOLVER_CONVERGENCE_RELATIVE_RHS = 1;  // must be power of 2
 const int SOLVER_CONVERGENCE_RELATIVE_RESIDUAL = 2;
 const int SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL = 4;

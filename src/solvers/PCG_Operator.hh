@@ -18,7 +18,7 @@ Usage:
 #include "errors.hh"
 #include "VerboseObject.hh"
 
-#include "Solver_constants.hh"
+#include "LinearOperatorDefs.hh"
 #include "LinearOperator.hh"
  
 namespace Amanzi {

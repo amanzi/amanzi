@@ -19,7 +19,7 @@ Usage:
 
 #include "DenseMatrix.hh"
 #include "LinearOperator.hh"
-#include "Solver_constants.hh"
+#include "LinearOperatorDefs.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
