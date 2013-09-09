@@ -74,11 +74,36 @@ add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cc LINK_LIBS ${flow_tpl_libs
 #
 # Install Targets
 #
-file(GLOB flow_inc_files "*.hh")
+#file(GLOB flow_inc_files "*.hh")
+set(flow_inc_files 
+  Darcy_PK.hh
+  Flow_BC_Factory.hh
+  flow-boundary-function.hh
+  Flow_constants.hh
+  flow-domain-function.hh
+  Flow_PK.hh
+  Flow_SourceFactory.hh
+  Flow_State.hh
+  Flow_typedefs.hh
+  Matrix_Audit.hh
+  Matrix_MFD.hh
+  Matrix_MFD_PLambda.hh
+  Matrix_MFD_TPFA.hh
+  Matrix_VAG.hh
+  RelativePermeability.hh
+  Richards_PK.hh
+  Stiffness_MFD.hh
+  TI_Specs.hh
+  WaterRetentionModel.hh
+  WRM_BrooksCorey.hh
+  WRM_fake.hh
+  WRM_vanGenuchten.hh)  
+
+
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-    generate_evaluators_registration_header(tests_flow_evaluator_reg.hh FACTORY_REG_LIST)
+    generate_evaluators_registration_header(HEADERFILE tests_flow_evaluator_reg.hh  LISTNAME FACTORY_REG_LIST)
 
 #if (0)
     # Add UnitTest include directoy

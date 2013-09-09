@@ -8,57 +8,89 @@
 #
 # How to use this...
 #
-# Use the function
+# Use the macro
 #
-# register_evaluator_with_factory(bla_reg.hh REGISTER_FILE_LIST)
+# register_evaluator_with_factory(HEADERFILE bla_reg.hh  LISTNAME REGISTER_FILE_LIST)
 #
 # to add the file bla_reg.hh to the list of files that is going
 # to be used to autogenerate an include file that is a concatenation
 # of all the _reg.hh files. This is where all specific evaluators 
 # are registered with the factory. This concatentated include file
-# is created by calling the function
+# is created by calling the macro
 #
-# register_evaluators(eval_reg.hh REGISTER_FILE_LIST)
+# generate_evaluators_registration_header(HEADERFILE eval_reg.hh LISTNAME REGISTER_FILE_LIST  INSTALL True)
 #
 # It should be called in the CMakeLists.txt in the directory
 # that contains the .cc file containing the main function. It auto-
 # generates the file eval_reg.hh, which must be included in the
-# .cc file that contains main.
+# .cc file that contains main. The argument INSTALL is optional
+# and if set to TRUE, True, or true, the concatenated header file
+# will be installed
 #
 # The result of this is that we are now sure that the code that is
 # needed to register all individual evaluators with the factory is 
 # in fact linked with the executable.
 #
 
+include(CMakeParseArguments)
 
 
-function(amanzi_file_cat IN_FILE OUT_FILE)
-  file(READ ${IN_FILE} CONTENTS)
-  file(APPEND ${OUT_FILE} "${CONTENTS}")
-endfunction()
+macro(amanzi_file_cat)
+  set(singleValueArgs DESTINATION)
+  set(multiValueArgs SOURCES)
+  set(options "")
+  
+  cmake_parse_arguments(LOCAL "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN})
 
-
-function(generate_evaluators_registration_header EVALUATOR_REG_FILE_NAME EVALUATOR_REG_LIST_NAME)
-
-  # Prepare a temporary file to "cat" to:
-  file(WRITE ${EVALUATOR_REG_FILE_NAME}.in "")
-
-  get_property(VAR_FACTORY_REG_HEADERS GLOBAL PROPERTY EVALUATOR_REG_LIST_NAME)
-
-  # Call the "cat" function for each input file
-  foreach(HEADER ${VAR_FACTORY_REG_HEADERS})
-    amanzi_file_cat(${HEADER} ${EVALUATOR_REG_FILE_NAME}.in)
+  foreach(FILE ${LOCAL_SOURCES})
+    file(READ ${FILE} CONTENTS)
+    file(APPEND ${LOCAL_DESTINATION} "${CONTENTS}")
   endforeach()
 
-  # Copy the temporary file to the final location
-  configure_file(${EVALUATOR_REG_FILE_NAME}.in ${CMAKE_CURRENT_SOURCE_DIR}/${EVALUATOR_REG_FILE_NAME} COPYONLY)
+endmacro(amanzi_file_cat)
+
+
+
+
+macro(generate_evaluators_registration_header)
+  set(singleValueArgs HEADERFILE)
+  set(multiValueArgs LISTNAME)
+  set(options INSTALL)
   
-  install(FILES ${EVALUATOR_REG_FILE_NAME}  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+  cmake_parse_arguments(LOCAL "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN})  
+  
+  # prepare a temporary file to "cat" to:
+  file(WRITE ${LOCAL_HEADERFILE}.in "")
+  # remove stale files
+  file(REMOVE ${LOCAL_HEADERFILE})
 
-endfunction()
+  get_property(VAR_LIST GLOBAL PROPERTY ${LOCAL_LISTNAME})
 
-function(register_evaluator_with_factory EVALUATOR_STUB_NAME EVALUATOR_REG_LIST_NAME)
-  get_property(VAR_TMP GLOBAL PROPERTY EVALUATOR_REG_LIST_NAME)
-  set(VAR_TMP ${VAR_TMP} ${CMAKE_CURRENT_SOURCE_DIR}/${EVALUATOR_STUB_NAME})
-  set_property(GLOBAL PROPERTY EVALUATOR_REG_LIST_NAME ${VAR_TMP})
-endfunction()
+  # concatenate the sources
+  amanzi_file_cat(SOURCES ${VAR_LIST} DESTINATION ${LOCAL_HEADERFILE}.in)
+
+  # copy the temporary file to the final location
+  configure_file(${LOCAL_HEADERFILE}.in ${CMAKE_CURRENT_SOURCE_DIR}/${LOCAL_HEADERFILE} COPYONLY)
+  
+  # install the header file 
+  if ((LOCAL_INSTALL STREQUAL "TRUE") OR (LOCAL_INSTALL STREQUAL "true") OR (LOCAL_INSTALL STREQUAL "True"))
+    add_install_include_file(${LOCAL_HEADERFILE})
+  endif()
+endmacro(generate_evaluators_registration_header)
+
+
+
+
+macro(register_evaluator_with_factory)
+  set(singleValueArgs HEADERFILE LISTNAME)
+  set(multiValueArgs "")
+  set(options "")
+  
+  cmake_parse_arguments(LOCAL "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN})  
+
+  get_property(VAR_TMP GLOBAL PROPERTY "${LOCAL_LISTNAME}")
+  set(VAR_TMP ${VAR_TMP} ${CMAKE_CURRENT_SOURCE_DIR}/${LOCAL_HEADERFILE})
+  list(REMOVE_DUPLICATES VAR_TMP)
+
+  set_property(GLOBAL PROPERTY "${LOCAL_LISTNAME}" ${VAR_TMP})
+endmacro(register_evaluator_with_factory)
