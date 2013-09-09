@@ -114,9 +114,8 @@
   <ParameterList name="Initial Conditions">
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
-      <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Value" type="double" value="201325.0"/>
+      <ParameterList name="IC: Uniform Velocity">
+        <Parameter name="Velocity Vector" type="Array(double)" value="{9.983266e-6, 0}"/>
       </ParameterList>
       <ParameterList name="Solute IC">
         <ParameterList name="Aqueous">

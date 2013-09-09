@@ -845,9 +845,9 @@ PorousMedia::variableSetUp ()
 			  bc,BndryFunc(FORT_ONE_N_FILL));
   }
 
-  is_diffusive.resize(NUM_SCALARS);
-  advectionType.resize(NUM_SCALARS);
-  diffusionType.resize(NUM_SCALARS);
+  is_diffusive.resize(NUM_SCALARS,false);
+  advectionType.resize(NUM_SCALARS,Conservative);
+  diffusionType.resize(NUM_SCALARS,Laplacian_S);
 
   // For components.
   for (int i=0; i<ncomps; i++) 
@@ -2492,9 +2492,7 @@ void  PorousMedia::read_tracer()
               set_tracer_bc(trac_bc,phys_bc_trac);
           }
       }
-      if (diffuse_tracers) {
-        ndiff += ntracers;
-      }
+      ndiff += ntracers;
   }
 }
 

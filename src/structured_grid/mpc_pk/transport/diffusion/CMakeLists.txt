@@ -80,19 +80,18 @@ if (BUILD_TESTS)
 
   preprocess_boxlib_fortran(FPP_out_files_1 ${FPP_source_files_1})
 
-  add_amanzi_test(tTensorDiffusion_PK tTensorDiffusion_PK inputs.2d
+  add_amanzi_test(tTensorDiffusion_PK tTensorDiffusion_PK
                   KIND unit
                   SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${TRANSTEST}/inputs.2d ${STRUCTUREDTRANS_BINARY_DIR})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E
-                    copy ${TRANSTEST}/gr16 ${STRUCTUREDTRANS_BINARY_DIR})
-    execute_process(COMMAND ${CMAKE_COMMAND} -E
                     copy ${TRANSTEST}/probin ${STRUCTUREDTRANS_BINARY_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${TRANSTEST}/tTensorDiffusion_TestRes_H ${STRUCTUREDTRANS_BINARY_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${TRANSTEST}/tTensorDiffusion_TestRes_D ${STRUCTUREDTRANS_BINARY_DIR})
   endif()
-
 endif()
 

@@ -3,6 +3,11 @@
 
 #include <tTensorDiffusion_PK_F.H>
 
+#define aT (0.d0)
+#define aL (1.d0)
+#define u (-1.d0)
+#define v (1.d0)
+
       subroutine FORT_FILLCRSE (
      $     crse, DIMS(crse),
      $     h, nc, dlo, dhi, plo
@@ -28,8 +33,6 @@ c
             if (i.gt.dhi(1)) x = plo(1)+(dhi(1)-dlo(1)+1)*h(1)
             do n=1,nc
                crse(i,j,n)=-(x-0.5d0)**2
-c               crse(i,j,n)=-(y-0.5d0)**2
-c               crse(i,j,n)=y
             enddo
          enddo
       enddo
@@ -63,9 +66,6 @@ c               crse(i,j,n)=y
             if (i.gt.dhi(1)) x = plo(1)+(dhi(1)-dlo(1)+1)*h(1)
             do n=1,nc
                fine(i,j,n)=-(x-0.5d0)**2
-c               fine(i,j,n)=-(y-0.5d0)**2
-c               fine(i,j,n)=y**2
-c               fine(i,j,n)=y
             enddo
          enddo
       enddo
@@ -82,15 +82,7 @@ c               fine(i,j,n)=y
       REAL_T rhs(DIMV(rhs),nc)
       REAL_T h(BL_SPACEDIM)
       REAL_T plo(BL_SPACEDIM)
-
-      integer imid, jmid
-      imid = 0.5*(ARG_L1(rhs)+ARG_H1(rhs))
-      jmid = 0.5*(ARG_L2(rhs)+ARG_H2(rhs))
-
-      rhs(:,:,:) = 0.d0
-c      rhs(imid,jmid,:) = 1.d0
-c      rhs(imid+1,jmid+1,:) = -1.d0
-      
+      rhs(:,:,:) = 0.d0      
       end
 
       subroutine FORT_MAKEMU(
@@ -104,12 +96,8 @@ c      rhs(imid+1,jmid+1,:) = -1.d0
 
       integer i,j
       REAL_T x,y
+      REAL_T vel, velInv
 
-      REAL_T aT, aL, u, v, vel, velInv
-      namelist /fortin/ aT, aL, u, v
-      open(9,file='probin',form='formatted',status='old')
-      read(9,fortin)
-      close(9)
       vel = SQRT(u*u + v*v)
       if (vel .ne. 0.d0) then
          velInv = 1.d0 / vel
@@ -156,11 +144,7 @@ c     \end{array}
       integer i,j
       REAL_T x,y
 
-      REAL_T aT, aL, u, v, vel, velInv
-      namelist /fortin/ aT, aL, u, v
-      open(9,file='probin',form='formatted',status='old')
-      read(9,fortin)
-      close(9)
+      REAL_T vel, velInv
       vel = SQRT(u*u + v*v)
       if (vel .ne. 0.d0) then
          velInv = 1.d0 / vel
