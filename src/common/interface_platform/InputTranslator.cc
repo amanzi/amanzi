@@ -502,6 +502,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   }
 
   // Now, go back and sort things out
+  bool haveSSF = false; // have steady-steady incr/red factors for later
+  bool haveTF = false;  // have transient incr/red factors for later
   std::string mode = defPL.get<std::string>("mode");
   //
   // Steady case
@@ -582,6 +584,25 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
     } else {
       // ERROR ;
     }
+    if (defPL.isParameter("reduction_factor")) {
+      haveSSF = true;
+    } else {
+      for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+        if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+          value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
+          haveSSF = true;
+	}
+      }
+    }
+    if (defPL.isParameter("increase_factor")) {
+      haveSSF = true;
+    } else {
+      for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+        if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+          haveSSF = true;
+	}
+      }
+    }
     list.sublist("Time Integration Mode").sublist("Steady") = steadyPL;
 
   } else {
@@ -612,6 +633,12 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
           } else {
             // ERROR ;
           }
+	  if (defPL.isParameter("reduction_factor")) {
+            haveTF = true;
+          }
+	  if (defPL.isParameter("increase_factor")) {
+            haveTF = true;
+          }
           // sitting on steady - grab start, end(switch) 
 	  if (ecsPL.sublist(it->first).isParameter("start")) {
             value = ecsPL.sublist(it->first).get<std::string>("start");
@@ -630,6 +657,12 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	  if (ecsPL.sublist(it->first).isParameter("init_dt")) {
             value = ecsPL.sublist(it->first).get<std::string>("init_dt");
 	    itsPL.set<double>("Steady Initial Time Step",atof(value.c_str()));
+	  } 
+	  if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+            haveSSF = true;
+	  } 
+	  if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+            haveSSF = true;
 	  } 
 	  // loop over execution list for:
 	  //     - build list of start times, initial step times (use default value if none given)
@@ -706,11 +739,18 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
         list.set<std::string>("Transport Model","On");
 	transportON=true;
 	//TODO: EIB - now get algorithm option
+        nodeAttr = attrMap->getNamedItem(XMLString::transcode("algorithm"));
+        textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	if (strcmp(textContent,"explicit first-order")) {
+	  tpkPL.set<std::string>("Transport Integration Algorithm","Explicit First-Order");
+	} else if (strcmp(textContent,"explicit second-order")) {
+	  tpkPL.set<std::string>("Transport Integration Algorithm","Explicit Second-Order");
+	}
       }
       XMLString::release(&textContent);
       // get chemisty - TODO: EIB - assuming this will be set to OFF!!!!!
       // NOTE: EIB - old spec options seem to be ON/OFF, algorithm option goes under Numerical Control Parameters
-      tmpList = pkElement->getElementsByTagName(XMLString::transcode("transport"));
+      tmpList = pkElement->getElementsByTagName(XMLString::transcode("chemistry"));
       attrMap = tmpList->item(0)->getAttributes();
       nodeAttr = attrMap->getNamedItem(XMLString::transcode("state"));
       textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
@@ -720,6 +760,11 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
         list.set<std::string>("Chemistry Model","On");
 	chemistryON=true;
 	//TODO: EIB - now get process model option
+        nodeAttr = attrMap->getNamedItem(XMLString::transcode("process_model"));
+        textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	if (strcmp(textContent,"implicit operator split")) {
+	  cpkPL.set<double>("max chemistry to transport timestep ratio",atof(textContent));
+	}
       }
       XMLString::release(&textContent);
     }
@@ -736,7 +781,41 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
         if (xercesc::DOMNode::ELEMENT_NODE == tmpNode->getNodeType()) {
           char* nodeName = xercesc::XMLString::transcode(tmpNode->getNodeName());
           if (strcmp(nodeName,"steady-state_controls")==0) {
-	    Teuchos::ParameterList ssPL("Steady-State Implicit Time Integration");
+	    Teuchos::ParameterList ssPL;
+	    // check for incr/red factors from execution_controls first
+	    if (haveSSF) {
+	      // look in defPL first
+	      if (defPL.isParameter("mode")) {
+                std::string mode = defPL.get<std::string>("mode");
+		if (strcmp(mode.c_str(),"steady")==0) {
+		    if (defPL.isParameter("reduction_factor")) {
+		      std::string value = defPL.get<std::string>("reduction_factor");
+                      ssPL.set<double>("steady time step reduction factor",atof(value.c_str()));
+		    }
+		    if (defPL.isParameter("increase_factor")) {
+                      std::string value = defPL.get<std::string>("increase_factor");
+                      ssPL.set<double>("steady time step increase factor",atof(value.c_str()));
+		    }
+		} else {
+		  // look in ecsPL
+                  for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+                    if (ecsPL.sublist(it->first).isParameter("mode")) {
+                      std::string mode = ecsPL.sublist(it->first).get<std::string>("mode");
+	              if (strcmp(mode.c_str(),"steady")==0) {
+		        if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+                          std::string value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
+                          ssPL.set<double>("steady time step reduction factor",atof(value.c_str()));
+		        }
+		        if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+                          std::string value = ecsPL.sublist(it->first).get<std::string>("increase_factor");
+                          ssPL.set<double>("steady time step increase factor",atof(value.c_str()));
+		        }
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
             // loop through children and deal with them
             xercesc::DOMNodeList* children = tmpNode->getChildNodes();
             for (int k=0; k<children->getLength(); k++) {
@@ -813,10 +892,44 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                 }
               }
 	    }
-            list.sublist("Numerical Control Parameters").sublist(meshbase) = ssPL;
+            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Steady-State Implicit Time Integration") = ssPL;
 	  }
           else if (strcmp(nodeName,"transient_controls")==0) {
-	    Teuchos::ParameterList tcPL("Transient Implicit Time Integration");
+	    Teuchos::ParameterList tcPL;
+	    // check for incr/red factors from execution_controls first
+	    if (haveTF) {
+	      // look in defPL first
+	      if (defPL.isParameter("mode")) {
+                std::string mode = defPL.get<std::string>("mode");
+		if (strcmp(mode.c_str(),"transient")==0) {
+		    if (defPL.isParameter("reduction_factor")) {
+		      std::string value = defPL.get<std::string>("reduction_factor");
+                      tcPL.set<double>("transient time step reduction factor",atof(value.c_str()));
+		    }
+		    if (defPL.isParameter("increase_factor")) {
+                      std::string value = defPL.get<std::string>("increase_factor");
+                      tcPL.set<double>("transient time step increase factor",atof(value.c_str()));
+		    }
+		} else {
+		  // look in ecsPL
+                  for (Teuchos::ParameterList::ConstIterator it = ecsPL.begin(); it != ecsPL.end(); ++it) {
+                    if (ecsPL.sublist(it->first).isParameter("mode")) {
+                      std::string mode = ecsPL.sublist(it->first).get<std::string>("mode");
+	              if (strcmp(mode.c_str(),"transient")==0) {
+		        if (ecsPL.sublist(it->first).isParameter("reduction_factor")) {
+                          std::string value = ecsPL.sublist(it->first).get<std::string>("reduction_factor");
+                          tcPL.set<double>("transient time step reduction factor",atof(value.c_str()));
+		        }
+		        if (ecsPL.sublist(it->first).isParameter("increase_factor")) {
+                          std::string value = ecsPL.sublist(it->first).get<std::string>("increase_factor");
+                          tcPL.set<double>("transient time step increase factor",atof(value.c_str()));
+		        }
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
 	    // grab integration method, then loop through it's children
             xercesc::DOMElement* tcElement = static_cast<xercesc::DOMElement*>(tmpNode);
             xercesc::DOMNodeList* tmpList = tcElement->getElementsByTagName(XMLString::transcode("integration_method"));
@@ -882,7 +995,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                 }
               }
             }
-            list.sublist("Numerical Control Parameters").sublist(meshbase) = tcPL;
+            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Transient Implicit Time Integration") = tcPL;
           }
           else if (strcmp(nodeName,"linear_solver")==0) {
 	    Teuchos::ParameterList lsPL;
