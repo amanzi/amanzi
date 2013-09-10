@@ -96,6 +96,10 @@ class Darcy_PK : public Flow_PK {
   Matrix_MFD* get_matrix() { return matrix_; }
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
+  // auxilliary data management
+  void UpdateAuxilliaryData();
+
+
  private:
   Teuchos::ParameterList dp_list_;
 

@@ -139,6 +139,10 @@ class Richards_PK : public Flow_PK {
   Matrix_MFD* preconditioner() { return preconditioner_; }
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
+  // auxilliary data management
+  void UpdateAuxilliaryData();
+
+
  private:
   Teuchos::ParameterList rp_list_;
 

@@ -464,6 +464,8 @@ void MPC::cycle_driver() {
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
     *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
   }
+  
+  if (flow_enabled) FPK->UpdateAuxilliaryData();
   if (chemistry_enabled) {
     // get the auxillary data from chemistry
     Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
@@ -877,6 +879,8 @@ void MPC::cycle_driver() {
       iter++;
       S->set_cycle(iter);
 
+      if (flow_enabled) FPK->UpdateAuxilliaryData();
+
       // make observations
       if (observations) {
 	if (observations->DumpRequested(S->cycle(), S->time())) {
@@ -937,6 +941,7 @@ void MPC::cycle_driver() {
       Amanzi::timer_manager.stop("I/O");
     }
   }
+  if (flow_enabled) FPK->UpdateAuxilliaryData();
 
   // write final visualization dump and checkpoint 
   // if no time stepping was done

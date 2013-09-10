@@ -206,6 +206,8 @@ void Unstructured_observations::make_observations(State& state)
     } else if (var == "Hydraulic Head") {
       value = 0.0;
       volume = 0.0;
+
+#if 0 // this is the old code path, i'm leaving it here for comparison
       int dim = state.GetMesh()->space_dimension();
       
       Teuchos::RCP<const Epetra_Vector> pressure = 
@@ -220,6 +222,18 @@ void Unstructured_observations::make_observations(State& state)
 	value +=  ( ( (*pressure)[ic] - p_atm ) / ( density * (*gravity)[dim-1]) + p[dim-1] ) * state.GetMesh()->cell_volume(ic) ;
 	volume += state.GetMesh()->cell_volume(ic);
       }
+#else
+      Teuchos::RCP<const Epetra_Vector> hydraulic_head = 
+	Teuchos::rcpFromRef(*(*state.GetFieldData("hydraulic_head")->ViewComponent("cell", false))(0));
+      
+      for (int i=0; i<mesh_block_size; ++i) {
+	int ic = cell_ids[i];
+	Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
+	value += (*hydraulic_head)[ic] * state.GetMesh()->cell_volume(ic);
+	volume += state.GetMesh()->cell_volume(ic);
+      }
+#endif
+
     } else {
       std::stringstream ss;
       ss << "State::point_value: cannot make an observation for variable " << name;
