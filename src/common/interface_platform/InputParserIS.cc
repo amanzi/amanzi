@@ -839,7 +839,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
       for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
 	   it != plist->sublist("Material Properties").end(); ++it) {
 	disp_list.set<std::string>("numerical method","two point flux approximation");
-	disp_list.set<std::string>("preconditioner","Hypre AMG");
+	disp_list.set<std::string>("solver","Hypre AMG");
 
 	if ( (it->second).isList()) {
 	  std::string mat_name = it->first;
@@ -983,6 +983,7 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   int maxiter = LIN_SOLVE_MAXITER;
   std::string method = LIN_SOLVE_METHOD;
   std::string prec = LIN_SOLVE_PREC;
+
   // get values from Execution control list if they exist
   if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
     Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
@@ -998,6 +999,8 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
           method = num_list.get<std::string>("linear solver method");
         if (num_list.isParameter("linear solver method"))
           prec = num_list.get<std::string>("linear solver preconditioner");
+	if (num_list.isParameter("iterative method"))
+	  prec = num_list.get<std::string>("linear solver iterative method");
       }
     }
   }
