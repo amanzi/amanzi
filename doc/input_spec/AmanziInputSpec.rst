@@ -1556,7 +1556,7 @@ Example:
 
   <ParameterList name="Cycle Macros">
     <ParameterList name="Every-5">
-      <Parameter name="Start_Period" type="Array int" value="{0, 5}"/>
+      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5, -1}"/>
     </ParameterList>
   </ParameterList>
 
@@ -1593,7 +1593,7 @@ Example:
 
   <ParameterList name="Cycle Macros">
     <ParameterList name="Every-10">
-      <Parameter name="Start_Period" type="Array int" value="{0, 10}"/>
+      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 10,-1}"/>
     </ParameterList>
   </ParameterList>
 
