@@ -839,7 +839,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
       for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
 	   it != plist->sublist("Material Properties").end(); ++it) {
 	disp_list.set<std::string>("numerical method","two point flux approximation");
-	disp_list.set<std::string>("solver","Hypre AMG");
+	disp_list.set<std::string>("solver","AztecOO");
 
 	if ( (it->second).isList()) {
 	  std::string mat_name = it->first;
