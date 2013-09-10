@@ -121,42 +121,34 @@ Teuchos::ParameterList get_Time_Macro(const std::string& macro_name, Teuchos::Pa
 }
 
 
-/* ******************************************************************
- * Empty
- ****************************************************************** */
-Teuchos::Array<int> get_Cycle_Macro(const std::string& macro_name, Teuchos::ParameterList* plist) {
-  Teuchos::Array<int> cycle_range(0);
+Teuchos::ParameterList get_Cycle_Macro(const std::string& macro_name, Teuchos::ParameterList* plist) {
+  Teuchos::ParameterList cycle_macro;
 
   if ( plist->sublist("Output").sublist("Cycle Macros").isSublist(macro_name) ) {
-    Teuchos::ParameterList& clist = plist->sublist("Output").sublist("Cycle Macros").sublist(macro_name);
-    if (clist.isParameter("Start_Period_Stop"))
-      cycle_range = clist.get<Teuchos::Array<int> >("Start_Period_Stop");
+    if (plist->sublist("Output").sublist("Cycle Macros").sublist(macro_name).isParameter("Start_Period_Stop")) {
+      Teuchos::Array<int> cycle_range;
+      cycle_range = plist->sublist("Output").sublist("Cycle Macros").sublist(macro_name)
+          .get<Teuchos::Array<int> >("Start_Period_Stop");
+
+      cycle_macro.set<Teuchos::Array<int> >("Start_Period_Stop",cycle_range);
+
+    }
+    if (plist->sublist("Output").sublist("Cycle Macros").sublist(macro_name).isParameter("Values")) {
+      Teuchos::Array<int> values;
+      values = plist->sublist("Output").sublist("Cycle Macros").sublist(macro_name)
+          .get<Teuchos::Array<int> >("Values");
+      cycle_macro.set<Teuchos::Array<int> >("Values",values);
+    }
   } else {
     std::stringstream ss;
     ss << "The cycle macro " << macro_name << " does not exist in the input file";
     Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
   }
 
-  return cycle_range;
+  return cycle_macro;
 }
 
-/* ******************************************************************
- * Empty
- ****************************************************************** */
-Teuchos::Array<int> get_Cycle_Macro_Values(const std::string& macro_name, Teuchos::ParameterList* plist) {
-  Teuchos::Array<int> values(0);
 
-  if ( plist->sublist("Output").sublist("Cycle Macros").isSublist(macro_name) ) {
-    Teuchos::ParameterList& clist = plist->sublist("Output").sublist("Cycle Macros").sublist(macro_name);
-    if (clist.isParameter("Values")) values = clist.get<Teuchos::Array<int> >("Values");
-  } else {
-    std::stringstream ss;
-    ss << "The cycle macro " << macro_name << " does not exist in the input file";
-    Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
-  }
-
-  return values;
-}
 
 /* ******************************************************************
  * Empty
@@ -350,7 +342,7 @@ Teuchos::ParameterList create_Checkpoint_Data_List(Teuchos::ParameterList* plist
       if ( rlist.isParameter("Cycle Macro") ) {
         std::string cycle_macro = rlist.get<std::string>("Cycle Macro");
 
-        Teuchos::Array<int> range = get_Cycle_Macro(cycle_macro, plist);
+        Teuchos::Array<int> range = get_Cycle_Macro(cycle_macro, plist).get<Teuchos::Array<int> >("Start_Period_Stop");
 
 	restart_list.set<Teuchos::Array<int> >("cycles start period stop", range);
       }
@@ -385,9 +377,17 @@ Teuchos::ParameterList create_Visualization_Data_List(Teuchos::ParameterList* pl
       // Cycle Macro
       if ( vis_list.isParameter("Cycle Macro") ) {
         std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
-        Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
-
-        vis_list.set("cycles start period stop", cm);
+	
+        //Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
+        Teuchos::ParameterList cycle_macro_list = get_Cycle_Macro(cycle_macro, plist);
+        
+        if (cycle_macro_list.isParameter("Start_Period_Stop")) {
+          vis_list.set<Teuchos::Array<int> >("cycles start period stop",cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop"));
+        } else if (cycle_macro_list.isParameter("Values")) {
+          vis_list.set<Teuchos::Array<int> >("cycles",cycle_macro_list.get<Teuchos::Array<int> >("Values"));
+        } else {
+	  Exceptions::amanzi_throw(Errors::Message("Cycle Macros must hace either the Values of Start_Period_Stop parameter."));
+	}
         // delete the cycle macro
         vis_list.remove("Cycle Macro");
       }
@@ -493,9 +493,16 @@ Teuchos::ParameterList create_Observation_Data_List(Teuchos::ParameterList* plis
           if (obs_list.sublist(i->first).isParameter("Cycle Macro")) {
             std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
 
-            Teuchos::Array<int> sps = get_Cycle_Macro(cycle_macro, plist);
-            Teuchos::Array<int> values = get_Cycle_Macro_Values(cycle_macro, plist);
+            Teuchos::ParameterList cycle_macro_list = get_Cycle_Macro(cycle_macro, plist);
+            
+            Teuchos::Array<int> sps, values; 
 
+            if (cycle_macro_list.isParameter("Start_Period_Stop")) {
+              sps = cycle_macro_list.get<Teuchos::Array<int> >("Start_Period_Stop");
+            }
+            if (cycle_macro_list.isParameter("Values")) {
+              values = cycle_macro_list.get<Teuchos::Array<int> >("Values");
+            }
             if (sps.size() != 3  && values.size() == 0) {
               Errors::Message message("Cycle macro " + cycle_macro + " has neither a valid Start_Period_Stop nor a valid Values parameter");
               Exceptions::amanzi_throw(message);
