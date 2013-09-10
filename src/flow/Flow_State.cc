@@ -116,6 +116,9 @@ void Flow_State::Construct_() {
     S_->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
   }
+
+  S_->RequireFieldEvaluator("hydraulic_head");
+
 };
 
 
