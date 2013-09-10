@@ -44,8 +44,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: flow
 #
-set(flow_src_files hydraulic_head_evaluator.cc
-                   Flow_PK.cc Flow_State.cc Flow_IO.cc
+set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SourceFactory.cc Flow_VandV.cc 
                    Darcy_PK.cc Darcy_TI.cc Darcy_IO.cc Darcy_AztecOO.cc
                    Richards_PK.cc Richards_IO.cc Richards_TI.cc Richards_WRM.cc
@@ -57,6 +56,7 @@ set(flow_src_files hydraulic_head_evaluator.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    Flow_Utilities.cc
                    flow-domain-function.cc flow-boundary-function.cc
+		   Flow_AuxData.cc
 		   )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
@@ -87,8 +87,6 @@ set(flow_inc_files
   Flow_SourceFactory.hh
   Flow_State.hh
   Flow_typedefs.hh
-  hydraulic_head_evaluator.hh
-  hydraulic_head_evaluator_reg.hh
   Matrix_Audit.hh
   Matrix_MFD.hh
   Matrix_MFD_PLambda.hh
