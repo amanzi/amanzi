@@ -87,6 +87,8 @@ set(flow_inc_files
   Flow_SourceFactory.hh
   Flow_State.hh
   Flow_typedefs.hh
+  hydraulic_head_evaluator.hh
+  hydraulic_head_evaluator_reg.hh
   Matrix_Audit.hh
   Matrix_MFD.hh
   Matrix_MFD_PLambda.hh

@@ -11,6 +11,8 @@ accessing the new state-dev from the old Flow PK.
 ------------------------------------------------------------------------- */
 
 #include "Flow_State.hh"
+#include "hydraulic_head_evaluator.hh"
+#include "state_defs.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -163,6 +165,8 @@ void Flow_State::Initialize() {
     // in the state.
     S_->GetField("specific_storage",name_)->set_initialized();
     S_->GetField("specific_yield",name_)->set_initialized();
+
+    S_->GetField("hydraulic_head",name_)->set_initialized();
   }
 }
 

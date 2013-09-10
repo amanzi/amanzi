@@ -34,7 +34,7 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
-
+include_directories(${FLOW_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -79,7 +79,7 @@ if ( BUILD_TESTS )
     include_directories(${TRANSPORT_SOURCE_DIR})
     include_directories(${Boost_INCLUDE_DIRS})
 
-    set(amanzi_libs transport state mesh_functions data_structures functions whetstone mesh_factory mesh_audit mesh geometry)
+    set(amanzi_libs transport flow state mesh_functions data_structures functions whetstone mesh_factory mesh_audit mesh geometry)
 
     # Test: miscaleneous transport routines
     add_amanzi_test(transport_mics transport_mics
@@ -108,7 +108,7 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions functions data_structures)
+        set(amanzi_libs flow geometry mesh mesh_audit mesh_factory state transport whetstone output mesh_functions functions data_structures)
 
         add_amanzi_test(transport_advance_mstk transport_advance_mstk
 	                KIND unit
@@ -154,7 +154,7 @@ if ( BUILD_TESTS )
     endif()    
 
     if ( ENABLE_STK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions data_structures)
+        set(amanzi_libs flow geometry mesh mesh_audit mesh_factory state transport whetstone mesh_functions data_structures)
 
         add_amanzi_test(transport_advance_stk transport_advance_stk
 	                KIND unit

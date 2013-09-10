@@ -7,7 +7,7 @@
 
 
 namespace Amanzi {
-namespace Flow {
+namespace AmanziFlow {
 
 class HydraulicHeadEvaluator : public FieldEvaluator {
 
@@ -50,7 +50,6 @@ public:
  protected:
   Key my_key_;
   Key my_mesh_;
-  bool computed_once_;
   bool communicate_;
 
  private:

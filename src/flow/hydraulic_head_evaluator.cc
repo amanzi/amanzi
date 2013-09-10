@@ -2,16 +2,17 @@
 #include "Mesh.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace AmanziFlow {
 
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
 HydraulicHeadEvaluator::HydraulicHeadEvaluator(Teuchos::ParameterList& plist) :
-    FieldEvaluator(plist),
-    computed_once_(false) {
+    FieldEvaluator(plist) {
 
   my_key_ = plist.get<std::string>("evaluator name", "hydraulic_head");
+  //my_mesh_ = "domain";
+
   if (plist.isParameter("mesh name")) {
     my_mesh_ = plist.get<std::string>("mesh name");
   } else if (my_key_ == std::string("hydraulic_head")) {
@@ -23,14 +24,12 @@ HydraulicHeadEvaluator::HydraulicHeadEvaluator(Teuchos::ParameterList& plist) :
   }
 
   communicate_ = plist_.get<bool>("manage communication", false);
-
 }
 
 HydraulicHeadEvaluator::HydraulicHeadEvaluator(const HydraulicHeadEvaluator& other) :
     FieldEvaluator(other),
     my_key_(other.my_key_),
     my_mesh_(other.my_mesh_),
-    computed_once_(false),
     communicate_(other.communicate_) {}
 
 
@@ -45,11 +44,11 @@ HydraulicHeadEvaluator::Clone() const {
 // ---------------------------------------------------------------------------
 void HydraulicHeadEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Require the field
-  Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(my_key_);
+  Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(my_key_, my_key_);
 
   if (!my_fac->owned()) {
-    // requirements not yet set, claim ownership and set valid component
-    S->RequireField(my_key_, my_key_)->SetMesh(S->GetMesh(my_mesh_))
+    // requirements not yet set, set valid component
+    S->RequireField(my_key_, "state")->SetMesh(S->GetMesh(my_mesh_))
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     // check plist for vis or checkpointing control
@@ -66,14 +65,8 @@ void HydraulicHeadEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 // for Field Key reqest.  Updates the field if needed.
 // ---------------------------------------------------------------------------
 bool HydraulicHeadEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S, Key request) {
-  if (!computed_once_) {
-    // field DOES have to be computed at least once, even if it never changes.
-    UpdateField_(S);
-    computed_once_ = true;
-    return true;
-  }
-
-  return false;
+  UpdateField_(S);
+  return true;
 }
 
 
@@ -102,8 +95,9 @@ bool HydraulicHeadEvaluator::ProvidesKey(Key key) const { return key == my_key_;
 // Update the value in the state.
 // ---------------------------------------------------------------------------
 void HydraulicHeadEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
-  // NOTE: HydraulicHeadEvaluator owns its own data.
-  Teuchos::RCP<CompositeVector> hh = S->GetFieldData(my_key_, my_key_);
+
+  // NOTE: HydraulicHeadEvaluator data lives in state.
+  Teuchos::RCP<CompositeVector> hh = S->GetFieldData(my_key_, "state");
   Epetra_MultiVector& hh_vec = *hh->ViewComponent("cell",false);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(my_mesh_);
