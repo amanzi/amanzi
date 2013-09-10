@@ -722,7 +722,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Logical"` [U]         | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"`         | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+| `"Region: Labeled Set"` [U]     | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                 | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Color Function"` [SU] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
@@ -886,11 +886,15 @@ the following set of physical properties using the supported models described be
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  Material Properties related to flow:
-
-  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
+  The flow related matrial properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
 
   * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`" (see below)
+
+  * Hydraulic Conductivity [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Hydraulic Conductivity: Uniform`", `"Hydraulic Conductivity: Anisotropic Uniform`" (see below)
+
+  Additional ''Material Properties'' related to flow are:
+
+  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
@@ -945,7 +949,7 @@ The following models can be specified for porosity (only `"Porosity: Uniform`" i
  
  * [SU] `"Value`" [double] to specify the constant value of porosity.
 
-The following models can be specified for the intrinsic permeability of the material (only `"Intrinsic Permeability: Uniform`" and `"Intrinsic Permeability: Anisotropic Uniform`" are supported at the moment):
+The following models can be specified for the intrinsic permeability of the material:
 
 * [SU] `"Intrinsic Permeability: Uniform`" [list] requires 
  
@@ -962,6 +966,23 @@ The following models can be specified for the intrinsic permeability of the mate
  where the directions refer to the global cartesian coordinates.
 
 Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
+
+The following models can be specified for the Hydraulic Conductivity of the material:
+
+* [SU] `"Hydraulic Conductivity: Uniform`" [list] requires 
+ 
+ * [SU] `"Value`" [double] to specify the constant value of the intrinsic permeability
+
+* [SU] `"Hydraulic Conductivity: Anisotropic Uniform`" [list] requires
+ 
+ * [SU] `"x`" [double] to specify the constant value of the intrinsic permeability in the x-direction; and
+
+ * [SU] `"y`" [double] to specify the constant value of the intrinsic permeability in the y-direction; and
+
+ * [SU] `"z`" [double] to specify the constant value of the intrinsic permeability in the z (vertical) direction.
+
+where the directions refer to the global cartesian coordinates.  Note that internally Amanzi works with a pressure formulation and uses intrinsic permeability.  If Hydraulic Conductivity is specified, constant density and viscosity values are used to convert it to intrinsic permeability
+(see Equation 3.25).  Hence, either Intrinsic Permeability or Hydraulic Conductivity must be specified, but not both.
 
 The following models are currently supported for capillary pressure (Section 3.3.2):
 
