@@ -49,7 +49,7 @@ set(transport_inc_files
   Reconstruction.hh
   Transport_BC_Factory.hh
   transport_boundary_function.hh
-  Transport_constants.hh
+  TransportDefs.hh
   transport_domain_function.hh
   Transport_PK.hh
   Transport_SourceFactory.hh
