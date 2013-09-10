@@ -1,24 +1,24 @@
 /*
-This is the Linear Solver component of the Amanzi code.
- 
-License: BSD
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  This is the Linear Solver component of the Amanzi code.
 
-Incomplete LU preconditioner.
-Usage: 
+  License: BSD
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Incomplete LU preconditioner.
+  Usage:
 */
 
-#ifndef __PRECONDITIONER_BLOCK_ILU_HH__
-#define __PRECONDITIONER_BLOCK_ILU_HH__
+#ifndef AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
+#define AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_FECrsMatrix.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
- 
+
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
@@ -28,16 +28,16 @@ class PreconditionerBlockILU : public Preconditioner {
   ~PreconditionerBlockILU() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(Teuchos::RCP<Epetra_FECrsMatrix> A);
+  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
   void Destroy();
 
-  void ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv);
+  void ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
 
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<Ifpack_Preconditioner> IfpILU_;
 
-  bool initialized;
+  bool initialized_;
 };
 
 }  // namespace AmanziPreconditioners
@@ -46,5 +46,3 @@ class PreconditionerBlockILU : public Preconditioner {
 
 
 #endif
-
-

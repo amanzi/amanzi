@@ -1,11 +1,11 @@
 /*
-This is the Linear Solver component of the Amanzi code.
- 
-License: BSD
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  This is the Linear Solver component of the Amanzi code.
 
-Conjugate gradient method.
-Usage: 
+  License: BSD
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Base factory for preconditioners.
+  Usage:
 */
 
 #include "Teuchos_RCP.hpp"
@@ -16,13 +16,13 @@ Usage:
 #include "PreconditionerHypre.hh"
 #include "PreconditionerML.hh"
 #include "PreconditionerBlockILU.hh"
- 
+
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
-* Initialization of the preconditioner                                                 
-****************************************************************** */
+ * Initialization of the preconditioner
+ ****************************************************************** */
 Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
     const string& name, const Teuchos::ParameterList& prec_list)
 {
@@ -56,6 +56,3 @@ Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
 
 }  // namespace AmanziPreconditioners
 }  // namespace Amanzi
-
-
-

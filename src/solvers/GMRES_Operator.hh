@@ -4,12 +4,12 @@ License: BSD
 Authors: Ethan Coon (ecoon@lanl.gov)
          Konstantin Lipnikov (lipnikov@lanl.gov)
 
-Generalized minimum residual method.
+Generalized minimum residual method (Yu.Kuznetsov, 1968; Y.Saad, 1986) 
 Usage: 
 */
 
-#ifndef  __GMRES_OPERATOR_HH__
-#define  __GMRES_OPERATOR_HH__
+#ifndef  AMANZI_GMRES_OPERATOR_HH_
+#define  AMANZI_GMRES_OPERATOR_HH_
 
 #include <cmath>
 
@@ -19,7 +19,7 @@ Usage:
 
 #include "DenseMatrix.hh"
 #include "LinearOperator.hh"
-#include "Solver_constants.hh"
+#include "LinearOperatorDefs.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -30,17 +30,19 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
   GMRES_Operator(Teuchos::RCP<const Matrix> m) :
       LinearOperator<Matrix, Vector, VectorSpace>(m) { 
     tol_ = 1e-6; 
+    overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
     max_itrs_ = 100;
     krylov_dim_ = 10;
-    criteria_ = SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
+    criteria_ = LIN_SOLVER_RELATIVE_RHS;
     initialized_ = false;
   }
   ~GMRES_Operator() {};
 
   void Init(Teuchos::ParameterList& plist);  
 
-  void ApplyInverse(const Vector& v, Vector& hv) const { 
-    num_itrs_ = gmres_restart(v, hv, tol_, max_itrs_, criteria_); 
+  int ApplyInverse(const Vector& v, Vector& hv) const { 
+    int i = gmres_restart(v, hv, tol_, max_itrs_, criteria_); 
+    return i;
   }
 
   Teuchos::RCP<GMRES_Operator> Clone() const {};
@@ -50,6 +52,7 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
   void set_criteria(int criteria) { criteria_ = criteria; }
   void set_krylov_dim(int n) { krylov_dim_ = n; }
+  void set_overflow(double tol) { overflow_tol_ = tol; }
 
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
@@ -69,7 +72,7 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   int max_itrs_, criteria_, krylov_dim_;
-  double tol_;
+  double tol_, overflow_tol_;
   mutable int num_itrs_;
   mutable double residual_;
   mutable bool initialized_;
@@ -77,39 +80,49 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
 
 
 /* ******************************************************************
-* GMRES with restart input/output data:
-*  f [input]         the right-hand side
-*  x [input/output]  initial guess / final solution
-*  tol [input]       convergence tolerance
-*  max_itrs [input]  maximum number of iterations
-*  criteria [input]  sum of termination critaria
-****************************************************************** */
+ * GMRES with restart input/output data:
+ *  f [input]         the right-hand side
+ *  x [input/output]  initial guess / final solution
+ *  tol [input]       convergence tolerance
+ *  max_itrs [input]  maximum number of iterations
+ *  criteria [input]  sum of termination critaria
+ *
+ *  Return value. If it is positive, it indicates the sucessful 
+ *  convergence criterion (criteria in a few exceptional cases) that
+ *  was checked first. If it is negative, it indicates a failure, see
+ *  LinearSolverDefs.hh for the error explanation. 
+ ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres_restart(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  int num_itrs = 0;
+  int total_itrs = 0;
   int max_itrs_left = max_itrs;
 
-  int i = krylov_dim_;
-  while (i == krylov_dim_ && max_itrs_left > 0) {
-    i = gmres(f, x, tol, max_itrs_left, criteria); 
-    num_itrs += i;
-    max_itrs_left -= i;
+  int ierr(LIN_SOLVER_MAX_ITERATIONS);
+  while (ierr == LIN_SOLVER_MAX_ITERATIONS && max_itrs_left > 0) {
+    ierr = gmres(f, x, tol, max_itrs_left, criteria); 
+    if (ierr == LIN_SOLVER_RESIDUAL_OVERFLOW) return ierr;
+
+    total_itrs += num_itrs_;
+    max_itrs_left -= num_itrs_;
   }
 
-  return num_itrs;
+  num_itrs_ = total_itrs;
+  return ierr;
 }
 
 
 /* ******************************************************************
-* GMRES input/output data:
-*  f [input]         the right-hand side
-*  x [input/output]  initial guess / final solution
-*  tol [input]       convergence tolerance
-*  max_itrs [input]  maximum number of iterations
-*  criteria [input]  sum of termination critaria
-****************************************************************** */
+ * GMRES input/output data:
+ *  f [input]         the right-hand side
+ *  x [input/output]  initial guess / final solution
+ *  tol [input]       convergence tolerance
+ *  max_itrs [input]  maximum number of iterations
+ *  criteria [input]  sum of termination critaria
+ *
+ *  Return value. See above.
+ ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
@@ -119,6 +132,7 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
+  num_itrs_ = 0;
 
   m_->ApplyInverse(f, r);
   double fnorm;
@@ -134,13 +148,17 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
   
   if (fnorm == 0.0) {
     x.PutScalar(0.0);
-    return 0;
+    return criteria;  // Zero solution satifies all criteria.
   }
-  if (! (criteria & SOLVER_MAKE_ONE_ITERATION)) {
-    if (criteria & SOLVER_CONVERGENCE_RELATIVE_RHS) {
-      if (rnorm0 < tol * fnorm) return 0; 
-    } else if (criteria & SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL) {
-      if (rnorm0 < tol) return 0;
+
+  // Ignore all criteria if one iteration is enforced.
+  if (rnorm0 > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
+
+  if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
+    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
+      if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS; 
+    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+      if (rnorm0 < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
     }
   }
 
@@ -181,26 +199,28 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
         *(vo_->os()) << i << " ||r||=" << residual_ << endl;
       }
     }
-    if (criteria_ & SOLVER_CONVERGENCE_RELATIVE_RHS) {
+    // Check all criteria one-by-one.
+    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (residual_ < tol * fnorm) { 
         ComputeSolution(x, i, T, s, v);  // vector s is overwritten
-        return i;
+        return LIN_SOLVER_RELATIVE_RHS;
       }
-    } else if (criteria_ & SOLVER_CONVERGENCE_RELATIVE_RESIDUAL) {
+    } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
       if (residual_ < tol * rnorm0) { 
         ComputeSolution(x, i, T, s, v);  // vector s is overwritten
-        return i;
+        return LIN_SOLVER_RELATIVE_RESIDUAL;
       }
-    } else if (criteria_ & SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL) {
+    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (residual_ < tol) { 
         ComputeSolution(x, i, T, s, v);  // vector s is overwritten
-        return i;
+        return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
+    num_itrs_ = i + 1;
   }
 
   ComputeSolution(x, krylov_dim_ - 1, T, s, v);  // vector s is overwritten
-  return krylov_dim_;
+  return LIN_SOLVER_MAX_ITERATIONS;
 }
 
 
@@ -215,14 +235,10 @@ void GMRES_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& p
 {
   vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
 
-  double tol = plist.get<double>("error tolerance", 1e-6);
-  set_tolerance(tol);
-
-  double max_itrs = plist.get<int>("maximum number of iterations", 100);
-  set_max_itrs(max_itrs);
-
-  double krylov_dim = plist.get<int>("size of Krylov space", 10);
-  set_krylov_dim(krylov_dim);
+  tol_ = plist.get<double>("error tolerance", 1e-6);
+  max_itrs_ = plist.get<int>("maximum number of iterations", 100);
+  krylov_dim_ = plist.get<int>("size of Krylov space", 10);
+  overflow_tol_ = plist.get<double>("overflow tolerance", 3.0e+50);
 
   int criteria(0);
   if (plist.isParameter("convergence criteria")) {
@@ -231,20 +247,21 @@ void GMRES_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& p
 
     for (int i = 0; i < names.size(); i++) {
       if (names[i] == "relative rhs") {
-        criteria += SOLVER_CONVERGENCE_RELATIVE_RHS;
+        criteria += LIN_SOLVER_RELATIVE_RHS;
       } else if (names[i] == "relative residual") {
-        criteria += SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
+        criteria += LIN_SOLVER_RELATIVE_RESIDUAL;
       } else if (names[i] == "absolute residual") {
-        criteria += SOLVER_CONVERGENCE_ABSOLUTE_RESIDUAL;
+        criteria += LIN_SOLVER_ABSOLUTE_RESIDUAL;
       } else if (names[i] == "make one iteration") {
-        criteria += SOLVER_MAKE_ONE_ITERATION;
+        criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       }
     }
   } else {
-    criteria = SOLVER_CONVERGENCE_RELATIVE_RESIDUAL;
+    criteria = LIN_SOLVER_RELATIVE_RHS;
   }
 
   set_criteria(criteria);
+  initialized_ = true;
 }
 
 

@@ -29,6 +29,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 /* **************************************************************** */
 TEST(ELASTICITY_STIFFNESS_2D) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -79,7 +80,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     for (int i=0; i<nrows; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    Entity_ID_List nodes;
+    AmanziMesh::Entity_ID_List nodes;
     std::vector<int> dirs;
     mesh->cell_get_nodes(cell, &nodes);
     
@@ -112,6 +113,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 /* **************************************************************** */
 TEST(ELASTICITY_STIFFNESS_3D) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -151,7 +153,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   for (int i=0; i<nrows; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_List nodes;
   std::vector<int> dirs;
   mesh->cell_get_nodes(cell, &nodes);
     

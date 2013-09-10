@@ -20,7 +20,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "tensor.hh"
 #include "PreconditionerFactory.hh"
 
-#include "Transport_constants.hh"
+#include "TransportDefs.hh"
 #include "Matrix_Dispersion.hh"
 
 namespace Amanzi {

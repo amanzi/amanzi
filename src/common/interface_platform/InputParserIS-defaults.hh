@@ -73,7 +73,7 @@
 
 #define LIN_SOLVE_TOL                   1.0e-16
 #define LIN_SOLVE_MAXITER               100
-#define LIN_SOLVE_METHOD                "GMRES"
+#define LIN_SOLVE_METHOD                "gmres"
 #define LIN_SOLVE_PREC                  "Hypre AMG"
 
 #define ML_SMOOTHER                     "Jacobi"

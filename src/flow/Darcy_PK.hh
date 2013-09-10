@@ -10,8 +10,8 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __DARCY_PK_HH__
-#define __DARCY_PK_HH__
+#ifndef AMANZI_DARCY_PK_HH_
+#define AMANZI_DARCY_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 

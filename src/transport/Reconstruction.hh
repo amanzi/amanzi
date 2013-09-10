@@ -1,14 +1,16 @@
 /*
-This class operates with a scalar cell-centered field.
-Lisence: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
-  Reconstruction scalar_cell_function(u);
-  scalar_cell_function.calculateCellGradient();
+  This class operates with a scalar cell-centered field.
+
+  Lisence: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Usage: 
+    Reconstruction scalar_cell_function(u);
+    scalar_cell_function.calculateCellGradient();
 */
 
-#ifndef __Reconstruction_hpp__
-#define __Reconstruction_hpp__
+#ifndef AMANZI_RECONSTRACTION_HH_
+#define AMANZI_RECONSTRACTION_HH_
 
 #include <vector>
 

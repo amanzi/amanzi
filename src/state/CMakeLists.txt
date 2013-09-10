@@ -49,7 +49,26 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: state
 #
-file(GLOB state_inc_files "*.hh")
+set(state_inc_files cell_volume_evaluator.hh
+  cell_volume_evaluator_reg.hh
+  checkpoint.hh
+  chemistry_data.hh
+  Field_CompositeVector.hh
+  Field_ConstantVector.hh
+  FieldEvaluator_Factory.hh
+  FieldEvaluator.hh
+  Field.hh
+  Field_Scalar.hh
+  io_event.hh
+  Observable.hh
+  PK_State.hh
+  rank_evaluator.hh
+  rank_evaluator_reg.hh
+  state_defs.hh
+  State.hh
+  UnstructuredObservations.hh
+  visualization.hh)
+
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
                    SOURCE State.cc
@@ -78,12 +97,12 @@ set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 #
 add_install_include_file(${state_inc_files})
 
-register_evaluator_with_factory(cell_volume_evaluator_reg.hh FACTORY_REG_LIST)
-register_evaluator_with_factory(rank_evaluator_reg.hh FACTORY_REG_LIST)
+register_evaluator_with_factory(HEADERFILE cell_volume_evaluator_reg.hh   LISTNAME FACTORY_REG_LIST)
+register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNAME FACTORY_REG_LIST)
 
 if (BUILD_TESTS)
 
-    register_evaluators(tests_state_evaluator_reg.hh FACTORY_REG_LIST)
+    generate_evaluators_registration_header(HEADERFILE tests_state_evaluator_reg.hh LISTNAME FACTORY_REG_LIST)
   
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})

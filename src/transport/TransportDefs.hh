@@ -1,16 +1,16 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __TRANSPORT_CONSTANTS_HH__
-#define __TRANSPORT_CONSTANTS_HH__
+#ifndef AMANZI_TRANSPORT_CONSTANTS_HH_
+#define AMANZI_TRANSPORT_CONSTANTS_HH_
 
 
 namespace Amanzi {
