@@ -31,11 +31,14 @@ std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput
 // Amanzi chemistry stuff
 #include "exceptions.hh"
 #include "errors.hh"
+#ifdef ALQUIMIA_ENABLED
+#else
 #include "simple_thermo_database.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_output.hh"
 extern Amanzi::AmanziChemistry::ChemistryOutput* Amanzi::AmanziChemistry::chem_out;
+#endif
 
 #define SHOWVALARR(val)                        \
 {                                              \
@@ -195,7 +198,10 @@ PorousMedia::CleanupStatics ()
     tic_array.clear();
     tbc_array.clear();
     initialized = false;
+#ifdef ALQUIMIA_ENABLED
+#else
     delete Amanzi::AmanziChemistry::chem_out;
+#endif
     delete richard_solver;
     physics_events_registered = false;
 }
@@ -225,9 +231,12 @@ PorousMedia::variableCleanUp ()
   source_array.clear();
 
   if (do_tracer_chemistry>0) {
+#ifdef ALQUIMIA_ENABLED
+#else
     chemSolve.clear();
     components.clear();
     parameters.clear();
+#endif
   }
 }
 
@@ -5956,6 +5965,8 @@ PorousMedia::advance_chemistry (Real time,
   BL_ASSERT(S_old.nComp() >= ncomps+ntracers);
   for (int ithread = 0; ithread < tnum; ithread++)
     {
+#ifdef ALQUIMIA_ENABLED
+#else
       BL_ASSERT(components[ithread].mineral_volume_fraction.size() == nminerals);
       BL_ASSERT(components[ithread].mineral_specific_surface_area.size() == nminerals);
       BL_ASSERT(components[ithread].total.size() == ntracers);
@@ -5969,6 +5980,7 @@ PorousMedia::advance_chemistry (Real time,
 	BL_ASSERT(components[ithread].isotherm_freundlich_n.size() == ntracers);
       }
       BL_ASSERT(components[ithread].ion_exchange_sites.size() == 0);
+#endif
     }
 
   //
@@ -6123,6 +6135,9 @@ PorousMedia::advance_chemistry (Real time,
 #else
       int threadid = 0;
 #endif
+
+#ifdef ALQUIMIA_ENABLED
+#else
       Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
       Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
       Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
@@ -6224,6 +6239,7 @@ PorousMedia::advance_chemistry (Real time,
 	  }
 	}
       }
+#endif
     }
   }
     

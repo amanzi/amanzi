@@ -31,8 +31,11 @@ class RSParams;
 #include <RichardSolver.H>
 
 // Amanzi chemistry
+#ifdef ALQUIMIA_ENABLED
+#else
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
+#endif
 
 static Real BL_ONEATM = 101325.0;
 
@@ -1256,11 +1259,16 @@ protected:
   static Array<Source> source_array;
 
 #ifdef AMANZI
+
+#ifdef ALQUIMIA_ENABLED
+#else
   static PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
   static std::string amanzi_database_file;
   static std::string amanzi_activity_model; 
   static Array<Amanzi::AmanziChemistry::Beaker::BeakerComponents> components;
   static Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> parameters;
+#endif
+
 #endif
   static int  max_grid_size_chem;
   static bool no_initial_values;
