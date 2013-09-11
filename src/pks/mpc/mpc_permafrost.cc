@@ -209,16 +209,19 @@ void MPCPermafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up,
     Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
 
     // scale by 1/h
-    Epetra_MultiVector Ccc(*dA_dy2->ViewComponent("cell",false));
-    Ccc = *dA_dy2->ViewComponent("cell",false);
-    Ccc.Scale(1./h);
+    Teuchos::RCP<Epetra_MultiVector> Ccc =
+        Teuchos::rcp(new Epetra_MultiVector(*dA_dy2->ViewComponent("cell",false)));
+    (*Ccc) = *dA_dy2->ViewComponent("cell",false);
+    Ccc->Scale(1./h);
 
-    Epetra_MultiVector Dcc(*dB_dy1->ViewComponent("cell",false));
-    Dcc = *dB_dy1->ViewComponent("cell",false);
-    Dcc.Scale(1./h);
+    Teuchos::RCP<Epetra_MultiVector> Dcc =
+        Teuchos::rcp(new Epetra_MultiVector(*dB_dy1->ViewComponent("cell",false)));
+    (*Dcc) = *dB_dy1->ViewComponent("cell",false);
+    Dcc->Scale(1./h);
 
     // Assemble the precon, form Schur complement
-    mfd_surf_preconditioner_->ComputeSchurComplement(Ccc, Dcc);
+    mfd_surf_preconditioner_->SetOffDiagonals(Ccc,Dcc);
+    mfd_surf_preconditioner_->ComputeSchurComplement();
     mfd_surf_preconditioner_->UpdatePreconditioner();
   }
 }

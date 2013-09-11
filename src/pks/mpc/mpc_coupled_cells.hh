@@ -62,6 +62,7 @@ class MPCCoupledCells : public StrongMPC {
   Key B_key_;
   Key y1_key_;
   Teuchos::RCP<Operators::MatrixMFD_Coupled> mfd_preconditioner_;
+  Teuchos::RCP<TreeMatrix> linsolve_preconditioner_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   bool decoupled_;

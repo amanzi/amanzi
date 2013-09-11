@@ -26,10 +26,17 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
 
   MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other);
 
-  virtual void ComputeSchurComplement(const Epetra_MultiVector& Ccc,
-          const Epetra_MultiVector& Dcc,
-          const Teuchos::Ptr<const Epetra_MultiVector>& Ccc_surf=Teuchos::null,
-          const Teuchos::Ptr<const Epetra_MultiVector>& Dcc_surf=Teuchos::null);
+  virtual void ComputeSchurComplement();
+
+  void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
+                       const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
+                       const Teuchos::RCP<const Epetra_MultiVector>& Ccc_surf=Teuchos::null,
+                       const Teuchos::RCP<const Epetra_MultiVector>& Dcc_surf=Teuchos::null) {
+    MatrixMFD_Coupled::SetOffDiagonals(Ccc,Dcc);
+    Ccc_surf_ = Ccc_surf;
+    Dcc_surf_ = Dcc_surf;
+  }
+
 
   void SetSurfaceOperators(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A,
                            const Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
@@ -47,6 +54,9 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_B_;
+
+  Teuchos::RCP<const Epetra_MultiVector> Ccc_surf_;
+  Teuchos::RCP<const Epetra_MultiVector> Dcc_surf_;
 
 };
 

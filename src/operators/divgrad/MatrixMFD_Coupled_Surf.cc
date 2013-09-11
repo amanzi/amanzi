@@ -17,13 +17,11 @@ MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& oth
     surface_A_(other.surface_A_),
     surface_B_(other.surface_B_) {}
 
-void MatrixMFD_Coupled_Surf::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
-        const Epetra_MultiVector& Dcc,
-        const Teuchos::Ptr<const Epetra_MultiVector>& Ccc_surf,
-        const Teuchos::Ptr<const Epetra_MultiVector>& Dcc_surf) {
+
+void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
 
   // Base ComputeSchurComplement() gets the standard face parts
-  MatrixMFD_Coupled::ComputeSchurComplement(Ccc, Dcc);
+  MatrixMFD_Coupled::ComputeSchurComplement();
 
   // now need to add in the surf parts, this code mimics that in
   // MatrixMFD_Surf::ComputeSchurComplement().
@@ -97,8 +95,8 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement(const Epetra_MultiVector& Cc
       block(1,1) = valuesB[m];
 
       // if (frow_global == indicesA[m]) {
-      //   block(0,1) = (*Ccc_surf)[0][sc];
-      //   block(1,0) = (*Dcc_surf)[0][sc];
+      //   block(0,1) = (*Ccc_surf_)[0][sc];
+      //   block(1,0) = (*Dcc_surf_)[0][sc];
       // }
 
       ierr = P2f2f_->SubmitBlockEntry(block.A(), block.LDA(), block.M(), block.N());
