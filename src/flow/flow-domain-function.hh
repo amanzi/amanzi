@@ -9,8 +9,8 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __AMANZI_FLOW_DOMAIN_FUNCTION_HH__
-#define __AMANZI_FLOW_DOMAIN_FUNCTION_HH__
+#ifndef AMANZI_FLOW_DOMAIN_FUNCTION_HH_
+#define AMANZI_FLOW_DOMAIN_FUNCTION_HH_
 
 #include <vector>
 #include <string>

@@ -4,8 +4,8 @@ License: BSD
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __FAKE_MODEL_HH__
-#define __FAKE_MODEL_HH__
+#ifndef AMANZI_FAKE_MODEL_HH_
+#define AMANZI_FAKE_MODEL_HH_
 
 #include "WaterRetentionModel.hh"
 

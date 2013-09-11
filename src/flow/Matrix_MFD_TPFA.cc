@@ -16,7 +16,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "AztecOO.h"
 #include "mfd3d_diffusion.hh"
 
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 #include "Matrix_MFD_TPFA.hh"
 
 

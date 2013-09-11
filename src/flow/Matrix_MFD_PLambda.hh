@@ -13,8 +13,8 @@ the base class. In particular, Lagrange multipliers and cell-based
 pressures are strongly coupled and form the global system.
 */
 
-#ifndef __MATRIX_MFD_PLAMBDA_HH__
-#define __MATRIX_MFD_PLAMBDA_HH__
+#ifndef AMANZI_MATRIX_MFD_PLAMBDA_HH_
+#define AMANZI_MATRIX_MFD_PLAMBDA_HH_
 
 #include <strings.h>
 

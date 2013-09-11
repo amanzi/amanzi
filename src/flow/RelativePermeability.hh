@@ -9,8 +9,8 @@ provided in the top-level COPYRIGHT file.
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __RELATIVE_PERMEABILITY_HH__
-#define __RELATIVE_PERMEABILITY_HH__
+#ifndef AMANZI_RELATIVE_PERMEABILITY_HH_
+#define AMANZI_RELATIVE_PERMEABILITY_HH_
 
 #include <string>
 #include <vector>

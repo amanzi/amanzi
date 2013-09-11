@@ -10,8 +10,8 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __VAN_GENUCHTEN_MODEL_HH__
-#define __VAN_GENUCHTEN_MODEL_HH__
+#ifndef AMANZI_VAN_GENUCHTEN_MODEL_HH_
+#define AMANZI_VAN_GENUCHTEN_MODEL_HH_
 
 #include "WaterRetentionModel.hh"
 

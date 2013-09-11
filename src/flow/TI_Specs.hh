@@ -9,10 +9,10 @@ provided in the top-level COPYRIGHT file.
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __TI_Specs_HH__
-#define __TI_Specs_HH__
+#ifndef AMANZI_TI_SPECS_HH_
+#define AMANZI_TI_SPECS_HH_
 
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 
 
 namespace Amanzi {

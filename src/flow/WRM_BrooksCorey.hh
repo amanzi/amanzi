@@ -9,8 +9,8 @@ provided in the top-level COPYRIGHT file.
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __BROOKS_COREY_MODEL_HH__
-#define __BROOKS_COREY_MODEL_HH__
+#ifndef AMANZI_BROOKS_COREY_MODEL_HH_
+#define AMANZI_BROOKS_COREY_MODEL_HH_
 
 #include "WaterRetentionModel.hh"
 

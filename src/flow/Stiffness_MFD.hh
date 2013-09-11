@@ -9,8 +9,8 @@ provided in the top-level COPYRIGHT file.
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __STIFFNESS_MFD_HH__
-#define __STIFFNESS_MFD_HH__
+#ifndef AMANZI_STIFFNESS_MFD_HH_
+#define AMANZI_STIFFNESS_MFD_HH_
 
 #include <strings.h>
 

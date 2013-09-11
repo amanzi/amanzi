@@ -22,7 +22,7 @@ Authors: Neil Carlson (version 1)
 #include "tensor.hh"
 
 #include "Darcy_PK.hh"
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 #include "Flow_SourceFactory.hh"
 #include "Flow_State.hh"
 #include "Matrix_MFD.hh"

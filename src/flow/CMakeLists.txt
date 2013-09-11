@@ -81,7 +81,7 @@ set(flow_inc_files
   Darcy_PK.hh
   Flow_BC_Factory.hh
   flow-boundary-function.hh
-  Flow_constants.hh
+  FlowDefs.hh
   flow-domain-function.hh
   Flow_PK.hh
   Flow_SourceFactory.hh
@@ -91,7 +91,6 @@ set(flow_inc_files
   Matrix_MFD.hh
   Matrix_MFD_PLambda.hh
   Matrix_MFD_TPFA.hh
-  Matrix_VAG.hh
   RelativePermeability.hh
   Richards_PK.hh
   Stiffness_MFD.hh

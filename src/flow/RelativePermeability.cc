@@ -17,7 +17,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "WRM_fake.hh"
 
 #include "RelativePermeability.hh"
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {

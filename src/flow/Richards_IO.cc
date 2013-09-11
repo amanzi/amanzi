@@ -16,7 +16,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 #include "Richards_PK.hh"
 
 namespace Amanzi {
