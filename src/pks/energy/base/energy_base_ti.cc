@@ -343,6 +343,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
     double buf_c(enorm_cell), buf_f(enorm_face);
     MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    /*
     if (std::abs(buf_c - enorm_cell) < 1.e-16) {
 
       if (S_next_->HasField("denergy_dtemperature")) {
@@ -377,6 +378,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
                 << "    dw_dT,dp = " << dwcdT[0][bad_cell] << ", " << dwcdp[0][bad_cell] << std::endl;
       }
     }
+    */
 #endif
 
     *out_ << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
