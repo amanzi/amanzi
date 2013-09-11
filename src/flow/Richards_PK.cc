@@ -30,7 +30,7 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 #include "mfd3d_diffusion.hh"
 
 #include "Matrix_MFD_PLambda.hh"
-#include "Matrix_MFD_TPFA.hh"
+#include "Matrix_TPFA.hh"
 
 #include "Flow_BC_Factory.hh"
 #include "Flow_State.hh"

@@ -50,7 +50,7 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Richards_PK.cc Richards_IO.cc Richards_TI.cc Richards_WRM.cc
                    Richards_SteadyState.cc Richards_Picard.cc Richards_AztecOO.cc
                    Richards_Bundles.cc Richards_Devel.cc 
-                   Matrix_MFD.cc Matrix_MFD_TPFA.cc Matrix_MFD_PLambda.cc
+                   Matrix_MFD.cc Matrix_TPFA.cc Matrix_MFD_PLambda.cc
                    Stiffness_MFD.cc 
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
@@ -90,7 +90,7 @@ set(flow_inc_files
   Matrix_Audit.hh
   Matrix_MFD.hh
   Matrix_MFD_PLambda.hh
-  Matrix_MFD_TPFA.hh
+  Matrix_TPFA.hh
   RelativePermeability.hh
   Richards_PK.hh
   Stiffness_MFD.hh

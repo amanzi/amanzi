@@ -26,7 +26,7 @@ Authors: Neil Carlson (version 1)
 #include "Flow_SourceFactory.hh"
 #include "Flow_State.hh"
 #include "Matrix_MFD.hh"
-#include "Matrix_MFD_TPFA.hh"
+#include "Matrix_TPFA.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {

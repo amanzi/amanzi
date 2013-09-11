@@ -17,7 +17,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "mfd3d_diffusion.hh"
 
 #include "FlowDefs.hh"
-#include "Matrix_MFD_TPFA.hh"
+#include "Matrix_TPFA.hh"
 
 
 namespace Amanzi {
