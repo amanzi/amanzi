@@ -97,7 +97,7 @@ class Darcy_PK : public Flow_PK {
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
   // auxilliary data management
-  void UpdateAuxilliaryData();
+  void UpdateAuxilliaryData(){};
 
 
  private:
