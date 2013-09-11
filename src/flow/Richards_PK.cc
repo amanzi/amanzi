@@ -496,7 +496,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
 
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
-    cout<<flux<<endl;
+    //cout<<"flux\n"<<flux<<endl;
+    //cout<<Krel_faces<<endl;
   } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
     if (matrix_tpfa == 0) {
@@ -506,7 +507,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     }
     matrix_tpfa->DeriveDarcyMassFlux(
         *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
-    cout<<flux<<endl;
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;

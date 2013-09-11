@@ -268,7 +268,8 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
     }    
   }
 
-  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+  //  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     int ncells_tmp = ncells_clipped;
     du.Comm().SumAll(&ncells_tmp, &ncells_clipped, 1);
     if (MyPID == 0 && ncells_clipped > 0) {

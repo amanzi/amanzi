@@ -115,6 +115,7 @@ void RelativePermeability::ComputeOnFaces(
 
   } else if (method_ == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
     Epetra_Vector& flux = FS_->ref_darcy_flux();
+    
     FaceUpwindFlux_(p, flux, bc_model, bc_values);
 
   } else if (method_ == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {

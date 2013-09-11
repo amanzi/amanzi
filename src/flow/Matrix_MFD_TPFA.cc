@@ -922,7 +922,9 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 
   AmanziMesh::Entity_ID_List cells;
 
-  darcy_mass_flux.PutScalar(0.);;
+  darcy_mass_flux.PutScalar(0.);
+
+  //cout<<solution_cells<<endl;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -931,7 +933,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
 
-      //      cout<<"Trans "<<Trans_faces[f]<<endl;
+      //      cout<<"Trans "<<f<<": "<<Trans_faces[f]<<endl;
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
@@ -943,7 +945,8 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
       }
       else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
 	double value = bc_values[f][0];
-	darcy_mass_flux[f] = value;
+	double area = mesh_->face_area(f);
+	darcy_mass_flux[f] = value*area ;
       }
       else {
 	if (f < nfaces_owned) {
@@ -953,29 +956,6 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 	    Exceptions::amanzi_throw(msg);
 	  }
 
-	  // if ((fabs(Grav_term[f]) > 1e-12 )&&(dirs[n]>0)){
-	  //   cout<<"FACE "<<f<<endl;
-	  //   cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<" "<<" Krel "<<Krel_faces[f]<<endl;
-	  //   //cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
-	  //   cout<<"gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
-	  //   cout<<"Grav_term "<<Grav_term[f]<<endl;
-	  //   //if (f == 49) {
-	  //   if (dirs[n]>0) {
-	  //     cout<<"cells: "<<c<<" "<<c+1<<" --- "<<solution[c]<<" "<<solution[c+1]<<endl;
-	  //     cout<<"Diff "<< Krel_faces[f]*Trans_faces[f]*(solution[c] - solution[c+1])<<endl;
-	  //   }
-	  //   //}
-	  // }
-
-
-	  // double s = Trans_faces[f]*solution[c];
-	  // darcy_mass_flux[f] += s * dirs[n];
-	  // if (cells[0] == c) darcy_mass_flux[f] += dirs[n]*Grav_term[f]*0.5;
-	  // else darcy_mass_flux[f] -= dirs[n]*Grav_term[f]*0.5;  
-	  // darcy_mass_flux[f] *= Krel_faces[f];
-	  // //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
-	  // //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
-	  // //exit(0);
 	  if (dirs[n] > 0){
 	    if (c == cells[0]){
 	      darcy_mass_flux[f] = Trans_faces[f]*(solution_cell_wghost[cells[0]] - solution_cell_wghost[cells[1]]) + Grav_term[f];
