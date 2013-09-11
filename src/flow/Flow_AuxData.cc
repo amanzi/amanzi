@@ -12,7 +12,7 @@ void aux_compute_hydraulic_head(Epetra_Vector* hydraulic_head, double p_atm, Epe
   hydraulic_head->PutScalar(-p_atm);
   hydraulic_head->Update(1.0,*pressure,1.0);
   
-  double g = gravity[dim-1];
+  double g = fabs(gravity[dim-1]);
   
   hydraulic_head->Scale(1.0/(g*rho));
   hydraulic_head->Update(1.0, *centroids, 1.0);
