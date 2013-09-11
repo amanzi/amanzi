@@ -98,8 +98,8 @@ void MatrixMFD_Coupled::InitializeFromPList_() {
 }
 
 
-void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
-        const Teuchos::Ptr<TreeVector>& Y) const {
+int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
+        TreeVector& Y) const {
   if (prec_method_ == PREC_METHOD_NULL) {
     Errors::Message msg("MatrixMFD::ApplyInverse requires a specified preconditioner method");
     Exceptions::amanzi_throw(msg);
@@ -189,8 +189,8 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
 
 
   // pull Y data
-  Teuchos::RCP<CompositeVector> YA = Y->SubVector(0)->data();
-  Teuchos::RCP<CompositeVector> YB = Y->SubVector(1)->data();
+  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->data();
+  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->data();
   Epetra_MultiVector& YA_c = *YA->ViewComponent("cell", false);
   Epetra_MultiVector& YB_c = *YB->ViewComponent("cell", false);
   Epetra_MultiVector& YA_f = *YA->ViewComponent("face", false);
@@ -210,17 +210,30 @@ void MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
     YB_f[0][f] = Yf[0][2*f + 1];
   }
 
+  return ierr;
 }
 
 
-void MatrixMFD_Coupled::Apply(const TreeVector& X,
-        const Teuchos::Ptr<TreeVector>& Y) const {
-  ASSERT(0);
+int MatrixMFD_Coupled::Apply(const TreeVector& X,
+        TreeVector& Y) const {
+  Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->data();
+  Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->data();
+  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->data();
+  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->data();
+
+  blockA_->Apply(*XA, *YA);
+  blockB_->Apply(*XB, *YB);
+
+  // add in the off-diagonals
+  YA->ViewComponent("cell",false)->Multiply(1., *Ccc_,
+          *XB->ViewComponent("cell",false), 1.);
+  YB->ViewComponent("cell",false)->Multiply(1., *Dcc_,
+          *XA->ViewComponent("cell",false), 1.);
+  return 0;
 }
 
 
-void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
-                                              const Epetra_MultiVector& Dcc) {
+void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
   int ierr(0);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -228,8 +241,8 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ASSERT(Ccc.MyLength() == ncells);
-  ASSERT(Dcc.MyLength() == ncells);
+  ASSERT(Ccc_->MyLength() == ncells);
+  ASSERT(Dcc_->MyLength() == ncells);
 
   // Get the assorted sub-blocks
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff = blockA_->Aff_cells();
@@ -274,12 +287,12 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
     }
 
     // Invert the cell block
-    double det_cell = Acc[c] * Bcc[c] - Ccc[0][c] * Dcc[0][c];
+    double det_cell = Acc[c] * Bcc[c] - (*Ccc_)[0][c] * (*Dcc_)[0][c];
     if (std::abs(det_cell) > 1.e-30) {
       cell_inv(0, 0) = Bcc[c]/det_cell;
       cell_inv(1, 1) = Acc[c]/det_cell;
-      cell_inv(0, 1) = -Ccc[0][c]/det_cell;
-      cell_inv(1, 0) = -Dcc[0][c]/det_cell;
+      cell_inv(0, 1) = -(*Ccc_)[0][c]/det_cell;
+      cell_inv(1, 0) = -(*Dcc_)[0][c]/det_cell;
     } else {
       std::cout << "MatrixMFD_Coupled: Division by zero: determinant of the cell block is zero" << std::endl;
       //      ASSERT(0);
@@ -404,9 +417,11 @@ void MatrixMFD_Coupled::ComputeSchurComplement(const Epetra_MultiVector& Ccc,
   is_matrix_constructed_ = true;
 
   // DEBUG dump
-  // std::stringstream filename_s;
-  // filename_s << "schur_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+  if (dump) {
+    std::stringstream filename_s;
+    filename_s << "schur_" << 0 << ".txt";
+    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
+  }
 
 }
 

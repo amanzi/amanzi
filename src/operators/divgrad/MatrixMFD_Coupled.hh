@@ -56,12 +56,14 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include "tree_vector.hh"
+#include "tree_matrix.hh"
 #include "MatrixMFD.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class MatrixMFD_Coupled : public Matrix {
+class MatrixMFD_Coupled : public Matrix,
+                          public TreeMatrix {
 
  public:
   MatrixMFD_Coupled(Teuchos::ParameterList& plist,
@@ -76,17 +78,43 @@ class MatrixMFD_Coupled : public Matrix {
     blockA_ = blockA;
     blockB_ = blockB;
   }
+
+  void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
+                       const Teuchos::RCP<const Epetra_MultiVector>& Dcc) {
+    Ccc_ = Ccc;
+    Dcc_ = Dcc;
+  }
+
   Teuchos::RCP<const Epetra_FEVbrMatrix> Schur() {
     return P2f2f_;
   }
 
-  virtual void Apply(const TreeVector& X,
-                     const Teuchos::Ptr<TreeVector>& Y) const;
-  virtual void ApplyInverse(const TreeVector& X,
-                            const Teuchos::Ptr<TreeVector>& Y) const;
+  // TreeMatrix stuff FIX ME!
+  virtual Teuchos::RCP<const TreeVectorFactory> domain() const {
+    return Teuchos::null; }
 
-  virtual void ComputeSchurComplement(const Epetra_MultiVector& Ccc,
-          const Epetra_MultiVector& Dcc);
+  // Vector space of the Matrix's range.
+  virtual Teuchos::RCP<const TreeVectorFactory> range() const {
+    return Teuchos::null; }
+
+  // Virtual copy constructor.
+  virtual Teuchos::RCP<TreeMatrix> Clone() const {
+    return Teuchos::rcp(new MatrixMFD_Coupled(*this));
+  }
+
+  virtual int Apply(const TreeVector& X,
+                     TreeVector& Y) const;
+  virtual int ApplyInverse(const TreeVector& X,
+                            TreeVector& Y) const;
+
+  virtual void Apply(const TreeVector& X,
+                     const Teuchos::Ptr<TreeVector>& Y) const {
+    Apply(X,*Y); }
+  virtual void ApplyInverse(const TreeVector& X,
+                            const Teuchos::Ptr<TreeVector>& Y) const {
+    ApplyInverse(X, *Y); }
+
+  virtual void ComputeSchurComplement(bool dump=false);
   virtual void SymbolicAssembleGlobalMatrices();
   virtual void InitPreconditioner();
   virtual void UpdatePreconditioner();
@@ -101,6 +129,10 @@ class MatrixMFD_Coupled : public Matrix {
   // sub-blocks
   Teuchos::RCP<MatrixMFD> blockA_;
   Teuchos::RCP<MatrixMFD> blockB_;
+
+  // off diagonal blocks
+  Teuchos::RCP<const Epetra_MultiVector> Ccc_;
+  Teuchos::RCP<const Epetra_MultiVector> Dcc_;
 
   // local matrices
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;

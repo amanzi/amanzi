@@ -47,12 +47,12 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
     return Teuchos::rcp(new MatrixVolumetricDeformation(*this)); }
 
   // Apply matrix, b <-- Ax
-  virtual void Apply(const CompositeVector& x,
-                     const Teuchos::Ptr<CompositeVector>& b) const;
+  virtual int Apply(const CompositeVector& x,
+                     CompositeVector& b) const;
 
   // Apply the inverse, x <-- A^-1 b
-  virtual void ApplyInverse(const CompositeVector& b,
-                            const Teuchos::Ptr<CompositeVector>& x) const;
+  virtual int ApplyInverse(const CompositeVector& b,
+                            CompositeVector& x) const;
 
   // This is a Normal equation, so we need to apply N^T to the rhs
   void ApplyRHS(const CompositeVector& x_cell,

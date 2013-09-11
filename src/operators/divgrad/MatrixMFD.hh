@@ -32,6 +32,7 @@
 #include "Point.hh"
 #include "tree_vector.hh"
 #include "composite_vector.hh"
+#include "composite_matrix.hh"
 #include "mfd3d.hh"
 
 #include "Matrix.hh"
@@ -53,7 +54,8 @@ const int MFD_MAX_NODES = 47;  // These polyhedron parameters must
 const int MFD_MAX_EDGES = 60;  // be calculated in Init().
 
 
-class MatrixMFD : public Matrix {
+class MatrixMFD : public Matrix,
+                  public CompositeMatrix {
  public:
 
   enum MFDMethod {
@@ -76,6 +78,18 @@ class MatrixMFD : public Matrix {
 
   // Virtual destructor
   virtual ~MatrixMFD() {};
+
+  // CompositeMatrix stuff... FIX ME!
+  virtual Teuchos::RCP<const CompositeVectorFactory> domain() const {
+    return Teuchos::null; }
+
+  virtual Teuchos::RCP<const CompositeVectorFactory> range() const {
+    return Teuchos::null; }
+
+  virtual Teuchos::RCP<CompositeMatrix> Clone() const {
+    return Teuchos::rcp(new MatrixMFD(*this)); }
+
+
 
   // Access to local matrices for external tweaking.
   std::vector<double>& Acc_cells() {
@@ -146,18 +160,18 @@ class MatrixMFD : public Matrix {
           const std::vector<double>& bc_values);
 
   // Operator methods.
-  virtual void Apply(const CompositeVector& X,
-                     const Teuchos::Ptr<CompositeVector>& Y) const;
-  virtual void ApplyInverse(const CompositeVector& X,
-                            const Teuchos::Ptr<CompositeVector>& Y) const;
+  virtual int Apply(const CompositeVector& X,
+                     CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X,
+                            CompositeVector& Y) const;
 
   virtual void Apply(const TreeVector& X,
                      const Teuchos::Ptr<TreeVector>& Y) const {
-    return Apply(*X.data(), Y->data().ptr());
+    Apply(*X.data(), *Y->data());
   }
   virtual void ApplyInverse(const TreeVector& X,
                             const Teuchos::Ptr<TreeVector>& Y) const {
-    return ApplyInverse(*X.data(), Y->data().ptr());
+    ApplyInverse(*X.data(), *Y->data());
   }
 
   virtual void ComputeResidual(const CompositeVector& X,

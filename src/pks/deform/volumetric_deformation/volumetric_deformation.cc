@@ -15,7 +15,7 @@
    ------------------------------------------------------------------------- */
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "NKAOperator.hh"
+#include "NKA_Operator.hh"
 #include "composite_vector_function_factory.hh"
 
 #include "volumetric_deformation.hh"
@@ -161,7 +161,7 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
       if (op_plist.isSublist("NKA Solver")) {
         Teuchos::ParameterList solver_plist = op_plist.sublist("NKA Solver");
         operator_ = Teuchos::rcp(
-            new NKAOperator<CompositeMatrix,CompositeVector,
+            new AmanziSolvers::NKA_Operator<CompositeMatrix,CompositeVector,
                             CompositeVectorFactory>(solver_plist,def_matrix_));
       } else {
         operator_ = def_matrix_;
@@ -492,7 +492,7 @@ bool VolumetricDeformation::advance(double dt) {
       def_matrix_->Assemble(fixed_node_list.ptr());
       def_matrix_->InitializeInverse();
       def_matrix_->ApplyRHS(*dcell_vol_vec, rhs.ptr(), fixed_node_list.ptr());
-      operator_->ApplyInverse(*rhs, nodal_dz_vec.ptr());
+      operator_->ApplyInverse(*rhs, *nodal_dz_vec);
 
       // form list of deformed nodes
       Entity_ID_List nodeids;

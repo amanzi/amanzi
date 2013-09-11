@@ -550,38 +550,39 @@ void MatrixMFD::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
 /* ******************************************************************
  * Parallel matvec product Y <-- A * X.
  ****************************************************************** */
-void MatrixMFD::Apply(const CompositeVector& X,
-                      const Teuchos::Ptr<CompositeVector>& Y) const {
+int MatrixMFD::Apply(const CompositeVector& X,
+                      CompositeVector& Y) const {
   AssertAssembledOperator_or_die_();
 
   int ierr;
 
   // Face unknowns:  Yf = Aff_ * Xf + Afc_ * Xc
   ierr = (*Aff_).Multiply(false, *X.ViewComponent("face",false),
-                          *Y->ViewComponent("face", false));
+                          *Y.ViewComponent("face", false));
 
-  Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
+  Epetra_MultiVector Tf(*Y.ViewComponent("face", false));
   ierr |= (*Afc_).Multiply(true, *X.ViewComponent("cell",false), Tf);
-  Y->ViewComponent("face",false)->Update(1.0, Tf, 1.0);
+  Y.ViewComponent("face",false)->Update(1.0, Tf, 1.0);
 
   // Cell unknowns:  Yc = Acf_ * Xf + Acc_ * Xc
   ierr |= (*Acf_).Multiply(false, *X.ViewComponent("face", false),
-                           *Y->ViewComponent("cell", false));
-  ierr |= Y->ViewComponent("cell", false)->Multiply(1.0, *Acc_,
+                           *Y.ViewComponent("cell", false));
+  ierr |= Y.ViewComponent("cell", false)->Multiply(1.0, *Acc_,
           *X.ViewComponent("cell", false), 1.0);
 
   if (ierr) {
     Errors::Message msg("MatrixMFD::Apply has failed to calculate Y = inv(A) * X.");
     Exceptions::amanzi_throw(msg);
   }
+  return ierr;
 }
 
 
 /* ******************************************************************
  * Parallel solve, Y <-- A^-1 X
  ****************************************************************** */
-void MatrixMFD::ApplyInverse(const CompositeVector& X,
-                             const Teuchos::Ptr<CompositeVector>& Y) const {
+int MatrixMFD::ApplyInverse(const CompositeVector& X,
+                             CompositeVector& Y) const {
   AssertAssembledOperator_or_die_();
   AssertAssembledSchur_or_die_();
 
@@ -591,8 +592,8 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   }
 
   // Temporary cell and face vectors.
-  Epetra_MultiVector Tc(*Y->ViewComponent("cell", false));
-  Epetra_MultiVector Tf(*Y->ViewComponent("face", false));
+  Epetra_MultiVector Tc(*Y.ViewComponent("cell", false));
+  Epetra_MultiVector Tf(*Y.ViewComponent("face", false));
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc_ inv(Acc_) Xc
   int ierr;
@@ -606,14 +607,14 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
   if (prec_method_ == TRILINOS_ML) {
-    ierr |= ml_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+    ierr |= ml_prec_->ApplyInverse(Tf, *Y.ViewComponent("face", false));
   } else if (prec_method_ == TRILINOS_ILU) {
-    ierr |= ilu_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+    ierr |= ilu_prec_->ApplyInverse(Tf, *Y.ViewComponent("face", false));
   } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    ierr |= ifp_prec_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+    ierr |= ifp_prec_->ApplyInverse(Tf, *Y.ViewComponent("face", false));
 #ifdef HAVE_HYPRE
   } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
-    ierr |= IfpHypre_Sff_->ApplyInverse(Tf, *Y->ViewComponent("face", false));
+    ierr |= IfpHypre_Sff_->ApplyInverse(Tf, *Y.ViewComponent("face", false));
 #endif
   } else {
     ASSERT(0);
@@ -621,16 +622,17 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
   ASSERT(!ierr);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
-  ierr |= (*Acf_).Multiply(false, *Y->ViewComponent("face", false), Tc);  // It performs the required parallel communications.
+  ierr |= (*Acf_).Multiply(false, *Y.ViewComponent("face", false), Tc);  // It performs the required parallel communications.
   ASSERT(!ierr);
 
   Tc.Update(1.0, *X.ViewComponent("cell", false), -1.0);
-  ierr |= Y->ViewComponent("cell", false)->ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
+  ierr |= Y.ViewComponent("cell", false)->ReciprocalMultiply(1.0, *Acc_, Tc, 0.0);
 
   if (ierr) {
     Errors::Message msg("MatrixMFD::ApplyInverse has failed in calculating y = A*x.");
     Exceptions::amanzi_throw(msg);
   }
+  return ierr;
 }
 
 
@@ -639,7 +641,7 @@ void MatrixMFD::ApplyInverse(const CompositeVector& X,
  ****************************************************************** */
 void MatrixMFD::ComputeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
-  Apply(solution, residual);
+  Apply(solution, *residual);
   residual->Update(1.0, *rhs_, -1.0);
 }
 
@@ -649,7 +651,7 @@ void MatrixMFD::ComputeResidual(const CompositeVector& solution,
  ****************************************************************** */
 void MatrixMFD::ComputeNegativeResidual(const CompositeVector& solution,
         const Teuchos::Ptr<CompositeVector>& residual) const {
-  Apply(solution, residual);
+  Apply(solution, *residual);
   residual->Update(-1.0, *rhs_, 1.0);
 }
 

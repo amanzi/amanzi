@@ -38,19 +38,20 @@ MatrixVolumetricDeformation::MatrixVolumetricDeformation(
 
 
 // Apply matrix, b <-- Ax
-void MatrixVolumetricDeformation::Apply(const CompositeVector& x,
-        const Teuchos::Ptr<CompositeVector>& b) const {
-  operator_->Apply(*x.ViewComponent("node",false),
-                   *b->ViewComponent("node",false));
+int MatrixVolumetricDeformation::Apply(const CompositeVector& x,
+        CompositeVector& b) const {
+  return operator_->Apply(*x.ViewComponent("node",false),
+                          *b.ViewComponent("node",false));
 }
 
 
 // Apply the inverse, x <-- A^-1 b
-void MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
-        const Teuchos::Ptr<CompositeVector>& x) const {
+int MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
+        CompositeVector& x) const {
   int ierr = prec_->ApplyInverse(*b.ViewComponent("node",false),
-          *x->ViewComponent("node", false));
+          *x.ViewComponent("node", false));
   ASSERT(!ierr);
+  return ierr;
 }
 
 
@@ -339,23 +340,24 @@ void MatrixVolumetricDeformation::Assemble(
        n!=fixed_nodes->end(); ++n) {
 
     // extract the row
-    ASSERT(*n < nnodes);
-    int n_gid = node_map.GID(*n);
-    int nneighbors;
-    ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors_,
-            nneighbors, node_values, node_indices); ASSERT(!ierr);
+    if (*n < nnodes) {
+      int n_gid = node_map.GID(*n);
+      int nneighbors;
+      ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors_,
+              nneighbors, node_values, node_indices); ASSERT(!ierr);
 
-    // zero the row, 1 on diagonal
-    for (int i=0; i!=nneighbors; ++i)
-      node_values[i] = node_indices[i] == n_gid ? 1. : 0.;
+      // zero the row, 1 on diagonal
+      for (int i=0; i!=nneighbors; ++i)
+        node_values[i] = node_indices[i] == n_gid ? 1. : 0.;
 
-    double rowsum = 0.;
-    for (int i=0; i!=nneighbors; ++i) rowsum += node_indices[i];
-    ASSERT(rowsum > 0.);
+      double rowsum = 0.;
+      for (int i=0; i!=nneighbors; ++i) rowsum += node_indices[i];
+      ASSERT(rowsum > 0.);
 
-    // replace the row
-    ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
-            node_values, node_indices); ASSERT(!ierr);
+      // replace the row
+      ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
+              node_values, node_indices); ASSERT(!ierr);
+    }
   }
 
   ierr = operator_->FillComplete();  ASSERT(!ierr);

@@ -34,9 +34,12 @@
 #include <fstream>
 #include "EpetraExt_RowMatrixOut.h"
 
+#include "NKA_Operator.hh"
+
 #include "FieldEvaluator.hh"
 #include "MatrixMFD.hh"
 #include "MatrixMFD_Coupled.hh"
+
 #include "mpc_coupled_cells.hh"
 
 namespace Amanzi {
@@ -92,6 +95,13 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->InitPreconditioner();
   preconditioner_ = mfd_preconditioner_;
+
+  // setup and initialize the linear solver for the preconditioner
+  if (plist_.isSublist("Coupled Solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_.sublist("Coupled Solver");
+    linsolve_preconditioner_ =
+        Teuchos::rcp(new AmanziSolvers::NKA_Operator<TreeMatrix,TreeVector,TreeVectorFactory>(linsolve_sublist, mfd_preconditioner_));
+  }
 }
 
 
@@ -110,11 +120,13 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
     Teuchos::RCP<const CompositeVector> dB_dy1 = S_next_->GetFieldData(dB_dy1_key_);
 
     // collect derivatives
-    Epetra_MultiVector Ccc(*dA_dy2->ViewComponent("cell",false));
-    Ccc = *dA_dy2->ViewComponent("cell",false);
+    Teuchos::RCP<Epetra_MultiVector> Ccc =
+        Teuchos::rcp(new Epetra_MultiVector(*dA_dy2->ViewComponent("cell",false)));
+    (*Ccc) = *dA_dy2->ViewComponent("cell",false);
 
-    Epetra_MultiVector Dcc(*dB_dy1->ViewComponent("cell",false));
-    Dcc = *dB_dy1->ViewComponent("cell",false);
+    Teuchos::RCP<Epetra_MultiVector> Dcc =
+        Teuchos::rcp(new Epetra_MultiVector(*dB_dy1->ViewComponent("cell",false)));
+    (*Dcc) = *dB_dy1->ViewComponent("cell",false);
 
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
       const Epetra_MultiVector& dsi_dp = *S_next_->GetFieldData("dsaturation_ice_dpressure")->ViewComponent("cell",false);
@@ -122,8 +134,8 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 
       for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
            c0!=dc_.end(); ++c0) {
-        *out_ << "    dwc_dT(" << *c0 << "): " << Ccc[0][*c0] << std::endl;
-        *out_ << "    de_dp(" << *c0 << "): " << Dcc[0][*c0] << std::endl;
+        *out_ << "    dwc_dT(" << *c0 << "): " << (*Ccc)[0][*c0] << std::endl;
+        *out_ << "    de_dp(" << *c0 << "): " << (*Dcc)[0][*c0] << std::endl;
         *out_ << "       dsi_dp(" << *c0 << "): " << dsi_dp[0][*c0] << std::endl;
         *out_ << "       dsi_dT(" << *c0 << "): " << dsi_dT[0][*c0] << std::endl;
         *out_ << "    --" << std::endl;
@@ -132,11 +144,18 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
     }
 
     // scale by 1/h
-    Ccc.Scale(1./h);
-    Dcc.Scale(1./h);
+    Ccc->Scale(1./h);
+    Dcc->Scale(1./h);
+    mfd_preconditioner_->SetOffDiagonals(Ccc,Dcc);
 
     // compute
-    mfd_preconditioner_->ComputeSchurComplement(Ccc, Dcc);
+    if (std::abs(S_next_->time() - 3.04746e+07) < 68690.3) {
+    //    if (std::abs(S_next_->time() - 3.03337e+07) < 68690.3) {
+      std::cout << "DUMPING SCHUR!" << std::endl;
+      mfd_preconditioner_->ComputeSchurComplement(true);
+    } else {
+      mfd_preconditioner_->ComputeSchurComplement();
+    }
 
     // Assemble the precon, form Schur complement
     mfd_preconditioner_->UpdatePreconditioner();
@@ -171,7 +190,12 @@ void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tree
     }
   }
 
-  mfd_preconditioner_->ApplyInverse(*u, Pu.ptr());
+  // Apply
+  if (linsolve_preconditioner_ != Teuchos::null) {
+    linsolve_preconditioner_->ApplyInverse(*u, *Pu);
+  } else {
+    mfd_preconditioner_->ApplyInverse(*u, *Pu);
+  }
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
