@@ -93,7 +93,7 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
     }
     if (c2 >=0 && c2 < c_owned_) {
       for (int i=0; i<num_dofs_; i++) {
-        field_c[i][c1] += field_f[i][f];
+        field_c[i][c2] += field_f[i][f];
       }
     }
   }
