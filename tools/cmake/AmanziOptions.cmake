@@ -73,7 +73,10 @@ option(TESTS_REQUIRE_MPIEXEC "Run all tests with the MPIEXEC binary" FALSE)
 # Need this option if the PATH environment does not include '.'
 option(TESTS_REQUIRE_FULLPATH "Append full path to test binaries" FALSE)
 
-
-
-
+# This is needed to allow the consistent registration of evaluators with
+# their factory, see src/common/standalone_simulation_coordinator/CMakeLists.txt,
+# src/common/standalone_simulation_coordinator/Main.cc, 
+# src/state/CMakeLists.txt, and src/0state/cell_volume_evaluator_reg.hh
+# for how to use this
+include(RegisterEvaluators)
 

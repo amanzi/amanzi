@@ -144,6 +144,9 @@ class Flow_PK : public BDF2::fnBase {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
 
+  // auxilliary data management
+  virtual void UpdateAuxilliaryData() = 0;
+
 public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;

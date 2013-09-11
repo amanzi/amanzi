@@ -10,8 +10,8 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __DARCY_PK_HH__
-#define __DARCY_PK_HH__
+#ifndef AMANZI_DARCY_PK_HH_
+#define AMANZI_DARCY_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -95,6 +95,10 @@ class Darcy_PK : public Flow_PK {
   std::vector<WhetStone::Tensor>& get_K() { return K; }
   Matrix_MFD* get_matrix() { return matrix_; }
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
+
+  // auxilliary data management
+  void UpdateAuxilliaryData();
+
 
  private:
   Teuchos::ParameterList dp_list_;

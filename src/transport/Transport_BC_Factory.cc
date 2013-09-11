@@ -14,7 +14,7 @@ Authors:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "errors.hh"
 
 #include "Transport_BC_Factory.hh"
-#include "Transport_constants.hh"
+#include "TransportDefs.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

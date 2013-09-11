@@ -8,80 +8,95 @@ Conjugate gradient method.
 Usage: 
 */
 
-#ifndef __PCG_OPERATOR_HH__
-#define __PCG_OPERATOR_HH__
+#ifndef AMANZI_PCG_OPERATOR_HH_
+#define AMANZI_PCG_OPERATOR_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "exceptions.hh"
-#include "errors.hh"
-#include "Solver_constants.hh"
+#include "VerboseObject.hh"
+
+#include "LinearOperatorDefs.hh"
+#include "LinearOperator.hh"
  
 namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class PCG_Operator : public Matrix {
+class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  PCG_Operator(Teuchos::RCP<const Matrix> m) : m_(m) { 
+  PCG_Operator(Teuchos::RCP<const Matrix> m) : 
+      LinearOperator<Matrix, Vector, VectorSpace>(m) { 
     tol_ = 1e-6; 
+    overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
     max_itrs_ = 100;
-    criteria_ = SOLVER_CONVERGENCE_RHS;
+    criteria_ = LIN_SOLVER_RELATIVE_RHS;
+    initialized_ = false;
   }
   ~PCG_Operator() {};
 
   void Init(Teuchos::ParameterList& plist);  
 
-  void Apply(const Vector& v, Vector& mv) const { m_->Apply(v, mv); }
-  void ApplyInverse(const Vector& v, Vector& hv) const { 
-    num_itrs_ = pcg(v, hv, tol_, max_itrs_, criteria_); 
+  int ApplyInverse(const Vector& v, Vector& hv) const { 
+    int ierr = pcg(v, hv, tol_, max_itrs_, criteria_); 
+    return ierr;
   }
 
-  Teuchos::RCP<const VectorSpace> domain() const { return m_->domain(); }
-  Teuchos::RCP<const VectorSpace> range() const { return m_->range(); }
   Teuchos::RCP<PCG_Operator> Clone() const {};
 
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
   void set_criteria(int criteria) { criteria_ = criteria; }
+  void set_overflow(double tol) { overflow_tol_ = tol; }
 
   double residual() { return residual_; }
   int num_itrs() { return num_itrs_; }
+
+ public:
+  Teuchos::RCP<VerboseObject> vo_;
 
  private:
   int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:
-  Teuchos::RCP<const Matrix> m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   int max_itrs_, criteria_;
-  double tol_;
+  double tol_, overflow_tol_;
   mutable int num_itrs_;
   mutable double residual_;
+  mutable bool initialized_;
 };
 
 
 /* ******************************************************************
-* PCG input/output data:
-*  f [input]         the right-hand side
-*  x [input/output]  initial guess / final solution
-*  tol [input]       convergence tolerance
-*  max_itrs [input]  maximum number of iterations
-*  criteria [input]  sum of termination critaria
-****************************************************************** */
+ * PCG input/output data:
+ *  f [input]         the right-hand side
+ *  x [input/output]  initial guess / final solution
+ *  tol [input]       convergence tolerance
+ *  max_itrs [input]  maximum number of iterations
+ *  criteria [input]  sum of termination critaria
+ *
+ *  Return value. If it is positive, it indicates the sucessful 
+ *  convergence criterion (criteria in a few exceptional cases) that
+ *  was checked first. If it is negative, it indicates a failure, see
+ *  LinearSolverDefs.hh for the error explanation. 
+ ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector r(f), p(f), v(f);  // construct empty vectors
+  num_itrs_ = 0;
 
-  double fnorm, xnorm;
+  double fnorm;
   f.Norm2(&fnorm);
-  x.Norm2(&xnorm);
-  if (xnorm == 0) xnorm = fnorm;
-  if (xnorm == 0) return 0;
+  if (fnorm == 0.0) {
+    x.PutScalar(0.0);
+    return criteria;  // Convergence for all criteria
+  }
 
   m_->Apply(x, r);  // r = f - M * x
   r.Update(1.0, f, -1.0);
@@ -92,23 +107,25 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
   m_->ApplyInverse(r, p);  // gamma = (H r,r)
   double gamma0;
   p.Dot(r, &gamma0);
-  if (gamma0 < 0) {
-    Errors::Message msg("PCG: ApplyInverse() is not an SPD operator.");
-    Exceptions::amanzi_throw(msg);
-  }
+  if (gamma0 < 0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
 
-  if (criteria & SOLVER_CONVERGENCE_RHS)   
-    if( rnorm0 < tol * fnorm) return 0; 
+  // Ignore all criteria if one iteration is enforced.
+  if (rnorm0 > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
+
+  if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
+    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
+      if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS; 
+    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+      if (rnorm0 < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+    }
+  }
 
   for (int i = 0; i < max_itrs; i++) {
     m_->Apply(p, v);
     double alpha;
     v.Dot(p, &alpha);
 
-    if (alpha < 0.0) {
-      Errors::Message msg("PCG: Apply() is not an SPD operator.");
-      Exceptions::amanzi_throw(msg);
-    }
+    if (alpha < 0.0) return LIN_SOLVER_NON_SPD_APPLY;
     alpha = gamma0 / alpha;   
 
     x.Update( alpha, p, 1.0);
@@ -117,27 +134,37 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
     m_->ApplyInverse(r, v);  // gamma = (H r, r)
     double gamma1;
     v.Dot(r, &gamma1);
-    if (gamma1 < 0.0) {
-      Errors::Message msg("PCG: ApplyInverse() is not an SPD operator.");
-      Exceptions::amanzi_throw(msg);
-    }
+    if (gamma1 < 0.0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
 
     double rnorm;
     r.Norm2(&rnorm);
     residual_ = rnorm;
  
-    if (criteria & SOLVER_CONVERGENCE_RHS) 
-      if (rnorm < tol * fnorm) return i+1;
-    if (criteria & SOLVER_CONVERGENCE_RESIDUAL) 
-      if (rnorm < tol * rnorm0) return i+1;
+    if (initialized_) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << i << " ||r||=" << residual_ << endl;
+      }
+    }
+    if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
+
+    // Return the first criterion which is fulfilled.
+    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
+      if (rnorm < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
+    } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
+      if (rnorm < tol * rnorm0) return LIN_SOLVER_RELATIVE_RESIDUAL;
+    } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+      if (rnorm < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+    }
 
     double beta = gamma1 / gamma0;
     gamma0 = gamma1;
  
     p.Update(1.0, v, beta);
+    num_itrs_ = i + 1;
   }
 
-  return max_itrs;
+  return LIN_SOLVER_MAX_ITERATIONS;
 };
 
 
@@ -150,11 +177,11 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
 template<class Matrix, class Vector, class VectorSpace>
 void PCG_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  double tol = plist.get<double>("error tolerance", 1e-6);
-  set_tolerance(tol);
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
 
-  double max_itrs = plist.get<int>("maximum number of iterations", 100);
-  set_max_itrs(max_itrs);
+  tol_ = plist.get<double>("error tolerance", 1e-6);
+  max_itrs_ = plist.get<int>("maximum number of iterations", 100);
+  overflow_tol_ = plist.get<double>("overflow tolerance", 3.0e+50);
 
   int criteria(0);
   if (plist.isParameter("convergence criteria")) {
@@ -163,16 +190,21 @@ void PCG_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& pli
 
     for (int i = 0; i < names.size(); i++) {
       if (names[i] == "relative rhs") {
-        criteria += SOLVER_CONVERGENCE_RHS;
+        criteria += LIN_SOLVER_RELATIVE_RHS;
       } else if (names[i] == "relative residual") {
-        criteria += SOLVER_CONVERGENCE_RESIDUAL;
+        criteria += LIN_SOLVER_RELATIVE_RESIDUAL;
+      } else if (names[i] == "absolute residual") {
+        criteria += LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      } else if (names[i] == "make one iteration") {
+        criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
       }
     }
   } else {
-    criteria = SOLVER_CONVERGENCE_RHS;
+    criteria = LIN_SOLVER_RELATIVE_RHS;
   }
 
   set_criteria(criteria);
+  initialized_ = true;
 }
 
 }  // namespace AmanziSolvers

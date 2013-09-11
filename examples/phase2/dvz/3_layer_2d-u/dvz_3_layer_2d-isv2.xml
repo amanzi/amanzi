@@ -82,7 +82,7 @@
 	<process_kernels>
 		<comments>This is a proposed comment field for process_kernels</comments>
       		<flow state = "on" model = "richards"/>
-      		<transport state = "on" algorithm = "explicit first-order"/>
+      		<transport state = "off" algorithm = "explicit first-order"/>
       		<chemistry state = "off" process_model="none"/>
 	</process_kernels>
 
@@ -110,12 +110,15 @@
 	         <comments>Note this section eliminates Initialize to Steady/Transient/Switch since multiple execution periods
 		           can be used instead. Execution control defaults can be overridden as shown on 0.0 time line.
 			   Use named time period as defined above, or actual times.</comments>
+		           <!-- current suggestion for specifing overall simulation start and end -->
+			   <simulation_begin>0.0</simulation_begin>
+			   <simulation_end>3000.0</simulation_end>
                            <execution_control_defaults                         init_dt= "3.168E-08"   max_dt="0.01"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-			   <execution_control  start="0.0;y"   end="1956.0"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
-			   <execution_control  start="B-17_release_begin" />
-			   <execution_control  start="B-17_release_end" />
-			   <execution_control  start="B-18_release_begin" />
-			   <execution_control  start="B-18_release_end" />
+			   <execution_control  start="0.0;y"   end="1956.0,y"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
+			   <execution_control start="B-17_release_begin" />
+			   <execution_control start="B-17_release_end" />
+			   <execution_control start="B-18_release_begin" />
+			   <execution_control start="B-18_release_end"  end="3000.0,y" />
 			   <!-- OR specify times
 			   <execution_control  start="0.0;y"   end="1956.0"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
 			   <execution_control  start="1956.0;y"  />
@@ -134,7 +137,7 @@
 		<steady-state_controls>
 		        <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
           		<min_iterations>10</min_iterations>
-		      	<max_iterations>20</max_iterations>
+		      	<max_iterations>15</max_iterations>
           		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
           		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
           		<error_rel_tol>0.0</error_rel_tol>
@@ -185,6 +188,7 @@
 	             <box name="Recharge_Boundary_WestofCribs" low_coordinates= "(0.0,0.0,107.52)"    high_coordinates="(74.5,1.0,107.52)"/>
 	             <box name="Recharge_Boundary_btwnCribs"   low_coordinates= "(78.5,0.0,107.52)"   high_coordinates="(143.5,1.0,107.52)"/>
 	             <box name="Recharge_Boundary_EastofCribs" low_coordinates= "(147.5,0.0,107.52)"  high_coordinates="(216.0,1.0,107.52)"/>
+	             <box name="Water Table"                   low_coordinates= "(0.0,0.0,0.0)"       high_coordinates="(216.0,1.0,0.0)"/>
 		</regions>
 
 	<mesh framework="mstk"> <!-- default is MSTK for unstructured -->
@@ -264,10 +268,10 @@
 		<comments>Format was changed because it is more readable for long time series</comments>
 		<boundary_condition name = "Recharge at top of the domain">
 			<comments>Would be nice to have comments section for each boundary_condition but its not clear how it maps to UI</comments>
-			<assigned_regions>Recharge_Boundary_WestofCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastofCribs0</assigned_regions>
+			<assigned_regions>Recharge_Boundary_WestofCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastofCribs</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<inward_mass_flux start="start"    function= "constant"  value="pre_1956_recharge"/>
+					<inward_mass_flux start="0.0"    function= "constant"  value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y" function= "constant"  value="post_1956_recharge"/>
 					<inward_mass_flux start="2012.0,y" function= "constant"  value="future_recharge"/>
 					<inward_mass_flux start="3000.0,y" function= "constant"  value="future_recharge"/>
@@ -330,14 +334,15 @@
 					<!--TDS Deleted type="Uniform Pressure" as that is redundant information -->
 					<!--TODO THIS needs to be reworked uniform vs. constant, time-function vs. spatial -->
 					<uniform_pressure name = "1" start="0.0"        function= "constant" value="101325.0"/>
-					<uniform_pressure name = "2" start="3000.0,yr"  function= "constant" value="101325.0"/>
+					<uniform_pressure name = "2" start="3000.0,y"  function= "constant" value="101325.0"/>
 				</liquid_component>
 				<solute_component name = "solute">
 					<aqueous_conc name = "Tc-99" start="0.0"        function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,yr"  function= "constant"    value="0.0"/>
+					<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"    value="0.0"/>
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
+
 	</boundary_conditions>
 
 	<output>

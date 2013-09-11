@@ -253,7 +253,7 @@ public:
 #endif
 			     FArrayBox& C_old, FArrayBox& C_new, int sCompC,
 			     FArrayBox& Sat_old, FArrayBox& Sat_new, int sCompS,
-			     FArrayBox&  tforces, int sCompF,
+			     const FArrayBox&  tforces, int sCompF,
 			     FArrayBox&  divu, int fab_ind, 
 			     FArrayBox&  aofs, int aofs_ind,
 			     FArrayBox&  rock_phi, int iconserv,

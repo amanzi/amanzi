@@ -32,6 +32,8 @@ include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 
+generate_evaluators_registration_header(HEADERFILE tests_chemistry_pk_evaluator_reg.hh LISTNAME FACTORY_REG_LIST)
+
 add_amanzi_test(chemistry_pk chemistry_pk_tests
                 KIND int
                 SOURCE 

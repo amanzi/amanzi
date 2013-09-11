@@ -28,6 +28,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 /* **************************************************************** */
 TEST(DARCY_MASS) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
@@ -66,7 +67,7 @@ TEST(DARCY_MASS) {
     for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
-    Entity_ID_List faces;
+    AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
     mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
@@ -94,6 +95,7 @@ TEST(DARCY_MASS) {
 /* **************************************************************** */
 TEST(DARCY_INVERSE_MASS) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
@@ -141,7 +143,7 @@ TEST(DARCY_INVERSE_MASS) {
     // verify exact integration property
     W.Inverse();
 
-    Entity_ID_List faces;
+    AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
     mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
@@ -169,6 +171,7 @@ TEST(DARCY_INVERSE_MASS) {
 /* **************************************************************** */
 TEST(DARCY_STIFFNESS_2D) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -207,7 +210,7 @@ TEST(DARCY_STIFFNESS_2D) {
   for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_List nodes;
   std::vector<int> dirs;
   mesh->cell_get_nodes(cell, &nodes);
     
@@ -239,6 +242,7 @@ TEST(DARCY_STIFFNESS_2D) {
 /* **************************************************************** */
 TEST(DARCY_STIFFNESS_3D) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -278,7 +282,7 @@ TEST(DARCY_STIFFNESS_3D) {
   for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_List nodes;
   std::vector<int> dirs;
   mesh->cell_get_nodes(cell, &nodes);
     
@@ -310,6 +314,7 @@ TEST(DARCY_STIFFNESS_3D) {
 /* **************************************************************** */
 TEST(RECOVER_GRADIENT_MIXED) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -332,7 +337,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
   MFD3D_Diffusion mfd(mesh);
 
   // create Darcy fluxes
-  Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
   int nfaces = 6, cell = 0;
@@ -364,6 +369,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
 /* **************************************************************** */
 TEST(RECOVER_GRADIENT_NODAL) {
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -386,7 +392,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
   MFD3D_Diffusion mfd(mesh);
 
   // create pressure solution
-  Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_List nodes;
   int nnodes = 8, cell = 0;
   mesh->cell_get_nodes(cell, &nodes);
 

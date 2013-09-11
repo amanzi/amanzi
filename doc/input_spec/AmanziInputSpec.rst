@@ -189,11 +189,9 @@ Usage:
 
   * [SU] `"Single-phase`" [string]: Single phase, fully saturated flow
 
-  * [S] `"Multi-phase`" [string]: Multiple phase, variably saturated flow
-
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
- * [SU] `"Chemistry Model`" [string]: Chemical reaction of constituents.  (Defaults to `"Off`", the only currently supported option)
+ * [SU] `"Chemistry Model`" [string]: Chemical reaction of constituents.  Accepts `"Off`" or `"On`" [string]
 
  * [SU] `"Time Integration Mode`" [list]: accepts one of three integration modes:
 
@@ -648,7 +646,7 @@ Example of `"Structured`" mesh:
 .. code-block:: xml
 
    <ParameterList name="Mesh">
-     <ParameterList name="Structured"/>
+     <ParameterList name="Structured">
        <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
        <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
        <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
@@ -660,9 +658,9 @@ Example of `"Unstructured`" mesh generated internally:
 .. code-block:: xml
 
    <ParameterList name="Mesh">
-     <ParameterList name="Unstructured"/>
-       <ParameterList name="Generate Mesh"/>
-         <ParameterList name="Uniform Structured"/>
+     <ParameterList name="Unstructured">
+       <ParameterList name="Generate Mesh">
+         <ParameterList name="Uniform Structured">
            <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
            <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
            <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
@@ -724,7 +722,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Logical"` [U]         | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"`         | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+| `"Region: Labeled Set"` [U]     | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                 | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +---------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Color Function"` [SU] | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
@@ -888,9 +886,15 @@ the following set of physical properties using the supported models described be
 
  * [SU] MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
+  The flow related matrial properties *Intrinsic Permeability* or *Hydraulic Conductivity* must be specified, but not both:  
 
   * [SU] Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`" (see below)
+
+  * Hydraulic Conductivity [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Hydraulic Conductivity: Uniform`", `"Hydraulic Conductivity: Anisotropic Uniform`" (see below)
+
+  Additional ''Material Properties'' related to flow are:
+
+  * [SU] Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`" (see below)
 
   * [SU] Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"van Genuchten`" or [U only] `"Brooks Corey`" (see below)
 
@@ -900,12 +904,42 @@ the following set of physical properties using the supported models described be
 
   * [U] Specific Yield [list] Parameterized model for Specific Yield [-]. Choose exactly one of the following: `"Specific Yield: Uniform`".
 
+  Material properties related to transport (dispersion and diffusion):
+
   * [SU] Dispersion Tensor [list] Parameterized model for Dispersion Tensor. Choose exactly one of the following: `"Dispersion Tensor:  Uniform Isotropic`".
 
   * [SU] Molecular Diffusion [list] Parameterized model for
     a single molecular diffusion coefficient for all primary species [L^2 / time = m^2 / s]. Choose exactly one of the following: `"Molecular Diffusion: Uniform`".
 
   * [SU] Tortuosity [list] Parameterized model for the Tortuosity [-]. Choose exactly one of the following: `"Tortuosity: Uniform`".
+
+  Material properties related to geochemistry are constant over the assigned regions and constant in time:
+
+  * [SU] Mineralogy [list] List of minerals in the system.  Any mineral present in the phase definition but 
+    not listed here must still be allocated in memory with default to zero parameter values.
+
+    * [SU] `"Mineral Name`" [list] Name of a mineral from the phase definitions "Minerals" list.
+
+      * [SU] `"Volume Fraction`" (double) [-] Uniform over the assigned region, constant in time (default: 0.0).
+      * [SU] `"Specific Surface Area`" (double) [units?] Uniform over the assigned region, constant in time (default: 0.0).
+
+  * [SU] `"Surface Complexation Sites`" [list]
+
+    * [SU] `"Site Name`" [list] Name of a site from the phase definitions "Sorption Sites" list.
+
+      * [SU] `"Site Density`" (double) [units?] Uniform over the assigned region, constant in time (default: 0.0)
+
+  * [SU] `"Cation Exchange Capacity`" (double) Uniform over the assigned region, constant in time (default: 0.0)
+
+  * [SU] `"Sorption Isotherms`" [list]
+
+    * [SU] `"Solute Name`" [list] The name of one of the solutes from the phase definitions "Component Solutes" list.
+ 
+      * [SU] `"Kd`" (double) distribution coefficient for this solute on this material (default: 0.0)
+      * [SU] `"Langmuir b`" (double) Langmuir isotherm "b" coefficient, optional parameter (default: 0.0)
+      * [SU] `"Freundlich n`" (double) Freundlich isotherm "n" coefficient, optional parameter (default to 1.0).
+
+  Assigned regions are typically specified last:
 
   * [SU] `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown. (NOTE: [S] if layers in this list overlap spatially, this list implies the precedence ordering, right to left)
 
@@ -915,7 +949,7 @@ The following models can be specified for porosity (only `"Porosity: Uniform`" i
  
  * [SU] `"Value`" [double] to specify the constant value of porosity.
 
-The following models can be specified for the intrinsic permeability of the material (only `"Intrinsic Permeability: Uniform`" and `"Intrinsic Permeability: Anisotropic Uniform`" are supported at the moment):
+The following models can be specified for the intrinsic permeability of the material:
 
 * [SU] `"Intrinsic Permeability: Uniform`" [list] requires 
  
@@ -932,6 +966,23 @@ The following models can be specified for the intrinsic permeability of the mate
  where the directions refer to the global cartesian coordinates.
 
 Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
+
+The following models can be specified for the Hydraulic Conductivity of the material:
+
+* [SU] `"Hydraulic Conductivity: Uniform`" [list] requires 
+ 
+ * [SU] `"Value`" [double] to specify the constant value of the intrinsic permeability
+
+* [SU] `"Hydraulic Conductivity: Anisotropic Uniform`" [list] requires
+ 
+ * [SU] `"x`" [double] to specify the constant value of the intrinsic permeability in the x-direction; and
+
+ * [SU] `"y`" [double] to specify the constant value of the intrinsic permeability in the y-direction; and
+
+ * [SU] `"z`" [double] to specify the constant value of the intrinsic permeability in the z (vertical) direction.
+
+where the directions refer to the global cartesian coordinates.  Note that internally Amanzi works with a pressure formulation and uses intrinsic permeability.  If Hydraulic Conductivity is specified, constant density and viscosity values are used to convert it to intrinsic permeability
+(see Equation 3.25).  Hence, either Intrinsic Permeability or Hydraulic Conductivity must be specified, but not both.
 
 The following models are currently supported for capillary pressure (Section 3.3.2):
 
@@ -1124,9 +1175,9 @@ Volumetric source terms, used to model infiltration (Section 3.7) and a wide var
 
 In order to support the rather general specification requirements (involving combinations of phase pressures and component saturations), we must first define the composition of the "state" of the simulations by identifying all phases, components and solutes that will be present in the system.  We do this hierarchically, first by phase then by component:
 
-* [SU] `"Phases`" [list] can accept lists named phases (PHASE).
+* [SU] `"Phase Definitions`" [list] can accept lists of named phases (currently PHASE can be `"Aqueous`" or `"Solid`").
 
- * [S] PHASE [list] can accept the following lists: `"Phase Properties`", `"Phase Components`"
+ * [SU] `"Aqueous`" phase [list] can accept the following lists: `"Phase Properties`", `"Phase Components`"
 
   * [SU] `"Phase Properties`" can accept models for viscosity and density
 
@@ -1134,11 +1185,16 @@ In order to support the rather general specification requirements (involving com
 
    * [SU only uniform] Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Phase Viscosity: Uniform`", `"Phase Viscosity: File`" (see below)
 
-  * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component.
+  * [SU] `"Phase Components`" can accept COMP [list] named after a user-defined phase component (e.g., Water).
 
-   * [S] COMP [list] can accept a list of solutes carried by the component.
+   * [SU] COMP [list] can accept a list of solutes carried by the component.
 
-    * [SU] `"Component Solutes`" [Array string] lists the solute names
+    * [SU] `"Component Solutes`" [Array string] List of primary or basis species for the aqueous solutes in the system. The order of this list must be the same as the order in the chemistry database file.
+
+ * [SU] `"Solid`" phase [list] can accept the following parameters: `"Minerals`", and `"Sorption Sites`"
+
+  * [SU] `"Minerals`" [string array] list of minerals present in the system. The order of this list must be the same as the order in the chemistry database file.
+  * [SU] `"Sorption Sites`" [string array] list of surface sites present in the system. The order of this list must be the same as the order in the chemistry database file.
 
 Next, we specify the initial conditions.  Note that support is provided for specifying initial data on the phases and/or components simultaneously (the capillary pressure relationships are used to convert between the various options).  Thus, boundary conditions on the phases and components are specified together.  The solutes are specified afterward, organized first by phase then component.  If a solute exists in more than one phase/component, a thermodynamic relationship is required to partition the distribution - Amanzi does not currently support such a situation.
 
@@ -1146,7 +1202,7 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
  * [SU] IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * [SU, all except file and velocity for structured] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`", `"IC: Uniform Velocity`" (see below)
+  * [SU] Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: Uniform Velocity`" (see below)
 
   * [SU] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned.  Note [S] when multiple regions specified overlap, this list implies a precedence, ordered right to left.
 
@@ -1156,10 +1212,10 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
     * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [SU] Component IC [list] Parameterized model for initial component conditions.  Choose exactly one of the following: `"IC: Uniform Concentration`"
+     * [SU] Component IC [list] Parameterized model for initial component conditions; only `"IC: Uniform Concentration`" is supported (see below)
 
-     * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
-
+      * [SU] `"Concentration Units`" [string] can accept `"Molarity`" (moles/volume), `"Molality`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+    
 
 Next, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
 
@@ -1177,7 +1233,7 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
     * [SU] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [SU, only Uniform Concentration] BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
+     * [SU] BC function [list] Parameterized model to specify the contcentration profile, only `"BC: Uniform Concentration`" is supported (see below).
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
@@ -1191,22 +1247,22 @@ Finally, we specify sources. Note that currently sources for components cannot b
   
   * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
-
 The following initial condition parameterizations are supported:
 
 * [SU] `"IC: Uniform Saturation`" requires `"Value`" [double]
 
 * [U] `"IC: Linear Saturation`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
-* `"IC: File Saturation`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
-
 * [U] `"IC: Uniform Pressure`" requires `"Value`" [double]
 
 * [SU] `"IC: Linear Pressure`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double) 
 
-* [U] `"IC: File Pressure`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
-
 * [U] `"IC: Uniform Velocity`" requires `"Velocity Vector`" (Array double).
+
+* [SU] `"IC: Uniform Concentration`" [list] 
+
+  * [SU] `"Value`" [double]  total component concentration in the units specified by the `"Concentration Units`" entry (see above)
+  * [SU] `"Free Ion Guess`" [double]  estimate of the free ion concentration for this solute; used to help convergence of the initial solution of the chemistry.
 
 The following boundary condition parameterizations are supported:
 
@@ -1214,31 +1270,29 @@ The following boundary condition parameterizations are supported:
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [SU] `"BC: Linear Pressure`" requires `"Reference Value`" [double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
+* [SU] `"BC: Linear Pressure`" [list] requires `"Reference Value`" [double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
-* [S] `"BC: Uniform Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [S] `"BC: Uniform Saturation`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [S] `"BC: Uniform Concentration`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* `"BC: Linear Saturation`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
-* `"BC: Linear Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
+* [U] `"BC: Seepage`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
 
-* [U] `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and one of `"Inward Mass Flux`" [Array double] or `"Inward Volumetric Flux`" [Array double].  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward refers to the flux being in the direction of the inward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" is supported.)
-
-* [SU] `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
+* [SU] `"BC: Hydrostatic`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Coordinate System`" [String] (either `"Absolute`" or `"Relative`", this parameter is optional with a default of `"Absolute`"),  and `"Water Table Height`" [Array double] (see below)
 
 * `"BC: Impermeable`"  requires no parameters
 
-* [SU] `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [SU] `"BC: Zero Flow`"  [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [S] `"BC: Zero Gradient`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [S] `"BC: Zero Gradient`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* [SU] `"BC: Uniform Concentration`" [list] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 The following source parameterizations are supported.
 
 * [U] `"Source: Volume Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * [U] `"Source: Permeability Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
-
-
 
 
 
@@ -1276,6 +1330,28 @@ For a particular interval it can be either `"Linear`" or `"Constant`".
 Example Phase Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Due to its length, an XML example of the `"Phases`" parameter list appears in the example appended to this specification.
+
+Chemistry
+=========
+
+The chemistry list is needed if the Chemistry model is set to `"On`".  
+
+
+* [SU] `"Chemistry`" [list]
+
+  * [SU] `"Thermodynamic Database`" [list]
+   
+    * [SU] `"File`" [string] Name of the chemistry database file, relative to the execution directory.
+    * [SU] `"Format`" [string] The format of the database file. Actual database format is not XML and is the same as described for the 2010 demo with additions for the new chemical processes. Valid values: `"simple`".
+
+  * [SU] `"Verbosity`" [string array] Control how much information the chemistry library will log. Valid values: "silent", "terse", "verbose", "warnings", "errors".
+  * [SU] `"Activity Model`" [string] The type of model used for activity corrections. Valid values: "unit", "debye-huckel".
+  * [SU] `"Tolerance`" [float] Tolerance in newton solves inside the chemistry library.
+  * [SU] `"Maximum Newton Iterations`" [int] Maximum number of iteration the chemistry library can take.
+  * [SU] `"Output File Name`" [string] Optional parameter. A file name that the chemistry library should use to write simulation information and debugging info. An empty string (default) indicates that the chemistry library should not write to a file.
+  * [SU] `"Use Standard Out`" [bool] A flag indicating whether the chemistry library can write simulation information and debugging info to standard out. Default is true, so the amanzi u/s drivers will need to set this appropriately on mpi/openmp processes.
+  * [SU] `"Auxiliary Data`" [string array] Additional chemistry related data that the user can request be saved to vis files. Currently "pH" is the only variable supported.
+  * [SU] `"Max Time Step (s)`" [double] The maximum time step that chemistry will allow the MPC to take.
 
 
 Output
@@ -1480,7 +1556,7 @@ Example:
 
   <ParameterList name="Cycle Macros">
     <ParameterList name="Every-5">
-      <Parameter name="Start_Period" type="Array int" value="{0, 5}"/>
+      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5, -1}"/>
     </ParameterList>
   </ParameterList>
 
@@ -1517,7 +1593,7 @@ Example:
 
   <ParameterList name="Cycle Macros">
     <ParameterList name="Every-10">
-      <Parameter name="Start_Period" type="Array int" value="{0, 10}"/>
+      <Parameter name="Start_Period_Stop" type="Array int" value="{0, 10,-1}"/>
     </ParameterList>
   </ParameterList>
 

@@ -246,7 +246,6 @@ State::RequireFieldEvaluator(Key key) {
     }
   }
 
-
   if (evaluator == Teuchos::null) {
     std::stringstream messagestream;
     messagestream << "Model for field " << key << " cannot be created in State.";

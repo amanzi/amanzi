@@ -192,7 +192,7 @@ extern "C"
 			ARLIM_P(ww_lo),ARLIM_P(ww_hi),
 			const int* bc, const int* lo, const int* hi, 
 			Real* dt, const Real* dx, int* fort_ind, 
-			int* use_forces_in_trans, int* iconserv);
+			int* use_forces_in_trans, int* iconserv, const Real* eps);
   
    void FORT_ESTATE_LIN(const Real* s_dat,  ARLIM_P(s_lo),  ARLIM_P(s_hi),
 			const Real* sn_dat, ARLIM_P(sn_lo), ARLIM_P(sn_hi),
@@ -213,7 +213,7 @@ extern "C"
 #endif
 			ARLIM_P(ww_lo),ARLIM_P(ww_hi),
 			const int* bc, const int* lo, const int* hi, 
-			Real* dt, const Real* dx,  int* nscal);
+			Real* dt, const Real* dx,  int* nscal, const Real* eps);
 
    void FORT_ESTATE_RMN(const Real* s_dat,  ARLIM_P(s_lo),  ARLIM_P(s_hi),
 			const Real* sn_dat, ARLIM_P(sn_lo), ARLIM_P(sn_hi),
@@ -245,7 +245,8 @@ extern "C"
 			const int* nkrcoef,
 			const int* bc, const int* lo, const int* hi, 
 			Real* dt, const Real* dx, 
-			int* use_forces_in_trans, int* iconserv, int* nscal);
+			int* use_forces_in_trans, int* iconserv, int* nscal,
+                        const Real* eps);
 
    void FORT_ESTATE_CPL(const Real* s_dat,  ARLIM_P(s_lo),  ARLIM_P(s_hi),
 			const Real* sn_dat, ARLIM_P(sn_lo), ARLIM_P(sn_hi),
@@ -281,7 +282,8 @@ extern "C"
 			const int* nkrcoef,
 			const int* bc, const int* lo, const int* hi, 
 			Real* dt, const Real* dx, 
-			int* use_forces_in_trans, int* iconserv, int* nscal);
+			int* use_forces_in_trans, int* iconserv, int* nscal,
+                        const Real* eps);
 
    void FORT_ESTATE_PMR(const Real* s_dat, const Real* u_dat, ARLIM_P(s_lo),ARLIM_P(s_hi), 
 			const Real* sn_dat, const Real* un_dat, ARLIM_P(sn_lo),ARLIM_P(sn_hi),
@@ -315,8 +317,33 @@ extern "C"
 			const int* bc, const int* lo, const int* hi, 
 			Real* dt, const Real* dx, 
 			int* use_forces_in_trans, int* iconserv,
-			Real* gravity, Real* eigmax);
+			Real* gravity, Real* eigmax, const Real* eps);
 
+#if 0
+        void FORT_ESTATE_TRACER(const Real* s_dat, const Real* sphi_dat, const Real* tfr_dat, 
+			ARLIM_P(s_lo),ARLIM_P(s_hi),
+			const Real* xlo_dat, 
+			const Real* xhi_dat, const Real* slx_dat, 
+			Real* slxscr, Real* stxlo, Real* stxhi,
+			const Real* uedge_dat, ARLIM_P(ue_lo), ARLIM_P(ue_hi),
+			const Real* stx,       ARLIM_P(stx_lo),ARLIM_P(stx_hi),
+			const Real* ylo_dat, 
+			const Real* yhi_dat, const Real* sly_dat, 
+			Real* slyscr, Real* stylo, Real* styhi,
+			const Real* vedge_dat, ARLIM_P(ve_lo), ARLIM_P(ve_hi),
+			const Real* sty,       ARLIM_P(sty_lo),ARLIM_P(sty_hi),
+#if (BL_SPACEDIM == 3)
+			const Real* zlo_dat, 
+			const Real* zhi_dat, const Real* slz_dat, 
+			Real* slzscr, Real* stzlo, Real* stzhi,
+			const Real* wedge_dat, ARLIM_P(we_lo), ARLIM_P(we_hi),
+			const Real* stz,       ARLIM_P(stz_lo),ARLIM_P(stz_hi),
+#endif
+			ARLIM_P(ww_lo),ARLIM_P(ww_hi),
+			const int* bc, const int* lo, const int* hi, 
+			Real* dt, const Real* dx, int* fort_ind, 
+			int* use_forces_in_trans, int* iconserv, const Real* eps);
+#else  
    void FORT_ESTATE_TRACER(const Real* s_dat,   ARLIM_P(s_lo),ARLIM_P(s_hi),
 			   const Real* sn_dat,  ARLIM_P(sn_lo),ARLIM_P(sn_hi),
 			   const Real* st_dat,  ARLIM_P(st_lo),ARLIM_P(st_hi),
@@ -338,8 +365,8 @@ extern "C"
 			   const Real* rphi_dat,  ARLIM_P(rphi_lo),  ARLIM_P(rphi_hi),
 			   ARLIM_P(ww_lo), ARLIM_P(ww_hi),
 			   const int* bc, const int* lo, const int* hi, 
-			   Real* dt, const Real* dx, int* nscal);
-
+			   Real* dt, const Real* dx, int* nscal, const Real* eps);
+#endif
   void FORT_SYNC_RMN(const Real* s_dat,  ARLIM_P(s_lo),  ARLIM_P(s_hi),
 		     const Real* sn_dat, ARLIM_P(sn_lo), ARLIM_P(sn_hi),
 		     const Real* tfr_dat, const Real* divu_dat, 
@@ -369,7 +396,8 @@ extern "C"
 		     const int* nkrcoef,
 		     const int* bc, const int* lo, const int* hi, 
 		     Real* dt, const Real* dx, 
-		     int* use_forces_in_trans, int* iconserv, int* nscal);
+		     int* use_forces_in_trans, int* iconserv, int* nscal,
+                     const Real* eps);
 
    void FORT_ADV_FORCING(const Real* aofs_dat, ARLIM_P(a_lo), ARLIM_P(a_hi),
 			 const Real* xflux_dat, ARLIM_P(xflux_lo),ARLIM_P(xflux_hi),

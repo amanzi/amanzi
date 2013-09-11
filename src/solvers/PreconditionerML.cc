@@ -1,63 +1,60 @@
 /*
-This is the Linear Solver component of the Amanzi code.
- 
-License: BSD
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  This is the Linear Solver component of the Amanzi code.
 
-Conjugate gradient method.
-Usage: 
+  License: BSD
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Conjugate gradient method.
+  Usage:
 */
 
 #include "Teuchos_RCP.hpp"
 
 #include "exceptions.hh"
 #include "PreconditionerML.hh"
- 
+
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
-* Apply the preconditioner.                                                 
-****************************************************************** */
-void PreconditionerML::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv)
+ * Apply the preconditioner.
+ ****************************************************************** */
+void PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
   ML_->ApplyInverse(v, hv);
 }
 
 
 /* ******************************************************************
-* Initialize the preconditioner.                                                 
-****************************************************************** */
+ * Initialize the preconditioner.
+ ****************************************************************** */
 void PreconditionerML::Init(const std::string& name, const Teuchos::ParameterList& list)
 {
   list_ = list;
-  initialized = false;
+  initialized_ = false;
 }
 
 
 /* ******************************************************************
-* Rebuild the preconditioner suing the given matrix A.                                                
-****************************************************************** */
-void PreconditionerML::Update(Teuchos::RCP<Epetra_FECrsMatrix> A)
+ * Rebuild the preconditioner suing the given matrix A.
+ ****************************************************************** */
+void PreconditionerML::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
 {
-  if (initialized) ML_->DestroyPreconditioner();
+  if (initialized_) ML_->DestroyPreconditioner();
   ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, list_, false));
   ML_->ComputePreconditioner();
-  initialized = true;
+  initialized_ = true;
 }
 
 
 /* ******************************************************************
-* Destroy the preconditioner and auxiliary data structures.
-****************************************************************** */
+ * Destroy the preconditioner and auxiliary data structures.
+ ****************************************************************** */
 void PreconditionerML::Destroy()
 {
-  if (initialized) ML_->DestroyPreconditioner();
-  initialized = false;
+  if (initialized_) ML_->DestroyPreconditioner();
+  initialized_ = false;
 }
 
 }  // namespace AmanziPreconditioners
 }  // namespace Amanzi
-
-
-

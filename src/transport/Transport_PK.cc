@@ -30,6 +30,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
 #include "Matrix_Dispersion.hh"
+#include "LinearOperatorFactory.hh"
+
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -409,8 +411,11 @@ void Transport_PK::Advance(double dT_MPC)
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
     dispersion_matrix->UpdatePreconditioner();
 
-    AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
-    pcg.Init(solvers_list.sublist(dispersion_solver));
+    // AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
+    // pcg.Init(solvers_list.sublist(dispersion_solver));
+    AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_Map> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> >
+       solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix);
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
     Epetra_Vector rhs(cmap);
@@ -428,13 +433,14 @@ void Transport_PK::Advance(double dT_MPC)
       tcc_next(i)->ExtractView(&data);
       Epetra_Vector sol(View, cmap, data);
 
-      pcg.ApplyInverse(rhs, sol);
-      residual += pcg.residual();
-      num_itrs += pcg.num_itrs();
+      solver->ApplyInverse(rhs, sol);
+      residual += solver->residual();
+      num_itrs += solver->num_itrs();
     }
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "dispersion solver: ||r||=" << residual / number_components
+      *(vo_->os()) << "dispersion solver (" << solver->name() 
+                   << ") ||r||=" << residual / number_components
                    << " itrs=" << num_itrs / number_components << endl;
     }
   }

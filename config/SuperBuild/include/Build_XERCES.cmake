@@ -1,5 +1,4 @@
 #  -*- mode: cmake -*-
-
 #
 # Build TPL: XERCES 
 #  
@@ -38,6 +37,13 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-build-step.cmake.in
                ${XERCES_cmake_build}
 	       @ONLY)
 
+# Set Xerces configuration options
+set (XERCES_CONFIGURE_OPTIONS --with-pic --disable-shared --disable-network)
+# Force OSX to use its CoreServices Framework 
+if (APPLE) 
+  list(APPEND XERCES_CONFIGURE_OPTIONS --enable-transcoder-macosunicodeconverter)
+endif()
+
 #
 #  Hopper cannot build the "samples"
 #
@@ -61,7 +67,7 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     CONFIGURE_COMMAND 
 		                      <SOURCE_DIR>/configure
 				                  --prefix=<INSTALL_DIR> 
-						  --with-pic --disable-shared --disable-network
+                                                  ${XERCES_CONFIGURE_OPTIONS}
                                                   CC=${CMAKE_C_COMPILER_USE}
                                                   CFLAGS=${CFLAGS}
                                                   CXX=${CMAKE_CXX_COMPILER_USE}

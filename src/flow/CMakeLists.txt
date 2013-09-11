@@ -55,7 +55,9 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    Flow_Utilities.cc
-                   flow-domain-function.cc flow-boundary-function.cc)
+                   flow-domain-function.cc flow-boundary-function.cc
+		   Flow_AuxData.cc
+		   )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
@@ -74,10 +76,37 @@ add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cc LINK_LIBS ${flow_tpl_libs
 #
 # Install Targets
 #
-file(GLOB flow_inc_files "*.hh")
+#file(GLOB flow_inc_files "*.hh")
+set(flow_inc_files 
+  Darcy_PK.hh
+  Flow_BC_Factory.hh
+  flow-boundary-function.hh
+  Flow_constants.hh
+  flow-domain-function.hh
+  Flow_PK.hh
+  Flow_SourceFactory.hh
+  Flow_State.hh
+  Flow_typedefs.hh
+  Matrix_Audit.hh
+  Matrix_MFD.hh
+  Matrix_MFD_PLambda.hh
+  Matrix_MFD_TPFA.hh
+  Matrix_VAG.hh
+  RelativePermeability.hh
+  Richards_PK.hh
+  Stiffness_MFD.hh
+  TI_Specs.hh
+  WaterRetentionModel.hh
+  WRM_BrooksCorey.hh
+  WRM_fake.hh
+  WRM_vanGenuchten.hh)  
+
+
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
+    generate_evaluators_registration_header(HEADERFILE tests_flow_evaluator_reg.hh  LISTNAME FACTORY_REG_LIST)
+
 #if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -94,7 +123,8 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     if ( ENABLE_MSTK_Mesh )
-        set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
+ 
+       set(amanzi_libs geometry mesh mesh_audit mesh_factory state flow whetstone data_structures)
  
         # Test: miscaleneous Darcy flow routines
         add_amanzi_test(flow_darcy_misc flow_darcy_misc 

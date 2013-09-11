@@ -13,8 +13,8 @@ Usage:
   TPK.advance(time_step);
 */
 
-#ifndef __TRANSPORT_PK_HH__
-#define __TRANSPORT_PK_HH__
+#ifndef AMANZI_TRANSPORT_PK_HH_
+#define AMANZI_TRANSPORT_PK_HH_
 
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -31,7 +31,7 @@ Usage:
 #include "State.hh"
 #include "Reconstruction.hh"
 
-#include "Transport_constants.hh"
+#include "TransportDefs.hh"
 #include "Transport_State.hh"
 #include "Transport_SourceFactory.hh"
 #include "Matrix_Dispersion.hh"

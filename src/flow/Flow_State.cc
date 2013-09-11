@@ -11,6 +11,7 @@ accessing the new state-dev from the old Flow PK.
 ------------------------------------------------------------------------- */
 
 #include "Flow_State.hh"
+#include "state_defs.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -116,6 +117,11 @@ void Flow_State::Construct_() {
     S_->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
   }
+
+  if (!S_->HasField("hydraulic_head")) {
+    S_->RequireField("hydraulic_head", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
 };
 
 
@@ -137,6 +143,7 @@ void Flow_State::Initialize() {
     S_->GetField("specific_yield",name_)->set_initialized();
     S_->GetField("darcy_flux",name_)->set_initialized();
     S_->GetField("darcy_velocity",name_)->set_initialized();
+    S_->GetField("hydraulic_head",name_)->set_initialized();
     S_->Initialize();
   } else {
     // BEGIN REMOVE ME once flow tests pass --etc
@@ -160,6 +167,9 @@ void Flow_State::Initialize() {
     // in the state.
     S_->GetField("specific_storage",name_)->set_initialized();
     S_->GetField("specific_yield",name_)->set_initialized();
+
+    // aux data that is only for vis/checkpoint/observation
+    S_->GetField("hydraulic_head",name_)->set_initialized();
   }
 }
 

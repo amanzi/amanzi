@@ -9,8 +9,8 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __TRANSPORT_SOURCE_FACTORY_HH__
-#define __TRANSPORT_SOURCE_FACTORY_HH__
+#ifndef AMANZI_TRANSPORT_SOURCE_FACTORY_HH_
+#define AMANZI_TRANSPORT_SOURCE_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

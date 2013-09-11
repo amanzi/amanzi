@@ -28,6 +28,7 @@
 #include "ErrorHandler.hpp"
 #include "InputTranslator.hh"
 //#include "DOMPrintErrorHandler.hpp"
+#include "XMLParameterListWriter.hh"
 
 #include "amanzi_version.hh"
 #include "dbc.hh"
@@ -47,6 +48,13 @@
 #endif
 #endif
 #endif
+
+
+#ifdef ENABLE_Unstructured
+#include "evaluator_reg.hh"
+#endif
+
+
 
 struct RunLog
     : public std::ostream
@@ -128,7 +136,21 @@ int main(int argc, char *argv[]) {
 
 	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, xmlSchema);
+	
 	//driver_parameter_list.print(std::cout,true,false);
+	std::string new_filename(xmlInFileName);
+        std::string new_extension("_oldspec.xml");
+        size_t pos = new_filename.find(".xml");
+        new_filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)12);
+        if (rank == 0) {
+          printf("Amanzi: writing the translated parameter list to file %s...\n", new_filename.c_str());
+	  Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+          Teuchos::XMLObject XMLobj = XMLWriter.toXML(driver_parameter_list);
+          std::ofstream xmlfile;
+          xmlfile.open(new_filename.c_str());
+          xmlfile << XMLobj;
+	}
+
       } else if(strcmp(temp2,"ParameterList")==0) {
 	Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
         driver_parameter_list = xmlreader.getParameters();

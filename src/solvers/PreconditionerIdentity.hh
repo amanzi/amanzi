@@ -1,24 +1,24 @@
 /*
-This is the Linear Solver component of the Amanzi code.
- 
-License: BSD
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  This is the Linear Solver component of the Amanzi code.
 
-Conjugate gradient method.
-Usage: 
+  License: BSD
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Conjugate gradient method.
+  Usage:
 */
 
-#ifndef __PRECONDITIONER_IDENTITY_HH__
-#define __PRECONDITIONER_IDENTITY_HH__
+#ifndef AMANZI_PRECONDITIONER_IDENTITY_HH_
+#define AMANZI_PRECONDITIONER_IDENTITY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_FECrsMatrix.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
- 
+
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
@@ -28,10 +28,12 @@ class PreconditionerIdentity : public Preconditioner {
   ~PreconditionerIdentity() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& list) {};
-  void Update(Teuchos::RCP<Epetra_FECrsMatrix> A) {};
+  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A) {};
   void Destroy() {};
 
-  void ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) { hv = v; }
+  void ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) {
+    hv = v;
+  }
 };
 
 }  // namespace AmanziPreconditioners
@@ -40,5 +42,3 @@ class PreconditionerIdentity : public Preconditioner {
 
 
 #endif
-
-

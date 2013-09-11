@@ -50,6 +50,9 @@ include_directories(${CHEM_INCLUDES_DIR})
 if ( ENABLE_Unstructured )
   include_directories(${ATK_SOURCE_DIR})
   include_directories(${MESH_FACTORY_SOURCE_DIR})
+  include_directories(${MESH_SOURCE_DIR})
+  include_directories(${MESH_DATA_SOURCE_DIR})
+  include_directories(${DATA_STRUCTURES_SOURCE_DIR})
   include_directories(${GEOMETRY_SOURCE_DIR})
   include_directories(${OUTPUT_SOURCE_DIR})
   include_directories(${STATE_SOURCE_DIR})
@@ -91,7 +94,7 @@ else()
 endif()
 
 if(ENABLE_Structured)
-  set(structured_grid_libs pmamr boxprob boxdriv structutils structmat ${CCSE_LIBRARIES})
+  set(structured_grid_libs pmamr boxprob boxdriv structutils structmat strans ${CCSE_LIBRARIES})
   link_directories(${CCSE_EXT_LIBRARY_DIRS})
   if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
     #message(">>>>>> using darwin ld flags")
@@ -123,6 +126,8 @@ if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
 endif()
 
+
+generate_evaluators_registration_header(HEADERFILE evaluator_reg.hh LISTNAME FACTORY_REG_LIST  INSTALL TRUE)
 
 # 
 # Main: Amanzi

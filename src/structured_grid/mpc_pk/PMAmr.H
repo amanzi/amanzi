@@ -11,7 +11,6 @@ class MFTGrowFill;
 #include <MatFiller.H>
 #include <Observation.H>
 #include <EventCoord.H>
-#include <MatFiller.H>
 
 class PMAmr
     : public Amr

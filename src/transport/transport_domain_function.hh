@@ -1,16 +1,16 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided Reconstruction.cppin the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH__
-#define __AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH__
+#ifndef AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
+#define AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
 
 #include <vector>
 #include <string>

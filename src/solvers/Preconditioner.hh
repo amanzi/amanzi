@@ -1,23 +1,24 @@
 /*
 This is the Linear Solver component of the Amanzi code.
- 
+
 License: BSD
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-Conjugate gradient method.
-Usage: 
+Base class for preconditioners.
+
+Usage:
 */
 
-#ifndef __PRECONDITIONER_HH__
-#define __PRECONDITIONER_HH__
+#ifndef AMANZI_PRECONDITIONER_HH_
+#define AMANZI_PRECONDITIONER_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_FECrsMatrix.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
- 
+
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
@@ -26,11 +27,20 @@ class Preconditioner {
   Preconditioner() {};
   ~Preconditioner() {};
 
-  virtual void Init(const std::string& name, const Teuchos::ParameterList& list) = 0;
-  virtual void Update(Teuchos::RCP<Epetra_FECrsMatrix> A) = 0;
+  // Initializes the solver with provided parameters.
+  // This need not be called by preconditioners created using the factory.
+  virtual void Init(const std::string& name,
+                    const Teuchos::ParameterList& list) = 0;
+
+  // Rebuild the preconditioner using the given matrix A.
+  virtual void Update(const Teuchos::RCP<Epetra_RowMatrix>& A) = 0;
+
+  // Destroy the preconditioner and auxiliary data structures.
   virtual void Destroy() = 0;
 
-  virtual void ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) = 0;
+  // Apply the preconditioner.
+  virtual void ApplyInverse(const Epetra_MultiVector& v,
+                            Epetra_MultiVector& hv) = 0;
 };
 
 }  // namespace AmanziPreconditioners
