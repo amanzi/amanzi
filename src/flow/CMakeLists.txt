@@ -49,14 +49,14 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_IO.cc Darcy_AztecOO.cc
                    Richards_PK.cc Richards_IO.cc Richards_TI.cc Richards_WRM.cc
                    Richards_SteadyState.cc Richards_Picard.cc Richards_AztecOO.cc
-                   Richards_Bundles.cc Richards_Devel.cc Richards_AndersonMixing.cc
+                   Richards_Bundles.cc Richards_Devel.cc 
                    Matrix_MFD.cc Matrix_MFD_TPFA.cc Matrix_MFD_PLambda.cc Matrix_VAG.cc 
                    Stiffness_MFD.cc 
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    Flow_Utilities.cc
                    flow-domain-function.cc flow-boundary-function.cc
-		   Flow_AuxData.cc
+		   #Flow_AuxData.cc
 		   )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )

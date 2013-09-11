@@ -140,7 +140,7 @@ class Richards_PK : public Flow_PK {
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
   // auxilliary data management
-  void UpdateAuxilliaryData();
+  void UpdateAuxilliaryData() {};
 
 
  private:
