@@ -24,8 +24,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "GMVMesh.hh"
 
 #include "Explicit_TI_RK.hh"
-#include "PCG_Operator.hh"
-#include "GMRES_Operator.hh"
 
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
