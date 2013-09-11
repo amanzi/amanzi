@@ -79,7 +79,6 @@ void Coordinator::coordinator_init() {
 
   // create the observations
   Teuchos::ParameterList observation_plist = parameter_list_.sublist("observations");
-  Teuchos::writeParameterListToXmlOStream(observation_plist, std::cout);
   observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
           Teuchos::null, comm_));
 
