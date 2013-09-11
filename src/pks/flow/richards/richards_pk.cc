@@ -782,13 +782,9 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
 
 bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u) {
   Teuchos::OSTab tab = getOSTab();
-  std::cout << std::setprecision(15);
-  std::cout << " old pressure top face = " << (*u->data())("face",500) << std::endl;
-
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
     *out_ << "  modifications for consistent face pressures." << std::endl;
   CalculateConsistentFaces(u->data().ptr());
-  std::cout << " new pressure top face = " << (*u->data())("face",500) << std::endl;
   return true;
 }
 
@@ -880,10 +876,6 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
       S_next_->GetFieldData("mass_density_liquid");
   Teuchos::RCP<const Epetra_Vector> gvec =
       S_next_->GetConstantVectorData("gravity");
-
-  std::cout << " Krel face 507 = " << (*rel_perm)("face",507) << std::endl;
-  std::cout << " Pres cell 101 = " << (*u)("cell",101) << std::endl;
-
 
   // Update the preconditioner with darcy and gravity fluxes
   matrix_->CreateMFDstiffnessMatrices(rel_perm.ptr());

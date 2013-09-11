@@ -25,6 +25,7 @@ WRMImplicitPermafrostModel::WRMImplicitPermafrostModel(Teuchos::ParameterList& p
   eps_ = plist_.get<double>("converged tolerance", 1.e-12);
   max_it_ = plist_.get<int>("max iterations", 100);
   deriv_regularization_ = plist_.get<double>("minimum dsi_dpressure magnitude", 1.e-10);
+  solver_ = plist_.get<std::string>("solver algorithm [bisection/toms]", "bisection");
 }
 
 // Above freezing calculation methods:
@@ -312,8 +313,15 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
 
   std::pair<double,double> result;
   try {
-    result =
-        boost::math::tools::toms748_solve(func, left, right, tol, max_it);
+    if (solver_ == "bisection") {
+      result = boost::math::tools::bisect(func, left, right, tol, max_it);
+    } else if (solver_ == "toms") {
+      result =
+          boost::math::tools::toms748_solve(func, left, right, tol, max_it);
+    } else {
+      Errors::Message emsg("Unknown solver method");
+      Exceptions::amanzi_throw(emsg);
+    }
   } catch (const std::exception& e) {
     // this throw should not be caught
     std::stringstream estream;
