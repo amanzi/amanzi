@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "mfd3d_diffusion.hh"
 
 #include "Flow_PK.hh"
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 #include "Stiffness_MFD.hh"
 
 

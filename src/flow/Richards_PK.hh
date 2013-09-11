@@ -10,8 +10,8 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __RICHARDS_PK_HH__
-#define __RICHARDS_PK_HH__
+#ifndef AMANZI_RICHARDS_PK_HH_
+#define AMANZI_RICHARDS_PK_HH_
 
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -140,7 +140,7 @@ class Richards_PK : public Flow_PK {
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
   // auxilliary data management
-  void UpdateAuxilliaryData(){};
+  void UpdateAuxilliaryData();
 
 
  private:

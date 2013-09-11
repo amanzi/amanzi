@@ -411,8 +411,6 @@ void Transport_PK::Advance(double dT_MPC)
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
     dispersion_matrix->UpdatePreconditioner();
 
-    // AmanziSolvers::PCG_Operator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> pcg(dispersion_matrix);
-    // pcg.Init(solvers_list.sublist(dispersion_solver));
     AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_Map> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> >
        solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix);

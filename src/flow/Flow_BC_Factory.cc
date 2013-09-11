@@ -17,7 +17,7 @@ Authors: Neil Carlson (version 1)  (nnc@lanl.gov)
 #include "errors.hh"
 
 #include "Flow_BC_Factory.hh"
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {

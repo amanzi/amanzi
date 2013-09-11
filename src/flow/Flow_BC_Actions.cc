@@ -16,7 +16,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Teuchos_RCP.hpp"
 
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 #include "Flow_PK.hh"
 
 

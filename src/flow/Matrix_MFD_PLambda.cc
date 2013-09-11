@@ -13,7 +13,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Epetra_FECrsGraph.h"
 
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 #include "Matrix_MFD_PLambda.hh"
 
 

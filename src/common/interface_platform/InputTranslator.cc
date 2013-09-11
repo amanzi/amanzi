@@ -1733,6 +1733,9 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 		  } else if (strcmp(bcChildName,"linear_pressure")==0) {
 		    bcname = "BC: Linear Pressure";
 		    valname = "Values";
+		  } else if (strcmp(bcChildName,"hydrostatic")==0) {
+		    bcname = "BC: Hydrostatic";
+		    valname = "Water Table Height";
 		  }
 		 }
 		}
@@ -1743,121 +1746,13 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 		vals.append(vals[0]);
 	      }
 	      if (times.length()==funcs.length()) funcs.remove(0); //EIB - this is iffy!!!
-	      // create a new list here
-	      Teuchos::ParameterList newbclist;
-	      newbclist.set<Teuchos::Array<double> >("Times",times);
-	      newbclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
-	      newbclist.set<Teuchos::Array<double> >(valname,vals);
-	      bclist.sublist(bcname) = newbclist;
-	      /*
-		if (strcmp(bcChildName,"hydrostatic")==0) {
-		  Teuchos::ParameterList nlist;
-	          attrMap = bcChildNode->getAttributes();
-		  //TODO: EIB - need to add testing to verify the attributes are actually there!!!
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
-                  textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		  if (strcmp(textContent2,"constant")==0) {
-		    Teuchos::Array<std::string> tmpStr;
-		    tmpStr.append("Constant");
-		    nlist.set<Teuchos::Array<std::string> >("Time Functions",tmpStr);
-	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("start"));
-                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		    Teuchos::Array<double> tmp;
-		    tmp.append(atof(textContent2));
-		    tmp.append(atof(textContent2)+1.0);
-		    nlist.set<Teuchos::Array<double> >("Times",tmp);
-	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		    Teuchos::Array<double> tmp2;
-		    tmp2.append(atof(textContent2));
-		    tmp2.append(atof(textContent2));
-	            XMLString::release(&textContent2);
-		    nlist.set<Teuchos::Array<double> >("Water Table Height",tmp2);
-		  }
-		  // TODO: EIB - old has linear, new has uniform ???
-	 	  bclist.sublist("BC: Hydrostatic") = nlist;
-		} else if (strcmp(bcChildName,"inward_mass_flux")==0) {
-		  Teuchos::ParameterList nlist;
-	          attrMap = bcChildNode->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
-                  textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		  // TODO: EIB - deal with linear, uniform
-		  if (strcmp(textContent2,"constant")==0) {
-		    Teuchos::Array<std::string> tmpStr;
-		    tmpStr.append("Constant");
-		    nlist.set<Teuchos::Array<std::string> >("Time Functions",tmpStr);
-	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("start"));
-                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		    // EIB>> TESTING
-		    std::cout << "EIB>> got start: " << textContent2 << std::endl;
-		    if (def_list.sublist("constants").sublist("constants").isSublist(textContent2))
-		        std::cout << "    EIB>> found param in constants: " << textContent2 << std::endl;
-		    if (def_list.sublist("constants").sublist("time_constants").isSublist(textContent2))
-		        std::cout << "    EIB>> found param in time_constants: " << textContent2 << std::endl;
-		    if (def_list.sublist("constants").sublist("numerical_constant").isSublist(textContent2))
-		        std::cout << "    EIB>> found param in numerical_constant: " << textContent2 << std::endl;
-		    // EIB >> DONE TESTING
-		    Teuchos::Array<double> tmp;
-		    tmp.append(atof(textContent2));
-		    tmp.append(atof(textContent2)+1.0);
-		    nlist.set<Teuchos::Array<double> >("Times",tmp);
-	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		    Teuchos::Array<double> tmp2;
-		    tmp2.append(atof(textContent2));
-		    tmp2.append(atof(textContent2));
-	            XMLString::release(&textContent2);
-		    nlist.set<Teuchos::Array<double> >("Inward Mass Flux",tmp2);
-		  }
-		  bclist.sublist("BC: Flux") = nlist;
-		} else if (strcmp(bcChildName,"inward_volumetric_flux")==0) {
-		  Teuchos::ParameterList nlist;
-	          attrMap = bcChildNode->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
-                  textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		  // TODO: EIB - deal with linear, uniform
-		  if (strcmp(textContent2,"constant")==0) {
-		    Teuchos::Array<std::string> tmpStr;
-		    tmpStr.append("Constant");
-		    nlist.set<Teuchos::Array<std::string> >("Time Functions",tmpStr);
-	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("start"));
-                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		    Teuchos::Array<double> tmp;
-		    tmp.append(atof(textContent2));
-		    tmp.append(atof(textContent2)+1.0);
-		    nlist.set<Teuchos::Array<double> >("Times",tmp);
-	            XMLString::release(&textContent2);
-                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-		    Teuchos::Array<double> tmp2;
-		    tmp2.append(atof(textContent2));
-		    tmp2.append(atof(textContent2));
-	            XMLString::release(&textContent2);
-		    nlist.set<Teuchos::Array<double> >("Inward Volumetric Flux",tmp2);
-		  }
-		  bclist.sublist("BC: Flux") = nlist;
-		} else if (strcmp(bcChildName,"uniform_pressure")==0) {
-	          attrMap = bcChildNode->getAttributes();
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
-                  char* func = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
-                  char* value = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("start"));
-                  char* start = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-                  vals.append(atof(value));
-		  double time = get_time_value(start, def_list);
-		  times.append(time);
-		}
-                //TODO: EIB - "Outward Volumetric Flux"
-	        //TODO: EIB - "Outward Mass Flux"
+	        // create a new list here
+	        Teuchos::ParameterList newbclist;
+	        newbclist.set<Teuchos::Array<double> >("Times",times);
+	        newbclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
+	        newbclist.set<Teuchos::Array<double> >(valname,vals);
+	        bclist.sublist(bcname) = newbclist;
 	      }
-		*/
-            }
             if (strcmp(compName,"solute_component")==0) {
               //TODO: EIB - deal with solute_component later
 	    }
