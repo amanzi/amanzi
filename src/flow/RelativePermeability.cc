@@ -239,8 +239,8 @@ void RelativePermeability::FaceUpwindFlux_(
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       /// ***** TEST  <--
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
+      // const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      // double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
       /// ***** TEST  -->
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
@@ -249,9 +249,9 @@ void RelativePermeability::FaceUpwindFlux_(
           (*Krel_faces_)[f] = WRM_[(*map_c2mb_)[c]]->k_relative(pc);
 
       /// ***** TEST  <--
-	  if ( cos_angle > -FLOW_RELATIVE_PERM_TOLERANCE ){
-	    cout << "Not aligned " <<" cell "<<c<<" face "<<f<<endl;
-	  }
+	  // if ( cos_angle > -FLOW_RELATIVE_PERM_TOLERANCE ){
+	  //   cout << "Not aligned " <<" cell "<<c<<" face "<<f<<endl;
+	  // }
       /// ***** TEST  -->   
 
         } else {
@@ -259,23 +259,23 @@ void RelativePermeability::FaceUpwindFlux_(
           (*Krel_faces_)[f] = (*Krel_cells_)[c];
 
       /// ***** TEST  <--
-	  if ( cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE ){
-	    cout << "Not aligned " <<" cell "<<c<<" face "<<f<<endl;
-	  }
+	  // if ( cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE ){
+	  //   cout << "Not aligned " <<" cell "<<c<<" face "<<f<<endl;
+	  // }
       /// ***** TEST  -->   
 
         }
       } else {
         if (flux[f] * dirs[n] > tol) {
           (*Krel_faces_)[f] = (*Krel_cells_)[c];  // The upwind face.
-      /// ***** TEST  <--
-	  if ( cos_angle < FLOW_RELATIVE_PERM_TOLERANCE ){
-	    cout << "Not aligned " <<" cell "<<c<<" face "<<f<<" "<<flux[f] * dirs[n]<<" "<<p[c]<<endl;
-	  }
-	  else {
-	    cout << "Aligned     " <<" cell "<<c<<" face "<<f<<" "<<flux[f] * dirs[n]<<" "<<p[c]<<endl;
-	  }
-      /// ***** TEST  -->   
+      // /// ***** TEST  <--
+      // 	  if ( cos_angle < FLOW_RELATIVE_PERM_TOLERANCE ){
+      // 	    cout << "Not aligned " <<" cell "<<c<<" face "<<f<<" "<<flux[f] * dirs[n]<<" "<<p[c]<<endl;
+      // 	  }
+      // 	  else {
+      // 	    cout << "Aligned     " <<" cell "<<c<<" face "<<f<<" "<<flux[f] * dirs[n]<<" "<<p[c]<<endl;
+      // 	  }
+      // /// ***** TEST  -->	  
         } else if (fabs(flux[f]) <= tol) { 
           (*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  // Almost vertical face.
         }
