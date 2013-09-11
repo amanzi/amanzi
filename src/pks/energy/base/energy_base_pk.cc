@@ -360,14 +360,9 @@ bool EnergyBase::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
     *out_ << "Modifying predictor:" << std::endl;
 
   if (modify_predictor_with_consistent_faces_) {
-    std::cout << " old temp top face = " << (*u->data())("face",500) << std::endl;
-
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
       *out_ << "  modifications for consistent face temperatures." << std::endl;
     CalculateConsistentFaces(u->data().ptr());
-
-    std::cout << " new temp top face = " << (*u->data())("face",500) << std::endl;
-
     return true;
   }
 
@@ -393,9 +388,6 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
       ->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(conductivity_key_);
-
-  std::cout << " Cond cell 99 = " << (*conductivity)("cell",99) << std::endl;
-  std::cout << " Temp cell 99 = " << (*u)("cell",99) << std::endl;
 
   matrix_->CreateMFDstiffnessMatrices(conductivity.ptr());
   matrix_->CreateMFDrhsVectors();

@@ -316,7 +316,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   int bad_cell = -1;
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
-    double tmp = std::abs(h*res_c[0][c]) / (atol_+rtol_* (cv[0][c]*2.e6));
+    double tmp = std::abs(h*res_c[0][c]) / (atol_ * cv[0][c]*2.e6 + rtol_* cv[0][c] * std::abs(energy[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;
@@ -343,12 +343,47 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
     double buf_c(enorm_cell), buf_f(enorm_face);
     MPI_Allreduce(&buf_c, &enorm_cell, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (std::abs(buf_c - enorm_cell) < 1.e-16) {
+
+      if (S_next_->HasField("denergy_dtemperature")) {
+      const Epetra_MultiVector& pres = *S_next_->GetFieldData("pressure")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& temp = *S_next_->GetFieldData("temperature")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& si = *S_next_->GetFieldData("saturation_ice")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& sl = *S_next_->GetFieldData("saturation_liquid")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& sg = *S_next_->GetFieldData("saturation_gas")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& dedT = *S_next_->GetFieldData("denergy_dtemperature")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& dedp = *S_next_->GetFieldData("denergy_dpressure")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& dwcdT = *S_next_->GetFieldData("dwater_content_dtemperature")
+          ->ViewComponent("cell",false);
+      const Epetra_MultiVector& dwcdp = *S_next_->GetFieldData("dwater_content_dpressure")
+          ->ViewComponent("cell",false);
+
+      std::cout << std::setprecision(15)
+                << "BAD CELL " << bad_cell << ", proc = " << mesh_->get_comm()->MyPID() << std::endl
+                << "   res = " << res_c[0][bad_cell] << std::endl
+                << "   e = " << energy[0][bad_cell] << std::endl
+                << "   T = " << temp[0][bad_cell] << std::endl
+                << "   p = " << pres[0][bad_cell] << std::endl
+                << "   sat_(i,l,g) = " << si[0][bad_cell] << ", " << sl[0][bad_cell] << ", " << sg[0][bad_cell] << std::endl
+                << "   cv = " << cv[0][bad_cell] << std::endl
+                << " J: de_dT,dp = " << dedT[0][bad_cell] << ", " << dedp[0][bad_cell] << std::endl
+                << "    dw_dT,dp = " << dwcdT[0][bad_cell] << ", " << dwcdp[0][bad_cell] << std::endl;
+      }
+    }
 #endif
 
     *out_ << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
-    //    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
     *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
   }
+
+
 
   // Communicate and take the max.
   double enorm_val(std::max<double>(enorm_face, enorm_cell));

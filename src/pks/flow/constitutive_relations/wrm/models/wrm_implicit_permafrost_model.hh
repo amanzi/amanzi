@@ -67,6 +67,7 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
   double eps_;
   uintmax_t max_it_;
   double deriv_regularization_;
+  std::string solver_;
 
  private:
   // Functor for ice saturation, gets used within a root-finding algorithm
