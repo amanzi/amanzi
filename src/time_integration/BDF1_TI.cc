@@ -383,6 +383,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   Epetra_Vector u_tmp(map);
 
   // cout<<"Check initial guess\n";
+  // cout.precision(16);
   // for (int i=0; i<12; i++) cout<<u[i]<<"\n";
   // cout<<endl;
 
@@ -435,7 +436,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);
 
-    
+    //exit(0);
 
     // stuff the preconditioned residual into a NOX::Epetra::Vector
     *preconditioned_f = u_tmp;  // copy preconditioned functional into appropriate data type
@@ -527,6 +528,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     if (error < state.ntol*state.ntol_multiplier_current)   {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error <<std::endl;
+	//exit(0);
       }
 
 

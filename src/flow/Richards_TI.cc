@@ -16,7 +16,7 @@ The routine implements interface to BDFx time integrators.
 #include <string>
 #include <vector>
 
-#include "Matrix_MFD_TPFA.hh"
+#include "Matrix_TPFA.hh"
 #include "Richards_PK.hh"
 
 
@@ -234,6 +234,8 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
 {
   double max_sat_pert = 0.125;
   bool ret_val = false;
+  double dumping_factor = 0.6;
+  double reference_pressure = 101325.;
 
   int ncells_clipped(0);
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 
@@ -261,14 +263,13 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
       if (du[c] >= 0.0) du[c] = fabs(du_pert_max);
       else du[c] = -fabs(du_pert_max);
 
-      //cout<<"old "<<u[c]<<" new "<<u[c]-du[c]<<" dp "<<du[c]<<" old dp "<<tmp<<endl;
-
       ncells_clipped++;
       ret_val = true;
     }    
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+  //  if (verbosity >= FLOW_VERBOSITY_HIGH) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     int ncells_tmp = ncells_clipped;
     du.Comm().SumAll(&ncells_tmp, &ncells_clipped, 1);
     if (MyPID == 0 && ncells_clipped > 0) {

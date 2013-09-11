@@ -30,7 +30,7 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 #include "mfd3d_diffusion.hh"
 
 #include "Matrix_MFD_PLambda.hh"
-#include "Matrix_MFD_TPFA.hh"
+#include "Matrix_TPFA.hh"
 
 #include "Flow_BC_Factory.hh"
 #include "Flow_State.hh"
@@ -437,6 +437,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
       std::printf("*************************************************************\n");
     }
+
   }
 
   // Well modeling
@@ -475,6 +476,13 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     double Tp = T0 + dT0;
     EnforceConstraints_MFD(Tp, *solution);
   }
+  else if (experimental_solver_ == FLOW_SOLVER_NEWTON){
+    double Tp = T0 + dT0;
+    Epetra_Vector* u_cells = FS->CreateCellView(*solution);
+    Epetra_Vector* u_faces = FS->CreateFaceView(*solution);
+    UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
+    rel_perm->Compute(*solution, bc_model, bc_values);
+  }
 
   // nonlinear solver control options
   ti_specs.num_itrs = 0;
@@ -488,6 +496,8 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
 
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
+    //cout<<"flux\n"<<flux<<endl;
+    //cout<<Krel_faces<<endl;
   } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
     if (matrix_tpfa == 0) {
@@ -496,7 +506,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       Exceptions::amanzi_throw(msg);
     }
     matrix_tpfa->DeriveDarcyMassFlux(
-        *solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
@@ -637,7 +647,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
       Exceptions::amanzi_throw(msg);
     }
     matrix_tpfa->DeriveDarcyMassFlux(
-        *solution, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;

@@ -12,7 +12,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Flow_State.hh"
 #include "Matrix_MFD.hh"
-#include "Matrix_MFD_TPFA.hh"
+#include "Matrix_TPFA.hh"
 #include "Matrix_MFD_PLambda.hh"
 #include "Richards_PK.hh"
 
@@ -179,20 +179,19 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
       Exceptions::amanzi_throw(msg);
     }
 
-    matrix_tpfa->DeriveDarcyMassFlux(*
-        u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa->DeriveDarcyMassFlux(*u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
 
     for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
 
     // cout<<"After DeriveDarcyMassFlux\n"<<endl;
     // for (int f = 48; f < nfaces_owned; f++){
-    //   cout<<"flux "<<f<<" - "<<flux[f]<<endl;
+    //   cout<<"flux "<<f<<":   "<<flux[f]<<endl;
     // }
   }
 
   rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
-
+  //exit(0);
   //Amanzi::timer_manager.start("Update precon");
 
   // setup a new algebraic problem
