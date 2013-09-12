@@ -60,12 +60,25 @@ TEST(NEWTON_RICHARD_STEADY) {
   Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
 
   // create flow state
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  FS->Initialize();
+  // Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+  // FS->Initialize();
 
+
+  Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
+  State S(state_list);
+  S.RegisterDomainMesh(mesh);
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  S.Setup();
+ 
+  FS->Initialize();
+  S.Initialize();
+  
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
+
+
+  
   RPK->InitSteadyState(0.0, 1e+4);
 
   // solve the problem
@@ -94,7 +107,7 @@ TEST(NEWTON_RICHARD_STEADY) {
     // cout << (mesh->cell_centroid(c))[2] << " " << pressure[c] << endl;
     CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
   }
-
+  
   delete RPK;
 }
 

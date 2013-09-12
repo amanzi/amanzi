@@ -11,8 +11,8 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __FLOW_BC_FACTORY_HH__
-#define __FLOW_BC_FACTORY_HH__
+#ifndef AMANZI_FLOW_BC_FACTORY_HH_
+#define AMANZI_FLOW_BC_FACTORY_HH_
 
 /* transient-flow-bc-list(NAME) is:
   <ParameterList name=NAME>

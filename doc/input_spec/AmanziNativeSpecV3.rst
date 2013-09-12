@@ -398,22 +398,17 @@ Initialization from a file
 --------------------------
 
 Some data can be initialized from files. Additional sublist has to be added to
-the `"state`" list with the file name and names of attributes. 
+named sublist of the `"state`" list with the file name and names of attributes. 
 The provided data will override results of other initialization tools. 
-Here is an example (incomplete):
+Here is an example:
 
 .. code-block:: xml
 
-  <ParameterList name="File initialization">
-    <ParameterList name="absolute permeability">  <!-- Amanzi's name of a state variable -->
-      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-      <Parameter name="attribute" type="string" value="perm"/>
-    </ParameterList>
-    <ParameterList name="porosity">
-      <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-      <Parameter name="attribute" type="string" value="porosity"/>
-    </ParameterList>
+  <ParameterList name="exodus file initialization">
+    <Parameter name="file" type="string" value="mesh_with_data.exo"/>
+    <Parameter name="attribute" type="string" value="perm"/>
   </ParameterList>
+
 
 Flow
 ====

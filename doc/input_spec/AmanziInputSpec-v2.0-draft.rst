@@ -106,13 +106,9 @@ Some explaination of each element goes here.
   
   <verbosity level="low | medium | high" />
   
-QUESTION: EIB - I don't understand what `"execution_control_defaults`" gets used for verses `"execution_control`"?  For now I am just skipping `"execution_control_defaults`".
-
 .. code-block:: xml
 
   <execution_control_defaults init_dt="labeled_time" max_dt="labeled_time" reduction_factor="exponential" increase_factor="exponential" mode="stead | transient" method=" bdf1 | picard" />
-
-NOTE: EIB - I don't understand how the method maps back to the old spec: bdf1 | picard? Is bdf1 the default? Does picard means, "Use Picard = true"?
 
     * init_dt="labeled_time" 
       
@@ -122,7 +118,7 @@ NOTE: EIB - I don't understand how the method maps back to the old spec: bdf1 | 
       
     * increase_factor="exponential" 
       
-    * mode="stead | transient" 
+    * mode="steady | transient" 
       
     * method=" bdf1 | picard" 
 
@@ -424,12 +420,9 @@ Within the Materials block an unbounded number of `"material`" elements can be d
 
 .. code-block:: xml
 
-  <cap_pressure name="van_genuchten ( NOT IMPLEMENTED YET - | brooks_corey | none )" >
+  <cap_pressure name="van_genuchten | brooks_corey | none )" >
       Required Elements: parameters
   </cap_pressure>
-
-
-REMINDER - REL_PERM IS NOT YET IMPLEMENTED
 
 * `"rel_perm`" is an optional element.  The available models are `"mualem`", `"burdine`", and `"none`".  The model name is specified in an attribute and parameters are specified in a subelement.  Model parameters are listed as attributes to the parameter element.
 
@@ -461,11 +454,15 @@ Process Kernels
 
 * `"transport`" has two attributes, `"state`" and `"algorithm`".
       
-      * SKIPPED FOR NOW
+      * `"state`" = "on | off"
+
+      *  `"algorithm`" = " explicit first-order | explicit second-order | none " 
 
 * `"chemistry`" has two attributes, `"state`" and `"process_model`".
       
-      * SKIPPED FOR NOW
+      * `"state`" = "on | off"
+
+      *  `"process_model`" = " implicit operator split | none " 
 
 Phases
 ======
@@ -490,7 +487,7 @@ Some general discussion of the `"Phases`" section goes here.
 
 Here is more info on the `"liquid_phase`" elements:
 
-    * `"eos`"="string" - QUESTION - EIB: note sure what this translate to in the old spec.
+    * `"eos`"="string" - SKIPPED
 
     * `"viscosity`"="exponential"
 
@@ -544,7 +541,7 @@ Here is more info on the `"liquid_phase`" elements:
 
     * `"liquid_component`" is an element with the following subelement: 
 
-        * `"pressure`" is an element with the following attributes: ONLY UNIFORM, for now
+        * `"pressure`" is an element with the following attributes: 
 
 .. code-block:: xml
 

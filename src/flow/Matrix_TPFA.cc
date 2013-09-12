@@ -16,8 +16,8 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "AztecOO.h"
 #include "mfd3d_diffusion.hh"
 
-#include "Flow_constants.hh"
-#include "Matrix_MFD_TPFA.hh"
+#include "FlowDefs.hh"
+#include "Matrix_TPFA.hh"
 
 
 namespace Amanzi {
@@ -129,110 +129,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
   Spp_->GlobalAssemble();
 }
 
-
-/* ******************************************************************
-* Convert elemental mass matrices into stiffness matrices and 
-* assemble them into four global matrices. 
-* We need an auxiliary GHOST-based vector to assemble the RHS.
-****************************************************************** */
-// void Matrix_MFD_TPFA::AssembleGlobalMatrices()
-// {
-//   Matrix_MFD::AssembleGlobalMatrices();
-
-//   AmanziMesh::Entity_ID_List faces;
-//   std::vector<int> dirs;
-//   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-//   Dff_->PutScalar(0.0);
-//   for (int c = 0; c < ncells_owned; c++) {
-//     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//     int mfaces = faces.size();
-
-//     for (int n = 0; n < mfaces; n++) {
-//       int f = faces[n];
-//       (*Dff_)[f] += Aff_cells_[c](n, n);
-//     }
-//   }
-//   FS_->CombineGhostFace2MasterFace(*Dff_, Add);
-
-//   // convert right-hand side to a cell-based vector
-//   const Epetra_Map& cmap = mesh_->cell_map(false);
-//   Epetra_Vector Tc(cmap);
-//   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-//   for (int f = 0; f < nfaces_owned; f++) (*rhs_faces_)[f] /= (*Dff_)[f];
-//   (*Acf_).Multiply(false, *rhs_faces_, Tc);
-//   for (int c = 0; c < ncells_owned; c++) (*rhs_cells_)[c] -= Tc[c];
-
-//   rhs_faces_->PutScalar(0.0);
-
-//   // create a with-ghost copy of Acc
-//   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-//   Epetra_Vector Dcc(cmap_wghost);
-
-//   for (int c = 0; c < ncells_owned; c++) Dcc[c] = (*Acc_)[c];
-//   FS_->CopyMasterCell2GhostCell(Dcc);
-
-//   AmanziMesh::Entity_ID_List cells;
-//   int cells_GID[2];
-//   double Acf_copy[2];
-
-//   // create auxiliaty with-ghost copy of Acf_cells
-//   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-//   Epetra_Vector Acf_parallel(fmap_wghost);
-
-//   for (int c = 0; c < ncells_owned; c++) {
-//     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//     int mfaces = faces.size();
-
-//     for (int i = 0; i < mfaces; i++) {
-//       int f = faces[i];
-//       if (f >= nfaces_owned) Acf_parallel[f] = Acf_cells_[c][i];
-//     }
-//   }
-//   FS_->CombineGhostFace2MasterFace(Acf_parallel, Add);
-
-//   // populate the global matrix
-//   Spp_->PutScalar(0.0);
-//   for (AmanziMesh::Entity_ID f = 0; f < nfaces_owned; f++) {
-//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-//     int mcells = cells.size();
-
-//     // populate face-based matrix.
-//     Teuchos::SerialDenseMatrix<int, double> Bpp(mcells, mcells);
-//     for (int n = 0; n < mcells; n++) {
-//       int c = cells[n];
-//       cells_GID[n] = cmap_wghost.GID(c);
-
-//       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-//       int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
-//       Bpp(n, n) = Dcc[c] / faces.size();
-//       if (c < ncells_owned) {
-//         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
-//         Acf_copy[n] = Acf_cells_[c][i];
-//       } else {
-//         Acf_copy[n] = Acf_parallel[f];
-//       }
-//     }
-
-//     for (int n = 0; n < mcells; n++) {
-//       for (int m = n; m < mcells; m++) {
-//         Bpp(n, m) -= Acf_copy[n] * Acf_copy[m] / (*Dff_)[f];
-//         Bpp(m, n) = Bpp(n, m);
-//       }
-//     }
-
-//     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Bpp.values());
-//   }
-//   (*Spp_).GlobalAssemble();
-
-//   // std::cout<<(*Spp_)<<endl;
-//   // std::cout<<(*rhs_cells_)<<endl;
-//   // exit(0);
-
-//}
-
-  void Matrix_MFD_TPFA::AssembleGlobalMatrices( const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces)
+void Matrix_MFD_TPFA::AssembleGlobalMatrices( const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces)
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -292,7 +189,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
 /* ******************************************************************
 * Assembles preconditioner. It has same set of parameters as matrix.
 ****************************************************************** */
-  void Matrix_MFD_TPFA::AssembleSchurComplement(const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces)
+void Matrix_MFD_TPFA::AssembleSchurComplement(const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces)
 {
   AssembleGlobalMatrices(Krel_faces, Trans_faces);
 }
@@ -522,70 +419,6 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 
 
 /* ******************************************************************
-* TBW
-****************************************************************** */
-void Matrix_MFD_TPFA::AddCol2NumJacob(int cell, Epetra_Vector& r)
-{
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
-  int mfaces = faces.size();
-  int indices;
-  double values;
-
-  indices = cell;
-  values = r[cell];
-
-  NumJac_->ReplaceGlobalValues(cell, 1, &values, &indices);
-
-  for (int i = 0; i < mfaces; i++) {
-    int c_adj = mfd3d.cell_get_face_adj_cell(cell, faces[i]);
-    // cout<<cell<<" - c_adj "<<c_adj<<endl;
-    if (c_adj >= 0) {
-      values = r[c_adj];
-      NumJac_->ReplaceGlobalValues(c_adj, 1, &values, &indices);
-    }
-  }
-  // cout<<"NonZeros "<<NumJac_->NumGlobalEntries(cell)<<endl;;
-
-  NumJac_->GlobalAssemble();
-}
-
-
-/* ******************************************************************
-* TBW
-****************************************************************** */
-void Matrix_MFD_TPFA::CompareJacobians()
-{
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  double ErrMax = 0;
-  double ErrL2 = 0;
-  double NormL2 = 0;
-  double NormMax = 0;
-
-  for (int cell = 0; cell < ncells_owned; cell++) {
-    int nonzeros = NumJac_->NumGlobalEntries(cell);
-
-    for (int i = 0; i < nonzeros; i++) {
-      ErrL2 += ((*NumJac_)[cell][i] - (*Spp_)[cell][i])*((*NumJac_)[cell][i] - (*Spp_)[cell][i]);
-      ErrMax = max(fabs((*NumJac_)[cell][i] - (*Spp_)[cell][i]), ErrMax);
-      NormL2 += (*NumJac_)[cell][i] * (*NumJac_)[cell][i];
-      NormMax = max((*NumJac_)[cell][i], NormMax);
-    }
-  }
-
-  ErrL2 = sqrt(ErrL2/NormL2);
-
-  cout<<"Error L2  "<<ErrL2<<endl;
-  cout<<"Error Max "<<ErrMax/NormMax<<endl;
-}
-
-
-/* ******************************************************************
 * Initialization of the preconditioner                                                 
 ****************************************************************** */
 void Matrix_MFD_TPFA::InitPreconditioner(int method, Teuchos::ParameterList& prec_list)
@@ -614,7 +447,6 @@ void Matrix_MFD_TPFA::InitPreconditioner(int method, Teuchos::ParameterList& pre
 ****************************************************************** */
 void Matrix_MFD_TPFA::UpdatePreconditioner()
 {
-  //cout<<"In update preconditioner\n"<<*Spp_;
 
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     if (MLprec->IsPreconditionerComputed()) MLprec->DestroyPreconditioner();
@@ -686,11 +518,6 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 
   int ierr = (*Spp_).Multiply(false, Xc, Yc);
 
-  // cout<<"Xc"<<Xc<<endl;
-  
-  //cout<<"Apply TPFA"<<(*Spp_)<<endl;
-
-  // cout<<"Yc "<<Yc<<endl;
 
   if (ierr) {
     Errors::Message msg("Matrix_MFD_TPFA::Apply has failed to calculate y = A*x.");
@@ -737,38 +564,38 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
 
   // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
   // use the same memory for X and Y, we introduce auxiliaty vector Tc.
-//   int ierr = 0;
-//   Epetra_Vector Tc(cmap);
-//   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-//     MLprec->ApplyInverse(Xc, Tc);
-//   } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-// #ifdef HAVE_HYPRE
-//     ierr = IfpHypre_Spp_->ApplyInverse(Xc, Tc);
-// #endif
-//   } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-//     ifp_prec_->ApplyInverse(Xc, Tc);
-//   }
-//   Yc = Tc;
+  int ierr = 0;
+  Epetra_Vector Tc(cmap);
+  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
+    MLprec->ApplyInverse(Xc, Tc);
+  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
+#ifdef HAVE_HYPRE
+    ierr = IfpHypre_Spp_->ApplyInverse(Xc, Tc);
+#endif
+  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
+    ifp_prec_->ApplyInverse(Xc, Tc);
+  }
+  Yc = Tc;
 
 
-  Epetra_LinearProblem problem(&*Spp_, &Yc, &Xc);
+  // Epetra_LinearProblem problem(&*Spp_, &Yc, &Xc);
 
-  AztecOO solver(problem);
+  // AztecOO solver(problem);
 
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, AZ_none);
-  solver.SetAztecOption(AZ_conv, AZ_rhs);
+  // solver.SetAztecOption(AZ_solver, AZ_gmres);
+  // solver.SetAztecOption(AZ_output, AZ_none);
+  // solver.SetAztecOption(AZ_conv, AZ_rhs);
  
-  int max_itrs_linear = 100;
-  double convergence_tol_linear = 1e-10;
+  // int max_itrs_linear = 100;
+  // double convergence_tol_linear = 1e-10;
 
-  solver.Iterate(max_itrs_linear, convergence_tol_linear);
-  int num_itrs = solver.NumIters();
+  // solver.Iterate(max_itrs_linear, convergence_tol_linear);
+  // int num_itrs = solver.NumIters();
 
-  // if (ierr) {
-  //   Errors::Message msg("Matrix_MFD_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
-  //   Exceptions::amanzi_throw(msg);
-  // }
+  if (ierr) {
+    Errors::Message msg("Matrix_MFD_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
+    Exceptions::amanzi_throw(msg);
+  }
 
   Yf = Xf;
 
@@ -887,7 +714,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
   return norm_residual;
 }
 
-void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
+  void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution_cells,
 					  const Epetra_Vector& Krel_faces,
 					  const Epetra_Vector& Trans_faces,
 					  const Epetra_Vector& Grav_term,
@@ -903,6 +730,13 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
 //   Epetra_Vector& solution_cell_wghost = *solution_cell;
 // #endif
   
+#ifdef HAVE_MPI
+  Epetra_Vector solution_cell_wghost(mesh_->cell_map(true));
+  FS_->CopyMasterCell2GhostCell(solution_cells, solution_cell_wghost);
+#else
+  Epetra_Vector& solution_cell_wghost = *solution_cells;
+#endif
+
   AmanziMesh::Entity_ID_List faces;
   std::vector<double> dp;
   std::vector<int> dirs;
@@ -911,10 +745,13 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   //  std::vector<int> flag(nfaces_wghost, 0);
+  //cout.precision(10);
 
   AmanziMesh::Entity_ID_List cells;
 
-  darcy_mass_flux.PutScalar(0.);;
+  darcy_mass_flux.PutScalar(0.);
+
+  //cout<<solution_cells<<endl;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -922,33 +759,39 @@ void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution,
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
+
+      //      cout<<"Trans "<<f<<": "<<Trans_faces[f]<<endl;
+
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
-	darcy_mass_flux[f] = dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value) + Grav_term[f]);
+	darcy_mass_flux[f] = dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution_cell_wghost[c] - value) + Grav_term[f]);
 	// cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<endl;
 	// cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
 	// cout<<"Boundary gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
-	// cout<<"Dirichler BC flux "<<darcy_mass_flux[f] <<endl;
+	// cout<<"Dirichler BC flux "<<darcy_mass_flux[f] <<endl<<endl;
       }
       else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
 	double value = bc_values[f][0];
-	darcy_mass_flux[f] = value;
+	double area = mesh_->face_area(f);
+	darcy_mass_flux[f] = value*area ;
       }
       else {
 	if (f < nfaces_owned) {
 	  mesh_->face_get_cells(f,  AmanziMesh::USED, &cells);
-	  // if (fabs(Grav_term[f]) > 1e-12){
-	  //   cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<" "<<" Krel "<<Krel_faces[f]<<endl;
-	  //   //cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
-	  //   cout<<"gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
-	  // }
-	  //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
-	  double s = Trans_faces[f]*solution[c];
-	  darcy_mass_flux[f] += s * dirs[n];
-	  if (cells[0] == c) darcy_mass_flux[f] += dirs[n]*Grav_term[f]*0.5;
-	  else darcy_mass_flux[f] -= dirs[n]*Grav_term[f]*0.5;  
-	  darcy_mass_flux[f] *= Krel_faces[f];
-	  //if (f==49) cout<<"f=49 "<<darcy_mass_flux[f]<<endl;
+	  if (cells.size() < 2){
+	    Errors::Message msg("Flow PK: Matrix_MFD_TPFA. These boundary conditions are not supported by TPFA discratization.");
+	    Exceptions::amanzi_throw(msg);
+	  }
+
+	  if (dirs[n] > 0){
+	    if (c == cells[0]){
+	      darcy_mass_flux[f] = Trans_faces[f]*(solution_cell_wghost[cells[0]] - solution_cell_wghost[cells[1]]) + Grav_term[f];
+	    }
+	    else {
+	      darcy_mass_flux[f] = Trans_faces[f]*(solution_cell_wghost[cells[1]] - solution_cell_wghost[cells[0]]) + Grav_term[f];
+	    }	    
+	    darcy_mass_flux[f] *= Krel_faces[f];
+	  }
 	}
       }
     }

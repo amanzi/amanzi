@@ -1216,8 +1216,8 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
       * [SU] `"Concentration Units`" [string] can accept `"Molarity`" (moles/volume), `"Molality`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
     
-
-Next, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
+Next, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the aqueous phase (flow), and on the solutes 
+(total component concentration of primary species in reactive transport).
 
 * [SU] `"Boundary Conditions`" [list] accepts labels, BC, of named boundary condition specifications 
 
@@ -1237,15 +1237,25 @@ Next, we specify boundary conditions.  Again, support is provided for specifying
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
-Finally, we specify sources. Note that currently sources for components cannot be specified.
+Finally, we specify sources.  Support is provided for specifying sources on the aqueous phase (flow), and for the solutes (total component concentration of primary species in reactive transport).
 
-* [U] `"Sources"` [list] accepts labels, SOURCE, of named boundary condition specifications
+* [U] `"Sources"` [list] accepts labels, SOURCE, of named source specifications
 
  * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
 
   * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
   
   * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
+
+  * `"Solute SOURCE`" can accept PHASE (labels of phases defined above)
+
+   * PHASE [list] can accept COMPONENT (labels of components defined above)
+
+    * COMPONENT [list] can accept SOLUTE (label of solute defined above)
+
+     * Source function [list] Parameterized model to specify the concentration profile, `"Source: Uniform Concentration`" and `"Source: Flow Weighted Concentration`" are supported (see below).
+
+      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
 The following initial condition parameterizations are supported:
 
@@ -1294,7 +1304,9 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Permeability Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
+* `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
+* `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 Time Functions
 ~~~~~~~~~~~~~~

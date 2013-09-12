@@ -23,9 +23,9 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
+class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  PCG_Operator(Teuchos::RCP<const Matrix> m) : 
+  LinearOperatorPCG(Teuchos::RCP<const Matrix> m) : 
       LinearOperator<Matrix, Vector, VectorSpace>(m) { 
     tol_ = 1e-6; 
     overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
@@ -33,7 +33,7 @@ class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
     criteria_ = LIN_SOLVER_RELATIVE_RHS;
     initialized_ = false;
   }
-  ~PCG_Operator() {};
+  ~LinearOperatorPCG() {};
 
   void Init(Teuchos::ParameterList& plist);  
 
@@ -42,7 +42,7 @@ class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
     return ierr;
   }
 
-  Teuchos::RCP<PCG_Operator> Clone() const {};
+  Teuchos::RCP<LinearOperatorPCG> Clone() const {};
 
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
@@ -85,7 +85,7 @@ class PCG_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
  *  LinearSolverDefs.hh for the error explanation. 
  ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
+int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector r(f), p(f), v(f);  // construct empty vectors
@@ -175,7 +175,7 @@ int PCG_Operator<Matrix, Vector, VectorSpace>::pcg(
 * "convergence criteria" Array(string) default = "{relative rhs}"
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void PCG_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
 

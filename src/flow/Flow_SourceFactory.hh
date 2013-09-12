@@ -1,5 +1,5 @@
-#ifndef __FLOW_SOURCE_FACTORY_HH__
-#define __FLOW_SOURCE_FACTORY_HH__
+#ifndef AMANZI_FLOW_SOURCE_FACTORY_HH_
+#define AMANZI_FLOW_SOURCE_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

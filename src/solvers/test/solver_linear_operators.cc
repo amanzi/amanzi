@@ -7,8 +7,8 @@
 
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
-#include "PCG_Operator.hh"
-#include "GMRES_Operator.hh"
+#include "LinearOperatorPCG.hh"
+#include "LinearOperatorGMRES.hh"
 
 using namespace Amanzi;
 
@@ -36,7 +36,7 @@ SUITE(SOLVERS) {
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::PCG_Operator<Matrix, Epetra_Vector, Epetra_Map> pcg(m);
+    AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m);
 
     // initial guess
     Epetra_Vector u(*map);
@@ -58,7 +58,7 @@ SUITE(SOLVERS) {
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::GMRES_Operator<Matrix, Epetra_Vector, Epetra_Map> gmres(m);
+    AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m);
 
     // initial guess
     Epetra_Vector u(*map);

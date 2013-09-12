@@ -1,5 +1,4 @@
 #  -*- mode: cmake -*-
-
 #
 # Build TPL: XERCES 
 #  

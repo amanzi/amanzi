@@ -846,9 +846,9 @@
 	  <!--
 	      Start:    t=1956.00  [y] = 6.172666560e+10 [s]
 	      Period:  dt=   0.05  [y] = 1.577880000e+6  [s]
-	      End:      t=1956.99  [y] = 61757907624e+10 [s]
+	      End:      t=1956.99  [y] = 6.1757907624e+10 [s]
 	  -->
-	  <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.17266656e+10, 1.577880000e+6, 61757907624e+10}"/>
+	  <Parameter name="Start_Period_Stop" type="Array(double)" value="{6.17266656e+10, 1.577880000e+6, 6.1757907624e+10}"/>
 	</ParameterList>
         <ParameterList name="Plume evolution: every year">
 	  <!--

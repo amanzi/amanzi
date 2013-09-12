@@ -4,8 +4,8 @@ License: BSD
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __MATRIX_AUDIT_HH__
-#define __MATRIX_AUDIT_HH__
+#ifndef AMANZI_MATRIX_AUDIT_HH_
+#define AMANZI_MATRIX_AUDIT_HH_
 
 #include "Epetra_Operator.h"
 

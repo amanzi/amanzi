@@ -40,6 +40,9 @@ class Flow_State : public PK_State {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("darcy_flux")->ViewComponent("face", ghosted_))(0)); }
   Teuchos::RCP<const Epetra_MultiVector> darcy_velocity() const {
     return S_->GetFieldData("darcy_velocity")->ViewComponent("face", ghosted_); }
+  Teuchos::RCP<const Epetra_Vector>hydraulic_head() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("hydraulic_head")->ViewComponent("cell", ghosted_))(0)); }
+  
 
   // non const access methods
   // Teuchos::RCP<const Epetra_Vector> vertical_permeability() const {
@@ -70,6 +73,8 @@ class Flow_State : public PK_State {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("darcy_flux", name_)->ViewComponent("face", ghosted_))(0)); }
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity() {
     return S_->GetFieldData("darcy_velocity", name_)->ViewComponent("face", ghosted_); }
+  Teuchos::RCP<Epetra_Vector> hydraulic_head() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("hydraulic_head", name_)->ViewComponent("cell", ghosted_))(0)); }
 
   // Teuchos::RCP<Epetra_Vector> vertical_permeability() {
   //   return Teuchos::rcpFromRef(*(*S_->GetFieldData("permeability", name_)->ViewComponent("cell", ghosted_))(0)); }
@@ -97,6 +102,8 @@ class Flow_State : public PK_State {
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux(); }
   Epetra_MultiVector& ref_darcy_velocity() { return *darcy_velocity(); }
   const AmanziGeometry::Point& ref_gravity() { return *gravity(); }
+  Epetra_Vector& ref_hydraulic_head() { return *hydraulic_head(); }
+
 
   // Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability(); }
   // Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability(); }

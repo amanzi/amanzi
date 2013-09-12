@@ -5,8 +5,8 @@ Authors: Neil Carlson (version 1)
          Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __WATER_RETENTION_MODEL_HH__
-#define __WATER_RETENTION_MODEL_HH__
+#ifndef AMANZI_WATER_RETENTION_MODEL_HH_
+#define AMANZI_WATER_RETENTION_MODEL_HH_
 
 #include <string>
 

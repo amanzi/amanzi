@@ -9,8 +9,8 @@ provided in the top-level COPYRIGHT file.
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __MATRIX_MFD_HH__
-#define __MATRIX_MFD_HH__
+#ifndef AMANZI_MATRIX_MFD_HH_
+#define AMANZI_MATRIX_MFD_HH_
 
 #include <strings.h>
 

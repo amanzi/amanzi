@@ -14,8 +14,8 @@ the base class. In particular, Lagrange multipliers are elliminated
 from the DAE system and short vectors are used in the nonlinear solver.
 */
 
-#ifndef __MATRIX_MFD_TPFA_HH__
-#define __MATRIX_MFD_TPFA_HH__
+#ifndef AMANZI_MATRIX_TPFA_HH__
+#define AMANZI_MATRIX_TPFA_HH__
 
 #include <strings.h>
 

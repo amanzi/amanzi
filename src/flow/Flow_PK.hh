@@ -9,8 +9,8 @@ Usage:
   FPK.advance(any_dT);
 */
 
-#ifndef __FLOW_PK_HH__
-#define __FLOW_PK_HH__
+#ifndef AMANZI_FLOW_PK_HH_
+#define AMANZI_FLOW_PK_HH_
 
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -24,7 +24,7 @@ Usage:
 #include "VerboseObject.hh"
 
 #include "Flow_State.hh"
-#include "Flow_constants.hh"
+#include "FlowDefs.hh"
 #include "Flow_typedefs.hh"
 #include "RelativePermeability.hh"
 #include "Matrix_MFD.hh"
@@ -143,6 +143,9 @@ class Flow_PK : public BDF2::fnBase {
                         std::vector<AmanziMesh::Entity_ID>* vv);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() { return mesh_; }
+
+  // auxilliary data management
+  virtual void UpdateAuxilliaryData() = 0;
 
 public:
   int ncells_owned, ncells_wghost;
