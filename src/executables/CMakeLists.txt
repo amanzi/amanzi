@@ -16,6 +16,8 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
 
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
+include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
+
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
 # wrap stuff in whole-archive for static stuff
