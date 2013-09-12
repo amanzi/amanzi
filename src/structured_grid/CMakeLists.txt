@@ -15,3 +15,5 @@ foreach(d ${PMAMR_REL_INCLUDE_DIRS})
   add_subdirectory(${d})
 endforeach(d)
 
+add_library(structured_amanzi $<TARGET_OBJECTS:boxprob1> $<TARGET_OBJECTS:structutils1> $<TARGET_OBJECTS:structmat1> $<TARGET_OBJECTS:pmamr1> $<TARGET_OBJECTS:boxdriv1> $<TARGET_OBJECTS:strans1>) 
+SET_TARGET_PROPERTIES(structured_amanzi PROPERTIES LINKER_LANGUAGE C)

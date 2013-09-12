@@ -28,6 +28,7 @@ set(CXX_source_files ParmParseHelpers.cpp InputParser_Structured.cpp
 TabularFunction.cpp EventCoord.cpp WritePlotfile.cpp)
 
 add_amanzi_library(structutils SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
+add_library(structutils1 OBJECT ${CXX_source_files} ${CXX_headers_files})
 
 if (BUILD_TESTS)
 

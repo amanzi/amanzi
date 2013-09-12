@@ -2927,6 +2927,27 @@ PorousMedia::AllocateUMacG() const
 }
 
 void
+PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
+{
+  BL_ASSERT(RhoSat.boxArray()== grids);
+  if (model == PM_RICHARDS) {
+    for (FillPatchIterator P_fpi(*this,RhoSat,nGrow,t_eval,Press_Type,0,ncomps); P_fpi.isValid(); ++P_fpi) {
+      calcInvPressure(RhoSat[P_fpi],P_fpi(),(*rock_phi)[P_fpi],(*kappa)[P_fpi],(*cpl_coef)[P_fpi]);
+    }
+  }
+  else if (model == PM_STEADY_SATURATED) {
+    for (int n=0; n<ncomps; ++n) {
+      RhoSat.setVal(density[n],n,1,nGrow);
+    }
+  }
+  else {
+    for (FillPatchIterator S_fpi(*this,RhoSat,nGrow,t_eval,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
+      RhoSat[S_fpi].copy(S_fpi());
+    }
+  }
+}
+
+void
 PorousMedia::cache_component_saturations(int nGrow)
 {
   component_saturations_cached = true;
@@ -2935,26 +2956,19 @@ PorousMedia::cache_component_saturations(int nGrow)
     sat_old_cached = new MultiFab(grids,ncomps,nGrow);
   }
   t_sat_old_cached = state[State_Type].prevTime();
-  for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrow,
-			       t_sat_old_cached,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-    (*sat_old_cached)[S_fpi].copy(S_fpi());
-    for (int n=0; n<ncomps; ++n) {
-      (*sat_old_cached)[S_fpi].mult(1/density[n],n,1);
-    }
+  get_fillpatched_rhosat(t_sat_old_cached,(*sat_old_cached),nGrow);
+  for (int n=0; n<ncomps; ++n) {
+    sat_old_cached->mult(1/density[n],n,1,nGrow);
   }
-
 
   if (sat_new_cached == 0 || sat_new_cached->nGrow()<nGrow || sat_new_cached->boxArray()!=grids) {
     delete sat_new_cached;
     sat_new_cached = new MultiFab(grids,ncomps,nGrow);
   }
   t_sat_new_cached = state[State_Type].curTime();
-  for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrow,
-			       t_sat_new_cached,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-    (*sat_new_cached)[S_fpi].copy(S_fpi());
-    for (int n=0; n<ncomps; ++n) {
-      (*sat_new_cached)[S_fpi].mult(1/density[n],n,1);
-    }
+  get_fillpatched_rhosat(t_sat_new_cached,(*sat_new_cached),nGrow);
+  for (int n=0; n<ncomps; ++n) {
+    sat_new_cached->mult(1/density[n],n,1,nGrow);
   }
 }
 
@@ -5175,23 +5189,11 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
     }
   }
   else {
+    int nGrow = 1;
     Real t_sat_old = prev_time;
-    for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
-                                 t_sat_old,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-      sat_old[S_fpi].copy(S_fpi());
-      for (int n=0; n<ncomps; ++n) {
-        sat_old[S_fpi].mult(1/density[n],n,1);
-      }
-    }
-    
     Real t_sat_new = cur_time;
-    for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowHYP,
-                                 t_sat_new,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-      sat_new[S_fpi].copy(S_fpi());
-      for (int n=0; n<ncomps; ++n) {
-        sat_new[S_fpi].mult(1/density[n],n,1);
-      }
-    }
+    get_fillpatched_rhosat(t_sat_old,sat_old,nGrow);
+    get_fillpatched_rhosat(t_sat_new,sat_new,nGrow);
   }
 
   int first_tracer = ncomps;
@@ -5456,22 +5458,9 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     }
     else {
       Real t_sat_old = prev_time;
-      for (FillPatchIterator S_fpi(*this,get_old_data(State_Type),nGrowHYP,
-                                   t_sat_old,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-        sat_old[S_fpi].copy(S_fpi());
-        for (int n=0; n<ncomps; ++n) {
-          sat_old[S_fpi].mult(1/density[n],n,1);
-        }
-      }
-      
       Real t_sat_new = cur_time;
-      for (FillPatchIterator S_fpi(*this,get_new_data(State_Type),nGrowHYP,
-                                   t_sat_new,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi) {
-        sat_new[S_fpi].copy(S_fpi());
-        for (int n=0; n<ncomps; ++n) {
-          sat_new[S_fpi].mult(1/density[n],n,1);
-        }
-      }
+      get_fillpatched_rhosat(t_sat_old,sat_old,nGrowHYP);
+      get_fillpatched_rhosat(t_sat_new,sat_new,nGrowHYP);
     }
 
     int Aidx = first_tracer;
@@ -5484,12 +5473,11 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
                                      prev_time,State_Type,first_tracer,ntracers);
          C_new_fpi.isValid();  ++C_new_fpi) {
       if (C_new_fpi().contains_nan()) {
-        std::cout << C_new_fpi() << std::endl;
         BoxLib::Abort("C_new has nans");
       }
     }
 #endif
-   
+
     FArrayBox SRCext, divu;
     for (FillPatchIterator C_old_fpi(*this,get_old_data(State_Type),nGrowHYP,
                                      prev_time,State_Type,first_tracer,ntracers),
@@ -5500,6 +5488,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       const int i = C_old_fpi.index();
       const Box& box = grids[i];
       const Box gbox = Box(box).grow(1);
+
       BL_ASSERT(!use_conserv_diff);
       divu.resize(gbox,1); divu.setVal(0);
 
@@ -5510,7 +5499,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       }
       const FArrayBox* SrcPtr = (F==0 ? &SRCext  :  &((*F)[C_old_fpi]));
 
-      state_bc = getBCArray(State_Type,i,ncomps,1);
+      state_bc = getBCArray(State_Type,i,ncomps,ntracers);
       BL_ASSERT(aofs->size()>i);
       BL_ASSERT(rock_phi->size()>i);
       BL_ASSERT(area[0].size()>i);
@@ -8147,23 +8136,7 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
   Real eigmax[BL_SPACEDIM] = { D_DECL(0,0,0) };
 
   MultiFab RhoSat(grids,ncomps,nGrowEIGEST);
-  if (model == PM_RICHARDS) {
-    MultiFab P(grids,ncomps,nGrowEIGEST);
-    for (FillPatchIterator P_fpi(*this,RhoSat,nGrowEIGEST,
-				 t_eval,State_Type,0,ncomps); P_fpi.isValid(); ++P_fpi)
-      {P[P_fpi].copy(P_fpi());}
-    calcInvPressure(RhoSat,P);
-  }
-  else if (model == PM_STEADY_SATURATED) {
-    for (int n=0; n<ncomps; ++n) {
-      RhoSat.setVal(density[n],n,1,nGrowEIGEST);
-    }
-  }
-  else {
-    for (FillPatchIterator S_fpi(*this,RhoSat,nGrowEIGEST,
-				 t_eval,State_Type,0,ncomps); S_fpi.isValid(); ++S_fpi)
-      {RhoSat[S_fpi].copy(S_fpi());}
-  }
+  get_fillpatched_rhosat(t_eval,RhoSat,nGrowEIGEST);
 
   for (MFIter mfi(RhoSat); mfi.isValid(); ++mfi) {
     const int i = mfi.index();
@@ -11846,16 +11819,29 @@ PorousMedia::calcInvCapillary (MultiFab&       N,
 }
 
 void 
-PorousMedia::calcInvPressure (MultiFab&       N,
-			      const MultiFab& p)
+PorousMedia::calcInvPressure (FArrayBox& n,
+                              const FArrayBox& pressure,
+                              const FArrayBox& rock_phi,
+                              const FArrayBox& kappa,
+                              const FArrayBox& cpl_coef) const
 {
-  for (MFIter mfi(N); mfi.isValid(); ++mfi) { 
-    FArrayBox pc;
-    const Box& fbox = N[mfi].box(); 
-    pc.resize(fbox,1);
-    pc.copy(p[mfi],fbox,0,fbox,0,1);
-    pc.mult(-1.0);    
-    PorousMedia::calcInvCapillary (N[mfi],pc,(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
+  FArrayBox& pc = const_cast<FArrayBox&>(pressure); // We will be careful!
+  pc.mult(-1,0,ncomps);
+  calcInvCapillary(n,pc,rock_phi,kappa,cpl_coef);
+  pc.mult(-1);
+}
+
+void 
+PorousMedia::calcInvPressure (MultiFab&       N,
+			      const MultiFab& p) const
+{
+  int nGrow = 1;  
+  FArrayBox press;
+  for (MFIter mfi(N); mfi.isValid(); ++mfi) {
+    const Box box = Box(mfi.validbox()).grow(nGrow);
+    press.resize(box,ncomps);
+    press.copy(p[mfi],box,0,box,0,ncomps);
+    calcInvPressure(N[mfi],press,(*rock_phi)[mfi],(*kappa)[mfi],(*cpl_coef)[mfi]);
   }
 }
 
@@ -12269,36 +12255,36 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
 void
 PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time, int sComp, int dComp, int nComp)
 {
-    BL_ASSERT(setup_tracer_transport > 0);
+  BL_ASSERT(setup_tracer_transport > 0);
 
-    Real t_eval = AdjustBCevalTime(State_Type,time,false);
+  Real t_eval = AdjustBCevalTime(State_Type,time,false);
     
-    FArrayBox bndFab;
-    for (int n=0; n<nComp; ++n) 
+  FArrayBox bndFab;
+  for (int n=0; n<nComp; ++n) 
+  {
+    int tracer_idx = sComp+n-ncomps;
+    if (tbc_descriptor_map[tracer_idx].size()) 
     {
-        int tracer_idx = sComp+n-ncomps;
-        if (tbc_descriptor_map[tracer_idx].size()) 
-        {
-            const Box domain = geom.Domain();
-            const Real* dx   = geom.CellSize();
+      const Box domain = geom.Domain();
+      const Real* dx   = geom.CellSize();
             
-            for (std::map<Orientation,BCDesc>::const_iterator
-                     it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
-            {
-                const Box bndBox = Box(it->second.first) & fab.box();
-                if (bndBox.ok()) {
-                    bndFab.resize(bndBox,1);
-                    bndFab.copy(fab,dComp+n,0,1);
-                    const Array<int>& face_bc_idxs = it->second.second;
-                    for (int i=0; i<face_bc_idxs.size(); ++i) {
-                        const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
-                        face_tbc.apply(bndFab,dx,0,1,t_eval);
-                    }
-                    fab.copy(bndFab,0,dComp+n,1);
-                }
-            }
-        }    
-    }
+      for (std::map<Orientation,BCDesc>::const_iterator
+             it=tbc_descriptor_map[tracer_idx].begin(); it!=tbc_descriptor_map[tracer_idx].end(); ++it) 
+      {
+        const Box bndBox = Box(it->second.first) & fab.box();
+        if (bndBox.ok()) {
+          bndFab.resize(bndBox,1);
+          bndFab.copy(fab,dComp+n,0,1);
+          const Array<int>& face_bc_idxs = it->second.second;
+          for (int i=0; i<face_bc_idxs.size(); ++i) {
+            const RegionData& face_tbc = tbc_array[tracer_idx][face_bc_idxs[i]];
+            face_tbc.apply(bndFab,dx,0,1,t_eval);
+          }
+          fab.copy(bndFab,0,dComp+n,1);
+        }
+      }
+    }    
+  }
 }
 
 void
@@ -12741,7 +12727,7 @@ PorousMedia::derive_Dispersivity(Real      time,
       MultiFab::Copy(mf,dtmp,dir,dcomp,1,0);
     } else {
       // Assume one component, return def
-      Real dispersivity_DEF = 1;
+      Real dispersivity_DEF = 0;
       mf.setVal(dispersivity_DEF,dcomp,1);
     }
 }

@@ -2457,28 +2457,33 @@ void  PorousMedia::read_tracer()
                       BoxLib::Abort(m.c_str());
                   }
 
-                  // Determine which boundary this bc is for, ensure that a unique type has been
-                  // specified for each boundary
-                  for (int k=0; k<tbc_region_names.size(); ++k) {
-                    int iorient = -1;
-                    for (int j=0; j<6; ++j) {
-                      if (tbc_region_names[k] == PMAMR::RlabelDEF[j]) {
-                        iorient = j;
+
+                  for (int j=0; j<tbc_regions.size(); ++j)
+                  {
+                    const std::string purpose = tbc_regions[j].purpose;
+                    int dir = -1, is_hi, k;
+                    for (int kt=0; kt<7 && dir<0; ++kt) {
+                      if (purpose == PMAMR::RpurposeDEF[kt]) {
+                        BL_ASSERT(kt != 6);
+                        dir = kt%3;
+                        is_hi = kt>=3;
+                        k = kt;
                       }
                     }
-                    if (iorient<0) {
-                      BoxLib::Abort("BC givien for tracers on region that is not on boundary");
+                    if (dir<0 || dir > BL_SPACEDIM) {
+                      std::cout << "Bad region for boundary: \n" << tbc_regions[j] << std::endl;
+                      BoxLib::Abort();
                     }
-                    if (orient_types[iorient] < 0) {
-                      orient_types[iorient] = AMR_BC_tID;
+
+                    if (orient_types[k] < 0) {
+                      orient_types[k] = AMR_BC_tID;
                     } else {
-                      if (orient_types[iorient] != AMR_BC_tID) {
+                      if (orient_types[k] != AMR_BC_tID) {
                         BoxLib::Abort("BC for tracers must all be of same type on each side");
                       }
                     }
                   }
               }
-
               // Set the default BC type = SlipWall (noflow)
               for (int k=0; k<orient_types.size(); ++k) {
                 if (orient_types[k] < 0) orient_types[k] = 4;

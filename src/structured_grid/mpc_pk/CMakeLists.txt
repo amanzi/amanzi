@@ -40,6 +40,8 @@ file(GLOB h_inc_files "*.H")
 add_amanzi_library(pmamr
                    SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
                    HEADERS ${h_inc_files})
+add_library(pmamr1 OBJECT ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
+                   ${h_inc_files})
 
 add_amanzi_library(pmamr_sub
                    SOURCE Region.cpp
