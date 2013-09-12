@@ -5,24 +5,30 @@
 namespace Amanzi {
 namespace AmanziFlow {
 
-void aux_compute_hydraulic_head(Epetra_Vector* hydraulic_head, double p_atm, Epetra_Vector* pressure, double rho,
-                                AmanziGeometry::Point gravity, Epetra_Vector* centroids) {
+/* ****************************************************************
+* Calculates hydraulic head usin (p - p0) / (rho * g)
+**************************************************************** */
+void aux_compute_hydraulic_head(
+    Epetra_Vector* hydraulic_head, double p_atm, Epetra_Vector* pressure, 
+    double rho, AmanziGeometry::Point gravity, Epetra_Vector* centroids) 
+{
   int dim = gravity.dim();
 
   hydraulic_head->PutScalar(-p_atm);
-  hydraulic_head->Update(1.0,*pressure,1.0);
+  hydraulic_head->Update(1.0, *pressure, 1.0);
   
-  double g = fabs(gravity[dim-1]);
+  double g = fabs(gravity[dim - 1]);
   
-  hydraulic_head->Scale(1.0/(g*rho));
+  hydraulic_head->Scale(1.0 / (g * rho));
   hydraulic_head->Update(1.0, *centroids, 1.0);
 }
 
 
-
-void Darcy_PK::UpdateAuxilliaryData() {
-  // update hydraulic head
-  
+/* ****************************************************************
+* Hydraulic head support for Darcy PK.
+**************************************************************** */
+void Darcy_PK::UpdateAuxilliaryData() 
+{
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& hydraulic_head = FS->ref_hydraulic_head();
 
@@ -38,15 +44,19 @@ void Darcy_PK::UpdateAuxilliaryData() {
   double rho = *FS->fluid_density();
   const AmanziGeometry::Point gravity = *FS->gravity();
 
-  aux_compute_hydraulic_head(&hydraulic_head, atm_pressure, &pressure, rho, gravity,
-                             &z_centroid);
+  aux_compute_hydraulic_head(
+      &hydraulic_head, atm_pressure, &pressure, rho, gravity, &z_centroid);
 }
 
 
+/* ****************************************************************
+* Hydraulic head support for Richards PK.
+**************************************************************** */
+void Richards_PK::UpdateAuxilliaryData() 
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+  *(vo_->os()) << "UpdateAuxilliaryData" << endl;  
 
-void Richards_PK::UpdateAuxilliaryData() {
-  // update hydraulic head
-  std::cout << "UpdateAuxilliaryData\n";  
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& hydraulic_head = FS->ref_hydraulic_head();
   
@@ -62,8 +72,8 @@ void Richards_PK::UpdateAuxilliaryData() {
   double rho = *FS->fluid_density();
   const AmanziGeometry::Point gravity = *FS->gravity();
 
-  aux_compute_hydraulic_head(&hydraulic_head, atm_pressure, &pressure, rho, gravity,
-                             &z_centroid);
+  aux_compute_hydraulic_head(
+      &hydraulic_head, atm_pressure, &pressure, rho, gravity, &z_centroid);
 }
 
 
