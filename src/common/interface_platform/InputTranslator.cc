@@ -1089,9 +1089,14 @@ Teuchos::ParameterList get_phases(xercesc::DOMDocument* xmlDoc) {
   Teuchos::ParameterList list;
 
   xercesc::DOMNodeList* nodeList;
+  xercesc::DOMNodeList* nodeList2;
   xercesc::DOMNode* nodeTmp;
+  xercesc::DOMNode* nodeTmp2;
+  xercesc::DOMNode* nodeAttr;
+  xercesc::DOMNamedNodeMap* attrMap;
   char* tagName;
   char* textContent;
+  char* textContent2;
 
   // get phases node
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("phases"));
@@ -1111,27 +1116,81 @@ Teuchos::ParameterList get_phases(xercesc::DOMDocument* xmlDoc) {
   nodeList = elementEC->getElementsByTagName(XMLString::transcode("liquid_phase"));
   if (nodeList->getLength() > 0) {
     nodeTmp = nodeList->item(0);
+    char* phaseName = xercesc::XMLString::transcode(nodeTmp->getNodeName());
     xercesc::DOMNodeList* childern = nodeTmp->getChildNodes();
     for (int i=0; i<childern->getLength(); i++) {
       xercesc::DOMNode* cur = childern->item(i) ;
       if (xercesc::DOMNode::ELEMENT_NODE == cur->getNodeType()) {
         tagName  = xercesc::XMLString::transcode(cur->getNodeName());
         textContent = XMLString::transcode(cur->getTextContent());
+	//TODO: NOTE: EIB - skipping EOS, not currently supported
 	if (strcmp(tagName,"viscosity")==0){
-          list.sublist("Aqueous").sublist("Phase Properties").sublist("Viscosity: Uniform").set<double>("Viscosity",atof(textContent));}
+          list.sublist("Aqueous").sublist("Phase Properties").sublist("Viscosity: Uniform").set<double>("Viscosity",atof(textContent));
+	}
 	else if (strcmp(tagName,"density")==0) {
           list.sublist("Aqueous").sublist("Phase Properties").sublist("Density: Uniform").set<double>("Density",atof(textContent));
 	}
+	else if (strcmp(tagName,"dissolved_components")==0) {
+	  Teuchos::ParameterList dcPL;
+	  Teuchos::Array<double> diffusion;
+	  Teuchos::Array<std::string> solutes;
+          xercesc::DOMElement* discompElem = static_cast<xercesc::DOMElement*>(cur);
+          nodeList2 = discompElem->getElementsByTagName(XMLString::transcode("solutes"));
+          if (nodeList2->getLength() > 0) {
+            nodeTmp2 = nodeList2->item(0);
+            xercesc::DOMNodeList* kids = nodeTmp2->getChildNodes();
+            for (int j=0; j<kids->getLength(); j++) {
+              xercesc::DOMNode* curKid = kids->item(j) ;
+              if (xercesc::DOMNode::ELEMENT_NODE == curKid->getNodeType()) {
+                tagName  = xercesc::XMLString::transcode(curKid->getNodeName());
+	        if (strcmp(tagName,"solute")==0){
+		  // put value in solutes array
+                  textContent2 = XMLString::transcode(curKid->getTextContent());
+		  solutes.append(textContent2);
+                  XMLString::release(&textContent2);
+		  // put attribute - coefficient_of_diffusion in diffusion array
+	          attrMap = curKid->getAttributes();
+                  nodeAttr = attrMap->getNamedItem(XMLString::transcode("coefficient_of_diffusion"));
+                  textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+		  diffusion.append(atof(textContent2));
+                  XMLString::release(&textContent2);
+		}
+	      }
+	    }
+	  }
+	  dcPL.set<Teuchos::Array<std::string> >("Component Solutes",solutes);
+	  list.sublist("Aqueous").sublist("Phase Components").sublist(phaseName) = dcPL;
+	}
+        XMLString::release(&textContent);
       }
     }
-    //TODO: EIB - get eos, dissolved components
   }
 
   // get any solid_phase node
   nodeList = elementEC->getElementsByTagName(XMLString::transcode("solid_phase"));
   if (nodeList->getLength() > 0) {
-    // do something with them
-    //TODO: EIB - solid phases
+    Teuchos::ParameterList spPL;
+    Teuchos::Array<std::string> minerals;
+    nodeTmp = nodeList->item(0);
+    xercesc::DOMElement* solidElem = static_cast<xercesc::DOMElement*>(nodeTmp);
+    nodeList2 = solidElem->getElementsByTagName(XMLString::transcode("minerals"));
+    if (nodeList2->getLength() > 0) {
+      nodeTmp2 = nodeList2->item(0);
+      xercesc::DOMNodeList* kids = nodeTmp2->getChildNodes();
+      for (int i=0; i<kids->getLength(); i++) {
+        xercesc::DOMNode* curKid = kids->item(i) ;
+        if (xercesc::DOMNode::ELEMENT_NODE == curKid->getNodeType()) {
+          tagName  = xercesc::XMLString::transcode(curKid->getNodeName());
+	  if (strcmp(tagName,"mineral")==0){
+            textContent2 = XMLString::transcode(curKid->getTextContent());
+	    minerals.append(textContent2);
+            XMLString::release(&textContent2);
+	  }
+	}
+      }
+    }
+    spPL.set<Teuchos::Array<std::string> >("Minerals",minerals);
+    list.sublist("Solid") = spPL;
   }
 
   return list;
@@ -1354,10 +1413,11 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc) {
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("particle_density",propName)==0){
 	            // TODO: EIB - assuming value, implement file later
+		    // TODO: EIB - should be check value >= 0.
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	            matlist.sublist("Mass Density: Uniform").set<double>("Value",atof(textContent2));
+	            matlist.sublist("Particle Density: Uniform").set<double>("Value",atof(textContent2));
 	            XMLString::release(&textContent2);
 	          }
 		}
@@ -1493,6 +1553,7 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc) {
   char* char_array;
   char* attrName;
   char* attrValue;
+  char* phaseName;
 
   // get regions node
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("initial_conditions"));
@@ -1529,6 +1590,9 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc) {
         }
         else if (strcmp(tagName,"liquid_phase")==0) {
           //TODO: EIB - deal with liquid phase
+          attrMap = ICNode->getAttributes();
+          nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+          phaseName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	  // loop over children, deal with liquid_component, solute_component, geomchemistry
           xercesc::DOMNodeList* compList = ICNode->getChildNodes();
           for (int k=0; k<compList->getLength(); k++) {
@@ -1540,7 +1604,8 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc) {
               for (int l=0; l<childList->getLength(); l++) {
                 xercesc::DOMNode* pressure = childList->item(l) ;
                 char* pressName  = xercesc::XMLString::transcode(pressure->getNodeName());
-                if (strcmp(pressName,"pressure")==0) {
+		//TODO: EIB - saturation
+                if (strcmp(pressName,"pressure")==0 || strcmp(pressName,"saturation")==0) {
 	          // loop over attributes to get info
 	          attrMap = pressure->getAttributes();
                   nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
@@ -1554,7 +1619,11 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc) {
                     attrValue = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 		    pressureList.set<double>("Value",atof(attrValue));
 	            XMLString::release(&attrValue);
-		    iclist.sublist("IC: Uniform Pressure") = pressureList;
+                    if (strcmp(pressName,"pressure")==0 ) {
+		      iclist.sublist("IC: Uniform Pressure") = pressureList;
+		    } else {
+		      iclist.sublist("IC: Uniform Saturation") = pressureList;
+		    }
 	          } else {
 	            Teuchos::Array<double> coord;
 	            Teuchos::Array<double> grad;
@@ -1586,20 +1655,45 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc) {
 	            grad.append(atof(char_array));
 		    pressureList.set<Teuchos::Array<double> >("Gradient Value",grad);
 	            XMLString::release(&attrValue);
-		    iclist.sublist("IC: Linear Pressure") = pressureList;
+                    if (strcmp(pressName,"pressure")==0 ) {
+		      iclist.sublist("IC: Linear Pressure") = pressureList;
+		    } else {
+		      iclist.sublist("IC: Linear Saturation") = pressureList;
+		    }
 	          }
                   XMLString::release(&textContent2);
 		}
 	      }
 			      
 	    }
-            if (strcmp(compName,"solute_component")==0) {
-              //TODO: EIB - deal with solute_component later
+	    else if (strcmp(compName,"solute_component")==0) {
+	      char* solName;
+	      char* funcType;
+	      Teuchos::ParameterList sclist;
+	      attrMap = compNode->getAttributes();
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+              solName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	      attrMap = compNode->getAttributes();
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("function"));
+              funcType = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	      if (strcmp(funcType,"uniform")==0){
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
+                textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+		sclist.sublist("IC: Uniform Concentration").set<double>("Value",atof(textContent2));
+	        XMLString::release(&textContent2);
+	      }else if (strcmp(funcType,"lineaer")==0){
+		// TODO: EIB - currently can't handle this
+	      }
+	      //TODO: EIB - not added concerntation units, confused by what to add. grab from units?
+	      iclist.sublist("Solute IC").sublist("Aqueous").sublist(phaseName).sublist(solName) = sclist;
+	      XMLString::release(&solName);
+	      XMLString::release(&funcType);
 	    }
-            if (strcmp(compName,"geochemistry")==0) {
+	    else if (strcmp(compName,"geochemistry")==0) {
               //TODO: EIB - deal with geochemisty later
 	    }
 	  }
+	  XMLString::release(&phaseName);
         }
         else if (strcmp(tagName,"solid_phase")==0) {
           //TODO: EIB - deal with solid phase -> mineral, geochemisty
@@ -1631,6 +1725,7 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
   xercesc::DOMNamedNodeMap* attrMap;
   char* tagName;
   char* propName;
+  char* phaseName;
   char* textContent;
   char* textContent2;
   char* char_array;
@@ -1673,6 +1768,9 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
         }
         else if (strcmp(tagName,"liquid_phase")==0) {
           //TODO: EIB - deal with liquid phase
+          attrMap = BCNode->getAttributes();
+          nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+          phaseName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	  // loop over children, deal with liquid_component, solute_component, geomchemistry
           xercesc::DOMNodeList* compList = BCNode->getChildNodes();
           for (int k=0; k<compList->getLength(); k++) {
@@ -1692,8 +1790,41 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
                  char* bcChildName  = xercesc::XMLString::transcode(bcChildNode->getNodeName());
 		 if (strcmp(bcChildName,"seepage_face")==0){
 		  bcname = "BC: Seepage";
+		  valname = "Inward Mass Flux";
+                  xercesc::DOMElement* bcElem = static_cast<xercesc::DOMElement*>(bcChildNode);
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("function")));
+		  if (strcmp(textContent2,"linear")==0) {
+		    funcs.append("Linear");
+		  } else if (strcmp(textContent2,"constant")==0) {
+		    funcs.append("Constant");
+		  } else if (strcmp(textContent2,"uniform")==0) {
+		    funcs.append("Uniform");
+		  }
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("inward_mass_flux")));
+                  double time = get_time_value(textContent2, def_list);
+		  vals.append(time);
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("start")));
+                  time = get_time_value(textContent2, def_list);
+		  times.append(time);
 		 } else if (strcmp(bcChildName,"no_flow")==0) {
 		  bcname = "BC: Zero Flow";
+                  xercesc::DOMElement* bcElem = static_cast<xercesc::DOMElement*>(bcChildNode);
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("function")));
+		  if (strcmp(textContent2,"linear")==0) {
+		    funcs.append("Linear");
+		  } else if (strcmp(textContent2,"constant")==0) {
+		    funcs.append("Constant");
+		  } else if (strcmp(textContent2,"uniform")==0) {
+		    funcs.append("Uniform");
+		  }
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("start")));
+                  double time = get_time_value(textContent2, def_list);
+		  times.append(time);
 		 } else {
                   xercesc::DOMElement* bcElem = static_cast<xercesc::DOMElement*>(bcChildNode);
                   textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
@@ -1741,7 +1872,7 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 		}
 	      }
 	      // if len array == 1: add dummy vals
-	      if (times.length()==1) {
+	      if (times.length()==1 && bcname != "BC: Zero Flow" ){
 		times.append(times[0]+1.);
 		vals.append(vals[0]);
 	      }
@@ -1750,16 +1881,55 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 	        Teuchos::ParameterList newbclist;
 	        newbclist.set<Teuchos::Array<double> >("Times",times);
 	        newbclist.set<Teuchos::Array<std::string> >("Time Functions",funcs);
-	        newbclist.set<Teuchos::Array<double> >(valname,vals);
+		if (bcname != "BC: Zero Flow") newbclist.set<Teuchos::Array<double> >(valname,vals);
 	        bclist.sublist(bcname) = newbclist;
 	      }
             if (strcmp(compName,"solute_component")==0) {
-              //TODO: EIB - deal with solute_component later
+	      char* solName;
+	      Teuchos::ParameterList sclist;
+	      // loop over elements to build time series, add to list
+	      Teuchos::Array<double> vals;
+	      Teuchos::Array<double> times;
+	      Teuchos::Array<std::string> funcs;
+              xercesc::DOMNodeList* acList = compNode->getChildNodes();
+              for (int l=0; l<acList->getLength(); l++) {
+		//TODO: EIB - not bother to look at nodeName, only aqueous_conc available for now
+                xercesc::DOMNode* cur = acList->item(l) ;
+                if (xercesc::DOMNode::ELEMENT_NODE == cur->getNodeType()) {
+                  xercesc::DOMElement* bcElem = static_cast<xercesc::DOMElement*>(cur);
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("function")));
+		  if (strcmp(textContent2,"linear")==0) {
+		    funcs.append("Linear");
+		  } else if (strcmp(textContent2,"constant")==0) {
+		    funcs.append("Constant");
+		  } else if (strcmp(textContent2,"uniform")==0) {
+		    funcs.append("Uniform");
+		  }
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("value")));
+                  double time = get_time_value(textContent2, def_list);
+		  vals.append(time);
+                  textContent2 = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("start")));
+                  time = get_time_value(textContent2, def_list);
+		  times.append(time);
+                  solName = xercesc::XMLString::transcode(bcElem->getAttribute(
+		              xercesc::XMLString::transcode("name")));
+		}
+	      }
+	      //TODO: EIB - not added concerntation units, need to grab from units
+	      sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<double> >("Times",times);
+	      sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<std::string> >("Time Functions",funcs);
+	      sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<double> >("Values",vals);
+	      bclist.sublist("Solute BC").sublist("Aqueous").sublist(phaseName).sublist(solName) = sclist;
+	      XMLString::release(&solName);
 	    }
             if (strcmp(compName,"geochemistry")==0) {
               //TODO: EIB - deal with geochemisty later
 	    }
 	  }
+          XMLString::release(&phaseName);
         }
         else if (strcmp(tagName,"solid_phase")==0) {
           //TODO: EIB - deal with solid phase -> mineral, geochemisty
@@ -2047,6 +2217,9 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
  * Empty
  ******************************************************************
  */
+
+//TODO: EIB - get default time unit from units, convert plain time values if not seconds.
+
 double get_time_value(std::string time_value, Teuchos::ParameterList def_list)
 {
 
