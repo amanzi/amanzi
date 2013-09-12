@@ -24,6 +24,7 @@ set(FPP_source_files PROB_${AMANZI_SPACEDIM}D.F)
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
 add_amanzi_library(boxprob SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files})
+add_library(boxprob1 OBJECT ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files})
 
 if (BUILD_TESTS)
 endif()

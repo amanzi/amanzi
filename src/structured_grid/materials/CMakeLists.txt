@@ -50,6 +50,8 @@ preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 add_amanzi_library(structmat
                    SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
                    HEADERS ${CXX_headers_files})
+add_library(structmat1 OBJECT ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
+                   ${CXX_headers_files})
 
 
 set(structured_grid_libs pmamr boxprob boxdriv structmat structutils ${CCSE_LIBRARIES})
