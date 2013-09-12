@@ -623,8 +623,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::verbose_chemistry = 0;
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = 0;
-  //PorousMedia::be_cn_theta_trac = 0.5;
-  PorousMedia::be_cn_theta_trac = 1;
+  PorousMedia::be_cn_theta_trac = 0.5;
 
   PorousMedia::richard_solver_verbose = 2;
 
