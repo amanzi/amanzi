@@ -233,7 +233,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="prev_water_satration">
+      <ParameterList name="prev_water_saturation">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
@@ -275,30 +275,14 @@
         </ParameterList>
       </ParameterList>
 
-
-
       <ParameterList name="darcy_flux">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="face"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
