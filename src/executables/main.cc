@@ -17,6 +17,10 @@
 #include "errors.hh"
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 
+#include "state_evaluators_reg.hh"
+#include "deform_evaluators_reg.hh"
+
+
 // include fenv if it exists
 #include "boost/version.hpp"
 #if (BOOST_VERSION / 100 % 1000 >= 46)

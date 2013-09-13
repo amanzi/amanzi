@@ -54,7 +54,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions(-DENABLE_DBC)
 endif()
 
-
 # --------------------------------------------------------------------------- #
 #  Define the include paths
 # --------------------------------------------------------------------------- #
@@ -109,10 +108,15 @@ endif()
 link_directories(${Amanzi_TPL_Trilinos_LIBRARY_DIRS})
 
 
+# add the macros that help with registration of factories
+include(${Amanzi_LIBRARY_DIR}/RegisterEvaluators.cmake)
+
 # --------------------------------------------------------------------------- #
 #  Building against Amanzi
 # --------------------------------------------------------------------------- #
 
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
+
+
 

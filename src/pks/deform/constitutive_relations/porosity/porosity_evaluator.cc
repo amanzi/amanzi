@@ -12,9 +12,6 @@ namespace Amanzi {
 namespace Deform {
 namespace DeformRelations {
 
-
-Utils::RegisteredFactory<FieldEvaluator,PorosityEvaluator> PorosityEvaluator::factory_("deformation porosity");
-
 PorosityEvaluator::PorosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
