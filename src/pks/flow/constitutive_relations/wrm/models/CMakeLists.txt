@@ -17,6 +17,7 @@ add_library(flow_relations_wrm_models
   wrm_permafrost_factory.cc
   wrm_old_permafrost_model.cc
   wrm_implicit_permafrost_model.cc
+  wrm_fpd_permafrost_model.cc
   )
 
 if ( BUILD_TESTS )
