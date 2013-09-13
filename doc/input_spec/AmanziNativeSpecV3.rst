@@ -1085,6 +1085,14 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
             ...
           </ParameterList>
        </ParameterList>
+
+       <ParameterList name="Block ILU">
+          <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
+          <Parameter name="type" type="string" value="block ilu"/>
+          <ParameterList name="Block ILU Parameters">
+            ...
+          </ParameterList>
+       </ParameterList>
      </ParameterList>
 
 Names `"Trilinos ML`" and `"Hypre AMG`" are selected by the user.

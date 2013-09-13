@@ -1468,6 +1468,7 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList dpc_list;
   
   dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
+  dpc_list.set<std::string>("type", "trilinos ml");
 
   double aggthr(ML_AGG_THR);
   std::string smthtyp(ML_SMOOTHER);
@@ -1528,6 +1529,7 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList bilu_list;
 
   bilu_list.set<std::string>("discretization method", "optimized mfd scaled");
+  bilu_list.set<std::string>("type", "block ilu");
 
   double bilu_relax_value(ILU_RLXVAL);
   double bilu_abs_thresh(ILU_ABSTHR);
@@ -1584,6 +1586,7 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList dpc_list;
 
   dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
+  dpc_list.set<std::string>("type", "boomer amg");
 
   double tol(AMG_TOL);
   int ncycles(AMG_NCYC);

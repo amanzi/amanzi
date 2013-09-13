@@ -200,6 +200,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres(
       }
     }
     // Check all criteria one-by-one.
+    num_itrs_ = i + 1;
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (residual_ < tol * fnorm) { 
         ComputeSolution(x, i, T, s, v);  // vector s is overwritten
@@ -216,7 +217,6 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres(
         return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
-    num_itrs_ = i + 1;
   }
 
   ComputeSolution(x, krylov_dim_ - 1, T, s, v);  // vector s is overwritten
