@@ -971,26 +971,31 @@ Note that the source values ire set up separately for each component:
 .. code-block:: xml
 
      <ParameterList name="source terms">
-       <ParameterList name="H+">
-         <Parameter name="regions" type="Array(string)" value="{Well east}"/>
-         <Parameter name="spatial distribution method" type="string" value="volume"/>
-         <ParameterList name="sink">
-           <ParameterList name="function-constant">
-             <Parameter name="value" type="double" value="-0.01"/>
+       <ParameterList name="concentration">
+         <ParameterList name="H+"> 
+           <ParameterList name="source for Well east">
+	     <Parameter name="regions" type="Array(string)" value="{Well east}"/>
+             <Parameter name="spatial distribution method" type="string" value="volume"/>
+             <ParameterList name="sink">
+             <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-0.01"/>
+             </ParameterList>
            </ParameterList>
          </ParameterList>
-       </ParameterList>
-
-       <ParameterList name="TC-99">
-         <Parameter name="regions" type="Array(string)" value="{Well west}"/>
-         <Parameter name="spatial distribution method" type="string" value="permeability"/>
-         <ParameterList name="sink">
-           <ParameterList name="function-constant">
-             <Parameter name="value" type="double" value="-0.02"/>
+     
+         <ParameterList name="TC-99">
+           <ParameterList name="source for Well west">
+             <Parameter name="regions" type="Array(string)" value="{Well west}"/>
+             <Parameter name="spatial distribution method" type="string" value="permeability"/>
+             <ParameterList name="sink">
+               <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="-0.02"/>
+             </ParameterList>
            </ParameterList>
          </ParameterList>
        </ParameterList>
      </ParameterList>
+    
 
 * `"spatial distribution method`" [string] identifies a method for distributing
   source Q over the specified regions. The available options are `"volume`",
