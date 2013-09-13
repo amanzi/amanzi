@@ -54,25 +54,25 @@ TEST(NEWTON_RICHARD_STEADY) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
   MeshFactory factory(&comm);
+  factory.preference(pref);
   ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
   Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
-
-  // create flow state
-  // Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
-  // FS->Initialize();
-
 
   Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
   State S(state_list);
   S.RegisterDomainMesh(mesh);
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
   S.Setup();
- 
+
   FS->Initialize();
   S.Initialize();
-  
+
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
   RPK->InitPK();
