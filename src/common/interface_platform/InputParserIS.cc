@@ -2023,6 +2023,9 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Particle Density: Uniform")) {
       particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value");
       use_particle_density = true;
+    } else {
+      particle_density = 1.0;
+      use_particle_density = true;
     }
 
     double specific_yield;
@@ -2030,12 +2033,19 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Yield: Uniform")) {
       specific_yield = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Yield: Uniform").get<double>("Value");
       use_specific_yield = true;
+    } else {
+      // use default value
+      specific_yield = 0.0;
+      use_specific_yield = true;
     }
     
     double specific_storage;
     bool use_specific_storage(false);
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Storage: Uniform")) {
       specific_storage = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Storage: Uniform").get<double>("Value");
+      use_specific_storage = true;
+    } else {
+      specific_storage = 0.0;
       use_specific_storage = true;
     }
 
