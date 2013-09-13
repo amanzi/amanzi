@@ -56,13 +56,14 @@ Syntax of the Specification
   For example, the specification might begin with the following:
 
 
- * `"X`" [list] 
+  * `"X`" [list] 
 
   * `"Y`" [string]
 
   * Z [list] Model for Z, choose exactly one of the following: (1) `"Z: z1`", or (2) `"Z: z2`" (see below) 
 
-Here, an `"X`" is defined by a `"Y`" and a `"Z`".  The `"Y`" is a string parameter but the `"Z`" is given by a model (which will require its own set of parameters).
+Here, an `"X`" is defined by a `"Y`" and a `"Z`".  
+The `"Y`" is a string parameter but the `"Z`" is given by a model (which will require its own set of parameters).
 The options for `"Z`" will then be described:
 
  * `"Z: z1`" applies model z1.  Requires `"z1a`" [string]
@@ -1071,6 +1072,7 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
      <ParameterList name="Preconditoners">
        <ParameterList name="Trilinos ML">
           <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
+          <Parameter name="type" type="string" value="trilinos ml"/>
           <ParameterList name="ML Parameters">
             ... 
          </ParameterList>
@@ -1078,6 +1080,7 @@ preconditioner and Hypre BoomerAMG preconditioner. Here is an example:
 
        <ParameterList name="Hypre AMG">
           <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
+          <Parameter name="type" type="string" value="boomer amg"/>
           <ParameterList name="BoomerAMG Parameters">
             ...
           </ParameterList>
