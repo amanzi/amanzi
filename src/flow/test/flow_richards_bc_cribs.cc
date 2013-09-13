@@ -53,7 +53,12 @@ TEST(FLOW_3D_RICHARDS) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
   MeshFactory factory(&comm);
+  factory.preference(pref);  
   ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
   ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
   Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
