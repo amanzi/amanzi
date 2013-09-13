@@ -117,7 +117,6 @@ void Flow_State::Construct_() {
     S_->RequireField("darcy_velocity", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, mesh_->space_dimension());
   }
-
   if (!S_->HasField("hydraulic_head")) {
     S_->RequireField("hydraulic_head", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -146,29 +145,10 @@ void Flow_State::Initialize() {
     S_->GetField("hydraulic_head",name_)->set_initialized();
     S_->Initialize();
   } else {
-    // BEGIN REMOVE ME once flow tests pass --etc
-    S_->GetFieldData("pressure",name_)->PutScalar(0.0);
-    S_->GetFieldData("water_saturation",name_)->PutScalar(1.0);
-    S_->GetFieldData("prev_water_saturation",name_)->PutScalar(1.0);
-    S_->GetFieldData("darcy_flux",name_)->PutScalar(0.0);
-    S_->GetFieldData("darcy_velocity",name_)->PutScalar(0.0);
-    S_->GetFieldData("specific_storage",name_)->PutScalar(0.0);
-    S_->GetFieldData("specific_yield",name_)->PutScalar(0.0);
-    // END REMOVE ME
-
-    // secondary variables, will be initialized by the PK
-    S_->GetField("water_saturation",name_)->set_initialized();
-    S_->GetField("prev_water_saturation",name_)->set_initialized();
-
-    S_->GetField("darcy_flux",name_)->set_initialized();
-    S_->GetField("darcy_velocity",name_)->set_initialized();
-
-    // no clue how these work or where they are initialized, but it seems not
-    // in the state.
-    S_->GetField("specific_storage",name_)->set_initialized();
-    S_->GetField("specific_yield",name_)->set_initialized();
-
     // aux data that is only for vis/checkpoint/observation
+    // these will never be initialized in the input file, so
+    // we need to set them to initialized here
+    S_->GetField("darcy_velocity",name_)->set_initialized();
     S_->GetField("hydraulic_head",name_)->set_initialized();
   }
 }

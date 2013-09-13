@@ -8,7 +8,7 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">
-    <ParameterList name="Material 1 Region">
+    <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
@@ -87,8 +87,8 @@
       </ParameterList>
 
       <ParameterList name="Water retention models">
-        <ParameterList name="WRM for Material 1 Region">
-          <Parameter name="region" type="string" value="Material 1 Region"/>
+        <ParameterList name="WRM for Computational domain">
+          <Parameter name="region" type="string" value="Computational domain"/>
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
@@ -212,10 +212,10 @@
       <ParameterList name="porosity">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Material 1 Region"/>
+            <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant"> <!-- time component -->
+              <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.2"/>
               </ParameterList>
             </ParameterList>
@@ -226,7 +226,7 @@
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Material 1 Region"/>
+            <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
@@ -257,7 +257,7 @@
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Material 1 Region"/>
+            <Parameter name="region" type="string" value="Computational domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-linear"> <!-- time component -->
@@ -269,6 +269,95 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+
+      <ParameterList name="specific_storage">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> 
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="specific_yield">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> 
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="darcy_flux">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="water_saturation">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="prev_water_saturation">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+
+      <ParameterList name="darcy_flux">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+
+
 
     </ParameterList>
   </ParameterList>
