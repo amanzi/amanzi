@@ -908,51 +908,33 @@ Parameter `"preconditioner`" will be replaced with more appropriate `"linear sol
 Boundary Conditions
 -------------------
 
-The boundary conditions sublist differs from a similar specification of the boundary conditions 
-in `"Flow`". Its structure will be changed in the nearest future. 
 For the advective transport, the boundary conditions must be specified on inflow parts of the
 boundary. If no value is prescribed through the XML input, the zero influx boundary condition
-is used. Note that the boundary condition is set up separately for each component:
-
-.. code-block:: xml
-
-   <ParameterList name="Transport BCs">
-     <ParameterList name="West Boundary for H+">
-       <Parameter name="H+" type="Array(double)" value="{1.0, 1.0}"/>
-       <Parameter name="Regions" type="Array(string)" value="{Left side}"/>
-       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-     </ParameterList>  
-
-     <ParameterList name="East Boundary for TC-99">
-       <Parameter name="TC-99" type="Array(double)" value="{1.0, 1.0}"/>
-       <Parameter name="Regions" type="Array(string)" value="{Bottom side}"/>
-       <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-       <Parameter name="Times" type="Array(double)" value="{0.0, 0.1}"/>
-     </ParameterList>  
-   </ParameterList>  
-
-
-The new structure of boundary conditions is aligned with that used for Flow.
-It allows the use to define spatially variable boundary conditions. 
-Temporary, both approaches to specifying boundary conditions are supported.
+is used. Note that the boundary condition is set up separately for each component.
+The structure of boundary conditions is aligned with that used for Flow and
+allows us to define spatially variable boundary conditions. 
 
 .. code-block:: xml
 
    <ParameterList name="boundary conditions">
      <ParameterList name="concentration">
        <ParameterList name="H+"> 
-         <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
-           <ParameterList name="boundary concentration">
-             <ParameterList name="function-constant">  <!-- any time function -->
-               <Parameter name="value" type="double" value="0.0"/>
+         <ParameterList name="source for east well">   <!-- user defined name -->
+           <Parameter name="regions" type="Array(string)" value="{Top, Bottom}"/>
+             <ParameterList name="boundary concentration">
+               <ParameterList name="function-constant">  <!-- any time function -->
+                 <Parameter name="value" type="double" value="0.0"/>
+               </ParameterList>
              </ParameterList>
            </ParameterList>
          </ParameterList>
+         <ParameterList name="source for west well">   <!-- user defined name -->
+           ...
+         </ParameterList>
        </ParameterList>
 
-       <ParameterList name="Tc-99"> <!-- Next component --> 
-       ...
+       <ParameterList name="Sugar syrop"> <!-- Next component --> 
+         ...
        </ParameterList>
      </ParameterList>
 
@@ -966,28 +948,31 @@ Sources and Sinks
 The external sources are typically located at pumping wells. The structure
 of sublist `"source terms`" includes only sublists named after components. 
 Again, constant functions can be replaced by any available time-function:
-Note that the source values ire set up separately for each component:
+Note that the source values are set up separately for each component:
 
 .. code-block:: xml
 
      <ParameterList name="source terms">
        <ParameterList name="concentration">
          <ParameterList name="H+"> 
-           <ParameterList name="source for Well east">
+           <ParameterList name="source for east well">   <!-- user defined name -->
 	     <Parameter name="regions" type="Array(string)" value="{Well east}"/>
              <Parameter name="spatial distribution method" type="string" value="volume"/>
-             <ParameterList name="sink">
+             <ParameterList name="sink">   <!-- keyword, do not change -->
              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="-0.01"/>
+               <Parameter name="value" type="double" value="-0.01"/>
              </ParameterList>
+           </ParameterList>
+           <ParameterList name="source for west well">
+              ...
            </ParameterList>
          </ParameterList>
      
-         <ParameterList name="TC-99">
-           <ParameterList name="source for Well west">
+         <ParameterList name="Sugar syrop">   <!-- next component name -->
+           <ParameterList name="source for Well west">   <!-- user defined name -->
              <Parameter name="regions" type="Array(string)" value="{Well west}"/>
              <Parameter name="spatial distribution method" type="string" value="permeability"/>
-             <ParameterList name="sink">
+             <ParameterList name="sink">  
                <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="-0.02"/>
              </ParameterList>

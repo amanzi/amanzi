@@ -25,8 +25,8 @@ namespace AmanziTransport {
 class TransportSourceFactory {
  public:
   TransportSourceFactory(const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                         const Teuchos::RCP<Teuchos::ParameterList> params)
-     : mesh_(mesh), params_(params) {};
+                         const Teuchos::RCP<Teuchos::ParameterList> plist)
+     : mesh_(mesh), plist_(plist) {};
   ~TransportSourceFactory() {};
   
   Functions::TransportDomainFunction* CreateSource();
@@ -39,7 +39,7 @@ class TransportSourceFactory {
      
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  const Teuchos::RCP<Teuchos::ParameterList> params_;
+  const Teuchos::RCP<Teuchos::ParameterList> plist_;
 };
 
 }  // namespace AmanziTransport
