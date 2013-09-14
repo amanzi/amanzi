@@ -17,8 +17,8 @@ Usage:
 #include "Epetra_FECrsMatrix.h"
 #include "Teuchos_RCP.hpp"
 
-#include "flow-boundary-function.hh"
-#include "flow-domain-function.hh"
+#include "flow_boundary_function.hh"
+#include "flow_domain_function.hh"
 #include "unique_mesh_function.hh"
 #include "BDF_FnBase.hh"
 #include "VerboseObject.hh"

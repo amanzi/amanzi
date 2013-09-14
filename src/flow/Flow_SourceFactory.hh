@@ -6,7 +6,7 @@
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "flow-domain-function.hh"
+#include "flow_domain_function.hh"
 
 
 namespace Amanzi {

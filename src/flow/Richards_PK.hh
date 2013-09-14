@@ -21,8 +21,8 @@ Authors: Neil Carlson (version 1)
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "flow-boundary-function.hh"
-#include "flow-domain-function.hh"
+#include "flow_boundary_function.hh"
+#include "flow_domain_function.hh"
 
 #include "BDF2_TI.hh"
 #include "BDF1_TI.hh"

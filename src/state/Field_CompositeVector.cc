@@ -345,7 +345,7 @@ void Field_CompositeVector::ReadFromExodusII_(const Teuchos::ParameterList& file
 
     for (int n = 0; n < num_elem_this_blk; n++) {
       int c = n + offset;
-      // for (int k = 0; k < nvectors; k++) dat_f[k][c] = attrib[n];
+      for (int k = 0; k < nvectors; k++) dat_f[k][c] = attrib[n];
     }
     free(attrib);
     printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk);

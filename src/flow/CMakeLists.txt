@@ -55,7 +55,7 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    RelativePermeability.cc RelativePermeability_IO.cc
                    Flow_Utilities.cc
-                   flow-domain-function.cc flow-boundary-function.cc
+                   flow_domain_function.cc flow_boundary_function.cc
 		   Flow_AuxData.cc
 		   )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
@@ -80,9 +80,9 @@ add_amanzi_library(matrix_audit SOURCE Matrix_Audit.cc LINK_LIBS ${flow_tpl_libs
 set(flow_inc_files 
   Darcy_PK.hh
   Flow_BC_Factory.hh
-  flow-boundary-function.hh
   FlowDefs.hh
-  flow-domain-function.hh
+  flow_boundary_function.hh
+  flow_domain_function.hh
   Flow_PK.hh
   Flow_SourceFactory.hh
   Flow_State.hh
