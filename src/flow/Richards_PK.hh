@@ -147,7 +147,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::ParameterList rp_list_;
 
   double atm_pressure;
-  Epetra_Map* super_map_;
+  Teuchos::RCP<Epetra_Map> super_map_;
 
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;

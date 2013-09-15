@@ -20,6 +20,7 @@ Authors: Neil Carlson (version 1)
 
 #include "mfd3d_diffusion.hh"
 #include "tensor.hh"
+#include "LinearOperatorFactory.hh"
 
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
@@ -42,10 +43,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   bc_flux = NULL;
   bc_seepage = NULL; 
   src_sink = NULL;
-
-  super_map_ = NULL; 
-  matrix_ = NULL; 
-  preconditioner_ = NULL;
 
   Flow_PK::Init(global_list, FS_MPC);  // sets up default parameters
   FS = FS_MPC;
@@ -70,7 +67,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   dim = mesh_->space_dimension();
 
   // Create the combined cell/face DoF map.
-  super_map_ = CreateSuperMap();
+  super_map_ = Teuchos::rcp(CreateSuperMap());
 
 #ifdef HAVE_MPI
   const Epetra_Comm& comm = mesh_->cell_map(false).Comm();
@@ -104,13 +101,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
 ****************************************************************** */
 Darcy_PK::~Darcy_PK()
 {
-  delete super_map_;
-  if (matrix_ == preconditioner_) {
-    delete matrix_;
-  } else {
-    delete matrix_;
-    delete preconditioner_;
-  }
   delete bc_pressure;
   delete bc_head;
   delete bc_flux;
@@ -136,12 +126,10 @@ void Darcy_PK::InitPK()
   // Read flow list and populate various structures. 
   ProcessParameterList();
 
-  // Select a proper matrix class. No options at the moment.
-  matrix_ = new Matrix_MFD(FS, *super_map_);
-  preconditioner_ = matrix_;
-
+  // Select a proper matrix class. No optionos at the moment.
+  matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
-  preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
+  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
 
   // Create the solution vectors.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
@@ -292,9 +280,9 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     prec_list = tmp_list.sublist("Block ILU Parameters");
   }
 
-  preconditioner_->DestroyPreconditioner();
-  preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(method, prec_list);
+  matrix_->DestroyPreconditioner();
+  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+  matrix_->InitPreconditioner(method, prec_list);
 
   // set up initial guess for solution
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -362,17 +350,6 @@ int Darcy_PK::Advance(double dT_MPC)
   double time = FS->get_time();
   if (time >= 0.0) T_physics = time;
 
-  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
-
-  // Create algebraic solver
-  AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
-
-  solver->SetAztecOption(AZ_solver, ls_specs.method);
-  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver->SetAztecOption(AZ_conv, AZ_rhs);
-
   // update boundary conditions and source terms
   time = T_physics;
   bc_pressure->Compute(time);
@@ -399,9 +376,9 @@ int Darcy_PK::Advance(double dT_MPC)
   // calculate and assemble elemental stifness matrices
   matrix_->CreateMFDstiffnessMatrices();
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, matrix_);
-  AddTimeDerivativeSpecificStorage(*solution_cells, dT, matrix_);
-  AddTimeDerivativeSpecificYield(*solution_cells, dT, matrix_);
+  AddGravityFluxes_MFD(K, &*matrix_);
+  AddTimeDerivativeSpecificStorage(*solution_cells, dT, &*matrix_);
+  AddTimeDerivativeSpecificYield(*solution_cells, dT, &*matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
@@ -410,19 +387,25 @@ int Darcy_PK::Advance(double dT_MPC)
   rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
-  Epetra_Vector b(*rhs);
-  solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
-  solver->SetLHS(&*solution);  // initial solution guess
+  // create linear solver
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
+
+  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+  solver->ApplyInverse(*rhs, *solution);
+
   ti_specs->num_itrs++;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int num_itrs = solver->NumIters();
-    double linear_residual = solver->ScaledResidual();
+    int num_itrs = solver->num_itrs();
+    double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "pressure solver: ||r||=" << linear_residual << " itr=" << num_itrs << endl;
+    *(vo_->os()) << "pressure solver (" << ls_specs.solver_name 
+                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
   }
 
   // calculate time derivative and 2nd-order solution approximation
@@ -448,7 +431,6 @@ int Darcy_PK::Advance(double dT_MPC)
   dt_tuple times(time, dT_MPC);
   ti_specs->dT_history.push_back(times);
 
-  delete solver;
   return 0;
 }
 

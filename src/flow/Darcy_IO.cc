@@ -77,9 +77,9 @@ void Darcy_PK::ProcessParameterList()
       Exceptions::amanzi_throw(msg);
     }
 
-    std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
     LinearSolver_Specs& ls_specs = ti_specs_sss_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+    ls_specs.solver_name = FindStringLinearSolver(sss_list, solver_list_);
+    ProcessStringLinearSolver(ls_specs.solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
   }
 
   // Time integrator for period II, called transient time integrator
@@ -99,9 +99,9 @@ void Darcy_PK::ProcessParameterList()
       Exceptions::amanzi_throw(msg);
     }
 
-    std::string linear_solver_name = FindStringLinearSolver(trs_list, solver_list_);
     LinearSolver_Specs& ls_specs = ti_specs_trs_.ls_specs;
-    ProcessStringLinearSolver(linear_solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
+    ls_specs.solver_name = FindStringLinearSolver(trs_list, solver_list_);
+    ProcessStringLinearSolver(ls_specs.solver_name, &ls_specs.max_itrs, &ls_specs.convergence_tol);
   }
 }
 

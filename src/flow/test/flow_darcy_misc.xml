@@ -86,7 +86,7 @@
       <ParameterList name="steady state time integrator">
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-        <Parameter name="linear solver" type="string" value="AztecOO CG"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
 
         <ParameterList name="BDF1">
           <Parameter name="error abs tol" type="double" value="0.1"/>
@@ -127,9 +127,9 @@
 
   <!-- SOLVERS -->
   <ParameterList name="Solvers">
-    <ParameterList name="AztecOO CG">
+    <ParameterList name="AztecOO">
       <Parameter name="error tolerance" type="double" value="1e-12"/>
-      <Parameter name="iterative method" type="string" value="GMRES"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
       <Parameter name="maximum number of iterations" type="int" value="400"/>
     </ParameterList>
   </ParameterList>

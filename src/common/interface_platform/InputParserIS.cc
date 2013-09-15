@@ -839,7 +839,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
       for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
 	   it != plist->sublist("Material Properties").end(); ++it) {
 	disp_list.set<std::string>("numerical method","two point flux approximation");
-	disp_list.set<std::string>("solver","AztecOO");
+	disp_list.set<std::string>("solver","PCG with Hypre AMG");
 
 	if ( (it->second).isList()) {
 	  std::string mat_name = it->first;
@@ -984,6 +984,7 @@ Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist
 Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList solver_list;
   Teuchos::ParameterList& aztecoo_list = solver_list.sublist("AztecOO");
+  Teuchos::ParameterList& pcg_list = solver_list.sublist("PCG with Hypre AMG");
 
   // define defaults...
   double tol = LIN_SOLVE_TOL;
@@ -1015,6 +1016,12 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   aztecoo_list.set<std::string>("iterative method", method);
   aztecoo_list.set<int>("maximum number of iterations", maxiter);
   aztecoo_list.set<std::string>("preconditioner", prec);
+
+  // add default PCG solver
+  pcg_list.set<double>("error tolerance", tol);
+  pcg_list.set<std::string>("iterative method", "pcg");
+  pcg_list.set<int>("maximum number of iterations", maxiter);
+  pcg_list.set<std::string>("preconditioner", prec);
 
   return solver_list;
 }

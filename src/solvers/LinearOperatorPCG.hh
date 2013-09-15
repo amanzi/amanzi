@@ -48,6 +48,7 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
   void set_criteria(int criteria) { criteria_ = criteria; }
+  void add_criteria(int criteria) { criteria_ |= criteria; }
   void set_overflow(double tol) { overflow_tol_ = tol; }
 
   double residual() { return residual_; }

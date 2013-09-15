@@ -28,7 +28,7 @@ Usage:
 #include "Flow_typedefs.hh"
 #include "RelativePermeability.hh"
 #include "Matrix_MFD.hh"
-#include "Matrix_MFD_PLambda.hh"
+// #include "Matrix_MFD_PLambda.hh"
 #include "TI_Specs.hh"
 
 
@@ -94,9 +94,9 @@ class Flow_PK : public BDF2::fnBase {
 			      std::vector<int>& bc_model, Matrix_MFD* matrix_operator);
 
   // Picard-Newton members
-  void AddNewtonFluxes_MFD(RelativePermeability& rel_perm,
-                           const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,
-                           Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix);
+  // void AddNewtonFluxes_MFD(RelativePermeability& rel_perm,
+  //                         const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,
+  //                         Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix);
 
   // access members 
   Teuchos::RCP<Flow_State> flow_state() { return FS; }

@@ -13,7 +13,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Flow_State.hh"
 #include "Matrix_MFD.hh"
 #include "Matrix_TPFA.hh"
-#include "Matrix_MFD_PLambda.hh"
+// #include "Matrix_MFD_PLambda.hh"
 #include "Richards_PK.hh"
 
 
@@ -212,13 +212,13 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
 
   AddTimeDerivative_MFD(*u_cells, dTp, preconditioner_);
   
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
-    Epetra_Vector& flux = FS->ref_darcy_flux();
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    rhs = preconditioner_->rhs();
-    AddNewtonFluxes_MFD(*rel_perm, *u_cells, flux, *rhs, matrix_plambda);
-  }
+  // if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+  //   Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
+  //   Epetra_Vector& flux = FS->ref_darcy_flux();
+  //   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
+  //   rhs = preconditioner_->rhs();
+  //   AddNewtonFluxes_MFD(*rel_perm, *u_cells, flux, *rhs, matrix_plambda);
+  // }
 
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);

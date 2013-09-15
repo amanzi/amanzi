@@ -333,16 +333,16 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, matrix_, *rel_perm);
-    AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, *rhs,
-                        static_cast<Matrix_MFD_PLambda*>(matrix_));
+    // AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, *rhs,
+    //                     static_cast<Matrix_MFD_PLambda*>(matrix_));
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
-    AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, residual,
-                        static_cast<Matrix_MFD_PLambda*>(preconditioner_));
+    // AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, residual,
+    //                     static_cast<Matrix_MFD_PLambda*>(preconditioner_));
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();

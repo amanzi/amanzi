@@ -216,14 +216,14 @@ TEST(FLOW_DARCY_SOURCE) {
   for (int n = 0; n < 240; n+=50) {
     // recalculate mass matrices
     double factor = pow(10.0, (double)(n - 50) / 100.0);
-    DPK->get_matrix()->CreateMFDmassMatrices_ScaledStability(
+    DPK->matrix()->CreateMFDmassMatrices_ScaledStability(
         AmanziFlow::FLOW_MFD3D_POLYHEDRA, factor, K);
 
     // create a problem
     DPK->AssembleMatrixMFD();
 
     // update right-hand side
-    Teuchos::RCP<Epetra_Vector> rhs = DPK->get_matrix()->rhs();
+    Teuchos::RCP<Epetra_Vector> rhs = DPK->matrix()->rhs();
     for (int c = 0; c < ncells; c++) {
       const Point& xc = mesh->cell_centroid(c);
       double volume = mesh->cell_volume(c);
