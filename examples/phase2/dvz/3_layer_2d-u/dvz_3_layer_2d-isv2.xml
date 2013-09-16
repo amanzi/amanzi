@@ -277,7 +277,7 @@
 					<inward_mass_flux start="3000.0,y" function= "constant"  value="future_recharge"/>
 				</liquid_component>
 				<solute_component name = "solute">
-					<aqueous_conc name = "Tc-99" start="start"     function= "constant"  value="zero"/>
+					<aqueous_conc name = "Tc-99" start="0.0"     function= "constant"  value="zero"/>
 					<aqueous_conc name = "Tc-99" start="1956.0,y"  function= "constant"  value="zero"/>
 					<aqueous_conc name = "Tc-99" start="2012.0,y"  function= "constant"  value="zero"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"  value="zero"/>

@@ -51,13 +51,12 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   ParameterXMLFileReader xmlreader(xmlFileName);
   parameter_list = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;
   pref.clear();
-  pref.push_back(Simple);
+  pref.push_back(MSTK);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);

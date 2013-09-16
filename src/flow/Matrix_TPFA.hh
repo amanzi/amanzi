@@ -30,7 +30,7 @@ namespace AmanziFlow {
 
 class Matrix_MFD_TPFA : public Matrix_MFD {
  public:
-  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map);// : Matrix_MFD(FS, map) {};
+  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map);
   ~Matrix_MFD_TPFA() {};
 
   // override main methods of the base class

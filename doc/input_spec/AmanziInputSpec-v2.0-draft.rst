@@ -473,7 +473,7 @@ Some general discussion of the `"Phases`" section goes here.
 
   <Phases>
       Required Elements: liquid_phase
-      Optional Elements: comments, solid_phase - SKIPPED
+      Optional Elements: solid_phase (comments - skipped)
   </Phases>
 
 * `"liquid_phase`" has the following elements
@@ -482,22 +482,22 @@ Some general discussion of the `"Phases`" section goes here.
 
   <liquid_phase>
       Required Elements: eos, viscosity, density
-      Optional Elements: dissolved_components - SKIPPED
+      Optional Elements: dissolved_components 
   </liquid_phase>
 
 Here is more info on the `"liquid_phase`" elements:
 
-    * `"eos`"="string" - SKIPPED
+    * `"eos`"="string" - SKIPPED, not currently supported
 
     * `"viscosity`"="exponential"
 
     * `"density`"="exponential"
 
-    * `"dissolved_components`" has the elements - SKIPPED
+    * `"dissolved_components`" has the elements 
 
         * `"solutes`"
 
-* `"solid_phase`" has the following elements - Remineder this element has been SKIPPED
+* `"solid_phase`" has the following elements 
 
 .. code-block:: xml
 
@@ -508,7 +508,7 @@ Here is more info on the `"liquid_phase`" elements:
 
 Here is more info on the `"solid_phase`" elements:
 
-    * `"minerals`" has the element - SKIPPED
+    * `"minerals`" has the element 
 
         * `"mineral`" which contains the name of the mineral
 
@@ -522,8 +522,8 @@ The `"initial_conditions`" section contains at least 1 and up to an unbounded nu
 .. code-block:: xml
 
   <initial_condition>
-      Required Elements: assigned_regions, liquid_phase
-      Optional Elements: comments, solid_phase - SKIPPED
+      Required Elements: assigned_regions
+      Optional Elements: liquid_phase (, comments, solid_phase - SKIPPED)
   </initial_condition>
 
 * `"assigned_regions`" is a comma seperated list of regions to apply the initical condition to.
@@ -534,7 +534,7 @@ The `"initial_conditions`" section contains at least 1 and up to an unbounded nu
 
   <liquid_phase>
       Required Elements: liquid_component
-      Optional Elements: solute_component, geochemistry - BOTH SKIPPED
+      Optional Elements: solute_component (, geochemistry  - SKIPPED)
   </liquid_phase>
 
 Here is more info on the `"liquid_phase`" elements:
@@ -548,13 +548,14 @@ Here is more info on the `"liquid_phase`" elements:
      <pressure name="some name" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
 
 .
-    * `"solute_component`" is an element with the following attributes: NOT IMPLEMENTED YET
+    * `"solute_component`" is an element with the following attributes: 
 
 .. code-block:: xml
 
-     <solute_component name="some name" filename="filename" value="exponential" function="linear | uniform" reference_coord="coordinate" gradient="coordinate"/>
+     <solute_component name="some name" (filename="filename" SKIPPED) value="exponential" function="uniform (|linear SKIPPED) " (reference_coord="coordinate" gradient="coordinate" - linear skipped) />
 
-.
+NOTE: Reading from a file is not yet implemeneted.  Also, the reference_coord and gradient attributes are only needed for the "linear" function type, which is also not yet implemeneted.
+
     * `"geochemistry`" is an element with the following subelement: NOT IMPLEMENTED YET
 
         * `"constraint`" is an element with the following attributes: ONLY UNIFORM, for now
@@ -604,28 +605,28 @@ The `"boundary_conditions`" section contains at least 1 and up to an unbounded n
 
   <liquid_phase>
       Required Elements: liquid_component
-      Optional Elements: solute_component, geochemistry - BOTH SKIPPED
+      Optional Elements: solute_component (, geochemistry - SKIPPED)
   </liquid_phase>
 
 Here is more info on the `"liquid_phase`" elements:
 
     * `"liquid_component`" is an element with the following subelement: 
 
-        * `"inward_mass_flux`" is an element with the following attributes: ONLY CONSTANT, for now
+        * `"inward_mass_flux`" is an element with the following attributes: 
 
 .. code-block:: xml
 
      <inward_mass_flux value="exponential" function="linear | uniform | constant" start="time" />
 
 .
-        * `"inward_volumetric_flux`" is an element with the following attributes: ONLY CONSTANT, for now
+        * `"inward_volumetric_flux`" is an element with the following attributes: 
 
 .. code-block:: xml
 
      <inward_volumetric_flux value="exponential" function="linear | uniform | constant" start="time" />
 
 .
-        * `"uniform_pressure`" is an element with the following attributes: ONLY CONSTANT, for now
+        * `"uniform_pressure`" is an element with the following attributes: 
 
 .. code-block:: xml
 
@@ -639,7 +640,7 @@ Here is more info on the `"liquid_phase`" elements:
      <hydrostatic name="some name" value="exponential" function="uniform | constant" start="time" />
 
 .
-    * `"solute_component`" is an element with the following subelement: NOT IMPLEMENTED YET
+    * `"solute_component`" is an element with the following subelement: 
 
         * `"aqueous_conc`" is an element with the following attributes: ONLY CONTANT, for now
 

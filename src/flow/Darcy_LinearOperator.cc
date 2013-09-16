@@ -12,6 +12,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Darcy_PK.hh"
+#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -23,7 +24,7 @@ void Darcy_PK::AssembleMatrixMFD()
 {
   matrix_->CreateMFDstiffnessMatrices();
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, matrix_);
+  AddGravityFluxes_MFD(K, &*matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
@@ -38,41 +39,34 @@ void Darcy_PK::AssembleMatrixMFD()
 ****************************************************************** */
 void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
 {
-  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
-
-  AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
-
-  solver->SetAztecOption(AZ_solver, ls_specs.method);  // Must be an AZ_xxx method.
-  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver->SetAztecOption(AZ_conv, AZ_rhs);
-
   // calculate and assemble elemental stifness matrices
   matrix_->CreateMFDstiffnessMatrices();
   matrix_->CreateMFDrhsVectors();
-  AddGravityFluxes_MFD(K, matrix_);
+  AddGravityFluxes_MFD(K, &*matrix_);
   matrix_->ApplyBoundaryConditions(bc_model, bc_values);
   matrix_->AssembleGlobalMatrices();
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
   rhs = matrix_->rhs();
-  Epetra_Vector b(*rhs);
-  solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
-  solver->SetLHS(&u);  // initial solution guess
 
-  solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
+  // create linear solver
+  LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  int num_itrs = solver->NumIters();
-  double linear_residual = solver->ScaledResidual();
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
+
+  solver->ApplyInverse(*rhs, *solution);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "pressure solver: ||r||=" << linear_residual << " itr=" << num_itrs << endl;
-  }
+    int num_itrs = solver->num_itrs();
+    double residual = solver->residual();
 
-  delete solver;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "pressure solver (" << ls_specs.solver_name 
+                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
+  }
 }
 
 
@@ -84,29 +78,19 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, E
 {
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
 
-  solver->SetAztecOption(AZ_solver, ls_specs.method);  // Must be an AZ_xxx method.
-  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver->SetAztecOption(AZ_conv, AZ_rhs);
-
-  Epetra_Vector b(rhs);
-  solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
-  solver->SetLHS(&u);  // initial solution guess
-
-  solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
+  solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int num_itrs = solver->NumIters();
-    double linear_residual = solver->ScaledResidual();
+    int num_itrs = solver->num_itrs();
+    double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "pressure solver: ||r||=" << linear_residual << " itr=" << num_itrs << endl;
+    *(vo_->os()) << "pressure solver: ||r||=" << residual << " itr=" << num_itrs << endl;
   }
-
-  delete solver;
 }
 
 }  // namespace AmanziFlow

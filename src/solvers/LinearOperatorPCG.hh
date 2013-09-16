@@ -48,6 +48,7 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
   void set_criteria(int criteria) { criteria_ = criteria; }
+  void add_criteria(int criteria) { criteria_ |= criteria; }
   void set_overflow(double tol) { overflow_tol_ = tol; }
 
   double residual() { return residual_; }
@@ -149,6 +150,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
     if (rnorm > overflow_tol_) return LIN_SOLVER_RESIDUAL_OVERFLOW;
 
     // Return the first criterion which is fulfilled.
+    num_itrs_ = i + 1;
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (rnorm < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
     } else if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
@@ -161,7 +163,6 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
     gamma0 = gamma1;
  
     p.Update(1.0, v, beta);
-    num_itrs_ = i + 1;
   }
 
   return LIN_SOLVER_MAX_ITERATIONS;

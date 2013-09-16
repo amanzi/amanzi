@@ -38,8 +38,13 @@
 
 
 #ifdef AMANZI
+
+#ifdef ALQUIMIA_ENABLED
+#else 
 #include "simple_thermo_database.hh"
 #include "activity_model_factory.hh"
+#endif 
+
 #endif
 
 #include <TabularFunction.H>
@@ -258,12 +263,16 @@ PorousMedia::MODEL_ID PorousMedia::model;
 // AMANZI flags.
 //
 #ifdef AMANZI
+
+#ifdef ALQUIMIA_ENABLED
+#else
 std::string PorousMedia::amanzi_database_file;
 std::string PorousMedia::amanzi_activity_model;
-
 PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase>    PorousMedia::chemSolve(PArrayManage);
 Array<Amanzi::AmanziChemistry::Beaker::BeakerComponents> PorousMedia::components;
 Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> PorousMedia::parameters;
+#endif
+
 #endif
 //
 // Internal switches.
@@ -2619,6 +2628,9 @@ void  PorousMedia::read_chem()
   // get input file name, create SimpleThermoDatabase, process
   if (do_tracer_chemistry>0)
     {
+#if ALQUIMIA_ENABLED
+#else
+
       Amanzi::AmanziChemistry::SetupDefaultChemistryOutput();
 
       ParmParse pb("prob.amanzi");
@@ -2755,7 +2767,8 @@ void  PorousMedia::read_chem()
       if (components[0].secondary_activity_coeff.size() > 0) {
 	// allocate additional storage for secondary activity coeffs
       }
-      
+     
+#endif
     }
 #endif
 

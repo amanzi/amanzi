@@ -17,7 +17,7 @@ Authors: Neil Carlson, version 1 (nnc@lanl.gov),
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "flow-boundary-function.hh"
+#include "flow_boundary_function.hh"
 #include "errors.hh"
 
 #include "MeshFactory.hh"

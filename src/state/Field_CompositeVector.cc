@@ -1,16 +1,18 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-ATS
+   ATS
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+   License: see $ATS_DIR/COPYRIGHT
+   Author: Ethan Coon
 
-Implementation for a Field.
+   Implementation for a Field.
 
-Field also stores some basic metadata for Vis, checkpointing, etc.
-------------------------------------------------------------------------- */
+   Field also stores some basic metadata for Vis, checkpointing, etc.
+   ------------------------------------------------------------------------- */
 
 #include <string>
+
+#include "exodusII.h"
 
 #include "errors.hh"
 #include "composite_vector.hh"
@@ -37,7 +39,7 @@ Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string 
 };
 
 Field_CompositeVector::Field_CompositeVector(std::string fieldname, std::string owner,
-                                           Teuchos::RCP<CompositeVector>& data) :
+        Teuchos::RCP<CompositeVector>& data) :
     Field::Field(fieldname, owner), data_(data) {
   type_ = COMPOSITE_VECTOR_FIELD;
 };
@@ -106,6 +108,18 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   if (plist.isParameter("cells from file")) {
     std::string filename = plist.get<string>("cells from file");
     ReadCellsFromCheckpoint_(filename);
+    return;
+  }
+
+  // ------ Try to set values from an file -----
+  if (plist.isSublist("exodus file initialization")) {
+    // data must be pre-initialized to zero in case Exodus file does not
+    // provide all values.
+    data_->PutScalar(0.);
+
+    const Teuchos::ParameterList& file_list = plist.sublist("exodus file initialization");
+    ReadFromExodusII_(file_list);
+    set_initialized();
     return;
   }
 
@@ -196,7 +210,7 @@ void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
         std::vector< std::string > vis_names(subfield_names_[i]);
         for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
           vis_names[j] = fieldname_ + std::string(".") + *compname
-            + std::string(".") + subfield_names_[i][j];
+              + std::string(".") + subfield_names_[i][j];
         }
         vis->WriteVector(*v, vis_names);
       }
@@ -284,6 +298,63 @@ void Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_in
     }
     i++;
   }
+}
+
+
+void Field_CompositeVector::ReadFromExodusII_(const Teuchos::ParameterList& file_list)
+{
+  Epetra_MultiVector& dat_f = *data_->ViewComponent("cell", false);
+  int nvectors = dat_f.NumVectors();
+
+  std::string file_name = file_list.get<std::string>("file");
+  std::string attribute_name = file_list.get<std::string>("attribute");
+
+  // open ExodusII file
+  const Epetra_Comm& comm = *data_->comm();
+
+  if (comm.NumProc() > 1) {
+    std::stringstream add_extension;
+    add_extension << "." << comm.NumProc() << "." << comm.MyPID();
+    file_name.append(add_extension.str());
+  }
+
+  int CPU_word_size(8), IO_word_size(0), ierr;
+  float version;
+  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
+  printf("Opening file: %s ws=%d %d\n", file_name.c_str(), CPU_word_size, IO_word_size);
+
+  // read database parameters
+  int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
+  char title[MAX_LINE_LENGTH + 1];
+  ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem,
+                     &num_elem_blk, &num_node_sets, &num_side_sets);
+
+  int* ids = (int*) calloc(num_elem_blk, sizeof(int));
+  ierr = ex_get_elem_blk_ids(exoid, ids);
+
+  // read attributes block-by-block
+  int offset = 0;
+  char elem_type[MAX_LINE_LENGTH + 1];
+  for (int i = 0; i < num_elem_blk; i++) {
+    int num_elem_this_blk, num_attr, num_nodes_elem;
+    ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk,
+                             &num_nodes_elem, &num_attr);
+
+    double* attrib = (double*) calloc(num_elem_this_blk * num_attr, sizeof(double));
+    ierr = ex_get_elem_attr(exoid, ids[i], attrib);
+
+    for (int n = 0; n < num_elem_this_blk; n++) {
+      int c = n + offset;
+      for (int k = 0; k < nvectors; k++) dat_f[k][c] = attrib[n];
+    }
+    free(attrib);
+    printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk);
+
+    offset += num_elem_this_blk;
+  }
+
+  ierr = ex_close(exoid);
+  printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr);
 }
 
 

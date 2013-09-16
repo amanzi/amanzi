@@ -61,6 +61,7 @@ public:
   void WriteVis(const Teuchos::Ptr<Visualization>& vis);
   void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp);
   void ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file);
+  void ReadFromExodusII_(const Teuchos::ParameterList& file_list);
 
 protected:
   void ReadCheckpoint_(std::string filename);

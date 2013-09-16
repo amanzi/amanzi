@@ -104,8 +104,8 @@ void Richards_PK::ProcessParameterList()
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
 
-    std::string linear_solver_name = FindStringLinearSolver(sss_list, solver_list_);
-    ProcessStringLinearSolver(linear_solver_name, &ti_specs_sss_.ls_specs);
+    ti_specs_sss_.ls_specs.solver_name = FindStringLinearSolver(sss_list, solver_list_);
+    ProcessStringLinearSolver(ti_specs_sss_.ls_specs.solver_name, &ti_specs_sss_.ls_specs);
 
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);

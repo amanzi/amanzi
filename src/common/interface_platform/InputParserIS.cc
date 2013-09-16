@@ -839,7 +839,7 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
       for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
 	   it != plist->sublist("Material Properties").end(); ++it) {
 	disp_list.set<std::string>("numerical method","two point flux approximation");
-	disp_list.set<std::string>("solver","AztecOO");
+	disp_list.set<std::string>("solver","PCG with Hypre AMG");
 
 	if ( (it->second).isList()) {
 	  std::string mat_name = it->first;
@@ -867,6 +867,13 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
     }       
   }
   
+  // now generate the source lists
+  Teuchos::ParameterList src_list = create_TransportSrc_List(plist);
+  if (src_list.begin() != src_list.end()) { // the source lists are not empty
+    trp_list.sublist("source terms") = src_list;
+  }
+
+
   // now generate the boundary conditions
   // loop over the boundary condition sublists and extract the relevant data
 
@@ -977,6 +984,7 @@ Teuchos::ParameterList create_Preconditioners_List(Teuchos::ParameterList* plist
 Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList solver_list;
   Teuchos::ParameterList& aztecoo_list = solver_list.sublist("AztecOO");
+  Teuchos::ParameterList& pcg_list = solver_list.sublist("PCG with Hypre AMG");
 
   // define defaults...
   double tol = LIN_SOLVE_TOL;
@@ -1008,6 +1016,12 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
   aztecoo_list.set<std::string>("iterative method", method);
   aztecoo_list.set<int>("maximum number of iterations", maxiter);
   aztecoo_list.set<std::string>("preconditioner", prec);
+
+  // add default PCG solver
+  pcg_list.set<double>("error tolerance", tol);
+  pcg_list.set<std::string>("iterative method", "pcg");
+  pcg_list.set<int>("maximum number of iterations", maxiter);
+  pcg_list.set<std::string>("preconditioner", prec);
 
   return solver_list;
 }
@@ -1294,6 +1308,7 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       Teuchos::ParameterList& src = src_sublist.sublist(src_sublist.name(i));
       // get name
       std::string name = src_sublist.name(i);
+      
       // create src sublist
       Teuchos::ParameterList& src_sub_out = src_list.sublist(name);
       // get the regions
@@ -1302,11 +1317,11 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       // get source function
       Teuchos::ParameterList src_fn; 
       if (src.isSublist("Source: Volume Weighted")) {
-        src_sub_out.set<std::string>("spatial distribution method","volume");
-        src_fn = src.sublist("Source: Volume Weighted");
+	src_sub_out.set<std::string>("spatial distribution method","volume");
+	src_fn = src.sublist("Source: Volume Weighted");
       } else if (src.isSublist("Source: Permeability Weighted")) {
-        src_sub_out.set<std::string>("spatial distribution method","permeability"); 
-        src_fn = src.sublist("Source: Permeability Weighted");
+	src_sub_out.set<std::string>("spatial distribution method","permeability"); 
+	src_fn = src.sublist("Source: Permeability Weighted");
       } else {
 	Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted' or 'Source: Permeability Weighted'."));	
       }
@@ -1315,30 +1330,30 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
       // write the native time function
       if (values.size() == 1) {
-        src_sub_out_fn.sublist("function-constant").set<double>("value",values[0]);
+	src_sub_out_fn.sublist("function-constant").set<double>("value",values[0]);
       } else if (values.size() > 1) {
-       Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
-       Teuchos::Array<std::string> time_fns =  src_fn.get<Teuchos::Array<std::string> >("Time Functions");
-      
-       Teuchos::ParameterList& ssofn = src_sub_out_fn.sublist("function-tabular");
+	Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
+	Teuchos::Array<std::string> time_fns =  src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+	
+	Teuchos::ParameterList& ssofn = src_sub_out_fn.sublist("function-tabular");
+	
+	ssofn.set<Teuchos::Array<double> >("x values", times);
+	ssofn.set<Teuchos::Array<double> >("y values", values);
+	
+	Teuchos::Array<std::string> forms_(time_fns.size());
         
-        ssofn.set<Teuchos::Array<double> >("x values", times);
-        ssofn.set<Teuchos::Array<double> >("y values", values);
-
-        Teuchos::Array<std::string> forms_(time_fns.size());
-          
-        for (int i=0; i<time_fns.size(); i++) {
-          if (time_fns[i] == "Linear") {
-            forms_[i] = "linear";
-          } else if (time_fns[i] == "Constant") {
-            forms_[i] = "constant";
-          } else {
-            Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: time function can only be 'Linear' or 'Constant'"));
-          }
-        }
-        ssofn.set<Teuchos::Array<std::string> >("forms",forms_);
+	for (int i=0; i<time_fns.size(); i++) {
+	  if (time_fns[i] == "Linear") {
+	    forms_[i] = "linear";
+	  } else if (time_fns[i] == "Constant") {
+	    forms_[i] = "constant";
+	  } else {
+	    Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: time function can only be 'Linear' or 'Constant'"));
+	  }
+	}
+	ssofn.set<Teuchos::Array<std::string> >("forms",forms_);
       } else {
-        // something is wrong with the input
+	// something is wrong with the input
       }
     }
   } 
@@ -1346,6 +1361,100 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
   return src_list;
 }
 
+
+
+
+
+Teuchos::ParameterList create_TransportSrc_List(Teuchos::ParameterList* plist)
+{
+  Teuchos::ParameterList src_list;
+  
+  Teuchos::ParameterList& src_sublist = plist->sublist("Sources");
+
+  for (Teuchos::ParameterList::ConstIterator i = src_sublist.begin(); i != src_sublist.end(); i++) {
+    // look at sublists
+    if (src_sublist.isSublist(src_sublist.name(i))) {
+      Teuchos::ParameterList& src = src_sublist.sublist(src_sublist.name(i));
+      // get name
+      std::string name = src_sublist.name(i);
+
+      // get the regions
+      Teuchos::Array<std::string> regions = src.get<Teuchos::Array<std::string> >("Assigned Regions");
+      
+      std::string dist_method("none");
+      if (src.isSublist("Source: Volume Weighted")) {
+	dist_method = "volume";
+      } else if (src.isSublist("Source: Permeability Weighted")) {
+	dist_method = "permeability"; 
+      }      
+
+
+      // go to the phase list
+      if (src.isSublist("Solute SOURCE")) {
+	if (src.sublist("Solute SOURCE").isSublist("Aqueous")) {
+	  if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist("Water")) {
+	    
+	    Teuchos::ParameterList src_bc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist("Water");
+
+	    // loop over all the source definitions
+	    for (Teuchos::ParameterList::ConstIterator ibc = src_bc_list.begin(); ibc != src_bc_list.end(); ibc++) {
+	      Teuchos::ParameterList& solute_src = src_bc_list.sublist(src_bc_list.name(ibc));
+	      std::string solute_name = src_bc_list.name(ibc);
+
+	      // create src sublist
+	      Teuchos::ParameterList& src_sub_out = src_list.sublist("concentration").sublist(solute_name).sublist("source for " + name);
+	      src_sub_out.set<Teuchos::Array<std::string> >("regions",regions);
+	      
+	      // get source function
+	      Teuchos::ParameterList src_fn; 
+	      if (solute_src.isSublist("Source: Uniform Concentration")) {
+		src_sub_out.set<std::string>("spatial distribution method","none");
+		src_fn = solute_src.sublist("Source: Uniform Concentration");
+	      } else if (solute_src.isSublist("Source: Flow Weighted Concentration")) {
+		src_sub_out.set<std::string>("spatial distribution method",dist_method); 
+		src_fn = solute_src.sublist("Source: Flow Weighted Concentration");
+	      } else {
+		Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted' or 'Source: Permeability Weighted'."));	
+	      }
+	      // create time function 
+	      Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
+	      Teuchos::Array<double> values = src_fn.get<Teuchos::Array<double> >("Values");
+	      // write the native time function
+	      if (values.size() == 1) {
+		src_sub_out_fn.sublist("function-constant").set<double>("value",values[0]);
+	      } else if (values.size() > 1) {
+		Teuchos::Array<double> times = src_fn.get<Teuchos::Array<double> >("Times");
+		Teuchos::Array<std::string> time_fns =  src_fn.get<Teuchos::Array<std::string> >("Time Functions");
+		
+		Teuchos::ParameterList& ssofn = src_sub_out_fn.sublist("function-tabular");
+		
+		ssofn.set<Teuchos::Array<double> >("x values", times);
+		ssofn.set<Teuchos::Array<double> >("y values", values);
+		
+		Teuchos::Array<std::string> forms_(time_fns.size());
+		
+		for (int i=0; i<time_fns.size(); i++) {
+		  if (time_fns[i] == "Linear") {
+		    forms_[i] = "linear";
+		  } else if (time_fns[i] == "Constant") {
+		    forms_[i] = "constant";
+		  } else {
+		    Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: time function can only be 'Linear' or 'Constant'"));
+		  }
+		}
+		ssofn.set<Teuchos::Array<std::string> >("forms",forms_);
+	      } else {
+		// something is wrong with the input
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  } 
+
+  return src_list;
+}
 
 
 /* ******************************************************************
@@ -1468,6 +1577,7 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList dpc_list;
   
   dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
+  dpc_list.set<std::string>("type", "trilinos ml");
 
   double aggthr(ML_AGG_THR);
   std::string smthtyp(ML_SMOOTHER);
@@ -1528,6 +1638,7 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList bilu_list;
 
   bilu_list.set<std::string>("discretization method", "optimized mfd scaled");
+  bilu_list.set<std::string>("type", "block ilu");
 
   double bilu_relax_value(ILU_RLXVAL);
   double bilu_abs_thresh(ILU_ABSTHR);
@@ -1584,6 +1695,7 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList dpc_list;
 
   dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
+  dpc_list.set<std::string>("type", "boomer amg");
 
   double tol(AMG_TOL);
   int ncycles(AMG_NCYC);
@@ -1859,6 +1971,8 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList stt_list;
   
+  // first we write initial conditions for scalars and vectors, not region-specific
+
   Teuchos::ParameterList & stt_ic = stt_list.sublist("initial conditions");
   //
   // --- gravity
@@ -1907,23 +2021,17 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
       }
     } 
-    double specific_yield;
-    bool use_specific_yield(false);
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Yield: Uniform")) {
-      specific_yield = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Yield: Uniform").get<double>("Value");
-      use_specific_yield = true;
+
+    // read the parameters that need to be written for each region in the Assigned regions list
+
+    double porosity;
+    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Porosity: Uniform")) {
+      porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Porosity must be specified as Intrinsic Porosity: Uniform, for every region."));
     }
-    
-    double specific_storage;
-    bool use_specific_storage(false);
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Storage: Uniform")) {
-      specific_storage = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Storage: Uniform").get<double>("Value");
-      use_specific_storage = true;
-    }
-    
-    double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
+
     double perm_x, perm_y, perm_z;
-    
     if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Uniform")) {
       perm_x = perm_y = perm_z = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
     } else if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
@@ -1935,64 +2043,107 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     } else {
       Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
     }
-    // particle density, for now we make the default 1.0 
-    // since we do not want to require this input parameter in the input spec, yet
-    double particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value",PARTICLE_DENSITY);
+    
+    double particle_density;
+    bool use_particle_density(false);
+    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Particle Density: Uniform")) {
+      particle_density = matprop_list.sublist(matprop_list.name(i)).sublist("Particle Density: Uniform").get<double>("Value");
+      use_particle_density = true;
+    } else {
+      particle_density = 1.0;
+      use_particle_density = true;
+    }
 
-    Teuchos::ParameterList &porosity_ic = stt_ic.sublist("porosity");
-    Teuchos::ParameterList &particle_density_ic = stt_ic.sublist("particle_density");
-    Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
-    Teuchos::ParameterList &pressure_ic = stt_ic.sublist("pressure");
-    Teuchos::ParameterList &concentration_ic = stt_ic.sublist("total_component_concentration");
-    Teuchos::ParameterList &saturation_ic = stt_ic.sublist("water_saturation");
-    Teuchos::ParameterList &prev_saturation_ic = stt_ic.sublist("prev_water_saturation");
-    Teuchos::ParameterList &darcy_flux_ic =  stt_ic.sublist("darcy_flux");
+    double specific_yield;
+    bool use_specific_yield(false);
+    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Yield: Uniform")) {
+      specific_yield = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Yield: Uniform").get<double>("Value");
+      use_specific_yield = true;
+    } else {
+      // use default value
+      specific_yield = 0.0;
+      use_specific_yield = true;
+    }
+    
+    double specific_storage;
+    bool use_specific_storage(false);
+    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Specific Storage: Uniform")) {
+      specific_storage = matprop_list.sublist(matprop_list.name(i)).sublist("Specific Storage: Uniform").get<double>("Value");
+      use_specific_storage = true;
+    } else {
+      specific_storage = 0.0;
+      use_specific_storage = true;
+    }
 
     for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
- 
+      // porosity...
+      Teuchos::ParameterList &porosity_ic = stt_ic.sublist("porosity");     
       porosity_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
 	.set<std::string>("component","cell")
 	.sublist("function").sublist("function-constant")
 	.set<double>("value", porosity);
 
+      // prev_saturation...
+      Teuchos::ParameterList &prev_saturation_ic = stt_ic.sublist("prev_water_saturation");
       prev_saturation_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
 	.set<std::string>("component","cell")
 	.sublist("function").sublist("function-constant")
 	.set<double>("value", 1.0);     
 
-
-      particle_density_ic.sublist("function").sublist(*i)
-	.set<std::string>("region",*i)
-	.set<std::string>("component","cell")
-	.sublist("function").sublist("function-constant")
-	.set<double>("value", particle_density);
-      
+      // permeability...
+      Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
       Teuchos::ParameterList& aux_list = 
 	permeability_ic.sublist("function").sublist(*i)
 	.set<std::string>("region",*i)
 	.set<std::string>("component","cell")
 	.sublist("function");
-
-      
       aux_list.set<int>("Number of DoFs",spatial_dimension_)
 	.set<std::string>("Function type","composite function");
-      
       aux_list.sublist("DoF 1 Function").sublist("function-constant")
 	.set<double>("value", perm_x);
-      
       if (spatial_dimension_ >= 2) {
 	aux_list.sublist("DoF 2 Function").sublist("function-constant")
 	  .set<double>("value", perm_y);
       }
-      
       if (spatial_dimension_ == 3) {
 	aux_list.sublist("DoF 3 Function").sublist("function-constant")
 	  .set<double>("value", perm_z);
       }
+      
+      // specific_yield...
+      if (use_specific_yield) {
+	Teuchos::ParameterList& spec_yield_ic = stt_ic.sublist("specific_yield");
+	spec_yield_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	.set<std::string>("component","cell")
+	.sublist("function").sublist("function-constant")
+	.set<double>("value", specific_yield);
+      }
 
+      // specific_storage...
+      if (use_specific_storage) {
+	Teuchos::ParameterList& spec_stor_ic = stt_ic.sublist("specific_storage");
+	spec_stor_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	.set<std::string>("component","cell")
+	.sublist("function").sublist("function-constant")
+	.set<double>("value", specific_storage);	
+      }
 
+      // particle_density...
+      if (use_particle_density) {
+	Teuchos::ParameterList& part_dens_ic = stt_ic.sublist("particle_density");
+	part_dens_ic.sublist("function").sublist(*i)
+	  .set<std::string>("region",*i)
+	.set<std::string>("component","cell")
+	.sublist("function").sublist("function-constant")
+	.set<double>("value", particle_density);		
+
+      }
+
+      // and now the initialization of fields that are initialize via an Initial Condition in the Akuna spec
 
       // find the initial conditions for the current region
       Teuchos::ParameterList& ic_list = plist->sublist("Initial Conditions");
@@ -2022,7 +2173,9 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       }
       // at this point ic_for_region is the list that defines the inital conditions for the current region
       
-      // write the initial conditions for pressure
+
+      // pressure...
+      Teuchos::ParameterList &pressure_ic = stt_ic.sublist("pressure");      
       if ( ic_for_region->isSublist("IC: Uniform Pressure")) {
 	double p = ic_for_region->sublist("IC: Uniform Pressure").get<double>("Value");
 	
@@ -2070,7 +2223,8 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, IC: Linear Pressure, or IC: File Pressure."));
       }
 
-      // write initial conditions for saturation
+      // saturation...
+      Teuchos::ParameterList &saturation_ic = stt_ic.sublist("water_saturation");
       if ( ic_for_region->isSublist("IC: Uniform Saturation")) {      
 	double s = ic_for_region->sublist("IC: Uniform Saturation").get<double>("Value");
 	saturation_ic.sublist("function").sublist(*i)
@@ -2112,7 +2266,8 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	  .set<double>("value", 1.0);
       }
       
-      // write initial conditions for Darcy flux
+      // darcy_flux...
+      Teuchos::ParameterList &darcy_flux_ic =  stt_ic.sublist("darcy_flux");      
       if (ic_for_region->isSublist("IC: Uniform Velocity")) { 
 	Teuchos::Array<double> vel_vec = ic_for_region->sublist("IC: Uniform Velocity").get<Teuchos::Array<double> >("Velocity Vector");
 	
@@ -2146,6 +2301,9 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
 	  .set<double>("value", 0.0);
       }
 
+
+      // total_component_concentration...
+      Teuchos::ParameterList &concentration_ic = stt_ic.sublist("total_component_concentration");
       if (plist->sublist("Execution Control").get<std::string>("Transport Model") != std::string("Off")  ||
 	  plist->sublist("Execution Control").get<std::string>("Chemistry Model") != std::string("Off") ) {
 	// write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component

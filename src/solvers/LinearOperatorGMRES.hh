@@ -51,6 +51,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
   void set_criteria(int criteria) { criteria_ = criteria; }
+  void add_criteria(int criteria) { criteria_ |= criteria; }
   void set_krylov_dim(int n) { krylov_dim_ = n; }
   void set_overflow(double tol) { overflow_tol_ = tol; }
 
@@ -172,7 +173,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres(
     m_->ApplyInverse(p, w);
 
     double tmp; 
-    for (int k = 0; k <= i; k++) {
+    for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
       w.Dot(*(v[k]), &tmp);
       w.Update(-tmp, *(v[k]), 1.0);
       T(k, i) = tmp;
@@ -200,6 +201,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres(
       }
     }
     // Check all criteria one-by-one.
+    num_itrs_ = i + 1;
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (residual_ < tol * fnorm) { 
         ComputeSolution(x, i, T, s, v);  // vector s is overwritten
@@ -216,7 +218,6 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres(
         return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
-    num_itrs_ = i + 1;
   }
 
   ComputeSolution(x, krylov_dim_ - 1, T, s, v);  // vector s is overwritten
@@ -233,7 +234,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres(
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::GMRES_Solver", plist)); 
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);

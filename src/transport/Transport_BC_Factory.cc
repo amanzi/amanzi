@@ -36,6 +36,7 @@ void TransportBCFactory::CreateConcentration(
         Teuchos::ParameterList& bclist = clist.sublist(name);
 	for (Teuchos::ParameterList::ConstIterator it1 = bclist.begin(); it1 != bclist.end(); ++it1) {
 	  std::string specname = it1->first;
+
 	  if (bclist.isSublist(specname)) {
 	    Teuchos::ParameterList& spec = bclist.sublist(specname);
 	    try {
@@ -44,14 +45,17 @@ void TransportBCFactory::CreateConcentration(
 	      bcs.push_back(bc);
 	      bcs_tcc_name.push_back(name);
 	    } catch (Errors::Message& m) {
-	      msg << "in sublist \"" << name.c_str() << "\": " << m.what();
+	      msg << "in sublist \"" << specname.c_str() << "\": " << m.what();
 	      Exceptions::amanzi_throw(msg);
 	    }
 	  } else {
-	    msg << "parameter \"" << name.c_str() << "\" is not a sublist.\n";
+	    msg << "parameter \"" << specname.c_str() << "\" is not a sublist.\n";
 	    Exceptions::amanzi_throw(msg);
 	  }
 	}
+      } else {
+	msg << "parameter \"" << name.c_str() << "\" is not a sublist.\n";
+	Exceptions::amanzi_throw(msg);
       }
     }
   } else {
