@@ -45,7 +45,8 @@ namespace AmanziFlow {
 
 class Matrix_MFD : public Epetra_Operator {
  public:
-  Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_);
+  Matrix_MFD() {};
+  Matrix_MFD(Teuchos::RCP<Flow_State> FS_, Teuchos::RCP<const Epetra_Map> map_);
   ~Matrix_MFD();
 
   // main methods
@@ -79,8 +80,8 @@ class Matrix_MFD : public Epetra_Operator {
   int SetUseTranspose(bool) { return 1; }
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-  const Epetra_Map& OperatorDomainMap() const { return map_; }
-  const Epetra_Map& OperatorRangeMap() const { return map_; }
+  const Epetra_Map& OperatorDomainMap() const { return *map_; }
+  const Epetra_Map& OperatorRangeMap() const { return *map_; }
 
   const char* Label() const { return strdup("Matrix MFD"); }
   double NormInf() const { return 0.0; }
@@ -123,7 +124,7 @@ class Matrix_MFD : public Epetra_Operator {
  protected:
   Teuchos::RCP<Flow_State> FS_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Epetra_Map map_;
+  Teuchos::RCP<const Epetra_Map> map_;
 
   bool flag_symmetry_;
   int actions_;  // applly, apply inverse, or both

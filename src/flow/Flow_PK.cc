@@ -419,6 +419,7 @@ void Flow_PK::AddGravityFluxes_TPFA(const Epetra_Vector& Krel_faces, const Epetr
 /* ******************************************************************
 *                                             
 ****************************************************************** */
+/*
 void Flow_PK::AddNewtonFluxes_MFD(
     RelativePermeability& rel_perm,
     const Epetra_Vector& pressure_cells, const Epetra_Vector& flux,
@@ -474,6 +475,7 @@ void Flow_PK::AddNewtonFluxes_MFD(
   FS->CombineGhostCell2MasterCell(rhs_wghost, Add);
   for (int c = 0; c < ncells_owned; c++) rhs[c] = rhs_wghost[c];
 }
+*/
 
 
 /* ******************************************************************

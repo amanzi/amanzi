@@ -20,8 +20,8 @@ Authors: Neil Carlson (version 1)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "flow-boundary-function.hh"
-#include "flow-domain-function.hh"
+#include "flow_boundary_function.hh"
+#include "flow_domain_function.hh"
 #include "tensor.hh"
 
 #include "Flow_PK.hh"
@@ -93,25 +93,24 @@ class Darcy_PK : public Flow_PK {
 
   // access methods only for unit tests (prefix get_ indicates that)
   std::vector<WhetStone::Tensor>& get_K() { return K; }
-  Matrix_MFD* get_matrix() { return matrix_; }
+  Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
   std::vector<bc_tuple>& get_bc_values() { return bc_values; }
 
   // auxilliary data management
-  void UpdateAuxilliaryData(){};
+  void UpdateAuxilliaryData();
 
 
  private:
   Teuchos::ParameterList dp_list_;
 
   double atm_pressure;
-  Epetra_Map* super_map_;
+  Teuchos::RCP<Epetra_Map> super_map_;
   int dim;
 
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;
 
-  Matrix_MFD* matrix_;
-  Matrix_MFD* preconditioner_;
+  Teuchos::RCP<Matrix_MFD> matrix_;
 
   int error_control_;
 

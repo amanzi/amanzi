@@ -19,8 +19,8 @@ Usage: Create("GMRES with Hypre AMG", solvers_list);
 #include "exceptions.hh"
 
 #include "LinearOperator.hh"
-#include "PCG_Operator.hh"
-#include "GMRES_Operator.hh"
+#include "LinearOperatorPCG.hh"
+#include "LinearOperatorGMRES.hh"
  
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -51,14 +51,14 @@ Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
       std::string method_name = slist.get<string>("iterative method");
 
       if (method_name == "pcg") {
-         Teuchos::RCP<PCG_Operator<Matrix, Vector, VectorSpace> > 
-             lin_op = Teuchos::rcp(new PCG_Operator<Matrix, Vector, VectorSpace>(m));
+         Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> > 
+             lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m));
          lin_op->Init(slist);
          lin_op->name() = method_name;
          return lin_op;
       } else if (method_name == "gmres") {
-         Teuchos::RCP<GMRES_Operator<Matrix, Vector, VectorSpace> > 
-             lin_op = Teuchos::rcp(new GMRES_Operator<Matrix, Vector, VectorSpace>(m));
+         Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> > 
+             lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m));
          lin_op->Init(slist);
          lin_op->name() = method_name;
          return lin_op;

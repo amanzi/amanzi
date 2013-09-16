@@ -14,7 +14,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Matrix_Audit.hh"
 #include "Richards_PK.hh"
 
-
 namespace Amanzi {
 namespace AmanziFlow {
 
@@ -33,15 +32,15 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, Linear
   rel_perm->SetFullySaturated();
 
   // calculate and assemble elemental stiffness matrices
-  AssembleSteadyStateMatrix_MFD(matrix_);
-  AssembleSteadyStatePreconditioner_MFD(preconditioner_);
+  AssembleSteadyStateMatrix_MFD(&*matrix_);
+  AssembleSteadyStatePreconditioner_MFD(&*preconditioner_);
   preconditioner_->UpdatePreconditioner();
 
   // solve symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
-  solver_tmp->SetUserOperator(matrix_);
-  solver_tmp->SetPrecOperator(preconditioner_);
+  solver_tmp->SetUserOperator(&*matrix_);
+  solver_tmp->SetPrecOperator(&*preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, ls_specs.method);  // Must be AZ_xxx method.
   solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
@@ -84,7 +83,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
 
   // calculate and assemble elemental stiffness matrix
   rel_perm->Compute(u, bc_model, bc_values);
-  AssembleSteadyStateMatrix_MFD(matrix_);
+  AssembleSteadyStateMatrix_MFD(&*matrix_);
   matrix_->ReduceGlobalSystem2LambdaSystem(u);
 
   // copy stiffness matrix to preconditioner (raw-data)
@@ -96,8 +95,8 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   // solve non-symmetric problem
   AztecOO* solver_tmp = new AztecOO;
 
-  solver_tmp->SetUserOperator(matrix_);
-  solver_tmp->SetPrecOperator(preconditioner_);
+  solver_tmp->SetUserOperator(&*matrix_);
+  solver_tmp->SetPrecOperator(&*preconditioner_);
   solver_tmp->SetAztecOption(AZ_solver, ls_specs.method);  // Must be AZ_xxx method. 
   solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
   solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);

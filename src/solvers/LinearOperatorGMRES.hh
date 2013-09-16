@@ -25,9 +25,9 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
+class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  GMRES_Operator(Teuchos::RCP<const Matrix> m) :
+  LinearOperatorGMRES(Teuchos::RCP<const Matrix> m) :
       LinearOperator<Matrix, Vector, VectorSpace>(m) { 
     tol_ = 1e-6; 
     overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
@@ -36,7 +36,7 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
     criteria_ = LIN_SOLVER_RELATIVE_RHS;
     initialized_ = false;
   }
-  ~GMRES_Operator() {};
+  ~LinearOperatorGMRES() {};
 
   void Init(Teuchos::ParameterList& plist);  
 
@@ -45,12 +45,13 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
     return i;
   }
 
-  Teuchos::RCP<GMRES_Operator> Clone() const {};
+  Teuchos::RCP<LinearOperatorGMRES> Clone() const {};
 
   // access members
   void set_tolerance(double tol) { tol_ = tol; }
   void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
   void set_criteria(int criteria) { criteria_ = criteria; }
+  void add_criteria(int criteria) { criteria_ |= criteria; }
   void set_krylov_dim(int n) { krylov_dim_ = n; }
   void set_overflow(double tol) { overflow_tol_ = tol; }
 
@@ -93,7 +94,7 @@ class GMRES_Operator : public LinearOperator<Matrix, Vector, VectorSpace> {
  *  LinearSolverDefs.hh for the error explanation. 
  ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres_restart(
+int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres_restart(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   int total_itrs = 0;
@@ -124,7 +125,7 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres_restart(
  *  Return value. See above.
  ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
+int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::gmres(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector w(f), r(f), p(f);  // construct empty vectors
@@ -172,7 +173,7 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
     m_->ApplyInverse(p, w);
 
     double tmp; 
-    for (int k = 0; k <= i; k++) {
+    for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
       w.Dot(*(v[k]), &tmp);
       w.Update(-tmp, *(v[k]), 1.0);
       T(k, i) = tmp;
@@ -200,6 +201,7 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
       }
     }
     // Check all criteria one-by-one.
+    num_itrs_ = i + 1;
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
       if (residual_ < tol * fnorm) { 
         ComputeSolution(x, i, T, s, v);  // vector s is overwritten
@@ -216,7 +218,6 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
         return LIN_SOLVER_ABSOLUTE_RESIDUAL;
       }
     }
-    num_itrs_ = i + 1;
   }
 
   ComputeSolution(x, krylov_dim_ - 1, T, s, v);  // vector s is overwritten
@@ -231,9 +232,9 @@ int GMRES_Operator<Matrix, Vector, VectorSpace>::gmres(
 * "convergence criteria" Array(string) default = "{relative rhs}"
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void GMRES_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::GMRES_Solver", plist)); 
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);
@@ -269,7 +270,7 @@ void GMRES_Operator<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& p
 * Givens rotations: initialization
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void GMRES_Operator<Matrix, Vector, VectorSpace>::InitGivensRotation(
+void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::InitGivensRotation(
     double& dx, double& dy, double& cs, double& sn) const
 {
   if (dy == 0.0) {
@@ -291,7 +292,7 @@ void GMRES_Operator<Matrix, Vector, VectorSpace>::InitGivensRotation(
 * Givens rotations: applications
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void GMRES_Operator<Matrix, Vector, VectorSpace>::ApplyGivensRotation(
+void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ApplyGivensRotation(
     double& dx, double& dy, double& cs, double& sn) const
 {
   double tmp = cs * dx + sn * dy;
@@ -304,7 +305,7 @@ void GMRES_Operator<Matrix, Vector, VectorSpace>::ApplyGivensRotation(
 * Computation of the solution destroys vector s.
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void GMRES_Operator<Matrix, Vector, VectorSpace>::ComputeSolution(
+void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution(
     Vector& x, int k, WhetStone::DenseMatrix& T, double* s, Vector** v) const
 {
   for (int i = k; i >= 0; i--) {

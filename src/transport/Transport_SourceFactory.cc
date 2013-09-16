@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code.
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided Reconstruction.cppin the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <string>
@@ -22,29 +22,46 @@ namespace AmanziTransport {
 /* ******************************************************************
 * Process source, step 1.
 ****************************************************************** */
-Functions::TransportDomainFunction* TransportSourceFactory::CreateSource()
+Functions::TransportDomainFunction* TransportSourceFactory::CreateSource() 
 {
+  Errors::Message msg;
   Functions::TransportDomainFunction* src = new Functions::TransportDomainFunction(mesh_);
 
-  // Iterate through the source specification sublists in the params_.
-  // All are expected to be sublists of identical structure.
-  for (Teuchos::ParameterList::ConstIterator i = params_->begin(); i != params_->end(); ++i) {
-    std::string name = i->first;
-    if (params_->isSublist(name)) {
-      Teuchos::ParameterList& spec = params_->sublist(name);
-      try {
-        ProcessSourceSpec(spec, name, src);
-      } catch (Errors::Message& msg) {
-        Errors::Message m;
-        m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
-        Exceptions::amanzi_throw(m);
+  if (plist_->isSublist("concentration")) {
+    Teuchos::ParameterList& clist = plist_->get<Teuchos::ParameterList>("concentration");
+
+    // Iterate through the source specification sublists in the clist.
+    // All are expected to be sublists of identical structure.
+    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+      std::string name = it->first;
+      if (clist.isSublist(name)) {
+        Teuchos::ParameterList& srclist = clist.sublist(name);
+	for (Teuchos::ParameterList::ConstIterator it1 = srclist.begin(); it1 != srclist.end(); ++it1) {
+	  std::string specname = it1->first;
+
+	  if (srclist.isSublist(specname)) {
+	    Teuchos::ParameterList& spec = srclist.sublist(specname);
+            try {
+              ProcessSourceSpec(spec, name, src);
+            } catch (Errors::Message& m) {
+              msg << "in sublist \"" << specname.c_str() << "\": " << m.what();
+              Exceptions::amanzi_throw(msg);
+            }
+          } else {
+            msg << "parameter \"" << specname.c_str() << "\" is not a sublist";
+            Exceptions::amanzi_throw(msg);
+          }
+        }
+      } else {
+        msg << "parameter \"" << name.c_str() << "\" is not a sublist";
+        Exceptions::amanzi_throw(msg);
       }
-    } else {
-      Errors::Message m;
-      m << "parameter \"" << name.c_str() << "\" is not a sublist";
-      Exceptions::amanzi_throw(m);
     }
+  } else {
+    msg << "Transport PK: \"source terms\" has no sublist \"concentration\".\n";
+    Exceptions::amanzi_throw(msg);  
   }
+
   return src;
 }
 
@@ -53,7 +70,7 @@ Functions::TransportDomainFunction* TransportSourceFactory::CreateSource()
 * Process source, step 2.
 ****************************************************************** */
 void TransportSourceFactory::ProcessSourceSpec(
-    Teuchos::ParameterList& list, const std::string& name, Functions::TransportDomainFunction* src) const
+  Teuchos::ParameterList& list, const std::string& name, Functions::TransportDomainFunction* src) const 
 {
   Errors::Message m;
   std::vector<std::string> regions;
@@ -91,7 +108,7 @@ void TransportSourceFactory::ProcessSourceSpec(
   int method;
   std::string action_name = list.get<std::string>("spatial distribution method", "none");
   ProcessStringActions(action_name, &method);
-  
+
   src->Define(regions, f, method, name);
 }
 
@@ -99,7 +116,7 @@ void TransportSourceFactory::ProcessSourceSpec(
 /* ****************************************************************
 * Process string for a source specipic action.
 **************************************************************** */
-void TransportSourceFactory::ProcessStringActions(const std::string& name, int* method) const
+void TransportSourceFactory::ProcessStringActions(const std::string& name, int* method) const 
 {
   Errors::Message msg;
   if (name == "none") {

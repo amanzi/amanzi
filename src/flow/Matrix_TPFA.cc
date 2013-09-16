@@ -34,7 +34,7 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 /* ******************************************************************
 * Constructor.                                           
 ****************************************************************** */
-Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map) 
+Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map) 
    :  Matrix_MFD(FS, map)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
