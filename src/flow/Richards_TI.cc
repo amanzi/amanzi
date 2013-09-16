@@ -18,7 +18,7 @@ The routine implements interface to BDFx time integrators.
 
 #include "Matrix_TPFA.hh"
 #include "Richards_PK.hh"
-
+#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -101,6 +101,13 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
   //Amanzi::timer_manager.start("Apply precon");
   preconditioner_->ApplyInverse(X, Y);
   //Amanzi::timer_manager.stop("Apply precon");
+
+  //AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+  // Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+  //solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix);
+
+
+
 }
 
 

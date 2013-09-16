@@ -197,6 +197,10 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Transmis_faces;
   Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
+  Teuchos::ParameterList solvers_list;
+  std::string flow_solver;
+
+
   int mfd3d_method_, mfd3d_method_preconditioner_;
   bool is_matrix_symmetric;
   int experimental_solver_; 
