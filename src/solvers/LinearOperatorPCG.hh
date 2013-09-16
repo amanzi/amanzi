@@ -25,8 +25,8 @@ namespace AmanziSolvers {
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  LinearOperatorPCG(const Teuchos::RCP<const Matrix>& m) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m) {
+  LinearOperatorPCG(const Teuchos::RCP<const Matrix>& m, const Teuchos::RCP<const Matrix>& h) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {
     tol_ = 1e-6;
     overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
     max_itrs_ = 100;
@@ -66,6 +66,7 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::h_;
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   int max_itrs_, criteria_;
@@ -109,7 +110,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   r.Norm2(&rnorm0);
   residual_ = rnorm0;
 
-  m_->ApplyInverse(r, p);  // gamma = (H r,r)
+  h_->ApplyInverse(r, p);  // gamma = (H r,r)
   double gamma0;
   p.Dot(r, &gamma0);
   if (gamma0 < 0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
@@ -136,7 +137,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     x.Update( alpha, p, 1.0);
     r.Update(-alpha, v, 1.0);
 
-    m_->ApplyInverse(r, v);  // gamma = (H r, r)
+    h_->ApplyInverse(r, v);  // gamma = (H r, r)
     double gamma1;
     v.Dot(r, &gamma1);
     if (gamma1 < 0.0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;

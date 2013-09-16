@@ -27,8 +27,8 @@ namespace AmanziSolvers {
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  LinearOperatorGMRES(const Teuchos::RCP<const Matrix>& m) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m) {
+  LinearOperatorGMRES(const Teuchos::RCP<const Matrix>& m, const Teuchos::RCP<const Matrix>& h) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {
     tol_ = 1e-6;
     overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
     max_itrs_ = 100;
@@ -74,6 +74,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
+  using LinearOperator<Matrix, Vector, VectorSpace>::h_;
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   int max_itrs_, criteria_, krylov_dim_;
@@ -139,14 +140,14 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
   num_itrs_ = 0;
 
-  m_->ApplyInverse(f, r);
+  h_->ApplyInverse(f, r);
   double fnorm;
   r.Norm2(&fnorm);
 
   m_->Apply(x, p);  // p = f - M * x
   p.Update(1.0, f, -1.0);
 
-  m_->ApplyInverse(p, r);
+  h_->ApplyInverse(p, r);
   double rnorm0;
   r.Norm2(&rnorm0);
   residual_ = rnorm0;
@@ -174,7 +175,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
 
   for (int i = 0; i < krylov_dim_; i++) {
     m_->Apply(*(v[i]), p);
-    m_->ApplyInverse(p, w);
+    h_->ApplyInverse(p, w);
 
     double tmp;
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm

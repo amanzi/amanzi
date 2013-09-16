@@ -35,15 +35,28 @@ class LinearOperatorFactory {
   Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
       const string& name,
       const Teuchos::ParameterList& solvers_list,
-      Teuchos::RCP<const Matrix> m);
+      Teuchos::RCP<const Matrix> m,  // Apply() is required
+      Teuchos::RCP<const Matrix> h);  // ApplyInverse() is required
+
+  Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
+      const string& name,
+      const Teuchos::ParameterList& solvers_list,
+      Teuchos::RCP<const Matrix> m) {
+    return Create(name, solvers_list, m, m);
+  }
 };
 
 
+/* ******************************************************************
+* The following calls have to be supported: m->Apply(...) and
+* h->ApplyInverse(...).
+****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
 LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     const string& name, const Teuchos::ParameterList& solvers_list,
-    Teuchos::RCP<const Matrix> m)
+    Teuchos::RCP<const Matrix> m,
+    Teuchos::RCP<const Matrix> h)
 {
   if (solvers_list.isSublist(name)) {
     Teuchos::ParameterList slist = solvers_list.sublist(name);
@@ -52,13 +65,13 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
 
       if (method_name == "pcg") {
         Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
-            lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m));
+            lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m, h));
         lin_op->Init(slist);
         lin_op->name() = method_name;
         return lin_op;
       } else if (method_name == "gmres") {
         Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> >
-            lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m));
+            lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m, h));
         lin_op->Init(slist);
         lin_op->name() = method_name;
         return lin_op;
