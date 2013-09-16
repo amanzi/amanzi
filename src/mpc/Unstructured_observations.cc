@@ -120,19 +120,23 @@ void Unstructured_observations::make_observations(State& state)
       var = name;
     }
     
-    unsigned int mesh_block_size(0); 
-    if (var == "Aqueous Mass Flux") { // for flux we need faces
+    unsigned int mesh_block_size(0);
+    Amanzi::AmanziMesh::Entity_ID_List entity_ids;
+    if (var == "Aqueous mass flux") { // for flux we need faces
       mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
 						      Amanzi::AmanziMesh::FACE,
-						      Amanzi::AmanziMesh::OWNED);          
+						      Amanzi::AmanziMesh::OWNED);
+      entity_ids.resize(mesh_block_size);
+      state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
+					&entity_ids);
     } else { // all others need cells
       mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
 						      Amanzi::AmanziMesh::CELL,
 						      Amanzi::AmanziMesh::OWNED);    
+      entity_ids.resize(mesh_block_size);
+      state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+					&entity_ids);
     }
-    Amanzi::AmanziMesh::Entity_ID_List entity_ids(mesh_block_size);
-    state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-				      &entity_ids);
 
     // is the user asking for a component concentration?
     int comp_index(0);
@@ -223,7 +227,7 @@ void Unstructured_observations::make_observations(State& state)
 	value += (*hydraulic_head)[ic] * state.GetMesh()->cell_volume(ic);
 	volume += state.GetMesh()->cell_volume(ic);
       }
-    } else if (var == "Aqueous Mass Flux") {
+    } else if (var == "Aqueous mass flux") {
       value = 0.0;
       volume = 0.0;
       
@@ -236,7 +240,6 @@ void Unstructured_observations::make_observations(State& state)
       AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
       
       AmanziGeometry::Point reg_normal = poly_reg->normal();
-    
 
       Teuchos::RCP<const Epetra_Vector> darcy_flux = 
 	Teuchos::rcpFromRef(*(*state.GetFieldData("darcy_flux")->ViewComponent("face", false))(0));      
