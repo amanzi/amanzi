@@ -58,7 +58,9 @@ public:
 
   int num_components() const { return num_components_; }
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
-  const Epetra_MpiComm* comm() { return mesh_->get_comm(); }
+
+  // CompositeVectors exist on a single communicator.
+  const Epetra_MpiComm& Comm() const { return *mesh_->get_comm(); }
 
   int num_dofs(std::string name) const { return ghostvec_->num_dofs(name); }
   AmanziMesh::Entity_kind location(std::string name) const {

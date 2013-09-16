@@ -18,6 +18,7 @@
 namespace Amanzi {
 
 // Basic constructor of an empty TreeVector
+TreeVector::TreeVector() {};
 TreeVector::TreeVector(std::string name) : name_(name) {};
 
 TreeVector::TreeVector(std::string name,
@@ -288,7 +289,23 @@ Teuchos::RCP<const TreeVector> TreeVector::SubVector(std::string subname) const 
   return Teuchos::null;
 };
 
-void TreeVector::PushBack(Teuchos::RCP<TreeVector>& subvec) {
+Teuchos::RCP<TreeVector> TreeVector::SubVector(int index) {
+  // Get a pointer to the sub-vector by index
+  if (index < subvecs_.size()) {
+    return subvecs_[index];
+  }
+  return Teuchos::null;
+};
+
+Teuchos::RCP<const TreeVector> TreeVector::SubVector(int index) const {
+  // Get a pointer to the sub-vector by index
+  if (index < subvecs_.size()) {
+    return subvecs_[index];
+  }
+  return Teuchos::null;
+};
+
+void TreeVector::PushBack(const Teuchos::RCP<TreeVector>& subvec) {
   subvecs_.push_back(subvec);
 };
 
