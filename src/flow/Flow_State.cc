@@ -109,6 +109,10 @@ void Flow_State::Construct_() {
     S_->RequireField("specific_yield", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+  if (!S_->HasField("particle_density")) {
+    S_->RequireField("particle_density", name_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -143,8 +147,39 @@ void Flow_State::Initialize() {
     S_->GetField("darcy_flux",name_)->set_initialized();
     S_->GetField("darcy_velocity",name_)->set_initialized();
     S_->GetField("hydraulic_head",name_)->set_initialized();
+    S_->GetField("particle_density",name_)->set_initialized();
     S_->Initialize();
   } else {
+    
+    // fields that might be initialized through the input
+    // file need to be tested and initialized 'by hand' here
+
+    if (!S_->GetField("darcy_flux",name_)->initialized()) {
+      darcy_flux()->PutScalar(0.0);
+      S_->GetField("darcy_flux",name_)->set_initialized();
+    }
+    if (!S_->GetField("water_saturation",name_)->initialized()) {
+      water_saturation()->PutScalar(1.0);
+      S_->GetField("water_saturation",name_)->set_initialized();
+    }
+    if (!S_->GetField("prev_water_saturation",name_)->initialized()) {
+      prev_water_saturation()->PutScalar(1.0);
+      S_->GetField("prev_water_saturation",name_)->set_initialized();
+    }
+    if (!S_->GetField("specific_yield",name_)->initialized()) {
+      specific_yield()->PutScalar(0.0);
+      S_->GetField("specific_yield",name_)->set_initialized();
+    }
+    if (!S_->GetField("specific_storage",name_)->initialized()) {
+      specific_storage()->PutScalar(0.0);
+      S_->GetField("specific_storage",name_)->set_initialized();
+    }
+    if (!S_->GetField("particle_density",name_)->initialized()) {
+      particle_density()->PutScalar(1.0);
+      S_->GetField("particle_density",name_)->set_initialized();
+    }    
+
+
     // aux data that is only for vis/checkpoint/observation
     // these will never be initialized in the input file, so
     // we need to set them to initialized here
