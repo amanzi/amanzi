@@ -850,122 +850,121 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
             }
           }
         }
-      }
-    }
-  }
-
-  // now write the dispersion lists if needed
-  if (need_dispersion_) { 
-    Teuchos::ParameterList &disp_list = trp_list.sublist("Dispersivity");
-    
-    if (plist->isSublist("Material Properties")) {
-      for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
-	   it != plist->sublist("Material Properties").end(); ++it) {
-	disp_list.set<std::string>("numerical method","two point flux approximation");
-	disp_list.set<std::string>("solver","PCG with Hypre AMG");
-
-	if ( (it->second).isList()) {
-	  std::string mat_name = it->first;
-	  Teuchos::ParameterList & mat_sublist = plist->sublist("Material Properties").sublist(mat_name);
-	  Teuchos::ParameterList & disp_sublist = disp_list.sublist(mat_name);
-	  // set a few default paramters
-	  disp_sublist.set<std::string>("model","Bear");
-	  // translate the other paramters
-	  disp_sublist.set<Teuchos::Array<std::string> >("regions",mat_sublist.get<Teuchos::Array<std::string> >("Assigned Regions"));
-	  if (!mat_sublist.isSublist("Dispersion Tensor: Uniform Isotropic")) {
-	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Dispersion Tensor: Uniform Isotropic for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
-	  }
-	  disp_sublist.set<double>("alphaL", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
-	  disp_sublist.set<double>("alphaT", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
-	  if (!mat_sublist.isSublist("Molecular Diffusion: Uniform")) {
-	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Molecular Diffusion: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
-	  }	  
-	  disp_sublist.set<double>("D", mat_sublist.sublist("Molecular Diffusion: Uniform").get<double>("Value"));
-	  if (!mat_sublist.isSublist("Tortuosity: Uniform")) {
-	    Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Tortuosity: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
-	  }	  
-	  disp_sublist.set<double>("tortuosity", mat_sublist.sublist("Tortuosity: Uniform").get<double>("Value"));
+      
+	// now write the dispersion lists if needed
+	if (need_dispersion_) { 
+	  Teuchos::ParameterList &disp_list = trp_list.sublist("Dispersivity");
+	  
+	  if (plist->isSublist("Material Properties")) {
+	    for (Teuchos::ParameterList::ConstIterator it = plist->sublist("Material Properties").begin(); 
+		 it != plist->sublist("Material Properties").end(); ++it) {
+	      disp_list.set<std::string>("numerical method","two point flux approximation");
+	      disp_list.set<std::string>("solver","PCG with Hypre AMG");
+	      
+	      if ( (it->second).isList()) {
+		std::string mat_name = it->first;
+		Teuchos::ParameterList & mat_sublist = plist->sublist("Material Properties").sublist(mat_name);
+		Teuchos::ParameterList & disp_sublist = disp_list.sublist(mat_name);
+		// set a few default paramters
+		disp_sublist.set<std::string>("model","Bear");
+		// translate the other paramters
+		disp_sublist.set<Teuchos::Array<std::string> >("regions",mat_sublist.get<Teuchos::Array<std::string> >("Assigned Regions"));
+		if (!mat_sublist.isSublist("Dispersion Tensor: Uniform Isotropic")) {
+		  Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Dispersion Tensor: Uniform Isotropic for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+		}
+		disp_sublist.set<double>("alphaL", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaL"));
+		disp_sublist.set<double>("alphaT", mat_sublist.sublist("Dispersion Tensor: Uniform Isotropic").get<double>("alphaT"));
+		if (!mat_sublist.isSublist("Molecular Diffusion: Uniform")) {
+		  Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Molecular Diffusion: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+		}	  
+		disp_sublist.set<double>("D", mat_sublist.sublist("Molecular Diffusion: Uniform").get<double>("Value"));
+		if (!mat_sublist.isSublist("Tortuosity: Uniform")) {
+		  Exceptions::amanzi_throw(Errors::Message("Dispersion is enabled, you must specify Tortuosity: Uniform for all materials. Disable it by purging all Material Property sublists of the Dispersion Tensor:, Molecular Diffusion:, and Tortuosity: sublists."));    
+		}	  
+		disp_sublist.set<double>("tortuosity", mat_sublist.sublist("Tortuosity: Uniform").get<double>("Value"));
+	      }
+	    } 
+	  }       
 	}
-      } 
-    }       
-  }
-  
-  // now generate the source lists
-  Teuchos::ParameterList src_list = create_TransportSrc_List(plist);
-  if (src_list.begin() != src_list.end()) { // the source lists are not empty
-    trp_list.sublist("source terms") = src_list;
-  }
-
-
-  // now generate the boundary conditions
-  // loop over the boundary condition sublists and extract the relevant data
-
-  int n_transport_bcs = 0;
-
-  Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
-
-  for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
-    // only count sublists
-    if (bc_sublist.isSublist(bc_sublist.name(i))) {
-      if ( bc_sublist.sublist((bc_sublist.name(i))).isSublist("Solute BC"))
-        n_transport_bcs++;
-    }
-  }
-
-  if (n_transport_bcs >= 0) {
-    Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
-
-    Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
-
-    // TODO: these simple checks for one transported phase will not
-    // work with the addition of the solid phase
-
-    //if ( (++ phase_list.begin()) == phase_list.end() ) {
-    if (true) {
-      Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
-
-      for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
-        // read the assigned regions
-        Teuchos::Array<std::string> regs = bc_sublist.sublist(bc_sublist.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
-
-        // only count sublists
-        std::string bc_root_str(bc_sublist.name(i));
-        if (bc_sublist.isSublist(bc_sublist.name(i))) {
-          if ( bc_sublist.sublist((bc_sublist.name(i))).isSublist("Solute BC")) {
-            // read the solute bc stuff
-            Teuchos::ParameterList& solbc = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC");
-
-            Teuchos::ParameterList& comps = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC").sublist(phase_name).sublist(phase_comp_name);
-
-            for (Teuchos::Array<std::string>::const_iterator i = comp_names.begin();
-                 i != comp_names.end(); i++) {
-              if (  comps.isSublist(*i) ) {
-                std::stringstream compss;
-                compss << *i;
-                if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
-                  Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
-                  bc.set<Teuchos::Array<std::string> >("regions",regs);
-                  Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
-
-                  Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
-                  Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
-                  Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
-
-                  Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
-                  bcfn.set<Teuchos::Array<double> >("y values", values);
-                  bcfn.set<Teuchos::Array<double> >("x values", times);
-                  bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
-                }
-              }
-            }
-          }
-        }
+	
+	// now generate the source lists
+	Teuchos::ParameterList src_list = create_TransportSrc_List(plist);
+	if (src_list.begin() != src_list.end()) { // the source lists are not empty
+	  trp_list.sublist("source terms") = src_list;
+	}
+	
+	
+	// now generate the boundary conditions
+	// loop over the boundary condition sublists and extract the relevant data
+	
+	int n_transport_bcs = 0;
+	
+	Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
+	
+	for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
+	  // only count sublists
+	  if (bc_sublist.isSublist(bc_sublist.name(i))) {
+	    if ( bc_sublist.sublist((bc_sublist.name(i))).isSublist("Solute BC"))
+	      n_transport_bcs++;
+	  }
+	}
+	
+	if (n_transport_bcs >= 0) {
+	  Teuchos::ParameterList& tbc_list = trp_list.sublist("boundary conditions").sublist("concentration");
+	  
+	  Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
+	  
+	  // TODO: these simple checks for one transported phase will not
+	  // work with the addition of the solid phase
+	  
+	  //if ( (++ phase_list.begin()) == phase_list.end() ) {
+	  if (true) {
+	    Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
+	    
+	    for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
+	      // read the assigned regions
+	      Teuchos::Array<std::string> regs = bc_sublist.sublist(bc_sublist.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
+	      
+	      // only count sublists
+	      std::string bc_root_str(bc_sublist.name(i));
+	      if (bc_sublist.isSublist(bc_sublist.name(i))) {
+		if ( bc_sublist.sublist((bc_sublist.name(i))).isSublist("Solute BC")) {
+		  // read the solute bc stuff
+		  Teuchos::ParameterList& solbc = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC");
+		  
+		  Teuchos::ParameterList& comps = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC").sublist(phase_name).sublist(phase_comp_name);
+		  
+		  for (Teuchos::Array<std::string>::const_iterator i = comp_names.begin();
+		       i != comp_names.end(); i++) {
+		    if (  comps.isSublist(*i) ) {
+		      std::stringstream compss;
+		      compss << *i;
+		      if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
+			Teuchos::ParameterList& bc = tbc_list.sublist(compss.str()).sublist(bc_root_str);
+			bc.set<Teuchos::Array<std::string> >("regions",regs);
+			Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
+			
+			Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+			Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
+			Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
+			
+			Teuchos::ParameterList &bcfn = bc.sublist("boundary concentration").sublist("function-tabular");
+			bcfn.set<Teuchos::Array<double> >("y values", values);
+			bcfn.set<Teuchos::Array<double> >("x values", times);
+			bcfn.set<Teuchos::Array<std::string> >("forms", translate_forms(time_fns));
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  } else {
+	    Exceptions::amanzi_throw(Errors::Message( "Unstructured Amanzi can only have one phase, but the input file specifies more than one."));
+	  }
+	}
       }
-    } else {
-      Exceptions::amanzi_throw(Errors::Message( "Unstructured Amanzi can only have one phase, but the input file specifies more than one."));
     }
   }
-
   return trp_list;
 }
 
