@@ -48,21 +48,12 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   Teuchos::RCP<LinearOperatorGMRES> Clone() const {};
 
   // access members
-  void set_tolerance(double tol) {
-    tol_ = tol;
-  }
-  void set_max_itrs(int max_itrs) {
-    max_itrs_ = max_itrs;
-  }
-  void set_criteria(int criteria) {
-    criteria_ = criteria;
-  }
-  void set_krylov_dim(int n) {
-    krylov_dim_ = n;
-  }
-  void set_overflow(double tol) {
-    overflow_tol_ = tol;
-  }
+  void set_tolerance(double tol) { tol_ = tol; }
+  void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
+  void set_criteria(int criteria) { criteria_ = criteria; }
+  void add_criteria(int criteria) { criteria_ |= criteria; }
+  void set_krylov_dim(int n) { krylov_dim_ = n; }
+  void set_overflow(double tol) { overflow_tol_ = tol; }
 
   double residual() {
     return residual_;
@@ -186,7 +177,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     m_->ApplyInverse(p, w);
 
     double tmp;
-    for (int k = 0; k <= i; k++) {
+    for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
       w.Dot(*(v[k]), &tmp);
       w.Update(-tmp, *(v[k]), 1.0);
       T(k, i) = tmp;
@@ -247,7 +238,7 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist));
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::GMRES_Solver", plist));
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);

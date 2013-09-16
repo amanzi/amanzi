@@ -26,6 +26,7 @@ class LinearSolver_Specs {
     max_itrs = 99;
     convergence_tol = 1e-14;
     method = 1;  // Must be equal to Aztec_cg
+    solver_name = "AztecOO";
     preconditioner_name = "undefined (default is HYPRE_AMG)";
     preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must be equal to ST_PRECOND
   }
@@ -33,6 +34,7 @@ class LinearSolver_Specs {
 
  public:
   int num_itrs, max_itrs, method;
+  std::string solver_name;
   std::string preconditioner_name;
   int preconditioner_method;
   double convergence_tol; 

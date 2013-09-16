@@ -13,7 +13,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Flow_State.hh"
 #include "Matrix_MFD.hh"
 #include "Matrix_TPFA.hh"
-#include "Matrix_MFD_PLambda.hh"
+// #include "Matrix_MFD_PLambda.hh"
 #include "Richards_PK.hh"
 
 
@@ -67,7 +67,7 @@ void Richards_PK::AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix)
     matrix->AssembleGlobalMatrices();
   }
   else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Richards PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
@@ -126,7 +126,7 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
   
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
@@ -148,7 +148,7 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
     // setup a new algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
+    AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
   }
@@ -172,7 +172,7 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   // update all coefficients, boundary data, and source/sink terms
   //Amanzi::timer_manager.stop("Update precon");
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Richards_PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
@@ -210,21 +210,21 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     memset(Ac, 0., nsize*sizeof(double));
   }
 
-  AddTimeDerivative_MFD(*u_cells, dTp, preconditioner_);
+  AddTimeDerivative_MFD(*u_cells, dTp, &*preconditioner_);
   
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
-    Epetra_Vector& flux = FS->ref_darcy_flux();
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    rhs = preconditioner_->rhs();
-    AddNewtonFluxes_MFD(*rel_perm, *u_cells, flux, *rhs, matrix_plambda);
-  }
+  // if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+  //   Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
+  //   Epetra_Vector& flux = FS->ref_darcy_flux();
+  //   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
+  //   rhs = preconditioner_->rhs();
+  //   AddNewtonFluxes_MFD(*rel_perm, *u_cells, flux, *rhs, matrix_plambda);
+  // }
 
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(preconditioner_);
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*preconditioner_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";

@@ -30,8 +30,8 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
+  solver->SetUserOperator(&*matrix_);
+  solver->SetPrecOperator(&*preconditioner_);
 
   if (is_matrix_symmetric) 
       solver->SetAztecOption(AZ_solver, AZ_cg);
@@ -54,8 +54,8 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
-    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, matrix_);
+    AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
+    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, &*matrix_);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();
@@ -63,7 +63,7 @@ int Richards_PK::PicardTimeStep(double Tp, double dTp, double& dTnext)
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
-    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, preconditioner_);
+    AddTimeDerivative_MFDpicard(*solution, *solution_cells, dTp, &*preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();

@@ -38,7 +38,7 @@ void Richards_PK::fun(
     // Epetra_Vector* u_faces = FS->CreateFaceView(u);
     // rel_perm->Compute(u, bc_model, bc_values);
     // UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Richards PK: cannot cast pointer to class Matrix_MFD_TPFA\n";

@@ -26,7 +26,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Constructor                                      
 ****************************************************************** */
-Matrix_MFD::Matrix_MFD(Teuchos::RCP<Flow_State> FS, const Epetra_Map& map)
+Matrix_MFD::Matrix_MFD(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map)
     : FS_(FS), map_(map)
 { 
   mesh_ = FS_->mesh();

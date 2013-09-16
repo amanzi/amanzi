@@ -12,7 +12,7 @@ Author (v1): Neil Carlson
        (v2): Ethan Coon
 */
 
-#include "flow-boundary-function.hh"
+#include "flow_boundary_function.hh"
 
 namespace Amanzi {
 namespace Functions {

@@ -131,7 +131,7 @@ void Unstructured_observations::make_observations(State& state)
     int comp_index(0);
     if (comp_names_.size() > 0) {
       for (comp_index = 0; comp_index != comp_names_.size(); ++comp_index) {
-	if ( comp_names_[comp_index] == var ) break;
+	if (comp_names_[comp_index] == var) break;
       }
     }
     
