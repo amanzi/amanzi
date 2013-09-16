@@ -331,34 +331,10 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
   // double K[2];
   double dKrel_dp[2];
 
-  // double rho_w = FS_->ref_fluid_density();
 
-  // for (int c = 0; c < mcells; c++) {
-  //   K[c] = 0.0;
-  //   for (int i = 0; i < dim-1; i++) K[c] += normal[i]*normal[i]*perm_abs_horz[c];
-  //   K[c] += normal[dim-1]*normal[dim-1]*perm_abs_vert[c];
-  //   K[c] /= FS_->ref_fluid_viscosity();
-  // }
-
-  // double Kabs_dist;
-
-  // if (mcells == 1) {
-  //   Kabs_dist = K[0]/dist;
-  // } else {
-  //   Kabs_dist = 2*K[0]*K[1]/(dist*(K[0] + K[1]));
-  // }
 
   double rho_w = FS_->ref_fluid_density();
-  // AmanziGeometry::Point gravity(dim);
-  // for (int i = 0; i < dim; i++) gravity[i] = (*(FS_->gravity()))[i] * rho;
 
-  // double grn = dist*gravity*normal;
-
-  //cout<<Kabs_dist*rho_w*mesh_->face_area(face_id)<<" "<<trans_faces[face_id]<<endl;
-
-  //cout<<"grn "<<grn*Kabs_dist<<" "<<grav_term_faces[face_id]/(rho_w*mesh_->face_area(face_id))<<endl;
-  //if (abs(grn) > 1e-8) exit(0);
-  // for (int i = 0; i < dim; i++) cout<<"dist "<<(*(FS->gravity()))[i]<<endl;
 
   double dpres;
   if (mcells == 2) {
@@ -466,10 +442,10 @@ void Matrix_MFD_TPFA::UpdatePreconditioner()
     functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
 
     Teuchos::ParameterList hypre_list;
-    hypre_list.set("Solver", PCG);
+    hypre_list.set("Solver", BoomerAMG);
     hypre_list.set("Preconditioner", BoomerAMG);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
+    hypre_list.set("SolveOrPrecondition", Solver);
+    hypre_list.set("SetPreconditioner", false);
     hypre_list.set("NumFunctions", 8);
     hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
 
@@ -564,7 +540,7 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
 
   // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
   // use the same memory for X and Y, we introduce auxiliaty vector Tc.
-  int ierr = 0;
+   int ierr = 0;
   Epetra_Vector Tc(cmap);
   if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
     MLprec->ApplyInverse(Xc, Tc);
@@ -748,10 +724,12 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
   //cout.precision(10);
 
   AmanziMesh::Entity_ID_List cells;
+  std::vector<int> flag(nfaces_wghost, 0);
 
-  darcy_mass_flux.PutScalar(0.);
+  //darcy_mass_flux.PutScalar(0.);
 
   //cout<<solution_cells<<endl;
+  //Epetra_Map face_wghost = mesh_->face_map(true);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -760,7 +738,9 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
 
-      //      cout<<"Trans "<<f<<": "<<Trans_faces[f]<<endl;
+
+      //int GID = face_wghost.GID(f);
+
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
@@ -776,22 +756,24 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 	darcy_mass_flux[f] = value*area ;
       }
       else {
-	if (f < nfaces_owned) {
+	if (f < nfaces_owned && !flag[f]) {
+	//if (f < nfaces_owned) {
+	  
 	  mesh_->face_get_cells(f,  AmanziMesh::USED, &cells);
-	  if (cells.size() < 2){
+	  if (cells.size() <= 1 ){
 	    Errors::Message msg("Flow PK: Matrix_MFD_TPFA. These boundary conditions are not supported by TPFA discratization.");
 	    Exceptions::amanzi_throw(msg);
 	  }
 
-	  if (dirs[n] > 0){
 	    if (c == cells[0]){
-	      darcy_mass_flux[f] = Trans_faces[f]*(solution_cell_wghost[cells[0]] - solution_cell_wghost[cells[1]]) + Grav_term[f];
+	      darcy_mass_flux[f] = dirs[n]*Trans_faces[f]*(solution_cell_wghost[cells[0]] - solution_cell_wghost[cells[1]]) + Grav_term[f];
 	    }
 	    else {
-	      darcy_mass_flux[f] = Trans_faces[f]*(solution_cell_wghost[cells[1]] - solution_cell_wghost[cells[0]]) + Grav_term[f];
+	      darcy_mass_flux[f] = dirs[n]*Trans_faces[f]*(solution_cell_wghost[cells[1]] - solution_cell_wghost[cells[0]]) + Grav_term[f];
 	    }	    
 	    darcy_mass_flux[f] *= Krel_faces[f];
-	  }
+	    flag[f] = 1;
+	 
 	}
       }
     }

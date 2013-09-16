@@ -200,7 +200,16 @@
 
   </boundary_conditions>
 
-
+  <sources>
+    <source name = "Pumping Well" >
+      <assigned_regions>Well</assigned_regions>
+      <liquid_phase name = "water">
+	<liquid_component name="water">
+	  <volume_weighted start="0.0" function="constant" value="-4.0"/>
+	</liquid_component>
+      </liquid_phase>
+    </source>
+  </sources>
   <!--
 
     Output
