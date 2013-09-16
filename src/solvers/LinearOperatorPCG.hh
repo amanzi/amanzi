@@ -1,11 +1,11 @@
 /*
-This is the Linear Solver component of the Amanzi code. 
-License: BSD
-Authors: Ethan Coon (ecoon@lanl.gov)
-         Konstantin Lipnikov (lipnikov@lanl.gov)
+  This is the Linear Solver component of the Amanzi code.
+  License: BSD
+  Authors: Ethan Coon (ecoon@lanl.gov)
+  Konstantin Lipnikov (lipnikov@lanl.gov)
 
-Conjugate gradient method.
-Usage: 
+  Conjugate gradient method.
+  Usage:
 */
 
 #ifndef AMANZI_PCG_OPERATOR_HH_
@@ -18,16 +18,16 @@ Usage:
 
 #include "LinearOperatorDefs.hh"
 #include "LinearOperator.hh"
- 
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
 class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  LinearOperatorPCG(Teuchos::RCP<const Matrix> m) : 
-      LinearOperator<Matrix, Vector, VectorSpace>(m) { 
-    tol_ = 1e-6; 
+  LinearOperatorPCG(const Teuchos::RCP<const Matrix>& m) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m) {
+    tol_ = 1e-6;
     overflow_tol_ = 3.0e+50;  // mass of the Universe (J.Hopkins)
     max_itrs_ = 100;
     criteria_ = LIN_SOLVER_RELATIVE_RHS;
@@ -35,29 +35,41 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   }
   ~LinearOperatorPCG() {};
 
-  void Init(Teuchos::ParameterList& plist);  
+  void Init(Teuchos::ParameterList& plist);
 
-  int ApplyInverse(const Vector& v, Vector& hv) const { 
-    int ierr = pcg(v, hv, tol_, max_itrs_, criteria_); 
+  int ApplyInverse(const Vector& v, Vector& hv) const {
+    int ierr = PCG_(v, hv, tol_, max_itrs_, criteria_);
     return ierr;
   }
 
   Teuchos::RCP<LinearOperatorPCG> Clone() const {};
 
   // access members
-  void set_tolerance(double tol) { tol_ = tol; }
-  void set_max_itrs(int max_itrs) { max_itrs_ = max_itrs; }
-  void set_criteria(int criteria) { criteria_ = criteria; }
-  void set_overflow(double tol) { overflow_tol_ = tol; }
+  void set_tolerance(double tol) {
+    tol_ = tol;
+  }
+  void set_max_itrs(int max_itrs) {
+    max_itrs_ = max_itrs;
+  }
+  void set_criteria(int criteria) {
+    criteria_ = criteria;
+  }
+  void set_overflow(double tol) {
+    overflow_tol_ = tol;
+  }
 
-  double residual() { return residual_; }
-  int num_itrs() { return num_itrs_; }
+  double residual() {
+    return residual_;
+  }
+  int num_itrs() {
+    return num_itrs_;
+  }
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
 
  private:
-  int pcg(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
+  int PCG_(const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const;
 
  private:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
@@ -79,13 +91,13 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
  *  max_itrs [input]  maximum number of iterations
  *  criteria [input]  sum of termination critaria
  *
- *  Return value. If it is positive, it indicates the sucessful 
+ *  Return value. If it is positive, it indicates the sucessful
  *  convergence criterion (criteria in a few exceptional cases) that
  *  was checked first. If it is negative, it indicates a failure, see
- *  LinearSolverDefs.hh for the error explanation. 
+ *  LinearSolverDefs.hh for the error explanation.
  ***************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
+int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Vector r(f), p(f), v(f);  // construct empty vectors
@@ -114,7 +126,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
 
   if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
     if (criteria & LIN_SOLVER_RELATIVE_RHS) {
-      if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS; 
+      if (rnorm0 < tol * fnorm) return LIN_SOLVER_RELATIVE_RHS;
     } else if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
       if (rnorm0 < tol) return LIN_SOLVER_ABSOLUTE_RESIDUAL;
     }
@@ -126,7 +138,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
     v.Dot(p, &alpha);
 
     if (alpha < 0.0) return LIN_SOLVER_NON_SPD_APPLY;
-    alpha = gamma0 / alpha;   
+    alpha = gamma0 / alpha;
 
     x.Update( alpha, p, 1.0);
     r.Update(-alpha, v, 1.0);
@@ -139,7 +151,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
     double rnorm;
     r.Norm2(&rnorm);
     residual_ = rnorm;
- 
+
     if (initialized_) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
@@ -160,7 +172,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
 
     double beta = gamma1 / gamma0;
     gamma0 = gamma1;
- 
+
     p.Update(1.0, v, beta);
   }
 
@@ -169,15 +181,15 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::pcg(
 
 
 /* ******************************************************************
-* Initialization from a parameter list. Available parameters:
-* "error tolerance" [double] default = 1e-6
-* "maximum number of iterations" [int] default = 100
-* "convergence criteria" Array(string) default = "{relative rhs}"
-****************************************************************** */
+ * Initialization from a parameter list. Available parameters:
+ * "error tolerance" [double] default = 1e-6
+ * "maximum number of iterations" [int] default = 100
+ * "convergence criteria" Array(string) default = "{relative rhs}"
+ ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi::PCG_Solver", plist));
 
   tol_ = plist.get<double>("error tolerance", 1e-6);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);
@@ -209,7 +221,5 @@ void LinearOperatorPCG<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi
- 
-#endif
-               
 
+#endif
