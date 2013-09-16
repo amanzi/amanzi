@@ -86,8 +86,8 @@
   <ParameterList name="Preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="discretization method" type="string" value="optimized mfd"/>
-      <Parameter name="type" type="string" value="boomer amg"/>
-      <ParameterList name="BoomerAMG Parameters">
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
