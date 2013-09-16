@@ -1577,7 +1577,7 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList dpc_list;
   
   dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
-  dpc_list.set<std::string>("type", "trilinos ml");
+  dpc_list.set<std::string>("type", "ml");
 
   double aggthr(ML_AGG_THR);
   std::string smthtyp(ML_SMOOTHER);
@@ -1609,7 +1609,7 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
     }
   }
 
-  Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
+  Teuchos::ParameterList& ml_list = dpc_list.sublist("ml parameters");
   ml_list.set<int>("ML output", ML_OUTPUT);
   ml_list.set<int>("max levels", ML_MAXLVLS);
   ml_list.set<std::string>("prec type",ML_PRECTYPE);
@@ -1674,7 +1674,7 @@ Teuchos::ParameterList create_BILU_List(Teuchos::ParameterList* plist)
     }
   }
 
-  Teuchos::ParameterList& p_list = bilu_list.sublist("Block ILU Parameters");
+  Teuchos::ParameterList& p_list = bilu_list.sublist("block ilu parameters");
   p_list.set<double>("fact: relax value",bilu_relax_value);
   p_list.set<double>("fact: absolute threshold",bilu_abs_thresh);
   p_list.set<double>("fact: relative threshold",bilu_rel_thresh);
@@ -1727,7 +1727,7 @@ Teuchos::ParameterList create_HypreAMG_List(Teuchos::ParameterList* plist)
     }
   }
 
-  Teuchos::ParameterList& amg_list = dpc_list.sublist("BoomerAMG Parameters");
+  Teuchos::ParameterList& amg_list = dpc_list.sublist("boomer amg parameters");
   amg_list.set<double>("tolerance", tol);
   amg_list.set<int>("smoother sweeps", nsmooth);
   amg_list.set<int>("cycle applications", ncycles);

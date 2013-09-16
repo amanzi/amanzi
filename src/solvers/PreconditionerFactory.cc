@@ -34,21 +34,21 @@ Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
     if (slist.isParameter("preconditioner type"))
       type = slist.get<std::string>("preconditioner type");
 
-    if (type == "BoomerAMG") {
-      Teuchos::ParameterList hypre_list = slist.sublist("BoomerAMG Parameters");
+    if (type == "boomer amg") {
+      Teuchos::ParameterList hypre_list = slist.sublist("boomer amg parameters");
       Teuchos::RCP<PreconditionerHypre> prec = Teuchos::rcp(new PreconditionerHypre());
       prec->Init(name, hypre_list);
       return prec;
-    } else if (type == "ML") {
-      Teuchos::ParameterList ml_list = slist.sublist("ML Parameters");
+    } else if (type == "ml") {
+      Teuchos::ParameterList ml_list = slist.sublist("ml parameters");
       Teuchos::RCP<PreconditionerML> prec = Teuchos::rcp(new PreconditionerML());
       prec->Init(name, ml_list);
       return prec;
-    } else if (type == "Block ILU") {
-      Teuchos::ParameterList ilu_list = slist.sublist("Block ILU Parameters");
+    } else if (type == "block ilu") {
+      Teuchos::ParameterList ilu_list = slist.sublist("block ilu parameters");
       Teuchos::RCP<PreconditionerBlockILU> prec = Teuchos::rcp(new PreconditionerBlockILU());
       prec->Init(name, ilu_list);
-    } else if (type == "Identity") {  // Identity preconditioner is default.
+    } else if (type == "identity") {  // Identity preconditioner is default.
       Teuchos::RCP<PreconditionerIdentity> prec = Teuchos::rcp(new PreconditionerIdentity());
       prec->Init(name, prec_list);
       return prec;
