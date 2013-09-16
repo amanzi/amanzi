@@ -135,7 +135,9 @@ void MPC::mpc_init() {
   }
 
   S->Setup();
-  
+
+  S->Initialize();
+
   if (chemistry_enabled) {
     CS->Initialize();
   }
@@ -146,7 +148,7 @@ void MPC::mpc_init() {
     FS->Initialize();
   }
 
-  S->Initialize();
+  S->CheckInitialized();
  
 
   if (transport_enabled) {
