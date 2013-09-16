@@ -165,8 +165,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
   AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
+  solver->SetUserOperator(&*matrix_);
+  solver->SetPrecOperator(&*preconditioner_);
 
   if (is_matrix_symmetric)
     solver->SetAztecOption(AZ_solver, AZ_cg);
@@ -214,7 +214,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
+    AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
     rhs = matrix_->rhs();  // export RHS from the matrix class
@@ -290,8 +290,8 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
   Epetra_Vector  flux_new(flux);
 
   AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
+  solver->SetUserOperator(&*matrix_);
+  solver->SetPrecOperator(&*preconditioner_);
 
   if (is_matrix_symmetric)
       solver->SetAztecOption(AZ_solver, AZ_cg);
@@ -332,7 +332,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     rhs = matrix_->rhs();  // export RHS from the matrix class
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
+    AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
     // AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, *rhs,
     //                     static_cast<Matrix_MFD_PLambda*>(matrix_));
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);

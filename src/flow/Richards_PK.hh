@@ -136,7 +136,7 @@ class Richards_PK : public Flow_PK {
   void ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
                                    const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
-  Matrix_MFD* preconditioner() { return preconditioner_; }
+  Teuchos::RCP<Matrix_MFD> preconditioner() { return preconditioner_; }
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
   // auxilliary data management
@@ -152,8 +152,8 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;
 
-  Matrix_MFD* matrix_;
-  Matrix_MFD* preconditioner_;
+  Teuchos::RCP<Matrix_MFD> matrix_;
+  Teuchos::RCP<Matrix_MFD> preconditioner_;
 
   BDF2::Dae* bdf2_dae;  // Time integrators
   BDF1Dae* bdf1_dae;

@@ -52,9 +52,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   bc_flux = NULL;
   bc_seepage = NULL;
 
-  matrix_ = NULL;
-  preconditioner_ = NULL;
-
   bdf2_dae = NULL;
   bdf1_dae = NULL;
 
@@ -117,9 +114,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
 ****************************************************************** */
 Richards_PK::~Richards_PK()
 {
-  delete matrix_;
-  delete preconditioner_;
-
   delete bdf2_dae;
   delete bc_pressure;
   delete bc_flux;
@@ -162,13 +156,13 @@ void Richards_PK::InitPK()
     // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
     // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
   } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_ = new Matrix_MFD_TPFA(FS, super_map_);
-    preconditioner_ = new Matrix_MFD_TPFA(FS, super_map_);
+    matrix_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_));
+    preconditioner_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_));
     matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
     preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   } else {
-    matrix_ = new Matrix_MFD(FS, super_map_);
-    preconditioner_ = new Matrix_MFD(FS, super_map_);
+    matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
+    preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
   }
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
@@ -497,7 +491,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     //cout<<"flux\n"<<flux<<endl;
     //cout<<Krel_faces<<endl;
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
@@ -638,7 +632,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(matrix_);
+    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";

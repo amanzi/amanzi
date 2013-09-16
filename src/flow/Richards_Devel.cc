@@ -33,8 +33,8 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   Teuchos::RCP<Epetra_Vector> solution_new_cells = Teuchos::rcp(FS->CreateCellView(solution_new));
 
   AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(matrix_);
-  solver->SetPrecOperator(preconditioner_);
+  solver->SetUserOperator(&*matrix_);
+  solver->SetPrecOperator(&*preconditioner_);
 
   if (is_matrix_symmetric) 
       solver->SetAztecOption(AZ_solver, AZ_cg);
@@ -73,15 +73,15 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     // create algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, matrix_, *rel_perm);
-    AddTimeDerivative_MFDfake(*solution_cells, dT, matrix_);
+    AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
+    AddTimeDerivative_MFDfake(*solution_cells, dT, &*matrix_);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
 
     // create preconditioner
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
-    AddTimeDerivative_MFDfake(*solution_cells, dT, preconditioner_);
+    AddTimeDerivative_MFDfake(*solution_cells, dT, &*preconditioner_);
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
