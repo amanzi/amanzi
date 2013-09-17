@@ -12,16 +12,15 @@ Default base with a few methods implemented in standard ways.
 #ifndef AMANZI_PK_DEFAULT_BASE_HH_
 #define AMANZI_PK_DEFAULT_BASE_HH_
 
-#include "Teuchos_VerboseObject.hpp" // REMOVE ME
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
-
-#include "VerboseObject.hh"
 #include "PK.hh"
 
 
 namespace Amanzi {
 
-class PKDefaultBase : public PK {
+class PKDefaultBase : public PK, public Teuchos::VerboseObject<PKDefaultBase> {
 
  public:
 
@@ -48,16 +47,6 @@ class PKDefaultBase : public PK {
   virtual std::string name() { return name_; }
 
  protected:
-  // REMOVE ME
-  // bool includesVerbLevel(Teuchos::EVerbosityLevel my_level,
-  //                        Teuchos::EVerbositylevel level, bool def) {
-  //   return vo_->includesVerbLevel(my_level, level, def);
-  // }
-
-  // REMOVE ME!
-  Teuchos::OSTab getOSTab(const int tabs=1) { return vo_->getOSTab(tabs); }
-
- protected:
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<TreeVector> solution_;
@@ -69,16 +58,11 @@ class PKDefaultBase : public PK {
   Teuchos::RCP<State> S_next_;
 
   // fancy OS
-  Teuchos::RCP<VerboseObject> vo_;
-
-  // -- more fancy OS... these will go away eventually, but removal requires
-  // -- much code refactoring.
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::EVerbosityLevel verbosity_;
 
   // cruft for easier global debugging
   std::vector<AmanziMesh::Entity_ID> dc_;
-  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
 };
 
 } // namespace

@@ -8,8 +8,8 @@ Author: Ethan Coon
 
 Default base with a few methods implemented in standard ways.
 ------------------------------------------------------------------------- */
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "global_verbosity.hh"
 #include "pk_default_base.hh"
 
 namespace Amanzi {
@@ -20,47 +20,28 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
   name_ = plist_.get<std::string>("PK name");
 
   // set up the VerboseObject
-  vo_ = Teuchos::rcp(new VerboseObject(name_, plist_));
+  setLinePrefix(Amanzi::VerbosityLevel::verbosityHeader(name_));
 
-  // Mirror the vo_ in the pk, as removal will require much code refactoring
-  out_ = vo_->os();
-  verbosity_ = vo_->getVerbLevel();
+  setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
+  Teuchos::readVerboseObjectSublist(&plist_,this);
 
+  // get the fancy output ??
+  verbosity_ = getVerbLevel();
+  out_ = getOStream();
 
   // cells to debug
   if (dc_.size() == 0) {
     if (plist_.isParameter("debug cells")) {
       Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
-      for (Teuchos::Array<int>::const_iterator c=dc.begin();
-           c!=dc.end(); ++c) dc_.push_back(*c);
-
-      // Enable a vo for each cell, allows parallel printing of debug cells.
-      if (plist_.isParameter("debug cell ranks")) {
-        Teuchos::Array<int> dc_ranks = plist_.get<Teuchos::Array<int> >("debug cell ranks");
-        if (dc.size() != dc_ranks.size()) {
-          Errors::Message message("Debug cell and debug cell ranks must be equal length.");
-          Exceptions::amanzi_throw(message);
-        }
-        for (Teuchos::Array<int>::const_iterator dcr=dc_ranks.begin();
-             dcr!=dc_ranks.end(); ++dcr) {
-          // make a verbose object for each case
-          Teuchos::ParameterList vo_plist;
-          vo_plist.sublist("VerboseObject");
-          vo_plist.sublist("VerboseObject")
-              = plist_.sublist("VerboseObject");
-          vo_plist.sublist("VerboseObject").set("Root ID", *dcr);
-
-          Teuchos::writeParameterListToXmlOStream(vo_plist, std::cout);
-          dcvo_.push_back(Teuchos::rcp(new VerboseObject(name_,vo_plist)));
-
-        }
-      } else {
-        // Simply use the pk's vo
-        dcvo_.resize(dc_.size(), vo_);
+      for (Teuchos::Array<int>::const_iterator lcv=dc.begin();
+           lcv!=dc.end(); ++lcv) {
+        dc_.push_back(*lcv);
       }
+    } else {
+      dc_.push_back(plist_.get<int>("debug cell 0",0));
+      dc_.push_back(plist_.get<int>("debug cell 1",0));
     }
   }
-
 }
 
 
