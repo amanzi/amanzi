@@ -371,7 +371,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
   Teuchos::ParameterList prec_list;
   if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    prec_list = tmp_list.sublist("ml Parameters"); 
+    prec_list = tmp_list.sublist("ml parameters"); 
   } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
     prec_list = tmp_list.sublist("boomer amg parameters"); 
   } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
