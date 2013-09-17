@@ -246,44 +246,22 @@ void RelativePermeability::FaceUpwindFlux_(
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       /// ***** TEST  <--
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      const AmanziGeometry::Point& cntr = mesh_->face_centroid(f);
-      double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
+      // const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      // const AmanziGeometry::Point& cntr = mesh_->face_centroid(f);
+      // double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / 
+	mesh_->face_area(f);
       /// ***** TEST  -->
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
         if (bc_model[f] == FLOW_BC_FACE_PRESSURE && flux[f] * dirs[n] < -tol) {
           double pc = atm_pressure - bc_values[f][0];
           (*Krel_faces_)[f] = WRM_[(*map_c2mb_)[c]]->k_relative(pc);
-
-      /// ***** TEST  <--
-	  // if ( cos_angle > -FLOW_RELATIVE_PERM_TOLERANCE ){
-	  //   cout << "Not aligned " <<" cell "<<c<<" face "<<f<<endl;
-	  // }
-      /// ***** TEST  -->   
-
         } else {
-
-          (*Krel_faces_)[f] = (*Krel_cells_)[c];
-
-      /// ***** TEST  <--
-	  // if ( cos_angle < -FLOW_RELATIVE_PERM_TOLERANCE ){
-	  // if (fabs(flux[f]) > 1e-12) cout << "Not aligned " <<" cell "<<c<<" face "<<f<<endl;
-	  //}
-      /// ***** TEST  -->   
-
+          (*Krel_faces_)[f] = (*Krel_cells_)[c];   
         }
       } else {
         if (flux[f] * dirs[n] > tol) {
-          (*Krel_faces_)[f] = (*Krel_cells_)[c];  // The upwind face.
-      // /// ***** TEST  <--
-      	  // if ( cos_angle < FLOW_RELATIVE_PERM_TOLERANCE ){
-      	  //   if (fabs(normal[2]) > 1e-5) cout << "Not aligned " << cntr <<" "<<flux[f] * dirs[n]<<" "<<p[c]<<endl;
-      	  // }
-       	  // else {
-	  //   if (fabs(normal[2]) > 1e-5) cout << "Aligned     " << cntr <<" "<<flux[f] * dirs[n]<<" "<<p[c]<<endl;
-       	  // }
-       /// ***** TEST  -->	  
+          (*Krel_faces_)[f] = (*Krel_cells_)[c];  // The upwind face.	  
         } else if (fabs(flux[f]) <= tol) { 
           (*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  // Almost vertical face.
         }

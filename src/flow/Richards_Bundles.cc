@@ -260,7 +260,9 @@ void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
 
   AmanziMesh::Entity_ID_List faces;
   AmanziMesh::Entity_ID_List cells;
-  double h[2], perm[2];
+  AmanziGeometry::Point a_dist;
+  double h[2], perm[2], perm_test[2], h_test[2];
+  double trans_f;
 
   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
@@ -273,10 +275,23 @@ void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
     const AmanziGeometry::Point& face_centr = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
+    if (ncells == 2){
+      a_dist = mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
+    } else if (ncells == 1) {    
+      a_dist = face_centr - mesh_->cell_centroid(cells[0]);
+    } 
+
+    a_dist *= 1./norm(a_dist);
+
     for (int i=0; i<ncells; i++) {
       h[i] = norm(face_centr - mesh_->cell_centroid(cells[i]));
       perm[i] = (rho/vis) * ((K[cells[i]] * normal) * normal) / area;
+
+      perm_test[i] = (rho/vis) * ((K[cells[i]] * normal) * a_dist);
+      h_test[i] = pow(-1, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;
       //perm[i] = ((K[cells[i]] * normal) * normal)/ area;
+      //cout<<i<<" "<<h[i]<<" "<<h_test[i]<<endl;
+      //cout<<i<<" "<<perm[i]<<" "<<perm_test[i]<<endl;
     }
     double factor, grav;
 
@@ -290,9 +305,19 @@ void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
       grav *= h[0];
     } 
 
-    Trans_faces[f] = factor;
+    trans_f = 0.;
+    for (int i=0; i<ncells; i++) {
+      trans_f += h_test[i]/perm[i];
+    }
+
+    trans_f = 1./trans_f;
+
+    //cout<<factor<<" "<<trans_f<<endl;
+
+    Trans_faces[f] = trans_f;
     grav_faces[f] = Trans_faces[f] * grav;
   }
+
 
   FS->CopyMasterFace2GhostFace(Trans_faces);
   FS->CopyMasterFace2GhostFace(grav_faces);
