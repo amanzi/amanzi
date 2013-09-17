@@ -12,8 +12,9 @@ Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <algorithm>
 #include <vector>
 
-#include "Richards_PK.hh"
+#include "LinearOperatorFactory.hh"
 #include "TI_Specs.hh"
+#include "Richards_PK.hh"
 
 
 namespace Amanzi {
@@ -86,14 +87,13 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
     preconditioner_->UpdatePreconditioner();
 
-    // call AztecOO solver
-    rhs = matrix_->rhs();
-    Epetra_Vector b(*rhs);
-    solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
-    solver->SetLHS(&*solution);  // initial solution guess
+    // solve linear problem
+    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+       solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
-    solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
-    int num_itrs = solver->NumIters();
+    rhs = matrix_->rhs();
+    solver->ApplyInverse(*rhs, *solution);
 
     // error estimates
     double sol_norm = FS->normLpCell(solution_new, 2.0);
@@ -105,11 +105,12 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
       dT /= 10;
       solution_new = solution_old;
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-        double linear_residual = solver->ScaledResidual();
+        int num_itrs = solver->num_itrs();
+        double residual = solver->residual();
 
         Teuchos::OSTab tab = vo_->getOSTab();
         *(vo_->os()) << "Fail:" << itrs << " Pressure(diff=" << L2error << ", sol=" 
-                     << sol_norm << ")  solver(" << linear_residual << ", " << num_itrs 
+                     << sol_norm << ")  solver(" << residual << ", " << num_itrs 
                      << "), T=" << T_physics << " dT=" << dT << endl;
       }
       ifail++;
@@ -118,11 +119,12 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
       solution_old = solution_new;
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-        double linear_residual = solver->ScaledResidual();
+        int num_itrs = solver->num_itrs();
+        double residual = solver->residual();
 
         Teuchos::OSTab tab = vo_->getOSTab();
         *(vo_->os()) << "Step:" << itrs << " Pressure(diff=" << L2error << ", sol=" 
-                     << sol_norm << ")  solver(" << linear_residual << ", " << num_itrs 
+                     << sol_norm << ")  solver(" << residual << ", " << num_itrs 
                      << "), T=" << T_physics << " dT=" << dT << endl;
       }
 
@@ -135,8 +137,6 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
   }
 
   ti_specs_sss_.num_itrs = itrs;
-
-  delete solver;
   return 0;
 }
 
@@ -158,6 +158,24 @@ void Richards_PK::AddTimeDerivative_MFDfake(
   }
 }
 
+
+/* ******************************************************************
+* Check difference du between the predicted and converged solutions.                                            
+****************************************************************** */
+double Richards_PK::ErrorNormPicardExperimental(const Epetra_Vector& u, const Epetra_Vector& du)
+{
+  double error_p = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    double tmp = fabs(du[c]) / (fabs(u[c] - atm_pressure) + atm_pressure);
+    error_p = std::max(error_p, tmp);
+  }
+
+#ifdef HAVE_MPI
+  double buf = error_p;
+  u.Comm().MaxAll(&buf, &error_p, 1);  // find the global maximum
+#endif
+  return error_p;
+}
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

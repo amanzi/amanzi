@@ -570,14 +570,6 @@ int Richards_PK::Advance(double dT_MPC)
     bdf1_dae->write_bdf1_stepping_statistics();
 
     T_physics = bdf1_dae->most_recent_time();
-
-  } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
-    if (block_picard == 0) {
-      PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
-      //AndersonMixingTimeStep(time, dT, dTnext);
-    } else {
-      dTnext = dT;
-    }
   }
 
   // Calculate time derivative and 2nd-order solution approximation.
