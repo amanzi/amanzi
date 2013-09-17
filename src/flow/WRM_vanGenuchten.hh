@@ -37,7 +37,7 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   double m_, n_, l_, alpha_;  // van Genuchten parameters
   const double sr_;  // residual saturation
   int function_;  // relative permeability model
-  double tol_; //defines when cut off derivative which tends to go to infinity
+  double tol_;  // defines when cut off derivative which tends to go to infinity
 
   const double pc0_;  // regularization threshold (usually 0 to 500 Pa)
   double a_, b_, factor_dSdPc_;  // frequently used constant

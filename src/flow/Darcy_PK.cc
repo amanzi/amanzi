@@ -255,17 +255,21 @@ void Darcy_PK::InitTransient(double T0, double dT0)
 ****************************************************************** */
 void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
 {
-  if (MyPID == 0 && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    std::printf("***********************************************************\n");
-    std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
-    std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
-    std::printf("%5s time stepping strategy id %2d\n", "", ti_specs.dT_method);
-    std::printf("%5s source/sink distribution method id %2d\n", "", src_sink_distribution);
-    std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n", "", 
-        ti_specs.ls_specs.convergence_tol, ti_specs.ls_specs.max_itrs);
-    std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
-    if (ti_specs.initialize_with_darcy)
-        std::printf("%5s initial pressure guess: \"saturated solution\"\n", "");
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "****************************************" << endl
+                 << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
+                 << "****************************************" << endl
+                 << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
+                 << "  time stepping id=" << ti_specs.dT_method << endl
+                 << "  sources distribution id=" << src_sink_distribution << endl
+                 << "  linear solver: ||r||<" << ls_specs.convergence_tol << " #itr<" << ls_specs.max_itrs << endl
+                 << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
+    if (ti_specs.initialize_with_darcy) {
+      *(vo_->os()) << "  initial pressure guess: \"saturated solution\"" << endl;
+    }
   }
 
   // set up new preconditioner (preconditioner_ = matrix_)
@@ -301,8 +305,8 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     int nokay = matrix_->nokay();
     int npassed = matrix_->npassed();
 
-    std::printf("%5s successful and passed matrices: %8d %8d\n", "", nokay, npassed);   
-    std::printf("***********************************************************\n");
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "  good and repaired matrices: " << nokay << " " << npassed << endl;
   }
 
   // Well modeling (one-time call)
