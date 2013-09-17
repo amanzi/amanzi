@@ -75,8 +75,6 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   void AddCol2NumJacob(int irow, Epetra_Vector& r);
   void CompareJacobians();
 
-  const char* Label() const { return strdup("Matrix MFD_TPFA"); }
-
  private:
   void ComputeJacobianLocal(int mcells,
                             int face_id,

@@ -1,6 +1,5 @@
 /*
 This is the flow component of the Amanzi code. 
-Solvers based on AztecOO are collected here.
 
 Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
 Amanzi is released under the three-clause BSD License. 

@@ -348,7 +348,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     std::printf("%5s error control options: %X\n", "", error_control_);
     std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
         "", ls.convergence_tol, ls.max_itrs);
-    std::printf("%7s iterative method AztecOO id %d (gmres=1)\n", "", ls.method);
+    std::printf("%7s iterative method id %d (gmres=1)\n", "", ls.method);
     std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
 
     if (ti_specs.initialize_with_darcy) {
@@ -356,7 +356,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       std::printf("%5s pressure re-initialization (saturated solution)\n", "");
       std::printf("%7s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
           "", ls_ini.convergence_tol, ls_ini.max_itrs);
-      std::printf("%7s iterative method AztecOO id %d (cg=0)\n", "", ls_ini.method);
+      std::printf("%7s iterative method id %d (cg=0)\n", "", ls_ini.method);
       std::printf("%7s preconditioner: \"%s\"\n", " ", ls_ini.preconditioner_name.c_str());
       if (ti_specs.clip_saturation > 0.0) {
         std::printf("%7s clipping saturation value: %9.4g [-]\n", "", ti_specs.clip_saturation);
