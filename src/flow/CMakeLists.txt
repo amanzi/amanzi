@@ -48,7 +48,7 @@ set(flow_src_files Flow_PK.cc Flow_State.cc Flow_IO.cc
                    Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SourceFactory.cc Flow_VandV.cc 
                    Darcy_PK.cc Darcy_TI.cc Darcy_IO.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_IO.cc Richards_TI.cc Richards_WRM.cc
-                   Richards_SteadyState.cc Richards_Picard.cc Richards_AztecOO.cc
+                   Richards_SteadyState.cc Richards_LinearOperator.cc
                    Richards_Bundles.cc Richards_Devel.cc 
                    Matrix_MFD.cc Matrix_TPFA.cc 
                    Stiffness_MFD.cc 

@@ -82,6 +82,9 @@ class State {
   // Initialize field evaluators using ICs set by PKs.
   void Initialize();
 
+  // Check that everything is initialized and owned.
+  void CheckInitialized();
+
 
   // -----------------------------------------------------------------------------
   // State handles mesh management.

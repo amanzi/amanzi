@@ -31,6 +31,7 @@ Matrix_MFD::Matrix_MFD(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Ma
 { 
   mesh_ = FS_->mesh();
   actions_ = 0;
+  method_ = 0;
 }
 
 
@@ -724,10 +725,6 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 /* ******************************************************************
 * The OWNED cell-based and face-based d.o.f. are packed together into 
 * the X and Y Epetra vectors, with the cell-based in the first part.
-*
-* WARNING: When invoked by AztecOO the arguments X and Y may be 
-* aliased: possibly the same object or different views of the same 
-* underlying data. Thus, we do not assign to Y until the end.                                              
 ****************************************************************** */
 int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {

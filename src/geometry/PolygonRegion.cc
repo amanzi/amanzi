@@ -191,11 +191,12 @@ PolygonRegion::inside(const Point& p) const
       double v_i = points_[i][d1];
       double u_iplus1 = points_[iplus1][d0];
       double v_iplus1 = points_[iplus1][d1];
-      
-      double slope = (u_iplus1-u_i)/(v_iplus1-v_i);
+ 
+      // don't compute - v_iplus1-v_i could be zero     
+      //      double slope = (u_iplus1-u_i)/(v_iplus1-v_i);
       
       if (((v_i > v && v_iplus1 <= v) || (v_iplus1 > v && v_i <= v)) &&
-          (u <= (u_i + (v-v_i)*slope)))
+          (u <= (u_i + (v-v_i)*(u_iplus1-u_i)/(v_iplus1-v_i))))
         result = !result;
     }
   }

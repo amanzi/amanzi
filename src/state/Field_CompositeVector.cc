@@ -245,7 +245,7 @@ void Field_CompositeVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk)
 
 void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-      Teuchos::rcp(new Amanzi::HDF5_MPI(*data_->comm(), filename));
+      Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
   EnsureSubfieldNames_();
 
   int i = 0;
@@ -271,7 +271,7 @@ void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
 
 void Field_CompositeVector::ReadCheckpoint_(std::string filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-      Teuchos::rcp(new Amanzi::HDF5_MPI(*data_->comm(), filename));
+      Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
   ReadCheckpoint(file_input.ptr());
 }
 
@@ -310,7 +310,7 @@ void Field_CompositeVector::ReadFromExodusII_(const Teuchos::ParameterList& file
   std::string attribute_name = file_list.get<std::string>("attribute");
 
   // open ExodusII file
-  const Epetra_Comm& comm = *data_->comm();
+  const Epetra_Comm& comm = data_->Comm();
 
   if (comm.NumProc() > 1) {
     std::stringstream add_extension;

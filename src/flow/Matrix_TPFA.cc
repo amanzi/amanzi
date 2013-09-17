@@ -13,7 +13,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Epetra_FECrsGraph.h"
-#include "AztecOO.h"
+// #include "AztecOO.h"
 #include "mfd3d_diffusion.hh"
 
 #include "FlowDefs.hh"

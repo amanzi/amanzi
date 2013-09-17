@@ -80,7 +80,7 @@ public:
 
 private:
   // private and unimplemented
-  CompositeVectorFactory& operator=(const CompositeVectorFactory&) {}
+  CompositeVectorFactory& operator=(const CompositeVectorFactory&);
 
   // Consistency checking.
   bool CheckContained_(const std::vector<std::string>& containing,

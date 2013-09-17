@@ -51,7 +51,7 @@ CompositeVector::CompositeVector(
   }
 
   // create the master BlockVector
-  mastervec_ = Teuchos::rcp(new BlockVector(comm(), names_, mastermaps, num_dofs));
+  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_, mastermaps, num_dofs));
 
   // do the same for the ghosted Vector, if necessary
   if (ghosted) {
@@ -69,7 +69,7 @@ CompositeVector::CompositeVector(
 
     // create the ghost BlockVector
     ghostvec_ =
-      Teuchos::rcp(new BlockVector(comm(), names_, ghostmaps, num_dofs));
+      Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, num_dofs));
   } else {
     ghostvec_ = mastervec_;
   }

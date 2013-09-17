@@ -348,7 +348,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     std::printf("%5s error control options: %X\n", "", error_control_);
     std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
         "", ls.convergence_tol, ls.max_itrs);
-    std::printf("%7s iterative method AztecOO id %d (gmres=1)\n", "", ls.method);
+    std::printf("%7s iterative method id %d (gmres=1)\n", "", ls.method);
     std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
 
     if (ti_specs.initialize_with_darcy) {
@@ -356,7 +356,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       std::printf("%5s pressure re-initialization (saturated solution)\n", "");
       std::printf("%7s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
           "", ls_ini.convergence_tol, ls_ini.max_itrs);
-      std::printf("%7s iterative method AztecOO id %d (cg=0)\n", "", ls_ini.method);
+      std::printf("%7s iterative method id %d (cg=0)\n", "", ls_ini.method);
       std::printf("%7s preconditioner: \"%s\"\n", " ", ls_ini.preconditioner_name.c_str());
       if (ti_specs.clip_saturation > 0.0) {
         std::printf("%7s clipping saturation value: %9.4g [-]\n", "", ti_specs.clip_saturation);
@@ -371,11 +371,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
   Teuchos::ParameterList prec_list;
   if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    prec_list = tmp_list.sublist("ML Parameters"); 
+    prec_list = tmp_list.sublist("ml Parameters"); 
   } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    prec_list = tmp_list.sublist("BoomerAMG Parameters"); 
+    prec_list = tmp_list.sublist("boomer amg parameters"); 
   } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    prec_list = tmp_list.sublist("Block ILU Parameters");
+    prec_list = tmp_list.sublist("block ilu parameters");
   }
 
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "monotone mfd");
@@ -570,14 +570,6 @@ int Richards_PK::Advance(double dT_MPC)
     bdf1_dae->write_bdf1_stepping_statistics();
 
     T_physics = bdf1_dae->most_recent_time();
-
-  } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
-    if (block_picard == 0) {
-      PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
-      //AndersonMixingTimeStep(time, dT, dTnext);
-    } else {
-      dTnext = dT;
-    }
   }
 
   // Calculate time derivative and 2nd-order solution approximation.
