@@ -39,7 +39,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(
     n_ = 2.0 / (1.0 - m_);
     function_ = FLOW_WRM_BURDINE;
   }
-
+  tol_ = 1e-10;
   factor_dSdPc_ = -m_ * n_ * alpha_ * (1.0 - sr_);
   a_ = b_ = 0;
   
@@ -124,11 +124,13 @@ double WRM_vanGenuchten::capillaryPressure(double s)
 ****************************************************************** */
 double WRM_vanGenuchten::dKdPc(double pc)
 {
-  if (pc > 0.0) {
+  if (pc >= pc0_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     double dsdp = dSdPc(pc);
 
     double x = pow(se, 1.0 / m_);
+    if (fabs(1-x) < tol_) return 0.;
+
     double y = pow(1.0 - x, m_);
     double dkdse;
     if (function_ == FLOW_WRM_MUALEM)
@@ -138,8 +140,11 @@ double WRM_vanGenuchten::dKdPc(double pc)
 
     return dkdse * dsdp / (1 - sr_);
 
-  } else {
+  } else if (pc <=0){
     return 0.0;
+  }
+  else {
+    return 2*a_*pc + 3*b_*pc*pc; 
   }
 }
 
