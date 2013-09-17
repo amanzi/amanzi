@@ -55,7 +55,7 @@ void Darcy_PK::UpdateAuxilliaryData()
 void Richards_PK::UpdateAuxilliaryData() 
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  *(vo_->os()) << "UpdateAuxilliaryData" << endl;  
+  *(vo_->os()) << "Secondary fields: hydraulic head, etc..." << endl;  
 
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& hydraulic_head = FS->ref_hydraulic_head();

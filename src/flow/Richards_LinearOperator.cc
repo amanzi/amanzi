@@ -12,6 +12,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Matrix_MFD.hh"
 #include "Matrix_Audit.hh"
+#include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 
 namespace Amanzi {
@@ -33,38 +34,26 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, Linear
 
   // calculate and assemble elemental stiffness matrices
   AssembleSteadyStateMatrix_MFD(&*matrix_);
+  Epetra_Vector& rhs = *(matrix_->rhs());
+
   AssembleSteadyStatePreconditioner_MFD(&*preconditioner_);
   preconditioner_->UpdatePreconditioner();
 
-  // solve symmetric problem
-  AztecOO* solver_tmp = new AztecOO;
+  // solve linear problem
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
-  solver_tmp->SetUserOperator(&*matrix_);
-  solver_tmp->SetPrecOperator(&*preconditioner_);
-  solver_tmp->SetAztecOption(AZ_solver, ls_specs.method);  // Must be AZ_xxx method.
-  solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
-
-  Epetra_Vector b(*(matrix_->rhs()));
-  solver_tmp->SetRHS(&b);
-  solver_tmp->SetLHS(&u);
-
-  solver_tmp->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
-
-  // Matrix_Audit audit(mesh_, matrix_);
-  // audit.InitAudit();
-  // audit.RunAudit();
+  solver->ApplyInverse(rhs, u);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int num_itrs = solver_tmp->NumIters();
-    double linear_residual = solver_tmp->ScaledResidual();
+    int num_itrs = solver->num_itrs();
+    double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "saturated solver: ||r||=" << linear_residual 
-                 << " itr=" << num_itrs << endl;
+    *(vo_->os()) << "saturated solver(" << ls_specs.solver_name 
+                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
   }
-
-  delete solver_tmp;
 }
 
 
@@ -90,34 +79,26 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   preconditioner_->PopulatePreconditioner(*matrix_);
   preconditioner_->UpdatePreconditioner();
 
+  // solve non-symmetric problem
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs_constraints;
 
-  // solve non-symmetric problem
-  AztecOO* solver_tmp = new AztecOO;
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+     solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
-  solver_tmp->SetUserOperator(&*matrix_);
-  solver_tmp->SetPrecOperator(&*preconditioner_);
-  solver_tmp->SetAztecOption(AZ_solver, ls_specs.method);  // Must be AZ_xxx method. 
-  solver_tmp->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver_tmp->SetAztecOption(AZ_conv, AZ_rhs);
+  Epetra_Vector& rhs = *(matrix_->rhs());
+  solver->ApplyInverse(rhs, *utmp_faces);
 
-  Epetra_Vector b(*(matrix_->rhs()));
-  solver_tmp->SetRHS(&b);
-
-  solver_tmp->SetLHS(&utmp);
-  solver_tmp->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
   *u_faces = *utmp_faces;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int num_itrs = solver_tmp->NumIters();
-    double linear_residual = solver_tmp->ScaledResidual();
+    int num_itrs = solver->num_itrs();
+    double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "constraints solver: ||r||=" << linear_residual
-                 << " itr=" << num_itrs << endl;
+    *(vo_->os()) << "constraints solver(" << ls_specs.solver_name 
+                 << "): ||r||=" << residual << " itr=" << num_itrs << endl;
   }
-
-  delete solver_tmp;
 }
 
 }  // namespace AmanziFlow

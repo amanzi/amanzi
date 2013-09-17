@@ -251,7 +251,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << endl;
+                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
 // Epetra_Vector& pressure = FS->ref_pressure();
@@ -369,7 +369,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << endl;
+                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux_new);
