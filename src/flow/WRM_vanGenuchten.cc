@@ -20,6 +20,7 @@ namespace AmanziFlow {
 
 const int FLOW_WRM_MUALEM = 1;
 const int FLOW_WRM_BURDINE = 2;
+const double FLOW_WRM_TOLERANCE = 1e-10;
 
 /* ******************************************************************
 * Setup fundamental parameters for this model.
@@ -28,7 +29,7 @@ const int FLOW_WRM_BURDINE = 2;
 WRM_vanGenuchten::WRM_vanGenuchten(
     std::string region, double m, double l, double alpha, 
     double sr, std::string krel_function, double pc0)
-    : m_(m), l_(l), alpha_(alpha), sr_(sr), pc0_(pc0)
+    : m_(m), l_(l), alpha_(alpha), sr_(sr), pc0_(pc0), tol_(FLOW_WRM_TOLERANCE)
 {
   set_region(region);
 
@@ -39,7 +40,6 @@ WRM_vanGenuchten::WRM_vanGenuchten(
     n_ = 2.0 / (1.0 - m_);
     function_ = FLOW_WRM_BURDINE;
   }
-  tol_ = 1e-10;
   factor_dSdPc_ = -m_ * n_ * alpha_ * (1.0 - sr_);
   a_ = b_ = 0;
   
