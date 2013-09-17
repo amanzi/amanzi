@@ -1599,7 +1599,7 @@ Teuchos::ParameterList create_DPC_List(Teuchos::ParameterList* plist)
   Teuchos::ParameterList dpc_list;
   
   dpc_list.set<std::string>("discretization method", "optimized mfd scaled");
-  dpc_list.set<std::string>("preconditionre type", "ml");
+  dpc_list.set<std::string>("preconditioner type", "ml");
 
   double aggthr(ML_AGG_THR);
   std::string smthtyp(ML_SMOOTHER);
