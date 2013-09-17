@@ -25,8 +25,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 set(CXX_header_files amanzi_structured_grid_simulation_driver.H)
 set(CXX_source_files amanzi_structured_grid_simulation_driver.cpp)
 
-add_amanzi_library(boxdriv SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
-add_library(boxdriv1 OBJECT ${CXX_source_files} ${CXX_headers_files})
+add_library(structdriv OBJECT ${CXX_source_files}
+                              ${CXX_headers_files})
 
 if (BUILD_TESTS)
 

@@ -8,8 +8,13 @@
 # through these variables.
 project(STRUCTMAT)
 
-set(CXX_header_files Material.H MatFiller.H MatFiller_F.H)
-set(CXX_source_files Material.cpp MatFiller.cpp)
+set(CXX_header_files Material.H
+                     MatFiller.H
+                     MatFiller_F.H)
+
+set(CXX_source_files Material.cpp
+                     MatFiller.cpp)
+
 set(FPP_source_files MatFiller_${AMANZI_SPACEDIM}D.F)
 
 
@@ -47,41 +52,26 @@ include_directories(${Epetra_INCLUDE_DIRS})
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
-add_amanzi_library(structmat
-                   SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
-                   HEADERS ${CXX_headers_files})
-add_library(structmat1 OBJECT ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
-                   ${CXX_headers_files})
-
-
-set(structured_grid_libs pmamr boxprob boxdriv structmat structutils ${CCSE_LIBRARIES})
-link_directories(${CCSE_EXT_LIBRARY_DIRS})
-if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
-  #message(">>>>>> using darwin ld flags")
-  set(ld_flag_prefix -force_load)
-  set(ld_flag_suffix)
-elseif (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-  #message(">>>>>> using linux ld flags")
-  set(ld_flag_prefix -Wl,-whole-archive)
-  set(ld_flag_suffix -Wl,-no-whole-archive)
-else()
-  message(FATAL_ERROR "Linking of structured grid is not supported on this system: '${CMAKE_SYSTEM_NAME}'")
-endif()
-
-foreach(lib ${structured_grid_libs})
-  set(ssc_structured_grid_libs ${ssc_structured_grid_libs} ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
-endforeach(lib)
-list(APPEND ssc_structured_grid_libs ${PETSC_LIBRARIES})
-
-get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
-
-set(ssc_tpl_libs_incl ${ssc_structured_grid_libs} ${ssc_common_libs})
-set(ssc_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-
-list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
+add_library(structmat OBJECT ${FPP_out_files}
+                             ${CXX_source_files}
+                             ${F90_source_files}
+                             ${F77_source_files}
+                             ${CXX_headers_files})
 
 if (BUILD_TESTS) 
+
+  include_directories(${CCSE_INCLUDE_DIRS})
+  link_directories(${CCSE_LIBRARY_DIR})
+  add_definitions("-DENABLE_Structured")
+
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES})
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
+    if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+      list(APPEND structured_grid_libs gfortran)
+    endif()
+  endif()
+
+  set(tpl_libs)
 
   add_amanzi_test(MaterialIDFiller tMIDf
                   KIND unit

@@ -12,12 +12,18 @@ define_external_project_args(CCSE TARGET ccse DEPENDS ${MPI_PROJECT})
 #      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
 #      CMAKE_ARGS -DVAR=VALUE OK
 # NO WHITESPACE between -D and VAR. Parser blows up otherwise.
-# 
+#
+
+#convert BOOLSs to INTs, as reqd
+set(ENABLE_OpenMP_INT 0)
+if (ENABLE_OpenMP)
+  set(ENABLE_OpenMP_INT 1)
+endif (ENABLE_OpenMP)
 message(STATUS "Build CCSE with space dimension ${CCSE_BL_SPACEDIM}")
 set(CCSE_CMAKE_CACHE_ARGS
                        -DENABLE_Config_Report:BOOL=TRUE
-                       -DENABLE_MPI:BOOL=TRUE
-                       -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
+                       -DENABLE_MPI:INT=1
+                       -DENABLE_OpenMP:INT=${ENABLE_OpenMP_INT}
                        -DENABLE_TESTS:BOOL=FALSE
                        -DBL_PRECISION:STRING=DOUBLE
                        -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM}

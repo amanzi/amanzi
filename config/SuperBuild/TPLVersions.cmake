@@ -92,13 +92,15 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 # TPL: CCSE
 #
 set(CCSE_VERSION_MAJOR 1)
-set(CCSE_VERSION_MINOR 1)
-set(CCSE_VERSION_PATCH 8)
+set(CCSE_VERSION_MINOR 2)
+set(CCSE_VERSION_PATCH 1)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
-set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+#set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
+set(CCSE_URL_STRING     "file:///home/marc/src/CCSE")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        d36b6f557aa75a8a303d16351216e75e)
+#set(CCSE_MD5_SUM        d36b6f557aa75a8a303d16351216e75e)
+set(CCSE_MD5_SUM        c343447436aa105cfe1587bd2ef61cbc)
 
 #
 # TPL: UnitTest
