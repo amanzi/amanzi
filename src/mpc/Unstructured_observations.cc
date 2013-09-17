@@ -122,7 +122,7 @@ void Unstructured_observations::make_observations(State& state)
     
     unsigned int mesh_block_size(0);
     Amanzi::AmanziMesh::Entity_ID_List entity_ids;
-    if (var == "Aqueous mass flux") { // for flux we need faces
+    if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate") ) { // for flux we need faces
       mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
 						      Amanzi::AmanziMesh::FACE,
 						      Amanzi::AmanziMesh::OWNED);
@@ -227,7 +227,7 @@ void Unstructured_observations::make_observations(State& state)
 	value += (*hydraulic_head)[ic] * state.GetMesh()->cell_volume(ic);
 	volume += state.GetMesh()->cell_volume(ic);
       }
-    } else if (var == "Aqueous mass flux") {
+    } else if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate")) {
       value = 0.0;
       volume = 0.0;
       
@@ -244,13 +244,18 @@ void Unstructured_observations::make_observations(State& state)
       Teuchos::RCP<const Epetra_Vector> darcy_flux = 
 	Teuchos::rcpFromRef(*(*state.GetFieldData("darcy_flux")->ViewComponent("face", false))(0));      
       
+      double density(1.0);
+      if (var == "Aqueous mass flow rate") {
+	density = *state.GetScalarData("fluid_density") ;
+      }
+
       for (int i = 0; i != mesh_block_size; ++i) {
 	int iface = entity_ids[i];
 	Amanzi::AmanziGeometry::Point face_normal = state.GetMesh()->face_normal(iface);
-	double sign = reg_normal * face_normal;
 	double area =  state.GetMesh()->face_area(iface);
+	double sign = reg_normal * face_normal / area;
 	
-	value += sign * (*darcy_flux)[iface] * area;
+	value += sign * (*darcy_flux)[iface] * density;
 	volume += area;
       }
      
