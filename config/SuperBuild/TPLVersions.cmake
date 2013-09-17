@@ -26,10 +26,11 @@
 #   0.91.2       - turned on patch for IfPack support of noncontiguous global ids with HYPRE
 #   0.91.3       - updated Xerces-C++ build/find to use OSX CoreServices framework
 #   0.91.4       - updated CCSE to version 1.1.8
+#   0.91.5       - updated CCSE to version 1.2.1
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 4)
+set (AMANZI_TPLS_VERSION_PATCH 5)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -92,13 +93,13 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 # TPL: CCSE
 #
 set(CCSE_VERSION_MAJOR 1)
-set(CCSE_VERSION_MINOR 1)
-set(CCSE_VERSION_PATCH 8)
+set(CCSE_VERSION_MINOR 2)
+set(CCSE_VERSION_PATCH 1)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        d36b6f557aa75a8a303d16351216e75e)
+set(CCSE_MD5_SUM        c343447436aa105cfe1587bd2ef61cbc)
 
 #
 # TPL: UnitTest
