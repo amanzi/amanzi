@@ -188,8 +188,14 @@ void MPC::mpc_init() {
       CPK->InitializeChemistry();
     } catch (const ChemistryExceptionType& chem_error) {
       std::ostringstream error_message;
+#ifdef ALQUIMIA_ENABLED
       error_message << "MPC:mpc_init(): error... Alquimia_Chemistry_PK.InitializeChemistry returned an error status: ";
       error_message << chem_error.what();
+#else
+      error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
+      error_message << chem_error.what();
+#endif
+
       Errors::Message message(error_message.str());
       Exceptions::amanzi_throw(message);
     }   

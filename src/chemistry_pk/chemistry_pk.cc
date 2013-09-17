@@ -153,15 +153,15 @@ void Chemistry_PK::InitializeChemistry(void) {
     }
   } catch (ChemistryException& geochem_error) {
     ierr = 1;
-    //chem_->DisplayResults();
-    //std::cout << geochem_error.what() << std::endl;
-    //Exceptions::amanzi_throw(geochem_error);
+    // chem_->DisplayResults();
+    // std::cout << geochem_error.what() << std::endl;
+    // Exceptions::amanzi_throw(geochem_error);
   }
   int recv(0);
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
     ChemistryException geochem_error("Error in Chemistry_PK::InitializeChemistry 0");
-    Exceptions::amanzi_throw(geochem_error); 
+    Exceptions::amanzi_throw(geochem_error);
   }
 
   // TODO(bandre): at this point we should know about any additional

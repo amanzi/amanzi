@@ -464,7 +464,10 @@ void Chemistry_State::Initialize() {
 
   // Aqueous species:
   if (number_of_aqueous_components_ > 0) {
-    InitializeField_(ic_plist, "total_component_concentration", false, -1.0);
+    if (!S_->GetField("total_component_concentration",name_)->initialized()) {
+      InitializeField_(ic_plist, "total_component_concentration", false, -1.0);
+      
+    }
     InitializeField_(ic_plist, "free_ion_species", true, 0.0);
     InitializeField_(ic_plist, "primary_activity_coeff", true, 1.0);
 
