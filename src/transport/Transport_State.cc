@@ -153,13 +153,29 @@ void Transport_State::Initialize() {
     S_->GetField("darcy_flux",name_)->set_initialized();
     S_->Initialize();
   } else {
-    // BEGIN REMOVE ME once flow tests pass --etc
-    S_->GetFieldData("porosity", name_)->PutScalar(0.2);
-    S_->GetFieldData("total_component_concentration", name_)->PutScalar(0.0);
-    S_->GetFieldData("water_saturation", name_)->PutScalar(1.0);
-    S_->GetFieldData("prev_water_saturation", name_)->PutScalar(1.0);
-    S_->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
-    // END REMOVE ME
+    // fields that might be initialized through the input
+    // file need to be tested and initialized 'by hand' here
+
+    if (!S_->GetField("darcy_flux",name_)->initialized()) {
+      darcy_flux()->PutScalar(0.0);
+      S_->GetField("darcy_flux",name_)->set_initialized();
+    }
+    if (!S_->GetField("water_saturation",name_)->initialized()) {
+      water_saturation()->PutScalar(1.0);
+      S_->GetField("water_saturation",name_)->set_initialized();
+    }
+    if (!S_->GetField("prev_water_saturation",name_)->initialized()) {
+      prev_water_saturation()->PutScalar(1.0);
+      S_->GetField("prev_water_saturation",name_)->set_initialized();
+    }
+
+    // // BEGIN REMOVE ME once flow tests pass --etc
+    // S_->GetFieldData("porosity", name_)->PutScalar(0.2);
+    // S_->GetFieldData("total_component_concentration", name_)->PutScalar(0.0);
+    // S_->GetFieldData("water_saturation", name_)->PutScalar(1.0);
+    // S_->GetFieldData("prev_water_saturation", name_)->PutScalar(1.0);
+    // S_->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
+    // // END REMOVE ME
   }
 }
 
