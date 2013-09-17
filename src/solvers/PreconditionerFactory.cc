@@ -30,7 +30,7 @@ Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
 {
   if (prec_list.isSublist(name)) {
     const Teuchos::ParameterList& slist = prec_list.sublist(name);
-    std::string type = "Identity";
+    std::string type = "identity";
     if (slist.isParameter("preconditioner type"))
       type = slist.get<std::string>("preconditioner type");
 

@@ -31,6 +31,7 @@ Matrix_MFD::Matrix_MFD(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Ma
 { 
   mesh_ = FS_->mesh();
   actions_ = 0;
+  method_ = 0;
 }
 
 
