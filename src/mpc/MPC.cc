@@ -6,6 +6,10 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
+#include "chemistry_pk.hh"
+#ifdef ALQUIMIA_ENABLED
+#include "alquimia_chemistry_pk.hh"
+#endif
 #include "MPC.hh"
 #include "State.hh"
 #include "Flow_State.hh"
@@ -26,13 +30,6 @@
 #include "TimerManager.hh"
 
 #include "DataDebug.hh"
-
-// Alquimia/Amanzi chemistry packages have different exception types.
-#ifdef ALQUIMIA_ENABLED
-typedef Exceptions::Amanzi_exception ChemistryExceptionType;
-#else
-typedef Amanzi::AmanziChemistry::ChemistryException ChemistryExceptionType;
-#endif
 
 namespace Amanzi {
 
@@ -77,7 +74,8 @@ void MPC::mpc_init() {
   transport_enabled =
       (mpc_parameter_list.get<string>("disable Transport_PK","no") == "no");
 
-  if (mpc_parameter_list.get<string>("Chemistry Model","Off") != "Off") {
+  std::string chemistry_model = mpc_parameter_list.get<string>("Chemistry Model","Off");
+  if (chemistry_model != "Off") {
     chemistry_enabled = true;
   }
 
@@ -178,31 +176,31 @@ void MPC::mpc_init() {
 
   if (chemistry_enabled) {
     try {
-      Teuchos::ParameterList chemistry_parameter_list =
-	parameter_list.sublist("Chemistry");
+      if (chemistry_model == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-      CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(chemistry_parameter_list, CS) );
+        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS) );
 #else
-      CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
+        cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
+        throw std::exception();
 #endif
+      } else if (chemistry_model == "Amanzi") {
+        Teuchos::ParameterList chemistry_parameter_list = parameter_list.sublist("Chemistry");
+        CPK = Teuchos::rcp( new AmanziChemistry::Chemistry_PK(chemistry_parameter_list, CS) );
+      } else {
+        cout << "MPC: unknown chemistry model: " << chemistry_model << endl;
+        throw std::exception();
+      }
       CPK->InitializeChemistry();
-    } catch (const ChemistryExceptionType& chem_error) {
+    } catch (const Errors::Message& chem_error) {
       std::ostringstream error_message;
-#ifdef ALQUIMIA_ENABLED
-      error_message << "MPC:mpc_init(): error... Alquimia_Chemistry_PK.InitializeChemistry returned an error status: ";
-      error_message << chem_error.what();
-#else
       error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
       error_message << chem_error.what();
-#endif
 
       Errors::Message message(error_message.str());
       Exceptions::amanzi_throw(message);
     }   
   } 
   // done creating auxilary state objects and  process models
-
-
 
   // create the observations
   if (parameter_list.isSublist("Observation Data")) {
@@ -375,7 +373,7 @@ void MPC::cycle_driver() {
   //     // set the names in the visualization object
   //     // S->set_compnames(compnames);
 
-  //   } catch (const Amanzi::AmanziChemistry::ChemistryException& chem_error) {
+  //   } catch (const Errors::Message& chem_error) {
   //     std::ostringstream error_message;
   //     error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
   //     error_message << chem_error.what();
@@ -798,7 +796,7 @@ void MPC::cycle_driver() {
               Amanzi::timer_manager.stop("Chemistry PK");
             }
             success = true;
-    } catch (const ChemistryExceptionType& chem_error) {
+    } catch (const Errors::Message& chem_error) {
             
             // if the chemistry step failed, we back up to the beginning of
             // the chemistry subcycling loop, but to do that we must restore

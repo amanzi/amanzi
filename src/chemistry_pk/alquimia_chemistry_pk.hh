@@ -9,7 +9,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Chemistry_State.hh"
+#include "chemistry_pk_base.hh"
 
 #include "alquimia_memory.h"
 #include "alquimia_util.h"
@@ -26,7 +26,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Alquimia_Chemistry_PK {
+class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
  public:
 
   // Constructor. Note that we must pass the "Main" parameter list
