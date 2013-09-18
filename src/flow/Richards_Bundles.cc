@@ -288,7 +288,7 @@ void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
       perm[i] = (rho/vis) * ((K[cells[i]] * normal) * normal) / area;
 
       perm_test[i] = (rho/vis) * ((K[cells[i]] * normal) * a_dist);
-      h_test[i] = pow(-1, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;
+      h_test[i] = pow(-1.0, i)*((face_centr - mesh_->cell_centroid(cells[i]))*normal) / area;
       //perm[i] = ((K[cells[i]] * normal) * normal)/ area;
       //cout<<i<<" "<<h[i]<<" "<<h_test[i]<<endl;
       //cout<<i<<" "<<perm[i]<<" "<<perm_test[i]<<endl;
