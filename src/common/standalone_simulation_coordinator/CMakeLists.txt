@@ -9,7 +9,7 @@
 
 project(SSC)
 
-if ( ENABLE_Structured)
+if ( ENABLE_Structured )
   include(CCSEOptions)
 endif()
 
@@ -88,58 +88,46 @@ endif()
 #
 if ( ENABLE_Unstructured )
   set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit)
-  #set(ssc_unstructured_grid_libs udriv mpc state transport flow whetstone matrix_audit)
 else()
   set(ssc_unstructured_grid_libs)
 endif()
 
 if(ENABLE_Structured)
-  set(structured_grid_libs pmamr boxprob boxdriv structutils structmat strans ${CCSE_LIBRARIES})
-  link_directories(${CCSE_EXT_LIBRARY_DIRS})
-  if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
-    #message(">>>>>> using darwin ld flags")
-    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-      set(ld_flag_prefix -force_load)
-      set(ld_flag_suffix)
+  set(ssc_structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi ${PETSC_LIBRARIES})
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
+    if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+      list(APPEND ssc_structured_grid_libs gfortran)
     endif()
-  elseif (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-    #message(">>>>>> using linux ld flags")
-    set(ld_flag_prefix -Wl,-whole-archive)
-    set(ld_flag_suffix -Wl,-no-whole-archive)
-  else()
-    message(FATAL_ERROR "Linking of structured grid is not supported on this system: '${CMAKE_SYSTEM_NAME}'")
   endif()
-  foreach(lib ${structured_grid_libs})
-    set(ssc_structured_grid_libs ${ssc_structured_grid_libs} ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
-  endforeach(lib)
-  list(APPEND ssc_structured_grid_libs ${PETSC_LIBRARIES})
 else()
   set(ssc_structured_grid_libs)
 endif()
-#message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
 set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
-set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
-set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+set(ssc_libs ${ssc_structured_grid_libs}
+             ${ssc_unstructured_grid_libs}
+             ${ssc_common_libs})
+set(ssc_tpl_libs ${amanzi_mesh_libs}
+                 ${Teuchos_LIBRARIES}
+                 ${Epetra_LIBRARIES}
+                 ${Boost_LIBRARIES}
+                 ${XERCES_LIBRARIES}
+                 ${XERCES_ICU_LIBRARIES})
 
 if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
 endif()
-
 
 generate_evaluators_registration_header(HEADERFILE evaluator_reg.hh LISTNAME FACTORY_REG_LIST  INSTALL TRUE)
 
 # 
 # Main: Amanzi
 #
-#print_variable(ssc_tpl_libs_incl)
-#print_variable(ssc_tpl_libs)
-#message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
 add_amanzi_executable(amanzi
                       SOURCE Main.cc
-                      LINK_LIBS ${ssc_tpl_libs_incl} ${ssc_tpl_libs}
+                      LINK_LIBS ${ssc_libs} ${ssc_tpl_libs}
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 

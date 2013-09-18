@@ -22,39 +22,27 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(CXX_header_files ParmParseHelpers.H InputParser_Structured.H
-TabularFunction.H EventCoord.H WritePlotfile.H)
-set(CXX_source_files ParmParseHelpers.cpp InputParser_Structured.cpp
-TabularFunction.cpp EventCoord.cpp WritePlotfile.cpp)
+set(CXX_header_files ParmParseHelpers.H
+                     InputParser_Structured.H
+                     TabularFunction.H
+                     EventCoord.H
+                     WritePlotfile.H)
+set(CXX_source_files ParmParseHelpers.cpp
+                     InputParser_Structured.cpp
+                     TabularFunction.cpp
+                     EventCoord.cpp
+                     WritePlotfile.cpp)
 
-add_amanzi_library(structutils SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
+add_library(structutils OBJECT ${CXX_source_files}
+                               ${CXX_headers_files})
 
 if (BUILD_TESTS)
-
-  if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
-    #message(">>>>>> using darwin ld flags")
-    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-      set(ld_flag_prefix -force_load)
-      set(ld_flag_suffix)
-    endif()
-  elseif (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-    #message(">>>>>> using linux ld flags")
-    set(ld_flag_prefix -Wl,-whole-archive)
-    set(ld_flag_suffix -Wl,-no-whole-archive)
-  else()
-    message(FATAL_ERROR "Linking of structured grid is not supported on this system: '${CMAKE_SYSTEM_NAME}'")
-  endif()
 
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(reqd_libs structutils box_c)
-  set(structured_grid_libs)
-  foreach(lib ${reqd_libs})
-    list(APPEND structured_grid_libs ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
-  endforeach(lib)
-
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
@@ -62,7 +50,6 @@ if (BUILD_TESTS)
   endif()
 
   set(tpl_libs ${Teuchos_LIBRARIES})
-
 
   add_amanzi_test(tPPH tPPH
                   KIND unit
@@ -78,7 +65,6 @@ if (BUILD_TESTS)
                   KIND unit
                   SOURCE tEventCoord.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
-
 
 endif()
 

@@ -4,6 +4,9 @@
 namespace Amanzi {
 namespace AmanziTransport {
 
+/* ****************************************************************
+* TBW.
+**************************************************************** */
 Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int ncomp) :
     PK_State(std::string("state"), mesh)
 {
@@ -22,6 +25,9 @@ Transport_State::Transport_State(Teuchos::RCP<AmanziMesh::Mesh> mesh, const int 
 }
 
 
+/* ****************************************************************
+* TBW.
+**************************************************************** */
 Transport_State::Transport_State(Teuchos::RCP<State> S, const int ncomp) :
   PK_State(std::string("state"), S),
   S_time_(S)
@@ -30,6 +36,9 @@ Transport_State::Transport_State(Teuchos::RCP<State> S, const int ncomp) :
 }
 
 
+/* ****************************************************************
+* TBW.
+**************************************************************** */
 Transport_State::Transport_State(Teuchos::RCP<State> S, std::vector<std::string> comp_names) :
     PK_State(std::string("state"), S),
     S_time_(S),
@@ -43,6 +52,9 @@ Transport_State::Transport_State(Teuchos::RCP<State> S, std::vector<std::string>
 }
 
 
+/* ****************************************************************
+* TBW.
+**************************************************************** */
 Transport_State::Transport_State(Transport_State& other,
         PKStateConstructMode mode) :
     PK_State(other, STATE_CONSTRUCT_MODE_COPY_POINTERS),
@@ -100,6 +112,9 @@ Transport_State::Transport_State(Transport_State& other,
 }
 
 
+/* ****************************************************************
+* TBW.
+**************************************************************** */
 void Transport_State::Construct_(const int ncomp) 
 {
   // Require data, all owned by "state" to cheat the system.
@@ -142,21 +157,30 @@ void Transport_State::Construct_(const int ncomp)
 }
 
 
+/* ****************************************************************
+* Called by all unit tests to populate meaniful state values.
+**************************************************************** */
 void Transport_State::Initialize() {
   if (standalone_mode_) {
     S_->Setup();
-    S_->GetField("total_component_concentration",name_)->set_initialized();
-    S_->GetField("fluid_density",name_)->set_initialized();
-    S_->GetField("porosity",name_)->set_initialized();
-    S_->GetField("water_saturation",name_)->set_initialized();
-    S_->GetField("prev_water_saturation",name_)->set_initialized();
-    S_->GetField("darcy_flux",name_)->set_initialized();
+    S_->GetField("total_component_concentration", name_)->set_initialized();
+    S_->GetField("fluid_density", name_)->set_initialized();
+    S_->GetField("porosity", name_)->set_initialized();
+    S_->GetField("water_saturation", name_)->set_initialized();
+    S_->GetField("prev_water_saturation", name_)->set_initialized();
+    S_->GetField("darcy_flux", name_)->set_initialized();
     S_->Initialize();
+
+    // S_->GetFieldData("porosity", name_)->PutScalar(0.2);
+    S_->GetFieldData("total_component_concentration", name_)->PutScalar(0.0);
+    S_->GetFieldData("water_saturation", name_)->PutScalar(1.0);
+    S_->GetFieldData("prev_water_saturation", name_)->PutScalar(1.0);
+    S_->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
   } else {
     // fields that might be initialized through the input
     // file need to be tested and initialized 'by hand' here
 
-    if (!S_->GetField("darcy_flux",name_)->initialized()) {
+    if (!S_->GetField("darcy_flux", name_)->initialized()) {
       darcy_flux()->PutScalar(0.0);
       S_->GetField("darcy_flux",name_)->set_initialized();
     }
@@ -168,14 +192,6 @@ void Transport_State::Initialize() {
       prev_water_saturation()->PutScalar(1.0);
       S_->GetField("prev_water_saturation",name_)->set_initialized();
     }
-
-    // // BEGIN REMOVE ME once flow tests pass --etc
-    // S_->GetFieldData("porosity", name_)->PutScalar(0.2);
-    // S_->GetFieldData("total_component_concentration", name_)->PutScalar(0.0);
-    // S_->GetFieldData("water_saturation", name_)->PutScalar(1.0);
-    // S_->GetFieldData("prev_water_saturation", name_)->PutScalar(1.0);
-    // S_->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
-    // // END REMOVE ME
   }
 }
 

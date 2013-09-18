@@ -21,59 +21,46 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(CXX_header_files TensorDiffusionBndry.H TensorDiffusion_PK.H TensorOp_F.H TensorOp.H Diffuser.H MFVector.H ABecHelper.H)
-set(CXX_source_files TensorDiffusionBndry.cpp TensorDiffusion_PK.cpp TensorOp.cpp MFVector.cpp ABecHelper.cpp)
+set(CXX_header_files TensorDiffusionBndry.H
+                     TensorDiffusion_PK.H
+                     TensorOp_F.H
+                     TensorOp.H
+                     Diffuser.H
+                     MFVector.H
+                     ABecHelper.H)
+set(CXX_source_files TensorDiffusionBndry.cpp
+                     TensorDiffusion_PK.cpp
+                     TensorOp.cpp
+                     MFVector.cpp
+                     ABecHelper.cpp)
 set(F90_source_files )
 set(F77_source_files )
 set(FPP_source_files TensorOp_${AMANZI_SPACEDIM}D.F)
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
-file(GLOB h_inc_files "*.H")
-add_amanzi_library(strans
-                   SOURCE ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files}
-                   HEADERS ${h_inc_files})
-
-add_amanzi_library(structtrans SOURCE ${CXX_source_files} HEADERS ${CXX_headers_files})
+add_library(strans OBJECT ${FPP_out_files}
+                          ${CXX_source_files}
+                          ${F90_source_files}
+                          ${F77_source_files}
+                          ${h_inc_files})
 
 if (BUILD_TESTS)
-
-  if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
-    #message(">>>>>> using darwin ld flags")
-    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-      set(ld_flag_prefix -force_load)
-      set(ld_flag_suffix)
-    endif()
-  elseif (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-    #message(">>>>>> using linux ld flags")
-    set(ld_flag_prefix -Wl,-whole-archive)
-    set(ld_flag_suffix -Wl,-no-whole-archive)
-  else()
-    message(FATAL_ERROR "Linking of structured grid is not supported on this system: '${CMAKE_SYSTEM_NAME}'")
-  endif()
 
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(reqd_libs box_c box_cbndry box_cmg box_ctmg pmamr_sub strans)
-  set(structured_grid_libs)
-  foreach(lib ${reqd_libs})
-    list(APPEND structured_grid_libs ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
-  endforeach(lib)
-  # This is a hack to get a couple of the things in libbox_camr.a explicitly without including the whole thing...ick
-  list(APPEND structured_grid_libs box_camr)
-
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
     endif()
   endif()
+  set(tpl_libs)
 
   set(TRANSTEST "${STRUCTUREDTRANS_SOURCE_DIR}/test")
   include_directories(${TRANSTEST})
-  set(tpl_libs ${Teuchos_LIBRARIES})
-
   set(CXX_header_files_1 ${TRANSTEST}/tTensorDiffusion_PK_F.H)
   set(CXX_source_files_1 ${TRANSTEST}/tTensorDiffusion_PK.cpp)
   set(F90_source_files_1 )
