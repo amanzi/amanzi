@@ -594,15 +594,19 @@ void State::Initialize() {
   // Initialize any other fields from state plist.
   InitializeFields_();
 
+  // Initialize other field evaluators.
+  InitializeEvaluators_();
+};
+
+
+void State::CheckInitialized() {
   // Ensure that non-evaluator-based fields are initialized.
   CheckNotEvaluatedFieldsInitialized_();
 
-  // Initialize other field evaluators.
-  InitializeEvaluators_();
-
   // Ensure everything is owned and initialized.
   CheckAllFieldsInitialized_();
-};
+}
+
 
 
 void State::InitializeEvaluators_() {

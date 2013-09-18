@@ -103,7 +103,7 @@ cout << "Test: Subcycling on a 2D square mesh" << endl;
 
     //for( int k=0; k<8; k++ )
     //  CHECK( ((*tcc_next)[0][k+1] - (*tcc_next)[0][k]) > -1e-15 );
-    if (iter == 15) {
+    if (iter == 5) {
       GMV::open_data_file(*mesh, (std::string)"transport.gmv");
       GMV::start_data();
       GMV::write_cell_data(*tcc_next, 0, "component0");

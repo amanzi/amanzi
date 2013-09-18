@@ -12,6 +12,8 @@
    NOTE: All BlockVector data is NOT initialized to zero!
    ------------------------------------------------------------------------- */
 
+#include "Epetra_MpiComm.h"
+#include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 
 #include "dbc.hh"
@@ -22,15 +24,14 @@
 namespace Amanzi {
 
 // Constructor
-BlockVector::BlockVector(const Epetra_MpiComm* comm,
+BlockVector::BlockVector(const Epetra_MpiComm& comm,
         std::vector<std::string>& names,
         std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
         std::vector<int> num_dofs) :
-
-    comm_(comm),
     names_(names),
     maps_(maps),
-    num_dofs_(num_dofs) {
+    num_dofs_(num_dofs),
+    comm_(comm) {
 
   num_components_ = maps_.size();
 
@@ -116,6 +117,12 @@ BlockVector& BlockVector::operator=(const BlockVector& other) {
 
 // Check consistency of meta-data and allocate data.
 void BlockVector::CreateData() {
+#ifdef ENABLE_DBC
+  if (data_[0] != Teuchos::null) {
+    std::cout << "WARNING: CompositeVector::CreateData() called on already created vector!" << std::endl;
+  }
+#endif
+
   // create the data
   for (int i = 0; i != num_components_; ++i) {
     data_[i] = Teuchos::rcp(new Epetra_MultiVector(*maps_[i], num_dofs_[i], false));

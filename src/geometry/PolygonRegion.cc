@@ -159,11 +159,36 @@ PolygonRegion::inside(const Point& p) const
 
   bool result(false);
   if (dimension() == 2) {
-    /* Now check if it lies in the line segment */
-    Point vec0 = points_[0]-p;
-    Point vec1 = points_[1]-p;
-    if (vec0*vec1 < 0.0)
-      result = true;
+    // Now check if it lies in the line segment 
+
+    // vector from start of segment to point 
+    Point vec0 = p-points_[0];
+
+    // segment vector
+    Point vec1 = points_[1]-points_[0];
+
+    // Normalize
+    double slen = norm(vec1);
+    vec1 /= slen;
+      
+    double dp = vec0*vec1;
+
+    // projection of vec0 along segment lies inside the segment
+    if (dp >= 0 && dp <= slen) {
+      
+      // projected point along line segment
+      Point p1 = points_[0] + dp*vec1;
+      
+      // vector between point and its projection
+      Point dvec = p - p1;
+      
+      // distance between point and its projection
+      double d_sqr = L22(dvec);
+      
+      // Is the distance 0? Point is inside segment
+      if (d_sqr < 1.0e-16)
+        result = true;
+    }
   }
   else {
     /* Now check if the point is in the polygon */
@@ -191,14 +216,68 @@ PolygonRegion::inside(const Point& p) const
       double v_i = points_[i][d1];
       double u_iplus1 = points_[iplus1][d0];
       double v_iplus1 = points_[iplus1][d1];
-      
-      double slope = (u_iplus1-u_i)/(v_iplus1-v_i);
+ 
+      // don't compute - v_iplus1-v_i could be zero     
+      //      double slope = (u_iplus1-u_i)/(v_iplus1-v_i);
       
       if (((v_i > v && v_iplus1 <= v) || (v_iplus1 > v && v_i <= v)) &&
-          (u <= (u_i + (v-v_i)*slope)))
+          (u <= (u_i + (v-v_i)*(u_iplus1-u_i)/(v_iplus1-v_i))))
         result = !result;
     }
+
+    // The above check is not guaranteed to give an +ve result if the point is on
+    // the boundary. So do an additional check 
+
+    if (!result) { 
+
+      for (int i = 0; i < num_points_; i++) {
+
+        int iplus1 = (i+1)%num_points_;
+
+        Point p_i(2);
+        p_i.set(points_[i][d0],points_[i][d1]);
+
+        Point p_iplus1(2);
+        p_iplus1.set(points_[iplus1][d0],points_[iplus1][d1]);
+
+        // vector from first point of segment to query point        
+        Point vec0(2);
+        vec0.set(u-p_i[0],v-p_i[1]);
+        
+        // line segment vector
+        Point vec1(2);
+        vec1 = p_iplus1 - p_i;
+        
+        // unit vector along segment
+        double slen = norm(vec1);
+        vec1 /= slen;
+
+        double dp = vec0*vec1;
+        
+        // projection of vec0 along segment lies outside the segment
+        if (dp < 0 || dp > slen)
+          continue;
+
+        // projected point along line segment
+        Point p1(2);
+        p1 = p_i + dp*vec1;
+
+        // vector between projected point and query point
+        Point dvec(2);
+        dvec.set(u-p1[0],v-p1[1]);
+
+        // distance between point and its projection
+        double d_sqr = L22(dvec);
+      
+        // Is the distance 0? Point is inside segment
+        if (d_sqr < 1.0e-16) {
+          result = true;
+          break;
+        }
+      }
+    }
   }
+
   return result;
 }
 

@@ -419,7 +419,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
  
     // iteration counter
-    itr++;
+    itr++; 
 
     // count the number of nonlinear function evaluations
     state.pcfun_calls++;
@@ -431,7 +431,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // evaluate nonlinear functional
     fn.fun(t, u, u_tmp, du, h);
 
-    //for (int i=0;i<12;i++) cout<<"r "<<du[i]<<" x "<<u[i]<<endl;
+
 
     // apply preconditioner to the nonlinear residual
     fn.precon(du, u_tmp);

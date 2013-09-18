@@ -27,10 +27,10 @@ class BlockVector {
 
 public:
   // Constructor
-  BlockVector(const Epetra_MpiComm* comm,
-                  std::vector<std::string>& names,
-                  std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-                  std::vector<int> num_dofs);
+  BlockVector(const Epetra_MpiComm& comm,
+              std::vector<std::string>& names,
+              std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
+              std::vector<int> num_dofs);
 
   // copy constructor
   BlockVector(const BlockVector& other, ConstructMode mode=CONSTRUCT_WITH_NEW_DATA);
@@ -54,11 +54,15 @@ public:
 
   int num_components() const { return num_components_; }
   int num_dofs(std::string name) const { return num_dofs_[index_(name)]; }
-  int size(std::string name) const { return sizes_[index_(name)]; }
+  unsigned int size(std::string name) const { return sizes_[index_(name)]; }
   Teuchos::RCP<const Epetra_Map> map(std::string name) const { return maps_[index_(name)]; }
 
 
   // Accessors to data.
+  bool IsComponent(std::string name) const {
+    return indexmap_.find(name) != indexmap_.end();
+  }
+
   // -- Access a view of a single component's data.
   Teuchos::RCP<const Epetra_MultiVector>
   ViewComponent(std::string name) const;
@@ -136,6 +140,8 @@ public:
   // Extras
   void Print(ostream &os) const;
 
+  const Epetra_MpiComm& Comm() const { return comm_; }
+
 private:
   int index_(std::string name) const {
     std::map<std::string, int>::const_iterator item = indexmap_.find(name);
@@ -144,14 +150,14 @@ private:
   }
 
 private:
-  const Epetra_MpiComm* comm_;
+  const Epetra_MpiComm comm_;
   std::map< std::string, int > indexmap_;
   int num_components_;
 
   std::vector<std::string> names_;
   std::vector<int> num_dofs_;
   std::vector<Teuchos::RCP<const Epetra_Map> > maps_;
-  std::vector<int> sizes_;
+  std::vector<unsigned int> sizes_;
   std::vector<Teuchos::RCP<Epetra_MultiVector> > data_;
 };
 

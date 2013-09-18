@@ -60,6 +60,8 @@ class Flow_State : public PK_State {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_storage")->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<const Epetra_Vector> specific_yield() const {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_yield")->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<const Epetra_Vector> particle_density() const {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("particle_density")->ViewComponent("cell", ghosted_))(0)); }
 
   // non-const pointers
   Teuchos::RCP<double> fluid_density() { return S_->GetScalarData("fluid_density", name_); }
@@ -93,6 +95,8 @@ class Flow_State : public PK_State {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_storage", name_)->ViewComponent("cell", ghosted_))(0)); }
   Teuchos::RCP<Epetra_Vector> specific_yield() {
     return Teuchos::rcpFromRef(*(*S_->GetFieldData("specific_yield", name_)->ViewComponent("cell", ghosted_))(0)); }
+  Teuchos::RCP<Epetra_Vector> particle_density() {
+    return Teuchos::rcpFromRef(*(*S_->GetFieldData("particle_density", name_)->ViewComponent("cell", ghosted_))(0)); }
 
   // non-const refs
   double ref_fluid_density() { return *fluid_density(); }
@@ -115,6 +119,7 @@ class Flow_State : public PK_State {
 
   Epetra_Vector& ref_specific_storage() { return *specific_storage(); }
   Epetra_Vector& ref_specific_yield() { return *specific_yield(); }
+  Epetra_Vector& ref_particle_density() { return *specific_yield(); }
 
   // miscaleneous
   double get_time() { return (S_ == Teuchos::null) ? -1.0 : S_->time(); }

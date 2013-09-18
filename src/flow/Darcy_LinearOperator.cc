@@ -64,7 +64,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
     double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "pressure solver (" << ls_specs.solver_name 
+    *(vo_->os()) << "pressure solver (" << solver->name() 
                  << "): ||r||=" << residual << " itr=" << num_itrs << endl;
   }
 }

@@ -54,6 +54,10 @@
 #include "evaluator_reg.hh"
 #endif
 
+#include <iostream>
+#include <boost/filesystem.hpp>
+using namespace boost::filesystem;
+
 
 
 struct RunLog
@@ -96,6 +100,11 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor::EParseCommandLineReturn
         parseReturn = CLP.parse(argc, argv);
 
+    // check if the files actually exist
+    if (!exists(xmlInFileName)) {
+      Exceptions::amanzi_throw(Errors::Message("The input file " + xmlInFileName + " does not exist."));
+    }
+
     // strinigy magic
 #define XSTR(s) STR(s)
 #define STR(s) #s
@@ -134,6 +143,10 @@ int main(int argc, char *argv[]) {
       //DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
       if (strcmp(temp2,"amanzi_input")==0) {
 
+	if (!exists(xmlSchema)) {
+	  Exceptions::amanzi_throw(Errors::Message("The schema file " + xmlSchema + " does not exist."));
+	}
+	
 	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
 	driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, xmlSchema);
 	

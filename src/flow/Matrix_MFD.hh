@@ -43,7 +43,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Matrix_MFD : public Epetra_Operator {
+class Matrix_MFD {
  public:
   Matrix_MFD() {};
   Matrix_MFD(Teuchos::RCP<Flow_State> FS_, Teuchos::RCP<const Epetra_Map> map_);
@@ -74,18 +74,8 @@ class Matrix_MFD : public Epetra_Operator {
   void DestroyPreconditioner();
 
   // required methods
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  bool UseTranspose() const { return false; }
-  int SetUseTranspose(bool) { return 1; }
-
-  const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-  const Epetra_Map& OperatorDomainMap() const { return *map_; }
-  const Epetra_Map& OperatorRangeMap() const { return *map_; }
-
-  const char* Label() const { return strdup("Matrix MFD"); }
-  double NormInf() const { return 0.0; }
-  bool HasNormInf() const { return false; }
+  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   // control methods
   void SetSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }

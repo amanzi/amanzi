@@ -12,6 +12,7 @@ Author:  Konstantin Lipnikov (lipnikov@lanl.gov)
 #include <algorithm>
 #include <vector>
 
+#include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 
 namespace Amanzi {
@@ -164,17 +165,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
   Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
 
-  AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(&*matrix_);
-  solver->SetPrecOperator(&*preconditioner_);
-
-  if (is_matrix_symmetric)
-    solver->SetAztecOption(AZ_solver, AZ_cg);
-  else
-    solver->SetAztecOption(AZ_solver, AZ_gmres);
-  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver->SetAztecOption(AZ_conv, AZ_rhs);
-
   // update steady state boundary conditions
   double time = T_physics;
   bc_pressure->Compute(time);
@@ -233,16 +223,15 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     rhs->Norm2(&L2norm);
     L2error /= L2norm;
 
-    // call AztecOO solver
-    Epetra_Vector b(*rhs);
-    solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
-    solver->SetLHS(&*solution);  // initial solution guess
+    // solve linear problem
+    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+       solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
-    double tol_dynamic = std::max(ls_specs.convergence_tol, L2error * 1e-18);
-    solver->Iterate(ls_specs.max_itrs, tol_dynamic);
+    solver->ApplyInverse(*rhs, *solution);
 
-    int num_itrs_linear = solver->NumIters();
-    double linear_residual = solver->ScaledResidual();
+    int num_itrs_linear = solver->num_itrs();
+    double linear_residual = solver->residual();
 
     // update relaxation
     double relaxation;
@@ -251,7 +240,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << endl;
+                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
 // Epetra_Vector& pressure = FS->ref_pressure();
@@ -268,8 +257,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
-
-  delete solver;
   return 0;
 }
 
@@ -288,17 +275,6 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
 
   Epetra_Vector& flux = FS->ref_darcy_flux();
   Epetra_Vector  flux_new(flux);
-
-  AztecOO* solver = new AztecOO;
-  solver->SetUserOperator(&*matrix_);
-  solver->SetPrecOperator(&*preconditioner_);
-
-  if (is_matrix_symmetric)
-      solver->SetAztecOption(AZ_solver, AZ_cg);
-  else 
-      solver->SetAztecOption(AZ_solver, AZ_cgs);
-  solver->SetAztecOption(AZ_output, verbosity_AztecOO);
-  solver->SetAztecOption(AZ_conv, AZ_rhs);
 
   // update steady state boundary conditions
   double time = T_physics;
@@ -353,14 +329,15 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     rhs->Norm2(&L2norm);
     L2error /= L2norm;
 
-    // call AztecOO solver
-    Epetra_Vector b(*rhs);
-    solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
-    solver->SetLHS(&*solution);  // initial solution guess
+    // solve linear problem
+    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+       solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
-    solver->Iterate(ls_specs.max_itrs, ls_specs.convergence_tol);
-    int num_itrs_linear = solver->NumIters();
-    double linear_residual = solver->ScaledResidual();
+    solver->ApplyInverse(*rhs, *solution);
+
+    int num_itrs_linear = solver->num_itrs();
+    double linear_residual = solver->residual();
 
     // update relaxation
     double relaxation;
@@ -369,7 +346,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << endl;
+                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux_new);
@@ -393,8 +370,6 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
-
-  delete solver;
   return 0;
 }
 

@@ -1,11 +1,11 @@
 /*
-This is the Linear Solver component of the Amanzi code.
- 
-License: BSD
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  This is the Linear Solver component of the Amanzi code.
 
-Factory of linear operators.
-Usage: Create("GMRES with Hypre AMG", solvers_list);
+  License: BSD
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Factory of linear operators.
+  Usage: Create("GMRES with Hypre AMG", solvers_list);
 */
 
 #ifndef AMANZI_LINEAR_OPERATOR_FACTORY_HH_
@@ -21,7 +21,7 @@ Usage: Create("GMRES with Hypre AMG", solvers_list);
 #include "LinearOperator.hh"
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
- 
+
 namespace Amanzi {
 namespace AmanziSolvers {
 
@@ -33,17 +33,30 @@ class LinearOperatorFactory {
 
   // use name in the solvers list to initialize the solver
   Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
-      const string& name, 
+      const string& name,
       const Teuchos::ParameterList& solvers_list,
-      Teuchos::RCP<const Matrix> m);
+      Teuchos::RCP<const Matrix> m,  // Apply() is required
+      Teuchos::RCP<const Matrix> h);  // ApplyInverse() is required
+
+  Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > Create(
+      const string& name,
+      const Teuchos::ParameterList& solvers_list,
+      Teuchos::RCP<const Matrix> m) {
+    return Create(name, solvers_list, m, m);
+  }
 };
 
 
+/* ******************************************************************
+* The following calls have to be supported: m->Apply(...) and
+* h->ApplyInverse(...).
+****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> > 
-    LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
+Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
+LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     const string& name, const Teuchos::ParameterList& solvers_list,
-    Teuchos::RCP<const Matrix> m)
+    Teuchos::RCP<const Matrix> m,
+    Teuchos::RCP<const Matrix> h)
 {
   if (solvers_list.isSublist(name)) {
     Teuchos::ParameterList slist = solvers_list.sublist(name);
@@ -51,17 +64,17 @@ Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
       std::string method_name = slist.get<string>("iterative method");
 
       if (method_name == "pcg") {
-         Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> > 
-             lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m));
-         lin_op->Init(slist);
-         lin_op->name() = method_name;
-         return lin_op;
+        Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
+            lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m, h));
+        lin_op->Init(slist);
+        lin_op->name() = method_name;
+        return lin_op;
       } else if (method_name == "gmres") {
-         Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> > 
-             lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m));
-         lin_op->Init(slist);
-         lin_op->name() = method_name;
-         return lin_op;
+        Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> >
+            lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m, h));
+        lin_op->Init(slist);
+        lin_op->name() = method_name;
+        return lin_op;
       } else {
         Errors::Message msg("LinearOperatorFactory: wrong value of parameter `\"iterative method`\"");
         Exceptions::amanzi_throw(msg);
@@ -76,9 +89,7 @@ Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
   }
 }
 
-}  // namespace AmanziPreconditioners
+}  // namespace AmanziSolvers
 }  // namespace Amanzi
 
 #endif
-
-

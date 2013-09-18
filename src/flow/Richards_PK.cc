@@ -214,6 +214,8 @@ void Richards_PK::InitPK()
   Epetra_Vector& lambda = FS->ref_lambda();
   UpdateSourceBoundaryData(time, pressure, lambda);
 
+  
+
   // injected water mass
   mass_bc = 0.0;
 
@@ -336,30 +338,28 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
   ResetPKtimes(T0, dT0);
 
-  if (MyPID == 0 && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     LinearSolver_Specs& ls = ti_specs.ls_specs;
-    std::printf("*************************************************************\n");
-    std::printf("Flow PK: TI phase: \"%s\"\n", ti_specs.ti_method_name.c_str());
-    std::printf("%5s starts at T=%9.4e [y] with dT=%9.4e [sec]\n", "", T0 / FLOW_YEAR, dT0);
-    std::printf("%5s time stepping strategy id %2d\n", "", ti_specs.dT_method);
-    std::printf("%5s source/sink distribution method id %2d\n", "", src_sink_distribution);
-    std::printf("%5s error control options: %X\n", "", error_control_);
-    std::printf("%5s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
-        "", ls.convergence_tol, ls.max_itrs);
-    std::printf("%7s iterative method AztecOO id %d (gmres=1)\n", "", ls.method);
-    std::printf("%7s preconditioner: \"%s\"\n", " ", ti_specs.preconditioner_name.c_str());
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "****************************************" << endl
+                 << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
+                 << "****************************************" << endl
+                 << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
+                 << "  sources distribution id=" << src_sink_distribution << endl
+                 << "  error control options id=" << error_control_ << endl
+                 << "  linear solver: ||r||<" << ls.convergence_tol << " #itr<" << ls.max_itrs << endl
+                 << "  iterative method: " << ls.solver_name << endl
+                 << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
 
     if (ti_specs.initialize_with_darcy) {
       LinearSolver_Specs& ls_ini = ti_specs.ls_specs_ini;
-      std::printf("%5s pressure re-initialization (saturated solution)\n", "");
-      std::printf("%7s linear solver criteria: ||r||< %9.3e  #itr < %d\n",
-          "", ls_ini.convergence_tol, ls_ini.max_itrs);
-      std::printf("%7s iterative method AztecOO id %d (cg=0)\n", "", ls_ini.method);
-      std::printf("%7s preconditioner: \"%s\"\n", " ", ls_ini.preconditioner_name.c_str());
+      *(vo_->os()) << "  initial pressure solver: " << ls_ini.solver_name << endl
+                   << "    criteria: ||r||<" << ls_ini.convergence_tol << " #itr<" << ls_ini.max_itrs << endl
+                   << "    preconditioner: " << ls_ini.preconditioner_name.c_str() << endl;
       if (ti_specs.clip_saturation > 0.0) {
-        std::printf("%7s clipping saturation value: %9.4g [-]\n", "", ti_specs.clip_saturation);
+        *(vo_->os()) << "    clipping saturation at " << ti_specs.clip_saturation << " [-]" << endl;
       } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
-        std::printf("%7s clipping pressure value: %9.4g [Pa]\n", "", ti_specs.clip_pressure);
+        *(vo_->os()) << "    clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << endl;
       }
     }
   }
@@ -369,11 +369,11 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
   Teuchos::ParameterList prec_list;
   if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    prec_list = tmp_list.sublist("ML Parameters"); 
+    prec_list = tmp_list.sublist("ml parameters"); 
   } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    prec_list = tmp_list.sublist("BoomerAMG Parameters"); 
+    prec_list = tmp_list.sublist("boomer amg parameters"); 
   } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    prec_list = tmp_list.sublist("Block ILU Parameters");
+    prec_list = tmp_list.sublist("block ilu parameters");
   }
 
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "monotone mfd");
@@ -420,16 +420,13 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
 #endif
 
-    if (MyPID == 0) {
-      int nokay = matrix_->nokay();
-      int npassed = matrix_->npassed();
+    int nokay = matrix_->nokay();
+    int npassed = matrix_->npassed();
 
-      std::printf("%5s discretization method (prec): \"%s\"\n", "", mfd3d_method_name.c_str());
-      std::printf("%7s assign default zero flux BC to %d faces\n", "", missed_bc_faces_);
-      std::printf("%7s successful and passed elemental matrices: %d %d\n", "", nokay, npassed);   
-      std::printf("*************************************************************\n");
-    }
-
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "  discretization method (prec): " << mfd3d_method_name.c_str() << endl
+                 << "    assign no-flow BC to " << missed_bc_faces_ << " faces" << endl
+                 << "    good and repaired matrices: " << nokay << " " << npassed << endl;   
   }
 
   // Well modeling
@@ -467,8 +464,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (ti_specs.pressure_lambda_constraints && experimental_solver_ == FLOW_SOLVER_NKA) {
     double Tp = T0 + dT0;
     EnforceConstraints_MFD(Tp, *solution);
-  }
-  else if (experimental_solver_ == FLOW_SOLVER_NEWTON){
+  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON){
     double Tp = T0 + dT0;
     Epetra_Vector* u_cells = FS->CreateCellView(*solution);
     Epetra_Vector* u_faces = FS->CreateFaceView(*solution);
@@ -481,15 +477,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   block_picard = 0;
 
   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-
   Epetra_Vector& flux = FS->ref_darcy_flux();
+
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
-    //cout<<"flux\n"<<flux<<endl;
-    //cout<<Krel_faces<<endl;
   } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
@@ -503,7 +496,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
 
-  // rel_perm->Compute(*solution , bc_model, bc_values);
+  // rel_perm->Compute(*solution, bc_model, bc_values);
 }
 
 
@@ -568,14 +561,6 @@ int Richards_PK::Advance(double dT_MPC)
     bdf1_dae->write_bdf1_stepping_statistics();
 
     T_physics = bdf1_dae->most_recent_time();
-
-  } else if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_PICARD) {
-    if (block_picard == 0) {
-      PicardTimeStep(time, dT, dTnext);  // Updates solution vector.
-      //AndersonMixingTimeStep(time, dT, dTnext);
-    } else {
-      dTnext = dT;
-    }
   }
 
   // Calculate time derivative and 2nd-order solution approximation.
@@ -629,7 +614,6 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);

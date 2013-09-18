@@ -96,6 +96,10 @@ TEST(POLYGON_REGION2)
   testp.set(0.0,0.0);
   CHECK(poly->inside(testp));
 
+  // Check a point that is on the boundary of the polygon
+  testp.set(0.5,-0.5);
+  CHECK(poly->inside(testp));
+    
   // Check a point we know to be off the plane
   testp.set(0.0,0.1);
   CHECK(!poly->inside(testp));
@@ -181,6 +185,22 @@ TEST(POLYGON_REGION3)
   Amanzi::AmanziGeometry::Point testp(dim);
   testp.set(0.1,0.1,0.1);
   CHECK(poly->inside(testp));
+
+  // Check a point known to be on a vertex of the polygon
+  testp.set(0.5,-0.5,-0.5);     // passes
+  testp.set(-0.5,-0.5,-0.5);    // fails
+  CHECK(poly->inside(testp));
+
+  // Check a point known to be on an edge of the polygon
+  testp.set(0.1,-0.5,-0.5);    // passes
+  testp.set(-0.5,0.1,0.1);     // fails
+  CHECK(poly->inside(testp));
+
+  // Check a point along the infinite line of an edge of the polygon
+  // but outside the edge
+
+  testp.set(-0.9,-0.5,-0.5);
+  CHECK(!poly->inside(testp));
 
   // Check a point we know to be off the plane
   testp.set(0.1,0.1,-0.9);
