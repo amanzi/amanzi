@@ -102,8 +102,10 @@ bool MPCSubsurface::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   bool modified(false);
   if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
     modified = ewc_->modify_predictor(h, up);
+    if (modified) changed_solution();
   } else if (predictor_type_ == PREDICTOR_HEURISTIC) {
     modified = modify_predictor_heuristic_(h, up);
+    if (modified) changed_solution();
   }
 
   // potentially update faces
