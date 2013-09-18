@@ -86,7 +86,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
   Epetra_Vector& rhs = *(matrix_->rhs());
-  solver->ApplyInverse(rhs, *utmp_faces);
+  solver->ApplyInverse(rhs, utmp);
 
   *u_faces = *utmp_faces;
 

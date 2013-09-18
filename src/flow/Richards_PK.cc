@@ -464,8 +464,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (ti_specs.pressure_lambda_constraints && experimental_solver_ == FLOW_SOLVER_NKA) {
     double Tp = T0 + dT0;
     EnforceConstraints_MFD(Tp, *solution);
-  }
-  else if (experimental_solver_ == FLOW_SOLVER_NEWTON){
+  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON){
     double Tp = T0 + dT0;
     Epetra_Vector* u_cells = FS->CreateCellView(*solution);
     Epetra_Vector* u_faces = FS->CreateFaceView(*solution);
@@ -478,15 +477,12 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   block_picard = 0;
 
   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-
   Epetra_Vector& flux = FS->ref_darcy_flux();
+
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
-    //cout<<"flux\n"<<flux<<endl;
-    //cout<<Krel_faces<<endl;
   } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
@@ -500,7 +496,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
 
-  // rel_perm->Compute(*solution , bc_model, bc_values);
+  // rel_perm->Compute(*solution, bc_model, bc_values);
 }
 
 
@@ -618,7 +614,6 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
     matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
-
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   } else {
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);

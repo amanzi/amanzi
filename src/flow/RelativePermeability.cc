@@ -227,17 +227,11 @@ void RelativePermeability::FaceUpwindFlux_(
 
   Krel_faces_->PutScalar(0.0);
 
-  //cout<<flux<<endl;
-
   double max_flux, min_flux;
   flux.MaxValue(&max_flux);
   flux.MinValue(&min_flux);
   
-
-
   double tol = FLOW_RELATIVE_PERM_TOLERANCE * std::max(fabs(max_flux), fabs(min_flux));
-
-  
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -248,8 +242,7 @@ void RelativePermeability::FaceUpwindFlux_(
       /// ***** TEST  <--
       // const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       // const AmanziGeometry::Point& cntr = mesh_->face_centroid(f);
-      // double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / 
-	mesh_->face_area(f);
+      // double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
       /// ***** TEST  -->
 
       if (bc_model[f] != FLOW_BC_FACE_NULL) {  // The boundary face.
@@ -268,7 +261,6 @@ void RelativePermeability::FaceUpwindFlux_(
       }
     }
   }
-  //exit(0);
 }
 
 
