@@ -66,7 +66,7 @@ double calculatePressureCellError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& pressu
 double calculateDarcyFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_flux)
 {
   double cr = 1.02160895462971866;  // analytical data
-  AmanziGeometry::Point velocity_exact(0.0, 0.0, -cr);
+  AmanziGeometry::Point velocity_exact(0.0, -cr);
 
   int nfaces = darcy_flux.MyLength();
   double error_l2 = 0.0;
@@ -88,6 +88,17 @@ double calculateDarcyDivergenceError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& dar
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_map = mesh->face_map(false);
+  const Epetra_BlockMap& target_map = mesh->face_map(true);
+  Epetra_Import importer(target_map, source_map);
+
+  Epetra_Vector darcy_flux_wghost(target_map);
+  darcy_flux_wghost.Import(darcy_flux, importer, Insert);
+#else
+  Epetra_Vector& darcy_flux_wghost = darcy_flux;
+#endif
+
   for (int c = 0; c < ncells_owned; c++) {
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
@@ -98,7 +109,7 @@ double calculateDarcyDivergenceError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& dar
     double div = 0.0;
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      div += darcy_flux[f] * dirs[i];
+      div += darcy_flux_wghost[f] * dirs[i];
     }
     error_L2 += div*div / mesh->cell_volume(c);
   }
@@ -153,9 +164,9 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     // create Richards process kernel
     Richards_PK* RPK = new Richards_PK(parameter_list, FS);
     RPK->InitPK();  // setup the problem
-    RPK->InitSteadyState(0.0, 0.01);
+    RPK->InitSteadyState(0.0, 0.2);
 
-    RPK->AdvanceToSteadyState(0.0, 0.01);
+    RPK->AdvanceToSteadyState(0.0, 0.2);
     RPK->CommitState(FS);
 
     double pressure_err, flux_err, div_err;  // error checks
