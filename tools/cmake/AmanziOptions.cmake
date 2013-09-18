@@ -71,7 +71,7 @@ endif()
 option(TESTS_REQUIRE_MPIEXEC "Run all tests with the MPIEXEC binary" FALSE)
 
 # Need this option if the PATH environment does not include '.'
-option(TESTS_REQUIRE_FULLPATH "Append full path to test binaries" FALSE)
+option(TESTS_REQUIRE_FULLPATH "Append full path to test binaries" TRUE)
 
 # This is needed to allow the consistent registration of evaluators with
 # their factory, see src/common/standalone_simulation_coordinator/CMakeLists.txt,
