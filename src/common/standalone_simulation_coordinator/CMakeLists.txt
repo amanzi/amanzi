@@ -9,7 +9,7 @@
 
 project(SSC)
 
-if ( ENABLE_Structured)
+if ( ENABLE_Structured )
   include(CCSEOptions)
 endif()
 
@@ -87,7 +87,7 @@ endif()
 # Binary: amanzi-demo-driver
 #
 if ( ENABLE_Unstructured )
-  set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit parallelio)
+  set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry_pk whetstone matrix_audit)
 else()
   set(ssc_unstructured_grid_libs)
 endif()
