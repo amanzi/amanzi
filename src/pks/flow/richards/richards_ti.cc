@@ -51,7 +51,11 @@ void Richards::fun(double t_old,
 
     Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
 
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    for (int i=0; i!=dc_.size(); ++i) {
+      AmanziMesh::Entity_ID *c0 = &dc_[i];
+      Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+      Teuchos::RCP<Teuchos::FancyOStream> out_ = dcvo_[i]->os();
+
       AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(*c0);
       *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << std::endl;
 
@@ -107,8 +111,11 @@ void Richards::fun(double t_old,
       Teuchos::RCP<const CompositeVector> sati0 =
           S_inter_->GetFieldData("saturation_ice");
 
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
-           c0!=dc_.end(); ++c0) {
+      for (int i=0; i!=dc_.size(); ++i) {
+        AmanziMesh::Entity_ID *c0 = &dc_[i];
+        Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+        Teuchos::RCP<Teuchos::FancyOStream> out_ = dcvo_[i]->os();
+
         *out_ << "    sat_old(" << *c0 << "): " << (*satl0)("cell",*c0) << ", "
               << (*sati0)("cell",*c0) << std::endl;
         *out_ << "    sat_new(" << *c0 << "): " << (*satl1)("cell",*c0) << ", "

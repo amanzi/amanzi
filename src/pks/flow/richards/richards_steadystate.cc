@@ -5,6 +5,7 @@ namespace Amanzi {
 namespace Flow {
 
 #define DEBUG_FLAG 1
+#define DEBUG_RES_FLAG 0
 
 RegisteredPKFactory<RichardsSteadyState> RichardsSteadyState::reg_("richards steady state");
 
@@ -171,12 +172,18 @@ void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVecto
     *out_ << "----------------------------------------------------------------" << std::endl;
     *out_ << "Residual calculation: t0 = " << t_old
           << " t1 = " << t_new << " h = " << h << std::endl;
+  }
 
-    Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
+  for (int i=0; i!=dc_.size(); ++i) {
+    if (dcvo_[i]->os_OK(Teuchos::VERB_HIGH)) {
+      AmanziMesh::Entity_ID *c0 = &dc_[i];
+      Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+      Teuchos::RCP<Teuchos::FancyOStream> out_ = dcvo_[i]->os();
 
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
       AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(*c0);
-      *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << std::endl;
+      *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << " on PID = " << mesh_->get_comm()->MyPID() << std::endl;
+
+      Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
 
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
