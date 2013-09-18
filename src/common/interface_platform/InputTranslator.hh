@@ -22,6 +22,7 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc);
 Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc);
 Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc);
 Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
+Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc);
 double get_time_value(std::string time_value, Teuchos::ParameterList def_list);
 
