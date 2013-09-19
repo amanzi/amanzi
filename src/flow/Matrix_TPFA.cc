@@ -395,78 +395,6 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 
 
 /* ******************************************************************
-* Initialization of the preconditioner                                                 
-****************************************************************** */
-void Matrix_MFD_TPFA::InitPreconditioner(int method, Teuchos::ParameterList& prec_list)
-{
-  method_ = method;
-
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    ML_list = prec_list;
-    MLprec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Spp_, ML_list, false));
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE
-    // read some boomer amg parameters
-    hypre_ncycles = prec_list.get<int>("cycle applications", 5);
-    hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
-    hypre_tol = prec_list.get<double>("tolerance", 0.0);
-    hypre_strong_threshold = prec_list.get<double>("strong threshold", 0.0);
-#endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ifp_plist_ = prec_list;
-  }
-}
-
-
-/* ******************************************************************
-* Rebuild the preconditioner.                                                 
-****************************************************************** */
-void Matrix_MFD_TPFA::UpdatePreconditioner()
-{
-
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    if (MLprec->IsPreconditionerComputed()) MLprec->DestroyPreconditioner();
-    MLprec->SetParameterList(ML_list);
-    MLprec->ComputePreconditioner();
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE
-    IfpHypre_Spp_ = Teuchos::rcp(new Ifpack_Hypre(&*Spp_));
-    Teuchos::RCP<FunctionParameter> functs[8];
-    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 0));
-    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
-    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6));
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold));
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol));
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));
-
-    Teuchos::ParameterList hypre_list;
-    hypre_list.set("Solver", BoomerAMG);
-    hypre_list.set("Preconditioner", BoomerAMG);
-    hypre_list.set("SolveOrPrecondition", Solver);
-    hypre_list.set("SetPreconditioner", false);
-    hypre_list.set("NumFunctions", 8);
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs);
-
-    IfpHypre_Spp_->SetParameters(hypre_list);
-    IfpHypre_Spp_->Initialize();
-    IfpHypre_Spp_->Compute();
-#endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    Ifpack factory;
-    std::string prectype("ILU");
-    int ovl = ifp_plist_.get<int>("overlap", 0);
-    ifp_plist_.set<std::string>("schwarz: combine mode", "Add");
-    ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*Spp_, ovl));
-    ifp_prec_->SetParameters(ifp_plist_);
-    ifp_prec_->Initialize();
-    ifp_prec_->Compute();
-  }
-}
-
-
-/* ******************************************************************
 * Parallel matvec product Spp * Xc.                                              
 ****************************************************************** */
 int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -535,38 +463,12 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
   Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
   Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
 
-  // cout<<"Xc\n";
-  // cout<<Xc<<endl;
-
   // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
   // use the same memory for X and Y, we introduce auxiliaty vector Tc.
-   int ierr = 0;
+  int ierr = 0;
   Epetra_Vector Tc(cmap);
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    MLprec->ApplyInverse(Xc, Tc);
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE
-    ierr = IfpHypre_Spp_->ApplyInverse(Xc, Tc);
-#endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ifp_prec_->ApplyInverse(Xc, Tc);
-  }
+  preconditioner_->ApplyInverse(Xc, Tc);
   Yc = Tc;
-
-
-  // Epetra_LinearProblem problem(&*Spp_, &Yc, &Xc);
-
-  // AztecOO solver(problem);
-
-  // solver.SetAztecOption(AZ_solver, AZ_gmres);
-  // solver.SetAztecOption(AZ_output, AZ_none);
-  // solver.SetAztecOption(AZ_conv, AZ_rhs);
- 
-  // int max_itrs_linear = 100;
-  // double convergence_tol_linear = 1e-10;
-
-  // solver.Iterate(max_itrs_linear, convergence_tol_linear);
-  // int num_itrs = solver.NumIters();
 
   if (ierr) {
     Errors::Message msg("Matrix_MFD_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");

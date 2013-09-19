@@ -20,6 +20,8 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
+
+#include "Preconditioner.hh"
 #include "ml_MultiLevelPreconditioner.h"
 
 #include "Ifpack.h" 
@@ -69,9 +71,9 @@ class Matrix_MFD {
                            const Epetra_Import& face_importer, 
                            Epetra_Vector& darcy_mass_flux);
 
-  virtual void InitPreconditioner(int method, Teuchos::ParameterList& prec_list);
-  virtual void UpdatePreconditioner();
-  void DestroyPreconditioner();
+  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list);
+  virtual void UpdatePreconditioner() { preconditioner_->Update(Sff_); } 
+  void DestroyPreconditioner() { preconditioner_->Destroy(); }
 
   // required methods
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -104,10 +106,6 @@ class Matrix_MFD {
   Teuchos::RCP<Epetra_CrsMatrix>& Acf() { return Acf_; }
   Teuchos::RCP<Epetra_CrsMatrix>& Afc() { return Afc_; }
 
-#ifdef HAVE_HYPRE
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff() { return IfpHypre_Sff_; }
-#endif
-
   int nokay() { return nokay_; }
   int npassed() { return npassed_; }
 
@@ -132,25 +130,13 @@ class Matrix_MFD {
   Teuchos::RCP<Epetra_CrsMatrix> Afc_;  // We generate transpose of this matrix block. 
   Teuchos::RCP<Epetra_FECrsMatrix> Aff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
+  Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
 
   Teuchos::RCP<Epetra_Vector> rhs_;
   Teuchos::RCP<Epetra_Vector> rhs_cells_;
   Teuchos::RCP<Epetra_Vector> rhs_faces_;
 
-  int method_;  // Preconditioners
-  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLprec;
-  Teuchos::ParameterList ML_list;
-  
-  Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
-  Teuchos::ParameterList ifp_plist_;
-
   int nokay_, npassed_;  // performance of algorithms generating mass matrices 
-
-#ifdef HAVE_HYPRE
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
-  double hypre_tol, hypre_strong_threshold;
-  int hypre_nsmooth, hypre_ncycles, hypre_verbosity;
-#endif
 
  private:
   void operator=(const Matrix_MFD& matrix);

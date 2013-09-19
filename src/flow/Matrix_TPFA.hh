@@ -69,8 +69,7 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-  void InitPreconditioner(int method, Teuchos::ParameterList& prec_list);
-  void UpdatePreconditioner();
+  void UpdatePreconditioner() { preconditioner_->Update(Spp_); } 
   
   void AddCol2NumJacob(int irow, Epetra_Vector& r);
   void CompareJacobians();
@@ -96,10 +95,6 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   Teuchos::RCP<Epetra_Vector> Dff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Spp_;  // Explicit Schur complement
   Teuchos::RCP<Epetra_FECrsMatrix> NumJac_;  // Numerical Jacobian
-
-#ifdef HAVE_HYPRE
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Spp_;
-#endif
 
  private:
   void operator=(const Matrix_MFD_TPFA& matrix);
