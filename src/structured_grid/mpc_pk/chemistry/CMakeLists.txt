@@ -52,5 +52,13 @@ if (BUILD_TESTS)
                   KIND unit
                   SOURCE ${SCHEMTEST}/tMultiFabCellVector.cpp
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+  add_amanzi_test(tMultiFabCellVector4 tMultiFabCellVector4
+                  KIND unit
+	          NPROCS 4
+                  SOURCE ${SCHEMTEST}/tMultiFabCellVector.cpp
+                  LINK_LIBS ${structured_grid_libs} ${tpl_libs})
+
+
 endif()
 
