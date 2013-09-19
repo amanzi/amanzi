@@ -10,7 +10,8 @@ set(PMAMR_REL_INCLUDE_DIRS mpc_pk
                            simulation_driver
                            utils
                            materials
-                           mpc_pk/transport/diffusion)
+                           mpc_pk/transport/diffusion
+                           mpc_pk/chemistry)
 set(PMAMR_INCLUDE_DIRS)
 foreach(d ${PMAMR_REL_INCLUDE_DIRS})
   list(APPEND PMAMR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${d})
@@ -25,5 +26,7 @@ add_library(structured_amanzi $<TARGET_OBJECTS:structdriv>
                               $<TARGET_OBJECTS:structmat>
                               $<TARGET_OBJECTS:pmamr>
                               $<TARGET_OBJECTS:boxprob>
-                              $<TARGET_OBJECTS:strans>)
+                              $<TARGET_OBJECTS:strans>
+                              $<TARGET_OBJECTS:schem>)
+
 SET_TARGET_PROPERTIES(structured_amanzi PROPERTIES LINKER_LANGUAGE C)
