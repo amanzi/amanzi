@@ -594,6 +594,7 @@ public:
 
   void cache_component_saturations(int nGrow);
   void reinstate_component_saturations();
+  void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
   // Update scalars, (viscous solve in scalar_update).
   //
@@ -922,7 +923,12 @@ public:
   //
   // Calculate inverse pressure
   //
-  void calcInvPressure (MultiFab& N,const MultiFab& P);
+  void calcInvPressure (MultiFab& N,const MultiFab& P) const;
+  void calcInvPressure (FArrayBox& n,
+                        const FArrayBox& pressure,
+                        const FArrayBox& rock_phi,
+                        const FArrayBox& kappa,
+                        const FArrayBox& cpl_coef) const;
   //
   // Calculate lambda = relative permeability/mu
   //

@@ -377,28 +377,29 @@ PMAmr::pm_timeStep (int  level,
           tpc_interval = i;
         }
       }
-      Real dt_tpc;
-      bool tpc_active = false;
+      Real dt_tpc, dt_tpc_eps;
       if (tpc_interval >= 0) {
         if (tpc_initial_time_steps.size()>tpc_interval
-            && tpc_initial_time_steps[tpc_interval]>0
-            && (std::abs(time - tpc_start_times[tpc_interval]) < tpc_initial_time_steps[tpc_interval])) {
-          tpc_active = true;
+            && tpc_initial_time_steps[tpc_interval]>0) {
+
+          // Find dt to apply at start of tpc interval
           dt_tpc = tpc_initial_time_steps[tpc_interval];
+          dt_tpc_eps = 1.e-6 * dt_tpc;
+          if (tpc_initial_time_step_multipliers.size()>tpc_interval
+              && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
+            dt_tpc *= tpc_initial_time_step_multipliers[tpc_interval];
+          }
+
+          if ( std::abs(time - tpc_start_times[tpc_interval]) < dt_tpc_eps) {
+            dt_level[0] = std::min(dt_tpc, dt_level[0]);
+          }
+          else {
+            if (tpc_maximum_time_steps.size()>tpc_interval
+                && tpc_maximum_time_steps[tpc_interval] > 0) {
+              dt_level[0] = std::min(dt_level[0],tpc_maximum_time_steps[tpc_interval]);
+            }
+          }
         }
-        if (tpc_initial_time_step_multipliers.size()>tpc_interval
-            && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
-          tpc_active = true;
-          dt_tpc *= tpc_initial_time_step_multipliers[tpc_interval];
-        }
-        if (tpc_maximum_time_steps.size()>tpc_interval
-            && tpc_maximum_time_steps[tpc_interval] > 0) {
-          tpc_active = true;
-          dt_tpc = std::min(dt_tpc,tpc_maximum_time_steps[tpc_interval]);
-        }
-      }
-      if (tpc_active && dt_level[level] > dt_tpc) {
-        dt_level[level] = dt_tpc;
         for (int lev = level+1; lev<=finest_level; ++lev) {
           dt_level[lev] = dt_level[lev-1] / n_cycle[lev];
         }

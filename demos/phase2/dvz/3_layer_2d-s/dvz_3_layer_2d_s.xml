@@ -72,57 +72,15 @@
 
       <ParameterList name="Basic Algorithm Control">
         <ParameterList name="Expert Settings">
-
           <Parameter name="max_n_subcycle_transport" type="int" value="20"/>
-
-          <Parameter name="do_multilevel_full" type="int" value="1"/>
-          <Parameter name="do_richard_init_to_steady" type="int" value="0"/>
-          <Parameter name="do_richard_sat_solve" type="int" value="0"/>
-          <Parameter name="richard_init_to_steady_verbose" type="int" value="2"/>
           <Parameter name="steady_limit_iterations" type="int" value="20"/>
           <Parameter name="steady_max_iterations" type="int" value="15"/>
-          <Parameter name="steady_max_iterations" type="int" value="10"/>
           <Parameter name="steady_time_step_reduction_factor" type="double" value="0.8"/>
           <Parameter name="steady_min_iterations" type="int" value="10"/>
-          <Parameter name="steady_min_iterations" type="int" value="5"/>
           <Parameter name="steady_time_step_increase_factor" type="double" value="1.25"/>
-          <Parameter name="steady_min_iterations_2" type="int" value="0"/>
-          <Parameter name="steady_time_step_increase_factor_2" type="double" value="10"/>
-          <Parameter name="steady_max_consecutive_failures_1" type="int" value="3"/>
-          <Parameter name="steady_time_step_retry_factor_1" type="double" value="0.5"/>
-          <Parameter name="steady_max_consecutive_failures_2" type="int" value="4"/>
-          <Parameter name="steady_time_step_retry_factor_2" type="double" value="0.05"/>
-          <Parameter name="steady_time_step_retry_factor_f" type="double" value="0.005"/>
-          <Parameter name="steady_max_time_steps" type="int" value="500"/>
-          <Parameter name="steady_max_num_consecutive_success" type="int" value="0"/>
-          <Parameter name="steady_extra_time_step_increase_factor" type="double" value="10."/>
-          <Parameter name="steady_max_num_consecutive_increases" type="int" value="15"/>
-          <Parameter name="steady_consecutive_increase_reduction_factor" type="double" value="0.4"/>
-          <Parameter name="steady_max_psuedo_time" type="double" value="3.15576e11"/>
-          <Parameter name="steady_abort_on_psuedo_timestep_failure" type="int" value="0"/>
-          <Parameter name="steady_use_PETSc_snes" type="bool" value="true"/>
-          <Parameter name="steady_limit_function_evals" type="int" value="100000000"/>
-          <Parameter name="steady_do_grid_sequence" type="int" value="1"/>
-          <Parameter name="steady_grid_sequence_new_level_dt_factor" type="double" value="1.e-3"/>
-
-          <Parameter name="richard_solver_verbose" type="int" value="3"/>
-          <Parameter name="richard_max_ls_iterations" type="int" value="10"/>
-          <Parameter name="richard_min_ls_factor" type="double" value="1.e-8"/>
-          <Parameter name="richard_ls_acceptance_factor" type="double" value="1.4"/>
           <Parameter name="richard_ls_acceptance_factor" type="double" value="5"/>
-          <Parameter name="richard_ls_reduction_factor" type="double" value="0.1"/>
-          <Parameter name="richard_monitor_linear_solve" type="int" value="0"/>
-          <Parameter name="richard_monitor_line_search" type="int" value="0"/>
-
-          <Parameter name="richard_use_fd_jac" type="int" value="1"/>
-          <Parameter name="richard_perturbation_scale_for_J" type="double" value="1.e-8"/>
-          <Parameter name="richard_use_dense_Jacobian" type="int" value="0"/>
           <Parameter name="richard_upwind_krel" type="int" value="1"/>
-          <Parameter name="richard_pressure_maxorder" type="int" value="3"/>
-          <Parameter name="richard_scale_solution_before_solve" type="bool" value="true"/>
           <Parameter name="richard_semi_analytic_J" type="bool" value="true"/>
-          <Parameter name="richard_variable_switch_saturation_threshold" type="double" value="-0.9996"/>
-
           <Parameter name="verbose" type="int" value="2"/>
 
         </ParameterList>
@@ -229,9 +187,7 @@
   </ParameterList>
   
   <ParameterList name="Material Properties">
-    <Parameter name="Permeability Output File" type="string" value="run_data/kp"/>
-    <Parameter name="Porosity Output File" type="string" value="run_data/pp"/>
-    <!-- <Parameter name="Saturation Threshold For Kr" type="double" value="0.995"/> -->
+    <Parameter name="Saturation Threshold For Kr" type="double" value="0.9995"/>
     
     <ParameterList name="Facies_1">
       <ParameterList name="Porosity: Uniform">
@@ -305,7 +261,7 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Reference Value" type="double" value="101325"/>
+        <Parameter name="Reference Value" type="double" value="0"/>
         <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9793.5192 }"/>
       </ParameterList>
@@ -327,18 +283,13 @@
     <ParameterList name="BC For Bottom Surface Outside All">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Values" type="Array(double)" value="{101325., 101325.}"/>
+        <Parameter name="Values" type="Array(double)" value="{0}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tc-99">
-              <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 9.4672798E10}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{0.0, 0.0}"/>
+              <ParameterList name="BC: No Flow">
               </ParameterList>
               <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>

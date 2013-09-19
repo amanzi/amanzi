@@ -26,7 +26,8 @@
 #   0.91.2       - turned on patch for IfPack support of noncontiguous global ids with HYPRE
 #   0.91.3       - updated Xerces-C++ build/find to use OSX CoreServices framework
 #   0.91.4       - updated CCSE to version 1.1.8
-#   0.91.5       - updated CCSE to version 1.2.3
+#   0.91.5       - updated CCSE to version 1.2.1
+#   0.91.6       - updated CCSE to version 1.2.3
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
