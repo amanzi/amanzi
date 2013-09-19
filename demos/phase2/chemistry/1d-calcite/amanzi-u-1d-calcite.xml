@@ -6,7 +6,7 @@
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -124,6 +124,7 @@
   <ParameterList name="Initial Conditions">
     <ParameterList name="Initial Condition">
       <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
+      <Parameter name="PFloTran Constraint" type="string" value="initial"/>
       <ParameterList name="IC: Uniform Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
         <Parameter name="Value" type="double" value="201325.0"/>
@@ -157,6 +158,7 @@
   <ParameterList name="Boundary Conditions">
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
+      <Parameter name="PFloTran Constraint" type="string" value="west"/>
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
@@ -263,17 +265,5 @@
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
     <Parameter name="Auxiliary Data" type="Array(string)" value="{pH}"/>
     <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
-    <ParameterList name="Initial Conditions">
-      <ParameterList name="initial">
-        <Parameter name="PFloTran Constraint" type="string" value="initial"/>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
-      </ParameterList> <!-- initial -->
-    </ParameterList> <!-- Initial Conditions -->
-    <ParameterList name="Boundary Conditions">
-      <ParameterList name="West BC">
-        <Parameter name="PFloTran Constraint" type="string" value="west"/>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
-      </ParameterList> <!-- West BC -->
-    </ParameterList> <!-- Boundary Conditions -->
   </ParameterList> <!-- Chemistry -->
 </ParameterList>

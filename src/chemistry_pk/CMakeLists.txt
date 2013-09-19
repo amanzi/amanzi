@@ -16,10 +16,12 @@ project(CHEMPK)
 
 IF (ENABLE_ALQUIMIA)
   # We use Alquimia for chemistry instead of Amanzi's built-in thing, 
-  # so we replace whatever existing GEOCHEM_LIBS property exists.
-  set(GEOCHEM_LIBS ${ALQUIMIA_LIBRARIES} ${PFLOTRAN_LIBRARIES} ${PETSC_LIBRARIES})
+  # so we augment whatever existing GEOCHEM_LIBS property exists.
+  get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+  get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
+  set(GEOCHEM_LIBS ${GEOCHEM_LIBS} ${ALQUIMIA_LIBRARIES} ${PFLOTRAN_LIBRARIES} ${PETSC_LIBRARIES})
   set_property(GLOBAL PROPERTY GEOCHEM_LIBS "${GEOCHEM_LIBS}")
-  set(CHEM_INCLUDES_DIR ${ALQUIMIA_INCLUDE_DIRS})
+  set(CHEM_INCLUDES_DIR ${CHEM_INCLUDES_DIR} ${ALQUIMIA_INCLUDE_DIRS})
   set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 ELSE()
   # Just use what's already there.
@@ -49,11 +51,10 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
 file(GLOB chem_inc_files "*hh")
-set(chem_src_files Chemistry_State.cc)
+set(chem_src_files Chemistry_State.cc;chemistry_pk.cc)
 if (ENABLE_ALQUIMIA)
   list(APPEND chem_src_files alquimia_chemistry_pk.cc)
 else()
-  list(APPEND chem_src_files chemistry_pk.cc)
 endif()
 add_amanzi_library(chemistry_pk
                    SOURCE ${chem_src_files}
@@ -61,7 +62,5 @@ add_amanzi_library(chemistry_pk
                    LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 
 if (BUILD_TESTS)
-  if (NOT ENABLE_ALQUIMIA)
-    add_subdirectory(tests_integration)
-  endif()
+  add_subdirectory(tests_integration)
 endif()
