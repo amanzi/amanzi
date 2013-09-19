@@ -88,7 +88,7 @@
 	<Parameter name="Initial Time Step" type="double" value="1000"/>
       </ParameterList>
     </ParameterList>
-    <Parameter name="Chemistry Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Darcy"/>
     <ParameterList name="GMV">

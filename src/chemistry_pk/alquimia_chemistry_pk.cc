@@ -419,11 +419,11 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
   // elsewhere in the file.
 
   // Initial conditions.
-  if (!main_param_list_.isSublist("state"))
+  if (!main_param_list_.isSublist("State"))
 //  if (!main_param_list_.isSublist("Initial Conditions"))
   {
     msg << "Chemistry_PK::XMLParameters(): \n";
-    msg << "  No 'state' sublist was found!\n";
+    msg << "  No 'State' sublist was found!\n";
     Exceptions::amanzi_throw(msg);
   }
   Teuchos::ParameterList state_list = main_param_list_.sublist("state");
