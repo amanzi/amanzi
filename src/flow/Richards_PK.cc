@@ -365,24 +365,14 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   }
 
   // set up new preconditioner
-  int method = ti_specs.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
-  Teuchos::ParameterList prec_list;
-  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    prec_list = tmp_list.sublist("ml parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    prec_list = tmp_list.sublist("boomer amg parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    prec_list = tmp_list.sublist("block ilu parameters");
-  }
-
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "monotone mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
-  preconditioner_->DestroyPreconditioner();
+  // preconditioner_->DestroyPreconditioner();
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(method, prec_list);
+  preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);

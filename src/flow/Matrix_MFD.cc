@@ -14,6 +14,7 @@ Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Epetra_FECrsGraph.h"
 
 #include "mfd3d_diffusion.hh"
+#include "PreconditionerFactory.hh"
 
 #include "Flow_PK.hh"
 #include "FlowDefs.hh"
@@ -31,7 +32,6 @@ Matrix_MFD::Matrix_MFD(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Ma
 { 
   mesh_ = FS_->mesh();
   actions_ = 0;
-  method_ = 0;
 }
 
 
@@ -594,87 +594,12 @@ double Matrix_MFD::ComputeNegativeResidual(const Epetra_Vector& solution, Epetra
 /* ******************************************************************
 * Initialization of the preconditioner                                                 
 ****************************************************************** */
-void Matrix_MFD::InitPreconditioner(int method, Teuchos::ParameterList& prec_list)
+void Matrix_MFD::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list)
 {
-  method_ = method;
-
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    ML_list = prec_list;
-    MLprec = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*Sff_, ML_list, false));
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE
-    hypre_ncycles = prec_list.get<int>("cycle applications", 5);  // Boomer AMG parameters
-    hypre_nsmooth = prec_list.get<int>("smoother sweeps", 3);
-    hypre_tol = prec_list.get<double>("tolerance", 0.0);
-    hypre_strong_threshold = prec_list.get<double>("strong threshold", 0.0);
-    hypre_verbosity = prec_list.get<int>("verbosity", 0);
-#endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ifp_plist_ = prec_list;
-  }
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(prec_name, prec_list);
 }
 
-
-/* ******************************************************************
-* Rebuild the preconditioner.                                                 
-****************************************************************** */
-void Matrix_MFD::UpdatePreconditioner()
-{
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    if (MLprec->IsPreconditionerComputed()) MLprec->DestroyPreconditioner();
-    MLprec->SetParameterList(ML_list);
-    MLprec->ComputePreconditioner();
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) {
-#ifdef HAVE_HYPRE
-    IfpHypre_Sff_ = Teuchos::rcp(new Ifpack_Hypre(&*Sff_));
-
-    Teuchos::RCP<FunctionParameter> functs[8];
-    functs[0] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 0));
-    functs[1] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, hypre_verbosity)); 
-    functs[2] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, hypre_nsmooth));
-    functs[3] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, hypre_ncycles));
-    functs[4] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6)); 
-    functs[5] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetStrongThreshold, hypre_strong_threshold)); 
-    functs[6] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, hypre_tol)); 
-    functs[7] = Teuchos::rcp(new FunctionParameter(Preconditioner, &HYPRE_BoomerAMGSetCycleType, 1));  
-
-    Teuchos::ParameterList hypre_list("Preconditioner List");
-    // hypre_list.set("Solver", PCG);
-    hypre_list.set("Preconditioner", BoomerAMG);
-    hypre_list.set("SolveOrPrecondition", Preconditioner);
-    hypre_list.set("SetPreconditioner", true);
-    hypre_list.set("NumFunctions", 8);
-    hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs); 
-
-    IfpHypre_Sff_->SetParameters(hypre_list);
-    IfpHypre_Sff_->Initialize();
-    IfpHypre_Sff_->Compute();
-#endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    Ifpack factory;
-    std::string prectype("ILU");
-    int ovl = ifp_plist_.get<int>("overlap", 0);
-    ifp_plist_.set<std::string>("schwarz: combine mode", "Add");
-    ifp_prec_ = Teuchos::rcp(factory.Create(prectype, &*Sff_, ovl));
-    ifp_prec_->SetParameters(ifp_plist_);
-    ifp_prec_->Initialize();
-    ifp_prec_->Compute();
-  }
-}
-
-
-/* ******************************************************************
-* Destroy ML preconditoner if it was created.
-****************************************************************** */
-void Matrix_MFD::DestroyPreconditioner()
-{
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    if (MLprec.getRawPtr() != NULL) 
-      if (MLprec->IsPreconditionerComputed()) 
-        MLprec->DestroyPreconditioner();
-  }
-}
-  
 
 /* ******************************************************************
 * Parallel matvec product A * X.                                              
@@ -760,15 +685,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   Tf.Update(1.0, Xf, -1.0);
 
   // Solve the Schur complement system Sff * Yf = Tf.
-  if (method_ == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    MLprec->ApplyInverse(Tf, Yf);
-  } else if (method_ == FLOW_PRECONDITIONER_HYPRE_AMG) { 
-#ifdef HAVE_HYPRE
-    ierr |= IfpHypre_Sff_->ApplyInverse(Tf, Yf);
-#endif
-  } else if (method_ == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    ifp_prec_->ApplyInverse(Tf, Yf);
-  }
+  preconditioner_->ApplyInverse(Tf, Yf);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
   ierr |= (*Acf_).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
