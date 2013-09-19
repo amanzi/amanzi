@@ -11,7 +11,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include <vector>
 
-#include "Ifpack.h"
 #include "Teuchos_RCP.hpp"
 
 #include "errors.hh"
@@ -162,15 +161,6 @@ void Flow_PK::ProcessStringLinearSolver(const std::string& name, LinearSolver_Sp
   ls_specs->max_itrs = tmp_list.get<int>("maximum number of iterations", 100);
   ls_specs->convergence_tol = tmp_list.get<double>("error tolerance", 1e-14);
 
-  string method_name = tmp_list.get<string>("iterative method", "gmres");
-  if (method_name == "gmres") {
-    ls_specs->method = AZ_gmres;
-  } else if (method_name == "cg") {
-    ls_specs->method = AZ_cg;
-  } else if (method_name == "cgs") {
-    ls_specs->method = AZ_cgs;
-  }
-
   ls_specs->preconditioner_name = FindStringPreconditioner(tmp_list);
   ProcessStringPreconditioner(ls_specs->preconditioner_name, &ls_specs->preconditioner_method);
 }
@@ -210,11 +200,6 @@ void Flow_PK::ProcessStringPreconditioner(const std::string& name, int* precondi
     *preconditioner = FLOW_PRECONDITIONER_TRILINOS_ML;
   } else if (name == "Hypre AMG") {
     *preconditioner = FLOW_PRECONDITIONER_HYPRE_AMG;
-#ifndef HAVE_HYPRE
-    Errors::Message msg;
-    msg << "\nFlow PK: Hypre TPL has not been activated.";
-    Exceptions::amanzi_throw(msg);   
-#endif
   } else if (name == "Block ILU") {
     *preconditioner = FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU;
   } else {
@@ -260,11 +245,11 @@ void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
     char file_name[30];
     sprintf(file_name, "flow_dt_history_%d.txt", ti_phase_counter++);
 
-    ofstream ofile;
+    std::ofstream ofile;
     ofile.open(file_name);
 
     for (double n = 0; n < dT_history.size(); n++) {
-      ofile << setprecision(10) << dT_history[n].first / FLOW_YEAR << " " << dT_history[n].second << endl;
+      ofile << std::setprecision(10) << dT_history[n].first / FLOW_YEAR << " " << dT_history[n].second << std::endl;
     }
     ofile.close();
   }

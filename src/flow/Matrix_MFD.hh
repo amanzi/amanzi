@@ -21,16 +21,11 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 
-#include "Preconditioner.hh"
-#include "ml_MultiLevelPreconditioner.h"
-
-#include "Ifpack.h" 
-// note that if trilinos is compiled with hypre support, then
-// including Ifpack.h results in the definition of HAVE_HYPRE
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
+
+#include "Preconditioner.hh"
 
 #include "Mesh.hh"
 #include "Point.hh"
@@ -40,7 +35,6 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Flow_State.hh"
 #include "Flow_typedefs.hh"
 #include "RelativePermeability.hh"
-
 
 namespace Amanzi {
 namespace AmanziFlow {

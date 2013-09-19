@@ -214,8 +214,6 @@ void Richards_PK::InitPK()
   Epetra_Vector& lambda = FS->ref_lambda();
   UpdateSourceBoundaryData(time, pressure, lambda);
 
-  
-
   // injected water mass
   mass_bc = 0.0;
 
