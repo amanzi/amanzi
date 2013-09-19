@@ -125,6 +125,7 @@ double WRM_vanGenuchten::capillaryPressure(double s)
 double WRM_vanGenuchten::dKdPc(double pc)
 {
   if (pc >= pc0_) {
+  //  if (pc >= tol_) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     double dsdp = dSdPc(pc);
 
