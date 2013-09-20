@@ -9,7 +9,7 @@
 
 project(SSC)
 
-if ( ENABLE_Structured )
+if ( ENABLE_Structured)
   include(CCSEOptions)
 endif()
 
