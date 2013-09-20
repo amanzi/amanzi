@@ -27,10 +27,11 @@
 #   0.91.3       - updated Xerces-C++ build/find to use OSX CoreServices framework
 #   0.91.4       - updated CCSE to version 1.1.8
 #   0.91.5       - updated CCSE to version 1.2.1
+#   0.91.6       - updated CCSE to version 1.2.3
 #
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 5)
+set (AMANZI_TPLS_VERSION_PATCH 6)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -94,12 +95,12 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 2)
-set(CCSE_VERSION_PATCH 1)
+set(CCSE_VERSION_PATCH 3)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        c343447436aa105cfe1587bd2ef61cbc)
+set(CCSE_MD5_SUM        14ce47e64742e2d83ce305eeb0ce5416)
 
 #
 # TPL: UnitTest

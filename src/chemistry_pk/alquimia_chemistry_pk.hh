@@ -9,7 +9,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Chemistry_State.hh"
+#include "chemistry_pk_base.hh"
 
 #include "alquimia_memory.h"
 #include "alquimia_util.h"
@@ -26,7 +26,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Alquimia_Chemistry_PK {
+class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
  public:
 
   // Constructor. Note that we must pass the "Main" parameter list
@@ -104,8 +104,8 @@ class Alquimia_Chemistry_PK {
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
 
-  // parameter list
-  Teuchos::ParameterList parameter_list_;
+  // parameter lists
+  Teuchos::ParameterList main_param_list_, chem_param_list_;
 
   // Alquimia data structures.
   bool chem_initialized_;
@@ -139,7 +139,7 @@ class Alquimia_Chemistry_PK {
   int InitializeSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
   int AdvanceSingleCell(double delta_time, int cellIndex, AlquimiaGeochemicalCondition* condition);
 
-  void ParseChemicalConditions(const std::string& sublist_name,
+  void ParseChemicalConditions(const Teuchos::ParameterList& param_list,
                                std::map<std::string, AlquimiaGeochemicalCondition*>& conditions);
   void XMLParameters(void);
   void SetupAuxiliaryOutput(void);

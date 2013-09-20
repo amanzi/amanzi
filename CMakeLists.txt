@@ -5,8 +5,8 @@
 #       Root CMakeLists.txt file
 #
 
-# Require cmake 2.8 or higher
-cmake_minimum_required(VERSION 2.8.2)
+# Require cmake 2.8.8 or higher
+cmake_minimum_required(VERSION 2.8.8)
 set(CMAKE_CTEST_COMMAND ${CMAKE_CTEST_COMMAND} -E examples)  
 
 if ("${CMAKE_PATCH_VERSION}" GREATER 3)

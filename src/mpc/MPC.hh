@@ -8,13 +8,7 @@
 #include "Epetra_MpiComm.h"
 #include "State.hh"
 #include "Chemistry_State.hh"
-
-#ifdef ALQUIMIA_ENABLED
-#include "alquimia_chemistry_pk.hh"
-#else
-#include "chemistry_pk.hh"
-#endif
-
+#include "chemistry_pk_base.hh"
 #include "Transport_State.hh"
 #include "Transport_PK.hh"
 #include "Flow_State.hh"
@@ -61,11 +55,7 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
     
   // process kernels
-#ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::Alquimia_Chemistry_PK> CPK;
-#else
-  Teuchos::RCP<AmanziChemistry::Chemistry_PK> CPK;
-#endif
+  Teuchos::RCP<AmanziChemistry::Chemistry_PK_Base> CPK;
   Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
   Teuchos::RCP<AmanziFlow::Flow_PK> FPK; 
     

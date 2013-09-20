@@ -11,12 +11,10 @@ add_subdirectory(functions)
 add_subdirectory(geometry)
 
 # Grid-option agnostic chemistry and interfaces
+add_subdirectory(chemistry)
 if (ENABLE_ALQUIMIA)
   # Use Alquimia as a chemistry engine.
   add_definitions(-DALQUIMIA_ENABLED)
-else()
-  # Use Amanzi's built-in chemistry engine.
-  add_subdirectory(chemistry)
 endif()
 
 add_subdirectory(common/interface_platform)

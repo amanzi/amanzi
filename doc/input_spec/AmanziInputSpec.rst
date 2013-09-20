@@ -1174,7 +1174,7 @@ For simplicity here, any boundary conditions not explicitly set in the input are
 Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of production and loss processes, are defined for each phase component, if applicable, and include the distribution of any solutes that are carried into the domain with the phase component.  However, sources are not currently supported in Amanzi.
 
 In order to support the rather general specification requirements (involving combinations of phase pressures and component saturations), we must first define the composition of the "state" of the simulations by identifying all phases, components and solutes that will be present in the system.  We do this hierarchically, first by phase then by component:
-
+/
 * [SU] `"Phase Definitions`" [list] can accept lists of named phases (currently PHASE can be `"Aqueous`" or `"Solid`").
 
  * [SU] `"Aqueous`" phase [list] can accept the following lists: `"Phase Properties`", `"Phase Components`"
@@ -1243,7 +1243,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
  * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
 
-  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
+  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
   
   * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
@@ -1300,9 +1300,11 @@ The following boundary condition parameterizations are supported:
 
 The following source parameterizations are supported.
 
-* [U] `"Source: Volume Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [U] `"Source: Permeability Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 * `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
