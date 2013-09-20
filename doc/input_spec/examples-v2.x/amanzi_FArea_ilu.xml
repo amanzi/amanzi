@@ -486,66 +486,66 @@
 	                <observations>
 	                        <filename>observation.out</filename> 
 	                        <liquid_phase name="water">
-	                                <observation variable="H+ Aqueous concentration">
+	                                <aqueous_conc solute="H+ Aqueous concentration">
 	                                        <assigned_regions>Well_1</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="H+ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="H+ Aqueous concentration">
 	                                        <assigned_regions>Well_2</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="H+ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="H+ Aqueous concentration">
 	                                        <assigned_regions>Well_3</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="UO2++ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="UO2++ Aqueous concentration">
 	                                        <assigned_regions>Well_1</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="UO2++ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="UO2++ Aqueous concentration">
 	                                        <assigned_regions>Well_2</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="UO2++ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="UO2++ Aqueous concentration">
 	                                        <assigned_regions>Well_3</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="Al+++ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="Al+++ Aqueous concentration">
 	                                        <assigned_regions>Well_1</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="Al+++ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="Al+++ Aqueous concentration">
 	                                        <assigned_regions>Well_2</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="Al+++ Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="Al+++ Aqueous concentration">
 	                                        <assigned_regions>Well_3</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="NO3- Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="NO3- Aqueous concentration">
 	                                        <assigned_regions>Well_1</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="NO3- Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="NO3- Aqueous concentration">
 	                                        <assigned_regions>Well_2</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
-	                                <observation variable="NO3- Aqueous concentration">
+	                                </aqueous_conc>
+	                                <aqueous_conc solute="NO3- Aqueous concentration">
 	                                        <assigned_regions>Well_3</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Every year</time_macro>
-	                                </observation>
+	                                </aqueous_conc>
 	                        </liquid_phase>
 	                </observations>
 	        </output>
