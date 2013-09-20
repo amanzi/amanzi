@@ -349,7 +349,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const Point& normal = mesh->face_normal(f);
-    solution[n] = -normal * flux * dirs[n];
+    solution[n] = -normal * flux;
   }
   
   // gradient recovery
