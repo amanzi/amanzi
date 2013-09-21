@@ -2395,11 +2395,12 @@ c ::: ---------------------------------------------------------
 c ::: Define linear pressure profile
 c ::: ---------------------------------------------------------
       
-      subroutine FORT_LINEAR_PRESSURE(p,DIMS(p),ncomps,
+      subroutine FORT_LINEAR_PRESSURE(lo,hi,p,DIMS(p),ncomps,
      &     dx,problo,ref_val,ref_loc,gradp)
 
       implicit none
 
+      integer lo(SDIM), hi(SDIM)
       integer DIMDEC(p)
       integer ncomps
       REAL_T  p(DIMV(p))
@@ -2413,10 +2414,10 @@ c ::: ---------------------------------------------------------
       integer i,j
       REAL_T  dp(SDIM), x, y
 
-      do j = ARG_L2(p), ARG_H2(p)
+      do j = lo(2),hi(2)
          y = (dble(j)+half)*dx(2) + problo(2)
          dp(2) = (y-ref_loc(2))*gradp(2)
-         do i = ARG_L1(p), ARG_H1(p)
+         do i = lo(1),hi(1)
             x = (dble(i)+half)*dx(1) + problo(1)
             dp(1) = (x-ref_loc(1))*gradp(1)
             p(i,j) = ref_val + dp(1) + dp(2)

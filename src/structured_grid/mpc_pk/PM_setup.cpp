@@ -370,8 +370,8 @@ static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
 static int scalar_bc[] =
   {
-    //    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, SEEPAGE
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_ODD, SEEPAGE
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, SEEPAGE
+    //INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_ODD, SEEPAGE
   };
 
 static int tracer_bc[] =
@@ -1763,7 +1763,7 @@ PorousMedia::build_region_PArray(const Array<std::string>& region_names)
             }
         }
         if (!found) {
-            std::string m = "Named region not found " + name;
+            std::string m = "Named region not found: \"" + name + "\"";
             BoxLib::Error(m.c_str());
         }
     }
@@ -2098,14 +2098,15 @@ void  PorousMedia::read_comp()
 
       // default to no flow first.
       for (int j=0;j<BL_SPACEDIM;j++) {
-	phys_bc.setLo(j,4);
-	pres_bc.setLo(j,4);
-	phys_bc.setHi(j,4);
-	pres_bc.setHi(j,4);
-      }	  
+	phys_bc.setLo(j,1);
+	pres_bc.setLo(j,1);
+	phys_bc.setHi(j,1);
+	pres_bc.setHi(j,1);
+      }
 
       for (int i = 0; i<n_bcs; i++)
       {
+          int ibc = i;
           const std::string& bcname = bc_names[i];
 	  const std::string prefix("comp.bcs." + bcname);
 	  ParmParse ppr(prefix.c_str());
@@ -2117,8 +2118,8 @@ void  PorousMedia::read_comp()
           std::string bc_type; ppr.get("type",bc_type);
 
           bool is_inflow = false;
-          int component_bc = 4;
-	  int pressure_bc  = 4;
+          int component_bc = 1;
+	  int pressure_bc  = 1;
 
           if (bc_type == "pressure")
           {
@@ -2153,11 +2154,11 @@ void  PorousMedia::read_comp()
 
               if (model == PM_STEADY_SATURATED 
 		  || (model == PM_RICHARDS && !do_richard_sat_solve)) {
-                bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,vals));
+                bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
               } else {
                 PressToRhoSat p_to_sat;
-                bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
-                                                          bc_type,ncomps,p_to_sat));
+                bc_array.set(ibc, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
+                                                            bc_type,ncomps,p_to_sat));
               }
           }
           else if (bc_type == "pressure_head")
@@ -2179,7 +2180,7 @@ void  PorousMedia::read_comp()
 
 	    Array<Real> times(1,0);
 	    Array<std::string> forms(0);
-	    bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
+	    bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
           }
           else if (bc_type == "linear_pressure")
           {
@@ -2207,9 +2208,13 @@ void  PorousMedia::read_comp()
             }
             pressure_bc = 2;
 
-	    Array<Real> times(1,0);
-	    Array<std::string> forms(0);
-	    bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
+	    Array<Array<Real> > values(vals.size(),Array<Real>(1,0));
+            for (int j=0; j<vals.size(); ++j) {
+              values[j][0] = vals[j];
+            }
+	    Array<Array<Real> > times(vals.size(),Array<Real>(1,0));
+	    Array<Array<std::string> > forms(vals.size(),Array<std::string>(0));
+	    bc_array.set(ibc,new ArrayRegionData(bcname,times,values,forms,bc_regions,bc_type));
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -2260,16 +2265,16 @@ void  PorousMedia::read_comp()
               is_inflow = true;
               component_bc = 1;
               pressure_bc = 1;
-	      bc_array.set(i,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
+	      bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
           else if (bc_type == "noflow")
           {
-              is_inflow = false;
-              component_bc = 4;
-              pressure_bc = 4;
-
-              Array<Real> val(1,0);
-              bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,val));
+            Array<Real> vals(1,0), times(1,0);
+            Array<std::string> forms(0);
+            is_inflow = true;
+            component_bc = 1;
+            pressure_bc = 1;
+            bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
           }
           else
           {

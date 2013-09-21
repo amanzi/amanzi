@@ -237,7 +237,7 @@ namespace Amanzi {
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
-      else if (flow_mode == "Steady State Saturated") {
+      else if (flow_mode == "Steady State Saturated" || flow_mode == "Single Phase") {
         model_name = "steady-saturated";
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
@@ -441,9 +441,7 @@ namespace Amanzi {
         if (switch_time < stop_time) {
           prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
         }
-        if (switch_time > strt_time) {
-          prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
-        }
+        prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
 
         struc_out_list.set<std::string>("execution_mode", "init_to_steady");
 
@@ -2032,7 +2030,14 @@ namespace Amanzi {
           throw std::exception();
         }
         const ParameterList& func_plist = bc_plist.sublist(phaseBCfuncs[0]);
-        const Array<std::string>& assigned_regions = bc_plist.get<Array<std::string> >(reqPbc[0]);
+        const Array<std::string>& _assigned_regions = bc_plist.get<Array<std::string> >(reqPbc[0]);
+
+        Array<std::string> assigned_regions(_assigned_regions.size());
+        for (int i=0; i<_assigned_regions.size(); ++i) {
+          assigned_regions[i] = underscore(_assigned_regions[i]);
+        }
+
+
         const std::string& Amanzi_type = phaseBCfuncs[0];              
 
         s[BClabel] = StateFunc(BClabel, Amanzi_type, func_plist, assigned_regions);
@@ -2688,12 +2693,7 @@ namespace Amanzi {
                 throw std::exception();
               }
             }
-            if (orient_type == "noflow") {
-              sat_bc      = 4; // No flow for saturation
-              pressure_bc = 4; // No flow for p
-              inflow_bc   = 0; // Automatically set to zero
-            }
-            else if (orient_type == "pressure"
+            if (orient_type == "pressure"
                      || orient_type == "pressure_head"
                      || orient_type == "linear_pressure"
                      || orient_type == "hydrostatic") {
@@ -2708,8 +2708,8 @@ namespace Amanzi {
               pressure_bc = 2; // Dirichlet for p
               inflow_bc   = 0; // Unused
             }
-            else if (orient_type == "zero_total_velocity") {
-              sat_bc      = 1; // Dirichlet for saturation (but will compute values based on p)
+            else if (orient_type == "zero_total_velocity" || orient_type == "noflow") {
+              sat_bc      = 4; // Neumann for saturation
               pressure_bc = 1; // Neumann for p
               inflow_bc   = 1; // Requires inflow_XX_vel velocity values for nphase-1 phases
             }
@@ -2720,9 +2720,9 @@ namespace Amanzi {
             }
           }
           else {
-            sat_bc = 3;
-            pressure_bc = 4;
-            inflow_bc = 4;
+            sat_bc = 4;
+            pressure_bc = 1;
+            inflow_bc = 1;
           }
         }
       }
@@ -3157,8 +3157,8 @@ namespace Amanzi {
           for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
             const std::string& name = underscore(rslist.name(ii));
                         
-            if (name == "Times") {
-              times = rslist.get<Array<double> >("Times");
+            if (name == "Values") {
+              times = rslist.get<Array<double> >("Values");
             }
             else if (name == "Start_Period_Stop") {
               vals = rslist.get<Array<double> >("Start_Period_Stop");
@@ -3220,7 +3220,7 @@ namespace Amanzi {
           for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
             const std::string& name = rslist.name(ii);
                   
-            if (name == "Cycles") {
+            if (name == "Values") {
               cycles = rslist.get<Array<int> >(name);
             }
             else if (name == "Start_Period_Stop") {
