@@ -1025,12 +1025,10 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
           tol = num_list.get<double>("linear solver tolerance");
         if (num_list.isParameter("linear solver maximum iterations"))
           maxiter = num_list.get<int>("linear solver maximum iterations");
-        if (num_list.isParameter("linear solver method"))
-          method = num_list.get<std::string>("linear solver method");
+        if (num_list.isParameter("linear solver iterative method"))
+          method = num_list.get<std::string>("linear solver iterative method");
         if (num_list.isParameter("linear solver method"))
           prec = num_list.get<std::string>("linear solver preconditioner");
-	if (num_list.isParameter("iterative method"))
-	  prec = num_list.get<std::string>("linear solver iterative method");
       }
     }
   }

@@ -25,7 +25,7 @@ class LinearSolver_Specs {
     num_itrs = 0;
     max_itrs = 99;
     convergence_tol = 1e-14;
-    solver_name = "AztecOO";
+    solver_name = "PCG with Hypre AMG";
     preconditioner_name = "undefined (default is HYPRE_AMG)";
     preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must be equal to ST_PRECOND
   }

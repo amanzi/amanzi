@@ -19,12 +19,12 @@ SUITE(SOLVERS) {
     ~Matrix() {};
 
     void Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
-      mv[0] = 2 * v[0] - v[1]; 
-      mv[1] = 2 * v[1] - v[0]; 
+      for (int i = 0; i < 5; i++) mv[i] = 2 * v[i];
+      for (int i = 1; i < 5; i++) mv[i] -= v[i - 1];
+      for (int i = 0; i < 4; i++) mv[i] -= v[i + 1];
     }
     void ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
-      hv[0] = v[0]; 
-      hv[1] = v[1]; 
+      for (int i = 0; i < 5; i++) hv[i] = v[i];
     }
   };
 
@@ -32,7 +32,7 @@ SUITE(SOLVERS) {
     std::cout << "Checking PCG solver..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(2, 0, *comm);
+    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
@@ -46,15 +46,19 @@ SUITE(SOLVERS) {
     // solve
     Epetra_Vector v(*map);
     pcg.ApplyInverse(u, v);
-    CHECK_CLOSE(-0.33333333e+0, v[0], 1e-6);
-    CHECK_CLOSE( 0.33333333e+0, v[1], 1e-6);
+
+    CHECK_CLOSE(-0.1666666666e+0, v[0], 1e-6);
+    CHECK_CLOSE( 0.6666666666e+0, v[1], 1e-6);
+    CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
+    CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
+    CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
   };
 
   TEST(GMRES_SOLVER) {
     std::cout << "Checking GMRES solver..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(2, 0, *comm);
+    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
@@ -68,15 +72,19 @@ SUITE(SOLVERS) {
     // solve
     Epetra_Vector v(*map);
     gmres.ApplyInverse(u, v);
-    CHECK_CLOSE(-0.33333333e+0, v[0], 1e-6);
-    CHECK_CLOSE( 0.33333333e+0, v[1], 1e-6);
+
+    CHECK_CLOSE(-0.1666666666e+0, v[0], 1e-6);
+    CHECK_CLOSE( 0.6666666666e+0, v[1], 1e-6);
+    CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
+    CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
+    CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
   };
 
   TEST(SOLVER_FACTORY) {
     std::cout << "Checking solver factory..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(2, 0, *comm);
+    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
 
     Teuchos::ParameterList plist;
     Teuchos::ParameterList& slist = plist.sublist("pcg");
@@ -96,15 +104,19 @@ SUITE(SOLVERS) {
     // solve
     Epetra_Vector v(*map);
     solver->ApplyInverse(u, v);
-    CHECK_CLOSE(-0.33333333e+0, v[0], 1e-6);
-    CHECK_CLOSE( 0.33333333e+0, v[1], 1e-6);
+
+    CHECK_CLOSE(-0.1666666666e+0, v[0], 1e-6);
+    CHECK_CLOSE( 0.6666666666e+0, v[1], 1e-6);
+    CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
+    CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
+    CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
   };
 
   TEST(VERBOSITY_OBJECT) {
     std::cout << "Checking verbosity object..." << std::endl;
 
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    Epetra_Map* map = new Epetra_Map(2, 0, *comm);
+    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
 
     Teuchos::ParameterList plist;
     Teuchos::ParameterList& slist = plist.sublist("pcg");
@@ -126,8 +138,12 @@ SUITE(SOLVERS) {
     // solve
     Epetra_Vector v(*map);
     solver->ApplyInverse(u, v);
-    CHECK_CLOSE(-0.33333333e+0, v[0], 1e-6);
-    CHECK_CLOSE( 0.33333333e+0, v[1], 1e-6);
+
+    CHECK_CLOSE(-0.1666666666e+0, v[0], 1e-6);
+    CHECK_CLOSE( 0.6666666666e+0, v[1], 1e-6);
+    CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
+    CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
+    CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
   };
 
 }

@@ -352,9 +352,11 @@ Usage:
 
      * [U] `"linear solver tolerance`" [double] Set the tolerance for the AztecOO linear solver that may be used in a saturated steady state computation. (default: `"1.0e-16`", suggested range: 1.0e-20 ... 1.0e-14)
 
-     * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation. (default: `"100`", suggested range: 50 ... 1000)
+     * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the linear solver that may be used in a saturated steady state computation. (default: `"100`", suggested range: 50 ... 1000)
  
      * [U] `"linear solver preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for linear problems, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
+
+     * [U] `"linear solver iterative method`" [string] select the iterative method to be used in linear solvers, choose one of `"pcg`", or `"gmres`". (default: `"gmres`")
 
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 

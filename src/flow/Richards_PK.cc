@@ -87,8 +87,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
   const Epetra_Map& target_cmap = mesh_->cell_map(true);
 
-  cell_importer_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
-
   const Epetra_Map& source_fmap = mesh_->face_map(false);
   const Epetra_Map& target_fmap = mesh_->face_map(true);
 
@@ -171,8 +169,8 @@ void Richards_PK::InitPK()
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
   solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
-  rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  rhs = matrix_->rhs();  // import rhs from the matrix
+  // rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
+  // rhs = matrix_->rhs();  // import rhs from the matrix
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   const Epetra_BlockMap& fmap_ghost = mesh_->face_map(true);
@@ -516,7 +514,8 @@ int Richards_PK::Advance(double dT_MPC)
   time = T_physics;
   if (ti_specs->num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
-    ComputeUDot(time, *solution, udot);
+    // I do not know how to estimate du/dt in a robust manner.
+    // ComputeUDot(time, *solution, udot);  
 
     if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
@@ -647,8 +646,11 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
 
 /* ******************************************************************
-* Estimate du/dt from the pressure equations, a du/dt = g - A*u.
+* Estimate du/dt from the pressure equation, a du/dt = g - A*u.
+* There is no meaniful way to estimate du/dt due to the abrupt change 
+* of function a. The routine is not used.
 ****************************************************************** */
+/*
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   AssembleMatrixMFD(u, T);
@@ -666,10 +668,10 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
 
   Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
   DeriveFaceValuesFromCellValues(*udot_cells, *udot_faces);
-  // udot_faces->PutScalar(0.0);
 
   return norm_udot;
 }
+*/
 
 
 /* ******************************************************************

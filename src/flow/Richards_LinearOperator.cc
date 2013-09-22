@@ -33,13 +33,14 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, Linear
 
   // calculate and assemble elemental stiffness matrices
   AssembleSteadyStateMatrix_MFD(&*matrix_);
-  Epetra_Vector& rhs = *(matrix_->rhs());
+  const Epetra_Vector& rhs = *(matrix_->rhs());
 
   AssembleSteadyStatePreconditioner_MFD(&*preconditioner_);
   preconditioner_->UpdatePreconditioner();
 
   // solve linear problem
   AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+
   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 

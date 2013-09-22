@@ -76,8 +76,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
   const Epetra_Map& target_cmap = mesh_->cell_map(true);
 
-  cell_importer_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
-
   const Epetra_Map& source_fmap = mesh_->face_map(false);
   const Epetra_Map& target_fmap = mesh_->face_map(true);
 
@@ -377,7 +375,7 @@ int Darcy_PK::Advance(double dT_MPC)
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
-  rhs = matrix_->rhs();
+  Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
   // create linear solver

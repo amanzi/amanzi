@@ -137,7 +137,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     x.Update( alpha, p, 1.0);
     r.Update(-alpha, v, 1.0);
 
-    h_->ApplyInverse(r, v);  // gamma = (H r, r)
+    h_->ApplyInverse(r, v);  // gamma1 = (H r, r)
     double gamma1;
     v.Dot(r, &gamma1);
     if (gamma1 < 0.0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
