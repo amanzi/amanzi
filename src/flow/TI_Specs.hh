@@ -57,7 +57,7 @@ class TI_Specs {
     clip_pressure = -1e+10;
     pressure_lambda_constraints = true;
 
-    ls_specs.solver_name = "undefined";
+    ls_specs.solver_name = "AztecOO";
     ls_specs_ini.solver_name = "PCG with Hypre AMG";
     ls_specs_constraints.solver_name = "AztecOO";
   }

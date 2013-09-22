@@ -119,8 +119,8 @@ SUITE(SOLVERS) {
     Epetra_Map* map = new Epetra_Map(5, 0, *comm);
 
     Teuchos::ParameterList plist;
-    Teuchos::ParameterList& slist = plist.sublist("pcg");
-    slist.set<string>("iterative method", "pcg");
+    Teuchos::ParameterList& slist = plist.sublist("gmres");
+    slist.set<string>("iterative method", "gmres");
     Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
     vlist.set("Verbosity Level", "extreme");
 
@@ -128,7 +128,7 @@ SUITE(SOLVERS) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
     AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
-        solver = factory.Create("pcg", plist, m);
+        solver = factory.Create("gmres", plist, m);
 
     // initial guess
     Epetra_Vector u(*map);

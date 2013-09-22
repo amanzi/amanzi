@@ -160,6 +160,9 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 {
+  // create verbosity object
+  VerboseObject* vo = new VerboseObject("Amanzi::Picard", rp_list_); 
+
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
@@ -240,10 +243,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     double relaxation;
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
+    if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *(vo->os()) << itrs << ": ||r||=" << L2error << " relax=" << relaxation 
+                  << " lin_solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
 // Epetra_Vector& pressure = FS->ref_pressure();
@@ -260,6 +263,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
+
+  delete vo;
   return 0;
 }
 
