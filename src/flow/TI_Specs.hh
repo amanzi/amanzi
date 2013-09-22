@@ -23,10 +23,9 @@ class LinearSolver_Specs {
  public:
   LinearSolver_Specs() {
     num_itrs = 0;
-    max_itrs = 99;
-    convergence_tol = 1e-14;
-    solver_name = "PCG with Hypre AMG";
-    preconditioner_name = "undefined (default is HYPRE_AMG)";
+    max_itrs = 911;
+    convergence_tol = 1.911e-16;
+    preconditioner_name = "undefined";
     preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must be equal to ST_PRECOND
   }
   ~LinearSolver_Specs() {};
@@ -44,7 +43,7 @@ class TI_Specs {
   TI_Specs() { 
     ti_method = FLOW_TIME_INTEGRATION_BDF1;
     ti_method_name = "none";
-    preconditioner_name = "undefined (default is HYPRE_AMG)";
+    preconditioner_name = "undefined";
     preconditioner_method = FLOW_PRECONDITIONER_HYPRE_AMG;  // Must equal to ST_PRECOND
     num_itrs = max_itrs = 0;
     error_control_options = 0;
@@ -57,6 +56,10 @@ class TI_Specs {
     clip_saturation = -1.0;
     clip_pressure = -1e+10;
     pressure_lambda_constraints = true;
+
+    ls_specs.solver_name = "undefined";
+    ls_specs_ini.solver_name = "PCG with Hypre AMG";
+    ls_specs_constraints.solver_name = "AztecOO";
   }
   ~TI_Specs() {};
 

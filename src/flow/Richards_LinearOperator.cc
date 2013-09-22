@@ -51,7 +51,7 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, Linear
     double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "saturated solver(" << solver->name() 
+    *(vo_->os()) << "saturated solver (" << solver->name() 
                  << "): ||r||=" << residual << " itr=" << num_itrs << endl;
   }
 }
@@ -96,7 +96,7 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
     double residual = solver->residual();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "constraints solver(" << solver->name() 
+    *(vo_->os()) << "constraints solver (" << solver->name() 
                  << "): ||r||=" << residual << " itr=" << num_itrs << endl;
   }
 }

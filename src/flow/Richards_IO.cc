@@ -96,6 +96,9 @@ void Richards_PK::ProcessParameterList()
   if (rp_list_.isSublist("steady state time integrator")) {
     Teuchos::ParameterList& sss_list = rp_list_.sublist("steady state time integrator");
 
+cout << ti_specs_sss_.ls_specs.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_ini.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_constraints.solver_name << endl << endl;
     std::string ti_method_name = sss_list.get<string>("time integration method", "none");
     ProcessStringTimeIntegration(ti_method_name, &ti_specs_sss_.ti_method);
     ProcessSublistTimeIntegration(sss_list, ti_method_name, ti_specs_sss_);
@@ -103,9 +106,15 @@ void Richards_PK::ProcessParameterList()
 
     ti_specs_sss_.preconditioner_name = FindStringPreconditioner(sss_list);
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
+cout << ti_specs_sss_.ls_specs.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_ini.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_constraints.solver_name << endl << endl;
 
     ti_specs_sss_.ls_specs.solver_name = FindStringLinearSolver(sss_list, solver_list_);
     ProcessStringLinearSolver(ti_specs_sss_.ls_specs.solver_name, &ti_specs_sss_.ls_specs);
+cout << ti_specs_sss_.ls_specs.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_ini.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_constraints.solver_name << endl << endl;
 
     ProcessStringPreconditioner(ti_specs_sss_.preconditioner_name, &ti_specs_sss_.preconditioner_method);
     ProcessStringErrorOptions(sss_list, &ti_specs_sss_.error_control_options);

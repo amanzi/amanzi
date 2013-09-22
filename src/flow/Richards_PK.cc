@@ -297,6 +297,9 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
                    FLOW_TI_ERROR_CONTROL_SATURATION;  // usually 1e-4;
   error_control_ |= ti_specs->error_control_options;
 
+cout << ti_specs_sss_.ls_specs.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_ini.solver_name << endl;
+cout << ti_specs_sss_.ls_specs_constraints.solver_name << endl;
   InitNextTI(T0, dT0, ti_specs_sss_);
 
   flow_status_ = FLOW_STATUS_STEADY_STATE;
@@ -344,7 +347,6 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
                  << "  sources distribution id=" << src_sink_distribution << endl
                  << "  error control options id=" << error_control_ << endl
                  << "  linear solver: ||r||<" << ls.convergence_tol << " #itr<" << ls.max_itrs << endl
-                 << "  iterative method: " << ls.solver_name << endl
                  << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
 
     if (ti_specs.initialize_with_darcy) {
