@@ -74,10 +74,10 @@ void Richards_PK::AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix)
       Exceptions::amanzi_throw(msg);
     }
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
+
+    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values);
     AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
-    matrix_tpfa -> AssembleGlobalMatrices(Krel_faces, *Transmis_faces);
+    matrix_tpfa -> AssembleGlobalMatrices();
   }
 }
 
@@ -102,10 +102,10 @@ void Richards_PK::AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* precondition
       Exceptions::amanzi_throw(msg);
     }
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-    prec_tpfa -> ApplyBoundaryConditions(bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
+
+    prec_tpfa -> ApplyBoundaryConditions(bc_model, bc_values);
     AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, prec_tpfa);
-    prec_tpfa -> AssembleGlobalMatrices(Krel_faces, *Transmis_faces);  
+    prec_tpfa -> AssembleGlobalMatrices();  
   }  
 }
 
@@ -136,14 +136,11 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
     Teuchos::RCP<Epetra_Vector> rhs_cells_ = matrix_tpfa -> rhs_cells();
     rhs_cells_->PutScalar(0.0);
 
-    //Epetra_Vector& Trans_faces = matrix_tpfa -> ref_trans_faces();
-    //Epetra_Vector& grav_faces = matrix_tpfa -> ref_grav_term_faces();
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-    matrix_tpfa->ApplyBoundaryConditions(
-        bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
+
+    matrix_tpfa->ApplyBoundaryConditions(bc_model, bc_values);
     AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
-    matrix_tpfa->AssembleGlobalMatrices(Krel_faces, *Transmis_faces);
+    matrix_tpfa->AssembleGlobalMatrices();
   } else{
     // setup a new algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
@@ -179,14 +176,14 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
       Exceptions::amanzi_throw(msg);
     }
 
-    matrix_tpfa->DeriveDarcyMassFlux(*u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa->DeriveDarcyMassFlux(*u_cells, bc_model, bc_values, flux);
 
     for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
   }
 
   rel_perm->Compute(u, bc_model, bc_values);
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
-  //exit(0);
+
   //Amanzi::timer_manager.start("Update precon");
 
   // setup a new algebraic problem
@@ -229,8 +226,8 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     //Amanzi::timer_manager.start("AnalyticJacobian");
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
-    matrix_tpfa->ApplyBoundaryConditions(bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
-    matrix_tpfa->AssembleSchurComplement(Krel_faces, *Transmis_faces);
+    matrix_tpfa->ApplyBoundaryConditions(bc_model, bc_values);
+    matrix_tpfa->AssembleSchurComplement(bc_model, bc_values);
 
     matrix_tpfa->AnalyticJacobian(*u_cells, dim, bc_model, bc_values, *Transmis_faces, *Grav_term_faces, *rel_perm);
     //Amanzi::timer_manager.stop("AnalyticJacobian");

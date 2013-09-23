@@ -149,29 +149,11 @@ void Richards_PK::InitPK()
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
 
-  // Select a proper matrix class
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
-    // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
-  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_));
-    preconditioner_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_));
-    matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
-    preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
-  } else {
-    matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
-    preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
-  }
-  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
-  preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
-
   // Create the solution (pressure) vector.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
   solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
-  // rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  // rhs = matrix_->rhs();  // import rhs from the matrix
-
+  
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   const Epetra_BlockMap& fmap_ghost = mesh_->face_map(true);
 
@@ -190,9 +172,7 @@ void Richards_PK::InitPK()
   SetAbsolutePermeabilityTensor(K);
   rel_perm->CalculateKVectorUnit(K, gravity_);
 
-  is_matrix_symmetric = SetSymmetryProperty();
-  matrix_->SetSymmetryProperty(is_matrix_symmetric);
-  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+
 
   /// Initialize Transmisibillities and Gravity terms contribution
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
@@ -206,6 +186,30 @@ void Richards_PK::InitPK()
     const Epetra_Map& cmap_owned = mesh_->cell_map(false);
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
+
+
+  // Select a proper matrix class
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+    // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
+    // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
+  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
+    matrix_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    preconditioner_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    // matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
+    // preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
+  } else {
+    matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
+    preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
+  }
+  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
+  preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
+
+  //rhs = matrix_->rhs();  // import rhs from the matrix
+
+  is_matrix_symmetric = SetSymmetryProperty();
+  matrix_->SetSymmetryProperty(is_matrix_symmetric);
+  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+
 
   // initialize boundary and source data 
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -472,8 +476,7 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    matrix_tpfa->DeriveDarcyMassFlux(
-        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa->DeriveDarcyMassFlux(*solution_cells, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
@@ -605,8 +608,7 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
       msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    matrix_tpfa->DeriveDarcyMassFlux(
-        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_tpfa->DeriveDarcyMassFlux(*solution_cells, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;

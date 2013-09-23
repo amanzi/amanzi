@@ -31,9 +31,7 @@ void Richards_PK::fun(
 { 
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     Epetra_Vector* u_cells = FS->CreateCellView(u);
-    // Epetra_Vector* u_faces = FS->CreateFaceView(u);
-    // rel_perm->Compute(u, bc_model, bc_values);
-    // UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
+
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
@@ -42,14 +40,14 @@ void Richards_PK::fun(
     }
     // compute A*u - rhs
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
+
+    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values);
     AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
     
     Teuchos::RCP<Epetra_Vector> rhs = matrix_tpfa->rhs();
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
-    matrix_tpfa->ComputeNegativeResidual(*u_cells,  Krel_faces, *Transmis_faces, f);  
+    matrix_tpfa->ComputeNegativeResidual(*u_cells,  f);  
   }
   else {
     // compute inegative residual f = A*u - rhs
