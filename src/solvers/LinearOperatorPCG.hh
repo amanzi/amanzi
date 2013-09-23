@@ -51,12 +51,8 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   void add_criteria(int criteria) { criteria_ |= criteria; }
   void set_overflow(double tol) { overflow_tol_ = tol; }
 
-  double residual() {
-    return residual_;
-  }
-  int num_itrs() {
-    return num_itrs_;
-  }
+  double residual() { return residual_; }
+  int num_itrs() { return num_itrs_; }
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
@@ -137,7 +133,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     x.Update( alpha, p, 1.0);
     r.Update(-alpha, v, 1.0);
 
-    h_->ApplyInverse(r, v);  // gamma = (H r, r)
+    h_->ApplyInverse(r, v);  // gamma1 = (H r, r)
     double gamma1;
     v.Dot(r, &gamma1);
     if (gamma1 < 0.0) return LIN_SOLVER_NON_SPD_APPLY_INVERSE;

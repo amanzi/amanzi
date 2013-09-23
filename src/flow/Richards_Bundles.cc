@@ -133,7 +133,7 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
       Exceptions::amanzi_throw(msg);
     }
 
-    Teuchos::RCP<Epetra_Vector>& rhs_cells_ = matrix_tpfa -> rhs_cells();
+    Teuchos::RCP<Epetra_Vector> rhs_cells_ = matrix_tpfa -> rhs_cells();
     rhs_cells_->PutScalar(0.0);
 
     //Epetra_Vector& Trans_faces = matrix_tpfa -> ref_trans_faces();
@@ -153,7 +153,7 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
     matrix_->AssembleGlobalMatrices();
   }
 
-  rhs = matrix_->rhs();
+  Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 }
 
@@ -182,11 +182,6 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     matrix_tpfa->DeriveDarcyMassFlux(*u_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
 
     for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
-
-    // cout<<"After DeriveDarcyMassFlux\n"<<endl;
-    // for (int f = 48; f < nfaces_owned; f++){
-    //   cout<<"flux "<<f<<":   "<<flux[f]<<endl;
-    // }
   }
 
   rel_perm->Compute(u, bc_model, bc_values);
@@ -301,28 +296,24 @@ void Richards_PK::ComputeTransmissibilities(Epetra_Vector& Trans_faces, Epetra_V
       factor = (perm[0]*perm[1]) / (h[0]*perm[1] + h[1]*perm[0]);
       grav *= (h[0] + h[1]);
     } else if (ncells == 1) {    
-      factor = perm[0]/h[0];
+      factor = perm[0] / h[0];
       grav *= h[0];
     } 
 
-    trans_f = 0.;
-    for (int i=0; i<ncells; i++) {
-      trans_f += h_test[i]/perm[i];
+    trans_f = 0.0;
+    for (int i = 0; i < ncells; i++) {
+      trans_f += h_test[i] / perm[i];
     }
 
-    trans_f = 1./trans_f;
-
-    //cout<<factor<<" "<<trans_f<<endl;
+    trans_f = 1.0 / trans_f;
 
     Trans_faces[f] = trans_f;
     grav_faces[f] = Trans_faces[f] * grav;
   }
 
-
   FS->CopyMasterFace2GhostFace(Trans_faces);
   FS->CopyMasterFace2GhostFace(grav_faces);
 }
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

@@ -779,8 +779,6 @@ void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   std::vector<int> flag(nfaces_wghost, 0);
 
-  
-
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();

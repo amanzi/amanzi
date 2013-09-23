@@ -82,7 +82,7 @@ int Richards_PK::AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs)
     Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
        solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
-    rhs = matrix_->rhs();
+    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
     solver->ApplyInverse(*rhs, *solution);
 
     // error estimates
