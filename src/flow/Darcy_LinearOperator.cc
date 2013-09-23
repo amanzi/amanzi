@@ -48,8 +48,6 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
-  rhs = matrix_->rhs();
-
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
@@ -57,6 +55,7 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
 
+  Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
   solver->ApplyInverse(*rhs, *solution);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {

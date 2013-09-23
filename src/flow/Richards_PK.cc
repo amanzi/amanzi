@@ -87,8 +87,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
   const Epetra_Map& target_cmap = mesh_->cell_map(true);
 
-  cell_importer_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
-
   const Epetra_Map& source_fmap = mesh_->face_map(false);
   const Epetra_Map& target_fmap = mesh_->face_map(true);
 
@@ -171,8 +169,8 @@ void Richards_PK::InitPK()
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
   solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
-  rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  rhs = matrix_->rhs();  // import rhs from the matrix
+  // rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
+  // rhs = matrix_->rhs();  // import rhs from the matrix
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   const Epetra_BlockMap& fmap_ghost = mesh_->face_map(true);
@@ -339,25 +337,21 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     LinearSolver_Specs& ls = ti_specs.ls_specs;
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "****************************************" << endl
-                 << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
+    *(vo_->os()) << endl << "****************************************" << endl
+                 << "New TI phase: " << ti_specs.ti_method_name.c_str() << endl
                  << "****************************************" << endl
-                 << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
-                 << "  sources distribution id=" << src_sink_distribution << endl
-                 << "  error control options id=" << error_control_ << endl
-                 << "  linear solver: ||r||<" << ls.convergence_tol << " #itr<" << ls.max_itrs << endl
-                 << "  iterative method: " << ls.solver_name << endl
-                 << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
+                 << " start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
+                 << " error control id=" << error_control_ << endl
+                 << " preconditioner for nonlinear solver: " << ti_specs.preconditioner_name.c_str() << endl
+                 << " sources distribution id=" << src_sink_distribution << endl;
 
     if (ti_specs.initialize_with_darcy) {
       LinearSolver_Specs& ls_ini = ti_specs.ls_specs_ini;
-      *(vo_->os()) << "  initial pressure solver: " << ls_ini.solver_name << endl
-                   << "    criteria: ||r||<" << ls_ini.convergence_tol << " #itr<" << ls_ini.max_itrs << endl
-                   << "    preconditioner: " << ls_ini.preconditioner_name.c_str() << endl;
+      *(vo_->os()) << " initial pressure solver: " << ls_ini.solver_name << endl;
       if (ti_specs.clip_saturation > 0.0) {
-        *(vo_->os()) << "    clipping saturation at " << ti_specs.clip_saturation << " [-]" << endl;
+        *(vo_->os()) << "  clipping saturation at " << ti_specs.clip_saturation << " [-]" << endl;
       } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
-        *(vo_->os()) << "    clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << endl;
+        *(vo_->os()) << "  clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << endl;
       }
     }
   }
@@ -412,9 +406,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     int npassed = matrix_->npassed();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "  discretization method (prec): " << mfd3d_method_name.c_str() << endl
-                 << "    assign no-flow BC to " << missed_bc_faces_ << " faces" << endl
-                 << "    good and repaired matrices: " << nokay << " " << npassed << endl;   
+    *(vo_->os()) << " discretization method (prec): " << mfd3d_method_name.c_str() << endl
+                 << "  good and repaired matrices: " << nokay << " " << npassed << endl
+                 << " assigned default (no-flow) BC to " << missed_bc_faces_ << " faces" << endl << endl;
   }
 
   // Well modeling
@@ -516,7 +510,8 @@ int Richards_PK::Advance(double dT_MPC)
   time = T_physics;
   if (ti_specs->num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
-    ComputeUDot(time, *solution, udot);
+    // I do not know how to estimate du/dt in a robust manner.
+    // ComputeUDot(time, *solution, udot);  
 
     if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
@@ -647,8 +642,11 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
 
 /* ******************************************************************
-* Estimate du/dt from the pressure equations, a du/dt = g - A*u.
+* Estimate du/dt from the pressure equation, a du/dt = g - A*u.
+* There is no meaniful way to estimate du/dt due to the abrupt change 
+* of function a. The routine is not used.
 ****************************************************************** */
+/*
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   AssembleMatrixMFD(u, T);
@@ -666,10 +664,10 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
 
   Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
   DeriveFaceValuesFromCellValues(*udot_cells, *udot_faces);
-  // udot_faces->PutScalar(0.0);
 
   return norm_udot;
 }
+*/
 
 
 /* ******************************************************************

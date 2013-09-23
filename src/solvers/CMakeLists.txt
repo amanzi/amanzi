@@ -33,7 +33,7 @@ include_directories(${NOX_INCLUDE_DIRS})
 # Library: solvers
 #
 file(GLOB solver_inc_files "*.hh")
-set(solvers_source_files NKA.cc NKADirection.cc NKADirFactory.cc 
+set(solvers_source_files NKA.cc
                          PreconditionerFactory.cc PreconditionerHypre.cc PreconditionerML.cc
                          PreconditionerBlockILU.cc)
 
@@ -62,6 +62,11 @@ if (BUILD_TESTS)
     add_amanzi_test(solver_linear_operators solver_linear_operators
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_operators.cc
+                    LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
+    add_amanzi_test(solver_nka solver_nka
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_nka.cc
                     LINK_LIBS error_handling whetstone atk ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 endif()

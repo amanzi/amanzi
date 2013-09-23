@@ -149,7 +149,6 @@ class Richards_PK : public Flow_PK {
   double atm_pressure;
   Teuchos::RCP<Epetra_Map> super_map_;
 
-  Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;
 
   Teuchos::RCP<Matrix_MFD> matrix_;
@@ -171,8 +170,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
   Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
-  Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
-  Teuchos::RCP<Epetra_Vector> rhs_faces;
 
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;

@@ -69,6 +69,7 @@ Changes by TDS June 2013:
 	* Added sources
 	* Modified hydrostatic boundary to include relative/absolute attribute
 	* Changed sequence to all, when type allowed.  Ordering should not be enforced unless necessary.
+	* Added dispersivity, diffusion and tortuosity
 	* DID NOT Add spatial_function; modified function --> time_function ***TODO****
   </xs:documentation>
 </xs:annotation>
@@ -142,7 +143,7 @@ Changes by TDS June 2013:
       </xs:documentation>
   </xs:annotation>
   <xs:restriction base="xs:token">
-    <xs:pattern value="[(]?([-+]?[0-9]*\.?[0-9]+)?,([-+]?[0-9]*\.?[0-9]+)?,([-+]?[0-9]*\.?[0-9]+)?[)]?"/>
+    <xs:pattern value="[(]?([-+]?[0-9]*\.?[0-9]+)?,([-+]?[0-9]*\.?[0-9]+),?([-+]?[0-9]*\.?[0-9]+)?[)]?"/>
   </xs:restriction>
 </xs:simpleType>
 
@@ -635,6 +636,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="max_iterations" type="xs:integer" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="tolerance" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="sub_cycling" type="xs:string" minOccurs = "0" maxOccurs = "1"/> <!--Use true/false type? -->
+		<xs:element name="cfl" type="typedef_exponential" minOccurs = "0" maxOccurs = "1"/>
 		<xs:element name="transport_sub_cycling" type="xs:string" minOccurs = "0" maxOccurs = "1"/> <!--Use true/false type? -->
 		<xs:element name="preconditioner" minOccurs="0" maxOccurs="1">
 			<xs:alternative test="@name eq 'trilinos_ml'" type="typedef_trilinos_ml"/>
@@ -895,6 +897,18 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 			<xs:alternative test="@type='file'" type="typedef_property_file"/>
 			<xs:alternative type="typedef_specific_yield"/>
 		</xs:element>
+		<xs:element name="dispersion_tensor" minOccurs="0" maxOccurs="1">			
+			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+			<xs:alternative type="typedef_dispersion_tensor"/>
+		</xs:element>
+		<xs:element name="molecular_diffusion" minOccurs="0" maxOccurs="1">			
+			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+			<xs:alternative type="typedef_molecular_diffusion"/>
+		</xs:element>
+		<xs:element name="tortuosity" minOccurs="0" maxOccurs="1">			
+			<xs:alternative test="@type='file'" type="typedef_property_file"/>
+			<xs:alternative type="typedef_tortuosity"/>
+		</xs:element>
 	</xs:all>
 </xs:complexType>
 
@@ -913,6 +927,20 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_specific_yield">
 	<xs:attribute name="value" use="required" type="typedef_exponential"/>
 </xs:complexType>
+
+<xs:complexType name="typedef_dispersion_tensor">
+	<xs:attribute name="alpha_l" use="required" type="typedef_exponential"/>
+	<xs:attribute name="alpha_t" use="required" type="typedef_exponential"/>
+</xs:complexType>
+
+<xs:complexType name="typedef_molecular_diffusion">
+	<xs:attribute name="value" use="required" type="typedef_exponential"/>
+</xs:complexType>
+
+<xs:complexType name="typedef_tortuosity">
+	<xs:attribute name="value" use="required" type="typedef_exponential"/>
+</xs:complexType>
+
 <xs:simpleType name="restriction_porosity">
 	<xs:restriction base="xs:decimal">
 		<xs:minInclusive value="0"/>
@@ -1132,11 +1160,27 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:attribute name="start" type="typedef_labeled_time"/>
 </xs:complexType>
 
+<!--
 <xs:complexType name="typedef_ic_liquid_component">
-	<xs:choice>
-		<xs:element name="pressure" type="typedef_ic_pressure"/>
-		<xs:element name="saturation" type="typedef_ic_saturation"/>
-	</xs:choice>
+	<xs:sequence>
+		<xs:element name="velocity" type="typedef_ic_velocity" minOccurs="0" maxOccurs="1"/>
+		<xs:choice>
+			<xs:element name="pressure" type="typedef_ic_pressure"/>
+			<xs:element name="saturation" type="typedef_ic_saturation"/>
+		</xs:choice>
+	</xs:sequence>
+	<xs:attribute name="name" type="xs:string"/>
+</xs:complexType>
+-->
+
+<xs:element name="ic_choice" abstract="true"/>
+<xs:element name="pressure" substitutionGroup="ic_choice" type="typedef_ic_pressure"/>
+<xs:element name="saturation" substitutionGroup="ic_choice" type="typedef_ic_saturation"/>
+<xs:complexType name="typedef_ic_liquid_component">
+	<xs:sequence>
+		<xs:element name="velocity" type="typedef_ic_velocity" minOccurs="0" maxOccurs="1"/>
+		<xs:element ref="ic_choice" minOccurs="1" maxOccurs="1"/>
+	</xs:sequence>
 	<xs:attribute name="name" type="xs:string"/>
 </xs:complexType>
 
@@ -1172,6 +1216,13 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<!--<xs:assert  test="@function = ('linear','uniform')"/>-->
 </xs:complexType>
 
+<xs:complexType name="typedef_ic_velocity">
+	<xs:attribute name="x" type="typedef_exponential"/>
+	<xs:attribute name="y" type="typedef_exponential"/>
+	<xs:attribute name="z" type="typedef_exponential"/>
+	<xs:attribute name="function" type="xs:string"/>
+	<xs:assert  test="@function = ('linear','uniform')"/>
+</xs:complexType>
 <!-- ====================================== Boundary Conditions ========================================= -->
 
 <xs:complexType name="typedef_boundary_conditions">
@@ -1391,13 +1442,17 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 		<xs:element name="aqueous_conc" type="typedef_src_aqueous_conc" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
+	<xs:attribute name="start" type="xs:string"/>
+	<xs:attribute name="value" type="xs:string"/>
+	<xs:attribute name="function" type="xs:string"/>
+	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	
 </xs:complexType>
 
 <!-- TODO: Do we need to define an aqueous conc specific to source? -->
 <!--       Can't this definition be shared? -->
 <xs:complexType name="typedef_src_aqueous_conc">
-	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="name" type="xs:string"/>
+	<xs:attribute name="start" type="xs:string"/>
 	<xs:attribute name="value" type="xs:string"/>
 	<xs:attribute name="function" type="xs:string"/>
 	<xs:assert  test="@function = ('linear', 'uniform', 'constant')"/>	

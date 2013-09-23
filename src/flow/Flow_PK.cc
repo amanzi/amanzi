@@ -633,8 +633,8 @@ void Flow_PK::WriteGMVfile(Teuchos::RCP<Flow_State> FS) const
   GMV::start_data();
   GMV::write_cell_data(FS->ref_pressure(), "pressure");
   GMV::write_cell_data(FS->ref_water_saturation(), "saturation");
-  GMV::write_cell_data(FS->ref_darcy_velocity(), 0, "velocity_h");
-  GMV::write_cell_data(FS->ref_darcy_velocity(), dim-1, "velocity_v");
+  // GMV::write_cell_data(FS->ref_darcy_velocity(), 0, "velocity_h");
+  // GMV::write_cell_data(FS->ref_darcy_velocity(), dim-1, "velocity_v");
   GMV::close_data_file();
 }
 
