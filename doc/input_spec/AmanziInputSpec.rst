@@ -260,13 +260,29 @@ Usage:
 
   If the unstructured option is active, the following list of parameters is valid:
 
-  * [U] `"Unstructured Algorithm"` [list] Control parameters associtated with the unstructured algorithm.
+  * [U] `"Unstructured Algorithm"` [list]: Control parameters associtated with the unstructured algorithm.
 
-   * [U] `"Transport Process Kernel`" [list] Control parameters for the transport methods
+   * [U] `"Flow Process Kernel`" [list]: Control parameters for the flow methods
 
-     * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default: `"Explicit First-Order`")
+     * [U] `"Discretization Method`" [string]: Specifies the spatial discretization 
+       method. The Available options are: `"mfd scaled`", `"optimized mfd scaled`"
+       (default), `"two-point flux approximation`", and `"support operator`".
+       The second option is recommended for orthogonal meshes and diagonal absolute permeability.
 
-     * [U] `"transport subcycling`" [bool] Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`")
+     * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
+       relative permeability. The available options are: `"upwind with gravity`", 
+       `"upwind with Darcy flux`" (default), `"cell centered"`, and `"upwind amanzi`"
+       (experimental).  The first three calculate the relative permeability on mesh interfaces.
+
+     * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
+
+   * [U] `"Transport Process Kernel`" [list]: Control parameters for the transport methods
+
+     * [U] `"Transport Integration Algorithm`" [string]: Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default: `"Explicit First-Order`")
+
+     * [U] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
+
+     * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`")
 
    * [U] `"Chemistry Process Kernel`" [list]: Control parameters for the reactive transport methods
 
@@ -1278,7 +1294,27 @@ The following initial condition parameterizations are supported:
 
 The following boundary condition parameterizations are supported:
 
-* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Inward Volumetric Flux`" [Array double], `"Inward Mass Flux`" [Array double], `"Outward Volumetric Flux`" [Array double] or `"Outward Mass Flux`" [Array double]. Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward or outward refers to the flux being in the direction of the inward or outward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" and `"Outward Mass Flux`" are supported.)
+* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] 
+  (see the note below) and one of the following: 
+
+    * [U]  `"Inward Volumetric Flux`" [Array double], 
+
+    * [SU] `"Inward Mass Flux`" [Array double], 
+
+    * [U]  `"Outward Volumetric Flux`" [Array double], or
+
+    * [SU] `"Outward Mass Flux`" [Array double]. 
+
+  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass
+  flux is interpreted as kilogramms per meter squared per
+  second. Inward or outward refers to the flux being in the direction
+  of the inward or outward normal to each face of the boundary region,
+  respectively. With `"Inward`" fluxes there is an additional
+  parameter to describe how sloping topography is handled:
+
+    * [U] "rainfall" [bool] indicates that the mass flux is defined with respect
+      to the gravity vector and the actual influx depends on boundary
+      slope (default value is "false").
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
@@ -1308,9 +1344,9 @@ The following source parameterizations are supported.
 
 * [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 Time Functions
 ~~~~~~~~~~~~~~
