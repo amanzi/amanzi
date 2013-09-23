@@ -9,6 +9,7 @@
 #include "LinearOperatorFactory.hh"
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
+#include "LinearOperatorNKA.hh"
 
 using namespace Amanzi;
 
@@ -72,6 +73,32 @@ SUITE(SOLVERS) {
     // solve
     Epetra_Vector v(*map);
     gmres.ApplyInverse(u, v);
+
+    CHECK_CLOSE(-0.1666666666e+0, v[0], 1e-6);
+    CHECK_CLOSE( 0.6666666666e+0, v[1], 1e-6);
+    CHECK_CLOSE( 0.5e+0, v[2], 1e-6);
+    CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
+    CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
+  };
+
+  TEST(NKA_SOLVER) {
+    std::cout << "Checking NKA solver..." << std::endl;
+
+    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+    Epetra_Map* map = new Epetra_Map(5, 0, *comm);
+
+    // create the pcg operator
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
+    AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_Map> nka(m, m);
+
+    // initial guess
+    Epetra_Vector u(*map);
+    u[0] = -1.0;
+    u[1] =  1.0;
+
+    // solve
+    Epetra_Vector v(*map);
+    nka.ApplyInverse(u, v);
 
     CHECK_CLOSE(-0.1666666666e+0, v[0], 1e-6);
     CHECK_CLOSE( 0.6666666666e+0, v[1], 1e-6);

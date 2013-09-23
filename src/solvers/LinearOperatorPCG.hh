@@ -51,12 +51,8 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
   void add_criteria(int criteria) { criteria_ |= criteria; }
   void set_overflow(double tol) { overflow_tol_ = tol; }
 
-  double residual() {
-    return residual_;
-  }
-  int num_itrs() {
-    return num_itrs_;
-  }
+  double residual() { return residual_; }
+  int num_itrs() { return num_itrs_; }
 
  public:
   Teuchos::RCP<VerboseObject> vo_;
