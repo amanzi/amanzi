@@ -270,7 +270,7 @@ void NKA_Base<Vector>::Correction(const Vector& f, Vector &dir, Teuchos::RCP<Vec
         hk[k] = sqrt(hkk);
       } else {
         if (wp->Comm().MyPID() == 0)
-          std::cout << "NKA ISSUE: Vector in span, hkk = " << hkk << ", tossing iterate" << std::endl;
+          std::cout << "NKA: Vectors are linearly dependent, hkk = " << hkk << ", tossing iterate" << std::endl;
 
         // The current w nearly lies in the span of the previous vectors:
         // Drop this vector,
