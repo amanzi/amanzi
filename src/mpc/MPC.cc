@@ -357,32 +357,6 @@ void MPC::cycle_driver() {
     S->set_intermediate_time(Tswitch);
   }
 
-  // if (chemistry_enabled) {
-  //   Amanzi::timer_manager.start("Chemistry PK");
-  //   try {
-  //     // these are the vectors that chemistry will populate with
-  //     // the names for the auxillary output vectors and the
-  //     // names of components
-  //     std::vector<string> compnames;
-
-  //     // // total view needs this to be outside the constructor
-  //     // CPK->InitializeChemistry();
-  //     // CPK->set_chemistry_output_names(&auxnames);
-  //     // CPK->set_component_names(&compnames);
-
-  //     // set the names in the visualization object
-  //     // S->set_compnames(compnames);
-
-  //   } catch (const Errors::Message& chem_error) {
-  //     std::ostringstream error_message;
-  //     error_message << "MPC:mpc_init(): error... Chemistry_PK.InitializeChemistry returned an error status: ";
-  //     error_message << chem_error.what();
-  //     Errors::Message message(error_message.str());
-  //     Exceptions::amanzi_throw(message);
-  //   }
-  //   Amanzi::timer_manager.stop("Chemistry PK");
-  // }
-
 
   if (chemistry_enabled) {
     // create stor for chemistry data
@@ -403,18 +377,19 @@ void MPC::cycle_driver() {
   int iter = 0;  // set the iteration counter to zero
   S->set_cycle(iter);
 
+  
+  double restart_dT(1.0e99);
   // read the checkpoint file as requested
   if (restart_requested == true) {
-    // // re-initialize the state object
-    // restart->read_state(*S, restart_from_filename);
-    // iter = S->get_cycle();
-    
-    // if (!reset_times_.empty()) {
-    //   while (reset_times_.front()<S->get_time()) {
-    //     reset_times_.erase(reset_times_.begin());
-    //     reset_times_dt_.erase(reset_times_dt_.begin());
-    //   }
-    // }
+    // re-initialize the state object
+    restart_dT = ReadCheckpoint(comm, Teuchos::ptr(&*S), restart_from_filename);
+    iter = S->cycle();
+    if (!reset_times_.empty()) {
+      while (reset_times_.front()<S->time()) {
+        reset_times_.erase(reset_times_.begin());
+        reset_times_dt_.erase(reset_times_dt_.begin());
+      }
+    }
   } else { // no restart, we will call the PKs to allow them to init their auxilary data and massage initial conditions
     Amanzi::timer_manager.start("Flow PK");
     if (flow_enabled) FPK->InitializeAuxiliaryData();
@@ -487,7 +462,7 @@ void MPC::cycle_driver() {
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
       *out << "Cycle " << S->cycle() << ": writing checkpoint" << std::endl;
     }
-    WriteCheckpoint(restart,S.ptr(),S->time());
+    WriteCheckpoint(restart,S.ptr(),restart_dT);
   }
   Amanzi::timer_manager.stop("I/O");
 
@@ -612,13 +587,18 @@ void MPC::cycle_driver() {
         }
       }
 
+      if (restart_requested) {
+	mpc_dT = restart_dT;
+	restart_requested = false;
+      } 	
+      
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
         *out << setprecision(5);
         *out << "Cycle " << iter;
         *out << ": proposed time step before flow step dT(y) = " << scientific << mpc_dT / (365.25*60*60*24);
         *out << std::endl;
       }
-      
+
 
       // steady flow is special, it might redo a time step, so we print
       // time step info after we've advanced steady flow
@@ -942,7 +922,7 @@ void MPC::cycle_driver() {
 	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
 	  *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
 	}
-	WriteCheckpoint(restart,S.ptr(),S->time());
+	WriteCheckpoint(restart,S.ptr(),mpc_dT);
       }
       Amanzi::timer_manager.stop("I/O");
     }
@@ -963,7 +943,7 @@ void MPC::cycle_driver() {
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
       *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
     }
-    WriteCheckpoint(restart,S.ptr(),S->time());
+    WriteCheckpoint(restart,S.ptr(),0.0);
     Amanzi::timer_manager.stop("I/O");
   }
 
