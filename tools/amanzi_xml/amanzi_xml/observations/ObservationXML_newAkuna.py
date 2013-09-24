@@ -17,10 +17,10 @@ class ObservationXML(object):
         self.names= []
 
     def getObservationList(self):
-        return search.getElementByPath(self.xml, "/Main/Output/Observation Data")
+        return search.getElementByPath(self.xml, "/amanzi_input/output/observations/liquid_phase")
 
     def getRegionList(self):
-        return search.getElementByPath(self.xml, "/Main/Regions")
+        return search.getElementByPath(self.xml, "/amanzi_input/regions")
 
     def getAllNames(self):
         self.names = []
@@ -31,8 +31,8 @@ class ObservationXML(object):
     def getAllCoordinates(self):
         self.coordinates = {}
         for item in self.obs_lists:
-            well_name = item.getElement("Region").value
-            region = search.getElementByPath(self.xml, "/Main/Regions/"+ well_name)
+            well_name = search.getElementByPath(item, "assigned_regions").text.strip()
+            region = search.getElementByName(search.getElementByPath(self.xml, "/amanzi_input/regions/"), well_name)
             local = region.sublist("Region: Point")
             location = search.getElementByPath(local, "/Region: Point/Coordinate")
             coordinate = location.value
@@ -41,16 +41,16 @@ class ObservationXML(object):
 
     def getCoordinateFromList(self, one_list):
         well_name = one_list.getElement("Region").value
-        region = search.getElementByPath(self.xml, "/Main/Regions/"+ well_name)
-        local = region.sublist("Region: Point")
-        location = search.getElementByPath(local, "/Region: Point/Coordinate")
-        coordinate = location.value
+        region = search.getElementByName(search.getElementByPath(self.xml, "/amanzi_input/regions/"), well_name)
+
+        try:
+            coordinate = region.get("coordinate")
+        except KeyError:
+            raise RuntimeError("Region is not of type point")
         return coordinate
 
     def getObservationFilename(self):
-        obs = search.getElementByPath(self.xml, "/Main/Output/Observation Data/Observation Output Filename")
-        obs_file = obs.value.strip()
-        return  obs_file
+        return search.getElementByPath(self.xml, "/amanzi_input/output/observations/filename").text.strip()
 
     def printSummary(self):
         print "Read input file:", self.filename
