@@ -187,6 +187,9 @@ int main(int argc, char *argv[]) {
 #ifdef ParMetis_MAJOR
 	std::cout << "  ParMetis       " << XSTR(ParMetis_MAJOR) << "." << XSTR(ParMetis_MINOR) << "." << XSTR(ParMetis_PATCH) << std::endl;
 #endif
+#ifdef PETSc_MAJOR
+	std::cout << "  PETSc          " << XSTR(PETSc_MAJOR) << "." << XSTR(PETSc_MINOR) << "." << XSTR(PETSc_PATCH) << std::endl;	
+#endif
 #ifdef PFLOTRAN_MAJOR
 	std::cout << "  PFLOTRAN       " << XSTR(PFLOTRAN_MAJOR) << "." << XSTR(PFLOTRAN_MINOR) << "." << XSTR(PFLOTRAN_PATCH) << std::endl;
 #endif
