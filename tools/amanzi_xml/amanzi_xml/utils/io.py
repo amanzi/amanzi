@@ -7,7 +7,10 @@ except ImportError:
 def fromFile(file_or_filename):
     """Reads a amanzi-xml hierarchy from a file or file handle"""
     elem = etree.parse(file_or_filename)
-    return parser.fromElement(elem.getroot())
+    if elem.getroot().tag == "ParameterList":
+        return parser.fromElement(elem.getroot())
+    else:
+        return elem.getroot()
 
 def fromString(string):
     """Reads a amanzi-xml hierarchy from a string"""

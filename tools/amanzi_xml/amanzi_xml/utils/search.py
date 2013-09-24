@@ -1,36 +1,37 @@
 import io
 
-def _findSingleElementGenerator(elem, name):
+# Searches based upon the "name" attribute as the unique identifyer.
+def _findSingleElementNameGenerator(elem, name):
     if elem.get("name") == name:
         yield elem
     else:
         for subel in elem:
-            for entry in _findSingleElementGenerator(subel, name):
+            for entry in _findSingleElementNameGenerator(subel, name):
                 yield entry
 
-def findElementGenerator(elem, path):
+def findElementNameGenerator(elem, path):
     """Generator that parses through all Elements with given relative path/name.
 
     The path argument may be either a name or a path, which may be
     either absolute or relative, i.e.:
-re      findElementGenerator(elem, "Mesh")
-      findElementGenerator(elem, "Mesh/Expert/Verify Mesh")
-      findElementGenerator(elem, "/Mesh/Expert/Verify Mesh")
+      findElementNameGenerator(elem, "Mesh")
+      findElementNameGenerator(elem, "Mesh/Expert/Verify Mesh")
+      findElementNameGenerator(elem, "/Mesh/Expert/Verify Mesh")
 
     """
     enames = path.split("/")
     if len(enames) == 1:
-        for entry in _findSingleElementGenerator(elem, enames[0]):
+        for entry in _findSingleElementNameGenerator(elem, enames[0]):
             yield entry
     else:
-        for entry in _findSingleElementGenerator(elem, enames[0]):
-            for subentry in findElementGenerator(entry, "/".join(enames[1:])):
+        for entry in _findSingleElementNameGenerator(elem, enames[0]):
+            for subentry in findElementNameGenerator(entry, "/".join(enames[1:])):
                 yield subentry
 
-def getElementByPath(elem, path):
+def getElementByName(elem, path):
     """Generator that parses through all Elements from an absolute path"""
     if not path.startswith("/"):
-        raise ValueError("getElementByPath must be provided an absolute path")
+        raise ValueError("getElementByName must be provided an absolute path")
 
     enames = path.strip("/").split("/")
     cur_elem = elem
@@ -44,7 +45,7 @@ def getElementByPath(elem, path):
     return cur_elem
 
 
-def searchAndReplace(pl, changeset):
+def searchAndReplaceByName(pl, changeset):
     """Search for a path and replace the value.
 
     Changeset is expected of the form:
@@ -59,15 +60,53 @@ def searchAndReplace(pl, changeset):
 
     path,val = tuple(split)
     if path.startswith("/"):
-        elem = getElementByPath(pl, path)
+        elem = getElementByName(pl, path)
         elem.setValue(val)
     else:
-        for elem in findElementGenerator(pl,path):
+        for elem in findElementNameGenerator(pl,path):
             elem.setValue(val)
 
-def searchAndRemove(pl, abspath):
+def searchAndRemoveByName(pl, abspath):
     """Search for an absolute path and remove the parameter."""
     subpath = abspath.split("/")
     containing_path = "/".join(subpath[:-1])
-    container = getElementByPath(pl, containing_path)
+    container = getElementByName(pl, containing_path)
     container.remove(container.getElement(subpath[-1]))
+
+
+
+# Searches based upon tags -- no uniqueness!
+def _findSingleElementTagGenerator(elem, tag):
+    if elem.tag == tag:
+        yield elem
+    else:
+        for subel in elem:
+            for entry in _findSingleElementTagGenerator(subel, tag):
+                yield entry
+
+def findElementTagGenerator(elem, path):
+    """Generator that parses through all Elements with given relative path/tag.
+
+    The path argument may be either a tag or a path, which may be
+    either absolute or relative, i.e.:
+      findElementTagGenerator(elem, "Mesh")
+      findElementTagGenerator(elem, "Mesh/Expert/Verify Mesh")
+      findElementTagGenerator(elem, "/Mesh/Expert/Verify Mesh")
+
+    """
+    etags = path.split("/")
+    if len(etags) == 1:
+        for entry in _findSingleElementTagGenerator(elem, etags[0]):
+            yield entry
+    else:
+        for entry in _findSingleElementTagGenerator(elem, etags[0]):
+            for subentry in findElementTagGenerator(entry, "/".join(etags[1:])):
+                yield subentry
+
+
+# Common interface
+def getElementByPath(xml, path):
+    if xml.tag == "ParameterList" or xml.tag == "Parameter":
+        return findElementNameGenerator(xml, path).next()
+    else:
+        return findElementTagGenerator(xml, path).next()
