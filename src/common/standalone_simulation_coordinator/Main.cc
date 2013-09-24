@@ -54,6 +54,8 @@
 #include "evaluator_reg.hh"
 #endif
 
+#include "tpl_versions.h"
+
 #include <iostream>
 #include <boost/filesystem.hpp>
 using namespace boost::filesystem;
@@ -77,9 +79,6 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
   int rank = mpiSession.getRank();
 
-  // make sure only PE0 can write to std::cout  --  NO...do not do this!!
-  // if (rank != 0) cout.rdbuf(0);
-
   try {
     Teuchos::CommandLineProcessor CLP;
 
@@ -95,15 +94,27 @@ int main(int argc, char *argv[]) {
     bool print_version(false);
     CLP.setOption("version", "no_version", &print_version, "Print version number and exit.");
 
-    CLP.throwExceptions(true);
+    bool print_tpl_versions(false);
+    CLP.setOption("tplversions", "no_tplversions", &print_tpl_versions, "Print version numbers of third party libraries and exit.");
+
+    CLP.throwExceptions(false);
+    CLP.recogniseAllOptions(true);
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn
         parseReturn = CLP.parse(argc, argv);
 
-    // check if the files actually exist
-    if (!exists(xmlInFileName)) {
-      Exceptions::amanzi_throw(Errors::Message("The input file " + xmlInFileName + " does not exist."));
+    if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+      // do nothing
+    }    
+    
+    if (parseReturn == Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION) {
+      throw 0;
     }
+
+    if (parseReturn == Teuchos::CommandLineProcessor::PARSE_ERROR) {
+      throw 0;
+    }
+    
 
     // strinigy magic
 #define XSTR(s) STR(s)
@@ -117,8 +128,44 @@ int main(int argc, char *argv[]) {
 	std::cout << "HG global hash " << XSTR(AMANZI_HG_GLOBAL_HASH) << std::endl;
 	std::cout << "HG local id    " << XSTR(AMANZI_HG_LOCAL_ID) << std::endl;
       }
-      exit(0);
     }
+
+    if (print_tpl_versions) {
+      if (rank == 0) {
+	std::cout << "Amanzi TPL collection version "<<  XSTR(AMANZI_MAJOR) << "." << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
+	std::cout << "Third party libraries that this amanzi binary is linked against:" << std::endl;
+	std::cout << "ALQUIMIA       " << XSTR(ALQUIMIA_MAJOR) << "." << XSTR(ALQUIMIA_MINOR) << "." << XSTR(ALQUIMIA_PATCH) << std::endl;
+	std::cout << "ASCEMIO        " << XSTR(ASCEMIO_MAJOR) << "." << XSTR(ASCEMIO_MINOR) << "." << XSTR(ASCEMIO_PATCH) << std::endl;
+	std::cout << "Boost          " << XSTR(Boost_MAJOR) << "." << XSTR(Boost_MINOR) << "." << XSTR(Boost_PATCH) << std::endl;
+	std::cout << "BoostCmake     " << XSTR(BoostCmake_MAJOR) << "." << XSTR(BoostCmake_MINOR) << "." << XSTR(BoostCmake_PATCH) << std::endl;
+	std::cout << "CCSE           " << XSTR(CCSE_MAJOR) << "." << XSTR(CCSE_MINOR) << "." << XSTR(CCSE_PATCH) << std::endl;
+	std::cout << "CURL           " << XSTR(CURL_MAJOR) << "." << XSTR(CURL_MINOR) << "." << XSTR(CURL_PATCH) << std::endl;
+	std::cout << "ExodusII       " << XSTR(ExodusII_MAJOR) << "." << XSTR(ExodusII_MINOR) << "." << XSTR(ExodusII_PATCH) << std::endl;
+	std::cout << "HDF5           " << XSTR(HDF5_MAJOR) << "." << XSTR(HDF5_MINOR) << "." << XSTR(HDF5_PATCH) << std::endl;
+	std::cout << "HYPRE          " << XSTR(HYPRE_MAJOR) << "." << XSTR(HYPRE_MINOR) << "." << XSTR(HYPRE_PATCH) << std::endl;
+	std::cout << "METIS          " << XSTR(METIS_MAJOR) << "." << XSTR(METIS_MINOR) << "." << XSTR(METIS_PATCH) << std::endl;	
+	std::cout << "MOAB           " << XSTR(MOAB_MAJOR) << "." << XSTR(MOAB_MINOR) << "." << XSTR(MOAB_PATCH) << std::endl;
+	std::cout << "MSTK           " << XSTR(MSTK_MAJOR) << "." << XSTR(MSTK_MINOR) << "." << XSTR(MSTK_PATCH) << std::endl;
+	std::cout << "NetCDF         " << XSTR(NetCDF_MAJOR) << "." << XSTR(NetCDF_MINOR) << "." << XSTR(NetCDF_PATCH) << std::endl;
+	std::cout << "NetCDF_Fortran " << XSTR(NetCDF_Fortran_MAJOR) << "." << XSTR(NetCDF_Fortran_MINOR) << "." << XSTR(NetCDF_Fortran_PATCH) << std::endl;
+	std::cout << "OpenMPI        " << XSTR(OpenMPI_MAJOR) << "." << XSTR(OpenMPI_MINOR) << "." << XSTR(OpenMPI_PATCH) << std::endl;	
+	std::cout << "ParMetis       " << XSTR(ParMetis_MAJOR) << "." << XSTR(ParMetis_MINOR) << "." << XSTR(ParMetis_PATCH) << std::endl;
+	std::cout << "PFLOTRAN       " << XSTR(PFLOTRAN_MAJOR) << "." << XSTR(PFLOTRAN_MINOR) << "." << XSTR(PFLOTRAN_PATCH) << std::endl;
+	std::cout << "SEACAS         " << XSTR(SEACAS_MAJOR) << "." << XSTR(SEACAS_MINOR) << "." << XSTR(SEACAS_PATCH) << std::endl;
+	std::cout << "SuperLU        " << XSTR(SuperLU_MAJOR) << "." << XSTR(SuperLU_MINOR) << "." << XSTR(SuperLU_PATCH) << std::endl;
+	std::cout << "SuperLUDist    " << XSTR(SuperLUDist_MAJOR) << "." << XSTR(SuperLUDist_MINOR) << "." << XSTR(SuperLUDist_PATCH) << std::endl;
+	std::cout << "Trilinos       " << XSTR(Trilinos_MAJOR) << "." << XSTR(Trilinos_MINOR) << "." << XSTR(Trilinos_PATCH) << std::endl;
+	std::cout << "UnitTest       " << XSTR(UnitTest_MAJOR) << "." << XSTR(UnitTest_MINOR) << "." << XSTR(UnitTest_PATCH) << std::endl;
+	std::cout << "XERCES         " << XSTR(XERCES_MAJOR) << "." << XSTR(XERCES_MINOR) << "." << XSTR(XERCES_PATCH) << std::endl;
+	std::cout << "ZLIB           " << XSTR(ZLIB_MAJOR) << "." << XSTR(ZLIB_MINOR) << "." << XSTR(ZLIB_PATCH) << std::endl;
+      }
+    }
+
+    // check if the input file actually exists
+    if (!exists(xmlInFileName)) {
+      Exceptions::amanzi_throw(Errors::Message("The input file " + xmlInFileName + " does not exist."));
+    }
+
 
     // EIB - this is the new piece which reads either the new or old input
     /***************************************/
