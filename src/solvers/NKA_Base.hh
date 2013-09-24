@@ -58,10 +58,10 @@ namespace AmanziSolvers {
 #define NKA_FALSE 0
 #define NKA_EOL -1
 
-template <class Vector>
+template<class Vector, class VectorSpace>
 class NKA_Base {
  public:
-  NKA_Base(int mvec, double vtol, const Vector& initvec);
+  NKA_Base(int mvec, double vtol, const VectorSpace& map);
   ~NKA_Base();
 
   void Relax();
@@ -91,8 +91,8 @@ class NKA_Base {
 /* ******************************************************************
  * Allocate memory
  ***************************************************************** */
-template<class Vector>
-NKA_Base<Vector>::NKA_Base(int mvec, double vtol, const Vector& initvec)
+template<class Vector, class VectorSpace>
+NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const VectorSpace& map)
 {
   mvec_ = std::max(mvec, 1);  // we cannot have mvec_ < 1
   vtol_ = vtol;
@@ -101,8 +101,8 @@ NKA_Base<Vector>::NKA_Base(int mvec, double vtol, const Vector& initvec)
   w_ = new Teuchos::RCP<Vector> [mvec_+1];
 
   for (int i = 0; i < mvec_ + 1; i++) {
-    v_[i] = Teuchos::rcp(new Vector(initvec));
-    w_[i] = Teuchos::rcp(new Vector(initvec));
+    v_[i] = Teuchos::rcp(new Vector(map));
+    w_[i] = Teuchos::rcp(new Vector(map));
   }
 
   h_ = new double* [mvec_+1];
@@ -118,8 +118,8 @@ NKA_Base<Vector>::NKA_Base(int mvec, double vtol, const Vector& initvec)
 /* ******************************************************************
  * Destroy memory
  ***************************************************************** */
-template<class Vector>
-NKA_Base<Vector>::~NKA_Base()
+template<class Vector, class VectorSpace>
+NKA_Base<Vector, VectorSpace>::~NKA_Base()
 {
   delete [] v_;
   delete [] w_;
@@ -135,8 +135,8 @@ NKA_Base<Vector>::~NKA_Base()
 /* ******************************************************************
  * TBW
  ***************************************************************** */
-template<class Vector>
-void NKA_Base<Vector>::Relax()
+template<class Vector, class VectorSpace>
+void NKA_Base<Vector, VectorSpace>::Relax()
 {
   if (pending_) {
     // Drop the initial slot where the pending_ vectors are stored.
@@ -161,8 +161,8 @@ void NKA_Base<Vector>::Relax()
 /* ******************************************************************
  * TBW
  ***************************************************************** */
-template<class Vector>
-void NKA_Base<Vector>::Restart()
+template<class Vector, class VectorSpace>
+void NKA_Base<Vector, VectorSpace>::Restart()
 {
   // No vectors are stored.
   first_v_  = NKA_EOL;
@@ -182,8 +182,8 @@ void NKA_Base<Vector>::Restart()
 /* ******************************************************************
  * TBW
  ***************************************************************** */
-template<class Vector>
-void NKA_Base<Vector>::Correction(const Vector& f, Vector &dir, Teuchos::RCP<Vector> old_dir)
+template<class Vector, class VectorSpace>
+void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir, Teuchos::RCP<Vector> old_dir)
 {
   int i, j, k, nvec, new_v;
   double s, hkk, hkj, cj;
@@ -209,7 +209,7 @@ void NKA_Base<Vector>::Correction(const Vector& f, Vector &dir, Teuchos::RCP<Vec
     // outside.
     if (s < 1.0e-8) {
       if (wp->Comm().MyPID() == 0)
-        std::cout << "NKA ISSUE: Dot product = " << s << ", tossing iterate" << std::endl;
+        std::cout << "NKA: Dot product = " << s << ", tossing iterate" << std::endl;
 
       // nka_relax sets pending_ to NKA_FALSE
       Relax();

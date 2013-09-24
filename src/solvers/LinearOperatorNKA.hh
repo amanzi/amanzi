@@ -76,7 +76,7 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
 template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorNKA<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& f, Vector& x) const 
 {
-  NKA_Base<Vector> nka(nka_dim_, nka_tol_, f);
+  NKA_Base<Vector, VectorSpace> nka(nka_dim_, nka_tol_, f.Map());
   nka.Restart();
 
   residual_ = 0.0;

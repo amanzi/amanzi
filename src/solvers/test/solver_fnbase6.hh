@@ -6,28 +6,23 @@
 
 #include "SolverFnBase.hh"
 
-// ODE for testing
+// ODE: f(u) = tanh(u) 
 class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vector> {
  public:
-  NonlinearProblem(double atol, double rtol, bool real_precon) :
-    rtol_(rtol), atol_(atol), real_precon_(real_precon) {}
+  NonlinearProblem(double atol, double rtol, bool exact_jacobian) :
+    rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {}
 
   void Residual(const Teuchos::RCP<Epetra_Vector>& u,
                 const Teuchos::RCP<Epetra_Vector>& f) {
-    // f = tanh(u)
     for (int c = 0; c != u->MyLength(); ++c) {
       double x = (*u)[c];
-      (*f)[c] = x < 0 ? -std::pow(std::abs(x), 1./5) : std::pow(std::abs(x), 1./5);
+      (*f)[c] = x < 0 ? -pow(fabs(x), 0.2) : pow(fabs(x), 0.2);
     }
-
-    // std::cout << " Residual eval:" << std::endl;
-    // std::cout << "  f(" << (*u)[0] << ") = " << (*f)[0] << std::endl;
-    // std::cout << "  f(" << (*u)[1] << ") = " << (*f)[1] << std::endl;
   }
 
   void ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& u,
-                           const Teuchos::RCP<Epetra_Vector>& Pu) {
-    Pu->ReciprocalMultiply(1.0, *Pu_, *u, 0.0);
+                           const Teuchos::RCP<Epetra_Vector>& hu) {
+    hu->ReciprocalMultiply(1.0, *h_, *u, 0.0);
   }
 
   double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
@@ -39,35 +34,27 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
   }
 
   void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& up) {
-    if (Pu_ == Teuchos::null) {
-      Pu_ = Teuchos::rcp(new Epetra_Vector(*up));
-    }
+    h_ = Teuchos::rcp(new Epetra_Vector(*up));
 
-    if (real_precon_) {
+    if (exact_jacobian_) {
       for (int c = 0; c != up->MyLength(); ++c) {
         double x = (*up)[c];
-        (*Pu_)[c] = 1.0 / std::pow(std::abs(x), 4.0 / 5) / 5.0;
-        // std::cout << "Pu = " << (*Pu_)[c] << std::endl;
+        (*h_)[c] = 1.0 / std::pow(fabs(x), 0.8) / 5.0;
       }
     } else {
       for (int c = 0; c != up->MyLength(); ++c) {
         double x = (*up)[c];
-        (*Pu_)[c] = 1.0 / std::pow(std::abs(x), 2.0 / 3) / 3.0;
+        (*h_)[c] = 1.0 / std::pow(fabs(x), 2.0 / 3) / 3.0;
       }
     }
   }
 
-  bool ModifyCorrection(const Teuchos::RCP<const Epetra_Vector>& res,
-                        const Teuchos::RCP<const Epetra_Vector>& u,
-			const Teuchos::RCP<Epetra_Vector>& du) {
-    return false; 
-  }
-
   void ChangedSolution() {};
 
+ protected:
   double atol_, rtol_;
-  bool real_precon_;  // use "approximate" Jacobian
-  Teuchos::RCP<Epetra_Vector> Pu_;
+  bool exact_jacobian_;
+  Teuchos::RCP<Epetra_Vector> h_;  // preconditioner
 };
 
 #endif

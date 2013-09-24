@@ -34,7 +34,7 @@ class SolverFnBase {
   // allow PK to modify a correction
   virtual bool ModifyCorrection(const Teuchos::RCP<const Vector>& r, 
                                 const Teuchos::RCP<const Vector>& u, 
-                                const Teuchos::RCP<Vector>& du) = 0;
+                                const Teuchos::RCP<Vector>& du) { return false; }
 
   // bookkeeping for state
   virtual void ChangedSolution() = 0;

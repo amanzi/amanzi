@@ -39,9 +39,9 @@ void Richards_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u, Linear
   preconditioner_->UpdatePreconditioner();
 
   // solve linear problem
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
 
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
   solver->ApplyInverse(rhs, u);
@@ -82,8 +82,8 @@ void Richards_PK::EnforceConstraints_MFD(double Tp, Epetra_Vector& u)
   // solve non-symmetric problem
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs_constraints;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
   Epetra_Vector& rhs = *(matrix_->rhs());

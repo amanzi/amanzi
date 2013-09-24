@@ -46,8 +46,8 @@ SUITE(SOLVERS) {
     plist.sublist("VerboseObject").set("Verbosity Level", "extreme");
 
     // create the Solver
-    Teuchos::RCP<Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector> > nka =
-        Teuchos::rcp(new Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector>(plist, fn, *vec));
+    Teuchos::RCP<Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
+        Teuchos::rcp(new Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist, fn, *map));
 
     // initial guess
     Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
@@ -76,11 +76,11 @@ SUITE(SOLVERS) {
     plist.set("max divergent iterations", 3);
     plist.set("max nka vectors", 3);
     plist.set("convergence monitor", "monitor update");
-    plist.sublist("VerboseObject").set("Verbosity Level", "extreme");
+    plist.sublist("VerboseObject").set("Verbosity Level", "high");
 
     // create the Solver
-    Teuchos::RCP<Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector> > nka =
-        Teuchos::rcp(new Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector>(plist, fn, *vec));
+    Teuchos::RCP<Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
+        Teuchos::rcp(new Amanzi::AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist, fn, *map));
 
     // initial guess
     Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));

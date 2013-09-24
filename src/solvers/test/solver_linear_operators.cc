@@ -89,7 +89,7 @@ SUITE(SOLVERS) {
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_Map> nka(m, m);
+    AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_BlockMap> nka(m, m);
 
     // initial guess
     Epetra_Vector u(*map);
@@ -119,8 +119,8 @@ SUITE(SOLVERS) {
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
+    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_BlockMap> > 
         solver = factory.Create("pcg", plist, m);
 
     // initial guess
@@ -153,8 +153,8 @@ SUITE(SOLVERS) {
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix());
-    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
+    AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_BlockMap> > 
         solver = factory.Create("gmres", plist, m);
 
     // initial guess
@@ -172,7 +172,6 @@ SUITE(SOLVERS) {
     CHECK_CLOSE( 0.3333333333e+0, v[3], 1e-6);
     CHECK_CLOSE( 0.1666666666e+0, v[4], 1e-6);
   };
-
 }
 
 
