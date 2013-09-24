@@ -67,17 +67,11 @@ void Richards_PK::AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix)
     matrix->AssembleGlobalMatrices();
   }
   else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Richards PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
-    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
-    matrix_tpfa -> AssembleGlobalMatrices();
+    matrix -> ApplyBoundaryConditions(bc_model, bc_values);
+    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, &*matrix);
+    matrix -> AssembleGlobalMatrices();
   }
 }
 
@@ -95,17 +89,12 @@ void Richards_PK::AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* precondition
     preconditioner->AssembleSchurComplement(bc_model, bc_values);
   }
   else {
-    Matrix_MFD_TPFA* prec_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(preconditioner);
-    if (prec_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Richards PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
+
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
-    prec_tpfa -> ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, prec_tpfa);
-    prec_tpfa -> AssembleGlobalMatrices();  
+    preconditioner -> ApplyBoundaryConditions(bc_model, bc_values);
+    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, preconditioner);
+    preconditioner -> AssembleGlobalMatrices();  
   }  
 }
 
@@ -126,21 +115,15 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
   
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
 
-    Teuchos::RCP<Epetra_Vector> rhs_cells_ = matrix_tpfa -> rhs_cells();
+    Teuchos::RCP<Epetra_Vector> rhs_cells_ = matrix_ -> rhs_cells();
     rhs_cells_->PutScalar(0.0);
 
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
-    matrix_tpfa->ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
-    matrix_tpfa->AssembleGlobalMatrices();
+    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
+    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, &*matrix_);
+    matrix_->AssembleGlobalMatrices();
   } else{
     // setup a new algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
@@ -169,14 +152,8 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   // update all coefficients, boundary data, and source/sink terms
   //Amanzi::timer_manager.stop("Update precon");
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Richards_PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
 
-    matrix_tpfa->DeriveDarcyMassFlux(*u_cells, bc_model, bc_values, flux);
+    matrix_->DeriveDarcyMassFlux(*u_cells, *face_importer_, bc_model, bc_values, flux);
 
     for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
   }
@@ -191,45 +168,27 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
   } else {
-    //u_faces -> PutScalar(0.0);
-    //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
+
     std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
-    //std::vector<double>& Fc_cells = preconditioner_->Fc_cells();
 
     double* Ac = Acc_cells.data();
-    //double* Fc = Fc_cells.data();
     int nsize = Acc_cells.size();
     memset(Ac, 0., nsize*sizeof(double));
   }
 
   AddTimeDerivative_MFD(*u_cells, dTp, &*preconditioner_);
   
-  // if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-  //   Matrix_MFD_PLambda* matrix_plambda = static_cast<Matrix_MFD_PLambda*>(preconditioner_);
-  //   Epetra_Vector& flux = FS->ref_darcy_flux();
-  //   Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-  //   rhs = preconditioner_->rhs();
-  //   AddNewtonFluxes_MFD(*rel_perm, *u_cells, flux, *rhs, matrix_plambda);
-  // }
 
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*preconditioner_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-
     //Amanzi::timer_manager.start("AnalyticJacobian");
-    Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
-    matrix_tpfa->ApplyBoundaryConditions(bc_model, bc_values);
-    matrix_tpfa->AssembleSchurComplement(bc_model, bc_values);
+    preconditioner_ -> ApplyBoundaryConditions(bc_model, bc_values);
+    preconditioner_ -> AssembleSchurComplement(bc_model, bc_values);
 
-    matrix_tpfa->AnalyticJacobian(*u_cells, dim, bc_model, bc_values, *Transmis_faces, *Grav_term_faces, *rel_perm);
+    preconditioner_ -> AnalyticJacobian(*u_cells, bc_model, bc_values, *rel_perm);
     //Amanzi::timer_manager.stop("AnalyticJacobian");
   }
 

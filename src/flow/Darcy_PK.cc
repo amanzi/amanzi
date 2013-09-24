@@ -438,7 +438,7 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   // calculate darcy mass flux
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   matrix_->CreateMFDstiffnessMatrices();
-  matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+  matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux);
   AddGravityFluxes_DarcyFlux(K, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 

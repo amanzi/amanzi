@@ -48,7 +48,7 @@ class Matrix_MFD {
   // main methods
   void CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K);
   void CreateMFDrhsVectors();
-  void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
+  virtual void ApplyBoundaryConditions(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
   void CreateMFDstiffnessMatrices();
   virtual void CreateMFDstiffnessMatrices(RelativePermeability& rel_perm);
@@ -56,14 +56,22 @@ class Matrix_MFD {
   virtual void AssembleGlobalMatrices();
   virtual void AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values);
 
-  double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
-  double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+  virtual double ComputeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+  virtual double ComputeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
+
+  virtual void AnalyticJacobian(const Epetra_Vector& solution, 
+				std::vector<int>& bc_markers, 
+				std::vector<bc_tuple>& bc_values,
+				RelativePermeability& rel_perm){};
 
   int ReduceGlobalSystem2LambdaSystem(Epetra_Vector& u);
 
-  void DeriveDarcyMassFlux(const Epetra_Vector& solution, 
-                           const Epetra_Import& face_importer, 
-                           Epetra_Vector& darcy_mass_flux);
+  virtual  void DeriveDarcyMassFlux(const Epetra_Vector& solution,
+				   const Epetra_Import& face_importer,
+				   std::vector<int>& bc_model, 
+				   std::vector<bc_tuple>& bc_values,
+				   Epetra_Vector& darcy_mass_flux);
+
 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list);
   virtual void UpdatePreconditioner() { preconditioner_->Update(Sff_); } 

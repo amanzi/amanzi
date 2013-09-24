@@ -760,6 +760,8 @@ int Matrix_MFD::PopulatePreconditioner(Matrix_MFD& matrix)
 ****************************************************************** */
 void Matrix_MFD::DeriveDarcyMassFlux(const Epetra_Vector& solution,
                                      const Epetra_Import& face_importer,
+				     std::vector<int>& bc_model, 
+				     std::vector<bc_tuple>& bc_values,
                                      Epetra_Vector& darcy_mass_flux)
 {
   Teuchos::RCP<Epetra_Vector> solution_faces = Teuchos::rcp(FS_->CreateFaceView(solution));

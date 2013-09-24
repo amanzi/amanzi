@@ -31,23 +31,15 @@ void Richards_PK::fun(
 { 
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     Epetra_Vector* u_cells = FS->CreateCellView(u);
-
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Richards PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-    // compute A*u - rhs
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
-    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
+    matrix_ -> ApplyBoundaryConditions(bc_model, bc_values);
+    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, &*matrix_);
     
-    Teuchos::RCP<Epetra_Vector> rhs = matrix_tpfa->rhs();
+    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
-    matrix_tpfa->ComputeNegativeResidual(*u_cells,  f);  
+    matrix_->ComputeNegativeResidual(*u_cells,  f);  
   }
   else {
     // compute inegative residual f = A*u - rhs

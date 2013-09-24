@@ -357,7 +357,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
                    << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
-    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux_new);
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux_new);
     AddGravityFluxes_DarcyFlux(K, flux_new, *rel_perm);
 
     int ndof = ncells_owned + nfaces_owned;

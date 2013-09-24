@@ -137,7 +137,7 @@ void RelativePermeability::FaceUpwindGravity_(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  Krel_faces_->PutScalar(0.0);
+  Krel_faces_->PutScalar(2.);
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -145,6 +145,8 @@ void RelativePermeability::FaceUpwindGravity_(
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
+
+
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double cos_angle = (normal * Kgravity_unit_[c]) * dirs[n] / mesh_->face_area(f);
 
@@ -159,11 +161,19 @@ void RelativePermeability::FaceUpwindGravity_(
         if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {
           (*Krel_faces_)[f] = (*Krel_cells_)[c]; // The upwind face.
         } else if (fabs(cos_angle) <= FLOW_RELATIVE_PERM_TOLERANCE) { 
-          (*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  //Almost vertical face.
+	  if ((*Krel_faces_)[f] > 1.)  (*Krel_faces_)[f] = (*Krel_cells_)[c] / 2;
+          else (*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  //Almost vertical face.
+	  //(*Krel_faces_)[f] += (*Krel_cells_)[c] / 2;  //Almost vertical face.
         } 
       }
+
+      // if ( gid == 332830){
+      // 	cout<<"Krel "<<(*Krel_faces_)[f]<<endl;
+      // }
     }
   }
+
+
 }
 
 
@@ -261,6 +271,7 @@ void RelativePermeability::FaceUpwindFlux_(
       }
     }
   }
+
 }
 
 

@@ -467,16 +467,10 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
-    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux);
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-    matrix_tpfa->DeriveDarcyMassFlux(*solution_cells, bc_model, bc_values, flux);
+    matrix_->DeriveDarcyMassFlux(*solution_cells, *face_importer_, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
@@ -599,16 +593,10 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
-    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux);
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-    matrix_tpfa->DeriveDarcyMassFlux(*solution_cells, bc_model, bc_values, flux);
+    matrix_->DeriveDarcyMassFlux(*solution_cells, *face_importer_, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;

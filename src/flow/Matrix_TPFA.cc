@@ -210,10 +210,8 @@ void Matrix_MFD_TPFA::AssembleSchurComplement(std::vector<int>& bc_model, std::v
 * analytical derivatives of relative permeabilities
 ****************************************************************** */
 void Matrix_MFD_TPFA::AnalyticJacobian(
-   const Epetra_Vector& solution, int dim,
+   const Epetra_Vector& solution, 
    std::vector<int>& bc_models, std::vector<bc_tuple>& bc_values,
-   const Epetra_Vector& trans_faces,
-   const Epetra_Vector& grav_term_faces,
    RelativePermeability& rel_perm)
 {
   AmanziMesh::Entity_ID_List faces;
@@ -235,16 +233,7 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
 
   Epetra_Vector pres_gh(cmap_wghost);
 
-  // Epetra_Vector pressure_vec(solution);
   FS_->CopyMasterCell2GhostCell(solution, pres_gh);
-
-  // Epetra_Vector perm_vert_gh(cmap_wghost);
-  // Epetra_Vector& perm_vert_vec = FS_->ref_vertical_permeability();
-  // FS_->CopyMasterCell2GhostCell(perm_vert_vec, perm_vert_gh);
-
-  // Epetra_Vector perm_horz_gh(cmap_wghost);
-  // Epetra_Vector& perm_horz_vec = FS_->ref_horizontal_permeability();
-  // FS_->CopyMasterCell2GhostCell(perm_horz_vec, perm_horz_gh);
 
   Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
   Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
@@ -261,52 +250,18 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
     for (int n = 0; n < mcells; n++) {
       cells_LID[n] = cells[n];
       cells_GID[n] = cmap_wghost.GID(cells_LID[n]);
-      //perm_abs_vert[n] = perm_vert_gh[cells_LID[n]];
-      //perm_abs_horz[n] = perm_horz_gh[cells_LID[n]];
       pres[n] = pres_gh[cells_LID[n]];
-      //k_rel[n] = Krel_cells[cells_LID[n]];
       dk_dp[n] = dKdP_cells[cells_LID[n]];
-      //cntr_cell[n] = mesh_->cell_centroid(cells_LID[n]);
     }
 
-    // if (mcells == 2) {
-    //   //dist = norm(cntr_cell[0] - cntr_cell[1]);
-    // } else 
     if (mcells == 1) {
-      //dist = norm(cntr_cell[0] - face_cntr);
-      //k_rel[0] = Krel_faces[f];
       dk_dp[0] = dKdP_faces[f];
     }
 
     const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0]);
 
-    // if (fabs(normal[2]) > 0.3) {
-    //   cout<<f<<" Krel "<<Krel_faces[f]<<" "<<dKdP_faces[f]<<" ";
-    //   if (mcells == 1) cout<<cells_GID[0]<<" ";
-    //   else cout<<cells_GID[0]<<" "<<cells_GID[1];
-    //   cout<<endl;
-    // }
 
-    // AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells_LID[0]);
-    // normal *= 1./ mesh_->face_area(f);
-
-    // ComputeJacobianLocal(mcells, f, dim, method, bc_models, bc_values, dist, pres,
-    // 			 perm_abs_vert, perm_abs_horz, k_rel, dk_dp, normal, trans_faces, grav_term_faces, Jpp);
-
-    ComputeJacobianLocal(mcells, f, method, bc_models, bc_values, pres, dk_dp, trans_faces, grav_term_faces, Jpp);
-
-    // if (((cells_GID[0]>5)||(cells_GID[1]>5))&& (mcells > 1)){
-    // if (f==107){
-    //   cout<<"GID "<<cells_GID[0]<<" "<<cells_GID[1]<<endl;
-    //   cout<<"dist "<<dist<<endl;
-    //   cout<<"pres "<<pres[0]<<" "<<pres[1]<<endl;
-    //   cout<<"perm v "<< perm_abs_vert[0]<<" "<< perm_abs_vert[1]<<endl;
-    //   cout<<"perm h "<< perm_abs_horz[0]<<" "<< perm_abs_horz[1]<<endl;
-    //   cout<<"k_rel "<<k_rel[0]<<" "<<k_rel[1]<<endl;
-    //   cout<<"dk_dp "<<dk_dp[0]<<" "<<dk_dp[1]<<endl;
-    //   cout<<"normal "<<normal<<endl;
-    //   cout<<Jpp<<endl;
-    // }
+    ComputeJacobianLocal(mcells, f, method, bc_models, bc_values, pres, dk_dp, Jpp);
 
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp.values());
   }
@@ -323,19 +278,11 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
 ****************************************************************** */
 void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
                                            int face_id,
-                                           //int dim,
                                            int Krel_method,
                                            std::vector<int>& bc_models,
                                            std::vector<bc_tuple>& bc_values,
-                                           //double dist,
                                            double *pres,
-                                           // double *perm_abs_vert,
-                                           // double *perm_abs_horz,
-                                           // double *k_rel,
                                            double *dk_dp_cell,
-                                           //AmanziGeometry::Point& normal,
-					   const Epetra_Vector& trans_faces,
-					   const Epetra_Vector& grav_term_faces,
                                            Teuchos::SerialDenseMatrix<int, double>& Jpp)
 {
   // double K[2];
@@ -351,7 +298,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
     dpres = pres[0] - pres[1];// + grn;
 		// cout<<"pres[0] "<<pres[0]<<" pres[1] "<<pres[1]<<" grv "<<grn<<endl;
     if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
-      double cos_angle = grav_term_faces[face_id]/(rho_w*mesh_->face_area(face_id));
+      double cos_angle = (*grav_on_faces_)[face_id]/(rho_w*mesh_->face_area(face_id));
       if (cos_angle > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dk_dp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -363,13 +310,13 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
       }
     } else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
-      if (trans_faces[face_id]*dpres + grav_term_faces[face_id] > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+      if ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id] > FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dk_dp_cell[0];
         dKrel_dp[1] = 0.0;
-    } else if (trans_faces[face_id]*dpres + grav_term_faces[face_id] < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+    } else if ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id] < -FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.0;
         dKrel_dp[1] = dk_dp_cell[1];
-    } else if (fabs(trans_faces[face_id]*dpres + grav_term_faces[face_id]) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
+    } else if (fabs((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id]) < FLOW_RELATIVE_PERM_TOLERANCE) {  // Upwind
         dKrel_dp[0] = 0.5*dk_dp_cell[0];
         dKrel_dp[1] = 0.5*dk_dp_cell[1];
     }
@@ -385,8 +332,8 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
     //   cout<<"dKrel_dp "<<dKrel_dp[0]<<" "<<dKrel_dp[1]<<endl;
     // }
 
-    Jpp(0, 0) = (trans_faces[face_id]*dpres + grav_term_faces[face_id])*dKrel_dp[0];
-    Jpp(0, 1) = (trans_faces[face_id]*dpres + grav_term_faces[face_id])*dKrel_dp[1];
+    Jpp(0, 0) = ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id])*dKrel_dp[0];
+    Jpp(0, 1) = ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id])*dKrel_dp[1];
     Jpp(1, 0) = -Jpp(0, 0);
     Jpp(1, 1) = -Jpp(0, 1);
 
@@ -396,7 +343,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 
       dpres = pres[0] - pres[1];// + grn;
       //cout<<"dk_dp_cell[0] "<<dk_dp_cell[0]<<endl;
-      Jpp(0,0) = (trans_faces[face_id]*dpres + grav_term_faces[face_id]) * dk_dp_cell[0];
+      Jpp(0,0) = ((*trans_on_faces_)[face_id]*dpres + (*grav_on_faces_)[face_id]) * dk_dp_cell[0];
     } else {
       Jpp(0,0) = 0.0;
     }
@@ -586,9 +533,10 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 }
 
   void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution_cells,		
-					  std::vector<int>& bc_model, 
-					  std::vector<bc_tuple>& bc_values,
-					  Epetra_Vector& darcy_mass_flux)
+					    const Epetra_Import& face_importer,
+					    std::vector<int>& bc_model, 
+					    std::vector<bc_tuple>& bc_values,
+					    Epetra_Vector& darcy_mass_flux)
 {
   
 #ifdef HAVE_MPI
@@ -624,10 +572,6 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
 	darcy_mass_flux[f] = dirs[n]*(*Krel_faces_)[f]*((*trans_on_faces_)[f]*(solution_cell_wghost[c] - value) + (*grav_on_faces_)[f]);
-	// cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<endl;
-	// cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
-	// cout<<"Boundary gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
-	// cout<<"Dirichler BC flux "<<darcy_mass_flux[f] <<endl<<endl;
       }
       else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
 	double value = bc_values[f][0];

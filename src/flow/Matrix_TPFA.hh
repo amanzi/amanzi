@@ -50,33 +50,31 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
   // void AssembleGlobalMatrices(const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces);
   // void AssembleSchurComplement(const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces);
   
-  double ComputeNegativeResidual(const Epetra_Vector& solution,  
+  virtual double ComputeNegativeResidual(const Epetra_Vector& solution,  
 				 Epetra_Vector& residual);
 
-  void UpdatePreconditioner() { preconditioner_->Update(Spp_); } 
+  virtual void UpdatePreconditioner() { preconditioner_->Update(Spp_); } 
 
 
-  void AnalyticJacobian(const Epetra_Vector& solution, int dim,
-                        std::vector<int>& bc_markers, std::vector<bc_tuple>& bc_values,
-			const Epetra_Vector& trans_faces,
-			const Epetra_Vector& grav_term_faces,
+  virtual void AnalyticJacobian(const Epetra_Vector& solution, 
+                        std::vector<int>& bc_markers, 
+			std::vector<bc_tuple>& bc_values,
                         RelativePermeability& rel_perm); 
 
 
-
-
-  void ApplyBoundaryConditions(std::vector<int>& bc_model,
+  virtual void ApplyBoundaryConditions(std::vector<int>& bc_model,
 			       std::vector<bc_tuple>& bc_values); 
 
-  void DeriveDarcyMassFlux(const Epetra_Vector& solution,
-			   std::vector<int>& bc_model, 
-			   std::vector<bc_tuple>& bc_values,
-			   Epetra_Vector& darcy_mass_flux);
+  virtual void DeriveDarcyMassFlux(const Epetra_Vector& solution,
+				   const Epetra_Import& face_importer,
+				   std::vector<int>& bc_model, 
+				   std::vector<bc_tuple>& bc_values,
+				   Epetra_Vector& darcy_mass_flux);
 
 
 
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
 
 
@@ -88,8 +86,6 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
                             std::vector<bc_tuple>& bc_values,
                             double *pres,
                             double *dk_dp_cell,
-			    const Epetra_Vector& trans_faces,
-			    const Epetra_Vector& grav_term_faces,
                             Teuchos::SerialDenseMatrix<int, double>& Jpp);
          
   Teuchos::RCP<Epetra_Vector> Dff_;
