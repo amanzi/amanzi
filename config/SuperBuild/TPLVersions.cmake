@@ -330,7 +330,9 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #
 # TPL: MOAB
 #
-set(MOAB_VERSION        r4276)
+set(MOAB_VERSION_MAJOR  r4276)
+set(MOAB_VERSION_MINOR  )
+set(MOAB_VERSION_PATCH  )
 set(MOAB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MOAB_ARCHIVE_FILE   MOAB-${MOAB_VERSION}.tar.gz)
 set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e) 
