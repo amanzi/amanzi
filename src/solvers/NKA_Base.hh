@@ -54,6 +54,11 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "VerboseObject.hh"
+
 #define NKA_TRUE 1
 #define NKA_FALSE 0
 #define NKA_EOL -1
@@ -63,6 +68,10 @@ class NKA_Base {
  public:
   NKA_Base(int mvec, double vtol, const VectorSpace& map);
   ~NKA_Base();
+
+  void Init(Teuchos::ParameterList& plist) {
+    vo_ = Teuchos::rcp(new VerboseObject("NKA_Base", plist));
+  }
 
   void Relax();
   void Restart();
@@ -85,6 +94,8 @@ class NKA_Base {
   int free_v_;   // index of the initial vector in free storage linked list
   int *next_v_;  // next_v index link field
   int *prev_v_;  // previous index link field in doubly-linked subspace v
+
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 
@@ -208,8 +219,10 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir, Teu
     // something reasonable here and hope that situation is detected on the
     // outside.
     if (s < 1.0e-8) {
-      if (wp->Comm().MyPID() == 0)
-        std::cout << "NKA: Dot product = " << s << ", tossing iterate" << std::endl;
+      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "Dot product = " << s << ", tossing iterate" << endl;
+      }
 
       // nka_relax sets pending_ to NKA_FALSE
       Relax();
@@ -269,8 +282,10 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir, Teu
       if (hkk > vtol_*vtol_) {
         hk[k] = sqrt(hkk);
       } else {
-        if (wp->Comm().MyPID() == 0)
-          std::cout << "NKA: Vectors are linearly dependent, hkk = " << hkk << ", tossing iterate" << std::endl;
+        if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "Vectors are linearly dependent, hkk=" << hkk << ", tossing iterate" << endl;
+        }
 
         // The current w nearly lies in the span of the previous vectors:
         // Drop this vector,

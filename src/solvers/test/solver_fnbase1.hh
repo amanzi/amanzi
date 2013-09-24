@@ -1,12 +1,12 @@
-#ifndef AMANZI_TEST_SOLVER_FNBASE6_HH_
-#define AMANZI_TEST_SOLVER_FNBASE6_HH_
+#ifndef AMANZI_TEST_SOLVER_FNBASE1_HH_
+#define AMANZI_TEST_SOLVER_FNBASE1_HH_
 
 #include <math.h>
 #include "Epetra_Vector.h"
 
 #include "SolverFnBase.hh"
 
-// ODE: f(u) = ... = 0
+// ODE: f(u) = u (u^2 + 1) = 0.
 class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vector> {
  public:
   NonlinearProblem(double atol, double rtol, bool exact_jacobian) :
@@ -16,7 +16,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
                 const Teuchos::RCP<Epetra_Vector>& f) {
     for (int c = 0; c != u->MyLength(); ++c) {
       double x = (*u)[c];
-      (*f)[c] = x < 0 ? -pow(fabs(x), 0.2) : pow(fabs(x), 0.2);
+      (*f)[c] = x * (x * x + 1.0);
     }
   }
 
@@ -39,12 +39,12 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     if (exact_jacobian_) {
       for (int c = 0; c != up->MyLength(); ++c) {
         double x = (*up)[c];
-        (*h_)[c] = 0.2 / pow(fabs(x), 0.8);
+        (*h_)[c] = 3 * x * x + 1.0;
       }
     } else {
       for (int c = 0; c != up->MyLength(); ++c) {
         double x = (*up)[c];
-        (*h_)[c] = 0.3 / pow(fabs(x), 2.0 / 3);
+        (*h_)[c] = x * x + 2.5;
       }
     }
   }
