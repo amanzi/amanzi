@@ -374,6 +374,10 @@ Usage:
 
      * [U] `"linear solver iterative method`" [string] select the iterative method to be used in linear solvers, choose one of `"pcg`", or `"gmres`". (default: `"gmres`")
 
+   * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
+
+     * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", and `"inexact Newton`".
+
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 
      * [U] `"Trilinos ML`" Parameter used by Trilinos multi-level solver, ML

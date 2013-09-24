@@ -1076,6 +1076,8 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
       std::string disc_method("optimized mfd scaled");
       std::string rel_perm("upwind with Darcy flux");
       double atm_pres(ATMOSPHERIC_PRESSURE);
+      std::string nonlinear_solver("NKA");
+
       if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
 	if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
 	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Flow Process Kernel")) {
@@ -1088,6 +1090,12 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    }
 	    if (fl_exp_params.isParameter("atmospheric pressure")) {
 	      atm_pres = fl_exp_params.get<double>("atmospheric pressure");
+	    }
+	  }
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Nonlinear Solver")) {	  
+	    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Nonlinear Solver");
+	    if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
+	      nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
 	    }
 	  }
 	}
@@ -1109,6 +1117,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 	  richards_problem.set<double>("atmospheric pressure", atm_pres);
 	  richards_problem.set<std::string>("discretization method", disc_method);
+	  
+	  if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+	    richards_problem.set<std::string>("experimental solver","newton");
+	  }
+	  
 	  // see if we need to generate a Picard list
 	  
 	  flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
@@ -1263,6 +1276,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	      }
 	    }
 	  }
+	  if (nonlinear_solver == std::string("Newton")) {
+	    sti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	  }
 	}
 
 	// only include the transient list if not in steady mode
@@ -1339,7 +1355,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	      }
 	    }
 	  }
-	  
+	  if (nonlinear_solver == std::string("Newton")) {
+	    tti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	  }
+
+
 	  transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 	}
       }
