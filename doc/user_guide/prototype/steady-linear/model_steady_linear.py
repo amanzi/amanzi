@@ -76,10 +76,11 @@ def createFromXML(filename):
         params["x1"], params["z1"] = float(high[0]), float(high[2]) 
         material_list = search.getElementByPath(xml, "/amanzi_input/materials/")
         params["K"] = search.getElementByPath(search.getElementByName(material_list,"Soil"),"permeability").get("x")
-        params["mu"]= search.getElementByPath(xml, "/amanzi_input/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
-        #params["rho"]= search.getElementByPath(xml, "/amanzi_input/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
-        #params["q_Upstream"] = - search.getElementByPath(xml, "/amanzi_input/Boundary Conditions/Upstream BC/BC: Flux/Inward Mass Flux").value[0]
-        #params["h_Downstream"] = search.getElementByPath(xml, "/amanzi_input/Boundary Conditions/Downstream BC/BC: Hydrostatic/Water Table Height").value[0] 
+        phases_list = search.getElementByPath(xml, "/amanzi_input/phases")
+        params["mu"] = float(search.getElementByPath(search.getElementByName(phases_list,"water"),"viscosity").text.strip())
+        params["rho"] = float(search.getElementByPath(search.getElementByName(phases_list,"water"),"density").text.strip())
+        params["q_Upstream"] = - float(search.getElementByPath(xml, "/amanzi_input/boundary_condition/{boundary_condition,Upstream BC}/liquid_phase/liquid_component/inward_mass_flux").get("value"))
+        params["h_Downstream"] = float(search.getElementByPath(xml, "/amanzi_input/boundary_condition/{boundary_condition,Downstream BC}/liquid_phase/liquid_component/hydrostatic").get("value"))
     #endif
     params.setdefault("g",9.80665)
    
