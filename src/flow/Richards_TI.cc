@@ -211,7 +211,7 @@ double Richards_PK::ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du
 ****************************************************************** */
 bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& du)
 {
-  double max_sat_pert = 0.125;
+  double max_sat_pert = 0.25;
   bool ret_val = false;
   double dumping_factor = 0.6;
   double reference_pressure = 101325.;

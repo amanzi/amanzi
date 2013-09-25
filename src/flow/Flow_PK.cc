@@ -72,6 +72,13 @@ void Flow_PK::Init(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
     Exceptions::amanzi_throw(msg);
   }
 
+  if (global_list.isSublist("Nonlinear solvers")) {
+    nonlin_solver_list_ = global_list.sublist("Nonlinear solvers");
+  } else {
+    //Errors::Message msg("Flow PK: input parameter list does not have <Nonlinear solvers> sublist.");
+    //Exceptions::amanzi_throw(msg);
+  }
+
 }
 
 

@@ -1047,8 +1047,15 @@ The verbose object is discussed below.
 
 Nonlinear Solvers
 =================
-This list does not exist yet.
+This list contains the name of a nonlinear solver. Curently, there are
+two available options: nka and newton. Using of the Newton method
+assumes that two-point flux discretization will be implemented.
 
+.. code-block:: xml
+
+  <ParameterList name="Nonlinear solvers">
+    <Parameter name="solver" type="string" value="newton"/>
+  </ParameterList>
 
 Preconditioners
 ===============

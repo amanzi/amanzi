@@ -62,7 +62,6 @@ class Richards_PK : public Flow_PK {
   void InitializeSteadySaturated();
 
   int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
-  int AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF2(TI_Specs& ti_specs);
@@ -70,8 +69,6 @@ class Richards_PK : public Flow_PK {
   void CommitState(Teuchos::RCP<Flow_State> FS);
 
   // methods for experimental time integration
-  int PicardTimeStep(double T, double dT, double& dTnext);
-  int AndersonMixingTimeStep(double T, double dT, double& dTnext);
   double ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du);
   double ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du);
   double ErrorNormPicardExperimental(const Epetra_Vector& uold, const Epetra_Vector& unew);
