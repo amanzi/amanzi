@@ -1156,10 +1156,6 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	  richards_problem.set<double>("atmospheric pressure", atm_pres);
 	  richards_problem.set<std::string>("discretization method", disc_method);
 	  
-	  if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
-	    richards_problem.set<std::string>("experimental solver","newton");
-	  }
-	  
 	  // see if we need to generate a Picard list
 	  
 	  flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
