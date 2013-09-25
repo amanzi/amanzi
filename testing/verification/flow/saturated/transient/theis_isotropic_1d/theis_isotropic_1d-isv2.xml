@@ -113,14 +113,14 @@
 
     <region name ="yz1">
      <comments>Left Plane</comments>
-      <plane location="-1200.0,-1200.0,0.0" direction="-1.0,0.0,0.0"/>
+      <plane location="-1200.0,-1200.0,0.0" normal="-1.0,0.0,0.0"/>
     </region>
     <!--
-    <plane name="yz1" location="-1200.0,-1200.0,0.0" direction="-1.0,0.0,0.0"/>
+    <plane name="yz1" location="-1200.0,-1200.0,0.0" normal="-1.0,0.0,0.0"/>
     -->
-    <plane name="yz2" location="1200.0,-1200.0,0.0" direction="1.0,0.0,0.0"/>
-    <plane name="xz1" location="-1200.0,-1200.0,0.0" direction="0.0,-1.0,0.0"/>
-    <plane name="xz2" location="-1200.0,1200.0,0.0" direction="0.0,1.0,0.0"/>
+    <plane name="yz2" location="1200.0,-1200.0,0.0" normal="1.0,0.0,0.0"/>
+    <plane name="xz1" location="-1200.0,-1200.0,0.0" normal="0.0,-1.0,0.0"/>
+    <plane name="xz2" location="-1200.0,1200.0,0.0" normal="0.0,1.0,0.0"/>
 
     <point name="Obs_r1" coordinate="(-33.0,0.0,5.0)"/>
     <point name="Obs_r2" coordinate="(-55.0,0.0,5.0)"/>
@@ -222,21 +222,21 @@
       <filename>observation.out</filename>
 
       <liquid_phase name="water">
-	<observation variable="Aqueous pressure">
+	<aqueous_pressure>
 	  <assigned_regions>Obs_r1</assigned_regions>
 	  <functional>point</functional>
 	  <time_macro>Observation Times</time_macro>
-	</observation>
-	<observation variable="Aqueous pressure">
+	</aqueous_pressure>
+	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
 	  <time_macro>Observation Times</time_macro>
-	</observation>
-	<observation variable="Aqueous pressure">
+	</aqueous_pressure>
+	<aqueous_pressure>
 	  <assigned_regions>Obs_r2</assigned_regions>
 	  <functional>point</functional>
 	  <time_macro>Observation Times</time_macro>
-	</observation>
+	</aqueous_pressure>
       </liquid_phase>
 
     </observations>

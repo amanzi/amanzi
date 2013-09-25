@@ -324,6 +324,8 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
   for (int j = 0; j <= k; j++) {
     x.Update(s[j], *(v[j]), 1.0);
   }
+
+  for (int i = 0; i < k + 1; i++) delete v[i];
 }
 
 }  // namespace AmanziSolvers

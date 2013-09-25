@@ -42,6 +42,22 @@ Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const
   Fc_cells_.resize(ncells);
 }
 
+  Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map,
+				   Teuchos::RCP<Epetra_Vector> Krel_faces,
+				   Teuchos::RCP<Epetra_Vector> Trans_faces,
+				   Teuchos::RCP<Epetra_Vector> Grav_faces) 
+   :  Matrix_MFD(FS, map)
+{
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
+  Acc_cells_.resize(ncells);
+  Fc_cells_.resize(ncells);
+
+  Krel_faces_ = Krel_faces;
+  trans_on_faces_ = Trans_faces;
+  grav_on_faces_ = Grav_faces;
+}
+
+
 
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
@@ -89,6 +105,7 @@ void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
     Acf_cells_.push_back(Bcf);
     Acc_cells_.push_back(matsum);
   }
+
 }
 
 
@@ -129,7 +146,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
   Spp_->GlobalAssemble();
 }
 
-void Matrix_MFD_TPFA::AssembleGlobalMatrices( const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces)
+void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -155,7 +172,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices( const Epetra_Vector& Krel_faces, c
     double tij;
     for (int i=0; i < mcells; i++){
       for (int j=0; j < mcells; j++){
-	tij = Trans_faces[f]*Krel_faces[f];
+	tij = (*trans_on_faces_)[f] * (*Krel_faces_)[f];
 	if (i==j) Spp_local(i,j) = tij;
 	else Spp_local(i,j) = -tij;
       }
@@ -166,22 +183,15 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices( const Epetra_Vector& Krel_faces, c
   }
 
   for (int c = 0; c <= ncells_owned; c++){
-    //cout<<"Acc_cells "<<Acc_cells_[c]<<" Fc_cells_ "<<Fc_cells_[c]<<endl;
     cells_GID[0] = cmap_wghost.GID(c);
     int mcells = 1;
     Spp_local(0,0) = Acc_cells_[c];
     (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Spp_local.values());
-
     (*rhs_cells_)[c] += Fc_cells_[c];
   }
 
   Spp_->GlobalAssemble();
-  // int tmp;
-  // cout<<"From AssembleGlobalMatrices\n";
-  // std::cout<<(*Spp_)<<endl;
-  // std::cout<<(*rhs_cells_)<<endl;
-  //cin >> tmp;
-  //exit(0);
+
     
 }
 
@@ -189,9 +199,9 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices( const Epetra_Vector& Krel_faces, c
 /* ******************************************************************
 * Assembles preconditioner. It has same set of parameters as matrix.
 ****************************************************************** */
-void Matrix_MFD_TPFA::AssembleSchurComplement(const Epetra_Vector& Krel_faces, const Epetra_Vector& Trans_faces)
+void Matrix_MFD_TPFA::AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
-  AssembleGlobalMatrices(Krel_faces, Trans_faces);
+  AssembleGlobalMatrices();
 }
 
  
@@ -483,10 +493,7 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
 
 
 void  Matrix_MFD_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model, 
-					       std::vector<bc_tuple>& bc_values,
-					       const Epetra_Vector& Krel_faces,
-					       Epetra_Vector& Trans_faces,
-					       Epetra_Vector& grav_term_faces){
+					       std::vector<bc_tuple>& bc_values){
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List faces;
@@ -506,13 +513,11 @@ void  Matrix_MFD_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
 
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
-	//if (f==84) cout<<"value*Trans_faces[f]*Krel_faces[f] "<<value*Trans_faces[f]*Krel_faces[f]<<" Trans_faces[f]*Krel_faces[f] "<< Trans_faces[f]*Krel_faces[f]<<endl;
-	(*rhs_cells_)[c] += value*Trans_faces[f]*Krel_faces[f];
+	(*rhs_cells_)[c] += value * (*trans_on_faces_)[f] * (*Krel_faces_)[f];
       } else if (bc_model[f] == FLOW_BC_FACE_FLUX) {
         (*rhs_cells_)[c] -= value * mesh_->face_area(f);
-	//if (value < 0)	cout<<"FLOW_BC_FACE_FLUX "<<value * mesh_->face_area(f)<<" "<<value<<" "<<mesh_->face_area(f)<<endl;
-	Trans_faces[f] = 0.0;
-	grav_term_faces[f] =0.0;
+	(*trans_on_faces_)[f] = 0.0;
+	(*grav_on_faces_)[f] = 0.0;
       } else if (bc_model[f] == FLOW_BC_FACE_MIXED) {
 	Errors::Message msg;
 	msg << "Mixed boundary conditions are not supported in TPFA mode\n";
@@ -532,9 +537,7 @@ void  Matrix_MFD_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
 // /* ******************************************************************
 // * Linear algebra operations with matrices: r = A * x - f                                                 
 // ****************************************************************** */
-double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution, 
-						const Epetra_Vector& Krel_faces, 
-						const Epetra_Vector& trans_faces, 
+double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,  
 						Epetra_Vector& residual)
 {
  
@@ -562,16 +565,12 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
       for (int i = 0; i < ncells; i++){
 	int c = cells[i];
 	if (c >= ncells_owned) continue;
-	residual[c] += pow(-1.0, i)*Krel_faces[f]*trans_faces[f]*(sol_gh[cells[0]] - sol_gh[cells[1]]);  
-	// if (c==11) {
-	//   cout<<"Negative Res2 "<<c<<" "<<Krel_faces[f]*trans_faces[f]*(sol_gh[cells[0]] - sol_gh[cells[1]])<<" "<<Krel_faces[f]*trans_faces[f]<<" "<<(sol_gh[cells[0]] - sol_gh[cells[1]])<<endl;
-	// } 
+	residual[c] += pow(-1.0, i)*(*Krel_faces_)[f]*(*trans_on_faces_)[f]*(sol_gh[cells[0]] - sol_gh[cells[1]]);  
       }
     }
     else if (ncells == 1){
       int c = cells[0];
-      residual[c] += Krel_faces[f]*trans_faces[f]*(sol_gh[c]);
-      //if (c==11) cout<<"Negative Res1 "<<c<<" "<<Krel_faces[f]*trans_faces[f]*(sol_gh[c])<<endl;
+      residual[c] += (*Krel_faces_)[f] * (*trans_on_faces_)[f] * sol_gh[c];
     }							
   } 
   
@@ -579,34 +578,18 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 
   for (int c = 0; c < ncells_owned; c++) {    
     residual[c] -= (*rhs_cells_)[c];
-    //cout<<"residual "<<c<<": "<< residual[c]<<" "<<sol_gh[c]<<" "<<(*rhs_cells_)[c]<<endl;
   }
     
-  //cout<<"residual "<<c<<": "<< residual[c]<<endl;
-  //if (c >1) break;
-  
-
-  //exit(0);
   double norm_residual;
   residual.Norm2(&norm_residual);
   return norm_residual;
 }
 
-  void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution_cells,
-					  const Epetra_Vector& Krel_faces,
-					  const Epetra_Vector& Trans_faces,
-					  const Epetra_Vector& Grav_term,
+  void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution_cells,		
 					  std::vector<int>& bc_model, 
 					  std::vector<bc_tuple>& bc_values,
 					  Epetra_Vector& darcy_mass_flux)
 {
-//   Teuchos::RCP<Epetra_Vector> solution_cell = Teuchos::rcp(FS_->CreateCellView(solution));
-// #ifdef HAVE_MPI
-//   Epetra_Vector solution_cell_wghost(mesh_->cell_map(true));
-//   solution_cell_wghost.Import(*solution_cell, cell_importer, Insert);
-// #else
-//   Epetra_Vector& solution_cell_wghost = *solution_cell;
-// #endif
   
 #ifdef HAVE_MPI
   Epetra_Vector solution_cell_wghost(mesh_->cell_map(true));
@@ -622,16 +605,10 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  //  std::vector<int> flag(nfaces_wghost, 0);
-  //cout.precision(10);
 
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> flag(nfaces_wghost, 0);
 
-  //darcy_mass_flux.PutScalar(0.);
-
-  //cout<<solution_cells<<endl;
-  //Epetra_Map face_wghost = mesh_->face_map(true);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -646,7 +623,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 
       if (bc_model[f] == FLOW_BC_FACE_PRESSURE) {
 	double value = bc_values[f][0];
-	darcy_mass_flux[f] = dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution_cell_wghost[c] - value) + Grav_term[f]);
+	darcy_mass_flux[f] = dirs[n]*(*Krel_faces_)[f]*((*trans_on_faces_)[f]*(solution_cell_wghost[c] - value) + (*grav_on_faces_)[f]);
 	// cout<<"T "<<Krel_faces[f]*Trans_faces[f]<<endl;
 	// cout<<"Boundary flux/grav "<<dirs[n]*Krel_faces[f]*(Trans_faces[f]*(solution[c] - value))<<endl;
 	// cout<<"Boundary gravity "<< dirs[n]*Krel_faces[f]*Grav_term[f]<<endl;
@@ -668,12 +645,12 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 	  }
 
 	    if (c == cells[0]){
-	      darcy_mass_flux[f] = dirs[n]*Trans_faces[f]*(solution_cell_wghost[cells[0]] - solution_cell_wghost[cells[1]]) + Grav_term[f];
+	      darcy_mass_flux[f] = dirs[n]*(*trans_on_faces_)[f]*(solution_cell_wghost[cells[0]] - solution_cell_wghost[cells[1]]) + (*grav_on_faces_)[f];
 	    }
 	    else {
-	      darcy_mass_flux[f] = dirs[n]*Trans_faces[f]*(solution_cell_wghost[cells[1]] - solution_cell_wghost[cells[0]]) + Grav_term[f];
+	      darcy_mass_flux[f] = dirs[n]*(*trans_on_faces_)[f]*(solution_cell_wghost[cells[1]] - solution_cell_wghost[cells[0]]) + (*grav_on_faces_)[f];
 	    }	    
-	    darcy_mass_flux[f] *= Krel_faces[f];
+	    darcy_mass_flux[f] *= (*Krel_faces_)[f];
 	    flag[f] = 1;
 	 
 	}

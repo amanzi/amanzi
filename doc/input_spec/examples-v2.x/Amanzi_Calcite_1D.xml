@@ -261,19 +261,19 @@
 		<observations>
        			<filename>observations.out</filename>
 			<liquid_phase name="water">
-          			<observation variable="Integrated Mass">
+          			<integrated_mass>
               				<filename>imass.out</filename>  <!-- later when there is more $$; for now all observation is output to same file -->
              				<assigned_regions>All</assigned_regions>
             				<functional>integral</functional>
               				<time_macro>Macro 1</time_macro>
-           			</observation>
+           			</integrated_mass>
 
-           			<observation variable="H+">
+           			<aqueous_conc solute ="H+">
 					<filename>conc.out</filename>  <!-- later when there is more $$; for now all observation is output to same file -->
 					<assigned_regions>half_distance,outlet</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Macro 1</time_macro>
-				</observation>
+				</aqueous_conc>
 			</liquid_phase>
 		</observations>
 	</output>

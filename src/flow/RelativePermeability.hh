@@ -68,6 +68,9 @@ class RelativePermeability {
 
   Epetra_Vector& Krel_cells() { return *Krel_cells_; }
   Epetra_Vector& Krel_faces() { return *Krel_faces_; }
+  Teuchos::RCP<Epetra_Vector>& Krel_cells_ptr() { return Krel_cells_;}
+  Teuchos::RCP<Epetra_Vector>& Krel_faces_ptr() { return Krel_faces_;}
+
   std::vector<std::vector<double> >& Krel_amanzi() { return Krel_amanzi_; }
   const Epetra_Vector& dKdP_cells() { return *dKdP_cells_; }
   const Epetra_Vector& dKdP_faces() { return *dKdP_faces_; }

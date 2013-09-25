@@ -109,6 +109,9 @@ if ( NOT TPL_INSTALL_PREFIX )
 endif()
 message(STATUS "Install TPLs in ${TPL_INSTALL_PREFIX}")
 
+# also set the CMAKE_INSTALL_PREFIX accordingly
+set(CMAKE_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
+
 # Amanzi mesh build options
 option(ENABLE_Structured   "Enable Amanzi structured mesh capability" TRUE)
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)

@@ -370,4 +370,7 @@ install(EXPORT AmanziTargets
 	NAMESPACE amanzi_
 	FILE AmanziTargets.cmake)
 
+install(FILES ${AMANZI_SOURCE_DIR}/doc/input_spec/schema/amanzi.xsd DESTINATION bin)
+
 endfunction()
+

@@ -67,7 +67,8 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
   while (itrs < max_itrs && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF1
       Epetra_Vector udot(*super_map_);
-      ComputeUDot(T0, *solution, udot);
+      // I do not know how to calculate du/dt in a robust way.
+      // ComputeUDot(T0, *solution, udot);
       bdf1_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
@@ -117,7 +118,8 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
   while (itrs < max_itrs_nonlinear && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
-      ComputeUDot(T0, *solution, udot);
+      // I do not know how to calculate du/dt in a robust way.
+      // ComputeUDot(T0, *solution, udot);
       bdf2_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
@@ -158,6 +160,9 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 {
+  // create verbosity object
+  VerboseObject* vo = new VerboseObject("Amanzi::Picard", rp_list_); 
+
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
@@ -207,7 +212,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
-    rhs = matrix_->rhs();  // export RHS from the matrix class
+
+    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();  // export RHS from the matrix class
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
     // create preconditioner
@@ -224,8 +230,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     L2error /= L2norm;
 
     // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
        solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
@@ -237,10 +243,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     double relaxation;
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
+    if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *(vo->os()) << itrs << ": ||r||=" << L2error << " relax=" << relaxation 
+                  << " lin_solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
 // Epetra_Vector& pressure = FS->ref_pressure();
@@ -257,6 +263,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
+
+  delete vo;
   return 0;
 }
 
@@ -305,7 +313,7 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     rel_perm->Compute(*solution, bc_model, bc_values);
 
     // create algebraic problem
-    rhs = matrix_->rhs();  // export RHS from the matrix class
+    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();  // export RHS from the matrix class
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
@@ -330,8 +338,8 @@ int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
     L2error /= L2norm;
 
     // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
        solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);

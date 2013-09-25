@@ -81,10 +81,8 @@
         <ParameterList name="Porosity: Uniform">
           <Parameter name="Value" type="double" value="0.43"  units="fraction"/>
         </ParameterList>
-        <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="1.18e-13"  units="m^2"/>
-          <Parameter name="Vertical" type="double" value="1.18e-13"  units="m^2"/>
-			<!-- changed units from m/s to m^2 -->
+        <ParameterList name="Intrinsic Permeability: Uniform">
+          <Parameter name="Value" type="double" value="1.18e-13" />
         </ParameterList>
         <ParameterList name="Capillary Pressure: van Genuchten">
           <Parameter name="alpha" type="double" value="1.02e-4" units="Pa^-1"/>
@@ -99,9 +97,8 @@
         <ParameterList name="Porosity: Uniform">
           <Parameter name="Value" type="double" value="0.43" units="fraction"/>
         </ParameterList>
-        <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="1.18472e-11"  units="m/s"/>
-          <Parameter name="Vertical" type="double" value="1.18472e-11" units="m/s"/>
+        <ParameterList name="Intrinsic Permeability: Uniform">
+          <Parameter name="Value" type="double" value="1.18472e-11" />
         </ParameterList>
         <ParameterList name="Capillary Pressure: van Genuchten">
           <Parameter name="alpha" type="double" value="1.532333e-3" units="Pa^-1"/>

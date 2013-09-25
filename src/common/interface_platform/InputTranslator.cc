@@ -1467,7 +1467,7 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc) {
 	      char_array = strtok(NULL,",");
 	      loc.append(atof(char_array));
               list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
-              nodeAttr = attrMap->getNamedItem(XMLString::transcode("direction"));
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	      char_array = strtok(textContent2,"(,");
 	      dir.append(atof(char_array));
@@ -1544,7 +1544,7 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc) {
 	char_array = strtok(NULL,",");
 	loc.append(atof(char_array));
         list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
-        nodeAttr = attrMap->getNamedItem(XMLString::transcode("direction"));
+        nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
         Teuchos::Array<double> dir;
 	char_array = strtok(textContent2,"(,");
@@ -1645,18 +1645,43 @@ Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc) {
 	            matlist.sublist("Particle Density: Uniform").set<double>("Value",atof(textContent2));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("specific_storage",propName)==0){
-	            // TODO: EIB - adding speculation for specific storage -> this may need fixing up
+		    // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Specific Storage: Uniform").set<double>("Value",atof(textContent2));
 	            XMLString::release(&textContent2);
 	          } else if  (strcmp("specific_yield",propName)==0){
-	            // TODO: EIB - adding speculation for specific yield -> this may need fixing up
+		    // TODO: EIB - not handling file case
                     attrMap = curkiddy->getAttributes();
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
                     textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	            matlist.sublist("Specific Yield: Uniform").set<double>("Value",atof(textContent2));
+	            XMLString::release(&textContent2);
+	          } else if  (strcmp("dispersion_tensor",propName)==0){
+		    // TODO: EIB - not handling file case
+                    attrMap = curkiddy->getAttributes();
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alphaL"));
+                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	            matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaL",atof(textContent2));
+	            XMLString::release(&textContent2);
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("alphaT"));
+                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	            matlist.sublist("Dispersion Tensor: Uniform Isotropic").set<double>("alphaT",atof(textContent2));
+	            XMLString::release(&textContent2);
+	          } else if  (strcmp("molecular_diffusion",propName)==0){
+		    // TODO: EIB - not handling file case
+                    attrMap = curkiddy->getAttributes();
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
+                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	            matlist.sublist("Molecular Diffusion: Uniform").set<double>("Value",atof(textContent2));
+	            XMLString::release(&textContent2);
+	          } else if  (strcmp("tortuosity",propName)==0){
+		    // TODO: EIB - not handling file case
+                    attrMap = curkiddy->getAttributes();
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("value"));
+                    textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	            matlist.sublist("Tortuosity: Uniform").set<double>("Value",atof(textContent2));
 	            XMLString::release(&textContent2);
 	          }
 		}
@@ -2215,6 +2240,7 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 
   // get Sources node
   xercesc::DOMNodeList* nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("sources"));
+  if (nodeList->getLength() > 0) {
   xercesc::DOMNode* nodeSC = nodeList->item(0);
   xercesc::DOMElement* elementSC = static_cast<xercesc::DOMElement*>(nodeSC);
 
@@ -2302,7 +2328,7 @@ Teuchos::ParameterList get_sources(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
       XMLString::release(&textContent);
     }
   }
-
+  }
 
   return list;
   
@@ -2509,64 +2535,106 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
 
   // get list of observations - this node MAY exist ONCE
   obsList = outElement->getElementsByTagName(XMLString::transcode("observations"));
-  for (int i=0; i<obsList->getLength(); i++) {
-    xercesc::DOMNode* curNode = obsList->item(i) ;
+  xercesc::DOMNode* nodeObs = obsList->item(0);
+
+  xercesc::DOMNodeList* OBList = nodeObs->getChildNodes();
+  Teuchos::ParameterList obsPL;
+  for (int i=0; i<OBList->getLength(); i++) {
+    xercesc::DOMNode* curNode = OBList->item(i) ;
     if (xercesc::DOMNode::ELEMENT_NODE == curNode->getNodeType()) {
-      Teuchos::ParameterList obsPL;
-      xercesc::DOMElement* curElement = static_cast<xercesc::DOMElement*>(curNode);
-      // get filename element 
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("filename"));
-      tmpNode = tmpList->item(0);
-      textContent = XMLString::transcode(tmpNode->getTextContent());
-      obsPL.set<std::string>("Observation Output Filename",textContent);
-      XMLString::release(&textContent);
-      // get liquid phase
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("liquid_phase"));
-      // get list of observation(s)
-      xercesc::DOMElement* tmpElement = static_cast<xercesc::DOMElement*>(tmpList->item(0));
-      xercesc::DOMNodeList* childList = tmpElement->getElementsByTagName(XMLString::transcode("observation"));
-      for (int j=0; j<childList->getLength(); j++) {
-        // loop over observation(s)
-        xercesc::DOMNode* childNode = childList->item(j) ;
-	// get variable name (attribute)
-	xercesc::DOMNamedNodeMap *attrMap = childNode->getAttributes();
-	xercesc::DOMNode* namednode = attrMap->getNamedItem(XMLString::transcode("variable"));
-	textContent = xercesc::XMLString::transcode(namednode->getNodeValue());
-	Teuchos::ParameterList obPL(textContent);
-	obPL.set<std::string>("Variable",textContent);
-	// get assigned regions (child element)
-        xercesc::DOMElement* childElement = static_cast<xercesc::DOMElement*>(childNode);
-	xercesc::DOMNodeList* kidList = childElement->getElementsByTagName(XMLString::transcode("assigned_regions"));
-	if (kidList->getLength() > 0) {
-          textContent2 = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
-	  obPL.set<std::string>("Region",textContent2);
-	  XMLString::release(&textContent2);
-	}
-	// get functional (child element)
-	kidList = childElement->getElementsByTagName(XMLString::transcode("functional"));
-	if (kidList->getLength() > 0) {
-          textContent2 = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
-	  if (strcmp(textContent2,"point")==0) {
-	    obPL.set<std::string>("Functional","Observation Data: Point");
-	  } else if (strcmp(textContent2,"integral")==0) {
-	    obPL.set<std::string>("Functional","Observation Data: Integral");
-	  } else if (strcmp(textContent2,"mean")==0) {
-	    obPL.set<std::string>("Functional","Observation Data: Mean");
+      textContent  = xercesc::XMLString::transcode(curNode->getNodeName());
+      if (strcmp(textContent,"filename")==0) {
+	textContent2 = xercesc::XMLString::transcode(curNode->getTextContent());
+        obsPL.set<std::string>("Observation Output Filename",textContent2);
+	XMLString::release(&textContent2);
+      } else if (strcmp(textContent,"liquid_phase")==0) {
+        xercesc::DOMNamedNodeMap* attrMap = curNode->getAttributes();
+        xercesc::DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+	char* phaseName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	// loop over observations
+	xercesc::DOMNodeList* childList = curNode->getChildNodes();
+        for (int j=0; j<childList->getLength(); j++) {
+	  Teuchos::ParameterList obPL;
+          xercesc::DOMNode* curObs = childList->item(j) ;
+          if (xercesc::DOMNode::ELEMENT_NODE == curObs->getNodeType()) {
+            char* obsType = xercesc::XMLString::transcode(curObs->getNodeName());
+            if (strcmp(obsType,"aqueous_pressure")==0) {
+	      obPL.set<std::string>("Variable","Aqueous pressure");
+	    } else if (strcmp(obsType,"integrated_mass")==0) {
+	      // TODO: EIB can't find matching version
+	      //obPL.set<std::string>("Variable","Aqueous pressure");
+            } else if (strcmp(obsType,"volumetric_water_content")==0) {
+	      obPL.set<std::string>("Variable","Volumetric water content");
+            } else if (strcmp(obsType,"gravimetric_water_content")==0) {
+	      obPL.set<std::string>("Variable","Gravimetric water content");
+            } else if (strcmp(obsType,"x_aqueous_volumetric_flux")==0) {
+	      // TODO: EIB needs double checking
+	      obPL.set<std::string>("Variable","X-Aqueous volumetric flux");
+            } else if (strcmp(obsType,"y_aqueous_volumetric_flux")==0) {
+	      // TODO: EIB needs double checking
+	      obPL.set<std::string>("Variable","Y-Aqueous volumetric flux");
+            } else if (strcmp(obsType,"z_aqueous_volumetric_flux")==0) {
+	      // TODO: EIB needs double checking
+	      obPL.set<std::string>("Variable","Z-Aqueous volumetric flux");
+            } else if (strcmp(obsType,"material_id")==0) {
+	      obPL.set<std::string>("Variable","MaterialID");
+            } else if (strcmp(obsType,"hydraulic_head")==0) {
+	      obPL.set<std::string>("Variable","Hydraulic Head");
+            } else if (strcmp(obsType,"aqueous_mass_flow_rate")==0) {
+	      obPL.set<std::string>("Variable","Aqueous mass flow rate");
+            } else if (strcmp(obsType,"aqueous_volumetric_flow_rate")==0) {
+	      obPL.set<std::string>("Variable","Aqueous volumetric flow rate");
+            } else if (strcmp(obsType,"aqueous_conc")==0) {
+	      // get solute name
+              xercesc::DOMNamedNodeMap* attrMap = curObs->getAttributes();
+              xercesc::DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+	      char* soluteName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	      std::stringstream name;
+	      name<< soluteName << " Aqueous concentration";
+	      obPL.set<std::string>("Variable",name.str());
+	    }
+	    xercesc::DOMNodeList* kidList = curObs->getChildNodes();
+            for (int k=0; k<kidList->getLength(); k++) {
+              xercesc::DOMNode* curElem = kidList->item(k) ;
+              if (xercesc::DOMNode::ELEMENT_NODE == curElem->getNodeType()) {
+                char* Elem =  xercesc::XMLString::transcode(curElem->getNodeName());
+                char* Value =  xercesc::XMLString::transcode(curElem->getTextContent());
+		if (strcmp(Elem,"assigned_regions")==0) {
+		  //TODO: EIB - really a note, REGION != ASSIGNED REGIONS, this isn't consistent!!!
+		  /*
+	          Teuchos::Array<std::string> regs;
+	          char* char_array;
+	          char_array = strtok(Value,",");
+	          while(char_array!=NULL){
+	            regs.append(char_array);
+	            char_array = strtok(NULL,",");
+	          }
+                  obPL.set<Teuchos::Array<std::string> >("Region",regs);
+		  */
+                  obPL.set<std::string>("Region",Value);
+		} else if (strcmp(Elem,"functional")==0) {
+	          if (strcmp(Value,"point")==0) {
+	            obPL.set<std::string>("Functional","Observation Data: Point");
+	          } else if (strcmp(Value,"integral")==0) {
+	            obPL.set<std::string>("Functional","Observation Data: Integral");
+	          } else if (strcmp(Value,"mean")==0) {
+	            obPL.set<std::string>("Functional","Observation Data: Mean");
+	          }
+		} else if (strcmp(Elem,"time_macro")==0) {
+	          obPL.set<std::string>("Time Macro",Value);
+		}
+                XMLString::release(&Elem);
+                XMLString::release(&Value);
+	      }
+	    }
+	    std::stringstream listName;
+	    listName << "observation-"<<j+1<<":"<<phaseName;
+	    obsPL.sublist(listName.str()) = obPL;
 	  }
-	  XMLString::release(&textContent2);
 	}
-	// get time_macro (child element)
-	kidList = childElement->getElementsByTagName(XMLString::transcode("time_macro"));
-	if (kidList->getLength() > 0) {
-          textContent2 = xercesc::XMLString::transcode(kidList->item(0)->getTextContent());
-	  obPL.set<std::string>("Time Macro",textContent2);
-	  XMLString::release(&textContent2);
-	}
-	std::stringstream listName;
-	listName << "observation-"<<j+1<<":"<<textContent;
-	obsPL.sublist(listName.str()) = obPL;
-	XMLString::release(&textContent);
+	XMLString::release(&phaseName);
       }
+      XMLString::release(&textContent);
       list.sublist("Observation Data") = obsPL;
     }
   }

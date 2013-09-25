@@ -24,41 +24,35 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate f(u, du/dt) = a d(s(u))/dt + A*u - g.                                         
+* Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
 void Richards_PK::fun(
     double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 { 
-  //Amanzi::timer_manager.start("Function");
-
-  //matrix_->ComputeNegativeResidual(u, f);  // compute A*u - g
-
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     Epetra_Vector* u_cells = FS->CreateCellView(u);
-    // Epetra_Vector* u_faces = FS->CreateFaceView(u);
-    // rel_perm->Compute(u, bc_model, bc_values);
-    // UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
+
     Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
     if (matrix_tpfa == 0) {
       Errors::Message msg;
       msg << "Richards PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
       Exceptions::amanzi_throw(msg);
     }
-    // compute A*u - g
+    // compute A*u - rhs
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
-    //ComputeTransmissibilities(*Transmis_faces, *Grav_term_faces);
-    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values, Krel_faces, *Transmis_faces, *Grav_term_faces);
+
+    matrix_tpfa -> ApplyBoundaryConditions(bc_model, bc_values);
     AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, matrix_tpfa);
     
-    rhs = matrix_tpfa->rhs();
+    Teuchos::RCP<Epetra_Vector> rhs = matrix_tpfa->rhs();
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
-    matrix_tpfa->ComputeNegativeResidual(*u_cells,  Krel_faces, *Transmis_faces, f);  
+    matrix_tpfa->ComputeNegativeResidual(*u_cells,  f);  
   }
   else {
-    //compute A*u - g
-     AssembleMatrixMFD(u, Tp);
-     matrix_->ComputeNegativeResidual(u, f);     
+    // compute inegative residual f = A*u - rhs
+    AssembleMatrixMFD(u, Tp);
+    matrix_->ComputeNegativeResidual(u, f);     
   }
 
   const Epetra_Vector& phi = FS->ref_porosity();
@@ -89,7 +83,6 @@ void Richards_PK::fun(
       }
     }
   }
-  //Amanzi::timer_manager.stop("Function");
 }
 
 
@@ -98,16 +91,7 @@ void Richards_PK::fun(
 ****************************************************************** */
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
-  //Amanzi::timer_manager.start("Apply precon");
   preconditioner_->ApplyInverse(X, Y);
-  //Amanzi::timer_manager.stop("Apply precon");
-
-  //AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-  // Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
-  //solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix);
-
-
-
 }
 
 
@@ -116,11 +100,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 ****************************************************************** */
 void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-
-  //Amanzi::timer_manager.start("Update precon");
   AssemblePreconditionerMFD(u, Tp, dTp);
-  ierr = 0;
-  //Amanzi::timer_manager.stop("Update precon");
 }
 
 
