@@ -138,6 +138,10 @@ void Unstructured_observations::make_observations(State& state)
 					&entity_ids);
     }
 
+    if (mesh_block_size == 0) {
+      Exceptions::amanzi_throw(Errors::Message("Cannot make an observation on an empty region: " + (i->second).region));
+    }
+
     // is the user asking for a component concentration?
     int comp_index(0);
     if (comp_names_.size() > 0) {

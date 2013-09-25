@@ -19,25 +19,33 @@ template<class Vector>
 class SolverFnBase {
  public:
   // computes the non-linear functional r = F(u)
-  virtual void Residual(const Teuchos::RCP<Vector>& u, 
+  virtual void Residual(const Teuchos::RCP<Vector>& u,
                         const Teuchos::RCP<Vector>& r) = 0;
 
   // preconditioner toolkit
   virtual void ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-                                   const Teuchos::RCP<Vector>& Pr) = 0;
+          const Teuchos::RCP<Vector>& Pr) = 0;
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) = 0;
 
   // error analysis
-  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u, 
+  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
                            const Teuchos::RCP<const Vector>& du) = 0;
 
   // allow PK to modify a correction
-  virtual bool ModifyCorrection(const Teuchos::RCP<const Vector>& r, 
-                                const Teuchos::RCP<const Vector>& u, 
-                                const Teuchos::RCP<Vector>& du) { return false; }
+  virtual bool ModifyCorrection(const Teuchos::RCP<const Vector>& r,
+          const Teuchos::RCP<const Vector>& u,
+          const Teuchos::RCP<Vector>& du) {
+    return false;
+  }
+
+  // Check the admissibility of an inner iterate (ensures preconditions for
+  // F(u) to be defined).
+  virtual bool IsAdmissible(const Teuchos::RCP<const Vector>& up) {
+    return true;
+  }
 
   // bookkeeping for state
-  virtual void ChangedSolution() = 0;
+  virtual void ChangedSolution() {}
 };
 
 }  // namespace AmanziSolvers

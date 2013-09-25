@@ -987,7 +987,6 @@ The following models can be specified for the intrinsic permeability of the mate
 
  where the directions refer to the global cartesian coordinates.
 
-Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
 
 The following models can be specified for the Hydraulic Conductivity of the material:
 
