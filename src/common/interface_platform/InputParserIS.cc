@@ -81,6 +81,7 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Flow") = create_Flow_List(plist);
   new_list.sublist("Preconditioners") = create_Preconditioners_List(plist);
   new_list.sublist("Solvers") = create_Solvers_List(plist);
+  new_list.sublist("Nonlinear solvers") = create_Nonlinear_Solvers_List(plist);
 
   if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
     new_list.sublist("Chemistry") = CreateChemistryList(plist);
@@ -1061,6 +1062,39 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
+ * Collects nonlinear solvers
+ ****************************************************************** */
+Teuchos::ParameterList create_Nonlinear_Solvers_List(Teuchos::ParameterList* plist) {
+  Teuchos::ParameterList nls_list;
+
+  std::string nonlinear_solver("");
+  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Nonlinear Solver")) {	  
+    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Nonlinear Solver");
+    if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
+      nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
+    }
+  }
+  
+  if (nonlinear_solver.size() > 0) {
+    if (nonlinear_solver == std::string("Newton")) {
+      nls_list.set("solver", "newton");
+    } else if (nonlinear_solver == std::string("inexact Newton")) {
+      nls_list.set("solver", "newton");
+    } else if (nonlinear_solver == "NKA") {
+      nls_list.set("solver", "nka");
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Select exaclty one of the nonlinear solver types 'Newton', 'inexact Newton', or 'NKA', "+ nonlinear_solver + " is not supported."));
+    }
+  } else { // default is nka
+    nls_list.set("solver", "nka");
+  }
+
+  return nls_list;
+
+}
+
+
+/* ******************************************************************
  * Empty
  ****************************************************************** */
 Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
@@ -1099,6 +1133,10 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	    }
 	  }
 	}
+      }
+      // discretization method must be two point flux approximation for if newton is used
+      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+	disc_method = std::string("two point flux approximation");
       }
 
       if (flow_model == "Single Phase" || flow_model == "Richards") {
@@ -2092,12 +2130,12 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     matid_ctr++;
     for (int ii=0; ii<regions.size(); ii++) {
       if (region_to_matid.find(regions[ii]) == region_to_matid.end()) {
-	region_to_matid[regions[ii]] = matid_ctr;
-	matid_to_material[matid_ctr] = matprop_list.name(i);
+        region_to_matid[regions[ii]] = matid_ctr;
+        matid_to_material[matid_ctr] = matprop_list.name(i);
       } else {
-	std::stringstream ss;
-	ss << "There is more than one material assinged to region " << regions[ii] << ".";
-	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+        std::stringstream ss;
+        ss << "There is more than one material assinged to region " << regions[ii] << ".";
+        Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
       }
     } 
 
@@ -2125,17 +2163,48 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     
     // permeability...
     double perm_x, perm_y, perm_z;
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Uniform")) {
-      perm_x = perm_y = perm_z = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
-    } else if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
-      perm_x = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("x");
-      perm_y = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("y");
-      if (matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").isParameter("z") ) {
-	perm_z = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("z");
-      }
-    } else {
-      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
+    Teuchos::ParameterList& mplist = matprop_list.sublist(matprop_list.name(i));
+    if ((mplist.isSublist("Intrinsic Permeability: Uniform") || mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform"))
+        && (mplist.isSublist("Hydraulic Conductivity: Uniform") || mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform"))) {
+      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified either Intrinsic Permeability or Hydraulic Conductivity, but not both."));     
     }
+
+    if (mplist.isSublist("Intrinsic Permeability: Uniform")) {
+      perm_x = perm_y = perm_z = mplist.sublist("Intrinsic Permeability: Uniform").get<double>("Value");
+    } else if (mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
+      perm_x = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("x");
+      perm_y = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("y");
+      if (mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").isParameter("z") ) {
+        if (spatial_dimension_ == 3) {
+          perm_z = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("z");
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("Intrinsic Permeability: Anisotropic Uniform defines a value for z, while the spatial dimension of the problem not 3."));
+        }
+      }
+    } else if (mplist.isSublist("Hydraulic Conductivity: Uniform")) {
+      perm_x = perm_y = perm_z = mplist.sublist("Hydraulic Conductivity: Uniform").get<double>("Value");
+      // now scale with rho, g and mu to get correct permeability values
+      perm_x *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_y *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_z *= viscosity/(density*GRAVITY_MAGNITUDE);
+    } else if (mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform")) {
+      perm_x = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("x");
+      perm_y = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("y");
+      if (mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").isParameter("z")) {
+        if (spatial_dimension_ == 3) {
+          perm_z = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("z");
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("Hydraulic Conductivity: Anisotropic Uniform defines a value for z, while the spatial dimension of the problem not 3."));          
+        }
+      }
+      // now scale with rho, g and mu to get correct permeablity values
+      perm_x *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_y *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_z *= viscosity/(density*GRAVITY_MAGNITUDE);
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as 'Intrinsic Permeability: Uniform', 'Intrinsic Permeability: Anisotropic Uniform', 'Hydraulic Conductivity: Uniform', or 'Hydraulic Conductivity: Anisotropic Uniform'"));
+    }
+
     Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
     Teuchos::ParameterList& aux_list = 
       permeability_ic.sublist("function").sublist(reg_str)
@@ -2148,11 +2217,11 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       .set<double>("value", perm_x);
     if (spatial_dimension_ >= 2) {
       aux_list.sublist("DoF 2 Function").sublist("function-constant")
-	.set<double>("value", perm_y);
+          .set<double>("value", perm_y);
     }
     if (spatial_dimension_ == 3) {
       aux_list.sublist("DoF 3 Function").sublist("function-constant")
-	.set<double>("value", perm_z);
+          .set<double>("value", perm_z);
     }
     
     // specific_yield...
