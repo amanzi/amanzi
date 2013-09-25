@@ -18,6 +18,11 @@
 
 #include "boost/mpi.hpp"
 
+// For now, we use the "interim" chemistry input spec, in which the 
+// initial and boundary conditions are specified within the Chemistry
+// parameter list.
+#define USE_INTERIM_INPUT_SPEC 1
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -426,8 +431,12 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     msg << "  No 'State' sublist was found!\n";
     Exceptions::amanzi_throw(msg);
   }
+#if USE_INTERIM_INPUT_SPEC
+  Teuchos::ParameterList initial_conditions = chem_param_list_.sublist("Initial Conditions");
+#else
   Teuchos::ParameterList state_list = main_param_list_.sublist("state");
   Teuchos::ParameterList initial_conditions = state_list.sublist("initial conditions");
+#endif
   ParseChemicalConditions(initial_conditions, chem_initial_conditions_);
   if (chem_initial_conditions_.empty())
   {
@@ -436,15 +445,16 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     Exceptions::amanzi_throw(msg);
   }
 
+#if USE_INTERIM_INPUT_SPEC
   // Boundary conditions.
   chem_boundary_conditions_.clear();
-  if (!main_param_list_.isSublist("boundary conditions"))
+  if (!chem_param_list_.isSublist("Boundary Conditions"))
   {
     msg << "Chemistry_PK::XMLParameters(): \n";
     msg << "  No boundary conditions were found!\n";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList boundary_conditions = main_param_list_.sublist("initial conditions");
+    Teuchos::ParameterList boundary_conditions = chem_param_list_.sublist("Boundary Conditions");
   ParseChemicalConditions(boundary_conditions, chem_boundary_conditions_);
   if (chem_boundary_conditions_.empty())
   {
@@ -452,6 +462,11 @@ void Alquimia_Chemistry_PK::XMLParameters(void)
     msg << "  No chemical boundary conditions were found!\n";
     Exceptions::amanzi_throw(msg);
   }
+#else
+  // We don't actually enforce boundary conditions in the new model.
+  // The Transport PK does all the work using the Alquimia-enabled 
+  // boundary function.
+#endif
 
   // Other settings.
   set_max_time_step(chem_param_list_.get<double>("Max Time Step (s)", 9.9e9));

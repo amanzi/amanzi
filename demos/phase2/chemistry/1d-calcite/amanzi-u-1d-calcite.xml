@@ -12,7 +12,7 @@
         <Parameter name="Start" type="double" value="0.0"/>
         <Parameter name="End" type="double" value="1.5778463e9"/>
         <Parameter name="Switch" type="double" value="0.0"/>
-	<Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
+	      <Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
         <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
       </ParameterList>
     </ParameterList>
@@ -158,7 +158,6 @@
   <ParameterList name="Boundary Conditions">
     <ParameterList name="West BC">
       <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
-      <Parameter name="PFloTran Constraint" type="string" value="west"/>
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
@@ -259,6 +258,18 @@
     </ParameterList> <!-- Thermodynamic Database -->
     <Parameter name="Engine" type="string" value="PFloTran"/>
     <Parameter name="Engine Input File" type="string" value="1d-calcite.in"/>
+    <ParameterList name="Initial Conditions">
+      <ParameterList name="Initial Condition">
+        <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
+        <Parameter name="PFloTran Constraint" type="string" value="initial"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Boundary Conditions">
+      <ParameterList name="West BC">
+        <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
+        <Parameter name="PFloTran Constraint" type="string" value="west"/>
+      </ParameterList>
+    </ParameterList>
     <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
