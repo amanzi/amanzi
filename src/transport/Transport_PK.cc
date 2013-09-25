@@ -67,7 +67,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
 
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
-  mass_tracer_exact = 0.0;
+  mass_tracer_exact = 0.0;  // Tracer is defined as species #0.
 }
 
 
@@ -364,6 +364,7 @@ void Transport_PK::Advance(double dT_MPC)
 
   dT = dT_original;  // restore the original dT (just in case)
 
+  // We define tracer as the species #0 as calculate some statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << ncycles << " sub-cycles, dT_stable=" << dT_original 
@@ -391,8 +392,8 @@ void Transport_PK::Advance(double dT_MPC)
     mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
 
     double mass_loss = mass_exact - mass_tracer;
-    *(vo_->os()) << "tracer: " << tccmin << " to " << tccmax << " at " << T_physics << "[sec]" << endl;
-    *(vo_->os()) << "mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
+    *(vo_->os()) << "species #0: " << tccmin << " <= concentration <= " << tccmax << endl;
+    *(vo_->os()) << "species #0: mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
   }
 
   if (dispersion_models.size() != 0) {
@@ -697,7 +698,10 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
     Functions::TransportDomainFunction::Iterator src;
     for (src = src_sink->begin(); src != src_sink->end(); ++src) {
       int c = src->first;
-      tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
+      double value = dTp * mesh_->cell_volume(c) * src->second;
+
+      tcc[i][c] += value;
+      if (i == 0) mass_tracer_exact += value;
     }
   }
 }

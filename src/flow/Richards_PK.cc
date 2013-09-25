@@ -195,8 +195,6 @@ void Richards_PK::InitPK()
   } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
     matrix_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
     preconditioner_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
-    // matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
-    // preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
   } else {
     matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
     preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
@@ -275,10 +273,7 @@ void Richards_PK::InitPicard(double T0)
   // calculate initial guess: cleaning is required (lipnikov@lanl.gov)
   T_physics = ti_specs_igs_.T0;
   dT = ti_specs_igs_.dT0;
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) 
-    AdvanceToSteadyState_PicardNewton(ti_specs_igs_);
-  else
-    AdvanceToSteadyState_Picard(ti_specs_igs_);
+  AdvanceToSteadyState_Picard(ti_specs_igs_);
 
   Epetra_Vector& ws = FS->ref_water_saturation();
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();

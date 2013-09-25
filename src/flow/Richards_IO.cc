@@ -70,8 +70,9 @@ void Richards_PK::ProcessParameterList()
   }
 
   // experimental solver (NKA is default)
-  string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");
-  ProcessStringExperimentalSolver(experimental_solver_name, &experimental_solver_);
+  // string experimental_solver_name = rp_list_.get<string>("experimental solver", "nka");
+  string solver_name = nonlin_solver_list_.get<string>("solver", "nka");
+  ProcessStringExperimentalSolver(solver_name, &experimental_solver_);
 
   // Time integrator for period I, temporary called initial guess initialization
   if (rp_list_.isSublist("initial guess pseudo time integrator")) {
