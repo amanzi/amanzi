@@ -393,5 +393,8 @@
   </ParameterList>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
   <Parameter isUsed="true" name="input file name" type="string" value="test_anjac.xml"/>
+  <ParameterList name="Nonlinear solvers">
+    <Parameter name="solver" type="string" value="newton"/>
+  </ParameterList>
 </ParameterList>
 
