@@ -74,6 +74,17 @@ if (NOT MPI_WRAPPERS_IN_USE)
   See previous error messages to determine missing compiler.")
 endif()
 
+
+include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
+# prepare the version numbers file
+set(TPL_VERSIONS_INCLUDE_FILE ${CMAKE_BINARY_DIR}/tpl_versions.h)
+file(WRITE ${TPL_VERSIONS_INCLUDE_FILE} "")
+install(FILES ${CMAKE_BINARY_DIR}/tpl_versions.h DESTINATION include)
+amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
+  PREFIX AMANZI
+  VERSION ${AMANZI_TPLS_VERSION_MAJOR} ${AMANZI_TPLS_VERSION_MINOR} ${AMANZI_TPLS_VERSION_PATCH})
+
+
 # ############################################################################ #
 # Build options
 # ############################################################################ #
