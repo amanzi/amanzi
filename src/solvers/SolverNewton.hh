@@ -33,8 +33,9 @@ class SolverNewton : public Solver<Vector> {
   int num_itrs() { return num_itrs_; }
   int pc_calls() { return pc_calls_; }
 
- protected:
+ private:
   void Init_();
+  int Newton_ErrorControl_(double error, double previous_error, double l2_error);
 
  protected:
   Teuchos::ParameterList plist_;
@@ -49,7 +50,7 @@ class SolverNewton : public Solver<Vector> {
   int fun_calls_, pc_calls_;
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_;
-  int monitor_;
+  ConvergenceMonitor monitor_;
 };
 
 
@@ -65,7 +66,14 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
-  monitor_ = SOLVER_MONITOR_RESIDUAL;
+
+  std::string monitor_name = plist_.get<std::string>("monitor", "monitor residual");
+
+  if (monitor_name == "monitor update") {
+    monitor_ = SOLVER_MONITOR_UPDATE;
+  } else {
+    monitor_ = SOLVER_MONITOR_RESIDUAL;  // default value
+  }
 
   fun_calls_ = 0;
   pc_calls_ = 0;
@@ -91,21 +99,20 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
-  double l2_error_initial(0.);
+  double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0);
   int divergence_count(0);
 
-  // nonlinear solver main loop
   do {
     // Check for too many nonlinear iterations.
     if (num_itrs_ > max_itrs_) {
-      if (vo_->os_OK(Teuchos::VERB_LOW))
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Solve reached maximum of iterations " << num_itrs_ 
                    << "  error = " << error << endl;
       return SOLVER_MAX_ITERATIONS;
     }
 
-    // Update the preconditioner if necessary.
+    // Update the preconditioner.
     pc_calls_++;
     fn_->UpdatePreconditioner(u);
 
@@ -122,9 +129,6 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       error = fn_->ErrorNorm(u, r);
       r->Norm2(&l2_error);
 
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-        *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << endl;
-
       // attempt to catch non-convergence early
       if (num_itrs_ == 1) {
         l2_error_initial = l2_error;
@@ -137,21 +141,8 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
         }
       }
 
-      if (error < tol_) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-          *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << endl;
-        return SOLVER_CONVERGED;
-      } else if (error > overflow_tol_) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) 
-          *vo_->os() << "Solve failed, error " << error << " > "
-                     << overflow_tol_ << " (overflow)" << endl;
-        return SOLVER_OVERFLOW;
-      } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) 
-          *vo_->os() << "Solver threatens to overflow, error " << error << " > "
-                     << previous_error << " (previous error)" << endl;
-        return SOLVER_OVERFLOW;
-      }
+      int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
+      if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
     // Apply the preconditioner to the nonlinear residual.
@@ -203,27 +194,39 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       error = fn_->ErrorNorm(u, du);
       du->Norm2(&l2_error);
 
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-        *vo_->os() << num_itrs_ << ": error=" << error << ",  L2-error=" << l2_error << endl;
-
-      // Check for convergence.
-      if (error < tol_) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
-          *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << endl;
-        return SOLVER_CONVERGED;
-      } else if (error > overflow_tol_) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-          *vo_->os() << "Solver failed, error " << error << " > "
-                     << overflow_tol_ << " (overflow)" << endl;
-        return SOLVER_OVERFLOW;
-      } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
-          *vo_->os() << "Solver threatens to overflow, FAIL." << endl
-                     << " ||error||=" << error << ", ||error_prev||=" << previous_error << endl;
-        return SOLVER_OVERFLOW;
-      }
+      int ierr = Newton_ErrorControl_(error, previous_error, l2_error);
+      if (ierr != SOLVER_CONTINUE) return ierr;
     }
   } while (true);
+}
+
+
+/* ******************************************************************
+* Internal error control
+****************************************************************** */
+template<class Vector, class VectorSpace>
+int SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(
+   double error, double previous_error, double l2_error)
+{
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << endl;
+
+  if (error < tol_) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+      *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << endl;
+    return SOLVER_CONVERGED;
+  } else if (error > overflow_tol_) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
+      *vo_->os() << "Solve failed, error " << error << " > "
+                 << overflow_tol_ << " (overflow)" << endl;
+    return SOLVER_OVERFLOW;
+  } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
+      *vo_->os() << "Solver threatens to overflow, error " << error << " > "
+                 << previous_error << " (previous error)" << endl;
+    return SOLVER_OVERFLOW;
+  }
+  return SOLVER_CONTINUE;
 }
 
 }  // namespace AmanziSolvers

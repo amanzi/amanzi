@@ -16,12 +16,6 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-enum ConvergenceMonitor {
-     SOLVER_MONITOR_UPDATE = 0,
-     SOLVER_MONITOR_PCED_RESIDUAL = 1,
-     SOLVER_MONITOR_RESIDUAL = 2
-};
-
 template<class Vector>
 class Solver {
  public:

@@ -1,7 +1,8 @@
 /*
   This is the Nonlinear Solver component of the Amanzi code.
 
-  Interface for an evaluator required for a nonlinear solver.
+  Interface for an evaluator required for a nonlinear solver
+  F(u) = 0.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
