@@ -1,102 +1,79 @@
 import io
 
 # Searches based upon the "name" attribute as the unique identifyer.
-def _findSingleElementNameGenerator(elem, name):
-    if elem.get("name") == name:
-        yield elem
-    else:
-        for subel in elem:
-            for entry in _findSingleElementNameGenerator(subel, name):
-                yield entry
-
-def findElementNameGenerator(elem, path):
-    """Generator that parses through all Elements with given relative path/name.
-
-    The path argument may be either a name or a path, which may be
-    either absolute or relative, i.e.:
-      findElementNameGenerator(elem, "Mesh")
-      findElementNameGenerator(elem, "Mesh/Expert/Verify Mesh")
-      findElementNameGenerator(elem, "/Mesh/Expert/Verify Mesh")
-
-    """
-    enames = path.strip("/").split("/")
-    if len(enames) == 1:
-        for entry in _findSingleElementNameGenerator(elem, enames[0]):
-            yield entry
-    else:
-        for entry in _findSingleElementNameGenerator(elem, enames[0]):
-            for subentry in findElementNameGenerator(entry, "/".join(enames[1:])):
-                yield subentry
-
-def getElementByName(elem, path):
-    """Generator that parses through all Elements from an absolute path"""
-
+def _getChildByName(elem, name):
+    """Assumed that names are unique!"""
+    for subel in elem:
+        if (name == subel.get("name")):
+            return subel
 
 # Searches based upon tags -- no uniqueness!
-def _findSingleElementTagGenerator(elem, tag):
-    if elem.tag == tag:
-        yield elem
+def _tagGenerator(elem, tag):
+    for subel in elem:
+        if tag == subel.tag:
+            yield subel
+
+def getElementByName(elem, path):
+    """Assumed that names are unique!"""
+    enames = path.strip("/").split("/")
+    assert(elem.get("name") == enames[0])
+    enames.pop(0)
+
+    if len(enames) == 0:
+        return elem
     else:
-        for subel in elem:
-            for entry in _findSingleElementTagGenerator(subel, tag):
-                yield entry
+        return getElementByName(_getChildByName(elem, enames[0]), "/".join(enames))
 
-def findElementTagGenerator(elem, path):
-    """Generator that parses through all Elements with given relative path/tag.
+def getElementByPath(elem, path):
+    if elem.tag == "ParameterList":
+        return getElementByName(elem, path)
 
-    The path argument may be either a tag or a path, which may be
-    either absolute or relative, i.e.:
-      findElementTagGenerator(elem, "Mesh")
-      findElementTagGenerator(elem, "Mesh/Expert/Verify Mesh")
-      findElementTagGenerator(elem, "/Mesh/Expert/Verify Mesh")
+    etagnames = path.strip("/").split("/")
+    mytagname = etagnames[0].strip().strip("}").strip("{").split(",")
 
-    """
-    path = path.strip("/")
-    etags = path.split("/")
-    if len(etags) == 1:
-        for entry in _findSingleElementTagGenerator(elem, etags[0]):
-            yield entry
+    if len(mytagname) > 0:
+        assert elem.tag == mytagname[0]
+    if len(mytagname) > 1:
+        assert elem.get("name") == mytagname[1]
+    etagnames.pop(0)
+
+    if len(etagnames) == 0:
+        return elem
     else:
-        for entry in _findSingleElementTagGenerator(elem, etags[0]):
-            for subentry in findElementTagGenerator(entry, "/".join(etags[1:])):
-                yield subentry
+        childtagname = etagnames[0].strip().strip("}").strip("{").split(",")
+        for child in _tagGenerator(elem, childtagname[0]):
+            if len(childtagname) == 1:
+                return getElementByPath(child, "/".join(etagnames))
+            else:
+                if child.get("name") == childtagname[1]:
+                    return getElementByPath(child, "/".join(etagnames))
 
 
-# Common interface
-def getElementByName(xml, namepath):
-    return findElementNameGenerator(xml, namepath).next()
+# def searchAndRemoveByName(pl, abspath):
+#     """Search for an absolute path and remove the parameter."""
+#     subpath = abspath.split("/")
+#     containing_path = "/".join(subpath[:-1])
+#     container = getElementByName(pl, containing_path)
+#     container.remove(container.getElement(subpath[-1]))
 
-def getElementByPath(xml, path):
-    if xml.tag == "ParameterList" or xml.tag == "Parameter":
-        return findElementNameGenerator(xml, path).next()
-    else:
-        return findElementTagGenerator(xml, path).next()
+# def searchAndReplaceByName(pl, changeset):
+#     """Search for a path and replace the value.
 
-def searchAndRemoveByName(pl, abspath):
-    """Search for an absolute path and remove the parameter."""
-    subpath = abspath.split("/")
-    containing_path = "/".join(subpath[:-1])
-    container = getElementByName(pl, containing_path)
-    container.remove(container.getElement(subpath[-1]))
+#     Changeset is expected of the form:
+#       path/to/my/parameter=newvalue
 
-def searchAndReplaceByName(pl, changeset):
-    """Search for a path and replace the value.
+#     or
+#       /abs/path/to/my/parameter=newvalue
+#     """
+#     split = changeset.split("=")
+#     if len(split) != 2:
+#         raise RuntimeError("Invalid changeset %s not of form path=val"%changeset)
 
-    Changeset is expected of the form:
-      path/to/my/parameter=newvalue
-
-    or
-      /abs/path/to/my/parameter=newvalue
-    """
-    split = changeset.split("=")
-    if len(split) != 2:
-        raise RuntimeError("Invalid changeset %s not of form path=val"%changeset)
-
-    path,val = tuple(split)
-    if path.startswith("/"):
-        elem = getElementByName(pl, path)
-        elem.setValue(val)
-    else:
-        for elem in findElementNameGenerator(pl,path):
-            elem.setValue(val)
+#     path,val = tuple(split)
+#     if path.startswith("/"):
+#         elem = getElementByName(pl, path)
+#         elem.setValue(val)
+#     else:
+#         for elem in findElementNameGenerator(pl,path):
+#             elem.setValue(val)
 
