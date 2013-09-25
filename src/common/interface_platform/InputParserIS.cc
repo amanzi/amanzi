@@ -825,11 +825,24 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
     if ( plist->sublist("Execution Control").isParameter("Transport Model") ) {
       if ( plist->sublist("Execution Control").get<std::string>("Transport Model") == "On" ) {
 
+	// get the expert parameters
+	double CFL(1.0);
+	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Transport Process Kernel")) {
+	      Teuchos::ParameterList t_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Transport Process Kernel");
+	      if (t_exp_params.isParameter("CFL")) {
+		CFL = t_exp_params.get<double>("CFL");
+	      }
+	    }
+	  }
+	}
+	
         // transport is on, set some defaults
         trp_list.set<int>("discretization order",1);
         trp_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         trp_list.set<std::string>("enable internal tests", "no");
-        trp_list.set<double>("CFL", 1.0);
+        trp_list.set<double>("CFL", CFL);
         trp_list.set<std::string>("flow mode", "transient");
         trp_list.set<std::string>("advection limiter", "Tensorial");
 
@@ -1059,22 +1072,56 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
       Teuchos::ParameterList *flow_list;
 
+      // get the expert parameters
+      std::string disc_method("optimized mfd scaled");
+      std::string rel_perm("upwind with Darcy flux");
+      double atm_pres(ATMOSPHERIC_PRESSURE);
+      std::string nonlinear_solver("NKA");
+
+      if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Flow Process Kernel")) {
+	    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Flow Process Kernel");
+	    if (fl_exp_params.isParameter("Discretization Method")) {
+	      disc_method = fl_exp_params.get<std::string>("Discretization Method");
+	    }
+	    if (fl_exp_params.isParameter("Relative Permeability")) {
+	      rel_perm = fl_exp_params.get<std::string>("Relative Permeability");
+	    }
+	    if (fl_exp_params.isParameter("atmospheric pressure")) {
+	      atm_pres = fl_exp_params.get<double>("atmospheric pressure");
+	    }
+	  }
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Nonlinear Solver")) {	  
+	    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Nonlinear Solver");
+	    if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
+	      nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
+	    }
+	  }
+	}
+      }
+
       if (flow_model == "Single Phase" || flow_model == "Richards") {
 	
 	if (flow_model == "Single Phase") {
 	  Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
 	  darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-	  darcy_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
-	  darcy_problem.set<std::string>("discretization method", "optimized mfd scaled");
+	  darcy_problem.set<double>("atmospheric pressure", atm_pres);
+	  darcy_problem.set<std::string>("discretization method", disc_method);
 	  
 	  flow_list = &darcy_problem; // we use this below to insert sublists that are shared by Richards and Darcy	
 	} else if (flow_model == "Richards") {
 	  Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
-	  richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
+	  richards_problem.set<std::string>("relative permeability", rel_perm);
 	  // this one should come from the input file...
 	  richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-	  richards_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
-	  richards_problem.set<std::string>("discretization method", "optimized mfd scaled");
+	  richards_problem.set<double>("atmospheric pressure", atm_pres);
+	  richards_problem.set<std::string>("discretization method", disc_method);
+	  
+	  if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+	    richards_problem.set<std::string>("experimental solver","newton");
+	  }
+	  
 	  // see if we need to generate a Picard list
 	  
 	  flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
@@ -1229,6 +1276,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	      }
 	    }
 	  }
+	  if (nonlinear_solver == std::string("Newton")) {
+	    sti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	  }
 	}
 
 	// only include the transient list if not in steady mode
@@ -1305,7 +1355,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	      }
 	    }
 	  }
-	  
+	  if (nonlinear_solver == std::string("Newton")) {
+	    tti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	  }
+
+
 	  transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 	}
       }
@@ -1784,6 +1838,7 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
         Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
+	
 
         if (! (bc_flux.isParameter("Inward Mass Flux") || bc_flux.isParameter("Outward Mass Flux"))  )  {
           // we can only handle mass fluxes right now
@@ -1808,7 +1863,8 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("mass flux").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
-
+	
+	tbc.set<bool>("rainfall", bc_flux.get<bool>("rainfall",false));
 
         if ( times.size() == 1 ) {
           Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");

@@ -374,6 +374,10 @@ Usage:
 
      * [U] `"linear solver iterative method`" [string] select the iterative method to be used in linear solvers, choose one of `"pcg`", or `"gmres`". (default: `"gmres`")
 
+   * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
+
+     * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", and `"inexact Newton`".
+
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 
      * [U] `"Trilinos ML`" Parameter used by Trilinos multi-level solver, ML
@@ -1297,11 +1301,11 @@ The following boundary condition parameterizations are supported:
 * [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] 
   (see the note below) and one of the following: 
 
-    * [U]  `"Inward Volumetric Flux`" [Array double], 
+    * []  `"Inward Volumetric Flux`" [Array double], 
 
     * [SU] `"Inward Mass Flux`" [Array double], 
 
-    * [U]  `"Outward Volumetric Flux`" [Array double], or
+    * []  `"Outward Volumetric Flux`" [Array double], or
 
     * [SU] `"Outward Mass Flux`" [Array double]. 
 
