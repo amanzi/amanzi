@@ -171,6 +171,7 @@ public:
 
   Teuchos::ParameterList solver_list_;
   Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList nonlin_solver_list_;
 
   AmanziGeometry::Point gravity_;
   double rho_, mu_;
