@@ -65,3 +65,8 @@ Plot the solutions
    :align: center
 
 .. include:: table_values.txt
+
+
+:math:`SO_2`
+
+:math:`\ce{SO2}`

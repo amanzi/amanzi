@@ -189,7 +189,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+'preamble': '\usepackage[version=3]{mhchem}',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -252,3 +252,4 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+

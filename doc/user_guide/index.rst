@@ -11,7 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
-  
+   capabilities/index.rst  
    install/index.rst
    viz/index.rst
    verification/index.rst

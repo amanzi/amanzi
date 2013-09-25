@@ -119,9 +119,7 @@ if __name__ == "__main__":
     input_filename = "amanzi_steady_linear.xml"
     try: 
         run_amanzi.run_amanzi("../"+input_filename)
-        print "trying to loadInputXML ..."
         obs_xml=loadInputXML(input_filename)
-        print "trying to loadDataFile ..."
         obs_data=loadDataFile(obs_xml)
 
         fig1= plt.figure()
@@ -131,7 +129,7 @@ if __name__ == "__main__":
         plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
         MakeTable(obs_data,obs_xml,input_filename)
 
-        plt.show()
+        # plt.show()
 
     finally:
         pass 
