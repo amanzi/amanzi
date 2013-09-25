@@ -275,10 +275,7 @@ void Richards_PK::InitPicard(double T0)
   // calculate initial guess: cleaning is required (lipnikov@lanl.gov)
   T_physics = ti_specs_igs_.T0;
   dT = ti_specs_igs_.dT0;
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) 
-    AdvanceToSteadyState_PicardNewton(ti_specs_igs_);
-  else
-    AdvanceToSteadyState_Picard(ti_specs_igs_);
+  AdvanceToSteadyState_Picard(ti_specs_igs_);
 
   Epetra_Vector& ws = FS->ref_water_saturation();
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
