@@ -19,7 +19,7 @@ def findElementNameGenerator(elem, path):
       findElementNameGenerator(elem, "/Mesh/Expert/Verify Mesh")
 
     """
-    enames = path.split("/")
+    enames = path.strip("/").split("/")
     if len(enames) == 1:
         for entry in _findSingleElementNameGenerator(elem, enames[0]):
             yield entry

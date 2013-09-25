@@ -14,8 +14,9 @@ Contents:
   
    install/index.rst
    viz/index.rst
-   testing/index.rst
+   verification/index.rst
    prototype/index.rst
+   
 
 Indices and tables
 ==================
