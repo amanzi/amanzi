@@ -2243,7 +2243,9 @@ void  PorousMedia::read_comp()
                   const std::string purpose = bc_regions[j].purpose;
                   for (int k=0; k<7; ++k) {
                       if (purpose == PMAMR::RpurposeDEF[k]) {
-                          BL_ASSERT(k != 6);
+			  if (k == 6) {
+			    BoxLib::Abort(std::string("BC \""+bcname+"\" must be applied on a face region").c_str());
+			  }
                           bool this_is_hi = (k>3);
                           if (is_hi < 0) {
                               is_hi = this_is_hi;
