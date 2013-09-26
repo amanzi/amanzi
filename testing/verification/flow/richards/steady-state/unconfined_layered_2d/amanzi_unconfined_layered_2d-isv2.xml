@@ -1,0 +1,1586 @@
+<amanzi_input version="2.0.0" type="unstructured">
+
+	<model_description name="unconfined_layered_2d">
+		<comments>Steady-State Richards: unconfined_layered_2d</comments>
+		<model_id>2SSUncFlow1</model_id>
+		<author>Greg Flach</author>
+		<units>
+			<length_unit>m</length_unit>
+			<time_unit>s</time_unit>
+			<mass_unit>kg</mass_unit>
+			<conc_unit>molar</conc_unit>
+		</units>
+	</model_description>
+
+	<definitions>
+		<macros>
+			<time_macro name="Steady State">
+				<time>3.16e+12</time>
+			</time_macro>
+		</macros>	
+	</definitions>
+
+	<process_kernels>
+		<comments>Variably saturated flow</comments>
+      		<flow state = "on" model = "richards"/>
+      		<transport state = "off" algorithm="none"/>
+      		<chemistry state = "off" process_model="none"/>
+	</process_kernels>
+
+	<phases>
+		<liquid_phase name="water">
+			<eos>false</eos>
+			<viscosity>1.002E-03</viscosity>
+			<density>998.2</density>
+		</liquid_phase>
+	</phases>
+
+	<execution_controls>
+		<verbosity level="high"/>
+		<execution_control_defaults mode="steady" method="bdf1" />
+		<execution_control  start="0.0" end="3.16e+12" init_dt="1000" mode = "steady" method="bdf1" />
+	</execution_controls>
+
+	<numerical_controls>
+	        <linear_solver>
+			<max_iterations>10</max_iterations>
+			<tolerance>1.0e-18</tolerance>
+		</linear_solver>
+	</numerical_controls>
+
+        <mesh framework="mstk">
+		<comments>Three-dimensional box 304.8m x 1.0m x 64.008m</comments>
+		<dimension>3</dimension>
+		<generate>
+			<number_of_cells nx = "50"  ny = "1"  nz = "105"/>
+			<box  low_coordinates = "0.0, 0.0, 0.0" high_coordinates = "304.8, 1.0, 64.008"/>
+		</generate>
+	</mesh>
+
+	<regions>
+  		<comments></comments>
+		<region name ="Entire Domain">
+			<comments>One region comprising the entire domain</comments>
+			<box low_coordinates="0.0, 0.0, 0.0"      high_coordinates="304.8, 1.0, 64.008"/>
+		</region>
+		<region name ="Confined Aquifer">
+			<comments>Confined aquifer</comments>
+			<box low_coordinates="0.0, 0.0, 0.0"      high_coordinates="304.8, 1.0, 30.48"/>
+		</region>
+		<region name ="Confining Unit">
+			<comments>Confining unit</comments>
+			<box low_coordinates="0.0, 0.0, 30.48"    high_coordinates="304.8, 1.0, 33.528"/>
+		</region>
+		<region name ="Unconfined Aquifer">
+			<comments>Unconfined aquifer</comments>
+			<box low_coordinates="0.0, 0.0, 33.528"   high_coordinates="304.8, 1.0, 64.008"/>
+		</region>
+
+		<region name ="Left Confined Aquifer">
+			<comments>Confined aquifer left boundary</comments>
+			<box low_coordinates="0.0, 0.0, 0.0"      high_coordinates="0.0, 1.0, 30.48"/>
+		</region>
+		<region name ="Left Confining Unit">
+			<comments>Confining unit left boundary</comments>
+			<box low_coordinates="0.0, 0.0, 30.48"    high_coordinates="0.0, 1.0, 33.528"/>
+		</region>
+		<region name ="Left Confined Aquifer">
+			<comments>Unconfined aquifer left boundary</comments>
+			<box low_coordinates="0.0, 0.0, 33.528"   high_coordinates="0.0, 1.0, 64.008"/>
+		</region>
+		<region name ="Right Confined Aquifer">
+			<comments>Confined aquifer right boundary</comments>
+			<box low_coordinates="304.8, 0.0, 0.0"    high_coordinates="304.8, 1.0, 30.48"/>
+		</region>
+		<region name ="Right Confining Unit">
+			<comments>Confining unit right boundary</comments>
+			<box low_coordinates="304.8, 0.0, 30.48"  high_coordinates="304.8, 1.0, 33.528"/>
+		</region>
+		<region name ="Right Confined Aquifer">
+			<comments>Unconfined aquifer right boundary</comments>
+			<box low_coordinates="304.8, 0.0, 33.528" high_coordinates="304.8, 1.0, 64.008"/>
+		</region>
+    <!-- 
+	 Observation points:
+    -->
+		<point name="Confined x=10 ft"	coordinate="3.048, 0.5, 15.5448"/>
+		<point name="Confined x=90 ft"	coordinate="27.432, 0.5, 15.5448"/>
+		<point name="Confined x=190 ft"	coordinate="57.912, 0.5, 15.5448"/>
+		<point name="Confined x=290 ft"	coordinate="88.392, 0.5, 15.5448"/>
+		<point name="Confined x=390 ft"	coordinate="118.87, 0.5, 15.5448"/>
+		<point name="Confined x=490 ft"	coordinate="149.35, 0.5, 15.5448"/>
+		<point name="Confined x=590 ft"	coordinate="179.83, 0.5, 15.5448"/>
+		<point name="Confined x=690 ft"	coordinate="210.31, 0.5, 15.5448"/>
+		<point name="Confined x=790 ft"	coordinate="243.79, 0.5, 15.5448"/>
+		<point name="Confined x=890 ft"	coordinate="271.27, 0.5, 15.5448"/>
+		<point name="Confined x=990 ft"	coordinate="301.75, 0.5, 15.5448"/>
+
+		<point name="Unconfined x=10 ft"	coordinate="3.048, 0.5, 33.8328"/>
+		<point name="Unconfined x=90 ft"	coordinate="27.432, 0.5, 33.8328"/>
+		<point name="Unconfined x=190 ft"	coordinate="57.912, 0.5, 33.8328"/>
+		<point name="Unconfined x=290 ft"	coordinate="88.392, 0.5, 33.8328"/>
+		<point name="Unconfined x=390 ft"	coordinate="118.87, 0.5, 33.8328"/>
+		<point name="Unconfined x=490 ft"	coordinate="149.35, 0.5, 33.8328"/>
+		<point name="Unconfined x=590 ft"	coordinate="179.83, 0.5, 33.8328"/>
+		<point name="Unconfined x=690 ft"	coordinate="210.31, 0.5, 33.8328"/>
+		<point name="Unconfined x=790 ft"	coordinate="240.79, 0.5, 33.8328"/>
+		<point name="Unconfined x=890 ft"	coordinate="271.27, 0.5, 33.8328"/>
+		<point name="Unconfined x=990 ft"	coordinate="301.75, 0.5, 33.8328"/>
+
+		<point name="Top x=10 ft"	coordinate="3.048, 0.5, 63.7032"/>
+		<point name="Top x=90 ft"	coordinate="27.432, 0.5, 63.7032"/>
+		<point name="Top x=190 ft"	coordinate="57.912, 0.5, 63.7032"/>
+		<point name="Top x=290 ft"	coordinate="88.392, 0.5, 63.7032"/>
+		<point name="Top x=390 ft"	coordinate="118.87, 0.5, 63.7032"/>
+		<point name="Top x=490 ft"	coordinate="149.35, 0.5, 63.7032"/>
+		<point name="Top x=590 ft"	coordinate="179.83, 0.5, 63.7032"/>
+		<point name="Top x=690 ft"	coordinate="210.31, 0.5, 63.7032"/>
+		<point name="Top x=790 ft"	coordinate="240.79, 0.5, 63.7032"/>
+		<point name="Top x=890 ft"	coordinate="271.27, 0.5, 63.7032"/>
+		<point name="Top x=990 ft"	coordinate="301.75, 0.5, 63.7032"/>
+
+		<point name="Left z=1 ft"	coordinate="0.0, 0.5, 0.3048"/>
+		<point name="Left z=99 ft"	coordinate="0.0, 0.5, 30.1752"/>
+		<point name="Left z=101 ft"	coordinate="0.0, 0.5, 30.7848"/>
+		<point name="Left z=109 ft"	coordinate="0.0, 0.5, 33.2232"/>
+		<point name="Left z=111 ft"	coordinate="0.0, 0.5, 33.8328"/>
+		<point name="Left z=121 ft"	coordinate="0.0, 0.5, 36.8808"/>
+		<point name="Left z=129 ft"	coordinate="0.0, 0.5, 39.3192"/>
+		<point name="Left z=131 ft"	coordinate="0.0, 0.5, 39.9288"/>
+		<point name="Left z=133 ft"	coordinate="0.0, 0.5, 40.5384"/>
+		<point name="Left z=135 ft"	coordinate="0.0, 0.5, 41.1480"/>
+		<point name="Left z=137 ft"	coordinate="0.0, 0.5, 41.7576"/>
+		<point name="Left z=139 ft"	coordinate="0.0, 0.5, 42.3672"/>
+		<point name="Left z=141 ft"	coordinate="0.0, 0.5, 42.9768"/>
+		<point name="Left z=143 ft"	coordinate="0.0, 0.5, 43.5864"/>
+		<point name="Left z=145 ft"	coordinate="0.0, 0.5, 44.1960"/>
+		<point name="Left z=147 ft"	coordinate="0.0, 0.5, 44.8056"/>
+		<point name="Left z=149 ft"	coordinate="0.0, 0.5, 45.4152"/>
+		<point name="Left z=151 ft"	coordinate="0.0, 0.5, 46.0248"/>
+		<point name="Left z=153 ft"	coordinate="0.0, 0.5, 46.6344"/>
+		<point name="Left z=155 ft"	coordinate="0.0, 0.5, 47.2440"/>
+		<point name="Left z=157 ft"	coordinate="0.0, 0.5, 47.8536"/>
+		<point name="Left z=159 ft"	coordinate="0.0, 0.5, 48.4632"/>
+		<point name="Left z=161 ft"	coordinate="0.0, 0.5, 49.0728"/>
+		<point name="Left z=163 ft"	coordinate="0.0, 0.5, 49.6824"/>
+		<point name="Left z=165 ft"	coordinate="0.0, 0.5, 50.2920"/>
+		<point name="Left z=167 ft"	coordinate="0.0, 0.5, 50.9016"/>
+		<point name="Left z=169 ft"	coordinate="0.0, 0.5, 51.5112"/>
+		<point name="Left z=171 ft"	coordinate="0.0, 0.5, 52.1208"/>
+		<point name="Left z=173 ft"	coordinate="0.0, 0.5, 52.7304"/>
+		<point name="Left z=175 ft"	coordinate="0.0, 0.5, 53.3400"/>
+		<point name="Left z=177 ft"	coordinate="0.0, 0.5, 53.9496"/>
+		<point name="Left z=179 ft"	coordinate="0.0, 0.5, 54.5592"/>
+		<point name="Left z=181 ft"	coordinate="0.0, 0.5, 55.1688"/>
+		<point name="Left z=183 ft"	coordinate="0.0, 0.5, 55.7784"/>
+		<point name="Left z=185 ft"	coordinate="0.0, 0.5, 56.3880"/>
+		<point name="Left z=187 ft"	coordinate="0.0, 0.5, 56.9976"/>
+		<point name="Left z=189 ft"	coordinate="0.0, 0.5, 57.6072"/>
+		<point name="Left z=191 ft"	coordinate="0.0, 0.5, 58.2168"/>
+		<point name="Left z=193 ft"	coordinate="0.0, 0.5, 58.8264"/>
+		<point name="Left z=195 ft"	coordinate="0.0, 0.5, 59.4360"/>
+		<point name="Left z=197 ft"	coordinate="0.0, 0.5, 60.0456"/>
+		<point name="Left z=199 ft"	coordinate="0.0, 0.5, 60.6552"/>
+		<point name="Left z=201 ft"	coordinate="0.0, 0.5, 61.2648"/>
+		<point name="Left z=203 ft"	coordinate="0.0, 0.5, 61.8744"/>
+		<point name="Left z=205 ft"	coordinate="0.0, 0.5, 62.4840"/>
+		<point name="Left z=207 ft"	coordinate="0.0, 0.5, 63.0936"/>
+		<point name="Left z=209 ft"	coordinate="0.0, 0.5, 63.7032"/>
+
+		<point name="Right z=1 ft"	coordinate="304.8, 0.5, 0.3048"/>
+		<point name="Right z=99 ft"	coordinate="304.8, 0.5, 30.1752"/>
+		<point name="Right z=101 ft"	coordinate="304.8, 0.5, 30.7848"/>
+		<point name="Right z=109 ft"	coordinate="304.8, 0.5, 33.2232"/>
+		<point name="Right z=111 ft"	coordinate="304.8, 0.5, 33.8328"/>
+		<point name="Right z=121 ft"	coordinate="304.8, 0.5, 36.8808"/>
+		<point name="Right z=129 ft"	coordinate="304.8, 0.5, 39.3192"/>
+		<point name="Right z=131 ft"	coordinate="304.8, 0.5, 39.9288"/>
+		<point name="Right z=133 ft"	coordinate="304.8, 0.5, 40.5384"/>
+		<point name="Right z=135 ft"	coordinate="304.8, 0.5, 41.1480"/>
+		<point name="Right z=137 ft"	coordinate="304.8, 0.5, 41.7576"/>
+		<point name="Right z=139 ft"	coordinate="304.8, 0.5, 42.3672"/>
+		<point name="Right z=141 ft"	coordinate="304.8, 0.5, 42.9768"/>
+		<point name="Right z=143 ft"	coordinate="304.8, 0.5, 43.5864"/>
+		<point name="Right z=145 ft"	coordinate="304.8, 0.5, 44.1960"/>
+		<point name="Right z=147 ft"	coordinate="304.8, 0.5, 44.8056"/>
+		<point name="Right z=149 ft"	coordinate="304.8, 0.5, 45.4152"/>
+		<point name="Right z=151 ft"	coordinate="304.8, 0.5, 46.0248"/>
+		<point name="Right z=153 ft"	coordinate="304.8, 0.5, 46.6344"/>
+		<point name="Right z=155 ft"	coordinate="304.8, 0.5, 47.2440"/>
+		<point name="Right z=157 ft"	coordinate="304.8, 0.5, 47.8536"/>
+		<point name="Right z=159 ft"	coordinate="304.8, 0.5, 48.4632"/>
+		<point name="Right z=161 ft"	coordinate="304.8, 0.5, 49.0728"/>
+		<point name="Right z=163 ft"	coordinate="304.8, 0.5, 49.6824"/>
+		<point name="Right z=165 ft"	coordinate="304.8, 0.5, 50.2920"/>
+		<point name="Right z=167 ft"	coordinate="304.8, 0.5, 50.9016"/>
+		<point name="Right z=169 ft"	coordinate="304.8, 0.5, 51.5112"/>
+		<point name="Right z=171 ft"	coordinate="304.8, 0.5, 52.1208"/>
+		<point name="Right z=173 ft"	coordinate="304.8, 0.5, 52.7304"/>
+		<point name="Right z=175 ft"	coordinate="304.8, 0.5, 53.3400"/>
+		<point name="Right z=177 ft"	coordinate="304.8, 0.5, 53.9496"/>
+		<point name="Right z=179 ft"	coordinate="304.8, 0.5, 54.5592"/>
+		<point name="Right z=181 ft"	coordinate="304.8, 0.5, 55.1688"/>
+		<point name="Right z=183 ft"	coordinate="304.8, 0.5, 55.7784"/>
+		<point name="Right z=185 ft"	coordinate="304.8, 0.5, 56.3880"/>
+		<point name="Right z=187 ft"	coordinate="304.8, 0.5, 56.9976"/>
+		<point name="Right z=189 ft"	coordinate="304.8, 0.5, 57.6072"/>
+		<point name="Right z=191 ft"	coordinate="304.8, 0.5, 58.2168"/>
+		<point name="Right z=193 ft"	coordinate="304.8, 0.5, 58.8264"/>
+		<point name="Right z=195 ft"	coordinate="304.8, 0.5, 59.4360"/>
+		<point name="Right z=197 ft"	coordinate="304.8, 0.5, 60.0456"/>
+		<point name="Right z=199 ft"	coordinate="304.8, 0.5, 60.6552"/>
+		<point name="Right z=201 ft"	coordinate="304.8, 0.5, 61.2648"/>
+		<point name="Right z=203 ft"	coordinate="304.8, 0.5, 61.8744"/>
+		<point name="Right z=205 ft"	coordinate="304.8, 0.5, 62.4840"/>
+		<point name="Right z=207 ft"	coordinate="304.8, 0.5, 63.0936"/>
+		<point name="Right z=209 ft"	coordinate="304.8, 0.5, 63.7032"/>
+
+		<point name="Middle z=1 ft"	coordinate="149.352, 0.5, 0.3048"/>
+		<point name="Middle z=99 ft"	coordinate="149.352, 0.5, 30.1752"/>
+		<point name="Middle z=101 ft"	coordinate="149.352, 0.5, 30.7848"/>
+		<point name="Middle z=109 ft"	coordinate="149.352, 0.5, 33.2232"/>
+		<point name="Middle z=111 ft"	coordinate="149.352, 0.5, 33.8328"/>
+		<point name="Middle z=121 ft"	coordinate="149.352, 0.5, 36.8808"/>
+		<point name="Middle z=129 ft"	coordinate="149.352, 0.5, 39.3192"/>
+		<point name="Middle z=131 ft"	coordinate="149.352, 0.5, 39.9288"/>
+		<point name="Middle z=133 ft"	coordinate="149.352, 0.5, 40.5384"/>
+		<point name="Middle z=135 ft"	coordinate="149.352, 0.5, 41.1480"/>
+		<point name="Middle z=137 ft"	coordinate="149.352, 0.5, 41.7576"/>
+		<point name="Middle z=139 ft"	coordinate="149.352, 0.5, 42.3672"/>
+		<point name="Middle z=141 ft"	coordinate="149.352, 0.5, 42.9768"/>
+		<point name="Middle z=143 ft"	coordinate="149.352, 0.5, 43.5864"/>
+		<point name="Middle z=145 ft"	coordinate="149.352, 0.5, 44.1960"/>
+		<point name="Middle z=147 ft"	coordinate="149.352, 0.5, 44.8056"/>
+		<point name="Middle z=149 ft"	coordinate="149.352, 0.5, 45.4152"/>
+		<point name="Middle z=151 ft"	coordinate="149.352, 0.5, 46.0248"/>
+		<point name="Middle z=153 ft"	coordinate="149.352, 0.5, 46.6344"/>
+		<point name="Middle z=155 ft"	coordinate="149.352, 0.5, 47.2440"/>
+		<point name="Middle z=157 ft"	coordinate="149.352, 0.5, 47.8536"/>
+		<point name="Middle z=159 ft"	coordinate="149.352, 0.5, 48.4632"/>
+		<point name="Middle z=161 ft"	coordinate="149.352, 0.5, 49.0728"/>
+		<point name="Middle z=163 ft"	coordinate="149.352, 0.5, 49.6824"/>
+		<point name="Middle z=165 ft"	coordinate="149.352, 0.5, 50.2920"/>
+		<point name="Middle z=167 ft"	coordinate="149.352, 0.5, 50.9016"/>
+		<point name="Middle z=169 ft"	coordinate="149.352, 0.5, 51.5112"/>
+		<point name="Middle z=171 ft"	coordinate="149.352, 0.5, 52.1208"/>
+		<point name="Middle z=173 ft"	coordinate="149.352, 0.5, 52.7304"/>
+		<point name="Middle z=175 ft"	coordinate="149.352, 0.5, 53.3400"/>
+		<point name="Middle z=177 ft"	coordinate="149.352, 0.5, 53.9496"/>
+		<point name="Middle z=179 ft"	coordinate="149.352, 0.5, 54.5592"/>
+		<point name="Middle z=181 ft"	coordinate="149.352, 0.5, 55.1688"/>
+		<point name="Middle z=183 ft"	coordinate="149.352, 0.5, 55.7784"/>
+		<point name="Middle z=185 ft"	coordinate="149.352, 0.5, 56.3880"/>
+		<point name="Middle z=187 ft"	coordinate="149.352, 0.5, 56.9976"/>
+		<point name="Middle z=189 ft"	coordinate="149.352, 0.5, 57.6072"/>
+		<point name="Middle z=191 ft"	coordinate="149.352, 0.5, 58.2168"/>
+		<point name="Middle z=193 ft"	coordinate="149.352, 0.5, 58.8264"/>
+		<point name="Middle z=195 ft"	coordinate="149.352, 0.5, 59.4360"/>
+		<point name="Middle z=197 ft"	coordinate="149.352, 0.5, 60.0456"/>
+		<point name="Middle z=199 ft"	coordinate="149.352, 0.5, 60.6552"/>
+		<point name="Middle z=201 ft"	coordinate="149.352, 0.5, 61.2648"/>
+		<point name="Middle z=203 ft"	coordinate="149.352, 0.5, 61.8744"/>
+		<point name="Middle z=205 ft"	coordinate="149.352, 0.5, 62.4840"/>
+		<point name="Middle z=207 ft"	coordinate="149.352, 0.5, 63.0936"/>
+		<point name="Middle z=209 ft"	coordinate="149.352, 0.5, 63.7032"/>
+	</regions>
+	
+	<materials>
+		<material name="Confined Aquifer">
+		       	<comments>Confined Aquifer</comments>
+               		<mechanical_properties>
+                         	<porosity value="0.25"/>
+ 	 	      	</mechanical_properties>
+ 	 	        <permeability x="3.6109e-13" y="3.6109e-13" z="3.6109e-12"/>
+			<cap_pressure model="van_genuchten">
+				<parameters alpha="1.46e-3" sr="0.052" m="0.314"/>
+			</cap_pressure>
+			<rel_perm model="mualem">
+			</rel_perm>
+ 	 	      	<assigned_regions>Confined Aquifer</assigned_regions>
+ 	   	</material>
+
+		<material name="Unconfined Aquifer">
+		       	<comments>Unconfined Aquifer</comments>
+               		<mechanical_properties>
+                         	<porosity value="0.25"/>
+ 	 	      	</mechanical_properties>
+ 	 	        <permeability x="3.6109e-13" y="3.6109e-13" z="3.6109e-12"/>
+			<cap_pressure model="van_genuchten">
+				<parameters alpha="1.46e-3" sr="0.052" m="0.314"/>
+			</cap_pressure>
+			<rel_perm model="mualem">
+			</rel_perm>
+ 	 	      	<assigned_regions>Unconfined Aquifer</assigned_regions>
+ 	   	</material>
+
+		<material name="Confining Unit">
+		       	<comments>Confining Unit</comments>
+               		<mechanical_properties>
+                         	<porosity value="0.25"/>
+ 	 	      	</mechanical_properties>
+ 	 	        <permeability x="4.1059e-17" y="4.1059e-17" z="4.1059e-16"/>
+			<cap_pressure model="van_genuchten">
+				<parameters alpha="1.46e-3" sr="0.052" m="0.314"/>
+			</cap_pressure>
+			<rel_perm model="mualem">
+			</rel_perm>
+ 	 	      	<assigned_regions>Confining Unit</assigned_regions>
+ 	   	</material>
+	</materials>
+
+	<initial_conditions>
+		<initial_condition name="Initial Condition">
+			<comments>Uniform pressure over entire domain</comments>
+			<assigned_regions>Entire Domain</assigned_regions>
+			<liquid_phase name = "water">
+				<liquid_component name = "water">
+					<pressure value = "101325.0" function="uniform"/>
+				</liquid_component>
+			</liquid_phase>
+         	</initial_condition>
+	</initial_conditions>
+
+	<boundary_conditions>
+		<comments></comments>
+		<boundary_condition name = "LeftBC Confined Aquifer">
+			<comments>Confined Aquifer at x=0</comments>
+			<assigned_regions>Left Confined Aquifer</assigned_regions>
+			<liquid_phase name = "water">
+				<liquid_component name = "water">
+					<hydrostatic start="0.0" function= "constant" value="48.768"/>
+				</liquid_component>
+			</liquid_phase>
+		</boundary_condition>
+		<boundary_condition name = "LeftBC Unconfined Aquifer">
+			<comments>Unconfined Aquifer at x=0</comments>
+			<assigned_regions>Left Unconfined Aquifer</assigned_regions>
+			<liquid_phase name = "water">
+				<liquid_component name = "water">
+					<hydrostatic start="0.0" function= "constant" value="51.816"/>
+				</liquid_component>
+			</liquid_phase>
+		</boundary_condition>
+		<boundary_condition name = "LeftBC Confining Unit">
+			<comments>Confining Unit at x=0</comments>
+			<assigned_regions>Left Confining Unit</assigned_regions>
+			<liquid_phase name = "water">
+				<liquid_component name = "water">
+					<no_flow/>
+				</liquid_component>
+			</liquid_phase>
+		</boundary_condition>
+
+		<boundary_condition name = "RightBC Confined Aquifer">
+			<comments>Confined Aquifer at x=L</comments>
+			<assigned_regions>Right Confined Aquifer</assigned_regions>
+			<liquid_phase name = "water">
+				<liquid_component name = "water">
+					<hydrostatic start="0.0" function= "constant" value="36.576"/>
+				</liquid_component>
+			</liquid_phase>
+		</boundary_condition>
+		<boundary_condition name = "RightBC Unconfined Aquifer">
+			<comments>Unconfined Aquifer at x=L</comments>
+			<assigned_regions>Right Unconfined Aquifer</assigned_regions>
+			<liquid_phase name = "water">
+				<liquid_component name = "water">
+					<hydrostatic start="0.0" function= "constant" value="39.624"/>
+				</liquid_component>
+			</liquid_phase>
+		</boundary_condition>
+		<boundary_condition name = "RightBC Confining Unit">
+			<comments>Confining Unit at x=L</comments>
+			<assigned_regions>Right Confining Unit</assigned_regions>
+			<liquid_phase name = "water">
+				<liquid_component name = "water">
+					<no_flow/>
+				</liquid_component>
+			</liquid_phase>
+		</boundary_condition>
+	</boundary_conditions>
+
+	<output>
+
+	        <observations>
+		        <filename>observation.out</filename>
+			<liquid_phase name="water">
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=10 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=90 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=190 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=290 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=390 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=490 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=590 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=690 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=790 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=890 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Unconfined x=990 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=10 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=90 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=190 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=290 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=390 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=490 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=590 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=690 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=790 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=890 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Confined x=990 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=10 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=90 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=190 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=290 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=390 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=490 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=590 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=690 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=790 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=890 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Top x=990 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=10 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=90 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=190 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=290 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=390 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=490 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=590 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=690 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=790 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=890 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Top x=990 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=1 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=99 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=101 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=109 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=111 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=121 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=129 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=131 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=133 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=135 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=137 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=139 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=141 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=143 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=145 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=147 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=149 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=151 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=153 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=155 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=157 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=159 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=161 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=163 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=165 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=167 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=169 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=171 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=173 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=175 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=177 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=179 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=181 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=183 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=185 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=187 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=189 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=191 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=193 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=195 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=197 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=199 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=201 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=203 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=205 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=207 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Left z=209 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=1 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=99 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=101 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=109 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=111 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=121 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=129 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=131 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=133 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=135 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=137 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=139 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=141 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=143 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=145 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=147 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=149 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=151 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=153 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=155 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=157 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=159 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=161 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=163 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=165 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=167 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=169 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=171 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=173 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=175 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=177 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=179 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=181 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=183 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=185 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=187 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=189 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=191 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=193 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=195 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=197 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=199 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=201 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=203 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=205 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=207 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Middle z=209 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=1 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=99 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=101 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=109 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=111 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=121 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=129 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=131 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=133 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=135 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=137 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=139 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=141 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=143 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=145 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=147 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=149 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=151 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=153 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=155 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=157 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=159 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=161 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=163 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=165 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=167 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=169 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=171 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=173 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=175 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=177 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=179 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=181 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=183 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=185 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=187 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=189 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=191 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=193 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=195 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=197 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=199 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=201 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=203 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=205 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=207 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+			        <aqueous_saturation>
+				        <assigned_regions>Right z=209 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_saturation>
+
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=1 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=99 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=101 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=109 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=111 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=121 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=129 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=131 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=133 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=135 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=137 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=139 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=141 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=143 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=145 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=147 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=149 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=151 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=153 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=155 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=157 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=159 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=161 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=163 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=165 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=167 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=169 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=171 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=173 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=175 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=177 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=179 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=181 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=183 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=185 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=187 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=189 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=191 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=193 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=195 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=197 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=199 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=201 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=203 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=205 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=207 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			        <aqueous_pressure>
+				        <assigned_regions>Middle z=209 ft</assigned_regions>
+				        <functional>point</functional>
+				        <time_macro>Steady State</time_macro>
+				</aqueous_pressure>
+			</liquid_phase>
+		</observations>
+
+		<vis>
+			<base_filename>steady-flow</base_filename>
+		  	<num_digits>5</num_digits>
+		  	<time_macro>Steady State</time_macro>
+		</vis>
+		
+	</output>
+
+</amanzi_input>
+
