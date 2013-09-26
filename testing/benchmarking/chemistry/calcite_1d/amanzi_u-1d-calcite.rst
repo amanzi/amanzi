@@ -1,4 +1,5 @@
 1D Calcite dissolution
+1D Calcite dissolution
 ======================
 
 Overview
@@ -24,18 +25,19 @@ About
 * Benchmark simulator: PFlotran
 * Files
 
-  * Amanzi input file: amanzi-1d-calcite.xml
-  * Benchmark simulator input file: 1d-calcite.in
+  * Amanzi input file/s (native chemistry): amanzi-1d-calcite.xml, calcite.bgd
+  * Amanzi input file/s (Alquimia chemistry): amanzi-1d-calcite-alq.xml, 1d-calcite.in, calcite.dat 
+  * Benchmark simulator input and output file/s: pflotran/1d-calcite.in, pflotran/calcite.dat, pflotran/1d-calcite.h5
 
-* Location: amanzi/examples/examples/phase2/chemistry/1d-calcite
+* Location: testing/benchmark/chemistry/calcite_1d/
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
-* Last tested on: Aug 31, 2013
+* Last tested on: Sept 30, 2013
 	
 Introduction
 ------------
 
-Carbonate minerals are present in many subsurface environments and contribute to their buffering capacity. Under common subsurface flow conditons, calcite dissolution is a relatively fast geochemical reaction leading often to local geochemical equilibrium and sharp dissolution fronts. Calcite dissolution is represented with a kinetic rate expression based on the transition state theory. In this test example, a solution under saturated with calcite is injected at x=0 into a 100-m porous domain containing calcite; as a result, calcite dissolves raising the pH and concentration of cations at the effluent of the domain. The simulation is run to 50 years.
+Carbonate minerals are present in many subsurface environments and contribute to their buffering capacity. Calcite dissolution is represented here with a kinetic rate expression based on the transition state theory. In this test example, a solution under saturated with calcite is injected at x=0 into a 100-m porous domain containing calcite; as a result, calcite dissolves raising the pH and the concentration of Ca in the effluent end of the domain. The simulation is run to 50 years.
 
 Model
 -----
@@ -43,7 +45,7 @@ Model
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 
 Aqueous complexation
 ~~~~~~~~~~~~~~~~~~~~
@@ -63,13 +65,12 @@ Six reactions equilibrium reactions are considered in aqueous phase (by conventi
  * :math:`\ce{CaCO3_{(aq)} <=> - H^+ + HCO3^- + Ca^{++}}`,
    :math:`\text{ } \log(K)=7.0017`
 
-
 Calcite dissolution
 ~~~~~~~~~~~~~~~~~~~
 
 Calcite dissolution can be expressed as
 
-:math:`\ce{CaCO3_{(s)} -> Ca^{2+} + CO3^{2-}}`
+:math:`CaCO_3(s) \rightarrow Ca^{2+} + CO_3^{2-}`
 
 The rate expression is 
 
@@ -93,10 +94,10 @@ Problem Specification
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 
-Geochemstry
-~~~~~~~~~~~
+Geochemistry
+~~~~~~~~~~~~
 
 To do.
 
@@ -111,5 +112,9 @@ These are the expected results.
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-Here go the figure and table.
+The figure shows the concentration of total calcium along the length of the column at the end of the simulation. 
+
+.. plot:: prototype/chemistry/calcite_1d/calcite_1d.py
+   :align: center
+
 
