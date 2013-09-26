@@ -50,19 +50,26 @@ Aqueous complexation
 
 Six reactions equilibrium reactions are considered in aqueous phase (by convention, secondary species are given in the left hand side, while primary species are in the right hand side):
 
-* :math:`OH^- = H_2O - H^+\;log(K)=13.9951`
-* :math:`CO_3^{--} =  - H^+ + HCO_3^-\;log(K)=10.3288`
-* :math:`CO_2(aq) =  - H_2O + H^+ + HCO_3^-\;log(K)=-6.3447`
-* :math:`CaOH_+ = H_2O - H^+ + Ca^{++}\;log(K)=12.85000`
-* :math:`CaHCO_3^+ = HCO_3^- + Ca^{++}\;log(K)=-1.0467`
-* :math:`CaCO_3(aq) =  - H^+ + HCO_3^- + Ca^{++}\;log(K)=7.0017`
+ * :math:`\ce{OH^- <=> H2O - H^+}`,  
+   :math:`\text{ } \log(K)=13.9951`              
+ * :math:`\ce{CO3^{--} <=>  -H^+ + HCO3^-}`, 
+   :math:`\text{ } \log(K)=10.3288`
+ * :math:`\ce{CO2_{(aq)} <=> - H2O + H^+ + HCO3^-}`, 
+   :math:`\text{ } \log(K)=-6.3447`
+ * :math:`\ce{CaOH_+ <=> H2O - H^+ + Ca^{++}}`, 
+   :math:`\text{ } log(K)=12.85000`, 
+ * :math:`\ce{CaHCO3^+ <=> HCO3^- + Ca^{++}}`, 
+   :math:`\text{ } \log(K)=-1.0467`
+ * :math:`\ce{CaCO3_{(aq)} <=> - H^+ + HCO3^- + Ca^{++}}`,
+   :math:`\text{ } \log(K)=7.0017`
+
 
 Calcite dissolution
 ~~~~~~~~~~~~~~~~~~~
 
 Calcite dissolution can be expressed as
 
-:math:`CaCO_3(s) \rightarrow Ca^{2+} + CO_3^{2-}`
+:math:`\ce{CaCO3_{(s)} -> Ca^{2+} + CO3^{2-}}`
 
 The rate expression is 
 

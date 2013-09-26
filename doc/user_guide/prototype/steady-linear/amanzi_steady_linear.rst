@@ -66,7 +66,3 @@ Plot the solutions
 
 .. include:: table_values.txt
 
-
-:math:`SO_2`
-
-:math:`\ce{SO2}`
