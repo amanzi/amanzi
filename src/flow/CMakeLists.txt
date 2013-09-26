@@ -103,8 +103,7 @@ set(flow_inc_files
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-    generate_evaluators_registration_header(HEADERFILE tests_flow_evaluator_reg.hh  LISTNAME FACTORY_REG_LIST)
-
+  
 #if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})

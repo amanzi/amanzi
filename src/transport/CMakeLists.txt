@@ -66,7 +66,6 @@ add_amanzi_library(transport
                              time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
-    generate_evaluators_registration_header(HEADERFILE tests_transport_evaluator_reg.hh  LISTNAME FACTORY_REG_LIST)
 
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})

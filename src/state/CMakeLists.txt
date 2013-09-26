@@ -97,12 +97,15 @@ set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 #
 add_install_include_file(${state_inc_files})
 
-register_evaluator_with_factory(HEADERFILE cell_volume_evaluator_reg.hh   LISTNAME FACTORY_REG_LIST)
-register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNAME FACTORY_REG_LIST)
+register_evaluator_with_factory(HEADERFILE cell_volume_evaluator_reg.hh   LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+
+generate_evaluators_registration_header(HEADERFILE state_evaluators_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
+
 
 if (BUILD_TESTS)
 
-    generate_evaluators_registration_header(HEADERFILE tests_state_evaluator_reg.hh LISTNAME FACTORY_REG_LIST)
+    #generate_evaluators_registration_header(HEADERFILE tests_state_evaluator_reg.hh LISTNAME FACTORY_REG_LIST)
   
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
