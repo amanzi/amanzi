@@ -39,7 +39,6 @@ else(PFLOTRAN_LIBRARIES AND PFLOTRAN_INCLUDE_DIRS)
 
     if(PFLOTRAN_INCLUDE_DIR)
       set(PFLOTRAN_INCLUDE_DIR "${PFLOTRAN_INCLUDE_DIR}" CACHE PATH "Path to search for PFLOTRAN include files")
-      set(PFLTORAN_INCLUDE_DIRS ${PFLOTRAN_INCLUDE_DIR})
     else()
       find_path(PFLOTRAN_INCLUDE_DIR pflotran_alquimia_interface.h ${PFLOTRAN_DIR}/include)
       if ( NOT PFLOTRAN_INCLUDE_DIR )
