@@ -2535,6 +2535,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
 
   // get list of observations - this node MAY exist ONCE
   obsList = outElement->getElementsByTagName(XMLString::transcode("observations"));
+  if (obsList->getLength() > 0) {
   xercesc::DOMNode* nodeObs = obsList->item(0);
 
   xercesc::DOMNodeList* OBList = nodeObs->getChildNodes();
@@ -2637,6 +2638,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc) {
       XMLString::release(&textContent);
       list.sublist("Observation Data") = obsPL;
     }
+  }
   }
 
   return list;
