@@ -43,7 +43,7 @@ class RelativePermeability {
   void ProcessParameterList();
 
   void Compute(const Epetra_Vector& p, 
-                const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
+               const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);
   void ComputeInCells(const Epetra_Vector& p);
   void ComputeOnFaces(const Epetra_Vector& p,
                       const std::vector<int>& bc_model, const std::vector<bc_tuple>& bc_values);

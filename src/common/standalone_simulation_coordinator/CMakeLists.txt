@@ -120,8 +120,6 @@ if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
 endif()
 
-generate_evaluators_registration_header(HEADERFILE evaluator_reg.hh LISTNAME FACTORY_REG_LIST  INSTALL TRUE)
-
 # 
 # Main: Amanzi
 #

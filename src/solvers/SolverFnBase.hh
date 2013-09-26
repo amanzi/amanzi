@@ -20,12 +20,11 @@ template<class Vector>
 class SolverFnBase {
  public:
   // computes the non-linear functional r = F(u)
-  virtual void Residual(const Teuchos::RCP<Vector>& u,
-                        const Teuchos::RCP<Vector>& r) = 0;
+  virtual void Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<Vector>& r) = 0;
 
   // preconditioner toolkit
   virtual void ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-          const Teuchos::RCP<Vector>& Pr) = 0;
+                                   const Teuchos::RCP<Vector>& Pr) = 0;
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) = 0;
 
   // error analysis
@@ -34,8 +33,8 @@ class SolverFnBase {
 
   // allow PK to modify a correction
   virtual bool ModifyCorrection(const Teuchos::RCP<const Vector>& r,
-          const Teuchos::RCP<const Vector>& u,
-          const Teuchos::RCP<Vector>& du) {
+                                const Teuchos::RCP<const Vector>& u,
+                                const Teuchos::RCP<Vector>& du) {
     return false;
   }
 
@@ -46,7 +45,7 @@ class SolverFnBase {
   }
 
   // bookkeeping for state
-  virtual void ChangedSolution() {}
+  virtual void ChangedSolution() {};
 };
 
 }  // namespace AmanziSolvers

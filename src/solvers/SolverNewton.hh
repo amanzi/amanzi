@@ -13,8 +13,9 @@
 
 #include "VerboseObject.hh"
 
-#include "SolverFnBase.hh"
 #include "Solver.hh"
+#include "SolverFnBase.hh"
+#include "SolverDefs.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {

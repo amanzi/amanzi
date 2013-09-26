@@ -103,8 +103,7 @@ set(flow_inc_files
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-    generate_evaluators_registration_header(HEADERFILE tests_flow_evaluator_reg.hh  LISTNAME FACTORY_REG_LIST)
-
+  
 #if (0)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -190,6 +189,12 @@ if (BUILD_TESTS)
         add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
 	                KIND unit
                         SOURCE test/Main.cc test/flow_richards_bc_cribs.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+        # Test: Picard
+        add_amanzi_test(flow_richards_picard flow_richards_picard
+	                KIND unit
+                        SOURCE test/Main.cc test/flow_richards_picard.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         # Test: Newton

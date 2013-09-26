@@ -65,8 +65,7 @@ void Richards_PK::AssembleSteadyStateMatrix_MFD(Matrix_MFD* matrix)
     AddGravityFluxes_MFD(K, matrix, *rel_perm);
     matrix->ApplyBoundaryConditions(bc_model, bc_values);
     matrix->AssembleGlobalMatrices();
-  }
-  else {
+  } else {
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
     matrix -> ApplyBoundaryConditions(bc_model, bc_values);
@@ -87,9 +86,7 @@ void Richards_PK::AssembleSteadyStatePreconditioner_MFD(Matrix_MFD* precondition
     preconditioner->CreateMFDrhsVectors();
     preconditioner->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner->AssembleSchurComplement(bc_model, bc_values);
-  }
-  else {
-
+  } else {
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
     preconditioner -> ApplyBoundaryConditions(bc_model, bc_values);
@@ -115,17 +112,15 @@ void Richards_PK::AssembleMatrixMFD(const Epetra_Vector& u, double Tp)
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
   
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-
     Teuchos::RCP<Epetra_Vector> rhs_cells_ = matrix_ -> rhs_cells();
     rhs_cells_->PutScalar(0.0);
 
     Epetra_Vector& Krel_faces = rel_perm->Krel_faces();
 
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-    AddGravityFluxes_TPFA( Krel_faces, *Grav_term_faces, bc_model, &*matrix_);
+    AddGravityFluxes_TPFA(Krel_faces, *Grav_term_faces, bc_model, &*matrix_);
     matrix_->AssembleGlobalMatrices();
   } else{
-    // setup a new algebraic problem
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);
     matrix_->CreateMFDrhsVectors();
     AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
@@ -150,11 +145,9 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   Epetra_Vector& flux = FS_aux->ref_darcy_flux();
 
   // update all coefficients, boundary data, and source/sink terms
-  //Amanzi::timer_manager.stop("Update precon");
+  // Amanzi::timer_manager.stop("Update precon");
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-
     matrix_->DeriveDarcyMassFlux(*u_cells, *face_importer_, bc_model, bc_values, flux);
-
     for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;    
   }
 
@@ -162,33 +155,30 @@ void Richards_PK::AssemblePreconditionerMFD(const Epetra_Vector& u, double Tp, d
   UpdateSourceBoundaryData(Tp, *u_cells, *u_faces);
 
   //Amanzi::timer_manager.start("Update precon");
-
-  // setup a new algebraic problem
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
     preconditioner_->CreateMFDrhsVectors();
   } else {
-
     std::vector<double>& Acc_cells = preconditioner_->Acc_cells();
 
     double* Ac = Acc_cells.data();
     int nsize = Acc_cells.size();
-    memset(Ac, 0., nsize*sizeof(double));
+    memset(Ac, 0.0, nsize*sizeof(double));
   }
 
-  AddTimeDerivative_MFD(*u_cells, dTp, &*preconditioner_);
+  if (dTp > 0.0) {
+    AddTimeDerivative_MFD(*u_cells, dTp, &*preconditioner_);
+  }
   
-
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
     preconditioner_->AssembleSchurComplement(bc_model, bc_values);
   } else {
     //Amanzi::timer_manager.start("AnalyticJacobian");
+    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
+    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
 
-    preconditioner_ -> ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_ -> AssembleSchurComplement(bc_model, bc_values);
-
-    preconditioner_ -> AnalyticJacobian(*u_cells, bc_model, bc_values, *rel_perm);
+    preconditioner_->AnalyticJacobian(*u_cells, bc_model, bc_values, *rel_perm);
     //Amanzi::timer_manager.stop("AnalyticJacobian");
   }
 
