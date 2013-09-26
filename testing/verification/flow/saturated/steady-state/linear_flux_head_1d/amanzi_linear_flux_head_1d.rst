@@ -43,7 +43,7 @@ the analytic solution :eq:`generalSoln` for hydraulic head becomes
 where :math:`L` = domain length [L]. For these boundary conditions the volumetric flowrate per unit area, 
 or Darcy velocity (:math:`U`, [L/T]), is constant and defined by Darcy's law as
 
-	.. math:: U = -\frac{k}{\mu\rho g}\frac{dh}{dx} = -K\frac{dh}{dx} = -K\frac{-U_0}{K} = U_0
+	.. math:: U = -\frac{k}{\mu}\rho g \frac{dh}{dx} = -K\frac{dh}{dx} = -K\frac{-U_0}{K} = U_0
 		:label: DarcyVel
 
 where :math:`k` = intrinsic permeability [L\ :sup:`2`\ ],
@@ -65,26 +65,28 @@ on an elementary problem. To generate numerical results the following specificat
 * Horizontal flow in the x-coordinate direction
 
 	* no-flow prescribed at the :math:`y_{min}, y_{max}, z_{min}, z_{max}` boundaries
-	* prescribed Darcy velocity at the x-coordinate inlet: :math:`U(0) = 0.01 m/d`
-	* prescribed hydraulic head at the x-coordinate outlet: :math:`h(L) = 19 m`
+	* prescribed Darcy velocity at the x-coordinate inlet: :math:`U(0) = 0.01 \text{[m/d]}`
+	* prescribed hydraulic head at the x-coordinate outlet: :math:`h(L) = 19 \text{[m]}`
 
 * Material properties:
 
-	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
-	* :math:`K = 1.0 m/d` :math:`(k = 1.1847E-12 m^2)`
+	* :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`,
+          :math:`\mu = 1.002e-3 \: \text{[Pa}\cdot \text{s]}`, 
+          :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
+	* :math:`K = 1.0 \text{[m/d]}` :math:`(k = 1.1847E-12 \text{[m}^2\text{]})`
 
 * Model discretization
 
-	* :math:`\Delta x = 5 m, \Delta y = 2 m, \Delta z = 10 m`
+	* :math:`\Delta x = 5 \text{[m]}, \Delta y = 2 \text{[m]}, \Delta z = 10 \text{[m]}`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
-	.. math:: h = 20m -\frac{x}{100m}
+	.. math:: h = 20 -\frac{x}{100m} \text{[m]}
 		:label: expectedH
 
 and
 
-	.. math:: U = 1.0 m/d 
+	.. math:: U = 1.0 \text{[m/d]}
 		:label: expectedU
 
 following Equations :eq:`specificSoln` and :eq:`DarcyVel`.
