@@ -87,8 +87,6 @@ class Richards_PK : public Flow_PK {
 
   void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
-  void AddTimeDerivative_MFDpicard(Epetra_Vector& pressure_cells, 
-                                   Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix_operator);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
   void AssembleMatrixMFD(const Epetra_Vector &u, double Tp);
@@ -127,22 +125,25 @@ class Richards_PK : public Flow_PK {
   // access methods
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
+  Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
+  Teuchos::RCP<Matrix_MFD> preconditioner() { return preconditioner_; }
+  Teuchos::RCP<Epetra_Vector> get_solution() { return solution; }
 
   // developement members
   bool SetSymmetryProperty();
   void ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
                                    const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
-  Teuchos::RCP<Matrix_MFD> preconditioner() { return preconditioner_; }
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
   // auxilliary data management
   void UpdateAuxilliaryData();
 
+ public:
+  Teuchos::ParameterList rp_list_;
+  Teuchos::ParameterList solvers_list;
 
  private:
-  Teuchos::ParameterList rp_list_;
-
   double atm_pressure;
   Teuchos::RCP<Epetra_Map> super_map_;
 
@@ -191,7 +192,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Transmis_faces;
   Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
-  Teuchos::ParameterList solvers_list;
   std::string flow_solver;
 
 

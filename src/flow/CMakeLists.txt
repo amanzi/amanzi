@@ -192,6 +192,12 @@ if (BUILD_TESTS)
                         SOURCE test/Main.cc test/flow_richards_bc_cribs.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+        # Test: Picard
+        add_amanzi_test(flow_richards_picard flow_richards_picard
+	                KIND unit
+                        SOURCE test/Main.cc test/flow_richards_picard.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
         # Test: Newton
         add_amanzi_test(flow_richards_newton_TPFA flow_richards_newton_TPFA
                         KIND unit
