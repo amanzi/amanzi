@@ -103,7 +103,48 @@ is specific to the chemical component considered as indicated by the subscript :
 Boundary Conditions
 ~~~~~~~~~~~~~~~~~~~
 
+A first-type or Dirichlet condition involves specification of a fixed value of the concentration, 
+:math:`C_i` at the boundary location:
+
+.. math::
+  C_i(\boldsymbol{x}, t) = C_{i,0}(\boldsymbol{x}, t)
+  \qquad \boldsymbol{x} \in \Gamma^{in},\quad t > 0,
+
+where :math:`C_0` is a given function.
+Pure advective transport requires to set up the Dirichlet boundary conditions only on
+the inflow boundary of the computational domain. 
+
+A second-type or Neumann boundary condition involves specification of the flux
+
+.. math::
+  J_i(\boldsymbol{x}, t) = J_{i,0}(\boldsymbol{x}, t),
+  \qquad \boldsymbol{x} \in \partial \Omega,\quad t > 0,
+
+where :math:`J_{i,0}` is a given flux function. 
+The Dirichlet boundary condition on the outflow part of the computational domain may 
+result in parabolic and/or exponential boundary layers; therefore should be used
+with caution.
+
+
+Initial Conditions
+~~~~~~~~~~~~~~~~~~
+
+An initial conditon specifies concentration at time :math:`T=0` inside the
+computational domain:
+
+.. math::
+  C_i(\boldsymbol{x}, 0) = C_{i,0}(\boldsymbol{x})
+  \qquad \boldsymbol{x} \in \Omega.
 
 
 Source Terms
 ~~~~~~~~~~~~
+
+The source term :math:`Q_i` is a given function specifying usually location of
+wells inside the computational domain:
+
+.. math::
+  Q_i(\boldsymbol{x}, t) = Q_{i,0}(\boldsymbol{x},t),
+  \qquad \boldsymbol{x} \in \Omega,\quad t > 0.
+
+
