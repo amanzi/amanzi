@@ -89,7 +89,7 @@ The advective front moves with the flow velocity. In the simulation time (50 yea
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-.. figure:: 1d-tracer-figure.png
-   :scale: 50 %
-   :alt: Figure. Tracer front at time 50 years as a function of length along the flow path. Amanzi and PFlotran solutions are compared. 
+This figure shows the tracer front at time 50 years as a function of length along the flow path. Amanzi and PFlotran solutions are compared.
 
+.. plot:: prototype/chemistry/tracer_1d/tracer_1d.py
+   :align: center
