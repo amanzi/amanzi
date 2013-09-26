@@ -323,6 +323,7 @@ PorousMedia::setup_bound_desc()
     tbc_descriptor_map.resize(ntracers);
   }
 
+#if 0
   for (int iface = 0; iface < Faces.size(); iface++)
   {
     const Orientation& face = Faces[iface];
@@ -359,11 +360,12 @@ PorousMedia::setup_bound_desc()
         bc_descriptor_map[face] = BCDesc(ccBndBox,myBCs);
       }
       else {
-        std::cerr << "No BCs responsible for filling face: " << face << std::endl;
+        std::cerr << "No saturation BCs responsible for filling face: " << face << std::endl;
         BoxLib::Abort();
       }
     }
   }
+#endif
 
   // Do tracers (requires bc on all faces)
   if (setup_tracer_transport) {
@@ -410,13 +412,11 @@ PorousMedia::setup_bound_desc()
     
   // setup boundary descriptor for the pressure
   pbc_descriptor_map.clear();
-  Faces.clear();
   const BCRec& pbc = desc_lst[Press_Type].getBC(0);
-  getDirichletFaces(Faces,Press_Type,pbc);
 
-  for (int iface = 0; iface < Faces.size(); iface++)
-  {
-    const Orientation& face = Faces[iface];
+  for (OrientationIter oitr; oitr; ++oitr) {
+    Orientation face = oitr();
+
     if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
     {
       Box ccBndBox  = BoxLib::adjCell(domain,face,1);
@@ -446,8 +446,8 @@ PorousMedia::setup_bound_desc()
           pbc_descriptor_map[face] = BCDesc(ccBndBox,myBCs);
         }
         else {
-          std::cerr << "No BCs responsible for filling face: " << Faces[iface] << std::endl;
-          BoxLib::Abort();
+          //std::cerr << "No pressure BCs responsible for filling face: " << face << std::endl;
+          //BoxLib::Abort();
         }
       }
     }
@@ -1060,6 +1060,9 @@ PorousMedia::initData ()
 	FArrayBox& pdat = P_new[mfi];
         DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
         DEF_LIMITS(pdat,p_ptr,p_lo,p_hi);
+        const Box& vbox = mfi.validbox();
+        const int* lo = vbox.loVect();
+        const int* hi = vbox.hiVect();
         
         for (int i=0; i<ic_array.size(); ++i)
         {
@@ -1096,7 +1099,7 @@ PorousMedia::initData ()
               const Real* ref_loc = &(vals[1+BL_SPACEDIM]);
               const Real* problo = geom.ProbLo();
 
-              FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+              FORT_LINEAR_PRESSURE(lo, hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                    dx, problo, ref_val, ref_loc, gradp);
 
 	    }
@@ -1118,7 +1121,7 @@ PorousMedia::initData ()
                 const Real* problo = geom.ProbLo();
                 const Real* ref_loc = problo;
                 Real ref_val = 0;
-                FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+                FORT_LINEAR_PRESSURE(lo, hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                      dx, problo, &ref_val, ref_loc, gradp.dataPtr());
 	    }
             else if (type == "zero_total_velocity")
@@ -2181,7 +2184,7 @@ PorousMedia::richard_init_to_steady()
           pmf.FillCoarsePatch(pmf.get_new_data(Press_Type),0,t+dt,Press_Type,0,ncomps);
           pmf.FillStateBndry(t,Press_Type,0,1); // Set boundary data (FIXME: If t-dep, this will set at t_final)
 	  if (model == PM_STEADY_SATURATED) {
-	    pmf.get_new_data(State_Type).setVal(0,0,ncomps);
+	    pmf.get_new_data(State_Type).setVal(1,0,ncomps);
 	  } else {
 	    pmf.calcInvPressure(pmf.get_new_data(State_Type),pmf.get_new_data(Press_Type));
 	  }
@@ -4240,7 +4243,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
                                  Real               t)
 {
     bool ret = false;
-    if (bc_descriptor_map.find(face) != bc_descriptor_map.end()) 
+    if (pbc_descriptor_map.find(face) != pbc_descriptor_map.end()) 
     {
         const Box domain = geom.Domain();
         const int* domhi = domain.hiVect();
@@ -4248,7 +4251,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
         const Real* dx   = geom.CellSize();
         Real t_eval = AdjustBCevalTime(State_Type,t,false);
 
-        const BCDesc& bc_desc = bc_descriptor_map[face];
+        const BCDesc& bc_desc = pbc_descriptor_map[face];
         const Box bndBox = bc_desc.first;
         const Array<int>& face_bc_idxs = bc_desc.second;
         
@@ -4257,7 +4260,7 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
         for (int i=0; i<face_bc_idxs.size(); ++i) {
           const RegionData& face_bc = bc_array[face_bc_idxs[i]];
           
-          if (face_bc.Type() == "zero_total_velocity") {
+          if (face_bc.Type() == "zero_total_velocity" || face_bc.Type() == "noflow") {
             ret = true;
             Array<Real> inflow_tmp = face_bc(t_eval);
             Real inflow_vel = inflow_tmp[0];
@@ -4269,7 +4272,14 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
             }
           }
 	}
-    }    
+    }
+    else {
+      // Implement default zero-flux bc
+      ret = true;
+      Box bndBox = BoxLib::adjCell(geom.Domain(),face,1);
+      ccBndFab.resize(bndBox,1); ccBndFab.setVal(0);
+      mask.resize(bndBox,1); mask.setVal(1);
+    }
     return ret;
 }
 
@@ -4289,7 +4299,7 @@ PorousMedia::get_inflow_density(const Orientation& face,
   else {
     const Real* dx   = geom.CellSize();
     FArrayBox mask;
-    if (face_bc.Type() == "zero_total_velocity") {
+    if (face_bc.Type() == "zero_total_velocity" || face_bc.Type() == "noflow") {
         Real t_eval = AdjustBCevalTime(State_Type,t,false);
         Array<Real> inflow_vel = face_bc(t_eval);
 	FArrayBox cdat, ktdat, kdat, vdat;
@@ -6269,8 +6279,6 @@ PorousMedia::advance_chemistry (Real time,
 	Fcnt_new[mfi].copy(grownFcnt[mfi]);
     }
     
-  std::cout << "********************** Level" << level << " filling new tracers, setting tn.tnp1" << std::endl;
-
   // Bring all states up to current time, and reinstate original dt info
   for (std::set<int>::const_iterator it=types_advanced.begin(), End=types_advanced.end(); it!=End; ++it) {
     state[*it].setTimeLevel(time+dt,dt,dt);
@@ -12255,7 +12263,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, Real time,int sComp, int dComp, i
           mask.setVal(0);
           const PArray<Region>& regions = face_bc.Regions();
                     
-          if (face_bc.Type() == "zero_total_velocity") {
+          if (face_bc.Type() == "zero_total_velocity"  || face_bc.Type() == "noflow") {
             get_inflow_density(it->first,face_bc,bndFab,bndBox,t_eval);
           }
           else {
@@ -12397,7 +12405,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
               Real* p_ptr = prdat.dataPtr();
               const int* p_lo = prdat.loVect();
               const int* p_hi = prdat.hiVect();
-              FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+              FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                    dx, problo, &ref_val, ref_loc, gradp.dataPtr());
 
             }
@@ -12413,7 +12421,7 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
               const int* p_lo = prdat.loVect();
               const int* p_hi = prdat.hiVect();
               const Real* problo = geom.ProbLo();
-              FORT_LINEAR_PRESSURE(p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
+              FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                    dx, problo, &(vals[0]), loc, gradp);
             }
 

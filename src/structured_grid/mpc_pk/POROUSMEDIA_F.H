@@ -517,7 +517,8 @@ extern "C" {
 		  const int* ncplcoef,const Real* dx, 
 		  const Real* wt_loc, const Real* grav);
 
-  void FORT_LINEAR_PRESSURE(Real* p, ARLIM_P(p), ARLIM_P(p), const int* ncomps,
+  void FORT_LINEAR_PRESSURE(const int* lo, const int* hi,
+                            Real* p, ARLIM_P(p), ARLIM_P(p), const int* ncomps,
                             const Real* dx, const Real* problo, const Real* ref_val,
                             const Real* ref_loc, const Real* gradp);
 
