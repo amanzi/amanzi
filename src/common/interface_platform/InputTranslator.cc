@@ -2690,8 +2690,8 @@ double get_time_value(std::string time_value, Teuchos::ParameterList def_list)
     time = atof(char_array);
     char_array = strtok(NULL,";, ");
     if (char_array!=NULL) {
-      if (strcmp(char_array,"y")==0) { time = time*31577600.0; }
-      else if (strcmp(char_array,"d")==0) { time = time*86100.0; }
+      if (strcmp(char_array,"y")==0) { time = time*31557600.0; }
+      else if (strcmp(char_array,"d")==0) { time = time*86400.0; }
       else if (strcmp(char_array,"h")==0) { time = time*3600.0; }
     }
     delete[] tmp;
