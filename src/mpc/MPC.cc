@@ -751,13 +751,14 @@ void MPC::cycle_driver() {
                 if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
                   *out << "Chemistry PK: advancing, current subcycling time step = " << tc_dT << std::endl;
                 }
-                Amanzi::timer_manager.start("Chemistry PK");
+		
+		Amanzi::timer_manager.start("Chemistry PK");
                 CPK->advance(tc_dT, total_component_concentration_star);
 
                 Amanzi::timer_manager.stop("Chemistry PK");
 		
 		*S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
-		  = *total_component_concentration_star;		
+		  = * CPK->get_total_component_concentration();	
 	      } else {
 		if (chemistry_enabled || transport_enabled) {
 		  *S->GetFieldData("total_component_concentration","state")->ViewComponent("cell", true)
