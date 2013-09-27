@@ -8,10 +8,10 @@
       <Parameter name="Interval" type="int" value="1000"/>
       <Parameter name="Start" type="int" value="0"/>
     </ParameterList>
-    <Parameter name="File Name Base" type="string" value="dump-"/>
+    <Parameter name="File Name Base" type="string" value="plot"/>
   </ParameterList>
   <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="3"/>
+    <Parameter name="Spatial Dimension" type="int" value="2"/>
   </ParameterList>
 
   <!--  FLOW:  -->
@@ -37,7 +37,7 @@
           <Parameter name="error rel tol" type="double" value="0"/>
           <Parameter name="time step increase factor" type="double" value="1.2"/>
 
-          <Parameter name="convergence tolerance" type="double" value="1e-12"/>
+          <Parameter name="convergence tolerance" type="double" value="1.0e-6"/>
           <Parameter name="maximum number of iterations" type="int" value="600"/>
           <Parameter name="start time" type="double" value="0.0"/>
           <Parameter name="end time" type="double" value="1e+10"/>
@@ -157,9 +157,9 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{1, 1, 516}"/>
-        <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
-        <Parameter name="Domain High Corner" type="Array(double)" value="{64.5, 1.0, 103.2}" />
+        <Parameter name="Number of Cells" type="Array(int)" value="{1, 516}"/>
+        <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0}" />
+        <Parameter name="Domain High Corner" type="Array(double)" value="{64.5, 103.2}" />
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -168,100 +168,88 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 103.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="90 Meter Plane Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array(double)" value="{0, 0, 1}"/>
-        <Parameter name="Location" type="Array(double)" value="{0, 0, 90}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, 1}"/>
+        <Parameter name="Location" type="Array(double)" value="{0, 90}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bfr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 96.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 96.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 103.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hcsr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 96.0}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 82.2}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 82.2}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 96.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hfsr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 82.2}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 23.4}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 23.4}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 82.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hgr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 23.4}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 22.2}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 22.2}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 23.4}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="CCuzr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 22.2}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 18.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 18.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 22.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="CCugr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 18.0}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 11.4}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 11.4}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Rlmr">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 11.4}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 6.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 6.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 11.4}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Rwiar">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 6.0}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 6.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Bottom Surface Region">
       <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array(double)" value="{0, 0, -1}"/>
-        <Parameter name="Location" type="Array(double)" value="{0, 0, 0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="East Surface Region">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array(double)" value="{1, 0, 0}"/>
-        <Parameter name="Location" type="Array(double)" value="{64.5, 0, 0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="North Surface Region">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array(double)" value="{0, 1, 0}"/>
-        <Parameter name="Location" type="Array(double)" value="{0, 1, 0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="South Surface Region">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array(double)" value="{0, -1, 0}"/>
-        <Parameter name="Location" type="Array(double)" value="{0, 0, 0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0, -1}"/>
+        <Parameter name="Location" type="Array(double)" value="{0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Region">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 0, 103.2}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{64.5, 103.2}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0, 103.2}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="West Surface Region">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array(double)" value="{-1, 0, 0}"/>
-        <Parameter name="Location" type="Array(double)" value="{0, 0, 0}"/>
-      </ParameterList>
+  </ParameterList>
+
+  <!-- NONLINEAR SOLVER -->
+  <ParameterList name="Nonlinear solvers">
+    <Parameter name="solver" type="string" value="picard"/>
+    <Parameter name="max divergent iterations" type="int" value="200"/>
+    <Parameter name="stagnation iteration check" type="int" value="1000"/>
+    <Parameter name="limit iterations" type="int" value="600"/>
+    <Parameter name="nonlinear tolerance" type="double" value="1e-6"/>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 
@@ -274,8 +262,8 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
     </ParameterList>
     <ParameterList name="AztecOO">
-      <Parameter name="error tolerance" type="double" value="1e-14"/>
-      <Parameter name="iterative method" type="string" value="gmres"/>
+      <Parameter name="error tolerance" type="double" value="1e-10"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
       <Parameter name="maximum number of iterations" type="int" value="400"/>
       <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
     </ParameterList>
@@ -321,7 +309,7 @@
       </ParameterList>
 
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
 
       <ParameterList name="pressure">
@@ -492,7 +480,6 @@
         </ParameterList>
       </ParameterList>
 
-
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="Mesh Block 1">
@@ -500,18 +487,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.436e-14"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.436e-14"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.436e-14"/>
                 </ParameterList>
@@ -524,18 +506,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="4.836e-13"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="4.836e-13"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="4.836e-13"/>
                 </ParameterList>
@@ -548,18 +525,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.045e-13"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.045e-13"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.045e-13"/>
                 </ParameterList>
@@ -572,18 +544,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="3.00e-14"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="3.00e-14"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="3.00e-14"/>
                 </ParameterList>
@@ -596,18 +563,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.063e-15"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.063e-15"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.063e-15"/>
                 </ParameterList>
@@ -620,18 +582,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="3.000e-14"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="3.000e-14"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="3.000e-14"/>
                 </ParameterList>
@@ -644,18 +601,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.063e-15"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.063e-15"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.063e-15"/>
                 </ParameterList>
@@ -668,18 +620,13 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Number of DoFs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="3.754e-14"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="3.754e-14"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="3.754e-14"/>
                 </ParameterList>

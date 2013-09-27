@@ -63,7 +63,7 @@ void SolverFnPicard<Vector>::Residual(const Teuchos::RCP<Vector>& u, Teuchos::RC
   RPK_->AssembleMatrixMFD(*u, 0.0);
   RPK_->AssemblePreconditionerMFD(*u, 0.0, 0.0);
 
-  RPK_->matrix()->ComputeResidual(*u, *r);
+  RPK_->matrix()->ComputeNegativeResidual(*u, *r);
 }
 
 
@@ -76,23 +76,22 @@ void SolverFnPicard<Vector>::ApplyPreconditioner(
 {
   AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
-      solver = factory.Create("pcg", RPK_->solvers_list, RPK_->matrix(), RPK_->preconditioner());
+      solver = factory.Create("AztecOO", RPK_->solver_list_, RPK_->matrix(), RPK_->preconditioner());
 
   solver->ApplyInverse(*v, *hv);
 }
 
 
 /* ******************************************************************
-* Calculate relaxation factor.                                                       
+* Calculate residual error.                                                       
 ****************************************************************** */
 template<class Vector>
 double SolverFnPicard<Vector>::ErrorNorm(
-    const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& du)
+    const Teuchos::RCP<const Vector>& u, const Teuchos::RCP<const Vector>& r)
 { 
-  double norm_du, norm_u;
-  du->NormInf(&norm_du);
-  u->NormInf(&norm_u);
-  return norm_du / (1e-10 + norm_u);
+  double rnorm;
+  r->Norm2(&rnorm);
+  return rnorm;
 }
 
 
@@ -119,6 +118,10 @@ bool SolverFnPicard<Vector>::ModifyCorrection(
   double relaxation_tmp = relaxation;
   mesh_->get_comm()->MinAll(&relaxation_tmp, &relaxation, 1);  // find the global minimum
 #endif
+
+  for (int c = 0; c < u->MyLength(); c++) {
+    (*du)[c] *= relaxation;
+  }
 
   return relaxation;
 }
