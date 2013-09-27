@@ -15,7 +15,7 @@
 
     <Parameter name="Flow Model" type="string" value="Richards"/>
     <Parameter name="Transport Model" type="string" value="On"/> 
-    <Parameter name="Chemistry Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
     <Parameter name="Verbosity" type="string" value="High"/>
 
     <ParameterList name="Time Integration Mode">
