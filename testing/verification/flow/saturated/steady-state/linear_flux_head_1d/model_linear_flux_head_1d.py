@@ -99,7 +99,7 @@ def createFromXML(filename):
     #
     #  Boundary Conditions
     #
-    params["h_0"] = search.getElementByPath(xml, "/Main/Boundary Conditions/LeftBC/BC: Hydrostatic/Water Table Height").value[0]
+    params["U_0"] = search.getElementByPath(xml, "/Main/Boundary Conditions/LeftBC/BC: Flux/Inward Mass Flux").value[0]/params["rho"]
     params["h_L"] = search.getElementByPath(xml, "/Main/Boundary Conditions/RightBC/BC: Hydrostatic/Water Table Height").value[0] 
 
     #
@@ -108,7 +108,7 @@ def createFromXML(filename):
     params.setdefault("g",9.80665)
    
     # instantiate the class
-    return LinearHeadHead(params)
+    return LinearFluxHead(params)
 
 if __name__ == "__main__":
 
