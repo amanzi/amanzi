@@ -1363,8 +1363,10 @@
   </ParameterList> <!-- Boundary Conditions -->
 
   <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple"/>
-    <Parameter name="Thermodynamic Database File" type="string" value="ascem-2012-farea.bgd"/>
+    <ParameterList name="Thermodynamic Database">
+      <Parameter name="Format" type="string" value="simple"/>
+      <Parameter name="File" type="string" value="ascem-2012-farea.bgd"/>
+    </ParameterList>
     <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
     <Parameter name="Activity Model" type="string" value="unit"/>
     <Parameter name="Tolerance" type="double" value="1.0e-10"/>
