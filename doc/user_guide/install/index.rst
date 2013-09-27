@@ -12,3 +12,4 @@ Contents:
    building_bootstrap.rst
    building_tpls.rst
    building_amanzi.rst
+   running_amanzi.rst
