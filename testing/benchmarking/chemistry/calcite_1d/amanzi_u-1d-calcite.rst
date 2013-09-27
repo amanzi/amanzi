@@ -1,5 +1,4 @@
 1D Calcite dissolution
-1D Calcite dissolution
 ======================
 
 Overview

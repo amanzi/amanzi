@@ -50,7 +50,7 @@ class SolverNewton : public Solver<Vector> {
   int max_itrs_, num_itrs_;
   int fun_calls_, pc_calls_;
   int max_error_growth_factor_, max_du_growth_factor_;
-  int max_divergence_count_;
+  int max_divergence_count_, stagnation_itr_check_;
   ConvergenceMonitor monitor_;
 };
 
@@ -61,12 +61,13 @@ class SolverNewton : public Solver<Vector> {
 template<class Vector, class VectorSpace>
 void SolverNewton<Vector, VectorSpace>::Init_()
 {
-  tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
+  tol_ = plist_.get<double>("nonlinear tolerance", 1.0e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 50);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
+  stagnation_itr_check_ = plist_.get<int>("stagnation iteration check", 8);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor residual");
 
@@ -133,7 +134,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       // attempt to catch non-convergence early
       if (num_itrs_ == 1) {
         l2_error_initial = l2_error;
-      } else if (num_itrs_ > 8) {
+      } else if (num_itrs_ > stagnation_itr_check_) {
         if (l2_error > l2_error_initial) {
           if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
             *vo_->os() << "Solver stagnating, L2-error=" << l2_error

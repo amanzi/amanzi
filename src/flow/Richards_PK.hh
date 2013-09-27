@@ -141,7 +141,6 @@ class Richards_PK : public Flow_PK {
 
  public:
   Teuchos::ParameterList rp_list_;
-  Teuchos::ParameterList solvers_list;
 
  private:
   double atm_pressure;
