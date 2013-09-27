@@ -1242,6 +1242,23 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	    if (transportON) list.sublist("Numerical Control Parameters").sublist(meshbase) = tpkPL;
 	    if (chemistryON) list.sublist("Numerical Control Parameters").sublist(meshbase) = cpkPL;
           }
+          else if (strcmp(nodeName,"nonlinear_solver")==0) {
+            // EIB: creating sub for section that doesn't actually exist yet in the New Schema, but does in the Input Spec
+	    Teuchos::ParameterList nlsPL;
+            xercesc::DOMNodeList* children = tmpNode->getChildNodes();
+            for (int k=0; k<children->getLength(); k++) {
+              xercesc::DOMNode* currentNode = children->item(k) ;
+              if (xercesc::DOMNode::ELEMENT_NODE == currentNode->getNodeType()) {
+    	        char* tagname = xercesc::XMLString::transcode(currentNode->getNodeName());
+                if (strcmp(tagname,"nonlinear_solver_type")==0) {
+                   textContent = XMLString::transcode(currentNode->getTextContent());
+                   nlsPL.set<std::string>("Nonlinear Solver Type",textContent);
+                   XMLString::release(&textContent);
+		}
+	      }
+	    }
+            list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlsPL;
+          }
         }
       }
     }      
