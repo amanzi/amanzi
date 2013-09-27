@@ -4,3 +4,5 @@ testing/verification/transport/saturated/steady-state/dispersion_aligned_point2d
 
 testing/verification/flow/saturated/transient/theis__isotropic__1d/theis__isotropic__1d-isv2.xml.i
 
+demos/phase2/dvz/3_layer_2d-u/dvz_3_layer_2d-isv2.xml
+

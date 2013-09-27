@@ -109,7 +109,7 @@ a restart option in the execution control section.  Don't know how to set up the
 	        <process_kernels>
 	                <comments>This is a proposed comment field for process_kernels</comments>
 	                <flow state = "on" model = "richards"/>
-	                <transport state = "on" algorithm = "explicit first-order"/>
+	                <transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
 	                <chemistry state = "off" process_model="none"/>
 	        </process_kernels>
 	
@@ -177,14 +177,12 @@ a restart option in the execution control section.  Don't know how to set up the
 	                        <max_iterations>20</max_iterations>
 	                        <max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
 	                        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-	                        <error_rel_tol>0.0</error_rel_tol>
-	                        <error_abs_tol>1.0</error_abs_tol>
 	                        <pseudo_time_integrator>
 	                                <method>picard</method>
-	                                        <preconditioner>hypre amg</preconditioner>
+	                                        <preconditioner>hypre_amg</preconditioner>
 	                                        <linear_solver>aztec00</linear_solver>
 	                                        <control_options>pressure</control_options>
-	                                        <divergent_max_iterations>100</divergent_max_iterations>
+	                                        <max_iterations>100</max_iterations>
 	                                        <clipping_saturation>0.95</clipping_saturation>
 	                                        <convergence_tolerance>0.95</convergence_tolerance>
 	                                        <initialize_with_darcy>true</initialize_with_darcy>
@@ -192,10 +190,7 @@ a restart option in the execution control section.  Don't know how to set up the
 	                </steady-state_controls>
 	                <transient_controls>
 	                        <comments>Proposed comments section.</comments>
-	                        <integration_method name="bdf1">
-	                           <convergence_criteria error_rel_tol="0.0" error_abs_tol="0.0" />
-	                           <nonlinear_solver_parameters min_iterations="12" max_iterations="20" max_preconditioner_lag="5" />
-	                        </integration_method>
+	                        <bdf1_integration_method min_iterations="12" max_iterations="20" max_preconditioner_lag_iterations="5" />
 	                </transient_controls>
 	                <linear_solver>
 	                        <comments>Proposed comment section.</comments>
@@ -208,8 +203,6 @@ a restart option in the execution control section.  Don't know how to set up the
 	                        	<hypre_tolerance>0.1</hypre_tolerance>
 	                        	<hypre_strong_threshold>0.4</hypre_strong_threshold>
 	                        </preconditioner>
-	                        <sub_cycling>true</sub_cycling>
-	                        <transport_sub_cycling>true</transport_sub_cycling>
 	                </linear_solver>
 	        </numerical_controls>
 	
@@ -383,7 +376,7 @@ a restart option in the execution control section.  Don't know how to set up the
 				<assigned_regions>all</assigned_regions>
 			 	<liquid_phase name = "water">
 	                       		<liquid_component name = "water">
-	                           		<pressure value = "101325" function="linear" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
+	                           		<linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
 					</liquid_component>    
 					<solute_component name = "Tc-99" value = "0" function="uniform"/>
 					<solute_component name = "U-234" filename = "uranium_initial.dat" />
