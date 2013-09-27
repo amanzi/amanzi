@@ -76,6 +76,7 @@ Note, the values in the schematic correlate to the values found in
 
 .. figure:: schematic/schematic.png 
     :figclass: align-center
+    :width: 600 px
 
     **a) Plume from point source loading in a constant uniform groundwater flow field. b) Problem domain.**
                     
@@ -116,16 +117,21 @@ The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
 
 .. figure:: figures/plume_centerline.png 
     :figclass: align-center
+    :width: 600 px
 
     **Concentration along plume centerline (y=0) from upgradient to downgradient**
 
+.. include:: table_values_centerline.txt
+
 .. figure:: figures/plume_transverse_well.png 
     :figclass: align-center
+    :width: 500 px
 
     **Concentration transverse to the flow field from plume centerline at x=0.**
 
 .. figure:: figures/plume_transverse_dnwind.png 
     :figclass: align-center
+    :width: 500 px
 
     **Concentration transverse to the flow field from plume centerline at x=424.**
 
