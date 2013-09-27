@@ -71,7 +71,6 @@ The off-diagonal entries are
 
 Schematic
 ~~~~~~~~~
-
 Note, the values in the schematic correlate to the values found in
 :ref:`Plot-Table`.
 
@@ -82,14 +81,61 @@ Note, the values in the schematic correlate to the values found in
                     
 .. _Variables:
         
+
 Defining Variables
 ~~~~~~~~~~~~~~~~~~
+* :math:`Q=8.1483 \cdot 10^{-8}` constant pumping rate [kg/s/m]
+* :math:`\boldsymbol{q}=(1.8634 \cdot 10^{-6},\,0.0)` constant Darcy velocity [m/s]
+* :math:`\phi=0.35` constant porosity
+* :math:`\alpha_L=21.3` longitudinal dispersivity [m]
+* :math:`\alpha_T=4.3` transverse dispersivity [m]
+* :math:`D_m=0.0` molecular diffusion coefficient [m^2/s]
+* :math:`T=1400` simulation time [d]
 
-* *Q* constant pumping rate
-* :math:`h(r,0)` initial water table table height
-* *r* radial distnace measured outward from well
-* *t* duration of pumping time
+Initial condition: :math:`C(x,0)=0` [kg/m^3]
+
+Boundary conditions: :math:`C(x,t)=0` [kg/m^3]
+
+The background mesh consists of square cells with size :math:`H=15` m.
+It has 84 grid cells in the x-direction and 37 grid cells in the y-direction. 
+The mesh is gradually refined toward the source such that the well is
+represented by a square cell of :math:`h=0.46875` [m] (:math:`h = H/32`).
+The mesh refinement adds 17% more cells.
+
+.. figure:: figures/mesh.png 
+    :figclass: align-center
+
+    **Computational mesh with 3650 cells.**
 
 
-The Amanzi grid resolution is nominally 15 m x 15 m but with 0.2 m x 0.2 m source cell.  This results in 84 grid cells in the x-direction and 37 grid cells in the y-direction.  The internal Amanzi calculational units are kilograms, meters, and seconds.  The nominal parameters specified in Aleman (2007) and the Amanzi conversions are presented below.
+Results and Comparison
+~~~~~~~~~~~~~~~~~~~~~~
+The plume structure is characterized by three line cuts.
+The first cut is given by line :math:`y=0` that goes through the well.
+The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
+
+.. figure:: figures/plume_centerline.png 
+    :figclass: align-center
+
+    **Concentration along plume centerline (y=0) from upgradient to downgradient**
+
+.. figure:: figures/plume_transverse_well.png 
+    :figclass: align-center
+
+    **Concentration transverse to the flow field from plume centerline at x=0.**
+
+.. figure:: figures/plume_transverse_dnwind.png 
+    :figclass: align-center
+
+    **Concentration transverse to the flow field from plume centerline at x=424.**
+
+
+References
+~~~~~~~~~~
+
+Aleman, S. 2007. PORFLOW Testing and Verification Document. Savannah River National 
+Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
+
+Yeh, G.T. 1981. AT123D: Analytical transient one-, two-, and three-dimensional 
+simulation of transport in the aquifer system, Oak Ridge National Lab., Tennessee, Report No. ORNL-5602.
 
