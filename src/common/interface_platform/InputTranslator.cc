@@ -2342,7 +2342,7 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 		times.append(times[0]+1.);
 		vals.append(vals[0]);
 	      }
-	      if (times.length()==funcs.length()) funcs.remove(0); //EIB - this is iffy!!!
+	      if (times.length()==funcs.length()) funcs.remove(funcs.length()-1); //EIB - this is iffy!!!
 	        // create a new list here
 	        Teuchos::ParameterList newbclist;
 	        newbclist.set<Teuchos::Array<double> >("Times",times);
@@ -2385,6 +2385,7 @@ Teuchos::ParameterList get_boundary_conditions(xercesc::DOMDocument* xmlDoc, Teu
 		              xercesc::XMLString::transcode("name")));
 		}
 	      }
+	      if (times.length()==funcs.length()) funcs.remove(funcs.length()-1); //EIB - this is iffy!!!
 	      //TODO: EIB - not added concerntation units, need to grab from units
 	      sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<double> >("Times",times);
 	      sclist.sublist("BC: Uniform Concentration").set<Teuchos::Array<std::string> >("Time Functions",funcs);
