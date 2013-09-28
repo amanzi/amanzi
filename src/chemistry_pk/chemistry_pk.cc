@@ -841,12 +841,5 @@ void Chemistry_PK::set_chemistry_output_names(std::vector<string>* names) {
   }
 }  // end set_chemistry_output_names()
 
-void Chemistry_PK::set_component_names(std::vector<string>* names) {
-  // TODO(bandre): this interface should no longer be used because the
-  // xml input file should contain this data in a place state can
-  // obtain it
-  chem_->GetPrimaryNames(names);
-}  // end set_component_names()
-
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

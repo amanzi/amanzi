@@ -90,10 +90,6 @@ class Chemistry_PK: public Chemistry_PK_Base {
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
 
-  // Ben: this routine should set the strings that will be
-  // appended to the component_x tag in the cgns output
-  void set_component_names(std::vector<std::string>* names);
-
  protected:
 
  private:
