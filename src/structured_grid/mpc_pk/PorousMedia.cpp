@@ -1098,31 +1098,11 @@ PorousMedia::initData ()
               const Real* gradp = &(vals[1]);
               const Real* ref_loc = &(vals[1+BL_SPACEDIM]);
               const Real* problo = geom.ProbLo();
+              const Real* probhi = geom.ProbHi();
 
               FORT_LINEAR_PRESSURE(lo, hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
-                                   dx, problo, ref_val, ref_loc, gradp);
+                                   dx, problo, probhi, ref_val, ref_loc, gradp);
 
-	    }
-            else if (type == "hydrostatic") 
-	    {
-                Array<Real> vals = ic();
-                BL_ASSERT(model >= 2);
-                FArrayBox& cdat = (*cpl_coef)[mfi];
-                const int n_cpl_coef = cpl_coef->nComp();
-                DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
-                FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-                           density.dataPtr(),&ncomps, 
-                           c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
-                           dx, vals.dataPtr(), &gravity);
-
-                Array<Real> gradp(BL_SPACEDIM,0);
-                Real dr = (ncomps == 1 ? density[0] : density[0] - density[1]);
-                gradp[BL_SPACEDIM-1] = - gravity * dr;
-                const Real* problo = geom.ProbLo();
-                const Real* ref_loc = problo;
-                Real ref_val = 0;
-                FORT_LINEAR_PRESSURE(lo, hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
-                                     dx, problo, &ref_val, ref_loc, gradp.dataPtr());
 	    }
             else if (type == "zero_total_velocity")
 	    {	     
@@ -1154,6 +1134,7 @@ PorousMedia::initData ()
 				s_bc);
 		  P_new[mfi].copy((*pcnp1_cc)[mfi]);
 		  P_new[mfi].mult(-1.0);
+		  P_new[mfi].plus(atmospheric_pressure_atm);
 		}
 	    }
             else if (type == "constant_velocity")
@@ -2282,12 +2263,6 @@ PorousMedia::init (AmrLevel& old)
   if (is_grid_changed_after_regrid && model == PM_STEADY_SATURATED) {
     set_vel_from_bcs(cur_time,u_mac_curr);
   }
-  /*  if (!is_grid_changed_after_regrid && model == PM_RICHARDS)
-      {
-      MultiFab P_tmp(grids      MultiFab::Copy(P_tmp,P_new,0,0,1,1);
-      P_tmp.mult(-1.0);
-      calcInvCapillary(S_new,P_tmp);
-      }*/
 
   //
   // Get best cell-centered velocity data: from old.
@@ -3097,8 +3072,6 @@ PorousMedia::advance_flow_nochange(Real time, Real dt)
       for (int d=0; d<BL_SPACEDIM; ++d) {
 	for (MFIter mfi(u_mac_curr[d]); mfi.isValid(); ++mfi) {
 	  u_mac_curr[d][mfi].copy(u_macG_curr[d][mfi.index()],0,0,1);
-
-	  std::cout << u_macG_curr[d][mfi.index()] << std::endl;
 	}
 	MultiFab::Copy(u_macG_prev[d],u_macG_curr[d],0,0,1,0);
 	MultiFab::Copy(u_macG_trac[d],u_macG_curr[d],0,0,1,0);
@@ -4708,7 +4681,7 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
 				  (*rock_phi)[i], (*kappa)[i],
 				  use_conserv_diff,
 				  state_ind,state_bc.dataPtr(),volume[i],
-				  nscal,gravity,eigmax_m);
+				  nscal,gravity,gravity_dir,eigmax_m);
 	}
 
       //
@@ -6833,6 +6806,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   calcLambda(pcTime);
   MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
   P_new.mult(-1.0,1);
+  P_new.plus(atmospheric_pressure_atm,1);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
   MultiFab* dalpha=0;
   bool do_n = true;
@@ -6840,7 +6814,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
   calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_n);
   while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
     {
-      diffusion->richard_iter_eqb(nc,gravity,density,res_fix,
+      diffusion->richard_iter_eqb(nc,gravity,gravity_dir,density,res_fix,
 				  cmp_pcp1,cmp_pcp1_dp,
 				  u_mac,do_upwind,&err_nwt);      
       if (verbose > 3 && ParallelDescriptor::IOProcessor())
@@ -6852,6 +6826,7 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
       calcLambda(pcTime);
       MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
       P_new.mult(-1.0,1);
+      P_new.plus(atmospheric_pressure_atm,1);
       compute_vel_phase(u_mac,0,pcTime);
       calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
       calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_n);
@@ -7009,10 +6984,11 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
       calcCapillary(pcTime);
       MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
       P_new.mult(-1.0,1);
+      P_new.plus(atmospheric_pressure_atm,1);
       while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
             itr_nwt++;
-            diffusion->richard_iter(dt,nc,gravity,density,res_fix,
+            diffusion->richard_iter(dt,nc,gravity,gravity_dir,density,res_fix,
                                     alpha,cmp_pcp1,cmp_pcp1_dp,
                                     u_mac,do_upwind,linear_status);
             
@@ -7030,6 +7006,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
                 calcLambda(pcTime);
                 MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
                 P_new.mult(-1.0,1);
+                P_new.plus(atmospheric_pressure_atm,1);
                 compute_vel_phase(u_mac,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind,pcTime);
                 calc_richard_jac (cmp_pcp1_dp,dalpha,lambdap1_cc,u_mac,pcTime,dt,0,do_upwind,do_richard_sat_solve);
@@ -7045,7 +7022,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
       while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)  && (linear_status.success)) 
 	{
             itr_nwt++;
-            diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
+            diffusion->richard_iter_p(dt,nc,gravity,gravity_dir,density,res_fix,
                                       alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
                                       u_mac,do_upwind,linear_status);
 
@@ -7081,7 +7058,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   const int nComp = 1;
   if (retVal == RichardNLSdata::RICHARD_SUCCESS) {
       diffusion->allocFluxBoxesLevel(fluxSC,nGrow,nComp);
-      diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+      diffusion->richard_flux(nc,-1.0,gravity,gravity_dir,density,fluxSC,pcnp1_cc,cmp_pcp1);
   }
 
   delete alpha;
@@ -7226,6 +7203,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
             //fine_lev.calcLambda(pcTime);
 	  MultiFab::Copy(P_lev,*(fine_lev.pcnp1_cc),0,0,1,1);
 	  P_lev.mult(-1.0,1);
+          P_lev.plus(atmospheric_pressure_atm,1);
 	}
   }
 
@@ -7245,7 +7223,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
         while ((nl_data.NLIterationsTaken() < nl_data.MaxNLIterations()) && (err_nwt > max_err_nwt) && (linear_status.success)) 
 	{
           nl_data++;
-	  diffusion->richard_composite_iter(dt,nlevs,nc,gravity,density,res_fix,
+	  diffusion->richard_composite_iter(dt,nlevs,nc,gravity,gravity_dir,density,res_fix,
 					    alpha,cmp_pcp1,cmp_pcp1_dp,u_mac_local,
 					    do_upwind,linear_status); 
 
@@ -7261,6 +7239,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 	      fine_lev.calcLambda(pcTime);
 	      MultiFab::Copy(P_lev,*(fine_lev.pcnp1_cc),0,0,1,1);
 	      P_lev.mult(-1.0,1);
+              P_lev.plus(atmospheric_pressure_atm,1);
 
 	      MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
 	      MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
@@ -7290,7 +7269,7 @@ PorousMedia::richard_composite_update (Real dt, RichardNLSdata& nl_data)
 	  bool update_jac = false;
 	  for (int lev=0;lev<nlevs;lev++) update_jac = nl_data.UpdateJacobian(lev) || update_jac;
 	  const Real tmp_time = ParallelDescriptor::second();
-	  diffusion->richard_composite_iter_p(dt,nlevs,nc,gravity,density,res_fix,
+	  diffusion->richard_composite_iter_p(dt,nlevs,nc,gravity,gravity_dir,density,res_fix,
                                               alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
                                               u_mac_local,update_jac,do_upwind,linear_status); 
 	  solve_time+= ParallelDescriptor::second() - tmp_time;
@@ -10294,9 +10273,10 @@ PorousMedia::richard_sync ()
       calcCapillary(pcTime);
       MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
       P_new.mult(-1.0,1);
+      P_new.plus(atmospheric_pressure_atm,1);
       while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.status!="Finished")) 
 	{
-            diffusion->richard_iter(dt,nc,gravity,density,res_fix,
+          diffusion->richard_iter(dt,nc,gravity,gravity_dir,density,res_fix,
                                     alpha,cmp_pcp1,cmp_pcp1_dp,
                                     u_mac_curr,do_upwind,linear_status);    
             
@@ -10313,6 +10293,7 @@ PorousMedia::richard_sync ()
                 calcLambda(pcTime);
                 MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
                 P_new.mult(-1.0,1);
+                P_new.plus(atmospheric_pressure_atm,1);
                 compute_vel_phase(u_mac_curr,0,pcTime);
                 calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind,pcTime);
                 calc_richard_jac (cmp_pcp1_dp,0,lambdap1_cc,u_mac_curr,pcTime,dt,0,do_upwind,do_richard_sat_solve);
@@ -10328,7 +10309,7 @@ PorousMedia::richard_sync ()
 
       while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt) && (linear_status.status!="Finished")) 
 	{
-            diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
+          diffusion->richard_iter_p(dt,nc,gravity,gravity_dir,density,res_fix,
                                       alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
                                       u_mac_curr,do_upwind,linear_status);
 
@@ -10367,7 +10348,7 @@ PorousMedia::richard_sync ()
 
   if (retVal == RichardNLSdata::RICHARD_SUCCESS)
   {  
-      diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+    diffusion->richard_flux(nc,-1.0,gravity,gravity_dir,density,fluxSC,pcnp1_cc,cmp_pcp1);
 
       if (verbose > 3 && ParallelDescriptor::IOProcessor())
       {
@@ -10446,6 +10427,7 @@ PorousMedia::richard_sync ()
               MultiFab P_tmp(fine_grids,1,0);
               MultiFab::Copy(P_tmp,P_new,0,0,1,0);
               P_tmp.mult(-1.0);
+              P_tmp.plus(atmospheric_pressure_atm,0);
               fine_lev.calcInvCapillary(sync_incr,P_tmp);
               MultiFab::Copy(S_new,sync_incr,0,0,1,0);
           }
@@ -11850,9 +11832,11 @@ PorousMedia::calcInvPressure (FArrayBox& n,
                               const FArrayBox& cpl_coef) const
 {
   FArrayBox& pc = const_cast<FArrayBox&>(pressure); // We will be careful!
-  pc.mult(-1,0,ncomps);
+  pc.mult(-1,0,ncomps); // Pcap = Pair - Pwater
+  pc.plus(atmospheric_pressure_atm);
   calcInvCapillary(n,pc,rock_phi,kappa,cpl_coef);
-  pc.mult(-1);
+  pc.mult(-1); // Pwater = Pair - Pcap
+  pc.plus(atmospheric_pressure_atm);
 }
 
 void 
@@ -12397,16 +12381,33 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
                 regions[j].setVal(mask,1,0,dx,0);
               }
               Real head_val = face_bc(t_eval)[0] * density[0] * gravity; // gravity=g/101325
-              Array<Real> gradp(BL_SPACEDIM,0);
-              gradp[BL_SPACEDIM-1] = - density[0] * gravity;// gravity=g/101325
+
+              Array<Real> gradp(3,0);
+              gradp[gravity_dir] = - density[0] * gravity;// gravity=g/101325
               const Real* problo = geom.ProbLo();
+              const Real* probhi = geom.ProbHi();
+
+              Array<Real> glo(BL_SPACEDIM), ghi(BL_SPACEDIM);
+              if (use_gauge_pressure[face_bc.Label()]) {
+                glo.resize(BL_SPACEDIM,0);
+                for (int j=0; j<BL_SPACEDIM; ++j) {
+                  ghi[j] = probhi[j] - problo[j];
+                }
+              }
+              else {
+                for (int j=0; j<BL_SPACEDIM; ++j) {
+                  glo[j] = problo[j];
+                  ghi[j] = probhi[j];
+                }
+              }
+
               const Real* ref_loc = problo;
               Real ref_val = head_val;
               Real* p_ptr = prdat.dataPtr();
               const int* p_lo = prdat.loVect();
               const int* p_hi = prdat.hiVect();
               FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
-                                   dx, problo, &ref_val, ref_loc, gradp.dataPtr());
+                                   dx, glo.dataPtr(), ghi.dataPtr(), &ref_val, ref_loc, gradp.dataPtr());
 
             }
             else if (face_bc.Type() == "linear_pressure") {
@@ -12421,8 +12422,9 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, Real time)
               const int* p_lo = prdat.loVect();
               const int* p_hi = prdat.hiVect();
               const Real* problo = geom.ProbLo();
+              const Real* probhi = geom.ProbHi();
               FORT_LINEAR_PRESSURE(p_lo, p_hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
-                                   dx, problo, &(vals[0]), loc, gradp);
+                                   dx, problo, probhi, &(vals[0]), loc, gradp);
             }
 
             for (IntVect iv=subbox.smallEnd(); iv<=subbox.bigEnd(); subbox.next(iv)) {
@@ -12630,7 +12632,7 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
                                    MultiFab& mf,
                                    int       dcomp)
 {
-  Real t_new = state[Press_Type].curTime(); 
+  Real t_new = state[Press_Type].curTime();
   int ncomp = 1;
   int ngrow = mf.nGrow();
   const Real* plo = geom.ProbLo();
@@ -12640,6 +12642,7 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
       BoxLib::Abort("PorousMedia::derive_Hydraulic_Head: cannot derived hydraulic head since gravity = 0");
     }
     AmrLevel::derive("pressure",time,mf,dcomp);
+    mf.plus(-atmospheric_pressure_atm,dcomp,ncomps,ngrow);
     Array<Real> rhog(ncomps);
     for (int i=0; i<ncomps; ++i) {
       rhog[i] = density[i] * gravity;
@@ -12649,7 +12652,10 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
       const Box box = BoxLib::grow(mfi.validbox(),ngrow);
       FORT_HYD_HEAD(box.loVect(), box.hiVect(),
                     fab.dataPtr(), ARLIM(fab.loVect()), ARLIM(fab.hiVect()),
-                    rhog.dataPtr(), dx, plo, &ncomps);
+                    rhog.dataPtr(), &gravity_dir, dx, plo, &ncomps);
+    }
+    if (BL_SPACEDIM<3 && gravity_dir>BL_SPACEDIM-1) {
+      mf.plus(z_location,dcomp,ncomps,ngrow);
     }
   }
   else {
@@ -12731,6 +12737,21 @@ PorousMedia::derive_Tortuosity(Real      time,
       // Assume one component, return def
       Real tortuosity_DEF = 1;
       mf.setVal(tortuosity_DEF,dcomp,1);
+    }
+}
+
+void
+PorousMedia::derive_SpecificStorage(Real      time,
+                                    MultiFab& mf,
+                                    int       dcomp)
+{
+    MatFiller* matFiller = PMParent()->GetMatFiller();
+    bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,mf,
+                                      "specific_storage",dcomp,mf.nGrow());
+    if (!ret) {
+      // Assume one component, return def
+      Real specific_storage_DEF = 1;
+      mf.setVal(specific_storage_DEF,dcomp,1);
     }
 }
 
@@ -12847,6 +12868,9 @@ PorousMedia::derive (const std::string& name,
     }
     else if (name == "Tortuosity") {
       derive_Tortuosity(time,mf,dcomp);
+    }
+    else if (name == "Specific_Storage") {
+      derive_SpecificStorage(time,mf,dcomp);
     }
     else {
       not_found_yet = true;

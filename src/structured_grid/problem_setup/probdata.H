@@ -4,9 +4,9 @@
       REAL_T  gravity
       integer phaseidx(1:100)
       integer ncomps, nphases, nreact, ntracers, naux
-      integer probtype, model
+      integer probtype, model, gravity_dir
 
-      common /probdt1/ probtype, model
+      common /probdt1/ probtype, model, gravity_dir
       common /probdt2/ denerr, adverr
       common /probdt3/ ncomps, nphases, nreact, ntracers, naux
       common /probdt4/ rhoval, muval, phaseidx

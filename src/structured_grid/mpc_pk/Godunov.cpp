@@ -841,6 +841,7 @@ Godunov::edge_states_pmr (const Box&  grd,
 			  int         iconserv,
 			  int         nscal,
 			  Real        gravity,
+                          int         gravity_dir,
 			  Real*       eigmax)
 {
   //
@@ -938,7 +939,7 @@ Godunov::edge_states_pmr (const Box&  grd,
 #endif
 		  ARLIM(ww_lo), ARLIM(ww_hi),
 		  bc, lo, hi, &dt, dx, 
-		  &use_forces_in_trans, &iconserv, &gravity, eigmax, &state_eps);
+		  &use_forces_in_trans, &iconserv, &gravity, &gravity_dir, eigmax, &state_eps);
 
 }
 
@@ -1468,6 +1469,7 @@ Godunov::AdvectStatePmr (const Box&  grd,
 			 FArrayBox&  vol,
 			 int         nscal,
 			 Real        gravity,
+			 int         gravity_dir,
                          Real*       eigmax)
 //
 // Compute the advective derivative from fluxes.
@@ -1484,7 +1486,7 @@ Godunov::AdvectStatePmr (const Box&  grd,
 #endif
 		  S, S_new, tforces, divu, rock_phi, kappa,
 		  fab_ind, state_ind, bc, 
-		  iconserv, nscal,gravity,eigmax);
+		  iconserv, nscal,gravity,gravity_dir,eigmax);
   //
   // Compute the advective tendency.
   //

@@ -15,7 +15,7 @@ c ::: -----------------------------------------------------------
 c ::: Initiate data in probdata.H 
 c ::: -----------------------------------------------------------
       subroutine FORT_INITPARAMS(ncomps_in,nphases_in,model_in,rhoval_in,
-     &     mu_in,phaseidx_in,gravity_in)
+     &     mu_in,phaseidx_in,gravity_in,gravity_dir_in)
 
       implicit none
 
@@ -26,6 +26,7 @@ c ::: -----------------------------------------------------------
       REAL_T  rhoval_in(ncomps_in)
       REAL_T  mu_in(ncomps_in)
       REAL_T  gravity_in
+      integer gravity_dir_in
 
       integer n
   
@@ -38,6 +39,7 @@ c ::: -----------------------------------------------------------
          phaseidx(n) = phaseidx_in(n)
       end do
       gravity      = gravity_in
+      gravity_dir  = gravity_dir_in
       end
 
 c ::: -----------------------------------------------------------
