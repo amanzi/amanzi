@@ -636,7 +636,7 @@ c :: RHOGBC: Define the hydrostatic values of phi along boundaries
 c :: -------------------------------------------------------------
 
       subroutine FORT_RHOGBC(rhog,DIMS(rhog),phi,DIMS(phi),
-     &     face,gravity,dx,domlo,domhi,
+     &     face,gravity,gravity_dir,dx,domlo,domhi,
      &     lo_bc,hi_bc,press_lo,press_hi)
 c
 c    Compute the contribution of gravity to the boundary conditions
@@ -655,6 +655,7 @@ c
       REAL_T  phi(DIMV(phi))
       REAL_T  dx(SDIM)
       REAL_T  gravity
+      integer gravity_dir
       REAL_T  press_lo(SDIM)
       REAL_T  press_hi(SDIM)
 

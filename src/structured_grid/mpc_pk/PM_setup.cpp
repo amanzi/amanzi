@@ -193,6 +193,8 @@ Real PorousMedia::steady_richard_max_dt;
 Real PorousMedia::transient_richard_max_dt;
 Real PorousMedia::dt_cutoff;
 Real PorousMedia::gravity;
+int  PorousMedia::gravity_dir;
+Real PorousMedia::z_location;
 int  PorousMedia::initial_step;
 int  PorousMedia::initial_iter;
 int  PorousMedia::sum_interval;
@@ -219,6 +221,9 @@ bool PorousMedia::def_harm_avg_cen2edge;
 // Capillary pressure flag.
 //
 int  PorousMedia::have_capillary;
+Real PorousMedia::atmospheric_pressure_atm;
+std::map<std::string,bool> PorousMedia::use_gauge_pressure;
+
 //
 // Molecular diffusion flag.
 //
@@ -573,6 +578,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::transient_richard_max_dt = -1; // Ignore if < 0
   PorousMedia::dt_cutoff    = 0.0;
   PorousMedia::gravity      = 9.807 / BL_ONEATM;
+  PorousMedia::gravity_dir  = BL_SPACEDIM-1;
+  PorousMedia::z_location   = 0;
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
   PorousMedia::sum_interval = -1;
@@ -586,7 +593,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::def_harm_avg_cen2edge = true;
 
   PorousMedia::have_capillary = 0;
-
+  PorousMedia::atmospheric_pressure_atm = 1;
   PorousMedia::saturation_threshold_for_vg_Kr = -1; // <0 bypasses smoothing
   PorousMedia::use_shifted_Kr_eval = 0; //
 
@@ -1136,6 +1143,7 @@ PorousMedia::read_rock()
     bool user_specified_molecular_diffusion_coefficient = false;
     bool user_specified_dispersivity = false;
     bool user_specified_tortuosity = false;
+    bool user_specified_specific_storage = false;
     for (int i = 0; i<nrock; i++)
     {
         const std::string& rname = r_names[i];
@@ -1144,6 +1152,7 @@ PorousMedia::read_rock()
         user_specified_molecular_diffusion_coefficient = ppr.countval("molecular_diffusion.val");
         user_specified_tortuosity = ppr.countval("tortuosity.val");
         user_specified_dispersivity = ppr.countval("dispersivity.alphaL");
+        user_specified_specific_storage = ppr.countval("specific_storage.val");
     }
 
     diffuse_tracers = do_tracer_diffusion
@@ -1185,6 +1194,14 @@ PorousMedia::read_rock()
           ppr.query("tortuosity.val",rTortuosity);
           std::string Tortuosity_str = "tortuosity";
           Tortuosity_func = new ConstantProperty(Tortuosity_str,rTortuosity,harm_crsn,pc_refine);
+        }
+
+        Real rSpecificStorage = 1;
+        Property* SpecificStorage_func = 0;
+        if (user_specified_specific_storage) {
+          ppr.query("specific_storage.val",rSpecificStorage);
+          std::string SpecificStorage_str = "specific_storage";
+          SpecificStorage_func = new ConstantProperty(SpecificStorage_str,rSpecificStorage,arith_crsn,pc_refine);
         }
 
         Property* phi_func = 0;
@@ -1350,6 +1367,9 @@ PorousMedia::read_rock()
         if (Tortuosity_func) {
           properties.push_back(Tortuosity_func);
         }
+        if (SpecificStorage_func) {
+          properties.push_back(SpecificStorage_func);
+        }
         properties.push_back(krel_func);
         properties.push_back(cpl_func);
         materials.set(i,new Material(rname,rregions,properties));
@@ -1357,6 +1377,7 @@ PorousMedia::read_rock()
         delete kappa_func;
         delete Dmolec_func;
         delete Tortuosity_func;
+        delete SpecificStorage_func;
         delete krel_func;
         delete cpl_func;
     }
@@ -1698,6 +1719,15 @@ void PorousMedia::read_prob()
   if (pb.contains("gravity")) {
     pb.get("gravity",gravity);
     gravity /= BL_ONEATM;
+  }
+  pb.query("gravity_dir",gravity_dir);
+  BL_ASSERT(gravity_dir>=0 && gravity_dir<3); // Note: can set this to 2 for a 2D problem
+  if (BL_SPACEDIM<3 && gravity_dir>BL_SPACEDIM-1) {
+    pb.query("z_location",z_location);
+  }
+  if (pb.countval("atmospheric_pressure_atm")) {
+    pp.get("atmospheric_pressure_atm",atmospheric_pressure_atm);
+    atmospheric_pressure_atm *= 1 / BL_ONEATM;
   }
 
   // Get algorithmic flags and options
@@ -2121,6 +2151,8 @@ void  PorousMedia::read_comp()
           int component_bc = 1;
 	  int pressure_bc  = 1;
 
+          use_gauge_pressure[bcname] = false; // Default value
+
           if (bc_type == "pressure")
           {
               int nPhase = pNames.size();
@@ -2168,6 +2200,17 @@ void  PorousMedia::read_comp()
             int nv = ppr.countval(val_name.c_str());
             if (nv) {
               ppr.getarr(val_name.c_str(),vals,0,nv);
+            }
+
+            if (pp.countval("normalization")>0) {
+              std::string norm_str; pp.get("normalization",norm_str);
+              if (norm_str == "Absolute") {
+                use_gauge_pressure[bcname] = false;
+              } else if (norm_str == "Relative") {
+                use_gauge_pressure[bcname] = true;
+              } else {
+                BoxLib::Abort("pressure_head BC normalization must be \"Absolute\" or \"Relative\"");
+              }
             }
 
             is_inflow = false;
@@ -2842,14 +2885,14 @@ void PorousMedia::read_params()
   read_chem();
 
   // source
-  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-  //  std::cout << "Read sources."<< std::endl;
-  //read_source();
-
+  read_source();
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read sources."<< std::endl;
+  
   int model_int = Model();
   FORT_INITPARAMS(&ncomps,&nphases,&model_int,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
-		  &gravity);
+		  &gravity,&gravity_dir);
     
   if (ntracers > 0)
     FORT_TCRPARAMS(&ntracers);

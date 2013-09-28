@@ -851,6 +851,7 @@ MacProj::set_dirichlet_bcs (int             level,
   //
   PorousMedia* pm_level = dynamic_cast<PorousMedia*>(&parent->getLevel(level));
   Real gravity = pm_level->getGravity();
+  int gravity_dir = pm_level->getGravityDir();
 
   Array<Orientation> Faces;
   PorousMedia::getDirichletFaces(Faces,Press_Type,p_bc);
@@ -934,7 +935,7 @@ MacProj::set_dirichlet_bcs (int             level,
 
 	      FORT_RHOGBC(rhoPtr,ARLIM(rholo),ARLIM(rhohi),
 			  phiPtr,ARLIM(philo),ARLIM(phihi),
-			  &face[iface],&gravity,dx,domlo,domhi,
+			  &face[iface],&gravity,&gravity_dir,dx,domlo,domhi,
 			  lo_bc,hi_bc, press_lo.dataPtr(), press_hi.dataPtr());
 	
 	      // Must do this kind of copy instead of mac_phi->copy(phidat);
