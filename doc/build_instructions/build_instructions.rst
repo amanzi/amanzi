@@ -1,5 +1,5 @@
 ==============================================
-Building and Installing Amanzi 
+Building and Installing Amanzi Using CMake
 ==============================================
 
 CMake Quickstart
