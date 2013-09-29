@@ -123,17 +123,25 @@ The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
 
 .. include:: table_values_centerline.txt
 
+The analytic data were computed with the AT123DAT software package.
+A difference observed near downstream boundary is due to boundary conditions
+on which the two models are based.
+
 .. figure:: figures/plume_transverse_well.png 
     :figclass: align-center
     :width: 500 px
 
     **Concentration transverse to the flow field from plume centerline at x=0.**
 
+.. include:: table_values_cross_a.txt
+
 .. figure:: figures/plume_transverse_dnwind.png 
     :figclass: align-center
     :width: 500 px
 
     **Concentration transverse to the flow field from plume centerline at x=424.**
+
+.. include:: table_values_cross_b.txt
 
 
 References
