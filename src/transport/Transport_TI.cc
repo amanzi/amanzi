@@ -93,6 +93,11 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     }
   }
 
+  // process external sources
+  if (src_sink != NULL) {
+    ComputeAddSourceTerms(t, 1.0, src_sink, f_component);
+  }
+
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
     double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
     f_component[c] /= vol_phi_ws;
