@@ -554,6 +554,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
+  mass_tracer_source = 0.0;
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -575,6 +576,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
       (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio;
     }
   }
+
+  // update mass balance
+  mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
