@@ -847,7 +847,8 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
 	}
 	
         // transport is on, set some defaults
-        trp_list.set<int>("discretization order",1);
+        trp_list.set<int>("spatial discretization order", 1);
+        trp_list.set<int>("temporal discretization order", 1);
         trp_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         trp_list.set<std::string>("enable internal tests", "no");
         trp_list.set<double>("CFL", CFL);
@@ -863,9 +864,11 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
               if (t_list.isParameter("Transport Integration Algorithm")) {
                 std::string tia = t_list.get<std::string>("Transport Integration Algorithm");
                 if ( tia == "Explicit First-Order" ) {
-                  trp_list.set<int>("discretization order",1);
+                  trp_list.set<int>("spatial discretization order", 1);
+                  trp_list.set<int>("temporal discretization order", 1);
                 } else if ( tia == "Explicit Second-Order" ) {
-                  trp_list.set<int>("discretization order",2);
+                  trp_list.set<int>("spatial discretization order", 2);
+                  trp_list.set<int>("temporal discretization order", 2);
                 }
               }
             }
