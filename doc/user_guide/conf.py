@@ -37,6 +37,12 @@ extensions = ['sphinx.ext.todo',
               'sphinxcontrib.tikz',
               ]
 
+
+if ( os.environ['MATHJAX_SSL'] == "1" ):
+    mathjax_path='https://software.lanl.gov/ascem/tpls/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+#endif
+
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

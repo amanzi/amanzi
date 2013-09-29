@@ -16,12 +16,6 @@ SPHINXBUILD   = export PYTHONPATH=$(NEW_PYTHONPATH); sphinx-build
 PAPER         =
 BUILDDIR      = _build
 
-# Build for MathJax over ssl?
-
-ifdef MATHJAX_SSL
-  SPHINXOPTS += -D mathjax_path=https://software.lanl.gov/ascem/tpls/mathjax/latest/MathJax.js
-endif
-
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
@@ -63,13 +57,16 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-html:
+html-ssl-set:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 html-ssl:
-	make MATHJAX_SSL=1 html
+	make MATHJAX_SSL=1 html-ssl-set
+
+html:
+	make MATHJAX_SSL=0 html-ssl-set
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
