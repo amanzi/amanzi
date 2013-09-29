@@ -454,6 +454,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
+  mass_tracer_source = 0.0;
 
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
@@ -531,6 +532,9 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
     for (int i = 0; i < num_components; i++) (*tcc_next)[i][c] /= vol_phi_ws;
   }
 
+  // update mass balance
+  mass_tracer_exact += mass_tracer_source * dT;
+
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
     CheckGEDproperty(*tcc_nextMPC);
@@ -550,6 +554,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
+  mass_tracer_source = 0.0;
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -562,7 +567,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
     Epetra_Vector*& tcc_component = (*tcc)(i);
     TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
-    double T = 0.0;
+    double T = T_physics;
     fun(T, *component_, f_component);
 
     double ws_ratio;
@@ -571,6 +576,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
       (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio;
     }
   }
+
+  // update mass balance
+  mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
@@ -590,6 +598,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
+  mass_tracer_source = 0.0;
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -605,7 +614,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
     Epetra_Vector*& tcc_component = (*tcc)(i);
     TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
-    double T = 0.0;
+    double T = T_physics;
     fun(T, *component_, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
@@ -623,6 +632,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
       (*tcc_next)[i][c] = ((*tcc_next)[i][c] + value) / 2;
     }
   }
+
+  // update mass balance
+  mass_tracer_exact += mass_tracer_source * dT / 2;
 
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
@@ -679,7 +691,8 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 
 
 /* ******************************************************************
-* Computes source and sink terms and adds them to vector tcc.                                   
+* Computes source and sink terms and adds them to vector tcc.
+* Return mass rate for the tracer.
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
                                          Functions::TransportDomainFunction* src_sink, 
@@ -698,10 +711,10 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
     Functions::TransportDomainFunction::Iterator src;
     for (src = src_sink->begin(); src != src_sink->end(); ++src) {
       int c = src->first;
-      double value = dTp * mesh_->cell_volume(c) * src->second;
+      double value = mesh_->cell_volume(c) * src->second;
 
-      tcc[i][c] += value;
-      if (i == 0) mass_tracer_exact += value;
+      tcc[i][c] += dTp * value;
+      if (i == 0) mass_tracer_source += value;
     }
   }
 }
@@ -737,13 +750,6 @@ void Transport_PK::IdentifyUpwindCells()
     }
   }
 }
-
-
-
-
-
-
-
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi
