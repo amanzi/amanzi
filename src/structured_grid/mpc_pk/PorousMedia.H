@@ -1201,6 +1201,7 @@ protected:
   static Array<Real> density;
   static PArray<RegionData> ic_array;
   static PArray<RegionData> bc_array;
+  static PArray<RegionData> source_array;
   static Array<Real> muval;
   static Array<std::string> user_derive_list;;
   
@@ -1212,6 +1213,7 @@ protected:
   static Array<Real> tDen;
   static Array<PArray<RegionData> > tic_array;
   static Array<PArray<RegionData> > tbc_array;
+  static Array<PArray<RegionData> > tsource_array;
   static std::map<std::string,Array<int> > group_map;
 
   // Minerals, Sorption sites
@@ -1270,7 +1272,6 @@ protected:
 
   // source term
   static bool do_source_term;
-  static Array<Source> source_array;
 
 #ifdef AMANZI
 
