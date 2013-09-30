@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
 
   <!--
      Confined Aquifer Transient Drawdown (Theis 1935)
