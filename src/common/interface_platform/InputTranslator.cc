@@ -939,11 +939,11 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       if (transElement->hasAttribute((XMLString::transcode("algorithm")))) {
 	textContent = xercesc::XMLString::transcode(
 	              transElement->getAttribute(xercesc::XMLString::transcode("algorithm")));
-	if (strcmp(textContent,"explicit first-order")) {
+	if (strcmp(textContent,"explicit first-order")==0) {
 	  tpkPL.set<std::string>("Transport Integration Algorithm","Explicit First-Order");
-	} else if (strcmp(textContent,"explicit second-order")) {
+	} else if (strcmp(textContent,"explicit second-order")==0) {
 	  tpkPL.set<std::string>("Transport Integration Algorithm","Explicit Second-Order");
-	} else if (strcmp(textContent,"none")) {
+	} else if (strcmp(textContent,"none")==0) {
 	  tpkPL.set<std::string>("Transport Integration Algorithm","None");
 	}
         XMLString::release(&textContent);
@@ -951,7 +951,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       if (transElement->hasAttribute((XMLString::transcode("sub_cycling")))) {
 	textContent = xercesc::XMLString::transcode(
 	              transElement->getAttribute(xercesc::XMLString::transcode("sub_cycling")));
-	if (strcmp(textContent,"on")) {
+	std::cout << "EIB>> got subcycling " << textContent << std::endl;
+	if (strcmp(textContent,"on")==0) {
 	  tpkPL.set<bool>("transport subcycling",true);
 	} else  {
 	  tpkPL.set<bool>("transport subcycling",false);
@@ -980,7 +981,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	//TODO: EIB - now get process model option
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("process_model"));
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	if (strcmp(textContent,"implicit operator split")) {
+	if (strcmp(textContent,"implicit operator split")==0) {
 	  cpkPL.set<double>("max chemistry to transport timestep ratio",get_double_constant(textContent,def_list));
 	}
       }
@@ -1054,15 +1055,15 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                     XMLString::release(&textContent);
                 } else if (strcmp(tagname,"nonlinear_tolerance")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    ssPL.set<double>("steady nonlinear tolerance",get_int_constant(textContent,def_list));
+                    ssPL.set<double>("steady nonlinear tolerance",get_double_constant(textContent,def_list));
                     XMLString::release(&textContent);
                 } else if (strcmp(tagname,"error_rel_tol")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    ssPL.set<double>("steady error rel tol",get_int_constant(textContent,def_list));
+                    ssPL.set<double>("steady error rel tol",get_double_constant(textContent,def_list));
                     XMLString::release(&textContent);
                 } else if (strcmp(tagname,"error_abs_tol")==0) {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    ssPL.set<double>("steady error abs tol",get_int_constant(textContent,def_list));
+                    ssPL.set<double>("steady error abs tol",get_double_constant(textContent,def_list));
                     XMLString::release(&textContent);
                 } else if (strcmp(tagname,"pseudo_time_integrator")==0) {
                     Teuchos::ParameterList ptiPL;
@@ -1178,13 +1179,13 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	      if (bdfElement->hasAttribute(xercesc::XMLString::transcode("limit_iterations"))){
 		textContent = xercesc::XMLString::transcode(
 			      bdfElement->getAttribute(xercesc::XMLString::transcode("limit_iterations")));
-                tcPL.set<int>("transient nonlinear tolerance",get_int_constant(textContent,def_list));
+                tcPL.set<int>("transient limit iterations",get_int_constant(textContent,def_list));
                 XMLString::release(&textContent);
 	      }
 	      if (bdfElement->hasAttribute(xercesc::XMLString::transcode("nonlinear_tolerance"))){
 		textContent = xercesc::XMLString::transcode(
 			      bdfElement->getAttribute(xercesc::XMLString::transcode("nonlinear_tolerance")));
-                tcPL.set<int>("transient nonlinear tolerance",get_int_constant(textContent,def_list));
+                tcPL.set<double>("transient nonlinear tolerance",get_double_constant(textContent,def_list));
                 XMLString::release(&textContent);
 	      }
 	      if (bdfElement->hasAttribute(xercesc::XMLString::transcode("max_divergent_iterations"))){
@@ -1282,7 +1283,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                       XMLString::release(&textContent2);
 		    } else if (strcmp(tagname,"hypre_tolerance")==0) {
                       char* textContent2 = XMLString::transcode(currentNode->getTextContent());
-                      preconPL.set<double>("Hypre AMG smoother sweeps",get_double_constant(textContent2,def_list));
+                      preconPL.set<double>("Hypre AMG tolerance",get_double_constant(textContent2,def_list));
                       XMLString::release(&textContent2);
 		    } else if (strcmp(tagname,"hypre_strong_threshold")==0) {
                       char* textContent2 = XMLString::transcode(currentNode->getTextContent());
