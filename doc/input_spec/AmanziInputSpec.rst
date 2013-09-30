@@ -191,7 +191,13 @@ Usage:
 
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
- * [SU] `"Chemistry Model`" [string]: Chemical reaction of constituents.  Accepts `"Off`" or `"On`" [string]
+ * [SU] `"Chemistry Model`" [string]: Chemical interface and engine for reaction of constituents.
+
+  * [SU] `"Off`" [string]: No chemistry model
+
+  * [SU] `"Amanzi`" [string]: Original Amanzi geochemistry engine, which supports only primary species concentrations in initial and boundary conditions, and source terms. 
+
+  * [SU] `"Alquimia`" [string]: Alquimia interface to a geochemistry engine, supporting geochemical constraints in initial and boundary conditions, and in source terms.
 
  * [SU] `"Time Integration Mode`" [list]: accepts one of three integration modes:
 
@@ -549,9 +555,9 @@ Example:
 
   <ParameterList name="Execution Control">
 
-    <Parameter name="Flow Mode" type="string" value="Richards"/>
-    <Parameter name="Transport Mode" type="string" value="On"/>
-    <Parameter name="Chemistry Mode" type="string" value="Off"/>
+    <Parameter name="Flow Model" type="string" value="Richards"/>
+    <Parameter name="Transport Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Off"/>
 
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
