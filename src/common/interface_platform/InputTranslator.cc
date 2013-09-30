@@ -365,7 +365,7 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	  temp = xercesc::XMLString::transcode(elementNode->getAttribute(
 		  xercesc::XMLString::transcode("low_coordinates")));
 	  // translate to array
-	  char_array = strtok(temp,",");
+	  char_array = strtok(temp,"(,");
 	  low.append(get_double_constant(char_array,def_list));
 	  char_array = strtok(NULL,",");
 	  low.append(get_double_constant(char_array,def_list));
@@ -375,7 +375,7 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	  temp = xercesc::XMLString::transcode(elementNode->getAttribute(
 		  xercesc::XMLString::transcode("high_coordinates")));
 	  // translate to array
-	  char_array = strtok(temp,",");
+	  char_array = strtok(temp,"(,");
 	  high.append(get_double_constant(char_array,def_list));
 	  char_array = strtok(NULL,",");
 	  high.append(get_double_constant(char_array,def_list));
@@ -951,7 +951,6 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       if (transElement->hasAttribute((XMLString::transcode("sub_cycling")))) {
 	textContent = xercesc::XMLString::transcode(
 	              transElement->getAttribute(xercesc::XMLString::transcode("sub_cycling")));
-	std::cout << "EIB>> got subcycling " << textContent << std::endl;
 	if (strcmp(textContent,"on")==0) {
 	  tpkPL.set<bool>("transport subcycling",true);
 	} else  {
@@ -1644,7 +1643,7 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	      high.append(get_double_constant(char_array,def_list));
               list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
 	      XMLString::release(&textContent2);
-	      XMLString::release(&textContent);
+	      //XMLString::release(&textContent);
 	    }
             else if  (strcmp(nodeName,"plane") == 0){
               Teuchos::Array<double> loc;
@@ -1669,8 +1668,41 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	      dir.append(get_double_constant(char_array,def_list));
               list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
 	      XMLString::release(&textContent2);
-	    } else if  (strcmp(nodeName,"file") == 0){
+	    } else if  (strcmp(nodeName,"region_file") == 0){
 	      //TODO: EIB - add file
+	      Teuchos::ParameterList rfPL;
+	      attrMap = curKid->getAttributes();
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+              textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	      rfPL.set<std::string>("File",textContent2);
+	      XMLString::release(&textContent2);
+              nodeAttr = attrMap->getNamedItem(XMLString::transcode("type"));
+              textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	      if  (strcmp(textContent2,"color") == 0){
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
+                char* value = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	        rfPL.set<int>("Value",atoi(value));
+	        XMLString::release(&value);
+		rfPL.print(std::cout,true,false);
+                list.sublist(textContent).sublist("Region: Color Function") = rfPL;
+	      }else if  (strcmp(textContent2,"labeled set") == 0){
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
+                char* value = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	        rfPL.set<std::string>("Label",value);
+	        XMLString::release(&value);
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("format"));
+                value = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	        if  (strcmp(value,"exodus ii") == 0){
+	          rfPL.set<std::string>("Format","Exodus II");
+		}
+	        XMLString::release(&value);
+                nodeAttr = attrMap->getNamedItem(XMLString::transcode("entity"));
+                value = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	        rfPL.set<std::string>("Entity",value);
+	        XMLString::release(&value);
+                list.sublist(textContent).sublist("Region: Labeled Set") = rfPL;
+	      }
+	      XMLString::release(&textContent2);
 	    }
 	    XMLString::release(&nodeName);
 	  }
