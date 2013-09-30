@@ -405,7 +405,9 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
           list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","Simple");
         } else if (strcmp(framework,"stk::mesh")==0) {
           list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","stk::mesh");
-        }
+        } else {
+          list.sublist("Unstructured").sublist("Expert").set<std::string>("Framework","MSTK");
+	}
       } else {
         list.sublist("Structured") = mesh_list;
       }
