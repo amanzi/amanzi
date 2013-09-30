@@ -151,9 +151,9 @@ Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc) {
 		  char_array = strtok(value,";, ");
 		  time = atof(char_array);
 		  char_array = strtok(NULL,";,");
-		  if (strcmp(char_array,"y")==0) { time = time*31577600.0; }
-		  else if (strcmp(char_array,"d")==0) { time = time*86100.0; }
-		  else if (strcmp(char_array,"h")==0) { time = time*3600.0; }
+		  if (strcmp(char_array,"y")==0) { time = time*365.25*24.0*60.0*60.0; }
+		  else if (strcmp(char_array,"d")==0) { time = time*24.0*60.0*60.0; }
+		  else if (strcmp(char_array,"h")==0) { time = time*60.0*60.0; }
 		} else {
 		  time = atof(value);
 		}
