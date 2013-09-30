@@ -90,13 +90,13 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
-        # x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
 
         # subplots
         fig, ax = plt.subplots()
 
         # lines on axes
-        # alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+        alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
         ama = ax.plot(x_amanzi_native, c_amanzi_native,'ro',label='Amanzi Native Chemistry')
         pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
 

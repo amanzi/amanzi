@@ -7,7 +7,7 @@ CHEMISTRY
   /
   GENERAL_REACTION
     REACTION Tritium <-> 
-    FORWARD_RATE 1.78577E-07 ! t_1/2 = 12.32 years
+    FORWARD_RATE 1.78577E-07 ! t_1/2 = 0.1232 years
     BACKWARD_RATE 0.d0
   /
   DATABASE ./tritium.dat
