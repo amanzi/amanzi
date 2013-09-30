@@ -13,12 +13,13 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include <vector>
 
 #include "Epetra_FECrsGraph.h"
-// #include "AztecOO.h"
+#include "AztecOO.h"
 #include "mfd3d_diffusion.hh"
 
 #include "FlowDefs.hh"
 #include "Matrix_TPFA.hh"
 
+#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -321,6 +322,8 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
 
+  //cout<<"Matrix_MFD_TPFA::Apply\n";
+
   // Create views Xc into the cell segments of X.
   double **cvec_ptrs = X.Pointers();
   double **fvec_ptrs = new double*[nvectors];
@@ -361,6 +364,12 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nvectors = X.NumVectors();
 
+  // Y = X;
+ 
+  // cout<<"Matrix_MFD_TPFA::ApplyInverse\n";
+
+  // return 0;
+
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
 
@@ -379,8 +388,8 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
   Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
   Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
 
-  // Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
-  // use the same memory for X and Y, we introduce auxiliaty vector Tc.
+  //Solve the Schur complement system Spp * Yc = Xc. Since AztecOO may
+  //use the same memory for X and Y, we introduce auxiliaty vector Tc.
   int ierr = 0;
   Epetra_Vector Tc(cmap);
   preconditioner_->ApplyInverse(Xc, Tc);
@@ -391,7 +400,23 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
     Exceptions::amanzi_throw(msg);
   }
 
+
+  // Epetra_LinearProblem problem(&*Spp_, &Yc, &Xc);
+
+  // AztecOO solver(problem);
+
+  // solver.SetAztecOption(AZ_solver, AZ_gmres);
+  // solver.SetAztecOption(AZ_output, AZ_summary);
+  // solver.SetAztecOption(AZ_conv, AZ_rhs);
+ 
+  // int max_itrs_linear = 100;
+  // double convergence_tol_linear = 1e-7;
+
+  // solver.Iterate(max_itrs_linear, convergence_tol_linear);
+  // int num_itrs = solver.NumIters();
+
   Yf = Xf;
+  Yf.PutScalar(0.0);
 
   delete [] fvec_ptrs;
   return 0;
