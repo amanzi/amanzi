@@ -141,7 +141,14 @@ van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-(TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
+The hydralic head computed using both Amanzi and the above analytic formulas
+is shown on the figure and in the table below.
+
+.. figure:: figures/hydraulic_head.png 
+    :figclass: align-center
+    :width: 600 px
+
+    **Concentration transverse to the flow field from plume centerline at x=0.**
 
 .. include:: table_values.txt
 
