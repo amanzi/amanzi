@@ -237,7 +237,7 @@ namespace Amanzi {
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
-      else if (flow_mode == "Steady State Saturated") {
+      else if (flow_mode == "Steady State Saturated" || flow_mode == "Single Phase") {
         model_name = "steady-saturated";
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
@@ -441,9 +441,7 @@ namespace Amanzi {
         if (switch_time < stop_time) {
           prob_out_list.set<double>(underscore("dt_init"),tran_list.get<double>(Transient_Init_Time_Step_str));
         }
-        if (switch_time > strt_time) {
-          prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
-        }
+        prob_out_list.set<double>(underscore("steady_init_time_step"),tran_list.get<double>(Steady_Init_Time_Step_str));
 
         struc_out_list.set<std::string>("execution_mode", "init_to_steady");
 
@@ -2032,7 +2030,14 @@ namespace Amanzi {
           throw std::exception();
         }
         const ParameterList& func_plist = bc_plist.sublist(phaseBCfuncs[0]);
-        const Array<std::string>& assigned_regions = bc_plist.get<Array<std::string> >(reqPbc[0]);
+        const Array<std::string>& _assigned_regions = bc_plist.get<Array<std::string> >(reqPbc[0]);
+
+        Array<std::string> assigned_regions(_assigned_regions.size());
+        for (int i=0; i<_assigned_regions.size(); ++i) {
+          assigned_regions[i] = underscore(_assigned_regions[i]);
+        }
+
+
         const std::string& Amanzi_type = phaseBCfuncs[0];              
 
         s[BClabel] = StateFunc(BClabel, Amanzi_type, func_plist, assigned_regions);
@@ -2688,12 +2693,7 @@ namespace Amanzi {
                 throw std::exception();
               }
             }
-            if (orient_type == "noflow") {
-              sat_bc      = 4; // No flow for saturation
-              pressure_bc = 4; // No flow for p
-              inflow_bc   = 0; // Automatically set to zero
-            }
-            else if (orient_type == "pressure"
+            if (orient_type == "pressure"
                      || orient_type == "pressure_head"
                      || orient_type == "linear_pressure"
                      || orient_type == "hydrostatic") {
@@ -2708,8 +2708,8 @@ namespace Amanzi {
               pressure_bc = 2; // Dirichlet for p
               inflow_bc   = 0; // Unused
             }
-            else if (orient_type == "zero_total_velocity") {
-              sat_bc      = 1; // Dirichlet for saturation (but will compute values based on p)
+            else if (orient_type == "zero_total_velocity" || orient_type == "noflow") {
+              sat_bc      = 4; // Neumann for saturation
               pressure_bc = 1; // Neumann for p
               inflow_bc   = 1; // Requires inflow_XX_vel velocity values for nphase-1 phases
             }
@@ -2720,9 +2720,9 @@ namespace Amanzi {
             }
           }
           else {
-            sat_bc = 3;
-            pressure_bc = 4;
-            inflow_bc = 4;
+            sat_bc = 4;
+            pressure_bc = 1;
+            inflow_bc = 1;
           }
         }
       }
@@ -2900,6 +2900,69 @@ namespace Amanzi {
       return solute_to_IClabel;
     }
 
+    void convert_Sources(const ParameterList& fPLin,
+			 const std::string&   Amanzi_type,
+			 ParameterList&       fPLout)
+    {
+      const std::string Source_Uniform_str = "Source: Uniform";
+      const std::string Source_Volume_Weighted_str = "Source: Volume Weighted";
+      const std::string Source_Permeability_Weighted_str = "Source: Permeability Weighted";
+
+      Array<std::string> nullList, reqP;
+
+      if (Amanzi_type == Source_Uniform_str
+	  || Amanzi_type == Source_Volume_Weighted_str
+	  || Amanzi_type == Source_Permeability_Weighted_str) {
+        const std::string val_name="Values"; reqP.push_back(val_name);
+        const std::string time_name="Times"; reqP.push_back(time_name);
+        const std::string form_name="Time Functions"; reqP.push_back(form_name);
+        PLoptions opt(fPLin,nullList,reqP,true,false);
+        Array<double> vals = fPLin.get<Array<double> >(val_name);
+        fPLout.set<Array<double> >("vals",vals);
+        if (vals.size()>1) {
+          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+        }
+	if (Amanzi_type == Source_Uniform_str) {
+	  fPLout.set<std::string>("type","uniform");
+	} else if (Amanzi_type == Source_Volume_Weighted_str) {
+	  fPLout.set<std::string>("type","volume_weighted");
+	} else {
+	  fPLout.set<std::string>("type","permeability_weighted");
+	}
+      }
+    }
+
+    void convert_Solute_Sources(const ParameterList& fPLin,
+				const std::string&   Amanzi_type,
+				ParameterList&       fPLout)
+    {
+      const std::string Source_Uniform_str = "Source: Uniform Concentration";
+      const std::string Source_Flow_Weighted_str = "Source: Flow Weighted Concentration";
+
+      Array<std::string> nullList, reqP;
+
+      if (Amanzi_type == Source_Uniform_str 
+	  || Amanzi_type == Source_Flow_Weighted_str) {
+        const std::string val_name="Values"; reqP.push_back(val_name);
+        const std::string time_name="Times"; reqP.push_back(time_name);
+        const std::string form_name="Time Functions"; reqP.push_back(form_name);
+        PLoptions opt(fPLin,nullList,reqP,true,false);
+        Array<double> vals = fPLin.get<Array<double> >(val_name);
+        fPLout.set<Array<double> >("vals",vals);
+        if (vals.size()>1) {
+          fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
+          fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
+        }
+	if (Amanzi_type == Source_Uniform_str) {
+	  fPLout.set<std::string>("type","uniform");
+	} else {
+	  fPLout.set<std::string>("type","flow_weighted");
+	}
+      }
+    }
+
+
     void
     convert_to_structured_state(const ParameterList& parameter_list, 
                                 ParameterList&       struc_list,
@@ -3009,8 +3072,7 @@ namespace Amanzi {
             solutePLs[soluteName].set(it->second.name(),it->second);
             bcLabels.push_back(it->second.name());
           }
-          solutePLs[soluteName].set<Array<std::string> >("tbcs",bcLabels);
-                    
+          solutePLs[soluteName].set<Array<std::string> >("tbcs",bcLabels);                    
         }
       }
 
@@ -3020,6 +3082,125 @@ namespace Amanzi {
         solute_list.set(soluteName,solutePLs[soluteName]);
       }
 
+      /*
+	Note: Looking to translate xml block that looks something like:
+
+	<ParameterList name="Sources">
+	  <ParameterList name="Aqueous">
+            <ParameterList name="Water">
+  	      <ParameterList name="SOURCE 1">
+  	        <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
+  	        <ParameterList name="Source: Uniform">
+  	          <Parameter name="Values" type="Array(double)" value="{19}"/>
+  	        </ParameterList>
+  	        <ParameterList name="Solute SOURCE">
+  	          <ParameterList name="Tc-99">
+  	            <ParameterList name="Source: Flow Weighted Concentration">
+  	  	      <Parameter name="Values" type="Array(double)" value="{19}"/>
+  	            </ParameterList>
+  	          </ParameterList>
+  	          <ParameterList name="U 237">
+  	            <ParameterList name="Source: Uniform Concentration">
+  	  	      <Parameter name="Values" type="Array(double)" value="{21}"/>
+  	            </ParameterList>
+  	          </ParameterList>
+  	        </ParameterList>
+  	      </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+
+	FIXME: Although current version implemented to skip the phase and component section entirely
+	(so they are hardwired to "Aqueous" and "Water", respectively)
+
+       */
+
+      // Add source info
+      const std::string Sources_str = "Sources";
+      const std::string Assigned_Regions_str = "Assigned Regions";
+      const std::string Solute_Source_str = "Solute SOURCE";
+
+      // FIXME: NEED TO VERIFY PHASE/COMP/SOLUTE IS VALID
+      const ParameterList& src_list = parameter_list.sublist(Sources_str);
+      ParameterList struct_src_list;
+      Array<std::string> nullList;
+      PLoptions s_opt(src_list,nullList,nullList,false,true);
+      //const Array<std::string> src_plabels = s_opt.OptLists(); // Must be known phase names
+      Array<std::string> src_plabels(1,"Aqueous"); // FIXME: Remove this eventually
+      for (int i=0; i< src_plabels.size(); ++i) {
+	const std::string& src_plabel = src_plabels[i];
+	ParameterList struct_src_phase_list;
+	//const ParameterList& src_phase_pl = src_list.sublist(src_plabel);	
+	const ParameterList& src_phase_pl = src_list;  // FIXME: Remove this eventually
+	PLoptions sp_opt(src_phase_pl,nullList,nullList,false,true);
+	//const Array<std::string> src_clabels = sp_opt.OptLists(); // Must be known component names
+	Array<std::string> src_clabels(1,"Water"); // FIXME: Remove this eventually
+	for (int j=0; j<src_clabels.size(); ++j) {
+	  const std::string& src_clabel = src_clabels[j];
+	  //const ParameterList& src_comp_pl = src_phase_pl.sublist(src_clabel);
+	  const ParameterList& src_comp_pl = src_phase_pl;  // FIXME: Remove this eventually
+	  PLoptions spc_opt(src_comp_pl,nullList,nullList,false,true);
+	  const Array<std::string> src_list_labels = spc_opt.OptLists(); // src label
+	  ParameterList struct_src_comp_list;
+	  for (int k=0; k<src_list_labels.size(); ++k) {
+	    const std::string& src_list_label = src_list_labels[k];
+	    const ParameterList& src_label_pl = src_comp_pl.sublist(src_list_label);
+	    ParameterList struct_src_label_list;
+	    Array<std::string> src_label_reqd_params; src_label_reqd_params.push_back(Assigned_Regions_str);
+	    PLoptions src_label_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
+	    const Array<std::string>& src_label_opt_lists = src_label_opt.OptLists(); // must be a known src func or "Solute SOURCE"
+	    bool function_set = false;
+	    bool solute_functions_set = false;
+	    for (int L=0; L<src_label_opt_lists.size(); ++L) {
+	      if (src_label_opt_lists[L] == Solute_Source_str) {
+		if (solute_functions_set) {
+		  MyAbort("Exactly one source function section allowed for solutes in "+Sources_str+"->"+src_plabel+"->"
+			  +src_clabel+"->"+src_list_label);
+		}
+		const ParameterList& src_solute_pl = src_label_pl.sublist(Solute_Source_str);
+		PLoptions src_solute_opt(src_solute_pl,nullList,nullList,false,true);
+		const Array<std::string> src_solute_labels = src_solute_opt.OptLists(); // each label must be a solute name
+		ParameterList struct_src_solute_list;
+		for (int M=0; M<src_solute_labels.size(); ++M) {
+		  const std::string& solute_label = src_solute_labels[M];
+		  const ParameterList& src_solute_func_pl = src_solute_pl.sublist(solute_label);
+		  PLoptions src_solute_func_opt(src_solute_func_pl,nullList,nullList,false,true);
+		  const Array<std::string>& src_solute_funcs = src_solute_func_opt.OptLists();
+		  if (src_solute_funcs.size() == 1) {
+		    const std::string& Amanzi_type = src_solute_funcs[0];
+		    const ParameterList& fPLin = src_solute_func_pl.sublist(Amanzi_type);
+		    ParameterList fPLout;
+		    convert_Solute_Sources(fPLin,Amanzi_type,fPLout);
+		    struct_src_solute_list.set(underscore(solute_label),fPLout);
+		  } else {
+		    MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_plabel+"->"
+			    +src_clabel+"->"+src_list_label+"->"+Solute_Source_str+"->"+solute_label);
+		  }
+		}
+		solute_functions_set = true;
+		struct_src_label_list.set("tracers_with_sources",underscore(src_solute_labels));
+		struct_src_label_list.set("tracer_sources",struct_src_solute_list);
+	      } else {
+		if (function_set) {
+		  MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_plabel+"->"
+			  +src_clabel+"->"+src_list_label);
+		}
+		const std::string& Amanzi_type = src_label_opt_lists[L];
+		const ParameterList& fPLin = src_label_pl.sublist(Amanzi_type);
+		const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
+		ParameterList fPLout;
+		convert_Sources(fPLin,Amanzi_type,struct_src_label_list);
+		struct_src_label_list.set("regions",regions);
+		function_set = true;
+	      }
+	    } // Component source label
+	    struct_src_comp_list.set(underscore(src_list_label),struct_src_label_list);
+	  } // Component source labels
+	  struct_src_phase_list.set(underscore(src_clabel),struct_src_comp_list);
+	} // Component labels
+	struct_src_list.set(underscore(src_plabel),struct_src_phase_list);
+      } // Phase labels
+      struc_list.set("source",struct_src_list);
 
       if (do_chem) 
       {
@@ -3157,8 +3338,8 @@ namespace Amanzi {
           for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
             const std::string& name = underscore(rslist.name(ii));
                         
-            if (name == "Times") {
-              times = rslist.get<Array<double> >("Times");
+            if (name == "Values") {
+              times = rslist.get<Array<double> >("Values");
             }
             else if (name == "Start_Period_Stop") {
               vals = rslist.get<Array<double> >("Start_Period_Stop");
@@ -3220,7 +3401,7 @@ namespace Amanzi {
           for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
             const std::string& name = rslist.name(ii);
                   
-            if (name == "Cycles") {
+            if (name == "Values") {
               cycles = rslist.get<Array<int> >(name);
             }
             else if (name == "Start_Period_Stop") {

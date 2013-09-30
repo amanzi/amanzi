@@ -6,7 +6,7 @@
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
+    <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -203,7 +203,7 @@
      <Parameter name="File" type="string" value="tritium.bgd" />
     </ParameterList>
     <Parameter name="Engine" type="string" value="PFloTran"/>
-    <Parameter name="Engine Input File" type="string" value="ascem-2012-1d-farea-full.in"/>
+    <Parameter name="Engine Input File" type="string" value="1d-tritium.in"/>
     <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
 <!--    <Parameter name="Verbosity" type="Array(string)" value="{verbose, warning, error, debug beaker}" /> -->
     <Parameter name="Activity Model" type="string" value="unit" />
@@ -217,10 +217,6 @@
       </ParameterList> <!-- initial -->
     </ParameterList> <!-- Initial Conditions -->
     <ParameterList name="Boundary Conditions">
-      <ParameterList name="East BC">
-        <Parameter name="PFloTran Constraint" type="string" value="east"/>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{East}"/>
-      </ParameterList> <!-- East BC -->
       <ParameterList name="West BC">
         <Parameter name="PFloTran Constraint" type="string" value="west"/>
         <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>

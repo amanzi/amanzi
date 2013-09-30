@@ -42,7 +42,7 @@ the analytic solution :eq:`generalSoln` for hydraulic head becomes
 where :math:`L` = domain length [L]. For these boundary conditions the volumetric flowrate per unit area, 
 or Darcy velocity (:math:`U`, [L/T]), is defined by Darcy's law as
 
-	.. math:: U = -\frac{k}{\mu\rho g}\frac{dh}{dx} = -K\frac{dh}{dx} = K\frac{h_0 - h_L}{L}
+	.. math:: U = -\frac{k}{\mu}\rho g \frac{dh}{dx} = -K\frac{dh}{dx} = K\frac{h_0 - h_L}{L}
 		:label: DarcyVel
 
 where :math:`k` = intrinsic permeability [L\ :sup:`2`\ ],

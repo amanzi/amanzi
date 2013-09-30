@@ -137,7 +137,9 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
 
   void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
-  int AdvanceSingleCell(double delta_time, int cellIndex, AlquimiaGeochemicalCondition* condition);
+  int AdvanceSingleCell(double delta_time, 
+                        Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
+                        int cellIndex, AlquimiaGeochemicalCondition* condition);
 
   void ParseChemicalConditions(const Teuchos::ParameterList& param_list,
                                std::map<std::string, AlquimiaGeochemicalCondition*>& conditions);

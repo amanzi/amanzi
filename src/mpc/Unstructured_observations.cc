@@ -138,7 +138,11 @@ void Unstructured_observations::make_observations(State& state)
 					&entity_ids);
     }
 
-    if (mesh_block_size == 0) {
+    // find global meshblocksize
+    int dummy = mesh_block_size; 
+    int global_mesh_block_size(0);
+    state.GetMesh()->get_comm()->SumAll(&dummy,&global_mesh_block_size,1);
+    if (global_mesh_block_size == 0) {
       Exceptions::amanzi_throw(Errors::Message("Cannot make an observation on an empty region: " + (i->second).region));
     }
 

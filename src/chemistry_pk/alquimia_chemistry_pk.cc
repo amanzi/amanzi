@@ -118,7 +118,9 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemic
                          &chem_data_.aux_data,
                          &chem_status_);
   if (chem_status_.error != 0)
-    ierr = 1;
+  {
+    return 1; 
+  }
 
   // Retrieve the auxiliary output data.
   chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
@@ -127,12 +129,16 @@ int Alquimia_Chemistry_PK::InitializeSingleCell(int cellIndex, AlquimiaGeochemic
                            &chem_data_.aux_data,
                            &chem_data_.aux_output,
                            &chem_status_);
+  if (chem_status_.error != 0)
+  {
+    return 1;
+  }
 
   // Copy the state information back out.
   CopyAlquimiaStateToAmanzi(cellIndex);
   CopyAlquimiaMaterialPropertiesToAmanzi(cellIndex);
 
-  return ierr;
+  return 0;
 }
 
 void Alquimia_Chemistry_PK::InitializeChemistry(void) 
@@ -178,7 +184,6 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
   }
 
   // Allocate data storage now that we have our space requirements.
-PrintAlquimiaSizes(&chem_data_.sizes);
   AllocateAlquimiaData(&chem_data_);
 
   // Get the problem metadata (species and mineral names, etc).
@@ -198,6 +203,7 @@ PrintAlquimiaSizes(&chem_data_.sizes);
   // appropriate values from the our cell properties.
   chemistry_state_->AllocateAdditionalChemistryStorage(number_aqueous_components());
 
+  // FIXME: This is unnecessary--sizes given by the engine file should suffice.
   // NOTE: we need to perform the initialization on the first cell to determine 
   // NOTE: the number of secondary activity coefficients, which we'll stash in 
   // NOTE: the chemistry state. For this operation, it doesn't matter which 
@@ -214,6 +220,7 @@ PrintAlquimiaSizes(&chem_data_.sizes);
   }
 
   // Make storage within Amanzi for auxiliary output.
+  // FIXME: Use the Alquimia containers to do this.
   SetupAuxiliaryOutput();
 
   // Now loop through all the regions and initialize.
@@ -523,22 +530,17 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
   alquimia_state->water_density = (*chemistry_state_->water_density())[cell_id];
   alquimia_state->porosity = (*chemistry_state_->porosity())[cell_id];
 
-  // Alquimia breaks the total aqueous component concentrations into mobile 
-  // and immobile parts. The "total sorbed" components are immobile, and 
-  // the remainder of the total are mobile.
   for (unsigned int c = 0; c < number_aqueous_components(); c++) 
   {
     double* cell_components = (*aqueous_components)[c];
-    double total = cell_components[cell_id];
-    double immobile = 0.0;
+    double total_mobile = cell_components[cell_id];
+    alquimia_state->total_mobile.data[c] = total_mobile;
     if (using_sorption()) 
     {
       double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
-      immobile = cell_total_sorbed[cell_id];
+      double immobile = cell_total_sorbed[cell_id];
       alquimia_state->total_immobile.data[c] = immobile;
     }  // end if(using_sorption)
-    double mobile = total - immobile;
-    alquimia_state->total_mobile.data[c] = mobile;
   }
 
   //
@@ -702,17 +704,17 @@ void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id)
   for (unsigned int c = 0; c < number_aqueous_components(); c++) 
   {
     double mobile = alquimia_state->total_mobile.data[c];
-    double immobile = (using_sorption()) ? alquimia_state->total_immobile.data[c] : 0.0;
 
     // NOTE: We place our mobile concentrations into the chemistry state's
     // NOTE: total component concentrations, not the aqueous concentrations.
     // NOTE: I assume this has to do with our operator splitting technique.
-    double total = mobile + immobile;
+    double total = mobile;
     double* cell_components = (*chemistry_state_->total_component_concentration())[c];
     cell_components[cell_id] = total;
 
     if (using_sorption())
     {
+      double immobile = alquimia_state->total_immobile.data[c];
       double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
       cell_total_sorbed[cell_id] = immobile;
     }
@@ -872,14 +874,16 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_Chemistry_PK::get_total_component_conc
 // This helper advances the solution on a single cell within Amanzi's state.
 // It returns the number of iterations taken to obtain the advanced solution, 
 // or -1 if an error occurred.
-int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, int cellIndex, AlquimiaGeochemicalCondition* condition) 
+int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, 
+                                             Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
+                                             int cellIndex, AlquimiaGeochemicalCondition* condition) 
 {
+  int num_iterations = 0;
+
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyAmanziStateToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
-  CopyAmanziMaterialPropertiesToAlquimia(cellIndex, chemistry_state_->total_component_concentration());
-
-  int ierr = 0;
+  CopyAmanziStateToAlquimia(cellIndex, total_component_concentration_star);
+  CopyAmanziMaterialPropertiesToAlquimia(cellIndex, total_component_concentration_star);
 
   // Apply the geochemical condition for this cell.
   if (condition != NULL)
@@ -892,21 +896,28 @@ int Alquimia_Chemistry_PK::AdvanceSingleCell(double delta_time, int cellIndex, A
         &chem_status_);
     if (chem_status_.error != 0)
       return -1;
+    num_iterations = 1;
   }
-
-  // create a backup copy of the components
-  //      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
-  // chemistry computations for this cell
-  chem_.ReactionStepOperatorSplit(&chem_data_.engine_state,
-                                  &delta_time,
-                                  &chem_data_.material_properties,
-                                  &chem_data_.state,
-                                  &chem_data_.aux_data,
-                                  &chem_status_);
-  if (chem_status_.error != 0)
-    return -1;
-
-  int num_iterations = chem_status_.num_newton_iterations;
+  else
+  {
+    // No geochem condition -- advance in time.
+    // create a backup copy of the components
+    //      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
+    // chemistry computations for this cell
+    chem_.ReactionStepOperatorSplit(&chem_data_.engine_state,
+        &delta_time,
+        &chem_data_.material_properties,
+        &chem_data_.state,
+        &chem_data_.aux_data,
+        &chem_status_);
+    if (chem_status_.error != 0)
+    {
+      printf("ERROR in advance!\n");
+      return -1;
+    }
+    AlquimiaState* alquimia_state = &chem_data_.state;
+    num_iterations = chem_status_.num_newton_iterations;
+  }
 
   // Retrieve the auxiliary output data.
   chem_.GetAuxiliaryOutput(&chem_data_.engine_state,
@@ -1008,41 +1019,14 @@ void Alquimia_Chemistry_PK::advance(
     for (size_t i = 0; i < cell_indices.size(); i++) 
     {
       int cell = cell_indices[i];
-      int num_iterations = AdvanceSingleCell(delta_time, cell, condition);
-      if (num_iterations > 0)
-      {
-        //std::stringstream message;
-        //message << "--- " << cell << "\n";
-        //beaker_components_.Display(message.str().c_str());
-        if (max_iterations < num_iterations) 
-        {
-          max_iterations = num_iterations;
-          imax = cell;
-        }
-        if (min_iterations > num_iterations) 
-        {
-          min_iterations = num_iterations;
-          imin = cell;
-        }
-        ave_iterations += num_iterations;
-      } 
-      else
+      int num_iterations = AdvanceSingleCell(delta_time, tcc_star, cell, condition);
+      if (num_iterations != 1)
       {
         ierr = 1;
       }
 
-      // update this cell's data in the arrays
-      if (ierr == 0) CopyAlquimiaStateToAmanzi(cell);
-
       // TODO(bandre): was porosity etc changed? copy someplace
 
-#ifdef GLENN_DEBUG
-      if (cell % (num_cells / 10) == 0) 
-      {
-        std::cout << "  " << cell * 100 / num_cells
-          << "%" << std::endl;
-      }
-#endif
     }  // for(cells)
   }
 
@@ -1061,7 +1045,7 @@ void Alquimia_Chemistry_PK::advance(
     // If this cell belongs to the boundary, skip it.
     if (boundary_cells.find(cell) != boundary_cells.end()) continue;
 
-    int num_iterations = AdvanceSingleCell(delta_time, cell, NULL);
+    int num_iterations = AdvanceSingleCell(delta_time, tcc_star, cell, NULL);
     if (num_iterations > 0)
     {
       //std::stringstream message;
@@ -1083,9 +1067,6 @@ void Alquimia_Chemistry_PK::advance(
     {
       ierr = 1;
     }
-
-    // update this cell's data in the arrays
-    if (ierr == 0) CopyAlquimiaStateToAmanzi(cell);
   }
 
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);

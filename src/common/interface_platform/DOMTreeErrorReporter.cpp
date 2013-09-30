@@ -22,21 +22,21 @@
 // ---------------------------------------------------------------------------
 //  Includes
 // ---------------------------------------------------------------------------
-#include <xercesc/sax/SAXParseException.hpp>
+#include <xercesc/dom/DOMParseException.hpp>
 #include "DOMTreeErrorReporter.hpp"
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
 
 
-void DOMTreeErrorReporter::warning(const SAXParseException&)
+void DOMTreeErrorReporter::warning(const DOMParseException&)
 {
     //
     // Ignore all warnings.
     //
 }
 
-void DOMTreeErrorReporter::error(const SAXParseException& toCatch)
+void DOMTreeErrorReporter::error(const DOMParseException& toCatch)
 {
 #define XSTR(s) STR(s)
 #define STR(s) #s
@@ -48,7 +48,7 @@ void DOMTreeErrorReporter::error(const SAXParseException& toCatch)
          << "\n   Message: " << XSTR(toCatch.getMessage()) << std::endl;
 }
 
-void DOMTreeErrorReporter::fatalError(const SAXParseException& toCatch)
+void DOMTreeErrorReporter::fatalError(const DOMParseException& toCatch)
 {
 #define XSTR(s) STR(s)
 #define STR(s) #s

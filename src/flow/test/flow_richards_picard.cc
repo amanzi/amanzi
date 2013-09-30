@@ -84,8 +84,10 @@ TEST(FLOW_RICHARDS_PICARD) {
   // create the Solver
   const Teuchos::RCP<Epetra_Vector> u = RPK->get_solution();
   const Epetra_BlockMap& map = u->Map();
+  Teuchos::ParameterList nlist = RPK->nonlin_solver_list_;
+
   Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap> > picard =
-      Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(plist, fn, map));
+      Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(nlist, fn, map));
 
   picard->Solve(u);
 

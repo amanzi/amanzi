@@ -20,18 +20,18 @@ About
 * Benchmark simulator: PFlotran
 * Files: 
   
-  * Amanzi input file: amanzi-1d-tracer.xml
-  * Benchmark simulator input file: 1d-tracer.in
+  * Amanzi input file: amanzi-u-1d-tracer.xml
+  * Benchmark simulator input file: 1d-tracer.in, output file = pflotran/1d-tracer.h5
 
-* Location: amanzi/examples/examples/phase2/chemistry/1d-tracer
+* Location: testing/benchmarking/chemistry/tracer_1d
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
-* Last tested on: Aug 31, 2013
+* Last tested on: Sept 30, 2013
 
 Introduction
 ------------
 
-When running a reactive transport problem, it is good practice to include a non-reactive component or tracer. Results obtained for this conservative tracer can be compared to results for reactive components. This comparison can provide insights into the effects of reactions on the fate of the reactive species, e.g. retardation of species subject to sorption. The problem presented here simulates the conservative (advective) transport of a single component in a 1D domain. The flow and transport components of this test problem are used as basis to develope the following reactive transport test problems: :doc:`../1d-tritium/amanzi_u-1d-tritium`, :doc:`../1d-calcite/amanzi_u-1d-calcite`, :doc:`../1d-ion-exchange/amanzi_u-1d-ion-exchange`, :doc:`../1d-surface-complexation/amanzi_u-1d-surface-complexation`, :doc:`../1d-farea/amanzi_u-1d-farea`.
+When running a reactive transport problem, it is good practice to include a non-reactive component or tracer. Results obtained for this conservative tracer can be compared to results for reactive components. This comparison can provide insights into the effects of reactions on the fate of the reactive species, e.g. retardation of species subject to sorption. The problem presented here simulates the conservative (advective) transport of a single component in a 1D domain. The flow and transport components of this test problem are used as basis to develope the following reactive transport test problems: :doc:`../tritium_1d/amanzi_u-1d-tritium`, :doc:`../calcite_1d/amanzi_u-1d-calcite`, :doc:`../ion_exchange_1d/amanzi_u-1d-ion-exchange`, :doc:`../surface_complexation_1d/amanzi_u-1d-surface-complexation`, :doc:`../farea_1d/amanzi_u-1d-farea`.
 
 Model
 -----
@@ -89,7 +89,7 @@ The advective front moves with the flow velocity. In the simulation time (50 yea
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-.. figure:: 1d-tracer-figure.png
-   :scale: 50 %
-   :alt: Figure. Tracer front at time 50 years as a function of length along the flow path. Amanzi and PFlotran solutions are compared. 
+This figure shows the tracer front at time 50 years as a function of length along the flow path. Amanzi and PFlotran solutions are compared.
 
+.. plot:: prototype/chemistry/tracer_1d/tracer_1d.py
+   :align: center

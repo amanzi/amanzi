@@ -248,7 +248,7 @@ void init_global_info(Teuchos::ParameterList* plist) {
   std::string chemistry_model = plist->sublist("Execution Control").get<std::string>("Chemistry Model");
 
   phase_name = "Aqueous";
-  phase_comp_name = "Water";
+
   // don't know the history of these variables, clear them just to be safe.
   comp_names.clear();
   mineral_names_.clear();
@@ -261,16 +261,23 @@ void init_global_info(Teuchos::ParameterList* plist) {
       if (phase_list.name(item) == "Aqueous" ) {
 	Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
 	if (aqueous_list.isSublist("Phase Components")) {
-	  Teuchos::ParameterList phase_components =
-            aqueous_list.sublist("Phase Components");
-	  if (phase_components.isSublist("Water")) {
-	    Teuchos::ParameterList water_components =
-              phase_components.sublist("Water");
-	    if ( water_components.isParameter("Component Solutes")) {
-	      comp_names =
-		water_components.get<Teuchos::Array<std::string> >("Component Solutes");
-	    }
-	  }  // end water
+	  Teuchos::ParameterList phase_components = aqueous_list.sublist("Phase Components");
+	  // for now there should only be one sublist here, we allow it to be named something
+	  // the user chooses, e.g. Water
+	  Teuchos::ParameterList::ConstIterator pcit = phase_components.begin();
+	  ++pcit; 
+	  if (pcit != phase_components.end()) {
+	    Exceptions::amanzi_throw(Errors::Message("Currently Amanzi only supports one phase component, e.g. Water"));
+	  }
+	  pcit = phase_components.begin();
+	  if (!pcit->second.isList()) {
+	    Exceptions::amanzi_throw(Errors::Message("The Phase Components list must only have one sublist, but you have specified a parameter instead."));
+	  }
+	  phase_comp_name = pcit->first;
+	  Teuchos::ParameterList& water_components = phase_components.sublist(phase_comp_name);
+	  if ( water_components.isParameter("Component Solutes")) {
+	    comp_names = water_components.get<Teuchos::Array<std::string> >("Component Solutes");
+	  }
 	}  // end phase components
       }  // end Aqueous phase
     }
@@ -840,7 +847,8 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
 	}
 	
         // transport is on, set some defaults
-        trp_list.set<int>("discretization order",1);
+        trp_list.set<int>("spatial discretization order", 1);
+        trp_list.set<int>("temporal discretization order", 1);
         trp_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         trp_list.set<std::string>("enable internal tests", "no");
         trp_list.set<double>("CFL", CFL);
@@ -856,9 +864,11 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
               if (t_list.isParameter("Transport Integration Algorithm")) {
                 std::string tia = t_list.get<std::string>("Transport Integration Algorithm");
                 if ( tia == "Explicit First-Order" ) {
-                  trp_list.set<int>("discretization order",1);
+                  trp_list.set<int>("spatial discretization order", 1);
+                  trp_list.set<int>("temporal discretization order", 1);
                 } else if ( tia == "Explicit Second-Order" ) {
-                  trp_list.set<int>("discretization order",2);
+                  trp_list.set<int>("spatial discretization order", 2);
+                  trp_list.set<int>("temporal discretization order", 2);
                 }
               }
             }
@@ -1503,9 +1513,9 @@ Teuchos::ParameterList create_TransportSrc_List(Teuchos::ParameterList* plist)
       // go to the phase list
       if (src.isSublist("Solute SOURCE")) {
 	if (src.sublist("Solute SOURCE").isSublist("Aqueous")) {
-	  if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist("Water")) {
+	  if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist(phase_comp_name)) {
 	    
-	    Teuchos::ParameterList src_bc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist("Water");
+	    Teuchos::ParameterList src_bc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist(phase_comp_name);
 
 	    // loop over all the source definitions
 	    for (Teuchos::ParameterList::ConstIterator ibc = src_bc_list.begin(); ibc != src_bc_list.end(); ibc++) {
