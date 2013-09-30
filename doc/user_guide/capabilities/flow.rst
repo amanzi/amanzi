@@ -27,6 +27,7 @@ and :math:`\boldsymbol{q}` is the liquid velocity given by Darcy's Law:
   \boldsymbol{q} 
   = -\frac{\boldsymbol{K} k_r}{\mu} 
   (\boldsymbol{\nabla} p - \rho \boldsymbol{g}),
+
 where :math:`\boldsymbol{K}` is the tensor of absolute perbeability of rock,
 :math:`k_r(s_l)` is the relative permeability,
 :math:`\mu` is the liquid viscosity,

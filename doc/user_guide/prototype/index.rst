@@ -10,6 +10,7 @@ Contents:
    steady-linear/amanzi_steady_linear.rst
    transient-theis/amanzi_transient_theis.rst
    transient-HantushThomas/hantush-anisotropic.rst
+   unconfined_seepage_1d/amanzi_unconfined_seepage_1d.rst
    dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.rst
    chemistry/1d-tracer/amanzi_u-1d-tracer.rst
    chemistry/1d-tritium/amanzi_u-1d-tritium.rst

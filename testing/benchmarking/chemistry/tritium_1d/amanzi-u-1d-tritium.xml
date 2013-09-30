@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.1.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D Flow and Transport with tritium decay"/>
   </ParameterList>
@@ -139,7 +139,7 @@
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6, 7.91317859e-6}"/>
+        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6, 7.91317859e-6}"/> 
 <!--        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{7.927447996e-9,7.927447996e-9}"/>	 		-->
       </ParameterList>
       <ParameterList name="Solute BC">
@@ -217,10 +217,6 @@
       </ParameterList> <!-- initial -->
     </ParameterList> <!-- Initial Conditions -->
     <ParameterList name="Boundary Conditions">
-      <ParameterList name="East BC">
-        <Parameter name="PFloTran Constraint" type="string" value="east"/>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{East}"/>
-      </ParameterList> <!-- East BC -->
       <ParameterList name="West BC">
         <Parameter name="PFloTran Constraint" type="string" value="west"/>
         <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>

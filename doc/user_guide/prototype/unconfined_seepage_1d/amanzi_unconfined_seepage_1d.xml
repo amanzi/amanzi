@@ -10,7 +10,7 @@
         <ParameterList name="Steady">
           <Parameter name="Start" type="double" value="0.0"/>
           <Parameter name="End" type="double" value="9.46728e+10"/>
-          <Parameter name="Initial Time Step" type="double" value="100.0"/>
+          <Parameter name="Initial Time Step" type="double" value="1.0"/>
         </ParameterList>
     </ParameterList>
 
@@ -39,7 +39,7 @@
         <Parameter name="Framework" type="string" value="MSTK"/>
       </ParameterList>
       <ParameterList name="Read Mesh File">
-        <Parameter name="File" type="string" value="porflow4_4.exo"/>
+        <Parameter name="File" type="string" value="amanzi_unconfined_seepage_1d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>
@@ -50,7 +50,7 @@
     <ParameterList name="Aquifer">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Entity" type="string" value="Cell"/>
-        <Parameter name="File" type="string" value="porflow4_4.exo"/>
+        <Parameter name="File" type="string" value="amanzi_unconfined_seepage_1d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Label" type="string" value="1"/>
       </ParameterList>
@@ -58,7 +58,7 @@
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Entity" type="string" value="Face"/>
-        <Parameter name="File" type="string" value="porflow4_4.exo"/>
+        <Parameter name="File" type="string" value="amanzi_unconfined_seepage_1d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Label" type="string" value="4"/>
       </ParameterList>
@@ -66,7 +66,7 @@
     <ParameterList name="Right side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Entity" type="string" value="Face"/>
-        <Parameter name="File" type="string" value="porflow4_4.exo"/>
+        <Parameter name="File" type="string" value="amanzi_unconfined_seepage_1d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Label" type="string" value="2"/>
       </ParameterList>
@@ -74,7 +74,7 @@
     <ParameterList name="Top side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Entity" type="string" value="Face"/>
-        <Parameter name="File" type="string" value="porflow4_4.exo"/>
+        <Parameter name="File" type="string" value="amanzi_unconfined_seepage_1d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Label" type="string" value="3"/>
       </ParameterList>
@@ -82,7 +82,7 @@
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Entity" type="string" value="Face"/>
-        <Parameter name="File" type="string" value="porflow4_4.exo"/>
+        <Parameter name="File" type="string" value="amanzi_unconfined_seepage_1d.exo"/>
         <Parameter name="Format" type="string" value="Exodus II"/>
         <Parameter name="Label" type="string" value="1"/>
       </ParameterList>
@@ -160,6 +160,7 @@
         <Parameter name="Sr" type="double" value="0.25"/>
         <Parameter name="m" type="double" value="0.09090"/>
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+        <Parameter name="krel smoothing interval" type="double" value="100"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

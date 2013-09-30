@@ -684,14 +684,6 @@ void Alquimia_Chemistry_PK::CopyAmanziMaterialPropertiesToAlquimia(
 
 }  // end CopyAmanziMaterialPropertiesToAlquimia()
 
-void CopyAmanziGeochemicalConditionsToAlquimia(const int cell_id,
-                                               Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
-{
-  // For now, Amanzi doesn't store geochemical conditions--we parse the 
-  // name of the backend engine's input file from XML and then pass that 
-  // filename directly to Alquimia.
-}
-
 void Alquimia_Chemistry_PK::CopyAlquimiaStateToAmanzi(const int cell_id) 
 {
   AlquimiaState* alquimia_state = &chem_data_.state;

@@ -18,6 +18,16 @@ individual submodels are consistent between Amanzi, the MRD and this
 document. Where applicable, the relevant sections of the MRD are
 indicated.
 
+Amanzi Input
+============
+
+Here, the user specifies which version of the input the input file
+adheres to. 
+
+.. code-block:: xml
+
+  <amanzi_input version="2.0.0"/>
+
 
 Model Description
 =================
