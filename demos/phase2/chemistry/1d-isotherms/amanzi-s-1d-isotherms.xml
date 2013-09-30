@@ -1,5 +1,5 @@
 <ParameterList name="Main">
-  <Parameter name="Amanzi Input format version" type="string" value="1.0.0"/>
+  <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
   <Parameter name="Dump ParmParse Table" type="string" value="run_data/ppfile"/>
   <ParameterList name="General Description">
     <Parameter name="Model ID" type="string" value="1D Flow and Transport"/>
