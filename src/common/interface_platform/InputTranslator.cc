@@ -583,7 +583,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       steadyPL.set<double>("Initial Time Step",get_double_constant(value,def_list));
       gotValue = false;
     } else {
-      // ERROR ;
+      // default value to 0.0
+      steadyPL.set<double>("Initial Time Step",0.0);
     }
     if (defPL.isParameter("method")) {
       method = defPL.get<std::string>("method");
