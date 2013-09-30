@@ -154,9 +154,6 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   void CopyAmanziMaterialPropertiesToAlquimia(
       const int cell_id,
       Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyAmanziGeochemicalConditionsToAlquimia(
-      const int cell_id,
-      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
 
   // These helpers copy Alquimia's data to Amanzi's chemistry state at the 
   // given cell.
