@@ -57,16 +57,13 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-html-ssl-set:
+html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 html-ssl:
-	make MATHJAX_SSL=1 html-ssl-set
-
-html:
-	make MATHJAX_SSL=0 html-ssl-set
+	make MATHJAX_SSL=1 html
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml

@@ -38,7 +38,7 @@ extensions = ['sphinx.ext.todo',
               ]
 
 
-if ( os.environ['MATHJAX_SSL'] == "1" ):
+if ( os.environ.get('MATHJAX_SSL') == "1" ):
     mathjax_path='https://software.lanl.gov/ascem/tpls/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
 #endif
 
@@ -80,7 +80,7 @@ release = '0.2.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build','testing']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
