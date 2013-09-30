@@ -64,47 +64,6 @@ Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const
 ****************************************************************** */
 void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
 {
-  int dim = mesh_->space_dimension();
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  Aff_cells_.clear();
-  Afc_cells_.clear();
-  Acf_cells_.clear();
-  Acc_cells_.clear();
-
-  Epetra_Vector& Krel_cells = rel_perm.Krel_cells();
-  Epetra_Vector& Krel_faces = rel_perm.Krel_faces();
-
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < ncells; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    WhetStone::DenseMatrix& Mff = Mff_cells_[c];
-    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
-    Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
-
-    if (Krel_cells[c] == 1.0) {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * Krel_faces[faces[n]];
-    } else {
-      for (int n = 0; n < nfaces; n++) Bff(n, n) = Mff(n, n) * Krel_cells[c];
-    }
-
-    double matsum = 0.0;  // elimination of mass matrix
-    for (int n = 0; n < nfaces; n++) {
-      double rowsum = Bff(n, n), colsum = Bff(n, n);
-      Bcf(n) = -colsum;
-      Bfc(n) = -rowsum;
-      matsum += colsum;
-    }
-
-    Aff_cells_.push_back(Bff);  // This the only place where memory can be allocated.
-    Afc_cells_.push_back(Bfc);
-    Acf_cells_.push_back(Bcf);
-    Acc_cells_.push_back(matsum);
-  }
 
 }
 
@@ -125,7 +84,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
   int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_FACES : FLOW_HEX_FACES;
   Epetra_FECrsGraph pp_graph(Copy, cmap, avg_entries_row + 1);
 
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells;   
   int cells_GID[2];
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
