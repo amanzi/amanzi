@@ -19,7 +19,7 @@
 #include "boost/lexical_cast.hpp"
 
 namespace Amanzi {
-namespace AmanziInput {
+namespace AmanziInput{
 
 
 /**
@@ -3320,11 +3320,11 @@ void check_AmanziInputVersion(Teuchos::ParameterList* plist) {
     Exceptions::amanzi_throw(Errors::Message("The version string in the input file '"+version+"' has the wrong format, please use X.Y.Z, where X, Y, and Z are integers."));
   }
 
-  if ((major != AMANZI_INPUT_VERSION_MAJOR) ||
-      (minor != AMANZI_INPUT_VERSION_MINOR) ||
-      (micro != AMANZI_INPUT_VERSION_MICRO)) {
+  if ((major != AMANZI_OLD_INPUT_VERSION_MAJOR) ||
+      (minor != AMANZI_OLD_INPUT_VERSION_MINOR) ||
+      (micro != AMANZI_OLD_INPUT_VERSION_MICRO)) {
     std::stringstream ss_ver_reqd;
-    ss_ver_reqd << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;
+    ss_ver_reqd << AMANZI_OLD_INPUT_VERSION_MAJOR << "." << AMANZI_OLD_INPUT_VERSION_MINOR << "." << AMANZI_OLD_INPUT_VERSION_MICRO;
     std::stringstream ss_ver_inp;
     ss_ver_inp << major << "." << minor << "." << micro;
 

@@ -1,4 +1,5 @@
 #include "InputTranslator.hh"
+#include "InputParserIS.hh"
 #include "InputParserIS-defaults.hh"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -72,16 +73,17 @@ Teuchos::ParameterList translate(const std::string& xmlfilename, const std::stri
 
   // check that it's validating here
 
-  // grab the version number attribute
-  new_list.set<std::string>("Amanzi Input Format Version", "1.1.0");
-
-  // grab the mesh type
-  //new_list.sublist(framework) = ...;
 
   // go through each section, if it exist in the file, translate it 
   // to the old format
   xercesc::DOMDocument *doc = parser->getDocument();
-  
+
+  // grab the version number attribute
+  new_list.set<std::string>("Amanzi Input Format Version", get_amanzi_version(doc,def_list));
+
+  // grab the mesh type
+  //new_list.sublist(framework) = ...;
+
   def_list.sublist("constants") = get_constants(doc);
 
   new_list.sublist("General Description") = get_model_description(doc,def_list);
@@ -238,6 +240,64 @@ Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc) {
   return list;
   
 }
+
+
+
+
+/* ******************************************************************
+ * Empty
+ ****************************************************************** */
+std::string get_amanzi_version(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list) {
+  std::string old_version;
+  
+  XMLCh* tag = XMLString::transcode("amanzi_input");
+
+  xercesc::DOMNodeList* nodeList = xmlDoc->getElementsByTagName(tag);  
+  XMLString::release(&tag);
+
+  const XMLSize_t nodeCount = nodeList->getLength();  
+  if (nodeList->getLength() > 0) {
+    xercesc::DOMNode* nodeGD = nodeList->item(0);
+    xercesc::DOMElement* elementGD = static_cast<xercesc::DOMElement*>(nodeGD);
+    std::string version(xercesc::XMLString::transcode(elementGD->getAttribute(xercesc::XMLString::transcode("version"))));
+    
+    int major, minor, micro;
+    
+    std::stringstream ss;
+    ss << version;
+    std::string ver;
+    
+    try {
+      getline(ss,ver,'.');
+      major = boost::lexical_cast<int>(ver);
+      
+      getline(ss,ver,'.');
+      minor = boost::lexical_cast<int>(ver);
+      
+      getline(ss,ver);
+      micro = boost::lexical_cast<int>(ver);
+    }
+    catch (...) {
+      Exceptions::amanzi_throw(Errors::Message("The version string in the input file '"+version+"' has the wrong format, please use X.Y.Z, where X, Y, and Z are integers."));
+    }
+
+    if ( (major == 2) && (minor == 0) && (micro == 0) ) {
+      // now we can proceed, we translate to a v1.2.0 parameterlist
+      old_version = "1.2.0";
+    } else {
+      std::stringstream ver;
+      ver << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;      
+      Exceptions::amanzi_throw(Errors::Message("The input version " + version + " specified in the input file is not supported. This version of amanzi supports version "+ ver.str() + "."));
+    }
+  } else {
+    // amanzi inpurt description did not exist, error
+    Exceptions::amanzi_throw(Errors::Message("Amanzi input description does not exist <amanz_input version=...>"));
+  }
+
+  return old_version;
+}
+
+
 
 /* ******************************************************************
  * Empty

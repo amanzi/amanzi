@@ -5,8 +5,8 @@
 namespace Amanzi {
 namespace AmanziNewInput {
 
-#define AMANZI_INPUT_VERSION_MAJOR 1
-#define AMANZI_INPUT_VERSION_MINOR 1
+#define AMANZI_INPUT_VERSION_MAJOR 2
+#define AMANZI_INPUT_VERSION_MINOR 0
 #define AMANZI_INPUT_VERSION_MICRO 0
 
 
@@ -14,6 +14,7 @@ namespace AmanziNewInput {
 Teuchos::ParameterList translate (const std::string& xmlfilename, const std::string& xmlSchemafile);
 
 Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc);
+std::string get_amanzi_version(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_model_description(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);

@@ -1,5 +1,5 @@
 
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.0.0" type="unstructured">
 
 	<model_description name="Dispersion Example Problem">
 		<comments>Example input file</comments>
