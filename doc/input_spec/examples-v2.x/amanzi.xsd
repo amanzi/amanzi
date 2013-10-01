@@ -1504,7 +1504,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all>
 		<xs:element name="base_filename" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="num_digits" type="xs:integer" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="time_macro" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+		<xs:element name="time_macro" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="cycle_macro" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
 </xs:complexType>
 
@@ -1513,7 +1514,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all>
 		<xs:element name="base_filename" type="xs:string" minOccurs="1" maxOccurs="1"/>
 		<xs:element name="num_digits" type="xs:integer" minOccurs="1" maxOccurs="1"/>
-		<xs:element name="time_macro" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+		<xs:element name="cycle_macro" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
 </xs:complexType>
 

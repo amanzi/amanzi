@@ -553,13 +553,13 @@ a restart option in the execution control section.  Don't know how to set up the
 	                <vis>
 	                        <base_filename>plot</base_filename>
 	                        <num_digits>5</num_digits>
-	                        <time_macro>Every_100_timesteps</time_macro>
+	                        <cycle_macro>Every_100_timesteps</cycle_macro>
 	                </vis>
 	
 	                <checkpoint>
 	                        <base_filename>chk</base_filename>
 	                        <num_digits>5</num_digits>
-	                        <time_macro>Macro 1</time_macro>
+	                        <cycle_macro>Every_100_timesteps</cycle_macro>
 	                </checkpoint>
 	
 	                <observations>
