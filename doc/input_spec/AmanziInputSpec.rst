@@ -1610,7 +1610,15 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * [SU] `"File Name Base`" [string]
 
+  * [U] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
+
   * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+
+Notes:
+
+[U] if only `"File Name Base`" and optionally `"File Name Digits`" are specified then only one checkpoint is
+written at the end of the simulation.
+
 
 
 Example:
@@ -1649,6 +1657,13 @@ at intervals corresponding to the numerical time step values; writes are control
   * [S] `"Variables`" [Array string] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
 
   * [U] `"Regions`" [Array string] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
+
+
+Notes:
+
+[U] If only `"File Name Base`" is specified, an initial and a final visualization dump are written.
+
+
 
 Example:
 
