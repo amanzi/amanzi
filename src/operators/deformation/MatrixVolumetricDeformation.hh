@@ -17,8 +17,8 @@
 #include "Epetra_CrsMatrix.h"
 
 #include "Mesh.hh"
-#include "composite_vector.hh"
-#include "composite_matrix.hh"
+#include "CompositeVector.hh"
+#include "CompositeMatrix.hh"
 #include "Matrix_PreconditionerDelegate.hh"
 
 namespace Amanzi {
@@ -35,11 +35,11 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
 
 
   // Vector space of the Matrix's domain.
-  virtual Teuchos::RCP<const CompositeVectorFactory> domain() const {
+  virtual Teuchos::RCP<const CompositeVectorSpace> domain() const {
     return domain_; }
 
   // Vector space of the Matrix's range.
-  virtual Teuchos::RCP<const CompositeVectorFactory> range() const {
+  virtual Teuchos::RCP<const CompositeVectorSpace> range() const {
     return range_; }
 
   // Virtual copy constructor.
@@ -72,8 +72,8 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
   Teuchos::RCP<Matrix_PreconditionerDelegate> prec_;
 
   // local data
-  Teuchos::RCP<CompositeVectorFactory> range_;
-  Teuchos::RCP<CompositeVectorFactory> domain_;
+  Teuchos::RCP<CompositeVectorSpace> range_;
+  Teuchos::RCP<CompositeVectorSpace> domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
   Teuchos::RCP<Epetra_CrsMatrix> operator_;

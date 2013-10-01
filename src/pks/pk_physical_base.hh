@@ -12,6 +12,7 @@ Default base with default implementations of methods for a physical PK.
 #ifndef AMANZI_PK_PHYSICAL_BASE_HH_
 #define AMANZI_PK_PHYSICAL_BASE_HH_
 
+#include "Debugger.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "pk_default_base.hh"
 
@@ -60,6 +61,8 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   std::string key_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator_;
 
+  // debugger for dumping vectors
+  Teuchos::RCP<Debugger> db_;
 };
 
 } // namespace

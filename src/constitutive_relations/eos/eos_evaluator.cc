@@ -43,7 +43,6 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
     key = plist_.get<std::string>("mass density key");
     my_keys_.push_back(key);
   }
-  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // Set up my dependencies.
   std::size_t end = key.find_first_of("_");
@@ -67,11 +66,11 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(pres_key_);
 
   // -- logging
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME)) {
-  Teuchos::OSTab tab = getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
     for (KeySet::const_iterator dep=dependencies_.begin();
          dep!=dependencies_.end(); ++dep) {
-      *out_ << " dep: " << *dep << std::endl;
+      *vo_->os() << " dep: " << *dep << std::endl;
     }
   }
 
@@ -132,7 +131,7 @@ void EOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (CompositeVector::name_iterator comp=mass_dens->begin();
          comp!=mass_dens->end(); ++comp) {
       if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-          molar_dens->has_component(*comp)) {
+          molar_dens->HasComponent(*comp)) {
         // calculate MassDensity from MolarDensity and molar mass.
         double M = eos_->MolarMass();
 
@@ -192,7 +191,7 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       for (CompositeVector::name_iterator comp=mass_dens->begin();
            comp!=mass_dens->end(); ++comp) {
         if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-            molar_dens->has_component(*comp)) {
+            molar_dens->HasComponent(*comp)) {
           // calculate MassDensity from MolarDensity and molar mass.
           double M = eos_->MolarMass();
 
@@ -233,7 +232,7 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       for (CompositeVector::name_iterator comp=mass_dens->begin();
            comp!=mass_dens->end(); ++comp) {
         if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-            molar_dens->has_component(*comp)) {
+            molar_dens->HasComponent(*comp)) {
           // calculate MassDensity from MolarDensity and molar mass.
           double M = eos_->MolarMass();
 

@@ -34,8 +34,7 @@
 #include <fstream>
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "NKA_Operator.hh"
-
+#include "LinearOperatorFactory.hh"
 #include "FieldEvaluator.hh"
 #include "MatrixMFD.hh"
 #include "MatrixMFD_Coupled.hh"
@@ -65,6 +64,38 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
 
   Key mesh_key = plist_.get<std::string>("mesh key");
   mesh_ = S->GetMesh(mesh_key);
+
+  // cells to debug
+  if (plist_.isParameter("debug cells")) {
+    dc_.clear();
+    Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
+    for (Teuchos::Array<int>::const_iterator c=dc.begin();
+         c!=dc.end(); ++c) dc_.push_back(*c);
+
+    // Enable a vo for each cell, allows parallel printing of debug cells.
+    if (plist_.isParameter("debug cell ranks")) {
+      Teuchos::Array<int> dc_ranks = plist_.get<Teuchos::Array<int> >("debug cell ranks");
+      if (dc.size() != dc_ranks.size()) {
+        Errors::Message message("Debug cell and debug cell ranks must be equal length.");
+        Exceptions::amanzi_throw(message);
+      }
+      for (Teuchos::Array<int>::const_iterator dcr=dc_ranks.begin();
+           dcr!=dc_ranks.end(); ++dcr) {
+        // make a verbose object for each case
+        Teuchos::ParameterList vo_plist;
+        vo_plist.sublist("VerboseObject");
+        vo_plist.sublist("VerboseObject")
+            = plist_.sublist("VerboseObject");
+        vo_plist.sublist("VerboseObject").set("write on rank", *dcr);
+
+        dcvo_.push_back(Teuchos::rcp(new VerboseObject(mesh_->get_comm(), name_,vo_plist)));
+
+      }
+    } else {
+      // Simply use the pk's vo
+      dcvo_.resize(dc_.size(), vo_);
+    }
+  }
 
   // Create the precon
   Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
@@ -99,8 +130,8 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   // setup and initialize the linear solver for the preconditioner
   if (plist_.isSublist("Coupled Solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_.sublist("Coupled Solver");
-    linsolve_preconditioner_ =
-        Teuchos::rcp(new AmanziSolvers::NKA_Operator<TreeMatrix,TreeVector,TreeVectorFactory>(linsolve_sublist, mfd_preconditioner_));
+    AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
+    linsolve_preconditioner_ = fac.Create("coupled solver", linsolve_sublist, mfd_preconditioner_);
   }
 }
 
@@ -176,15 +207,15 @@ void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tree
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "Residuals:" << std::endl;
-      *out_ << "  p(" << *c0 << "): " << (*u->SubVector(0)->data())("cell",*c0);
+      *out_ << "  p(" << *c0 << "): " << (*u->SubVector(0)->Data())("cell",*c0);
       for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*u->SubVector(0)->data())("face",fnums0[n]);
+        *out_ << ",  " << (*u->SubVector(0)->Data())("face",fnums0[n]);
       }
       *out_ << std::endl;
 
-      *out_ << "  T(" << *c0 << "): " << (*u->SubVector(1)->data())("cell",*c0);
+      *out_ << "  T(" << *c0 << "): " << (*u->SubVector(1)->Data())("cell",*c0);
       for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*u->SubVector(1)->data())("face",fnums0[n]);
+        *out_ << ",  " << (*u->SubVector(1)->Data())("face",fnums0[n]);
       }
       *out_ << std::endl;
     }
@@ -204,15 +235,15 @@ void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tree
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
       *out_ << "Preconditioned Updates:" << std::endl;
-      *out_ << "  Pp(" << *c0 << "): " << (*Pu->SubVector(0)->data())("cell",*c0);
+      *out_ << "  Pp(" << *c0 << "): " << (*Pu->SubVector(0)->Data())("cell",*c0);
       for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+        *out_ << ",  " << (*Pu->SubVector(0)->Data())("face",fnums0[n]);
       }
       *out_ << std::endl;
 
-      *out_ << "  PT(" << *c0 << "): " << (*Pu->SubVector(1)->data())("cell",*c0);
+      *out_ << "  PT(" << *c0 << "): " << (*Pu->SubVector(1)->Data())("cell",*c0);
       for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+        *out_ << ",  " << (*Pu->SubVector(1)->Data())("face",fnums0[n]);
       }
       *out_ << std::endl;
     }

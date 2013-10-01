@@ -66,6 +66,10 @@ class MPCCoupledCells : public StrongMPC {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   bool decoupled_;
+
+  // cruft for easier global debugging
+  std::vector<AmanziMesh::Entity_ID> dc_;
+  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
 };
 
 

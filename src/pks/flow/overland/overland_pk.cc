@@ -294,9 +294,9 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Commiting state." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Commiting state." << std::endl;
 
   // update boundary conditions
   bc_head_->Compute(S->time());
@@ -326,9 +326,9 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // Update diagnostics -- used prior to vis.
 // -----------------------------------------------------------------------------
 void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Calculating diagnostic variables." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Calculating diagnostic variables." << std::endl;
 
   // update the cell velocities
   if (update_flux_ == UPDATE_FLUX_VIS) {
@@ -369,9 +369,9 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating permeability?";
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating permeability?";
 
   bool update_perm = S->GetFieldEvaluator("overland_conductivity")
       ->HasFieldChanged(S, name_);
@@ -429,7 +429,7 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   if (update_perm && out_.get() &&
       includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << " TRUE." << std::endl;
+    *vo_->os() << " TRUE." << std::endl;
   }
   return update_perm;
 }
@@ -439,9 +439,9 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating BCs." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating BCs." << std::endl;
 
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
@@ -488,9 +488,9 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time without elevation.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating BCs Markers only." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating BCs Markers only." << std::endl;
 
   AmanziMesh::Entity_ID_List cells;
   // initialize all as null
@@ -525,9 +525,9 @@ void OverlandFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S
 
 
 void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "    Tweaking BCs for the Operator." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Tweaking BCs for the Operator." << std::endl;
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
@@ -576,15 +576,15 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
 
 void OverlandFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "    Tweaking BCs for the PC." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Tweaking BCs for the PC." << std::endl;
 };
 
 void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "    Tweaking BCs for calculation of consistent faces." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Tweaking BCs for calculation of consistent faces." << std::endl;
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
@@ -648,14 +648,14 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 
 
 bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Modifying predictor:" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Modifying predictor:" << std::endl;
 
   if (modify_predictor_with_consistent_faces_) {
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-      *out_ << "  modifications for consistent face pressures." << std::endl;
-    CalculateConsistentFaces(u->data().ptr());
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  modifications for consistent face pressures." << std::endl;
+    CalculateConsistentFaces(u->Data().ptr());
     return true;
   }
 
@@ -665,7 +665,7 @@ bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
 
 void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // update boundary conditions
   bc_head_->Compute(S_next_->time());
@@ -688,18 +688,6 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
   S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev","pres_elev");
 
-#if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << "Consistent faces:" << std::endl;
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-      if (*c0 < ncells) {
-        *out_ << "  u_c = " << (*u)("cell",*c0) << ",  pres_elev_c = " << (*pres_elev)("cell",*c0) << std::endl;
-      }
-    }
-  }
-#endif
-
   // Update the preconditioner with darcy and gravity fluxes
   // skip accumulation terms, they're not needed
   // Assemble
@@ -714,23 +702,6 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
       ->ViewComponent("face",false);
   u->ViewComponent("face",false)->Update(1., *pres_elev->ViewComponent("face",false),
           -1., elevation, 0.);
-
-#if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-      if (*c0 < ncells) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-        *out_ << "  cond = " << (*cond)("face",fnums0[0]) << std::endl;
-        *out_ << "  pres_e_f = " << (*pres_elev)("face",fnums0[0]) << std::endl;
-        *out_ << "  u_f = " << (*u)("face",fnums0[0]) << std::endl;
-      }
-    }
-  }
-#endif
 }
 
 } // namespace

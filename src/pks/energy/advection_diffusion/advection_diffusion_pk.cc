@@ -9,7 +9,7 @@ Author: Ethan Coon
 
 #include "advection_factory.hh"
 #include "energy_bc_factory.hh"
-#include "composite_vector_factory.hh"
+#include "CompositeVectorSpace.hh"
 
 #include "advection_diffusion.hh"
 
@@ -21,7 +21,7 @@ RegisteredPKFactory<AdvectionDiffusion> AdvectionDiffusion::reg_("advection-diff
 void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
 
   // require fields
-  Teuchos::RCP<CompositeVectorFactory> factory;
+  Teuchos::RCP<CompositeVectorSpace> factory;
 
   // -- temperature -- on cells and faces
   std::vector<AmanziMesh::Entity_kind> locations2(2);

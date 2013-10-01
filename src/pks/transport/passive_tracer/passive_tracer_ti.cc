@@ -15,7 +15,7 @@ void PassiveTracer::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_o
   solution_to_state(u_new, S_next_);
 
   // get access to the solution
-  Teuchos::RCP<CompositeVector> res = g->data();
+  Teuchos::RCP<CompositeVector> res = g->Data();
   res->PutScalar(0.0);
 
   // update bcs
@@ -37,8 +37,8 @@ void PassiveTracer::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVe
 double PassiveTracer::enorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   double enorm_val = 0.0;
-  Teuchos::RCP<const Epetra_MultiVector> conc_vec = u->data()->ViewComponent(false);
-  Teuchos::RCP<const Epetra_MultiVector> conc_dot_vec = du->data()->ViewComponent(false);
+  Teuchos::RCP<const Epetra_MultiVector> conc_vec = u->Data()->ViewComponent(false);
+  Teuchos::RCP<const Epetra_MultiVector> conc_dot_vec = du->Data()->ViewComponent(false);
 
   for (int lcv=0; lcv != conc_vec->MyLength(); ++lcv) {
     double tmp = abs((*(*conc_dot_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*conc_vec)(0))[lcv]));

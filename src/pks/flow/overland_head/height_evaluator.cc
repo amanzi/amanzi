@@ -19,7 +19,6 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   // my keys are for saturation and rel perm.
   my_key_ = plist_.get<string>("height key", "ponded_depth");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // my dependencies
   dens_key_ = plist_.get<string>("mass density key", "surface_mass_density_liquid");
@@ -55,7 +54,7 @@ HeightEvaluator::Clone() const {
 void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.
   ASSERT(my_key_ != std::string(""));
-  Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(my_key_, my_key_);
+  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
@@ -69,9 +68,9 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
     // Create an unowned factory to check my dependencies.  This is done
     // manually here because we do NOT want faces, despite having faces in
     // my_key.  The faces will get updated directly from the mixed field.
-    Teuchos::RCP<CompositeVectorFactory> dep_fac =
-        Teuchos::rcp(new CompositeVectorFactory());
-    dep_fac->set_owned(false);
+    Teuchos::RCP<CompositeVectorSpace> dep_fac =
+        Teuchos::rcp(new CompositeVectorSpace());
+    dep_fac->SetOwned(false);
     dep_fac->SetGhosted(my_fac->Ghosted());
     dep_fac->SetMesh(my_fac->Mesh());
     dep_fac->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -79,7 +78,7 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
     // Loop over my dependencies, ensuring they meet the requirements.
     for (KeySet::const_iterator key=dependencies_.begin();
          key!=dependencies_.end(); ++key) {
-      Teuchos::RCP<CompositeVectorFactory> fac = S->RequireField(*key);
+      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(*key);
       fac->Update(*dep_fac);
     }
 
@@ -111,12 +110,11 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
   } else {
     // or create the field.  Note we have to do extra work that is normally
     // done by State in initialize.
-    Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(my_key_);
-    Teuchos::RCP<CompositeVectorFactory> new_fac =
+    Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_);
+    Teuchos::RCP<CompositeVectorSpace> new_fac =
       S->RequireField(dmy_key, my_key_);
     new_fac->Update(*my_fac);
-    dmy = new_fac->CreateVector(true);
-    dmy->CreateData();
+    dmy = Teuchos::rcp(new CompositeVector(*my_fac));
     S->SetData(dmy_key, my_key_, dmy);
     S->GetField(dmy_key,my_key_)->set_initialized();
     S->GetField(dmy_key,my_key_)->set_io_vis(false);
@@ -137,8 +135,8 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
       dmy->ViewComponent("cell",false)->Update(1.0,
               *tmp->ViewComponent("cell",false), 1.0);
 
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME)) {
-        *out_ << dmy_key << " = " << (*tmp)("cell",0) << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_->os() << dmy_key << " = " << (*tmp)("cell",0) << std::endl;
       }
 
     } else if (S->GetFieldEvaluator(*dep)->IsDependency(S, wrt_key)) {
@@ -149,9 +147,9 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
       // -- partial F / partial dep
       EvaluateFieldPartialDerivative_(S, *dep, tmp.ptr());
 
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME)) {
-        *out_ << ddep_key << " = " << (*ddep)("cell",0) << ", ";
-        *out_ << "d"<< my_key_ << "_d" << *dep << " = " << (*tmp)("cell",0) << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+        *vo_->os() << ddep_key << " = " << (*ddep)("cell",0) << ", ";
+        *vo_->os() << "d"<< my_key_ << "_d" << *dep << " = " << (*tmp)("cell",0) << std::endl;
       }
 
       dmy->ViewComponent("cell",false)

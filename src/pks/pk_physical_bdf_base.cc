@@ -68,8 +68,8 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
     *out_ << "ENorm (Infnorm) of: " << name_ << ": ";
   }
 
-  Teuchos::RCP<const CompositeVector> vec = u->data();
-  Teuchos::RCP<const CompositeVector> dvec = du->data();
+  Teuchos::RCP<const CompositeVector> vec = u->Data();
+  Teuchos::RCP<const CompositeVector> dvec = du->Data();
 
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=vec->begin();

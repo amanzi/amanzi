@@ -30,7 +30,6 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
     my_key_ = plist_.get<std::string>("overland conductivity key",
             "overland_conductivity");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // create the model, hard-coded until we have a 2nd model
   ASSERT(plist_.isSublist("overland conductivity model"));

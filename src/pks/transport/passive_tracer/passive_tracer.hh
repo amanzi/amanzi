@@ -17,8 +17,8 @@ simple passive tracer transport
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 #include "State.hh"
 #include "advection.hh"
 #include "boundary_function.hh"

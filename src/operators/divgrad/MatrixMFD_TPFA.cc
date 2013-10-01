@@ -40,7 +40,7 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   assembled_operator_ = false;
 
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -54,28 +54,28 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    WhetStone::DenseMatrix& Mff = Mff_cells_[c];
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
     if (Krel == Teuchos::null ||
-        (!Krel->has_component("cell") && !Krel->has_component("face"))) {
+        (!Krel->HasComponent("cell") && !Krel->HasComponent("face"))) {
       for (int n=0; n!=nfaces; ++n) {
         Bff(n, n) = Mff(n, n);
       }
-    } else if (Krel->has_component("cell") && !Krel->has_component("face")) {
+    } else if (Krel->HasComponent("cell") && !Krel->HasComponent("face")) {
       const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
 
       for (int n=0; n!=nfaces; ++n) {
         Bff(n, n) = Mff(n,n) * Krel_c[0][c];
       }
-    } else if (!Krel->has_component("cell") && Krel->has_component("face")) {
+    } else if (!Krel->HasComponent("cell") && Krel->HasComponent("face")) {
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
 
       for (int n=0; n!=nfaces; ++n) {
         Bff(n, n) = Mff(n,n) * Krel_f[0][faces[n]];
       }
-    } else if (Krel->has_component("cell") && Krel->has_component("face")) {
+    } else if (Krel->HasComponent("cell") && Krel->HasComponent("face")) {
       const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
 
@@ -137,8 +137,10 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
   std::vector<std::string> names(1,"face");
   std::vector<AmanziMesh::Entity_kind> locations(1,AmanziMesh::FACE);
   std::vector<int> ndofs(1,1);
-  Dff_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, ndofs, true));
-  Dff_->CreateData();
+  
+  CompositeVectorSpace space;
+  space.SetMesh(mesh_)->SetGhosted()->SetComponents(names,locations,ndofs);
+  Dff_ = Teuchos::rcp(new CompositeVector(space));
   Dff_->PutScalar(0.);
 
   Spp_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, pp_graph));
@@ -200,8 +202,9 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   rhs_faces->PutScalar(0.);
 
   // create a with-ghost copy of Acc
-  CompositeVector Dcc(mesh_,names_c,locations_c,ndofs,true);
-  Dcc.CreateData();
+  CompositeVectorSpace space_c;
+  space_c.SetMesh(mesh_)->SetGhosted()->SetComponents(names_c,locations_c,ndofs);
+  CompositeVector Dcc(space_c);
 
   { // context for non-const access
     Epetra_MultiVector& Dcc_c = *Dcc.ViewComponent("cell",true);
@@ -216,10 +219,10 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
   double Afc_copy[2];
 
   // create auxiliaty with-ghost copy of Acf_cells
-  CompositeVector Acf_parallel(mesh_,names_f,locations_f,ndofs,true);
-  Acf_parallel.CreateData();
-  CompositeVector Afc_parallel(mesh_,names_f,locations_f,ndofs,true);
-  Afc_parallel.CreateData();
+  CompositeVectorSpace space_f;
+  space_f.SetMesh(mesh_)->SetGhosted()->SetComponents(names_f,locations_f,ndofs);
+  CompositeVector Acf_parallel(space_f);
+  CompositeVector Afc_parallel(space_f);
 
   Epetra_MultiVector& Acf_parallel_f = *Acf_parallel.ViewComponent("face",true);
   Epetra_MultiVector& Afc_parallel_f = *Afc_parallel.ViewComponent("face",true);

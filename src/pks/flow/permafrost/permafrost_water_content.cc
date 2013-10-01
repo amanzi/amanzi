@@ -24,7 +24,6 @@ namespace Flow {
 PermafrostWaterContent::PermafrostWaterContent(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = std::string("water_content");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   dependencies_.insert(std::string("porosity"));
 

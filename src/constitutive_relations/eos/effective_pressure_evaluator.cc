@@ -22,8 +22,6 @@ EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& p
     my_key_ = ep_plist_.get<std::string>("effective pressure key", "effective_pressure");
   }
 
-  setLinePrefix(my_key_+std::string(" evaluator"));
-
   std::size_t end = my_key_.find_first_of("_");
   std::string domain_name = my_key_.substr(0,end);
   if (domain_name == std::string("effective")) {
@@ -38,11 +36,11 @@ EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& p
   dependencies_.insert(pres_key_);
 
   // -- logging
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME)) {
-    Teuchos::OSTab tab = getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
     for (KeySet::const_iterator dep=dependencies_.begin();
          dep!=dependencies_.end(); ++dep) {
-      *out_ << " dep: " << *dep << std::endl;
+      *vo_->os() << " dep: " << *dep << std::endl;
     }
   }
 

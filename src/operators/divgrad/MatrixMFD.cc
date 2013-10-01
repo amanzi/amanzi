@@ -117,7 +117,7 @@ void MatrixMFD::CreateMFDmassMatrices(
   assembled_operator_ = false;
 
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -137,29 +137,29 @@ void MatrixMFD::CreateMFDmassMatrices(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double> Mff(nfaces, nfaces);
+    WhetStone::DenseMatrix Mff(nfaces, nfaces);
 
     if (K != Teuchos::null) {
       Kc = (*K)[c];
     }
 
     if (method_ == MFD3D_POLYHEDRA_SCALED) {
-      ok = mfd.DarcyMassInverseScaled(c, Kc, Mff);
+      ok = mfd.MassMatrixInverseScaled(c, Kc, Mff);
     } else if (method_ == MFD3D_POLYHEDRA) {
-      ok = mfd.DarcyMassInverse(c, Kc, Mff);
+      ok = mfd.MassMatrixInverse(c, Kc, Mff);
     } else if (method_ == MFD3D_OPTIMIZED_SCALED) {
-      ok = mfd.DarcyMassInverseOptimizedScaled(c, Kc, Mff);
+      ok = mfd.MassMatrixInverseOptimizedScaled(c, Kc, Mff);
     } else if (method_ == MFD3D_OPTIMIZED) {
-      ok = mfd.DarcyMassInverseOptimized(c, Kc, Mff);
+      ok = mfd.MassMatrixInverseOptimized(c, Kc, Mff);
     } else if (method_ == MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.DarcyMassInverseHex(c, Kc, Mff);
+        ok = mfd.MassMatrixInverseHex(c, Kc, Mff);
       else
-        ok = mfd.DarcyMassInverse(c, Kc, Mff);
+        ok = mfd.MassMatrixInverse(c, Kc, Mff);
     } else if (method_ == MFD3D_TWO_POINT_FLUX) {
-      ok = mfd.DarcyMassInverseDiagonal(c, Kc, Mff);
+      ok = mfd.MassMatrixInverseDiagonal(c, Kc, Mff);
     } else if (method_ == MFD3D_SUPPORT_OPERATOR) {
-      ok = mfd.DarcyMassInverseSO(c, Kc, Mff);
+      ok = mfd.MassMatrixInverseSO(c, Kc, Mff);
     } else {
       Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
       Exceptions::amanzi_throw(msg);
@@ -193,7 +193,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
   assembled_operator_ = false;
 
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D mfd(mesh_);
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -207,18 +207,18 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
-    Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+    WhetStone::DenseMatrix& Mff = Mff_cells_[c];
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
     if (Krel == Teuchos::null ||
-        (!Krel->has_component("cell") && !Krel->has_component("face"))) {
+        (!Krel->HasComponent("cell") && !Krel->HasComponent("face"))) {
       for (int n=0; n!=nfaces; ++n) {
         for (int m=0; m!=nfaces; ++m) {
           Bff(m, n) = Mff(m,n);
         }
       }
-    } else if (Krel->has_component("cell") && !Krel->has_component("face")) {
+    } else if (Krel->HasComponent("cell") && !Krel->HasComponent("face")) {
       const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
 
       for (int n=0; n!=nfaces; ++n) {
@@ -226,7 +226,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
           Bff(m, n) = Mff(m,n) * Krel_c[0][c];
         }
       }
-    } else if (!Krel->has_component("cell") && Krel->has_component("face")) {
+    } else if (!Krel->HasComponent("cell") && Krel->HasComponent("face")) {
       Krel->ScatterMasterToGhosted("face");
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
 
@@ -235,7 +235,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
           Bff(m, n) = Mff(m,n) * Krel_f[0][faces[m]];
         }
       }
-    } else if (Krel->has_component("cell") && Krel->has_component("face")) {
+    } else if (Krel->HasComponent("cell") && Krel->HasComponent("face")) {
       Krel->ScatterMasterToGhosted("face");
       const Epetra_MultiVector& Krel_f = *Krel->ViewComponent("face",true);
       const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
@@ -436,8 +436,9 @@ void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
   locations[1] = AmanziMesh::FACE;
 
   std::vector<int> num_dofs(2,1);
-  rhs_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, num_dofs, true));
-  rhs_->CreateData();
+  CompositeVectorSpace space;
+  space.SetMesh(mesh_)->SetGhosted()->SetComponents(names,locations,num_dofs);
+  rhs_ = Teuchos::rcp(new CompositeVector(space));
 }
 
 

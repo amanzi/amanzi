@@ -9,7 +9,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "errors.hh"
-#include "composite_vector_factory.hh"
+#include "CompositeVectorSpace.hh"
 #include "MatrixVolumetricDeformation.hh"
 
 #define MESH_TYPE 1 // 0 = HEXES, 1 = TRIANGULAR PRISMS
@@ -113,9 +113,9 @@ void MatrixVolumetricDeformation::PreAssemble_() {
   const Epetra_Map& node_map = mesh_->node_epetra_map(false);
   const Epetra_Map& node_map_wghost = mesh_->node_epetra_map(true);
 
-  range_ = Teuchos::rcp(new CompositeVectorFactory());
+  range_ = Teuchos::rcp(new CompositeVectorSpace());
   range_->SetMesh(mesh_)->SetComponent("cell",AmanziMesh::CELL,1);
-  domain_ = Teuchos::rcp(new CompositeVectorFactory());
+  domain_ = Teuchos::rcp(new CompositeVectorSpace());
   domain_->SetMesh(mesh_)->SetComponent("node",AmanziMesh::NODE,1);
 
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

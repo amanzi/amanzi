@@ -125,7 +125,7 @@ void StrongMPC::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector
     (*pk)->precon(pk_u, pk_Pu);
   }
 
-//   std::cout<<*(((Pu->SubVector("flow"))->data())->ViewComponent("cell", false));
+//   std::cout<<*(((Pu->SubVector("flow"))->Data())->ViewComponent("cell", false));
 //   cout<<"Exit from StrongMPC precon\n";
 //   exit(0);
 };

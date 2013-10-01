@@ -24,7 +24,6 @@ namespace Energy {
 SurfaceIceEnergyEvaluator::SurfaceIceEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("energy key", "surface_energy");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // densities
   dens_key_ = plist.get<std::string>("molar density liquid key",

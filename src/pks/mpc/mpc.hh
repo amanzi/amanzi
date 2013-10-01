@@ -28,7 +28,7 @@ respective methods.
 #include "Epetra_MpiComm.h"
 
 #include "State.hh"
-#include "tree_vector.hh"
+#include "TreeVector.hh"
 
 #include "pk_default_base.hh"
 #include "pk_factory.hh"

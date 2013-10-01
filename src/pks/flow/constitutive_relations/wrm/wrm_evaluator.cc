@@ -58,15 +58,12 @@ void WRMEvaluator::InitializeFromPlist_() {
   // my dependencies are capillary pressure.
   cap_pres_key_ = plist_.get<string>("capillary pressure key", "capillary_pressure_gas_liq");
   dependencies_.insert(cap_pres_key_);
-
-  // set up the verbose object
-  setLinePrefix(std::string("saturation evaluator"));
 }
 
 
 void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->mesh());
+  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->Mesh());
 
   Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell",false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(cap_pres_key_)
@@ -79,13 +76,13 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 
   // Potentially do face values as well.
-  if (results[0]->has_component("boundary_face")) {
+  if (results[0]->HasComponent("boundary_face")) {
     Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)
         ->ViewComponent("boundary_face",false);
 
     // Need to get boundary face's inner cell to specify the WRM.
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
     const Epetra_Map& face_map = mesh->face_epetra_map(false);
     AmanziMesh::Entity_ID_List cells;
@@ -108,7 +105,7 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (CompositeVector::name_iterator comp=results[1]->begin();
          comp!=results[1]->end(); ++comp) {
 
-      if (results[0]->has_component(*comp)) {
+      if (results[0]->HasComponent(*comp)) {
         // sat_g = 1 - sat_l
         results[1]->ViewComponent(*comp,false)->PutScalar(1.);
         results[1]->ViewComponent(*comp,false)->Update(-1,
@@ -127,7 +124,7 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->mesh());
+  if (!wrms_->first->initialized()) wrms_->first->Initialize(results[0]->Mesh());
 
   ASSERT(wrt_key == cap_pres_key_);
 
@@ -142,13 +139,13 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
   }
 
   // Potentially do face values as well.
-  if (results[0]->has_component("boundary_face")) {
+  if (results[0]->HasComponent("boundary_face")) {
     Epetra_MultiVector& sat_bf = *results[0]->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pres_bf = *S->GetFieldData(cap_pres_key_)
         ->ViewComponent("boundary_face",false);
 
     // Need to get boundary face's inner cell to specify the WRM.
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
     const Epetra_Map& face_map = mesh->face_epetra_map(false);
     AmanziMesh::Entity_ID_List cells;
@@ -171,7 +168,7 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
     for (CompositeVector::name_iterator comp=results[1]->begin();
          comp!=results[1]->end(); ++comp) {
 
-      if (results[0]->has_component(*comp)) {
+      if (results[0]->HasComponent(*comp)) {
         // d_sat_g =  - d_sat_l
         results[1]->ViewComponent(*comp,false)->Update(-1,
                 *results[0]->ViewComponent(*comp,false), 0.);

@@ -13,8 +13,8 @@ using namespace std;
 #include "Mesh_MSTK.hh"
 #include "Mesh.hh"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 #include "State.hh"
 
 #include "PK.hh"
@@ -117,7 +117,7 @@ public:
 
   // remap the column of nodes (it uses PCol to store the node information)
   void analyze_final_mesh( vector<PCol> & pcol );
-  void analyze_final_mesh();
+  void analyze_final_Mesh();
 
   // final print
   void print_goodbye();

@@ -24,7 +24,6 @@ namespace Energy {
 TwoPhaseEnergyEvaluator::TwoPhaseEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("energy key", "energy");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   dependencies_.insert(std::string("porosity"));
 

@@ -9,6 +9,7 @@ Author: Ethan Coon
 Process kernel for energy equation for overland flow.
 ------------------------------------------------------------------------- */
 
+#include "Debugger.hh"
 #include "eos_evaluator.hh"
 #include "iem_evaluator.hh"
 #include "thermal_conductivity_surface_evaluator.hh"
@@ -259,7 +260,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
 // -------------------------------------------------------------
 void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
@@ -295,11 +296,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source Q_E(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source Q_E", g);
 #endif
 
   }
@@ -364,11 +361,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
       }
     }
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source E*Q_m(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source E*Q_m", g);
 #endif
   }
 
@@ -384,12 +377,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
       g_c[0][c] -= K_surface_to_air_ * (T_air1 - temp_c[0][c]) * (*fa1)[0][c];
     }
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source K(" << *c0 << "): (" << T_air1 << "-T): "
-              << g_c[0][*c0] << std::endl;
-      }
-    }
+    std::stringstream header;
+    header << "  res_source K[ t_air=" << T_air1 << "]";
+    db_->WriteVector(header.str(), g);
 #endif
 
   }
@@ -429,11 +419,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source E*q_m_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source E*q_m_ss", g);
 #endif
   }
 
@@ -451,11 +437,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source q^E_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source q^E_ss", g);
 #endif
 
   }

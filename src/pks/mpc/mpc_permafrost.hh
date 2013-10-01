@@ -91,6 +91,13 @@ class MPCPermafrost : public StrongMPC {
   Teuchos::RCP<MPCDelegateEWC> ewc_;
 
 
+  // cruft for easier global debugging
+  std::vector<AmanziMesh::Entity_ID> dc_;
+  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
+  std::vector<AmanziMesh::Entity_ID> surf_dc_;
+  std::vector<Teuchos::RCP<VerboseObject> > surf_dcvo_;
+
+
  private:
   // factory registration
   static RegisteredPKFactory<MPCPermafrost> reg_;

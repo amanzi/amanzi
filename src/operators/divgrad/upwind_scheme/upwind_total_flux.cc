@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 
 #include "Mesh.hh"
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 #include "State.hh"
 #include "upwind_total_flux.hh"
 #include "Epetra_IntVector.h"
@@ -41,10 +41,10 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
         const CompositeVector& cell_coef,
         const CompositeVector& flux,
         const Teuchos::Ptr<CompositeVector>& face_coef) {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->Mesh();
 
   // initialize the face coefficients
-  if (face_coef->has_component("cell")) {
+  if (face_coef->HasComponent("cell")) {
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 
@@ -58,9 +58,9 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
   // Identify upwind/downwind cells for each local face.  Note upwind/downwind
   // may be a ghost cell.
-  Epetra_IntVector upwind_cell(*face_coef->map("face",true));
+  Epetra_IntVector upwind_cell(*face_coef->ComponentMap("face",true));
   upwind_cell.PutValue(-1);
-  Epetra_IntVector downwind_cell(*face_coef->map("face",true));
+  Epetra_IntVector downwind_cell(*face_coef->ComponentMap("face",true));
   downwind_cell.PutValue(-1);
 
   AmanziMesh::Entity_ID_List faces;
