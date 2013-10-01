@@ -1,5 +1,5 @@
-Unconfined Flow Simulations
-===========================
+Unconfined Flow with Seepage
+============================
 
 Steady-state, constant-property, saturated flow in an unconfined aquifer with seepage
 -------------------------------------------------------------------------------------

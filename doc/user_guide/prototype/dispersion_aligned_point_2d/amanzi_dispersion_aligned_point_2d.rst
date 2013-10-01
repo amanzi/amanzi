@@ -80,8 +80,6 @@ Note, the values in the schematic correlate to the values found in
 
     **a) Plume from point source loading in a constant uniform groundwater flow field. b) Problem domain.**
                     
-.. _Variables:
-        
 
 Defining Variables
 ~~~~~~~~~~~~~~~~~~
