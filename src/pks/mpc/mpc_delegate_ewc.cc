@@ -22,13 +22,9 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 MPCDelegateEWC::MPCDelegateEWC(Teuchos::ParameterList& plist) :
     plist_(plist) {
-  if (plist_.isParameter("debug cells")) {
-    Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
-    for (Teuchos::Array<int>::const_iterator lcv=dc.begin();
-         lcv!=dc.end(); ++lcv) {
-      dc_.push_back(*lcv);
-    }
-  }
+  // set up the VerboseObject
+  std::string name = plist_.get<std::string>("PK name")+std::string(" EWC");
+  vo_ = Teuchos::rcp(new VerboseObject(name, plist_));
 }
 
 // -----------------------------------------------------------------------------
@@ -38,16 +34,6 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   // Verbosity
   std::string name = plist_.get<std::string>("PK name")+std::string(" EWC");
 
-  // set up the VerboseObject
-  setLinePrefix(Amanzi::VerbosityLevel::verbosityHeader(name));
-
-  setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
-  Teuchos::readVerboseObjectSublist(&plist_,this);
-
-  // get the fancy output ??
-  verbosity_ = getVerbLevel();
-  out_ = getOStream();
-
   // Get the mesh
   Key domain = plist_.get<std::string>("domain key", "");
   if (domain.size() != 0) {
@@ -55,6 +41,9 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   } else {
     mesh_ = S->GetMesh("domain");
   }
+
+  // set up a debugger
+  db_ = Teuchos::rcp(new Debugger(mesh_, name, plist_));
 
   // Process the parameter list for data Keys
   if (domain.size() > 0) domain.append(1, '_');
@@ -208,23 +197,21 @@ void MPCDelegateEWC::update_precon(double t, Teuchos::RCP<const TreeVector> up, 
 // Application of the preconditioner.
 // -----------------------------------------------------------------------------
 void MPCDelegateEWC::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  if (precon_type_ == PRECON_EWC) {
+  if ((precon_type_ == PRECON_EWC) || (precon_type_ == PRECON_SMART_EWC)) {
     precon_ewc_(u,Pu);
-  } else if (precon_type_ == PRECON_SMART_EWC) {
-    precon_smart_ewc_(u,Pu);
   }
 }
 
 
 bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Modifying predictor using EWC algorithm" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Modifying predictor using EWC algorithm" << std::endl;
 
   // projected guesses for T and p
-  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->data();
+  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->Data();
   Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
-  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->data();
+  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->Data();
   Epetra_MultiVector& pres_guess_c = *pres_guess->ViewComponent("cell",false);
 
   // T, p at the previous step
@@ -273,14 +260,17 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
 
     // uses intensive forms, so must divide by cell volume.
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      if (std::find(dc_.begin(), dc_.end(), c) - dc_.begin() != dc_.size()) {
-        *out_ << "Inverting: c = " << c << std::endl;
-        *out_ << "   p,T  = " << p << ", " << T << std::endl;
-        *out_ << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
-        *out_ << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      int rank = mesh_->get_comm()->MyPID();
+      Teuchos::RCP<VerboseObject> dcvo = db_->GetVerboseObject(c, rank);
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME)) {
+        Teuchos::OSTab tab = dcvo->getOSTab();
+        *dcvo->os() << "Inverting: c = " << c << std::endl;
+        *dcvo->os() << "   p,T  = " << p << ", " << T << std::endl;
+        *dcvo->os() << "   wc,e = " << wc1[0][c] << ", " << e1[0][c] << std::endl;
+        *dcvo->os() << "   goal = " << wc2[0][c] << ", " << e2[0][c] << std::endl;
       }
-  }
+    }
 #endif
     ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
 
@@ -294,14 +284,14 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
 
 
 bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Modifying predictor using SmartEWC algorithm" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Modifying predictor using SmartEWC algorithm" << std::endl;
 
   // projected guesses for T and p
-  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->data();
+  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->Data();
   Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
-  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->data();
+  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->Data();
   Epetra_MultiVector& pres_guess_c = *pres_guess->ViewComponent("cell",false);
 
   // T, p at the previous step
@@ -340,10 +330,13 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
+  int rank = mesh_->get_comm()->MyPID();
   int ncells = wc0.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    bool debug_c = false;
-    if (std::find(dc_.begin(), dc_.end(), c) - dc_.begin() != dc_.size()) debug_c = true;
+    Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      dcvo = db_->GetVerboseObject(c, rank);
+    Teuchos::OSTab dctab = dcvo == Teuchos::null ? vo_->getOSTab() : dcvo->getOSTab();
 
     AmanziGeometry::Point result(2);
     int ierr = 0;
@@ -356,44 +349,32 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
     double T = T1[0][c];
 
     double wc_tmp(0.), e_tmp(0.);
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      if (debug_c) {
-        *out_ << "Predicting: c = " << c << std::endl;
-        *out_ << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
-        *out_ << "   porosity = " << poro[0][c] << std::endl;
-        *out_ << "   -------------" << std::endl;
-        *out_ << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl;
-        *out_ << "   Prev p,T: " << p << ", " << T << std::endl;
-        *out_ << "   -------------" << std::endl;
-        *out_ << "   Extrap wc,e: " << wc2[0][c] << ", " << e2[0][c] << std::endl;
-        *out_ << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << T_guess << std::endl;
-      }
-    }
+    if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+      *dcvo->os() << "Predicting: c = " << c << std::endl
+                  << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl
+                  << "   porosity = " << poro[0][c] << std::endl
+                  << "   -------------" << std::endl
+                  << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl
+                  << "   Prev p,T: " << p << ", " << T << std::endl
+                  << "   -------------" << std::endl
+                  << "   Extrap wc,e: " << wc2[0][c] << ", " << e2[0][c] << std::endl
+                  << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << T_guess << std::endl;
+
     ierr = model_->Evaluate(T_guess, pres_guess_c[0][c], poro[0][c],
                             e_tmp, wc_tmp);
     ASSERT(!ierr);
 
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      if (debug_c) {
-        *out_ << "   Calc wc,e of extrap: " << wc_tmp*cv[0][c] << ", " << e_tmp*cv[0][c] << std::endl;
-        *out_ << "   -------------" << std::endl;
-      }
-    }
-
+    if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+      *dcvo->os() << "   Calc wc,e of extrap: " << wc_tmp*cv[0][c] << ", " << e_tmp*cv[0][c] << std::endl
+                  << "   -------------" << std::endl;
 
     if (T_guess - T < 0.) {  // decreasing, freezing
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-        if (debug_c) {
-          *out_ << "   decreasing temps..." << std::endl;
-        }
-      }
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   decreasing temps..." << std::endl;
 
       if (T_guess >= 273.149) {
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-          if (debug_c) {
-            *out_ << "   above freezing, keep T,p projections" << std::endl;
-          }
-        }
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   above freezing, keep T,p projections" << std::endl;
         // pass, guesses are good
       } else {
         // -- invert for T,p at the projected ewc
@@ -401,84 +382,60 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
         double s_g, s_l, s_i;
         ierr |= model_->EvaluateSaturations(T,p,poro[0][c],s_g,s_l,s_i);
         if (ierr) {
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            if (debug_c) {
-              *out_ << "FAILED EWC PREDICTOR" << std::endl;
-            }
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
 
         } else {
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            if (debug_c) {
-              *out_ << "   saturations new ewc values (g,l,i): " << s_g << ", " << s_l << ", " << s_i << std::endl;
-              *out_ << "   frozen_fraction at the new ewc values: " << (s_i/(s_l + s_i)) << std::endl;
-            }
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   saturations new ewc values (g,l,i): " << s_g << ", " << s_l << ", " << s_i << std::endl
+                        << "   frozen_fraction at the new ewc values: " << (s_i/(s_l + s_i)) << std::endl;
 
           // Check if our energy projection is before the 2nd inflection point
           if ( s_i / (s_l + s_i) < 0.99) {
-            if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-              if (debug_c) {
-                *out_ << "     kept within the transition zone." << std::endl;
-                *out_ << "   p,T = " << p << ", " << T << std::endl;
-              }
-            }
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "     kept within the transition zone." << std::endl
+                          << "   p,T = " << p << ", " << T << std::endl;
+
             // in the transition zone of latent heat exchange
             temp_guess_c[0][c] = T;
             pres_guess_c[0][c] = p;
           } else {
             // pass, past the transition and we are just chilling ice
-            if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-              if (debug_c) {
-                *out_ << "     outside the transition zone." << std::endl;
-              }
-            }
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "     outside the transition zone." << std::endl;
           }
         }
       }
 
     } else { // increasing, thawing
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-        if (debug_c) {
-          *out_ << "   increasing temps..." << std::endl;
-        }
-      }
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+        *dcvo->os() << "   increasing temps..." << std::endl;
 
       if (T >= 273.149) {
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-          if (debug_c) {
-            *out_ << "   above freezing, keep T,p projections" << std::endl;
-          }
-        }
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   above freezing, keep T,p projections" << std::endl;
+
         // pass, guesses are good
       } else {
         double s_g, s_l, s_i;
         ierr = model_->EvaluateSaturations(temp_guess_c[0][c],pres_guess_c[0][c],
                 poro[0][c],s_g,s_l,s_i);
         ASSERT(!ierr);
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-          if (debug_c) {
-            *out_ << "   saturations extrap pT values (g,l,i): " << s_g << ", " << s_l << ", " << s_i << std::endl;
-            *out_ << "   frozen_fraction at the new pT values: " << (s_i/(s_l + s_i)) << std::endl;
-          }
-        }
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   saturations extrap pT values (g,l,i): " << s_g << ", " << s_l << ", " << s_i << std::endl
+                        << "   frozen_fraction at the new pT values: " << (s_i/(s_l + s_i)) << std::endl;
 
         if (( s_i / (s_l + s_i) > 0.99)) {
           // pass, warming ice but still outside of the transition region
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            if (debug_c) {
-              *out_ << "     outside the transition zone." << std::endl;
-            }
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "     outside the transition zone." << std::endl;
         } else {
           // in the transition zone of latent heat exchange
           ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            if (debug_c) {
-              *out_ << "     kept within the transition zone." << std::endl;
-              *out_ << "   p,T = " << p << ", " << T << std::endl;
-            }
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "     kept within the transition zone." << std::endl
+                          << "   p,T = " << p << ", " << T << std::endl;
+
           if (!ierr && T < 273.149) {
             temp_guess_c[0][c] = T;
             pres_guess_c[0][c] = p;
@@ -495,14 +452,14 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
 
 
 bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Modifying predictor using SmartEWC algorithm" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Modifying predictor using SmartEWC algorithm" << std::endl;
 
   // projected guesses for T and p
-  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->data();
+  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->Data();
   Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
-  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->data();
+  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->Data();
   Epetra_MultiVector& pres_guess_c = *pres_guess->ViewComponent("cell",false);
 
   // T, p at the previous step
@@ -534,8 +491,14 @@ bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector>
 
   double e_scale = 10000.;
 
+  int rank = mesh_->get_comm()->MyPID();
   int ncells = e0.MyLength();
   for (int c=0; c!=ncells; ++c) {
+    Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      dcvo = db_->GetVerboseObject(c, rank);
+    Teuchos::OSTab dctab = dcvo == Teuchos::null ? vo_->getOSTab() : dcvo->getOSTab();
+
     bool ewc_predictor = false;
     AmanziGeometry::Point result(2);
     int ierr = 0;
@@ -548,54 +511,48 @@ bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector>
     double T = T1[0][c];
 
     double wc_tmp(0.), e_tmp(0.);
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      *out_ << "Inverting: c = " << c << std::endl;
-      *out_ << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
-      *out_ << "   porosity = " << poro[0][c] << std::endl;
-      *out_ << "   -------------" << std::endl;
-      *out_ << "   2Prev e: " << e0[0][c] << std::endl;
-      *out_ << "   2Prev T: " << T_prev2 << std::endl;
-      *out_ << "   -------------" << std::endl;
-      *out_ << "   Prev e: " << e1[0][c] << std::endl;
-      *out_ << "   Prev T: " << T << std::endl;
-      *out_ << "   -------------" << std::endl;
-      *out_ << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << temp_guess_c[0][c] << std::endl;
-    }
+    if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+      *dcvo->os() << "Inverting: c = " << c << std::endl
+                  << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl
+                  << "   porosity = " << poro[0][c] << std::endl
+                  << "   -------------" << std::endl
+                  << "   2Prev e: " << e0[0][c] << std::endl
+                  << "   2Prev T: " << T_prev2 << std::endl
+                  << "   -------------" << std::endl
+                  << "   Prev e: " << e1[0][c] << std::endl
+                  << "   Prev T: " << T << std::endl
+                  << "   -------------" << std::endl
+                  << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << temp_guess_c[0][c] << std::endl;
 
     ierr = model_->Evaluate(temp_guess_c[0][c], pres_guess_c[0][c], poro[0][c],
                             e_tmp, wc_tmp);
     ASSERT(!ierr);
 
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      *out_ << "   Calc e of extrap: " << e_tmp*cv[0][c] << std::endl;
-      *out_ << "   Extrap e: " << e2[0][c] << std::endl;
-    }
+    if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+      *dcvo->os() << "   Calc e of extrap: " << e_tmp*cv[0][c] << std::endl
+                  << "   Extrap e: " << e2[0][c] << std::endl;
 
 
     if (std::abs(e_tmp - e1[0][c]) > std::abs(e2[0][c] - e1[0][c])) { // extrap energy change is smaller
       // uses intensive forms, so must divide by cell volume.
       ierr = model_->InverseEvaluateEnergy(e2[0][c]/cv[0][c], pres_guess_c[0][c], poro[0][c], T);
 
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-        *out_ << "   Inverted T = " << T << std::endl;
-      }
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+        *dcvo->os() << "   Inverted T = " << T << std::endl;
 
       if (!ierr) { // valid solution, no zero determinates, etc
         if (std::abs(temp_guess_c[0][c] - T1[0][c]) > std::abs(T - T1[0][c])) {
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            *out_ << "   EWC Accepted" << std::endl;
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   EWC Accepted" << std::endl;
           temp_guess_c[0][c] = T;
         } else {
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            *out_ << "   EWC NOT Accepted" << std::endl;
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   EWC NOT Accepted" << std::endl;
         }
       }
     } else {
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-        *out_ << "   EWC energy change not smaller!" << std::endl;
-      }
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+        *dcvo->os() << "   EWC energy change not smaller!" << std::endl;
     }
   }
   return true;
@@ -604,14 +561,14 @@ bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector>
 
 
 bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Modifying predictor using SmartEWC algorithm" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Modifying predictor using SmartEWC algorithm" << std::endl;
 
   // projected guesses for T and p
-  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->data();
+  Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->Data();
   Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
-  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->data();
+  Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->Data();
   Epetra_MultiVector& pres_guess_c = *pres_guess->ViewComponent("cell",false);
 
   // T, p at the previous step
@@ -643,8 +600,15 @@ bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeV
 
   double e_scale = 10000.;
 
+  int rank = mesh_->get_comm()->MyPID();
   int ncells = e0.MyLength();
   for (int c=0; c!=ncells; ++c) {
+    // debugger
+    Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      dcvo = db_->GetVerboseObject(c, rank);
+    Teuchos::OSTab dctab = dcvo == Teuchos::null ? vo_->getOSTab() : dcvo->getOSTab();
+
     bool ewc_predictor = false;
     AmanziGeometry::Point result(2);
     int ierr = 0;
@@ -683,54 +647,49 @@ bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeV
       double T = T1[0][c];
 
       double wc_tmp(0.), e_tmp(0.);
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-        *out_ << "Inverting: c = " << c << std::endl;
-        *out_ << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl;
-        *out_ << "   porosity = " << poro[0][c] << std::endl;
-        *out_ << "   -------------" << std::endl;
-        *out_ << "   2Prev e: " << e0[0][c] << std::endl;
-        *out_ << "   2Prev T: " << T_prev2 << std::endl;
-        *out_ << "   -------------" << std::endl;
-        *out_ << "   Prev e: " << e1[0][c] << std::endl;
-        *out_ << "   Prev T: " << T << std::endl;
-        *out_ << "   -------------" << std::endl;
-        *out_ << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << temp_guess_c[0][c] << std::endl;
-      }
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+        *dcvo->os() << "Inverting: c = " << c << std::endl
+                    << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl
+                    << "   porosity = " << poro[0][c] << std::endl
+                    << "   -------------" << std::endl
+                    << "   2Prev e: " << e0[0][c] << std::endl
+                    << "   2Prev T: " << T_prev2 << std::endl
+                    << "   -------------" << std::endl
+                    << "   Prev e: " << e1[0][c] << std::endl
+                    << "   Prev T: " << T << std::endl
+                    << "   -------------" << std::endl
+                    << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << temp_guess_c[0][c] << std::endl;
+
 
       ierr = model_->Evaluate(temp_guess_c[0][c], pres_guess_c[0][c], poro[0][c],
               e_tmp, wc_tmp);
       ASSERT(!ierr);
 
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-        *out_ << "   Calc e of extrap: " << e_tmp*cv[0][c] << std::endl;
-        *out_ << "   Extrap e: " << e2[0][c] << std::endl;
-      }
+      if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+        *dcvo->os() << "   Calc e of extrap: " << e_tmp*cv[0][c] << std::endl
+                    << "   Extrap e: " << e2[0][c] << std::endl;
 
 
       if (std::abs(e_tmp - e1[0][c]) > std::abs(e2[0][c] - e1[0][c])) { // extrap energy change is smaller
         // uses intensive forms, so must divide by cell volume.
         ierr = model_->InverseEvaluateEnergy(e2[0][c]/cv[0][c], pres_guess_c[0][c], poro[0][c], T);
 
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-          *out_ << "   Inverted T = " << T << std::endl;
-        }
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   Inverted T = " << T << std::endl;
 
         if (!ierr) { // valid solution, no zero determinates, etc
           if (std::abs(temp_guess_c[0][c] - T1[0][c]) > std::abs(T - T1[0][c])) {
-            if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-              *out_ << "   EWC Accepted" << std::endl;
-            }
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   EWC Accepted" << std::endl;
             temp_guess_c[0][c] = T;
           } else {
-            if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-              *out_ << "   EWC NOT Accepted" << std::endl;
-            }
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   EWC NOT Accepted" << std::endl;
           }
         }
       } else {
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-          *out_ << "   EWC energy change not smaller!" << std::endl;
-        }
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   EWC energy change not smaller!" << std::endl;
       }
     }
   }
@@ -738,7 +697,7 @@ bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeV
 }
 
 
-void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
+void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   // Pu currently stores (dp_std,dT_std).  The approach here is:
   // -- calculate (wc_ewc,e_ewc), a wc and energy-basis correction:
@@ -747,13 +706,13 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
   // -- invert the relation, calculating (p_ewc, T_ewc) = ewc^-1(wc_ewc, e_ewc)
   // -- use the smaller update of ||(p_ewc,T_ewc) - (p_0,T_0)|| and ||(dp_std, dT_std)||.
 
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Preconditioning using SmartEWC algorithm" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Preconditioning using SmartEWC algorithm" << std::endl;
 
   // projected guesses for T and p
-  Epetra_MultiVector& dp_std = *Pu->SubVector(0)->data()->ViewComponent("cell",false);
-  Epetra_MultiVector& dT_std = *Pu->SubVector(1)->data()->ViewComponent("cell",false);
+  Epetra_MultiVector& dp_std = *Pu->SubVector(0)->Data()->ViewComponent("cell",false);
+  Epetra_MultiVector& dT_std = *Pu->SubVector(1)->Data()->ViewComponent("cell",false);
 
   // additional data required
   const Epetra_MultiVector& base_poro = *S_next_->GetFieldData("base_porosity")->ViewComponent("cell",false);
@@ -769,33 +728,31 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
   double dT_min = 0.01;
   double dp_min = 100.;
 
+  int rank = mesh_->get_comm()->MyPID();
   int ncells = base_poro.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    bool debug_c = false;
-    if (std::find(dc_.begin(), dc_.end(), c) - dc_.begin() != dc_.size()) debug_c = true;
+    // debugger
+    Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      dcvo = db_->GetVerboseObject(c, rank);
+    Teuchos::OSTab dctab = dcvo == Teuchos::null ? vo_->getOSTab() : dcvo->getOSTab();
 
     double T_prev = T_old[0][c];
     double T_std = T_prev - dT_std[0][c];
     bool precon_ewc = false;
 
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      if (debug_c)
-        *out_ << "Precon: c = " << c << std::endl;
-    }
+    if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+      *dcvo->os() << "Precon: c = " << c << std::endl;
 
     // only do EWC if corrections are large, ie not clearly converging
     if (std::abs(dT_std[0][c]) > dT_min || std::abs(dp_std[0][c]) > dp_min) {
       if (-dT_std[0][c] < 0.) {  // decreasing, freezing
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-          if (debug_c)
-            *out_ << "   decreasing temps..." << std::endl;
-        }
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   decreasing temps..." << std::endl;
 
         if (T_std >= 273.15) {
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            if (debug_c)
-              *out_ << "   above freezing, keep std correction" << std::endl;
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   above freezing, keep std correction" << std::endl;
           // pass, guesses are good
 
         } else {
@@ -804,17 +761,13 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
               - (jac_[c](0,0) * dp_std[0][c] + jac_[c](0,1) * dT_std[0][c]);
           double e_ewc = e_old[0][c]
               - (jac_[c](1,0) * dp_std[0][c] + jac_[c](1,1) * dT_std[0][c]);
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-            if (debug_c) {
-              *out_ << "   Prev p,T: " << p_old[0][c] << ", " << T_old[0][c] << std::endl;
-              *out_ << "   Prev wc,e: " << wc_old[0][c] << ", " << e_old[0][c] << std::endl;
-              *out_ << "   -------------" << std::endl;
-              *out_ << "   Std correction dp,dT: " << dp_std[0][c] << ", "
-                    << dT_std[0][c] << std::endl;
-              *out_ << "   applying the EWC precon:" << std::endl;
-              *out_ << "     wc,e_ewc = " << wc_ewc << ", " << e_ewc << std::endl;
-            }
-          }
+          if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+            *dcvo->os() << "   Prev p,T: " << p_old[0][c] << ", " << T_old[0][c] << std::endl
+                        << "   Prev wc,e: " << wc_old[0][c] << ", " << e_old[0][c] << std::endl
+                        << "   -------------" << std::endl
+                        << "   Std correction dp,dT: " << dp_std[0][c] << ", " << dT_std[0][c] << std::endl
+                        << "   applying the EWC precon:" << std::endl
+                        << "     wc,e_ewc = " << wc_ewc << ", " << e_ewc << std::endl;
 
           // -- invert for T,p at the projected ewc
           double T(T_prev), p(p_old[0][c]);
@@ -824,52 +777,43 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
           ierr |= model_->EvaluateSaturations(T,p,base_poro[0][c],s_g,s_l,s_i);
 
           if (ierr) {
-            if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-              if (debug_c)
-                *out_ << "FAILED EWC PRECON" << std::endl;
-            }
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "FAILED EWC PRECON" << std::endl;
 
           } else {
-            if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-              if (debug_c)
-                *out_ << "   frozen_fraction at the new ewc corrected values: " << (s_i/(s_l + s_i)) << std::endl;
-            }
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   frozen_fraction at the new ewc corrected values: " << (s_i/(s_l + s_i)) << std::endl;
 
             // Check if our energy projection is before the 2nd inflection point
             if ( s_i / (s_l + s_i) < 0.99) {
               double dT_ewc = T_old[0][c] - T;
               double dp_ewc = p_old[0][c] - p;
 
-              if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-                if (debug_c) {
-                  *out_ << "     kept within the transition zone." << std::endl;
-                  *out_ << "   p,T_ewc = " << p << ", " << T << std::endl;
-                  *out_ << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
-                  if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
-                    *out_ << "  sufficient change" << std::endl;
-                  } else {
-                    *out_ << "  insufficient change" << std::endl;
-                  }
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME)) {
+                *dcvo->os() << "     kept within the transition zone." << std::endl
+                            << "   p,T_ewc = " << p << ", " << T << std::endl
+                            << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
+                if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                  *dcvo->os() << "  sufficient change" << std::endl;
+                } else {
+                  *dcvo->os() << "  insufficient change" << std::endl;
                 }
               }
+
               if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
                 dT_std[0][c] = dT_ewc;
                 dp_std[0][c] = dp_ewc;
               }
             } else {
               // pass, past the transition and we are just chilling ice
-              if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-                if (debug_c)
-                  *out_ << "     outside the transition zone." << std::endl;
-              }
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "     outside the transition zone." << std::endl;
             }
           }
         }
       } else { // increasing, thawing
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-          if (debug_c)
-            *out_ << "   increasing temps..." << std::endl;
-        }
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+          *dcvo->os() << "   increasing temps..." << std::endl;
 
         if (T_std >= 273.15) {
           // pass, update is are good
@@ -887,17 +831,13 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
                 - (jac_[c](0,0) * dp_std[0][c] + jac_[c](0,1) * dT_std[0][c]);
             double e_ewc = e_old[0][c]
                 - (jac_[c](1,0) * dp_std[0][c] + jac_[c](1,1) * dT_std[0][c]);
-            if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-              if (debug_c) {
-                *out_ << "   Prev p,T: " << p_old[0][c] << ", " << T_old[0][c] << std::endl;
-                *out_ << "   Prev wc,e: " << wc_old[0][c] << ", " << e_old[0][c] << std::endl;
-                *out_ << "   -------------" << std::endl;
-                *out_ << "   Std correction dp,dT: " << dp_std[0][c] << ", "
-                      << dT_std[0][c] << std::endl;
-                *out_ << "   applying the EWC precon:" << std::endl;
-                *out_ << "     wc,e_ewc = " << wc_ewc << ", " << e_ewc << std::endl;
-              }
-            }
+            if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+              *dcvo->os() << "   Prev p,T: " << p_old[0][c] << ", " << T_old[0][c] << std::endl
+                          << "   Prev wc,e: " << wc_old[0][c] << ", " << e_old[0][c] << std::endl
+                          << "   -------------" << std::endl
+                          << "   Std correction dp,dT: " << dp_std[0][c] << ", " << dT_std[0][c] << std::endl
+                          << "   applying the EWC precon:" << std::endl
+                          << "     wc,e_ewc = " << wc_ewc << ", " << e_ewc << std::endl;
 
             // -- invert for T,p at the projected ewc
             double T(T_prev), p(p_old[0][c]);
@@ -908,18 +848,17 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
               double dT_ewc = T_old[0][c] - T;
               double dp_ewc = p_old[0][c] - p;
 
-              if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-                if (debug_c) {
-                  *out_ << "     kept within the transition zone." << std::endl;
-                  *out_ << "   p,T_ewc = " << p << ", " << T << std::endl;
-                  *out_ << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
-                  if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
-                    *out_ << "  sufficient change" << std::endl;
-                  } else {
-                    *out_ << "  insufficient change" << std::endl;
-                  }
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME)) {
+                *dcvo->os() << "     kept within the transition zone." << std::endl
+                            << "   p,T_ewc = " << p << ", " << T << std::endl
+                            << "   dp,dT_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
+                if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
+                  *dcvo->os() << "  sufficient change" << std::endl;
+                } else {
+                  *dcvo->os() << "  insufficient change" << std::endl;
                 }
               }
+
               if (std::abs(dT_ewc) > dT_min || std::abs(dp_ewc) > dp_min) {
                 dT_std[0][c] = dT_ewc;
                 dp_std[0][c] = dp_ewc;
@@ -927,97 +866,12 @@ void MPCDelegateEWC::precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
 
             } else {
               // pass, past the transition zone and onto the upper branch
-              if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-                if (debug_c)
-                  *out_ << "     outside the transition zone." << std::endl;
-              }
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "     outside the transition zone." << std::endl;
             }
           }
         }
       }
-    }
-  }
-}
-
-
-void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<TreeVector> Pu) {
-  // Pu currently stores (dp_std,dT_std).  The approach here is:
-  // -- calculate (wc_ewc,e_ewc), a wc and energy-basis correction:
-  //        wc_ewc = wc_0 - [ dwc/dp  dwc/dT ]( dp_std )
-  //         e_ewc =  e_0 - [  de/dp   de/dT ]( dT_std )
-  // -- invert the relation, calculating (p_ewc, T_ewc) = ewc^-1(wc_ewc, e_ewc)
-  // -- use the smaller update of ||(p_ewc,T_ewc) - (p_0,T_0)|| and ||(dp_std, dT_std)||.
-
-  // typical update sizes, dT ~ .1 degree, dp ~ 10k Pa?
-  double dp_scale = 1.e4;
-  double dT_scale = 0.1;
-
-  // -- calculate (wc_ewc,e_ewc), a wc and energy-basis correction:
-  //        wc_ewc = wc_0 - [ dwc/dp  dwc/dT ]( dp )
-  //         e_ewc =  e_0 - [  de/dp   de/dT ]( dT )
-  Epetra_MultiVector& dp_std = *Pu->SubVector(0)->data()->ViewComponent("cell",false);
-  Epetra_MultiVector& dT_std = *Pu->SubVector(1)->data()->ViewComponent("cell",false);
-  Epetra_MultiVector wc_ewc(dp_std);
-  Epetra_MultiVector e_ewc(dT_std);
-
-  const Epetra_MultiVector& base_poro = *S_next_->GetFieldData("base_porosity")->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")->ViewComponent("cell",false);
-  const Epetra_MultiVector& p_old = *S_next_->GetFieldData("pressure")->ViewComponent("cell",false);
-  const Epetra_MultiVector& T_old = *S_next_->GetFieldData("temperature")->ViewComponent("cell",false);
-  const Epetra_MultiVector& wc_old = *S_next_->GetFieldData("water_content")->ViewComponent("cell",false);
-  const Epetra_MultiVector& e_old = *S_next_->GetFieldData("energy")->ViewComponent("cell",false);
-
-  int ncells = wc_ewc.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-#if DEBUG_FLAG
-    *out_ << "EWC PRECON: c = " << c << std::endl;
-    *out_ << "   dp,dT_std = " << dp_std[0][c] << ", " << dT_std[0][c] << std::endl;
-#endif
-
-    wc_ewc[0][c] = jac_[c](0,0) * dp_std[0][c] + jac_[c](0,1) * dT_std[0][c];
-    e_ewc[0][c] = jac_[c](1,0) * dp_std[0][c] + jac_[c](1,1) * dT_std[0][c];
-
-#if DEBUG_FLAG
-    *out_ << "   dwc,de = " << wc_ewc[0][c] << ", " << e_ewc[0][c] << std::endl;
-#endif
-    // wc,e_ewc = wc,e_old - dwc,de
-    wc_ewc[0][c] = wc_old[0][c] - wc_ewc[0][c];
-    e_ewc[0][c] = e_old[0][c] - e_ewc[0][c];
-
-
-    // -- invert the relation, calculating (dp_ewc, dT_ewc) = (p_old, T_old) - ewc^-1(wc_ewc, e_ewc)
-    double dT_ewc(T_old[0][c]), dp_ewc(p_old[0][c]);
-
-#if DEBUG_FLAG
-    *out_ << " Inverting: c = " << c << std::endl;
-    *out_ << "   wc,e = " << wc_ewc[0][c] << ", " << e_ewc[0][c] << std::endl;
-#endif
-
-    int ierr = model_->InverseEvaluate(e_ewc[0][c]/cv[0][c], wc_ewc[0][c]/cv[0][c], base_poro[0][c], dT_ewc, dp_ewc);
-    if (ierr) {
-      std::cout << "MPCDelgateEWC: Division by zero: determinant of the EWC Jacobian is zero" << std::endl;
-      //      ASSERT(0);
-      Exceptions::amanzi_throw(Errors::CutTimeStep());
-    }
-
-#if DEBUG_FLAG
-    *out_ << "   p,T  = " << dp_ewc << ", " << dT_ewc << std::endl;
-    *out_ << "   dp,T_std = " << dp_std[0][c] << ", " << dT_std[0][c] << std::endl;
-#endif
-
-    dT_ewc = T_old[0][c] - dT_ewc;
-    dp_ewc = p_old[0][c] - dp_ewc;
-
-#if DEBUG_FLAG
-    *out_ << "   dp,T_ewc = " << dp_ewc << ", " << dT_ewc << std::endl;
-#endif
-
-    // -- use the smaller update of ||(dp_ewc,dT_ewc)|| and ||(dp_std, dT_std)||.
-    if ( (std::abs(dT_ewc / dT_scale) + std::abs(dp_ewc / dp_scale)) <
-         (std::abs(dT_std[0][c] / dT_scale) + std::abs(dp_std[0][c] / dp_scale)) ) {
-      dT_std[0][c] = dT_ewc;
-      dp_std[0][c] = dp_ewc;
     }
   }
 }

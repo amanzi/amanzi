@@ -31,7 +31,7 @@
 #include <string>
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "tree_vector.hh"
+#include "TreeVector.hh"
 #include "PK.hh"
 
 namespace Amanzi {

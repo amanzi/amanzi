@@ -22,8 +22,6 @@ OverlandSourceFromSubsurfaceFluxEvaluator::OverlandSourceFromSubsurfaceFluxEvalu
     my_key_ = plist_.get<std::string>("source key", "overland_source_from_subsurface");
   }
 
-  setLinePrefix(my_key_+std::string(" evaluator"));
-
   flux_key_ = plist_.get<std::string>("flux key", "darcy_flux");
 
   // since we cannot have flux as a dependency (it has no model), we have to

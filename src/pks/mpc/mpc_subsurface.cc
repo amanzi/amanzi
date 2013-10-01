@@ -168,12 +168,12 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     std::vector<int> dirs;
     mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
 
-    *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->data())("cell",c0);
-    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+    *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->Data())("cell",c0);
+    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->Data())("face",fnums0[n]);
     *out_ << std::endl;
 
-    *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->data())("cell",c0);
-    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+    *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->Data())("cell",c0);
+    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->Data())("face",fnums0[n]);
     *out_ << std::endl;
 
   }
@@ -193,10 +193,10 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     mfd_preconditioner_->UpdateConsistentFaceCorrection(*res0, Pu_std.ptr());
 
     // update Pu_lambda <-- Pu_lambda_std + dPu_lambda
-    Pu->SubVector(0)->data()->ViewComponent("face",false)->Update(1.,
-            *Pu_std->SubVector(0)->data()->ViewComponent("face",false), 1.);
-    Pu->SubVector(1)->data()->ViewComponent("face",false)->Update(1.,
-            *Pu_std->SubVector(1)->data()->ViewComponent("face",false), 1.);
+    Pu->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
+    Pu->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
 
 #if DEBUG_FLAG
   // Dump residual
@@ -209,12 +209,12 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-      *out_ << "  PC_p(" << *c0 << "): " << (*Pu->SubVector(0)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
+      *out_ << "  PC_p(" << *c0 << "): " << (*Pu->SubVector(0)->Data())("cell",*c0);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->Data())("face",fnums0[n]);
       *out_ << std::endl;
 
-      *out_ << "  PC_T(" << *c0 << "): " << (*Pu->SubVector(1)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
+      *out_ << "  PC_T(" << *c0 << "): " << (*Pu->SubVector(1)->Data())("cell",*c0);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->Data())("face",fnums0[n]);
       *out_ << std::endl;
     }
 
@@ -248,12 +248,12 @@ bool MPCSubsurface::modify_correction(double h,
       std::vector<int> dirs;
       mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-      *out_ << "  NKA_PC_p(" << *c0 << "): " << (*du->SubVector(0)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(0)->data())("face",fnums0[n]);
+      *out_ << "  NKA_PC_p(" << *c0 << "): " << (*du->SubVector(0)->Data())("cell",*c0);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(0)->Data())("face",fnums0[n]);
       *out_ << std::endl;
 
-      *out_ << "  NKA_PC_T(" << *c0 << "): " << (*du->SubVector(1)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(1)->data())("face",fnums0[n]);
+      *out_ << "  NKA_PC_T(" << *c0 << "): " << (*du->SubVector(1)->Data())("cell",*c0);
+      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(1)->Data())("face",fnums0[n]);
       *out_ << std::endl;
     }
 

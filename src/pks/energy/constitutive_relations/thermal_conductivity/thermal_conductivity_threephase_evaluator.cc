@@ -21,7 +21,6 @@ ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("thermal conductivity key", "thermal_conductivity");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   poro_key_ = plist_.get<std::string>("porosity key", "porosity");
   dependencies_.insert(poro_key_);
@@ -66,8 +65,8 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateField_(
   Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
   Teuchos::RCP<const CompositeVector> sat2 = S->GetFieldData(sat2_key_);
 
-  for (CompositeVector::name_iterator comp=poro->begin();
-       comp!=poro->end(); ++comp) {
+  for (CompositeVector::name_iterator comp=result->begin();
+       comp!=result->end(); ++comp) {
     // much more efficient to pull out vectors first
     const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp,false);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);

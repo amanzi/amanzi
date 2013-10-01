@@ -25,7 +25,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "UnstructuredObservations.hh"
 #include "State.hh"
 #include "PK.hh"
-#include "tree_vector.hh"
+#include "TreeVector.hh"
 #include "pk_factory.hh"
 
 #include "coordinator.hh"

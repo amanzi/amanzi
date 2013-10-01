@@ -26,9 +26,9 @@ void RichardsSteadyState::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Precon update at t = " << t << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Precon update at t = " << t << std::endl;
   }
 
   PKDefaultBase::solution_to_state(up, S_next_);
@@ -90,28 +90,28 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
   //   *up2 = *up;
   //   int f = 500;
   //   int c = 99;
-  //   (*up_nc->data())("face",f) =
-  //       (*up_nc->data())("face",f) + 10;
-  //   (*up_nc->data())("cell",c) =
-  //       (*up_nc->data())("cell",c) + 20;
+  //   (*up_nc->Data())("face",f) =
+  //       (*up_nc->Data())("face",f) + 10;
+  //   (*up_nc->Data())("cell",c) =
+  //       (*up_nc->Data())("cell",c) + 20;
   //   changed_solution();
   //   fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
 
   //   std::cout.precision(16);
   //   std::cout << "DFDP: " << std::endl;
-  //   std::cout << "  L0 = " << (*up2->data())("face",f);
-  //   std::cout << "  L1 = " << (*up_nc->data())("face",f);
-  //   std::cout << "  p0 = " << (*up2->data())("cell",c);
-  //   std::cout << "  p1 = " << (*up_nc->data())("cell",c) << std::endl;
-  //   std::cout << "  fL0 = " << (*f1->data())("face",f);
-  //   std::cout << "  fL1 = " << (*f2->data())("face",f);
-  //   std::cout << "  fp0 = " << (*f1->data())("cell",c);
-  //   std::cout << "  fp1 = " << (*f2->data())("cell",c) << std::endl;
-  //   std::cout << "  DfL = " << (*f2->data())("face",f) - (*f1->data())("face",f);
-  //   std::cout << "  Dfp = " << (*f2->data())("cell",c) - (*f1->data())("cell",c) << std::endl;
+  //   std::cout << "  L0 = " << (*up2->Data())("face",f);
+  //   std::cout << "  L1 = " << (*up_nc->Data())("face",f);
+  //   std::cout << "  p0 = " << (*up2->Data())("cell",c);
+  //   std::cout << "  p1 = " << (*up_nc->Data())("cell",c) << std::endl;
+  //   std::cout << "  fL0 = " << (*f1->Data())("face",f);
+  //   std::cout << "  fL1 = " << (*f2->Data())("face",f);
+  //   std::cout << "  fp0 = " << (*f1->Data())("cell",c);
+  //   std::cout << "  fp1 = " << (*f2->Data())("cell",c) << std::endl;
+  //   std::cout << "  DfL = " << (*f2->Data())("face",f) - (*f1->Data())("face",f);
+  //   std::cout << "  Dfp = " << (*f2->Data())("cell",c) - (*f1->Data())("cell",c) << std::endl;
 
-  //   double df_dp = ((*f2->data())("face",f)
-  //                   -(*f1->data())("face",f)) / 10;
+  //   double df_dp = ((*f2->Data())("face",f)
+  //                   -(*f1->Data())("face",f)) / 10;
   //   std::cout << "DFDP = " << df_dp << std::endl;
 
   //   // invert
@@ -119,8 +119,8 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
   //   //    f2->Print(std::cout);
   //   precon(f2, f1);
   //   std::cout << "  dp = " << 10 << std::endl;
-  //   std::cout << "  S^-1 * dfL = " << (*f1->data())("face",f) << std::endl;
-  //   std::cout << "  S^-1 * dfp = " << (*f1->data())("cell",c) << std::endl;
+  //   std::cout << "  S^-1 * dfL = " << (*f1->Data())("face",f) << std::endl;
+  //   std::cout << "  S^-1 * dfp = " << (*f1->Data())("cell",c) << std::endl;
   //   std::cout << std::endl;
   // }
 
@@ -130,16 +130,16 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
   std::stringstream filename_s;
   filename_s << "schur_" << S_next_->cycle() << ".txt";
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-  *out_ << "updated precon " << S_next_->cycle() << std::endl;
+  *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
 
   // print the rel perm
   Teuchos::RCP<const CompositeVector> cell_rel_perm =
       S_next_->GetFieldData("relative_permeability");
-  *out_ << "REL PERM: " << std::endl;
-  cell_rel_perm->Print(*out_);
-  *out_ << std::endl;
-  *out_ << "UPWINDED REL PERM: " << std::endl;
-  rel_perm->Print(*out_);
+  *vo_->os() << "REL PERM: " << std::endl;
+  cell_rel_perm->Print(*vo_->os());
+  *vo_->os() << std::endl;
+  *vo_->os() << "UPWINDED REL PERM: " << std::endl;
+  rel_perm->Print(*vo_->os());
   */
 
 };
@@ -152,7 +152,7 @@ void RichardsSteadyState::update_precon(double t, Teuchos::RCP<const TreeVector>
 void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   niter_++;
 
@@ -162,42 +162,23 @@ void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVecto
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(u_new, S_next_);
-  Teuchos::RCP<CompositeVector> u = u_new->data();
+  Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   if (dynamic_mesh_) matrix_->CreateMFDmassMatrices(K_.ptr());
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << std::setprecision(15);
-    *out_ << "----------------------------------------------------------------" << std::endl;
-    *out_ << "Residual calculation: t0 = " << t_old
-          << " t1 = " << t_new << " h = " << h << std::endl;
-  }
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Residual calculation: t0 = " << t_old
+               << " t1 = " << t_new << " h = " << h << std::endl;
 
-  for (int i=0; i!=dc_.size(); ++i) {
-    if (dcvo_[i]->os_OK(Teuchos::VERB_HIGH)) {
-      AmanziMesh::Entity_ID *c0 = &dc_[i];
-      Teuchos::OSTab tab = dcvo_[i]->getOSTab();
-      Teuchos::RCP<Teuchos::FancyOStream> out_ = dcvo_[i]->os();
-
-      AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(*c0);
-      *out_ << "Cell c(" << *c0 << ") centroid = " << c0_centroid << " on PID = " << mesh_->get_comm()->MyPID() << std::endl;
-
-      Teuchos::RCP<const CompositeVector> u_old = S_inter_->GetFieldData(key_);
-
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "  p_old(" << *c0 << "): " << (*u_old)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u_old)("face",fnums0[n]);
-      *out_ << std::endl;
-
-      *out_ << "  p_new(" << *c0 << "): " << (*u)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u)("face",fnums0[n]);
-      *out_ << std::endl;
-    }
-  }
+  // dump u_old, u_new
+  db_->WriteCellInfo(true);
+  std::vector<std::string> vnames;
+  vnames.push_back("p_old"); vnames.push_back("p_new");
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(S_inter_->GetFieldData(key_).ptr()); vecs.push_back(u.ptr());
+  db_->WriteVectors(vnames, vecs, true);
 #endif
 
   // update boundary conditions
@@ -206,66 +187,30 @@ void RichardsSteadyState::fun(double t_old, double t_new, Teuchos::RCP<TreeVecto
   UpdateBoundaryConditions_();
 
   // zero out residual
-  Teuchos::RCP<CompositeVector> res = g->data();
+  Teuchos::RCP<CompositeVector> res = g->Data();
   res->PutScalar(0.0);
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    Teuchos::RCP<const CompositeVector> satl1 =
-        S_next_->GetFieldData("saturation_liquid");
-    Teuchos::RCP<const CompositeVector> satl0 =
-        S_inter_->GetFieldData("saturation_liquid");
+  // dump s_old, s_new
+  vnames[0] = "sl_old"; vnames[1] = "sl_new";
+  vecs[0] = S_inter_->GetFieldData("saturation_liquid").ptr();
+  vecs[1] = S_next_->GetFieldData("saturation_liquid").ptr();
 
-
-    Teuchos::RCP<const CompositeVector> relperm =
-        S_next_->GetFieldData("relative_permeability");
-    Teuchos::RCP<const Epetra_MultiVector> relperm_bf =
-        relperm->ViewComponent("boundary_face",false);
-    Teuchos::RCP<const CompositeVector> uw_relperm =
-        S_next_->GetFieldData("numerical_rel_perm");
-    Teuchos::RCP<const Epetra_MultiVector> uw_relperm_bf =
-        uw_relperm->ViewComponent("boundary_face",false);
-    Teuchos::RCP<const CompositeVector> flux_dir =
-        S_next_->GetFieldData("darcy_flux_direction");
-
-    if (S_next_->HasField("saturation_ice")) {
-      Teuchos::RCP<const CompositeVector> sati1 =
-          S_next_->GetFieldData("saturation_ice");
-      Teuchos::RCP<const CompositeVector> sati0 =
-          S_inter_->GetFieldData("saturation_ice");
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
-           c0!=dc_.end(); ++c0) {
-        *out_ << "    sat_old(" << *c0 << "): " << (*satl0)("cell",*c0) << ", "
-              << (*sati0)("cell",*c0) << std::endl;
-        *out_ << "    sat_new(" << *c0 << "): " << (*satl1)("cell",*c0) << ", "
-              << (*sati1)("cell",*c0) << std::endl;
-      }
-    } else {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
-           c0!=dc_.end(); ++c0) {
-        *out_ << "    sat_old(" << *c0 << "): " << (*satl0)("cell",*c0) << std::endl;
-        *out_ << "    sat_new(" << *c0 << "): " << (*satl1)("cell",*c0) << std::endl;
-      }
-    }
-
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
-         c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "    k_rel(" << *c0 << "): " << (*uw_relperm)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*uw_relperm)("face",fnums0[n]);
-      *out_ << std::endl;
-
-      *out_ << "  res(" << *c0 << ") (after diffusion): " << (*res)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
-      *out_ << std::endl;
-    }
+  if (S_next_->HasField("saturation_ice")) {
+    vnames.push_back("si_old");
+    vnames.push_back("si_new");
+    vecs.push_back(S_inter_->GetFieldData("saturation_ice").ptr());
+    vecs.push_back(S_next_->GetFieldData("saturation_ice").ptr());
   }
+
+  vnames.push_back("k_rel");
+  vecs.push_back(S_next_->GetFieldData("relative_permeability").ptr());
+  db_->WriteVectors(vnames,vecs,true);
+
+  db_->WriteVector("res (post diffusion)", res.ptr(), true);
 #endif
 
 #if DEBUG_RES_FLAG

@@ -96,7 +96,6 @@ void WRMPermafrostEvaluator::InitializeFromPlist_() {
   s_l_key_ = plist_.get<string>("liquid saturation key", "saturation_liquid");
   my_keys_.push_back(s_l_key_);
   my_keys_.push_back(plist_.get<string>("ice saturation key", "saturation_ice"));
-  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // liquid-gas capillary pressure
   pc_liq_key_ = plist_.get<string>("gas-liquid capillary pressure key",
@@ -107,9 +106,6 @@ void WRMPermafrostEvaluator::InitializeFromPlist_() {
   pc_ice_key_ = plist_.get<string>("liquid-ice capillary pressure key",
           "capillary_pressure_liq_ice");
   dependencies_.insert(pc_ice_key_);
-
-  // set up the verbose object
-  setLinePrefix(std::string("saturation evaluator"));
 }
 
 
@@ -118,7 +114,7 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
   // Initialize the MeshPartition
   if (!permafrost_models_->first->initialized())
-    permafrost_models_->first->Initialize(results[0]->mesh());
+    permafrost_models_->first->Initialize(results[0]->Mesh());
 
   // Cell values
   Epetra_MultiVector& satg_c = *results[0]->ViewComponent("cell",false);
@@ -141,9 +137,9 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 
   // Potentially do face values as well, though only for saturation_liquid?
-  if (results[1]->has_component("boundary_face")) {
-    ASSERT(!results[0]->has_component("boundary_face"));
-    ASSERT(!results[2]->has_component("boundary_face"));
+  if (results[1]->HasComponent("boundary_face")) {
+    ASSERT(!results[0]->HasComponent("boundary_face"));
+    ASSERT(!results[2]->HasComponent("boundary_face"));
 
     Epetra_MultiVector& sat_bf = *results[1]->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pc_liq_bf = *S->GetFieldData(pc_liq_key_)
@@ -152,7 +148,7 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         ->ViewComponent("boundary_face",false);
 
     // Need to get boundary face's inner cell to specify the WRM.
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
     const Epetra_Map& face_map = mesh->face_epetra_map(false);
     AmanziMesh::Entity_ID_List cells;
@@ -217,9 +213,9 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
   }
 
   // Potentially do face values as well, though only for saturation_liquid?
-  if (results[1]->has_component("boundary_face")) {
-    ASSERT(!results[0]->has_component("boundary_face"));
-    ASSERT(!results[2]->has_component("boundary_face"));
+  if (results[1]->HasComponent("boundary_face")) {
+    ASSERT(!results[0]->HasComponent("boundary_face"));
+    ASSERT(!results[2]->HasComponent("boundary_face"));
 
     Epetra_MultiVector& sat_bf = *results[1]->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& pc_liq_bf = *S->GetFieldData(pc_liq_key_)
@@ -228,7 +224,7 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
         ->ViewComponent("boundary_face",false);
 
     // Need to get boundary face's inner cell to specify the WRM.
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->mesh();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = results[0]->Mesh();
     const Epetra_Map& face_map = mesh->face_epetra_map(false);
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
     AmanziMesh::Entity_ID_List cells;

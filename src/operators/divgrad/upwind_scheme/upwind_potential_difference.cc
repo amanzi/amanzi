@@ -11,7 +11,7 @@
 // determined by an (optional) other field.
 // -----------------------------------------------------------------------------
 
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 #include "State.hh"
 #include "upwind_potential_difference.hh"
 
@@ -50,11 +50,11 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
         const Teuchos::Ptr<CompositeVector>& face_coef) {
 
   // initialize the cell coefficients
-  if (face_coef->has_component("cell")) {
+  if (face_coef->HasComponent("cell")) {
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->Mesh();
   AmanziMesh::Entity_ID_List cells;
   std::vector<int> dirs;
   double eps = 1.e-16;

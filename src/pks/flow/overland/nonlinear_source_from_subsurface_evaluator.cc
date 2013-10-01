@@ -20,7 +20,6 @@ NonlinearSourceFromSubsurfaceEvaluator::NonlinearSourceFromSubsurfaceEvaluator(
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("source key",
           "overland_source_from_subsurface");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   height_key_ = plist_.get<std::string>("subsurface height key", "ponded_depth");
   dependencies_.insert(height_key_);

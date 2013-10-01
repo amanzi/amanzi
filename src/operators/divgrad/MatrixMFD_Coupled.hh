@@ -55,8 +55,8 @@
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Teuchos_LAPACK.hpp"
 
-#include "tree_vector.hh"
-#include "tree_matrix.hh"
+#include "TreeVector.hh"
+#include "TreeMatrix.hh"
 #include "MatrixMFD.hh"
 
 namespace Amanzi {
@@ -90,11 +90,11 @@ class MatrixMFD_Coupled : public Matrix,
   }
 
   // TreeMatrix stuff FIX ME!
-  virtual Teuchos::RCP<const TreeVectorFactory> domain() const {
+  virtual Teuchos::RCP<const TreeVectorSpace> domain() const {
     return Teuchos::null; }
 
   // Vector space of the Matrix's range.
-  virtual Teuchos::RCP<const TreeVectorFactory> range() const {
+  virtual Teuchos::RCP<const TreeVectorSpace> range() const {
     return Teuchos::null; }
 
   // Virtual copy constructor.

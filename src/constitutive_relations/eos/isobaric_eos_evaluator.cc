@@ -42,7 +42,6 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
     a_key_ = plist_.get<std::string>("mass density key");
     my_keys_.push_back(a_key_);
   }
-  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // Set up my dependencies.
   std::size_t end = a_key_.find_first_of("_");

@@ -41,18 +41,14 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   // get the mesh
   mesh_ = S->GetMesh(domain_);
 
-  // debug cells
-  if (plist_.get<bool>("debug all cells", false)) {
-    dc_.clear();
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (int c=0; c!=ncells; ++c) dc_.push_back(c);
-  }
-
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList pv_sublist = plist_.sublist("primary variable evaluator");
   pv_sublist.set("evaluator name", key_);
   solution_evaluator_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(pv_sublist));
   S->SetFieldEvaluator(key_, solution_evaluator_);
+
+  // set up the debugger
+  db_ = Teuchos::rcp(new Debugger(mesh_, name_, plist_));
 
 };
 
@@ -62,7 +58,7 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::state_to_solution(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& solution) {
-  solution->set_data(S->GetFieldData(key_, name_));
+  solution->SetData(S->GetFieldData(key_, name_));
 };
 
 
@@ -71,7 +67,8 @@ void PKPhysicalBase::state_to_solution(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::solution_to_state(const Teuchos::RCP<TreeVector>& solution,
         const Teuchos::RCP<State>& S) {
-  S->SetData(key_, name_, solution->data());
+  ASSERT(solution->Data() == S->GetFieldData(key_));
+  //  S->SetData(key_, name_, solution->Data());
   //  solution_evaluator_->SetFieldAsChanged();
 };
 
@@ -129,7 +126,7 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   // -- Push the data into the solution.
-  solution_->set_data(field->GetFieldData());
+  solution_->SetData(field->GetFieldData());
 };
 
 
@@ -145,7 +142,7 @@ void PKPhysicalBase::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Composit
   int f_owned = cv_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    cv->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    cv->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

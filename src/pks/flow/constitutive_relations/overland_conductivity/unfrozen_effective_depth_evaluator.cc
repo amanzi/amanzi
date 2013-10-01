@@ -29,7 +29,6 @@ UnfrozenEffectiveDepthEvaluator::UnfrozenEffectiveDepthEvaluator(Teuchos::Parame
     my_key_ = plist_.get<std::string>("unfrozen effective depth key",
             "unfrozen_effective_depth");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
 }
 

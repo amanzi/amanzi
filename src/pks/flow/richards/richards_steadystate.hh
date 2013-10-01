@@ -5,8 +5,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 #include "State.hh"
 #include "MatrixMFD.hh"
 #include "upwinding.hh"

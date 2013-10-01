@@ -20,8 +20,8 @@ MPCSurfaceSubsurfaceFluxCoupler.
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 
-#include "tree_vector.hh"
-#include "composite_vector.hh"
+#include "TreeVector.hh"
+#include "CompositeVector.hh"
 #include "pk_factory.hh"
 #include "pk_default_base.hh"
 #include "FieldEvaluator.hh"
@@ -109,7 +109,7 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
         Teuchos::RCP<TreeVector> Pu) {
   bool modified = false;
 
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(this->domain_pk_name_)->data();
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(this->domain_pk_name_)->Data();
   const Epetra_MultiVector& domain_p_f = *S_next_->GetFieldData("pressure")
       ->ViewComponent("face",false);
 
@@ -204,8 +204,8 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
   // these face corrections to get improved cell corrections.
   if (modified && make_cells_consistent_) {
     this->mfd_preconditioner_->UpdateConsistentCellCorrection(
-        *u->SubVector(this->domain_pk_name_)->data(),
-        Pu->SubVector(this->domain_pk_name_)->data().ptr());
+        *u->SubVector(this->domain_pk_name_)->Data(),
+        Pu->SubVector(this->domain_pk_name_)->Data().ptr());
   }
 
   // Approach 4 works on cells
@@ -235,7 +235,7 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     this->domain_mesh_->get_comm()->SumAll(&ncapped_l, &ncapped, 1);
     if (ncapped > 0) {
       modified = true;
-      Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(this->domain_pk_name_)->data();
+      Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(this->domain_pk_name_)->Data();
       this->mfd_preconditioner_->UpdateConsistentFaceCorrection(*domain_u, domain_Pu.ptr());
     }
   }
@@ -257,9 +257,9 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
     *out_ << "  Precon updating surface faces." << std::endl;
 
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(this->surf_pk_name_)->data();
+  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(this->surf_pk_name_)->Data();
   Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(this->surf_pk_name_)->data();
+  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(this->surf_pk_name_)->Data();
 
   // Calculate delta h on the surface
   Teuchos::RCP<CompositeVector> surf_Ph = Teuchos::rcp(new CompositeVector(*surf_Pu));
@@ -345,9 +345,9 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
     Epetra_MultiVector& domain_u_f =
-        *up->SubVector(this->domain_pk_name_)->data()->ViewComponent("face",false);
+        *up->SubVector(this->domain_pk_name_)->Data()->ViewComponent("face",false);
     Epetra_MultiVector& surf_u_c =
-        *up->SubVector(this->surf_pk_name_)->data()->ViewComponent("cell",false);
+        *up->SubVector(this->surf_pk_name_)->Data()->ViewComponent("cell",false);
 
     int ncells = surf_u_c.MyLength();
     for (int c=0; c!=ncells; ++c) {

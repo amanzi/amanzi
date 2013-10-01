@@ -48,13 +48,7 @@ class PKDefaultBase : public PK {
   virtual std::string name() { return name_; }
 
  protected:
-  // REMOVE ME
-  // bool includesVerbLevel(Teuchos::EVerbosityLevel my_level,
-  //                        Teuchos::EVerbositylevel level, bool def) {
-  //   return vo_->includesVerbLevel(my_level, level, def);
-  // }
-
-  // REMOVE ME!
+  // REMOVE ME! --etc
   Teuchos::OSTab getOSTab(const int tabs=1) { return vo_->getOSTab(tabs); }
 
  protected:
@@ -71,14 +65,12 @@ class PKDefaultBase : public PK {
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;
 
+  // REMOVE ME! --etc
   // -- more fancy OS... these will go away eventually, but removal requires
   // -- much code refactoring.
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::EVerbosityLevel verbosity_;
 
-  // cruft for easier global debugging
-  std::vector<AmanziMesh::Entity_ID> dc_;
-  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
 };
 
 } // namespace

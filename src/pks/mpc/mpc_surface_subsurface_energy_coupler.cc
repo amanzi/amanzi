@@ -63,18 +63,17 @@ void MPCSurfaceSubsurfaceEnergyCoupler::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   // Grab the surface cell residuals and stick them in the corresponding
   // subsurface face locations.
-  Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(domain_pk_name_)->data();
+  Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(domain_pk_name_)->Data();
   Teuchos::RCP<CompositeVector> domain_u_new = Teuchos::rcp(new CompositeVector(*domain_u));
-  domain_u_new->CreateData();
   *domain_u_new = *domain_u;
 
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
+  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->Data();
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->Data();
+  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->Data();
 
 
   const Epetra_MultiVector& surf_u_c = *u->SubVector(surf_pk_name_)
-      ->data()->ViewComponent("cell",false);
+      ->Data()->ViewComponent("cell",false);
   Epetra_MultiVector& domain_u_new_f = *domain_u_new->ViewComponent("face",false);
 
   int ncells_surf = surf_u_c.MyLength();
@@ -158,9 +157,9 @@ bool MPCSurfaceSubsurfaceEnergyCoupler::modify_predictor(double h, Teuchos::RCP<
 
   if (changed) {
     Epetra_MultiVector& domain_u_f =
-      *domain_u->data()->ViewComponent("face",false);
+      *domain_u->Data()->ViewComponent("face",false);
     const Epetra_MultiVector& surf_u_c =
-      *surf_u->data()->ViewComponent("cell",false);
+      *surf_u->Data()->ViewComponent("cell",false);
 
     int ncells_surf = surf_u_c.MyLength();
     for (int c=0; c!=ncells_surf; ++c) {

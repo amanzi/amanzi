@@ -15,7 +15,6 @@
 #include "Epetra_Operator.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -30,10 +29,11 @@
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "tree_vector.hh"
-#include "composite_vector.hh"
-#include "composite_matrix.hh"
-#include "mfd3d.hh"
+#include "TreeVector.hh"
+#include "CompositeVector.hh"
+#include "CompositeMatrix.hh"
+#include "DenseMatrix.hh"
+#include "mfd3d_diffusion.hh"
 
 #include "Matrix.hh"
 
@@ -80,10 +80,10 @@ class MatrixMFD : public Matrix,
   virtual ~MatrixMFD() {};
 
   // CompositeMatrix stuff... FIX ME!
-  virtual Teuchos::RCP<const CompositeVectorFactory> domain() const {
+  virtual Teuchos::RCP<const CompositeVectorSpace> domain() const {
     return Teuchos::null; }
 
-  virtual Teuchos::RCP<const CompositeVectorFactory> range() const {
+  virtual Teuchos::RCP<const CompositeVectorSpace> range() const {
     return Teuchos::null; }
 
   virtual Teuchos::RCP<CompositeMatrix> Clone() const {
@@ -167,11 +167,11 @@ class MatrixMFD : public Matrix,
 
   virtual void Apply(const TreeVector& X,
                      const Teuchos::Ptr<TreeVector>& Y) const {
-    Apply(*X.data(), *Y->data());
+    Apply(*X.Data(), *Y->Data());
   }
   virtual void ApplyInverse(const TreeVector& X,
                             const Teuchos::Ptr<TreeVector>& Y) const {
-    ApplyInverse(*X.data(), *Y->data());
+    ApplyInverse(*X.Data(), *Y->Data());
   }
 
   virtual void ComputeResidual(const CompositeVector& X,
@@ -221,7 +221,7 @@ class MatrixMFD : public Matrix,
   MFDMethod method_;
 
   // local matrices
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
+  std::vector<WhetStone::DenseMatrix > Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
   std::vector<double> Acc_cells_;  // duplication may be useful later

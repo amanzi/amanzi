@@ -12,7 +12,7 @@
 
 #include "Mesh.hh"
 
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 #include "State.hh"
 #include "upwind_cell_centered.hh"
 
@@ -32,7 +32,7 @@ void UpwindCellCentered::Update(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<CompositeVector> face = S->GetFieldData(face_coef_, pkname_);
 
   *face->ViewComponent("cell") = *cell->ViewComponent("cell");
-  if (face->has_component("face")) {
+  if (face->HasComponent("face")) {
     face->ViewComponent("face",true)->PutScalar(1.0);
   }
 };

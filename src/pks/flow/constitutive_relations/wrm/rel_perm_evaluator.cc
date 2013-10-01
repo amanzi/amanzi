@@ -48,7 +48,6 @@ void RelPermEvaluator::InitializeFromPlist_() {
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<string>("rel perm key", "relative_permeability");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // my dependencies are just saturation.
   sat_key_ = plist_.get<string>("saturation key", "saturation_liquid");
@@ -63,7 +62,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
   // initialize the MeshPartition if needed to make sure all cells are covered
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(result->mesh());
+  if (!wrms_->first->initialized()) wrms_->first->Initialize(result->Mesh());
 
   const Epetra_MultiVector& sat_c = *S->GetFieldData(sat_key_)
       ->ViewComponent("cell",false);
@@ -78,12 +77,12 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 
   // Potentially do face values as well.
-  if (result->has_component("boundary_face")) {
+  if (result->HasComponent("boundary_face")) {
     const Epetra_MultiVector& sat_bf = *S->GetFieldData(sat_key_)
         ->ViewComponent("boundary_face",false);
     Epetra_MultiVector& res_v = *result->ViewComponent("boundary_face",false);
 
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->mesh();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
     const Epetra_Map& face_map = mesh->face_epetra_map(false);
 
@@ -110,7 +109,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
   ASSERT(wrt_key == sat_key_);
 
   // initialize the MeshPartition if needed to make sure all cells are covered
-  if (!wrms_->first->initialized()) wrms_->first->Initialize(result->mesh());
+  if (!wrms_->first->initialized()) wrms_->first->Initialize(result->Mesh());
   const Epetra_MultiVector& sat_c = *S->GetFieldData(sat_key_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& res_v = *result->ViewComponent("cell",false);
@@ -130,12 +129,12 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
   }
 
   // Potentially do face values as well.
-  if (result->has_component("boundary_face")) {
+  if (result->HasComponent("boundary_face")) {
     const Epetra_MultiVector& sat_bf = *S->GetFieldData(sat_key_)
         ->ViewComponent("boundary_face",false);
     Epetra_MultiVector& res_v = *result->ViewComponent("boundary_face",false);
 
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->mesh();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_epetra_map();
     const Epetra_Map& face_map = mesh->face_epetra_map(false);
 

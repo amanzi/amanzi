@@ -20,7 +20,6 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
     my_key_ = plist_.get<std::string>("thermal conductivity key",
             "surface_thermal_conductivity");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   uf_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
   dependencies_.insert(uf_key_);

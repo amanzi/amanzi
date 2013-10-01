@@ -31,49 +31,43 @@ void OverlandFlow::fun( double t_old,
                         Teuchos::RCP<TreeVector> u_new,
                         Teuchos::RCP<TreeVector> g ) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // bookkeeping
   double h = t_new - t_old;
   ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
-  Teuchos::RCP<CompositeVector> u = u_new->data();
+  Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   // zero out residual
-  Teuchos::RCP<CompositeVector> res = g->data();
+  Teuchos::RCP<CompositeVector> res = g->Data();
   res->PutScalar(0.0);
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "----------------------------------------------------------------" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Residual calculation: t0 = " << t_old
+               << " t1 = " << t_new << " h = " << h << std::endl;
+#endif
 
-    *out_ << "Residual calculation: T0 = " << t_old
-          << " T1 = " << t_new << " H = " << h << std::endl;
-    *out_ << std::setprecision(15);
+  // unnecessary here if not debeugging, but doesn't hurt either
+  S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
 
-    S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
-    Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData("ponded_depth");
-    Teuchos::RCP<const CompositeVector> preselev= S_next_->GetFieldData("pres_elev");
+#if DEBUG_FLAG
+  // dump u_old, u_new
+  db_->WriteCellInfo(true);
+  std::vector<std::string> vnames;
+  vnames.push_back("h_old");
+  vnames.push_back("h_new");
+  vnames.push_back("h+z");
 
-    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      if (*c0 < ncells) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(S_inter_->GetFieldData(key_).ptr());
+  vecs.push_back(u.ptr());
+  vecs.push_back(S_next_->GetFieldData("pres_elev").ptr());
 
-        *out_ << "  p(" << *c0 <<"): " << (*u)("cell",0,*c0) << std::endl;
-        *out_ << "  h(" << *c0 <<"): " << (*depth)("cell",0,*c0);
-        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*depth)("face",fnums0[n]);
-        *out_ << std::endl;
-        *out_ << "  hz(" << *c0 <<"): " << (*preselev)("cell",0,*c0);
-        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*preselev)("face",fnums0[n]);
-        *out_ << std::endl;
-        *out_ << " --" << std::endl;
-      }
-    }
-  }
+  db_->WriteVectors(vnames, vecs, true);
 #endif
 
   // pointer-copy temperature into state and update any auxilary data
@@ -88,52 +82,21 @@ void OverlandFlow::fun( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    Teuchos::RCP<const CompositeVector> cond =
-      S_next_->GetFieldData("upwind_overland_conductivity", name_);
-    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      if (*c0 < ncells) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-        *out_ << "  cond(" << *c0 << "): " << (*cond)("cell",*c0);
-        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*cond)("face",fnums0[n]);
-        *out_ << std::endl;
-        *out_ << "  res(" << *c0 << ") (diff): " << (*res)("cell",*c0);
-        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*res)("face",fnums0[n]);
-        *out_ << std::endl;
-      }
-    }
-  }
+  db_->WriteVector("k_s", S_next_->GetFieldData("upwind_overland_conductivity").ptr(), true);
+  db_->WriteVector("res (post diffusion)", res.ptr(), true);
 #endif
 
 
   // accumulation term
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      if (*c0 < ncells) {
-        *out_ << "  res(" << *c0 << ") (acc): " << (*res)("cell",*c0) << std::endl;
-      }
-    }
-  }
+  db_->WriteVector("res (post accumulation)", res.ptr(), true);
 #endif
 
   // add rhs load value
   AddSourceTerms_(res.ptr());
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      if (*c0 < ncells) {
-        *out_ << "  res(" << *c0 << ") (source): " << (*res)("cell",*c0) << std::endl;
-      }
-    }
-  }
+  db_->WriteVector("res (post source)", res.ptr(), true);
 #endif
 };
 
@@ -142,47 +105,19 @@ void OverlandFlow::fun( double t_old,
 // Apply the preconditioner to u and return the result in Pu.
 // -----------------------------------------------------------------------------
 void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "Precon application:" << std::endl;
 
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Precon application:" << std::endl;
-    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      if (*c0 < ncells) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-        *out_ << "  p(" << *c0 <<"): " << (*u->data())("cell",0,*c0);
-        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*u->data())("face",fnums0[n]);
-        *out_ << std::endl;
-      }
-    }
-  }
+  db_->WriteVector("h_res", u->Data().ptr(), true);
 #endif
 
   // apply the preconditioner
   preconditioner_->ApplyInverse(*u, Pu.ptr());
 
-  // Dump correction
 #if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Precon application:" << std::endl;
-    unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      if (*c0 < ncells) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-        *out_ << "  PC*p(" << *c0 <<"): " << (*Pu->data())("cell",0,*c0);
-        for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->data())("face",fnums0[n]);
-        *out_ << std::endl;
-      }
-    }
-  }
+  db_->WriteVector("PC*h_res", Pu->Data().ptr(), true);
 #endif
 };
 
@@ -192,9 +127,9 @@ void OverlandFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVec
 // -----------------------------------------------------------------------------
 void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Precon update at t = " << t << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
@@ -238,8 +173,8 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   mfd_preconditioner_->ApplyBoundaryConditions(bc_markers_, bc_values_);
 
   if (assemble_preconditioner_) {
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-      *out_ << "  assembling..." << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  assembling..." << std::endl;
     mfd_preconditioner_->AssembleGlobalMatrices();
     mfd_preconditioner_->ComputeSchurComplement(bc_markers_, bc_values_);
     mfd_preconditioner_->UpdatePreconditioner();
@@ -251,7 +186,7 @@ void OverlandFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up, do
   std::stringstream filename_s;
   filename_s << "schur_" << S_next_->cycle() << ".txt";
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
-  *out_ << "updated precon " << S_next_->cycle() << std::endl;
+  *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
   */
 };
 
@@ -269,15 +204,25 @@ void OverlandFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> prec
 
 double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // Calculate water content at the solution.
+  S_next_->GetFieldEvaluator("surface_water_content")
+      ->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& wc = *S_next_->GetFieldData("surface_water_content")
+      ->ViewComponent("cell",false);
+
   const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_flux")
       ->ViewComponent("face",false);
   double flux_max(0.);
   flux.NormInf(&flux_max);
 
-  Teuchos::RCP<const CompositeVector> res = du->data();
+  Teuchos::RCP<const CompositeVector> res = du->Data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
   const Epetra_MultiVector& res_f = *res->ViewComponent("face",false);
-  const Epetra_MultiVector& height_c = *u->data()->ViewComponent("cell",false);
+  const Epetra_MultiVector& height_c = *u->Data()->ViewComponent("cell",false);
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface_cell_volume")
+      ->ViewComponent("cell",false);
   double h = S_next_->time() - S_inter_->time();
 
   // Cell error is based upon error in mass conservation relative to
@@ -287,7 +232,7 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     double tmp = std::abs(h*res_c[0][c])
-        / (atol_*0.01 + rtol_*std::abs(height_c[0][c]));
+        / (atol_ * .1*cv[0][c] + rtol_*std::abs(wc[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;
@@ -304,8 +249,7 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
 
 
   // Write out Inf norms too.
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double infnorm_c(0.), infnorm_f(0.);
     res_c.NormInf(&infnorm_c);
     res_f.NormInf(&infnorm_f);
@@ -316,9 +260,8 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
     MPI_Allreduce(&buf_f, &enorm_face, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-    *out_ << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl;
-    //    *out_ << "ENorm (cells) = " << enorm_cell << " (" << infnorm_c << ")" << std::endl;
-    *out_ << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
+    *vo_->os() << "ENorm (cells) = " << enorm_cell << "[" << bad_cell << "] (" << infnorm_c << ")" << std::endl
+               << "ENorm (faces) = " << enorm_face << " (" << infnorm_f << ")" << std::endl;
   }
 
   double enorm_val(std::max<double>(enorm_face, enorm_cell));

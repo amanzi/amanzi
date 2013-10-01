@@ -17,7 +17,6 @@ OverlandHeadIcyWaterContentEvaluator::OverlandHeadIcyWaterContentEvaluator(Teuch
     SecondaryVariableFieldEvaluator(plist) {
   // my keys are for saturation and rel perm.
   my_key_ = plist_.get<string>("water content key", "surface_water_content");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // my dependencies
   dens_key_ = plist_.get<string>("liquid molar density key", "surface_molar_density_liquid");

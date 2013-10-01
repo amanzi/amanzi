@@ -15,8 +15,6 @@ namespace DeformRelations {
 PorosityEvaluator::PorosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  setLinePrefix(my_key_+std::string(" evaluator"));
-
   // add dependency to cell volume
   dependencies_.insert("cell_volume");
   dependencies_.insert("deformation");

@@ -798,7 +798,7 @@ void DeformMesh::mesh_deformation() {
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
 
-  analyze_final_mesh();
+  analyze_final_Mesh();
 
   // set the list of the new position coords
   AmanziGeometry::Point_List newpos, finpos;
@@ -1010,7 +1010,7 @@ void DeformMesh::analyze_final_mesh( vector<PCol> & pcol ) {
 }
 
 // analyze the structure of the mesh along the vertical columns
-void DeformMesh::analyze_final_mesh() {
+void DeformMesh::analyze_final_Mesh() {
   bool verbose(false);
 
   // remap the mesh on columns

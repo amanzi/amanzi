@@ -106,8 +106,8 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   }
 
   // pull X data
-  Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->data();
-  Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->data();
+  Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->Data();
+  Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->Data();
   const Epetra_MultiVector& XA_c = *XA->ViewComponent("cell", false);
   const Epetra_MultiVector& XB_c = *XB->ViewComponent("cell", false);
   const Epetra_MultiVector& XA_f = *XA->ViewComponent("face", false);
@@ -189,8 +189,8 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
 
 
   // pull Y data
-  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->data();
-  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->data();
+  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
+  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->Data();
   Epetra_MultiVector& YA_c = *YA->ViewComponent("cell", false);
   Epetra_MultiVector& YB_c = *YB->ViewComponent("cell", false);
   Epetra_MultiVector& YA_f = *YA->ViewComponent("face", false);
@@ -216,10 +216,10 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
 
 int MatrixMFD_Coupled::Apply(const TreeVector& X,
         TreeVector& Y) const {
-  Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->data();
-  Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->data();
-  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->data();
-  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->data();
+  Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->Data();
+  Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->Data();
+  Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
+  Teuchos::RCP<CompositeVector> YB = Y.SubVector(1)->Data();
 
   blockA_->Apply(*XA, *YA);
   blockB_->Apply(*XB, *YB);
@@ -602,10 +602,10 @@ void MatrixMFD_Coupled::UpdatePreconditioner() {
 
 void MatrixMFD_Coupled::UpdateConsistentFaceCorrection(const TreeVector& u,
         const Teuchos::Ptr<TreeVector>& Pu) {
-  blockA_->UpdateConsistentFaceCorrection(*u.SubVector(0)->data(),
-          Pu->SubVector(0)->data().ptr());
-  blockB_->UpdateConsistentFaceCorrection(*u.SubVector(1)->data(),
-          Pu->SubVector(1)->data().ptr());
+  blockA_->UpdateConsistentFaceCorrection(*u.SubVector(0)->Data(),
+          Pu->SubVector(0)->Data().ptr());
+  blockB_->UpdateConsistentFaceCorrection(*u.SubVector(1)->Data(),
+          Pu->SubVector(1)->Data().ptr());
 }
 
 } // namespace

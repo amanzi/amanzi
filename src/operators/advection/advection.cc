@@ -8,6 +8,8 @@
    Base class for advection.
    ------------------------------------------------------------------------- */
 
+#include "CompositeVectorSpace.hh"
+
 #include "advection.hh"
 
 namespace Amanzi {
@@ -31,8 +33,10 @@ void Advection::set_num_dofs(int num_dofs) {
     locations[0] = AmanziMesh::CELL;
     locations[1] = AmanziMesh::FACE;
 
-    field_ = Teuchos::rcp(new CompositeVector(mesh_, names, locations, ndofs_tmp, true));
-    field_->CreateData();
+    Teuchos::RCP<CompositeVectorSpace> space = Teuchos::rcp(new CompositeVectorSpace());
+    space->SetMesh(mesh_)->SetGhosted()->SetComponents(names,locations,ndofs_tmp);
+    field_ = Teuchos::rcp(new CompositeVector(*space));
+
   }
 }
 
