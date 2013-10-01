@@ -1157,6 +1157,10 @@ PorousMedia::read_rock()
         user_specified_specific_storage = ppr.countval("specific_storage.val");
     }
 
+    if (model == PM_SATURATED) {
+      user_specified_specific_storage = true; // Will use default if not specified
+    }
+
     diffuse_tracers = do_tracer_diffusion
       && ( user_specified_molecular_diffusion_coefficient || user_specified_dispersivity);
     tensor_tracer_diffusion = diffuse_tracers && user_specified_dispersivity;
@@ -1198,7 +1202,7 @@ PorousMedia::read_rock()
           Tortuosity_func = new ConstantProperty(Tortuosity_str,rTortuosity,harm_crsn,pc_refine);
         }
 
-        Real rSpecificStorage = 1;
+        Real rSpecificStorage = 0;
         Property* SpecificStorage_func = 0;
         if (user_specified_specific_storage) {
           ppr.query("specific_storage.val",rSpecificStorage);
