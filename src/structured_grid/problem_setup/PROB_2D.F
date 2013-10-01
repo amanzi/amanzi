@@ -1026,6 +1026,10 @@ c     initialize compcount and compidx (F90 syntax)
          rhocomp(i) = rhoval(i)
       end do
 
+      if (gravity_dir.ne.SDIM-1) then
+         call bl_pd_abort('INIT_UMAC does not incorporate gravity_dir')
+      endif
+
 c ::: If RHS = -\nabla \cdot U, the following constructs U
       do i = lo(1),hi(1)+1
          do j = lo(2),hi(2)
