@@ -65,8 +65,8 @@
           <Parameter name="Value" type="double" value="0.43"  units="fraction"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="1.18e-13"  units="m^2"/>
-          <Parameter name="Vertical" type="double" value="1.18e-13"  units="m^2"/>
+          <Parameter name="x" type="double" value="1.18e-13"  units="m^2"/>
+          <Parameter name="y" type="double" value="1.18e-13"  units="m^2"/>
 			<!-- changed units from m/s to m^2 -->
         </ParameterList>
         <ParameterList name="Capillary Pressure: van Genuchten">
@@ -83,8 +83,8 @@
           <Parameter name="Value" type="double" value="0.43" units="fraction"/>
         </ParameterList>
         <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-          <Parameter name="Horizontal" type="double" value="1.18472e-11"  units="m/s"/>
-          <Parameter name="Vertical" type="double" value="1.18472e-11" units="m/s"/>
+          <Parameter name="x" type="double" value="1.18472e-11"  units="m/s"/>
+          <Parameter name="y" type="double" value="1.18472e-11" units="m/s"/>
         </ParameterList>
         <ParameterList name="Capillary Pressure: van Genuchten">
           <Parameter name="alpha" type="double" value="1.532333e-3" units="Pa^-1"/>
