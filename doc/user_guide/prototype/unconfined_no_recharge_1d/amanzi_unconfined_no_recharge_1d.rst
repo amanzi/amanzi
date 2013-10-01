@@ -121,30 +121,30 @@ are selected. Input parameters for the numerical simulation are summarized as:
 * Domain (2D)
 
 	* :math:`x_{min} = z_{min} = 0`
-	* :math:`x_{max} = L = 100 ft, z_{max} = 60 ft`
+	* :math:`x_{max} = L = 100 ft,\ z_{max} = 60 ft`
 
 * Boundary conditions
 
 	* no-flow prescribed at the :math:`z_{min}, z_{max}` boundaries (:math:`Q_{src} = 0`)
-	* prescribed hydraulic head at the x-coordinate boundaries: :math:`h(0) = 40 ft, h(L) = 20 ft`
+	* prescribed hydraulic head at the x-coordinate boundaries: :math:`h(0) = 40 ft,\ h(L) = 20 ft`
 
 * Material properties
 
-	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
+	* :math:`\rho = 998.2 \: kg/m^3,\ \mu = 1.002 \cdot 10^{-3} \: Pa\cdot s,\ g = 9.807 \: m/s^2` 
 	* :math:`K_{xx} = 10^{-3} ft/s`
-	* :math:`K_{zz} = 10 \cdot K_{xx}` 
+	* :math:`K_{zz} = 10 K_{xx}` 
 	* van Genuchten (1980) - Mualem (1976) parameters for a gravel based on Phifer et al. (2006):
-		* :math:`\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})`
+		* :math:`\alpha = 0.143 cm^{-1} (1.46 \cdot 10^{-3} Pa^{-1})`
 		* :math:`S_r = 0.052`
 		* :math:`m = 0.314`
 
 * Model discretization
 
-	* :math:`\Delta x = 1 ft, \Delta z = 1 ft`
+	* :math:`\Delta x = 1 ft,\ \Delta z = 1 ft`
 
 For these input specifications, *Amanzi* simulation output is expected to closely match
 
-.. math:: h [ft] = \sqrt{1600 - 12 x}
+.. math:: h = \sqrt{1600 - 12 x}
    :label: expectedH1
 
 from Equation :eq:`specificSoln1`. 
@@ -153,7 +153,15 @@ from Equation :eq:`specificSoln1`.
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Table comparing analytic and Amanzi hydraulic head:
+The hydralic head computed using both Amanzi and the above analytic formulas
+is shown on the figure and in the table below.
+
+.. figure:: figures/hydraulic_head.png 
+   :figclass: align-center
+   :width: 600 px
+
+    **Concentration transverse to the flow field from plume centerline at x=0.**
+
 
 .. include:: table_values.txt
 
