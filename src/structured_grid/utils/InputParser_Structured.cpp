@@ -237,8 +237,13 @@ namespace Amanzi {
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
-      else if (flow_mode == "Steady State Saturated" || flow_mode == "Single Phase") {
+      else if (flow_mode == "Steady State Saturated") {
         model_name = "steady-saturated";
+        prob_out_list.set("have_capillary",0);
+        prob_out_list.set("cfl",-1);
+      }
+      else if (flow_mode == "Single Phase") {
+        model_name = "saturated";
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
@@ -1321,12 +1326,17 @@ namespace Amanzi {
     void convert_SpecificStorageUniform(const ParameterList& fPLin,
                                         ParameterList&       fPLout)
     {
-      const std::string Value_str = "Value";
       Array<std::string> nullList, reqP;
-      reqP.push_back(Value_str);
-      PLoptions opt(fPLin,nullList,reqP,true,true);
-      for (int i=0; i<reqP.size(); ++i) {
-        fPLout.set<double>(reqP[i],fPLin.get<double>(reqP[i]));
+      if (fPLin.isParameter("Value")) {
+        const std::string val_name="Value"; reqP.push_back(val_name);
+        PLoptions opt(fPLin,nullList,reqP,true,true);
+        double val = fPLin.get<double>(val_name);
+        fPLout.set<double>("val",val);
+      }
+      else {
+        std::string str = "Unrecognized specific_storage parameters";
+        std::cout << fPLin << std::endl;
+        BoxLib::Abort(str.c_str());
       }
     }
 
@@ -1455,7 +1465,7 @@ namespace Amanzi {
               else if (rlabel==specific_storage_uniform_str) {
                 ParameterList ssublist;
                 convert_SpecificStorageUniform(rsslist,ssublist);
-                ssublist.set("specific_storage",ssublist);
+                rsublist.set("specific_storage",ssublist);
               }
               else if (rlabel=="Capillary Pressure: van Genuchten") {
                 int cpl_type = 3;
@@ -3091,29 +3101,27 @@ namespace Amanzi {
 	<ParameterList name="Sources">
   	  <ParameterList name="SOURCE 1">
   	    <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
-	    <ParameterList name="Aqueous">
-              <ParameterList name="Water">
-  	        <ParameterList name="Source: Uniform">
-  	          <Parameter name="Values" type="Array(double)" value="{19}"/>
-  	        </ParameterList>
-  	        <ParameterList name="Solute SOURCE">
-  	          <ParameterList name="Tc-99">
-  	            <ParameterList name="Source: Flow Weighted Concentration">
-  	  	      <Parameter name="Values" type="Array(double)" value="{19}"/>
-  	            </ParameterList>
+            <ParameterList name="Water">
+  	      <ParameterList name="Source: Uniform">
+  	        <Parameter name="Values" type="Array(double)" value="{19}"/>
+  	      </ParameterList>
+  	      <ParameterList name="Solute SOURCE">
+  	        <ParameterList name="Tc-99">
+  	          <ParameterList name="Source: Flow Weighted Concentration">
+  	    	      <Parameter name="Values" type="Array(double)" value="{19}"/>
   	          </ParameterList>
-  	          <ParameterList name="U 237">
-  	            <ParameterList name="Source: Uniform Concentration">
-  	  	      <Parameter name="Values" type="Array(double)" value="{21}"/>
-  	            </ParameterList>
+  	        </ParameterList>
+  	        <ParameterList name="U 237">
+  	          <ParameterList name="Source: Uniform Concentration">
+  	    	      <Parameter name="Values" type="Array(double)" value="{21}"/>
   	          </ParameterList>
   	        </ParameterList>
   	      </ParameterList>
-            </ParameterList>
+  	    </ParameterList>
           </ParameterList>
 
-	FIXME: Although current version implemented to skip the phase and component section entirely
-	(so they are hardwired to "Aqueous" and "Water", respectively)
+	FIXME: Although current version implemented to skip the component section entirely
+	(so it is hardwired to "Water", respectively)
 
        */
 
@@ -3121,7 +3129,6 @@ namespace Amanzi {
       const std::string Sources_str = "Sources";
       const std::string Assigned_Regions_str = "Assigned Regions";
       const std::string Solute_Source_str = "Solute SOURCE";
-
 
       // FIXME: NEED TO VERIFY PHASE/COMP/SOLUTE IS VALID
       bool do_source_term = false;
@@ -3137,67 +3144,59 @@ namespace Amanzi {
           const ParameterList& src_label_pl = src_list.sublist(src_label);
           Array<std::string> src_label_reqd_params; src_label_reqd_params.push_back(Assigned_Regions_str);
           PLoptions sl_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
-          const Array<std::string>& src_plabels = sl_opt.OptLists(); // Must be known phase names
+          const Array<std::string>& src_clabels = sl_opt.OptLists(); // Must be known comp names
           const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
           struct_src_label_list.set("regions",regions);
-          for (int j=0; j<src_plabels.size(); ++j) {
-            const std::string& src_plabel = src_plabels[j];
-            const ParameterList& src_phase_pl = src_label_pl.sublist(src_plabel);
-            PLoptions sp_opt(src_phase_pl,nullList,nullList,false,true);
-            const Array<std::string>& src_clabels = sp_opt.OptLists(); // Must be known comp names
-            ParameterList struct_src_phase_list;
-            for (int k=0; k<src_clabels.size(); ++k) {
-              const std::string& src_clabel = src_clabels[k];
-              const ParameterList& src_comp_pl = src_phase_pl.sublist(src_clabel);
-              ParameterList struct_src_comp_list;
-              PLoptions src_comp_opt(src_comp_pl,nullList,nullList,false,true);
-              const Array<std::string>& src_comp_opt_lists = src_comp_opt.OptLists(); // must be a known src func or "Solute SOURCE"
-              bool function_set = false;
-              bool solute_functions_set = false;
-              for (int L=0; L<src_comp_opt_lists.size(); ++L) {
-                if (src_comp_opt_lists[L] == Solute_Source_str) {
-                  if (solute_functions_set) {
-                    MyAbort("Exactly one source function section allowed for solutes in "+Sources_str+"->"+src_label+"->"
-                            +src_plabel+"->"+src_clabel);
-                  }
-                  const ParameterList& src_solute_pl = src_comp_pl.sublist(Solute_Source_str);
-                  PLoptions src_solute_opt(src_solute_pl,nullList,nullList,false,true);
-                  const Array<std::string>& src_solute_labels = src_solute_opt.OptLists(); // each label must be a solute name
-                  ParameterList struct_src_solute_list;
-                  for (int M=0; M<src_solute_labels.size(); ++M) {
-                    const std::string& solute_label = src_solute_labels[M];
-                    const ParameterList& src_solute_func_pl = src_solute_pl.sublist(solute_label);
-                    PLoptions src_solute_func_opt(src_solute_func_pl,nullList,nullList,false,true);
-                    const Array<std::string>& src_solute_funcs = src_solute_func_opt.OptLists();
-                    if (src_solute_funcs.size() == 1) {
-                      const std::string& Amanzi_type = src_solute_funcs[0];
-                      const ParameterList& fPLin = src_solute_func_pl.sublist(Amanzi_type);
-                      ParameterList fPLout;
-                      convert_Solute_Sources(fPLin,Amanzi_type,fPLout);
-                      struct_src_solute_list.set(underscore(solute_label),fPLout);
-                    } else {
-                      MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"
-                              +src_plabel+"->"+src_clabel+"->"+Solute_Source_str+"->"+solute_label);
-                    }
-                  }
-                  solute_functions_set = true;
-                  struct_src_comp_list.set("tracers_with_sources",underscore(src_solute_labels));
-                  struct_src_comp_list.set("tracer_sources",struct_src_solute_list);
-                } else {
-                  if (function_set) {
-                    MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"
-                            +src_plabel+"->"+src_clabel);
-                  }
-                  const std::string& Amanzi_type = src_comp_opt_lists[L];
-                  const ParameterList& fPLin = src_comp_pl.sublist(Amanzi_type);
-                  ParameterList fPLout;
-                  convert_Sources(fPLin,Amanzi_type,struct_src_comp_list);
-                  function_set = true;
-                }
-              }
-              struct_src_phase_list.set(underscore(src_clabel),struct_src_comp_list);
-            }
-            struct_src_label_list.set(underscore(src_plabel),struct_src_phase_list);
+          for (int j=0; j<src_clabels.size(); ++j) {
+            const std::string& src_clabel = src_clabels[j];
+            const ParameterList& src_comp_pl = src_label_pl.sublist(src_clabel);
+            PLoptions sp_opt(src_comp_pl,nullList,nullList,false,true);
+            ParameterList struct_src_comp_list;
+	    PLoptions src_comp_opt(src_comp_pl,nullList,nullList,false,true);
+	    const Array<std::string>& src_comp_opt_lists = src_comp_opt.OptLists(); // must be a known src func or "Solute SOURCE"
+	    bool function_set = false;
+	    bool solute_functions_set = false;
+	    for (int L=0; L<src_comp_opt_lists.size(); ++L) {
+	      if (src_comp_opt_lists[L] == Solute_Source_str) {
+		if (solute_functions_set) {
+		  MyAbort("Exactly one source function section allowed for solutes in "+Sources_str+"->"+src_label+"->"
+			  +src_clabel);
+		}
+		const ParameterList& src_solute_pl = src_comp_pl.sublist(Solute_Source_str);
+		PLoptions src_solute_opt(src_solute_pl,nullList,nullList,false,true);
+		const Array<std::string>& src_solute_labels = src_solute_opt.OptLists(); // each label must be a solute name
+		ParameterList struct_src_solute_list;
+		for (int M=0; M<src_solute_labels.size(); ++M) {
+		  const std::string& solute_label = src_solute_labels[M];
+		  const ParameterList& src_solute_func_pl = src_solute_pl.sublist(solute_label);
+		  PLoptions src_solute_func_opt(src_solute_func_pl,nullList,nullList,false,true);
+		  const Array<std::string>& src_solute_funcs = src_solute_func_opt.OptLists();
+		  if (src_solute_funcs.size() == 1) {
+		    const std::string& Amanzi_type = src_solute_funcs[0];
+		    const ParameterList& fPLin = src_solute_func_pl.sublist(Amanzi_type);
+		    ParameterList fPLout;
+		    convert_Solute_Sources(fPLin,Amanzi_type,fPLout);
+		    struct_src_solute_list.set(underscore(solute_label),fPLout);
+		  } else {
+		    MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"
+			    +src_clabel+"->"+Solute_Source_str+"->"+solute_label);
+		  }
+		}
+		solute_functions_set = true;
+		struct_src_comp_list.set("tracers_with_sources",underscore(src_solute_labels));
+		struct_src_comp_list.set("tracer_sources",struct_src_solute_list);
+	      } else {
+		if (function_set) {
+		  MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"+src_clabel);
+		}
+		const std::string& Amanzi_type = src_comp_opt_lists[L];
+		const ParameterList& fPLin = src_comp_pl.sublist(Amanzi_type);
+		ParameterList fPLout;
+		convert_Sources(fPLin,Amanzi_type,struct_src_comp_list);
+		function_set = true;
+	      }
+	    }
+            struct_src_label_list.set(underscore(src_clabel),struct_src_comp_list);
           }
           struct_src_list.set(underscore(src_label),struct_src_label_list);
         }

@@ -1154,8 +1154,8 @@ c     trace the state to the cell edges
 c
       do j = jmin-1,jmax+1
          do i = imin,  imax+1
-            xlo(i,j) = s(i-1,j) + (half  - dthx*uedge(i,j))*sx(i-1,j)/sphi(i-1,j)
-            xhi(i,j) = s(i,  j) + (-half - dthx*uedge(i,j))*sx(i,  j)/sphi(i,j)
+            xlo(i,j) = s(i-1,j) + (half  - dthx*uedge(i,j)/sphi(i-1,j))*sx(i-1,j)
+            xhi(i,j) = s(i,  j) + (-half - dthx*uedge(i,j)/sphi(i  ,j))*sx(i,  j)
          end do
       end do
 
@@ -1163,7 +1163,7 @@ c
          do j = jmin-1,jmax+1
             do i = imin,  imax+1
                xlo(i,j) = xlo(i,j) + dth*tforces(i-1,j)/sphi(i-1,j)
-               xhi(i,j) = xhi(i,j) + dth*tforces(i,  j)/sphi(i,j)
+               xhi(i,j) = xhi(i,j) + dth*tforces(i,  j)/sphi(i  ,j)
             end do
          end do
          if (iconserv .eq. 1) then
@@ -1174,7 +1174,7 @@ c
                divum = (uedge(i,j)-uedge(i-1,j))*hxi
      &              +  (vedge(i-1,j+1)-vedge(i-1,j))*hyi
                xlo(i,j) = xlo(i,j) - dth*s(i-1,j)*divum/sphi(i-1,j)
-               xhi(i,j) = xhi(i,j) - dth*s(i  ,j)*divup/sphi(i,j)
+               xhi(i,j) = xhi(i,j) - dth*s(i  ,j)*divup/sphi(i  ,j)
             end do
            end do
          end if
@@ -1196,8 +1196,8 @@ c
       do j = jmin,  jmax+1
          do i = imin-1,imax+1
             spip = 1.d0 
-            ylo(i,j) = s(i,j-1) + (half  - dthy*vedge(i,j))*sy(i,j-1)/sphi(i,j-1)
-            yhi(i,j) = s(i,j)   + (-half - dthy*vedge(i,j))*sy(i,j)/sphi(i,j)
+            ylo(i,j) = s(i,j-1) + (half  - dthy*vedge(i,j)/sphi(i,j-1))*sy(i,j-1)
+            yhi(i,j) = s(i,j)   + (-half - dthy*vedge(i,j)/sphi(i,j  ))*sy(i,j  )
          end do
       end do
 
@@ -1205,7 +1205,7 @@ c
          do j = jmin, jmax+1
             do i = imin-1,  imax+1
                ylo(i,j) = ylo(i,j) + dth*tforces(i,j-1)/sphi(i,j-1)
-               yhi(i,j) = yhi(i,j) + dth*tforces(i,j  )/sphi(i,j)
+               yhi(i,j) = yhi(i,j) + dth*tforces(i,j  )/sphi(i,j  )
             end do
          end do
          if (iconserv .eq. 1) then
@@ -1216,7 +1216,7 @@ c
                divum = (uedge(i+1,j)-uedge(i,j))*hxi
      &              +  (vedge(i,j)-vedge(i,j-1))*hyi
                ylo(i,j) = ylo(i,j) - dth*spim*s(i,j-1)*divum/sphi(i,j-1)
-               yhi(i,j) = yhi(i,j) - dth*spip*s(i,j  )*divup/sphi(i,j)
+               yhi(i,j) = yhi(i,j) - dth*spip*s(i,j  )*divup/sphi(i,j  )
             end do
            end do
          end if

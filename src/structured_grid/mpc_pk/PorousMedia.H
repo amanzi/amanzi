@@ -819,20 +819,12 @@ public:
   //
   // Get the forcing term.
   //
-  void getForce (FArrayBox&       force,
-		 int              gridno,
-		 int              ngrow,
-		 int              strt_comp,
-		 int              num_comp,
-		 const Real       time,
-		 int              do_rho_scale = 0);
-
-  void getForce_Tracer (FArrayBox&       force,
-			int              gridno,
-			int              ngrow,
-			int              strt_comp,
-			int              num_comp,
-			const Real       time);
+  void getForce (MultiFab& force,
+		 int       nGrow,
+		 int       strt_comp,
+		 int       num_comp,
+		 Real      time,
+		 bool      do_rho_scale = false);
   //
   // Fill ghost cells of state.
   //
@@ -1077,6 +1069,7 @@ public:
     PM_POLYMER,
     PM_RICHARDS,
     PM_STEADY_SATURATED,
+    PM_SATURATED, // FIXME: Merge this and STEADY_SATURATED into SINGLE_PHASE
     PM_INVALID
   };
   static MODEL_ID model;
@@ -1089,6 +1082,7 @@ public:
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
   MultiFab* KappaCCavg() {return kappa;};
   MultiFab* Porosity() {return rock_phi;}
+  MultiFab* SpecificStorage() {return specific_storage;}
   MultiFab* KappaEC() {return kpedge;}
   MultiFab* PCapParams() {return cpl_coef;}
   MultiFab* KrParams() {return kr_coef;}
@@ -1308,6 +1302,7 @@ protected:
   MultiFab* kappa;
   MultiFab* kpedge;
   MultiFab* rock_phi;
+  MultiFab* specific_storage;
   MultiFab* kr_coef;
   MultiFab* cpl_coef;
   //

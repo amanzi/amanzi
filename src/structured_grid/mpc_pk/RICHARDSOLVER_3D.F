@@ -235,39 +235,74 @@
       endif
       end     
 
-      subroutine FORT_RS_PDOTRES(Res,DIMS(Res),RSn,DIMS(RSn),
-     &     RSnp1,DIMS(RSnp1),Porositynp1,DIMS(Porositynp1),
-     &     Porosityn,DIMS(Porosityn),dt,lo,hi,nc)
+      subroutine FORT_RS_SATURATEDRES(Res,DIMS(Res),Pn,DIMS(Pn),
+     &     Pnp1,DIMS(Pnp1),SpecificStorage,DIMS(SpecificStorage),
+     &     Porosity,DIMS(Porosity),Src,DIMS(Src),dt,lo,hi,nc)
       implicit none      
       integer DIMDEC(Res)
-      integer DIMDEC(RSn)
-      integer DIMDEC(RSnp1)
-      integer DIMDEC(Porositynp1)
-      integer DIMDEC(Porosityn)
+      integer DIMDEC(Pn)
+      integer DIMDEC(Pnp1)
+      integer DIMDEC(Porosity)
+      integer DIMDEC(SpecificStorage)
+      integer DIMDEC(Src)
       integer lo(SDIM),hi(SDIM)
       integer nc
       REAL_T  Res(DIMV(Res),nc)
-      REAL_T  RSn(DIMV(RSn),nc)
-      REAL_T  RSnp1(DIMV(RSnp1),nc)
-      REAL_T  Porositynp1(DIMV(Porositynp1))
-      REAL_T  Porosityn(DIMV(Porosityn))
+      REAL_T  Pn(DIMV(Pn),nc)
+      REAL_T  Pnp1(DIMV(Pnp1),nc)
+      REAL_T  Porosity(DIMV(Porosity))
+      REAL_T  SpecificStorage(DIMV(SpecificStorage))
+      REAL_T  Src(DIMV(Src),nc)
       REAL_T  rho(nc)
       REAL_T  dt
       
       integer i, j, k, n
 
-c     On input, Res contains Div(DarcyVel)
+c     On input, Res contains Div(rho.DarcyVel)
       do n=1,nc
          do k = lo(3),hi(3)
             do j = lo(2),hi(2)
                do i = lo(1),hi(1)
-                  Res(i,j,k,n) = (Porositynp1(i,j,k)*RSnp1(i,j,k,n) - Porosityn(i,j,k)*RSn(i,j,k,n))/dt + Res(i,j,k,n)
+                  Res(i,j,k,n) = SpecificStorage(i,j,k)*(Pnp1(i,j,k,n) - Pn(i,j,k,n))/dt
+     &                 + Res(i,j,k,n) - Src(i,j,k,n)
                enddo
             enddo
          enddo
       enddo
       end
 
+      subroutine FORT_RS_RICHARDRES(Res,DIMS(Res),RSn,DIMS(RSn),
+     &     RSnp1,DIMS(RSnp1),Porosity,DIMS(Porosity),Src,DIMS(Src),
+     &     dt,lo,hi,nc)
+      implicit none      
+      integer DIMDEC(Res)
+      integer DIMDEC(RSn)
+      integer DIMDEC(RSnp1)
+      integer DIMDEC(Porosity)
+      integer DIMDEC(Src)
+      integer lo(SDIM),hi(SDIM)
+      integer nc
+      REAL_T  Res(DIMV(Res),nc)
+      REAL_T  RSn(DIMV(RSn),nc)
+      REAL_T  RSnp1(DIMV(RSnp1),nc)
+      REAL_T  Porosity(DIMV(Porosity))
+      REAL_T  Src(DIMV(Src),nc)
+      REAL_T  dt
+      
+      integer i, j, k, n
+
+c     On input, Res contains Div(rho.DarcyVel)
+      do n=1,nc
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)
+                  Res(i,j,k,n) = Porosity(i,j,k)*(RSnp1(i,j,k,n) - RSn(i,j,k,n))/dt 
+     &                 + Res(i,j,k,n) - Src(i,j,k,n)
+               enddo
+            enddo
+         enddo
+      enddo
+      end
 
       subroutine FORT_RS_ALTUP(rhosat,DIMS(rhosat),p,DIMS(p),
      &     dp,DIMS(dp),kappa,DIMS(kappa),coef,DIMS(coef),n_coef,
