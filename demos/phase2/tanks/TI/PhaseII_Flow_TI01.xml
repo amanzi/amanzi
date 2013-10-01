@@ -366,7 +366,7 @@
     <ParameterList name="BC lower">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Values" type="Array(double)" value="{0}"/>
+        <Parameter name="Values" type="Array(double)" value="{101325}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">

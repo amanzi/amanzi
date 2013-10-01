@@ -185,7 +185,11 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
       pcap_params.set(lev,pm[lev].PCapParams());
     }
     porosity.set(lev,pm[lev].Porosity());
-    specific_storage.set(lev,pm[lev].SpecificStorage());
+
+    if (is_saturated) {
+      specific_storage.set(lev,pm[lev].SpecificStorage());
+    }
+
     if (!params.use_fd_jac || params.semi_analytic_J || params.variable_switch_saturation_threshold) {
         kappaccavg.set(lev,pm[lev].KappaCCavg());
     }
@@ -205,8 +209,14 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     PCapParams = 0;
   }
   Porosity = new MFTower(layout,porosity,nLevs);
-  SpecificStorage = new MFTower(layout,specific_storage,nLevs);
-      
+
+  if (is_saturated) {
+    SpecificStorage = new MFTower(layout,specific_storage,nLevs);
+  }
+  else {
+    SpecificStorage = 0;
+  }
+
   ctmp.resize(BL_SPACEDIM);
   Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
   Alpha = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
