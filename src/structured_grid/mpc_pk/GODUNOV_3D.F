@@ -57,9 +57,19 @@ c ::: arguments
 c ::: internal variables
       REAL_T  gravx, gravy, gravz
       
-      gravx = zero
-      gravy = zero
-      gravz = -gravity
+      if (gravity_dir.eq.0) then
+         gravx = -gravity
+         gravy = zero
+         gravz = zero
+      else if (gravity_dir.eq.1) then
+         gravx = zero
+         gravy = -gravity
+         gravz = zero
+      else if (gravity_dir.eq.2) then
+         gravx = zero
+         gravy = zero
+         gravz = -gravity
+      endif
 
       call get_dlbd_cc(s,DIMS(s),lam,dlam,d2lam,DIMS(lam),
      &     krcoef,DIMS(krcoef),nkrcoef,
@@ -767,9 +777,19 @@ c ::: internal variables
       REAL_T, ALLOCATABLE :: zlo(:,:,:,:), zhi(:,:,:,:)
       integer nc
       
-      gravx = zero
-      gravy = zero
-      gravz = -gravity
+      if (gravity_dir.eq.0) then
+         gravx = -gravity
+         gravy = zero
+         gravz = zero
+      else if (gravity_dir.eq.1) then
+         gravx = zero
+         gravy = -gravity
+         gravz = zero
+      else if (gravity_dir.eq.2) then
+         gravx = zero
+         gravy = zero
+         gravz = -gravity
+      endif
 
       ALLOCATE(fluxx(DIMV(uedge),nscal))
       ALLOCATE(fluxy(DIMV(vedge),nscal))
@@ -905,10 +925,19 @@ c ::: internal variables
       REAL_T, ALLOCATABLE :: ylo(:,:,:,:), yhi(:,:,:,:)
       REAL_T, ALLOCATABLE :: zlo(:,:,:,:), zhi(:,:,:,:)
       
-
-      gravx = zero
-      gravy = zero
-      gravz = -gravity
+      if (gravity_dir.eq.0) then
+         gravx = -gravity
+         gravy = zero
+         gravz = zero
+      else if (gravity_dir.eq.1) then
+         gravx = zero
+         gravy = -gravity
+         gravz = zero
+      else if (gravity_dir.eq.2) then
+         gravx = zero
+         gravy = zero
+         gravz = -gravity
+      endif
 
       ALLOCATE(fluxx(DIMV(uedge),nscal))
       ALLOCATE(fluxy(DIMV(vedge),nscal))
@@ -1100,7 +1129,7 @@ c ::: arguments
      &     strucz, eigvz, eiglz, eigrz, 
      &     DIMS(work),
      &     bc,lo,hi,dt,dx,
-     &     use_minion,iconserv,grav,eigmax)
+     &     use_minion,iconserv,grav,gdir,eigmax)
 c
 c ::: This subroutine computes edges states and fluxes for the polymer problem
 c     The algorithm goes as follows:
@@ -1138,6 +1167,7 @@ c ::: arguments
       REAL_T  rphi(DIMV(rphi))
       REAL_T  kappa(DIMV(kappa))
       REAL_T  dx(SDIM), eigmax(SDIM),  grav
+      integer gdir
       REAL_T  eigvx(DIMV(work),ncomps-1)
       REAL_T  eigvy(DIMV(work),ncomps-1)
       REAL_T  eigvz(DIMV(work),ncomps-1)
@@ -1185,9 +1215,20 @@ c ::: internal variables
       hx    = dx(1)
       hy    = dx(2)
       hz    = dx(3)
-      gravx = zero
-      gravy = zero
-      gravz = -grav
+
+      if (gdir.eq.0) then
+         gravx = -grav
+         gravy = zero
+         gravz = zero
+      else if (gdir.eq.1) then
+         gravx = zero
+         gravy = -grav
+         gravz = zero
+      else if (gdir.eq.2) then
+         gravx = zero
+         gravy = zero
+         gravz = -grav
+      endif
 
 c ::: identify comp-phase relation (in GODUNOV_F.F)
       call get_mu_rho_phases(rho, mu, athick, rhoval, muval, 
@@ -1451,9 +1492,20 @@ c ::: internal variables
       hx    = dx(1)
       hy    = dx(2)
       hz    = dx(3)
-      gravx = zero
-      gravy = zero
-      gravz = -gravity
+
+      if (gravity_dir.eq.0) then
+         gravx = -gravity
+         gravy = zero
+         gravz = zero
+      else if (gravity_dir.eq.1) then
+         gravx = zero
+         gravy = -gravity
+         gravz = zero
+      else if (gravity_dir.eq.2) then
+         gravx = zero
+         gravy = zero
+         gravz = -gravity
+      endif
 
       ALLOCATE(fluxx(DIMV(uedge),nscal))
       ALLOCATE(fluxy(DIMV(vedge),nscal))

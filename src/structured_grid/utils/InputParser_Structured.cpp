@@ -336,12 +336,13 @@ namespace Amanzi {
         std::string Time_Step_Shrink_Max_str = "Maximum Time Step Shrink";
         std::string Init_Time_Step_Mult_str = "Initial Time Step Multiplier";
         std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
-        std::string Max_Step_str = "Maximum Cycle Number";
+        std::string Max_Step_str = "Maximum Cycle Number"; reqP.push_back(Max_Step_str);
 
-        PLoptions Topt(tran_list,reqL,reqP,true,false); 
+        PLoptions Topt(tran_list,reqL,reqP,true,false);
         const Array<std::string> ToptP = Topt.OptParms();
         struc_out_list.set<double>("strt_time", tran_list.get<double>(Start_str));
         struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
+        struc_out_list.set<int>("max_step", tran_list.get<int>(Max_Step_str));
         double dt_init = -1;
         double dt_init_mult = -1;
         double dt_grow_max = -1;
@@ -1317,6 +1318,18 @@ namespace Amanzi {
       }
     }
 
+    void convert_SpecificStorageUniform(const ParameterList& fPLin,
+                                        ParameterList&       fPLout)
+    {
+      const std::string Value_str = "Value";
+      Array<std::string> nullList, reqP;
+      reqP.push_back(Value_str);
+      PLoptions opt(fPLin,nullList,reqP,true,true);
+      for (int i=0; i<reqP.size(); ++i) {
+        fPLout.set<double>(reqP[i],fPLin.get<double>(reqP[i]));
+      }
+    }
+
     void convert_DispersionTensorUniform(const ParameterList& fPLin,
                                          ParameterList&       fPLout)
     {
@@ -1330,7 +1343,6 @@ namespace Amanzi {
         fPLout.set<double>(reqP[i],fPLin.get<double>(reqP[i]));
       }
     }
-
 
     //
     // convert material to structured format
@@ -1366,6 +1378,7 @@ namespace Amanzi {
       const std::string molec_diff_uniform_str = "Molecular Diffusion: Uniform";
       const std::string tortuosity_str = "Tortuosity: Uniform";
       const std::string dispersivity_str = "Dispersion Tensor: Uniform Isotropic";
+      const std::string specific_storage_uniform_str = "Specific Storage: Uniform";
 
       std::string kp_file_in, kp_file_out, pp_file_in, pp_file_out;
       std::string porosity_plotfile_in, porosity_plotfile_out;
@@ -1438,6 +1451,11 @@ namespace Amanzi {
                 ParameterList dsublist;
                 convert_DispersionTensorUniform(rsslist,dsublist);
                 rsublist.set("dispersivity",dsublist);
+              }
+              else if (rlabel==specific_storage_uniform_str) {
+                ParameterList ssublist;
+                convert_SpecificStorageUniform(rsslist,ssublist);
+                ssublist.set("specific_storage",ssublist);
               }
               else if (rlabel=="Capillary Pressure: van Genuchten") {
                 int cpl_type = 3;
@@ -1697,47 +1715,6 @@ namespace Amanzi {
           if (rlist.isParameter(shift_str)) {
             bool use_shifted_kr_eval = rlist.get<bool>(shift_str);
             rock_list.set(underscore(shift_str),(int)use_shifted_kr_eval);
-          }
-          std::string porosity_input_plotfile_str = "Porosity Input PlotFile";
-          std::string porosity_output_plotfile_str = "Porosity Output PlotFile";
-          std::string permeability_input_plotfile_str = "Permeability Input PlotFile";
-          std::string permeability_output_plotfile_str = "Permeability Output PlotFile";
-          std::string porosity_output_multifab_file_str = "Porosity Output File";
-          std::string porosity_input_multifab_file_str = "Porosity Input File";
-          std::string permeability_output_multifab_file_str = "Permeability Output File";
-          std::string permeability_input_multifab_file_str = "Permeability Input File";
-
-          if (rlist.isParameter(permeability_output_multifab_file_str)) {
-            kp_file_out_set = true;
-            kp_file_out = rlist.get<std::string>(permeability_output_multifab_file_str);
-          }
-          if (rlist.isParameter(permeability_input_multifab_file_str)) {
-            kp_file_in_set = true;
-            kp_file_in  = rlist.get<std::string>(permeability_input_multifab_file_str);
-          }
-          if (rlist.isParameter(porosity_output_multifab_file_str)) {
-            pp_file_out_set = true;
-            pp_file_out = rlist.get<std::string>(porosity_output_multifab_file_str);
-          }
-          if (rlist.isParameter(porosity_input_multifab_file_str)) {
-            pp_file_in_set = true;
-            pp_file_in  = rlist.get<std::string>(porosity_input_multifab_file_str);
-          }
-          if (rlist.isParameter(porosity_output_plotfile_str)) {
-            pp_plotfile_out_set = true;
-            porosity_plotfile_out = rlist.get<std::string>(porosity_output_plotfile_str);
-          }
-          if (rlist.isParameter(porosity_input_plotfile_str)) {
-            pp_plotfile_in_set = true;
-            porosity_plotfile_in = rlist.get<std::string>(porosity_input_plotfile_str);
-          }
-          if (rlist.isParameter(permeability_output_plotfile_str)) {
-            kp_plotfile_out_set = true;
-            permeability_plotfile_out = rlist.get<std::string>(permeability_output_plotfile_str);
-          }
-          if (rlist.isParameter(permeability_input_plotfile_str)) {
-            kp_plotfile_in_set = true;
-            permeability_plotfile_in = rlist.get<std::string>(permeability_input_plotfile_str);
           }
         }
       }
@@ -2403,20 +2380,44 @@ namespace Amanzi {
         fPLout.set<Array<double> >("loc",fPLin.get<Array<double> >(ref_name));
         fPLout.set<std::string>("type","linear_pressure");
       }
-      else if (Amanzi_type == "BC: Uniform Pressure Head")
+      else if ((Amanzi_type == "BC: Uniform Pressure Head")
+               || (Amanzi_type == "BC: Hydrostatic"))
       {
-        const std::string val_name="Values"; reqP.push_back(val_name);
+        const std::string val_name
+          = (Amanzi_type == "BC: Uniform Pressure Head" ?  "Values" : "Water Table Height");
+        reqP.push_back(val_name);
         const std::string time_name="Times"; reqP.push_back(time_name);
         const std::string form_name="Time Functions"; reqP.push_back(form_name);
         PLoptions opt(fPLin,nullList,reqP,true,false);
         Array<double> vals = fPLin.get<Array<double> >(val_name);
         convert_length_units(fPLin,vals);
+        const std::string Coordinate_System_str = "Coordinate_System";
+        const std::string Coordinate_System_Absolute_str = "Absolute";
+        const std::string Coordinate_System_Relative_str = "Relative";
+        std::string absolute_or_relative = Coordinate_System_Absolute_str; // Default value
+        if (Amanzi_type == "Water Table Height") {
+          const Array<std::string>& optParams = opt.OptParms();
+          for (int i=0; i<optParams.size(); ++i) {
+            const std::string& optParam = optParams[i];
+            if (optParam == Coordinate_System_str) {
+              absolute_or_relative = fPLin.get<std::string>(Coordinate_System_str);
+              if ( ! (absolute_or_relative==Coordinate_System_Absolute_str
+                      || absolute_or_relative==Coordinate_System_Relative_str)) {
+                std::string j = "Value for \"BC: Hydrostatic\" parameter: \""+Coordinate_System_str+"\" (if provided) must be"
+                  + " either \""+Coordinate_System_Absolute_str+"\" or \""+Coordinate_System_Absolute_str+"\" (\""
+                  + absolute_or_relative +"\" given)";
+              }
+            }
+          }
+        }
+
         fPLout.set<Array<double> >("vals",vals);
         if (vals.size()>1) {
           fPLout.set<Array<double> >("times",fPLin.get<Array<double> >(time_name));
           fPLout.set<Array<std::string> >("forms",fPLin.get<Array<std::string> >(form_name));
         }
         fPLout.set<std::string>("type","pressure_head");
+        fPLout.set<std::string>("normalization",absolute_or_relative);
       }
       else if (Amanzi_type == "BC: Uniform Pressure")
       {
@@ -2615,6 +2616,7 @@ namespace Amanzi {
         }
         else if ( (Amanzi_type == "BC: Uniform Pressure")
                   || (Amanzi_type == "BC: Uniform Pressure Head")
+                  || (Amanzi_type == "BC: Hydrostatic")
                   || (Amanzi_type == "BC: Linear Pressure") )
         {
           convert_BCPressure(fPLin,Amanzi_type,fPLout);
@@ -3085,11 +3087,12 @@ namespace Amanzi {
       /*
 	Note: Looking to translate xml block that looks something like:
 
+
 	<ParameterList name="Sources">
-	  <ParameterList name="Aqueous">
-            <ParameterList name="Water">
-  	      <ParameterList name="SOURCE 1">
-  	        <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
+  	  <ParameterList name="SOURCE 1">
+  	    <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
+	    <ParameterList name="Aqueous">
+              <ParameterList name="Water">
   	        <ParameterList name="Source: Uniform">
   	          <Parameter name="Values" type="Array(double)" value="{19}"/>
   	        </ParameterList>
@@ -3108,7 +3111,6 @@ namespace Amanzi {
   	      </ParameterList>
             </ParameterList>
           </ParameterList>
-        </ParameterList>
 
 	FIXME: Although current version implemented to skip the phase and component section entirely
 	(so they are hardwired to "Aqueous" and "Water", respectively)
@@ -3120,87 +3122,92 @@ namespace Amanzi {
       const std::string Assigned_Regions_str = "Assigned Regions";
       const std::string Solute_Source_str = "Solute SOURCE";
 
+
       // FIXME: NEED TO VERIFY PHASE/COMP/SOLUTE IS VALID
-      const ParameterList& src_list = parameter_list.sublist(Sources_str);
-      ParameterList struct_src_list;
-      Array<std::string> nullList;
-      PLoptions s_opt(src_list,nullList,nullList,false,true);
-      //const Array<std::string> src_plabels = s_opt.OptLists(); // Must be known phase names
-      Array<std::string> src_plabels(1,"Aqueous"); // FIXME: Remove this eventually
-      for (int i=0; i< src_plabels.size(); ++i) {
-	const std::string& src_plabel = src_plabels[i];
-	ParameterList struct_src_phase_list;
-	//const ParameterList& src_phase_pl = src_list.sublist(src_plabel);	
-	const ParameterList& src_phase_pl = src_list;  // FIXME: Remove this eventually
-	PLoptions sp_opt(src_phase_pl,nullList,nullList,false,true);
-	//const Array<std::string> src_clabels = sp_opt.OptLists(); // Must be known component names
-	Array<std::string> src_clabels(1,"Water"); // FIXME: Remove this eventually
-	for (int j=0; j<src_clabels.size(); ++j) {
-	  const std::string& src_clabel = src_clabels[j];
-	  //const ParameterList& src_comp_pl = src_phase_pl.sublist(src_clabel);
-	  const ParameterList& src_comp_pl = src_phase_pl;  // FIXME: Remove this eventually
-	  PLoptions spc_opt(src_comp_pl,nullList,nullList,false,true);
-	  const Array<std::string> src_list_labels = spc_opt.OptLists(); // src label
-	  ParameterList struct_src_comp_list;
-	  for (int k=0; k<src_list_labels.size(); ++k) {
-	    const std::string& src_list_label = src_list_labels[k];
-	    const ParameterList& src_label_pl = src_comp_pl.sublist(src_list_label);
-	    ParameterList struct_src_label_list;
-	    Array<std::string> src_label_reqd_params; src_label_reqd_params.push_back(Assigned_Regions_str);
-	    PLoptions src_label_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
-	    const Array<std::string>& src_label_opt_lists = src_label_opt.OptLists(); // must be a known src func or "Solute SOURCE"
-	    bool function_set = false;
-	    bool solute_functions_set = false;
-	    for (int L=0; L<src_label_opt_lists.size(); ++L) {
-	      if (src_label_opt_lists[L] == Solute_Source_str) {
-		if (solute_functions_set) {
-		  MyAbort("Exactly one source function section allowed for solutes in "+Sources_str+"->"+src_plabel+"->"
-			  +src_clabel+"->"+src_list_label);
-		}
-		const ParameterList& src_solute_pl = src_label_pl.sublist(Solute_Source_str);
-		PLoptions src_solute_opt(src_solute_pl,nullList,nullList,false,true);
-		const Array<std::string> src_solute_labels = src_solute_opt.OptLists(); // each label must be a solute name
-		ParameterList struct_src_solute_list;
-		for (int M=0; M<src_solute_labels.size(); ++M) {
-		  const std::string& solute_label = src_solute_labels[M];
-		  const ParameterList& src_solute_func_pl = src_solute_pl.sublist(solute_label);
-		  PLoptions src_solute_func_opt(src_solute_func_pl,nullList,nullList,false,true);
-		  const Array<std::string>& src_solute_funcs = src_solute_func_opt.OptLists();
-		  if (src_solute_funcs.size() == 1) {
-		    const std::string& Amanzi_type = src_solute_funcs[0];
-		    const ParameterList& fPLin = src_solute_func_pl.sublist(Amanzi_type);
-		    ParameterList fPLout;
-		    convert_Solute_Sources(fPLin,Amanzi_type,fPLout);
-		    struct_src_solute_list.set(underscore(solute_label),fPLout);
-		  } else {
-		    MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_plabel+"->"
-			    +src_clabel+"->"+src_list_label+"->"+Solute_Source_str+"->"+solute_label);
-		  }
-		}
-		solute_functions_set = true;
-		struct_src_label_list.set("tracers_with_sources",underscore(src_solute_labels));
-		struct_src_label_list.set("tracer_sources",struct_src_solute_list);
-	      } else {
-		if (function_set) {
-		  MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_plabel+"->"
-			  +src_clabel+"->"+src_list_label);
-		}
-		const std::string& Amanzi_type = src_label_opt_lists[L];
-		const ParameterList& fPLin = src_label_pl.sublist(Amanzi_type);
-		const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
-		ParameterList fPLout;
-		convert_Sources(fPLin,Amanzi_type,struct_src_label_list);
-		struct_src_label_list.set("regions",regions);
-		function_set = true;
-	      }
-	    } // Component source label
-	    struct_src_comp_list.set(underscore(src_list_label),struct_src_label_list);
-	  } // Component source labels
-	  struct_src_phase_list.set(underscore(src_clabel),struct_src_comp_list);
-	} // Component labels
-	struct_src_list.set(underscore(src_plabel),struct_src_phase_list);
-      } // Phase labels
-      struc_list.set("source",struct_src_list);
+      bool do_source_term = false;
+      if (parameter_list.isSublist(Sources_str)) {
+        const ParameterList& src_list = parameter_list.sublist(Sources_str);
+        ParameterList struct_src_list;
+        Array<std::string> nullList;
+        PLoptions s_opt(src_list,nullList,nullList,false,true);
+        const Array<std::string> src_labels = s_opt.OptLists(); // src labels
+        for (int i=0; i< src_labels.size(); ++i) {
+          const std::string& src_label = src_labels[i];
+          ParameterList struct_src_label_list;
+          const ParameterList& src_label_pl = src_list.sublist(src_label);
+          Array<std::string> src_label_reqd_params; src_label_reqd_params.push_back(Assigned_Regions_str);
+          PLoptions sl_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
+          const Array<std::string>& src_plabels = sl_opt.OptLists(); // Must be known phase names
+          const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
+          struct_src_label_list.set("regions",regions);
+          for (int j=0; j<src_plabels.size(); ++j) {
+            const std::string& src_plabel = src_plabels[j];
+            const ParameterList& src_phase_pl = src_label_pl.sublist(src_plabel);
+            PLoptions sp_opt(src_phase_pl,nullList,nullList,false,true);
+            const Array<std::string>& src_clabels = sp_opt.OptLists(); // Must be known comp names
+            ParameterList struct_src_phase_list;
+            for (int k=0; k<src_clabels.size(); ++k) {
+              const std::string& src_clabel = src_clabels[k];
+              const ParameterList& src_comp_pl = src_phase_pl.sublist(src_clabel);
+              ParameterList struct_src_comp_list;
+              PLoptions src_comp_opt(src_comp_pl,nullList,nullList,false,true);
+              const Array<std::string>& src_comp_opt_lists = src_comp_opt.OptLists(); // must be a known src func or "Solute SOURCE"
+              bool function_set = false;
+              bool solute_functions_set = false;
+              for (int L=0; L<src_comp_opt_lists.size(); ++L) {
+                if (src_comp_opt_lists[L] == Solute_Source_str) {
+                  if (solute_functions_set) {
+                    MyAbort("Exactly one source function section allowed for solutes in "+Sources_str+"->"+src_label+"->"
+                            +src_plabel+"->"+src_clabel);
+                  }
+                  const ParameterList& src_solute_pl = src_comp_pl.sublist(Solute_Source_str);
+                  PLoptions src_solute_opt(src_solute_pl,nullList,nullList,false,true);
+                  const Array<std::string>& src_solute_labels = src_solute_opt.OptLists(); // each label must be a solute name
+                  ParameterList struct_src_solute_list;
+                  for (int M=0; M<src_solute_labels.size(); ++M) {
+                    const std::string& solute_label = src_solute_labels[M];
+                    const ParameterList& src_solute_func_pl = src_solute_pl.sublist(solute_label);
+                    PLoptions src_solute_func_opt(src_solute_func_pl,nullList,nullList,false,true);
+                    const Array<std::string>& src_solute_funcs = src_solute_func_opt.OptLists();
+                    if (src_solute_funcs.size() == 1) {
+                      const std::string& Amanzi_type = src_solute_funcs[0];
+                      const ParameterList& fPLin = src_solute_func_pl.sublist(Amanzi_type);
+                      ParameterList fPLout;
+                      convert_Solute_Sources(fPLin,Amanzi_type,fPLout);
+                      struct_src_solute_list.set(underscore(solute_label),fPLout);
+                    } else {
+                      MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"
+                              +src_plabel+"->"+src_clabel+"->"+Solute_Source_str+"->"+solute_label);
+                    }
+                  }
+                  solute_functions_set = true;
+                  struct_src_comp_list.set("tracers_with_sources",underscore(src_solute_labels));
+                  struct_src_comp_list.set("tracer_sources",struct_src_solute_list);
+                } else {
+                  if (function_set) {
+                    MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"
+                            +src_plabel+"->"+src_clabel);
+                  }
+                  const std::string& Amanzi_type = src_comp_opt_lists[L];
+                  const ParameterList& fPLin = src_comp_pl.sublist(Amanzi_type);
+                  ParameterList fPLout;
+                  convert_Sources(fPLin,Amanzi_type,struct_src_comp_list);
+                  function_set = true;
+                }
+              }
+              struct_src_phase_list.set(underscore(src_clabel),struct_src_comp_list);
+            }
+            struct_src_label_list.set(underscore(src_plabel),struct_src_phase_list);
+          }
+          struct_src_list.set(underscore(src_label),struct_src_label_list);
+        }
+        if (src_labels.size()>0) {
+          struct_src_list.set<Array<std::string> >("sources",underscore(src_labels));
+          struc_list.set("source",struct_src_list);
+          do_source_term = true;
+        }
+      }
+      struc_list.sublist("prob").set<bool>("do_source_term",do_source_term);
 
       if (do_chem) 
       {
@@ -3251,6 +3258,7 @@ namespace Amanzi {
       user_derive_list.push_back(underscore("Dispersivity_L"));
       user_derive_list.push_back(underscore("Dispersivity_T"));
       user_derive_list.push_back(underscore("Tortuosity"));
+      user_derive_list.push_back(underscore("Specific Storage"));
 
       user_derive_list.push_back(underscore("Intrinsic Permeability X"));
       user_derive_list.push_back(underscore("Intrinsic Permeability Y"));

@@ -239,7 +239,10 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   mftfp->BuildStencil(pressure_bc, params.pressure_maxorder);
 
   gravity.resize(BL_SPACEDIM,0);
-  gravity[BL_SPACEDIM-1] = PorousMedia::getGravity();
+  int gravity_dir = PorousMedia::getGravityDir();
+  if (gravity_dir < BL_SPACEDIM) {
+    gravity[gravity_dir] = PorousMedia::getGravity();
+  }
   density = PorousMedia::Density();
 
   // Estmated number of nonzero local columns of J

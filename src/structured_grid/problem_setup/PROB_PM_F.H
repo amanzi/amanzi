@@ -164,7 +164,7 @@
 			    const Real* dx,const Real* xlo, const Real* xhi);
 
      void FORT_INITPARAMS (int* ncomps, int* nphases, int* model_in, Real* rhoval, 
-			   Real* muval, int* phaseidx,Real* gravity);
+			   Real* muval, int* phaseidx,Real* gravity, int* gravity_dir);
     
      void FORT_TCRPARAMS (int* ntracers); 
 

@@ -437,9 +437,13 @@ public:
   //
   // Returns the value of "gravity" for use in the projection outflow bcs.
   //
-  static Real getGravity () 
+  static Real getGravity ()
   {
     return gravity;
+  }
+  static int getGravityDir ()
+  {
+    return gravity_dir;
   }
 
   //
@@ -1150,6 +1154,10 @@ public:
                          MultiFab& mf,
                          int       dcomp);
 
+  void derive_SpecificStorage(Real      time,
+                              MultiFab& mf,
+                              int       dcomp);
+
   void derive_Dispersivity(Real      time,
                            MultiFab& mf,
                            int       dcomp,
@@ -1193,6 +1201,7 @@ protected:
   static Array<Real> density;
   static PArray<RegionData> ic_array;
   static PArray<RegionData> bc_array;
+  static PArray<RegionData> source_array;
   static Array<Real> muval;
   static Array<std::string> user_derive_list;;
   
@@ -1204,6 +1213,7 @@ protected:
   static Array<Real> tDen;
   static Array<PArray<RegionData> > tic_array;
   static Array<PArray<RegionData> > tbc_array;
+  static Array<PArray<RegionData> > tsource_array;
   static std::map<std::string,Array<int> > group_map;
 
   // Minerals, Sorption sites
@@ -1262,7 +1272,6 @@ protected:
 
   // source term
   static bool do_source_term;
-  static Array<Source> source_array;
 
 #ifdef AMANZI
 
@@ -1377,6 +1386,7 @@ protected:
   //
   static int        verbose;
   static Real       gravity;
+  static int        gravity_dir;
   static int        NUM_SCALARS;      // number of non-velocity components
   static int        NUM_STATE;        // total number of state variables
   //
@@ -1396,6 +1406,9 @@ protected:
   static Real        be_cn_theta;
   static int         variable_scal_diff;
   static int         have_capillary;
+  static Real        atmospheric_pressure_atm;
+  static std::map<std::string,bool> use_gauge_pressure; // On bc_tag string
+  static Real        z_location;
   //  
   // Chemistry/solute/tracer parameters 
   //
