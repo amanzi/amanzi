@@ -29,6 +29,7 @@
 #   0.91.5       - updated CCSE to version 1.2.1
 #   0.91.6       - updated CCSE to version 1.2.3
 #   0.91.7       - updated MSTK to version 2.10rc3
+#   0.91.8       - updated Alquimia to licensed version 0.1
 #
 
 include(CMakeParseArguments)
@@ -79,7 +80,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION_PATCH 8)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -351,6 +352,7 @@ set(PFLOTRAN_MD5_SUM        f81f285837e4490992e9dda2159e1baa)
 # TPL: Alquimia
 #
 set(ALQUIMIA_VERSION_MAJOR 0)
+set(ALQUIMIA_VERSION_MINOR 1)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ALQUIMIA_ARCHIVE_FILE   berkeleylab-alquimia-639283b202dd.tar.gz)
-set(ALQUIMIA_MD5_SUM        09f0a9fa24b8ee7b7657e973d55c260c)
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.1.tar.gz)
+set(ALQUIMIA_MD5_SUM        8001a8721a002937801562bcc242824f)
