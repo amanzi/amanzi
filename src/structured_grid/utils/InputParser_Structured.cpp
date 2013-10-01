@@ -229,16 +229,12 @@ namespace Amanzi {
       std::string model_name;
       std::string flow_mode = ec_list.get<std::string>(flow_str);
       if (flow_mode == "Off") {
-        MyAbort("\"" + flow_str + "\" = \"" + flow_mode + "\" not supported");
-        prob_out_list.set("do_simple",2);
-      }
-      else if (flow_mode == "Richards") {
-        model_name = "richards";
+        model_name = "steady-saturated";
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
-      else if (flow_mode == "Steady State Saturated") {
-        model_name = "steady-saturated";
+      else if (flow_mode == "Richards") {
+        model_name = "richards";
         prob_out_list.set("have_capillary",0);
         prob_out_list.set("cfl",-1);
       }
@@ -1212,8 +1208,8 @@ namespace Amanzi {
     {
       /* Handle isotropic and anisotropic permeabilities here */
       Array<std::string> nullList, reqP;
-      const std::string vertical_str = "Vertical";
-      const std::string horizontal_str = "Horizontal";
+      const std::string vertical_str = "y";
+      const std::string horizontal_str = "x";
       const std::string uniform_value_str = "Value";
       const std::string values_str = "Values";
       const std::string times_str = "Times";

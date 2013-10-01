@@ -2460,7 +2460,7 @@ void  PorousMedia::read_tracer()
               int n_tbc = ppr.countval("tbcs");
               if (n_tbc <= 0)
               {
-                  BoxLib::Abort("each tracer requires boundary conditions");
+                //BoxLib::Abort("each tracer requires boundary conditions");
               }
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
               tbc_array[i].resize(n_tbc,PArrayManage);
