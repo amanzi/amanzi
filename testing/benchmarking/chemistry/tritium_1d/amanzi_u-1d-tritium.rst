@@ -26,10 +26,10 @@ About
   * Amanzi input file: amanzi-u-1d-tritium.xml
   * Benchmark simulator input file: 1d-tritium.in
 
-* Location: amanzi/examples/examples/phase2/chemistry/1d-tritium
+* Location: amanzi/testing/benchmarking/chemistry/tritium_1d
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
-* Last tested on Aug 31, 2013
+* Last tested on Sept 30, 2013
 
 Introduction
 ------------
@@ -44,7 +44,7 @@ Model
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 
 First order (kinetic) decay
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,7 +67,7 @@ Problem Specification
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 
 Geochemistry
 ~~~~~~~~~~~~
