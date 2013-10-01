@@ -1,7 +1,8 @@
 <!-- This file has been modified to include additional regions (layer, surface and plane) and includes
 a restart option in the execution control section.  Don't know how to set up the different mesh cases -->
 <!-- Standardize on lower case.  Can't just convert to lower case in the case of file names -->
-	<!-- Would like to be able to include files with times, macros etc for reuse -->	<amanzi_input version="2.1.0" type="unstructured">
+	<!-- Would like to be able to include files with times, macros etc for reuse -->	
+<amanzi_input version="2.0.0" type="unstructured">
 	
 	        <model_description name="BC Cribs">
 	                <comments>Added section on units definition</comments>
