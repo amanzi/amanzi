@@ -318,7 +318,7 @@ c
 
       subroutine FORT_DRHOG_RICHARD(rg,DIMS(rg),
      &     cx,DIMS(cx),cy,DIMS(cy),cz,DIMS(cz),rho,
-     &     lo,hi,dx,grav,mult)
+     &     lo,hi,dx,grav,gravity_dir,mult)
 c
 c    ----------------------------------------------------------
 c    RHOPRESS
@@ -340,24 +340,41 @@ c
       REAL_T  cz(DIMV(cz))
       REAL_T  rho
       REAL_T  mult,grav
+      integer gravity_dir
       
       integer i, j, k
-c
-c     gravity is nonzero only in the z direction
-c
-      do k = lo(3),hi(3)
-         do j = lo(2),hi(2)
-            do i = lo(1),hi(1)
-               rg(i,j,k) = rg(i,j,k) - mult*rho*grav*(cz(i,j,k+1) - cz(i,j,k))/dx(3)
+
+      if (gravity_dir.eq.0) then 
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)
+                  rg(i,j,k) = rg(i,j,k) - mult*rho*grav*(cx(i+1,j,k) - cx(i,j,k))/dx(1)
+               end do
             end do
          end do
-      end do
+      else if (gravity_dir.eq.1) then 
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)
+                  rg(i,j,k) = rg(i,j,k) - mult*rho*grav*(cy(i,j+1,k) - cy(i,j,k))/dx(2)
+               end do
+            end do
+         end do
+      else if (gravity_dir.eq.3) then 
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)
+                  rg(i,j,k) = rg(i,j,k) - mult*rho*grav*(cz(i,j,k+1) - cz(i,j,k))/dx(3)
+               end do
+            end do
+         end do
+      endif
 
       end     
 
       subroutine FORT_FRHOG_RICHARD(fx, DIMS(fx), cx, DIMS(cx),
      &     fy, DIMS(fy),cy,DIMS(cy), fz, DIMS(fz), cz, DIMS(cz), rho,
-     &     lo,hi,dx,grav,mult)
+     &     lo,hi,dx,grav,gravity_dir,mult)
 c
 c    ----------------------------------------------------------
 c    RHOPRESS
@@ -383,18 +400,35 @@ c
       REAL_T  cz(DIMV(cz))
       REAL_T  rho
       REAL_T  mult,grav
+      integer gravity_dir
       
       integer i, j, k
-c
-c     gravity is nonzero only in the z direction
-c
-      do k = lo(3),hi(3)+1
-         do j = lo(2),hi(2)
-            do i = lo(1),hi(1)
-               fz(i,j,k) = fz(i,j,k) - mult*rho*grav*cz(i,j,k) 
+
+      if (gravity_dir.eq.0) then
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)+1
+                  fx(i,j,k) = fx(i,j,k) - mult*rho*grav*cx(i,j,k) 
+               end do
             end do
          end do
-      end do
+      else if (gravity_dir.eq.1) then
+         do k = lo(3),hi(3)
+            do j = lo(2),hi(2)+1
+               do i = lo(1),hi(1)
+                  fy(i,j,k) = fy(i,j,k) - mult*rho*grav*cy(i,j,k) 
+               end do
+            end do
+         end do
+      else if (gravity_dir.eq.2) then
+         do k = lo(3),hi(3)+1
+            do j = lo(2),hi(2)
+               do i = lo(1),hi(1)
+                  fz(i,j,k) = fz(i,j,k) - mult*rho*grav*cz(i,j,k) 
+               end do
+            end do
+         end do
+      endif
 
       end     
 

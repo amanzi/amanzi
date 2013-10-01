@@ -2,30 +2,34 @@
 #define _RICHARDSOLVER_F_H
 
 #ifdef BL_LANG_FORT
-#    define FORT_RS_GXPA     rsardgxpa
-#    define FORT_RS_XMULTYZ  rsxmultyz
-#    define FORT_RS_CTE_UPW  rsacteupw
-#    define FORT_RS_PDOTRES  rspdotres
-#    define FORT_RS_ALTUP    rsaltup
+#    define FORT_RS_GXPA       rsardgxpa
+#    define FORT_RS_XMULTYZ    rsxmultyz
+#    define FORT_RS_CTE_UPW    rsacteupw
+#    define FORT_RS_RICHARDRES rsrichardres
+#    define FORT_RS_SATURATEDRES rssatres
+#    define FORT_RS_ALTUP      rsaltup
 #else
 #  if  defined(BL_FORT_USE_UPPERCASE)
-#    define FORT_RS_GXPA     RSGXPA
-#    define FORT_RS_XMULTYZ  RSXMULTYZ
-#    define FORT_RS_CTE_UPW  RSACTEUPW
-#    define FORT_RS_PDOTRES  RSPDOTRES
-#    define FORT_RS_ALTUP    RSALTUP
+#    define FORT_RS_GXPA       RSGXPA
+#    define FORT_RS_XMULTYZ    RSXMULTYZ
+#    define FORT_RS_CTE_UPW    RSACTEUPW
+#    define FORT_RS_RICHARDRES RSRICHARDRES
+#    define FORT_RS_SATURATEDRES RSSATRES
+#    define FORT_RS_ALTUP      RSALTUP
 #  elif defined(BL_FORT_USE_LOWERCASE)
-#    define FORT_RS_GXPA     rsardgxpa
-#    define FORT_RS_XMULTYZ  rsxmultyz
-#    define FORT_RS_CTE_UPW  rsacteupw
-#    define FORT_RS_PDOTRES  rspdotres
-#    define FORT_RS_ALTUP    rsaltup
+#    define FORT_RS_GXPA       rsardgxpa
+#    define FORT_RS_XMULTYZ    rsxmultyz
+#    define FORT_RS_CTE_UPW    rsacteupw
+#    define FORT_RS_RICHARDRES rsrichardres
+#    define FORT_RS_SATURATEDRES rssatres
+#    define FORT_RS_ALTUP      rsaltup
 #  elif defined(BL_FORT_USE_UNDERSCORE)
-#    define FORT_RS_GXPA     rsardgxpa_
-#    define FORT_RS_XMULTYZ  rsxmultyz_
-#    define FORT_RS_CTE_UPW  rsacteupw_
-#    define FORT_RS_PDOTRES  rspdotres_
-#    define FORT_RS_ALTUP    rsaltup_
+#    define FORT_RS_GXPA       rsardgxpa_
+#    define FORT_RS_XMULTYZ    rsxmultyz_
+#    define FORT_RS_CTE_UPW    rsacteupw_
+#    define FORT_RS_RICHARDRES rsrichardres_
+#    define FORT_RS_SATURATEDRES rssatres_
+#    define FORT_RS_ALTUP      rsaltup_
 #  endif
 
 #include <ArrayLim.H>
@@ -50,12 +54,20 @@ extern "C"
 			const int* dir, const int* nc,
                         const int* bclo, const int* bchi, const int* do_upwind);
 
-  void FORT_RS_PDOTRES (Real* res,        ARLIM_P(reslo), ARLIM_P(reshi),
-			const Real* rso,  ARLIM_P(rsnlo), ARLIM_P(rsnhi),
-			const Real* rsn,  ARLIM_P(rsnlo), ARLIM_P(rsnhi),
-			const Real* phio, ARLIM_P(phiolo), ARLIM_P(phiohi),
-			const Real* phin, ARLIM_P(phinlo), ARLIM_P(phinhi),
-			const Real* dt, const int*  lo, const int*  hi, const int* nc);
+  void FORT_RS_SATURATEDRES (Real* res,       ARLIM_P(reslo), ARLIM_P(reshi),
+			     const Real* po,  ARLIM_P(polo),  ARLIM_P(pohi),
+			     const Real* pn,  ARLIM_P(pnlo),  ARLIM_P(pnhi),
+			     const Real* ss,  ARLIM_P(sslo),  ARLIM_P(sshi),
+			     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi),
+			     const Real* src, ARLIM_P(srclo), ARLIM_P(srchi),
+			     const Real* dt, const int*  lo, const int*  hi, const int* nc);
+  
+  void FORT_RS_RICHARDRES (Real* res,       ARLIM_P(reslo), ARLIM_P(reshi),
+			   const Real* rso, ARLIM_P(rsolo), ARLIM_P(rsohi),
+			   const Real* rsn, ARLIM_P(rsnlo), ARLIM_P(rsnhi),
+			   const Real* phi, ARLIM_P(philo), ARLIM_P(phihi),
+			   const Real* src, ARLIM_P(srclo), ARLIM_P(srchi),
+			   const Real* dt, const int*  lo, const int*  hi, const int* nc);
 
   void FORT_RS_ALTUP(Real* rhosat,   ARLIM_P(rslo), ARLIM_P(rshi),
                      Real* p,        ARLIM_P(plo),  ARLIM_P(phi),

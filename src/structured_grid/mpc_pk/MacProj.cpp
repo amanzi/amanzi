@@ -605,9 +605,11 @@ MacProj::mac_sync_compute (int                   level,
   MultiFab* divu_fp = new MultiFab(grids,1,1);
   (*divu_fp).setVal(0.);
 
-  FArrayBox tforces;
   FArrayBox flux[BL_SPACEDIM];
   MultiFab& S_new = pm_level.get_new_data(State_Type); 
+  int nGrowF = 1;
+  MultiFab tforces(grids,nscal,nGrowF);
+  pm_level.getForce(tforces,nGrowF,0,nscal,prev_time);
 
   for (FillPatchIterator S_fpi(pm_level,scal_visc_terms,HYP_GROW,
 			       prev_time,State_Type,0,nscal);
@@ -619,12 +621,9 @@ MacProj::mac_sync_compute (int                   level,
       pm_level_bc       = pm_level.getBCArray(State_Type,i,state_ind,1);
       int use_conserv_diff = (advectionType[state_ind] == Conservative);
 
-      // tforces is set to zero in PorousMedia::getForce, using prev_time, need to check
-      pm_level.getForce(tforces,i,1,0,nscal,prev_time);
-	
       // Compute total forcing terms.
       // iconserve set to 1.  
-      godunov->Sum_tf_divu_visc(S_fpi(), state_ind, tforces, state_ind, nscal,
+      godunov->Sum_tf_divu_visc(S_fpi(), state_ind, tforces[S_fpi], state_ind, nscal,
 				scal_visc_terms[i], state_ind, 
 				(*divu_fp)[i], use_conserv_diff);
 
@@ -649,7 +648,7 @@ MacProj::mac_sync_compute (int                   level,
 				 area[level][2][i], u_macG[2][i], u_corr[2][i], 
 				 flux[2], kpedge[2][i],
 #endif
-				 S_fpi(),S_new[i],tforces,
+				 S_fpi(),S_new[i],tforces[S_fpi],
 				 (*divu_fp)[i] , state_ind,
 				 (*Ssync)[i]   , state_ind,
 				 (*rock_phi)[i], (*kappa)[i],
@@ -667,7 +666,7 @@ MacProj::mac_sync_compute (int                   level,
 #if (BL_SPACEDIM == 3)                        
 				  area[level][2][i], u_macG[2][i], flux[2],
 #endif
-				  S_fpi(),S_new[i],tforces, state_ind,
+				  S_fpi(),S_new[i],tforces[S_fpi], state_ind,
 				  (*Ssync)[i]   , state_ind,
 				  (*rock_phi)[i], state_ind,
 				  pm_level_bc.dataPtr(),volume[level][i],nscal);	
@@ -851,6 +850,7 @@ MacProj::set_dirichlet_bcs (int             level,
   //
   PorousMedia* pm_level = dynamic_cast<PorousMedia*>(&parent->getLevel(level));
   Real gravity = pm_level->getGravity();
+  int gravity_dir = pm_level->getGravityDir();
 
   Array<Orientation> Faces;
   PorousMedia::getDirichletFaces(Faces,Press_Type,p_bc);
@@ -934,7 +934,7 @@ MacProj::set_dirichlet_bcs (int             level,
 
 	      FORT_RHOGBC(rhoPtr,ARLIM(rholo),ARLIM(rhohi),
 			  phiPtr,ARLIM(philo),ARLIM(phihi),
-			  &face[iface],&gravity,dx,domlo,domhi,
+			  &face[iface],&gravity,&gravity_dir,dx,domlo,domhi,
 			  lo_bc,hi_bc, press_lo.dataPtr(), press_hi.dataPtr());
 	
 	      // Must do this kind of copy instead of mac_phi->copy(phidat);

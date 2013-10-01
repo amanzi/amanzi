@@ -155,7 +155,7 @@ Index (const PointRegion& region,
         Real loc = std::max(geom.ProbLo(d)+eps, region.coor[d]);
         loc = std::min(loc, geom.ProbHi(d)-eps);
 
-        iv[d] = floor(loc/geom.CellSize(d));
+        iv[d] = floor((loc-geom.ProbLo(d))/geom.CellSize(d));
     }
     iv += geom.Domain().smallEnd();
     return iv;

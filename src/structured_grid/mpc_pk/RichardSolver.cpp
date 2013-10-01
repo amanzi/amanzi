@@ -161,6 +161,7 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   RhoSatOld = 0;
   RhoSatNew = 0;
   Pnew = 0;
+  Pold = 0;
   KappaCCdir = 0;
   CoeffCC = 0;
 
@@ -168,9 +169,12 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   PArray<MultiFab> kappaccavg(nLevs,PArrayNoManage);
   PArray<MultiFab> kappaccdir(nLevs,PArrayNoManage);
   PArray<MultiFab> porosity(nLevs,PArrayNoManage);
+  PArray<MultiFab> specific_storage(nLevs,PArrayNoManage);
   PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
 
-  bool is_saturated = PorousMedia::Model() == PorousMedia::PM_STEADY_SATURATED;
+  int pm_model = PorousMedia::Model();
+  bool is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED) 
+    || (pm_model == PorousMedia::PM_SATURATED);
   if (is_saturated) {
     params.upwind_krel = false;
   }
@@ -181,6 +185,7 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
       pcap_params.set(lev,pm[lev].PCapParams());
     }
     porosity.set(lev,pm[lev].Porosity());
+    specific_storage.set(lev,pm[lev].SpecificStorage());
     if (!params.use_fd_jac || params.semi_analytic_J || params.variable_switch_saturation_threshold) {
         kappaccavg.set(lev,pm[lev].KappaCCavg());
     }
@@ -200,6 +205,7 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
     PCapParams = 0;
   }
   Porosity = new MFTower(layout,porosity,nLevs);
+  SpecificStorage = new MFTower(layout,specific_storage,nLevs);
       
   ctmp.resize(BL_SPACEDIM);
   Rhs = new MFTower(layout,IndexType(IntVect::TheZeroVector()),1,1,nLevs);
@@ -239,7 +245,10 @@ RichardSolver::RichardSolver(PMAmr&          _pm_amr,
   mftfp->BuildStencil(pressure_bc, params.pressure_maxorder);
 
   gravity.resize(BL_SPACEDIM,0);
-  gravity[BL_SPACEDIM-1] = PorousMedia::getGravity();
+  int gravity_dir = PorousMedia::getGravityDir();
+  if (gravity_dir < BL_SPACEDIM) {
+    gravity[gravity_dir] = PorousMedia::getGravity();
+  }
   density = PorousMedia::Density();
 
   // Estmated number of nonzero local columns of J
@@ -409,6 +418,7 @@ RichardSolver::~RichardSolver()
 {
     PetscErrorCode ierr;
 
+    delete Pold;
     delete Pnew;
     delete RhoSatNew;
     delete RhoSatOld;
@@ -436,6 +446,7 @@ RichardSolver::~RichardSolver()
     delete Alpha;
     delete Rhs;
     delete Porosity;
+    delete SpecificStorage;
     delete PCapParams;
     delete Lambda;
     delete KappaCCavg;
@@ -518,7 +529,7 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   }
 
   MFTower& RhsMFT = GetResidual();
-  MFTower& SolnMFT = GetPressure();
+  MFTower& SolnMFT = GetPressureNp1();
   MFTower& PCapParamsMFT = GetPCapParams();
 
   Vec& RhsV = GetResidualV();
@@ -529,7 +540,9 @@ RichardSolver::Solve(Real cur_time, Real delta_t, int timestep, RichardNLSdata& 
   ierr = layout.MFTowerToVec(RhsV,RhsMFT,0); CHKPETSC(ierr);
   ierr = layout.MFTowerToVec(SolnV,SolnMFT,0); CHKPETSC(ierr);
 
-  bool is_saturated = PorousMedia::Model() == PorousMedia::PM_STEADY_SATURATED;
+  int pm_model = PorousMedia::Model();
+  bool is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED)
+    || (pm_model == PorousMedia::PM_SATURATED);
   if (is_saturated) {
     ierr = VecSet(SolnTypInvV,1); CHKPETSC(ierr);
   }
@@ -647,16 +660,19 @@ RichardSolver::ResetRhoSat()
   PArray<MultiFab> S_new(nLevs,PArrayNoManage);
   PArray<MultiFab> S_old(nLevs,PArrayNoManage);
   PArray<MultiFab> P_new(nLevs,PArrayNoManage);
+  PArray<MultiFab> P_old(nLevs,PArrayNoManage);
   
   for (int lev=0; lev<nLevs; ++lev) {
     S_new.set(lev,&(pm[lev].get_new_data(State_Type)));
     S_old.set(lev,&(pm[lev].get_old_data(State_Type)));
     P_new.set(lev,&(pm[lev].get_new_data(Press_Type)));
+    P_old.set(lev,&(pm[lev].get_old_data(Press_Type)));
   }
 
   delete RhoSatOld; RhoSatOld = new MFTower(layout,S_old,nLevs);
   delete RhoSatNew; RhoSatNew = new MFTower(layout,S_new,nLevs);
   delete Pnew; Pnew = new MFTower(layout,P_new,nLevs);
+  delete Pold; Pold = new MFTower(layout,P_old,nLevs);
 }
 
 void
@@ -1156,7 +1172,9 @@ RichardSolver::ComputeDarcyVelocity(PArray<MFTower>&       darcy_vel,
 
     // Assumes lev=0 here corresponds to Amr.level=0, sets dirichlet values of rho.sat and
     // lambda on dirichlet pressure faces
-    bool is_saturated = PorousMedia::Model() == PorousMedia::PM_STEADY_SATURATED;
+    int pm_model = PorousMedia::Model();
+    bool is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED)
+        || (pm_model == PorousMedia::PM_SATURATED);
     for (int lev=0; lev<nLevs; ++lev) {
         pm[lev].FillStateBndry(t,Press_Type,0,1); // Set new boundary data
         if (!is_saturated) {
@@ -1347,7 +1365,7 @@ RichardSolver::DivRhoU(MFTower& DivRhoU,
 }
 
 void
-RichardSolver::DpDtResidual(MFTower& residual,
+RichardSolver::CalcResidual(MFTower& residual,
 			    MFTower& pressure,
 			    Real     t,
 			    Real     dt)
@@ -1355,29 +1373,53 @@ RichardSolver::DpDtResidual(MFTower& residual,
   DivRhoU(residual,pressure,t);
 
   if (dt>0) {
+    int pm_model = PorousMedia::Model();
+    bool is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED) 
+      || (pm_model == PorousMedia::PM_SATURATED);
+    
     int sComp=0;
     int dComp=0;
     int nComp=1;
+    int nGrow=0;
 
     const Array<BoxArray>& gridArray = layout.GridArray();
     const Array<IntVect>& refRatio = layout.RefRatio();
-
-    for (int lev=0; lev<nLevs; ++lev)
-    {
+    FArrayBox source, st;
+    for (int lev=0; lev<nLevs; ++lev) {
       MultiFab& Rlev = residual[lev];
+      MultiFab source(Rlev.boxArray(),Rlev.nComp(),nGrow);
+      int do_rho_scale = 1;
+      pm[lev].getForce(source,nGrow,sComp,nComp,t,do_rho_scale);
       for (MFIter mfi(Rlev); mfi.isValid(); ++mfi) {
 	const Box& vbox = mfi.validbox();
 	FArrayBox& Res = Rlev[mfi];
-	const FArrayBox& rs_n = GetRhoSatN()[lev][mfi];
-	const FArrayBox& rs_np1 = GetRhoSatNp1()[lev][mfi];
-	const FArrayBox& phi_n = GetPorosity()[lev][mfi];
-	const FArrayBox& phi_np1 = GetPorosity()[lev][mfi];
-	FORT_RS_PDOTRES(Res.dataPtr(),    ARLIM(Res.loVect()),     ARLIM(Res.hiVect()),
-			rs_n.dataPtr(),   ARLIM(rs_n.loVect()),    ARLIM(rs_n.hiVect()),
-			rs_np1.dataPtr(), ARLIM(rs_np1.loVect()),  ARLIM(rs_np1.hiVect()),
-			phi_n.dataPtr(),  ARLIM(phi_n.loVect()),   ARLIM(phi_n.hiVect()),
-			phi_np1.dataPtr(),ARLIM(phi_np1.loVect()), ARLIM(phi_np1.hiVect()),
-		        &dt, vbox.loVect(), vbox.hiVect(), &nComp);
+	const FArrayBox& phi = GetPorosity()[lev][mfi];
+	const FArrayBox& sfab = source[mfi];
+
+	if (is_saturated) {
+	  const FArrayBox& p_n = GetPressureN()[lev][mfi];
+	  const FArrayBox& p_np1 = pressure[lev][mfi];
+	  const FArrayBox& ss = GetSpecificStorage()[lev][mfi];
+	  st.resize(vbox,1);
+	  st.copy(ss);
+	  st.mult(1/PorousMedia::getGravity());
+	  FORT_RS_SATURATEDRES(Res.dataPtr(),   ARLIM(Res.loVect()),   ARLIM(Res.hiVect()),
+			       p_n.dataPtr(),   ARLIM(p_n.loVect()),   ARLIM(p_n.hiVect()),
+			       p_np1.dataPtr(), ARLIM(p_np1.loVect()), ARLIM(p_np1.hiVect()),
+			       st.dataPtr(),    ARLIM(st.loVect()),    ARLIM(st.hiVect()),
+			       phi.dataPtr(),   ARLIM(phi.loVect()),   ARLIM(phi.hiVect()),
+			       sfab.dataPtr(),  ARLIM(sfab.loVect()),  ARLIM(sfab.hiVect()),
+			       &dt, vbox.loVect(), vbox.hiVect(), &nComp);
+	} else {
+	  const FArrayBox& rs_n = GetRhoSatN()[lev][mfi];
+	  const FArrayBox& rs_np1 = GetRhoSatNp1()[lev][mfi];
+	  FORT_RS_RICHARDRES(Res.dataPtr(),    ARLIM(Res.loVect()),    ARLIM(Res.hiVect()),
+			     rs_n.dataPtr(),   ARLIM(rs_n.loVect()),   ARLIM(rs_n.hiVect()),
+			     rs_np1.dataPtr(), ARLIM(rs_np1.loVect()), ARLIM(rs_np1.hiVect()),
+			     phi.dataPtr(),    ARLIM(phi.loVect()),    ARLIM(phi.hiVect()),
+			     sfab.dataPtr(),  ARLIM(sfab.loVect()),    ARLIM(sfab.hiVect()),
+			     &dt, vbox.loVect(), vbox.hiVect(), &nComp);
+	}
       }
     }
   }
@@ -1560,7 +1602,7 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
         ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
     }
 
-    MFTower& xMFT = rs->GetPressure();
+    MFTower& xMFT = rs->GetPressureNp1();
     MFTower& fMFT = rs->GetResidual();
 
     Layout& layout = rs->GetLayout();
@@ -1568,7 +1610,7 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 
     Real t = rs->GetTime();
     Real dt = rs->GetDt();
-    rs->DpDtResidual(fMFT,xMFT,t,dt);
+    rs->CalcResidual(fMFT,xMFT,t,dt);
 
 #if 0
     // Scale residual by cell volume/sqrt(total volume)
@@ -1605,7 +1647,7 @@ RichardR2(SNES snes,Vec x,Vec f,void *dummy)
         ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
     }
 
-    MFTower& xMFT = rs->GetPressure();
+    MFTower& xMFT = rs->GetPressureNp1();
     MFTower& fMFT = rs->GetResidual();
 
     Layout& layout = rs->GetLayout();
@@ -1634,7 +1676,7 @@ RichardJacFromPM(SNES snes, Vec x, Mat* jac, Mat* jacpre, MatStructure* flag, vo
   if (!rs) {
     BoxLib::Abort("Bad cast in RichardJacFromPM");
   }
-  MFTower& xMFT = rs->GetPressure();
+  MFTower& xMFT = rs->GetPressureNp1();
   
   Layout& layout = rs->GetLayout();
   ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
@@ -1691,12 +1733,20 @@ void RecordSolve(Vec& p,Vec& dp,Vec& dp_orig,Vec& pnew,Vec& F,Vec& G,CheckCtx* c
 
   for (int lev=0; lev<nLevs; ++lev) {
     pm[lev].FillStateBndry(cur_time,Press_Type,0,1);
-    pm[lev].calcInvPressure(SnewMFT[lev],PnewMFT[lev]);
-    SnewMFT[lev].mult(1/rho,0,1);
 
-    pm[lev].calcInvPressure(SoldMFT[lev],PoldMFT[lev]);
-    SoldMFT[lev].mult(1/rho,0,1);
+    int pm_model = PorousMedia::Model();
+    bool is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED) 
+      || (pm_model == PorousMedia::PM_SATURATED);
+    if (is_saturated) {
+      SnewMFT[lev].setVal(1,0,1);
+      SoldMFT[lev].setVal(1,0,1);
+    } else {
+      pm[lev].calcInvPressure(SnewMFT[lev],PnewMFT[lev]);
+      SnewMFT[lev].mult(1/rho,0,1);
 
+      pm[lev].calcInvPressure(SoldMFT[lev],PoldMFT[lev]);
+      SoldMFT[lev].mult(1/rho,0,1);
+    }
     MultiFab::Copy(DsMFT[lev],SnewMFT[lev],0,0,1,0);
     MultiFab::Subtract(DsMFT[lev],SoldMFT[lev],0,0,1,0);
 
@@ -1915,7 +1965,7 @@ AltUpdate(SNES snes,Vec pk,Vec dp,Vec pkp1,void *ctx,Real ls_factor,PetscBool *c
         ierr = VecPointwiseMult(pk,pk,Ptyp); CHKPETSC(ierr);
     }
 
-    MFTower& P_MFT = rs->GetPressure();
+    MFTower& P_MFT = rs->GetPressureNp1();
     MFTower& RS_MFT = rs->GetRhoSatNp1();
     MFTower& DP_MFT = rs->GetAlpha(); //Handy data container
     const MFTower& K_MFT = rs->GetKappaCCavg();
@@ -2369,7 +2419,7 @@ void
 RichardSolver::ComputeRichardAlpha(Vec& Alpha,const Vec& Pressure)
 {
   MFTower& PCapParamsMFT = GetPCapParams();
-  MFTower& PMFT = GetPressure();
+  MFTower& PMFT = GetPressureNp1();
   MFTower& aMFT = GetAlpha();
   PetscErrorCode ierr = GetLayout().VecToMFTower(PMFT,Pressure,0); CHKPETSC(ierr);
 

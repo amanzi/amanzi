@@ -404,7 +404,7 @@ c
 
       subroutine FORT_DRHOG_RICHARD(rg,DIMS(rg),
      &     cx,DIMS(cx),cy,DIMS(cy),rho,
-     &     lo,hi,dx,grav,mult)
+     &     lo,hi,dx,grav,gravity_dir,mult)
 c
 c    ----------------------------------------------------------
 c    RHOPRESS
@@ -424,22 +424,29 @@ c
       REAL_T  cy(DIMV(cy))
       REAL_T  rho
       REAL_T  mult,grav
+      integer gravity_dir
       
       integer i, j
-c
-c     gravity is nonzero only in the y direction
-c
-      do i = lo(1),hi(1)
-         do j = lo(2),hi(2)
-            rg(i,j) = rg(i,j) - mult*rho*grav*(cy(i,j+1) - cy(i,j))/dx(2)
+
+      if (gravity_dir.eq.0) then
+         do i = lo(1),hi(1)
+            do j = lo(2),hi(2)
+               rg(i,j) = rg(i,j) - mult*rho*grav*(cx(i+1,j) - cx(i,j))/dx(1)
+            end do
          end do
-      end do
+      else if (gravity_dir.eq.1) then
+         do i = lo(1),hi(1)
+            do j = lo(2),hi(2)
+               rg(i,j) = rg(i,j) - mult*rho*grav*(cy(i,j+1) - cy(i,j))/dx(2)
+            end do
+         end do
+      endif
 
       end     
 
       subroutine FORT_FRHOG_RICHARD(fx, DIMS(fx), cx, DIMS(cx),
      &     fy, DIMS(fy),cy,DIMS(cy),rho,
-     &     lo,hi,dx,grav,mult)
+     &     lo,hi,dx,grav,gravity_dir,mult)
 c
 c    ----------------------------------------------------------
 c    RHOPRESS
@@ -461,17 +468,23 @@ c
       REAL_T  cy(DIMV(cy))
       REAL_T  rho
       REAL_T  mult,grav
+      integer gravity_dir
       
       integer i, j
-c
-c     gravity is nonzero only in the y direction
-c
-      do j = lo(2),hi(2)+1
-         do i = lo(1),hi(1)
-            fy(i,j) = fy(i,j) + mult*rho*grav*cy(i,j) 
-         end do
-      end do
 
+      if (gravity_dir.eq.0) then
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)+1
+               fx(i,j) = fx(i,j) + mult*rho*grav*cx(i,j) 
+            end do
+         end do
+      elseif (gravity_dir.eq.1) then
+         do j = lo(2),hi(2)+1
+            do i = lo(1),hi(1)
+               fy(i,j) = fy(i,j) + mult*rho*grav*cy(i,j) 
+            end do
+         end do
+      endif
       end     
 
 

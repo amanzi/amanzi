@@ -844,6 +844,10 @@ c
       REAL_T  ld(ncomps), kedge, ledge, grad, tmp(2)
       logical hv_diffuse
 
+      if (gravity_dir.ne.SDIM-1) then
+         call bl_pd_abort('INIT_UMAC does not incorporate gravity_dir')
+      endif
+
 c     initialize compcount and compidx (F90 syntax)
       call get_compidx(compcount,compidx,phaseidx,nphases,ncomps)
 

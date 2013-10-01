@@ -102,7 +102,7 @@ extern "C"
 			    const Real* cz,  ARLIM_P(czlo), ARLIM_P(czhi),
 #endif
 			    const Real* rho, const int*  lo, const int*  hi,
-			    const Real* dx,  const Real* grav, const Real* mult);
+			    const Real* dx,  const Real* grav, const int* gdir, const Real* mult);
 
     void FORT_FRHOG_RICHARD(const Real* fx,  ARLIM_P(fxlo), ARLIM_P(fxhi),
 			    const Real* cx,  ARLIM_P(cxlo), ARLIM_P(cxhi),
@@ -113,7 +113,7 @@ extern "C"
 			    const Real* cz,  ARLIM_P(czlo), ARLIM_P(czhi),
 #endif
 			    const Real* rho, const int*  lo, const int*  hi,
-			    const Real* dx,  const Real* grav, const Real* mult);
+			    const Real* dx,  const Real* grav, const int* gdir, const Real* mult);
 
     void FORT_HOOPSRC (ARLIM_P(grid_lo), ARLIM_P(grid_hi),
                        Real *fab, ARLIM_P(fab_lo), ARLIM_P(fab_hi),

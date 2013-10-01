@@ -317,7 +317,7 @@ extern "C"
 			const int* bc, const int* lo, const int* hi, 
 			Real* dt, const Real* dx, 
 			int* use_forces_in_trans, int* iconserv,
-			Real* gravity, Real* eigmax, const Real* eps);
+			const Real* gravity, const int* gravity_dir, Real* eigmax, const Real* eps);
 
 #if 0
         void FORT_ESTATE_TRACER(const Real* s_dat, const Real* sphi_dat, const Real* tfr_dat, 
