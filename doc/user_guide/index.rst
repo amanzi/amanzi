@@ -11,12 +11,11 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
-   capabilities/index.rst  
-   install/index.rst
+   background/index.rst
+   capabilities/index.rst 
+   input/input_schema.rst  
    viz/index.rst
-   verification/index.rst
    prototype/index.rst
-   
 
 Indices and tables
 ==================
