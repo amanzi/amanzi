@@ -127,7 +127,7 @@ a restart option in the execution control section.  Don't know how to set up the
 	                        <density>998.2</density>
 	                        <dissolved_components>
 	                                <solutes>
-					<solute coefficient_of_diffusion = "1.0e-09"> Tc-99</solute>
+					<solute coefficient_of_diffusion = "1.0e-09">Tc-99</solute>
 				</solutes> 
 	                        </dissolved_components>
 	                </liquid_phase>
@@ -541,11 +541,11 @@ a restart option in the execution control section.  Don't know how to set up the
 				<liquid_phase name = "water">
 	                                <liquid_component name = "water">
 	                                        <uniform_pressure name = "1" start="0.0"        function= "constant" value="106221.7596"/>
-	                                        <uniform_pressure name = "2" start="3000.0,yr"  function= "constant" value="106221.7596"/>
+	                                        <uniform_pressure name = "2" start="3000.0,y"  function= "constant" value="106221.7596"/>
 	                                </liquid_component>
 	                                <solute_component name = "solute">
 	                                        <aqueous_conc name = "Tc-99" start="0.0"        function= "constant"    value="0.0"/>
-	                                        <aqueous_conc name = "Tc-99" start="3000.0,yr"  function= "constant"    value="0.0"/>
+	                                        <aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"    value="0.0"/>
 	                                </solute_component>
 				</liquid_phase>
 			</boundary_condition>
@@ -569,14 +569,14 @@ a restart option in the execution control section.  Don't know how to set up the
 	                        <liquid_phase name="water">
 	                                <integrated_mass>
 	                                        <filename>imass.out</filename>  
-	                                        <assigned_regions>All</assigned_regions>
+	                                        <assigned_regions>all</assigned_regions>
 	                                        <functional>integral</functional>
 	                                        <time_macro>Macro 1</time_macro>
 	                                </integrated_mass>
 	
 	                                <aqueous_conc solute = "Tc-99">
 						<filename>conc.out</filename>
-	                                        <assigned_regions>point1,point2,...</assigned_regions>
+	                                        <assigned_regions>Well A_01,Well A_02,Well A_03</assigned_regions>
 	                                        <functional>point</functional>
 	                                        <time_macro>Macro 1</time_macro>
 	                                </aqueous_conc>
