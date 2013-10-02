@@ -311,17 +311,7 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   Epetra_MultiVector Tc(Xc);
 
   // Solve the pp system
-  if (prec_method_ == TRILINOS_ML) {
-    ierr |= ml_prec_->ApplyInverse(Xc, Tc);
-  } else if (prec_method_ == TRILINOS_ILU) {
-    ierr |= ilu_prec_->ApplyInverse(Xc, Tc);
-  } else if (prec_method_ == TRILINOS_BLOCK_ILU) {
-    ierr |= ifp_prec_->ApplyInverse(Xc, Tc);
-#ifdef HAVE_HYPRE
-  } else if (prec_method_ == HYPRE_AMG || prec_method_ == HYPRE_EUCLID) {
-    ierr |= IfpHypre_Sff_->ApplyInverse(Xc, Tc);
-#endif
-  }
+  ierr = S_pc_->ApplyInverse(Xc, Tc);
   ASSERT(!ierr);
 
   *Y->ViewComponent("cell",false) = Tc;

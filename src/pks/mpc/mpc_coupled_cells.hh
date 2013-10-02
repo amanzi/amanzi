@@ -34,6 +34,7 @@ d_temperature and d_energy / d_pressure.
 #ifndef MPC_COUPLED_CELLS_HH_
 #define MPC_COUPLED_CELLS_HH_
 
+#include "pk_physical_bdf_base.hh"
 #include "MatrixMFD_Coupled.hh"
 #include "strong_mpc.hh"
 
@@ -41,7 +42,7 @@ namespace Amanzi {
 
 namespace Operators { class MatrixMFD_Coupled; }
 
-class MPCCoupledCells : public StrongMPC {
+class MPCCoupledCells : public StrongMPC<PKPhysicalBDFBase> {
  public:
   MPCCoupledCells(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<TreeVector>& soln);

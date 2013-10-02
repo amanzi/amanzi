@@ -46,12 +46,12 @@ namespace Amanzi {
 MPCCoupledCells::MPCCoupledCells(Teuchos::ParameterList& plist,
         const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist,soln),
-    StrongMPC(plist,soln),
+    StrongMPC<PKPhysicalBDFBase>(plist,soln),
     decoupled_(false)
 {}
 
 void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
-  StrongMPC::setup(S);
+  StrongMPC<PKPhysicalBDFBase>::setup(S);
 
   decoupled_ = plist_.get<bool>("decoupled",false);
 
@@ -103,35 +103,21 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new Operators::MatrixMFD_Coupled(pc_sublist, mesh_));
 
   // Set the sub-blocks from the sub-PK's preconditioners.
-  Teuchos::RCP<Operators::Matrix> pcA = sub_pks_[0]->preconditioner();
-  Teuchos::RCP<Operators::Matrix> pcB = sub_pks_[1]->preconditioner();
-
-#ifdef ENABLE_DBC
-  Teuchos::RCP<Operators::MatrixMFD> pcB_mfd =
-      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcB);
-  ASSERT(pcB_mfd != Teuchos::null);
-  Teuchos::RCP<Operators::MatrixMFD> pcA_mfd =
-      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcA);
-  ASSERT(pcA_mfd != Teuchos::null);
-#else
-  Teuchos::RCP<Operators::MatrixMFD> pcA_mfd =
-      Teuchos::rcp_static_cast<Operators::MatrixMFD>(pcA);
-  Teuchos::RCP<Operators::MatrixMFD> pcB_mfd =
-      Teuchos::rcp_static_cast<Operators::MatrixMFD>(pcB);
-#endif
-
-  mfd_preconditioner_->SetSubBlocks(pcA_mfd, pcB_mfd);
+  Teuchos::RCP<Operators::MatrixMFD> pcA = sub_pks_[0]->preconditioner();
+  Teuchos::RCP<Operators::MatrixMFD> pcB = sub_pks_[1]->preconditioner();
+  mfd_preconditioner_->SetSubBlocks(pcA, pcB);
 
   // setup and initialize the preconditioner
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->InitPreconditioner();
-  preconditioner_ = mfd_preconditioner_;
 
   // setup and initialize the linear solver for the preconditioner
   if (plist_.isSublist("Coupled Solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_.sublist("Coupled Solver");
     AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
     linsolve_preconditioner_ = fac.Create("coupled solver", linsolve_sublist, mfd_preconditioner_);
+  } else {
+    linsolve_preconditioner_ = mfd_preconditioner_;
   }
 }
 
@@ -139,7 +125,7 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
 // updates the preconditioner
 void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
-  StrongMPC::update_precon(t,up,h);
+  StrongMPC<PKPhysicalBDFBase>::update_precon(t,up,h);
 
   // Update and get the off-diagonal terms.
   if (!decoupled_) {
@@ -198,7 +184,7 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = getOSTab();
 
-  if (decoupled_) return StrongMPC::precon(u,Pu);
+  if (decoupled_) return StrongMPC<PKPhysicalBDFBase>::precon(u,Pu);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
@@ -222,11 +208,7 @@ void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tree
   }
 
   // Apply
-  if (linsolve_preconditioner_ != Teuchos::null) {
-    linsolve_preconditioner_->ApplyInverse(*u, *Pu);
-  } else {
-    mfd_preconditioner_->ApplyInverse(*u, *Pu);
-  }
+  linsolve_preconditioner_->ApplyInverse(*u, *Pu);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {

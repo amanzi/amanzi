@@ -79,8 +79,6 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
-
   // error monitor
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);

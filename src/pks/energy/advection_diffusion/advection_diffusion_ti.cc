@@ -57,7 +57,7 @@ void AdvectionDiffusion::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<T
   //  *Pu = *u;
 
   // MFD ML preconditioner
-  preconditioner_->ApplyInverse(*u, Pu.ptr());
+  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
   std::cout << "  Pu: " << (*Pu->Data())("cell",0) << " " << (*Pu->Data())("face",0) << std::endl;
 };
@@ -104,16 +104,6 @@ void AdvectionDiffusion::update_precon(double t, Teuchos::RCP<const TreeVector> 
   mfd_preconditioner_->UpdatePreconditioner();
 };
 
-
-void AdvectionDiffusion::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
-  preconditioner_ = precon;
-  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
-  ASSERT(mfd_preconditioner_ != Teuchos::null);
-  mfd_preconditioner_->set_symmetric(true);
-  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  mfd_preconditioner_->InitPreconditioner();
-}
 
 } // namespace Energy
 } // namespace Amanzi

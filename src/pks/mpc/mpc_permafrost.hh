@@ -32,13 +32,13 @@ namespace Operators { class MatrixMFD_Coupled_Surf; }
 
 class MPCDelegateEWC;
 
-class MPCPermafrost : public StrongMPC {
+class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceCoupler> {
 
  public:
   MPCPermafrost(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, soln),
-      StrongMPC(plist, soln)
+      StrongMPC<MPCSurfaceSubsurfaceCoupler>(plist, soln)
   {}
 
 

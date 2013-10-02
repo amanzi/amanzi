@@ -39,7 +39,7 @@ RegisteredPKFactory<MPCPermafrost> MPCPermafrost::reg_("permafrost model");
 // Setup data
 // -------------------------------------------------------------
 void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
-  StrongMPC::setup(S);
+  StrongMPC<MPCSurfaceSubsurfaceCoupler>::setup(S);
 
   // option to decoupled and revert to StrongMPC
   decoupled_ = plist_.get<bool>("decoupled",false);
@@ -126,11 +126,10 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
   mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(
       pc_sublist, mesh, surf_mesh));
-  preconditioner_ = mfd_surf_preconditioner_;
 
   // Set the subblocks.  Note these are the flux-coupled PCs, which are
   // MatrixMFD_Surfs.
-  Teuchos::RCP<Operators::Matrix> pcA = sub_pks_[0]->preconditioner();
+  Teuchos::RCP<Operators::MatrixMFD> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Matrix> pcB = sub_pks_[1]->preconditioner();
 
   // MUST be dynamic cast as these are part of a multiple inheritance diamond
@@ -186,7 +185,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
 
 
 void MPCPermafrost::initialize(const Teuchos::Ptr<State>& S) {
-  StrongMPC::initialize(S);
+  StrongMPC<MPCSurfaceSubsurfaceCoupler>::initialize(S);
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 }
 
@@ -194,13 +193,13 @@ void MPCPermafrost::initialize(const Teuchos::Ptr<State>& S) {
 void MPCPermafrost::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,
         const Teuchos::RCP<State>& S_next) {
-  StrongMPC::set_states(S,S_inter,S_next);
+  StrongMPC<MPCSurfaceSubsurfaceCoupler>::set_states(S,S_inter,S_next);
   if (ewc_ != Teuchos::null) ewc_->set_states(S,S_inter,S_next);
 }
 
 
 void MPCPermafrost::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  StrongMPC::commit_state(dt,S);
+  StrongMPC<MPCSurfaceSubsurfaceCoupler>::commit_state(dt,S);
   if (ewc_ != Teuchos::null) ewc_->commit_state(dt,S);
 }
 
@@ -235,7 +234,7 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   }
 
   // potentially update faces
-  changed |= StrongMPC::modify_predictor(h, up);
+  changed |= StrongMPC<MPCSurfaceSubsurfaceCoupler>::modify_predictor(h, up);
 
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
     for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
@@ -263,7 +262,7 @@ void MPCPermafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
     *out_ << "Precon update at t = " << t << std::endl;
 
-  StrongMPC::update_precon(t,up,h);
+  StrongMPC<MPCSurfaceSubsurfaceCoupler>::update_precon(t,up,h);
 
   if (!decoupled_) {
     S_next_->GetFieldEvaluator(A_key_)
@@ -298,7 +297,7 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
     *out_ << "Precon application:" << std::endl;
 
-  if (decoupled_) return StrongMPC::precon(u,Pu);
+  if (decoupled_) return StrongMPC<MPCSurfaceSubsurfaceCoupler>::precon(u,Pu);
 
   // make a new TreeVector that is just the subsurface values (by pointer).
   // -- note these const casts are necessary to create the new TreeVector, but

@@ -35,11 +35,13 @@ if (BUILD_TESTS)
 	  test/test_mfd_surf.cc)
     target_link_libraries(test_mfd
       divgrad
+      amanzi_atk
       amanzi_whetstone
       amanzi_geometry
       amanzi_mesh_factory
       amanzi_mstk_mesh
       amanzi_data_structures
+      amanzi_solvers
       ${Amanzi_TPL_UnitTest_LIBRARIES} ${Amanzi_TPL_Trilinos_LIBRARIES})
 
 endif()

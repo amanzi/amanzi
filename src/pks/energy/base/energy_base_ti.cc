@@ -114,7 +114,7 @@ void EnergyBase::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVecto
 #endif
 
   // apply the preconditioner
-  preconditioner_->ApplyInverse(*u, Pu.ptr());
+  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
@@ -201,17 +201,6 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     mfd_preconditioner_->UpdatePreconditioner();
   }
 };
-
-
-void EnergyBase::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
-  preconditioner_ = precon;
-  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
-  ASSERT(mfd_preconditioner_ != Teuchos::null);
-  mfd_preconditioner_->set_symmetric(true);
-  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  mfd_preconditioner_->InitPreconditioner();
-}
 
 
 double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,

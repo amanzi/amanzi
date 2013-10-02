@@ -12,17 +12,17 @@ multiple coupler types.
 #ifndef PKS_MPC_SURFACE_SUBSURFACE_COUPLER_HH_
 #define PKS_MPC_SURFACE_SUBSURFACE_COUPLER_HH_
 
+#include "pk_physical_bdf_base.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
 
-class PKPhysicalBDFBase;
 namespace Operators {
   class MatrixMFD_Surf;
   class MatrixMFD_TPFA;
 }
 
-class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
+class MPCSurfaceSubsurfaceCoupler : public StrongMPC<PKPhysicalBDFBase> {
 
  public:
   MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList& plist,

@@ -74,8 +74,6 @@ public:
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
-
 protected:
   // Create of physical evaluators.
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);

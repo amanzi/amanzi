@@ -153,9 +153,11 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  Teuchos::RCP<Operators::Matrix> precon =
-    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
-  set_preconditioner(precon);
+  mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  mfd_preconditioner_->set_symmetric(true);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+  mfd_preconditioner_->InitPreconditioner();
 
   // constraint on max delta T, which kicks us out of bad iterates faster?
   dT_max_ = plist_.get<double>("maximum temperature change", 10.);
@@ -190,7 +192,7 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize boundary conditions
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::Matrix::MATRIX_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   // initialize flux
@@ -244,7 +246,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
     *vo_->os() << "  Updating BCs." << std::endl;
 
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -252,7 +254,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
   for (Functions::BoundaryFunction::Iterator bc=bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
@@ -260,7 +262,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
 
@@ -278,7 +280,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to dirichlet
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = temp[0][c];
     }
   }
@@ -298,7 +300,7 @@ void EnergyBase::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to Neumann
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
       std::cout << " setting BC from surface energy flux = " << flux[0][c] << std::endl;
     }
@@ -313,7 +315,7 @@ void EnergyBase::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& t
   Epetra_MultiVector& temp_f = *temp->ViewComponent("face",true);
   unsigned int nfaces = temp->size("face",true);
   for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
       temp_f[0][f] = bc_values_[f];
     }
   }

@@ -98,6 +98,21 @@ void MatrixMFD_Coupled::InitializeFromPList_() {
 }
 
 
+void MatrixMFD_Coupled::SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
+				     const Teuchos::RCP<MatrixMFD>& blockB) {
+    blockA_ = blockA;
+    blockB_ = blockB;
+
+    // set up the space
+    Teuchos::RCP<const CompositeVectorSpace> spaceA = Teuchos::rcpFromRef(blockA->DomainMap());
+    Teuchos::RCP<const CompositeVectorSpace> spaceB = Teuchos::rcpFromRef(blockB->DomainMap());
+    Teuchos::RCP<const TreeVectorSpace> spaceA_TV = Teuchos::rcp(new TreeVectorSpace(spaceA));
+    Teuchos::RCP<const TreeVectorSpace> spaceB_TV = Teuchos::rcp(new TreeVectorSpace(spaceB));
+    space_ = Teuchos::rcp(new TreeVectorSpace());
+    space_->PushBack(spaceA_TV);
+    space_->PushBack(spaceB_TV);    
+  }
+
 int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
         TreeVector& Y) const {
   if (prec_method_ == PREC_METHOD_NULL) {

@@ -11,6 +11,7 @@
 #include "errors.hh"
 #include "CompositeVectorSpace.hh"
 #include "MatrixVolumetricDeformation.hh"
+#include "PreconditionerFactory.hh"
 
 #define MESH_TYPE 1 // 0 = HEXES, 1 = TRIANGULAR PRISMS
 
@@ -61,7 +62,8 @@ void MatrixVolumetricDeformation::InitializeFromOptions_() {
   diagonal_shift_ = plist_.get<double>("diagonal shift", 1.e-6);
 
   // preconditioner
-  prec_ = Teuchos::rcp(new Matrix_PreconditionerDelegate(plist_));
+  AmanziPreconditioners::PreconditionerFactory fac;
+  prec_ = fac.Create(plist_);
 };
 
 
@@ -374,14 +376,13 @@ void MatrixVolumetricDeformation::Assemble(
   delete[] node_values;
 
   // Set the operator in the precon
-  prec_->set_matrix(operator_);
+  prec_->Destroy();
+  prec_->Update(operator_);
 }
 
 
 
-void MatrixVolumetricDeformation::InitializeInverse() {
-  prec_->InitializePreconditioner();
-};
+void MatrixVolumetricDeformation::InitializeInverse() {};
 
 }
 }
