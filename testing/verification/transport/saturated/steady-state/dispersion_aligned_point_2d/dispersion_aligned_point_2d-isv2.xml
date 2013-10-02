@@ -44,6 +44,11 @@
 			<viscosity>1.002E-03</viscosity>
 			<density>998.2</density>
 		</liquid_phase>
+		<dissolved_components>
+			<solutes>
+				<solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+			</solutes>
+		</dissolved_components>
 	</phases>
 
 	<execution_controls>
@@ -82,8 +87,8 @@
 
 		<point name = "Dnwind150"  coordinate="-150.0,0.0"/>
 		<point name = "Dnwind090"  coordinate="-90.0,0.0"/>
-		<point name = "Dnwind090"  coordinate="-30.0,0.0"/>
-		<point name = "Upwind090"  coordinate="30.0,0.0"/>
+		<point name = "Dnwind030"  coordinate="-30.0,0.0"/>
+		<point name = "Upwind030"  coordinate="30.0,0.0"/>
 		<point name = "Upwind090"  coordinate="90.0,0.0"/>
 		<point name = "Upwind150"  coordinate="150.0,0.0"/>
 		<point name = "Upwind210"  coordinate="210.0,0.0"/>
