@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <boost/lambda/lambda.hpp>
 #include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -1745,7 +1746,6 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
                 char* value = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	        rfPL.set<int>("Value",atoi(value));
 	        XMLString::release(&value);
-		rfPL.print(std::cout,true,false);
                 list.sublist(textContent).sublist("Region: Color Function") = rfPL;
 	      }else if  (strcmp(textContent2,"labeled set") == 0){
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
@@ -2783,12 +2783,12 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro;
               macro.append(textContent2);
-              visPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
+              //visPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
+              visPL.set<std::string>("Cycle Macro",textContent2);
               XMLString::release(&textContent2);
 	    }
             XMLString::release(&textContent);
           }
-          visPL.print(std::cout,true,false);
           list.sublist("Visualization Data") = visPL;
 
 	} else if (strcmp(outName,"checkpoint")==0) {
@@ -2810,7 +2810,8 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
 	      Teuchos::Array<std::string> macro;
               macro.append(textContent2);
-              chkPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
+              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
+              chkPL.set<std::string >("Cycle Macro",textContent2);
               XMLString::release(&textContent2);
 	    }
             XMLString::release(&textContent);
