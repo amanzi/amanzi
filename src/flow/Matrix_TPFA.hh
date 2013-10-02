@@ -28,16 +28,16 @@ from the DAE system and short vectors are used in the nonlinear solver.
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Matrix_MFD_TPFA : public Matrix_MFD {
+class Matrix_TPFA : public Matrix_MFD {
  public:
-  Matrix_MFD_TPFA(){};
-  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map);
-  Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, 
+  Matrix_TPFA(){};
+  Matrix_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map);
+  Matrix_TPFA(Teuchos::RCP<Flow_State> FS, 
 		  Teuchos::RCP<const Epetra_Map> map,
 		  Teuchos::RCP<Epetra_Vector> Krel_faces,
 		  Teuchos::RCP<Epetra_Vector> Trans_faces,
 		  Teuchos::RCP<Epetra_Vector> Grav_faces);
-  ~Matrix_MFD_TPFA() {};
+  ~Matrix_TPFA() {};
 
   void Set_Krel_faces (Teuchos::RCP<Epetra_Vector> Krel_faces) { Krel_faces_ = Krel_faces;}
   void Set_Trans_faces(Teuchos::RCP<Epetra_Vector> Trans_faces) { trans_on_faces_ = Trans_faces;}
@@ -98,7 +98,7 @@ class Matrix_MFD_TPFA : public Matrix_MFD {
 
 
  private:
-  void operator=(const Matrix_MFD_TPFA& matrix);
+  void operator=(const Matrix_TPFA& matrix);
 };
 
 }  // namespace AmanziFlow

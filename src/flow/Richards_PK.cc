@@ -193,8 +193,8 @@ void Richards_PK::InitPK()
     // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
     // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
   } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
-    preconditioner_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    matrix_ = Teuchos::rcp(new Matrix_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    preconditioner_ = Teuchos::rcp(new Matrix_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
   } else {
     matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
     preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));

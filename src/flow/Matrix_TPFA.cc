@@ -35,7 +35,7 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 /* ******************************************************************
 * Constructor.                                           
 ****************************************************************** */
-Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map) 
+Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map) 
    :  Matrix_MFD(FS, map)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
@@ -43,7 +43,7 @@ Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const
   Fc_cells_.resize(ncells);
 }
 
-  Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map,
+  Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map,
 				   Teuchos::RCP<Epetra_Vector> Krel_faces,
 				   Teuchos::RCP<Epetra_Vector> Trans_faces,
 				   Teuchos::RCP<Epetra_Vector> Grav_faces) 
@@ -63,7 +63,7 @@ Matrix_MFD_TPFA::Matrix_MFD_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
-void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
+void Matrix_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
 {
 
 }
@@ -74,7 +74,7 @@ void Matrix_MFD_TPFA::CreateMFDstiffnessMatrices(RelativePermeability& rel_perm)
 * If matrix is non-symmetric, we generate transpose of the matrix 
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
-void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
+void Matrix_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 {
   Matrix_MFD::SymbolicAssembleGlobalMatrices(super_map);
 
@@ -106,7 +106,7 @@ void Matrix_MFD_TPFA::SymbolicAssembleGlobalMatrices(const Epetra_Map& super_map
   Spp_->GlobalAssemble();
 }
 
-void Matrix_MFD_TPFA::AssembleGlobalMatrices()
+void Matrix_TPFA::AssembleGlobalMatrices()
 {
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -159,7 +159,7 @@ void Matrix_MFD_TPFA::AssembleGlobalMatrices()
 /* ******************************************************************
 * Assembles preconditioner. It has same set of parameters as matrix.
 ****************************************************************** */
-void Matrix_MFD_TPFA::AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
+void Matrix_TPFA::AssembleSchurComplement(std::vector<int>& bc_model, std::vector<bc_tuple>& bc_values)
 {
   AssembleGlobalMatrices();
 }
@@ -169,7 +169,7 @@ void Matrix_MFD_TPFA::AssembleSchurComplement(std::vector<int>& bc_model, std::v
 * Computation of the part of the jacobian which depends on
 * analytical derivatives of relative permeabilities
 ****************************************************************** */
-void Matrix_MFD_TPFA::AnalyticJacobian(
+void Matrix_TPFA::AnalyticJacobian(
    const Epetra_Vector& solution, 
    std::vector<int>& bc_models, std::vector<bc_tuple>& bc_values,
    RelativePermeability& rel_perm)
@@ -236,7 +236,7 @@ void Matrix_MFD_TPFA::AnalyticJacobian(
 * Computation of a local submatrix of 
 * Analytical Jacobian (nonlinear part) on a particular face.
 ****************************************************************** */
-void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
+void Matrix_TPFA::ComputeJacobianLocal(int mcells,
                                            int face_id,
                                            int Krel_method,
                                            std::vector<int>& bc_models,
@@ -314,7 +314,7 @@ void Matrix_MFD_TPFA::ComputeJacobianLocal(int mcells,
 /* ******************************************************************
 * Parallel matvec product Spp * Xc.                                              
 ****************************************************************** */
-int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Matrix_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nvectors = X.NumVectors();
@@ -322,7 +322,7 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
 
-  //cout<<"Matrix_MFD_TPFA::Apply\n";
+  //cout<<"Matrix_TPFA::Apply\n";
 
   // Create views Xc into the cell segments of X.
   double **cvec_ptrs = X.Pointers();
@@ -343,7 +343,7 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 
 
   if (ierr) {
-    Errors::Message msg("Matrix_MFD_TPFA::Apply has failed to calculate y = A*x.");
+    Errors::Message msg("Matrix_TPFA::Apply has failed to calculate y = A*x.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -359,14 +359,14 @@ int Matrix_MFD_TPFA::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) c
 * The OWNED cell-based and face-based d.o.f. are packed together into 
 * the X and Y Epetra vectors, with the cell-based in the first part.                                           
 ****************************************************************** */
-int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Matrix_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nvectors = X.NumVectors();
 
   // Y = X;
  
-  // cout<<"Matrix_MFD_TPFA::ApplyInverse\n";
+  // cout<<"Matrix_TPFA::ApplyInverse\n";
 
   // return 0;
 
@@ -396,7 +396,7 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
   Yc = Tc;
 
   if (ierr) {
-    Errors::Message msg("Matrix_MFD_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
+    Errors::Message msg("Matrix_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -423,7 +423,7 @@ int Matrix_MFD_TPFA::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVecto
 }
 
 
-void  Matrix_MFD_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model, 
+void  Matrix_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model, 
 					       std::vector<bc_tuple>& bc_values){
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -468,7 +468,7 @@ void  Matrix_MFD_TPFA::ApplyBoundaryConditions(std::vector<int>& bc_model,
 // /* ******************************************************************
 // * Linear algebra operations with matrices: r = A * x - f                                                 
 // ****************************************************************** */
-double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,  
+double Matrix_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,  
 						Epetra_Vector& residual)
 {
  
@@ -516,7 +516,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
   return norm_residual;
 }
 
-  void Matrix_MFD_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution_cells,		
+  void Matrix_TPFA::DeriveDarcyMassFlux(const Epetra_Vector& solution_cells,		
 					    const Epetra_Import& face_importer,
 					    std::vector<int>& bc_model, 
 					    std::vector<bc_tuple>& bc_values,
@@ -568,7 +568,7 @@ double Matrix_MFD_TPFA::ComputeNegativeResidual(const Epetra_Vector& solution,
 	  
 	  mesh_->face_get_cells(f,  AmanziMesh::USED, &cells);
 	  if (cells.size() <= 1 ){
-	    Errors::Message msg("Flow PK: Matrix_MFD_TPFA. These boundary conditions are not supported by TPFA discratization.");
+	    Errors::Message msg("Flow PK: Matrix_TPFA. These boundary conditions are not supported by TPFA discratization.");
 	    Exceptions::amanzi_throw(msg);
 	  }
 
