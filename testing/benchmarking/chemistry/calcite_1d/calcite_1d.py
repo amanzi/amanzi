@@ -145,7 +145,7 @@ if __name__ == "__main__":
            VF_amanzi_alquimia = VF_amanzi_alquimia +[c_amanzi_alquimia]
 
         # subplots
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(3,sharex=True,figsize=(10,10))
 
         alq = [0.0] * len(times)
         ama = [0.0] * len(times)
@@ -153,19 +153,29 @@ if __name__ == "__main__":
         for i, time in enumerate(times):
 
           # lines on axes
-          alq[i] = ax.plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
-          ama[i] = ax.plot(x_amanzi_native, Ca_amanzi_native[i],'ro',label='Amanzi Native Chemistry')
-          pfl[i] = ax.plot(x_pflotran, Ca_pflotran[i],'b-',label='PFloTran',linewidth=2)
+          alq[i] = ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+          ama[i] = ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'ro',label='Amanzi Native Chemistry')
+          pfl[i] = ax[0].plot(x_pflotran, Ca_pflotran[i],'b-',label='PFloTran',linewidth=2)
 
+          ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+          ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'ro',label='Amanzi Native Chemistry')
+          ax[1].plot(x_pflotran, pH_pflotran[i],'b-',label='PFloTran',linewidth=2)
+
+          ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+          ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'ro',label='Amanzi Native Chemistry')
+          ax[2].plot(x_pflotran, VF_pflotran[i],'b-',label='PFloTran',linewidth=2)
+          
         # axes
-        ax.set_xlabel("Distance (m)",fontsize=20)
-        ax.set_ylabel("Total Ca concentration [mol/L]",fontsize=20)
+        ax[2].set_xlabel("Distance (m)",fontsize=20)
+        ax[0].set_ylabel("Total Ca concentration [mol/L]",fontsize=15)
+        ax[1].set_ylabel("pH",fontsize=20)
+        ax[2].set_ylabel("Calcite volume fraction",fontsize=15)
 
         # plot adjustments
         plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
 #        plt.legend(loc='upper left',fontsize=13)
         plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=20)
-        plt.tick_params(axis='both', which='major', labelsize=20)
+        plt.tick_params(axis='x', which='major', labelsize=20)
 
         #pyplot.show()
         plt.savefig(local_path+"calcite_1d.png",format="png")
