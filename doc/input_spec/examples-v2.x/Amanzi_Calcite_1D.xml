@@ -12,7 +12,7 @@
 
 	<definitions>
 	    	<macros>
-				<cycle_macro name = "Every-100-steps">
+				<cycle_macro name = "Every_100_steps">
 					<start>0</start>
 					<timestep_interval>100</timestep_interval>
 					<stop>-1</stop>
@@ -247,7 +247,7 @@
 		<checkpoint>
 			<base_filename>chk</base_filename>
 		  	<num_digits>5</num_digits>
-		  	<time_macro>Every_100_timesteps</time_macro>
+		  	<cycle_macro>Every_100_steps</cycle_macro>
 		</checkpoint>
 
 		<observations>

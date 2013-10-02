@@ -128,7 +128,6 @@ a restart option in the execution control section.  Don't know how to set up the
 	                        <dissolved_components>
 	                                <solutes>
 					<solute coefficient_of_diffusion = "1.0e-09"> Tc-99</solute>
-					<solute coefficient_of_diffusion = "1.0e-09"> U-238</solute>
 				</solutes> 
 	                        </dissolved_components>
 	                </liquid_phase>
@@ -141,13 +140,16 @@ a restart option in the execution control section.  Don't know how to set up the
 	                           Use named time period as defined above, or actual times.</comments>
 	                 <execution_control_defaults init_dt= "3.168E-08"   max_dt="0.01"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
 			 	   <!-- vlf restart goes here? -->
+				   <!-- this restart file doesn't actually exist; need to grab restart file from Amanzi_BCCribs.xml file to test execution
 	                           <execution_control  restart="chk001.h5" start="start" />
+				   -->
+			        <execution_control  start="0.0;y"   end="1956.0"    init_dt= "0.01"        max_dt="500.0" reduction_factor="0.8"  mode = "steady"   />
 	                           <execution_control  start="B-14_B-17_release_begin" />
 	                           <execution_control  start="B-17_release_end" />
 	                           <execution_control  start="B-19_release_begin" />
 	                           <execution_control  start="B-14_release_end" />
 	                           <execution_control  start="B-18_release_begin" />
-	                           <execution_control  start="B-16_B-15_release_begin" />
+	                           <execution_control  start="B-15_B-16_release_begin" />
 	                           <execution_control  start="B-18_release_end" />
 	                           <execution_control  start="B-16_release_end" />
 	                           <execution_control  start="B-19_release_end" />
@@ -240,18 +242,16 @@ a restart option in the execution control section.  Don't know how to set up the
 	                        <box low_coordinates= "0.0,0.0,106.0"     high_coordinates="110.0,280.0,107.0"/>
 	                </region>
 
+	                <region name ="all">
+	                        <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="110.0,280.0,107.0"/>
+	                </region>
+
 			<!-- vlf:  Additional regions defined -->
 	                <region name ="Water Table">
 	                        <comments>Proposed comments field</comments>
 	                        <plane location = "0.0,0.0,0.0"     normal="0.0,0.0,-1.0"/>
 	                </region>
 
-			<!-- vlf:  Layers and surfaces not currently supported -->
-	                <region name= "Upper aquifer">
-	                        <region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="cell" label="50000"/>
-
-	                </region>
-	
 	                        <box name="Top Surface 1"    low_coordinates= "(0.0,0.0,106.0)"     high_coordinates="(110.0,280.0,107.0)"/>
 	                        <box name="Top Surface 2"    low_coordinates= "(205.0,0.0,106.0)"    high_coordinates="(320.0,280.0,107.0)"/>
 	                        <box name="Top Surface 3"    low_coordinates= "(110.0,165.0,106.0)" high_coordinates="(205.0,280.0,107.0)"/>
@@ -371,19 +371,20 @@ a restart option in the execution control section.  Don't know how to set up the
 	
 	        </materials>
 	
-	        <initial_conditions>
+		<initial_conditions>
 			<initial_condition name="Pressure and concentration for entire domain">
-				<comments>For solutes, either provide value/function or filename; value can be a user-defined constant</comments>
+				<comments>Initial Conditions Comments go here</comments>
 				<assigned_regions>all</assigned_regions>
-			 	<liquid_phase name = "water">
-	                       		<liquid_component name = "water">
-	                           		<linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
-					</liquid_component>    
+				<liquid_phase name = "water">
+					<liquid_component name = "water">
+						<linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
+					</liquid_component>
+					   <!-- For solutes, either provide value/function or filename; value can be a user-defined constant -->
+					   <!-- TODO: This capability does not currently exist -->
 					<solute_component name = "Tc-99" value = "0" function="uniform"/>
-					<solute_component name = "U-234" filename = "uranium_initial.dat" />
 				</liquid_phase>
-			</initial_condition>
-	        </initial_conditions>
+                 	</initial_condition>
+		</initial_conditions>
 	
 	        <boundary_conditions>
 			<comments>Format was changed because it is more readable for long time series</comments>
@@ -433,7 +434,7 @@ a restart option in the execution control section.  Don't know how to set up the
 					<liquid_component name = "water">
 	                                        <inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
 	                                        <inward_mass_flux start="1956.0,y"                function= "constant"    value="post_1956_recharge"/>
-	                                        <inward_mass_flux start="B-16_B-15_release_begin" function= "constant"    value="0.004569421375516516"/>
+	                                        <inward_mass_flux start="B-15_B-16_release_begin" function= "constant"    value="0.004569421375516516"/>
 	                                        <inward_mass_flux start="B-15_release_end"        function= "constant"    value="post_1956_recharge"/>
 	                                        <inward_mass_flux start="2012.0,y"                function= "constant"    value="future_recharge"/>
 	                                        <inward_mass_flux start="3000.0,y"                function= "constant"    value="future_recharge"/>
@@ -463,7 +464,7 @@ a restart option in the execution control section.  Don't know how to set up the
 	                                <solute_component name = "solute">
 	                                        <aqueous_conc name = "Tc-99" start="0.0"                     function= "constant"    value="0.0"/>
 	                                        <aqueous_conc name = "Tc-99" start="1956.0,y"                function= "constant"    value="0.0"/>
-	                                        <aqueous_conc name = "Tc-99" start="B-16_B-15_release_begin" function= "constant"    value="3.524e-06"/>
+	                                        <aqueous_conc name = "Tc-99" start="B-15_B-16_release_begin" function= "constant"    value="3.524e-06"/>
 	                                        <aqueous_conc name = "Tc-99" start="B-16_release_end"        function= "constant"    value="0.0"/>
 	                                        <aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
 	                                        <aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>

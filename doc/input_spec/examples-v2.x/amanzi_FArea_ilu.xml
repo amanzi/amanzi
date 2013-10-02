@@ -464,7 +464,7 @@
 	                <checkpoint>
 	                        <base_filename>chk</base_filename>
 	                        <num_digits>5</num_digits>
-	                        <time_macro>Every-100-timesteps</time_macro>
+	                        <cycle_macro>Every-100-timesteps</cycle_macro>
 	                </checkpoint>
 	
 	                <observations>

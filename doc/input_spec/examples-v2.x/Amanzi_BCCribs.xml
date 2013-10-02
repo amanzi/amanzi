@@ -124,7 +124,6 @@
 			<dissolved_components> 
 				<solutes>
 					<solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
-					<solute coefficient_of_diffusion="1.0e-9">U-234</solute>
 				</solutes> 
 			</dissolved_components>
 		</liquid_phase>
@@ -566,7 +565,7 @@
 		<checkpoint>
 			<base_filename>chk</base_filename>
 		  	<num_digits>5</num_digits>
-		  	<time_macro>Macro 1</time_macro>
+		  	<cycle_macro>Every_100_timesteps</cycle_macro>
 		</checkpoint>
 
 		<observations>
