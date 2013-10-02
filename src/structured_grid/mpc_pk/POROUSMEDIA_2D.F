@@ -1277,7 +1277,7 @@ c :: ------------------------------------------------------------
 
       integer i, j,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
-      REAL_T  grav
+      REAL_T  gravx, gravy
       REAL_T  multx(2), multy(2), ldx(2), ldy(2), dldx(4), dldy(4)
 
       REAL_T  sat(ncomps), stmp(ncomps), rtmp(ncomps), dltmp(3)
@@ -1322,7 +1322,13 @@ c :: ------------------------------------------------------------
          end do
       end do
 
-      grav = -rhoval(1)*gravity
+      if (gravity_dir.eq.0) then
+         gravx = -rhoval(1)*gravity
+         gravy = 0.d0
+      else if (gravity_dir.eq.1) then
+         gravx = 0.d0
+         gravy = -rhoval(1)*gravity
+      endif
       bx = zero
       by = zero
       do j = lo(2), hi(2)
@@ -1431,20 +1437,20 @@ c :: ------------------------------------------------------------
                end if
             end if
 
-            bx(i,j,2)   = (-dldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)) -
+            bx(i,j,2)   = (-dldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1) - gravx) -
      &           ldx(1)*(multx(1)*dpcdn(i-1,j)/dx(1)))/dx(1)
-            bx(i,j,1) = (dldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
+            bx(i,j,1) = (dldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1) - gravx) -
      &           ldx(2)*(multx(2)*dpcdn(i+1,j)/dx(1)))/dx(1)
-            bx(i,j,3)   = (dldx(4)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) - 
-     &           dldx(3)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)) +
+            bx(i,j,3)   = (dldx(4)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1) - gravx) - 
+     &           dldx(3)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1) - gravx) +
      &           (ldx(1)+ldx(2))*dpcdn(i,j)/dx(1))/dx(1)
             
-            by(i,j,2)   = (-dldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav) -
+            by(i,j,2)   = (-dldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - gravy) -
      &           ldy(1)*(multy(1)*dpcdn(i,j-1)/dx(2)))/dx(2)
-            by(i,j,1) = (dldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) -
+            by(i,j,1) = (dldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - gravy) -
      &           ldy(2)*(multy(2)*dpcdn(i,j+1)/dx(2)))/dx(2)
-            by(i,j,3)   = (dldy(4)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) - 
-     &           dldy(3)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav) +
+            by(i,j,3)   = (dldy(4)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - gravy) - 
+     &           dldy(3)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - gravy) +
      &           (ldy(1)+ldy(2))*dpcdn(i,j)/dx(2))/dx(2)
          end do
       end do
@@ -1520,14 +1526,19 @@ c :: ------------------------------------------------------------
 
       integer i, j,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
-      REAL_T  grav, rgx, rgy
+      REAL_T  gravx, gravy, rgx, rgy
       REAL_T  multx(2), multy(2), ldx(2), ldy(2)
       REAL_T  comp(ncomps)
       REAL_T  ldtmp(ncomps),ldn(3),pcn(3),rgtmpx(3),rgtmpy(3), dcx(3), dcy(3)
-c
-c     gravity is nonzero only in the y direction
-c
-      grav = -rhoval(1)*gravity
+
+      if (gravity_dir.eq.0) then
+         gravx = -rhoval(1)*gravity
+         gravy = 0.d0
+      else if (gravity_dir.eq.1) then
+         gravx = 0.d0
+         gravy = -rhoval(1)*gravity
+      endif
+
       bx = zero
       by = zero
       do j=lo(2), hi(2)
@@ -1591,10 +1602,10 @@ c
                end if
             end if
 
-            rgx = (ldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
-     &           ldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)))/dx(1) 
-            rgy = (ldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) - 
-     &           ldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav))/dx(2)           
+            rgx = (ldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1) - gravx) -
+     &           ldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1) - gravx))/dx(1) 
+            rgy = (ldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - gravy) - 
+     &           ldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - gravy))/dx(2)           
 
 c           x-direction
             do n = -1,1
@@ -1635,8 +1646,8 @@ c           x-direction
                   ldx(2) = merge(ldx(2),kpx(i+1,j)*ldn(3),ldx(2)==zero)
                end if
 
-               rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1)) -
-     &           ldx(1)*(-multx(1)*(pcn(2)-pcn(1))/dx(1)))/dx(1) 
+               rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1) - gravx) -
+     &           ldx(1)*(-multx(1)*(pcn(2)-pcn(1))/dx(1) - gravx))/dx(1) 
             end do
 
 c           y-direction
@@ -1676,8 +1687,8 @@ c           y-direction
                   ldy(2) = merge(ldy(2),kpy(i,j+1)*ldn(3),ldy(2)==zero)
                end if
 
-               rgtmpy(n+2) =  (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2) - grav) - 
-     &           ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2) - grav))/dx(2)                
+               rgtmpy(n+2) =  (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2) - gravy) - 
+     &           ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2) - gravy))/dx(2)                
             end do
 
             bx(i,j,2) = (rgtmpx(1) - rgx)/dcx(1)
@@ -1755,14 +1766,19 @@ c :: ------------------------------------------------------------
 
       integer i, j,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
-      REAL_T  grav, rgx, rgy
+      REAL_T  gravx, gravy, rgx, rgy
       REAL_T  multx(2), multy(2), ldx(2), ldy(2)
       REAL_T  comp(ncomps),cap
       REAL_T  ldtmp(ncomps),ldn(3),pn(3),rgtmpx(3),rgtmpy(3), dcx(3), dcy(3)
-c
-c     gravity is nonzero only in the y direction
-c
-      grav = -rhoval(1)*gravity
+
+      if (gravity_dir.eq.0) then
+         gravx = -rhoval(1)*gravity
+         gravy = 0.d0
+      else if (gravity_dir.eq.1) then
+         gravx = 0.d0
+         gravy = -rhoval(1)*gravity
+      endif
+
       bx = zero
       by = zero
       do j=lo(2), hi(2)
@@ -1826,10 +1842,10 @@ c
                end if
             end if
 
-            rgx = (ldx(2)*(multx(2)*(p(i+1,j)-p(i,j))/dx(1)) -
-     &           ldx(1)*(multx(1)*(p(i,j)-p(i-1,j))/dx(1)))/dx(1) 
-            rgy = (ldy(2)*(multy(2)*(p(i,j+1)-p(i,j))/dx(2) - grav) - 
-     &           ldy(1)*(multy(1)*(p(i,j)-p(i,j-1))/dx(2) - grav))/dx(2)           
+            rgx = (ldx(2)*(multx(2)*(p(i+1,j)-p(i,j))/dx(1) - gravx) -
+     &           ldx(1)*(multx(1)*(p(i,j)-p(i-1,j))/dx(1) - gravx))/dx(1) 
+            rgy = (ldy(2)*(multy(2)*(p(i,j+1)-p(i,j))/dx(2) - gravy) - 
+     &           ldy(1)*(multy(1)*(p(i,j)-p(i,j-1))/dx(2) - gravy))/dx(2)           
 
 c           x-direction
             do n = -1,1 
@@ -1862,8 +1878,8 @@ c           x-direction
                   ldx(2) = merge(ldx(2),kpx(i+1,j)*ldn(3),ldx(2)==zero)
                end if
 
-               rgtmpx(n+2) = (ldx(2)*(multx(2)*(pn(3)-pn(2))/dx(1)) -
-     &           ldx(1)*(multx(1)*(pn(2)-pn(1))/dx(1)))/dx(1) 
+               rgtmpx(n+2) = (ldx(2)*(multx(2)*(pn(3)-pn(2))/dx(1) - gravx) -
+     &           ldx(1)*(multx(1)*(pn(2)-pn(1))/dx(1) - gravx))/dx(1) 
             end do
 
 c           y-direction
@@ -1896,8 +1912,8 @@ c           y-direction
                elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
                   ldy(2) = merge(ldy(2),kpy(i,j+1)*ldn(3),ldy(2)==zero)
                end if
-               rgtmpy(n+2) = (ldy(2)*(multy(2)*(pn(3)-pn(2))/dx(2) - grav) - 
-     &           ldy(1)*(multy(1)*(pn(2)-pn(1))/dx(2) - grav))/dx(2)                
+               rgtmpy(n+2) = (ldy(2)*(multy(2)*(pn(3)-pn(2))/dx(2) - gravy) - 
+     &           ldy(1)*(multy(1)*(pn(2)-pn(1))/dx(2) - gravy))/dx(2)                
 
             end do
 
@@ -2166,17 +2182,21 @@ c :: ------------------------------------------------------------
       REAL_T  kpx(DIMV(kpx)),kpy(DIMV(kpy)) 
       integer do_upwind
       integer i, j
-      REAL_T  grav, mult, ld, dp
-c
-c     gravity is nonzero only in the y direction
-c
-      grav = -rhoval(1)*gravity
+      REAL_T  gravx, gravy, mult, ld, dp
+
+      if (gravity_dir.eq.0) then
+         gravx = -rhoval(1)*gravity
+         gravy = 0.d0
+      else if (gravity_dir.eq.1) then
+         gravx = 0.d0
+         gravy = -rhoval(1)*gravity
+      endif
       ux = zero
       uy = zero
       do_upwind = 1
       do j=lo(2), hi(2)
          do i=lo(1), hi(1)+1
-            dp = - (p(i,j)-p(i-1,j))/dx(1)
+            dp = - ((p(i,j)-p(i-1,j))/dx(1) - gravx)
             mult = one
             if (do_upwind.eq.1) then
                ld   = merge(lbd(i-1,j,1),lbd(i,j,1),dp>=zero)
@@ -2200,14 +2220,14 @@ c
                end if
             end if
 
-            ux(i,j) = ux(i,j) + kpx(i,j)*ld*mult*dp
+            ux(i,j) = ux(i,j) - kpx(i,j)*ld*(mult*(p(i,j)-p(i-1,j))/dx(1) - gravx)  
 
          end do
       end do
             
       do j=lo(2), hi(2)+1
          do i=lo(1), hi(1)
-            dp = - ((p(i,j)-p(i,j-1))/dx(2) - grav)
+            dp = - ((p(i,j)-p(i,j-1))/dx(2) - gravy)
             mult = one
             if (do_upwind.eq.1) then
                ld   = merge(lbd(i,j-1,1),lbd(i,j,1),dp>=zero)
@@ -2231,7 +2251,7 @@ c
                end if
             end if
 
-            uy(i,j) = uy(i,j) - kpy(i,j)*ld*(mult*(p(i,j)-p(i,j-1))/dx(2) - grav)  
+            uy(i,j) = uy(i,j) - kpy(i,j)*ld*(mult*(p(i,j)-p(i,j-1))/dx(2) - gravy)  
 
          end do
       end do
@@ -2311,101 +2331,22 @@ c ::: -------------------------------------------------------------
 
 
 c ::: ---------------------------------------------------------
-c ::: Define hydrostatic boundary condition
-c ::: ---------------------------------------------------------
-      
-      subroutine FORT_HYDRO(rho,DIMS(rho),rhoval,ncomps,
-     &     cplcoef,DIMS(cplcoef),ncplcoef,dx,wt_loc,grav)
-
-      implicit none
-
-      integer DIMDEC(rho)
-      integer DIMDEC(cplcoef)
-      integer ncomps, ncplcoef
-      REAL_T  rho(DIMV(rho),ncomps)
-      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
-      REAL_T  rhoval(ncomps)
-      REAL_T  dx(SDIM)
-      REAL_T  wt_loc
-      REAL_T  grav
-      
-      integer i,j,k,l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res
-      REAL_T  y
-      REAL_T  pc,phi,kappa,satlim(2),stmp(2)
-
-c     Gauss Legendre integration
-      REAL_T, parameter :: qd(5) = (/ 0.0d0,
-     &                                0.906179845938664d0*half,
-     &                                0.538469310105683d0*half,
-     &                               -0.906179845938664d0*half,
-     &                               -0.538469310105683d0*half /)
-
-
-      REAL_T, parameter :: wt(5) = (/ 0.568888888888889d0*half,
-     &                                0.236926885056189d0*half,
-     &                                0.478628670499366d0*half,
-     &                                0.236926885056189d0*half,
-     &                                0.478628670499366d0*half /)
-
-c     dummy
-      phi   = zero
-      kappa = zero
-
-      do j = ARG_L2(rho), ARG_H2(rho)
-         do i = ARG_L1(rho), ARG_H1(rho)
-            rho(i,j,:) = zero
-            do k = 1,5
-               y = (dble(j)+half+qd(k))*dx(2)
-               if (y .le. wt_loc) then
-                  rho(i,j,1) = rho(i,j,1) + rhoval(1)*wt(k)
-                  if (ncomps > 1) then
-                     rho(i,j,2) = zero
-                  end if
-               else
-                  l_cpl_type = nint(cplcoef(i,j,1))
-                  l_cpl_coef = cplcoef(i,j,2)
-                  l_sigma    = cplcoef(i,j,3)
-                  l_sat_res  = cplcoef(i,j,4)
-                  satlim(1) = l_sat_res*rhoval(1)
-                  if (ncomps .eq. 1) then
-                     pc = rhoval(1)*grav*(y-wt_loc)
-                  else
-                     satlim(2) = (one - l_sat_res)*rhoval(2)
-                     pc = (rhoval(1)-rhoval(2))*grav*(y-wt_loc)
-                  endif
-                  call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
-     &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
-                  if (stmp(1) .lt. satlim(1)) then
-                     stmp = satlim
-                  end if
-                  rho(i,j,1) = rho(i,j,1) + stmp(1)*wt(k)
-                  if (ncomps>1) then
-                     rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
-                  endif
-               end if
-            end do 
-         end do
-      end do 
-
-      end
-
-
-c ::: ---------------------------------------------------------
 c ::: Define linear pressure profile
 c ::: ---------------------------------------------------------
       
-      subroutine FORT_LINEAR_PRESSURE(p,DIMS(p),ncomps,
-     &     dx,problo,ref_val,ref_loc,gradp)
+      subroutine FORT_LINEAR_PRESSURE(lo,hi,p,DIMS(p),ncomps,
+     &     dx,problo,probhi,ref_val,ref_loc,gradp)
 
       implicit none
 
+      integer lo(SDIM), hi(SDIM)
       integer DIMDEC(p)
       integer ncomps
       REAL_T  p(DIMV(p))
       REAL_T  rhoval(ncomps)
       REAL_T  dx(SDIM)
       REAL_T  problo(SDIM)
+      REAL_T  probhi(SDIM)
       REAL_T  ref_val
       REAL_T  ref_loc(SDIM)
       REAL_T  gradp(SDIM)
@@ -2413,11 +2354,11 @@ c ::: ---------------------------------------------------------
       integer i,j
       REAL_T  dp(SDIM), x, y
 
-      do j = ARG_L2(p), ARG_H2(p)
-         y = (dble(j)+half)*dx(2) + problo(2)
+      do j = lo(2),hi(2)
+         y = MAX(problo(2), MIN(probhi(2), (dble(j)+half)*dx(2) + problo(2)))
          dp(2) = (y-ref_loc(2))*gradp(2)
-         do i = ARG_L1(p), ARG_H1(p)
-            x = (dble(i)+half)*dx(1) + problo(1)
+         do i = lo(1),hi(1)
+            x = MAX(problo(1), MIN(probhi(1), (dble(i)+half)*dx(1) + problo(1)))
             dp(1) = (x-ref_loc(1))*gradp(1)
             p(i,j) = ref_val + dp(1) + dp(2)
          end do
@@ -2430,7 +2371,7 @@ c ::: Define hydraulic head
 c ::: ---------------------------------------------------------
  
       subroutine FORT_HYD_HEAD(lo, hi, ph, DIMS(ph),
-     &     rhog, dx, plo, nc)
+     &     rhog, gdir, dx, plo, nc)
 
       implicit none
 
@@ -2441,19 +2382,41 @@ c ::: ---------------------------------------------------------
       REAL_T  dx(SDIM)
       REAL_T  plo(SDIM)
       REAL_T  rhog(nc)
+      integer gdir
 
       integer i,j,n
-      REAL_T  y, fac
+      REAL_T  x, y, fac
 
-      do n = 1,nc
-         fac = 1.d0 / rhog(n)
-         do j = ARG_L2(ph), ARG_H2(ph)
-            y = (dble(j)+half)*dx(2) + plo(2)
-            do i = ARG_L1(ph), ARG_H1(ph)
-               ph(i,j,n) = y  +  ph(i,j,n) * fac
+      if (gdir.eq.0) then 
+         do n = 1,nc
+            fac = 1.d0 / rhog(n)
+            do j = ARG_L2(ph), ARG_H2(ph)
+               do i = ARG_L1(ph), ARG_H1(ph)
+                  x = (dble(i)+half)*dx(1) + plo(1)
+                  ph(i,j,n) = x  +  ph(i,j,n) * fac
+               enddo
             enddo
          enddo
-      enddo
+      else if (gdir.eq.1) then 
+         do n = 1,nc
+            fac = 1.d0 / rhog(n)
+            do j = ARG_L2(ph), ARG_H2(ph)
+               y = (dble(j)+half)*dx(2) + plo(2)
+               do i = ARG_L1(ph), ARG_H1(ph)
+                  ph(i,j,n) = y  +  ph(i,j,n) * fac
+               enddo
+            enddo
+         enddo
+      else
+         do n = 1,nc
+            fac = 1.d0 / rhog(n)
+            do j = ARG_L2(ph), ARG_H2(ph)
+               do i = ARG_L1(ph), ARG_H1(ph)
+                  ph(i,j,n) = ph(i,j,n) * fac
+               enddo
+            enddo
+         enddo
+      endif
       end
 
 
@@ -2582,341 +2545,6 @@ c ::: ------------------------------------------------------------------
       end
 
 
-c ::: ---------------------------------------------------------
-c ::: Define Rockhold boundary condition
-c ::: ---------------------------------------------------------
-      
-      subroutine FORT_ROCKHOLD(rho,DIMS(rho),rhoval,ncomps,
-     &     depth,pressure,nz,cplcoef,DIMS(cplcoef),ncplcoef,dx,grav,probhi)
-
-
-      implicit none
-
-      integer DIMDEC(rho)
-      integer DIMDEC(cplcoef)
-      integer ncomps, ncplcoef, nz
-      REAL_T  rho(DIMV(rho),ncomps)
-      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
-      REAL_T  rhoval(ncomps)
-      REAL_T  dx(SDIM)
-      REAL_T  probhi(SDIM)
-      REAL_T  depth(nz),pressure(nz)
-      REAL_T  grav
-      
-      integer i,j,k,l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res,phi,kappa
-      REAL_T  y,dz
-      integer zlo,zhi
-      REAL_T  pc,stmp(2)
-
-c     Gauss Legendre integration
-      REAL_T, parameter :: qd(5) = (/ 0.0d0,
-     &                                0.906179845938664d0*half,
-     &                                0.538469310105683d0*half,
-     &                               -0.906179845938664d0*half,
-     &                               -0.538469310105683d0*half /)
-
-
-      REAL_T, parameter :: wt(5) = (/ 0.568888888888889d0*half,
-     &                                0.236926885056189d0*half,
-     &                                0.478628670499366d0*half,
-     &                                0.236926885056189d0*half,
-     &                                0.478628670499366d0*half /)
-      phi = zero
-      kappa = zero
-      dz = depth(nz)/dble(nz-1)
-      do j = ARG_L2(rho), ARG_H2(rho)
-         do i = ARG_L1(rho), ARG_H1(rho)
-            rho(i,j,:) = zero
-            do k = 1,5
-               y = probhi(2) - (dble(j)+half+qd(k))*dx(2)
-
-               if (y .gt. depth(nz)) then
-                  rho(i,j,1) = rho(i,j,1) + rhoval(1)*wt(k)
-               else if (y .lt. depth(1)) then
-                  pc = -pressure(1)*grav*rhoval(1)
-                  l_cpl_type = nint(cplcoef(i,j,1))
-                  l_cpl_coef = cplcoef(i,j,2)
-                  l_sigma    = cplcoef(i,j,3)
-                  l_sat_res  = cplcoef(i,j,4)
-                  call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
-     &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
-                  rho(i,j,1) = rho(i,j,1) + stmp(1)*wt(k)
-                  rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
-               else
-                  zlo = nint(y/dz+0.5)
-                  zhi = nint(y/dz+0.5)+1
-                  pc = pressure(zlo) + (y-depth(zlo))/(depth(zhi)-depth(zlo))*(pressure(zhi)-pressure(zlo))
-                  pc = -pc*grav*rhoval(1)
-                  l_cpl_type = nint(cplcoef(i,j,1))
-                  l_cpl_coef = cplcoef(i,j,2)
-                  l_sigma    = cplcoef(i,j,3)
-                  l_sat_res  = cplcoef(i,j,4)
-                  call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
-     &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
-                  rho(i,j,1) = rho(i,j,1) + stmp(1)*wt(k)
-                  rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
-               end if
-            end do 
-         end do
-      end do 
-      end
-
-c ::: ---------------------------------------------------------
-c ::: Define Rockhold boundary condition
-c ::: ---------------------------------------------------------
-      
-c$$$      subroutine FORT_ROCKHOLD(rho,DIMS(rho),rhoval,ncomps,
-c$$$     &     cplcoef,DIMS(cplcoef),ncplcoef,dx,wt_loc,grav,
-c$$$     &     vgk,vga,vgn,ts,tr,nmat,q,h0,nn,nz,ns)
-c$$$
-c$$$      implicit none
-c$$$
-c$$$      integer DIMDEC(rho)
-c$$$      integer DIMDEC(cplcoef)
-c$$$      integer ncomps, ncplcoef
-c$$$      REAL_T  rho(DIMV(rho),ncomps)
-c$$$      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
-c$$$      REAL_T  rhoval(ncomps)
-c$$$      REAL_T  dx(SDIM)
-c$$$      REAL_T  wt_loc
-c$$$      REAL_T  grav
-c$$$      
-c$$$      integer i,j,k,l_cpl_type
-c$$$      REAL_T  l_cpl_coef, l_sigma, l_sat_res
-c$$$      REAL_T  y
-c$$$      REAL_T  pc,phi,kappa,satlim(2),stmp(2)
-c$$$      integer nn,nmat,nz,ns
-c$$$      integer mtype(nz)
-c$$$      integer i,iter
-c$$$      REAL_T  q,h0,hlo,hhi,tmpk,cond
-c$$$      REAL_T  z(nz),vgk(nz),vga(nz),vgn(nz),ts(nz),tr(nz),
-c$$$     &     h(nz),thb(nz),tht(nz),tt(nz),hk(nz),gam(ns),sl(ns),
-c$$$     &     htmp(ns+1),uk(ns+1)
-c$$$
-c$$$      REAL_T, allocatable :: z(:),vgk(:),
-c$$$      
-c$$$
-c$$$      hlo = 0
-c$$$      hhi = 25
-c$$$    
-c$$$      do i = 1,nmat
-c$$$        iter = 0
-c$$$        tmpk = cond(hhi,vga(i),vgn(i),vgk(i))
-c$$$        if ( tmpk .ge. q ) then
-c$$$  100     hhi = hhi*2.d0
-c$$$          iter = iter + 1
-c$$$          tmpk = cond(hhi,vga(i),vgn(i),vgk(i))
-c$$$          if( tmpk .ge. q ) then
-c$$$              goto 100
-c$$$           end if
-c$$$        end if
-c$$$      end do
-c$$$      
-c$$$      
-c$$$      do i = 1,nn
-c$$$
-c$$$        read(1,*) z(i),mtype(i)
-c$$$        if( i .gt. 1 ) then
-c$$$          if( z(i) .ge. z(i-1) ) then
-c$$$            write(*,*)' '
-c$$$            write(*,*)' program terminating...'
-c$$$            write(*,*)' z must be in decreasing order.'
-c$$$            stop
-c$$$          endif
-c$$$        endif
-c$$$      end do
-c$$$
-c$$$      dh = (hhi - hlo)/float(ns)
-c$$$      h(1) = h0
-c$$$      jj = mtype(1)
-c$$$
-c$$$      call slope(ns,hlo,dh,vga(jj),vgn(jj),vgk(jj),htmp,sl,uk)
-c$$$      call gamma(ns,q,uk,sl,htmp,gam)
-c$$$
-c$$$      do j = 2,nn
-c$$$        if( mtype(j) .ne. mtype(j-1) ) then
-c$$$          jj = mtype(j)
-c$$$          call slope(ns,hlo,dh,vga(jj),vgn(jj),vgk(jj),htmp,sl,uk)
-c$$$          call gamma(ns,q,uk,sl,htmp,gam)
-c$$$        endif
-c$$$        i = max(1,int((h(j-1) - hlo)/dh + 1.))   
-c$$$        tst = gam(i)*exp(sl(i)*h(j-1)) - 1.d0
-c$$$        if( tst .eq. 0.d0 ) then
-c$$$          h(j) = h(j-1)
-c$$$        else
-c$$$          z0 = z(j-1)
-c$$$          dz = z(j) - z(j-1)
-c$$$          if( h(j-1) .lt. htmp(1) ) then
-c$$$            hnew = g0(q,vgk(jj),dz,h(j-1))
-c$$$            if( hnew .le. htmp(1) ) then
-c$$$              h(j) = hnew
-c$$$            else
-c$$$              z0 = z0 + f0(htmp(1),q,vgk(jj)) - f0(h(j-1),q,vgk(jj))
-c$$$              dz = z(j) - z0
-c$$$              hnew = g(sl(1),gam(1),htmp(1),dz)
-c$$$              if( hnew .le. htmp(2) ) then
-c$$$                h(j) = hnew
-c$$$              else
-c$$$                do kk = 2,ns
-c$$$                  z0 = z0 + f(sl(kk),gam(kk),htmp(kk))
-c$$$     &                    - f(sl(kk-1),gam(kk-1),htmp(kk-1))
-c$$$                  dz = z(j) - z0
-c$$$                  hnew = g(sl(kk),gam(kk),htmp(kk),dz)
-c$$$                  if( hnew .le. htmp(kk) ) then
-c$$$                    h(j) = hnew
-c$$$                    goto 600
-c$$$                  endif
-c$$$                end do
-c$$$              endif
-c$$$            endif
-c$$$          else
-c$$$            hnew = g(sl(i),gam(i),h(j-1),dz)
-c$$$            if( hnew .ge. htmp(i) .and. hnew .lt. htmp(i+1)) then
-c$$$              h(j) = hnew
-c$$$            elseif( hnew .lt. htmp(i) ) then
-c$$$              if( i .eq. 1 ) then
-c$$$                dz = dz + f(sl(1),gam(1),htmp(1)) 
-c$$$     &                  - f(sl(1),gam(1),h(j-1))
-c$$$                h(j) = g0(q,vgk(jj),dz,htmp(1))
-c$$$              else
-c$$$                k = i
-c$$$                do kk = k,2,-1 
-c$$$                  if( kk .eq. k ) then
-c$$$                    z0 = z0 + f(sl(kk),gam(kk),htmp(kk))
-c$$$     &                      - f(sl(kk),gam(kk),h(j-1))
-c$$$                  else
-c$$$                    z0 = z0 + f(sl(kk),gam(kk),htmp(kk))
-c$$$     &                      - f(sl(kk),gam(kk),htmp(kk+1))
-c$$$                  endif
-c$$$                  dz = z(j) - z0
-c$$$                  hnew = g(sl(kk-1),gam(kk-1),htmp(kk),dz)
-c$$$                  if( hnew .ge. htmp(kk-1) ) then
-c$$$                    h(j) = hnew
-c$$$                    goto 600
-c$$$                  endif
-c$$$                end do
-c$$$                z0 = z0 + f(sl(1),gam(1),htmp(1)) 
-c$$$     &                  - f(sl(1),gam(1),h(j-1))
-c$$$                dz = z(j) - z0
-c$$$                h(j) = g0(q,vgk(jj),dz,htmp(1)) 
-c$$$              endif
-c$$$            elseif( hnew .ge. htmp(i+1) ) then
-c$$$              k = i
-c$$$              do kk = k,ns-2
-c$$$                if( kk .eq. k ) then
-c$$$                  z0 = z0 + f(sl(kk),gam(kk),htmp(kk+1))
-c$$$     &                    - f(sl(kk),gam(kk),h(j-1))
-c$$$                else
-c$$$                  z0 = z0 + f(sl(kk),gam(kk),htmp(kk+1))
-c$$$     &                    - f(sl(kk),gam(kk),htmp(kk))
-c$$$                endif
-c$$$                dz = z(j) - z0
-c$$$                hnew = g(sl(kk+1),gam(kk+1),htmp(kk+1),dz)
-c$$$                if( hnew .lt. htmp(kk+2) ) then
-c$$$                  h(j) = hnew
-c$$$                  goto 600
-c$$$                endif
-c$$$              end do
-c$$$            endif
-c$$$          endif
-c$$$  600   endif
-c$$$      end do
-c$$$
-c$$$      contains 
-c$$$        subroutine gamma(ns,q,uk,sl,htmp,gam)
-c$$$        implicit none
-c$$$        integer ns
-c$$$        REAL_T q, uk(ns+1),sl(ns),htmp(ns+1),gam(ns)
-c$$$        do i = 1,ns
-c$$$           gam(i) = q/uk(i)*dexp(-sl(i)*htmp(i))
-c$$$        end do
-c$$$        end
-c$$$      
-c$$$        subroutine get_theta(nz,nn,mtype,ts,tr,vga,vgn,h,thb,tht)
-c$$$        implicit none
-c$$$        integer i,jb,jt,nz,nn
-c$$$        integer mtype(nz)
-c$$$        REAL_T  vga(nz),vgn(nz),ts(nz),tr(nz),
-c$$$     &       h(nz),thb(nz),tht(nz),theta
-c$$$        do i = 1,nn
-c$$$           jb = mtype(i)
-c$$$           thb(i) = theta(ts(jb),tr(jb),vga(jb),vgn(jb),h(i))
-c$$$           tht(i) = thb(i)
-c$$$           if( i .lt. nn ) then
-c$$$              if( mtype(i+1) .ne. mtype(i) ) then
-c$$$                 jt = mtype(i+1)
-c$$$                 tht(i) = theta(ts(jt),tr(jt),vga(jt),vgn(jt),h(i))
-c$$$              endif
-c$$$           endif
-c$$$        end do
-c$$$        end
-c$$$       
-c$$$        subroutine slope(ns,h1,dh,vga,vgn,vgk,htmp,sl,uk)
-c$$$        implicit none
-c$$$        integer ns,i
-c$$$        REAL_T h1,dh,vga,vgn,vgk,htmp(ns+1),sl(ns),uk(ns+1)
-c$$$        do i = 1,ns+1
-c$$$           htmp(i) = h1 + float(i-1)*dh
-c$$$           uk(i) = cond(htmp(i),vga,vgn,vgk)
-c$$$        end do
-c$$$        do i = 1,ns
-c$$$           sl(i) = dlog(uk(i)/uk(i+1))/(htmp(i+1) - htmp(i))
-c$$$           sl(i) = max(sl(i),1.d-15)
-c$$$        end do
-c$$$        end
-c$$$
-c$$$        REAL_T function cond(h,vga,vgn,vgk)
-c$$$        implicit none
-c$$$        REAL_T h, vga, vgn, vgk, t1,vgm
-c$$$        if( h .le. 0.d0 ) then
-c$$$           cond = vgk
-c$$$        else 
-c$$$           vgm = 1.d0 - 1.d0/vgn
-c$$$           t1 = 1.d0 + (vga*h)**vgn
-c$$$           cond = (vgk*(1.d0 - (vga*h)**(vgn - 1.d0)
-c$$$     &          *t1**(-vgm))**2.d0)/t1**(vgm*0.5d0)
-c$$$        endif
-c$$$        end function cond
-c$$$
-c$$$        REAL_T function theta(ts,tr,vga,vgn,h)
-c$$$        implicit none
-c$$$        REAL_T ts,tr,vga,vgn,h,vgm
-c$$$        vgm = 1.d0 - 1.d0/vgn
-c$$$        if( h .ge. 0.d0 ) then
-c$$$           theta = ((1.d0 + (vga*h)**vgn)**(-vgm))*(ts - tr) + tr
-c$$$        else
-c$$$           theta = ts
-c$$$        endif
-c$$$        end function theta
-c$$$      
-c$$$        REAL_T function g(a,gam,ho,z)
-c$$$        implicit none
-c$$$        REAL_T a,gam,ho,z
-c$$$        g = -1.d0/a*dlog(gam - (gam*dexp(a*ho) - 1.d0)*dexp(a*(z-ho)))
-c$$$        return
-c$$$        end function g
-c$$$       
-c$$$        REAL_T function g0(q,vgk,dz,h0)
-c$$$        implicit none
-c$$$        REAL_T q,vgk,dz,h0
-c$$$        g0 = (q/vgk - 1.d0)*dz + h0
-c$$$        end function g0
-c$$$
-c$$$        REAL_T function f(a,g,h)
-c$$$        implicit none
-c$$$        REAL_T a,g,h
-c$$$        f = 1.d0/a*dlog(abs(g*dexp(a*h) - 1.d0)) - h
-c$$$        end function f
-c$$$
-c$$$        REAL_T function f0(h,q,vgk)
-c$$$        implicit none
-c$$$        REAL_T h,q,vgk
-c$$$        f0 = h/(q/vgk - 1.d0)
-c$$$        end function f0
-c$$$
-c$$$      end
-
 c :::
 c ::: Fill ghost cells if nghost > 1 
 c :::
@@ -2980,81 +2608,6 @@ c     x-faces
       end
 
 
-
-#if 0
-c ::: ---------------------------------------------------------
-c ::: Define steady Richards 1D profile : FIXME
-c ::: ---------------------------------------------------------
-      
-      subroutine FORT_STEADY_1D_RICHARD(rho,DIMS(rho),rhoval,
-     &     cplcoef,DIMS(cplcoef),ncplcoef,dx,grav,rhoGInt,prevLoc)
-
-      implicit none
-
-      integer DIMDEC(rho)
-      integer DIMDEC(cplcoef)
-      integer ncomps, ncplcoef
-      REAL_T  rho(DIMV(rho),ncomps)
-      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
-      REAL_T  rhoval(ncomps)
-      REAL_T  dx(SDIM)
-      REAL_T  grav, rhoGint, prevLoc
-      
-      integer i,j,k,l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res
-      REAL_T  y
-      REAL_T  pc,phi,kappa,satlim(2),stmp(2)
-      REAL_T  intRhoG, prev_loc
-
-c     Gauss Legendre integration
-      REAL_T, parameter :: qd(5) = (/ 0.0d0,
-     &                                0.906179845938664d0*half,
-     &                                0.538469310105683d0*half,
-     &                               -0.906179845938664d0*half,
-     &                               -0.538469310105683d0*half /)
-
-
-      REAL_T, parameter :: wt(5) = (/ 0.568888888888889d0*half,
-     &                                0.236926885056189d0*half,
-     &                                0.478628670499366d0*half,
-     &                                0.236926885056189d0*half,
-     &                                0.478628670499366d0*half /)
-
-c     dummy
-      phi   = zero
-      kappa = zero
-
-      do j = ARG_L2(rho), ARG_H2(rho)
-         do i = ARG_L1(rho), ARG_H1(rho)
-            rho(i,j,:) = zero
-            do k = 1,5
-               y = (dble(j)+half+qd(k))*dx(2)
-               if (y .le. wt_loc) then
-                  rho(i,j,1) = rho(i,j,1) + rhoval(1)*wt(k)
-                  rho(i,j,2) = zero
-               else
-                  l_cpl_type = nint(cplcoef(i,j,1))
-                  l_cpl_coef = cplcoef(i,j,2)
-                  l_sigma    = cplcoef(i,j,3)
-                  l_sat_res  = cplcoef(i,j,4)
-                  satlim(1) = l_sat_res*rhoval(1)
-                  satlim(2) = (one - l_sat_res)*rhoval(2)
-                  pc = (rhoval(1)-rhoval(2))*grav*(y-prevLoc) + intRhoG
-                  call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
-     &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
-                  if (stmp(1) .lt. satlim(1)) then
-                     stmp = satlim
-                  end if
-                  rho(i,j,1) = rho(i,j,1) + stmp(1)*wt(k)
-                  rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
-               end if
-            end do 
-         end do
-      end do 
-
-      end
-
-#endif
 
 #define NCROSS 1
 #define DXY 1

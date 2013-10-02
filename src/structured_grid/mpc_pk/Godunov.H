@@ -123,7 +123,7 @@ public:
 		       FArrayBox& rockphi,
 		       FArrayBox& kappa,
 		       int fab_ind, int state_ind, const int *bc,
-		       int use_conserv, int nscal, Real gravity, Real* eigmax);
+		       int use_conserv, int nscal, Real gravity, int gravity_dir, Real* eigmax);
 
   void edge_states_tracer (const Box& grd, const Real* dx, Real dt,
 			   FArrayBox&  uedge, FArrayBox&  stx,
@@ -243,7 +243,7 @@ public:
 			      FArrayBox &rock_phi,
 			      FArrayBox &kappa,
 			      int iconserv, int state_ind, const int *bc,
-			      FArrayBox &vol, int nscal, Real gravity, Real* eigmax);    
+			      FArrayBox &vol, int nscal, Real gravity, int gravity_dir, Real* eigmax);    
 
   virtual void AdvectTracer (const Box& grd, const Real* dx, Real dt, 
 			     FArrayBox& areax, FArrayBox& uedge, FArrayBox& xflux,

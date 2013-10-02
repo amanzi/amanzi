@@ -237,8 +237,8 @@
         <Parameter name="Value" type="double" value="0.38"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="5.13e-13"/>
-        <Parameter name="Vertical" type="double" value="2.87e-13"/>
+        <Parameter name="x" type="double" value="5.13e-13"/>
+        <Parameter name="y" type="double" value="2.87e-13"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="3.02e-4"/>
@@ -254,8 +254,8 @@
         <Parameter name="Value" type="double" value="0.30"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="1.54e-10"/>
-        <Parameter name="Vertical" type="double" value="1.54e-10"/>
+        <Parameter name="x" type="double" value="1.54e-10"/>
+        <Parameter name="y" type="double" value="1.54e-10"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="1.46e-3"/>
@@ -271,8 +271,8 @@
         <Parameter name="Value" type="double" value="0.168"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="3.49e-17"/>
-        <Parameter name="Vertical" type="double" value="3.49e-17"/>
+        <Parameter name="x" type="double" value="3.49e-17"/>
+        <Parameter name="y" type="double" value="3.49e-17"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.130e-8"/>
@@ -288,8 +288,8 @@
         <Parameter name="Value" type="double" value="0.168"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="3.49e-22"/>
-        <Parameter name="Vertical" type="double" value="3.49e-22"/>
+        <Parameter name="x" type="double" value="3.49e-22"/>
+        <Parameter name="y" type="double" value="3.49e-22"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.130e-8"/>
@@ -305,8 +305,8 @@
         <Parameter name="Value" type="double" value="0.266"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="3.70e-17"/>
-        <Parameter name="Vertical" type="double" value="3.70e-17"/>
+        <Parameter name="x" type="double" value="3.70e-17"/>
+        <Parameter name="y" type="double" value="3.70e-17"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.130e-8"/>
@@ -366,7 +366,7 @@
     <ParameterList name="BC lower">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Values" type="Array(double)" value="{0}"/>
+        <Parameter name="Values" type="Array(double)" value="{101325}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">

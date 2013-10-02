@@ -1,18 +1,22 @@
 import matplotlib.pyplot as plt
 import numpy
 import model_steady_linear 
-from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
+import amanzi_xml.utils.io as io
 import prettytable 
 import os 
 
 # load input xml file
 #  -- create an ObservationXML object
 def loadInputXML(filename):
-    Obs_xml = ObsXML(filename)
-    return Obs_xml
-            
+    xml = io.fromFile(filename)
+    if (xml.tag == "ParameterList"):
+        from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
+    else:
+        from amanzi_xml.observations.ObservationXML_newAkuna import ObservationXML as ObsXML
+    return ObsXML(filename)
+
 # load the data file
 #  -- use above xml object to get observation filename
 #  -- create an ObservationData object
@@ -119,11 +123,14 @@ if __name__ == "__main__":
         obs_data=loadDataFile(obs_xml)
 
         fig1= plt.figure()
-        axes1=fig1.add_axes([.1,.1,.8,.8])
+        axes1=fig1.add_axes([.15,.15,.8,.8])
        
         cmap = plotExampleObservations(obs_xml,obs_data, axes1)
         plotExampleModel(input_filename, cmap, axes1,obs_xml, obs_data)
         MakeTable(obs_data,obs_xml,input_filename)
+
+        # plt.show()
+
     finally:
         pass 
 

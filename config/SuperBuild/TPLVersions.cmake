@@ -27,10 +27,60 @@
 #   0.91.3       - updated Xerces-C++ build/find to use OSX CoreServices framework
 #   0.91.4       - updated CCSE to version 1.1.8
 #   0.91.5       - updated CCSE to version 1.2.1
+#   0.91.6       - updated CCSE to version 1.2.3
+#   0.91.7       - updated MSTK to version 2.10rc3
+#   0.91.8       - updated Alquimia to licensed version 0.1
 #
+
+include(CMakeParseArguments)
+
+MACRO(LIST_LENGTH var)
+  SET(entries)
+  FOREACH(e ${ARGN})
+    SET(entries "${entries}.")
+  ENDFOREACH(e)
+  STRING(LENGTH "${entries}" ${var})
+ENDMACRO(LIST_LENGTH)
+
+# this macro appends version number defines to the tpl_versions.h include file
+macro(amanzi_tpl_version_write)
+  set(singleValueArgs FILENAME PREFIX)
+  set(multiValueArgs VERSION)
+  set(options "")
+  
+  cmake_parse_arguments(LOCAL "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  list_length(length ${LOCAL_VERSION})
+
+  if (length GREATER 0) 
+    list(GET LOCAL_VERSION 0 MAJOR)
+    file(APPEND ${LOCAL_FILENAME} "#define ${LOCAL_PREFIX}_MAJOR ${MAJOR}\n")
+  else()
+    file(APPEND ${LOCAL_FILENAME} "#define ${LOCAL_PREFIX}_MAJOR\n")
+  endif()
+
+  if (length GREATER 1)
+    list(GET LOCAL_VERSION 1 MINOR)
+    file(APPEND ${LOCAL_FILENAME} "#define ${LOCAL_PREFIX}_MINOR ${MINOR}\n")
+  else()
+    file(APPEND ${LOCAL_FILENAME} "#define ${LOCAL_PREFIX}_MINOR\n")
+  endif()
+
+  if (length GREATER 2)
+    list(GET LOCAL_VERSION 2 PATCH)
+    file(APPEND ${LOCAL_FILENAME} "#define ${LOCAL_PREFIX}_PATCH ${PATCH}\n")
+  else()
+    file(APPEND ${LOCAL_FILENAME} "#define ${LOCAL_PREFIX}_PATCH\n")
+  endif()
+
+  file(APPEND ${LOCAL_FILENAME} "\n")
+
+endmacro(amanzi_tpl_version_write)
+
+
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 91)
-set (AMANZI_TPLS_VERSION_PATCH 5)
+set (AMANZI_TPLS_VERSION_PATCH 8)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -94,12 +144,12 @@ set(METIS_MD5_SUM        d3848b454532ef18dc83e4fb160d1e10)
 #
 set(CCSE_VERSION_MAJOR 1)
 set(CCSE_VERSION_MINOR 2)
-set(CCSE_VERSION_PATCH 1)
+set(CCSE_VERSION_PATCH 3)
 set(CCSE_VERSION ${CCSE_VERSION_MAJOR}.${CCSE_VERSION_MINOR}.${CCSE_VERSION_PATCH})
 set(AMANZI_DIR $ENV{AMANZI_DIR})
 set(CCSE_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(CCSE_ARCHIVE_FILE   ccse-${CCSE_VERSION}.tar.gz) 
-set(CCSE_MD5_SUM        c343447436aa105cfe1587bd2ef61cbc)
+set(CCSE_MD5_SUM        14ce47e64742e2d83ce305eeb0ce5416)
 
 #
 # TPL: UnitTest
@@ -121,7 +171,7 @@ set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_V
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
-set(Boost_MD5_SUM        4b6bd483b692fd138aef84ed2c8eb679) 
+set(Boost_MD5_SUM        4b6bd483b692fd138aef84ed2c8eb679)
 
 #
 # TPL: BoostCmake
@@ -154,7 +204,7 @@ set(NetCDF_VERSION_PATCH 1.1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc) 
+set(NetCDF_MD5_SUM        5eebcf19e6ac78a61c73464713cbfafc)
 
 #
 # TPL: NetCDF Fortran
@@ -174,7 +224,7 @@ set(ASCEMIO_VERSION_MINOR 2)
 set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
 set(ASCEMIO_URL_STRING    "http://software.lanl.gov/ascem/tpls")
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
-set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)      
+set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 
 #
 # TPL: ExodusII
@@ -197,17 +247,19 @@ set(ExodusII_ARCHIVE_FILE   exodusii-${ExodusII_VERSION}.tar.gz)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 02)
-set(MSTK_VERSION_PATCH )
+set(MSTK_VERSION_MINOR 10)
+set(MSTK_VERSION_PATCH rc3)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        7eb6955dc04542b6f87a2b419c717949)
+set(MSTK_MD5_SUM        9b7515af0e2895f97d483c0291546ef6)
 
 #
 # TPL: MOAB
 #
-set(MOAB_VERSION        r4276)
+set(MOAB_VERSION_MAJOR  r4276)
+set(MOAB_VERSION_MINOR  )
+set(MOAB_VERSION_PATCH  )
 set(MOAB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MOAB_ARCHIVE_FILE   MOAB-${MOAB_VERSION}.tar.gz)
 set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e) 
@@ -243,7 +295,7 @@ set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR})
 set(SuperLU_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
 set(SuperLU_MD5_SUM        565602cf69e425874c2525f8b96e9bb1)
- 
+
 #
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
@@ -254,7 +306,6 @@ set(SuperLUDist_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(SuperLUDist_ARCHIVE_FILE   superlu_dist_${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_MD5_SUM        2194ae8f9786e396a721cf4d41045566)
  
-
 #
 # TPL: PETSc
 #
@@ -265,7 +316,7 @@ set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}-p${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(PETSc_ARCHIVE_FILE   petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        b9b5b42ffb6c619e4f7ee6b29134dc5f) 
+set(PETSc_MD5_SUM        b9b5b42ffb6c619e4f7ee6b29134dc5f)
 
 #
 # TPL: Trilinos
@@ -292,6 +343,7 @@ set(SEACAS_MD5_SUM        edd4cbb84ff5874dc96e846ceeab50b7)
 #
 # TPL: PFlotran
 #
+set(PFLOTRAN_VERSION_MAJOR 0)
 set(PFLOTRAN_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-07032013-clean.tgz)
 set(PFLOTRAN_MD5_SUM        f81f285837e4490992e9dda2159e1baa)
@@ -299,7 +351,8 @@ set(PFLOTRAN_MD5_SUM        f81f285837e4490992e9dda2159e1baa)
 #
 # TPL: Alquimia
 #
+set(ALQUIMIA_VERSION_MAJOR 0)
+set(ALQUIMIA_VERSION_MINOR 1)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ALQUIMIA_ARCHIVE_FILE   berkeleylab-alquimia-639283b202dd.tar.gz)
-set(ALQUIMIA_MD5_SUM        09f0a9fa24b8ee7b7657e973d55c260c)
-
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.1.tar.gz)
+set(ALQUIMIA_MD5_SUM        8001a8721a002937801562bcc242824f)

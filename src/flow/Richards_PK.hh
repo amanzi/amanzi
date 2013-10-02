@@ -62,7 +62,6 @@ class Richards_PK : public Flow_PK {
   void InitializeSteadySaturated();
 
   int AdvanceToSteadyState_Picard(TI_Specs& ti_specs);
-  int AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BackwardEuler(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF1(TI_Specs& ti_specs);
   int AdvanceToSteadyState_BDF2(TI_Specs& ti_specs);
@@ -70,8 +69,6 @@ class Richards_PK : public Flow_PK {
   void CommitState(Teuchos::RCP<Flow_State> FS);
 
   // methods for experimental time integration
-  int PicardTimeStep(double T, double dT, double& dTnext);
-  int AndersonMixingTimeStep(double T, double dT, double& dTnext);
   double ErrorNormRC1(const Epetra_Vector& u, const Epetra_Vector& du);
   double ErrorNormSTOMP(const Epetra_Vector& u, const Epetra_Vector& du);
   double ErrorNormPicardExperimental(const Epetra_Vector& uold, const Epetra_Vector& unew);
@@ -90,8 +87,6 @@ class Richards_PK : public Flow_PK {
 
   void AddTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
   void AddTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix_operator);
-  void AddTimeDerivative_MFDpicard(Epetra_Vector& pressure_cells, 
-                                   Epetra_Vector& pressure_cells_dSdP, double dTp, Matrix_MFD* matrix_operator);
 
   double ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
   void AssembleMatrixMFD(const Epetra_Vector &u, double Tp);
@@ -130,26 +125,27 @@ class Richards_PK : public Flow_PK {
   // access methods
   const Epetra_Map& super_map() { return *super_map_; }
   AmanziGeometry::Point& gravity() { return gravity_; }
+  Teuchos::RCP<Matrix_MFD> matrix() { return matrix_; }
+  Teuchos::RCP<Matrix_MFD> preconditioner() { return preconditioner_; }
+  Teuchos::RCP<Epetra_Vector> get_solution() { return solution; }
 
   // developement members
   bool SetSymmetryProperty();
   void ImproveAlgebraicConsistency(const Epetra_Vector& flux, 
                                    const Epetra_Vector& ws_prev, Epetra_Vector& ws);
   
-  Teuchos::RCP<Matrix_MFD> preconditioner() { return preconditioner_; }
   int ApllyPrecInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
   // auxilliary data management
   void UpdateAuxilliaryData();
 
-
- private:
+ public:
   Teuchos::ParameterList rp_list_;
 
+ private:
   double atm_pressure;
   Teuchos::RCP<Epetra_Map> super_map_;
 
-  Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;
 
   Teuchos::RCP<Matrix_MFD> matrix_;
@@ -171,8 +167,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
   Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
-  Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
-  Teuchos::RCP<Epetra_Vector> rhs_faces;
 
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
@@ -197,7 +191,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Transmis_faces;
   Teuchos::RCP<Epetra_Vector> Grav_term_faces;
 
-  Teuchos::ParameterList solvers_list;
   std::string flow_solver;
 
 

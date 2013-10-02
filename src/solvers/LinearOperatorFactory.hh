@@ -21,6 +21,7 @@
 #include "LinearOperator.hh"
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
+#include "LinearOperatorNKA.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -72,6 +73,12 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       } else if (method_name == "gmres") {
         Teuchos::RCP<LinearOperatorGMRES<Matrix, Vector, VectorSpace> >
             lin_op = Teuchos::rcp(new LinearOperatorGMRES<Matrix, Vector, VectorSpace>(m, h));
+        lin_op->Init(slist);
+        lin_op->name() = method_name;
+        return lin_op;
+      } else if (method_name == "nka") {
+        Teuchos::RCP<LinearOperatorNKA<Matrix, Vector, VectorSpace> >
+            lin_op = Teuchos::rcp(new LinearOperatorNKA<Matrix, Vector, VectorSpace>(m, h));
         lin_op->Init(slist);
         lin_op->name() = method_name;
         return lin_op;

@@ -55,22 +55,35 @@ def createFromXML(filename):
     # grab params from input file
     params = dict()
 
-    import amanzi_xml.utils.io
-    xml = amanzi_xml.utils.io.fromFile(filename)
     import amanzi_xml.utils.search as search
+    import amanzi_xml.utils.io as io
+    xml = io.fromFile(filename)
    
-    params["x0"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[0]
-    params["z0"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[2]
-    params["x1"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[0]
-    params["z1"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[2] 
-    params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
-    params["mu"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
-    params["rho"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
-    params["q_Upstream"] = - search.getElementByPath(xml, "/Main/Boundary Conditions/Upstream BC/BC: Flux/Inward Mass Flux").value[0]
-    params["h_Downstream"] = search.getElementByPath(xml, "/Main/Boundary Conditions/Downstream BC/BC: Hydrostatic/Water Table Height").value[0] 
+    if (xml.tag == "ParameterList"):
+        params["x0"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[0]
+        params["z0"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Corner").value[2]
+        params["x1"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[0]
+        params["z1"] = search.getElementByPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Corner").value[2] 
+        params["K"] = search.getElementByPath(xml, "/Main/Material Properties/Soil/Intrinsic Permeability: Uniform/Value").value
+        params["mu"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
+        params["rho"]= search.getElementByPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
+        params["q_Upstream"] = - search.getElementByPath(xml, "/Main/Boundary Conditions/Upstream BC/BC: Flux/Inward Mass Flux").value[0]
+        params["h_Downstream"] = search.getElementByPath(xml, "/Main/Boundary Conditions/Downstream BC/BC: Hydrostatic/Water Table Height").value[0] 
+    else:
+        low = search.getElementByPath(xml, "/amanzi_input/mesh/generate/box/").get("low_coordinates").split(",")
+        params["x0"], params["z0"] = float(low[0]), float(low[2]) 
+        high = search.getElementByPath(xml, "/amanzi_input/mesh/generate/box/").get("high_coordinates").split(",")
+        params["x1"], params["z1"] = float(high[0]), float(high[2]) 
+        material_list = search.getElementByPath(xml, "/amanzi_input/materials/")
+        params["K"] = search.getElementByPath(search.getElementByName(material_list,"Soil"),"permeability").get("x")
+        phases_list = search.getElementByPath(xml, "/amanzi_input/phases")
+        params["mu"] = float(search.getElementByPath(search.getElementByName(phases_list,"water"),"viscosity").text.strip())
+        params["rho"] = float(search.getElementByPath(search.getElementByName(phases_list,"water"),"density").text.strip())
+        params["q_Upstream"] = - float(search.getElementByPath(xml, "/amanzi_input/boundary_condition/{boundary_condition,Upstream BC}/liquid_phase/liquid_component/inward_mass_flux").get("value"))
+        params["h_Downstream"] = float(search.getElementByPath(xml, "/amanzi_input/boundary_condition/{boundary_condition,Downstream BC}/liquid_phase/liquid_component/hydrostatic").get("value"))
+    #endif
     params.setdefault("g",9.80665)
    
-
     # instantiate the class
     return SteadyLinear(params)
 

@@ -48,15 +48,14 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, Epetra_Vector& u)
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
-  rhs = matrix_->rhs();
-
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
 
+  Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
   solver->ApplyInverse(*rhs, *solution);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -78,8 +77,8 @@ void Darcy_PK::SolveFullySaturatedProblem(double Tp, const Epetra_Vector& rhs, E
 {
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
 
   solver->ApplyInverse(rhs, u);

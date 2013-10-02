@@ -4,9 +4,9 @@
 namespace Amanzi {
 namespace AmanziInput {
 
-#define AMANZI_INPUT_VERSION_MAJOR 1
-#define AMANZI_INPUT_VERSION_MINOR 1
-#define AMANZI_INPUT_VERSION_MICRO 0
+#define AMANZI_OLD_INPUT_VERSION_MAJOR 1
+#define AMANZI_OLD_INPUT_VERSION_MINOR 2
+#define AMANZI_OLD_INPUT_VERSION_MICRO 0
 
 
 
@@ -40,6 +40,7 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_BILU_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_HypreAMG_List ( Teuchos::ParameterList* plist );
 Teuchos::ParameterList create_Solvers_List ( Teuchos::ParameterList* plist );
+Teuchos::ParameterList create_Nonlinear_Solvers_List ( Teuchos::ParameterList* plist );
 void output_boundary_conditions( Teuchos::ParameterList* plist );
 void check_AmanziInputVersion(Teuchos::ParameterList* plist);
 

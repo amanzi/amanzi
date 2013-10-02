@@ -8,11 +8,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "chemistry_pk_base.hh"
 #include "beaker.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
-
-#include "Chemistry_State.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -23,7 +22,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Chemistry_PK {
+class Chemistry_PK: public Chemistry_PK_Base {
  public:
 
 
@@ -90,10 +89,6 @@ class Chemistry_PK {
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
-
-  // Ben: this routine should set the strings that will be
-  // appended to the component_x tag in the cgns output
-  void set_component_names(std::vector<std::string>* names);
 
  protected:
 

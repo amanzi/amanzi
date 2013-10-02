@@ -204,7 +204,7 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
 
 /* ******************************************************************
 * Calculate change of tracer volume per second due to boundary flux.
-* This is the simplified version lipnikov@lanl.gov)
+* This is the simplified version (lipnikov@lanl.gov).
 ****************************************************************** */
 double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
 {

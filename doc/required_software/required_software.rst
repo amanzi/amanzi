@@ -122,7 +122,7 @@ METIS:
         :Information: http://glaros.dtc.umn.edu/gkhome/views/metis/
 
 Trilinos:
-        :Versions: 10.12.2
+        :Versions: 11.0.3
         :Description: Library collection of tools for numberic computing in C++
         :Role: Used throughout Amanzi for data structures and algotithms
         
@@ -137,7 +137,7 @@ Trilinos:
         :Information: http://trilinos.sandia.gov/
 
 CCSE:
-        :Version: 1.0.1
+        :Version: 1.2.3
         :Description: Base library for structured-mesh objects
         :Role: Used by Amanzi to implement structured-grid adaptive integrator
         :Dependencies: MPI, OpenMPI (if enabled)
@@ -150,7 +150,7 @@ Required Software Tools
 -----------------------
 
 CMake:
-        :Versions: 2.8.5 required.
+        :Versions: 2.8.8 required.
         :Description: Cross-platform software build system
         :Role: Forms the basis of the Amanzi build and testing tools
         :Dependencies: A suitable build backand. GNU Make is standard.
@@ -181,14 +181,14 @@ UnitTest++:
 
 
 MOAB:
-        :Versions: Revision 4225 from the SVN repository
+        :Versions: Revision 4276 from the SVN repository
         :Description: A Meshing database library
         :Role: An optional backend for Amanzi meshing
         :Dependencies: ExodusII
         :Information: 
 
 MSTK:
-        :Versions: 1.85.rc4
+        :Versions: 2.10.rc3
         :Description: A meshing database library
         :Role: An optional backend for Amanzi meshing
         :Dependencies: ExodusII, Zoltan (Trilinos)

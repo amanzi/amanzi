@@ -57,10 +57,9 @@ Note, the values in the schematic correlate to the values found in
 :ref:`Plot-Table`.
 
 .. figure:: schematic/Theis.png 
-    :align: center 
     :figclass: align-center
 
-    **Figure 1.2 Illustration of transient drawdown**
+    **Figure 1.2:  Illustration of transient drawdown**
 		    
 .. _Variables:
         

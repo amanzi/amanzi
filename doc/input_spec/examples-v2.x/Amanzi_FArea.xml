@@ -1,5 +1,5 @@
 
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.0.0" type="unstructured">
         
         <model_description name="F Area 2D">
                 <comments>full chemistry</comments>

@@ -19,7 +19,7 @@
 #include "boost/lexical_cast.hpp"
 
 namespace Amanzi {
-namespace AmanziInput {
+namespace AmanziInput{
 
 
 /**
@@ -81,6 +81,7 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
   new_list.sublist("Flow") = create_Flow_List(plist);
   new_list.sublist("Preconditioners") = create_Preconditioners_List(plist);
   new_list.sublist("Solvers") = create_Solvers_List(plist);
+  new_list.sublist("Nonlinear solvers") = create_Nonlinear_Solvers_List(plist);
 
   if (new_list.sublist("MPC").get<std::string>("Chemistry Model") != "Off") {
     new_list.sublist("Chemistry") = CreateChemistryList(plist);
@@ -247,7 +248,7 @@ void init_global_info(Teuchos::ParameterList* plist) {
   std::string chemistry_model = plist->sublist("Execution Control").get<std::string>("Chemistry Model");
 
   phase_name = "Aqueous";
-  phase_comp_name = "Water";
+
   // don't know the history of these variables, clear them just to be safe.
   comp_names.clear();
   mineral_names_.clear();
@@ -260,16 +261,23 @@ void init_global_info(Teuchos::ParameterList* plist) {
       if (phase_list.name(item) == "Aqueous" ) {
 	Teuchos::ParameterList aqueous_list = phase_list.sublist("Aqueous");
 	if (aqueous_list.isSublist("Phase Components")) {
-	  Teuchos::ParameterList phase_components =
-            aqueous_list.sublist("Phase Components");
-	  if (phase_components.isSublist("Water")) {
-	    Teuchos::ParameterList water_components =
-              phase_components.sublist("Water");
-	    if ( water_components.isParameter("Component Solutes")) {
-	      comp_names =
-		water_components.get<Teuchos::Array<std::string> >("Component Solutes");
-	    }
-	  }  // end water
+	  Teuchos::ParameterList phase_components = aqueous_list.sublist("Phase Components");
+	  // for now there should only be one sublist here, we allow it to be named something
+	  // the user chooses, e.g. Water
+	  Teuchos::ParameterList::ConstIterator pcit = phase_components.begin();
+	  ++pcit; 
+	  if (pcit != phase_components.end()) {
+	    Exceptions::amanzi_throw(Errors::Message("Currently Amanzi only supports one phase component, e.g. Water"));
+	  }
+	  pcit = phase_components.begin();
+	  if (!pcit->second.isList()) {
+	    Exceptions::amanzi_throw(Errors::Message("The Phase Components list must only have one sublist, but you have specified a parameter instead."));
+	  }
+	  phase_comp_name = pcit->first;
+	  Teuchos::ParameterList& water_components = phase_components.sublist(phase_comp_name);
+	  if ( water_components.isParameter("Component Solutes")) {
+	    comp_names = water_components.get<Teuchos::Array<std::string> >("Component Solutes");
+	  }
 	}  // end phase components
       }  // end Aqueous phase
     }
@@ -825,11 +833,25 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
     if ( plist->sublist("Execution Control").isParameter("Transport Model") ) {
       if ( plist->sublist("Execution Control").get<std::string>("Transport Model") == "On" ) {
 
+	// get the expert parameters
+	double CFL(1.0);
+	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	    if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Transport Process Kernel")) {
+	      Teuchos::ParameterList t_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Transport Process Kernel");
+	      if (t_exp_params.isParameter("CFL")) {
+		CFL = t_exp_params.get<double>("CFL");
+	      }
+	    }
+	  }
+	}
+	
         // transport is on, set some defaults
-        trp_list.set<int>("discretization order",1);
+        trp_list.set<int>("spatial discretization order", 1);
+        trp_list.set<int>("temporal discretization order", 1);
         trp_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
         trp_list.set<std::string>("enable internal tests", "no");
-        trp_list.set<double>("CFL", 1.0);
+        trp_list.set<double>("CFL", CFL);
         trp_list.set<std::string>("flow mode", "transient");
         trp_list.set<std::string>("advection limiter", "Tensorial");
 
@@ -842,9 +864,11 @@ Teuchos::ParameterList create_Transport_List(Teuchos::ParameterList* plist) {
               if (t_list.isParameter("Transport Integration Algorithm")) {
                 std::string tia = t_list.get<std::string>("Transport Integration Algorithm");
                 if ( tia == "Explicit First-Order" ) {
-                  trp_list.set<int>("discretization order",1);
+                  trp_list.set<int>("spatial discretization order", 1);
+                  trp_list.set<int>("temporal discretization order", 1);
                 } else if ( tia == "Explicit Second-Order" ) {
-                  trp_list.set<int>("discretization order",2);
+                  trp_list.set<int>("spatial discretization order", 2);
+                  trp_list.set<int>("temporal discretization order", 2);
                 }
               }
             }
@@ -1025,12 +1049,10 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
           tol = num_list.get<double>("linear solver tolerance");
         if (num_list.isParameter("linear solver maximum iterations"))
           maxiter = num_list.get<int>("linear solver maximum iterations");
-        if (num_list.isParameter("linear solver method"))
-          method = num_list.get<std::string>("linear solver method");
+        if (num_list.isParameter("linear solver iterative method"))
+          method = num_list.get<std::string>("linear solver iterative method");
         if (num_list.isParameter("linear solver method"))
           prec = num_list.get<std::string>("linear solver preconditioner");
-	if (num_list.isParameter("iterative method"))
-	  prec = num_list.get<std::string>("linear solver iterative method");
       }
     }
   }
@@ -1050,6 +1072,39 @@ Teuchos::ParameterList create_Solvers_List(Teuchos::ParameterList* plist) {
 
 
 /* ******************************************************************
+ * Collects nonlinear solvers
+ ****************************************************************** */
+Teuchos::ParameterList create_Nonlinear_Solvers_List(Teuchos::ParameterList* plist) {
+  Teuchos::ParameterList nls_list;
+
+  std::string nonlinear_solver("");
+  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Nonlinear Solver")) {	  
+    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Nonlinear Solver");
+    if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
+      nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
+    }
+  }
+  
+  if (nonlinear_solver.size() > 0) {
+    if (nonlinear_solver == std::string("Newton")) {
+      nls_list.set("solver", "newton");
+    } else if (nonlinear_solver == std::string("inexact Newton")) {
+      nls_list.set("solver", "newton");
+    } else if (nonlinear_solver == "NKA") {
+      nls_list.set("solver", "nka");
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Select exaclty one of the nonlinear solver types 'Newton', 'inexact Newton', or 'NKA', "+ nonlinear_solver + " is not supported."));
+    }
+  } else { // default is nka
+    nls_list.set("solver", "nka");
+  }
+
+  return nls_list;
+
+}
+
+
+/* ******************************************************************
  * Empty
  ****************************************************************** */
 Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
@@ -1061,22 +1116,56 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 
       Teuchos::ParameterList *flow_list;
 
+      // get the expert parameters
+      std::string disc_method("optimized mfd scaled");
+      std::string rel_perm("upwind with Darcy flux");
+      double atm_pres(ATMOSPHERIC_PRESSURE);
+      std::string nonlinear_solver("NKA");
+
+      if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Flow Process Kernel")) {
+	    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Flow Process Kernel");
+	    if (fl_exp_params.isParameter("Discretization Method")) {
+	      disc_method = fl_exp_params.get<std::string>("Discretization Method");
+	    }
+	    if (fl_exp_params.isParameter("Relative Permeability")) {
+	      rel_perm = fl_exp_params.get<std::string>("Relative Permeability");
+	    }
+	    if (fl_exp_params.isParameter("atmospheric pressure")) {
+	      atm_pres = fl_exp_params.get<double>("atmospheric pressure");
+	    }
+	  }
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").isSublist("Nonlinear Solver")) {	  
+	    Teuchos::ParameterList fl_exp_params = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm").sublist("Nonlinear Solver");
+	    if (fl_exp_params.isParameter("Nonlinear Solver Type")) {
+	      nonlinear_solver = fl_exp_params.get<std::string>("Nonlinear Solver Type");
+	    }
+	  }
+	}
+      }
+      // discretization method must be two point flux approximation for if newton is used
+      if (nonlinear_solver == std::string("Newton") || nonlinear_solver == std::string("inexact Newton")) {
+	disc_method = std::string("two point flux approximation");
+      }
+
       if (flow_model == "Single Phase" || flow_model == "Richards") {
 	
 	if (flow_model == "Single Phase") {
 	  Teuchos::ParameterList& darcy_problem = flw_list.sublist("Darcy Problem");
 	  darcy_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-	  darcy_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
-	  darcy_problem.set<std::string>("discretization method", "optimized mfd scaled");
+	  darcy_problem.set<double>("atmospheric pressure", atm_pres);
+	  darcy_problem.set<std::string>("discretization method", disc_method);
 	  
 	  flow_list = &darcy_problem; // we use this below to insert sublists that are shared by Richards and Darcy	
 	} else if (flow_model == "Richards") {
 	  Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
-	  richards_problem.set<std::string>("relative permeability", "upwind with Darcy flux");
+	  richards_problem.set<std::string>("relative permeability", rel_perm);
 	  // this one should come from the input file...
 	  richards_problem.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-	  richards_problem.set<double>("atmospheric pressure", ATMOSPHERIC_PRESSURE);
-	  richards_problem.set<std::string>("discretization method", "optimized mfd scaled");
+	  richards_problem.set<double>("atmospheric pressure", atm_pres);
+	  richards_problem.set<std::string>("discretization method", disc_method);
+	  
 	  // see if we need to generate a Picard list
 	  
 	  flow_list = &richards_problem; // we use this below to insert sublists that are shared by Richards and Darcy
@@ -1231,6 +1320,9 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	      }
 	    }
 	  }
+	  if (nonlinear_solver == std::string("Newton")) {
+	    sti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	  }
 	}
 
 	// only include the transient list if not in steady mode
@@ -1307,7 +1399,11 @@ Teuchos::ParameterList create_Flow_List(Teuchos::ParameterList* plist) {
 	      }
 	    }
 	  }
-	  
+	  if (nonlinear_solver == std::string("Newton")) {
+	    tti_bdf1.set<int>("max preconditioner lag iterations", 0);
+	  }
+
+
 	  transient_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 	}
       }
@@ -1344,8 +1440,11 @@ Teuchos::ParameterList create_FlowSrc_List(Teuchos::ParameterList* plist)
       } else if (src.isSublist("Source: Permeability Weighted")) {
 	src_sub_out.set<std::string>("spatial distribution method","permeability"); 
 	src_fn = src.sublist("Source: Permeability Weighted");
+      } else if (src.isSublist("Source: Uniform")) {
+	src_sub_out.set<std::string>("spatial distribution method","none"); 
+	src_fn = src.sublist("Source: Uniform");	
       } else {
-	Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted' or 'Source: Permeability Weighted'."));	
+	Exceptions::amanzi_throw(Errors::Message("In the definition of Sources: you must either specify 'Source: Volume Weighted', 'Source: Permeability Weighted', or 'Source: Uniform'"));	
       }
       // create time function 
       Teuchos::ParameterList& src_sub_out_fn = src_sub_out.sublist("sink");
@@ -1414,9 +1513,9 @@ Teuchos::ParameterList create_TransportSrc_List(Teuchos::ParameterList* plist)
       // go to the phase list
       if (src.isSublist("Solute SOURCE")) {
 	if (src.sublist("Solute SOURCE").isSublist("Aqueous")) {
-	  if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist("Water")) {
+	  if (src.sublist("Solute SOURCE").sublist("Aqueous").isSublist(phase_comp_name)) {
 	    
-	    Teuchos::ParameterList src_bc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist("Water");
+	    Teuchos::ParameterList src_bc_list = src.sublist("Solute SOURCE").sublist("Aqueous").sublist(phase_comp_name);
 
 	    // loop over all the source definitions
 	    for (Teuchos::ParameterList::ConstIterator ibc = src_bc_list.begin(); ibc != src_bc_list.end(); ibc++) {
@@ -1786,6 +1885,7 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
         Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
+	
 
         if (! (bc_flux.isParameter("Inward Mass Flux") || bc_flux.isParameter("Outward Mass Flux"))  )  {
           // we can only handle mass fluxes right now
@@ -1810,7 +1910,8 @@ Teuchos::ParameterList create_SS_FlowBC_List(Teuchos::ParameterList* plist) {
 
         Teuchos::ParameterList& tbc = ssf_list.sublist("mass flux").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
-
+	
+	tbc.set<bool>("rainfall", bc_flux.get<bool>("rainfall",false));
 
         if ( times.size() == 1 ) {
           Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");
@@ -2035,12 +2136,12 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     matid_ctr++;
     for (int ii=0; ii<regions.size(); ii++) {
       if (region_to_matid.find(regions[ii]) == region_to_matid.end()) {
-	region_to_matid[regions[ii]] = matid_ctr;
-	matid_to_material[matid_ctr] = matprop_list.name(i);
+        region_to_matid[regions[ii]] = matid_ctr;
+        matid_to_material[matid_ctr] = matprop_list.name(i);
       } else {
-	std::stringstream ss;
-	ss << "There is more than one material assinged to region " << regions[ii] << ".";
-	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+        std::stringstream ss;
+        ss << "There is more than one material assinged to region " << regions[ii] << ".";
+        Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
       }
     } 
 
@@ -2068,17 +2169,48 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
     
     // permeability...
     double perm_x, perm_y, perm_z;
-    if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Uniform")) {
-      perm_x = perm_y = perm_z = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
-    } else if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
-      perm_x = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("x");
-      perm_y = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("y");
-      if (matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").isParameter("z") ) {
-	perm_z = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("z");
-      }
-    } else {
-      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
+    Teuchos::ParameterList& mplist = matprop_list.sublist(matprop_list.name(i));
+    if ((mplist.isSublist("Intrinsic Permeability: Uniform") || mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform"))
+        && (mplist.isSublist("Hydraulic Conductivity: Uniform") || mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform"))) {
+      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified either Intrinsic Permeability or Hydraulic Conductivity, but not both."));     
     }
+
+    if (mplist.isSublist("Intrinsic Permeability: Uniform")) {
+      perm_x = perm_y = perm_z = mplist.sublist("Intrinsic Permeability: Uniform").get<double>("Value");
+    } else if (mplist.isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
+      perm_x = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("x");
+      perm_y = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("y");
+      if (mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").isParameter("z") ) {
+        if (spatial_dimension_ == 3) {
+          perm_z = mplist.sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("z");
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("Intrinsic Permeability: Anisotropic Uniform defines a value for z, while the spatial dimension of the problem not 3."));
+        }
+      }
+    } else if (mplist.isSublist("Hydraulic Conductivity: Uniform")) {
+      perm_x = perm_y = perm_z = mplist.sublist("Hydraulic Conductivity: Uniform").get<double>("Value");
+      // now scale with rho, g and mu to get correct permeability values
+      perm_x *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_y *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_z *= viscosity/(density*GRAVITY_MAGNITUDE);
+    } else if (mplist.isSublist("Hydraulic Conductivity: Anisotropic Uniform")) {
+      perm_x = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("x");
+      perm_y = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("y");
+      if (mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").isParameter("z")) {
+        if (spatial_dimension_ == 3) {
+          perm_z = mplist.sublist("Hydraulic Conductivity: Anisotropic Uniform").get<double>("z");
+        } else {
+          Exceptions::amanzi_throw(Errors::Message("Hydraulic Conductivity: Anisotropic Uniform defines a value for z, while the spatial dimension of the problem not 3."));          
+        }
+      }
+      // now scale with rho, g and mu to get correct permeablity values
+      perm_x *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_y *= viscosity/(density*GRAVITY_MAGNITUDE);
+      perm_z *= viscosity/(density*GRAVITY_MAGNITUDE);
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as 'Intrinsic Permeability: Uniform', 'Intrinsic Permeability: Anisotropic Uniform', 'Hydraulic Conductivity: Uniform', or 'Hydraulic Conductivity: Anisotropic Uniform'"));
+    }
+
     Teuchos::ParameterList &permeability_ic = stt_ic.sublist("permeability");
     Teuchos::ParameterList& aux_list = 
       permeability_ic.sublist("function").sublist(reg_str)
@@ -2091,11 +2223,11 @@ Teuchos::ParameterList create_State_List(Teuchos::ParameterList* plist) {
       .set<double>("value", perm_x);
     if (spatial_dimension_ >= 2) {
       aux_list.sublist("DoF 2 Function").sublist("function-constant")
-	.set<double>("value", perm_y);
+          .set<double>("value", perm_y);
     }
     if (spatial_dimension_ == 3) {
       aux_list.sublist("DoF 3 Function").sublist("function-constant")
-	.set<double>("value", perm_z);
+          .set<double>("value", perm_z);
     }
     
     // specific_yield...
@@ -3188,11 +3320,11 @@ void check_AmanziInputVersion(Teuchos::ParameterList* plist) {
     Exceptions::amanzi_throw(Errors::Message("The version string in the input file '"+version+"' has the wrong format, please use X.Y.Z, where X, Y, and Z are integers."));
   }
 
-  if ((major != AMANZI_INPUT_VERSION_MAJOR) ||
-      (minor != AMANZI_INPUT_VERSION_MINOR) ||
-      (micro != AMANZI_INPUT_VERSION_MICRO)) {
+  if ((major != AMANZI_OLD_INPUT_VERSION_MAJOR) ||
+      (minor != AMANZI_OLD_INPUT_VERSION_MINOR) ||
+      (micro != AMANZI_OLD_INPUT_VERSION_MICRO)) {
     std::stringstream ss_ver_reqd;
-    ss_ver_reqd << AMANZI_INPUT_VERSION_MAJOR << "." << AMANZI_INPUT_VERSION_MINOR << "." << AMANZI_INPUT_VERSION_MICRO;
+    ss_ver_reqd << AMANZI_OLD_INPUT_VERSION_MAJOR << "." << AMANZI_OLD_INPUT_VERSION_MINOR << "." << AMANZI_OLD_INPUT_VERSION_MICRO;
     std::stringstream ss_ver_inp;
     ss_ver_inp << major << "." << minor << "." << micro;
 

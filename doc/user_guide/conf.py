@@ -30,13 +30,18 @@ extensions = ['sphinx.ext.todo',
               'sphinx.ext.ifconfig',
               'sphinx.ext.autodoc',
               'sphinx.ext.doctest',
-              'matplotlib.sphinxext.mathmpl',
               'matplotlib.sphinxext.only_directives',
               'matplotlib.sphinxext.plot_directive',
               'matplotlib.sphinxext.ipython_directive',
               'matplotlib.sphinxext.ipython_console_highlighting',
               'sphinxcontrib.tikz',
               ]
+
+
+if ( os.environ.get('MATHJAX_SSL') == "1" ):
+    mathjax_path='https://software.lanl.gov/ascem/tpls/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+#endif
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -49,7 +54,6 @@ source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
-
 
 # General information about the project.
 project = u'Amanzi'
@@ -76,7 +80,8 @@ release = '0.2.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+#exclude_patterns = ['_build','testing','prototype','viz','install']
+exclude_patterns = ['_build','testing','install']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -103,7 +108,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinxdoc'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -191,7 +196,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+'preamble': '\usepackage[version=3]{mhchem}',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -254,3 +259,4 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+

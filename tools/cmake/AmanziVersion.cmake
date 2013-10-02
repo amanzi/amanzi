@@ -8,9 +8,9 @@ include(InstallManager)
 
 # Amanzi version format major.minor.patch
 set(AMANZI_VERSION_MAJOR 0)
-set(AMANZI_VERSION_MINOR 1)
-set(AMANZI_VERSION_PATCH 0)
-set(AMANZI_VERSION "0.1")
+set(AMANZI_VERSION_MINOR 79)
+set(AMANZI_VERSION_PATCH 0-dev)
+set(AMANZI_VERSION "0.79.0-dev")
 
 # Set Mercurial branch and ids
 mercurial_branch(AMANZI_HG_BRANCH)

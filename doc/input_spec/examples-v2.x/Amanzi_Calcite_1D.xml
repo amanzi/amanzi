@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.0.0" type="unstructured">
 
 	<model_description name="1D Calcite Dissolution">
 		<author>Glenn Hammond</author>
@@ -12,7 +12,7 @@
 
 	<definitions>
 	    	<macros>
-				<cycle_macro name = "Every-100-steps">
+				<cycle_macro name = "Every_100_steps">
 					<start>0</start>
 					<timestep_interval>100</timestep_interval>
 					<stop>-1</stop>
@@ -58,7 +58,7 @@
 
 	<process_kernels>
 		<flow state="on" model="saturated"/>
-		<transport state="on" algorithm="implicit upwind"/>
+		<transport state="on" algorithm="implicit upwind" sub_cycling = "on"/>
 		<chemistry state="on" process_model="implicit operator split"/>
 	</process_kernels>
 
@@ -96,14 +96,11 @@
 		      	<max_iterations>20</max_iterations>
           		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
           		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-          		<error_rel_tol>0.0</error_rel_tol>
-          		<error_abs_tol>1.0</error_abs_tol>
           		<pseudo_time_integrator>
                			<method>picard</method>
-          				<preconditioner>hypre amg</preconditioner>
+          				<preconditioner>hypre_amg</preconditioner>
           				<linear_solver>aztec00</linear_solver>
           				<control_options>pressure</control_options>
-          				<divergent_max_iterations>100</divergent_max_iterations>
           				<clipping_saturation>0.95</clipping_saturation>
           				<convergence_tolerance>0.95</convergence_tolerance>
           				<initialize_with_darcy>true</initialize_with_darcy>
@@ -111,10 +108,7 @@
 		</steady-state_controls>
 		<transient_controls>
 			<comments>Proposed comments section.</comments>
-			<integration_method name="bdf1">
-			   <convergence_criteria error_rel_tol="0.0" error_abs_tol="0.0" />
-                           <nonlinear_solver_parameters min_iterations="12" max_iterations="20" max_preconditioner_lag="5" />
-			</integration_method>
+			<bdf1_integration_method min_iterations="12" max_iterations="20" max_preconditioner_lag_iterations="5" />
 		</transient_controls>
 		<linear_solver>
 			<comments>Proposed comment section.</comments>
@@ -127,8 +121,6 @@
 	                       	<hypre_tolerance>0.1</hypre_tolerance>
 	                       	<hypre_strong_threshold>0.8</hypre_strong_threshold>
 	                 </preconditioner>
-       		         <sub_cycling>true</sub_cycling>
-			<transport_sub_cycling>true</transport_sub_cycling>
 		</linear_solver>
 	</numerical_controls>
 
@@ -206,7 +198,7 @@
 			<assigned_regions>All</assigned_regions>
 			<liquid_phase name="water">
 				<liquid_component name="water">
-					<pressure value="201325.0"/>
+					<uniform_pressure value="201325.0"/>
 				</liquid_component>
 				<geochemistry>
 					<constraint name="Initial"/>
@@ -255,25 +247,25 @@
 		<checkpoint>
 			<base_filename>chk</base_filename>
 		  	<num_digits>5</num_digits>
-		  	<time_macro>Every_100_timesteps</time_macro>
+		  	<cycle_macro>Every_100_steps</cycle_macro>
 		</checkpoint>
 
 		<observations>
        			<filename>observations.out</filename>
 			<liquid_phase name="water">
-          			<observation variable="Integrated Mass">
+          			<integrated_mass>
               				<filename>imass.out</filename>  <!-- later when there is more $$; for now all observation is output to same file -->
              				<assigned_regions>All</assigned_regions>
             				<functional>integral</functional>
               				<time_macro>Macro 1</time_macro>
-           			</observation>
+           			</integrated_mass>
 
-           			<observation variable="H+">
+           			<aqueous_conc solute ="H+">
 					<filename>conc.out</filename>  <!-- later when there is more $$; for now all observation is output to same file -->
 					<assigned_regions>half_distance,outlet</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Macro 1</time_macro>
-				</observation>
+				</aqueous_conc>
 			</liquid_phase>
 		</observations>
 	</output>

@@ -14,10 +14,7 @@ accessing the new state-dev from the old Flow PK.
 #define AMANZI_CHEMISTRY_STATE_NEW_HH_
 
 #include "PK_State.hh"
-
-#ifndef ALQUIMIA_ENABLED
 #include "beaker.hh"
-#endif
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -40,9 +37,7 @@ class Chemistry_State : public PK_State {
 
   virtual ~Chemistry_State() {}
 
-#ifndef ALQUIMIA_ENABLED
   void AllocateAdditionalChemistryStorage(const Beaker::BeakerComponents&);
-#endif
   void AllocateAdditionalChemistryStorage(int num_aqueous_components);
 
   void Initialize();

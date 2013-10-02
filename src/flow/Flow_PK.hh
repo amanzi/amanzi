@@ -148,6 +148,10 @@ class Flow_PK : public BDF2::fnBase {
   virtual void UpdateAuxilliaryData() = 0;
 
 public:
+  Teuchos::ParameterList solver_list_;
+  Teuchos::ParameterList preconditioner_list_;
+  Teuchos::ParameterList nonlin_solver_list_;
+
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
@@ -168,9 +172,6 @@ public:
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-
-  Teuchos::ParameterList solver_list_;
-  Teuchos::ParameterList preconditioner_list_;
 
   AmanziGeometry::Point gravity_;
   double rho_, mu_;

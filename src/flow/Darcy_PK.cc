@@ -76,8 +76,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State>
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
   const Epetra_Map& target_cmap = mesh_->cell_map(true);
 
-  cell_importer_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
-
   const Epetra_Map& source_fmap = mesh_->face_map(false);
   const Epetra_Map& target_fmap = mesh_->face_map(true);
 
@@ -272,21 +270,10 @@ void Darcy_PK::InitNextTI(double T0, double dT0, TI_Specs ti_specs)
     }
   }
 
-  // set up new preconditioner (preconditioner_ = matrix_)
-  int method = ti_specs.preconditioner_method;
-  Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
-  Teuchos::ParameterList prec_list;
-  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    prec_list = tmp_list.sublist("ml parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    prec_list = tmp_list.sublist("boomer amg parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    prec_list = tmp_list.sublist("block ilu parameters");
-  }
-
-  matrix_->DestroyPreconditioner();
+  // set up new preconditioner
+  // matrix_->DestroyPreconditionerNew();
   matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
-  matrix_->InitPreconditioner(method, prec_list);
+  matrix_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up initial guess for solution
   Epetra_Vector& pressure = FS->ref_pressure();
@@ -388,14 +375,14 @@ int Darcy_PK::Advance(double dT_MPC)
   matrix_->AssembleSchurComplement(bc_model, bc_values);
   matrix_->UpdatePreconditioner();
 
-  rhs = matrix_->rhs();
+  Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();
   if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
   // create linear solver
   LinearSolver_Specs& ls_specs = ti_specs->ls_specs;
 
-  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+  AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_);
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
@@ -451,7 +438,7 @@ void Darcy_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   // calculate darcy mass flux
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   matrix_->CreateMFDstiffnessMatrices();
-  matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+  matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux);
   AddGravityFluxes_DarcyFlux(K, flux);
   for (int c = 0; c < nfaces_owned; c++) flux[c] /= rho_;
 

@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.0.0" type="unstructured">
 
 	<model_description name="SR Test Problem">
 		<comments>Getting started on a simple 2D steady-state saturated test</comments>
@@ -49,14 +49,12 @@
 		      	<max_iterations>20</max_iterations>
           		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
           		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-          		<error_rel_tol>0.0</error_rel_tol>
-          		<error_abs_tol>1.0</error_abs_tol>
           		<pseudo_time_integrator>
                			<method>picard</method>
-          			<preconditioner>hypre amg</preconditioner>
+          			<preconditioner>hypre_amg</preconditioner>
           			<linear_solver>aztec00</linear_solver>
           			<control_options>pressure</control_options>
-          			<divergent_max_iterations>100</divergent_max_iterations>
+          			<max_iterations>100</max_iterations>
           			<clipping_saturation>0.9</clipping_saturation>
           			<convergence_tolerance>1.0e-10</convergence_tolerance>
           			<initialize_with_darcy>true</initialize_with_darcy>
@@ -75,8 +73,6 @@
 			        <hypre_tolerance>0.1</hypre_tolerance>
 			        <hypre_strong_threshold>0.4</hypre_strong_threshold>
 			</preconditioner>
-       		        <sub_cycling>true</sub_cycling>
-			<transport_sub_cycling>true</transport_sub_cycling>
 		</linear_solver>
 
 	</numerical_controls>
@@ -134,7 +130,7 @@
 			<assigned_regions>Entire Domain</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<saturation value = "1.0" function="uniform"/>
+					<uniform_saturation value = "1.0"/>
 				</liquid_component>
 			</liquid_phase>
          	</initial_condition>

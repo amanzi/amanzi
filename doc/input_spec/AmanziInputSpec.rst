@@ -191,7 +191,13 @@ Usage:
 
  * [SU] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
- * [SU] `"Chemistry Model`" [string]: Chemical reaction of constituents.  Accepts `"Off`" or `"On`" [string]
+ * [SU] `"Chemistry Model`" [string]: Chemical interface and engine for reaction of constituents.
+
+  * [SU] `"Off`" [string]: No chemistry model
+
+  * [SU] `"Amanzi`" [string]: Original Amanzi geochemistry engine, which supports only primary species concentrations in initial and boundary conditions, and source terms. 
+
+  * [SU] `"Alquimia`" [string]: Alquimia interface to a geochemistry engine, supporting geochemical constraints in initial and boundary conditions, and in source terms.
 
  * [SU] `"Time Integration Mode`" [list]: accepts one of three integration modes:
 
@@ -260,13 +266,29 @@ Usage:
 
   If the unstructured option is active, the following list of parameters is valid:
 
-  * [U] `"Unstructured Algorithm"` [list] Control parameters associtated with the unstructured algorithm.
+  * [U] `"Unstructured Algorithm"` [list]: Control parameters associtated with the unstructured algorithm.
 
-   * [U] `"Transport Process Kernel`" [list] Control parameters for the transport methods
+   * [U] `"Flow Process Kernel`" [list]: Control parameters for the flow methods
 
-     * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default: `"Explicit First-Order`")
+     * [U] `"Discretization Method`" [string]: Specifies the spatial discretization 
+       method. The Available options are: `"mfd scaled`", `"optimized mfd scaled`"
+       (default), `"two-point flux approximation`", and `"support operator`".
+       The second option is recommended for orthogonal meshes and diagonal absolute permeability.
 
-     * [U] `"transport subcycling`" [bool] Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`")
+     * [U] `"Relative Permeability`" [string]: Defines a method for calculating the *upwinded*
+       relative permeability. The available options are: `"upwind with gravity`", 
+       `"upwind with Darcy flux`" (default), `"cell centered"`, and `"upwind amanzi`"
+       (experimental).  The first three calculate the relative permeability on mesh interfaces.
+
+     * [U] `"atmospheric pressure`" [double]: Defines the atmospheric pressure, [Pa].   
+
+   * [U] `"Transport Process Kernel`" [list]: Control parameters for the transport methods
+
+     * [U] `"Transport Integration Algorithm`" [string]: Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default: `"Explicit First-Order`")
+
+     * [U] `"CFL`" [double]: Time step limiter, a number less than 1 with default of 1.
+
+     * [U] `"transport subcycling`" [bool]: Accepts `"true`" or `"false`" which corresponds to transport subcycling on or off, respectively. (default: `"true`")
 
    * [U] `"Chemistry Process Kernel`" [list]: Control parameters for the reactive transport methods
 
@@ -352,9 +374,15 @@ Usage:
 
      * [U] `"linear solver tolerance`" [double] Set the tolerance for the AztecOO linear solver that may be used in a saturated steady state computation. (default: `"1.0e-16`", suggested range: 1.0e-20 ... 1.0e-14)
 
-     * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the AztecOO linear solver that may be used in a saturated steady state computation. (default: `"100`", suggested range: 50 ... 1000)
+     * [U] `"linear solver maximum iterations`" [int] Set the maximum number of iterations for the linear solver that may be used in a saturated steady state computation. (default: `"100`", suggested range: 50 ... 1000)
  
      * [U] `"linear solver preconditioner`" [string] select the preconditioner to be used in the nonlinear solver for linear problems, choose one of `"Trilinos ML`", `"Hypre AMG`", or `"Block ILU`". (default: `"Hypre AMG`")
+
+     * [U] `"linear solver iterative method`" [string] select the iterative method to be used in linear solvers, choose one of `"pcg`", or `"gmres`". (default: `"gmres`")
+
+   * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
+
+     * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", and `"inexact Newton`".
 
    * [U] `"Preconditioners`" [list] Parameters to control the linear solver algorithms used in the preconditioner.
 
@@ -527,9 +555,9 @@ Example:
 
   <ParameterList name="Execution Control">
 
-    <Parameter name="Flow Mode" type="string" value="Richards"/>
-    <Parameter name="Transport Mode" type="string" value="On"/>
-    <Parameter name="Chemistry Mode" type="string" value="Off"/>
+    <Parameter name="Flow Model" type="string" value="Richards"/>
+    <Parameter name="Transport Model" type="string" value="On"/>
+    <Parameter name="Chemistry Model" type="string" value="Off"/>
 
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Transient">
@@ -965,7 +993,6 @@ The following models can be specified for the intrinsic permeability of the mate
 
  where the directions refer to the global cartesian coordinates.
 
-Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
 
 The following models can be specified for the Hydraulic Conductivity of the material:
 
@@ -1174,7 +1201,7 @@ For simplicity here, any boundary conditions not explicitly set in the input are
 Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of production and loss processes, are defined for each phase component, if applicable, and include the distribution of any solutes that are carried into the domain with the phase component.  However, sources are not currently supported in Amanzi.
 
 In order to support the rather general specification requirements (involving combinations of phase pressures and component saturations), we must first define the composition of the "state" of the simulations by identifying all phases, components and solutes that will be present in the system.  We do this hierarchically, first by phase then by component:
-
+/
 * [SU] `"Phase Definitions`" [list] can accept lists of named phases (currently PHASE can be `"Aqueous`" or `"Solid`").
 
  * [SU] `"Aqueous`" phase [list] can accept the following lists: `"Phase Properties`", `"Phase Components`"
@@ -1243,7 +1270,7 @@ Finally, we specify sources.  Support is provided for specifying sources on the 
 
  * [U] SOURCE [list] label for a source term, accepts source function names, and parameters to specify assigned regions and solute source conditions.
 
-  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
+  * [U] Function [list] Parameterized model to specify source. Choose exactly one of the following: `"Source: Uniform`", `"Source: Volume Weighted`", `"Source: Permeability Weighted`" (see below).
   
   * [U] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
@@ -1276,7 +1303,27 @@ The following initial condition parameterizations are supported:
 
 The following boundary condition parameterizations are supported:
 
-* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Inward Volumetric Flux`" [Array double], `"Inward Mass Flux`" [Array double], `"Outward Volumetric Flux`" [Array double] or `"Outward Mass Flux`" [Array double]. Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward or outward refers to the flux being in the direction of the inward or outward normal to each face of the boundary region, respectively. (In the unstructured code, only `"Inward Mass Flux`" and `"Outward Mass Flux`" are supported.)
+* [SU] `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] 
+  (see the note below) and one of the following: 
+
+    * []  `"Inward Volumetric Flux`" [Array double], 
+
+    * [SU] `"Inward Mass Flux`" [Array double], 
+
+    * []  `"Outward Volumetric Flux`" [Array double], or
+
+    * [SU] `"Outward Mass Flux`" [Array double]. 
+
+  Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass
+  flux is interpreted as kilogramms per meter squared per
+  second. Inward or outward refers to the flux being in the direction
+  of the inward or outward normal to each face of the boundary region,
+  respectively. With `"Inward`" fluxes there is an additional
+  parameter to describe how sloping topography is handled:
+
+    * [U] "rainfall" [bool] indicates that the mass flux is defined with respect
+      to the gravity vector and the actual influx depends on boundary
+      slope (default value is "false").
 
 * [SU] `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
@@ -1300,13 +1347,15 @@ The following boundary condition parameterizations are supported:
 
 The following source parameterizations are supported.
 
-* [U] `"Source: Volume Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Uniform`" [kg/s/m^3] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* [U] `"Source: Permeability Weighted`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Volume Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Permeability Weighted`" [kg/s] requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* [U] `"Source: Uniform Concentration`" uses a volume weighting to distribute the source uniformally over the specified region(s).  Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* [U] `"Source: Flow Weighted Concentration`" aligns the spatial distribution of the concentration with the distribution selected for the flow. Requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
 Time Functions
 ~~~~~~~~~~~~~~
@@ -1561,7 +1610,15 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * [SU] `"File Name Base`" [string]
 
+  * [U] `"File Name Digits`" [int] specify the number of digits that should be appended to the file name for the cycle number.
+
   * [SU] `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
+
+Notes:
+
+[U] if only `"File Name Base`" and optionally `"File Name Digits`" are specified then only one checkpoint is
+written at the end of the simulation.
+
 
 
 Example:
@@ -1600,6 +1657,13 @@ at intervals corresponding to the numerical time step values; writes are control
   * [S] `"Variables`" [Array string] can accept a list of field quantities to include in the file.  At present the unstructured code dumps all of the dependent variables in the system state.
 
   * [U] `"Regions`" [Array string] (optional) can accept a list of region names of cell regions that will be available to plot separately from the overall mesh. 
+
+
+Notes:
+
+[U] If only `"File Name Base`" is specified, an initial and a final visualization dump are written.
+
+
 
 Example:
 

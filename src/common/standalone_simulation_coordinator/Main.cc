@@ -51,8 +51,10 @@
 
 
 #ifdef ENABLE_Unstructured
-#include "evaluator_reg.hh"
+#include "state_evaluators_reg.hh"
 #endif
+
+#include "tpl_versions.h"
 
 #include <iostream>
 #include <boost/filesystem.hpp>
@@ -77,32 +79,50 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
   int rank = mpiSession.getRank();
 
-  // make sure only PE0 can write to std::cout  --  NO...do not do this!!
-  // if (rank != 0) cout.rdbuf(0);
-
   try {
     Teuchos::CommandLineProcessor CLP;
 
     CLP.setDocString("The Amanzi driver reads an XML input file and\n"
                      "runs a reactive flow and transport simulation.\n");
 
-    std::string xmlInFileName = "options.xml";
+    std::string xmlInFileName = "";
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
 
-    std::string xmlSchema = "doc/input_spec/amanzi.xsd";
-    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File"); 
+    std::string xmlSchema = "";
+    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File");
 
     bool print_version(false);
-    CLP.setOption("version", "no_version", &print_version, "Print version number and exit.");
+    CLP.setOption("print_version", "no_print_version", &print_version, "Print version number and exit.");
 
-    CLP.throwExceptions(true);
+    bool print_tpl_versions(false);
+    CLP.setOption("print_tplversions", "no_print_tplversions", &print_tpl_versions, "Print version numbers of third party libraries and exit.");
+
+    bool print_all(false);
+    CLP.setOption("print_all", "no_print_all", &print_all, "Print all pre-run information.");    
+
+    bool print_paths(false);
+    CLP.setOption("print_paths", "no_print_paths", &print_paths, "Print paths of the xml input file and the xml schema file.");    
+    
+    CLP.throwExceptions(false);
+    CLP.recogniseAllOptions(true);
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn
         parseReturn = CLP.parse(argc, argv);
 
-    // check if the files actually exist
-    if (!exists(xmlInFileName)) {
-      Exceptions::amanzi_throw(Errors::Message("The input file " + xmlInFileName + " does not exist."));
+    if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+      throw std::string("amanzi not run");
+    }    
+    if (parseReturn == Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION) {
+      throw std::string("amanzi not run");
+    }
+    if (parseReturn == Teuchos::CommandLineProcessor::PARSE_ERROR) {
+      throw std::string("amanzi not run");
+    }
+    
+    if (print_all) {
+      print_paths = true;
+      print_tpl_versions = true;
+      print_version = true;
     }
 
     // strinigy magic
@@ -117,8 +137,108 @@ int main(int argc, char *argv[]) {
 	std::cout << "HG global hash " << XSTR(AMANZI_HG_GLOBAL_HASH) << std::endl;
 	std::cout << "HG local id    " << XSTR(AMANZI_HG_LOCAL_ID) << std::endl;
       }
-      exit(0);
     }
+
+    if (print_tpl_versions) {
+      if (rank == 0) {
+#ifdef AMANZI_MAJOR
+	std::cout << "Amanzi TPL collection version "<<  XSTR(AMANZI_MAJOR) << "." << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
+#endif
+	std::cout << "Third party libraries that this amanzi binary is linked against:" << std::endl;
+#ifdef ALQUIMIA_MAJOR
+	std::cout << "  ALQUIMIA       " << XSTR(ALQUIMIA_MAJOR) << "." << XSTR(ALQUIMIA_MINOR) << "." << XSTR(ALQUIMIA_PATCH) << std::endl;
+#endif
+#ifdef ASCEMIO_MAJOR
+	std::cout << "  ASCEMIO        " << XSTR(ASCEMIO_MAJOR) << "." << XSTR(ASCEMIO_MINOR) << "." << XSTR(ASCEMIO_PATCH) << std::endl;
+#endif
+#ifdef Boost_MAJOR
+	std::cout << "  Boost          " << XSTR(Boost_MAJOR) << "." << XSTR(Boost_MINOR) << "." << XSTR(Boost_PATCH) << std::endl;
+#endif
+#ifdef CCSE_MAJOR
+	std::cout << "  CCSE           " << XSTR(CCSE_MAJOR) << "." << XSTR(CCSE_MINOR) << "." << XSTR(CCSE_PATCH) << std::endl;
+#endif
+#ifdef CURL_MAJOR
+	std::cout << "  CURL           " << XSTR(CURL_MAJOR) << "." << XSTR(CURL_MINOR) << "." << XSTR(CURL_PATCH) << std::endl;
+#endif
+#ifdef ExodusII_MAJOR
+	std::cout << "  ExodusII       " << XSTR(ExodusII_MAJOR) << "." << XSTR(ExodusII_MINOR) << "." << XSTR(ExodusII_PATCH) << std::endl;
+#endif
+#ifdef HDF5_MAJOR
+	std::cout << "  HDF5           " << XSTR(HDF5_MAJOR) << "." << XSTR(HDF5_MINOR) << "." << XSTR(HDF5_PATCH) << std::endl;
+#endif
+#ifdef HYPRE_MAJOR
+	std::cout << "  HYPRE          " << XSTR(HYPRE_MAJOR) << "." << XSTR(HYPRE_MINOR) << "." << XSTR(HYPRE_PATCH) << std::endl;
+#endif
+#ifdef METIS_MAJOR
+	std::cout << "  METIS          " << XSTR(METIS_MAJOR) << "." << XSTR(METIS_MINOR) << "." << XSTR(METIS_PATCH) << std::endl;	
+#endif
+#ifdef MOAB_MAJOR
+	std::cout << "  MOAB           " << XSTR(MOAB_MAJOR) << "." << XSTR(MOAB_MINOR) << "." << XSTR(MOAB_PATCH) << std::endl;
+#endif
+#ifdef MSTK_MAJOR 
+	std::cout << "  MSTK           " << XSTR(MSTK_MAJOR) << "." << XSTR(MSTK_MINOR) << "." << XSTR(MSTK_PATCH) << std::endl;
+#endif
+#ifdef NetCDF_MAJOR
+	std::cout << "  NetCDF         " << XSTR(NetCDF_MAJOR) << "." << XSTR(NetCDF_MINOR) << "." << XSTR(NetCDF_PATCH) << std::endl;
+#endif
+#ifdef NetCDF_Fortran_MAJOR
+	std::cout << "  NetCDF_Fortran " << XSTR(NetCDF_Fortran_MAJOR) << "." << XSTR(NetCDF_Fortran_MINOR) << "." << XSTR(NetCDF_Fortran_PATCH) << std::endl;
+#endif
+#ifdef ParMetis_MAJOR
+	std::cout << "  ParMetis       " << XSTR(ParMetis_MAJOR) << "." << XSTR(ParMetis_MINOR) << "." << XSTR(ParMetis_PATCH) << std::endl;
+#endif
+#ifdef PETSc_MAJOR
+	std::cout << "  PETSc          " << XSTR(PETSc_MAJOR) << "." << XSTR(PETSc_MINOR) << "." << XSTR(PETSc_PATCH) << std::endl;	
+#endif
+#ifdef PFLOTRAN_MAJOR
+	std::cout << "  PFLOTRAN       " << XSTR(PFLOTRAN_MAJOR) << "." << XSTR(PFLOTRAN_MINOR) << "." << XSTR(PFLOTRAN_PATCH) << std::endl;
+#endif
+#ifdef SEACAS_MAJOR
+	std::cout << "  SEACAS         " << XSTR(SEACAS_MAJOR) << "." << XSTR(SEACAS_MINOR) << "." << XSTR(SEACAS_PATCH) << std::endl;
+#endif
+#ifdef SuperLU_MAJOR
+	std::cout << "  SuperLU        " << XSTR(SuperLU_MAJOR) << "." << XSTR(SuperLU_MINOR) << "." << XSTR(SuperLU_PATCH) << std::endl;
+#endif
+#ifdef SuperLUDist_MAJOR
+	std::cout << "  SuperLUDist    " << XSTR(SuperLUDist_MAJOR) << "." << XSTR(SuperLUDist_MINOR) << "." << XSTR(SuperLUDist_PATCH) << std::endl;
+#endif
+#ifdef Trilinos_MAJOR
+	std::cout << "  Trilinos       " << XSTR(Trilinos_MAJOR) << "." << XSTR(Trilinos_MINOR) << "." << XSTR(Trilinos_PATCH) << std::endl;
+#endif
+#ifdef UnitTest_MAJOR
+	std::cout << "  UnitTest       " << XSTR(UnitTest_MAJOR) << "." << XSTR(UnitTest_MINOR) << "." << XSTR(UnitTest_PATCH) << std::endl;
+#endif
+#ifdef XERCES_MAJOR
+	std::cout << "  XERCES         " << XSTR(XERCES_MAJOR) << "." << XSTR(XERCES_MINOR) << "." << XSTR(XERCES_PATCH) << std::endl;
+#endif
+#ifdef ZLIB_MAJOR
+	std::cout << "  ZLIB           " << XSTR(ZLIB_MAJOR) << "." << XSTR(ZLIB_MINOR) << "." << XSTR(ZLIB_PATCH) << std::endl;
+#endif
+      }
+    }
+
+    if (print_paths) {
+      if (rank == 0) {
+	std::cout << "xml input file:  " << xmlInFileName << std::endl;
+	std::cout << "xml schema file: " << xmlSchema << std::endl;
+      }
+    }
+
+    if (xmlInFileName.size() == 0) {
+      if (rank == 0) {
+	std::cout << "ERROR: No xml input file was specified. Use the command line option --xml_file to specify one." << std::endl;
+      }      
+      throw std::string("amanzi not run");      
+    }
+
+    // check if the input file actually exists
+    if (!exists(xmlInFileName)) {
+      if (rank == 0) {
+	std::cout << "ERROR: The xml input file " << xmlInFileName << " that was specified using the command line option --xml_file does not exist." << std::endl;
+      }
+      throw std::string("amanzi not run");
+    }
+
 
     // EIB - this is the new piece which reads either the new or old input
     /***************************************/
@@ -143,8 +263,18 @@ int main(int argc, char *argv[]) {
       //DOMImplementation* impl =  DOMImplementationRegistry::getDOMImplementation(X("Core"));
       if (strcmp(temp2,"amanzi_input")==0) {
 
+	if (xmlSchema.size() == 0) {
+	  if (rank == 0) {
+	    std::cout << "ERROR: No xml schema file was specified. Use the command line option --xml_schema to specify one." << std::endl;
+	  }      
+	  throw std::string("amanzi not run");      
+	}
+
 	if (!exists(xmlSchema)) {
-	  Exceptions::amanzi_throw(Errors::Message("The schema file " + xmlSchema + " does not exist."));
+	  if (rank == 0) {
+	    std::cout << "Error: The xml schema file " << xmlSchema << " that was specified using the command line option --xml_schema does not exist." << std::endl;
+	  }
+	  throw std::string("amanzi not run");
 	}
 	
 	//amanzi_throw(Errors::Message("Translation for new input spec is not yet complete, please use old input spec"));
@@ -307,14 +437,24 @@ int main(int argc, char *argv[]) {
     }
     delete simulator;
   }
-
-  catch (std::exception& e) {
+  catch (std::string& s) {
     if (rank == 0) {
-      std::cout << e.what() << std::endl;
-      std::cout << "Amanzi::SIMULATION_FAILED\n";
+      if (s == "amanzi not run") {
+	std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
+      } 
     }
   }
-
+  catch (std::exception& e) {
+    if (rank == 0) {
+      if (e.what() == "amanzi not run") {
+	std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
+      } else {
+	std::cout << e.what() << std::endl;
+	std::cout << "Amanzi::SIMULATION_FAILED\n";
+      }
+    }
+  }
+  
   // catch all
   catch (...) {
     if (rank == 0) {

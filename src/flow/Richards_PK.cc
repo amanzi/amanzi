@@ -87,8 +87,6 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
   const Epetra_Map& target_cmap = mesh_->cell_map(true);
 
-  cell_importer_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
-
   const Epetra_Map& source_fmap = mesh_->face_map(false);
   const Epetra_Map& target_fmap = mesh_->face_map(true);
 
@@ -151,29 +149,11 @@ void Richards_PK::InitPK()
   std::string krel_method_name = rp_list_.get<string>("relative permeability");
   rel_perm->ProcessStringRelativePermeability(krel_method_name);
 
-  // Select a proper matrix class
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
-    // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
-    // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
-  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_));
-    preconditioner_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_));
-    matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
-    preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
-  } else {
-    matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
-    preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
-  }
-  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
-  preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
-
   // Create the solution (pressure) vector.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->CreateCellView(*solution));
   solution_faces = Teuchos::rcp(FS->CreateFaceView(*solution));
-  rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  rhs = matrix_->rhs();  // import rhs from the matrix
-
+  
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   const Epetra_BlockMap& fmap_ghost = mesh_->face_map(true);
 
@@ -192,9 +172,7 @@ void Richards_PK::InitPK()
   SetAbsolutePermeabilityTensor(K);
   rel_perm->CalculateKVectorUnit(K, gravity_);
 
-  is_matrix_symmetric = SetSymmetryProperty();
-  matrix_->SetSymmetryProperty(is_matrix_symmetric);
-  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+
 
   /// Initialize Transmisibillities and Gravity terms contribution
   if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
@@ -209,12 +187,32 @@ void Richards_PK::InitPK()
     Kxy = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   }
 
+
+  // Select a proper matrix class
+  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) {
+    // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
+    // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
+  } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
+    matrix_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    preconditioner_ = Teuchos::rcp(new Matrix_MFD_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+  } else {
+    matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
+    preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
+  }
+  matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
+  preconditioner_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
+
+  //rhs = matrix_->rhs();  // import rhs from the matrix
+
+  is_matrix_symmetric = SetSymmetryProperty();
+  matrix_->SetSymmetryProperty(is_matrix_symmetric);
+  matrix_->SymbolicAssembleGlobalMatrices(*super_map_);
+
+
   // initialize boundary and source data 
   Epetra_Vector& pressure = FS->ref_pressure();
   Epetra_Vector& lambda = FS->ref_lambda();
   UpdateSourceBoundaryData(time, pressure, lambda);
-
-  
 
   // injected water mass
   mass_bc = 0.0;
@@ -275,10 +273,7 @@ void Richards_PK::InitPicard(double T0)
   // calculate initial guess: cleaning is required (lipnikov@lanl.gov)
   T_physics = ti_specs_igs_.T0;
   dT = ti_specs_igs_.dT0;
-  if (experimental_solver_ == FLOW_SOLVER_PICARD_NEWTON) 
-    AdvanceToSteadyState_PicardNewton(ti_specs_igs_);
-  else
-    AdvanceToSteadyState_Picard(ti_specs_igs_);
+  AdvanceToSteadyState_Picard(ti_specs_igs_);
 
   Epetra_Vector& ws = FS->ref_water_saturation();
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
@@ -341,48 +336,34 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     LinearSolver_Specs& ls = ti_specs.ls_specs;
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "****************************************" << endl
-                 << "TI phase: " << ti_specs.ti_method_name.c_str() << endl
+    *(vo_->os()) << endl << "****************************************" << endl
+                 << "New TI phase: " << ti_specs.ti_method_name.c_str() << endl
                  << "****************************************" << endl
-                 << "  start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
-                 << "  sources distribution id=" << src_sink_distribution << endl
-                 << "  error control options id=" << error_control_ << endl
-                 << "  linear solver: ||r||<" << ls.convergence_tol << " #itr<" << ls.max_itrs << endl
-                 << "  iterative method: " << ls.solver_name << endl
-                 << "  preconditioner: " << ti_specs.preconditioner_name.c_str() << endl;
+                 << " start T=" << T0 / FLOW_YEAR << " [y], dT=" << dT0 << " [sec]" << endl
+                 << " error control id=" << error_control_ << endl
+                 << " preconditioner for nonlinear solver: " << ti_specs.preconditioner_name.c_str() << endl
+                 << " sources distribution id=" << src_sink_distribution << endl;
 
     if (ti_specs.initialize_with_darcy) {
       LinearSolver_Specs& ls_ini = ti_specs.ls_specs_ini;
-      *(vo_->os()) << "  initial pressure solver: " << ls_ini.solver_name << endl
-                   << "    criteria: ||r||<" << ls_ini.convergence_tol << " #itr<" << ls_ini.max_itrs << endl
-                   << "    preconditioner: " << ls_ini.preconditioner_name.c_str() << endl;
+      *(vo_->os()) << " initial pressure solver: " << ls_ini.solver_name << endl;
       if (ti_specs.clip_saturation > 0.0) {
-        *(vo_->os()) << "    clipping saturation at " << ti_specs.clip_saturation << " [-]" << endl;
+        *(vo_->os()) << "  clipping saturation at " << ti_specs.clip_saturation << " [-]" << endl;
       } else if (ti_specs.clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
-        *(vo_->os()) << "    clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << endl;
+        *(vo_->os()) << "  clipping pressure at " << ti_specs.clip_pressure << " [Pa]" << endl;
       }
     }
   }
 
   // set up new preconditioner
-  int method = ti_specs.preconditioner_method;
   Teuchos::ParameterList& tmp_list = preconditioner_list_.sublist(ti_specs.preconditioner_name);
-  Teuchos::ParameterList prec_list;
-  if (method == FLOW_PRECONDITIONER_TRILINOS_ML) {
-    prec_list = tmp_list.sublist("ml parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_HYPRE_AMG) {
-    prec_list = tmp_list.sublist("boomer amg parameters"); 
-  } else if (method == FLOW_PRECONDITIONER_TRILINOS_BLOCK_ILU) {
-    prec_list = tmp_list.sublist("block ilu parameters");
-  }
-
   string mfd3d_method_name = tmp_list.get<string>("discretization method", "monotone mfd");
   ProcessStringMFD3D(mfd3d_method_name, &mfd3d_method_preconditioner_); 
 
-  preconditioner_->DestroyPreconditioner();
+  // preconditioner_->DestroyPreconditioner();
   preconditioner_->SetSymmetryProperty(is_matrix_symmetric);
   preconditioner_->SymbolicAssembleGlobalMatrices(*super_map_);
-  preconditioner_->InitPreconditioner(method, prec_list);
+  preconditioner_->InitPreconditioner(ti_specs.preconditioner_name, preconditioner_list_);
 
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);
@@ -424,9 +405,9 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
     int npassed = matrix_->npassed();
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *(vo_->os()) << "  discretization method (prec): " << mfd3d_method_name.c_str() << endl
-                 << "    assign no-flow BC to " << missed_bc_faces_ << " faces" << endl
-                 << "    good and repaired matrices: " << nokay << " " << npassed << endl;   
+    *(vo_->os()) << " discretization method (prec): " << mfd3d_method_name.c_str() << endl
+                 << "  good and repaired matrices: " << nokay << " " << npassed << endl
+                 << " assigned default (no-flow) BC to " << missed_bc_faces_ << " faces" << endl << endl;
   }
 
   // Well modeling
@@ -481,17 +462,10 @@ void Richards_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
-    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux);
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-    matrix_tpfa->DeriveDarcyMassFlux(
-        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_->DeriveDarcyMassFlux(*solution_cells, *face_importer_, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
@@ -528,7 +502,8 @@ int Richards_PK::Advance(double dT_MPC)
   time = T_physics;
   if (ti_specs->num_itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
-    ComputeUDot(time, *solution, udot);
+    // I do not know how to estimate du/dt in a robust manner.
+    // ComputeUDot(time, *solution, udot);  
 
     if (ti_specs->ti_method == FLOW_TIME_INTEGRATION_BDF2) {
       bdf2_dae->set_initial_state(time, *solution, udot);
@@ -613,17 +588,10 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
   Epetra_Vector& flux = FS_MPC->ref_darcy_flux();
   if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
     matrix_->CreateMFDstiffnessMatrices(*rel_perm);  // We remove dT from mass matrices.
-    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux);
+    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, bc_model, bc_values, flux);
     AddGravityFluxes_DarcyFlux(K, flux, *rel_perm);
   } else {
-    Matrix_MFD_TPFA* matrix_tpfa = dynamic_cast<Matrix_MFD_TPFA*>(&*matrix_);
-    if (matrix_tpfa == 0) {
-      Errors::Message msg;
-      msg << "Flow PK: cannot cast pointer to class Matrix_MFD_TPFA\n";
-      Exceptions::amanzi_throw(msg);
-    }
-    matrix_tpfa->DeriveDarcyMassFlux(
-        *solution_cells, Krel_faces, *Transmis_faces, *Grav_term_faces, bc_model, bc_values, flux);
+    matrix_->DeriveDarcyMassFlux(*solution_cells, *face_importer_, bc_model, bc_values, flux);
   }
 
   for (int f = 0; f < nfaces_owned; f++) flux[f] /= rho_;
@@ -659,8 +627,11 @@ void Richards_PK::CommitState(Teuchos::RCP<Flow_State> FS_MPC)
 
 
 /* ******************************************************************
-* Estimate du/dt from the pressure equations, a du/dt = g - A*u.
+* Estimate du/dt from the pressure equation, a du/dt = g - A*u.
+* There is no meaniful way to estimate du/dt due to the abrupt change 
+* of function a. The routine is not used.
 ****************************************************************** */
+/*
 double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   AssembleMatrixMFD(u, T);
@@ -678,10 +649,10 @@ double Richards_PK::ComputeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
 
   Epetra_Vector* udot_faces = FS->CreateFaceView(udot);
   DeriveFaceValuesFromCellValues(*udot_cells, *udot_faces);
-  // udot_faces->PutScalar(0.0);
 
   return norm_udot;
 }
+*/
 
 
 /* ******************************************************************

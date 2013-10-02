@@ -67,7 +67,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
 
   flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
-  mass_tracer_exact = 0.0;
+  mass_tracer_exact = 0.0;  // Tracer is defined as species #0.
 }
 
 
@@ -364,6 +364,7 @@ void Transport_PK::Advance(double dT_MPC)
 
   dT = dT_original;  // restore the original dT (just in case)
 
+  // We define tracer as the species #0 as calculate some statistics.
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << ncycles << " sub-cycles, dT_stable=" << dT_original 
@@ -391,8 +392,8 @@ void Transport_PK::Advance(double dT_MPC)
     mesh_->get_comm()->SumAll(&mass_exact_tmp, &mass_exact, 1);
 
     double mass_loss = mass_exact - mass_tracer;
-    *(vo_->os()) << "tracer: " << tccmin << " to " << tccmax << " at " << T_physics << "[sec]" << endl;
-    *(vo_->os()) << "mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
+    *(vo_->os()) << "species #0: " << tccmin << " <= concentration <= " << tccmax << endl;
+    *(vo_->os()) << "species #0: mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
   }
 
   if (dispersion_models.size() != 0) {
@@ -409,8 +410,8 @@ void Transport_PK::Advance(double dT_MPC)
     dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
     dispersion_matrix->UpdatePreconditioner();
 
-    AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_Map> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_Map> >
+    AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> >
        solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix);
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
@@ -453,6 +454,7 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
+  mass_tracer_source = 0.0;
 
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
@@ -530,6 +532,9 @@ void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
     for (int i = 0; i < num_components; i++) (*tcc_next)[i][c] /= vol_phi_ws;
   }
 
+  // update mass balance
+  mass_tracer_exact += mass_tracer_source * dT;
+
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
     CheckGEDproperty(*tcc_nextMPC);
@@ -549,6 +554,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
+  mass_tracer_source = 0.0;
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -561,7 +567,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
     Epetra_Vector*& tcc_component = (*tcc)(i);
     TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
-    double T = 0.0;
+    double T = T_physics;
     fun(T, *component_, f_component);
 
     double ws_ratio;
@@ -570,6 +576,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
       (*tcc_next)[i][c] = ((*tcc)[i][c] + dT * f_component[c]) * ws_ratio;
     }
   }
+
+  // update mass balance
+  mass_tracer_exact += mass_tracer_source * dT;
 
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
@@ -589,6 +598,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
+  mass_tracer_source = 0.0;
 
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
@@ -604,7 +614,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
     Epetra_Vector*& tcc_component = (*tcc)(i);
     TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
 
-    double T = 0.0;
+    double T = T_physics;
     fun(T, *component_, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
@@ -622,6 +632,9 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
       (*tcc_next)[i][c] = ((*tcc_next)[i][c] + value) / 2;
     }
   }
+
+  // update mass balance
+  mass_tracer_exact += mass_tracer_source * dT / 2;
 
   if (internal_tests) {
     Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->total_component_concentration();
@@ -678,7 +691,8 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dT_cycle)
 
 
 /* ******************************************************************
-* Computes source and sink terms and adds them to vector tcc.                                   
+* Computes source and sink terms and adds them to vector tcc.
+* Return mass rate for the tracer.
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp, 
                                          Functions::TransportDomainFunction* src_sink, 
@@ -697,7 +711,10 @@ void Transport_PK::ComputeAddSourceTerms(double Tp, double dTp,
     Functions::TransportDomainFunction::Iterator src;
     for (src = src_sink->begin(); src != src_sink->end(); ++src) {
       int c = src->first;
-      tcc[i][c] += dTp * mesh_->cell_volume(c) * src->second;
+      double value = mesh_->cell_volume(c) * src->second;
+
+      tcc[i][c] += dTp * value;
+      if (i == 0) mass_tracer_source += value;
     }
   }
 }
@@ -733,13 +750,6 @@ void Transport_PK::IdentifyUpwindCells()
     }
   }
 }
-
-
-
-
-
-
-
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi

@@ -1,6 +1,6 @@
 <!-- Standardize on lower case.  Can't just convert to lower case in the case of file names -->
 <!-- Would like to be able to include files with times, macros etc for reuse -->
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.0.0" type="unstructured">
 
 	<model_description name="BC Cribs">
 		<comments>Added section on units definition</comments>
@@ -17,8 +17,6 @@
    <definitions>
 
 	<constants>
-		<constant name="zero" type="none" value="0.000"/>
-		<constant name="start" type="time" value="1956.0;y"/>
 		<constant name ="start"                   type="time" value="1956.0;y"/>
 		<constant name ="B-14_B-17_release_begin" type="time" value="1956.0;y"/>
 		<constant name ="B-17_release_end"        type="time" value ="1956.0822;y"/>
@@ -50,7 +48,7 @@
 			/>
 		-->
 			<!--  ALTERNATE as list of time elements - Schema as written now validates this-->
-		<time_macro name="Macro 1">
+		<time_macro name="vis_macro">
 			<time>6.17266656E10</time>
 			<time>6.172982136E10</time>
 			<time>6.173297712E10</time>
@@ -81,9 +79,12 @@
 			<time>6.3372710016E10</time>
 			<time>6.33834396E10</time>
 		</time_macro>
-	  	<time_macro name = "Macro 2">
-			<time>6.17266656E10</time>
+	  	<time_macro name = "obs_bhA">
 			<time>6.33834396E10</time>
+		</time_macro>
+
+	  	<time_macro name = "obs_bhC">
+			<time>6.337271002E10</time>
 		</time_macro>
 
 	  	<cycle_macro name = "Every_100_timesteps">
@@ -108,7 +109,7 @@
 	<process_kernels>
 		<comments>This is a proposed comment field for process_kernels</comments>
       		<flow state = "on" model = "richards"/>
-      		<transport state = "on" algorithm = "explicit first-order"/>
+      		<transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
       		<chemistry state = "off" process_model="none"/>
 	</process_kernels>
 
@@ -126,7 +127,6 @@
 			<dissolved_components> 
 				<solutes>
 					<solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
-					<solute coefficient_of_diffusion="1.0e-9">U-234</solute>
 				</solutes> 
 			</dissolved_components>
 		</liquid_phase>
@@ -144,7 +144,7 @@
 			   <execution_control  start="B-19_release_begin" />
 			   <execution_control  start="B-14_release_end" />
 			   <execution_control  start="B-18_release_begin" />
-			   <execution_control  start="B-16_B-15_release_begin" />
+			   <execution_control  start="B-15_B-16_release_begin" />
 			   <execution_control  start="B-18_release_end" />
 			   <execution_control  start="B-16_release_end" />
 			   <execution_control  start="B-19_release_end" />
@@ -175,14 +175,12 @@
 		      	<max_iterations>20</max_iterations>
           		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
           		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-          		<error_rel_tol>0.0</error_rel_tol>
-          		<error_abs_tol>1.0</error_abs_tol>
           		<pseudo_time_integrator>
                			<method>picard</method>
-          				<preconditioner>hypre amg</preconditioner>
+          				<preconditioner>hypre_amg</preconditioner>
           				<linear_solver>aztec00</linear_solver>
           				<control_options>pressure</control_options>
-          				<divergent_max_iterations>100</divergent_max_iterations>
+          				<max_iterations>100</max_iterations>
           				<clipping_saturation>0.95</clipping_saturation>
           				<convergence_tolerance>0.95</convergence_tolerance>
           				<initialize_with_darcy>true</initialize_with_darcy>
@@ -190,11 +188,15 @@
 		</steady-state_controls>
 		<transient_controls>
 			<comments>Proposed comments section.</comments>
-			<integration_method name="bdf1">
-			   <convergence_criteria error_rel_tol="0.0" error_abs_tol="0.0" />
-                           <nonlinear_solver_parameters min_iterations="12" max_iterations="20" max_preconditioner_lag="5" />
-			</integration_method>
+			<bdf1_integration_method min_iterations="12" max_iterations="20" limit_iterations = "20" nonlinear_tolerance="1.0e-05" nonlinear_iteration_damping_factor="1.0" max_preconditioner_lag_iterations="5" max_divergent_iterations="3" nonlinear_iteration_divergence_factor="1.0" restart_tolerance_factor="1.0" restart_tolerance_relaxation_factor="1.0" />
+	                <preconditioner name = "hypre_amg">
+	                     	<hypre_cycle_applications>10</hypre_cycle_applications>
+	                	<hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+	                       	<hypre_tolerance>0.1</hypre_tolerance>
+	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
+	                 </preconditioner>
 		</transient_controls>
+		<nonlinear_solver name= "nka"/>
 		<linear_solver>
 			<comments>Proposed comment section.</comments>
 			<method>gmres</method>
@@ -206,8 +208,6 @@
 	                       	<hypre_tolerance>0.1</hypre_tolerance>
 	                       	<hypre_strong_threshold>0.4</hypre_strong_threshold>
 	                 </preconditioner>
-       		         <sub_cycling>true</sub_cycling>
-			<transport_sub_cycling>true</transport_sub_cycling>
 		</linear_solver>
 	</numerical_controls>
 	
@@ -240,46 +240,12 @@
 	                        <comments>Proposed comments field</comments>
 	                        <plane location = "0.0,0.0,0.0"     normal="0.0,0.0,-1.0"/>
 	                </region>
-
-			<!-- vlf:  Layers and surfaces not currently supported -->
-	                <region name= "Upper aquifer">
-	                        <region_file name = "f_area_mesh_2D.exo" type="labeled set" format="exodus ii" entity="cell" label="50000"/>
-
-	                </region>
 	
-	                        <box name="Top Surface 1"    low_coordinates= "(0.0,0.0,106.0)"     high_coordinates="(110.0,280.0,107.0)"/>
-	                        <box name="Top Surface 2"    low_coordinates= "(205.0,0.0,106.0)"    high_coordinates="(320.0,280.0,107.0)"/>
-	                        <box name="Top Surface 3"    low_coordinates= "(110.0,165.0,106.0)" high_coordinates="(205.0,280.0,107.0)"/>
-	                        <box name="Top Surface 4"    low_coordinates= "(110.0,0.0,106.0)"   high_coordinates="(205.0,115.0,107.0)"/>
-	                        <box name="Top Surface 5"    low_coordinates= "(110.0,120.0,106.0)" high_coordinates="(205.0,160.0,107.0)"/>
-	                        <box name="Top Surface 6"    low_coordinates= "(115.0,160.0,106.0)" high_coordinates="(155.0,165.0,107.0)"/>
-	                        <box name="Top Surface 7"    low_coordinates= "(115.0,160.0,106.0)" high_coordinates="(155.0,165.0,107.0)"/>
-	                        <box name="Top Surface 8"    low_coordinates= "(160.0,160.0,106.0)" high_coordinates="(200.0,165.0,107.0)"/>
-	                        <box name="Top Surface 9"    low_coordinates= "(115.0,115.0,106.0)"  high_coordinates="(155.0,120.0,107.0)"/>
-	                        <box name="Top Surface 10"   low_coordinates= "(160.0,115.0,106.0)" high_coordinates="(200.0,120.0,107.0)"/>
-	                        <box name="Crib 216-B-14"    low_coordinates= "(200.0,115.0,106.0)" high_coordinates="(205.0,120.0,107.0)"/>
-
              	<!-- Allow either verbose or compact formats -->
       		<!-- see proposed spec for limited logical operations on regions(union,intersection,subtraction) -->
 
-		<region name ="facies1">
-			<comments>The term 'color function' was eliminated</comments>
-			<region_file name = "model.tf3"  type="color" label="1"/>
-		</region>
-
-		<region name ="facies2">
-			<comments>The term 'color function' was eliminated</comments>
-			<region_file name = "model.tf3"  type="color" label="2"/>
-		</region>
-
-		<region name ="facies3">
-			<comments>The term 'color function' was eliminated</comments>
-			<region_file name = "model.tf3"  type="color" label="3"/>
-		</region>
-
-		<region name ="Top Surface 1">
-			<comments>Proposed comments field</comments>
-			<box low_coordinates= "0.0,0.0,106.0"     high_coordinates="110.0,280.0,107.0"/>
+		<region name ="all">
+			<box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "320.0,280.0,107.0"/>
 		</region>
 
 			<box name="Top Surface 1"    low_coordinates= "(0.0,0.0,106.0)"     high_coordinates="(110.0,280.0,107.0)"/>
@@ -416,12 +382,11 @@
 			<assigned_regions>all</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<pressure value = "101325" function="linear" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
+					<linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
 				</liquid_component>
 				   <!-- For solutes, either provide value/function or filename; value can be a user-defined constant -->
 				   <!-- TODO: This capability does not currently exist -->
 				<solute_component name = "Tc-99" value = "0" function="uniform"/>
-				<solute_component name = "U-234" filename = "uranium_initial.dat" />
 			</liquid_phase>
          	</initial_condition>
 	</initial_conditions>
@@ -474,7 +439,7 @@
 				<liquid_component name = "water">
 					<inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y"                function= "constant"    value="post_1956_recharge"/>
-					<inward_mass_flux start="B-16_B-15_release_begin" function= "constant"    value="0.004569421375516516"/>
+					<inward_mass_flux start="B-15_B-16_release_begin" function= "constant"    value="0.004569421375516516"/>
 					<inward_mass_flux start="B-15_release_end"        function= "constant"    value="post_1956_recharge"/>
 					<inward_mass_flux start="2012.0,y"                function= "constant"    value="future_recharge"/>
 					<inward_mass_flux start="3000.0,y"                function= "constant"    value="future_recharge"/>
@@ -504,7 +469,7 @@
 				<solute_component name = "solute">
 					<aqueous_conc name = "Tc-99" start="0.0"                     function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="1956.0,y"                function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="B-16_B-15_release_begin" function= "constant"    value="3.524e-06"/>
+					<aqueous_conc name = "Tc-99" start="B-15_B-16_release_begin" function= "constant"    value="3.524e-06"/>
 					<aqueous_conc name = "Tc-99" start="B-16_release_end"        function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="2012.0,y"                function= "constant"    value="0.0"/>
 					<aqueous_conc name = "Tc-99" start="3000.0,y"                function= "constant"    value="0.0"/>
@@ -583,11 +548,11 @@
 					<!--TDS Deleted type="Uniform Pressure" as that is redundant information -->
 					<!--TODO THIS needs to be reworked uniform vs. constant, time-function vs. spatial -->
 					<uniform_pressure name = "1" start="0.0"        function= "constant" value="106221.7596"/>
-					<uniform_pressure name = "2" start="3000.0,yr"  function= "constant" value="106221.7596"/>
+					<uniform_pressure name = "2" start="3000.0,y"  function= "constant" value="106221.7596"/>
 				</liquid_component>
 				<solute_component name = "solute">
 					<aqueous_conc name = "Tc-99" start="0.0"        function= "constant"    value="0.0"/>
-					<aqueous_conc name = "Tc-99" start="3000.0,yr"  function= "constant"    value="0.0"/>
+					<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"    value="0.0"/>
 				</solute_component>
 			</liquid_phase>
 		</boundary_condition>
@@ -597,31 +562,55 @@
 		<vis>
 			<base_filename>plot</base_filename>
 		  	<num_digits>5</num_digits>
-		  	<time_macro>Every_100_timesteps</time_macro>
+		  	<time_macro>vis_macro</time_macro>
 		</vis>
 
 		<checkpoint>
 			<base_filename>chk</base_filename>
 		  	<num_digits>5</num_digits>
-		  	<time_macro>Macro 1</time_macro>
+		  	<cycle_macro>Every_100_timesteps</cycle_macro>
 		</checkpoint>
 
 		<observations>
        			<filename>observations.out</filename>
 			<liquid_phase name="water">
-          			<observation variable="Integrated Mass">
-              				<filename>imass.out</filename>  <!-- later when there is more $$; for now all observation is output to same file -->
-             				<assigned_regions>All</assigned_regions>
+			        <!-- for now all observation is output to same file
+          			<integrated_mass>
+              				<filename>imass.out</filename>  
+             				<assigned_regions>all</assigned_regions>
             				<functional>integral</functional>
               				<time_macro>Macro 1</time_macro>
-           			</observation>
+          			</integrated_mass>
+				-->
 
-           			<observation variable="Tc-99">
-					<filename>conc.out</filename>  <!-- later when there is more $$; for now all observation is output to same file -->
-					<assigned_regions>point1,point2,...</assigned_regions>
+           			<aqueous_conc solute ="Tc-99">
+					<filename>obs.out</filename>  
+					<assigned_regions>Well A_01,Well A_02,Well A_03,Well A_04,Well A_05,Well A_06,Well A_07,Well A_08,Well A_09,Well A_10,Well A_11,Well A_12,Well A_13,Well A_14,Well A_15,Well A_16,Well A_17,Well A_18,Well A_19,Well A_20,Well A_21,Well A_22,Well A_23,Well A_24,Well A_25,Well A_26,Well A_27,Well A_28,Well A_29,Well A_30,Well A_31</assigned_regions>
 					<functional>point</functional>
-					<time_macro>Macro 1</time_macro>
-				</observation>
+					<time_macro>obs_bhA</time_macro>
+				</aqueous_conc>
+
+           			<gravimetric_water_content>
+					<filename>obs.out</filename>  
+					<assigned_regions>Well A_01,Well A_02,Well A_03,Well A_04,Well A_05,Well A_06,Well A_07,Well A_08,Well A_09,Well A_10,Well A_11,Well A_12,Well A_13,Well A_14,Well A_15,Well A_16,Well A_17,Well A_18,Well A_19,Well A_20,Well A_21,Well A_22,Well A_23,Well A_24,Well A_25,Well A_26,Well A_27,Well A_28,Well A_29,Well A_30,Well A_31</assigned_regions>
+					<functional>point</functional>
+					<time_macro>obs_bhA</time_macro>
+           			</gravimetric_water_content>
+
+           			<aqueous_conc solute ="Tc-99">
+					<filename>obs.out</filename>  
+					<assigned_regions>Well C_01,Well C_02,Well C_03,Well C_04,Well C_05,Well C_06,Well C_07,Well C_08,Well C_09,Well C_10,Well C_11,</assigned_regions>
+					<functional>point</functional>
+					<time_macro>obs_bhC</time_macro>
+				</aqueous_conc>
+
+           			<gravimetric_water_content>
+					<filename>obs.out</filename>  
+					<assigned_regions>Well C_01,Well C_02,Well C_03,Well C_04,Well C_05,Well C_06,Well C_07,Well C_08,Well C_09,Well C_10,Well C_11,</assigned_regions>
+					<functional>point</functional>
+					<time_macro>obs_bhC</time_macro>
+				</gravimetric_water_content>
+
 			</liquid_phase>
 		</observations>
 

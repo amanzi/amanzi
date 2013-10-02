@@ -18,6 +18,16 @@ individual submodels are consistent between Amanzi, the MRD and this
 document. Where applicable, the relevant sections of the MRD are
 indicated.
 
+Amanzi Input
+============
+
+Here, the user specifies which version of the input the input file
+adheres to. 
+
+.. code-block:: xml
+
+  <amanzi_input version="2.0.0"/>
+
 
 Model Description
 =================
@@ -732,55 +742,61 @@ The Observations element holds all the observations that the user is requesting 
 .. code-block:: xml
 
    <observations>
-     Required Elements: filename, phase
+     Required Elements: filename, liquid_phase
      Optional Elements: NONE
    </observations>
 
 The *filename* element contains the filename for the observation output, and may include the full path.  Currently, all observations are written to the same file.  
 
-The *phase* element requires that the name of the phase be specified as an attribute and at least one observaton.
+The *liquid_phase* element requires that the name of the phase be specified as an attribute and at least one observaton.  The observation element is named according to what is being observed.  The observations elements available are as follows:
 
 .. code-block:: xml
 
-     <phase name="Name of Phase (Required)">
-       Required Elements: observation (one observation element block for each observation)
-       Optional Elements: NONE
-     </phase>
+     <liquid_phase name="Name of Phase (Required)">
+       Required Elements: NONE 
+       Optional Elements: integrated_mass, volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
+                          x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
+                          hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc
+     </liquid_phase>
 
-In this release the only valid phase name is ''aqueous''.  The observation element requires a field quantity be given as an attribute, and elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. 
+The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
 
 .. code-block :: xml
 
-   <observation variable="Field Quantity (Required: see above for list of valid fields)">
-
+   <observation_type>
      Required Elements: assigned_region, functional, time_macro 
      Optional Elements: NONE
-     
-   </observation>
+   </observation_type>
 
-Here the elements are ... 
-
-
+The only exception is aqueous_conc requires an attribute Name="Solute Name".
 
 Example:
 
 .. code-block :: xml
 
-   <observations>
-     <filename>observation.out</filename> 
-       <phase name="aqueous">
-         <observation variable="H+ Aqueous concentration">
-           <assigned_region>Well_1</assigned_region>
-           <functional>point</functional>
-           <time_macro>Every year</time_macro>
-         </observation>
-	 <observation variable="UO2++ Aqueous concentration">
-	   <assigned_region>Well_3</assigned_region>
-	   <functional>point</functional>
-	   <time_macro>Every year</time_macro>
-	 </observation>
-       </phase>
-     </observations>
+    <observations>
+
+      <filename>observation.out</filename>
+
+      <liquid_phase name="water">
+	<aqueous_pressure>
+	  <assigned_regions>Obs_r1</assigned_regions>
+	  <functional>point</functional>
+	  <time_macro>Observation Times</time_macro>
+	</aqueous_pressure>
+	<aqueous_pressure>
+	  <assigned_regions>Obs_r2</assigned_regions>
+	  <functional>point</functional>
+	  <time_macro>Observation Times</time_macro>
+	</aqueous_pressure>
+	<aqueous_pressure>
+	  <assigned_regions>Obs_r2</assigned_regions>
+	  <functional>point</functional>
+	  <time_macro>Observation Times</time_macro>
+	</aqueous_pressure>
+      </liquid_phase>
+
+    </observations>
 
 
 

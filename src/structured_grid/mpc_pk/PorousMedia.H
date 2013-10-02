@@ -437,9 +437,13 @@ public:
   //
   // Returns the value of "gravity" for use in the projection outflow bcs.
   //
-  static Real getGravity () 
+  static Real getGravity ()
   {
     return gravity;
+  }
+  static int getGravityDir ()
+  {
+    return gravity_dir;
   }
 
   //
@@ -594,6 +598,7 @@ public:
 
   void cache_component_saturations(int nGrow);
   void reinstate_component_saturations();
+  void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
   // Update scalars, (viscous solve in scalar_update).
   //
@@ -814,20 +819,12 @@ public:
   //
   // Get the forcing term.
   //
-  void getForce (FArrayBox&       force,
-		 int              gridno,
-		 int              ngrow,
-		 int              strt_comp,
-		 int              num_comp,
-		 const Real       time,
-		 int              do_rho_scale = 0);
-
-  void getForce_Tracer (FArrayBox&       force,
-			int              gridno,
-			int              ngrow,
-			int              strt_comp,
-			int              num_comp,
-			const Real       time);
+  void getForce (MultiFab& force,
+		 int       nGrow,
+		 int       strt_comp,
+		 int       num_comp,
+		 Real      time,
+		 bool      do_rho_scale = false);
   //
   // Fill ghost cells of state.
   //
@@ -922,7 +919,12 @@ public:
   //
   // Calculate inverse pressure
   //
-  void calcInvPressure (MultiFab& N,const MultiFab& P);
+  void calcInvPressure (MultiFab& N,const MultiFab& P) const;
+  void calcInvPressure (FArrayBox& n,
+                        const FArrayBox& pressure,
+                        const FArrayBox& rock_phi,
+                        const FArrayBox& kappa,
+                        const FArrayBox& cpl_coef) const;
   //
   // Calculate lambda = relative permeability/mu
   //
@@ -1067,6 +1069,7 @@ public:
     PM_POLYMER,
     PM_RICHARDS,
     PM_STEADY_SATURATED,
+    PM_SATURATED, // FIXME: Merge this and STEADY_SATURATED into SINGLE_PHASE
     PM_INVALID
   };
   static MODEL_ID model;
@@ -1079,6 +1082,7 @@ public:
   MultiFab* LambdaCC_Curr() {return lambdap1_cc;}
   MultiFab* KappaCCavg() {return kappa;};
   MultiFab* Porosity() {return rock_phi;}
+  MultiFab* SpecificStorage() {return specific_storage;}
   MultiFab* KappaEC() {return kpedge;}
   MultiFab* PCapParams() {return cpl_coef;}
   MultiFab* KrParams() {return kr_coef;}
@@ -1144,6 +1148,10 @@ public:
                          MultiFab& mf,
                          int       dcomp);
 
+  void derive_SpecificStorage(Real      time,
+                              MultiFab& mf,
+                              int       dcomp);
+
   void derive_Dispersivity(Real      time,
                            MultiFab& mf,
                            int       dcomp,
@@ -1187,6 +1195,7 @@ protected:
   static Array<Real> density;
   static PArray<RegionData> ic_array;
   static PArray<RegionData> bc_array;
+  static PArray<RegionData> source_array;
   static Array<Real> muval;
   static Array<std::string> user_derive_list;;
   
@@ -1198,6 +1207,7 @@ protected:
   static Array<Real> tDen;
   static Array<PArray<RegionData> > tic_array;
   static Array<PArray<RegionData> > tbc_array;
+  static Array<PArray<RegionData> > tsource_array;
   static std::map<std::string,Array<int> > group_map;
 
   // Minerals, Sorption sites
@@ -1256,7 +1266,6 @@ protected:
 
   // source term
   static bool do_source_term;
-  static Array<Source> source_array;
 
 #ifdef AMANZI
 
@@ -1293,6 +1302,7 @@ protected:
   MultiFab* kappa;
   MultiFab* kpedge;
   MultiFab* rock_phi;
+  MultiFab* specific_storage;
   MultiFab* kr_coef;
   MultiFab* cpl_coef;
   //
@@ -1371,6 +1381,7 @@ protected:
   //
   static int        verbose;
   static Real       gravity;
+  static int        gravity_dir;
   static int        NUM_SCALARS;      // number of non-velocity components
   static int        NUM_STATE;        // total number of state variables
   //
@@ -1390,6 +1401,9 @@ protected:
   static Real        be_cn_theta;
   static int         variable_scal_diff;
   static int         have_capillary;
+  static Real        atmospheric_pressure_atm;
+  static std::map<std::string,bool> use_gauge_pressure; // On bc_tag string
+  static Real        z_location;
   //  
   // Chemistry/solute/tracer parameters 
   //

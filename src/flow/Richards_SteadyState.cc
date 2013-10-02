@@ -67,7 +67,8 @@ int Richards_PK::AdvanceToSteadyState_BDF1(TI_Specs& ti_specs)
   while (itrs < max_itrs && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF1
       Epetra_Vector udot(*super_map_);
-      ComputeUDot(T0, *solution, udot);
+      // I do not know how to calculate du/dt in a robust way.
+      // ComputeUDot(T0, *solution, udot);
       bdf1_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
@@ -117,7 +118,8 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
   while (itrs < max_itrs_nonlinear && T_physics < T1) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
-      ComputeUDot(T0, *solution, udot);
+      // I do not know how to calculate du/dt in a robust way.
+      // ComputeUDot(T0, *solution, udot);
       bdf2_dae->set_initial_state(T0, *solution, udot);
 
       int ierr;
@@ -158,6 +160,9 @@ int Richards_PK::AdvanceToSteadyState_BDF2(TI_Specs& ti_specs)
 ****************************************************************** */
 int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
 {
+  // create verbosity object
+  VerboseObject* vo = new VerboseObject("Amanzi::Picard", rp_list_); 
+
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
@@ -207,7 +212,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
     matrix_->ApplyBoundaryConditions(bc_model, bc_values);
     matrix_->AssembleGlobalMatrices();
-    rhs = matrix_->rhs();  // export RHS from the matrix class
+
+    Teuchos::RCP<Epetra_Vector> rhs = matrix_->rhs();  // export RHS from the matrix class
     if (src_sink != NULL) AddSourceTerms(src_sink, *rhs);
 
     // create preconditioner
@@ -224,8 +230,8 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     L2error /= L2norm;
 
     // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
+    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> >
        solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
@@ -237,10 +243,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
     double relaxation;
     relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
+    if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *(vo->os()) << itrs << ": ||r||=" << L2error << " relax=" << relaxation 
+                  << " lin_solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
     }
 
 // Epetra_Vector& pressure = FS->ref_pressure();
@@ -257,125 +263,14 @@ int Richards_PK::AdvanceToSteadyState_Picard(TI_Specs& ti_specs)
   }
 
   ti_specs.num_itrs = itrs;
+
+  delete vo;
   return 0;
 }
 
 
 /* ******************************************************************
-* Calculates steady-state solution using the Picard Newton method.                                             
-****************************************************************** */
-int Richards_PK::AdvanceToSteadyState_PicardNewton(TI_Specs& ti_specs)
-{
-  Epetra_Vector  solution_old(*solution);
-  Epetra_Vector& solution_new = *solution;
-  Epetra_Vector  residual(*solution);
-
-  Epetra_Vector* solution_old_cells = FS->CreateCellView(solution_old);
-  Epetra_Vector* solution_new_cells = FS->CreateCellView(solution_new);
-
-  Epetra_Vector& flux = FS->ref_darcy_flux();
-  Epetra_Vector  flux_new(flux);
-
-  // update steady state boundary conditions
-  double time = T_physics;
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(time);
-  else
-    bc_head->ComputeShift(time, shift_water_table_->Values());
-
-  // convergence criteria
-  int max_itrs_nonlinear = ti_specs.max_itrs;
-  double residual_tol_nonlinear = ti_specs.residual_tol;
-  LinearSolver_Specs& ls_specs = ti_specs.ls_specs;
-
-  int itrs = 0;
-  double L2norm, L2error = 1.0;
-
-  while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
-    // update dynamic boundary conditions
-    bc_seepage->Compute(time);
-    ProcessBoundaryConditions(
-        bc_pressure, bc_head, bc_flux, bc_seepage,
-        *solution_cells, *solution_faces, atm_pressure,
-        rainfall_factor, bc_submodel, bc_model, bc_values);
-
-    // update permeabilities
-    rel_perm->Compute(*solution, bc_model, bc_values);
-
-    // create algebraic problem
-    rhs = matrix_->rhs();  // export RHS from the matrix class
-    matrix_->CreateMFDstiffnessMatrices(*rel_perm);
-    matrix_->CreateMFDrhsVectors();
-    AddGravityFluxes_MFD(K, &*matrix_, *rel_perm);
-    // AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, *rhs,
-    //                     static_cast<Matrix_MFD_PLambda*>(matrix_));
-    matrix_->ApplyBoundaryConditions(bc_model, bc_values);
-    matrix_->AssembleGlobalMatrices();
-
-    // create preconditioner
-    preconditioner_->CreateMFDstiffnessMatrices(*rel_perm);
-    preconditioner_->CreateMFDrhsVectors();
-    // AddNewtonFluxes_MFD(*rel_perm, *solution_cells, flux, residual,
-    //                     static_cast<Matrix_MFD_PLambda*>(preconditioner_));
-    preconditioner_->ApplyBoundaryConditions(bc_model, bc_values);
-    preconditioner_->AssembleSchurComplement(bc_model, bc_values);
-    preconditioner_->UpdatePreconditioner();
-
-    // check convergence of non-linear residual
-    L2error = matrix_->ComputeResidual(solution_new, residual);
-    residual.Norm2(&L2error);
-    rhs->Norm2(&L2norm);
-    L2error /= L2norm;
-
-    // solve linear problem
-    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_Map> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_Map> >
-       solver = factory.Create(ls_specs.solver_name, solver_list_, matrix_, preconditioner_);
-
-    solver->ApplyInverse(*rhs, *solution);
-
-    int num_itrs_linear = solver->num_itrs();
-    double linear_residual = solver->residual();
-
-    // update relaxation
-    double relaxation;
-    relaxation = CalculateRelaxationFactor(*solution_old_cells, *solution_new_cells);
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "Picard:" << itrs << " ||r||=" << L2error << " relax=" << relaxation 
-                   << " solver(" << linear_residual << ", " << num_itrs_linear << ")" << endl;
-    }
-
-    matrix_->DeriveDarcyMassFlux(*solution, *face_importer_, flux_new);
-    AddGravityFluxes_DarcyFlux(K, flux_new, *rel_perm);
-
-    int ndof = ncells_owned + nfaces_owned;
-    for (int c = 0; c < ndof; c++) {
-      solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
-      solution_old[c] = solution_new[c];
-    }
-
-    for (int f = 0; f < nfaces_owned; f++) {
-      flux[f] = (1.0 - relaxation) * flux[f] + relaxation * flux_new[f];
-    }
-
-    // DEBUG
-    CommitState(FS); WriteGMVfile(FS);
-
-    T_physics += dT;
-    itrs++;
-  }
-
-  ti_specs.num_itrs = itrs;
-  return 0;
-}
-
-
-/* ******************************************************************
-* Calculate relazation factor.                                                       
+* Calculate relaxation factor.                                                       
 ****************************************************************** */
 double Richards_PK::CalculateRelaxationFactor(const Epetra_Vector& uold, const Epetra_Vector& unew)
 { 

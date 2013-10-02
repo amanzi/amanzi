@@ -31,7 +31,7 @@ class ObservationXML(object):
     def getAllCoordinates(self):
         self.coordinates = {}
         for item in self.obs_lists:
-            well_name =item.getElement("Region").value
+            well_name = item.getElement("Region").value
             region = search.getElementByPath(self.xml, "/Main/Regions/"+ well_name)
             local = region.sublist("Region: Point")
             location = search.getElementByPath(local, "/Region: Point/Coordinate")

@@ -38,7 +38,6 @@
 #    define FORT_HYDRO             hydro
 #    define FORT_LINEAR_PRESSURE   linearpres
 #    define FORT_HYD_HEAD          hydhead
-#    define FORT_ROCKHOLD          rockhold
 #    define FORT_STEADYSTATE       steadystate
 #    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
@@ -82,7 +81,6 @@
 #    define FORT_HYDRO             HYDRO
 #    define FORT_LINEAR_PRESSURE   LINEARPRES
 #    define FORT_HYD_HEAD          HYDHEAD
-#    define FORT_ROCKHOLD          ROCKHOLD
 #    define FORT_STEADYSTATE       STEADYSTATE
 #    define FORT_STEADYSTATE_FAB   STEADYSTATEFAB
 #    define FORT_PATCH_GHOST       PATCH_GHOST
@@ -125,7 +123,6 @@
 #    define FORT_HYDRO             hydro
 #    define FORT_LINEAR_PRESSURE   linearpres
 #    define FORT_HYD_HEAD          hydhead
-#    define FORT_ROCKHOLD          rockhold
 #    define FORT_STEADYSTATE       steadystate
 #    define FORT_STEADYSTATE_FAB   steadystatefab
 #    define FORT_PATCH_GHOST       patch_ghost
@@ -168,7 +165,6 @@
 #    define FORT_HYDRO             hydro_
 #    define FORT_LINEAR_PRESSURE   linearpres_
 #    define FORT_HYD_HEAD          hydhead_
-#    define FORT_ROCKHOLD          rockhold_
 #    define FORT_STEADYSTATE       steadystate_
 #    define FORT_STEADYSTATE_FAB   steadystatefab_
 #    define FORT_PATCH_GHOST       patch_ghost_
@@ -517,20 +513,15 @@ extern "C" {
 		  const int* ncplcoef,const Real* dx, 
 		  const Real* wt_loc, const Real* grav);
 
-  void FORT_LINEAR_PRESSURE(Real* p, ARLIM_P(p), ARLIM_P(p), const int* ncomps,
-                            const Real* dx, const Real* problo, const Real* ref_val,
+  void FORT_LINEAR_PRESSURE(const int* lo, const int* hi,
+                            Real* p, ARLIM_P(p), ARLIM_P(p), const int* ncomps,
+                            const Real* dx, const Real* problo, const Real* probhi, const Real* ref_val,
                             const Real* ref_loc, const Real* gradp);
 
   void FORT_HYD_HEAD(const int* lo, const int* hi,
                      const Real* pin_hout, ARLIM_P(plo), ARLIM_P(phi),
-                     const Real* rhog, const Real* dx, const Real* plo,
+                     const Real* rhog, const int* gdir, const Real* dx, const Real* plo,
                      const int* ncomps);
-
-  void FORT_ROCKHOLD(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi), 
-		     const Real* rhoval, const int* ncomps,
-		     const Real* depth, const Real* pressure, const int* nz,
-		     const Real* cplcoef, ARLIM_P(clo), ARLIM_P(chi),
-		     const int* ncplcoef,const Real* dx,  const Real* grav, const Real* probhi);
 
   void FORT_STEADYSTATE(Real* rho, ARLIM_P(rlo), ARLIM_P(rhi), 
 			const Real* rhoval, const Real* muval, const int* ncomps,

@@ -62,7 +62,9 @@ public:
   MFTower& GetKappaCCavg() {return *KappaCCavg;}
   PArray<MFTower>& GetKappaEC() {return KappaEC;}
   MFTower& GetPorosity() {return *Porosity;}
-  MFTower& GetPressure() {return *Pnew;}
+  MFTower& GetSpecificStorage() {return *SpecificStorage;}
+  MFTower& GetPressureNp1() {return *Pnew;}
+  MFTower& GetPressureN() {return *Pold;}
   Vec& GetPressureV() {return SolnV;}
   MFTower& GetResidual() {return *Rhs;}
   Vec& GetResidualV() {return RhsV;}
@@ -101,7 +103,7 @@ public:
                MFTower& pressure,
                Real     t);
 
-  void DpDtResidual(MFTower& residual,
+  void CalcResidual(MFTower& residual,
 		    MFTower& pressure,
 		    Real     t,
 		    Real     dt);
@@ -184,7 +186,7 @@ protected:
 
   int nLevs;
   Array<PArray<MultiFab> > ctmp; // Currently maintains its own copy of these, should be fixed
-  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *Pnew, *KappaCCavg, *KappaCCdir, *PCapParams, *Alpha, *CoeffCC;
+  MFTower *Rhs, *RhoSatOld, *RhoSatNew, *Lambda, *Porosity, *SpecificStorage, *Pold, *Pnew, *KappaCCavg, *KappaCCdir, *PCapParams, *Alpha, *CoeffCC;
   PArray<MFTower> KappaEC, DarcyVelocity, RichardCoefs;
 
   Vec RhsV, SolnV, SolnTypV, SolnTypInvV, GV, AlphaV;

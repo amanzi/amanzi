@@ -20,17 +20,23 @@
 #
 # generate_evaluators_registration_header(HEADERFILE eval_reg.hh LISTNAME REGISTER_FILE_LIST  INSTALL True)
 #
-# It should be called in the CMakeLists.txt in the directory
-# that contains the .cc file containing the main function. It auto-
-# generates the file eval_reg.hh, which must be included in the
+# It autogenerates the file eval_reg.hh, which must be included in the
 # .cc file that contains main. The argument INSTALL is optional
 # and if set to TRUE, True, or true, the concatenated header file
-# will be installed
+# will be installed.
 #
-# The result of this is that we are now sure that the code that is
-# needed to register all individual evaluators with the factory is 
-# in fact linked with the executable.
+# The macro
 #
+# include_evaluators_directories(LISTNAME REGISTER_FILE_LIST_INCLUDES)
+#
+# must be used in the CMakeCache.txt file to add the necessary include_directories
+# calls. Note that the macro  generate_evaluators_registration_header  creates
+# a global list that contains all the necessary include directories, and names
+# this global list the list file name used in that macro with an appended _INCLUDES.
+# In the example above, the global list that stores the include directories is
+# called REGISTER_FILE_LIST_INCLUDES.
+#
+
 
 include(CMakeParseArguments)
 
@@ -53,8 +59,8 @@ endmacro(amanzi_file_cat)
 
 
 macro(generate_evaluators_registration_header)
-  set(singleValueArgs HEADERFILE)
-  set(multiValueArgs LISTNAME)
+  set(singleValueArgs HEADERFILE LISTNAME)
+  set(multiValueArgs "")
   set(options INSTALL)
   
   cmake_parse_arguments(LOCAL "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN})  
@@ -74,8 +80,19 @@ macro(generate_evaluators_registration_header)
   
   # install the header file 
   if ((LOCAL_INSTALL STREQUAL "TRUE") OR (LOCAL_INSTALL STREQUAL "true") OR (LOCAL_INSTALL STREQUAL "True"))
-    add_install_include_file(${LOCAL_HEADERFILE})
+    #add_install_include_file(${LOCAL_HEADERFILE})
+    install(FILES ${LOCAL_HEADERFILE} DESTINATION include)
   endif()
+
+  # collect the necessary include directories into the list LISTNAME_INCLUDES
+  list(APPEND MY_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
+  foreach(FILE  ${VAR_LIST})
+    get_filename_component(INCLUDE_PATH ${FILE} PATH)
+    list(APPEND  MY_INCLUDES ${INCLUDE_PATH})
+  endforeach()
+  
+  set_property(GLOBAL PROPERTY ${LOCAL_LISTNAME}_INCLUDES ${MY_INCLUDES})
+
 endmacro(generate_evaluators_registration_header)
 
 
@@ -94,3 +111,18 @@ macro(register_evaluator_with_factory)
 
   set_property(GLOBAL PROPERTY "${LOCAL_LISTNAME}" ${VAR_TMP})
 endmacro(register_evaluator_with_factory)
+
+
+
+
+macro(include_evaluators_directories)
+  set(singleValueArgs LISTNAME)
+  set(multiValueArgs "")
+  set(options "")
+
+  cmake_parse_arguments(LOCAL "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN})  
+
+  get_property(VAR GLOBAL PROPERTY ${LOCAL_LISTNAME})
+  include_directories(${VAR})
+
+endmacro(include_evaluators_directories)
