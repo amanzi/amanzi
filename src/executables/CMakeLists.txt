@@ -93,6 +93,7 @@ target_link_libraries(ats
                       deformation_operator
                       amanzi_whetstone
                       amanzi_time_integration
+		      amanzi_solvers
                       amanzi_mesh
                       amanzi_mesh_audit
                       amanzi_mesh_functions

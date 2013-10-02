@@ -122,7 +122,7 @@ void TwoPhase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S,
   for (int f=0; f!=nfaces; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (cells.size() == 1) {
-      double T = bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET ?
+      double T = bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET ?
           bc_values_[f] : temp[0][f];
       double p = pres[0][f];
       double dens = eos_liquid_->MolarDensity(T,p);

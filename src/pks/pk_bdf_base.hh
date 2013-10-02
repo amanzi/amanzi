@@ -17,7 +17,6 @@ BDF.
 
 #include "BDFFnBase.hh"
 #include "BDF1_TI.hh"
-#include "Matrix.hh"
 #include "pk_default_base.hh"
 
 namespace Amanzi {
@@ -29,8 +28,7 @@ class PKBDFBase : public virtual PKDefaultBase,
 
   PKBDFBase(Teuchos::ParameterList& plist,
             const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      backtracking_(false) {}
+      PKDefaultBase(plist,solution) {}
 
   // Virtual destructor
   virtual ~PKBDFBase() {}
@@ -45,18 +43,12 @@ class PKBDFBase : public virtual PKDefaultBase,
   // -- Choose a time step compatible with physics.
   virtual double get_dt();
 
-  // Operator access/mutate/use
-  virtual Teuchos::RCP<Operators::Matrix> preconditioner() { return preconditioner_; }
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner) {
-    preconditioner_ = preconditioner; }
-  virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-
   // -- Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool advance(double dt);
 
   // -- Check the admissibility of a solution.
   virtual bool is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
-
+ 
   // -- Possibly modify the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator.
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up) { return false; }
@@ -66,17 +58,14 @@ class PKBDFBase : public virtual PKDefaultBase,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
     return false; }
 
+
  protected: // data
+  // preconditioner assembly control
+  bool assemble_preconditioner_;
+
   // timestep control
   double dt_;
   Teuchos::RCP<BDF1_TI<TreeVector> > time_stepper_;
-  bool backtracking_;
-  int backtracking_count_;
-  int backtracking_iterations_;
-
-  // operators
-  Teuchos::RCP<Operators::Matrix> preconditioner_;
-  bool assemble_preconditioner_;
 
   // timing
   Teuchos::RCP<Teuchos::Time> step_walltime_;

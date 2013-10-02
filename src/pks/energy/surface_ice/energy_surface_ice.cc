@@ -133,9 +133,12 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- kill the preconditioner and replace with a TPFA precon
     Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-    Teuchos::RCP<Operators::Matrix> precon =
-        Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
-    set_preconditioner(precon);
+    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
+    mfd_preconditioner_->set_symmetric(true);
+    mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+    mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+    mfd_preconditioner_->InitPreconditioner();
+
 
     // -- ensure mass source from subsurface exists
     S->RequireField("surface_subsurface_flux")
@@ -242,7 +245,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   for (unsigned int f=0; f!=nfaces; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (cells.size() == 1) {
-      double T = bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET ?
+      double T = bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET ?
           bc_values_[f] : temp_f[0][f];
       double p = pres_c[0][cells[0]];
       double dens = eos_liquid_->MolarDensity(T,p);

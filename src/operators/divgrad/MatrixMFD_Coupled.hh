@@ -62,8 +62,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class MatrixMFD_Coupled : public Matrix,
-                          public TreeMatrix {
+class MatrixMFD_Coupled : public TreeMatrix {
 
  public:
   MatrixMFD_Coupled(Teuchos::ParameterList& plist,
@@ -74,10 +73,7 @@ class MatrixMFD_Coupled : public Matrix,
   void InitializeFromPList_();
 
   void SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
-                    const Teuchos::RCP<MatrixMFD>& blockB) {
-    blockA_ = blockA;
-    blockB_ = blockB;
-  }
+                    const Teuchos::RCP<MatrixMFD>& blockB);
 
   void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
                        const Teuchos::RCP<const Epetra_MultiVector>& Dcc) {
@@ -90,12 +86,12 @@ class MatrixMFD_Coupled : public Matrix,
   }
 
   // TreeMatrix stuff FIX ME!
-  virtual Teuchos::RCP<const TreeVectorSpace> domain() const {
-    return Teuchos::null; }
+  virtual const TreeVectorSpace& DomainMap() const {
+    return *space_; }
 
   // Vector space of the Matrix's range.
-  virtual Teuchos::RCP<const TreeVectorSpace> range() const {
-    return Teuchos::null; }
+  virtual const TreeVectorSpace& RangeMap() const {
+    return *space_; }
 
   // Virtual copy constructor.
   virtual Teuchos::RCP<TreeMatrix> Clone() const {
@@ -125,6 +121,9 @@ class MatrixMFD_Coupled : public Matrix,
   // mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
+
+  // domain/range space
+  Teuchos::RCP<TreeVectorSpace> space_;
 
   // sub-blocks
   Teuchos::RCP<MatrixMFD> blockA_;

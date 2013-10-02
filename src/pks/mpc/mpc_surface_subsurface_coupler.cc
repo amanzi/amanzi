@@ -118,39 +118,6 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
       surf_dcvo_.resize(surf_dc_.size(), vo_);
     }
   }
-
-  // Replace the subdomain preconditioners with the necessary versions.
-  Teuchos::ParameterList surface_pc_plist = plist_.sublist("PKs")
-      .sublist(surf_pk_name_).sublist("Diffusion PC");
-  Teuchos::ParameterList subsurface_pc_plist = plist_.sublist("PKs")
-      .sublist(domain_pk_name_).sublist("Diffusion PC");
-  Teuchos::ParameterList surface_op_plist = plist_.sublist("PKs")
-      .sublist(surf_pk_name_).sublist("Diffusion");
-  Teuchos::ParameterList subsurface_op_plist = plist_.sublist("PKs")
-      .sublist(domain_pk_name_).sublist("Diffusion");
-
-  if (subsurface_op_plist.get<bool>("scaled constraint equation", false)) {
-    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Surf_ScaledConstraint(
-        subsurface_pc_plist, domain_mesh_, surf_mesh_));
-  } else {
-    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Surf(
-        subsurface_pc_plist, domain_mesh_, surf_mesh_));
-  }
-  preconditioner_ = mfd_preconditioner_;
-
-  // CLEAN UP THIS CRUFT!  surf precon should ALWAYS be ScaledConstraint... we
-  // should impose this from above, not backhandedly
-  surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(
-      surface_pc_plist, surf_mesh_));
-
-
-  // set the surface A in the MFD_Surf.
-  mfd_preconditioner_->SetSurfaceOperator(surf_preconditioner_);
-
-  // give the PCs back to the PKs
-  domain_pk_->set_preconditioner(preconditioner_);
-  surf_pk_->set_preconditioner(surf_preconditioner_);
-
 }
 
 bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_surf_to_subsurf_(double h,

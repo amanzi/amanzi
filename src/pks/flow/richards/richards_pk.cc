@@ -225,13 +225,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  Teuchos::RCP<Operators::MatrixMFD> precon;
   if (!scaled_constraint_) {
-    precon = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
   } else {
-    precon = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_pc_plist, mesh_));
+    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_pc_plist, mesh_));
   }
-  set_preconditioner(precon);
+  mfd_preconditioner_->set_symmetric(symmetric_);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->InitPreconditioner();
 
   // wc preconditioner
   precon_wc_ = plist_.get<bool>("precondition using WC", false);
@@ -333,7 +334,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::Matrix::MATRIX_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   // Set extra fields as initialized -- these don't currently have evaluators,
@@ -604,7 +605,7 @@ void Richards::UpdateBoundaryConditions_() {
     *vo_->os() << "  Updating BCs." << std::endl;
 
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -612,7 +613,7 @@ void Richards::UpdateBoundaryConditions_() {
   Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
@@ -620,7 +621,7 @@ void Richards::UpdateBoundaryConditions_() {
     // Standard Neuman boundary conditions
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     }
   } else {
@@ -628,7 +629,7 @@ void Richards::UpdateBoundaryConditions_() {
     const Epetra_MultiVector& temp = *S_next_->GetFieldData("temperature")->ViewComponent("face");
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       if (temp[0][f] > 273.15) {
         bc_values_[f] = bc->second;
       } else {
@@ -643,10 +644,10 @@ void Richards::UpdateBoundaryConditions_() {
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
     if (pressure[0][f] < p_atm) {
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     } else {
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = p_atm;
     }
   }
@@ -665,7 +666,7 @@ void Richards::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to dirichlet
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = head[0][c];
     }
   }
@@ -684,7 +685,7 @@ void Richards::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to Neumann
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
       // NOTE: flux[0][c] is in units of mols / s, where as Neumann BCs are in
       //       units of mols / s / A.  The right A must be chosen, as it is
@@ -703,7 +704,7 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
   Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
   unsigned int nfaces = pres_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
       pres_f[0][f] = bc_values_[f];
     }
   }

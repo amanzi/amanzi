@@ -29,18 +29,6 @@ void PKPhysicalBDFBase::setup(const Teuchos::Ptr<State>& S) {
   // convergence criteria
   atol_ = plist_.get<double>("absolute error tolerance",1.0);
   rtol_ = plist_.get<double>("relative error tolerance",1.0);
-  atol0_ = atol_;
-  rtol0_ = rtol_;
-
-  // adapt the tolerances to fit the timestep
-  adapt_tols_to_h_ = plist_.get<bool>("adapt tolerances to timestep", "false");
-  if (adapt_tols_to_h_) {
-    min_tol_h_ = plist_.get<double>("cutoff timestep for adaptive tolerance", 100.0);
-  }
-
-  // continuation to steady state enables a gradually shrinking atol/rtol
-  continuation_to_ss_ = plist_.get<bool>("continuation to steady state", false);
-
 };
 
 

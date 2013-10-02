@@ -59,7 +59,6 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
 private:
   // helper methods for calling the above methods

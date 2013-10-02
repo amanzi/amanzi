@@ -134,7 +134,7 @@ void OverlandHeadFlow::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<Tre
 #endif
 
   // apply the preconditioner
-  preconditioner_->ApplyInverse(*u, Pu.ptr());
+  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 
 #if DEBUG_FLAG
@@ -313,18 +313,6 @@ void OverlandHeadFlow::update_precon(double t, Teuchos::RCP<const TreeVector> up
   *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
   */
 };
-
-
-void OverlandHeadFlow::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
-  preconditioner_ = precon;
-  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
-  ASSERT(mfd_preconditioner_ != Teuchos::null);
-  mfd_preconditioner_->set_symmetric(symmetric_);
-  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-  mfd_preconditioner_->InitPreconditioner();
-}
-
 
 double OverlandHeadFlow::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {

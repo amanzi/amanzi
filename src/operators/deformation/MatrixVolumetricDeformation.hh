@@ -19,7 +19,7 @@
 #include "Mesh.hh"
 #include "CompositeVector.hh"
 #include "CompositeMatrix.hh"
-#include "Matrix_PreconditionerDelegate.hh"
+#include "Preconditioner.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -35,12 +35,12 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
 
 
   // Vector space of the Matrix's domain.
-  virtual Teuchos::RCP<const CompositeVectorSpace> domain() const {
-    return domain_; }
+  virtual const CompositeVectorSpace& DomainMap() const {
+    return *domain_; }
 
   // Vector space of the Matrix's range.
-  virtual Teuchos::RCP<const CompositeVectorSpace> range() const {
-    return range_; }
+  virtual const CompositeVectorSpace& RangeMap() const {
+    return *range_; }
 
   // Virtual copy constructor.
   virtual Teuchos::RCP<CompositeMatrix> Clone() const {
@@ -69,7 +69,7 @@ class MatrixVolumetricDeformation : public CompositeMatrix {
 
  protected:
   // solver methods
-  Teuchos::RCP<Matrix_PreconditionerDelegate> prec_;
+  Teuchos::RCP<AmanziPreconditioners::Preconditioner> prec_;
 
   // local data
   Teuchos::RCP<CompositeVectorSpace> range_;

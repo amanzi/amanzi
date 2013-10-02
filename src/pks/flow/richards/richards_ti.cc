@@ -122,7 +122,7 @@ void Richards::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector>
 #endif
 
   // Apply the preconditioner
-  preconditioner_->ApplyInverse(*u, Pu.ptr());
+  mfd_preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
@@ -220,17 +220,6 @@ void Richards::update_precon(double t, Teuchos::RCP<const TreeVector> up, double
     mfd_preconditioner_->UpdatePreconditioner();
   }
 };
-
-
-void Richards::set_preconditioner(const Teuchos::RCP<Operators::Matrix> precon) {
-  preconditioner_ = precon;
-  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(precon);
-  ASSERT(mfd_preconditioner_ != Teuchos::null);
-  mfd_preconditioner_->set_symmetric(symmetric_);
-  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-  mfd_preconditioner_->InitPreconditioner();
-}
-
 
 double Richards::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
