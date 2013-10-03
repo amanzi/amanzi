@@ -96,7 +96,7 @@
       <ParameterList name="Mineralogy">
 	<ParameterList name="Calcite">
 	  <Parameter name="Volume Fraction" type="double" value="1.0e-5"/>
-	  <Parameter name="Specific Surface Area" type="double" value="1.0"/>	  
+	  <Parameter name="Specific Surface Area" type="double" value="100.0"/>	  
 	</ParameterList>
       </ParameterList>
     </ParameterList>
