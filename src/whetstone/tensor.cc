@@ -81,9 +81,22 @@ int Tensor::init(int d, int rank)
 
 
 /* ******************************************************************
+* Assign constan value to the tensor entries 
+****************************************************************** */
+void Tensor::PutScalar(double val)
+{
+  if (! data_) return;
+
+  size_ = WHETSTONE_TENSOR_SIZE[d_ - 1][rank_ - 1];
+  int mem = size_ * size_;
+  for (int i = 0; i < mem; i++) data_[i] = val;
+}
+
+
+/* ******************************************************************
 * Trace operation with tensors of rank 1 and 2
 ****************************************************************** */
-double Tensor::trace() const
+double Tensor::Trace() const
 {
   double s = 0.0;
   if (rank_ <= 2) {

@@ -36,7 +36,8 @@ class Tensor {
 
   // primary members
   int init(int d, int rank);
-  double trace() const;
+  void PutScalar(double val);
+  double Trace() const;
   double det();
   void inverse();
   void transpose();
