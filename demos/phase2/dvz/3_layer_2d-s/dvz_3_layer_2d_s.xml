@@ -28,6 +28,7 @@
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <Parameter name="Verbosity" type="string" value="Low"/>
+    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00356"/> -->
 
     <ParameterList name="Time Integration Mode">
       
@@ -261,7 +262,7 @@
       <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
       <ParameterList name="IC: Linear Pressure">
         <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Reference Value" type="double" value="0"/>
+        <Parameter name="Reference Value" type="double" value="101325"/>
         <Parameter name="Reference Coordinate" type="Array(double)" value="{0,0}"/>
         <Parameter name="Gradient Value" type="Array(double)" value="{0,-9793.5192 }"/>
       </ParameterList>
@@ -283,7 +284,7 @@
     <ParameterList name="BC For Bottom Surface Outside All">
       <Parameter name="Assigned Regions" type="Array(string)" value="{YLOBC}"/>
       <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Values" type="Array(double)" value="{0}"/>
+        <Parameter name="Values" type="Array(double)" value="{101325}"/>
       </ParameterList>
       <ParameterList name="Solute BC">
         <ParameterList name="Aqueous">

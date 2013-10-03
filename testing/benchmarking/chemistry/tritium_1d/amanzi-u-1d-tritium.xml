@@ -6,7 +6,7 @@
   <ParameterList name="Execution Control">
     <Parameter name="Flow Model" type="string" value="Single Phase"/>
     <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
+    <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
     <ParameterList name="Time Integration Mode">
       <ParameterList name="Initialize To Steady">
         <Parameter name="Start" type="double" value="0.0"/>
@@ -139,6 +139,7 @@
       <ParameterList name="BC: Flux">
         <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
         <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
+<!--        <Parameter name="Inward Mass Flux" type="Array(double)" value="{0.0, 0.0}"/> -->
         <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6, 7.91317859e-6}"/> 
 <!--        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{7.927447996e-9,7.927447996e-9}"/>	 		-->
       </ParameterList>
@@ -209,7 +210,8 @@
     <Parameter name="Activity Model" type="string" value="unit" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="25"/>
-    <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
+<!--    <Parameter name="Max Time Step (s)" type="double" value="157784.630"/> -->
+    <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/> 
     <ParameterList name="Initial Conditions">
       <ParameterList name="initial">
         <Parameter name="PFloTran Constraint" type="string" value="initial"/>

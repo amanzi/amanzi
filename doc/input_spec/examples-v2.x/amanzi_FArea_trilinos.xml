@@ -2,7 +2,7 @@
      to geochemistry and process kernel sections.  Need to know how moving mineralogy impacts amanzi chemistry.
      Still need to create additional mesh options -->
 
-	<amanzi_input version="2.1.0" type="unstructured">
+	<amanzi_input version="2.0.0" type="unstructured">
 	       
 	        <model_description name="F Area 2D">
 	                <comments>full chemistry</comments>
@@ -463,7 +463,7 @@
 	                <checkpoint>
 	                        <base_filename>chk</base_filename>
 	                        <num_digits>5</num_digits>
-	                        <time_macro>Every-100-timesteps</time_macro>
+	                        <cycle_macro>Every-100-timesteps</cycle_macro>
 	                </checkpoint>
 	
 	                <observations>

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <boost/lambda/lambda.hpp>
 #include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -1745,7 +1746,6 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
                 char* value = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
 	        rfPL.set<int>("Value",atoi(value));
 	        XMLString::release(&value);
-		rfPL.print(std::cout,true,false);
                 list.sublist(textContent).sublist("Region: Color Function") = rfPL;
 	      }else if  (strcmp(textContent2,"labeled set") == 0){
                 nodeAttr = attrMap->getNamedItem(XMLString::transcode("label"));
@@ -2751,175 +2751,178 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
   nodeList = xmlDoc->getElementsByTagName(XMLString::transcode("output"));
   xercesc::DOMNode* outNode = nodeList->item(0);
   xercesc::DOMElement* outElement = static_cast<xercesc::DOMElement*>(outNode);
+  if (xercesc::DOMNode::ELEMENT_NODE == outNode->getNodeType()) {
+    xercesc::DOMNodeList* outChildList = outNode->getChildNodes();
+    for (int m=0; m<outChildList->getLength(); m++) {
+      xercesc::DOMNode* curoutNode = outChildList->item(m) ;
+      if (xercesc::DOMNode::ELEMENT_NODE == curoutNode->getNodeType()) {
+        char* outName = xercesc::XMLString::transcode(curoutNode->getNodeName());
+        if (strcmp(outName,"vis")==0) {
 
-  // get list of vis - this node MAY exist ONCE
-  visList = outElement->getElementsByTagName(XMLString::transcode("vis"));
-  for (int i=0; i<visList->getLength(); i++) {
-    xercesc::DOMNode* curNode = visList->item(i) ;
-    if (xercesc::DOMNode::ELEMENT_NODE == curNode->getNodeType()) {
-      Teuchos::ParameterList visPL;
-      xercesc::DOMElement* curElement = static_cast<xercesc::DOMElement*>(curNode);
-      // get base_filename element
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("base_filename"));
-      tmpNode = tmpList->item(0);
-      textContent = XMLString::transcode(tmpNode->getTextContent());
-      visPL.set<std::string>("File Name Base",textContent);
-      XMLString::release(&textContent);
-      // get num_digits element
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("num_digits"));
-      tmpNode = tmpList->item(0);
-      textContent = XMLString::transcode(tmpNode->getTextContent());
-      visPL.set<int>("File Name Digits",get_int_constant(textContent,def_list));
-      XMLString::release(&textContent);
-      // get time_macro element
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("time_macro"));
-      tmpNode = tmpList->item(0);
-      textContent = XMLString::transcode(tmpNode->getTextContent());
-      Teuchos::Array<std::string> macro;
-      macro.append(textContent);
-      visPL.set<Teuchos::Array<std::string> >("Time Macro",macro);
-      XMLString::release(&textContent);
-      list.sublist("Visualization Data") = visPL;
-    }
-  }
-
-  // get list of checkpoint - this node MAY exist ONCE
-  chkList = outElement->getElementsByTagName(XMLString::transcode("checkpoint"));
-  for (int i=0; i<chkList->getLength(); i++) {
-    xercesc::DOMNode* curNode = chkList->item(i) ;
-    if (xercesc::DOMNode::ELEMENT_NODE == curNode->getNodeType()) {
-      Teuchos::ParameterList chkPL;
-      xercesc::DOMElement* curElement = static_cast<xercesc::DOMElement*>(curNode);
-      // get base_filename element
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("base_filename"));
-      tmpNode = tmpList->item(0);
-      textContent = XMLString::transcode(tmpNode->getTextContent());
-      chkPL.set<std::string>("File Name Base",textContent);
-      XMLString::release(&textContent);
-      // get num_digits element
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("num_digits"));
-      tmpNode = tmpList->item(0);
-      textContent = XMLString::transcode(tmpNode->getTextContent());
-      chkPL.set<int>("File Name Digits",get_int_constant(textContent,def_list));
-      XMLString::release(&textContent);
-      // get time_macro element
-      tmpList = curElement->getElementsByTagName(XMLString::transcode("time_macro"));
-      tmpNode = tmpList->item(0);
-      textContent = XMLString::transcode(tmpNode->getTextContent());
-      Teuchos::Array<std::string> macro;
-      macro.append(textContent);
-      chkPL.set<Teuchos::Array<std::string> >("Time Macro",macro);
-      XMLString::release(&textContent);
-      list.sublist("Checkpoint Data") = chkPL;
-    }
-  }
-
-  // get list of observations - this node MAY exist ONCE
-  obsList = outElement->getElementsByTagName(XMLString::transcode("observations"));
-  if (obsList->getLength() > 0) {
-  xercesc::DOMNode* nodeObs = obsList->item(0);
-
-  xercesc::DOMNodeList* OBList = nodeObs->getChildNodes();
-  Teuchos::ParameterList obsPL;
-  for (int i=0; i<OBList->getLength(); i++) {
-    xercesc::DOMNode* curNode = OBList->item(i) ;
-    if (xercesc::DOMNode::ELEMENT_NODE == curNode->getNodeType()) {
-      textContent  = xercesc::XMLString::transcode(curNode->getNodeName());
-      if (strcmp(textContent,"filename")==0) {
-	textContent2 = xercesc::XMLString::transcode(curNode->getTextContent());
-        obsPL.set<std::string>("Observation Output Filename",textContent2);
-	XMLString::release(&textContent2);
-      } else if (strcmp(textContent,"liquid_phase")==0) {
-        xercesc::DOMNamedNodeMap* attrMap = curNode->getAttributes();
-        xercesc::DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
-	char* phaseName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	// loop over observations
-	xercesc::DOMNodeList* childList = curNode->getChildNodes();
-        for (int j=0; j<childList->getLength(); j++) {
-	  Teuchos::ParameterList obPL;
-          xercesc::DOMNode* curObs = childList->item(j) ;
-          if (xercesc::DOMNode::ELEMENT_NODE == curObs->getNodeType()) {
-            char* obsType = xercesc::XMLString::transcode(curObs->getNodeName());
-            if (strcmp(obsType,"aqueous_pressure")==0) {
-	      obPL.set<std::string>("Variable","Aqueous pressure");
-	    } else if (strcmp(obsType,"integrated_mass")==0) {
-	      // TODO: EIB can't find matching version
-	      //obPL.set<std::string>("Variable","Aqueous pressure");
-            } else if (strcmp(obsType,"volumetric_water_content")==0) {
-	      obPL.set<std::string>("Variable","Volumetric water content");
-            } else if (strcmp(obsType,"gravimetric_water_content")==0) {
-	      obPL.set<std::string>("Variable","Gravimetric water content");
-            } else if (strcmp(obsType,"x_aqueous_volumetric_flux")==0) {
-	      // TODO: EIB needs double checking
-	      obPL.set<std::string>("Variable","X-Aqueous volumetric flux");
-            } else if (strcmp(obsType,"y_aqueous_volumetric_flux")==0) {
-	      // TODO: EIB needs double checking
-	      obPL.set<std::string>("Variable","Y-Aqueous volumetric flux");
-            } else if (strcmp(obsType,"z_aqueous_volumetric_flux")==0) {
-	      // TODO: EIB needs double checking
-	      obPL.set<std::string>("Variable","Z-Aqueous volumetric flux");
-            } else if (strcmp(obsType,"material_id")==0) {
-	      obPL.set<std::string>("Variable","MaterialID");
-            } else if (strcmp(obsType,"hydraulic_head")==0) {
-	      obPL.set<std::string>("Variable","Hydraulic Head");
-            } else if (strcmp(obsType,"aqueous_mass_flow_rate")==0) {
-	      obPL.set<std::string>("Variable","Aqueous mass flow rate");
-            } else if (strcmp(obsType,"aqueous_volumetric_flow_rate")==0) {
-	      obPL.set<std::string>("Variable","Aqueous volumetric flow rate");
-            } else if (strcmp(obsType,"aqueous_conc")==0) {
-	      // get solute name
-              xercesc::DOMNamedNodeMap* attrMap = curObs->getAttributes();
-              xercesc::DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("solute"));
-	      char* soluteName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      std::stringstream name;
-	      name<< soluteName << " Aqueous concentration";
-	      obPL.set<std::string>("Variable",name.str());
+          // get list of vis - this node MAY exist ONCE
+          xercesc::DOMNodeList* childList = curoutNode->getChildNodes();
+          Teuchos::ParameterList visPL;
+          for (int j=0; j<childList->getLength(); j++) {
+            xercesc::DOMNode* curKid = childList->item(j) ;
+            textContent  = xercesc::XMLString::transcode(curKid->getNodeName());
+            if (strcmp(textContent,"base_filename")==0) {
+	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
+              visPL.set<std::string>("File Name Base",textContent);
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"num_digits")==0) {
+	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
+              visPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"time_macro")==0) {
+	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
+	      Teuchos::Array<std::string> macro;
+              macro.append(textContent2);
+              visPL.set<Teuchos::Array<std::string> >("Time Macro",macro);
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"cycle_macro")==0) {
+	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
+	      Teuchos::Array<std::string> macro;
+              macro.append(textContent2);
+              //visPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
+              visPL.set<std::string>("Cycle Macro",textContent2);
+              XMLString::release(&textContent2);
 	    }
-	    xercesc::DOMNodeList* kidList = curObs->getChildNodes();
-            for (int k=0; k<kidList->getLength(); k++) {
-              xercesc::DOMNode* curElem = kidList->item(k) ;
-              if (xercesc::DOMNode::ELEMENT_NODE == curElem->getNodeType()) {
-                char* Elem =  xercesc::XMLString::transcode(curElem->getNodeName());
-                char* Value =  xercesc::XMLString::transcode(curElem->getTextContent());
-		if (strcmp(Elem,"assigned_regions")==0) {
-		  //TODO: EIB - really a note, REGION != ASSIGNED REGIONS, this isn't consistent!!!
-		  /*
-	          Teuchos::Array<std::string> regs;
-	          char* char_array;
-	          char_array = strtok(Value,",");
-	          while(char_array!=NULL){
-	            regs.append(char_array);
-	            char_array = strtok(NULL,",");
-	          }
-                  obPL.set<Teuchos::Array<std::string> >("Region",regs);
-		  */
-                  obPL.set<std::string>("Region",Value);
-		} else if (strcmp(Elem,"functional")==0) {
-	          if (strcmp(Value,"point")==0) {
-	            obPL.set<std::string>("Functional","Observation Data: Point");
-	          } else if (strcmp(Value,"integral")==0) {
-	            obPL.set<std::string>("Functional","Observation Data: Integral");
-	          } else if (strcmp(Value,"mean")==0) {
-	            obPL.set<std::string>("Functional","Observation Data: Mean");
-	          }
-		} else if (strcmp(Elem,"time_macro")==0) {
-	          obPL.set<std::string>("Time Macro",Value);
-		}
-                XMLString::release(&Elem);
-                XMLString::release(&Value);
-	      }
+            XMLString::release(&textContent);
+          }
+          list.sublist("Visualization Data") = visPL;
+
+	} else if (strcmp(outName,"checkpoint")==0) {
+          // get list of checkpoint - this node MAY exist ONCE
+          Teuchos::ParameterList chkPL;
+          xercesc::DOMNodeList* childList = curoutNode->getChildNodes();
+          for (int j=0; j<childList->getLength(); j++) {
+            xercesc::DOMNode* curKid = childList->item(j) ;
+            textContent  = xercesc::XMLString::transcode(curKid->getNodeName());
+            if (strcmp(textContent,"base_filename")==0) {
+	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
+              chkPL.set<std::string>("File Name Base",textContent);
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"num_digits")==0) {
+	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
+              chkPL.set<int>("File Name Digits",get_int_constant(textContent,def_list));
+              XMLString::release(&textContent2);
+	    } else if (strcmp(textContent,"cycle_macro")==0) {
+	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
+	      Teuchos::Array<std::string> macro;
+              macro.append(textContent2);
+              //chkPL.set<Teuchos::Array<std::string> >("Cycle Macro",macro);
+              chkPL.set<std::string >("Cycle Macro",textContent2);
+              XMLString::release(&textContent2);
 	    }
-	    std::stringstream listName;
-	    listName << "observation-"<<j+1<<":"<<phaseName;
-	    obsPL.sublist(listName.str()) = obPL;
-	  }
+            XMLString::release(&textContent);
+          }
+          list.sublist("Checkpoint Data") = chkPL;
+	} else if (strcmp(outName,"observations")==0) {
+
+          Teuchos::ParameterList obsPL;
+          xercesc::DOMNodeList* OBList = curoutNode->getChildNodes();
+          for (int i=0; i<OBList->getLength(); i++) {
+            xercesc::DOMNode* curNode = OBList->item(i) ;
+            if (xercesc::DOMNode::ELEMENT_NODE == curNode->getNodeType()) {
+              textContent  = xercesc::XMLString::transcode(curNode->getNodeName());
+              if (strcmp(textContent,"filename")==0) {
+	        textContent2 = xercesc::XMLString::transcode(curNode->getTextContent());
+                obsPL.set<std::string>("Observation Output Filename",textContent2);
+	        XMLString::release(&textContent2);
+              } else if (strcmp(textContent,"liquid_phase")==0) {
+                xercesc::DOMNamedNodeMap* attrMap = curNode->getAttributes();
+                xercesc::DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+	        char* phaseName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	        // loop over observations
+	        xercesc::DOMNodeList* childList = curNode->getChildNodes();
+                for (int j=0; j<childList->getLength(); j++) {
+	          Teuchos::ParameterList obPL;
+                  xercesc::DOMNode* curObs = childList->item(j) ;
+                  if (xercesc::DOMNode::ELEMENT_NODE == curObs->getNodeType()) {
+                    char* obsType = xercesc::XMLString::transcode(curObs->getNodeName());
+                    if (strcmp(obsType,"aqueous_pressure")==0) {
+	              obPL.set<std::string>("Variable","Aqueous pressure");
+	            } else if (strcmp(obsType,"integrated_mass")==0) {
+	              // TODO: EIB can't find matching version
+	              //obPL.set<std::string>("Variable","Aqueous pressure");
+                    } else if (strcmp(obsType,"volumetric_water_content")==0) {
+	              obPL.set<std::string>("Variable","Volumetric water content");
+                    } else if (strcmp(obsType,"gravimetric_water_content")==0) {
+	              obPL.set<std::string>("Variable","Gravimetric water content");
+                    } else if (strcmp(obsType,"x_aqueous_volumetric_flux")==0) {
+	              // TODO: EIB needs double checking
+	              obPL.set<std::string>("Variable","X-Aqueous volumetric flux");
+                    } else if (strcmp(obsType,"y_aqueous_volumetric_flux")==0) {
+	              // TODO: EIB needs double checking
+	              obPL.set<std::string>("Variable","Y-Aqueous volumetric flux");
+                    } else if (strcmp(obsType,"z_aqueous_volumetric_flux")==0) {
+	              // TODO: EIB needs double checking
+	              obPL.set<std::string>("Variable","Z-Aqueous volumetric flux");
+                    } else if (strcmp(obsType,"material_id")==0) {
+	              obPL.set<std::string>("Variable","MaterialID");
+                    } else if (strcmp(obsType,"hydraulic_head")==0) {
+	              obPL.set<std::string>("Variable","Hydraulic Head");
+                    } else if (strcmp(obsType,"aqueous_mass_flow_rate")==0) {
+	              obPL.set<std::string>("Variable","Aqueous mass flow rate");
+                    } else if (strcmp(obsType,"aqueous_volumetric_flow_rate")==0) {
+	              obPL.set<std::string>("Variable","Aqueous volumetric flow rate");
+                    } else if (strcmp(obsType,"aqueous_conc")==0) {
+	              // get solute name
+                      xercesc::DOMNamedNodeMap* attrMap = curObs->getAttributes();
+                      xercesc::DOMNode* nodeAttr = attrMap->getNamedItem(XMLString::transcode("solute"));
+	              char* soluteName = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+	              std::stringstream name;
+	              name<< soluteName << " Aqueous concentration";
+	              obPL.set<std::string>("Variable",name.str());
+	            }
+	            xercesc::DOMNodeList* kidList = curObs->getChildNodes();
+                    for (int k=0; k<kidList->getLength(); k++) {
+                      xercesc::DOMNode* curElem = kidList->item(k) ;
+                      if (xercesc::DOMNode::ELEMENT_NODE == curElem->getNodeType()) {
+                        char* Elem =  xercesc::XMLString::transcode(curElem->getNodeName());
+                        char* Value =  xercesc::XMLString::transcode(curElem->getTextContent());
+		        if (strcmp(Elem,"assigned_regions")==0) {
+		          //TODO: EIB - really a note, REGION != ASSIGNED REGIONS, this isn't consistent!!!
+		          /*
+	                  Teuchos::Array<std::string> regs;
+	                  char* char_array;
+	                  char_array = strtok(Value,",");
+	                  while(char_array!=NULL){
+	                    regs.append(char_array);
+	                    char_array = strtok(NULL,",");
+	                  }
+                          obPL.set<Teuchos::Array<std::string> >("Region",regs);
+		          */
+                          obPL.set<std::string>("Region",Value);
+		        } else if (strcmp(Elem,"functional")==0) {
+	                  if (strcmp(Value,"point")==0) {
+	                    obPL.set<std::string>("Functional","Observation Data: Point");
+	                  } else if (strcmp(Value,"integral")==0) {
+	                    obPL.set<std::string>("Functional","Observation Data: Integral");
+	                  } else if (strcmp(Value,"mean")==0) {
+	                    obPL.set<std::string>("Functional","Observation Data: Mean");
+	                  }
+		        } else if (strcmp(Elem,"time_macro")==0) {
+	                  obPL.set<std::string>("Time Macro",Value);
+		        }
+                        XMLString::release(&Elem);
+                        XMLString::release(&Value);
+	              }
+	            }
+	            std::stringstream listName;
+	            listName << "observation-"<<j+1<<":"<<phaseName;
+	            obsPL.sublist(listName.str()) = obPL;
+	          }
+	        }
+	        XMLString::release(&phaseName);
+              }
+              XMLString::release(&textContent);
+              list.sublist("Observation Data") = obsPL;
+            }
+          }
 	}
-	XMLString::release(&phaseName);
       }
-      XMLString::release(&textContent);
-      list.sublist("Observation Data") = obsPL;
     }
-  }
   }
 
   return list;

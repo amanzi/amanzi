@@ -920,6 +920,7 @@ void
 Diffusion::residual_richard (ABecLaplacian*         visc_op,
 			     Real                   dt,
 			     Real                   gravity,
+                             int                    gravity_dir,
 			     Array<Real>            density,
 			     MultiFab&              res,
 			     const MultiFab*        p,
@@ -962,7 +963,7 @@ Diffusion::residual_richard (ABecLaplacian*         visc_op,
 #if (BL_SPACEDIM==3)
 			    bz_dat, ARLIM(bzlo), ARLIM(bzhi),
 #endif
-			    &density[0],lo,hi,dx,&gravity,&dt);
+			    &density[0],lo,hi,dx,&gravity,&gravity_dir,&dt);
     }
 
   // res  = res + \phi (n(t+dt))
@@ -991,6 +992,7 @@ void
 Diffusion::residual_richard (MGT_Solver&               mgt_solver,
 			     Real                      dt,
 			     Real                      gravity,
+			     int                       gravity_dir,
 			     Array<Real>               density,
 			     MultiFab**                Rhs,
 			     PArray<MultiFab>&         p,
@@ -1036,7 +1038,7 @@ Diffusion::residual_richard (MGT_Solver&               mgt_solver,
 #if (BL_SPACEDIM==3)
 			      bz_dat, ARLIM(bzlo), ARLIM(bzhi),
 #endif
-			      &density[0],lo,hi,dx,&gravity,&dt);
+			      &density[0],lo,hi,dx,&gravity,&gravity_dir,&dt);
 	}
 
       // res  = res + \phi (n(t+dt))
@@ -1099,6 +1101,7 @@ void
 Diffusion::richard_iter (Real                   dt,
 			 int                    nc,
 			 Real                   gravity,
+                         int                    gravity_dir,
 			 const Array<Real>&     density,
 			 const MultiFab&        res_fix,
 			 const MultiFab*        alpha, 
@@ -1148,7 +1151,7 @@ Diffusion::richard_iter (Real                   dt,
   ABecLaplacian* visc_op = getViscOp(visc_bndry,a,b,0,0,beta,alpha,false);
   MultiFab::Copy(Rhs,res_fix,0,0,1,0);
 
-  residual_richard(visc_op,dt*density[0],gravity,density,Rhs,&P_new,beta,alpha);
+  residual_richard(visc_op,dt*density[0],gravity,gravity_dir,density,Rhs,&P_new,beta,alpha);
   status.initial_residual_norm = Rhs.norm2(0);
 
   // preconditioning the residual.
@@ -1237,7 +1240,7 @@ Diffusion::richard_iter (Real                   dt,
   setBeta (visc_op,0,betatmp,false);
   MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
 
-  residual_richard(visc_op,dt*density[0],gravity,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
+  residual_richard(visc_op,dt*density[0],gravity,gravity_dir,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhsp1.norm2(0);
   status.initial_solution_norm = S_new.norm2(nc);
 
@@ -1289,7 +1292,7 @@ Diffusion::richard_iter (Real                   dt,
       setBeta (visc_op,0,betatmp,false);
       MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
 
-      residual_richard(visc_op,dt*density[0],gravity,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
+      residual_richard(visc_op,dt*density[0],gravity,gravity_dir,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
       status.residual_norm_post_ls = Rhsp1.norm2(0);
 
       if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
@@ -1344,6 +1347,7 @@ Diffusion::richard_composite_iter (Real                      dt,
 				   int                       nlevs,
 				   int                       nc,
 				   Real                      gravity,
+				   int                       gravity_dir,
 				   Array<Real>               density,
 				   PArray<MultiFab>&         res_fix,
 				   PArray<MultiFab>&         alpha, 
@@ -1438,7 +1442,7 @@ Diffusion::richard_composite_iter (Real                      dt,
   // Setup RHS
   mgt_solver.set_maxorder(2);
   mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+  residual_richard(mgt_solver,dt*density[0],gravity,gravity_dir,density,Rhs_p.dataPtr(),
 		   Pnew_p,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
 
   status.initial_residual_norm = Rhs[0].norm2(0); 
@@ -1521,7 +1525,7 @@ Diffusion::richard_composite_iter (Real                      dt,
       pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
     }
   mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+  residual_richard(mgt_solver,dt*density[0],gravity,gravity_dir,density,Rhs_p.dataPtr(),
 		   Pnew_p,beta,alpha,res_fix,Stmp_p.dataPtr(),visc_bndry);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
 
@@ -1557,7 +1561,7 @@ Diffusion::richard_composite_iter (Real                      dt,
 	  pm[lev].calc_richard_coef(beta_lp[lev].dataPtr(),&(lambda[lev]),umac[lev],0,do_upwind);
       }
       mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
-      residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+      residual_richard(mgt_solver,dt*density[0],gravity,gravity_dir,density,Rhs_p.dataPtr(),
 		       Pnew_p,beta,alpha,res_fix,Stmp_p.dataPtr(),visc_bndry);
       status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhs[0].norm2(0);
 
@@ -1605,6 +1609,7 @@ void
 Diffusion::richard_iter_p (Real                   dt,
 			   int                    nc,
 			   Real                   gravity,
+			   int                    gravity_dir,
 			   Array<Real>            density,
 			   MultiFab&              res_fix,
 			   const MultiFab*        alpha, 
@@ -1664,7 +1669,7 @@ Diffusion::richard_iter_p (Real                   dt,
   // Compute residual
   setBeta (visc_op,0,betatmp,false);
   MultiFab::Copy(Rhs,res_fix,0,0,1,0);
-  residual_richard(visc_op,b,gravity,density,Rhs,&P_new,betatmp,alpha,&Stmp);
+  residual_richard(visc_op,b,gravity,gravity_dir,density,Rhs,&P_new,betatmp,alpha,&Stmp);
   status.initial_residual_norm = Rhs.norm2(0);
   
   if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
@@ -1756,7 +1761,7 @@ Diffusion::richard_iter_p (Real                   dt,
   // Compute residual
   setBeta (visc_op,0,betatmp,false);
   MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
-  residual_richard(visc_op,b,gravity,density,Rhsp1,&ptmp,betatmp,alpha,&Stmp);
+  residual_richard(visc_op,b,gravity,gravity_dir,density,Rhsp1,&ptmp,betatmp,alpha,&Stmp);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = Rhsp1.norm2(0);
 
   if (status.residual_norm_pre_ls <= status.initial_residual_norm * status.ls_acceptance_factor) {
@@ -1790,7 +1795,7 @@ Diffusion::richard_iter_p (Real                   dt,
       pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
       setBeta (visc_op,0,betatmp,false);
       MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
-      residual_richard(visc_op,b,gravity,density,Rhsp1,&ptmp,betatmp,alpha,&Stmp);
+      residual_richard(visc_op,b,gravity,gravity_dir,density,Rhsp1,&ptmp,betatmp,alpha,&Stmp);
       status.residual_norm_post_ls = Rhsp1.norm2(0);
 
       if (ParallelDescriptor::IOProcessor() && status.monitor_line_search) {
@@ -1881,6 +1886,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 				     int                       nlevs,
 				     int                       nc,
 				     Real                      gravity,
+				     int                       gravity_dir,
 				     Array<Real>               density,
 				     PArray<MultiFab>&         res_fix,
 				     PArray<MultiFab>&         alpha, 
@@ -2009,7 +2015,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   mgt_solver.set_maxorder(2);
   mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+  residual_richard(mgt_solver,dt*density[0],gravity,gravity_dir,density,Rhs_p.dataPtr(),
 		   Pnew_p,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
   status.initial_residual_norm = MyNorm(Rhs[0],which_norm);
 
@@ -2172,7 +2178,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
   }
 
   mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
-  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+  residual_richard(mgt_solver,dt*density[0],gravity,gravity_dir,density,Rhs_p.dataPtr(),
 		   Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
   status.residual_norm_post_ls = status.residual_norm_pre_ls = MyNorm(Rhs[0],which_norm);
 
@@ -2211,7 +2217,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
       }
  
       mgt_solver.set_porous_coefficients(a1, a2, beta_pp, b, xa, xb, nc_opt); 
-      residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs_p.dataPtr(),
+      residual_richard(mgt_solver,dt*density[0],gravity,gravity_dir,density,Rhs_p.dataPtr(),
                        Ptmp,beta,alpha,res_fix,Snew_p.dataPtr(),visc_bndry);
       status.residual_norm_post_ls = MyNorm(Rhs[0],which_norm);
       
@@ -2280,6 +2286,7 @@ Diffusion::richard_composite_iter_p (Real                      dt,
 void
 Diffusion::richard_iter_eqb (int                    nc,
 			     Real                   gravity,
+			     int                    gravity_dir,
 			     Array<Real>            density,
 			     MultiFab&              res_fix,
 			     const MultiFab* const* beta,
@@ -2295,7 +2302,7 @@ Diffusion::richard_iter_eqb (int                    nc,
 #if 0
   MultiFab* alpha = 0;
   Real dt = 1.0;
-  richard_iter (dt,nc,gravity,density,res_fix,alpha, 
+  richard_iter (dt,nc,gravity,gravity_dir,density,res_fix,alpha, 
 		beta,beta_dp,umac,do_upwind,err_nwt);
 #else
   BoxLib::Abort("Not implemented yet");
@@ -2306,6 +2313,7 @@ Diffusion::richard_iter_eqb (int                    nc,
 void
 Diffusion::jac_richard (int                    nc,
 			Real                   gravity,
+			int                    gravity_dir,
 			Array<Real>            density,
 			MultiFab&              res_fix,
 			MultiFab&              soln,
@@ -2339,7 +2347,7 @@ Diffusion::jac_richard (int                    nc,
   // Compute residual
   setBeta (visc_op,0,betatmp);
   MultiFab::Copy(soln,res_fix,0,0,1,0);
-  residual_richard(visc_op,1.0,gravity,density,soln,&pc,betatmp);
+  residual_richard(visc_op,1.0,gravity,gravity_dir,density,soln,&pc,betatmp);
   removeFluxBoxesLevel(betatmp);
   if (visc_op_dp != 0)
     {
@@ -2362,6 +2370,7 @@ void
 Diffusion::richard_flux( int                    nc,
 			 Real                   be_cn_theta,
 			 Real                   gravity,
+			 int                    gravity_dir,
 			 Array<Real>&           density,
 			 MultiFab* const*       flux,
 			 const MultiFab*        pc,
@@ -2420,7 +2429,7 @@ Diffusion::richard_flux( int                    nc,
 			    fz_dat, ARLIM(fzlo), ARLIM(fzhi),
 			    bz_dat, ARLIM(bzlo), ARLIM(bzhi),
 #endif
-			    &density[0],lo,hi,dx,&gravity,&b);
+			    &density[0],lo,hi,dx,&gravity,&gravity_dir,&b);
     }
 
   for (int i = 0; i < BL_SPACEDIM; ++i)

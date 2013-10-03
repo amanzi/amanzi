@@ -1,4 +1,3 @@
-
 <amanzi_input version="2.0.0" type="unstructured">
 
 	<model_description name="Dispersion Example Problem">
@@ -44,6 +43,13 @@
 			<eos>false</eos>
 			<viscosity>1.002E-03</viscosity>
 			<density>998.2</density>
+
+			<dissolved_components>
+				<solutes>
+					<solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+				</solutes>
+			</dissolved_components>
+
 		</liquid_phase>
 	</phases>
 
@@ -83,8 +89,8 @@
 
 		<point name = "Dnwind150"  coordinate="-150.0,0.0"/>
 		<point name = "Dnwind090"  coordinate="-90.0,0.0"/>
-		<point name = "Dnwind090"  coordinate="-30.0,0.0"/>
-		<point name = "Upwind090"  coordinate="30.0,0.0"/>
+		<point name = "Dnwind030"  coordinate="-30.0,0.0"/>
+		<point name = "Upwind030"  coordinate="30.0,0.0"/>
 		<point name = "Upwind090"  coordinate="90.0,0.0"/>
 		<point name = "Upwind150"  coordinate="150.0,0.0"/>
 		<point name = "Upwind210"  coordinate="210.0,0.0"/>
@@ -178,7 +184,7 @@
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>
 				<aqueous_conc solute="Tc-99">
-					<assigned_regions>Upwind279</assigned_regions>
+					<assigned_regions>Upwind270</assigned_regions>
 					<functional>point</functional>
 					<time_macro>Observation Times</time_macro>
 				</aqueous_conc>

@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.0.0" type="unstructured">
 
 	<model_description name="SR Test Problem">
 		<comments>Getting started on a simple 2D steady-state saturated test</comments>
