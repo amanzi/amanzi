@@ -54,6 +54,32 @@ def GetXY_PFloTran(path,root,time,comp):
 
     return (x_pflotran, c_pflotran)
 
+# ------------- CRUNCHFLOW ------------------------------------------------------------------
+def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
+
+    # read CrunchFlow data
+    filename = os.path.join(path,cf_file)
+    f = open(filename,'r')
+    lines = f.readlines()
+    f.close()
+
+    # ignore couple of lines
+    for i in range(ignore):
+      lines.pop(0)
+
+    # extract data x0, x1, ..., xN-1 per line, keep only two columns
+    xv=[]
+    yv=[] 
+    for line in lines:
+      xv = xv + [float(line.split()[0])]
+      yv = yv + [float(line.split()[comp+1])]
+    
+    xv = np.array(xv)
+    yv = np.array(yv)
+
+    return (xv, yv)
+
+# Main -------------------------------------------------------------------------------------
 if __name__ == "__main__":
 
     import os
@@ -87,6 +113,62 @@ if __name__ == "__main__":
     for i, time in enumerate(times):
        x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
        VF_pflotran = VF_pflotran + [c_pflotran]
+
+    # crunchflow GIMRT
+    path_to_crunchflow = "crunchflow/gimrt"
+
+     # hardwired for calcite_1d_CF.in: time and comp
+    times_CF = ['totcon1.out','totcon2.out','totcon3.out','totcon4.out','totcon5.out']
+    comp = 2
+    Ca_crunchflow = []
+    ignore = 4
+    for i, time in enumerate(times_CF):
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       Ca_crunchflow = Ca_crunchflow + [c_crunchflow]
+
+    times_CF = ['pH1.out','pH2.out','pH3.out','pH4.out','pH5.out']
+    comp = 0
+    pH_crunchflow = []
+    ignore = 3
+    for i, time in enumerate(times_CF):
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       pH_crunchflow = pH_crunchflow + [c_crunchflow]
+
+    times_CF = ['volume1.out','volume2.out','volume3.out','volume4.out','volume5.out']
+    comp = 0
+    VF_crunchflow = []
+    ignore = 4
+    for i, time in enumerate(times_CF):
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       VF_crunchflow = VF_crunchflow + [c_crunchflow/100.0]
+
+    # crunchflow OS3D
+    path_to_crunchflow = "crunchflow/os3d"
+
+     # hardwired for calcite_1d_CF.in: time and comp
+    times_CF = ['totcon1.out','totcon2.out','totcon3.out','totcon4.out','totcon5.out']
+    comp = 2
+    Ca_crunchOS3D = []
+    ignore = 4
+    for i, time in enumerate(times_CF):
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       Ca_crunchOS3D = Ca_crunchOS3D + [c_crunchflow]
+
+    times_CF = ['pH1.out','pH2.out','pH3.out','pH4.out','pH5.out']
+    comp = 0
+    pH_crunchOS3D = []
+    ignore = 3
+    for i, time in enumerate(times_CF):
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       pH_crunchOS3D = pH_crunchOS3D + [c_crunchflow]
+
+    times_CF = ['volume1.out','volume2.out','volume3.out','volume4.out','volume5.out']
+    comp = 0
+    VF_crunchOS3D = []
+    ignore = 4
+    for i, time in enumerate(times_CF):
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       VF_crunchOS3D = VF_crunchOS3D + [c_crunchflow/100.0]
 
     CWD = os.getcwd()
     local_path = "" 
@@ -147,23 +229,41 @@ if __name__ == "__main__":
         # subplots
         fig, ax = plt.subplots(3,sharex=True,figsize=(10,10))
 
-        alq = [0.0] * len(times)
-        ama = [0.0] * len(times)
-        pfl = [0.0] * len(times)
+        #alq = [0.0] * len(times)
+        #ama = [0.0] * len(times)
+        #pfl = [0.0] * len(times)
+      
         for i, time in enumerate(times):
 
           # lines on axes
-          alq[i] = ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
-          ama[i] = ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'ro',label='Amanzi Native Chemistry')
-          pfl[i] = ax[0].plot(x_pflotran, Ca_pflotran[i],'b-',label='PFloTran',linewidth=2)
+          ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
+          ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'r--')
+          ax[0].plot(x_pflotran, Ca_pflotran[i],'bx',linewidth=2)
+          if i>1:
+                  ax[0].plot(x_crunchflow, Ca_crunchflow[i-1],'y.')
+                  ax[0].plot(x_crunchflow, Ca_crunchOS3D[i-1],'g.')
 
-          ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
-          ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'ro',label='Amanzi Native Chemistry')
-          ax[1].plot(x_pflotran, pH_pflotran[i],'b-',label='PFloTran',linewidth=2)
+          ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',linewidth=2)
+          ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'r--')
+          ax[1].plot(x_pflotran, pH_pflotran[i],'bx',linewidth=2)
+          if i>0:
+                  ax[1].plot(x_crunchflow, pH_crunchflow[i-1],'y.')
+                  ax[1].plot(x_crunchflow, pH_crunchOS3D[i-1],'g.')
 
-          ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
-          ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'ro',label='Amanzi Native Chemistry')
-          ax[2].plot(x_pflotran, VF_pflotran[i],'b-',label='PFloTran',linewidth=2)
+          if i==0:
+            ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'r--',label='Amanzi Native Chemistry')
+            ax[2].plot(x_pflotran, VF_pflotran[i],'bx',label='PFloTran',linewidth=2)
+          else:
+            ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
+            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'r--')
+            ax[2].plot(x_pflotran, VF_pflotran[i],'bx',linewidth=2)
+            if i==1:
+                  ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.',label='CrunchFlow GIMRT')
+                  ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.',label='CrunchFlow OS3D')
+            else: 
+                  ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.')
+                  ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.')
           
         # axes
         ax[2].set_xlabel("Distance (m)",fontsize=20)
@@ -173,7 +273,7 @@ if __name__ == "__main__":
 
         # plot adjustments
         plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
-#        plt.legend(loc='upper left',fontsize=13)
+        ax[2].legend(loc='lower right',fontsize=13)
         plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=20)
         plt.tick_params(axis='x', which='major', labelsize=20)
 
