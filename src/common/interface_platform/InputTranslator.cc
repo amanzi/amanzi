@@ -2767,7 +2767,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
             textContent  = xercesc::XMLString::transcode(curKid->getNodeName());
             if (strcmp(textContent,"base_filename")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
-              visPL.set<std::string>("File Name Base",textContent);
+              visPL.set<std::string>("File Name Base",textContent2);
               XMLString::release(&textContent2);
 	    } else if (strcmp(textContent,"num_digits")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
@@ -2800,11 +2800,11 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
             textContent  = xercesc::XMLString::transcode(curKid->getNodeName());
             if (strcmp(textContent,"base_filename")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
-              chkPL.set<std::string>("File Name Base",textContent);
+              chkPL.set<std::string>("File Name Base",textContent2);
               XMLString::release(&textContent2);
 	    } else if (strcmp(textContent,"num_digits")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
-              chkPL.set<int>("File Name Digits",get_int_constant(textContent,def_list));
+              chkPL.set<int>("File Name Digits",get_int_constant(textContent2,def_list));
               XMLString::release(&textContent2);
 	    } else if (strcmp(textContent,"cycle_macro")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
