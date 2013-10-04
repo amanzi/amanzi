@@ -92,7 +92,7 @@ The advective front moves with the flow velocity. In the simulation time (50 yea
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran and CrunchFlow along the length of the domain. This figure shows the tracer front at time 50 years as a function of length along the flow path. Amanzi, PFloTran and CrunchFLow GIMRT (the benchmark simulators used in the example) add a moderate amount of numerical dispersion to the solution. The TVD scheme used in CrunchFlow OS3D does a good job in minimizing numerical dispersion.
+In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran and CrunchFlow along the length of the domain. Amanzi, PFloTran and CrunchFLow GIMRT (the benchmark simulators used in the example) add a moderate amount of numerical dispersion to the solution. The TVD scheme used in CrunchFlow OS3D does a good job in minimizing numerical dispersion.
 
 .. plot:: prototype/chemistry/tracer_1d/tracer_1d.py
    :align: center

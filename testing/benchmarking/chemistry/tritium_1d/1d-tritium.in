@@ -127,6 +127,12 @@ CONSTRAINT west
   /
 END
 
+CONSTRAINT east
+  CONCENTRATIONS
+    Tritium  1.d-20      T
+  /
+END
+
 :=========================== condition couplers ===============================
 : initial condition
 INITIAL_CONDITION

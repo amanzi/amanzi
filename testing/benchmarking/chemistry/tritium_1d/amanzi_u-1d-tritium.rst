@@ -23,13 +23,14 @@ About
 * Benchmark simulator: PFlotran
 * Files
 
-  * Amanzi input file: amanzi-u-1d-tritium.xml
-  * Benchmark simulator input file: 1d-tritium.in
+  * Amanzi input file/s (native chemistry): amanzi-1d-tritium.xml, tritium.bgd
+  * Amanzi input file/s (Alquimia chemistry): amanzi-1d-tritium-alq.xml, 1d-tritium.in, tritium.dat  
+  * Benchmark simulator input file: 1d-tritium.in, tritium.dat, output file = pflotran/1d-tritium.h5
 
 * Location: amanzi/testing/benchmarking/chemistry/tritium_1d
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins
-* Last tested on Sept 30, 2013
+* Last tested on Oct 3, 2013
 
 Introduction
 ------------
@@ -73,9 +74,9 @@ Geochemistry
 ~~~~~~~~~~~~
 
 In this example, the half life of tririum is taken as 
-:math:`t_{1/2} = 13.31 s`
+:math:`t_{1/2} = 13.31 \text{ years}`
 . Thus, 
-:math:`\lambda = 1.78577 \cdot 10^{-9} s^{-1}`
+:math:`\lambda = 1.78577 \cdot 10^{-9} \text{ s}^{-1}`
 
 Results and Comparison
 ----------------------
@@ -83,10 +84,13 @@ Results and Comparison
 Expected results
 ~~~~~~~~~~~~~~~~
 
-These are the expected results.
+Tritium enters the 1D column from the left and as it flows left to right it decays exponentially.
 
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-Here go the figure and table.
+In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran along the length of the colum. Agreement is very good overall. Minor differences in the leading edge are attributed to the numerical dispersion added by the different numerical schemes.
+
+.. plot:: prototype/chemistry/tritium_1d/tritium_1d.py
+   :align: center
 
