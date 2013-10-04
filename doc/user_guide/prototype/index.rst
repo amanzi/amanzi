@@ -13,7 +13,6 @@ Contents:
    unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.rst
    unconfined_seepage_1d/amanzi_unconfined_seepage_1d.rst
    dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.rst
-   dispersion_diagonal_point_2d/amanzi_dispersion_diagonal_point_2d.rst
    chemistry/tracer_1d/amanzi_u-1d-tracer.rst
    chemistry/tritium_1d/amanzi_u-1d-tritium.rst
    chemistry/calcite_1d/amanzi_u-1d-calcite.rst
