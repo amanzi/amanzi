@@ -287,10 +287,8 @@ bool StrongMPC<PK_t>::is_admissible(Teuchos::RCP<const TreeVector> u) {
     }
 
     if (!(*pk)->is_admissible(pk_u)) {
-      if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
-        Teuchos::OSTab tab = getOSTab();
-        *out_ << "PK " << (*pk)->name() << " is not admissible." << std::endl;
-      }
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "PK " << (*pk)->name() << " is not admissible." << std::endl;
 
       return false;
     }

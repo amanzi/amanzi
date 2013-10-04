@@ -315,12 +315,11 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
 
 
 bool VolumetricDeformation::advance(double dt) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
-    *out_ << "Advancing deformation PK from time " << S_->time() << " to "
-          << S_next_->time() << " with step size " << dt << std::endl;
-    *out_ << "----------------------------------------------------------------" << std::endl;
-  }
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << "Advancing deformation PK from time " << S_->time() << " to "
+               << S_next_->time() << " with step size " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
 
   double ss = S_next_->time();
   double ss0 = S_->time();
@@ -394,9 +393,8 @@ bool VolumetricDeformation::advance(double dt) {
           ->ViewComponent("cell",false);
 
       double thaw_height = (*thaw_front_func_)(&ss);
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
-        *out_ << "Thaw Height = " << thaw_height << std::endl;
-      }
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Thaw Height = " << thaw_height << std::endl;
 
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
 

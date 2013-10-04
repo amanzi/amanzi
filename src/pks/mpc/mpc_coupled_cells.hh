@@ -69,8 +69,7 @@ class MPCCoupledCells : public StrongMPC<PKPhysicalBDFBase> {
   bool decoupled_;
 
   // cruft for easier global debugging
-  std::vector<AmanziMesh::Entity_ID> dc_;
-  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
+  Teuchos::RCP<Debugger> db_;
 };
 
 
