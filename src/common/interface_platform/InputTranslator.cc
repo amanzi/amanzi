@@ -1277,7 +1277,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	      if (bdfElement->hasAttribute(xercesc::XMLString::transcode("restart_tolerance_factor"))){
 		textContent = xercesc::XMLString::transcode(
 		            bdfElement->getAttribute(xercesc::XMLString::transcode("restart_tolerance_factor")));
-                tcPL.set<double>("transient nonlinear tolerance",get_double_constant(textContent,def_list));
+                tcPL.set<double>("transient restart tolerance relaxation factor",get_double_constant(textContent,def_list));
                 XMLString::release(&textContent);
 	      }
 	      if (bdfElement->hasAttribute(xercesc::XMLString::transcode("restart_tolerance_relaxation_factor"))){
