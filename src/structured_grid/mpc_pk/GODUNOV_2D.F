@@ -5387,12 +5387,11 @@ c     idx_total is an array of 0-based indices selecting a subset of the tracers
             do i = lo(1), hi(1)
                if (sn(i,j,cWater) .gt. zero) then
                   cn(i,j,idx) = (so(i,j,cWater)*co(i,j,idx)
-     &                 - dt*(aofs(i,j,idx)+tforces(i,j,idx))/rockphi(i,j))/sn(i,j,cWater)
+     &                 + dt*(tforces(i,j,idx)-aofs(i,j,idx))/rockphi(i,j))/sn(i,j,cWater)
                end if
             end do
          end do
       end do
-
       end 
 
       subroutine slope_alpha(s,DIMS(s),slx,sly,DIMS(sl),

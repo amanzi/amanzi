@@ -1,5 +1,7 @@
 <ParameterList name="Main">
     <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
+    <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+
     <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
       <Parameter name="Author" type="string" value="Day"/>
@@ -128,7 +130,6 @@
                 <ParameterList name="IC: Uniform Concentration">
                   <Parameter name="Value" type="double" value="0"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="TBC"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

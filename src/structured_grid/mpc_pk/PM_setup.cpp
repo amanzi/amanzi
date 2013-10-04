@@ -2568,6 +2568,17 @@ void  PorousMedia::read_tracer()
   }
 }
 
+static
+int loc_in_array(const std::string& val,const Array<std::string>& arr)
+{
+  int location = -1;
+  for (int i=0; i<arr.size() && location<0; ++i) {
+    if (val == arr[i]) location = i;
+  }
+  return location;
+}
+
+
 void  PorousMedia::read_source()
 {
   //
@@ -2593,58 +2604,91 @@ void  PorousMedia::read_source()
       pps.getarr("regions",src_region_names,0,n_src_regions);
       const PArray<Region> source_regions = build_region_PArray(src_region_names);
 
-      for (int ic=0; ic<cNames.size(); ++ic) {
-	const std::string& cName = cNames[ic];
-	const std::string c_prefix(prefix+"."+cName);
-	ParmParse pps_c(c_prefix.c_str());
-
-	if (pps_c.countval("type")) {
-	  std::string source_type; pps_c.get("type",source_type);              
-	  if (source_type == "uniform"
-              || source_type == "volume_weighted"
-              || source_type == "permeability_weighted")
-            {
-              int nvars = pps_c.countval("vals");
-              BL_ASSERT(nvars>0);
-              Array<Real> vals; pps_c.getarr("vals",vals,0,nvars);
-              source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
-            }
-	  else {
-	    std::string m = "Source: \"" + source_names[i] 
-	      + "\": Unsupported source type: \"" + source_type + "\"";
-	    BoxLib::Abort(m.c_str());
+      if (pps.countval("type")) {
+	std::string source_type; pps.get("type",source_type);
+	if (source_type == "uniform"
+	    || source_type == "volume_weighted"
+	    || source_type == "permeability_weighted")
+	  {
+	    int nvars = pps.countval("vals");
+	    BL_ASSERT(nvars>0);
+	    Array<Real> vals; pps.getarr("vals",vals,0,nvars);
+	    source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
 	  }
+	else {
+	  std::string m = "Source: \"" + source_names[i] 
+	    + "\": Unsupported source type: \"" + source_type + "\"";
+	  BoxLib::Abort(m.c_str());
 	}
-	int ntracers_with_sources = pps_c.countval("tracers_with_sources");
-	if (ntracers_with_sources>0) {
-	  Array<std::string> tracers_with_sources;
-	  pps_c.getarr("tracers_with_sources",tracers_with_sources,0,ntracers_with_sources);
-	  tsource_array[i].resize(ntracers_with_sources);
+      }
+      else {
+	std::string m = "Source: \"" + source_names[i] 
+	  + "\": Requires \"type\" specifier";
+	BoxLib::Abort(m.c_str());
+      }
 
-	  for (int it=0; it<tracers_with_sources.size(); ++it) {
-	    const std::string& tName = tracers_with_sources[it]; // FIXME: verify this exists
-	    const std::string c_t_prefix(c_prefix+".tracer_sources."+tName);
-	    ParmParse pps_c_t(c_t_prefix.c_str());
+      for (int ip=0; ip<pNames.size(); ++ip) {
+	const std::string& pName = pNames[ip];
+	const std::string p_prefix(prefix+"."+pName);
+	ParmParse pps_p(p_prefix.c_str());
+	
+	for (int ic=0; ic<cNames.size(); ++ic) {
+	  const std::string& cName = cNames[ic];
+	  const std::string c_prefix(p_prefix+"."+cName);
+	  ParmParse pps_c(c_prefix.c_str());
 
-	    if (pps_c_t.countval("type")) {
-	      std::string tsource_type; pps_c_t.get("type",tsource_type);              
-	      if (tsource_type == "uniform"
-		  || tsource_type == "flow_weighted")
-                {
-                  int ntvars = pps_c_t.countval("vals");
-                  BL_ASSERT(ntvars>0);
-                  Array<Real> tvals; pps_c_t.getarr("vals",tvals,0,ntvars);
-                  tsource_array[i].set(it, new RegionData(source_name,source_regions,tsource_type,tvals));
-                }
+	  int ntracers_with_sources = pps_c.countval("tracers_with_sources");
+	  if (ntracers_with_sources>0) {
+	    Array<std::string> tracers_with_sources;
+	    pps_c.getarr("tracers_with_sources",tracers_with_sources,0,ntracers_with_sources);
+	    tsource_array[i].resize(ntracers);
+	    
+	    for (int it=0; it<tracers_with_sources.size(); ++it) {
+	      const std::string& tName = tracers_with_sources[it];
+	      int t_pos = loc_in_array(tName,tNames);
+	      if (t_pos>=0) {
+		const std::string c_t_prefix(c_prefix+"."+tName);
+		ParmParse pps_c_t(c_t_prefix.c_str());
+	      
+		if (pps_c_t.countval("type")) {
+		  std::string tsource_type; pps_c_t.get("type",tsource_type);              
+		  if (tsource_type == "uniform"
+		      || tsource_type == "flow_weighted")
+		    {
+		      int ntvars = pps_c_t.countval("vals");
+		      BL_ASSERT(ntvars>0);
+		      Array<Real> tvals; pps_c_t.getarr("vals",tvals,0,ntvars);
+		      tsource_array[i].set(t_pos, new RegionData(source_name,source_regions,tsource_type,tvals));
+		    }
+		  else {
+		    BoxLib::Abort(std::string("Source: \"" + source_names[i] + 
+					      " \"" + cName + "\" Solute SOURCE: \"" + tName
+					      + "\": Unsupported source type: \"" + tsource_type + "\"").c_str());
+		  }
+		} else {
+		  BoxLib::Abort(std::string("Source: \"" + source_names[i] 
+					    + "\": Requires \"type\" specifier for solute \""+tName+"\"").c_str());
+		}
+		if (pps_c_t.countval("Concentration_Units")) {
+		  // FIXME: We do not currently do anything with this parameter
+		}
+	      }
 	      else {
-		std::string m = "Source: \"" + source_names[i] + 
-		  " \"" + cName + "\" Solute SOURCE: \"" + tName
-		  + "\": Unsupported source type: \"" + tsource_type + "\"";
-		BoxLib::Abort(m.c_str());
+		BoxLib::Abort(std::string("Source: \"" + source_names[i]
+					  + "\" contains unknown tracer: \""+tName+"\"").c_str());
+	      }
+	    }
+
+	    // Set default source (uniform=0) for all tracers not set explicitly
+	    const std::string default_tsource_type = "uniform";
+	    const Array<Real> default_tsource_tvals(1,0);
+	    for (int it=0; it<ntracers; ++it) {
+	      if ( !(tsource_array[i].defined(it)) ) {
+		tsource_array[i].set(it, new RegionData(source_name,source_regions,default_tsource_type,default_tsource_tvals));
 	      }
 	    }
 	  }
-        }
+	}
       }
     }
   }

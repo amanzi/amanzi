@@ -114,6 +114,30 @@ if __name__ == "__main__":
        x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
        VF_pflotran = VF_pflotran + [c_pflotran]
 
+    # pflotran Operator Splitting
+    path_to_pflotran = "pflotran/os"
+
+     # hardwired for 1d-calcite: time and comp
+    times = ['Time:  0.00000E+00 y','Time:  1.00000E+01 y','Time:  2.00000E+01 y','Time:  3.00000E+01 y','Time:  4.00000E+01 y','Time:  5.00000E+01 y']
+
+    comp = 'Total_Ca++ [M]'
+    Ca_pflotran_OS = []
+    for i, time in enumerate(times):
+       x_pflotran_OS, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       Ca_pflotran_OS = Ca_pflotran_OS + [c_pflotran]
+
+    comp = 'pH'
+    pH_pflotran_OS = []
+    for i, time in enumerate(times):
+       x_pflotran_OS, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       pH_pflotran_OS = pH_pflotran_OS + [c_pflotran]
+
+    comp = 'Calcite_VF'
+    VF_pflotran_OS = []
+    for i, time in enumerate(times):
+       x_pflotran_OS, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       VF_pflotran_OS = VF_pflotran_OS + [c_pflotran]
+
     # crunchflow GIMRT
     path_to_crunchflow = "crunchflow/gimrt"
 
@@ -227,11 +251,7 @@ if __name__ == "__main__":
            VF_amanzi_alquimia = VF_amanzi_alquimia +[c_amanzi_alquimia]
 
         # subplots
-        fig, ax = plt.subplots(3,sharex=True,figsize=(10,10))
-
-        #alq = [0.0] * len(times)
-        #ama = [0.0] * len(times)
-        #pfl = [0.0] * len(times)
+        fig, ax = plt.subplots(3,sharex=True,figsize=(15,10))
       
         for i, time in enumerate(times):
 
@@ -239,6 +259,7 @@ if __name__ == "__main__":
           ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
           ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'r--')
           ax[0].plot(x_pflotran, Ca_pflotran[i],'bx',linewidth=2)
+          ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'b*',linewidth=2)
           if i>1:
                   ax[0].plot(x_crunchflow, Ca_crunchflow[i-1],'y.')
                   ax[0].plot(x_crunchflow, Ca_crunchOS3D[i-1],'g.')
@@ -246,6 +267,7 @@ if __name__ == "__main__":
           ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',linewidth=2)
           ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'r--')
           ax[1].plot(x_pflotran, pH_pflotran[i],'bx',linewidth=2)
+          ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'b*',linewidth=2)
           if i>0:
                   ax[1].plot(x_crunchflow, pH_crunchflow[i-1],'y.')
                   ax[1].plot(x_crunchflow, pH_crunchOS3D[i-1],'g.')
@@ -254,10 +276,12 @@ if __name__ == "__main__":
             ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
             ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'r--',label='Amanzi Native Chemistry')
             ax[2].plot(x_pflotran, VF_pflotran[i],'bx',label='PFloTran',linewidth=2)
+            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'b*',label='PFloTran OS',linewidth=2)
           else:
             ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
             ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'r--')
             ax[2].plot(x_pflotran, VF_pflotran[i],'bx',linewidth=2)
+            ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'b*',linewidth=2)
             if i==1:
                   ax[2].plot(x_crunchflow, VF_crunchflow[i-1],'y.',label='CrunchFlow GIMRT')
                   ax[2].plot(x_crunchflow, VF_crunchOS3D[i-1],'g.',label='CrunchFlow OS3D')
@@ -278,8 +302,8 @@ if __name__ == "__main__":
         plt.tick_params(axis='x', which='major', labelsize=20)
 
         #pyplot.show()
-        plt.savefig(local_path+"calcite_1d.png",format="png")
-        plt.close()
+        #plt.savefig(local_path+"calcite_1d.png",format="png")
+        #plt.close()
 
     finally:
         pass 

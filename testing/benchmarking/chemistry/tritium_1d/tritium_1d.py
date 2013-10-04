@@ -106,12 +106,12 @@ if __name__ == "__main__":
 
         # plot adjustments
         plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
-        plt.legend(loc='upper left',fontsize=13)
+        plt.legend(loc='upper right',fontsize=13)
         plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
         plt.tick_params(axis='both', which='major', labelsize=20)
 
         #pyplot.show()
-        plt.savefig(root+"_1d.png",format="png")
+        #plt.savefig(root+"_1d.png",format="png")
         #plt.close()
 
     finally:

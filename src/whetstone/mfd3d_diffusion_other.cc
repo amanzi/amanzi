@@ -41,14 +41,18 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
+  AmanziGeometry::Point a(d);
 
   W.PutScalar(0.0);
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double Knn = (permeability * normal) * normal;
-    double dxn = (xf - xc) * normal;
+
+    a = xf - xc;
+    double s = mesh_->face_area(f) * dirs[n] / norm(a);
+    double Knn = ((permeability * a) * normal) * s;
+    double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

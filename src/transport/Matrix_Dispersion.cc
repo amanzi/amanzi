@@ -75,6 +75,7 @@ void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flu
 
       AmanziMesh::Entity_ID_List::iterator c;
       for (c = block.begin(); c != block.end(); c++) {
+        D[*c].PutScalar(0.0); 
         if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
           for (int i = 0; i < dim; i++) {
             D[*c](i, i) = spec->alphaL + spec->D * spec->tau;
@@ -320,7 +321,6 @@ void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_St
     App_->SumIntoGlobalValues(1, &c2, 3, cells_GID, Bpp);
   }
   App_->GlobalAssemble();
-cout << *App_ << endl;
 }
 
 
