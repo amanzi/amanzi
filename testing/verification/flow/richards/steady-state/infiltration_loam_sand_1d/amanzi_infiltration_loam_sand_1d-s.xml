@@ -1,8 +1,10 @@
 <ParameterList name="Main">
     <Parameter name="Amanzi Input Format Version" type="string" value="1.2.0"/>
-    <ParameterList name="General Description">
+     <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+
+   <ParameterList name="General Description">
       <Parameter name="Model ID" type="string" value="TBD"/>
-      <Parameter name="Author" type="string" value="Castleton"/>
+      <Parameter name="Author" type="string" value="Day, Castleton"/>
     </ParameterList>
     <ParameterList name="Execution Control">
       <Parameter name="Flow Model" type="string" value="Richards"/>

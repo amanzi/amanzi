@@ -157,16 +157,13 @@
         <ParameterList name="Every_1.0_1000.0_-1">
           <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
         </ParameterList>
-        <ParameterList name="EveryStep">
-          <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,1,-1}"/>
-        </ParameterList>
       </ParameterList>
       <ParameterList name="Variable Macros"/>
       <ParameterList name="Observation Data"/>
       <ParameterList name="Visualization Data">
         <Parameter name="File Name Base" type="string" value="case_2c_plot"/>
         <Parameter name="File Name Digits" type="int" value="5"/>
-        <Parameter name="Cycle Macro" type="string" value="EveryStep"/>
+        <Parameter name="Cycle Macro" type="string" value="Every_1.0_1000.0_-1"/>
       </ParameterList>
       <ParameterList name="Checkpoint Data">
         <Parameter name="File Name Base" type="string" value="case_2c_checkpoint"/>
