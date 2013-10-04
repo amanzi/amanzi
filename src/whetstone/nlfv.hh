@@ -1,19 +1,18 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Version: 2.0
-Release name: naka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Version: 2.0
+  Release name: naka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __NLFV_HH__
-#define __NLFV_HH__
+#ifndef AMANZI_WHETSTONE_NLFV_HH_
+#define AMANZI_WHETSTONE_NLFV_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -35,9 +34,9 @@ class NLFV {
   void HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
                               AmanziGeometry::Point& p, double& weight);
 
-  void MaximumDecomposition(const AmanziGeometry::Point& conormal, 
-                            const std::vector<AmanziGeometry::Point>& tau,
-                            double* w1, double* w2, int* i1, int* i2);
+  int PositiveDecomposition(
+      int id1, const std::vector<AmanziGeometry::Point>& tau,
+      AmanziGeometry::Point& conormal, double* ws, int* ids);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

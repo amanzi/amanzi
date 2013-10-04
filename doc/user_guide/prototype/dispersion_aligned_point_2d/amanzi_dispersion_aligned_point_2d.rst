@@ -1,5 +1,5 @@
-2D Dispersive Transport in a Uniform Flow Field
-===============================================
+2D Dispersive Transport in a Uniform Flow Field (alighed)
+=========================================================
 
 Introduction
 ~~~~~~~~~~~~
@@ -72,7 +72,7 @@ The off-diagonal entries are
 Schematic
 ~~~~~~~~~
 Note, the values in the schematic correlate to the values found in
-:ref:`Plot-Table`.
+:ref:`Dispersion:2D:Plot-Table`.
 
 .. figure:: schematic/schematic.png 
     :figclass: align-center
@@ -96,7 +96,7 @@ Initial condition: :math:`C(x,0)=0` [kg/m^3]
 Boundary conditions: :math:`C(x,t)=0` [kg/m^3]
 
 The background mesh consists of square cells with size :math:`H=15` m.
-It has 84 grid cells in the x-direction and 37 grid cells in the y-direction. 
+It has 83 grid cells in the x-direction and 37 grid cells in the y-direction. 
 The mesh is gradually refined toward the source such that the well is
 represented by a square cell of :math:`h=0.46875` [m] (:math:`h = H/32`).
 The mesh refinement adds 17% more cells.

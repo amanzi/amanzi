@@ -251,25 +251,25 @@ void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_St
     }
 
     // calculate positive decomposition of the conormals
-    int i1, i2;
-    double w1, w2;
+    int ids[d];
+    double ws[d];
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       conormal = (D[c] * normal) * dirs[i];
 
-      nlfv.MaximumDecomposition(conormal, tau, &w1, &w2, &i1, &i2);
+      nlfv.PositiveDecomposition(i, tau, conormal, ws, ids);
       if (fid[f] == 0) {
-        coefs[f][0] = w1;
-        coefs[f][1] = w2;
-        stencil[f][0] = mfd3d.cell_get_face_adj_cell(c, faces[i1]);
-        stencil[f][1] = mfd3d.cell_get_face_adj_cell(c, faces[i2]);
+        coefs[f][0] = ws[0];
+        coefs[f][1] = ws[1];
+        stencil[f][0] = mfd3d.cell_get_face_adj_cell(c, faces[ids[0]]);
+        stencil[f][1] = mfd3d.cell_get_face_adj_cell(c, faces[ids[1]]);
         fid[f] = 1;
       } else {
-        coefs[f][2] = w1;
-        coefs[f][3] = w2;
-        stencil[f][2] = mfd3d.cell_get_face_adj_cell(c, faces[i1]);
-        stencil[f][3] = mfd3d.cell_get_face_adj_cell(c, faces[i2]);
+        coefs[f][2] = ws[0];
+        coefs[f][3] = ws[1];
+        stencil[f][2] = mfd3d.cell_get_face_adj_cell(c, faces[ids[0]]);
+        stencil[f][3] = mfd3d.cell_get_face_adj_cell(c, faces[ids[1]]);
         fid[f] = 2;
       }
     }

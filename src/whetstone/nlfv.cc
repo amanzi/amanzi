@@ -1,17 +1,17 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Release name: aka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Release name: aka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
+#include "WhetStoneDefs.hh"
 #include "nlfv.hh"
 
 
@@ -66,36 +66,86 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
 
 
 /* ******************************************************************
-* Decompose: conormal = w1 * tau[i1] + w2 * tau[i2],  w1,w2 >= 0.
-* Requires some modification.
+* Decomposion: conormal = w1 * tau[i1] + w2 * tau[i2] + w3 * tau[i3],
+* where the weights w1,w2,w3 >= 0.
+* We make three assumptions:
+* 1. The directions tau_i are normalized, ||tau_i||=1.
+* 2. The first direction is fized.
+* 3. conormal can be rewritten. 
 ****************************************************************** */
-void NLFV::MaximumDecomposition(const AmanziGeometry::Point& conormal, 
-                                const std::vector<AmanziGeometry::Point>& tau,
-                                double* w1, double* w2, int* i1, int* i2)
+int NLFV::PositiveDecomposition(
+    int id1, const std::vector<AmanziGeometry::Point>& tau,
+    AmanziGeometry::Point& conormal, double* ws, int* ids)
 {
-  // calculate all projections
+  int d = mesh_->space_dimension();
   int ntau = tau.size();
-  double cs[ntau];
+
+  double cnorm = norm(conormal);
+  conormal /= cnorm;
+
+  // elliminate first direction
+  ids[0] = id1;
+
+  double w1 = conormal * tau[id1];  
+  ws[0] = w1 * cnorm;
+  if (w1 < 0.0) return -1;  // Perhaps this cell is non-convex.
+  for (int k = 0; k < d; k++) conormal[k] -= w1 * tau[id1][k];
   
-  for (int i = 0; i < ntau; i++) {
-    cs[i] = conormal * tau[i];
+  if (norm(conormal) < WHETSTONE_TOLERANCE_DECOMPOSITION) {
+    for (int k = 1; k < d; k++) {
+      ids[k] = (id1 + k) % ntau;
+      ws[k] = 0.0;
+    }
+    return 0;
   }
 
-  // find the largest value in these projections
-  int k = 0;
-  for (int i = 1; i < ntau; i++) {
-    if (cs[i] > cs[k]) k = i;
-  }
-  *i1 = k;
-  *w1 = cs[k];
+  // find the second direction
+  int mtau = ntau - 1;
+  int jds[mtau];
 
-  // find the closest to zero in these projections
-  k = 0;
-  for (int i = 1; i < ntau; i++) {
-    if (fabs(cs[i]) < fabs(cs[k])) k = i;
+  int id2 = -1;
+  double w2 = 0.0;
+  for (int i = 0; i < mtau; i++) {
+    int k = (id1 + i) % ntau;
+    jds[i] = k;
+    double tmp = conormal * tau[k];
+    if (tmp > w2) {
+      w2 = tmp;
+      id2 = k; 
+    }
   }
-  *i2 = k;
-  *w2 = cs[k];
+  ids[1] = id2;
+  ws[1] = w2;
+  if (id2 < 0) return -1;  // Perhaps this cell is non-convex.
+  for (int k = 0; k < d; k++) conormal[k] -= w2 * tau[id2][k];
+
+  // find the third direction
+  if (d == 3) {
+    if (norm(conormal) < WHETSTONE_TOLERANCE_DECOMPOSITION) {
+      ids[2] = jds[(id2 + 1) % mtau];
+      ws[2] = 0.0;
+      return 0;
+    }
+ 
+    ntau--;
+    mtau--;
+
+    int id3 = -1;
+    double w3 = 0.0;
+    for (int i = 0; i < mtau; i++) {
+      int k = (id2 + i) % ntau;
+      double tmp = conormal * tau[k];
+      if (tmp > w3) {
+        w3 = tmp;
+        id3 = k; 
+      }
+    }
+    ids[2] = id3;
+    ws[2] = w3;
+    if (id3 < 0) return -1;  // Perhaps this cell is non-convex.
+  }
+
+  return 0;
 }
 
 }  // namespace WhetStone
