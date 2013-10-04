@@ -24,17 +24,15 @@ namespace Amanzi {
           ICBCFunc() {};
           ICBCFunc(const ParameterList& plist,
                    const std::string& Amanzi_type,
-                   const std::string& units,
                    const std::string& label)
-              : plist(plist), Amanzi_type(Amanzi_type), units(units), label(label) {}
+              : plist(plist), Amanzi_type(Amanzi_type), label(label) {}
           
           const ParameterList& PList() const {return plist;}
           const std::string& Amanzi_Type() const {return Amanzi_type;}
           const std::string& Label() const {return label;}
-          const std::string& Units() const {return units;}
           
       protected:
-          std::string Amanzi_type, label, units;
+          std::string Amanzi_type, label;
           ParameterList plist;
       };
 
