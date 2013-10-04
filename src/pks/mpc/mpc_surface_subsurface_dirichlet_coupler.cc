@@ -34,6 +34,7 @@ MPCSurfaceSubsurfaceDirichletCoupler::reg_("surface-subsurface Dirichlet coupler
 // -------------------------------------------------------------
 void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   // Apply the combined preconditioner to the subsurface residual
   PreconApply_(u,Pu);
 
@@ -41,49 +42,19 @@ void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector>
   PreconUpdateSurfaceCells_(Pu);
   PreconUpdateSurfaceFaces_(u,Pu);
 
-#if DEBUG_FLAG
-  Teuchos::OSTab tab = getOSTab();
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->Data();
-  Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(domain_pk_name_)->Data();
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->Data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->Data();
+  // write residuals
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Preconditioner Application:" << std::endl;
+  std::vector<std::string> vnames;
+  vnames.push_back("  r_sub"); vnames.push_back("  PC*r_sub"); 
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(u->SubVector(0)->Data().ptr()); 
+  vecs.push_back(Pu->SubVector(0)->Data().ptr()); 
+  domain_db_->WriteVectors(vnames, vecs, true);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Preconditioner application" << std::endl;
-    *out_ << " SubSurface precon:" << std::endl;
-
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      domain_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "  u(" << *c0 << "): " << (*domain_u)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*domain_u)("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-      *out_ << "  PC*u(" << *c0 << "): " << (*domain_u)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*domain_u)("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-    }
-
-    *out_ << " Surface precon:" << std::endl;
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=surf_dc_.begin(); c0!=surf_dc_.end(); ++c0) {
-      if (*c0 < surf_u->size("cell",false)) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-        *out_ << "  u(" << *c0 << "): " << (*surf_u)("cell",*c0) << ", "
-              << (*surf_u)("face",fnums0[0]) << std::endl;
-        *out_ << "  PC*u(" << *c0 << "): " << (*surf_Pu)("cell",*c0) << ", "
-              << (*surf_Pu)("face",fnums0[0]) << std::endl;
-      }
-    }
-  }
-#endif
+  vnames[0] = "  r_surf"; vnames[1] = "  PC*r_surf";
+  vecs[0] = u->SubVector(1)->Data().ptr();
+  vecs[1] = Pu->SubVector(1)->Data().ptr();
+  surf_db_->WriteVectors(vnames, vecs, true);
 }
 
 

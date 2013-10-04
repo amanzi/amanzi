@@ -193,7 +193,7 @@ void EnergyBase::update_precon(double t, Teuchos::RCP<const TreeVector> up, doub
     mfd_preconditioner_->AssembleGlobalMatrices();
   } else if (assemble_preconditioner_) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *out_ << "  assembling..." << std::endl;
+      *vo_->os() << "  assembling..." << std::endl;
     // -- assemble
     mfd_preconditioner_->AssembleGlobalMatrices();
     // -- form and prep the Schur complement for inversion

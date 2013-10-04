@@ -150,7 +150,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+  // note PC is in PKPhysicalBDFBase
 
   // custom enorm tolerances
   double mass_atol_;

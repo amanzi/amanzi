@@ -617,10 +617,8 @@ bool OverlandHeadFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     }
   }
 
-  if (update_perm && out_.get() &&
-      includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+  if (update_perm && vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << " TRUE." << std::endl;
-  }
   return update_perm;
 }
 

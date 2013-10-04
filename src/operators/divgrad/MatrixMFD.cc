@@ -82,9 +82,11 @@ void MatrixMFD::InitializeFromPList_() {
   space_->SetMesh(mesh_)->SetComponents(names,locations,ndofs);
 
   // preconditioner
-  Teuchos::ParameterList pc_list = plist_.sublist("preconditioner");
-  AmanziPreconditioners::PreconditionerFactory pc_fac;
-  S_pc_ = pc_fac.Create(pc_list);
+  if (plist_.isSublist("preconditioner")) {
+    Teuchos::ParameterList pc_list = plist_.sublist("preconditioner");
+    AmanziPreconditioners::PreconditionerFactory pc_fac;
+    S_pc_ = pc_fac.Create(pc_list);
+  }
 
   // verbose object
   vo_ = Teuchos::rcp(new VerboseObject("MatrixMFD", plist_));
@@ -581,6 +583,11 @@ int MatrixMFD::ApplyInverse(const CompositeVector& X,
   AssertAssembledOperator_or_die_();
   AssertAssembledSchur_or_die_();
 
+  if (S_pc_ == Teuchos::null) {
+    Errors::Message msg("MatrixMFD::ApplyInverse called but no preconditioner sublist was provided");
+    Exceptions::amanzi_throw(msg);
+  }
+
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(*Y.ViewComponent("cell", false));
   Epetra_MultiVector Tf(*Y.ViewComponent("face", false));
@@ -643,6 +650,10 @@ void MatrixMFD::InitPreconditioner() {}
  * Rebuild preconditioner.
  ****************************************************************** */
 void MatrixMFD::UpdatePreconditioner() {
+  if (S_pc_ == Teuchos::null) {
+    Errors::Message msg("MatrixMFD::UpdatePreconditioner called but no preconditioner sublist was provided");
+    Exceptions::amanzi_throw(msg);
+  }
   S_pc_->Destroy();
   S_pc_->Update(Sff_);
 }
@@ -763,6 +774,12 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
  ****************************************************************** */
 void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u) {
   AssertAssembledOperator_or_die_();
+  
+  if (Aff_op_ == Teuchos::null) {
+    Errors::Message msg("MatrixMFD::UpdateConsistentFaceConstraints was called, but no consistent face solver sublist was provided.");
+    Exceptions::amanzi_throw(msg);
+  }
+
 
   Teuchos::RCP<Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> rhs_f = rhs_->ViewComponent("face", false);

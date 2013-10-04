@@ -141,7 +141,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+  // note PC is in PKPhysicalBDFBase
 
   bool tpfa_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;

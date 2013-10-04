@@ -82,8 +82,10 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_next) {
   PKDefaultBase::set_states(S, S_inter, S_next);
 
+  // Get the FE and mark it as changed.
+  // Note that this is necessary because we need this to point at the
+  // FE in S_next_, not the one which we created in S_.
   Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
-
 #if ENABLE_DBC
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   ASSERT(solution_evaluator_ != Teuchos::null);

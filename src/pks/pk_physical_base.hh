@@ -47,6 +47,9 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   // -- initialize
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
+  // Accessor for debugger, for use by coupling MPCs
+  Teuchos::RCP<Debugger> debugger() { return db_; }
+
  protected: // methods
   std::string Key_(std::string suffix) { return domain_prefix_+suffix; }
   void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);

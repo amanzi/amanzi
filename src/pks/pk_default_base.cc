@@ -21,11 +21,6 @@ void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
 
   // set up the VerboseObject
   vo_ = Teuchos::rcp(new VerboseObject(name_, plist_));
-
-  // REMOVE ME! --etc
-  // Mirror the vo_ in the pk, as removal will require much code refactoring
-  out_ = vo_->os();
-  verbosity_ = vo_->getVerbLevel();
 }
 
 

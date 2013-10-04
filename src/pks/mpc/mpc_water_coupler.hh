@@ -253,9 +253,9 @@ template<class BaseCoupler>
 void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Precon updating surface faces." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Precon updating surface faces." << std::endl;
 
   Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(this->surf_pk_name_)->Data();
   Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
@@ -275,24 +275,13 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
   this->surf_pk_->changed_solution();
   S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
 
-
-  if (this->out_.get() && includesVerbLevel(this->verbosity_, Teuchos::VERB_HIGH, true)) {
-    Teuchos::RCP<const CompositeVector> h_new = S_next_->GetFieldData("ponded_depth");
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=this->surf_dc_.begin();
-         c0!=this->surf_dc_.end(); ++c0) {
-      if (*c0 < surf_u->size("cell",false)) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        this->surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-        *this->out_ << "  h_old(" << *c0 << ") cell/face: "
-                    << (*surf_Ph)("cell",*c0) << ", "
-                    << (*surf_Pu)("face",fnums0[0]) << std::endl;
-        *this->out_ << "  h_new(" << *c0 << ") cell/face: "
-                    << (*h_new)("cell",*c0) << ", "
-                    << (*h_new)("face",fnums0[0]) << std::endl;
-      }
-    }
-  }
+  // write residuals
+  std::vector<std::string> vnames;
+  vnames.push_back("  h_old (c)"); vnames.push_back("  h_old (f)"); vnames.push_back("  h_new"); 
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(surf_Ph.ptr()); vecs.push_back(surf_Pu.ptr()); 
+  vecs.push_back(S_next_->GetFieldData("ponded_depth").ptr());
+  this->surf_db_->WriteVectors(vnames, vecs, true);
 
   // put delta ponded depth into surf_Ph_cell
   surf_Ph->ViewComponent("cell",false)
@@ -301,21 +290,6 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
   // update delta faces
   this->surf_preconditioner_->UpdateConsistentFaceCorrection(*surf_u, surf_Ph.ptr());
   *surf_Pu->ViewComponent("face",false) = *surf_Ph->ViewComponent("face",false);
-
-  if (this->out_.get() && includesVerbLevel(this->verbosity_, Teuchos::VERB_HIGH, true)) {
-
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=this->surf_dc_.begin();
-         c0!=this->surf_dc_.end(); ++c0) {
-      if (*c0 < surf_u->size("cell",false)) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        this->surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-        *this->out_ << "  PC*u(" << *c0 << ") in h cell/face: "
-                    << (*surf_Ph)("cell",*c0) << ", "
-                    << (*surf_Pu)("face",fnums0[0]) << std::endl;
-      }
-    }
-  }
 
   // revert solution so we don't break things
   S_next_->GetFieldData("surface_pressure",this->surf_pk_name_)
@@ -330,15 +304,15 @@ void MPCWaterCoupler<BaseCoupler>::PreconUpdateSurfaceFaces_(
 template<class BaseCoupler>
 bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
         Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // Make sure surface values match the subsurface values.
   bool changed = BaseCoupler::modify_predictor_copy_subsurf_to_surf_(h, up);
 
   // modify predictor via heuristic stops spurting in the surface flow
   if (modify_predictor_heuristic_) {
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-      *out_ << " Modifying predictor with water heuristic" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_HIGH))
+      *vo_->os() << " Modifying predictor with water heuristic" << std::endl;
 
     const Epetra_MultiVector& surf_u_prev_c =
         *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
@@ -359,16 +333,16 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
 
       if (pnew > 0) {
         if (dp > pnew) {
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-            *out_ << "CHANGING (first over?): p = " << surf_u_c[0][c]
+          if (vo_->os_OK(Teuchos::VERB_HIGH))
+            *vo_->os() << "CHANGING (first over?): p = " << surf_u_c[0][c]
                   << " to " << patm + .001 << std::endl;
           surf_u_c[0][c] = patm + .001;
           domain_u_f[0][f] = surf_u_c[0][c];
 
         } else if (pold > 0 && dp > pold) {
-          if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-            *out_ << "CHANGING (second over?): p = " << surf_u_c[0][c]
-                  << " to " << patm + 2*pold << std::endl;
+          if (vo_->os_OK(Teuchos::VERB_HIGH))
+            *vo_->os() << "CHANGING (second over?): p = " << surf_u_c[0][c]
+                       << " to " << patm + 2*pold << std::endl;
 
           surf_u_c[0][c] = patm + 2*pold;
           domain_u_f[0][f] = surf_u_c[0][c];
@@ -380,7 +354,6 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
 
   // call the base coupler's modify.
   changed |= BaseCoupler::modify_predictor(h, up);
-
 
   return changed;
 }

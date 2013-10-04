@@ -74,11 +74,6 @@ bool PKBDFBase::advance(double dt) {
     fail = time_stepper_->time_step(dt, dt_solver, solution_);
   }
 
-  // VerboseObject stuff.
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    Teuchos::OSTab tab = getOSTab();
-  }
-
   if (!fail) {
     // commit the step as successful
     time_stepper_->commit_solution(dt, solution_);

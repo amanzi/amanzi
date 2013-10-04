@@ -13,8 +13,6 @@ multiple coupler types.
 
 #include "MatrixMFD_Surf.hh"
 #include "MatrixMFD_TPFA.hh"
-#include "MatrixMFD_Surf_ScaledConstraint.hh"
-#include "MatrixMFD_TPFA_ScaledConstraint.hh"
 #include "mpc_surface_subsurface_coupler.hh"
 
 namespace Amanzi {
@@ -22,7 +20,7 @@ namespace Amanzi {
 MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList& plist,
         const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist, soln),
-    StrongMPC(plist,soln) {
+    StrongMPC<PKPhysicalBDFBase>(plist,soln) {
 
   domain_mesh_key_ = plist.get<std::string>("subsurface mesh key","domain");
   surf_mesh_key_ = plist.get<std::string>("surface mesh key","surface");
@@ -32,7 +30,7 @@ MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList&
 };
 
 void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
-  StrongMPC::setup(S);
+  StrongMPC<PKPhysicalBDFBase>::setup(S);
 
   // get the mesh info
   surf_mesh_ = S->GetMesh(surf_mesh_key_);
@@ -55,76 +53,16 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
     ASSERT(0);
   }
 
-  // cells to debug, subsurface
-  if (plist_.isParameter("debug cells")) {
-    dc_.clear();
-    Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
-    for (Teuchos::Array<int>::const_iterator c=dc.begin();
-         c!=dc.end(); ++c) dc_.push_back(*c);
-
-    // Enable a vo for each cell, allows parallel printing of debug cells.
-    if (plist_.isParameter("debug cell ranks")) {
-      Teuchos::Array<int> dc_ranks = plist_.get<Teuchos::Array<int> >("debug cell ranks");
-      if (dc.size() != dc_ranks.size()) {
-        Errors::Message message("Debug cell and debug cell ranks must be equal length.");
-        Exceptions::amanzi_throw(message);
-      }
-      for (Teuchos::Array<int>::const_iterator dcr=dc_ranks.begin();
-           dcr!=dc_ranks.end(); ++dcr) {
-        // make a verbose object for each case
-        Teuchos::ParameterList vo_plist;
-        vo_plist.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject")
-            = plist_.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject").set("write on rank", *dcr);
-
-        dcvo_.push_back(Teuchos::rcp(new VerboseObject(domain_mesh_->get_comm(), name_,vo_plist)));
-
-      }
-    } else {
-      // Simply use the pk's vo
-      dcvo_.resize(dc_.size(), vo_);
-    }
-  }
-
-  // cells to debug, subsurface
-  if (plist_.isParameter("surface debug cells")) {
-    surf_dc_.clear();
-    Teuchos::Array<int> surf_dc = plist_.get<Teuchos::Array<int> >("surface debug cells");
-    for (Teuchos::Array<int>::const_iterator c=surf_dc.begin();
-         c!=surf_dc.end(); ++c) surf_dc_.push_back(*c);
-
-    // Enable a vo for each cell, allows parallel printing of debug cells.
-    if (plist_.isParameter("surface debug cell ranks")) {
-      Teuchos::Array<int> surf_dc_ranks = plist_.get<Teuchos::Array<int> >("surface debug cell ranks");
-      if (surf_dc.size() != surf_dc_ranks.size()) {
-        Errors::Message message("Debug cell and debug cell ranks must be equal length.");
-        Exceptions::amanzi_throw(message);
-      }
-      for (Teuchos::Array<int>::const_iterator surf_dcr=surf_dc_ranks.begin();
-           surf_dcr!=surf_dc_ranks.end(); ++surf_dcr) {
-        // make a verbose object for each case
-        Teuchos::ParameterList vo_plist;
-        vo_plist.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject")
-            = plist_.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject").set("write on rank", *surf_dcr);
-
-        surf_dcvo_.push_back(Teuchos::rcp(new VerboseObject(surf_mesh_->get_comm(), name_,vo_plist)));
-
-      }
-    } else {
-      // Simply use the pk's vo
-      surf_dcvo_.resize(surf_dc_.size(), vo_);
-    }
-  }
+  // get the PKs debuggers for our own use
+  domain_db_ = domain_pk_->debugger();
+  surf_db_ = surf_pk_->debugger();
 }
 
 bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_surf_to_subsurf_(double h,
         Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Modifying predictor, copying surf -> sub-surf" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Modifying predictor, copying surf -> sub-surf" << std::endl;
 
   Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->Data()
       ->ViewComponent("face",false);
@@ -143,9 +81,9 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_surf_to_subsurf_(double 
 
 bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_subsurf_to_surf_(double h,
         Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Modifying predictor, copying sub-surf -> surf" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Modifying predictor, copying sub-surf -> surf" << std::endl;
 
   const Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->Data()
       ->ViewComponent("face",false);
