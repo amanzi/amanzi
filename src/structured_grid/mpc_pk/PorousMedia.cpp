@@ -2908,21 +2908,22 @@ PorousMedia::multilevel_advance (Real  time,
 
     dt_new = dt;
     step_ok = true;
+    Real dt_suggest_flow = -1;
 
     if (model == PM_STEADY_SATURATED) {
       advance_flow_nochange(time,dt);
     }
     else {
 
-      Real dt_suggest_flow = dt;
+      dt_suggest_flow = dt;
       step_ok = advance_multilevel_richards_flow(time,dt,dt_suggest_flow);
-      dt_new = dt_suggest_flow; 
       if (!step_ok) {
+	dt_new = dt_suggest_flow; 
 	return false;
       }
     }
 
-    Real dt_suggest_tc = dt_new;
+    Real dt_suggest_tc = -1;
     if (advect_tracers > 0  ||  react_tracers > 0) {
       bool use_cached_sat = false;
       bool do_subcycle_tc = false;
@@ -2935,7 +2936,19 @@ PorousMedia::multilevel_advance (Real  time,
         return false;
       }      
     }
-    dt_new = std::min(dt_new, dt_suggest_tc);
+
+    Real dt_suggest = -1;
+    if (dt_suggest_flow > 0) {
+      dt_suggest = dt_suggest_flow;
+    }
+    if (dt_suggest_tc > 0) {
+      if (dt_suggest > 0) {	
+	dt_suggest = std::min(dt_suggest,dt_suggest_tc);
+      } else {
+	dt_suggest = dt_suggest_tc;
+      }
+    }
+    dt_new = dt_suggest;  
   }
 
   if (level == 0) {
@@ -3255,31 +3268,31 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
       int first_tracer = ncomps;
       MultiFab::Copy(state[State_Type].oldData(),state[State_Type].newData(),first_tracer,first_tracer,ntracers,0);
 
+      int nGrowF = 1;
+      MultiFab Fext(grids,ntracers,nGrowF);
+      bool do_rho_scale = 0;
+      getForce(Fext,nGrowF,ncomps,ntracers,t_subtr,do_rho_scale);
+
       if (advect_tracers) {
-	//
 	// Initialize flux registers
-	//
 	if (do_reflux && level < parent->finestLevel()) {
 	  getAdvFluxReg(level+1).setVal(0);
 	}
 	bool do_reflux_this_call = true;
-	tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat);
+	tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat,&Fext);
       }
 
-      //
       // Initialize diffusive flux registers
-      //
       if (do_reflux && level < parent->finestLevel()) {
         getViscFluxReg(level+1).setVal(0);
       }
+
+      // Diffuse 
       if (diffuse_tracers) {
-        MultiFab Fext(grids,ntracers,1);
-        MultiFab::Copy(Fext,*aofs,first_tracer,0,ntracers,0); // aofs = -d/dt(s.phi.C) due to advection
-        Fext.mult(-1);
+	MultiFab::Subtract(Fext,*aofs,first_tracer,0,ntracers,0);// S_diffusion = Fext - Div(AdvectionFlux), ng=0
 	bool reflux_on_this_call = true;
         tracer_diffusion (reflux_on_this_call,use_cached_sat,Fext);
       }
-
 
       bool step_ok_chem = true;
       if (react_tracers > 0) {
@@ -5232,6 +5245,10 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
     Real t_sat_new = cur_time;
     get_fillpatched_rhosat(t_sat_old,sat_old,nGrow);
     get_fillpatched_rhosat(t_sat_new,sat_new,nGrow);
+    for (int n=0; n<ncomps; ++n) {
+      sat_old.mult(1/density[n],n,1,nGrow);
+      sat_new.mult(1/density[n],n,1,nGrow);
+    }
   }
 
   int first_tracer = ncomps;
@@ -5499,11 +5516,15 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       Real t_sat_new = cur_time;
       get_fillpatched_rhosat(t_sat_old,sat_old,nGrowHYP);
       get_fillpatched_rhosat(t_sat_new,sat_new,nGrowHYP);
+      for (int n=0; n<ncomps; ++n) {
+	sat_old.mult(1/density[n],n,1,nGrowHYP);
+	sat_new.mult(1/density[n],n,1,nGrowHYP);
+      }
     }
 
     int Aidx = first_tracer;
     int Cidx, Sidx, SRCidx, Didx, DUidx;
-    Cidx = Sidx = SRCidx = Didx = DUidx = 0;
+    Cidx = Sidx = Didx = DUidx = 0;
     int use_conserv_diff = (advectionType[first_tracer] == Conservative);
 
 #ifndef NDEBUG
@@ -5532,11 +5553,17 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 
       godunov->Setup_tracer(grids[i], D_DECL(flux[0],flux[1],flux[2]), ntracers);
 
+      const FArrayBox* SrcPtr = 0;
+      SRCidx = 0;
       if (F==0) {
-        SRCext.resize(gbox,ntracers); SRCext.setVal(0);
+        SRCext.resize(gbox,ntracers);
+	SRCext.setVal(0);
+	SrcPtr = &SRCext;
       }
-      const FArrayBox* SrcPtr = (F==0 ? &SRCext  :  &((*F)[C_old_fpi]));
-
+      else {
+	SrcPtr = &((*F)[C_old_fpi]);
+      }
+	
       state_bc = getBCArray(State_Type,i,ncomps,ntracers);
       BL_ASSERT(aofs->size()>i);
       BL_ASSERT(rock_phi->size()>i);
@@ -5563,7 +5590,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       //
       godunov->Add_aofs_tracer(C_old_fpi(),C_new_fpi(), Cidx, ntracers,
                                sat_old[i], sat_new[i], Sidx, ncomps,
-                               (*aofs)[i], Aidx, SRCext, SRCidx, (*rock_phi)[i],
+                               (*aofs)[i], Aidx, *SrcPtr, SRCidx, (*rock_phi)[i],
                                grids[i], idx_total, dt); 
 
       // Copy new tracer concentrations into "new" state
@@ -8167,9 +8194,6 @@ PorousMedia::initialTimeStep (MultiFab* u_mac)
         dt_0 = std::min(dt_0, stop_time - cur_time);
     }
     
-    if (init_shrink>0) 
-        dt_0 *= init_shrink;
-
     return dt_0;
 }
 
@@ -8417,15 +8441,10 @@ PorousMedia::computeNewDt (int                   finest_level,
           }
       }
 
-      if (cum_time == start_time) {
-          dt_init_local = GetUserInputInitDt();
-      }
-      else {
-        Real transient_start = (execution_mode==INIT_TO_STEADY ? switch_time : start_time);
-        in_transient_period = cum_time >= transient_start;
-        if (cum_time == transient_start) {
-          dt_init_local = GetUserInputInitDt();
-        }
+      Real transient_start = (execution_mode==INIT_TO_STEADY ? switch_time : start_time);
+      in_transient_period = cum_time >= transient_start;
+      if (cum_time == transient_start) {
+	dt_init_local = GetUserInputInitDt();
       }
   }
 
@@ -8578,9 +8597,6 @@ PorousMedia::post_init_estDT (Real&        dt_init_local,
   {
       dt_init_local = std::abs(dt_init);
   }
-
-  if (init_shrink>0) 
-      dt_init_local *= init_shrink;
 
   BL_ASSERT(dt_init_local != 0);
 
@@ -10677,7 +10693,7 @@ PorousMedia::getForce (MultiFab& force,
 		       Real      time,
 		       bool      do_rho_scale)
 {
-  BL_ASSERT(strt_comp+num_comp <= ncomps);
+  BL_ASSERT(strt_comp+num_comp <= ncomps + ntracers);
   BL_ASSERT(force.nGrow()>=nGrow);
   BL_ASSERT(force.boxArray()==grids);
 
@@ -10686,58 +10702,81 @@ PorousMedia::getForce (MultiFab& force,
     const Real* dx = geom.CellSize();
     MultiFab mask(grids,num_comp,nGrow);
     MultiFab tmp(grids,num_comp,nGrow); tmp.setVal(0);
+
     for (int i=0; i<source_array.size(); ++i) {
       mask.setVal(0);
+      int snum_comp = std::min(num_comp-strt_comp,ncomps);
       for (MFIter mfi(force); mfi.isValid(); ++mfi) {
-	source_array[i].apply(tmp[mfi],dx,0,num_comp,time);	
+	source_array[i].apply(tmp[mfi],dx,0,snum_comp,time);	
 	const PArray<Region>& regions = source_array[i].Regions();
 	for (int j=0; j<regions.size(); ++j) {
 	  regions[j].setVal(mask[mfi],1,0,dx,0);
 	}
       }
 
-      if (source_array[i].Type() == "volume_weighted") {
-	// Scale all values set by this source function so they sum to 
-	// user specified value
-	Real cellVol = 1;
-	for (int d=0; d<BL_SPACEDIM; ++d) {
-	  cellVol *= dx[d];
+      if (snum_comp > 0) {
+	const std::string& stype = source_array[i].Type();
+	if (stype == "volume_weighted") {
+	  // Scale all values set by this source function so they sum to 
+	  // user specified value
+	  Real cellVol = 1;
+	  for (int d=0; d<BL_SPACEDIM; ++d) {
+	    cellVol *= dx[d];
+	  }
+	  Real num_cells=0;
+	  for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
+	    num_cells += mask[mfi].sum(mfi.validbox(),0,1);
+	  }
+	  ParallelDescriptor::ReduceRealSum(num_cells);
+	  Real total_volume_this_level = num_cells * cellVol;
+	  mask.mult(1/total_volume_this_level,0,snum_comp,nGrow);
 	}
-	Real num_cells=0;
-	for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
-	  num_cells += mask[mfi].sum(mfi.validbox(),0,1);
+	else {
+	  if (stype != "uniform") {
+	    BoxLib::Abort(std::string("Unsupported Source function type: \""+stype+"\"").c_str());
+	  }
 	}
-	ParallelDescriptor::ReduceRealSum(num_cells);
-	Real total_volume_this_level = num_cells * cellVol;
-	tmp.mult(1/total_volume_this_level,0,num_comp,nGrow);
       }
-      else {
-	if (source_array[i].Type() != "uniform") {
-	  BoxLib::Abort("Unsupported Source function type");
+      mask.FillBoundary(0,1);
+      geom.FillPeriodicBoundary(mask,0,1);
+
+      if (strt_comp+num_comp > ncomps) {
+	int tstrt_comp = std::max(ncomps,strt_comp);
+	int tnum_comp = num_comp - snum_comp;
+
+	for (int it=0; it<tnum_comp; ++it) {
+	  const RegionData& tsource = tsource_array[i][it];
+	  if (tsource.Type()=="uniform") {
+	    for (MFIter mfi(force); mfi.isValid(); ++mfi) {
+	      tsource.apply(tmp[mfi],dx,it+snum_comp,1,time);
+	    }
+	  }
+	  else {
+	    BoxLib::Abort(std::string("Tracer source type \""+tsource.Type()+"\" not yet implemented").c_str());
+	  }
 	}
       }
 
-      // Now put source into final structure, but only where mask set
-      mask.FillBoundary(0,1);
-      geom.FillPeriodicBoundary(mask,0,1);
+      // FIXME: If this is to fill component sources, this ignores strt_comp, assuming it is zero
       for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
 	const Box& box = mfi.validbox();
 	const FArrayBox& maskfab = mask[mfi];
 	for (IntVect iv=box.smallEnd(), End=box.bigEnd(); iv<=End; box.next(iv)) {
-	  if (maskfab(iv,0) > 0) {
+	  Real m = maskfab(iv,0);
+	  if (m > 0) {
 	    FArrayBox& f = force[mfi];
 	    const FArrayBox& t = tmp[mfi];
 	    for (int n=0; n<num_comp; ++n) {
-	      f(iv,n) = t(iv,n);
+	      f(iv,n) = m * t(iv,n); // NOTE: volume-weighting of component source impacts solute sources
 	    }
 	  }
 	}
       }
-    }
 
-    if (do_rho_scale) {
-      for (int i=0; i<num_comp; ++i) {
-	force.mult(density[strt_comp+i],i,1);
+      if (do_rho_scale) {
+	for (int i=0; i<snum_comp; ++i) {
+	  force.mult(density[strt_comp+i],i,1);
+	}
       }
     }
   }
@@ -10942,18 +10981,23 @@ PorousMedia::calcDiffusivity (const Real time,
       BL_ASSERT(dComp_tracs + num_tracs < diff_cc->nComp());
 
       MatFiller* matFiller = PMParent()->GetMatFiller();
-      bool ret = matFiller->SetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
+      bool retD = matFiller->SetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
+      diff_cc->mult(1/density[0],dComp_tracs,1,nGrow);
 
-      if (!ret) {
-        diff_cc->setVal(0,dComp_tracs,num_tracs);
+      MultiFab tau(grids,1,nGrow);
+      bool retT = matFiller->SetProperty(time,level,tau,"tortuosity",0,nGrow);
+
+      if (!retD || !retT) {
+        diff_cc->setVal(0,dComp_tracs,num_tracs,nGrow);
       }
       else {
-        // Set D_eff <- D_eff * sat * phi, copy out to all tracers
+        // Set D_eff <- D * tau * sat * phi, copy out to all tracers
         for (MFIter mfi(S); mfi.isValid(); ++mfi) {
           const Box& box = S[mfi].box();
           FArrayBox& fab = (*diff_cc)[mfi];
           fab.mult(S[mfi],0,dComp_tracs,1);
           fab.mult((*rock_phi)[mfi],0,dComp_tracs,1);
+          fab.mult(tau[mfi],0,dComp_tracs,1);
           for (int n=1; n<num_tracs; ++n) {
             fab.copy(fab,dComp_tracs,dComp_tracs+n,1);
           }

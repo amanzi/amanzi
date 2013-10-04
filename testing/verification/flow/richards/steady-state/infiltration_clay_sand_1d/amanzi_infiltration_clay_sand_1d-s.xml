@@ -128,7 +128,6 @@
                 <ParameterList name="IC: Uniform Concentration">
                   <Parameter name="Value" type="double" value="0"/>
                 </ParameterList>
-                <Parameter name="Concentration Units" type="string" value="TBC"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
