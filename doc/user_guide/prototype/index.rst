@@ -16,6 +16,6 @@ Contents:
    chemistry/tracer_1d/amanzi_u-1d-tracer.rst
    chemistry/tritium_1d/amanzi_u-1d-tritium.rst
    chemistry/calcite_1d/amanzi_u-1d-calcite.rst
-   chemistry/1d-ion-exchange/amanzi_u-1d-ion-exchange.rst
-   chemistry/1d-surface-complexation/amanzi_u-1d-surface-complexation.rst
-   chemistry/1d-farea/amanzi_u-1d-farea.rst
+   chemistry/ion_exchange_1d/amanzi_u-1d-ion-exchange.rst
+   chemistry/surface_complexation_1d/amanzi_u-1d-surface-complexation.rst
+   chemistry/farea_1d/amanzi_u-1d-farea.rst
