@@ -3267,8 +3267,8 @@ namespace Amanzi {
 #endif
 
       user_derive_list.push_back(underscore("Molecular Diffusion Coefficient"));
-      user_derive_list.push_back(underscore("Dispersivity_L"));
-      user_derive_list.push_back(underscore("Dispersivity_T"));
+      user_derive_list.push_back(underscore("Dispersivity L"));
+      user_derive_list.push_back(underscore("Dispersivity T"));
       user_derive_list.push_back(underscore("Tortuosity"));
       user_derive_list.push_back(underscore("Specific Storage"));
 

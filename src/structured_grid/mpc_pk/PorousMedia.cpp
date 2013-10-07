@@ -10704,29 +10704,28 @@ PorousMedia::getForce (MultiFab& force,
 	}
       }
 
-      if (snum_comp > 0) {
-	const std::string& stype = source_array[i].Type();
-	if (stype == "volume_weighted") {
-	  // Scale all values set by this source function so they sum to 
-	  // user specified value
-	  Real cellVol = 1;
-	  for (int d=0; d<BL_SPACEDIM; ++d) {
-	    cellVol *= dx[d];
-	  }
-	  Real num_cells=0;
-	  for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
-	    num_cells += mask[mfi].sum(mfi.validbox(),0,1);
-	  }
-	  ParallelDescriptor::ReduceRealSum(num_cells);
-	  Real total_volume_this_level = num_cells * cellVol;
-	  mask.mult(1/total_volume_this_level,0,snum_comp,nGrow);
+      const std::string& stype = source_array[i].Type();
+      if (stype == "volume_weighted") {
+	// Scale all values set by this source function so they sum to 
+	// user specified value
+	Real cellVol = 1;
+	for (int d=0; d<BL_SPACEDIM; ++d) {
+	  cellVol *= dx[d];
 	}
-	else {
-	  if (stype != "uniform") {
-	    BoxLib::Abort(std::string("Unsupported Source function type: \""+stype+"\"").c_str());
-	  }
+	Real num_cells=0;
+	for (MFIter mfi(mask); mfi.isValid(); ++mfi) {
+	  num_cells += mask[mfi].sum(mfi.validbox(),0,1);
+	}
+	ParallelDescriptor::ReduceRealSum(num_cells);
+	Real total_volume_this_level = num_cells * cellVol;
+	mask.mult(1/total_volume_this_level,0,1,nGrow);
+      }
+      else {
+	if (stype != "uniform") {
+	  BoxLib::Abort(std::string("Unsupported Source function type: \""+stype+"\"").c_str());
 	}
       }
+
       mask.FillBoundary(0,1);
       geom.FillPeriodicBoundary(mask,0,1);
 

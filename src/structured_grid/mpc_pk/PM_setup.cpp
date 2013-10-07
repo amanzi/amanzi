@@ -2659,9 +2659,6 @@ void  PorousMedia::read_source()
 		      int ntvars = pps_c_t.countval("vals");
 		      BL_ASSERT(ntvars>0);
 		      Array<Real> tvals; pps_c_t.getarr("vals",tvals,0,ntvars);
-                      for (int k=0; k<ntvars; ++k) {
-                        tvals[k] *= 1/density[0]; // Solutes evolved as sat.C rather than rho.sat.C
-                      }
 		      tsource_array[i].set(t_pos, new RegionData(source_name,source_regions,tsource_type,tvals));
 		    }
 		  else {

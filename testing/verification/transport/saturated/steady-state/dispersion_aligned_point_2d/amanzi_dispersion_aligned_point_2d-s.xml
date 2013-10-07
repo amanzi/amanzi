@@ -30,7 +30,7 @@
 	<ParameterList name="Multigrid Algorithm">
 	  <ParameterList name="Expert Settings">
 	    <Parameter name="usecg" type="int" value="0"/>
-	    <Parameter name="v" type="int" value="3"/>
+	    <Parameter name="v" type="int" value="0"/>
 	    <Parameter name="maxiter" type="int" value="100"/>
 	    <Parameter name="numLevelsMAX" type="int" value="200"/>
 	  </ParameterList>
@@ -59,8 +59,8 @@
       <!-- <Parameter name="Number of Cells"    type="Array(int)"    value="{  80, 36}"/> -->
       <Parameter name="Domain Low Corner"  type="Array(double)" value="{-270,-300}"/>
       <Parameter name="Domain High Corner" type="Array(double)" value="{ 930, 300}"/>
-      <Parameter name="Number of Cells"    type="Array(int)"    value="{ 256, 128}"/>
       <Parameter name="Number of Cells"    type="Array(int)"    value="{ 512, 256}"/>
+      <Parameter name="Number of Cells"    type="Array(int)"    value="{ 256, 128}"/>
       <Parameter name="Number of Cells"    type="Array(int)"    value="{ 128, 64}"/>
     </ParameterList>
   </ParameterList>
@@ -70,6 +70,8 @@
       <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array(double)" value="{-7.5,-7.5}"/>
         <Parameter name="High Coordinate" type="Array(double)" value="{7.5, 7.5}"/>
+        <!-- <Parameter name="Low Coordinate" type="Array(double)" value="{-5,-5}"/> -->
+        <!-- <Parameter name="High Coordinate" type="Array(double)" value="{5, 5}"/> -->
       </ParameterList>
     </ParameterList>
 
@@ -240,74 +242,74 @@
     </ParameterList>
 
     <ParameterList name="Checkpoint Data">
-      <Parameter name="File Name Base" type="string" value="chk"/>
-      <Parameter name="File Name Digits" type="int" value="5"/>
-      <Parameter name="Cycle Macros" type="Array(string)" value="{Every 5}"/>
+      <!-- <Parameter name="File Name Base" type="string" value="chk"/> -->
+      <!-- <Parameter name="File Name Digits" type="int" value="5"/> -->
+      <!-- <Parameter name="Cycle Macros" type="Array(string)" value="{Every 5}"/> -->
     </ParameterList>
 
     <ParameterList name="Observation Data">
       <Parameter name="Observation Output Filename" type="string" value="obs5_2_1.out"/>
-      <ParameterList name="Point 01">
+      <ParameterList name="Pt -150">
         <Parameter name="Region" type="string" value="Dnwind150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 02">
+      <ParameterList name="Pt -090">
         <Parameter name="Region" type="string" value="Dnwind090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 03">
+      <ParameterList name="Pt -030">
         <Parameter name="Region" type="string" value="Dnwind030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 04">
+      <ParameterList name="Pt +030">
         <Parameter name="Region" type="string" value="Upwind030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 05">
+      <ParameterList name="Pt +090">
         <Parameter name="Region" type="string" value="Upwind090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 06">
+      <ParameterList name="Pt +150">
         <Parameter name="Region" type="string" value="Upwind150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 07">
+      <ParameterList name="Pt +210">
         <Parameter name="Region" type="string" value="Upwind210"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 08">
+      <ParameterList name="Pt +270">
         <Parameter name="Region" type="string" value="Upwind270"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 09">
+      <ParameterList name="Pt +330">
         <Parameter name="Region" type="string" value="Upwind330"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 10">
+      <ParameterList name="Pt +390">
         <Parameter name="Region" type="string" value="Upwind390"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-      <ParameterList name="Point 11">
+      <ParameterList name="Pt +450">
         <Parameter name="Region" type="string" value="Upwind450"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous Concentration"/>
