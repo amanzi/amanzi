@@ -3158,14 +3158,39 @@ c     x-faces
       REAL_T  b1z(DIMV(b1z),NCROSS)
       
       integer i,j
+      REAL_T u00, u01, u10, u11
+      REAL_T v00, v01, v10, v11
+      REAL_T w00, w01, w10, w11
       REAL_T uface, vface, wface, velInv, vel, aLface, aTface, Dface
 
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)+1
                uface = u(i,j,k)
-               vface = 0.25d0*(v(i-1,j+1,k)+v(i,j+1,k)+v(i-1,j,k)+v(i,j,k)
-               wface = 0.25d0*(w(i-1,j,k+1)+w(i,j,k+1)+w(i-1,j,k)+w(i,j,k)
+               if (i.eq.lo(1) .and. bc(1,1).ne.INT_DIR) then
+                  v01 = v(i  ,j+1,k  )
+                  v00 = v(i  ,j  ,k  )
+                  w01 = w(i  ,j  ,k+1)
+                  w00 = w(i  ,j  ,k  )
+               else
+                  v01 = v(i-1,j+1,k  )
+                  v00 = v(i-1,j  ,k  )
+                  w01 = w(i-1,j  ,k+1)
+                  w00 = w(i-1,j  ,k  )
+               endif
+               if (i.eq.hi(1)+1 .and. bc(1,2).ne.INT_DIR) then
+                  v10 = v(i-1,j  ,k  )
+                  v11 = v(i-1,j+1,k  )
+                  w01 = w(i-1,j  ,k+1)
+                  w00 = w(i-1,j  ,k  )
+               else
+                  v10 = v(i  ,j  ,k  )
+                  v11 = v(i  ,j+1,k  )
+                  w01 = w(i  ,j  ,k+1)
+                  w00 = w(i  ,j  ,k  )
+               endif
+               vface = 0.25d0*(v00+v01+v10+v11)
+               wface = 0.25d0*(w00+w01+w10+w11)
                aLface = 0.5d0*(a(i,j,k,1)+a(i-1,j,k,1))
                aTface = 0.5d0*(a(i,j,k,2)+a(i-1,j,k,2))
                Dface = 0.5d0*(Dcc(i,j,k)+Dcc(i-1,j,k))
@@ -3186,9 +3211,32 @@ c     x-faces
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)+1
             do i = lo(1), hi(1)
-               uface = 0.25d0*(u(i,j,k)+u(i+1,j,k)+u(i,j-1,k)+u(i+1,j-1,k)
+
                vface = v(i,j,k)
-               wface = 0.25d0*(w(i,j,k)+w(i,j,k+1)+w(i,j-1,k)+w(i,j-1,k+1)
+               if (j.eq.lo(2) .and. bc(2,1).ne.INT_DIR) then
+                  u01 = u(i+1,j  ,k  )
+                  u00 = u(i  ,j  ,k  )
+                  w10 = w(i  ,j  ,k+1)
+                  w00 = w(i  ,j  ,k  )
+               else
+                  u10 = u(i+1,j-1,k  )
+                  u00 = u(i  ,j-1,k  )
+                  w10 = w(i  ,j-1,k+1)
+                  w00 = w(i  ,j-1,k  )
+               endif
+               if (j.eq.hi(2)+1 .and. bc(2,2).ne.INT_DIR) then
+                  u01 = u(i+1,j-1,k  )
+                  u00 = u(i  ,j-1,k  )
+                  w10 = w(i  ,j-1,k+1)
+                  w00 = w(i  ,j-1,k  )
+               else
+                  u10 = u(i+1,j  ,k  )
+                  u00 = u(i  ,j  ,k  )
+                  w10 = w(i  ,j  ,k+1)
+                  w00 = w(i  ,j  ,k  )
+               endif
+               uface = 0.25d0*(u00+u01+u10+u11)
+               wface = 0.25d0*(w00+w01+w10+w11)
                aLface = 0.5d0*(a(i,j,k,1)+a(i,j-1,k,1))
                aTface = 0.5d0*(a(i,j,k,2)+a(i,j-1,k,2))
                Dface = 0.5d0*(Dcc(i,j,k)+Dcc(i,j-1,k))
@@ -3209,9 +3257,32 @@ c     x-faces
       do k = lo(3), hi(3)+1
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
-               uface = 0.25d0*(u(i,j,k)+u(i+1,j,k)+u(i,j,k-1)+u(i+1,j,k-1)
-               vface = 0.25d0*(v(i,j,k)+v(i,j+1,k)+v(i,j,k-1)+v(i,j+1,k11)
+
                wface = w(i,j,k)
+               if (k.eq.lo(3) .and. bc(3,1).ne.INT_DIR) then
+                  u10 = u(i+1,j  ,k  )
+                  u00 = u(i  ,j  ,k  )
+                  v10 = v(i  ,j+1,k  )
+                  v00 = v(i  ,j  ,k  )
+               else
+                  u10 = u(i+1,j  ,k-1)
+                  u00 = u(i  ,j  ,k-1)
+                  v10 = v(i  ,j+1,k-1)
+                  v00 = v(i  ,j  ,k-1)
+               endif
+               if (k.eq.hi(3)+1 .and. bc(3,2).ne.INT_DIR) then
+                  u10 = u(i+1,j  ,k-1)
+                  u00 = u(i  ,j  ,k-1)
+                  v10 = v(i  ,j+1,k-1)
+                  v00 = v(i  ,j  ,k-1)
+               else
+                  u10 = u(i+1,j  ,k  )
+                  u00 = u(i  ,j  ,k  )
+                  v10 = v(i  ,j+1,k  )
+                  v00 = v(i  ,j  ,k  )
+               endif
+               uface = 0.25d0*(u00+u01+u10+u11)
+               vface = 0.25d0*(v00+v01+v10+v11)
                aLface = 0.5d0*(a(i,j,k,1)+a(i,j,k-1,1))
                aTface = 0.5d0*(a(i,j,k,2)+a(i,j,k-1,2))
                Dface = 0.5d0*(Dcc(i,j,k)+Dcc(i,j,k-1))

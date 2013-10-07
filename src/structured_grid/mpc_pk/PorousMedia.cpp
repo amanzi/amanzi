@@ -677,52 +677,25 @@ PorousMedia::~PorousMedia ()
   delete [] u_macG_curr;
   delete [] u_macG_trac;
   delete [] u_corr;
-
-  u_macG_prev = 0;
-  u_macG_curr = 0;
-  u_macG_trac = 0;
-  u_corr      = 0;
-      
   delete [] rhs_RhoD;
   delete [] kpedge;
   delete [] lambda;
   delete kappa;
   delete rock_phi;
   delete specific_storage;
-
-  if (kr_coef)
-    delete kr_coef;
-  if (cpl_coef)
-    delete cpl_coef;
-  if (lambda_cc)
-    delete lambda_cc;
-  if (lambdap1_cc)
-    delete lambdap1_cc;
-  if (dlambda_cc)
-    delete dlambda_cc;
-
- 
-  // Remove the arrays for variable viscosity and diffusivity
-  // and delete the Diffusion object
-  if (variable_scal_diff)
-    {
-      delete diffn_cc;
-      delete diffnp1_cc;
-    }
-  if (have_capillary)
-    {
-      delete pcn_cc;
-      delete pcnp1_cc;
-    }
+  delete kr_coef;
+  delete cpl_coef;
+  delete lambda_cc;
+  delete lambdap1_cc;
+  delete dlambda_cc;
+  delete diffn_cc;
+  delete diffnp1_cc;
+  delete pcn_cc;
+  delete pcnp1_cc;
   delete diffusion;
   delete aofs;
-
-  if (sat_old_cached != 0) {
-    delete sat_old_cached;
-  }
-  if (sat_new_cached != 0) {
-    delete sat_new_cached;
-  }
+  delete sat_old_cached;
+  delete sat_new_cached;
 }
 
 void
@@ -2357,7 +2330,8 @@ PorousMedia::init ()
 
   U_cor.setVal(0.);
 
-  if (model == PM_STEADY_SATURATED) {
+  if ((model == PM_STEADY_SATURATED)
+      || (model == PM_SATURATED)) {
     set_vel_from_bcs(cur_time,u_mac_curr);
   }  
 
@@ -2509,7 +2483,8 @@ PorousMedia::advance_setup (Real time,
     if (model != PM_RICHARDS)
 #endif
       {
-	if (PM_STEADY_SATURATED) {
+	if ( (model==PM_STEADY_SATURATED)
+             || (model==PM_SATURATED) ) {
 	  set_vel_from_bcs(time,u_mac_curr);
 	}
 	else if (do_simple == 0 && (full_cycle == 1 || no_corrector == 1))
@@ -3114,7 +3089,7 @@ PorousMedia::set_saturated_velocity()
       Array<Real> vals = ic();
       BL_ASSERT(vals.size() >= BL_SPACEDIM);
       for (int d=0; d<BL_SPACEDIM; ++d) {
-	u_mac_curr[d].setVal(vals[d]);
+	u_mac_curr[d].setVal(vals[d],u_mac_curr[d].nGrow());
 	u_macG_curr[d].setVal(vals[d]);
 	u_macG_prev[d].setVal(vals[d]);
 	u_macG_trac[d].setVal(vals[d]);
@@ -5170,8 +5145,9 @@ Real get_scaled_abs_tol (const MultiFab& rhs,
                          Real            reduction)
 {
   Real norm_est = 0;
-  for (MFIter Rhsmfi(rhs); Rhsmfi.isValid(); ++Rhsmfi)
-    norm_est = std::max(norm_est, rhs[Rhsmfi].norm(0));
+  for (MFIter Rhsmfi(rhs); Rhsmfi.isValid(); ++Rhsmfi) {
+    norm_est = std::max(norm_est,rhs[Rhsmfi].norm(Rhsmfi.validbox(),0));
+  }
   ParallelDescriptor::ReduceRealMax(norm_est);
   return norm_est * reduction;
 }
@@ -5434,13 +5410,23 @@ PorousMedia::tracer_diffusion (bool reflux_on_this_call,
       }
     }
     
-    delete tensor_diffuser, scalar_diffuser;
-    delete scalar_linop_old, scalar_linop_new, tensor_linop_old, tensor_linop_new;
+    delete tensor_diffuser;
+    delete scalar_diffuser;
+    delete scalar_linop_old;
+    delete scalar_linop_new;
+    delete tensor_linop_old;
+    delete tensor_linop_new;
+    delete tbd_old;
+    delete tbd_new;
+    delete vbd_old;
+    delete vbd_new;
   }
   for (int d = 0; d < BL_SPACEDIM; d++) {
-    delete bn[d], bnp1[d], flux[d];
+    delete bn[d];
+    delete bnp1[d];
     if (tensor_tracer_diffusion) {
-      delete b1n[d], b1np1[d];
+      delete b1n[d];
+      delete b1np1[d];
     }
   }
 
@@ -5755,7 +5741,8 @@ PorousMedia::getTracerViscTerms(MultiFab&  D,
       scalar_linop->apply(D,S,0,LinOp::Inhomogeneous_BC,true,first_tracer+n,n,1,0);
     }
     MultiFab::Multiply(D,volInv,0,n,1,0);
-    delete scalar_linop, tensor_linop;
+    delete scalar_linop;
+    delete tensor_linop;
   }
   for (int d = 0; d < BL_SPACEDIM; d++) {
     delete beta[d];
@@ -8128,7 +8115,8 @@ PorousMedia::estTimeStep (MultiFab* u_mac)
               }
               else
 #endif
-		if (model == PM_STEADY_SATURATED) {
+		if ( (model == PM_STEADY_SATURATED)
+                     || (model == PM_SATURATED) ) {
 		  set_vel_from_bcs(PMParent()->startTime(),u_mac);
 		} else 
               {
@@ -10176,8 +10164,10 @@ PorousMedia::mac_sync ()
       for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
         S_new[mfi].plus((*Ssync)[mfi],first_tracer,first_tracer,ntracers);
       }
-      delete tensor_diffuser, scalar_diffuser;
-      delete scalar_linop, tensor_linop;
+      delete tensor_diffuser;
+      delete scalar_diffuser;
+      delete scalar_linop;
+      delete tensor_linop;
       for (int d = 0; d < BL_SPACEDIM; d++) {
         delete betanp1[d];
         if (tensor_tracer_diffusion) {
@@ -10982,7 +10972,6 @@ PorousMedia::calcDiffusivity (const Real time,
 
       MatFiller* matFiller = PMParent()->GetMatFiller();
       bool retD = matFiller->SetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
-      diff_cc->mult(1/density[0],dComp_tracs,1,nGrow);
 
       MultiFab tau(grids,1,nGrow);
       bool retT = matFiller->SetProperty(time,level,tau,"tortuosity",0,nGrow);
@@ -10991,7 +10980,8 @@ PorousMedia::calcDiffusivity (const Real time,
         diff_cc->setVal(0,dComp_tracs,num_tracs,nGrow);
       }
       else {
-        // Set D_eff <- D * tau * sat * phi, copy out to all tracers
+        // Set D_eff <- D * tau * sat * phi / rho, copy out to all tracers
+        diff_cc->mult(1/density[0],dComp_tracs,1,nGrow);
         for (MFIter mfi(S); mfi.isValid(); ++mfi) {
           const Box& box = S[mfi].box();
           FArrayBox& fab = (*diff_cc)[mfi];
@@ -11052,6 +11042,7 @@ PorousMedia::getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
 
   MultiFab* diff_cc  = (whichTime == AmrOldTime) ? diffn_cc : diffnp1_cc;
   int first_tracer = ncomps;
+  getDiffusivity(diagonal_diffusivity,time,first_tracer,0,1);
 
   MatFiller* matFiller = PMParent()->GetMatFiller();
   std::string pName = "dispersivity";
@@ -11060,12 +11051,11 @@ PorousMedia::getTensorDiffusivity (MultiFab*  diagonal_diffusivity[BL_SPACEDIM],
     for (int d=0; d<BL_SPACEDIM; ++d) {
       (*off_diagonal_diffusivity[d]).setVal(0);
     }
-    getDiffusivity(diagonal_diffusivity,time,first_tracer,0,1);
     return;
   }
   MultiFab alpha(grids,nCompAlpha,1); // FIXME: This actually never changes
   bool ret = matFiller->SetProperty(state[State_Type].curTime(),level,alpha,
-                                    "dispersivity",0,alpha.nGrow());
+                                    pName,0,alpha.nGrow());
   BL_ASSERT(ret);
 
   const MultiFab* u_macG = (whichTime == AmrOldTime) ? u_macG_prev : u_macG_curr;
@@ -12210,16 +12200,6 @@ PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
       if (n_t > 0) {
 	dirichletTracerBC(dest,time,s_t,dest_comp+n_c,n_t);
       }
-
-#ifndef NDEBUG
-      if (dest.contains_nan(dest.box(),dest_comp,num_comp)) {
-        std::cout << "PorousMedia::setPhysBoundaryValues:  finished, but still contains nans" << std::endl;
-        std::cout << "time,src_comp: " << time << ", " << src_comp << std::endl;
-        std::cout << "level,destbox,destcomp,numcomp: " << level << ", " << dest.box() << ", " << dest_comp << ", " << num_comp << std::endl;
-        std::cout << dest << std::endl;
-        BoxLib::Abort();
-      }
-#endif
     }
     else if (state_indx==Press_Type) {
       dirichletPressBC(dest,time);

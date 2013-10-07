@@ -2638,12 +2638,28 @@ c     x-faces
       REAL_T  b1y(DIMV(b1y),NCROSS)
       
       integer i,j
+      REAL_T u00, u01, u10, u11
+      REAL_T v00, v01, v10, v11
       REAL_T uface, vface, velInv, vel, aLface, aTface, Dface
 
       do j = lo(2), hi(2)
          do i = lo(1), hi(1)+1
             uface = u(i,j)
-            vface = 0.25d0*(v(i-1,j+1)+v(i,j+1)+v(i-1,j)+v(i,j))
+            if (i.eq.lo(1) .and. bc(1,1).ne.INT_DIR) then
+               v00 = v(i  ,j  )
+               v01 = v(i  ,j+1)
+            else
+               v00 = v(i-1,j  )
+               v01 = v(i-1,j+1)
+            endif
+            if (i.eq.hi(1)+1 .and. bc(1,2).ne.INT_DIR) then
+               v10 = v(i-1,j  )
+               v11 = v(i-1,j+1)
+            else
+               v10 = v(i  ,j  )
+               v11 = v(i  ,j+1)
+            endif
+            vface = 0.25d0*(v00+v01+v10+v11)
             aLface = 0.5d0*(a(i,j,1)+a(i-1,j,1))
             aTface = 0.5d0*(a(i,j,2)+a(i-1,j,2))
             Dface = 0.5d0*(Dcc(i,j)+Dcc(i-1,j))
@@ -2660,7 +2676,22 @@ c     x-faces
 
       do j = lo(2), hi(2)+1
          do i = lo(1), hi(1)
-            uface = 0.25d0*(u(i+1,j)+u(i+1,j-1)+u(i,j-1)+u(i,j))
+
+            if (j.eq.lo(2) .and. bc(2,1).ne.INT_DIR) then
+               u00 = u(i  ,j  )
+               u10 = u(i+1,j  )
+            else
+               u00 = u(i  ,j-1)
+               u10 = u(i+1,j-1)
+            endif
+            if (j.eq.hi(2)+1 .and. bc(2,2).ne.INT_DIR) then
+               u01 = u(i  ,j-1)
+               u11 = u(i+1,j-1)
+            else
+               u01 = u(i  ,j  )
+               u11 = u(i+1,j  )
+            endif
+            uface = 0.25d0*(u00+u10+u01+u11)
             vface = v(i,j)
             aLface = 0.5d0*(a(i,j,1)+a(i,j-1,1))
             aTface = 0.5d0*(a(i,j,2)+a(i,j-1,2))
