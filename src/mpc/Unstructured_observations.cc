@@ -85,217 +85,219 @@ void Unstructured_observations::make_observations(State& state)
 {
   // loop over all observables
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
-    // for now we can only observe Integrals and Values
-
-    if ( (i->second).functional != "Observation Data: Integral"  &&
-         (i->second).functional != "Observation Data: Point" )  {
-      Errors::Message m("Unstructured_observations: can only handle Functional == Observation Data: Integral, or Functional == Observation Data: Point");
-      Exceptions::amanzi_throw(m);
-    }
-
-    std::string label = i->first;
-
-    // we need to make an observation for each variable in the observable
-    std::string var = (i->second).variable;
     
-    // data structure to store the observation
-    Amanzi::ObservationData::DataTriple data_triplet;
-    
-    // build the name of the observation
-    std::stringstream ss;
-    ss << label << ", " << var;
-    
-    std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label]; 
-    
-    double value(0.0);
-    double volume(0.0);
-
-    // check if Aqueous concentration was requested
-    std::string name = var;
-    
-    int pos = name.find("Aqueous concentration");
-    if (pos != string::npos) {
-      var = name.substr(0, pos-1);
-    } else {
-      var = name;
-    }
-    
-    unsigned int mesh_block_size(0);
-    Amanzi::AmanziMesh::Entity_ID_List entity_ids;
-    if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate") ) { // for flux we need faces
-      mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
-						      Amanzi::AmanziMesh::FACE,
-						      Amanzi::AmanziMesh::OWNED);
-      entity_ids.resize(mesh_block_size);
-      state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
-					&entity_ids);
-    } else { // all others need cells
-      mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
-						      Amanzi::AmanziMesh::CELL,
-						      Amanzi::AmanziMesh::OWNED);    
-      entity_ids.resize(mesh_block_size);
-      state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-					&entity_ids);
-    }
-
-    // find global meshblocksize
-    int dummy = mesh_block_size; 
-    int global_mesh_block_size(0);
-    state.GetMesh()->get_comm()->SumAll(&dummy,&global_mesh_block_size,1);
-    if (global_mesh_block_size == 0) {
-      Exceptions::amanzi_throw(Errors::Message("Cannot make an observation on an empty region: " + (i->second).region));
-    }
-
-    // is the user asking for a component concentration?
-    int comp_index(0);
-    if (comp_names_.size() > 0) {
-      for (comp_index = 0; comp_index != comp_names_.size(); ++comp_index) {
-	if (comp_names_[comp_index] == var) break;
+    if ((i->second).DumpRequested(state.time()) || (i->second).DumpRequested(state.cycle())) {
+      
+      // for now we can only observe Integrals and Values
+      if ( (i->second).functional != "Observation Data: Integral"  &&
+	   (i->second).functional != "Observation Data: Point" )  {
+	Errors::Message m("Unstructured_observations: can only handle Functional == Observation Data: Integral, or Functional == Observation Data: Point");
+	Exceptions::amanzi_throw(m);
       }
-    }
-    
-    if (comp_names_.size() > 0 && comp_index != comp_names_.size() ) { // the user is asking to for an observation on tcc
-      value = 0.0;
-      volume = 0.0;
       
-      Teuchos::RCP<const Epetra_MultiVector> total_component_concentration = 
-	state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
+      std::string label = i->first;
       
-      for (int i=0; i<mesh_block_size; i++) {
-	int ic = entity_ids[i];
-	value += (*(*total_component_concentration)(comp_index))[ic] * state.GetMesh()->cell_volume(ic);
-	
-	volume += state.GetMesh()->cell_volume(ic);
-      }
-    } else if (var == "Volumetric water content") {
-      value = 0.0;
-      volume = 0.0;
+      // we need to make an observation for each variable in the observable
+      std::string var = (i->second).variable;
       
-      Teuchos::RCP<const Epetra_Vector> porosity = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));	  
-      Teuchos::RCP<const Epetra_Vector> water_saturation = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
+      // data structure to store the observation
+      Amanzi::ObservationData::DataTriple data_triplet;
       
-      for (int i=0; i<mesh_block_size; i++) {
-	int ic = entity_ids[i];
-	value += (*porosity)[ic] * (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
-	volume += state.GetMesh()->cell_volume(ic);
-      }
-    } else if (var == "Gravimetric water content") {
-      value = 0.0;
-      volume = 0.0;
-      
-      Teuchos::RCP<const Epetra_Vector> water_saturation = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
-      double water_density =  *state.GetScalarData("fluid_density");
-      double particle_density(1.0); // does not exist in new state, yet... TODO
-      Teuchos::RCP<const Epetra_Vector> porosity = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));
-      
-      for (int i=0; i<mesh_block_size; i++) {
-	int ic = entity_ids[i];
-	value += (*porosity)[ic] * (*water_saturation)[ic] * water_density 
-	  / ( particle_density * (1.0 - (*porosity)[ic] ) )  * state.GetMesh()->cell_volume(ic);
-	volume += state.GetMesh()->cell_volume(ic);
-      }    
-    } else if (var == "Aqueous pressure") {
-      value = 0.0;
-      volume = 0.0;
-      
-      Teuchos::RCP<const Epetra_Vector> pressure = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
-      
-      for (int i=0; i<mesh_block_size; i++) {
-	int ic = entity_ids[i];
-	value += (*pressure)[ic] * state.GetMesh()->cell_volume(ic);
-	volume += state.GetMesh()->cell_volume(ic);
-      }
-    } else if (var == "Aqueous saturation") {
-      value = 0.0;
-      volume = 0.0;
-      
-      Teuchos::RCP<const Epetra_Vector> water_saturation = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));	  
-      
-      for (int i=0; i<mesh_block_size; i++) {
-	int ic = entity_ids[i];
-	value += (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
-	volume += state.GetMesh()->cell_volume(ic);
-      }    
-    } else if (var == "Hydraulic Head") {
-      value = 0.0;
-      volume = 0.0;
-
-      Teuchos::RCP<const Epetra_Vector> hydraulic_head = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("hydraulic_head")->ViewComponent("cell", false))(0));
-      
-      for (int i=0; i<mesh_block_size; ++i) {
-	int ic = entity_ids[i];
-	Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
-	value += (*hydraulic_head)[ic] * state.GetMesh()->cell_volume(ic);
-	volume += state.GetMesh()->cell_volume(ic);
-      }
-    } else if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate")) {
-      value = 0.0;
-      volume = 0.0;
-      
-      // get the region object
-      AmanziGeometry::GeometricModelPtr gm_ptr = state.GetMesh()->geometric_model();
-      AmanziGeometry::RegionPtr reg_ptr = gm_ptr->FindRegion((i->second).region);
-      if (reg_ptr->type() != AmanziGeometry::POLYGON) {
-
-      }
-      AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
-      
-      AmanziGeometry::Point reg_normal = poly_reg->normal();
-
-      Teuchos::RCP<const Epetra_Vector> darcy_flux = 
-	Teuchos::rcpFromRef(*(*state.GetFieldData("darcy_flux")->ViewComponent("face", false))(0));      
-      
-      double density(1.0);
-      if (var == "Aqueous mass flow rate") {
-	density = *state.GetScalarData("fluid_density") ;
-      }
-
-      for (int i = 0; i != mesh_block_size; ++i) {
-	int iface = entity_ids[i];
-	Amanzi::AmanziGeometry::Point face_normal = state.GetMesh()->face_normal(iface);
-	double area =  state.GetMesh()->face_area(iface);
-	double sign = reg_normal * face_normal / area;
-	
-	value += sign * (*darcy_flux)[iface] * density;
-	volume += area;
-      }
-     
-    } else {
+      // build the name of the observation
       std::stringstream ss;
-      ss << "State::point_value: cannot make an observation for variable " << name;
-      Errors::Message m(ss.str().c_str());
-      Exceptions::amanzi_throw(m);
+      ss << label << ", " << var;
+      
+      std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[label]; 
+      
+      double value(0.0);
+      double volume(0.0);
+      
+      // check if Aqueous concentration was requested
+      std::string name = var;
+      
+      int pos = name.find("Aqueous concentration");
+      if (pos != string::npos) {
+	var = name.substr(0, pos-1);
+      } else {
+	var = name;
+      }
+      
+      unsigned int mesh_block_size(0);
+      Amanzi::AmanziMesh::Entity_ID_List entity_ids;
+      if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate") ) { // for flux we need faces
+	mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
+							Amanzi::AmanziMesh::FACE,
+							Amanzi::AmanziMesh::OWNED);
+	entity_ids.resize(mesh_block_size);
+	state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
+					  &entity_ids);
+      } else { // all others need cells
+	mesh_block_size = state.GetMesh()->get_set_size((i->second).region,
+							Amanzi::AmanziMesh::CELL,
+							Amanzi::AmanziMesh::OWNED);    
+	entity_ids.resize(mesh_block_size);
+	state.GetMesh()->get_set_entities((i->second).region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+					  &entity_ids);
+      }
+      
+      // find global meshblocksize
+      int dummy = mesh_block_size; 
+      int global_mesh_block_size(0);
+      state.GetMesh()->get_comm()->SumAll(&dummy,&global_mesh_block_size,1);
+      if (global_mesh_block_size == 0) {
+	Exceptions::amanzi_throw(Errors::Message("Cannot make an observation on an empty region: " + (i->second).region));
+      }
+      
+      // is the user asking for a component concentration?
+      int comp_index(0);
+      if (comp_names_.size() > 0) {
+	for (comp_index = 0; comp_index != comp_names_.size(); ++comp_index) {
+	  if (comp_names_[comp_index] == var) break;
+	}
+      }
+      
+      if (comp_names_.size() > 0 && comp_index != comp_names_.size() ) { // the user is asking to for an observation on tcc
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_MultiVector> total_component_concentration = 
+	  state.GetFieldData("total_component_concentration")->ViewComponent("cell", false);
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = entity_ids[i];
+	  value += (*(*total_component_concentration)(comp_index))[ic] * state.GetMesh()->cell_volume(ic);
+	  
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else if (var == "Volumetric water content") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> porosity = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));	  
+	Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = entity_ids[i];
+	  value += (*porosity)[ic] * (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else if (var == "Gravimetric water content") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));
+	double water_density =  *state.GetScalarData("fluid_density");
+	double particle_density(1.0); // does not exist in new state, yet... TODO
+	Teuchos::RCP<const Epetra_Vector> porosity = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("porosity")->ViewComponent("cell", false))(0));
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = entity_ids[i];
+	  value += (*porosity)[ic] * (*water_saturation)[ic] * water_density 
+	    / ( particle_density * (1.0 - (*porosity)[ic] ) )  * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}    
+      } else if (var == "Aqueous pressure") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> pressure = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("pressure")->ViewComponent("cell", false))(0));	  
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = entity_ids[i];
+	  value += (*pressure)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else if (var == "Aqueous saturation") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> water_saturation = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("water_saturation")->ViewComponent("cell", false))(0));	  
+	
+	for (int i=0; i<mesh_block_size; i++) {
+	  int ic = entity_ids[i];
+	  value += (*water_saturation)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}    
+      } else if (var == "Hydraulic Head") {
+	value = 0.0;
+	volume = 0.0;
+	
+	Teuchos::RCP<const Epetra_Vector> hydraulic_head = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("hydraulic_head")->ViewComponent("cell", false))(0));
+	
+	for (int i=0; i<mesh_block_size; ++i) {
+	  int ic = entity_ids[i];
+	  Amanzi::AmanziGeometry::Point p = state.GetMesh()->cell_centroid(ic);
+	  value += (*hydraulic_head)[ic] * state.GetMesh()->cell_volume(ic);
+	  volume += state.GetMesh()->cell_volume(ic);
+	}
+      } else if ( (var == "Aqueous mass flow rate") || (var == "Aqueous volumetric flow rate")) {
+	value = 0.0;
+	volume = 0.0;
+	
+	// get the region object
+	AmanziGeometry::GeometricModelPtr gm_ptr = state.GetMesh()->geometric_model();
+	AmanziGeometry::RegionPtr reg_ptr = gm_ptr->FindRegion((i->second).region);
+	if (reg_ptr->type() != AmanziGeometry::POLYGON) {
+	  
+	}
+	AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
+	
+	AmanziGeometry::Point reg_normal = poly_reg->normal();
+	
+	Teuchos::RCP<const Epetra_Vector> darcy_flux = 
+	  Teuchos::rcpFromRef(*(*state.GetFieldData("darcy_flux")->ViewComponent("face", false))(0));      
+	
+	double density(1.0);
+	if (var == "Aqueous mass flow rate") {
+	  density = *state.GetScalarData("fluid_density") ;
+	}
+	
+	for (int i = 0; i != mesh_block_size; ++i) {
+	  int iface = entity_ids[i];
+	  Amanzi::AmanziGeometry::Point face_normal = state.GetMesh()->face_normal(iface);
+	  double area =  state.GetMesh()->face_area(iface);
+	  double sign = reg_normal * face_normal / area;
+	  
+	  value += sign * (*darcy_flux)[iface] * density;
+	  volume += area;
+	}
+	
+      } else {
+	std::stringstream ss;
+	ss << "Unstructured_observations::make_observations: cannot make an observation for variable " << name;
+	Errors::Message m(ss.str().c_str());
+	Exceptions::amanzi_throw(m);
+      }
+      
+      // syncronize the result across processors
+      
+      double result;
+      state.GetMesh()->get_comm()->SumAll(&value,&result,1);
+      
+      double vresult;
+      state.GetMesh()->get_comm()->SumAll(&volume,&vresult,1);
+      
+      
+      if ((i->second).functional == "Observation Data: Integral") {  
+	data_triplet.value = result;	
+      } else if ((i->second).functional == "Observation Data: Point") {
+	data_triplet.value = result/vresult;
+      }
+      
+      data_triplet.is_valid = true;
+      data_triplet.time = state.time();
+      
+      od.push_back(data_triplet);
     }
-    
-    // syncronize the result across processors
-    
-    double result;
-    state.GetMesh()->get_comm()->SumAll(&value,&result,1);
-    
-    double vresult;
-    state.GetMesh()->get_comm()->SumAll(&volume,&vresult,1);
-    
-    
-    if ((i->second).functional == "Observation Data: Integral") {  
-      data_triplet.value = result;	
-    } else if ((i->second).functional == "Observation Data: Point") {
-      data_triplet.value = result/vresult;
-    }
-    
-    data_triplet.is_valid = true;
-    data_triplet.time = state.time();
-    
-    od.push_back(data_triplet);
   }
 }
-
 
 
 bool Unstructured_observations::DumpRequested(const double time) {
