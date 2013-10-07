@@ -42,6 +42,27 @@ class DispersionModel {
 };
 
 
+struct FaceStencil {
+ public:
+  FaceStencil() {};
+  ~FaceStencil() {};
+
+  void Init(int d) {
+    p.init(d);
+    weights.resize(2 * d);
+    stencil.resize(2 * d);
+    faces.resize(2 * d);
+  }
+
+ public:
+  AmanziGeometry::Point p;  // harmonic averaging point
+  double gamma;  // coefficient for cell with the lowest id 
+  std::vector<double> weights;  // weights in positive decompositions
+  std::vector<int> stencil;  // ids of cells in positive decompositions
+  std::vector<int> faces;  // ids of interface faces
+};
+
+
 class Matrix_Dispersion {
  public:
   Matrix_Dispersion() {};
@@ -52,6 +73,7 @@ class Matrix_Dispersion {
   void Init(std::vector<Teuchos::RCP<DispersionModel> >& specs, 
             const std::string& preconditioner, 
             const Teuchos::ParameterList& prec_list);
+
   void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   void ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
@@ -59,18 +81,21 @@ class Matrix_Dispersion {
                                  const Epetra_Vector& porosity,
                                   const Epetra_Vector& saturation);
   void SymbolicAssembleGlobalMatrix();
-  void AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS);
-  void AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_State>& TS);
   void AddTimeDerivative(double dT, const Epetra_Vector& porosity, 
                          const Epetra_Vector& saturation);
+
+  // TPFA members
+  void AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS);
+
+  // NLFV members
+  void InitNLFV();  // additional initialization of nonlinear scheme
+  void CreateFluxStencils();
+  void AssembleGlobalMatrixNLFV(const Epetra_Vector& p);
 
   void UpdatePreconditioner() { preconditioner_->Update(App_); }
 
  private:
-  void PopulateHarmonicPoints();
-  void ExtractBoundaryConditions(const int component,
-                                 std::vector<int>& bc_face_id,
-                                 std::vector<double>& bc_face_value);
+  void PopulateHarmonicPoints_();
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -81,10 +106,8 @@ class Matrix_Dispersion {
 
   std::vector<Teuchos::RCP<DispersionModel> >* specs_;
 
-  std::vector<AmanziGeometry::Point> hap_points_;
-  std::vector<double> hap_weights_;
-
   std::vector<WhetStone::Tensor> D;
+  std::vector<FaceStencil> stencil_;
 
   Teuchos::RCP<Epetra_FECrsMatrix> App_;
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;

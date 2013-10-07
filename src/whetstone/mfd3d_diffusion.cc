@@ -47,7 +47,7 @@ int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
   Tensor Tinv(T);
-  Tinv.inverse();
+  Tinv.Inverse();
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
@@ -211,7 +211,7 @@ int MFD3D_Diffusion::MassMatrix(int cell, const Tensor& permeability, DenseMatri
   DenseMatrix Mc(nfaces, nfaces);
 
   Tensor permeability_inv(permeability);
-  permeability_inv.inverse();
+  permeability_inv.Inverse();
 
   int ok = L2consistency(cell, permeability_inv, N, Mc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;

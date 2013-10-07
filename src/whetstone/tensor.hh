@@ -38,11 +38,10 @@ class Tensor {
   int init(int d, int rank);
   void PutScalar(double val);
   double Trace() const;
-  double det();
-  void inverse();
-  void transpose();
-  double determinant();
-  void spectral_bounds(double* lower, double* upper) const;
+  double Det();
+  void Inverse();
+  void Transpose();
+  void SpectralBounds(double* lower, double* upper) const;
 
   // elementary operators
   Tensor& operator*=(const double& c);
@@ -53,8 +52,8 @@ class Tensor {
   // access members
   double& operator()(int i, int j) { return data_[i * size_ + j]; }
   double& operator()(int i, int j) const { return data_[i * size_ + j]; }
-  int add_column(const int column, const AmanziGeometry::Point& p); 
-  int add_row(const int row, const AmanziGeometry::Point& p); 
+  int AddColumn(const int column, const AmanziGeometry::Point& p); 
+  int AddRow(const int row, const AmanziGeometry::Point& p); 
 
   int dimension() const { return d_; }
   int rank() const { return rank_; }

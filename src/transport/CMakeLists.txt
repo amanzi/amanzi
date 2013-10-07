@@ -150,6 +150,11 @@ if ( BUILD_TESTS )
 	                KIND unit
                         SOURCE test/Main.cc test/transport_subcycling.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+        add_amanzi_test(transport_matrix transport_matrix
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_matrix.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
 
     if ( ENABLE_STK_Mesh )

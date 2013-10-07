@@ -46,6 +46,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
   parameter_list = parameter_list_MPC.sublist("Transport");
   preconditioners_list = parameter_list_MPC.sublist("Preconditioners");
   solvers_list = parameter_list_MPC.sublist("Solvers");
+  nonlin_solvers_list = parameter_list_MPC.sublist("Nonlinear solvers");
 
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
@@ -153,10 +154,10 @@ int Transport_PK::InitPK()
   }
  
   // dispersivity models
-  if (dispersion_models.size() != 0) {
-    dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
-    dispersion_matrix->Init(dispersion_models, dispersion_preconditioner, preconditioners_list);
-    dispersion_matrix->SymbolicAssembleGlobalMatrix();
+  if (dispersion_models_.size() != 0) {
+    dispersion_matrix_ = Teuchos::rcp(new Matrix_Dispersion(mesh_));
+    dispersion_matrix_->Init(dispersion_models_, dispersion_preconditioner, preconditioners_list);
+    dispersion_matrix_->SymbolicAssembleGlobalMatrix();
   }
   return 0;
 }
@@ -396,23 +397,33 @@ void Transport_PK::Advance(double dT_MPC)
     *(vo_->os()) << "species #0: mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
   }
 
-  if (dispersion_models.size() != 0) {
+  if (dispersion_models_.size() != 0) {
     const Epetra_Vector& phi = TS->ref_porosity();
     const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
-    dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
+    dispersion_matrix_->CalculateDispersionTensor(flux, phi, ws);
 
     if (dispersion_method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
-      dispersion_matrix->AssembleGlobalMatrixTPFA(TS);
+      dispersion_matrix_->AssembleGlobalMatrixTPFA(TS);
     } else if (dispersion_method == TRANSPORT_DISPERSION_METHOD_NLFV) {
-      dispersion_matrix->AssembleGlobalMatrixNLFV(TS);
+      dispersion_matrix_->InitNLFV();
+      dispersion_matrix_->CreateFluxStencils();
+
+      double* data;  // convert ghosted vector to owned vector
+      tcc_next(0)->ExtractView(&data);
+      const Epetra_Map& cmap = mesh_->cell_map(false);
+      Epetra_Vector sol(View, cmap, data);
+
+      dispersion_matrix_->AssembleGlobalMatrixNLFV(sol);
     }
-    dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
-    dispersion_matrix->UpdatePreconditioner();
+    dispersion_matrix_->AddTimeDerivative(dT_MPC, phi, ws);
+    dispersion_matrix_->UpdatePreconditioner();
 
     AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> >
-       solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix);
+       solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix_);
+
+    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // We want at least one iteration
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
     Epetra_Vector rhs(cmap);
@@ -434,6 +445,7 @@ void Transport_PK::Advance(double dT_MPC)
       residual += solver->residual();
       num_itrs += solver->num_itrs();
     }
+
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *(vo_->os()) << "dispersion solver (" << solver->name() 

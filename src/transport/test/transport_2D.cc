@@ -44,15 +44,14 @@ cout << "Test: Advance on a 2D square mesh" << endl;
 #endif
 
   /* read parameter list */
-  ParameterList parameter_list;
+  ParameterList plist;
   string xmlFileName = "test/transport_2D.xml";
-  // DEPRECATED   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   ParameterXMLFileReader xmlreader(xmlFileName);
-  parameter_list = xmlreader.getParameters();
+  plist = xmlreader.getParameters();
 
   /* create an MSTK mesh framework */
-  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
 
   FrameworkPreference pref;
@@ -77,7 +76,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   TS->set_total_component_concentration(0.0,1);
 
   /* initialize a transport process kernel from a transport state */
-  Transport_PK TPK(parameter_list, TS);
+  Transport_PK TPK(plist, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
 

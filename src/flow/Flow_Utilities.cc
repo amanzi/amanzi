@@ -130,10 +130,10 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
 
         for (int i = 0; i < d; i++) {
           int f = faces[i];
-          N.add_row(i, mesh_->face_normal(f));
+          N.AddRow(i, mesh_->face_normal(f));
           tmp[i] = flux_wghost[f];
         }
-        N.inverse();
+        N.Inverse();
         local_velocity += N * tmp;
       }
       local_velocity /= (double)ncells;

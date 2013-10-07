@@ -43,12 +43,6 @@ void Matrix_Dispersion::Init(std::vector<Teuchos::RCP<DispersionModel> >& specs,
 
   dim = mesh_->space_dimension();
 
-  // allocate memory (do it dynamically ?)
-  hap_points_.resize(nfaces_wghost);
-  for (int f = 0; f < nfaces_wghost; f++) hap_points_[f].init(dim);
-
-  hap_weights_.resize(nfaces_wghost);
-
   D.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
 
@@ -207,35 +201,40 @@ void Matrix_Dispersion::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_St
 }
 
 
-/* ******************************************************************
-* Calculate and assemble fluxes using the NLFV scheme.
-****************************************************************** */
-void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_State>& TS)
+/* *******************************************************************
+* Allocate necessary structures for the nonlinear scheme.
+******************************************************************* */
+void Matrix_Dispersion::InitNLFV()
 {
-  // calculate harmonic averaging points
+  int d = mesh_->space_dimension();
+  stencil_.resize(nfaces_wghost);
+  for (int f = 0; f < nfaces_wghost; f++) stencil_[f].Init(d);
+}
+
+
+/* ******************************************************************
+* Create face-based flux stencils.
+****************************************************************** */
+void Matrix_Dispersion::CreateFluxStencils()
+{
   WhetStone::NLFV nlfv(mesh_);
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
-  std::vector<AmanziGeometry::Point> pts(nfaces_wghost);
-  std::vector<double> weights(nfaces_wghost);
-
-  for (int f = 0; f < nfaces_wghost; f++) {
-    nlfv.HarmonicAveragingPoint(f, D, pts[f], weights[f]);
+  // calculate harmonic averaging points
+  for (int f = 0; f < nfaces_owned; f++) {
+    nlfv.HarmonicAveragingPoint(f, D, stencil_[f].p, stencil_[f].gamma);
   }
 
   // calculate coefficients in positive decompositions of conormals
-  int d = mesh_->space_dimension();
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
 
+  int d = mesh_->space_dimension();
   AmanziGeometry::Point conormal(d), v(d);
   std::vector<AmanziGeometry::Point> tau;
 
-  double coefs[nfaces_wghost][2 * d];
-  int  stencil[nfaces_wghost][2 * d];
-
-  int fid[nfaces_wghost];
-  for (int f = 0; f < nfaces_wghost; f++) fid[f] = 0;
+  std::vector<int> fpointer;
+  fpointer.assign(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -246,42 +245,47 @@ void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_St
 
     tau.clear();
     for (int i = 0; i < nfaces; i++) {
-      v = pts[faces[i]] - xc;
+      int f = faces[i];
+      v = stencil_[f].p - xc;
       tau.push_back(v);
     }
 
     // calculate positive decomposition of the conormals
     int ids[d];
     double ws[d];
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
+    for (int n = 0; n < nfaces; n++) {
+      int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      conormal = (D[c] * normal) * dirs[i];
+      conormal = (D[c] * normal) * dirs[n];
 
-      nlfv.PositiveDecomposition(i, tau, conormal, ws, ids);
-      if (fid[f] == 0) {
-        coefs[f][0] = ws[0];
-        coefs[f][1] = ws[1];
-        stencil[f][0] = mfd3d.cell_get_face_adj_cell(c, faces[ids[0]]);
-        stencil[f][1] = mfd3d.cell_get_face_adj_cell(c, faces[ids[1]]);
-        fid[f] = 1;
-      } else {
-        coefs[f][2] = ws[0];
-        coefs[f][3] = ws[1];
-        stencil[f][2] = mfd3d.cell_get_face_adj_cell(c, faces[ids[0]]);
-        stencil[f][3] = mfd3d.cell_get_face_adj_cell(c, faces[ids[1]]);
-        fid[f] = 2;
+      nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
+
+      int k = fpointer[f];
+      for (int i = 0; i < d; i++) {
+        stencil_[f].weights[k + i] = ws[i];
+        stencil_[f].stencil[k + i] = mfd3d.cell_get_face_adj_cell(c, faces[ids[i]]);
+        stencil_[f].faces[k + i] = faces[ids[i]];
       }
+      fpointer[f] += d;
     }
   }
+}
 
-  // calculate fluxes (loop over faces)
 
-  // populate the matrix (loop over faces)
+/* ******************************************************************
+* Calculate and assemble fluxes using the NLFV scheme. We avoid 
+* round-off operations since the stencils already incorporate them.
+****************************************************************** */
+void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Epetra_Vector& p)
+{
+  AmanziMesh::Entity_ID_List cells;
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  int cells_GID[3];
-  double Bpp[3];
 
+  int d = mesh_->space_dimension();
+  int cells_GID[d + 1];
+  double Bpp[d + 1];
+
+  // populate the global matrix (loop over internal faces)
   App_->PutScalar(0.0);
 
   for (int f = 0; f < nfaces_owned; f++) {
@@ -289,36 +293,111 @@ void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Teuchos::RCP<Transport_St
     int ncells = cells.size();
     if (ncells < 2) continue;
 
-    int c1 = cmap_wghost.GID(cells[0]);
-    int c2 = cmap_wghost.GID(cells[1]);
-
+    // Select cell with the smallest id. Since \gamma is 
+    // associated with the first cell it must be swapped.
+    double gamma_tpfa = stencil_[f].gamma;
+    int c1 = cells[0];
+    int c2 = cells[1];
     if (c1 > c2) {
       int c = c1;
       c1 = c2;
       c2 = c;
+      gamma_tpfa = 1.0 - gamma_tpfa;
     }
 
+    // calculate non-TPFA fluxes. Typically g1 * g2 <= 0.0
+    double g1 = 0.0;
+    for (int i = 1; i < d; i++) {
+      int c3 = stencil_[f].stencil[i];
+      if (c3 >= 0) {
+        int f1 = stencil_[f].faces[i];
+        double gamma = stencil_[f1].gamma;
+        if (c3 < c1) gamma = 1.0 - gamma;
+
+        double tmp = stencil_[f].weights[i] *gamma;
+        g1 += tmp * (p[c1] - p[c3]);
+      }
+    }
+
+    double g2 = 0.0;
+    for (int i = 1; i < d; i++) {
+      int c3 = stencil_[f].stencil[i + d];
+      if (c3 >= 0) {
+        int f1 = stencil_[f].faces[i + d];
+        double gamma = stencil_[f1].gamma;
+        if (c3 < c2) gamma = 1.0 - gamma;
+
+        double tmp = stencil_[f].weights[i + d] * gamma;
+        g2 += tmp * (p[c2] - p[c3]);
+      }
+    }
+
+    // calculate TPFA flux
+    double w1, w2, tpfa, gg, mu(0.5);
+    gg = g1 * g2;
+    g1 = fabs(g1);
+    g2 = fabs(g2);
+    if (g1 + g2 != 0.0) mu = g2 / (g1 + g2);
+
+    w1 = stencil_[f].weights[0] * gamma_tpfa;
+    w2 = stencil_[f].weights[d] * gamma_tpfa;
+    tpfa = mu * w1 + (1.0 - mu) * w2;
+
+    // add fluxes to the matrix
+    c1 = cmap_wghost.GID(c1);
+    c2 = cmap_wghost.GID(c2);
+
+    int m = 1;
     cells_GID[0] = c1;
-    cells_GID[1] = cmap_wghost.GID(stencil[f][0]);
-    cells_GID[2] = cmap_wghost.GID(stencil[f][1]);
+    cells_GID[1] = c2;
+    Bpp[0] =  tpfa;
+    Bpp[1] = -tpfa;
 
-    double factor = mesh_->face_area(f) / mesh_->cell_volume(c1);
-    Bpp[0] = (coefs[f][0] + coefs[f][1]) * factor;
-    Bpp[1] = -coefs[f][0] * factor;
-    Bpp[2] = -coefs[f][1] * factor;
+    if (gg <= 0.0) { 
+      for (int i = 1; i < d; i++) {
+        int c3 = stencil_[f].stencil[i];
+        if (c3 >= 0) {
+          m++;
+          cells_GID[m] = cmap_wghost.GID(c3);
 
-    App_->SumIntoGlobalValues(1, &c1, 3, cells_GID, Bpp);
+          int f1 = stencil_[f].faces[i];
+          double gamma = stencil_[f1].gamma;
+          if (c3 < c1) gamma = 1.0 - gamma;
 
-    factor = mesh_->face_area(f) / mesh_->cell_volume(c2);
+          double tmp = 2 * stencil_[f].weights[i] * gamma * mu;
+          Bpp[0] += tmp;
+          Bpp[m] = -tmp;
+        }
+      }
+    }
+
+    App_->SumIntoGlobalValues(1, &c1, m + 1, cells_GID, Bpp);
+
+    m = 1;
     cells_GID[0] = c2;
-    cells_GID[1] = cmap_wghost.GID(stencil[f][2]);
-    cells_GID[2] = cmap_wghost.GID(stencil[f][3]);
+    cells_GID[1] = c1;
+    Bpp[0] =  tpfa;
+    Bpp[1] = -tpfa;
 
-    Bpp[0] = (coefs[f][2] + coefs[f][3]) * factor;
-    Bpp[1] = -coefs[f][2] * factor;
-    Bpp[2] = -coefs[f][3] * factor;
+    if (gg <= 0.0) { 
+      for (int i = 1; i < d; i++) {
+        int c3 = stencil_[f].stencil[i + d];
+        if (c3 >= 0) {
+          m++;
+          cells_GID[m] = cmap_wghost.GID(c3);
 
-    App_->SumIntoGlobalValues(1, &c2, 3, cells_GID, Bpp);
+          int f1 = stencil_[f].faces[i + d];
+          double gamma = stencil_[f1].gamma;
+          if (c3 < c2) gamma = 1.0 - gamma;
+
+          double tmp = 2 * stencil_[f].weights[i + d] * gamma * (1.0 - mu);
+          Bpp[0] += tmp;
+          Bpp[m] = -tmp;
+        }
+      }
+    }
+
+    App_->SumIntoGlobalValues(1, &c2, m + 1, cells_GID, Bpp);
   }
   App_->GlobalAssemble();
 }
@@ -357,42 +436,6 @@ void Matrix_Dispersion::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 void Matrix_Dispersion::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   preconditioner_->ApplyInverse(v, hv);
-}
-
-
-/* *******************************************************************
-* Collect time-dependent boundary data in face-based arrays.                               
-******************************************************************* */
-void Matrix_Dispersion::ExtractBoundaryConditions(const int component,
-                                             std::vector<int>& bc_face_id,
-                                             std::vector<double>& bc_face_value)
-{
-  bc_face_id.assign(nfaces_wghost, 0);
-
-  /*
-  for (int n = 0; n < bcs.size(); n++) {
-    if (component == bcs_tcc_index[n]) {
-      for (Amanzi::Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
-        int f = bc->first;
-        bc_face_id[f] = TRANSPORT_BC_CONSTANT_TCC;
-        bc_face_value[f] = bc->second;
-      }
-    }
-  }
-  */
-}
-
-
-/* *******************************************************************
-* Calculate harmonic averaging points and related weigths.
-******************************************************************* */
-void Matrix_Dispersion::PopulateHarmonicPoints()
-{
-  WhetStone::NLFV nlfv(mesh_);
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    nlfv.HarmonicAveragingPoint(f, D, hap_points_[f], hap_weights_[f]);
-  }
 }
 
 

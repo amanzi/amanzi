@@ -23,7 +23,8 @@ namespace WhetStone {
 * materials where (a) continuity conditions are satisfied for 
 * continuous piecewise linear pressure functions and (b) pressure 
 * value is a convex combination of two neighboring cell-based 
-* prossures.
+* pressures p_0 and p_1:
+*   p = w p_0 + (1-x) p_1. 
 ****************************************************************** */
 void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
                                   AmanziGeometry::Point& p, double& weight)
@@ -67,82 +68,97 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
 
 /* ******************************************************************
 * Decomposion: conormal = w1 * tau[i1] + w2 * tau[i2] + w3 * tau[i3],
-* where the weights w1,w2,w3 >= 0.
-* We make three assumptions:
-* 1. The directions tau_i are normalized, ||tau_i||=1.
-* 2. The first direction is fized.
-* 3. conormal can be rewritten. 
+* where the weights ws = (w1, w2, w3) >= 0.
 ****************************************************************** */
 int NLFV::PositiveDecomposition(
     int id1, const std::vector<AmanziGeometry::Point>& tau,
-    AmanziGeometry::Point& conormal, double* ws, int* ids)
+    const AmanziGeometry::Point& conormal, double* ws, int* ids)
 {
   int d = mesh_->space_dimension();
   int ntau = tau.size();
 
-  double cnorm = norm(conormal);
-  conormal /= cnorm;
+  // default is the TPFA stencil 
+  double c1 = norm(tau[id1]);
+  double c2 = norm(conormal);
 
-  // elliminate first direction
   ids[0] = id1;
-
-  double w1 = conormal * tau[id1];  
-  ws[0] = w1 * cnorm;
-  if (w1 < 0.0) return -1;  // Perhaps this cell is non-convex.
-  for (int k = 0; k < d; k++) conormal[k] -= w1 * tau[id1][k];
-  
-  if (norm(conormal) < WHETSTONE_TOLERANCE_DECOMPOSITION) {
-    for (int k = 1; k < d; k++) {
-      ids[k] = (id1 + k) % ntau;
-      ws[k] = 0.0;
-    }
-    return 0;
+  ws[0] = c2 / c1;
+  for (int k = 1; k < d; k++) {
+    ids[k] = (id1 + k) % ntau;
+    ws[k] = 0.0;
   }
 
-  // find the second direction
-  int mtau = ntau - 1;
-  int jds[mtau];
+  // Check that the first direction is sufficient.
+  double cs = (conormal * tau[id1]) / (c1 * c2);
+  if (fabs(cs - 1.0) < WHETSTONE_TOLERANCE_DECOMPOSITION) return 0;
 
-  int id2 = -1;
-  double w2 = 0.0;
-  for (int i = 0; i < mtau; i++) {
-    int k = (id1 + i) % ntau;
-    jds[i] = k;
-    double tmp = conormal * tau[k];
-    if (tmp > w2) {
-      w2 = tmp;
-      id2 = k; 
-    }
-  }
-  ids[1] = id2;
-  ws[1] = w2;
-  if (id2 < 0) return -1;  // Perhaps this cell is non-convex.
-  for (int k = 0; k < d; k++) conormal[k] -= w2 * tau[id2][k];
+  // Find the other directions
+  Tensor T(d, 2);
+  double det = 0.0;
 
-  // find the third direction
-  if (d == 3) {
-    if (norm(conormal) < WHETSTONE_TOLERANCE_DECOMPOSITION) {
-      ids[2] = jds[(id2 + 1) % mtau];
-      ws[2] = 0.0;
-      return 0;
-    }
- 
-    ntau--;
-    mtau--;
+  if (d == 2) {
+    for (int i = 0; i < ntau; i++) {
+      if (i == id1) continue;
 
-    int id3 = -1;
-    double w3 = 0.0;
-    for (int i = 0; i < mtau; i++) {
-      int k = (id2 + i) % ntau;
-      double tmp = conormal * tau[k];
-      if (tmp > w3) {
-        w3 = tmp;
-        id3 = k; 
+      T.AddRow(0, tau[id1]);
+      T.AddRow(1, tau[i]);
+
+      // We skip almost colinear pairs.
+      c2 = norm(tau[i]);
+      double tmp = fabs(T.Det()) / (c1 * c2);
+      if (tmp < WHETSTONE_TOLERANCE_DECOMPOSITION) continue;
+
+      T.Inverse();
+      AmanziGeometry::Point p = T * conormal;
+
+      // We look for the strongest pair of vectors and try to 
+      // avoid degenerate cases to improve robustness.
+      if (p[0] >= 0.0 && 
+          p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
+        if (tmp > det) {
+          det = tmp;
+          ws[0] = p[0];
+          ws[1] = fabs(p[1]);
+          ids[1] = i; 
+        }
       }
     }
-    ids[2] = id3;
-    ws[2] = w3;
-    if (id3 < 0) return -1;  // Perhaps this cell is non-convex.
+  } else if (d == 3) {
+    for (int i = 0; i < ntau; i++) {
+      if (i == id1) continue;
+
+      c2 = norm(tau[i]);
+      for (int j = i + 1; j < ntau; j++) {
+        if (j == id1) continue;
+
+        T.AddRow(0, tau[id1]);
+        T.AddRow(1, tau[i]);
+        T.AddRow(2, tau[j]);
+
+        // We skip almost colinear pairs.
+        double c3 = norm(tau[j]);
+        double tmp = fabs(T.Det()) / (c1 * c2 * c3);
+        if (tmp < WHETSTONE_TOLERANCE_DECOMPOSITION) continue;
+
+        T.Inverse();
+        AmanziGeometry::Point p = T * conormal;
+
+        // We look for the strongest triple of vectors and try to 
+        // avoid degenerate cases to improve robustness.
+        if (p[0] >= 0.0 && 
+            p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION &&
+            p[2] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
+          if (tmp > det) {
+            det = tmp;
+            ws[0] = p[0];
+            ws[1] = fabs(p[1]);
+            ws[2] = fabs(p[2]);
+            ids[1] = i; 
+            ids[2] = j; 
+          }
+        }
+      }
+    }
   }
 
   return 0;

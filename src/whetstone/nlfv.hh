@@ -36,7 +36,7 @@ class NLFV {
 
   int PositiveDecomposition(
       int id1, const std::vector<AmanziGeometry::Point>& tau,
-      AmanziGeometry::Point& conormal, double* ws, int* ids);
+      const AmanziGeometry::Point& conormal, double* ws, int* ids);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
