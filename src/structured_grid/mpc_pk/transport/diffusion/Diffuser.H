@@ -62,7 +62,7 @@
         : opOld(new DiffuserOp<Vector,Op>(_oldOp,_Wold)),
           opNew(new DiffuserOp<Vector,Op>(_newOp,_Wnew)),
           Volume(volume), X(volume), Y(volume) {}
-      ~Diffuser() {delete opOld, opNew;}
+      ~Diffuser() {delete opOld; delete opNew;}
       void Diffuse(const Vector* Sold, Vector& Snew, const Vector& dRhs, Real t_old, Real t_new, Real abs_tol, Real rel_tol) {
 
         Real dt = t_new - t_old;

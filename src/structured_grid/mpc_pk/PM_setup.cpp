@@ -1383,6 +1383,7 @@ PorousMedia::read_rock()
         delete kappa_func;
         delete Dmolec_func;
         delete Tortuosity_func;
+        delete Dispersivity_func;
         delete SpecificStorage_func;
         delete krel_func;
         delete cpl_func;
@@ -2405,8 +2406,8 @@ void  PorousMedia::read_tracer()
   ntracers = pp.countval("tracers");
   if (ntracers > 0)
   {
-      tic_array.resize(ntracers);
-      tbc_array.resize(ntracers);
+    tic_array.resize(ntracers);
+    tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
 
       for (int i = 0; i<ntracers; i++)
@@ -2590,7 +2591,7 @@ void  PorousMedia::read_source()
 
   int nsources = pp.countval("sources");
   if (nsources>0) {
-    source_array.resize(nsources);
+    source_array.resize(nsources,PArrayManage);
     tsource_array.resize(nsources);
     Array<std::string> source_names(nsources);
     pp.getarr("sources",source_names,0,nsources);
@@ -2641,7 +2642,7 @@ void  PorousMedia::read_source()
 	  if (ntracers_with_sources>0) {
 	    Array<std::string> tracers_with_sources;
 	    pps_c.getarr("tracers_with_sources",tracers_with_sources,0,ntracers_with_sources);
-	    tsource_array[i].resize(ntracers);
+	    tsource_array[i].resize(ntracers, PArrayManage);
 	    
 	    for (int it=0; it<tracers_with_sources.size(); ++it) {
 	      const std::string& tName = tracers_with_sources[it];
@@ -2658,6 +2659,9 @@ void  PorousMedia::read_source()
 		      int ntvars = pps_c_t.countval("vals");
 		      BL_ASSERT(ntvars>0);
 		      Array<Real> tvals; pps_c_t.getarr("vals",tvals,0,ntvars);
+                      for (int k=0; k<ntvars; ++k) {
+                        tvals[k] *= 1/density[0]; // Solutes evolved as sat.C rather than rho.sat.C
+                      }
 		      tsource_array[i].set(t_pos, new RegionData(source_name,source_regions,tsource_type,tvals));
 		    }
 		  else {
