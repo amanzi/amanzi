@@ -17,7 +17,7 @@ Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc);
 std::string get_amanzi_version(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_model_description(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
-Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
+Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList* def_list);
 Teuchos::ParameterList get_phases(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
 Teuchos::ParameterList get_materials(xercesc::DOMDocument* xmlDoc, Teuchos::ParameterList def_list);
@@ -28,6 +28,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 double get_time_value(std::string time_value, Teuchos::ParameterList def_list);
 double get_double_constant(std::string pos_name, Teuchos::ParameterList def_list);
 int get_int_constant(std::string pos_name, Teuchos::ParameterList def_list);
+Teuchos::Array<std::string> make_regions_list(char* char_array);
 
 static bool isUnstr_ ;
 static int dimension_;
