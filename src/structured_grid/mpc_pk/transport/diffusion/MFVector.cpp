@@ -35,7 +35,7 @@ namespace Amanzi {
         fabX.mult(a,0,nComp());
       }
       if (b!=0) {
-        t.resize(fabX.box(),nComp());
+        t.resize(mfi.validbox(),nComp());
         t.copy(fabY,0,0,nComp());
         if (b!=1) {
           t.mult(b,0,nComp());
@@ -57,7 +57,7 @@ namespace Amanzi {
         fabX.mult(a,0,nComp());
       }
       if (b!=0) {
-        t.resize(fabX.box(),nComp());
+        t.resize(mfi.validbox(),nComp());
         t.copy(fabY,0,0,nComp());
         t.invert(b,0,nComp());
         fabX.plus(t,0,0,nComp());
@@ -84,7 +84,7 @@ namespace Amanzi {
         for (MFIter mfi(*this); mfi.isValid(); ++mfi) {
           FArrayBox& fabX = (*this)[mfi];
           const FArrayBox& fabY = Y[mfi];
-          t.resize(fabX.box(),nComp());
+          t.resize(mfi.validbox(),nComp());
           t.copy(fabY,0,0,nComp());
           if (a!=1) {
             t.mult(a,0,nComp());
@@ -102,7 +102,7 @@ namespace Amanzi {
       for (MFIter mfi(*this); mfi.isValid(); ++mfi) {
         FArrayBox& fabX = (*this)[mfi];
         const FArrayBox& fabY = Y[mfi];
-        t.resize(fabX.box(),nComp());
+        t.resize(mfi.validbox(),nComp());
         t.copy(fabY,0,0,nComp());
         t.invert(a,0,nComp());
         fabX.mult(t,0,0,nComp());
