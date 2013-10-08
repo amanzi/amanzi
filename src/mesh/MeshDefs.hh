@@ -35,6 +35,14 @@ typedef std::string Set_Name;
 typedef std::vector<Entity_ID> Entity_ID_List;
 typedef std::vector<Set_ID> Set_ID_List;
 
+// Mesh Type
+
+enum Mesh_type
+{
+  RECTANGULAR,   // Equivalent of structured but can't use i,j,k notation
+  GENERAL        // general unstructured
+};
+
 // Cells (aka zones/elements) are the highest dimension entities in a mesh 
 // Nodes (aka vertices) are lowest dimension entities in a mesh 
 // Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
