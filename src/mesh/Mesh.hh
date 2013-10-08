@@ -33,6 +33,7 @@ class Mesh
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normal0, face_normal1;
   mutable Entity_ID_List cell_cellabove, cell_cellbelow, node_nodeabove;
+  mutable Mesh_type mesh_type_;
   AmanziGeometry::GeometricModelPtr geometric_model_;
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
@@ -58,8 +59,8 @@ class Mesh
   // constructor
 
   Mesh()
-    : spacedim(3), celldim(3), geometry_precomputed(false), columns_built(false),
-      comm(NULL),geometric_model_(NULL)
+    : spacedim(3), celldim(3), mesh_type_(GENERAL), geometry_precomputed(false), 
+      columns_built(false), comm(NULL), geometric_model_(NULL)
   {
   }
 
@@ -101,8 +102,20 @@ class Mesh
   }
 
 
+  // Set/Get mesh type - RECTANGULAR, GENERAL (See MeshDefs.hh)
 
-  // Get parallel type of entity
+  inline
+  void set_mesh_type(const Mesh_type mesh_type) {
+    mesh_type_ = mesh_type;
+  }
+
+  inline
+  Mesh_type mesh_type() const {
+    return mesh_type_;
+  }
+
+
+  // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
 
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
@@ -110,11 +123,13 @@ class Mesh
 
 
   // Parent entity in the source mesh if mesh was derived from another mesh
+
   virtual
   Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
 
 
-  // Get cell type
+  // Get cell type - UNKNOWN, TRI, QUAD, POLYGON, TET, PRISM, PYRAMID, HEX, POLYHED 
+  // See MeshDefs.hh
 
   virtual
   Cell_type cell_get_type(const Entity_ID cellid) const = 0;
