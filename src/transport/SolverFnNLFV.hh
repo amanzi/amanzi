@@ -34,7 +34,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
     const Epetra_Vector& flux = TS->ref_darcy_flux();
     const Epetra_Vector& ws = TS->ref_water_saturation();
 
-    Teuchos::RCP<Matrix_Dispersion> matrix = TPK_->dispersion_matrix();
+    Teuchos::RCP<Dispersion_TPFA> matrix = TPK_->dispersion_matrix();
     matrix->CalculateDispersionTensor(flux, phi, ws);
     matrix->InitNLFV();
     matrix->CreateFluxStencils();
@@ -74,7 +74,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
 template<class Vector>
 void SolverFnNLFV<Vector>::Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<Vector>& r)
 {
-  Teuchos::RCP<Matrix_Dispersion> matrix = TPK_->dispersion_matrix();
+  Teuchos::RCP<Dispersion_TPFA> matrix = TPK_->dispersion_matrix();
   Teuchos::RCP<Transport_State> TS = TPK_->transport_state();
 
   matrix->AssembleGlobalMatrixNLFV(*u);
@@ -92,8 +92,8 @@ template<class Vector>
 void SolverFnNLFV<Vector>::ApplyPreconditioner(
     const Teuchos::RCP<const Vector>& v, const Teuchos::RCP<Vector>& hv)
 {
-  AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> >
+  AmanziSolvers::LinearOperatorFactory<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create("Dispersion Solver", TPK_->solvers_list, TPK_->dispersion_matrix());
 
   solver->ApplyInverse(*v, *hv);

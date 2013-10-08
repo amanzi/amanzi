@@ -1,10 +1,10 @@
-#ifndef   __TENSOR_HH__
-#define   __TENSOR_HH__
+#ifndef AMANZI_TENSOR_HH_
+#define AMANZI_TENSOR_HH_
 
 /*
-Tensors of rank 1 are numbers in all dimensions.
-Tensors of rank 2 are square matrices in all dimensions.
-Only symmetric tensors of rank 4 are considered here.
+  Tensors of rank 1 are numbers in all dimensions.
+  Tensors of rank 2 are square matrices in all dimensions.
+  Only symmetric tensors of rank 4 are considered here.
 */
 
 #include <iostream>

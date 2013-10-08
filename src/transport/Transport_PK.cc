@@ -27,7 +27,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
-#include "Matrix_Dispersion.hh"
+#include "Dispersion_TPFA.hh"
 #include "LinearOperatorFactory.hh"
 
 
@@ -155,8 +155,9 @@ int Transport_PK::InitPK()
  
   // dispersivity models
   if (dispersion_models_.size() != 0) {
-    dispersion_matrix_ = Teuchos::rcp(new Matrix_Dispersion(mesh_));
-    dispersion_matrix_->Init(dispersion_models_, dispersion_preconditioner, preconditioners_list);
+    dispersion_matrix_ = Teuchos::rcp(new Dispersion_TPFA(&dispersion_models_, mesh_, TS));
+    dispersion_matrix_->Init();
+    dispersion_matrix_->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
     dispersion_matrix_->SymbolicAssembleGlobalMatrix();
   }
   return 0;
@@ -419,8 +420,8 @@ void Transport_PK::Advance(double dT_MPC)
     dispersion_matrix_->AddTimeDerivative(dT_MPC, phi, ws);
     dispersion_matrix_->UpdatePreconditioner();
 
-    AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> >
+    AmanziSolvers::LinearOperatorFactory<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> >
        solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix_);
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // We want at least one iteration

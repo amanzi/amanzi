@@ -21,101 +21,17 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "PreconditionerFactory.hh"
 
 #include "TransportDefs.hh"
-#include "Matrix_Dispersion.hh"
+#include "Dispersion_TPFA.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
-
-/* *******************************************************************
-* Initialization of a class.
-******************************************************************* */
-void Matrix_Dispersion::Init(std::vector<Teuchos::RCP<DispersionModel> >& specs, 
-                             const std::string& preconditioner, 
-                             const Teuchos::ParameterList& prec_list)
-{
-  specs_ = &specs;
-
-  ncells_owned  = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-
-  nfaces_owned  = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
-  dim = mesh_->space_dimension();
-
-  D.resize(ncells_owned);
-  for (int c = 0; c < ncells_owned; c++) D[c].init(dim, 2);
-
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(preconditioner, prec_list);
-}
-
-
-/* *******************************************************************
- * Calculate a dispersive tensor the from Darcy fluxes. The flux is
- * assumed to be scaled by face area.
- ****************************************************************** */
-void Matrix_Dispersion::CalculateDispersionTensor(const Epetra_Vector& darcy_flux, 
-                                                  const Epetra_Vector& porosity, 
-                                                  const Epetra_Vector& saturation)
-{
-  for (int mb = 0; mb < specs_->size(); mb++) {
-    Teuchos::RCP<DispersionModel> spec = (*specs_)[mb]; 
-
-    std::vector<AmanziMesh::Entity_ID> block;
-    for (int r = 0; r < (spec->regions).size(); r++) {
-      std::string region = (spec->regions)[r];
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-
-      AmanziMesh::Entity_ID_List::iterator c;
-      for (c = block.begin(); c != block.end(); c++) {
-        D[*c].PutScalar(0.0); 
-        if (spec->model == TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC) {
-          for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->alphaL + spec->D * spec->tau;
-          }
-          D[*c] *= porosity[*c] * saturation[*c];
-        } else {
-          WhetStone::MFD3D_Diffusion mfd3d(mesh_);
-
-          AmanziMesh::Entity_ID_List faces;
-          std::vector<int> dirs;
-          AmanziGeometry::Point velocity(dim);
-
-          mesh_->cell_get_faces_and_dirs(*c, &faces, &dirs);
-          int nfaces = faces.size();
-
-          std::vector<double> flux(nfaces);
-          for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[faces[n]];
-          mfd3d.RecoverGradient_MassMatrix(*c, flux, velocity);
-          velocity /= porosity[*c];  // pore velocity
-
-          double velocity_value = norm(velocity);
-          double anisotropy = spec->alphaL - spec->alphaT;
-
-          for (int i = 0; i < dim; i++) {
-            D[*c](i, i) = spec->D * spec->tau + spec->alphaT * velocity_value;
-            for (int j = i; j < dim; j++) {
-              double s = anisotropy * velocity[i] * velocity[j];
-              if (velocity_value) s /= velocity_value;
-              D[*c](j, i) = D[*c](i, j) += s;
-            }
-          }
-
-          D[*c] *= porosity[*c] * saturation[*c];
-        }
-      }
-    }
-  }
-}
-
 
 /* ******************************************************************
 * Initialize Trilinos matrices. It must be called only once. 
 * If matrix is non-symmetric, we generate transpose of the matrix 
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
-void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
+void Dispersion_TPFA::SymbolicAssembleGlobalMatrix()
 {
   const Epetra_Map& cmap_owned = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -148,7 +64,7 @@ void Matrix_Dispersion::SymbolicAssembleGlobalMatrix()
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
 ****************************************************************** */
-void Matrix_Dispersion::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS)
+void Dispersion_TPFA::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS)
 {
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -204,7 +120,7 @@ void Matrix_Dispersion::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_St
 /* *******************************************************************
 * Allocate necessary structures for the nonlinear scheme.
 ******************************************************************* */
-void Matrix_Dispersion::InitNLFV()
+void Dispersion_TPFA::InitNLFV()
 {
   int d = mesh_->space_dimension();
   stencil_.resize(nfaces_wghost);
@@ -215,7 +131,7 @@ void Matrix_Dispersion::InitNLFV()
 /* ******************************************************************
 * Create face-based flux stencils.
 ****************************************************************** */
-void Matrix_Dispersion::CreateFluxStencils()
+void Dispersion_TPFA::CreateFluxStencils()
 {
   WhetStone::NLFV nlfv(mesh_);
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -276,7 +192,7 @@ void Matrix_Dispersion::CreateFluxStencils()
 * Calculate and assemble fluxes using the NLFV scheme. We avoid 
 * round-off operations since the stencils already incorporate them.
 ****************************************************************** */
-void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Epetra_Vector& p)
+void Dispersion_TPFA::AssembleGlobalMatrixNLFV(const Epetra_Vector& p)
 {
   AmanziMesh::Entity_ID_List cells;
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -403,28 +319,10 @@ void Matrix_Dispersion::AssembleGlobalMatrixNLFV(const Epetra_Vector& p)
 }
 
 
-/* ******************************************************************
-* Adds time derivative to the cell-based part of MFD algebraic system.
-****************************************************************** */
-void Matrix_Dispersion::AddTimeDerivative(
-    double dT, const Epetra_Vector& porosity, const Epetra_Vector& saturation)
-{
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double volume = mesh_->cell_volume(c);
-    double factor = volume * porosity[c] * saturation[c] / dT;
-
-    int c_GID = cmap_wghost.GID(c);
-    App_->SumIntoGlobalValues(1, &c_GID, &factor);
-  }
-}
-
-
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Matrix_Dispersion::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
+void Dispersion_TPFA::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 {
   App_->Apply(v, av);
 }
@@ -433,9 +331,10 @@ void Matrix_Dispersion::Apply(const Epetra_Vector& v, Epetra_Vector& av) const
 /* *******************************************************************
 * Collect time-dependent boundary data in face-based arrays.                               
 ******************************************************************* */
-void Matrix_Dispersion::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+int Dispersion_TPFA::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
   preconditioner_->ApplyInverse(v, hv);
+  return 0;
 }
 
 
