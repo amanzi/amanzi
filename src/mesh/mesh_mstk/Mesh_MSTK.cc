@@ -249,6 +249,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
   pre_create_steps_(space_dimension, incomm, gm);
 
 
+  Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
 
 
   if (serial_run) {
@@ -335,6 +336,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     }
 
 
+  Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
+
+
   int topo_dim=space_dim; // What is the topological dimension of the mesh
   set_cell_dimension(topo_dim);
 
@@ -413,6 +417,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
   pre_create_steps_(space_dim, incomm, gm);
 
 
+  Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
 
 
   if (myprocid == 0) {

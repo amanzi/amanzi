@@ -26,6 +26,7 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
     z0_(z0), z1_(z1)
 {
   Mesh::set_comm(communicator);
+  Mesh::set_mesh_type(RECTANGULAR);
   if (gm != (AmanziGeometry::GeometricModelPtr) NULL) 
     Mesh::set_geometric_model(gm);
  
@@ -54,6 +55,7 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 			   const AmanziGeometry::GeometricModelPtr &gm)
 {
   Mesh::set_comm(communicator);
+  Mesh::set_mesh_type(RECTANGULAR);
   if (gm != (AmanziGeometry::GeometricModelPtr) NULL) 
     Mesh::set_geometric_model(gm);
 
@@ -66,6 +68,7 @@ Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
                           const AmanziGeometry::GeometricModelPtr &gm)
 {
   Mesh::set_comm(communicator);
+  Mesh::set_mesh_type(RECTANGULAR);
   if (gm != (AmanziGeometry::GeometricModelPtr) NULL) 
     Mesh::set_geometric_model(gm);
 
