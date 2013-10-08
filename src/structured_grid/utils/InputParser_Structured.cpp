@@ -211,7 +211,8 @@ namespace Amanzi {
       ParameterList& mac_out_list     = struc_out_list.sublist("mac");
       ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
       ParameterList& io_out_list      = struc_out_list.sublist("vismf");
-      ParameterList& fab_out_list     = struc_out_list.sublist("fabarray");
+      ParameterList& fabarr_out_list  = struc_out_list.sublist("fabarray");
+      ParameterList& fab_out_list     = struc_out_list.sublist("fab");
 
       ParameterList& chem_out_list    = prob_out_list.sublist("amanzi");
 
@@ -905,7 +906,7 @@ namespace Amanzi {
       cg_out_list.set("v",cg_v);
       prob_out_list.set("v",prob_v);
       io_out_list.set("v",io_v);
-      fab_out_list.set("verbose",fab_v);
+      fabarr_out_list.set("verbose",fab_v);
             
       for (int i=0; i<optL.size(); ++i)
       {
