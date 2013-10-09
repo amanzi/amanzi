@@ -22,6 +22,9 @@ class ThermalConductivityThreePhaseEvaluator :
     public SecondaryVariableFieldEvaluator {
 
  public:
+
+  typedef std::pair<std::string,Teuchos::RCP<ThermalConductivityThreePhase> > RegionModelPair;
+
   // constructor format for all derived classes
   ThermalConductivityThreePhaseEvaluator(Teuchos::ParameterList& plist);
   ThermalConductivityThreePhaseEvaluator(const ThermalConductivityThreePhaseEvaluator& other);
@@ -35,7 +38,8 @@ class ThermalConductivityThreePhaseEvaluator :
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Teuchos::RCP<ThermalConductivityThreePhase> tc_;
+  
+  std::vector<RegionModelPair> tcs_;
 
   // Keys for fields
   // dependencies
