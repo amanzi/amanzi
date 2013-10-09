@@ -53,11 +53,12 @@ class Dispersion {
   ~Dispersion() {};
 
   // required members
-  virtual void SymbolicAssembleGlobalMatrix() = 0;
-  virtual void AssembleGlobalMatrix(const Epetra_Vector& p) = 0;
+  virtual void SymbolicAssembleMatrix() {};  // It fixes a large stencil S.
+  virtual void ModifySymbolicAssemble() {};  // It allows to tweak the stencil a little.
+  virtual void AssembleMatrix(const Epetra_Vector& p) {};
 
-  virtual void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const = 0;
-  virtual int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const = 0;
+  virtual void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const {};
+  virtual int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const {};
 
   // generic members
   void Init();

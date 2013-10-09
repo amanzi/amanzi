@@ -12,6 +12,7 @@
 #include "DispersionMatrixFactory.hh"
 #include "Dispersion.hh"
 #include "Dispersion_TPFA.hh"
+#include "Dispersion_NLFV.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -24,8 +25,14 @@ Teuchos::RCP<Dispersion> DispersionMatrixFactory::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
 {
   if (matrix_name == "tpfa") {
-    Teuchos::RCP<Dispersion_TPFA> prec = Teuchos::rcp(new Dispersion_TPFA(specs, mesh, TS));
-    return prec;
+    Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(specs, mesh, TS));
+    matrix->Init();
+    return matrix;
+  } else if (matrix_name == "nlfv") {
+    Teuchos::RCP<Dispersion_NLFV> matrix = Teuchos::rcp(new Dispersion_NLFV(specs, mesh, TS));
+    matrix->Init();
+    matrix->InitNLFV();  // additional initialization
+    return matrix;
   } else {
     std::stringstream msgstream;
     msgstream << "DispersionMatrixFactory: Unknown matrix name " << matrix_name;

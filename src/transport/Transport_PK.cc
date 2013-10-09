@@ -27,7 +27,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
-#include "Dispersion_TPFA.hh"
+#include "Dispersion.hh"
+#include "DispersionMatrixFactory.hh"
 #include "LinearOperatorFactory.hh"
 
 
@@ -151,14 +152,6 @@ int Transport_PK::InitPK()
   // source term memory allocation (revisit the code (lipnikov@lanl.gov)
   if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  }
- 
-  // dispersivity models
-  if (dispersion_models_.size() != 0) {
-    dispersion_matrix_ = Teuchos::rcp(new Dispersion_TPFA(&dispersion_models_, mesh_, TS));
-    dispersion_matrix_->Init();
-    dispersion_matrix_->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
-    dispersion_matrix_->SymbolicAssembleGlobalMatrix();
   }
   return 0;
 }
@@ -400,31 +393,26 @@ void Transport_PK::Advance(double dT_MPC)
 
   if (dispersion_models_.size() != 0) {
     const Epetra_Vector& phi = TS->ref_porosity();
+    const Epetra_Vector& ws = TS->ref_water_saturation();
     const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
+    DispersionMatrixFactory mfactory;
+    dispersion_matrix_ = mfactory.Create("tpfa", &dispersion_models_, mesh_, TS_nextBIG);
+
     dispersion_matrix_->CalculateDispersionTensor(flux, phi, ws);
-
-    if (dispersion_method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
-      dispersion_matrix_->AssembleGlobalMatrixTPFA(TS);
-    } else if (dispersion_method == TRANSPORT_DISPERSION_METHOD_NLFV) {
-      dispersion_matrix_->InitNLFV();
-      dispersion_matrix_->CreateFluxStencils();
-
-      double* data;  // convert ghosted vector to owned vector
-      tcc_next(0)->ExtractView(&data);
-      const Epetra_Map& cmap = mesh_->cell_map(false);
-      Epetra_Vector sol(View, cmap, data);
-
-      dispersion_matrix_->AssembleGlobalMatrixNLFV(sol);
-    }
+    dispersion_matrix_->SymbolicAssembleMatrix();
+    dispersion_matrix_->ModifySymbolicAssemble();
+    dispersion_matrix_->AssembleMatrix(phi);
     dispersion_matrix_->AddTimeDerivative(dT_MPC, phi, ws);
+
+    dispersion_matrix_->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
     dispersion_matrix_->UpdatePreconditioner();
 
-    AmanziSolvers::LinearOperatorFactory<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> >
-       solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix_);
+    AmanziSolvers::LinearOperatorFactory<Dispersion, Epetra_Vector, Epetra_BlockMap> sfactory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion, Epetra_Vector, Epetra_BlockMap> >
+       solver = sfactory.Create(dispersion_solver, solvers_list, dispersion_matrix_);
 
-    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // We want at least one iteration
+    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
     const Epetra_Map& cmap = mesh_->cell_map(false);
     Epetra_Vector rhs(cmap);
@@ -443,6 +431,7 @@ void Transport_PK::Advance(double dT_MPC)
       Epetra_Vector sol(View, cmap, data);
 
       solver->ApplyInverse(rhs, sol);
+
       residual += solver->residual();
       num_itrs += solver->num_itrs();
     }

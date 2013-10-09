@@ -25,27 +25,6 @@
 namespace Amanzi {
 namespace AmanziTransport {
 
-struct FaceStencil {
- public:
-  FaceStencil() {};
-  ~FaceStencil() {};
-
-  void Init(int d) {
-    p.init(d);
-    weights.resize(2 * d);
-    stencil.resize(2 * d);
-    faces.resize(2 * d);
-  }
-
- public:
-  AmanziGeometry::Point p;  // harmonic averaging point
-  double gamma;  // coefficient for cell with the lowest id 
-  std::vector<double> weights;  // weights in positive decompositions
-  std::vector<int> stencil;  // ids of cells in positive decompositions
-  std::vector<int> faces;  // ids of interface faces
-};
-
-
 class Dispersion_TPFA : public Dispersion {
  public:
   Dispersion_TPFA() {};
@@ -58,20 +37,8 @@ class Dispersion_TPFA : public Dispersion {
   void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const;
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
-  void SymbolicAssembleGlobalMatrix();
-  void AssembleGlobalMatrix(const Epetra_Vector& p) { AssembleGlobalMatrixTPFA(TS_); }
-  void AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS);
-
-  // NLFV members
-  void InitNLFV();  // additional initialization of nonlinear scheme
-  void CreateFluxStencils();
-  void AssembleGlobalMatrixNLFV(const Epetra_Vector& p);
-
- private:
-  void PopulateHarmonicPoints_();
-
- private:
-  std::vector<FaceStencil> stencil_;
+  void SymbolicAssembleMatrix();
+  void AssembleMatrix(const Epetra_Vector& p);
 };
 
 }  // namespace AmanziTransport

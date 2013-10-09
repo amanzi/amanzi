@@ -25,6 +25,9 @@
 #include "Transport_State.hh"
 #include "Transport_PK.hh"
 #include "DispersionMatrixFactory.hh"
+#include "Dispersion.hh"
+#include "Dispersion_TPFA.hh"
+#include "Dispersion_NLFV.hh"
 
 using namespace Teuchos;
 using namespace Amanzi;
@@ -121,7 +124,7 @@ SUITE(DISPERSION_MATRIX) {
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_TPFA) {
     cout << endl
-         << "Test: bi-quartic solution with TPFA (no convergence)" << endl;
+         << "Test: TPFA matrix (no spatial convergence)" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -132,9 +135,9 @@ SUITE(DISPERSION_MATRIX) {
     Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(&(TPK->dispersion_models()), mesh, TS));
     matrix->Init();
     matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
-    matrix->SymbolicAssembleGlobalMatrix();
+    matrix->SymbolicAssembleMatrix();
     matrix->CalculateDispersionTensor(flux, phi, ws);
-    matrix->AssembleGlobalMatrixTPFA(TS);
+    matrix->AssembleMatrix(phi);
 
     /* populate right-hand side and solution */
     Epetra_Vector u(phi), r(phi), b(phi);
@@ -155,7 +158,7 @@ SUITE(DISPERSION_MATRIX) {
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_NLFV) {
     cout << endl
-         << "Test: bi-quartic solution with NLFV (spartial convergence)" << endl;
+         << "Test: NLFV matrix (spartial convergence)" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -164,14 +167,13 @@ SUITE(DISPERSION_MATRIX) {
     const Epetra_Vector& ws = TS->ref_water_saturation();
 
     /* create matrix */
-    Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(&(TPK->dispersion_models()), mesh, TS));
+    Teuchos::RCP<Dispersion_NLFV> matrix = Teuchos::rcp(new Dispersion_NLFV(&(TPK->dispersion_models()), mesh, TS));
     matrix->Init();
-    matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
-
-    matrix->SymbolicAssembleGlobalMatrix();
-    matrix->CalculateDispersionTensor(flux, phi, ws);
     matrix->InitNLFV();
-    matrix->CreateFluxStencils();
+    matrix->CalculateDispersionTensor(flux, phi, ws);
+
+    matrix->SymbolicAssembleMatrix();
+    matrix->ModifySymbolicAssemble();
 
     /* populate solution and right-hand side */
     Epetra_Vector u(phi), b(phi);
@@ -179,7 +181,7 @@ SUITE(DISPERSION_MATRIX) {
     InitRHS(b, 1.0);
 
     /* update matrix */
-    matrix->AssembleGlobalMatrixNLFV(u);
+    matrix->AssembleMatrix(u);
     matrix->AddTimeDerivative(1.0, phi, ws);
 
     /* Compute residual */
@@ -198,7 +200,7 @@ SUITE(DISPERSION_MATRIX) {
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_FACTORY) {
     cout << endl
-         << "Test: bi-quartic solution with TPFA (using factory)" << endl;
+         << "Test: Factory of matrices" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -208,16 +210,18 @@ SUITE(DISPERSION_MATRIX) {
 
     DispersionMatrixFactory factory;
     Teuchos::RCP<Dispersion> matrix = factory.Create("tpfa", &(TPK->dispersion_models()), mesh, TS);
-    matrix->Init();
     matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
-    matrix->SymbolicAssembleGlobalMatrix();
+
     matrix->CalculateDispersionTensor(flux, phi, ws);
-    matrix->AssembleGlobalMatrix(phi);
+    matrix->SymbolicAssembleMatrix();
+    matrix->ModifySymbolicAssemble();
 
     /* populate right-hand side and solution */
     Epetra_Vector u(phi), r(phi), b(phi);
     InitSOL(u);
     InitRHS(b, 0.0);
+
+    matrix->AssembleMatrix(u);
 
     /* calcualte residual */
     matrix->Apply(u, r);
@@ -232,9 +236,9 @@ SUITE(DISPERSION_MATRIX) {
   }
 
   /* **************************************************************** */
-  TEST_FIXTURE(Problem, MATRIX_NLFV_SOLVER) {
+  TEST_FIXTURE(Problem, MATRIX_PICARD) {
     cout << endl 
-         << "Test: bi-quartic solution with NLFV (nonlinear convergence)" << endl;
+         << "Test: Nonlinear convergence" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -242,19 +246,19 @@ SUITE(DISPERSION_MATRIX) {
     const Epetra_Vector& flux = TS->ref_darcy_flux();
     const Epetra_Vector& ws = TS->ref_water_saturation();
 
-    Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(&(TPK->dispersion_models()), mesh, TS));
+    Teuchos::RCP<Dispersion_NLFV> matrix = Teuchos::rcp(new Dispersion_NLFV(&(TPK->dispersion_models()), mesh, TS));
     matrix->Init();
-    matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
-
-    matrix->SymbolicAssembleGlobalMatrix();
-    matrix->CalculateDispersionTensor(flux, phi, ws);
     matrix->InitNLFV();
-    matrix->CreateFluxStencils();
+
+    matrix->CalculateDispersionTensor(flux, phi, ws);
+    matrix->SymbolicAssembleMatrix();
+    matrix->ModifySymbolicAssemble();
 
     /* create matrix */
     Epetra_Vector u(phi);
     u.PutScalar(1.0);
-    matrix->AssembleGlobalMatrixNLFV(u);
+
+    matrix->AssembleMatrix(u);
     matrix->AddTimeDerivative(1.0, phi, ws);
 
     /* populate right-hand side */
@@ -264,15 +268,16 @@ SUITE(DISPERSION_MATRIX) {
     double bnorm; 
     b.Norm2(&bnorm);
 
+    matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
     matrix->UpdatePreconditioner();
 
-    AmanziSolvers::LinearOperatorFactory<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> >
-       solver = factory.Create("Dispersion Solver", plist.sublist("Solvers"), matrix);
+    AmanziSolvers::LinearOperatorFactory<Dispersion_NLFV, Epetra_Vector, Epetra_BlockMap> factory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion_NLFV, Epetra_Vector, Epetra_BlockMap> >
+        solver = factory.Create("Dispersion Solver", plist.sublist("Solvers"), matrix);
 
     double snorm, residual; 
     for (int n = 0; n < 10; n++) {
-      matrix->AssembleGlobalMatrixNLFV(u);
+      matrix->AssembleMatrix(u);
       matrix->AddTimeDerivative(1.0, phi, ws);
 
       u.Norm2(&snorm);
@@ -300,9 +305,9 @@ SUITE(DISPERSION_MATRIX) {
   }
 
   /* **************************************************************** */
-  TEST_FIXTURE(Problem, MATRIX_NLFV_PICARD) {
+  TEST_FIXTURE(Problem, MATRIX_SOLVER) {
     cout << endl 
-         << "Test: bi-quartic solution with NLFV (Picard)" << endl;
+         << "Test: NLFV coupled with Newton" << endl;
     Init();
 
     /* populate the solution guess and right-hand side */
@@ -313,18 +318,34 @@ SUITE(DISPERSION_MATRIX) {
     u->PutScalar(1.0);
     InitRHS(*b, 1.0);
 
+    /* create matrix sparcity structure */
+    const Epetra_Vector& flux = TS->ref_darcy_flux();
+    const Epetra_Vector& ws = TS->ref_water_saturation();
+
+    DispersionMatrixFactory factory;
+    Teuchos::RCP<Dispersion> matrix = TPK->dispersion_matrix();
+    matrix = factory.Create("nlfv", &(TPK->dispersion_models()), mesh, TS);
+    matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
+cout << TPK << endl;
+cout << matrix << endl;
+cout << TPK->dispersion_matrix() << endl;
+
+    matrix->CalculateDispersionTensor(flux, phi, ws);
+    matrix->SymbolicAssembleMatrix();
+    matrix->ModifySymbolicAssemble();
+
     /* create the function class */
     Teuchos::RCP<SolverFnNLFV<Epetra_Vector> > fn = 
         Teuchos::rcp(new SolverFnNLFV<Epetra_Vector>(mesh, TPK, b));
 
-    // create the Solver
+    /* create nonlinear solver */
     const Epetra_BlockMap& map = b->Map();
     Teuchos::ParameterList& nlist = TPK->nonlin_solvers_list;
 
     Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap> > picard =
         Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(nlist, fn, map));
 
-    picard->Solve(u);
+    // picard->Solve(u);
   }
 }
 

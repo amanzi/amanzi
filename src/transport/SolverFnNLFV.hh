@@ -1,9 +1,8 @@
 /*
-  This is the transport component of the Amanzi code.
+  This is the Transport component of Amanzi.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-
 
 #ifndef AMANZI_TRANSPORT_SOLVER_FN_NLFV_
 #define AMANZI_TRANSPORT_SOLVER_FN_NLFV_
@@ -28,17 +27,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
  public:
   SolverFnNLFV(Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
                Teuchos::RCP<Transport_PK> TPK, Teuchos::RCP<Vector> b) :
-      mesh_(mesh), TPK_(TPK), b_(b) {
-    Teuchos::RCP<Transport_State> TS = TPK_->transport_state();
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& flux = TS->ref_darcy_flux();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-
-    Teuchos::RCP<Dispersion_TPFA> matrix = TPK_->dispersion_matrix();
-    matrix->CalculateDispersionTensor(flux, phi, ws);
-    matrix->InitNLFV();
-    matrix->CreateFluxStencils();
-  }
+      mesh_(mesh), TPK_(TPK), b_(b) {}
 
   ~SolverFnNLFV() {};
 
@@ -74,11 +63,13 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
 template<class Vector>
 void SolverFnNLFV<Vector>::Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<Vector>& r)
 {
-  Teuchos::RCP<Dispersion_TPFA> matrix = TPK_->dispersion_matrix();
   Teuchos::RCP<Transport_State> TS = TPK_->transport_state();
-
-  matrix->AssembleGlobalMatrixNLFV(*u);
-  matrix->AddTimeDerivative(TPK_->TimeStep(), TS->ref_porosity(), TS->ref_water_saturation());
+  const Epetra_Vector& phi = TS->ref_porosity();
+  const Epetra_Vector& ws = TS->ref_water_saturation();
+ 
+  Teuchos::RCP<Dispersion> matrix = TPK_->dispersion_matrix();
+  matrix->AssembleMatrix(*u);
+  matrix->AddTimeDerivative(TPK_->TimeStep(), phi, ws);
 
   matrix->Apply(*u, *r);
   r->Update(1.0, *b_, -1.0);
@@ -92,8 +83,8 @@ template<class Vector>
 void SolverFnNLFV<Vector>::ApplyPreconditioner(
     const Teuchos::RCP<const Vector>& v, const Teuchos::RCP<Vector>& hv)
 {
-  AmanziSolvers::LinearOperatorFactory<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion_TPFA, Epetra_Vector, Epetra_BlockMap> >
+  AmanziSolvers::LinearOperatorFactory<Dispersion, Epetra_Vector, Epetra_BlockMap> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion, Epetra_Vector, Epetra_BlockMap> >
      solver = factory.Create("Dispersion Solver", TPK_->solvers_list, TPK_->dispersion_matrix());
 
   solver->ApplyInverse(*v, *hv);

@@ -34,7 +34,7 @@
 #include "TransportDefs.hh"
 #include "Transport_State.hh"
 #include "Transport_SourceFactory.hh"
-#include "Dispersion_TPFA.hh"
+#include "Dispersion.hh"
 
 
 /*
@@ -78,7 +78,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> transport_state_next() { return TS_nextMPC; }
   Transport_State& ref_transport_state_next() { return *TS_nextBIG; }
   std::vector<Teuchos::RCP<DispersionModel> >& dispersion_models() { return dispersion_models_; }
-  Teuchos::RCP<Dispersion_TPFA> dispersion_matrix() { return dispersion_matrix_; }
+  Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
   double TimeStep() { return dT; }
   void TimeStep(double dT_) { dT = dT_; }
 
@@ -187,7 +187,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  Teuchos::RCP<Dispersion_TPFA> dispersion_matrix_; // data for dispersion
+  Teuchos::RCP<Dispersion> dispersion_matrix_;  // data for dispersion
   std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;
   int dispersion_method;
   std::string dispersion_preconditioner;

@@ -31,7 +31,7 @@ namespace AmanziTransport {
 * If matrix is non-symmetric, we generate transpose of the matrix 
 * block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
-void Dispersion_TPFA::SymbolicAssembleGlobalMatrix()
+void Dispersion_TPFA::SymbolicAssembleMatrix()
 {
   const Epetra_Map& cmap_owned = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -64,7 +64,7 @@ void Dispersion_TPFA::SymbolicAssembleGlobalMatrix()
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
 ****************************************************************** */
-void Dispersion_TPFA::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_State>& TS)
+void Dispersion_TPFA::AssembleMatrix(const Epetra_Vector& p)
 {
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -87,7 +87,7 @@ void Dispersion_TPFA::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_Stat
       T[f] += 1.0 / Mff(n, n);
     }
   }
-  TS->CombineGhostFace2MasterFace(T, Add);
+  TS_->CombineGhostFace2MasterFace(T, Add);
  
   // populate the global matrix
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -112,208 +112,6 @@ void Dispersion_TPFA::AssembleGlobalMatrixTPFA(const Teuchos::RCP<Transport_Stat
     }
 
     App_->SumIntoGlobalValues(ncells, cells_GID, Bpp.Values());
-  }
-  App_->GlobalAssemble();
-}
-
-
-/* *******************************************************************
-* Allocate necessary structures for the nonlinear scheme.
-******************************************************************* */
-void Dispersion_TPFA::InitNLFV()
-{
-  int d = mesh_->space_dimension();
-  stencil_.resize(nfaces_wghost);
-  for (int f = 0; f < nfaces_wghost; f++) stencil_[f].Init(d);
-}
-
-
-/* ******************************************************************
-* Create face-based flux stencils.
-****************************************************************** */
-void Dispersion_TPFA::CreateFluxStencils()
-{
-  WhetStone::NLFV nlfv(mesh_);
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
-
-  // calculate harmonic averaging points
-  for (int f = 0; f < nfaces_owned; f++) {
-    nlfv.HarmonicAveragingPoint(f, D, stencil_[f].p, stencil_[f].gamma);
-  }
-
-  // calculate coefficients in positive decompositions of conormals
-  AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
-
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point conormal(d), v(d);
-  std::vector<AmanziGeometry::Point> tau;
-
-  std::vector<int> fpointer;
-  fpointer.assign(nfaces_wghost, 0);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-    // calculate local directions
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    tau.clear();
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      v = stencil_[f].p - xc;
-      tau.push_back(v);
-    }
-
-    // calculate positive decomposition of the conormals
-    int ids[d];
-    double ws[d];
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      conormal = (D[c] * normal) * dirs[n];
-
-      nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
-
-      int k = fpointer[f];
-      for (int i = 0; i < d; i++) {
-        stencil_[f].weights[k + i] = ws[i];
-        stencil_[f].stencil[k + i] = mfd3d.cell_get_face_adj_cell(c, faces[ids[i]]);
-        stencil_[f].faces[k + i] = faces[ids[i]];
-      }
-      fpointer[f] += d;
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Calculate and assemble fluxes using the NLFV scheme. We avoid 
-* round-off operations since the stencils already incorporate them.
-****************************************************************** */
-void Dispersion_TPFA::AssembleGlobalMatrixNLFV(const Epetra_Vector& p)
-{
-  AmanziMesh::Entity_ID_List cells;
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-
-  int d = mesh_->space_dimension();
-  int cells_GID[d + 1];
-  double Bpp[d + 1];
-
-  // populate the global matrix (loop over internal faces)
-  App_->PutScalar(0.0);
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-    if (ncells < 2) continue;
-
-    // Select cell with the smallest id. Since \gamma is 
-    // associated with the first cell it must be swapped.
-    double gamma_tpfa = stencil_[f].gamma;
-    int c1 = cells[0];
-    int c2 = cells[1];
-    if (c1 > c2) {
-      int c = c1;
-      c1 = c2;
-      c2 = c;
-      gamma_tpfa = 1.0 - gamma_tpfa;
-    }
-
-    // calculate non-TPFA fluxes. Typically g1 * g2 <= 0.0
-    double g1 = 0.0;
-    for (int i = 1; i < d; i++) {
-      int c3 = stencil_[f].stencil[i];
-      if (c3 >= 0) {
-        int f1 = stencil_[f].faces[i];
-        double gamma = stencil_[f1].gamma;
-        if (c3 < c1) gamma = 1.0 - gamma;
-
-        double tmp = stencil_[f].weights[i] *gamma;
-        g1 += tmp * (p[c1] - p[c3]);
-      }
-    }
-
-    double g2 = 0.0;
-    for (int i = 1; i < d; i++) {
-      int c3 = stencil_[f].stencil[i + d];
-      if (c3 >= 0) {
-        int f1 = stencil_[f].faces[i + d];
-        double gamma = stencil_[f1].gamma;
-        if (c3 < c2) gamma = 1.0 - gamma;
-
-        double tmp = stencil_[f].weights[i + d] * gamma;
-        g2 += tmp * (p[c2] - p[c3]);
-      }
-    }
-
-    // calculate TPFA flux
-    double w1, w2, tpfa, gg, mu(0.5);
-    gg = g1 * g2;
-    g1 = fabs(g1);
-    g2 = fabs(g2);
-    if (g1 + g2 != 0.0) mu = g2 / (g1 + g2);
-
-    w1 = stencil_[f].weights[0] * gamma_tpfa;
-    w2 = stencil_[f].weights[d] * gamma_tpfa;
-    tpfa = mu * w1 + (1.0 - mu) * w2;
-
-    // add fluxes to the matrix
-    c1 = cmap_wghost.GID(c1);
-    c2 = cmap_wghost.GID(c2);
-
-    int m = 1;
-    cells_GID[0] = c1;
-    cells_GID[1] = c2;
-    Bpp[0] =  tpfa;
-    Bpp[1] = -tpfa;
-
-    if (gg <= 0.0) { 
-      for (int i = 1; i < d; i++) {
-        int c3 = stencil_[f].stencil[i];
-        if (c3 >= 0) {
-          m++;
-          cells_GID[m] = cmap_wghost.GID(c3);
-
-          int f1 = stencil_[f].faces[i];
-          double gamma = stencil_[f1].gamma;
-          if (c3 < c1) gamma = 1.0 - gamma;
-
-          double tmp = 2 * stencil_[f].weights[i] * gamma * mu;
-          Bpp[0] += tmp;
-          Bpp[m] = -tmp;
-        }
-      }
-    }
-
-    App_->SumIntoGlobalValues(1, &c1, m + 1, cells_GID, Bpp);
-
-    m = 1;
-    cells_GID[0] = c2;
-    cells_GID[1] = c1;
-    Bpp[0] =  tpfa;
-    Bpp[1] = -tpfa;
-
-    if (gg <= 0.0) { 
-      for (int i = 1; i < d; i++) {
-        int c3 = stencil_[f].stencil[i + d];
-        if (c3 >= 0) {
-          m++;
-          cells_GID[m] = cmap_wghost.GID(c3);
-
-          int f1 = stencil_[f].faces[i + d];
-          double gamma = stencil_[f1].gamma;
-          if (c3 < c2) gamma = 1.0 - gamma;
-
-          double tmp = 2 * stencil_[f].weights[i + d] * gamma * (1.0 - mu);
-          Bpp[0] += tmp;
-          Bpp[m] = -tmp;
-        }
-      }
-    }
-
-    App_->SumIntoGlobalValues(1, &c2, m + 1, cells_GID, Bpp);
   }
   App_->GlobalAssemble();
 }
