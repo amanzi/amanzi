@@ -45,19 +45,6 @@ void Dispersion::Init()
 
 
 /* *******************************************************************
-* Initialization of a class.
-******************************************************************* */
-void Dispersion::Init(
-    std::vector<Teuchos::RCP<DispersionModel> >* specs,
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS) 
-{
-  specs_ = specs;
-  mesh_ = mesh; 
-  TS_ = TS;
-}
-
-
-/* *******************************************************************
 * Initialization of a preconditioner
 ******************************************************************* */
 void Dispersion::InitPreconditioner(

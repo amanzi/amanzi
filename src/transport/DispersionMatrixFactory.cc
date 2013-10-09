@@ -20,10 +20,11 @@ namespace AmanziTransport {
  * Initialization of the dispersion matrix
  ****************************************************************** */
 Teuchos::RCP<Dispersion> DispersionMatrixFactory::Create(
-    const std::string& matrix_name, const Teuchos::ParameterList& matrix_list)
+    const string& matrix_name, std::vector<Teuchos::RCP<DispersionModel> >* specs,
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
 {
   if (matrix_name == "tpfa") {
-    Teuchos::RCP<Dispersion_TPFA> prec = Teuchos::rcp(new Dispersion_TPFA());
+    Teuchos::RCP<Dispersion_TPFA> prec = Teuchos::rcp(new Dispersion_TPFA(specs, mesh, TS));
     return prec;
   } else {
     std::stringstream msgstream;

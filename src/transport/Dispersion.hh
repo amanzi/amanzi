@@ -61,8 +61,6 @@ class Dispersion {
 
   // generic members
   void Init();
-  void Init(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-            Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS);
   void CalculateDispersionTensor(
       const Epetra_Vector& darcy_flux,
       const Epetra_Vector& porosity, const Epetra_Vector& saturation);

@@ -22,7 +22,8 @@ class DispersionMatrixFactory {
   ~DispersionMatrixFactory() {};
 
   Teuchos::RCP<Dispersion> Create(
-      const string& matrix_name, const Teuchos::ParameterList& matrix_list);
+     const string& matrix_name, std::vector<Teuchos::RCP<DispersionModel> >* specs,
+     Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS);
 };
 
 }  // namespace AmanziTransport
