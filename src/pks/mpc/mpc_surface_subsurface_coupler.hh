@@ -47,7 +47,9 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
 
   // pk info
+  int domain_pk_index_;
   Key domain_pk_name_;
+  int surf_pk_index_;
   Key surf_pk_name_;
   Teuchos::RCP<PKPhysicalBDFBase> surf_pk_;
   Teuchos::RCP<PKPhysicalBDFBase> domain_pk_;

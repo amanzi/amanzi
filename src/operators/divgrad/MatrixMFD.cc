@@ -68,8 +68,8 @@ void MatrixMFD::InitializeFromPList_() {
   } else if (methodstring == "support operator") {
     method_ = MFD3D_SUPPORT_OPERATOR;
   } else {
-	Errors::Message msg("MatrixMFD: unexpected discretization methods");
-	Exceptions::amanzi_throw(msg);
+    Errors::Message msg("MatrixMFD: unexpected discretization methods");
+    Exceptions::amanzi_throw(msg);
   }
 
   // vector space
@@ -96,8 +96,12 @@ void MatrixMFD::InitializeFromPList_() {
     Teuchos::ParameterList Aff_plist = plist_.sublist("consistent face solver");
     Aff_op_ = Teuchos::rcp(new EpetraMatrixDefault<Epetra_FECrsMatrix>(Aff_plist));
 
-    AmanziSolvers::LinearOperatorFactory<EpetraMatrix,Epetra_Vector,Epetra_BlockMap> op_fac;
-    Aff_solver_ = op_fac.Create(Aff_plist, Aff_op_);
+    if (Aff_plist.isParameter("iterative method")) {
+      AmanziSolvers::LinearOperatorFactory<EpetraMatrix,Epetra_Vector,Epetra_BlockMap> op_fac;
+      Aff_solver_ = op_fac.Create(Aff_plist, Aff_op_);
+    } else {
+      Aff_solver_ = Aff_op_;
+    }
   }
 }
 
@@ -617,6 +621,7 @@ int MatrixMFD::ApplyInverse(const CompositeVector& X,
     Errors::Message msg("MatrixMFD::ApplyInverse has failed in calculating y = A*x.");
     Exceptions::amanzi_throw(msg);
   }
+
   return ierr;
 }
 
@@ -802,6 +807,11 @@ void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVect
 void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
         const Teuchos::Ptr<CompositeVector>& Pu) {
   AssertAssembledOperator_or_die_();
+
+  if (Aff_op_ == Teuchos::null) {
+    Errors::Message msg("MatrixMFD::UpdateConsistentFaceCorrection was called, but no consistent face solver sublist was provided.");
+    Exceptions::amanzi_throw(msg);
+  }
 
   Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);
   Epetra_MultiVector& Pu_f = *Pu->ViewComponent("face", false);

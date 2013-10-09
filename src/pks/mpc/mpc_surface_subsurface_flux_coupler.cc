@@ -50,8 +50,8 @@ void MPCSurfaceSubsurfaceFluxCoupler::fun(double t_old, double t_new,
   solution_to_state(u_new, S_next_);
 
   // evaluate the residual of the surface equation
-  Teuchos::RCP<TreeVector> surf_u_new = u_new->SubVector(surf_pk_name_);
-  Teuchos::RCP<TreeVector> surf_g = g->SubVector(surf_pk_name_);
+  Teuchos::RCP<TreeVector> surf_u_new = u_new->SubVector(surf_pk_index_);
+  Teuchos::RCP<TreeVector> surf_g = g->SubVector(surf_pk_index_);
   surf_pk_->fun(t_old, t_new, Teuchos::null, surf_u_new, surf_g);
 
   // The residual of the surface equation provides the flux.  This is the mass
@@ -61,8 +61,8 @@ void MPCSurfaceSubsurfaceFluxCoupler::fun(double t_old, double t_new,
   *source->ViewComponent("cell",false) = *surf_g->Data()->ViewComponent("cell",false);
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-  Teuchos::RCP<TreeVector> domain_u_new = u_new->SubVector(domain_pk_name_);
-  Teuchos::RCP<TreeVector> domain_g = g->SubVector(domain_pk_name_);
+  Teuchos::RCP<TreeVector> domain_u_new = u_new->SubVector(domain_pk_index_);
+  Teuchos::RCP<TreeVector> domain_g = g->SubVector(domain_pk_index_);
   domain_pk_->fun(t_old, t_new, Teuchos::null, domain_u_new, domain_g);
 
   // Set the surf cell residual to 0.
@@ -106,7 +106,7 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconApply_(
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "  Precon applying the subsurf + surf TPFA operator." << std::endl;
 
-  domain_pk_->precon(u->SubVector(domain_pk_name_), Pu->SubVector(domain_pk_name_));
+  domain_pk_->precon(u->SubVector(domain_pk_index_), Pu->SubVector(domain_pk_index_));
 };
 
 
@@ -134,8 +134,8 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceCells_(
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "  Precon updating surface cells." << std::endl;
 
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->Data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->Data();
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_index_)->Data();
+  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_index_)->Data();
 
   int ncells_surf = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -168,8 +168,8 @@ void MPCSurfaceSubsurfaceFluxCoupler::PreconUpdateSurfaceFaces_(
     *vo_->os() << "  Precon updating surface faces." << std::endl;
 
   // update delta faces
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->Data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->Data();
+  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_index_)->Data();
+  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_index_)->Data();
   surf_preconditioner_->UpdateConsistentFaceCorrection(*surf_u, surf_Pu.ptr());
 }
 
@@ -213,25 +213,25 @@ void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
     *up2 = *up;
     int c = 4;
     int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    (*up_nc->SubVector(domain_pk_name_)->Data())("face",f) =
-        (*up_nc->SubVector(domain_pk_name_)->Data())("face",f) + .001;
-    (*up_nc->SubVector(surf_pk_name_)->Data())("cell",c) =
-        (*up_nc->SubVector(surf_pk_name_)->Data())("cell",c) + .001;
+    (*up_nc->SubVector(domain_pk_index_)->Data())("face",f) =
+        (*up_nc->SubVector(domain_pk_index_)->Data())("face",f) + .001;
+    (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) =
+        (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) + .001;
     changed_solution();
     fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
 
     std::cout << "DFDP: " << std::endl;
-    std::cout << "  p0 = " << (*up2->SubVector(domain_pk_name_)->Data())("face",f);
-    std::cout << "  sp0 = " << (*up2->SubVector(surf_pk_name_)->Data())("cell",c) << std::endl;
-    std::cout << "  p1 = " << (*up_nc->SubVector(domain_pk_name_)->Data())("face",f);
-    std::cout << "  sp1 = " << (*up_nc->SubVector(surf_pk_name_)->Data())("cell",c) << std::endl;
-    std::cout << "  f0 = " << (*f1->SubVector(domain_pk_name_)->Data())("face",f) << std::endl;
-    std::cout << "  f1 = " << (*f2->SubVector(domain_pk_name_)->Data())("face",f) << std::endl;
+    std::cout << "  p0 = " << (*up2->SubVector(domain_pk_index_)->Data())("face",f);
+    std::cout << "  sp0 = " << (*up2->SubVector(surf_pk_index_)->Data())("cell",c) << std::endl;
+    std::cout << "  p1 = " << (*up_nc->SubVector(domain_pk_index_)->Data())("face",f);
+    std::cout << "  sp1 = " << (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) << std::endl;
+    std::cout << "  f0 = " << (*f1->SubVector(domain_pk_index_)->Data())("face",f) << std::endl;
+    std::cout << "  f1 = " << (*f2->SubVector(domain_pk_index_)->Data())("face",f) << std::endl;
 
 
 
-    double df_dp = ((*f2->SubVector(domain_pk_name_)->Data())("face",f)
-                    -(*f1->SubVector(domain_pk_name_)->Data())("face",f)) / .001;
+    double df_dp = ((*f2->SubVector(domain_pk_index_)->Data())("face",f)
+                    -(*f1->SubVector(domain_pk_index_)->Data())("face",f)) / .001;
     std::cout << "DFDP = " << df_dp << std::endl;
   }
   */
@@ -251,7 +251,7 @@ bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor_for_flux_bc_(double h,
   // consistent with the flux BCs.
 
   // -- call surface's modify_predictor()
-  Teuchos::RCP<TreeVector> surf_u = up->SubVector(surf_pk_name_);
+  Teuchos::RCP<TreeVector> surf_u = up->SubVector(surf_pk_index_);
   surf_pk_->modify_predictor(h, surf_u);
 
   // -- call the surface residual function to get the surface flux BCs
@@ -265,7 +265,7 @@ bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor_for_flux_bc_(double h,
   *source->ViewComponent("cell",false) = *surf_g->Data()->ViewComponent("cell",false);
 
   // -- call the subsurface modify_predictor(), which uses those BCs
-  Teuchos::RCP<TreeVector> domain_u = up->SubVector(domain_pk_name_);
+  Teuchos::RCP<TreeVector> domain_u = up->SubVector(domain_pk_index_);
   domain_pk_->modify_predictor(h, domain_u);
 
   // ensure the surface and subsurface match

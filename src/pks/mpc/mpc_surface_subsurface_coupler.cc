@@ -39,15 +39,19 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
   // get the pk info
   if (sub_pks_[0]->name() == domain_pk_name_) {
     domain_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
+    domain_pk_index_ = 0;
     ASSERT(domain_pk_ != Teuchos::null);
     ASSERT(sub_pks_[1]->name() == surf_pk_name_);
     surf_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[1]);
+    surf_pk_index_ = 1;
     ASSERT(surf_pk_ != Teuchos::null);
   } else if (sub_pks_[1]->name() == domain_pk_name_) {
     domain_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[1]);
+    domain_pk_index_ = 1;
     ASSERT(domain_pk_ != Teuchos::null);
     ASSERT(sub_pks_[0]->name() == surf_pk_name_);
     surf_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
+    surf_pk_index_ = 0;
     ASSERT(surf_pk_ != Teuchos::null);
   } else {
     ASSERT(0);
@@ -64,9 +68,9 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_surf_to_subsurf_(double 
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "  Modifying predictor, copying surf -> sub-surf" << std::endl;
 
-  Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->Data()
+  Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_index_)->Data()
       ->ViewComponent("face",false);
-  const Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_name_)->Data()
+  const Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_index_)->Data()
       ->ViewComponent("cell",false);
 
   int ncells = surf_u_c.MyLength();
@@ -85,9 +89,9 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_subsurf_to_surf_(double 
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "  Modifying predictor, copying sub-surf -> surf" << std::endl;
 
-  const Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_name_)->Data()
+  const Epetra_MultiVector& domain_u_f = *up->SubVector(domain_pk_index_)->Data()
       ->ViewComponent("face",false);
-  Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_name_)->Data()
+  Epetra_MultiVector& surf_u_c = *up->SubVector(surf_pk_index_)->Data()
       ->ViewComponent("cell",false);
 
   int ncells = surf_u_c.MyLength();
@@ -103,13 +107,13 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor(double h,
         Teuchos::RCP<TreeVector> up) {
 
   // In most cases, we first deal with the subsurface, then the surface.
-  bool changed = domain_pk_->modify_predictor(h, up->SubVector(domain_pk_name_));
+  bool changed = domain_pk_->modify_predictor(h, up->SubVector(domain_pk_index_));
 
   // Ensure surface face values match subsurface values
   if (changed) modify_predictor_copy_subsurf_to_surf_(h, up);
 
   // Call the surface modify_predictor() to update surface faces.
-  changed |= surf_pk_->modify_predictor(h, up->SubVector(surf_pk_name_));
+  changed |= surf_pk_->modify_predictor(h, up->SubVector(surf_pk_index_));
 
   return changed;
 }

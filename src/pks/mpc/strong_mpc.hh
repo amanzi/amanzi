@@ -78,6 +78,9 @@ public:
   virtual bool modify_correction(double h, Teuchos::RCP<const TreeVector> res,
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
+protected:
+  using MPC<PK_t>::sub_pks_;
+
 private:
   // factory registration
   static RegisteredPKFactory<StrongMPC> reg_;
@@ -131,13 +134,11 @@ void StrongMPC<PK_t>::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u
   solution_to_state(u_new, S_next_);
 
   // loop over sub-PKs
-  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
-       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
-
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the old solution sub-vector
     Teuchos::RCP<TreeVector> pk_u_old(Teuchos::null);
     if (u_old != Teuchos::null) {
-      pk_u_old = u_old->SubVector((*pk)->name());
+      pk_u_old = u_old->SubVector(i);
       if (pk_u_old == Teuchos::null) {
         Errors::Message message("MPC: vector structure does not match PK structure");
         Exceptions::amanzi_throw(message);
@@ -145,21 +146,21 @@ void StrongMPC<PK_t>::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u
     }
 
     // pull out the new solution sub-vector
-    Teuchos::RCP<TreeVector> pk_u_new = u_new->SubVector((*pk)->name());
+    Teuchos::RCP<TreeVector> pk_u_new = u_new->SubVector(i);
     if (pk_u_new == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // pull out the residual sub-vector
-    Teuchos::RCP<TreeVector> pk_g = g->SubVector((*pk)->name());
+    Teuchos::RCP<TreeVector> pk_g = g->SubVector(i);
     if (pk_g == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // fill the nonlinear function with each sub-PKs contribution
-    (*pk)->fun(t_old, t_new, pk_u_old, pk_u_new, pk_g);
+    sub_pks_[i]->fun(t_old, t_new, pk_u_old, pk_u_new, pk_g);
   }
 };
 
@@ -170,25 +171,23 @@ void StrongMPC<PK_t>::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u
 template<class PK_t>
 void StrongMPC<PK_t>::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
   // loop over sub-PKs
-  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
-       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
-
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the u sub-vector
-    Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
     if (pk_u == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // pull out the preconditioned u sub-vector
-    Teuchos::RCP<TreeVector> pk_Pu = Pu->SubVector((*pk)->name());
+    Teuchos::RCP<TreeVector> pk_Pu = Pu->SubVector(i);
     if (pk_Pu == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // Fill the preconditioned u as the block-diagonal product using each sub-PK.
-    (*pk)->precon(pk_u, pk_Pu);
+    sub_pks_[i]->precon(pk_u, pk_Pu);
   }
 
 //   std::cout<<*(((Pu->SubVector("flow"))->Data())->ViewComponent("cell", false));
@@ -207,25 +206,23 @@ double StrongMPC<PK_t>::enorm(Teuchos::RCP<const TreeVector> u,
   double norm = 0.0;
 
   // loop over sub-PKs
-  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
-       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
-
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the u sub-vector
-    Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
     if (pk_u == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // pull out the du sub-vector
-    Teuchos::RCP<const TreeVector> pk_du = du->SubVector((*pk)->name());
+    Teuchos::RCP<const TreeVector> pk_du = du->SubVector(i);
     if (pk_du == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // norm is the max of the sub-PK norms
-    double tmp_norm = (*pk)->enorm(pk_u, pk_du);
+    double tmp_norm = sub_pks_[i]->enorm(pk_u, pk_du);
     norm = std::max(norm, tmp_norm);
   }
   return norm;
@@ -240,18 +237,16 @@ void StrongMPC<PK_t>::update_precon(double t, Teuchos::RCP<const TreeVector> up,
   PKDefaultBase::solution_to_state(up, S_next_);
 
   // loop over sub-PKs
-  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
-       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
-
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the up sub-vector
-    Teuchos::RCP<const TreeVector> pk_up = up->SubVector((*pk)->name());
+    Teuchos::RCP<const TreeVector> pk_up = up->SubVector(i);
     if (pk_up == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // update precons of each of the sub-PKs
-    (*pk)->update_precon(t, pk_up, h);
+    sub_pks_[i]->update_precon(t, pk_up, h);
   };
 };
 
@@ -276,19 +271,17 @@ template<class PK_t>
 bool StrongMPC<PK_t>::is_admissible(Teuchos::RCP<const TreeVector> u) {
   // First ensure each PK thinks we are admissible -- this will ensure
   // the residual can at least be evaluated.
-  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
-       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
-
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the u sub-vector
-    Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
     if (pk_u == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
-    if (!(*pk)->is_admissible(pk_u)) {
+    if (!sub_pks_[i]->is_admissible(pk_u)) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "PK " << (*pk)->name() << " is not admissible." << std::endl;
+        *vo_->os() << "PK " << sub_pks_[i]->name() << " is not admissible." << std::endl;
 
       return false;
     }
@@ -306,17 +299,15 @@ template<class PK_t>
 bool StrongMPC<PK_t>::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
   // loop over sub-PKs
   bool modified = false;
-  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
-       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
-
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the u sub-vector
-    Teuchos::RCP<TreeVector> pk_u = u->SubVector((*pk)->name());
+    Teuchos::RCP<TreeVector> pk_u = u->SubVector(i);
     if (pk_u == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
-    modified |= (*pk)->modify_predictor(h,pk_u);
+    modified |= sub_pks_[i]->modify_predictor(h,pk_u);
   }
   return modified;
 };
@@ -330,20 +321,18 @@ bool StrongMPC<PK_t>::modify_correction(double h, Teuchos::RCP<const TreeVector>
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   // loop over sub-PKs
   bool modified = false;
-  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
-       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
-
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
     // pull out the u sub-vector
-    Teuchos::RCP<const TreeVector> pk_u = u->SubVector((*pk)->name());
-    Teuchos::RCP<const TreeVector> pk_res = res->SubVector((*pk)->name());
-    Teuchos::RCP<TreeVector> pk_du = du->SubVector((*pk)->name());
+    Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
+    Teuchos::RCP<const TreeVector> pk_res = res->SubVector(i);
+    Teuchos::RCP<TreeVector> pk_du = du->SubVector(i);
 
     if (pk_u == Teuchos::null || pk_du == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
-    modified |= (*pk)->modify_correction(h, pk_res, pk_u, pk_du);
+    modified |= sub_pks_[i]->modify_correction(h, pk_res, pk_u, pk_du);
   }
   return modified;
 };

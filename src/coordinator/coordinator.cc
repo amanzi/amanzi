@@ -64,7 +64,7 @@ void Coordinator::coordinator_init() {
   const std::string &pk_name = pks_list.name(pk_item);
 
   // create the solution
-  soln_ = Teuchos::rcp(new TreeVector(pk_name));
+  soln_ = Teuchos::rcp(new TreeVector());
 
   // create the pk
   PKFactory pk_factory;

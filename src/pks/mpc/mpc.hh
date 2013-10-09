@@ -93,11 +93,11 @@ void MPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
 
     for (int i=0; i!=npks; ++i) {
       // create the solution vector
-      std::string name_i = pk_order[i];
-      Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(name_i));
+      Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
       solution_->PushBack(pk_soln);
 
       // create the PK
+      std::string name_i = pk_order[i];
       Teuchos::ParameterList pk_list = pks_list.sublist(name_i);
       pk_list.set("PK name", name_i);
       Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, pk_soln);
@@ -116,7 +116,7 @@ void MPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
       const Teuchos::ParameterEntry  &entry_i = pks_list.entry(i);
       if (entry_i.isList()) {
         // create the solution vector
-        Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(name_i));
+        Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
         solution_->PushBack(pk_soln);
 
         // create the PK
@@ -151,14 +151,13 @@ void MPC<PK_t>::initialize(const Teuchos::Ptr<State>& S) {
 template <class PK_t>
 void MPC<PK_t>::state_to_solution(const Teuchos::RCP<State>& S,
                             const Teuchos::RCP<TreeVector>& soln) {
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
-    Teuchos::RCP<TreeVector> pk_soln = soln->SubVector((*pk)->name());
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
+    Teuchos::RCP<TreeVector> pk_soln = soln->SubVector(i);
     if (pk_soln == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
-    (*pk)->state_to_solution(S, pk_soln);
+    sub_pks_[i]->state_to_solution(S, pk_soln);
   }
 };
 
@@ -169,14 +168,13 @@ void MPC<PK_t>::state_to_solution(const Teuchos::RCP<State>& S,
 template <class PK_t>
 void MPC<PK_t>::solution_to_state(const Teuchos::RCP<TreeVector>& soln,
                             const Teuchos::RCP<State>& S) {
-  for (typename SubPKList::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
-    Teuchos::RCP<TreeVector> pk_soln = soln->SubVector((*pk)->name());
+  for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
+    Teuchos::RCP<TreeVector> pk_soln = soln->SubVector(i);
     if (pk_soln == Teuchos::null) {
       Errors::Message message("MPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
-    (*pk)->solution_to_state(pk_soln, S);
+    sub_pks_[i]->solution_to_state(pk_soln, S);
   }
 };
 
