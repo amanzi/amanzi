@@ -92,9 +92,8 @@ class MFD3D_Diffusion : public MFD3D {
                                       const std::vector<double>& solution, 
                                       AmanziGeometry::Point& gradient);
 
-
  private:  
-  // supporting stability methods (add matrix Ms in M = Mc + Ms)
+  // stability methods (add matrix Ms in M = Mc + Ms)
   int StabilityMonotoneHex(int cell, const Tensor& T,
                            DenseMatrix& Mc, DenseMatrix& M);
 

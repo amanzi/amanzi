@@ -69,6 +69,8 @@ class Dispersion {
   void AddTimeDerivative(
       double dT, const Epetra_Vector& porosity, const Epetra_Vector& saturation);
 
+  const Epetra_Map& Range() { return App_->RowMap(); }
+
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& prec_list);
   void UpdatePreconditioner() { preconditioner_->Update(App_); }
 

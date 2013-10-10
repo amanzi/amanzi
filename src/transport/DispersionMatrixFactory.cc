@@ -12,6 +12,7 @@
 #include "DispersionMatrixFactory.hh"
 #include "Dispersion.hh"
 #include "Dispersion_TPFA.hh"
+#include "Dispersion_MFD.hh"
 #include "Dispersion_NLFV.hh"
 
 namespace Amanzi {
@@ -26,6 +27,10 @@ Teuchos::RCP<Dispersion> DispersionMatrixFactory::Create(
 {
   if (matrix_name == "tpfa") {
     Teuchos::RCP<Dispersion_TPFA> matrix = Teuchos::rcp(new Dispersion_TPFA(specs, mesh, TS));
+    matrix->Init();
+    return matrix;
+  } else if (matrix_name == "mfd") {
+    Teuchos::RCP<Dispersion_MFD> matrix = Teuchos::rcp(new Dispersion_MFD(specs, mesh, TS));
     matrix->Init();
     return matrix;
   } else if (matrix_name == "nlfv") {

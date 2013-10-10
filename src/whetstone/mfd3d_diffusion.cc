@@ -463,8 +463,8 @@ int MFD3D_Diffusion::MassMatrixInverseScaled(int cell, const Tensor& permeabilit
 /* ******************************************************************
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseHex(int cell, const Tensor& permeability,
-                                          DenseMatrix& W)
+int MFD3D_Diffusion::MassMatrixInverseHex(
+    int cell, const Tensor& permeability, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
@@ -611,10 +611,11 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
       area2 = mesh_->face_area(f);
 
       s1 = (T * normal1) * normal2 * (dirs[k] * dirs[l]) / (area1 * area2);
-      if (i-j)
+      if (i-j) {
         T1(i, j) = T1(j, i) = -fabs(s1);
-      else
+      } else {
         T1(i, i) = s1;
+      }
     }
   }
 

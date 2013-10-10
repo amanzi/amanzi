@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the Transport component of Amanzi. 
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -396,8 +396,11 @@ void Transport_PK::Advance(double dT_MPC)
     const Epetra_Vector& ws = TS->ref_water_saturation();
     const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
+    std::string scheme("tpfa");
+    if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) scheme = "mfd";
+
     DispersionMatrixFactory mfactory;
-    dispersion_matrix_ = mfactory.Create("tpfa", &dispersion_models_, mesh_, TS_nextBIG);
+    dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, TS_nextBIG);
 
     dispersion_matrix_->CalculateDispersionTensor(flux, phi, ws);
     dispersion_matrix_->SymbolicAssembleMatrix();
@@ -414,8 +417,8 @@ void Transport_PK::Advance(double dT_MPC)
 
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
-    const Epetra_Map& cmap = mesh_->cell_map(false);
-    Epetra_Vector rhs(cmap);
+    const Epetra_Map& map = dispersion_matrix_->Range();
+    Epetra_Vector rhs(map), sol(map);
 
     double residual = 0.0;
     int num_itrs = 0;
@@ -424,16 +427,17 @@ void Transport_PK::Advance(double dT_MPC)
       for (int c = 0; c < ncells_owned; c++) {
         double factor = mesh_->cell_volume(c) * ws[c] * phi[c] / dT_MPC;
         rhs[c] = tcc_next[i][c] * factor;
+        sol[c] = tcc_next[i][c];
       }
-
-      double* data;  // convert ghosted vector to owned vector
-      tcc_next(i)->ExtractView(&data);
-      Epetra_Vector sol(View, cmap, data);
 
       solver->ApplyInverse(rhs, sol);
 
       residual += solver->residual();
       num_itrs += solver->num_itrs();
+
+      for (int c = 0; c < ncells_owned; c++) {
+        tcc_next[i][c] = sol[c];
+      }
     }
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

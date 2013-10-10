@@ -27,6 +27,7 @@
 #include "DispersionMatrixFactory.hh"
 #include "Dispersion.hh"
 #include "Dispersion_TPFA.hh"
+#include "Dispersion_MFD.hh"
 #include "Dispersion_NLFV.hh"
 
 using namespace Teuchos;
@@ -124,8 +125,7 @@ SUITE(DISPERSION_MATRIX) {
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_TPFA) {
-    cout << endl
-         << "Test: TPFA matrix (no spatial convergence)" << endl;
+    cout << endl << "Test: TPFA matrix (no spatial convergence)" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -157,9 +157,41 @@ SUITE(DISPERSION_MATRIX) {
   }
 
   /* **************************************************************** */
+  TEST_FIXTURE(Problem, MATRIX_MFD) {
+    cout << endl << "Test: MFD matrix" << endl;
+    Init();
+
+    /* generate a dispersion matrix */
+    const Epetra_Vector& phi = TS->ref_porosity();
+    const Epetra_Vector& flux = TS->ref_darcy_flux();
+    const Epetra_Vector& ws = TS->ref_water_saturation();
+
+    Teuchos::RCP<Dispersion_MFD> matrix = Teuchos::rcp(new Dispersion_MFD(&(TPK->dispersion_models()), mesh, TS));
+    matrix->Init();
+    matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
+    matrix->SymbolicAssembleMatrix();
+    matrix->CalculateDispersionTensor(flux, phi, ws);
+    matrix->AssembleMatrix(phi);
+
+    /* populate right-hand side and solution */
+    const Epetra_Map& map = matrix->super_map();
+    Epetra_Vector u(map), r(map), b(map);
+    u.PutScalar(1.0);
+    b.PutScalar(0.0);
+
+    matrix->Apply(u, r);
+    r.Update(-1.0, b, 1.0);
+
+    double bnorm, residual; 
+    b.Norm2(&bnorm);
+    r.Norm2(&residual);
+    cout << "Relative residual: " << residual << endl;
+    CHECK(residual < 0.5);
+  }
+
+  /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_NLFV) {
-    cout << endl
-         << "Test: NLFV matrix (spartial convergence)" << endl;
+    cout << endl << "Test: NLFV matrix (spartial convergence)" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -200,8 +232,7 @@ SUITE(DISPERSION_MATRIX) {
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_FACTORY) {
-    cout << endl
-         << "Test: Factory of matrices" << endl;
+    cout << endl << "Test: Factory of matrices" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -238,8 +269,7 @@ SUITE(DISPERSION_MATRIX) {
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_PICARD) {
-    cout << endl 
-         << "Test: Nonlinear convergence" << endl;
+    cout << endl << "Test: Nonlinear convergence" << endl;
     Init();
 
     /* generate a dispersion matrix */
@@ -283,7 +313,7 @@ SUITE(DISPERSION_MATRIX) {
 
       u.Norm2(&snorm);
       residual = solver->TrueResidual(b, u);
-      cout << "||r||=" << residual <<  "  ||u||=" << snorm << endl;
+      cout << "||r||=" << residual << "  ||u||=" << snorm << endl;
       CHECK(residual < 0.12 / pow(1.7, double(n)));
 
       solver->ApplyInverse(b, u);
@@ -307,8 +337,7 @@ SUITE(DISPERSION_MATRIX) {
 
   /* **************************************************************** */
   TEST_FIXTURE(Problem, MATRIX_SOLVER) {
-    cout << endl 
-         << "Test: NLFV coupled with Newton" << endl;
+    cout << endl << "Test: NLFV coupled with Newton" << endl;
     Init();
 
     /* populate the solution guess and right-hand side */
