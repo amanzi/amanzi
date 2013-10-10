@@ -2971,8 +2971,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
               XMLString::release(&textContent2);
 	    } else if (strcmp(textContent,"time_macro")==0) {
 	      textContent2 = xercesc::XMLString::transcode(curKid->getTextContent());
-	      Teuchos::Array<std::string> macro;
-              macro.append(textContent2);
+	      Teuchos::Array<std::string> macro = make_regions_list(textContent2);
               visPL.set<Teuchos::Array<std::string> >("Time Macro",macro);
               XMLString::release(&textContent2);
 	    } else if (strcmp(textContent,"cycle_macro")==0) {
