@@ -80,6 +80,7 @@ SUITE(DISPERSION_MATRIX) {
       /* initialize a transport process kernel from a transport state */
       TPK = rcp(new Transport_PK(plist, TS));
       TPK->InitPK();
+      TPK->TimeStep(1.0);
     }
     
     void InitSOL(Epetra_Vector& u) {
@@ -323,12 +324,9 @@ SUITE(DISPERSION_MATRIX) {
     const Epetra_Vector& ws = TS->ref_water_saturation();
 
     DispersionMatrixFactory factory;
-    Teuchos::RCP<Dispersion> matrix = TPK->dispersion_matrix();
-    matrix = factory.Create("nlfv", &(TPK->dispersion_models()), mesh, TS);
+    Teuchos::RCP<Dispersion> matrix = factory.Create("nlfv", &(TPK->dispersion_models()), mesh, TS);
+    TPK->init_dispersion_matrix(matrix);
     matrix->InitPreconditioner("Hypre AMG", plist.sublist("Preconditioners"));
-cout << TPK << endl;
-cout << matrix << endl;
-cout << TPK->dispersion_matrix() << endl;
 
     matrix->CalculateDispersionTensor(flux, phi, ws);
     matrix->SymbolicAssembleMatrix();
@@ -345,7 +343,7 @@ cout << TPK->dispersion_matrix() << endl;
     Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap> > picard =
         Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>(nlist, fn, map));
 
-    // picard->Solve(u);
+    picard->Solve(u);
   }
 }
 

@@ -76,14 +76,17 @@ class Transport_PK : public Explicit_TI::fnBase {
   // access members  
   Teuchos::RCP<Transport_State> transport_state() { return TS; }
   Teuchos::RCP<Transport_State> transport_state_next() { return TS_nextMPC; }
-  Transport_State& ref_transport_state_next() { return *TS_nextBIG; }
-  std::vector<Teuchos::RCP<DispersionModel> >& dispersion_models() { return dispersion_models_; }
   Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
+
   double TimeStep() { return dT; }
   void TimeStep(double dT_) { dT = dT_; }
 
   inline double cfl() { return cfl_; }
   inline int get_transport_status() { return status; }
+
+  // for unit tests only
+  std::vector<Teuchos::RCP<DispersionModel> >& dispersion_models() { return dispersion_models_; }
+  void init_dispersion_matrix(Teuchos::RCP<Dispersion> matrix) { dispersion_matrix_ = matrix; } 
 
   // control members
   void PrintStatistics() const;

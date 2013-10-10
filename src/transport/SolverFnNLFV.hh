@@ -37,9 +37,7 @@ class SolverFnNLFV : public AmanziSolvers::SolverFnBase<Vector> {
   // preconditioner toolkit
   void ApplyPreconditioner(const Teuchos::RCP<const Vector>& v,
                            const Teuchos::RCP<Vector>& hv);
-  void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) {
-    TPK_->dispersion_matrix()->UpdatePreconditioner();
-  }
+  void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u);
 
   // error analysis
   double ErrorNorm(const Teuchos::RCP<const Vector>& u, 
@@ -72,7 +70,7 @@ void SolverFnNLFV<Vector>::Residual(const Teuchos::RCP<Vector>& u, Teuchos::RCP<
   matrix->AddTimeDerivative(TPK_->TimeStep(), phi, ws);
 
   matrix->Apply(*u, *r);
-  r->Update(1.0, *b_, -1.0);
+  r->Update(-1.0, *b_, 1.0);
 }
 
 
@@ -88,6 +86,23 @@ void SolverFnNLFV<Vector>::ApplyPreconditioner(
      solver = factory.Create("Dispersion Solver", TPK_->solvers_list, TPK_->dispersion_matrix());
 
   solver->ApplyInverse(*v, *hv);
+}
+
+
+/* ******************************************************************
+* Use linear solver. 
+****************************************************************** */
+template<class Vector>
+void SolverFnNLFV<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Vector>& u)
+{
+  Teuchos::RCP<Transport_State> TS = TPK_->transport_state();
+  const Epetra_Vector& phi = TS->ref_porosity();
+  const Epetra_Vector& ws = TS->ref_water_saturation();
+ 
+  Teuchos::RCP<Dispersion> matrix = TPK_->dispersion_matrix();
+  matrix->AssembleMatrix(*u);
+  matrix->AddTimeDerivative(TPK_->TimeStep(), phi, ws);
+  matrix->UpdatePreconditioner();
 }
 
 
@@ -113,7 +128,7 @@ bool SolverFnNLFV<Vector>::ModifyCorrection(
     const Teuchos::RCP<const Vector>& u, 
     const Teuchos::RCP<Vector>& du)
 { 
-  return true;
+  return false;
 }
 
 }  // namespace AmanziFlow
