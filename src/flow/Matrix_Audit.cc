@@ -281,6 +281,7 @@ int Matrix_Audit::CheckMatrixSymmetry()
       printf("   Summetry violation: (Ax,y)=%12.7g (Ay,x)=%12.7g\n", axy, ayx);
     }
   }
+  return 0;
 }
 
 
@@ -308,6 +309,7 @@ int Matrix_Audit::CheckMatrixCoercivity()
       printf("   Coercivity violation: (Ax,x)=%12.7g\n", axx);
     }
   }
+  return 0;
 }
 
 

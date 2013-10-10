@@ -94,6 +94,7 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     Errors::Message msg("LinearOperatorFactory: solver is not on the list of solvers.");
     Exceptions::amanzi_throw(msg);
   }
+  return Teuchos::null;
 }
 
 }  // namespace AmanziSolvers

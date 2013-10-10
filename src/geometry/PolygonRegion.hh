@@ -50,13 +50,13 @@ public:
   RegionType type() const { return POLYGON; }
 
   inline 
-  const unsigned int num_points() const {return num_points_;}
+  unsigned int num_points() const { return num_points_; }
 
   inline
-  const std::vector<Point>& points() const {return points_;}
+  const std::vector<Point>& points() const { return points_; }
 
   inline
-  const Point& normal() const {return normal_;}
+  const Point& normal() const { return normal_; }
 
   /// Is the the specified point inside this region
   bool inside(const Point& p) const;

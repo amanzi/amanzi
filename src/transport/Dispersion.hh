@@ -58,7 +58,7 @@ class Dispersion {
   virtual void AssembleMatrix(const Epetra_Vector& p) {};
 
   virtual void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const {};
-  virtual int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const {};
+  virtual int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const { return 0; }
 
   // generic members
   void Init();

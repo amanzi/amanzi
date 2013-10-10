@@ -44,6 +44,7 @@ Teuchos::RCP<Dispersion> DispersionMatrixFactory::Create(
     Errors::Message message(msgstream.str());
     Exceptions::amanzi_throw(message);
   }
+  return Teuchos::null;  // This line cannot be reached.
 }
 
 }  // namespace AmanziTransport

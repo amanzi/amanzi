@@ -291,6 +291,7 @@ int MFD3D_Diffusion::RecoverGradient_MassMatrix(int cell,
   }
 
   gradient *= -1.0 / mesh_->cell_volume(cell);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 

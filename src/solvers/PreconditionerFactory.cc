@@ -63,6 +63,8 @@ Teuchos::RCP<Preconditioner> PreconditionerFactory::Create(
     prec->Init(name, prec_list);
     return prec;
   }
+
+  return Teuchos::null;  // This line should never be reached, but Intel spits a warning.
 }
 
 }  // namespace AmanziPreconditioners
