@@ -184,9 +184,9 @@ Teuchos::ParameterList get_constants(xercesc::DOMDocument* xmlDoc) {
 		char_array = strtok(value,";, ");
 		time = atof(char_array);
 		char_array = strtok(NULL,";,");
-		if (strcmp(char_array,"y")==0) { time = time*31577600.0; }
-		else if (strcmp(char_array,"d")==0) { time = time*86100.0; }
-		else if (strcmp(char_array,"h")==0) { time = time*3600.0; }
+		if (strcmp(char_array,"y")==0) { time = time*365.25*24.0*60.0*60.0; }
+		else if (strcmp(char_array,"d")==0) { time = time*24.0*60.0*60.0; }
+		else if (strcmp(char_array,"h")==0) { time = time*60.0*60.0; }
 		// add to list
 		Teuchos::ParameterList tmp;
 		tmp.set<double>("value",time);
@@ -2881,7 +2881,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
             tmpNode = curList->item(0);
 	    char* nodeTxt = xercesc::XMLString::transcode(tmpNode->getTextContent());
             Teuchos::Array<double> sps;
-	    sps.append(get_double_constant(nodeTxt,def_list));
+	    sps.append(get_time_value(nodeTxt,def_list));
 	    XMLString::release(&nodeTxt);
             curList = curElement->getElementsByTagName(XMLString::transcode("timestep_interval"));
 	    if (curList->getLength() >0) {
@@ -2893,7 +2893,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	      if (curList->getLength() >0) {
                 tmpNode = curList->item(0);
 	        nodeTxt = xercesc::XMLString::transcode(tmpNode->getTextContent());
-	        sps.append(get_double_constant(nodeTxt,def_list));
+	        sps.append(get_time_value(nodeTxt,def_list));
 	        XMLString::release(&nodeTxt);
 	      } else {
 	        sps.append(-1.0);
@@ -3152,9 +3152,9 @@ double get_time_value(std::string time_value, Teuchos::ParameterList def_list)
     time = atof(char_array);
     char_array = strtok(NULL,";, ");
     if (char_array!=NULL) {
-      if (strcmp(char_array,"y")==0) { time = time*31557600.0; }
-      else if (strcmp(char_array,"d")==0) { time = time*86400.0; }
-      else if (strcmp(char_array,"h")==0) { time = time*3600.0; }
+      if (strcmp(char_array,"y")==0) { time = time*365.25*24.0*60.0*60.0; }
+      else if (strcmp(char_array,"d")==0) { time = time*24.0*60.0*60.0; }
+      else if (strcmp(char_array,"h")==0) { time = time*60.0*60.0; }
     }
     delete[] tmp;
   }
