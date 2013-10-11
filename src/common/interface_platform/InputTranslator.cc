@@ -2887,7 +2887,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	    if (curList->getLength() >0) {
               tmpNode = curList->item(0);
 	      nodeTxt = xercesc::XMLString::transcode(tmpNode->getTextContent());
-	      sps.append(get_double_constant(nodeTxt,def_list));
+	      sps.append(get_time_value(nodeTxt,def_list));
 	      XMLString::release(&nodeTxt);
               curList = curElement->getElementsByTagName(XMLString::transcode("stop"));
 	      if (curList->getLength() >0) {
