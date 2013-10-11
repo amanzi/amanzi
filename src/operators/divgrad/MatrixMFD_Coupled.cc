@@ -52,7 +52,7 @@ namespace Amanzi {
 namespace Operators {
 
 MatrixMFD_Coupled::MatrixMFD_Coupled(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     plist_(plist),
     mesh_(mesh),
     is_matrix_constructed_(false) {

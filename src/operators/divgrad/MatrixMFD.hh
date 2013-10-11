@@ -74,7 +74,7 @@ class MatrixMFD : public CompositeMatrix {
 
   // Constructor
   MatrixMFD(Teuchos::ParameterList& plist,
-            const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   MatrixMFD(const MatrixMFD& other);
 
@@ -151,6 +151,7 @@ class MatrixMFD : public CompositeMatrix {
   bool symmetric() { return flag_symmetry_; }
   void set_symmetric(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
+  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
 
   // Main computational methods
   // -- local matrices

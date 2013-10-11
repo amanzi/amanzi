@@ -20,19 +20,10 @@ namespace Operators {
 
 MatrixMFD_Surf_ScaledConstraint::MatrixMFD_Surf_ScaledConstraint(
         Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
-    MatrixMFD_Surf(plist, mesh, surface_mesh),
+        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+    MatrixMFD_Surf(plist,mesh),
     MatrixMFD_ScaledConstraint(plist,mesh),
     MatrixMFD(plist,mesh) {}
-
-
-MatrixMFD_Surf_ScaledConstraint::MatrixMFD_Surf_ScaledConstraint(
-        const MatrixMFD_ScaledConstraint& other,
-        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
-    MatrixMFD_Surf(other, surface_mesh),
-    MatrixMFD_ScaledConstraint(other),
-    MatrixMFD(other) {}
 
 
 // Assumes the Surface A was already assembled.

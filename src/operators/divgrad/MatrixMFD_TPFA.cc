@@ -22,6 +22,9 @@
 namespace Amanzi {
 namespace Operators {
 
+RegisteredMatrixMFD_Factory<MatrixMFD_TPFA> MatrixMFD_TPFA::reg_("MatrixMFD_TPFA");
+
+
 template<class T>
 int FindPosition(const std::vector<T>& v, const T& value) {
   for (unsigned int i=0; i!=v.size(); ++i)
@@ -286,11 +289,11 @@ void MatrixMFD_TPFA::AssembleGlobalMatrices() {
 /* ******************************************************************
  * Parallel matvec product Spp * Xc.
  ****************************************************************** */
-void MatrixMFD_TPFA::Apply(const CompositeVector& X,
-                      const Teuchos::Ptr<CompositeVector>& Y) const {
+int MatrixMFD_TPFA::Apply(const CompositeVector& X,
+			   CompositeVector& Y) const {
 
   int ierr = (*Spp_).Multiply(false, *X.ViewComponent("cell",false),
-          *Y->ViewComponent("cell",false));
+          *Y.ViewComponent("cell",false));
 
   if (ierr) {
     Errors::Message msg("MatrixMFD_TPFA::Apply has failed to calculate y = A*x.");
@@ -298,13 +301,14 @@ void MatrixMFD_TPFA::Apply(const CompositeVector& X,
   }
 
   // Yf = Xf;
-  Y->ViewComponent("face",false)->PutScalar(0.);
+  Y.ViewComponent("face",false)->PutScalar(0.);
+  return ierr;
 }
 
 
 
-void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
-        const Teuchos::Ptr<CompositeVector>& Y) const {
+int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
+				 CompositeVector& Y) const {
   // Solve the Schur complement system Spp * Yc = Xc.
   int ierr = 0;
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell",false);
@@ -314,7 +318,7 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   ierr = S_pc_->ApplyInverse(Xc, Tc);
   ASSERT(!ierr);
 
-  *Y->ViewComponent("cell",false) = Tc;
+  *Y.ViewComponent("cell",false) = Tc;
 
   if (ierr) {
     Errors::Message msg("MatrixMFD_TPFA::ApplyInverse has failed in calculating y = inv(A)*x.");
@@ -322,7 +326,7 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   }
 
   // Update the faces
-  Epetra_MultiVector& Yf = *Y->ViewComponent("face", false);
+  Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
   const Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
 
@@ -333,6 +337,7 @@ void MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
   for (int f=0; f!=nfaces; ++f) {
     Yf[0][f] /= Dff_f[0][f];
   }
+  return ierr;
 }
 
 

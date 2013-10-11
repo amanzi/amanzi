@@ -194,16 +194,17 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // Calculate water content at the solution.
-  S_next_->GetFieldEvaluator("surface_water_content")
-      ->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& wc = *S_next_->GetFieldData("surface_water_content")
-      ->ViewComponent("cell",false);
-
   const Epetra_MultiVector& flux = *S_next_->GetFieldData("surface_flux")
       ->ViewComponent("face",false);
   double flux_max(0.);
   flux.NormInf(&flux_max);
+
+  // Calculate water content at the solution.
+  S_next_->GetFieldEvaluator("ponded_depth")
+      ->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& wc = *S_next_->GetFieldData("ponded_depth")
+      ->ViewComponent("cell",false);
+
 
   Teuchos::RCP<const CompositeVector> res = du->Data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
@@ -220,7 +221,7 @@ double OverlandFlow::enorm(Teuchos::RCP<const TreeVector> u,
   unsigned int ncells = res_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     double tmp = std::abs(h*res_c[0][c])
-        / (atol_ * .1*cv[0][c] + rtol_*std::abs(wc[0][c]));
+        / (atol_ * .1*cv[0][c] + rtol_*std::abs(wc[0][c]*cv[0][c]));
     if (tmp > enorm_cell) {
       enorm_cell = tmp;
       bad_cell = c;

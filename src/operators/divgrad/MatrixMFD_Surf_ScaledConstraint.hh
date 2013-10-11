@@ -22,12 +22,7 @@ class MatrixMFD_Surf_ScaledConstraint : public MatrixMFD_Surf,
 
  public:
   MatrixMFD_Surf_ScaledConstraint(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
-
-  // NOTE this is not a copy constructor!
-  MatrixMFD_Surf_ScaledConstraint(const MatrixMFD_ScaledConstraint& other,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
+				  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   virtual void AssembleGlobalMatrices();
 
@@ -36,6 +31,12 @@ class MatrixMFD_Surf_ScaledConstraint : public MatrixMFD_Surf,
 
   virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
           const std::vector<double>& bc_values);
+
+
+ private:
+  // factory registration
+  static RegisteredMatrixMFD_Factory<MatrixMFD_Surf> reg_;
+
 
 };
 

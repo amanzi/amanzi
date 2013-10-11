@@ -12,8 +12,8 @@
 
 #include <strings.h>
 
+#include "MatrixMFD_Factory.hh"
 #include "MatrixMFD.hh"
-
 
 namespace Amanzi {
 namespace Operators {
@@ -23,7 +23,7 @@ class MatrixMFD_ScaledConstraint : virtual public MatrixMFD {
 
   // Constructor
   MatrixMFD_ScaledConstraint(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       MatrixMFD(plist, mesh) {
     flag_symmetry_ = false;
   }
@@ -59,6 +59,11 @@ class MatrixMFD_ScaledConstraint : virtual public MatrixMFD {
   Teuchos::RCP<Epetra_Vector> Krel_;
 
   friend class MatrixMFD_Coupled;
+
+ private:
+  // factory registration
+  static RegisteredMatrixMFD_Factory<MatrixMFD_ScaledConstraint> reg_;
+
 };
 
 

@@ -22,6 +22,7 @@
 #include "Ifpack.h"
 
 #include "MatrixMFD.hh"
+#include "MatrixMFD_Factory.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -29,7 +30,7 @@ namespace Operators {
 class MatrixMFD_TPFA : virtual public MatrixMFD {
  public:
   MatrixMFD_TPFA(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       MatrixMFD(plist,mesh) {}
 
   // override main methods of the base class
@@ -39,10 +40,10 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
           const std::vector<double>& bc_values) { Sff_ = Spp_; }
 
-  virtual void Apply(const CompositeVector& X,
-             const Teuchos::Ptr<CompositeVector>& Y) const;
-  virtual void ApplyInverse(const CompositeVector& X,
-                    const Teuchos::Ptr<CompositeVector>& Y) const;
+  virtual int Apply(const CompositeVector& X,
+                     CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X,
+                            CompositeVector& Y) const;
 
   void AnalyticJacobian(const CompositeVector& height,
                         const CompositeVector& potential,
@@ -81,6 +82,11 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   void operator=(const MatrixMFD_TPFA& matrix);
 
   friend class MatrixMFD_Surf;
+
+private:
+  // factory registration
+  static RegisteredMatrixMFD_Factory<MatrixMFD_TPFA> reg_;
+
 };
 
 }  // namespace Operators

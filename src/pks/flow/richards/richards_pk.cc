@@ -23,7 +23,8 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
-#include "MatrixMFD_ScaledConstraint.hh"
+#include "MatrixMFD_Factory.hh"
+
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
 #include "rel_perm_evaluator.hh"
@@ -211,25 +212,18 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
 
   // operator for the diffusion terms
+  Operators::MatrixMFD_Factory fac;
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   scaled_constraint_ = mfd_plist.get<bool>("scaled constraint equation", false);
-  if (!scaled_constraint_) {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
-  } else {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_plist, mesh_));
-    symmetric_ = false;
-  }
+  matrix_ = fac.CreateMatrixMFD(mfd_plist, mesh_);
+  symmetric_ = false;
   matrix_->set_symmetric(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->InitPreconditioner();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  if (!scaled_constraint_) {
-    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
-  } else {
-    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_pc_plist, mesh_));
-  }
+  mfd_preconditioner_ = fac.CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->InitPreconditioner();
