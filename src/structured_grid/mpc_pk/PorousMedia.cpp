@@ -5454,7 +5454,7 @@ void
 PorousMedia::tracer_advection (MultiFab* u_macG,
                                bool reflux_on_this_call,
                                bool use_cached_sat,
-                               const MultiFab* F)
+                               MultiFab* F)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
 
@@ -5539,7 +5539,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 
       godunov->Setup_tracer(grids[i], D_DECL(flux[0],flux[1],flux[2]), ntracers);
 
-      const FArrayBox* SrcPtr = 0;
+      FArrayBox* SrcPtr = 0;
       SRCidx = 0;
       if (F==0) {
         SRCext.resize(gbox,ntracers);
@@ -5549,7 +5549,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       else {
 	SrcPtr = &((*F)[C_old_fpi]);
       }
-	
+
       state_bc = getBCArray(State_Type,i,ncomps,ntracers);
       BL_ASSERT(aofs->size()>i);
       BL_ASSERT(rock_phi->size()>i);

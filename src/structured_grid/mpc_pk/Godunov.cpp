@@ -43,7 +43,7 @@ Godunov::Initialize ()
     //
     Godunov::verbose             = 0;
     Godunov::slope_order         = 4;
-    Godunov::use_forces_in_trans = 0;
+    Godunov::use_forces_in_trans = 1;
     //
     // Read parameters from input file and command line.
     //
@@ -246,6 +246,7 @@ Godunov::Setup (const Box& grd,
   // Create the advective velocities and FAB workspace for GODUNOV Box.
   int work_sz;
   work_bx = BoxLib::grow(grd,1);
+
   if (model == -1)
     work.resize(work_bx,2*BL_SPACEDIM+1);
   else if (model == 0 || model == 1)
@@ -297,14 +298,6 @@ Godunov::Setup_tracer (const Box&       grd,
 	 yflux_bx.grow(1);,
 	 zflux_bx.grow(1););
 
-  D_TERM(xlo.resize(xflux_bx,nscal); xlo.setVal(0.);,
-	 ylo.resize(yflux_bx,nscal); ylo.setVal(0.);,
-	 zlo.resize(zflux_bx,nscal); zlo.setVal(0.););
-
-  D_TERM(xhi.resize(xflux_bx,nscal); xhi.setVal(0.);,
-	 yhi.resize(yflux_bx,nscal); yhi.setVal(0.);,
-	 zhi.resize(zflux_bx,nscal); zhi.setVal(0.););
-
   //
   // Ensure 1D scratch space is large enough.
   //
@@ -312,7 +305,7 @@ Godunov::Setup_tracer (const Box&       grd,
   //
   // Create the advective velocities and FAB workspace for GODUNOV Box.
   work_bx = BoxLib::grow(grd,1);
-  work.resize(work_bx,BL_SPACEDIM*nscal);
+  work.resize(work_bx,BL_SPACEDIM*nscal*3);
 
   utmp.clear();
   utmpn.clear();
@@ -949,17 +942,11 @@ Godunov::edge_states_tracer (const Box&  grd,
 			     Real        dt,
 			     FArrayBox&  uedge,
 			     FArrayBox&  stx,
-			     FArrayBox&  xlo,
-			     FArrayBox&  xhi,
 			     FArrayBox&  vedge,
 			     FArrayBox&  sty,
-			     FArrayBox&  ylo,
-			     FArrayBox&  yhi,
 #if (BL_SPACEDIM == 3)               
 			     FArrayBox&  wedge,
 			     FArrayBox&  stz,
-			     FArrayBox&  zlo,
-			     FArrayBox&  zhi,
 #endif
 			     FArrayBox&  C_old,
 			     FArrayBox&  C_new,
@@ -968,6 +955,7 @@ Godunov::edge_states_tracer (const Box&  grd,
 			     FArrayBox&  Sat_new,
                              int         sCompS,
 			     FArrayBox&  rock_phi,
+			     FArrayBox&  tforces,
 			     const int*  bc,
 			     int         nCompC)
 {
@@ -1003,67 +991,85 @@ Godunov::edge_states_tracer (const Box&  grd,
   const int *sn_hi   = Sat_new.hiVect();
   const int *ww_lo   = work.loVect();
   const int *ww_hi   = work.hiVect();
-  const Real *co_dat = C_old.dataPtr(sCompC);
-  const Real *cn_dat = C_new.dataPtr(sCompC);
-  const Real *so_dat = Sat_old.dataPtr(sCompS);
-  const Real *sn_dat = Sat_new.dataPtr(sCompS);
 
+  FArrayBox capInv(C_old.box(),1);
+  capInv.copy(Sat_old,sCompC,0,1);
+  capInv.plus(Sat_new,sCompC,0,1);
+  capInv.mult(rock_phi,0,0,1);
+  capInv.invert(2,0,1);
+
+  const Real *capInv_dat = capInv.dataPtr();
+  const int *capInv_lo   = capInv.loVect();
+  const int *capInv_hi   = capInv.hiVect();
+
+  const Real *tfr_dat  = tforces.dataPtr();
+  const int *tfr_lo    = tforces.loVect();
+  const int *tfr_hi    = tforces.hiVect();
+
+  if (work.nComp() < BL_SPACEDIM*3) {
+    BoxLib::Abort("Godunov work space needs at least 3*SPACEDIM components");
+  }
+  Real *slx_dat   = work.dataPtr(0);
+  Real *xlo_dat   = work.dataPtr(1);
+  Real *xhi_dat   = work.dataPtr(2);
+
+  Real *sly_dat   = work.dataPtr(3);
+  Real *ylo_dat   = work.dataPtr(4);
+  Real *yhi_dat   = work.dataPtr(5);
 #if (BL_SPACEDIM == 3)
-  const Real *slx_dat   = work.dataPtr(0*nCompC);
-  const Real *sly_dat   = work.dataPtr(1*nCompC);
-  const Real *slz_dat   = work.dataPtr(2*nCompC);
-#else
-  const Real *slx_dat   = work.dataPtr(0*nCompC);
-  const Real *sly_dat   = work.dataPtr(1*nCompC);
-#endif
-  //
-  // C component indices starts from 0, Fortran from 1
-  //
-#if 0
-  void FORT_ESTATE_TRACER(const Real* s_dat, const Real* sphi_dat, const Real* tfr_dat, 
-                          ARLIM_P(s_lo),ARLIM_P(s_hi),
-                          const Real* xlo_dat, 
-                          const Real* xhi_dat, const Real* slx_dat, 
-                          Real* slxscr, Real* stxlo, Real* stxhi,
-                          const Real* uedge_dat, ARLIM_P(ue_lo), ARLIM_P(ue_hi),
-                          const Real* stx,       ARLIM_P(stx_lo),ARLIM_P(stx_hi),
-                          const Real* ylo_dat, 
-                          const Real* yhi_dat, const Real* sly_dat, 
-                          Real* slyscr, Real* stylo, Real* styhi,
-                          const Real* vedge_dat, ARLIM_P(ve_lo), ARLIM_P(ve_hi),
-                          const Real* sty,       ARLIM_P(sty_lo),ARLIM_P(sty_hi),
-#if (BL_SPACEDIM == 3)
-                          const Real* zlo_dat, 
-                          const Real* zhi_dat, const Real* slz_dat, 
-                          Real* slzscr, Real* stzlo, Real* stzhi,
-                          const Real* wedge_dat, ARLIM_P(we_lo), ARLIM_P(we_hi),
-                          const Real* stz,       ARLIM_P(stz_lo),ARLIM_P(stz_hi),
-#endif
-                          ARLIM_P(ww_lo),ARLIM_P(ww_hi),
-                          const int* bc, const int* lo, const int* hi, 
-                          Real* dt, const Real* dx, int* fort_ind, 
-                          int* use_forces_in_trans, int* iconserv, const Real* eps);
+  Real *slz_dat   = work.dataPtr(6);
+  Real *zlo_dat   = work.dataPtr(7);
+  Real *zhi_dat   = work.dataPtr(8);
 #endif
 
+  const Real *uedge_dat = uedge.dataPtr();
+  const int *ue_lo      = uedge.loVect();
+  const int *ue_hi      = uedge.hiVect();
+  const int *stx_lo     = stx.loVect();
+  const int *stx_hi     = stx.hiVect();
 
-  FORT_ESTATE_TRACER(co_dat, ARLIM(co_lo), ARLIM(co_hi),
-		     cn_dat, ARLIM(cn_lo), ARLIM(cn_hi), 
-		     so_dat, ARLIM(so_lo), ARLIM(so_hi),
-		     sn_dat, ARLIM(sn_lo), ARLIM(sn_hi), 
-		     slx_dat, slxscr,xlo.dataPtr(),xhi.dataPtr(),
-		     uedge.dataPtr(),ARLIM(uedge.loVect()),ARLIM(uedge.hiVect()),
-		     stx.dataPtr(),ARLIM(stx.loVect()),ARLIM(stx.hiVect()),
-		     sly_dat, slyscr,ylo.dataPtr(),yhi.dataPtr(),
-		     vedge.dataPtr(),ARLIM(vedge.loVect()), ARLIM(vedge.hiVect()),
-		     sty.dataPtr(),ARLIM(sty.loVect()),ARLIM(sty.hiVect()),
+  const Real *vedge_dat = vedge.dataPtr();
+  const int *ve_lo      = vedge.loVect();
+  const int *ve_hi      = vedge.hiVect();
+  const int *sty_lo     = sty.loVect();
+  const int *sty_hi     = sty.hiVect();
+
 #if (BL_SPACEDIM == 3)
-		     slz_dat, slzscr,zlo.dataPtr(),zhi.dataPtr(),
-		     wedge.dataPtr(),ARLIM(wedge.loVect()),ARLIM(wedge.hiVect()),
-		     stz.dataPtr(),ARLIM(stz.loVect()),ARLIM(stz.hiVect()),
+  const Real *wedge_dat = wedge.dataPtr();
+  const int *we_lo      = wedge.loVect();
+  const int *we_hi      = wedge.hiVect();
+  const int *stz_lo     = stz.loVect();
+  const int *stz_hi     = stz.hiVect();
 #endif
-		     rock_phi.dataPtr(),ARLIM(rock_phi.loVect()),ARLIM(rock_phi.hiVect()),
-		     ARLIM(ww_lo), ARLIM(ww_hi),
-		     bc, lo, hi, &dt, dx, &nCompC, &tracer_eps);
+
+  for (int n=0; n<nCompC; ++n) {
+
+    const Real *co_dat = C_old.dataPtr(sCompC+n);
+    
+    Real *stx_dat = stx.dataPtr(n);
+    Real *sty_dat = sty.dataPtr(n);
+#if (BL_SPACEDIM == 3)
+    Real *stz_dat = stz.dataPtr(n);
+#endif
+
+    int iconserv = 1;
+    FORT_ESTATE_TRACER(co_dat,     ARLIM(co_lo),     ARLIM(co_hi), 
+		       capInv_dat, ARLIM(capInv_lo), ARLIM(capInv_hi),
+		       tfr_dat,    ARLIM(tfr_lo),    ARLIM(tfr_hi),
+		       xlo_dat, xhi_dat, slx_dat, slxscr, stxlo, stxhi, 
+		       uedge_dat,  ARLIM(ue_lo),     ARLIM(ue_hi),
+		       stx_dat,    ARLIM(stx_lo),    ARLIM(stx_hi),
+		       ylo_dat, yhi_dat, sly_dat, slyscr, stylo, styhi, 
+		       vedge_dat,  ARLIM(ve_lo),     ARLIM(ve_hi),
+		       sty_dat,    ARLIM(sty_lo),    ARLIM(sty_hi),
+#if (BL_SPACEDIM == 3)
+		       zlo_dat, zhi_dat, slz_dat, slzscr, stzlo, stzhi, 
+		       uedge_dat,  ARLIM(ue_lo),     ARLIM(ue_hi),
+		       stz_dat,    ARLIM(stz_lo),    ARLIM(stz_hi),
+#endif
+		       ARLIM(ww_lo),ARLIM(ww_hi),
+		       bc, lo, hi, &dt, dx, &use_forces_in_trans, &iconserv, &tracer_eps);
+  }
 }
 
 
@@ -1501,6 +1507,7 @@ Godunov::AdvectStatePmr (const Box&  grd,
     
 }
 
+#include <fstream>
 void
 Godunov::AdvectTracer (const Box&  grd,
 		       const Real* dx,
@@ -1522,7 +1529,7 @@ Godunov::AdvectTracer (const Box&  grd,
 		       FArrayBox&  Sat_old,
 		       FArrayBox&  Sat_new,
                        int         sCompS,
-		       const FArrayBox&  tforces,
+		       FArrayBox&  tforces,
                        int         sCompF,
 		       FArrayBox&  divu,
 		       int         fab_ind,
@@ -1538,13 +1545,13 @@ Godunov::AdvectTracer (const Box&  grd,
   // Compute edge states for an advected quantity.
   //
   edge_states_tracer(grd, dx, dt,
-		     uedge, xflux, xlo, xhi,
-		     vedge, yflux, ylo, yhi,
+		     uedge, xflux,
+		     vedge, yflux,
 #if (BL_SPACEDIM == 3)             
-		     wedge, zflux, zlo, zhi,
+		     wedge, zflux,
 #endif
 		     C_old, C_new, sCompC, Sat_old, Sat_new, sCompS, rock_phi, 
-		     bc, nscal);
+		     tforces, bc, nscal);
   //
   // Compute the advective tendency.
   //

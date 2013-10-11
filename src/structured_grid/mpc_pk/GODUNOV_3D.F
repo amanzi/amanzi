@@ -1320,6 +1320,75 @@ c ::: convert the second auxiliary variable to c instead of c*s
 
       end
 
+#if 1
+c
+c     This is ESTATE_FPU with a time-independent "capacitance" factor in the time 
+c     derivative.  That is, the conservation equation solved looks like 
+c
+c                    d(s.cap)/dt + Div(s.u) = F
+c
+c     whereas the default ESTATE_FPU assumes cap==1
+c
+      subroutine FORT_ESTATE_TRACER(s, DIMS(s), capInv, DIMS(capInv), 
+     &     tforces, DIMS(tforces),
+     &     xlo, xhi, sx, slxscr, stxlo, stxhi,
+     &     uedge, DIMS(uedge), xstate, DIMS(xstate),
+     &     ylo, yhi, sy, slyscr, stylo, styhi,
+     &     vedge, DIMS(vedge), ystate, DIMS(ystate),
+     &     zlo, zhi, sz, slzscr, stzlo, stzhi,
+     &     wedge, DIMS(wedge), zstate, DIMS(zstate),
+     &     DIMS(work),
+     &     bc,lo,hi,dt,dx,use_minion,iconserv,seps)
+      implicit none
+
+      integer i,j,n
+      integer lo(SDIM),hi(SDIM),bc(SDIM,2)
+      integer imin,jmin,kmin,imax,jmax,kmax
+      REAL_T hx, hy, hz, dt, dth, dthx, dthy, hxi, hyi, hzi
+      REAL_T tr,ubar,vbar,wbar,stx,sty,stzfu,fv,dx(SDIM)
+      REAL_T eps,eps_for_bc,spi,divum,divup
+      parameter( eps        = zero )
+      parameter( eps_for_bc = zero )
+
+      integer DIMDEC(s)
+      integer DIMDEC(capInv)
+      integer DIMDEC(tforces)
+      integer DIMDEC(work)
+      integer DIMDEC(uedge)
+      integer DIMDEC(xstate)
+      integer DIMDEC(vedge)
+      integer DIMDEC(ystate)
+      integer DIMDEC(wedge)
+      integer DIMDEC(zstate)
+
+      REAL_T s(DIMV(s))
+      REAL_T capInv(DIMV(capInv))
+      REAL_T stxlo(DIM1(s)),stxhi(DIM1(s)),slxscr(DIM1(s),4)
+      REAL_T stylo(DIM2(s)),styhi(DIM2(s)),slyscr(DIM2(s),4)
+      REAL_T stzlo(DIM3(s)),stzhi(DIM3(s)),slzscr(DIM3(s),4)
+
+      REAL_T uedge(DIMV(uedge)), xstate(DIMV(xstate))
+      REAL_T vedge(DIMV(vedge)), ystate(DIMV(ystate))
+      REAL_T wedge(DIMV(wedge)), zstate(DIMV(zstate))
+
+      REAL_T xlo(DIMV(work)), xhi(DIMV(work))
+      REAL_T ylo(DIMV(work)), yhi(DIMV(work))
+      REAL_T zlo(DIMV(work)), zhi(DIMV(work))
+      REAL_T  sx(DIMV(work))
+      REAL_T  sy(DIMV(work))
+      REAL_T  sz(DIMV(work))
+      REAL_T tforces(DIMV(tforces))
+      REAL_T seps
+     
+      REAL_T spx,smx,spy,smy,spz,smz,strans,spip,spim
+
+      integer use_minion, iconserv
+      integer inc
+
+      call bl_abort()
+
+      end
+#else
       subroutine FORT_ESTATE_TRACER (s, DIMS(s),
      &     sn, DIMS(sn), 
      &     st, DIMS(st), stn, DIMS(stn),
@@ -1414,6 +1483,7 @@ c ::: predictor step: determine final edge states
      &     0,0,1,lo,hi,nscal)
 
       end
+#endif
 
       subroutine FORT_SYNC_RMN (s,  DIMS(s), sn, DIMS(sn), 
      &     tf, divu, lbd_cc, dlbd_cc,

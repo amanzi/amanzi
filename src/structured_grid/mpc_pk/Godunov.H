@@ -127,16 +127,13 @@ public:
 
   void edge_states_tracer (const Box& grd, const Real* dx, Real dt,
 			   FArrayBox&  uedge, FArrayBox&  stx,
-			   FArrayBox&  xlo, FArrayBox&  xhi,
 			   FArrayBox&  vedge, FArrayBox&  sty,
-			   FArrayBox&  ylo, FArrayBox&  yhi,
 #if (BL_SPACEDIM == 3)               
 			   FArrayBox&  wedge, FArrayBox&  stz,
-			   FArrayBox&  zlo, FArrayBox&  zhi,
 #endif
 			   FArrayBox&  C_old, FArrayBox&  C_new, int sCompC,
 			   FArrayBox&  Sat_old, FArrayBox&  Sat_new, int sCompS,
-			   FArrayBox&  rock_phi, const int*  bc, int nCompC);
+			   FArrayBox&  rock_phi, FArrayBox& tforces, const int*  bc, int nCompC);
 
   void edge_sync_rmn(const Box &grd, const Real *dx, Real dt, 
 		     FArrayBox &uedge, FArrayBox &stx, FArrayBox &kappax,
@@ -253,7 +250,7 @@ public:
 #endif
 			     FArrayBox& C_old, FArrayBox& C_new, int sCompC,
 			     FArrayBox& Sat_old, FArrayBox& Sat_new, int sCompS,
-			     const FArrayBox&  tforces, int sCompF,
+			     FArrayBox&  tforces, int sCompF,
 			     FArrayBox&  divu, int fab_ind, 
 			     FArrayBox&  aofs, int aofs_ind,
 			     FArrayBox&  rock_phi, int iconserv,

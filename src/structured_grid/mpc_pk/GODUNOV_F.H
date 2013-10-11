@@ -319,30 +319,35 @@ extern "C"
 			int* use_forces_in_trans, int* iconserv,
 			const Real* gravity, const int* gravity_dir, Real* eigmax, const Real* eps);
 
-#if 0
-        void FORT_ESTATE_TRACER(const Real* s_dat, const Real* sphi_dat, const Real* tfr_dat, 
-			ARLIM_P(s_lo),ARLIM_P(s_hi),
-			const Real* xlo_dat, 
-			const Real* xhi_dat, const Real* slx_dat, 
-			Real* slxscr, Real* stxlo, Real* stxhi,
-			const Real* uedge_dat, ARLIM_P(ue_lo), ARLIM_P(ue_hi),
-			const Real* stx,       ARLIM_P(stx_lo),ARLIM_P(stx_hi),
-			const Real* ylo_dat, 
-			const Real* yhi_dat, const Real* sly_dat, 
-			Real* slyscr, Real* stylo, Real* styhi,
-			const Real* vedge_dat, ARLIM_P(ve_lo), ARLIM_P(ve_hi),
-			const Real* sty,       ARLIM_P(sty_lo),ARLIM_P(sty_hi),
+#if 1
+        void FORT_ESTATE_TRACER(const Real* s_dat,     ARLIM_P(s_lo),    ARLIM_P(s_hi),
+				const Real* sphi_dat,  ARLIM_P(sphi_lo), ARLIM_P(sphi_hi),
+				const Real* tfr_dat,   ARLIM_P(s_lo),    ARLIM_P(s_hi),
+
+				Real*       xlo_dat,   
+				Real*       xhi_dat,   
+				Real* slx, Real* slxscr, Real* stxlo, Real* stxhi,
+				const Real* uedge_dat, ARLIM_P(ue_lo),   ARLIM_P(ue_hi),
+				const Real* stx,       ARLIM_P(stx_lo),  ARLIM_P(stx_hi),
+
+
+				Real*       ylo_dat,   
+				Real*       yhi_dat,   
+				Real* sly, Real* slyscr, Real* stylo, Real* styhi,
+				const Real* vedge_dat, ARLIM_P(ve_lo),   ARLIM_P(ve_hi),
+				const Real* sty,       ARLIM_P(sty_lo),  ARLIM_P(sty_hi),
+
 #if (BL_SPACEDIM == 3)
-			const Real* zlo_dat, 
-			const Real* zhi_dat, const Real* slz_dat, 
-			Real* slzscr, Real* stzlo, Real* stzhi,
-			const Real* wedge_dat, ARLIM_P(we_lo), ARLIM_P(we_hi),
-			const Real* stz,       ARLIM_P(stz_lo),ARLIM_P(stz_hi),
+				Real*       zlo_dat,   
+				Real*       zhi_dat,   
+				Real* slz, Real* slzscr, Real* stzlo, Real* stzhi,
+				const Real* wedge_dat, ARLIM_P(we_lo),   ARLIM_P(we_hi),
+				const Real* stz,       ARLIM_P(stz_lo),  ARLIM_P(stz_hi),
 #endif
-			ARLIM_P(ww_lo),ARLIM_P(ww_hi),
-			const int* bc, const int* lo, const int* hi, 
-			Real* dt, const Real* dx, int* fort_ind, 
-			int* use_forces_in_trans, int* iconserv, const Real* eps);
+				ARLIM_P(ww_lo),ARLIM_P(ww_hi),
+				const int* bc, const int* lo, const int* hi, 
+				Real* dt, const Real* dx,
+				const int* use_forces_in_trans, const int* iconserv, const Real* eps);
 #else  
    void FORT_ESTATE_TRACER(const Real* s_dat,   ARLIM_P(s_lo),ARLIM_P(s_hi),
 			   const Real* sn_dat,  ARLIM_P(sn_lo),ARLIM_P(sn_hi),
