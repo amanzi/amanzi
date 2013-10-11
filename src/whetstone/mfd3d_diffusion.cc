@@ -47,7 +47,7 @@ int MFD3D_Diffusion::L2consistency(int cell, const Tensor& T,
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
   Tensor Tinv(T);
-  Tinv.inverse();
+  Tinv.Inverse();
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
@@ -211,7 +211,7 @@ int MFD3D_Diffusion::MassMatrix(int cell, const Tensor& permeability, DenseMatri
   DenseMatrix Mc(nfaces, nfaces);
 
   Tensor permeability_inv(permeability);
-  permeability_inv.inverse();
+  permeability_inv.Inverse();
 
   int ok = L2consistency(cell, permeability_inv, N, Mc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
@@ -291,6 +291,7 @@ int MFD3D_Diffusion::RecoverGradient_MassMatrix(int cell,
   }
 
   gradient *= -1.0 / mesh_->cell_volume(cell);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
@@ -463,8 +464,8 @@ int MFD3D_Diffusion::MassMatrixInverseScaled(int cell, const Tensor& permeabilit
 /* ******************************************************************
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseHex(int cell, const Tensor& permeability,
-                                          DenseMatrix& W)
+int MFD3D_Diffusion::MassMatrixInverseHex(
+    int cell, const Tensor& permeability, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
@@ -611,10 +612,11 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
       area2 = mesh_->face_area(f);
 
       s1 = (T * normal1) * normal2 * (dirs[k] * dirs[l]) / (area1 * area2);
-      if (i-j)
+      if (i-j) {
         T1(i, j) = T1(j, i) = -fabs(s1);
-      else
+      } else {
         T1(i, i) = s1;
+      }
     }
   }
 

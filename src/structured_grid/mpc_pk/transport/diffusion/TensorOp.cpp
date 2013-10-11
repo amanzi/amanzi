@@ -478,45 +478,70 @@ TensorOp::applyBC (MultiFab&      inout,
 
   // Note that we only need to do something where the grids touch the physical boundary.
 
-  // First sync up internal "regular" grow cells
-  inout.FillBoundary(src_comp,num_comp,local,cross);
-  const Geometry& geom = bndryData().getGeom();
-  geom.FillPeriodicBoundary(inout,src_comp,num_comp,do_corners,local);
-
-  // Now sync up APPLYBC-filled corner cells
-  const BoxArray& grids = bndryData().boxes();
+  const Geometry& geom = geomarray[level];
+  const BoxArray& grids = inout.boxArray();
   const Box& domain = geom.Domain();
   int nGrow = 1;
 
   // Lets do a quick check to see if we need to do anything at all here
-  BoxArray gba = BoxArray(grids).grow(nGrow);
-  if (! (domain.contains(gba.minimalBox())) ) {
+  BoxArray BIGba = BoxArray(grids).grow(nGrow);
 
-    // Build grown MF with best data so far
-    MultiFab inoutg(gba,num_comp,0);
-    for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
-      inoutg[mfi].copy(inout[mfi],src_comp,0,num_comp);
-    }
+  if (! (domain.contains(BIGba.minimalBox())) ) {
+
+    BoxArray boundary_pieces;
+    Array<int> proc_idxs;
+    Array<Array<int> > old_to_new(grids.size());
+    const DistributionMapping& dmap=inout.DistributionMap();
 
     for (int d=0; d<BL_SPACEDIM; ++d) {
       if (! (geom.isPeriodic(d)) ) {
-        Box gDomain = Box(domain).grow(d,nGrow);
-        BoxArray growDomain = BoxLib::boxComplement(gDomain,domain);
-        BoxArray growCells = BoxLib::intersect(gba,growDomain);
-        if (growCells.size()>0) {      
-          MultiFab growMF(BoxArray(growCells).grow(nGrow),num_comp,0);
-          growMF.copy(inoutg,0,0,num_comp); // parallel copy
-          MultiFab growMFg(growCells,num_comp,nGrow);
-          for (MFIter mfi(growMFg); mfi.isValid(); ++mfi) {
-            growMFg[mfi].copy(growMF[mfi],0,0,num_comp);
+
+        BoxArray gba = BoxArray(grids).grow(d,nGrow);
+        for (int i=0; i<gba.size(); ++i) {
+          BoxArray new_pieces = BoxLib::boxComplement(gba[i],domain);
+          int size_new = new_pieces.size();
+          if (size_new>0) {
+            int size_old = boundary_pieces.size();
+            boundary_pieces.resize(size_old+size_new);
+            proc_idxs.resize(boundary_pieces.size());
+            for (int j=0; j<size_new; ++j) {
+              boundary_pieces.set(size_old+j,new_pieces[j]);
+              proc_idxs[size_old+j] = dmap[i];
+              old_to_new[i].push_back(size_old+j);
+            }
           }
-          growMFg.FillBoundary(); // Skip periodic, since all these "valid" cells are outside the domain
-          for (MFIter mfi(growMFg); mfi.isValid(); ++mfi) {
-            growMF[mfi].copy(growMFg[mfi],0,0,num_comp);
-          }
-          inoutg.copy(growMF); // Another parallel copy
-          for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
-            inout[mfi].copy(inout[mfi],0,src_comp,num_comp);
+        }
+      }
+    }
+
+    proc_idxs.push_back(ParallelDescriptor::MyProc());
+
+    MultiFab boundary_data(boundary_pieces,num_comp,nGrow,
+                           DistributionMapping(proc_idxs));
+
+    for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
+      const FArrayBox& src_fab = inout[mfi];
+      for (int j=0; j<old_to_new[mfi.index()].size(); ++j) {
+        int new_box_idx = old_to_new[mfi.index()][j];
+        boundary_data[new_box_idx].copy(src_fab,src_comp,0,num_comp);
+      }
+    }
+
+    boundary_data.FillBoundary();
+
+    for (MFIter mfi(inout); mfi.isValid(); ++mfi) {
+      int idx = mfi.index();
+      FArrayBox& dst_fab = inout[mfi];
+      for (int j=0; j<old_to_new[idx].size(); ++j) {
+        int new_box_idx = old_to_new[mfi.index()][j];
+        const FArrayBox& src_fab = boundary_data[new_box_idx];
+        const Box& src_box = src_fab.box();
+
+        BoxArray pieces_outside_domain = BoxLib::boxComplement(src_box,domain);
+        for (int k=0; k<pieces_outside_domain.size(); ++k) {
+          const Box& outside = pieces_outside_domain[k] & dst_fab.box();
+          if (outside.ok()) {
+            dst_fab.copy(src_fab,outside,0,outside,src_comp,num_comp);
           }
         }
       }

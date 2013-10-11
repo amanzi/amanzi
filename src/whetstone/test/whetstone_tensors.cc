@@ -27,7 +27,7 @@ TEST(TENSOR_INVERSE) {
   T(1, 0) = 0.5;
   T(1, 1) = 3.0;
 
-  T.inverse();
+  T.Inverse();
 
   CHECK_CLOSE(T(0, 0), 0.697674418604651, 1e-12);
   CHECK_CLOSE(T(0, 1), 0.465116279069767, 1e-12);

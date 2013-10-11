@@ -590,7 +590,7 @@ public:
   void tracer_advection (MultiFab* u_mac,
 			 bool reflux_on_this_call,
                          bool use_cached_sat,
-                         const MultiFab* F = 0);
+                         MultiFab* F = 0);
 
   void tracer_diffusion (bool reflux_on_this_call,
                          bool use_cached_sat,

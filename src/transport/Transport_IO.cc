@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <set>
@@ -76,23 +76,23 @@ void Transport_PK::ProcessParameterList()
       if (dlist.isSublist(dlist.name(i))) nblocks++;
     }
 
-    dispersion_models.resize(nblocks);
+    dispersion_models_.resize(nblocks);
 
     int iblock = 0;
     for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) {
-        dispersion_models[iblock] = Teuchos::rcp(new DispersionModel());
+        dispersion_models_[iblock] = Teuchos::rcp(new DispersionModel());
 
         Teuchos::ParameterList& model_list = dlist.sublist(dlist.name(i));
 
         string model_name = model_list.get<string>("model", "none");
-        ProcessStringDispersionModel(model_name, &(dispersion_models[iblock]->model));
+        ProcessStringDispersionModel(model_name, &(dispersion_models_[iblock]->model));
 
-        dispersion_models[iblock]->alphaL = model_list.get<double>("alphaL", 0.0);
-        dispersion_models[iblock]->alphaT = model_list.get<double>("alphaT", 0.0);
-        dispersion_models[iblock]->D = model_list.get<double>("D", 0.0);
-        dispersion_models[iblock]->tau = model_list.get<double>("tortuosity", 0.0);
-        dispersion_models[iblock]->regions = model_list.get<Teuchos::Array<std::string> >("regions").toVector();
+        dispersion_models_[iblock]->alphaL = model_list.get<double>("alphaL", 0.0);
+        dispersion_models_[iblock]->alphaT = model_list.get<double>("alphaT", 0.0);
+        dispersion_models_[iblock]->D = model_list.get<double>("D", 0.0);
+        dispersion_models_[iblock]->tau = model_list.get<double>("tortuosity", 0.0);
+        dispersion_models_[iblock]->regions = model_list.get<Teuchos::Array<std::string> >("regions").toVector();
 
         iblock++;
       }

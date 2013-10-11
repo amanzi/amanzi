@@ -101,7 +101,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
   int nnodes = nodes.size();
 
   Tensor K(permeability);
-  K.inverse();
+  K.Inverse();
 
   // collect all corner matrices
   std::vector<Tensor> Mv;
@@ -121,14 +121,14 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
 
     for (int i = 0; i < d; i++) {
       int f = corner_faces[i];
-      N.add_column(i, mesh_->face_normal(f));
+      N.AddColumn(i, mesh_->face_normal(f));
     }
-    double cwgt_tmp = fabs(N.determinant());
+    double cwgt_tmp = fabs(N.Det());
 
-    N.inverse();
+    N.Inverse();
     NK = N * K;
 
-    N.transpose();
+    N.Transpose();
     Mv_tmp = NK * N;
     Mv.push_back(Mv_tmp);
 

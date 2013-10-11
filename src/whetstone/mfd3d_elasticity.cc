@@ -46,7 +46,7 @@ int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
   Tensor Tinv(T);
-  Tinv.inverse();
+  Tinv.Inverse();
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
@@ -147,7 +147,7 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
 
   // calculate R inv(T) R^T / volume
   Tensor Tinv(T);
-  Tinv.inverse();
+  Tinv.Inverse();
 
   double volume = mesh_->cell_volume(cell);
   Tinv *= 1.0 / volume;

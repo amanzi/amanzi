@@ -95,7 +95,7 @@ TEST(FLOW_RICHARDS_PICARD) {
 
   // derive dependent variable
   Epetra_Vector& pressure = FS->ref_pressure();
-  Epetra_Vector  saturation(pressure);
+  Epetra_Vector saturation(pressure);
   RPK->DeriveSaturationFromPressure(pressure, saturation);
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");

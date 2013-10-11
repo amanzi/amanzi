@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the Transport component of Amanzi. 
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -27,7 +27,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Transport_PK.hh"
 #include "Reconstruction.hh"
-#include "Matrix_Dispersion.hh"
+#include "Dispersion.hh"
+#include "DispersionMatrixFactory.hh"
 #include "LinearOperatorFactory.hh"
 
 
@@ -46,6 +47,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
   parameter_list = parameter_list_MPC.sublist("Transport");
   preconditioners_list = parameter_list_MPC.sublist("Preconditioners");
   solvers_list = parameter_list_MPC.sublist("Solvers");
+  nonlin_solvers_list = parameter_list_MPC.sublist("Nonlinear solvers");
 
   number_components = TS_MPC->total_component_concentration()->NumVectors();
 
@@ -150,13 +152,6 @@ int Transport_PK::InitPK()
   // source term memory allocation (revisit the code (lipnikov@lanl.gov)
   if (src_sink_distribution & Functions::TransportActions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  }
- 
-  // dispersivity models
-  if (dispersion_models.size() != 0) {
-    dispersion_matrix = Teuchos::rcp(new Matrix_Dispersion(mesh_));
-    dispersion_matrix->Init(dispersion_models, dispersion_preconditioner, preconditioners_list);
-    dispersion_matrix->SymbolicAssembleGlobalMatrix();
   }
   return 0;
 }
@@ -396,26 +391,34 @@ void Transport_PK::Advance(double dT_MPC)
     *(vo_->os()) << "species #0: mass=" << mass_tracer << " [kg], mass left domain=" << mass_loss << " [kg]" << endl;
   }
 
-  if (dispersion_models.size() != 0) {
+  if (dispersion_models_.size() != 0) {
     const Epetra_Vector& phi = TS->ref_porosity();
+    const Epetra_Vector& ws = TS->ref_water_saturation();
     const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
 
-    dispersion_matrix->CalculateDispersionTensor(flux, phi, ws);
+    std::string scheme("tpfa");
+    if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) scheme = "mfd";
 
-    if (dispersion_method == TRANSPORT_DISPERSION_METHOD_TPFA) { 
-      dispersion_matrix->AssembleGlobalMatrixTPFA(TS);
-    } else if (dispersion_method == TRANSPORT_DISPERSION_METHOD_NLFV) {
-      dispersion_matrix->AssembleGlobalMatrixNLFV(TS);
-    }
-    dispersion_matrix->AddTimeDerivative(dT_MPC, phi, ws);
-    dispersion_matrix->UpdatePreconditioner();
+    DispersionMatrixFactory mfactory;
+    dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, TS_nextBIG);
 
-    AmanziSolvers::LinearOperatorFactory<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_Dispersion, Epetra_Vector, Epetra_BlockMap> >
-       solver = factory.Create(dispersion_solver, solvers_list, dispersion_matrix);
+    dispersion_matrix_->CalculateDispersionTensor(flux, phi, ws);
+    dispersion_matrix_->SymbolicAssembleMatrix();
+    dispersion_matrix_->ModifySymbolicAssemble();
+    dispersion_matrix_->AssembleMatrix(phi);
+    dispersion_matrix_->AddTimeDerivative(dT_MPC, phi, ws);
 
-    const Epetra_Map& cmap = mesh_->cell_map(false);
-    Epetra_Vector rhs(cmap);
+    dispersion_matrix_->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
+    dispersion_matrix_->UpdatePreconditioner();
+
+    AmanziSolvers::LinearOperatorFactory<Dispersion, Epetra_Vector, Epetra_BlockMap> sfactory;
+    Teuchos::RCP<AmanziSolvers::LinearOperator<Dispersion, Epetra_Vector, Epetra_BlockMap> >
+       solver = sfactory.Create(dispersion_solver, solvers_list, dispersion_matrix_);
+
+    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
+
+    const Epetra_Map& map = dispersion_matrix_->Range();
+    Epetra_Vector rhs(map), sol(map);
 
     double residual = 0.0;
     int num_itrs = 0;
@@ -424,16 +427,19 @@ void Transport_PK::Advance(double dT_MPC)
       for (int c = 0; c < ncells_owned; c++) {
         double factor = mesh_->cell_volume(c) * ws[c] * phi[c] / dT_MPC;
         rhs[c] = tcc_next[i][c] * factor;
+        sol[c] = tcc_next[i][c];
       }
 
-      double* data;  // convert ghosted vector to owned vector
-      tcc_next(i)->ExtractView(&data);
-      Epetra_Vector sol(View, cmap, data);
-
       solver->ApplyInverse(rhs, sol);
+
       residual += solver->residual();
       num_itrs += solver->num_itrs();
+
+      for (int c = 0; c < ncells_owned; c++) {
+        tcc_next[i][c] = sol[c];
+      }
     }
+
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
       *(vo_->os()) << "dispersion solver (" << solver->name() 

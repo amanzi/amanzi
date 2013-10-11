@@ -134,6 +134,7 @@
 
 
 	<execution_controls>
+		<verbosity level="high"/>
 	         <comments>Note this section eliminates Initialize to Steady/Transient/Switch since multiple execution periods
 		           can be used instead. Execution control defaults can be overridden as shown on 0.0 time line.
 			   Use named time period as defined above, or actual times.</comments>

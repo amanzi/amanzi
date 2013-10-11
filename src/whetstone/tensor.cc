@@ -109,7 +109,7 @@ double Tensor::Trace() const
 /* ******************************************************************
 * Inverse operation with tensors of rank 1 and 2
 ****************************************************************** */
-void Tensor::inverse()
+void Tensor::Inverse()
 {
   if (size_ == 1) {
     data_[0] = 1.0 / data_[0];
@@ -136,7 +136,7 @@ void Tensor::inverse()
 /* ******************************************************************
 * Transpose operator for non-symmetric tensors.
 ****************************************************************** */
-void Tensor::transpose()
+void Tensor::Transpose()
 {
   if (rank_ == 2 && d_ == 2) {
     double tmp = data_[1];
@@ -161,7 +161,7 @@ void Tensor::transpose()
 /* ******************************************************************
 * Determinant of second-order tensors.
 ****************************************************************** */
-double Tensor::determinant()
+double Tensor::Det()
 {
   double det = 0.0;
   if (rank_ == 2 && d_ == 2) {
@@ -181,7 +181,7 @@ double Tensor::determinant()
 /* ******************************************************************
 * Spectral bounds of symmetric tensors of rank 1 and 2
 ****************************************************************** */
-void Tensor::spectral_bounds(double* lower, double* upper) const
+void Tensor::SpectralBounds(double* lower, double* upper) const
 {
   if (size_ == 1) {
     *lower = data_[0];
@@ -315,7 +315,7 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 /* ******************************************************************
 * Miscaleneous routines: populate tensors of rank 2
 ****************************************************************** */
-int Tensor::add_column(const int column, const AmanziGeometry::Point& p)
+int Tensor::AddColumn(const int column, const AmanziGeometry::Point& p)
 {
   if (rank_ == 2) {
     for (int i = 0; i < d_; i++) (*this)(i, column) = p[i];
@@ -325,7 +325,7 @@ int Tensor::add_column(const int column, const AmanziGeometry::Point& p)
 }
 
 
-int Tensor::add_row(const int row, const AmanziGeometry::Point& p)
+int Tensor::AddRow(const int row, const AmanziGeometry::Point& p)
 {
   if (rank_ == 2) {
     for (int i = 0; i < d_; i++) (*this)(row, i) = p[i];
