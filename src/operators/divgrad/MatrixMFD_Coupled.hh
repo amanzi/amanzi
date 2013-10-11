@@ -62,7 +62,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
 
  public:
   MatrixMFD_Coupled(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   MatrixMFD_Coupled(const MatrixMFD_Coupled& other);
 

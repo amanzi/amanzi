@@ -116,7 +116,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
   std::string method_name = plist_.get<string>("upwind conductivity method",
-          "upwind by potential difference");
+          "upwind with total flux");
   if (method_name == "cell centered") {
     upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
@@ -389,8 +389,10 @@ void OverlandHeadFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
   S->GetField("surface_flux", name_)->set_initialized();
-  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
+    S->GetFieldData("surface_flux_direction", name_)->PutScalar(0.);
     S->GetField("surface_flux_direction", name_)->set_initialized();
+  }
   S->GetField("surface_velocity", name_)->set_initialized();
 };
 

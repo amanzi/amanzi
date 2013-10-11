@@ -31,9 +31,6 @@ class MPCSurfaceSubsurfaceEnergyCoupler : public MPCSurfaceSubsurfaceCoupler {
       PKDefaultBase(plist, soln),
       MPCSurfaceSubsurfaceCoupler(plist, soln) {}
 
-  // -- Setup data.
-  virtual void setup(const Teuchos::Ptr<State>& S);
-
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 

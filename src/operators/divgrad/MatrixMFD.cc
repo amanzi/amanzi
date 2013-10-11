@@ -18,7 +18,7 @@ namespace Operators {
  * Constructor
  ****************************************************************** */
 MatrixMFD::MatrixMFD(Teuchos::ParameterList& plist,
-                     const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     plist_(plist),
     mesh_(mesh),
     flag_symmetry_(false),

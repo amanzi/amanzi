@@ -5,6 +5,7 @@
 
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
+           Satish Karra (satkarra@lanl.gov)
 */
 
 #include "dbc.hh"
@@ -47,10 +48,11 @@ ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
       std::string region_name = tcp_sublist.get<std::string>("region");
       Teuchos::RCP<ThermalConductivityThreePhase> tc = fac.createThermalConductivityModel(tcp_sublist);
       tcs_.push_back(std::make_pair(region_name,tc));
+    } else {
+      Errors::Message message("ThermalConductivityThreePhaseEvaluator: region-based lists.  (Perhaps you have an old-style input file?)");
+      Exceptions::amanzi_throw(message);
     }
-
   }
-
 }
 
 

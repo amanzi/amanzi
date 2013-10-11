@@ -38,24 +38,35 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
 
   // get the pk info
   if (sub_pks_[0]->name() == domain_pk_name_) {
-    domain_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
+    domain_pk_ = sub_pks_[0];
     domain_pk_index_ = 0;
-    ASSERT(domain_pk_ != Teuchos::null);
     ASSERT(sub_pks_[1]->name() == surf_pk_name_);
-    surf_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[1]);
+    surf_pk_ = sub_pks_[1];
     surf_pk_index_ = 1;
-    ASSERT(surf_pk_ != Teuchos::null);
   } else if (sub_pks_[1]->name() == domain_pk_name_) {
-    domain_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[1]);
+    domain_pk_ = sub_pks_[1];
     domain_pk_index_ = 1;
-    ASSERT(domain_pk_ != Teuchos::null);
     ASSERT(sub_pks_[0]->name() == surf_pk_name_);
-    surf_pk_ = Teuchos::rcp_dynamic_cast<PKPhysicalBDFBase>(sub_pks_[0]);
+    surf_pk_ = sub_pks_[0];
     surf_pk_index_ = 0;
-    ASSERT(surf_pk_ != Teuchos::null);
   } else {
     ASSERT(0);
   }
+
+  // get the preconditioners for our own use
+  mfd_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(domain_pk_->preconditioner());
+  if (mfd_preconditioner_ == Teuchos::null) {
+    Errors::Message msg("MPCSurfaceSubsurfaceCoupler: subsurface operator must be MatrixMFD_Surf.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  surf_preconditioner_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(surf_pk_->preconditioner());
+  if (surf_preconditioner_ == Teuchos::null) {
+    Errors::Message msg("MPCSurfaceSubsurfaceCoupler: surface operator must be MatrixMFD_TPFA.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  mfd_preconditioner_->SetSurfaceOperator(surf_preconditioner_);
 
   // get the PKs debuggers for our own use
   domain_db_ = domain_pk_->debugger();

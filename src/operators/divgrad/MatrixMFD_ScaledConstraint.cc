@@ -7,11 +7,12 @@
 #include "errors.hh"
 #include "Epetra_FECrsGraph.h"
 #include "EpetraExt_RowMatrixOut.h"
-#include "MatrixMFD.hh"
 #include "MatrixMFD_ScaledConstraint.hh"
 
 namespace Amanzi {
 namespace Operators {
+
+RegisteredMatrixMFD_Factory<MatrixMFD_ScaledConstraint> MatrixMFD_ScaledConstraint::reg_("MatrixMFD_ScaledConstraint");
 
 void MatrixMFD_ScaledConstraint::set_symmetric(bool flag_symmetry) {
   if (flag_symmetry) {
