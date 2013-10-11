@@ -234,9 +234,11 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
 /* ****************************************************************
 * Find string for the preconditoner.
 **************************************************************** */
-void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
+void Flow_PK::OutputTimeHistory(
+    const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history)
 {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  if (plist.isParameter("plot time history") && 
+      vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "saving time history in file flow_dt_history.txt..." << endl;
 
