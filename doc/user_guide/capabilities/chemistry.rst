@@ -11,6 +11,7 @@ The stoichiometric relation for a generic reaction involving :math:`N_c` reactan
 .. math::
   \sum_{j=1}^{N_c} \nu_{ij}~A_j = A_i
   :label: stoichiometry
+
 where :math:`\nu_{ij}` is the stoichiometric coefficients of the :math:`j-th` reactant in the :math:`i-th` reaction. 
 
 Total component concentrations

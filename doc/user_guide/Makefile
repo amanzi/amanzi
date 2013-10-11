@@ -56,8 +56,10 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
+	-rm -rf verification tutorial benchmarking
 
-html:
+html: 
+	python collect.py
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

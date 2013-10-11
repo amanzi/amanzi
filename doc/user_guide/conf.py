@@ -80,8 +80,8 @@ release = '0.2.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-#exclude_patterns = ['_build','testing','prototype','viz','install']
-exclude_patterns = ['_build','testing','install']
+exclude_patterns = ['_build','testing','prototype','viz','install']
+# exclude_patterns = ['_build','testing','install']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None

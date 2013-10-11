@@ -14,8 +14,11 @@ Contents:
    background/index.rst
    capabilities/index.rst 
    input/input_schema.rst  
-   viz/index.rst
-   prototype/index.rst
+   tutorial/index.rst
+   verification/index.rst
+   benchmarking/index.rst
+.. viz/index.rst
+.. prototype/index.rst
 
 Indices and tables
 ==================

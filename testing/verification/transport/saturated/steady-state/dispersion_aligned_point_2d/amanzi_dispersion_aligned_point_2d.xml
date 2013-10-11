@@ -40,12 +40,9 @@
         <Parameter name="Framework" type="string" value="MSTK"/>
         <Parameter name="Verify Mesh" type="bool" value="false"/>
       </ParameterList>
-      <ParameterList name="Generate Mesh">
-        <ParameterList name="Uniform Structured">
-          <Parameter name="Domain Low Corner" type="Array(double)" value="{-271.0, -270.0}"/>
-          <Parameter name="Domain High Corner" type="Array(double)" value="{960.0,  270.0}"/>
-          <Parameter name="Number of Cells" type="Array(int)" value="{84, 37}"/>
-        </ParameterList>
+      <ParameterList name="Read Mesh File">
+        <Parameter name="File" type="string" value="porflow5_2_1_r5.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -54,70 +51,195 @@
   <ParameterList name="Regions">
     <ParameterList name="All domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-271.0, -270.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{960.0,  270.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-273.75, -273.75}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{971.25,  281.25}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-5.0,-5.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{5.0, 5.0}"/>
+        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.1,-0.1}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.1, 0.1}"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Dnwind150">
+    <ParameterList name="Upstrm210">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{-210.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Upstrm150">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{-150.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Dnwind090">
+    <ParameterList name="Upstrm090">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{-90.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Dnwind030">
+    <ParameterList name="Upstrm030">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{-30.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind030">
+    <ParameterList name="Dnstrm030">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{30.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind090">
+    <ParameterList name="Dnstrm090">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{90.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind150">
+    <ParameterList name="Dnstrm150">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{150.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind210">
+    <ParameterList name="Dnstrm210">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{210.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind270">
+    <ParameterList name="Dnstrm270">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{270.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind330">
+    <ParameterList name="Dnstrm330">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{330.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind390">
+    <ParameterList name="Dnstrm390">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{390.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Upwind450">
+    <ParameterList name="Dnstrm450">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{450.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm510">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{510.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm570">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{570.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm630">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{630.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm690">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{690.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm750">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{750.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm810">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{810.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm870">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{870.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm930">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{930.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0030">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,30.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0060">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,60.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0090">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,90.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0120">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,120.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0150">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,150.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0180">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,180.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0210">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,210.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Cross0240">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{0.0,240.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb030">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,30.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb060">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,60.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb090">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,90.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb120">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,120.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb150">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,150.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb180">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,180.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb210">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,210.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Crossb240">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{424.0,240.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -246,70 +368,219 @@
     </ParameterList>
 
     <ParameterList name="Observation Data">
-      <Parameter name="Observation Output Filename" type="string" value="obs5_2_1.out"/>
+      <Parameter name="Observation Output Filename" type="string" value="obs5_2_1_r5.out"/>
       <ParameterList name="Point 01">
-        <Parameter name="Region" type="string" value="Dnwind150"/>
+        <Parameter name="Region" type="string" value="Upstrm210"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 02">
-        <Parameter name="Region" type="string" value="Dnwind090"/>
+        <Parameter name="Region" type="string" value="Upstrm150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 03">
-        <Parameter name="Region" type="string" value="Dnwind030"/>
+        <Parameter name="Region" type="string" value="Upstrm090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
-
       <ParameterList name="Point 04">
-        <Parameter name="Region" type="string" value="Upwind030"/>
+        <Parameter name="Region" type="string" value="Upstrm030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 05">
-        <Parameter name="Region" type="string" value="Upwind090"/>
+        <Parameter name="Region" type="string" value="Dnstrm030"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 06">
-        <Parameter name="Region" type="string" value="Upwind150"/>
+        <Parameter name="Region" type="string" value="Dnstrm090"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 07">
-        <Parameter name="Region" type="string" value="Upwind210"/>
+        <Parameter name="Region" type="string" value="Dnstrm150"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 08">
-        <Parameter name="Region" type="string" value="Upwind270"/>
+        <Parameter name="Region" type="string" value="Dnstrm210"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 09">
-        <Parameter name="Region" type="string" value="Upwind330"/>
+        <Parameter name="Region" type="string" value="Dnstrm270"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 10">
-        <Parameter name="Region" type="string" value="Upwind390"/>
+        <Parameter name="Region" type="string" value="Dnstrm330"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>
       </ParameterList>
       <ParameterList name="Point 11">
-        <Parameter name="Region" type="string" value="Upwind450"/>
+        <Parameter name="Region" type="string" value="Dnstrm390"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 12">
+        <Parameter name="Region" type="string" value="Dnstrm450"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 13">
+        <Parameter name="Region" type="string" value="Dnstrm510"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 14">
+        <Parameter name="Region" type="string" value="Dnstrm570"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 15">
+        <Parameter name="Region" type="string" value="Dnstrm630"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 16">
+        <Parameter name="Region" type="string" value="Dnstrm690"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 17">
+        <Parameter name="Region" type="string" value="Dnstrm750"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 18">
+        <Parameter name="Region" type="string" value="Dnstrm810"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 19">
+        <Parameter name="Region" type="string" value="Dnstrm870"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 20">
+        <Parameter name="Region" type="string" value="Dnstrm930"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 21">
+        <Parameter name="Region" type="string" value="Cross0030"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 22">
+        <Parameter name="Region" type="string" value="Cross0060"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 23">
+        <Parameter name="Region" type="string" value="Cross0090"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 24">
+        <Parameter name="Region" type="string" value="Cross0120"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 25">
+        <Parameter name="Region" type="string" value="Cross0150"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 26">
+        <Parameter name="Region" type="string" value="Cross0180"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 27">
+        <Parameter name="Region" type="string" value="Cross0210"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 28">
+        <Parameter name="Region" type="string" value="Cross0240"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 29">
+        <Parameter name="Region" type="string" value="Crossb030"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 30">
+        <Parameter name="Region" type="string" value="Crossb060"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 31">
+        <Parameter name="Region" type="string" value="Crossb090"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 32">
+        <Parameter name="Region" type="string" value="Crossb120"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 33">
+        <Parameter name="Region" type="string" value="Crossb150"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 34">
+        <Parameter name="Region" type="string" value="Crossb180"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 35">
+        <Parameter name="Region" type="string" value="Crossb210"/>
+        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+        <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
+        <Parameter name="Time Macro" type="string" value="Observation Times"/>
+      </ParameterList>
+      <ParameterList name="Point 36">
+        <Parameter name="Region" type="string" value="Crossb240"/>
         <Parameter name="Functional" type="string" value="Observation Data: Point"/>
         <Parameter name="Variable" type="string" value="Tc-99 Aqueous concentration"/>
         <Parameter name="Time Macro" type="string" value="Observation Times"/>

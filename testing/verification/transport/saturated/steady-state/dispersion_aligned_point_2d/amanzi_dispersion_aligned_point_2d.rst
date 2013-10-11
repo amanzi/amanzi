@@ -72,7 +72,7 @@ The off-diagonal entries are
 Schematic
 ~~~~~~~~~
 Note, the values in the schematic correlate to the values found in
-
+..:ref:`Dispersion:2D:Plot-Table`.
 
 .. figure:: schematic/schematic.png 
     :figclass: align-center
