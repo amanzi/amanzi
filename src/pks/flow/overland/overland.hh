@@ -18,11 +18,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 namespace Amanzi {
 
-namespace Operators {
-  class MatrixMFD_TPFA;
-}
 class MPCSurfaceSubsurfaceDirichletCoupler;
-
 
 namespace Flow {
 
@@ -132,6 +128,7 @@ protected:
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
   bool perm_update_required_;
+  bool tpfa_;
 
   // coupling term
   bool full_jacobian_;
@@ -142,9 +139,6 @@ protected:
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
   // note PC is in PKPhysicalBDFBase
-
-  bool tpfa_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;

@@ -11,6 +11,7 @@ Author: Ethan Coon
 #include "energy_bc_factory.hh"
 #include "CompositeVectorSpace.hh"
 
+#include "MatrixMFD_Factory.hh"
 #include "advection_diffusion.hh"
 
 namespace Amanzi {
@@ -68,7 +69,7 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = energy_plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, S->GetMesh()));
+  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
@@ -76,8 +77,7 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   // preconditioner
   // NOTE: may want to allow these to be the same/different?
   Teuchos::ParameterList mfd_pc_plist = energy_plist_.sublist("Diffusion PC");
-  mfd_preconditioner_ =
-    Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, S->GetMesh()));
+  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(true);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);

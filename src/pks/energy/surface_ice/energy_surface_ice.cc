@@ -131,15 +131,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
-    // -- kill the preconditioner and replace with a TPFA precon
-    Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
-    mfd_preconditioner_->set_symmetric(true);
-    mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
-    mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
-    mfd_preconditioner_->InitPreconditioner();
-
-
     // -- ensure mass source from subsurface exists
     S->RequireField("surface_subsurface_flux")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);

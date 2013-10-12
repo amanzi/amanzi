@@ -27,6 +27,13 @@ MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList&
 
   surf_pk_name_ = plist.get<std::string>("surface PK name");
   domain_pk_name_ = plist.get<std::string>("subsurface PK name");
+
+  // ensure the subsurface preconditioner is a Surf
+  plist.sublist("PKs").sublist(domain_pk_name_)
+      .sublist("Diffusion PC").set("coupled to surface", true);
+  // ensure the surface preconditioner is TPFA
+  plist.sublist("PKs").sublist(surf_pk_name_)
+      .sublist("Diffusion PC").set("TPFA", true);
 };
 
 void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {

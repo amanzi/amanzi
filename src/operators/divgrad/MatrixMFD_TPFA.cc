@@ -22,9 +22,6 @@
 namespace Amanzi {
 namespace Operators {
 
-RegisteredMatrixMFD_Factory<MatrixMFD_TPFA> MatrixMFD_TPFA::reg_("MatrixMFD_TPFA");
-
-
 template<class T>
 int FindPosition(const std::vector<T>& v, const T& value) {
   for (unsigned int i=0; i!=v.size(); ++i)

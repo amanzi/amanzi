@@ -36,6 +36,7 @@
 
 #include "LinearOperatorFactory.hh"
 #include "FieldEvaluator.hh"
+#include "MatrixMFD_Factory.hh"
 #include "MatrixMFD.hh"
 #include "MatrixMFD_Coupled.hh"
 
@@ -70,8 +71,7 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
 
   // Create the precon
   Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
-  mfd_preconditioner_ =
-      Teuchos::rcp(new Operators::MatrixMFD_Coupled(pc_sublist, mesh_));
+  mfd_preconditioner_ = Operators::CreateMatrixMFD_Coupled(pc_sublist, mesh_);
 
   // Set the sub-blocks from the sub-PK's preconditioners.
   Teuchos::RCP<Operators::MatrixMFD> pcA = sub_pks_[0]->preconditioner();

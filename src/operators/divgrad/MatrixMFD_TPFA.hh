@@ -22,7 +22,6 @@
 #include "Ifpack.h"
 
 #include "MatrixMFD.hh"
-#include "MatrixMFD_Factory.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -82,10 +81,6 @@ class MatrixMFD_TPFA : virtual public MatrixMFD {
   void operator=(const MatrixMFD_TPFA& matrix);
 
   friend class MatrixMFD_Surf;
-
-private:
-  // factory registration
-  static RegisteredMatrixMFD_Factory<MatrixMFD_TPFA> reg_;
 
 };
 

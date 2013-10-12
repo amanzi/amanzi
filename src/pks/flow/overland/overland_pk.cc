@@ -17,7 +17,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "composite_vector_function_factory.hh"
 #include "independent_variable_field_evaluator.hh"
 
-#include "MatrixMFD_TPFA_ScaledConstraint.hh"
+#include "MatrixMFD_Factory.hh"
 #include "upwind_potential_difference.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_cell_centered.hh"
@@ -122,11 +122,8 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   tpfa_ = mfd_plist.get<bool>("TPFA", false);
-  if (tpfa_) {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(mfd_plist, mesh_));
-  } else {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_plist, mesh_));
-  }
+  mfd_plist.set("scaled constraint equation", true);
+  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
 
   symmetric_ = false;
   matrix_->set_symmetric(symmetric_);
@@ -141,14 +138,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   if (tpfa_) {
     full_jacobian_ = mfd_pc_plist.get<bool>("TPFA use full Jacobian", false);
   }
-
-  if (tpfa_) {
-    tpfa_preconditioner_ =
-        Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(mfd_pc_plist, mesh_));
-    mfd_preconditioner_ = tpfa_preconditioner_;
-  } else {
-    mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(mfd_pc_plist, mesh_));
-  }
+  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);

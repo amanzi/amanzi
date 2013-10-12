@@ -82,7 +82,6 @@ private:
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // time integration
   double atol_;

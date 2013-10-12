@@ -12,8 +12,6 @@
 namespace Amanzi {
 namespace Operators {
 
-RegisteredMatrixMFD_Factory<MatrixMFD_ScaledConstraint> MatrixMFD_ScaledConstraint::reg_("MatrixMFD_ScaledConstraint");
-
 void MatrixMFD_ScaledConstraint::set_symmetric(bool flag_symmetry) {
   if (flag_symmetry) {
     Errors::Message msg("MatrixMFD_ScaledConstraint: ScaledConstraint cannot be symmetric");

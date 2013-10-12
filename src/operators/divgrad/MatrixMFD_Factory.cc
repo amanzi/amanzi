@@ -24,11 +24,69 @@
    ------------------------------------------------------------------------- */
 
 #include "MatrixMFD_Factory.hh"
+#include "MatrixMFD_Surf_ScaledConstraint.hh"
+#include "MatrixMFD_Surf.hh"
+#include "MatrixMFD_TPFA_ScaledConstraint.hh"
+#include "MatrixMFD_TPFA.hh"
+#include "MatrixMFD_ScaledConstraint.hh"
+#include "MatrixMFD.hh"
+#include "MatrixMFD_Coupled_Surf.hh"
+#include "MatrixMFD_Coupled.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-MatrixMFD_Factory::map_type* MatrixMFD_Factory::map_;
+Teuchos::RCP<MatrixMFD>
+CreateMatrixMFD(Teuchos::ParameterList& plist,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+
+  bool surf = plist.get<bool>("coupled to surface", false);
+  bool tpfa = plist.get<bool>("TPFA", false);
+  bool scaled_constraint = plist.get<bool>("scaled constraint equation", false);
+
+  if (surf && tpfa) {
+    Errors::Message msg("MatrixMFD Factory: both Surf and TPFA cannot be specified.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (surf) {
+    if (scaled_constraint) {
+      return Teuchos::rcp(new MatrixMFD_Surf_ScaledConstraint(plist, mesh));
+    } else {
+      return Teuchos::rcp(new MatrixMFD_Surf(plist, mesh));
+    }
+  } else if (tpfa) {
+    if (scaled_constraint) {
+      return Teuchos::rcp(new MatrixMFD_TPFA_ScaledConstraint(plist, mesh));
+    } else {
+      return Teuchos::rcp(new MatrixMFD_TPFA(plist, mesh));
+    }
+  } else {
+    if (scaled_constraint) {
+      return Teuchos::rcp(new MatrixMFD_ScaledConstraint(plist, mesh));
+    } else {
+      return Teuchos::rcp(new MatrixMFD(plist, mesh));
+    }
+  }
+
+  ASSERT(0);
+  return Teuchos::null;
+}
+
+
+Teuchos::RCP<MatrixMFD_Coupled>
+CreateMatrixMFD_Coupled(Teuchos::ParameterList& plist,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+  bool surf = plist.get<bool>("coupled to surface", false);
+  if (surf) {
+    return Teuchos::rcp(new MatrixMFD_Coupled_Surf(plist, mesh));
+  } else {
+    return Teuchos::rcp(new MatrixMFD_Coupled(plist, mesh));
+  }
+
+  ASSERT(0);
+  return Teuchos::null;
+}
 
 } // namespace
 } // namespace

@@ -17,8 +17,6 @@
 namespace Amanzi {
 namespace Operators {
 
-RegisteredMatrixMFD_Factory<MatrixMFD_Surf> MatrixMFD_Surf::reg_("MatrixMFD_Surf");
-
 MatrixMFD_Surf::MatrixMFD_Surf(Teuchos::ParameterList& plist,
 			       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     MatrixMFD(plist,mesh) {}
