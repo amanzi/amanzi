@@ -620,6 +620,11 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
     }
   }
 
+  // verify SPD property
+  double lower, upper;
+  T1.SpectralBounds(&lower, &upper);
+  if (lower <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
   // add stability term D_ik T1_kl D_il
   double volume = mesh_->cell_volume(cell);
   for (int i = 0; i < nrows; i++) {
@@ -634,7 +639,7 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
       M(l, k) = M(k, l) += T1(i1, i2) * area1 * area2 / volume;  // Fix (lipnikov@lanl.gov)
     }
   }
-  return 0;
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 

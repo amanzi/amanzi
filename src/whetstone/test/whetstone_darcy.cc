@@ -118,10 +118,10 @@ TEST(DARCY_INVERSE_MASS) {
 
   int nfaces = 6, cell = 0;
   Tensor T(3, 1);  // tensor of rank 1
-  T(0, 0) = 1;
+  T(0, 0) = 1.0;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 4; method++) {
+  for (int method = 0; method < 5; method++) {
     if (method == 0) 
       mfd.MassMatrixInverse(cell, T, W);
     else if (method == 1)
@@ -130,6 +130,8 @@ TEST(DARCY_INVERSE_MASS) {
       mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
     else if (method == 3)
       mfd.MassMatrixInverseSO(cell, T, W);
+    else if (method == 4)
+      mfd.MassMatrixInverseHex(cell, T, W);
 
     printf("Inverse of mass matrix for method=%d\n", method);
     for (int i=0; i<6; i++) {
@@ -162,6 +164,86 @@ TEST(DARCY_INVERSE_MASS) {
     }
     CHECK_CLOSE(vxx, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
+  }
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(DARCY_FULL_TENSOR) {
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Inverse mass matrix and full tensor" << endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Simple);
+
+  MeshFactory factory(comm);
+  factory.preference(pref);
+  RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  int nfaces = 6, cell = 0;
+  Tensor T(3, 2);  // tensor of rank 2
+  T(0, 0) = 1.0;
+  T(1, 1) = 2.0;
+  T(2, 2) = 3.0;
+  T(0, 1) = T(1, 0) = 1.0;
+  T(1, 2) = T(2, 1) = 1.0;
+
+  DenseMatrix W(nfaces, nfaces);
+  for (int method = 0; method < 5; method++) {
+    if (method == 0) 
+      mfd.MassMatrixInverse(cell, T, W);
+    else if (method == 1)
+      mfd.MassMatrixInverseScaled(cell, T, W);
+    else if (method == 2)
+      mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
+    else if (method == 3)
+      mfd.MassMatrixInverseSO(cell, T, W);
+    else if (method == 4)
+      mfd.MassMatrixInverseHex(cell, T, W);
+
+    printf("Inverse of mass matrix for method=%d\n", method);
+    for (int i=0; i<6; i++) {
+      for (int j=0; j<6; j++ ) printf("%8.4f ", W(i, j)); 
+      printf("\n");
+    }
+
+    // verify SPD propery
+    for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
+
+    // verify exact integration property
+    W.Inverse();
+
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+    
+    AmanziGeometry::Point v(1.0, 2.0, 3.0);
+    double xi, xj;
+    double vxx = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      xi = (v * mesh->face_normal(f)) * dirs[i];
+      for (int j = 0; j < nfaces; j++) {
+        f = faces[j];
+        xj = (v * mesh->face_normal(f)) * dirs[j];
+        vxx += W(i, j) * xi * xj;
+      }
+    }
+    CHECK_CLOSE(vxx, 4 * volume, 1e-10);
   }
 
   delete comm;

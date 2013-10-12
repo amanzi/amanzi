@@ -114,7 +114,11 @@ void Dispersion_MFD::AssembleMatrix(const Epetra_Vector& p)
     WhetStone::DenseMatrix Bpp(ndof, ndof);
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
 
-    mfd3d.MassMatrixInverseHex(c, D[c], Wff);
+    // build inverse of the mass matrix
+    int i = mfd3d.MassMatrixInverseHex(c, D[c], Wff);
+    if (i == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
+      mfd3d.MassMatrixInverseOptimizedScaled(c, D[c], Wff);
+    }
     for (int n = 0; n < nfaces; n++)
       for (int m = 0; m < nfaces; m++) Bpp(m + 1, n + 1) = Wff(m, n);
 
