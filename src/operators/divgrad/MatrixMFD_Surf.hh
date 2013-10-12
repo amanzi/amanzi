@@ -44,10 +44,6 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
   Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
 
- private:
-  // factory registration
-  static RegisteredMatrixMFD_Factory<MatrixMFD_Surf> reg_;
-
 };
 
 

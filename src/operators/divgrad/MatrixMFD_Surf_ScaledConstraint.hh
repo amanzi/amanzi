@@ -32,12 +32,6 @@ class MatrixMFD_Surf_ScaledConstraint : public MatrixMFD_Surf,
   virtual void ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
           const std::vector<double>& bc_values);
 
-
- private:
-  // factory registration
-  static RegisteredMatrixMFD_Factory<MatrixMFD_Surf> reg_;
-
-
 };
 
 

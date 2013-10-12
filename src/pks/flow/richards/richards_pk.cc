@@ -212,10 +212,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
 
   // operator for the diffusion terms
-  Operators::MatrixMFD_Factory fac;
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   scaled_constraint_ = mfd_plist.get<bool>("scaled constraint equation", false);
-  matrix_ = fac.CreateMatrixMFD(mfd_plist, mesh_);
+  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   symmetric_ = false;
   matrix_->set_symmetric(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
@@ -223,7 +222,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  mfd_preconditioner_ = fac.CreateMatrixMFD(mfd_pc_plist, mesh_);
+  mfd_pc_plist.set("scaled constraint equation", scaled_constraint_);
+  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->InitPreconditioner();

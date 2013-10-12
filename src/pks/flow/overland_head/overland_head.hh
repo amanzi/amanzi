@@ -11,6 +11,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 #include "boundary_function.hh"
 #include "MatrixMFD.hh"
+#include "MatrixMFD_TPFA.hh"
 #include "upwinding.hh"
 
 #include "pk_factory.hh"
@@ -18,12 +19,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 namespace Amanzi {
 
-namespace Operators {
-  class MatrixMFD_TPFA;
-}
 class MPCSurfaceSubsurfaceDirichletCoupler;
-
-
 namespace Flow {
 
 namespace FlowRelations {
@@ -149,10 +145,10 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
   // note PC is in PKPhysicalBDFBase
 
   bool tpfa_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;

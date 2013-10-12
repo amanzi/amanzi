@@ -12,7 +12,6 @@
 
 #include <strings.h>
 
-#include "MatrixMFD_Factory.hh"
 #include "MatrixMFD.hh"
 
 namespace Amanzi {
@@ -59,10 +58,6 @@ class MatrixMFD_ScaledConstraint : virtual public MatrixMFD {
   Teuchos::RCP<Epetra_Vector> Krel_;
 
   friend class MatrixMFD_Coupled;
-
- private:
-  // factory registration
-  static RegisteredMatrixMFD_Factory<MatrixMFD_ScaledConstraint> reg_;
 
 };
 

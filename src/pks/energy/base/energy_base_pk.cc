@@ -12,6 +12,7 @@ Author: Ethan Coon
 
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
+#include "MatrixMFD_Factory.hh"
 
 #include "energy_base.hh"
 
@@ -145,7 +146,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
-  matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
+  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->CreateMFDmassMatrices(Teuchos::null);
@@ -153,7 +154,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  mfd_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
+  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(true);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
