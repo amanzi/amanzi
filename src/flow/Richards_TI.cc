@@ -83,7 +83,6 @@ void Richards_PK::fun(
 ****************************************************************** */
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
-
  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
   preconditioner_->ApplyInverse(X, Y);
  }

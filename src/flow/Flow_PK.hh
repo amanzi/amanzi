@@ -123,9 +123,9 @@ class Flow_PK : public BDF2::fnBase {
   void ProcessStringLinearSolver(const std::string& name, LinearSolver_Specs* ls_specs);
   void ProcessStringPreconditioner(const std::string& name, int* preconditioner);
 
-  std::string FindStringLinearSolver(const Teuchos::ParameterList& list, const Teuchos::ParameterList& solver_list);
+  std::string FindStringLinearSolver(const Teuchos::ParameterList& plist, const Teuchos::ParameterList& solver_list);
   std::string FindStringPreconditioner(const Teuchos::ParameterList& list);
-  void OutputTimeHistory(std::vector<dt_tuple>& dT_history);
+  void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
 
   // extension of mesh API
   int BoundaryFaceGetCell(int f);
