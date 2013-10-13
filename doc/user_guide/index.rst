@@ -14,7 +14,6 @@ Contents:
    background/index.rst
    capabilities/index.rst
    input/input_schema.rst
-   mycase/index.rst
 
 Indices and tables
 ==================
