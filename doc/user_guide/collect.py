@@ -44,7 +44,7 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                 'index_file' : 'doc/user_guide/verification/confined_flow/index.rst',
                                 'index_list' : ['linear_head_head', 'linear_flux_head',
                                                 'linear_materials_serial','linear_materials_parallel',
-                                                'theis_isotropic',
+                                                'theis_isotropic', 'hantush_anisotropic',
                                                 ],
                                 },
                                'linear_head_head' :
@@ -71,6 +71,11 @@ verification['confined_flow']={'index_entry' : 'confined_flow/index.rst',
                                    {'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
                                     'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic',
                                     'index_entry' : 'theis_isotropic/amanzi_theis_isotropic_1d.rst',
+                                    },
+                               'hantush_anisotropic' :
+                                   {'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
+                                    'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
+                                    'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
                                     },
                                }
 
@@ -162,11 +167,13 @@ mycase['index']={'index_title' : 'My Prototype Documentation',
                  'index_list' : ['newcase'],
              }
 
-mycase['newcase']={'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
-                   'dest_dir' : 'doc/user_guide/mycase/theis_isotropic_1d',
-                   'index_entry' : 'theis_isotropic_1d/amanzi_theis_isotropic_1d.rst',
+mycase['newcase']={'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
+                   'dest_dir' : 'doc/user_guide/mycase/hantush_anisotropic_2d',
+                   'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
                }
 
+
+# =========================================================================================================================
 #
 #  Create parser and options
 #
@@ -213,8 +220,7 @@ if (opts.mycase):
     toc_user_guide['mycase'] = {'index_entry' : 'mycase/index.rst'}
     sections['mycase'] = mycase
     
-
-# ================================================================================================
+# =========================================================================================================================
 
 # Set the logfile
 logfile=sys.stdout
