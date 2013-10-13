@@ -12,13 +12,9 @@ Contents:
    :maxdepth: 2
    
    background/index.rst
-   capabilities/index.rst 
-   input/input_schema.rst  
-   tutorial/index.rst
-   verification/index.rst
-   benchmarking/index.rst
-.. viz/index.rst
-.. prototype/index.rst
+   capabilities/index.rst
+   input/input_schema.rst
+   mycase/index.rst
 
 Indices and tables
 ==================

@@ -78,48 +78,38 @@ def IndexCreate(amanzi_home,data,logfile):
 
     f.close()
             
-def IndexInsert(index_file,insert_lines):
+def IndexInsert(index_file,new_lines):
 
-    # make a new list of lines to add
-    new_lines=[]
+    # make a backup
+    shutil.copyfile(index_file,index_file+"~")
+    # add new lines after the toctree directive
+    infile=open(index_file+"~")
+    outfile=open(index_file,"w")
 
-    file_contents = open(index_file).read()
-    for line in insert_lines:
-        if line not in file_contents:
-            new_lines.append(line)
-        
-    if not new_lines:
-        # if new_lines is empty we are done
-        return
-    else:
-        # make a backup
-        shutil.copyfile(index_file,index_file+"~")
-        # add new lines after the toctree directive
-        infile=open(index_file+"~")
-        outfile=open(index_file,"w")
-
-        skip_toctree_options=False
-        new_lines_inserted=False
-        for line in infile:
-            if "toctree::" in line:
-                skip_toctree_options=True
-                outfile.write(line)
-            elif ( skip_toctree_options and line.strip() ):
-                outfile.write(line)
-            elif ( skip_toctree_options and not line.strip() ):
-                outfile.write(line)
-                skip_toctree_options=False
-                for nline in new_lines:
-                    outfile.write("   "+nline+"\n")
-                new_lines_inserted=True
-            else:
-                outfile.write(line)
-                    
-        if not new_lines_inserted:
+    skip_toctree_options=False
+    old_entries_skipped=False
+    new_lines_inserted=False
+    for line in infile:
+        if "toctree::" in line:
+            skip_toctree_options=True
+            outfile.write(line)
+        elif ( skip_toctree_options and line.strip() ):
+            outfile.write(line)
+        elif ( skip_toctree_options and not line.strip() ):
+            outfile.write(line)
+            skip_toctree_options=False
             for nline in new_lines:
                 outfile.write("   "+nline+"\n")
             new_lines_inserted=True
-
+        elif ( new_lines_inserted and not old_entries_skipped ):
+            if ( not line.strip() ):
+                outfile.write("\n")
+                old_entries_skipped=True
+        elif ( old_entries_skipped ):
+            outfile.write(line)
+        else:
+            outfile.write(line)
+       
                
 def RecurseIndex(amanzi_home,content,level,logfile):
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys, utils
+import optparse
 
 #  Create dictionary that describes:
 #
@@ -144,14 +145,67 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                 }
 
 
-#
-#  Collect sections into a single dictionary
-#
-sections={'tutorial' : tutorial,
-          'verification' : verification,
-          'benchmarking': benchmark,
-}
 
+#
+#  Benchmarks
+#
+mycase={}
+mycase['index']={'index_title' : 'My Prototype Documentation',
+                 'index_file' : 'doc/user_guide/mycase/index.rst',
+                 'index_list' : ['newcase'],
+             }
+
+mycase['newcase']={'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
+                   'dest_dir' : 'doc/user_guide/mycase/theis_isotropic_1d',
+                   'index_entry' : 'theis_isotropic_1d/amanzi_theis_isotropic_1d.rst',
+               }
+
+#
+#  Create parser and options
+#
+p = optparse.OptionParser()
+p.add_option('--full-guide', help='Build the full User Guide', default=False, dest='full_guide', action='store_true')
+p.add_option('--mycase', help='Build the "mycase" test', default=False, dest='mycase', action='store_true')
+p.add_option('--tutorial', default=False, dest='tutorial', action='store_true')
+p.add_option('--verification', default=False, dest='verification', action='store_true')
+p.add_option('--benchmarking', default=False, dest='benchmarking', action='store_true')
+
+(opts,args) = p.parse_args()
+
+#
+#  Create dictionary for sections
+#
+sections={}
+
+#
+#  Table of Contents (Top Level)
+#
+toc_user_guide = {'index_list' : [ 'background', 'capabilities', 'input' ],
+                  'background'   : { 'index_entry' : 'background/index.rst' },
+                  'capabilities' : { 'index_entry' : 'capabilities/index.rst' },
+                  'input'        : { 'index_entry' : 'input/input_schema.rst'  },
+            }
+
+if ( opts.tutorial or opts.full_guide ):
+    toc_user_guide['index_list'].append('tutorial')
+    toc_user_guide['tutorial'] = { 'index_entry' : 'tutorial/index.rst' }
+    sections['tutorial'] = tutorial
+
+if ( opts.verification or opts.full_guide ):
+    toc_user_guide['index_list'].append('verification')
+    toc_user_guide['verification'] = { 'index_entry' : 'verification/index.rst' }
+    sections['verification'] = verification
+
+if ( opts.benchmarking or opts.full_guide ):
+    toc_user_guide['index_list'].append('benchmarking')
+    toc_user_guide['benchmarking'] = {'index_entry' : 'benchmarking/index.rst'}
+    sections['benchmarking'] = benchmark
+
+if (opts.mycase):
+    toc_user_guide['index_list'].append('mycase')
+    toc_user_guide['mycase'] = {'index_entry' : 'mycase/index.rst'}
+    sections['mycase'] = mycase
+    
 
 # ================================================================================================
 
@@ -169,6 +223,15 @@ utils.RecurseIndex(amanzi_home,sections,level,logfile)
 
 # Copy content 
 utils.RecurseCopy(amanzi_home,sections,level,logfile)
+
+# Fix top-level index 
+
+index_entries = [ ]
+for e in toc_user_guide['index_list']:
+    index_entries.append(toc_user_guide[e]['index_entry'])
+
+print index_entries
+utils.IndexInsert('index.rst',index_entries)
 
 # Fix paths on plot directives
 utils.WalkRstFiles(amanzi_home,sections,logfile)
