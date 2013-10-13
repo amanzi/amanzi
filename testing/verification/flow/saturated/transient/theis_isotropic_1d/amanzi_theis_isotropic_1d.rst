@@ -156,7 +156,7 @@ the water table.
 Plot and Table of Analytic Solution and Amanzi Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. plot:: prototype/transient-theis/amanzi_transient_theis.py
+.. plot:: prototype/transient-theis/amanzi_theis_isotropic_1d.py
 
 
 .. include:: table_values_theis.txt

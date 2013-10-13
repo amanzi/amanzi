@@ -229,8 +229,6 @@ utils.RecurseCopy(amanzi_home,sections,level,logfile)
 index_entries = [ ]
 for e in toc_user_guide['index_list']:
     index_entries.append(toc_user_guide[e]['index_entry'])
-
-print index_entries
 utils.IndexInsert('index.rst',index_entries)
 
 # Fix paths on plot directives

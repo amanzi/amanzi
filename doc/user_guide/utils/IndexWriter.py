@@ -187,7 +187,13 @@ def UpdatePlotPath(amanzi_home,rst_dir,rst_base,logfile):
     rst_file=os.path.join(rst_dir,rst_base)
     
     # Ensure this will work with a full path as well as local path
-    plt_path = rst_dir.lstrip(amanzi_home+os.sep+"doc/user_guide"+os.sep)    
+    print rst_dir
+    k = rst_dir.rfind("doc"+os.sep+"user_guide"+os.sep)
+    if ( k == -1 ):
+        plt_path=rst_dir
+    else:
+        plt_path = rst_dir[k+15:len(rst_dir)]
+    print plt_path
 
     logfile.write("  %s\n" % rst_file )
 

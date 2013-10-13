@@ -55,11 +55,15 @@ help:
 	@echo " NEW_PYTHONPATH = $(NEW_PYTHONPATH)"
 
 clean:
-	-rm -rf $(BUILDDIR)/*
-	-rm -rf verification tutorial benchmarking
+	@echo "Removing the build directory: $(BUILDDIR)" ;\
+	rm -rf $(BUILDDIR)/*  ;\
+	echo "Removing the section subdirectories: verification, tutorial, benchmarking, mycase" ;\
+	rm -rf verification tutorial benchmarking mycase  ;\
+	echo "Reverting ./index.rst"   ;\
+	hg revert ./index.rst
 
 html: 
-	python collect.py
+	python collect.py $(AMANZI_SECTION_OPTIONS) 
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
