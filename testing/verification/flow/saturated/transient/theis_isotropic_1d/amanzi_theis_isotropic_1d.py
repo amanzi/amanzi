@@ -4,7 +4,7 @@ import math
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
-import model_theis 
+import model_theis_isotropic_1d
 import prettytable
 
 # load input xml file
@@ -52,7 +52,7 @@ def plotTheisObservations(Obs_xml, Obs_data, axes1):
     return cmap
 
 def plotTheisAnalytic(filename, cmap, axes1, Obs_xml ,Obs_data):
-    mymodel = model_theis.createFromXML(filename)
+    mymodel = model_theis_isotropic_1d.createFromXML(filename)
     tindex = numpy.arange(125)
     times = []
     table_values = []
@@ -85,7 +85,7 @@ def MakeTable(Obs_data,Obs_xml,filename):
     #### ==== Modify if statement of another coordinate is desired            ==== ####
     drawdown_amanzi = []
     coordinates = []
-    mymodel = model_theis.createFromXML(filename)
+    mymodel = model_theis_isotropic_1d.createFromXML(filename)
     
     for obs in Obs_data.observations.itervalues():
         if obs.coordinate[0] == -55.0:
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi
 
-    input_filename =os.path.join("amanzi_transient_theis.xml")
+    input_filename =os.path.join("amanzi_theis_isotropic_1d.xml")
 
     CWD = os.getcwd()
     try: 

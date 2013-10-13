@@ -157,11 +157,8 @@ Plot and Table of Analytic Solution and Amanzi Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. plot:: prototype/transient-theis/amanzi_theis_isotropic_1d.py
+	  :align: center
 
 
 .. include:: table_values_theis.txt
 
-Note, this is an image of contour lines of constant draw down measured
-at 35,000 seconds after pumping begins.  
-
-.. image:: schematic/contour.png
