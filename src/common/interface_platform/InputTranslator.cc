@@ -1212,8 +1212,8 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                                 XMLString::release(&textContent);
                             } else if (strcmp(tag,"max_iterations")==0) {
                                 textContent = XMLString::transcode(curNode->getTextContent());
-                                ptiPL.set<double>("pseudo time integrator picard maximum number of iterations",
-						   get_double_constant(textContent,*def_list));
+                                ptiPL.set<int>("pseudo time integrator picard maximum number of iterations",
+						   get_int_constant(textContent,*def_list));
                                 XMLString::release(&textContent);
                             } else if (strcmp(tag,"clipping_saturation")==0) {
                                 textContent = XMLString::transcode(curNode->getTextContent());
@@ -2870,7 +2870,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
               xercesc::DOMNode* timeNode = childList->item(j) ;
               if (xercesc::DOMNode::ELEMENT_NODE == timeNode->getNodeType()) {
 	        char* nodeTxt = xercesc::XMLString::transcode(timeNode->getTextContent());
-	        times.append(get_double_constant(nodeTxt,def_list));
+	        times.append(get_time_value(nodeTxt,def_list));
 	        XMLString::release(&nodeTxt);
 	      }
 	    }
@@ -2887,7 +2887,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	    if (curList->getLength() >0) {
               tmpNode = curList->item(0);
 	      nodeTxt = xercesc::XMLString::transcode(tmpNode->getTextContent());
-	      sps.append(get_double_constant(nodeTxt,def_list));
+	      sps.append(get_time_value(nodeTxt,def_list));
 	      XMLString::release(&nodeTxt);
               curList = curElement->getElementsByTagName(XMLString::transcode("stop"));
 	      if (curList->getLength() >0) {
@@ -2904,6 +2904,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	    }
 	  }
 	  tmPL.sublist(textContent) = tm_parameter;
+	  XMLString::release(&textContent);
 	} else if (strcmp(tagname,"cycle_macro")==0) {
           Teuchos::ParameterList cm_parameter;
           attrMap = currentNode->getAttributes();
@@ -2936,6 +2937,7 @@ Teuchos::ParameterList get_output(xercesc::DOMDocument* xmlDoc, Teuchos::Paramet
 	    cm_parameter.set<Teuchos::Array<int> >("Values", sps);
 	  }
 	  cmPL.sublist(textContent) = cm_parameter;
+	  XMLString::release(&textContent);
 	}
       }
     }
