@@ -39,11 +39,14 @@ namespace Amanzi {
 class PKFactory {
 
 public:
-  typedef std::map<std::string, PK* (*)(Teuchos::ParameterList&,
-        const Teuchos::RCP<TreeVector>&)> map_type;
+  typedef std::map<std::string,
+                   PK* (*)(Teuchos::ParameterList&,
+                           Teuchos::ParameterList&,
+                           const Teuchos::RCP<TreeVector>&)> map_type;
 
   static Teuchos::RCP<PK> CreatePK(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<TreeVector>& soln) {
+          Teuchos::ParameterList& FElist,
+          const Teuchos::RCP<TreeVector>& soln) {
     std::string s = plist.get<string>("PK type");
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
@@ -55,7 +58,7 @@ public:
       }
       return Teuchos::null;
     }
-    return Teuchos::rcp(iter->second(plist, soln));
+    return Teuchos::rcp(iter->second(plist, FElist, soln));
   }
 
 protected:
@@ -72,8 +75,9 @@ private:
 
 
 template<typename T> PK* CreateT(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) {
-  return new T(plist, soln);
+  return new T(plist, FElist, soln);
 }
 
 
@@ -84,7 +88,9 @@ public:
   // case a name s is already in the map? (i.e. two implementations trying to
   // call themselves the same thing) --etc
   RegisteredPKFactory(const std::string& s) {
-    GetMap()->insert(std::pair<std::string,PK* (*)(Teuchos::ParameterList&, const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
+    GetMap()->insert(std::pair<std::string, PK* (*)(Teuchos::ParameterList&,
+            Teuchos::ParameterList&,
+            const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
   }
 };
 

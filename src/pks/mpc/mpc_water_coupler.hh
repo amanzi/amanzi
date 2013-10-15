@@ -34,8 +34,8 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
  public:
 
   MPCWaterCoupler(Teuchos::ParameterList& plist,
+                  Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<TreeVector>& soln);
-
 
   // Hackery hook for inheriting MPCs.
   virtual bool PreconPostprocess_(Teuchos::RCP<const TreeVector> u,
@@ -72,9 +72,10 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
 // -----------------------------------------------------------------------------
 template<class BaseCoupler>
 MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist, soln),
-    BaseCoupler(plist,soln) {
+    PKDefaultBase(plist, FElist, soln),
+    BaseCoupler(plist, FElist, soln) {
 
   // predictor modifications
   modify_predictor_heuristic_ =

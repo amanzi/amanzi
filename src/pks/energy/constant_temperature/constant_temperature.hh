@@ -33,9 +33,10 @@ class ConstantTemperature : public PKPhysicalBDFBase {
 public:
 
   ConstantTemperature(Teuchos::ParameterList& plist,
+                      Teuchos::ParameterList& FElist,
                       const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      PKPhysicalBDFBase(plist, solution) {
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution) {
     plist_.set("solution key", "temperature");
   }
 

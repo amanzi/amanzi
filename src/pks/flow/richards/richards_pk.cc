@@ -44,9 +44,10 @@ RegisteredPKFactory<Richards> Richards::reg_("richards flow");
 // Constructor
 // -------------------------------------------------------------
 Richards::Richards(Teuchos::ParameterList& plist,
-         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist,solution),
-    PKPhysicalBDFBase(plist, solution),
+                   Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBDFBase(plist, FElist, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),

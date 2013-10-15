@@ -25,9 +25,10 @@ using namespace Amanzi::AmanziMesh;
 RegisteredPKFactory<PrescribedVolumetricDeformation> PrescribedVolumetricDeformation::reg_("prescribed volumetric deformation");
 
 PrescribedVolumetricDeformation::PrescribedVolumetricDeformation(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
-    PKDefaultBase(plist,solution),
-    PKPhysicalBase(plist,solution)
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBase(plist, FElist, solution)
 {
   poro_key_ = plist.get<std::string>("porosity key","porosity");
 

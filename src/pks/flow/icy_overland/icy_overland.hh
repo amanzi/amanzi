@@ -27,9 +27,10 @@ class IcyOverlandFlow : public OverlandHeadFlow {
 
  public:
   IcyOverlandFlow(Teuchos::ParameterList& plist,
+                  Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      OverlandHeadFlow(plist, solution) {}
+      PKDefaultBase(plist, FElist, solution),
+      OverlandHeadFlow(plist, FElist, solution) {}
 
   // Virtual destructor
   virtual ~IcyOverlandFlow() {}

@@ -32,9 +32,10 @@ class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
   OverlandFlow(Teuchos::ParameterList& plist,
+               Teuchos::ParameterList& FElist,
                const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBDFBase(plist, solution),
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution),
       standalone_mode_(false),
       is_source_term_(false),
       perm_update_required_(true),

@@ -70,7 +70,7 @@ void Coordinator::coordinator_init() {
   PKFactory pk_factory;
   Teuchos::ParameterList pk_list = pks_list.sublist(pk_name);
   pk_list.set("PK name", pk_name);
-  pk_ = pk_factory.CreatePK(pk_list, soln_);
+  pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
   pk_->setup(S_.ptr());
 
   // create the checkpointing

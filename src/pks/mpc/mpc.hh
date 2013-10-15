@@ -39,8 +39,9 @@ template <class PK_t>
 class MPC : virtual public PKDefaultBase {
 
 public:
-  MPC(Teuchos::ParameterList& mpc_plist, const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(mpc_plist,soln) {}
+  MPC(Teuchos::ParameterList& plist,
+      Teuchos::ParameterList& FElist,
+      const Teuchos::RCP<TreeVector>& soln);
 
   // Virtual destructor
   virtual ~MPC() {}
@@ -75,12 +76,15 @@ public:
 
 };
 
+
 // -----------------------------------------------------------------------------
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
-  PKDefaultBase::setup(S);
+MPC<PK_t>::MPC(Teuchos::ParameterList& plist,
+               Teuchos::ParameterList& FElist,
+               const Teuchos::RCP<TreeVector>& soln) :
+    PKDefaultBase(plist, FElist, soln) {
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   Teuchos::ParameterList pks_list = plist_.sublist("PKs");
@@ -100,9 +104,7 @@ void MPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
       std::string name_i = pk_order[i];
       Teuchos::ParameterList pk_list = pks_list.sublist(name_i);
       pk_list.set("PK name", name_i);
-      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, pk_soln);
-      pk_notype->setup(S);
-
+      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
       Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
       sub_pks_.push_back(pk);
     }
@@ -122,13 +124,24 @@ void MPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
         // create the PK
         Teuchos::ParameterList pk_list = pks_list.sublist(name_i);
         pk_list.set("PK name", name_i);
-        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, pk_soln);
-        pk_notype->setup(S);
-
+        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
         Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
         sub_pks_.push_back(pk);
       }
     }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// Setup of PK hierarchy from PList
+// -----------------------------------------------------------------------------
+template <class PK_t>
+void MPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
+  PKDefaultBase::setup(S);
+  for (typename SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    (*pk)->setup(S);
   }
 }
 

@@ -28,6 +28,7 @@ class EnergySurfaceIce : public EnergyBase {
 
 public:
   EnergySurfaceIce(Teuchos::ParameterList& plist,
+                   Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution);
 
   // -- set up data structures

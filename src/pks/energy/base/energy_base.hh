@@ -30,9 +30,11 @@ namespace Energy {
 class EnergyBase : public PKPhysicalBDFBase {
 
 public:
-  EnergyBase(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBDFBase(plist, solution),
+  EnergyBase(Teuchos::ParameterList& plist,
+             Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution),
       modify_predictor_with_consistent_faces_(false),
       coupled_to_subsurface_via_temp_(false),
       coupled_to_subsurface_via_flux_(false),

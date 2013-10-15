@@ -36,7 +36,7 @@ class PassiveTracer : public PK {
 public:
 
   PassiveTracer(Teuchos::ParameterList& transport_plist,
-                const Teuchos::RCP<State>& S,
+                Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& solution);
 
   // ConstantTemperature is a PK

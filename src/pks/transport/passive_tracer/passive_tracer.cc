@@ -17,7 +17,8 @@ namespace Transport {
 RegisteredPKFactory<PassiveTracer> PassiveTracer::reg_("passive tracer transport");
 
 PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
-        const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
+                             Teuchos::ParameterList& FElist,
+                             const Teuchos::RCP<TreeVector>& solution) :
   transport_plist_(transport_plist) {
 
   // require fields for the state and solution

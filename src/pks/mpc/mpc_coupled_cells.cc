@@ -44,13 +44,6 @@
 
 namespace Amanzi {
 
-MPCCoupledCells::MPCCoupledCells(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist,soln),
-    StrongMPC<PKPhysicalBDFBase>(plist,soln),
-    decoupled_(false)
-{}
-
 void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   StrongMPC<PKPhysicalBDFBase>::setup(S);
 

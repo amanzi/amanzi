@@ -18,9 +18,10 @@ multiple coupler types.
 namespace Amanzi {
 
 MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist, soln),
-    StrongMPC<PKPhysicalBDFBase>(plist,soln) {
+    PKDefaultBase(plist, FElist, soln),
+    StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln) {
 
   domain_mesh_key_ = plist.get<std::string>("subsurface mesh key","domain");
   surf_mesh_key_ = plist.get<std::string>("surface mesh key","surface");

@@ -45,7 +45,11 @@ namespace Operators { class MatrixMFD_Coupled; }
 class MPCCoupledCells : public StrongMPC<PKPhysicalBDFBase> {
  public:
   MPCCoupledCells(Teuchos::ParameterList& plist,
-                  const Teuchos::RCP<TreeVector>& soln);
+                  Teuchos::ParameterList& FElist,
+                  const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist, FElist, soln),
+      StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln),
+      decoupled_(false) {}
 
   virtual void setup(const Teuchos::Ptr<State>& S);
 

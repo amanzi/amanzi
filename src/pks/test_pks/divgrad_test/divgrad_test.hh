@@ -27,9 +27,10 @@ class DivGradTest : public PKPhysicalBase {
 
 public:
   DivGradTest(Teuchos::ParameterList& plist,
-           const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      PKPhysicalBase(plist, solution) {
+              Teuchos::ParameterList& FElist,
+              const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBase(plist, FElist, solution) {
     // set a few parameters before setup
     plist_.set("solution key", "solution");
   }
