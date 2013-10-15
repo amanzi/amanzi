@@ -153,14 +153,14 @@ For these input specifications, *Amanzi* simulation output is expected to closel
 
 from Equation :eq:`specificSoln1`. 
 
-Mualem, Y. 1976. *A new model predicting the hydraulic conductivity of unsaturated porous media*. Water Resour. Res. 12:513522.
+Mualem, Y. 1976. *A new model predicting the hydraulic conductivity of unsaturated porous media*. Water Resour. Res. 12:513-522.
 
 Phifer, M. A., M. R. Millings, and G. P. Flach. 2006. *Hydraulic Property Data Package for the E-Area and Z-Area Soils, 
 Cementitious Materials, and Waste Zones*. Savannah River National Laboratory technical report WSRC-STI-2006-00198 Rev 0. 325 p.
 
-Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. Physics 1 (5): 318333.
+Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. Physics 1 (5): 318-333.
 
-van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892898.
+van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892-898.
 
 
 Amanzi verification test problem #2
