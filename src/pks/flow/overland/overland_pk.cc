@@ -138,6 +138,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   if (tpfa_) {
     full_jacobian_ = mfd_pc_plist.get<bool>("TPFA use full Jacobian", false);
   }
+  mfd_pc_plist.set("scaled constraint equation", true);
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
