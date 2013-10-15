@@ -160,6 +160,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   tpfa_ = mfd_plist.get<bool>("TPFA", false);
+  mfd_plist.set("scaled constraint equation", true);
   matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   symmetric_ = false;
   matrix_->set_symmetric(symmetric_);
@@ -173,6 +174,7 @@ void OverlandHeadFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   }
 
   if (!tpfa_) tpfa_ = mfd_pc_plist.get<bool>("TPFA", false);
+  mfd_pc_plist.set("scaled constraint equation", true);
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();

@@ -1,13 +1,13 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
-ATS
+   ATS
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+   License: see $ATS_DIR/COPYRIGHT
+   Author: Ethan Coon
 
-Default base with default implementations of methods for a physical PK.
-------------------------------------------------------------------------- */
+   Default base with default implementations of methods for a physical PK.
+   ------------------------------------------------------------------------- */
 
 #include "pk_physical_base.hh"
 
@@ -33,11 +33,12 @@ PKPhysicalBase::PKPhysicalBase(Teuchos::ParameterList& plist,
     domain_prefix_ = std::string("");
   } else {
     domain_prefix_ = domain_ + std::string("_");
-  }  
-  
+  }
+
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
   pv_sublist.set("evaluator name", key_);
+  pv_sublist.set("field evaluator type", "primary variable");
 }
 
 // -----------------------------------------------------------------------------
@@ -54,6 +55,14 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
 
   // require primary variable evaluator
   S->RequireFieldEvaluator(key_);
+  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
+#if ENABLE_DBC
+  solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  ASSERT(solution_evaluator_ != Teuchos::null);
+#else
+  solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
+#endif
+
 };
 
 
