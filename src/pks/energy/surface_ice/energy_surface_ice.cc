@@ -35,9 +35,10 @@ RegisteredPKFactory<EnergySurfaceIce> EnergySurfaceIce::reg_("surface energy");
 // Constructor
 // -------------------------------------------------------------
 EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, solution),
-    EnergyBase(plist, solution),
+    PKDefaultBase(plist, FElist, solution),
+    EnergyBase(plist, FElist, solution),
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),

@@ -21,7 +21,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 
-add_library(mpc mpc.cc
+add_library(mpc
   weak_mpc.cc
   strong_mpc.cc
   mpc_coupled_cells.cc

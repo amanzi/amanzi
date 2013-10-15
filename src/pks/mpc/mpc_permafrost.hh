@@ -36,10 +36,10 @@ class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceCoupler> {
 
  public:
   MPCPermafrost(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, soln),
-      StrongMPC<MPCSurfaceSubsurfaceCoupler>(plist, soln)
-  {}
+                Teuchos::ParameterList& FElist,
+                const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist, FElist, soln),
+      StrongMPC<MPCSurfaceSubsurfaceCoupler>(plist, FElist, soln) {}
 
 
   virtual void setup(const Teuchos::Ptr<State>& S);

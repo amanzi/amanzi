@@ -32,9 +32,10 @@ class OverlandHeadFlow : public PKPhysicalBDFBase {
 
 public:
   OverlandHeadFlow(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBDFBase(plist, solution),
+                   Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution),
       standalone_mode_(false),
       is_source_term_(false),
       coupled_to_subsurface_via_head_(false),

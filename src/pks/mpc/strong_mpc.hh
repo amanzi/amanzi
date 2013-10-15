@@ -34,10 +34,8 @@ class StrongMPC : public MPC<PK_t>,
 
 public:
   StrongMPC(Teuchos::ParameterList& plist,
-            const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, soln),
-      MPC<PK_t>(plist,soln),
-      PKBDFBase(plist,soln) {}
+            Teuchos::ParameterList& FElist,
+            const Teuchos::RCP<TreeVector>& soln);
 
   // Virtual destructor
   virtual ~StrongMPC() {}
@@ -86,6 +84,17 @@ private:
   static RegisteredPKFactory<StrongMPC> reg_;
 
 };
+
+// -----------------------------------------------------------------------------
+// Constructor
+// -----------------------------------------------------------------------------
+template<class PK_t>
+StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& plist,
+                           Teuchos::ParameterList& FElist,
+                           const Teuchos::RCP<TreeVector>& soln) :
+    PKDefaultBase(plist, FElist, soln),
+    MPC<PK_t>(plist, FElist, soln),
+    PKBDFBase(plist, FElist, soln) {}
 
 
 // -----------------------------------------------------------------------------

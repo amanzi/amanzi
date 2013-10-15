@@ -25,9 +25,10 @@ using namespace Amanzi::AmanziMesh;
 RegisteredPKFactory<PrescribedDeformation> PrescribedDeformation::reg_("prescribed deformation");
 
 PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
-    PKDefaultBase(plist,solution),
-    PKPhysicalBase(plist,solution),
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBase(plist, FElist, solution),
     prescribed_deformation_case_(1)
 {
   prescribed_deformation_case_ = plist.get<int>("deformation function",1);

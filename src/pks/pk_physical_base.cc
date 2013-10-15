@@ -14,21 +14,18 @@ Default base with default implementations of methods for a physical PK.
 namespace Amanzi {
 
 
-// -----------------------------------------------------------------------------
-// Construction of data.
-// -----------------------------------------------------------------------------
-void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
-  PKDefaultBase::setup(S);
+PKPhysicalBase::PKPhysicalBase(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
+        const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist,FElist,solution) {
 
-  // If they have not been set, pull the domain name and primary variable key
-  // from the parameter list.
-
+  // process the PList
   // domain
   if (domain_ == std::string("")) {
     domain_ = plist_.get<std::string>("domain name", std::string("domain"));
   }
   if (key_ == std::string("")) {
-    key_ = plist_.get<std::string>("primary variable key");
+    key_ = plist_.get<std::string>("primary variable");
   }
 
   // derive the prefix
@@ -36,20 +33,27 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
     domain_prefix_ = std::string("");
   } else {
     domain_prefix_ = domain_ + std::string("_");
-  }
+  }  
+  
+  // set up the primary variable solution, and its evaluator
+  Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
+  pv_sublist.set("evaluator name", key_);
+}
+
+// -----------------------------------------------------------------------------
+// Construction of data.
+// -----------------------------------------------------------------------------
+void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
+  PKDefaultBase::setup(S);
 
   // get the mesh
   mesh_ = S->GetMesh(domain_);
 
-  // set up the primary variable solution, and its evaluator
-  Teuchos::ParameterList pv_sublist = plist_.sublist("primary variable evaluator");
-  pv_sublist.set("evaluator name", key_);
-  solution_evaluator_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(pv_sublist));
-  S->SetFieldEvaluator(key_, solution_evaluator_);
-
   // set up the debugger
   db_ = Teuchos::rcp(new Debugger(mesh_, name_, plist_));
 
+  // require primary variable evaluator
+  S->RequireFieldEvaluator(key_);
 };
 
 

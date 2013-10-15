@@ -26,10 +26,11 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
  public:
   PKPhysicalBDFBase(Teuchos::ParameterList& plist,
+                    Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBase(plist,solution),
-      PKBDFBase(plist,solution) {}
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBase(plist, FElist, solution),
+      PKBDFBase(plist, FElist, solution) {}
 
   virtual void setup(const Teuchos::Ptr<State>& S);
 

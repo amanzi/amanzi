@@ -27,9 +27,10 @@ RegisteredPKFactory<TwoPhase> TwoPhase::reg_("two-phase energy");
 // Constructor
 // -------------------------------------------------------------
 TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
+                   Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, solution),
-    EnergyBase(plist, solution) {
+    PKDefaultBase(plist, FElist, solution),
+    EnergyBase(plist, FElist, solution) {
   if (!plist_.isParameter("flux key")) plist_.set("flux key", "darcy_flux");
 }
 

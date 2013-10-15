@@ -22,8 +22,8 @@ class PKPhysicalBase : public virtual PKDefaultBase {
 
  public:
   PKPhysicalBase(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution) {}
+                 Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~PKPhysicalBase() {}

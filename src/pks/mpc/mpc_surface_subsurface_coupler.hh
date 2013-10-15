@@ -26,6 +26,7 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC<PKPhysicalBDFBase> {
 
  public:
   MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList& plist,
+          Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln);
 
   // -- Setup data.
