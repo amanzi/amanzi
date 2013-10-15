@@ -245,12 +245,16 @@ void Unstructured_observations::make_observations(State& state)
 	AmanziGeometry::GeometricModelPtr gm_ptr = state.GetMesh()->geometric_model();
 	AmanziGeometry::RegionPtr reg_ptr = gm_ptr->FindRegion((i->second).region);
 	if (reg_ptr->type() != AmanziGeometry::POLYGON) {
+	  AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
+	  AmanziGeometry::Point reg_normal = poly_reg->normal();
+	} else if (reg_ptr->type() != AmanziGeometry::PLANE) {
+	  AmanziGeometry::PlaneRegion *plane_reg = dynamic_cast<AmanziGeometry::PlaneRegion*>(reg_ptr);
+	  AmanziGeometry::Point reg_normal = poly_reg->direction();
+	} else {
+	  // error
 	  
 	}
-	AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
-	
-	AmanziGeometry::Point reg_normal = poly_reg->normal();
-	
+
 	Teuchos::RCP<const Epetra_Vector> darcy_flux = 
 	  Teuchos::rcpFromRef(*(*state.GetFieldData("darcy_flux")->ViewComponent("face", false))(0));      
 	
