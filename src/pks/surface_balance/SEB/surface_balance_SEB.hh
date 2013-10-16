@@ -45,11 +45,8 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
  public:
 
   SurfaceBalanceSEB(Teuchos::ParameterList& plist,
-                    const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      PKPhysicalBase(plist, solution) {
-    plist_.set("domain", "surface");
-  }
+                    Teuchos::ParameterList& FElist,
+                    const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~SurfaceBalanceSEB() {}
@@ -63,7 +60,7 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
 
   // -- provide a timestep size
   virtual double get_dt() {
-    return 1.e99;
+    return dt_;
   }
 
   // -- Commit any secondary (dependent) variables.
@@ -87,6 +84,8 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_esource_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wsource_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wtemp_;
+
+  double dt_;
 
  private:
   // factory registration
