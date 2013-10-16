@@ -45,11 +45,11 @@ public:
   static Teuchos::RCP<PK> CreatePK(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<TreeVector>& soln) {
     std::string s = plist.get<string>("PK type");
-    typename map_type::iterator iter = GetMap()->find(s);
+    map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
       std::cout << "cannot get item of type: " << s << std::endl;
 
-      for (typename map_type::iterator iter=GetMap()->begin();
+      for (map_type::iterator iter=GetMap()->begin();
            iter!=GetMap()->end(); ++iter) {
         std::cout << "  option: " << iter->first << std::endl;
       }
