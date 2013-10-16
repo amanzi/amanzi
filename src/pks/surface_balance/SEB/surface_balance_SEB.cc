@@ -32,7 +32,7 @@
  * ------------------------------------------------------------------------- */
 
 
-#include "surface_top_cells_evalutor.hh"
+#include "surface_top_cells_evaluator.hh"
 
 #include "surface_balance_SEB.hh"
 #include "SnowEnergyBalance.hh"
@@ -53,19 +53,21 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& plist,
   // -- surface energy source
   Teuchos::ParameterList& esource_sublist = FElist.sublist("surface_energy_source");
   esource_sublist.set("evaluator name", "surface_energy_source");
-  pv_sublist.set("field evaluator type", "primary variable");
+  esource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface mass source
-  Teuchos::ParameterList& esource_sublist = FElist.sublist("surface_water_source");
-  esource_sublist.set("evaluator name", "surface_water_source");
-  pv_sublist.set("field evaluator type", "primary variable");
+  Teuchos::ParameterList& wsource_sublist = FElist.sublist("surface_water_source");
+  wsource_sublist.set("evaluator name", "surface_water_source");
+  wsource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface energy temperature
-  Teuchos::ParameterList& esource_sublist = FElist.sublist("water_source_temperature");
-  esource_sublist.set("evaluator name", "water_source_temperature");
-  pv_sublist.set("field evaluator type", "primary variable");
+  Teuchos::ParameterList& wtemp_sublist = FElist.sublist("water_source_temperature");
+  wtemp_sublist.set("evaluator name", "water_source_temperature");
+  wtemp_sublist.set("field evaluator type", "primary variable");
 
 
+  // timestep size
+  dt_ = plist.get<double>("max time step", 1.e99);
 }
 
 
@@ -100,7 +102,7 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("water_source_temperature", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("water_source_temperature");
-  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("water_source_temperature");
+  fm = S->GetFieldEvaluator("water_source_temperature");
   pvfe_wtemp_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wtemp_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
@@ -110,51 +112,51 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
   // requirements: independent variables (data from MET)
   S->RequireFieldEvaluator("incoming_shortwave_radiation");
   S->RequireField("incoming_shortwave_radiation")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("air_temperature");
   S->RequireField("air_temperature")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("relative_humidity");
   S->RequireField("relative_humidity")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("wind_speed");
   S->RequireField("wind_speed")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("precipitation_rain");
-  S->RequireField("iprecipitation_rain")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("precipitation_rain")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("precipitation_snow");
   S->RequireField("precipitation_snow")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // requirements: stored secondary variables
-  S->RequireField("snow_density")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("snow_density", name_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireField("days_of_nosnow")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("days_of_nosnow", name_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // information from ATS data
   S->RequireFieldEvaluator("surface_temperature");
   S->RequireField("surface_temperature")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("ponded_depth");
   S->RequireField("ponded_depth")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("surface_porosity");
-  S->RequireField("surface_water_porosity")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField("surface_porosity")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("surface_vapor_pressure");
   S->RequireField("surface_vapor_pressure")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
 };
 
 // initialize ICs
@@ -253,7 +255,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
       *S_next_->GetFieldData("surface_water_source", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& surf_water_temp =
-      *S_next_->GetFieldData("surface_source_temperature", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("water_source_temperature", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& snow_depth =
       *S_next_->GetFieldData("snow_depth", name_)->ViewComponent("cell", false);
@@ -262,7 +264,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
       *S_next_->GetFieldData("snow_density", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& days_of_nosnow =
-      *S_next_->GetFieldData("days_of_nowsnow", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("days_of_nosnow", name_)->ViewComponent("cell", false);
 
 
   // loop over all cells and call CalculateSEB_
