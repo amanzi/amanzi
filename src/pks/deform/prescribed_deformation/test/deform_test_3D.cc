@@ -69,7 +69,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   
   // get the list of nodes on the top
   //deform_test.mesh_deformation();
-  //deform_test.analyze_final_mesh();
+  //deform_test.analyze_final_Mesh();
 
   // say goodbye and exit
   deform_test.print_goodbye();

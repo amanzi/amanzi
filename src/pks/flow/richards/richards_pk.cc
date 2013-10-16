@@ -23,7 +23,8 @@ Authors: Neil Carlson (version 1)
 #include "composite_vector_function.hh"
 #include "composite_vector_function_factory.hh"
 
-#include "MatrixMFD_ScaledConstraint.hh"
+#include "MatrixMFD_Factory.hh"
+
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
 #include "rel_perm_evaluator.hh"
@@ -43,9 +44,10 @@ RegisteredPKFactory<Richards> Richards::reg_("richards flow");
 // Constructor
 // -------------------------------------------------------------
 Richards::Richards(Teuchos::ParameterList& plist,
-         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist,solution),
-    PKPhysicalBDFBase(plist, solution),
+                   Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBDFBase(plist, FElist, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),
@@ -70,22 +72,6 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
-
-  // debug cells
-  if (coupled_to_surface_via_flux_ || coupled_to_surface_via_head_) {
-    if (plist_.get<bool>("debug all surface cells", false)) {
-      dc_.clear();
-      Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh("surface");
-      unsigned int ncells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-      for (unsigned int c=0; c!=ncells; ++c) {
-        AmanziMesh::Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, c);
-        AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
-        dc_.push_back(cells[0]);
-      }
-    }
-  }
 };
 
 
@@ -229,25 +215,19 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   scaled_constraint_ = mfd_plist.get<bool>("scaled constraint equation", false);
-  if (!scaled_constraint_) {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
-  } else {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_plist, mesh_));
-    symmetric_ = false;
-  }
+  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
+  symmetric_ = false;
   matrix_->set_symmetric(symmetric_);
   matrix_->SymbolicAssembleGlobalMatrices();
   matrix_->InitPreconditioner();
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  Teuchos::RCP<Operators::MatrixMFD> precon;
-  if (!scaled_constraint_) {
-    precon = Teuchos::rcp(new Operators::MatrixMFD(mfd_pc_plist, mesh_));
-  } else {
-    precon = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_pc_plist, mesh_));
-  }
-  set_preconditioner(precon);
+  mfd_pc_plist.set("scaled constraint equation", scaled_constraint_);
+  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
+  mfd_preconditioner_->set_symmetric(symmetric_);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->InitPreconditioner();
 
   // wc preconditioner
   precon_wc_ = plist_.get<bool>("precondition using WC", false);
@@ -349,7 +329,7 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize boundary conditions.
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::Matrix::MATRIX_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   // Set extra fields as initialized -- these don't currently have evaluators,
@@ -387,9 +367,9 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Commiting state." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Commiting state." << std::endl;
 
   niter_ = 0;
 
@@ -437,8 +417,8 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
     error.NormInf(&einf);
 
     // VerboseObject stuff.
-    Teuchos::OSTab tab = getOSTab();
-    *out_ << "Final Mass Balance Error: " << einf << std::endl;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Final Mass Balance Error: " << einf << std::endl;
   }
 #endif
 };
@@ -448,9 +428,9 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // Update any diagnostic variables prior to vis (in this case velocity field).
 // -----------------------------------------------------------------------------
 void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Calculating diagnostic variables." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Calculating diagnostic variables." << std::endl;
 
   // update the cell velocities
   if (update_flux_ == UPDATE_FLUX_VIS) {
@@ -495,9 +475,9 @@ void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating permeability?";
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating permeability?";
 
   Teuchos::RCP<CompositeVector> uw_rel_perm = S->GetFieldData("numerical_rel_perm", name_);
   Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData("relative_permeability");
@@ -604,8 +584,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
   }
 
   // debugging
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << " " << update_perm << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_->os() << " " << update_perm << std::endl;
   }
   return update_perm;
 };
@@ -615,12 +595,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
 void Richards::UpdateBoundaryConditions_() {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating BCs." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating BCs." << std::endl;
 
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -628,7 +608,7 @@ void Richards::UpdateBoundaryConditions_() {
   Functions::BoundaryFunction::Iterator bc;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
 
@@ -636,7 +616,7 @@ void Richards::UpdateBoundaryConditions_() {
     // Standard Neuman boundary conditions
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     }
   } else {
@@ -644,7 +624,7 @@ void Richards::UpdateBoundaryConditions_() {
     const Epetra_MultiVector& temp = *S_next_->GetFieldData("temperature")->ViewComponent("face");
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       if (temp[0][f] > 273.15) {
         bc_values_[f] = bc->second;
       } else {
@@ -659,10 +639,10 @@ void Richards::UpdateBoundaryConditions_() {
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
     if (pressure[0][f] < p_atm) {
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = bc->second;
     } else {
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = p_atm;
     }
   }
@@ -681,7 +661,7 @@ void Richards::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to dirichlet
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+      bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
       bc_values_[f] = head[0][c];
     }
   }
@@ -700,7 +680,7 @@ void Richards::UpdateBoundaryConditions_() {
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to Neumann
-      bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+      bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
       // NOTE: flux[0][c] is in units of mols / s, where as Neumann BCs are in
       //       units of mols / s / A.  The right A must be chosen, as it is
@@ -719,7 +699,7 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
   Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
   unsigned int nfaces = pres_f.MyLength();
   for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
       pres_f[0][f] = bc_values_[f];
     }
   }
@@ -727,9 +707,9 @@ Richards::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& pres) {
 
 
 bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Modifying predictor:" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Modifying predictor:" << std::endl;
 
   bool changed(false);
   if (modify_predictor_bc_flux_ ||
@@ -749,9 +729,9 @@ bool Richards::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
 }
 
 bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
 
   if (flux_predictor_ == Teuchos::null) {
     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
@@ -781,10 +761,10 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
 }
 
 bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector> u) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  modifications for consistent face pressures." << std::endl;
-  CalculateConsistentFaces(u->data().ptr());
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  modifications for consistent face pressures." << std::endl;
+  CalculateConsistentFaces(u->Data().ptr());
   return true;
 }
 
@@ -792,12 +772,12 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
   ASSERT(0);
   return false;
 
-  // Teuchos::OSTab tab = getOSTab();
-  // if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-  //   *out_ << "  modifications for consistent face pressures." << std::endl;
+  // Teuchos::OSTab tab = vo_->getOSTab();
+  // if (vo_->os_OK(Teuchos::VERB_EXTREME))
+  //   *vo_->os() << "  modifications for consistent face pressures." << std::endl;
 
   // // assumes mostly incompressible liquid, and uses just ds/dt
-  // Epetra_MultiVector& u_c = u->data()->ViewComponent("cell",false);
+  // Epetra_MultiVector& u_c = u->Data()->ViewComponent("cell",false);
 
   // // pres at previous step
   // const Epetra_MultiVector& p1 = *S_inter_->GetFieldData("saturation_liquid")
@@ -830,8 +810,8 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 
 void Richards::CalculateConsistentFacesForInfiltration_(
     const Teuchos::Ptr<CompositeVector>& u) {
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
 
   if (flux_predictor_ == Teuchos::null) {
     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
@@ -858,7 +838,7 @@ void Richards::CalculateConsistentFacesForInfiltration_(
 
 void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // update the rel perm according to the scheme of choice
   changed_solution();
@@ -896,26 +876,26 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 // Check admissibility of the solution guess.
 // -----------------------------------------------------------------------------
 bool Richards::is_admissible(Teuchos::RCP<const TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Checking admissibility..." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Checking admissibility..." << std::endl;
 
   // For some reason, wandering PKs break most frequently with an unreasonable
   // presure.  This simply tries to catch that before it happens.
-  Teuchos::RCP<const CompositeVector> pres = up->data();
+  Teuchos::RCP<const CompositeVector> pres = up->Data();
 
   const Epetra_MultiVector& pres_v = *pres->ViewComponent("cell",false);
   double minp(0.), maxp(0.);
   int ierr = pres_v.MinValue(&minp);
   ierr |= pres_v.MaxValue(&maxp);
 
-  if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_HIGH,true)) {
-    *out_ << "    Admissible p? (min/max): " << minp << ",  " << maxp << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "    Admissible p? (min/max): " << minp << ",  " << maxp << std::endl;
   }
 
   if (ierr || minp < -1.e8 || maxp > 1.e8) {
-    if(out_.get() && includesVerbLevel(verbosity_,Teuchos::VERB_MEDIUM,true)) {
-      *out_ << " is not admissible, as it is not within bounds of constitutive models: min(p) = " << minp << ", max(p) = " << maxp << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << " is not admissible, as it is not within bounds of constitutive models: min(p) = " << minp << ", max(p) = " << maxp << std::endl;
     }
     return false;
   }

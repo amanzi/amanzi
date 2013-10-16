@@ -158,28 +158,7 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
   } else if (precon_type_ == PRECON_SMART_EWC) {
     MPCCoupledCells::precon(u,Pu);
 
-#if DEBUG_FLAG
-  // Dump residual
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Picard Precon application:" << std::endl;
-
-    int c0 = 0;
-    AmanziMesh::Entity_ID_List fnums0;
-    std::vector<int> dirs;
-    mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
-
-    *out_ << "  PC_p(" << c0 << "): " << (*Pu->SubVector(0)->data())("cell",c0);
-    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
-    *out_ << std::endl;
-
-    *out_ << "  PC_T(" << c0 << "): " << (*Pu->SubVector(1)->data())("cell",c0);
-    for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
-    *out_ << std::endl;
-
-  }
-#endif
-
-    // make sure we can backcalc face corrections that preserve residuals on faces
+    // make sure we can back-calc face corrections that preserve residuals on faces
     Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*u));
     res0->PutScalar(0.);
     Teuchos::RCP<TreeVector> Pu_std = Teuchos::rcp(new TreeVector(*Pu));
@@ -193,35 +172,19 @@ void MPCSubsurface::precon(Teuchos::RCP<const TreeVector> u,
     mfd_preconditioner_->UpdateConsistentFaceCorrection(*res0, Pu_std.ptr());
 
     // update Pu_lambda <-- Pu_lambda_std + dPu_lambda
-    Pu->SubVector(0)->data()->ViewComponent("face",false)->Update(1.,
-            *Pu_std->SubVector(0)->data()->ViewComponent("face",false), 1.);
-    Pu->SubVector(1)->data()->ViewComponent("face",false)->Update(1.,
-            *Pu_std->SubVector(1)->data()->ViewComponent("face",false), 1.);
+    Pu->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
+    Pu->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
+            *Pu_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
 
-#if DEBUG_FLAG
-  // Dump residual
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "EWC Precon application:" << std::endl;
-
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
-         c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "  PC_p(" << *c0 << "): " << (*Pu->SubVector(0)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
-      *out_ << std::endl;
-
-      *out_ << "  PC_T(" << *c0 << "): " << (*Pu->SubVector(1)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
-      *out_ << std::endl;
-    }
-
-  }
-#endif
-
-
+    // write residuals
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "EWC Precon Correction:" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  PC*r_p"); vnames.push_back("  PC*r_T"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(Pu->SubVector(0)->Data().ptr()); 
+    vecs.push_back(Pu->SubVector(1)->Data().ptr()); 
+    db_->WriteVectors(vnames, vecs, true);
   }
 }
 
@@ -237,28 +200,14 @@ bool MPCSubsurface::modify_correction(double h,
         Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> du) {
 
-#if DEBUG_FLAG
-  // Dump residual
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "NKA'd PC application:" << std::endl;
-
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
-         c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "  NKA_PC_p(" << *c0 << "): " << (*du->SubVector(0)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(0)->data())("face",fnums0[n]);
-      *out_ << std::endl;
-
-      *out_ << "  NKA_PC_T(" << *c0 << "): " << (*du->SubVector(1)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) *out_ << ",  " << (*du->SubVector(1)->data())("face",fnums0[n]);
-      *out_ << std::endl;
-    }
-
-  }
-#endif
+  // write residuals
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "NKA'd Correction:" << std::endl;
+  std::vector<std::string> vnames;
+  vnames.push_back("  NKA*PC*r_p"); vnames.push_back("  NKA*PC*r_T"); 
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(du->SubVector(0)->Data().ptr()); 
+  vecs.push_back(du->SubVector(1)->Data().ptr()); 
+  db_->WriteVectors(vnames, vecs, true);
 
   return false;
 }

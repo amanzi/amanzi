@@ -17,6 +17,7 @@ add_library(divgrad MatrixMFD.cc
                     MatrixMFD_Surf_ScaledConstraint.cc
                     MatrixMFD_Coupled.cc
                     MatrixMFD_Coupled_Surf.cc
+		            MatrixMFD_Factory.cc
                     upwind_scheme/upwind_cell_centered.cc
                     upwind_scheme/upwind_arithmetic_mean.cc
                     upwind_scheme/upwind_total_flux.cc
@@ -35,11 +36,13 @@ if (BUILD_TESTS)
 	  test/test_mfd_surf.cc)
     target_link_libraries(test_mfd
       divgrad
+      amanzi_atk
       amanzi_whetstone
       amanzi_geometry
       amanzi_mesh_factory
       amanzi_mstk_mesh
       amanzi_data_structures
+      amanzi_solvers
       ${Amanzi_TPL_UnitTest_LIBRARIES} ${Amanzi_TPL_Trilinos_LIBRARIES})
 
 endif()

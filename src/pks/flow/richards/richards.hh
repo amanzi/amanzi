@@ -33,6 +33,7 @@ class Richards : public PKPhysicalBDFBase {
 
 public:
   Richards(Teuchos::ParameterList& plist,
+           Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
@@ -73,8 +74,6 @@ public:
 
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
-
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
 protected:
   // Create of physical evaluators.
@@ -152,7 +151,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+  // note PC is in PKPhysicalBDFBase
 
   // custom enorm tolerances
   double mass_atol_;

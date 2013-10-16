@@ -25,7 +25,6 @@ PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
     my_key_ = plist_.get<std::string>("capillary pressure of ice-water key",
             "capillary_pressure_liq_ice");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key", "temperature");

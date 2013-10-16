@@ -20,7 +20,7 @@ bool PredictorDelegateBCFlux::modify_predictor(const Teuchos::Ptr<CompositeVecto
 
   int nfaces = bc_values_->size();
   for (int f=0; f!=nfaces; ++f) {
-    if ((*bc_markers_)[f] == Operators::Matrix::MATRIX_BC_FLUX) {
+    if ((*bc_markers_)[f] == Operators::MATRIX_BC_FLUX) {
       double lambda = (*u)("face",f);
       // only do if below saturated
       if (lambda < 101325.) {

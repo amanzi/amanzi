@@ -41,6 +41,7 @@ WHOLE_ARCHIVE(pk_volumetric_deformation)
 WHOLE_ARCHIVE(pk_surface_balance_SEB)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(mpc)
+WHOLE_ARCHIVE(divgrad)
 
 WHOLE_ARCHIVE(relations_eos)
 WHOLE_ARCHIVE(flow_relations_wrm)
@@ -91,10 +92,11 @@ target_link_libraries(ats
                       relations_ewc
                       bc_factory
                       advection
-                      divgrad
+                      ${divgrad}
                       deformation_operator
                       amanzi_whetstone
                       amanzi_time_integration
+		      amanzi_solvers
                       amanzi_mesh
                       amanzi_mesh_audit
                       amanzi_mesh_functions

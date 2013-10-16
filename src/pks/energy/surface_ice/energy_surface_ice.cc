@@ -9,6 +9,7 @@ Author: Ethan Coon
 Process kernel for energy equation for overland flow.
 ------------------------------------------------------------------------- */
 
+#include "Debugger.hh"
 #include "eos_evaluator.hh"
 #include "iem_evaluator.hh"
 #include "thermal_conductivity_surface_evaluator.hh"
@@ -34,9 +35,10 @@ RegisteredPKFactory<EnergySurfaceIce> EnergySurfaceIce::reg_("surface energy");
 // Constructor
 // -------------------------------------------------------------
 EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, solution),
-    EnergyBase(plist, solution),
+    PKDefaultBase(plist, FElist, solution),
+    EnergyBase(plist, FElist, solution),
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
@@ -130,12 +132,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
-    // -- kill the preconditioner and replace with a TPFA precon
-    Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-    Teuchos::RCP<Operators::Matrix> precon =
-        Teuchos::rcp(new Operators::MatrixMFD_TPFA(mfd_pc_plist, mesh_));
-    set_preconditioner(precon);
-
     // -- ensure mass source from subsurface exists
     S->RequireField("surface_subsurface_flux")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -241,7 +237,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
   for (unsigned int f=0; f!=nfaces; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     if (cells.size() == 1) {
-      double T = bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET ?
+      double T = bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET ?
           bc_values_[f] : temp_f[0][f];
       double p = pres_c[0][cells[0]];
       double dens = eos_liquid_->MolarDensity(T,p);
@@ -259,7 +255,7 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
 // -------------------------------------------------------------
 void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
@@ -295,11 +291,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source Q_E(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source Q_E", g);
 #endif
 
   }
@@ -364,11 +356,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
       }
     }
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source E*Q_m(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source E*Q_m", g);
 #endif
   }
 
@@ -384,12 +372,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
       g_c[0][c] -= K_surface_to_air_ * (T_air1 - temp_c[0][c]) * (*fa1)[0][c];
     }
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source K(" << *c0 << "): (" << T_air1 << "-T): "
-              << g_c[0][*c0] << std::endl;
-      }
-    }
+    std::stringstream header;
+    header << "  res_source K[ t_air=" << T_air1 << "]";
+    db_->WriteVector(header.str(), g);
 #endif
 
   }
@@ -429,11 +414,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source E*q_m_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source E*q_m_ss", g);
 #endif
   }
 
@@ -451,11 +432,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     }
 
 #if DEBUG_FLAG
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-        *out_ << "  res_source q^E_ss(" << *c0 << "): " << g_c[0][*c0] << std::endl;
-      }
-    }
+    db_->WriteVector("  res_source q^E_ss", g);
 #endif
 
   }

@@ -23,7 +23,6 @@ PCLiquidEvaluator::PCLiquidEvaluator(Teuchos::ParameterList& plist) :
   // my keys
   my_key_ = plist_.get<std::string>("gas-liquid capillary pressure key",
           "capillary_pressure_gas_liq");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key", "pressure");

@@ -25,7 +25,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "UnstructuredObservations.hh"
 #include "State.hh"
 #include "PK.hh"
-#include "tree_vector.hh"
+#include "TreeVector.hh"
 #include "pk_factory.hh"
 
 #include "coordinator.hh"
@@ -64,13 +64,13 @@ void Coordinator::coordinator_init() {
   const std::string &pk_name = pks_list.name(pk_item);
 
   // create the solution
-  soln_ = Teuchos::rcp(new TreeVector(pk_name));
+  soln_ = Teuchos::rcp(new TreeVector());
 
   // create the pk
   PKFactory pk_factory;
   Teuchos::ParameterList pk_list = pks_list.sublist(pk_name);
   pk_list.set("PK name", pk_name);
-  pk_ = pk_factory.CreatePK(pk_list, soln_);
+  pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
   pk_->setup(S_.ptr());
 
   // create the checkpointing

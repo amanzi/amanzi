@@ -12,6 +12,7 @@ Default base with default implementations of methods for a physical PK.
 #ifndef AMANZI_PK_PHYSICAL_BASE_HH_
 #define AMANZI_PK_PHYSICAL_BASE_HH_
 
+#include "Debugger.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "pk_default_base.hh"
 
@@ -21,8 +22,8 @@ class PKPhysicalBase : public virtual PKDefaultBase {
 
  public:
   PKPhysicalBase(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution) {}
+                 Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~PKPhysicalBase() {}
@@ -46,6 +47,9 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   // -- initialize
   virtual void initialize(const Teuchos::Ptr<State>& S);
 
+  // Accessor for debugger, for use by coupling MPCs
+  Teuchos::RCP<Debugger> debugger() { return db_; }
+
  protected: // methods
   std::string Key_(std::string suffix) { return domain_prefix_+suffix; }
   void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);
@@ -60,6 +64,8 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   std::string key_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator_;
 
+  // debugger for dumping vectors
+  Teuchos::RCP<Debugger> db_;
 };
 
 } // namespace

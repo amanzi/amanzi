@@ -17,14 +17,15 @@ namespace Transport {
 RegisteredPKFactory<PassiveTracer> PassiveTracer::reg_("passive tracer transport");
 
 PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
-        const Teuchos::RCP<State>& S, const Teuchos::RCP<TreeVector>& solution) :
+                             Teuchos::ParameterList& FElist,
+                             const Teuchos::RCP<TreeVector>& solution) :
   transport_plist_(transport_plist) {
 
   // require fields for the state and solution
   S->RequireField("concentration", "transport", AmanziMesh::CELL);
   S->GetField("concentration","transport")->set_io_vis(true);
   Teuchos::RCP<CompositeVector> conc = S->GetFieldData("concentration", "transport");
-  solution->set_data(conc);
+  solution->SetData(conc);
   solution_ = solution;
 
   // independent variables (not owned by this pk)
@@ -36,7 +37,7 @@ PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = transport_plist_.sublist("Advection");
-  advection_ = advection_factory.create(advect_plist, S->mesh());
+  advection_ = advection_factory.create(advect_plist, S->Mesh());
 
   // bcs
   bcs_ = Teuchos::rcp(new std::vector< Teuchos::RCP<BoundaryFunction> >);
@@ -124,7 +125,7 @@ void PassiveTracer::process_parameter_list(const Teuchos::RCP<State>& S) {
 
       Teuchos::RCP<Function> func;
       func = Teuchos::rcp(new TabularFunction(times, values, forms));
-      Teuchos::RCP<BoundaryFunction> bnd_fun = Teuchos::rcp(new BoundaryFunction(S->mesh()));
+      Teuchos::RCP<BoundaryFunction> bnd_fun = Teuchos::rcp(new BoundaryFunction(S->Mesh()));
       bnd_fun->Define(regions, func);
       bcs_->push_back(bnd_fun);
     }
@@ -143,7 +144,7 @@ void PassiveTracer::process_parameter_list(const Teuchos::RCP<State>& S) {
 // Pointer copy of state to solution
 void PassiveTracer::state_to_solution(const Teuchos::RCP<State>& S,
         const Teuchos::RCP<TreeVector>& soln) {
-  soln->set_data(S->GetFieldData("concentration", "transport"));
+  soln->SetData(S->GetFieldData("concentration", "transport"));
 };
 
 // Pointer copy concentration fields from solution vector into state.  Used within
@@ -151,7 +152,7 @@ void PassiveTracer::state_to_solution(const Teuchos::RCP<State>& S,
 // use with other PKs.
 void PassiveTracer::solution_to_state(const Teuchos::RCP<TreeVector>& soln,
         const Teuchos::RCP<State>& S) {
-  S->SetData("concentration", "transport", soln->data());
+  S->SetData("concentration", "transport", soln->Data());
 };
 
 // -- advance using the BDF integrator

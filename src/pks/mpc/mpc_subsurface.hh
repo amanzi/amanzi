@@ -24,9 +24,10 @@ class MPCSubsurface : public MPCCoupledCells {
  public:
 
   MPCSubsurface(Teuchos::ParameterList& plist,
+                Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, soln),
-      MPCCoupledCells(plist,soln) {}
+      PKDefaultBase(plist, FElist, soln),
+      MPCCoupledCells(plist, FElist, soln) {}
 
   // -- Initialize owned (dependent) variables.
   virtual void setup(const Teuchos::Ptr<State>& S);

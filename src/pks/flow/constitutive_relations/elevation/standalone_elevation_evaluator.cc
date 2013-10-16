@@ -34,12 +34,12 @@ void StandaloneElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr
   // If necessary, create the functions from paramater lists.
   if (elevation_function_ == Teuchos::null) {
     Teuchos::ParameterList plist = plist_.sublist("elevation function");
-    elevation_function_ = Functions::CreateCompositeVectorFunction(plist, *elev);
+    elevation_function_ = Functions::CreateCompositeVectorFunction(plist, elev->Map());
   }
 
   if (slope_function_ == Teuchos::null) {
     Teuchos::ParameterList slope_plist = plist_.sublist("slope function");
-    slope_function_ = Functions::CreateCompositeVectorFunction(slope_plist, *slope);
+    slope_function_ = Functions::CreateCompositeVectorFunction(slope_plist, slope->Map());
   }
 
   // Evaluate the functions.

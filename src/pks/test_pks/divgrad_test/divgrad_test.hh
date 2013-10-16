@@ -27,9 +27,10 @@ class DivGradTest : public PKPhysicalBase {
 
 public:
   DivGradTest(Teuchos::ParameterList& plist,
-           const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      PKPhysicalBase(plist, solution) {
+              Teuchos::ParameterList& FElist,
+              const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBase(plist, FElist, solution) {
     // set a few parameters before setup
     plist_.set("solution key", "solution");
   }
@@ -67,7 +68,7 @@ protected:
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_dirichlet_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_neumann_;
-  std::vector<Operators::Matrix::MatrixBC> bc_markers_;
+  std::vector<Operators::MatrixBC> bc_markers_;
   std::vector<double> bc_values_;
 
  private:

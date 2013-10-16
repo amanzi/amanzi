@@ -34,6 +34,7 @@ MPCSurfaceSubsurfaceDirichletCoupler::reg_("surface-subsurface Dirichlet coupler
 // -------------------------------------------------------------
 void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   // Apply the combined preconditioner to the subsurface residual
   PreconApply_(u,Pu);
 
@@ -41,49 +42,19 @@ void MPCSurfaceSubsurfaceDirichletCoupler::precon(Teuchos::RCP<const TreeVector>
   PreconUpdateSurfaceCells_(Pu);
   PreconUpdateSurfaceFaces_(u,Pu);
 
-#if DEBUG_FLAG
-  Teuchos::OSTab tab = getOSTab();
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->data();
-  Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(domain_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
+  // write residuals
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Preconditioner Application:" << std::endl;
+  std::vector<std::string> vnames;
+  vnames.push_back("  r_sub"); vnames.push_back("  PC*r_sub"); 
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(u->SubVector(0)->Data().ptr()); 
+  vecs.push_back(Pu->SubVector(0)->Data().ptr()); 
+  domain_db_->WriteVectors(vnames, vecs, true);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Preconditioner application" << std::endl;
-    *out_ << " SubSurface precon:" << std::endl;
-
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      domain_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "  u(" << *c0 << "): " << (*domain_u)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*domain_u)("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-      *out_ << "  PC*u(" << *c0 << "): " << (*domain_u)("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*domain_u)("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-    }
-
-    *out_ << " Surface precon:" << std::endl;
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=surf_dc_.begin(); c0!=surf_dc_.end(); ++c0) {
-      if (*c0 < surf_u->size("cell",false)) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        surf_mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-        *out_ << "  u(" << *c0 << "): " << (*surf_u)("cell",*c0) << ", "
-              << (*surf_u)("face",fnums0[0]) << std::endl;
-        *out_ << "  PC*u(" << *c0 << "): " << (*surf_Pu)("cell",*c0) << ", "
-              << (*surf_Pu)("face",fnums0[0]) << std::endl;
-      }
-    }
-  }
-#endif
+  vnames[0] = "  r_surf"; vnames[1] = "  PC*r_surf";
+  vecs[0] = u->SubVector(1)->Data().ptr();
+  vecs[1] = Pu->SubVector(1)->Data().ptr();
+  surf_db_->WriteVectors(vnames, vecs, true);
 }
 
 
@@ -96,18 +67,17 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconApply_(
 
   // Grab the surface cell residuals and stick them in the corresponding
   // subsurface face locations.
-  Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(domain_pk_name_)->data();
+  Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(domain_pk_index_)->Data();
   Teuchos::RCP<CompositeVector> domain_u_new = Teuchos::rcp(new CompositeVector(*domain_u));
-  domain_u_new->CreateData();
   *domain_u_new = *domain_u;
 
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
+  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_index_)->Data();
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_index_)->Data();
+  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_index_)->Data();
 
 
-  const Epetra_MultiVector& surf_u_c = *u->SubVector(surf_pk_name_)
-      ->data()->ViewComponent("cell",false);
+  const Epetra_MultiVector& surf_u_c = *u->SubVector(surf_pk_index_)
+      ->Data()->ViewComponent("cell",false);
   Epetra_MultiVector& domain_u_new_f = *domain_u_new->ViewComponent("face",false);
 
   int ncells_surf = surf_u_c.MyLength();
@@ -118,10 +88,10 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconApply_(
 
   // Apply the combined preconditioner
   //  mfd_preconditioner_->ApplyInverse(*domain_u_new, domain_Pu.ptr());
-  Teuchos::RCP<TreeVector> domain_u_TV = Teuchos::rcp(new TreeVector("domain_u_TV"));
-  domain_u_TV->set_data(domain_u_new);
-  Teuchos::RCP<TreeVector> domain_Pu_TV = Teuchos::rcp(new TreeVector("domain_Pu_TV"));
-  domain_Pu_TV->set_data(domain_Pu);
+  Teuchos::RCP<TreeVector> domain_u_TV = Teuchos::rcp(new TreeVector());
+  domain_u_TV->SetData(domain_u_new);
+  Teuchos::RCP<TreeVector> domain_Pu_TV = Teuchos::rcp(new TreeVector());
+  domain_Pu_TV->SetData(domain_Pu);
   domain_pk_->precon(domain_u_TV, domain_Pu_TV);
 }
 
@@ -149,8 +119,8 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconUpdateSurfaceCells_(
     Teuchos::RCP<TreeVector> Pu) {
 
 
-  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(domain_pk_index_)->Data();
+  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_index_)->Data();
   Epetra_MultiVector& domain_Pu_f = *domain_Pu->ViewComponent("face",false);
   Epetra_MultiVector& surf_Pu_c = *surf_Pu->ViewComponent("cell",false);
 
@@ -175,8 +145,8 @@ void MPCSurfaceSubsurfaceDirichletCoupler::PreconUpdateSurfaceFaces_(
     Teuchos::RCP<const TreeVector> u,
     Teuchos::RCP<TreeVector> Pu) {
   // update delta faces
-  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_name_)->data();
-  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_name_)->data();
+  Teuchos::RCP<const CompositeVector> surf_u = u->SubVector(surf_pk_index_)->Data();
+  Teuchos::RCP<CompositeVector> surf_Pu = Pu->SubVector(surf_pk_index_)->Data();
   surf_preconditioner_->UpdateConsistentFaceCorrection(*surf_u, surf_Pu.ptr());
 }
 

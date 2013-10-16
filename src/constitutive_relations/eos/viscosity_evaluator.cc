@@ -23,7 +23,6 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("viscosity key", "viscosity_liquid");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // Set up my dependencies.
   std::size_t end = my_key_.find_first_of("_");

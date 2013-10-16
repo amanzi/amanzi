@@ -25,7 +25,6 @@ UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& pli
   if (my_key_ == std::string("")) {
     my_key_ = "unfrozen_fraction";
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // create the model, hard-coded until we have a 2nd model
   ASSERT(plist_.isSublist("unfrozen fraction model"));

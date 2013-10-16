@@ -21,7 +21,6 @@ SurfaceCouplerViaSourceEvaluator::SurfaceCouplerViaSourceEvaluator(
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("source key",
           "overland_source_from_subsurface");
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   pres_key_ = plist_.get<std::string>("pressure key", "pressure");
   dependencies_.insert(pres_key_);
@@ -140,9 +139,9 @@ void SurfaceCouplerViaSourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>&
       (*result)("cell",c) = (subsurface_head - surface_head) / L * std::pow<double>(subsurface_head, 5./3.) * coef;
     }
 
-    Teuchos::OSTab tab = getOSTab();
+    Teuchos::OSTab tab = vo_->getOSTab();
     if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-      *out_ << "Source, sub -> surface = " << (*result)("cell",c) << std::endl;
+      *vo_->os() << "Source, sub -> surface = " << (*result)("cell",c) << std::endl;
     }
 
   }

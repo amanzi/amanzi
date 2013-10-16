@@ -18,7 +18,6 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
     dynamic_mesh_(false) {
   my_keys_.push_back(plist_.get<std::string>("elevation key", "elevation"));
   my_keys_.push_back(plist_.get<std::string>("slope magnitude key", "slope_magnitude"));
-  setLinePrefix(my_keys_[0]+std::string(" evaluator"));
 
   // If the mesh changes dynamically (e.g. due to the presence of a deformation
   // pk, then we must make sure that elevation is recomputed every time the 
@@ -35,9 +34,9 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // If boundary faces are requested, grab the slopes on the internal cell
   Teuchos::Ptr<CompositeVector> slope = results[1];
 
-  if (slope->has_component("boundary_face")) {
-    const Epetra_Map& vandelay_map = slope->mesh()->exterior_face_epetra_map();
-    const Epetra_Map& face_map = slope->mesh()->face_epetra_map(false);
+  if (slope->HasComponent("boundary_face")) {
+    const Epetra_Map& vandelay_map = slope->Mesh()->exterior_face_epetra_map();
+    const Epetra_Map& face_map = slope->Mesh()->face_epetra_map(false);
     Epetra_MultiVector& slope_bf = *slope->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& slope_c = *slope->ViewComponent("cell",false);
 
@@ -47,7 +46,7 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      slope->mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      slope->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
 
       slope_bf[0][bf] = slope_c[0][cells[0]];
@@ -78,7 +77,7 @@ void ElevationEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists, and claim ownership.
   for (std::vector<Key>::const_iterator my_key=my_keys_.begin();
        my_key!=my_keys_.end(); ++my_key) {
-    Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(*my_key, *my_key);
+    Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(*my_key, *my_key);
 
     // check plist for vis or checkpointing control
     bool io_my_key = plist_.get<bool>(std::string("visualize ")+*my_key, true);

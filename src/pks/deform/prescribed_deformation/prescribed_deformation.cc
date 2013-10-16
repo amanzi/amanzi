@@ -25,9 +25,10 @@ using namespace Amanzi::AmanziMesh;
 RegisteredPKFactory<PrescribedDeformation> PrescribedDeformation::reg_("prescribed deformation");
 
 PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
-    PKDefaultBase(plist,solution),
-    PKPhysicalBase(plist,solution),
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBase(plist, FElist, solution),
     prescribed_deformation_case_(1)
 {
   prescribed_deformation_case_ = plist.get<int>("deformation function",1);
@@ -135,12 +136,11 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
 }
 
 bool PrescribedDeformation::advance(double dt) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Advancing deformation PK from time " << S_->time() << " to "
-          << S_next_->time() << " with step size " << dt << std::endl;
-    *out_ << "----------------------------------------------------------------" << std::endl;
-  }
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "Advancing deformation PK from time " << S_->time() << " to "
+               << S_next_->time() << " with step size " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
 
   if (prescribed_deformation_case_ == 0) return false;
 
@@ -167,10 +167,9 @@ bool PrescribedDeformation::advance(double dt) {
       {
         double thickness = 0.9 + 0.1*std::cos( ss / (365.25*24*60*60) * 2.0*M_PI );
         double thickness0 = 0.9 + 0.1*std::cos( ss0 / (365.25*24*60*60) * 2.0*M_PI );
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-          *out_ << std::setprecision(16);
-          *out_ << "  thicknesses: " << thickness << ", " << thickness0 << std::endl;
-        }
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << std::setprecision(16)
+                     << "  thicknesses: " << thickness << ", " << thickness0 << std::endl;
 
         double factor = thickness/thickness0;
         // std::cout << "SETTING factor = " << factor << std::endl;
@@ -214,13 +213,11 @@ bool PrescribedDeformation::advance(double dt) {
         coords.init(dim);
         new_coords.init(dim);
 
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-          *out_ << std::setprecision(16);
-          *out_ << "  z-coord (0,0) = " << deformation_fn_2(0.,0.,ss0) << std::endl;
-        }
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << std::setprecision(16)
+                     << "  z-coord (0,0) = " << deformation_fn_2(0.,0.,ss0) << std::endl;
 
         for (int iV=0; iV<nV; iV++) {
-
           // get the coords of the node
           write_access_mesh_->node_get_coordinates(iV,&coords);
 
@@ -251,13 +248,11 @@ bool PrescribedDeformation::advance(double dt) {
         coords.init(dim);
         new_coords.init(dim);
 
-        if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-          *out_ << std::setprecision(16);
-          *out_ << "  z-coord (0,0) = " << deformation_fn_3(0.,0.,z0_,ss0) << std::endl;
-        }
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << std::setprecision(16)
+                     << "  z-coord (0,0) = " << deformation_fn_3(0.,0.,z0_,ss0) << std::endl;
 
         for (int iV=0; iV<nV; iV++) {
-
           // get the coords of the node
           write_access_mesh_->node_get_coordinates(iV,&coords);
 

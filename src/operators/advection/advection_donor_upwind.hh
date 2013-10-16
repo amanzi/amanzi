@@ -16,7 +16,7 @@
 #include "Epetra_IntVector.h"
 
 #include "Mesh.hh"
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 
 #include "advection.hh"
 

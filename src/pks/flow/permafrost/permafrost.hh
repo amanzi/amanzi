@@ -19,8 +19,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 #include "State.hh"
 #include "MatrixMFD.hh"
 #include "upwinding.hh"
@@ -40,9 +40,11 @@ friend class MPCCoupledFlowEnergy;
 
 public:
   // Constructors.
-  Permafrost(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      Richards(plist, solution) {}
+  Permafrost(Teuchos::ParameterList& plist,
+             Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      Richards(plist, FElist, solution) {}
 
   // Virtual destructor
   virtual ~Permafrost() {}

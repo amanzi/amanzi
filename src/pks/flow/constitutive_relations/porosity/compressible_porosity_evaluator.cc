@@ -29,7 +29,6 @@ CompressiblePorosityEvaluator::CompressiblePorosityEvaluator(Teuchos::ParameterL
     my_key_ = plist_.get<std::string>("compressed porosity key",
             "porosity");
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   ASSERT(plist_.isSublist("compressible porosity model parameters"));
   model_ = Teuchos::rcp(new CompressiblePorosityModel(

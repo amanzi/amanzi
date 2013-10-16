@@ -6,8 +6,8 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Standard base for most PKs, this combines both domains/meshes of
-PKPhysicalBase and BDF methods of PKBDFBase.
+Standard base for most diffusion-dominated PKs, this combines both
+domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 ------------------------------------------------------------------------- */
 
 #ifndef AMANZI_PK_PHYSICAL_BDF_BASE_HH_
@@ -18,7 +18,7 @@ PKPhysicalBase and BDF methods of PKBDFBase.
 #include "pk_bdf_base.hh"
 #include "pk_physical_base.hh"
 
-#include "Matrix.hh"
+#include "MatrixMFD.hh"
 
 namespace Amanzi {
 
@@ -26,11 +26,11 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
  public:
   PKPhysicalBDFBase(Teuchos::ParameterList& plist,
+                    Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBase(plist,solution),
-      PKBDFBase(plist,solution),
-      continuation_to_ss_(false) {}
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBase(plist, FElist, solution),
+      PKBDFBase(plist, FElist, solution) {}
 
   virtual void setup(const Teuchos::Ptr<State>& S);
 
@@ -53,29 +53,23 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   //    state.
   virtual void changed_solution();
 
+  // PC operator access
+  Teuchos::RCP<Operators::MatrixMFD> preconditioner() { return mfd_preconditioner_; }
+
   // BC access
-  std::vector<Operators::Matrix::MatrixBC>& bc_markers() { return bc_markers_; }
+  std::vector<Operators::MatrixBC>& bc_markers() { return bc_markers_; }
   std::vector<double>& bc_values() { return bc_values_; }
 
-  // evaluating consistent faces for given BCs and cell values
-  virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
-    Errors::Message message(std::string("Calculate consistent faces not implemented by PK: ")+name_);
-    Exceptions::amanzi_throw(message);
-  }
-
-
  protected:
+  // PC
+  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+
   // BCs
-  std::vector<Operators::Matrix::MatrixBC> bc_markers_;
+  std::vector<Operators::MatrixBC> bc_markers_;
   std::vector<double> bc_values_;
 
   // error criteria
   double atol_, rtol_;
-  double atol0_, rtol0_;
-  bool adapt_tols_to_h_;
-  double min_tol_h_;
-
-  bool continuation_to_ss_;
 };
 
 
