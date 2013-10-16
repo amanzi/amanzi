@@ -10,7 +10,7 @@
 // faces.
 // -----------------------------------------------------------------------------
 
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 #include "State.hh"
 #include "upwind_arithmetic_mean.hh"
 
@@ -36,12 +36,12 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
         const CompositeVector& cell_coef,
         const Teuchos::Ptr<CompositeVector>& face_coef) {
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->Mesh();
   AmanziMesh::Entity_ID_List faces;
 
   // initialize the face coefficients
   face_coef->ViewComponent("face",true)->PutScalar(0.0);
-  if (face_coef->has_component("cell")) {
+  if (face_coef->HasComponent("cell")) {
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 

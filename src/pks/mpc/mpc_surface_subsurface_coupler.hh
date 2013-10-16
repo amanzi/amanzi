@@ -12,20 +12,21 @@ multiple coupler types.
 #ifndef PKS_MPC_SURFACE_SUBSURFACE_COUPLER_HH_
 #define PKS_MPC_SURFACE_SUBSURFACE_COUPLER_HH_
 
+#include "pk_physical_bdf_base.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
 
-class PKPhysicalBDFBase;
 namespace Operators {
   class MatrixMFD_Surf;
   class MatrixMFD_TPFA;
 }
 
-class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
+class MPCSurfaceSubsurfaceCoupler : public StrongMPC<PKPhysicalBDFBase> {
 
  public:
   MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList& plist,
+          Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln);
 
   // -- Setup data.
@@ -47,7 +48,9 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
 
   // pk info
+  int domain_pk_index_;
   Key domain_pk_name_;
+  int surf_pk_index_;
   Key surf_pk_name_;
   Teuchos::RCP<PKPhysicalBDFBase> surf_pk_;
   Teuchos::RCP<PKPhysicalBDFBase> domain_pk_;
@@ -56,8 +59,9 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC {
   Teuchos::RCP<Operators::MatrixMFD_Surf> mfd_preconditioner_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> surf_preconditioner_;
 
-  // cruft for easier global debugging
-  std::vector<AmanziMesh::Entity_ID> surf_dc_;
+  // debugger for dumping vectors
+  Teuchos::RCP<Debugger> domain_db_;
+  Teuchos::RCP<Debugger> surf_db_;
 
 };
 

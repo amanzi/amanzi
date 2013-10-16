@@ -17,7 +17,7 @@
 #ifndef PKS_VOLUMETRIC_DEFORMATION_HH_
 #define PKS_VOLUMETRIC_DEFORMATION_HH_
 
-#include "composite_matrix.hh"
+#include "CompositeMatrix.hh"
 #include "composite_vector_function.hh"
 #include "Function.hh"
 
@@ -34,6 +34,7 @@ class VolumetricDeformation : public PKPhysicalBase {
  public:
 
   VolumetricDeformation(Teuchos::ParameterList& plist,
+                        Teuchos::ParameterList& FElist,
                         const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor

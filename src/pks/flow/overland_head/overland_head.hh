@@ -11,6 +11,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 #include "boundary_function.hh"
 #include "MatrixMFD.hh"
+#include "MatrixMFD_TPFA.hh"
 #include "upwinding.hh"
 
 #include "pk_factory.hh"
@@ -18,12 +19,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 namespace Amanzi {
 
-namespace Operators {
-  class MatrixMFD_TPFA;
-}
 class MPCSurfaceSubsurfaceDirichletCoupler;
-
-
 namespace Flow {
 
 namespace FlowRelations {
@@ -36,9 +32,10 @@ class OverlandHeadFlow : public PKPhysicalBDFBase {
 
 public:
   OverlandHeadFlow(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBDFBase(plist, solution),
+                   Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution),
       standalone_mode_(false),
       is_source_term_(false),
       coupled_to_subsurface_via_head_(false),
@@ -78,8 +75,6 @@ public:
 
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
-
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
   // error monitor
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
@@ -151,10 +146,10 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
+  // note PC is in PKPhysicalBDFBase
 
   bool tpfa_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;

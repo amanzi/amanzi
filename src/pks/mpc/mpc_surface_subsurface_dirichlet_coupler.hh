@@ -25,9 +25,10 @@ class MPCSurfaceSubsurfaceDirichletCoupler : public MPCSurfaceSubsurfaceCoupler 
 
  public:
   MPCSurfaceSubsurfaceDirichletCoupler(Teuchos::ParameterList& plist,
+          Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, soln),
-      MPCSurfaceSubsurfaceCoupler(plist, soln) {}
+      PKDefaultBase(plist, FElist, soln),
+      MPCSurfaceSubsurfaceCoupler(plist, FElist, soln) {}
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);

@@ -27,9 +27,10 @@ class AdvectionDiffusion : public PKPhysicalBDFBase {
 public:
 
   AdvectionDiffusion(Teuchos::ParameterList& plist,
+                     Teuchos::ParameterList& FElist,
                      const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist,solution),
-      PKPhysicalBDFBase(plist, solution) {}
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution) {}
 
   // Virtual destructor
   virtual ~AdvectionDiffusion() {}
@@ -59,7 +60,6 @@ public:
   // updates the preconditioner
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
 private:
   // helper methods for calling the above methods
@@ -83,7 +83,6 @@ private:
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
 
   // time integration
   double atol_;

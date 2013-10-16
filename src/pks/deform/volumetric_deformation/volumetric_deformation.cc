@@ -15,7 +15,7 @@
    ------------------------------------------------------------------------- */
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "NKA_Operator.hh"
+#include "LinearOperatorFactory.hh"
 #include "composite_vector_function_factory.hh"
 
 #include "volumetric_deformation.hh"
@@ -29,9 +29,10 @@ using namespace Amanzi::AmanziMesh;
 RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
 
 VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
+        Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
-    PKDefaultBase(plist,solution),
-    PKPhysicalBase(plist,solution) {
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBase(plist, FElist, solution) {
   poro_key_ = plist_.get<std::string>("porosity key","porosity");
   dt_ = plist_.get<double>("initial time step");
 
@@ -94,7 +95,7 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // Create storage and a function for cell volume change
-  Teuchos::RCP<CompositeVectorFactory> cv_fac =
+  Teuchos::RCP<CompositeVectorSpace> cv_fac =
       S->RequireField("cell_volume_change", name_);
   cv_fac->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -158,11 +159,11 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
       def_matrix_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(
           op_plist, mesh_));
 
-      if (op_plist.isSublist("NKA Solver")) {
-        Teuchos::ParameterList solver_plist = op_plist.sublist("NKA Solver");
-        operator_ = Teuchos::rcp(
-            new AmanziSolvers::NKA_Operator<CompositeMatrix,CompositeVector,
-                            CompositeVectorFactory>(solver_plist,def_matrix_));
+      if (op_plist.isSublist("Solver")) {
+        Teuchos::ParameterList solver_plist = op_plist.sublist("Solver");
+        AmanziSolvers::LinearOperatorFactory<CompositeMatrix,CompositeVector,
+                            CompositeVectorSpace> fac;
+        operator_ = fac.Create("deformation linear solver",solver_plist,def_matrix_);
       } else {
         operator_ = def_matrix_;
       }
@@ -315,12 +316,11 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
 
 
 bool VolumetricDeformation::advance(double dt) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
-    *out_ << "Advancing deformation PK from time " << S_->time() << " to "
-          << S_next_->time() << " with step size " << dt << std::endl;
-    *out_ << "----------------------------------------------------------------" << std::endl;
-  }
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << "Advancing deformation PK from time " << S_->time() << " to "
+               << S_next_->time() << " with step size " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
 
   double ss = S_next_->time();
   double ss0 = S_->time();
@@ -394,9 +394,8 @@ bool VolumetricDeformation::advance(double dt) {
           ->ViewComponent("cell",false);
 
       double thaw_height = (*thaw_front_func_)(&ss);
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
-        *out_ << "Thaw Height = " << thaw_height << std::endl;
-      }
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Thaw Height = " << thaw_height << std::endl;
 
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
 
@@ -458,25 +457,6 @@ bool VolumetricDeformation::advance(double dt) {
     }
     default:
       ASSERT(0);
-  }
-
-
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    const Epetra_MultiVector& cv0 = *S_next_->GetFieldData("initial_cell_volume")
-        ->ViewComponent("cell",true);
-    const Epetra_MultiVector& cv1 = *S_next_->GetFieldData("integrated_cell_volume")
-        ->ViewComponent("cell",true);
-    const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")
-        ->ViewComponent("cell",true);
-
-    Teuchos::OSTab tab = getOSTab();
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      *out_ << "  CV_mesh(" << *c0 << ")  = " << mesh_->cell_volume(*c0) << std::endl;
-      *out_ << "  CV_vec(" << *c0 << ")  = " << cv[0][*c0] << std::endl;
-      *out_ << "  CV0(" << *c0 << ")  = " << cv0[0][*c0] << std::endl;
-      *out_ << "  CV1(" << *c0 << ")  = " << cv1[0][*c0] << std::endl;
-      *out_ << "  dCV(" << *c0 << ")  = " << (*dcell_vol_vec)("cell",*c0) << std::endl;
-    }
   }
 
 
@@ -571,13 +551,7 @@ bool VolumetricDeformation::advance(double dt) {
         }
       }
 
-
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-        Teuchos::OSTab tab = getOSTab();
-        for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-          *out_ << "  f_above_def(" << *c0 << ")  = " << (*face_above_def_vec)("cell",*c0) << std::endl;
-        }
-      }
+      db_->WriteVector("f_above_def", face_above_def_vec.ptr(), true);
 
       // loop over cells, calculating node changes as the average of the
       // neighboring face changes.
@@ -625,20 +599,6 @@ bool VolumetricDeformation::advance(double dt) {
           if (nodal_dz_l[1][n] > 0.) {
             nodal_dz_l[0][n] /= nodal_dz_l[1][n];
           }
-        }
-      }
-
-      if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-        Teuchos::OSTab tab = getOSTab();
-        for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-          AmanziMesh:Entity_ID_List nodes;
-          mesh_->cell_get_nodes(*c0, &nodes);
-          *out_ << "  nodal_dz(" << *c0 << ")  = ";
-          for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
-               n!=nodes.end(); ++n) {
-            *out_ << " (" << *n << ", " << (*nodal_dz_vec)("node", *n) << ")";
-          }
-          *out_ << std::endl;
         }
       }
 

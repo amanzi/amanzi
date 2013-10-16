@@ -17,7 +17,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "composite_vector_function_factory.hh"
 #include "independent_variable_field_evaluator.hh"
 
-#include "MatrixMFD_TPFA_ScaledConstraint.hh"
+#include "MatrixMFD_Factory.hh"
 #include "upwind_potential_difference.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_cell_centered.hh"
@@ -87,7 +87,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
   std::string method_name = plist_.get<string>("upwind conductivity method",
-          "upwind by potential difference");
+          "upwind with total flux");
   if (method_name == "cell centered") {
     upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
     upwinding_ = Teuchos::rcp(new Operators::UpwindCellCentered(name_,
@@ -122,11 +122,8 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
   tpfa_ = mfd_plist.get<bool>("TPFA", false);
-  if (tpfa_) {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(mfd_plist, mesh_));
-  } else {
-    matrix_ = Teuchos::rcp(new Operators::MatrixMFD_ScaledConstraint(mfd_plist, mesh_));
-  }
+  mfd_plist.set("scaled constraint equation", true);
+  matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
 
   symmetric_ = false;
   matrix_->set_symmetric(symmetric_);
@@ -135,22 +132,19 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   matrix_->InitPreconditioner();
 
   Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
-  Teuchos::RCP<Operators::Matrix> precon;
 
   if (!tpfa_) tpfa_ = mfd_pc_plist.get<bool>("TPFA", false);
   full_jacobian_ = false;
   if (tpfa_) {
     full_jacobian_ = mfd_pc_plist.get<bool>("TPFA use full Jacobian", false);
   }
+  mfd_pc_plist.set("scaled constraint equation", true);
+  mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
+  mfd_preconditioner_->set_symmetric(symmetric_);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->CreateMFDmassMatrices(Teuchos::null);
+  mfd_preconditioner_->InitPreconditioner();
 
-  if (tpfa_) {
-    tpfa_preconditioner_ =
-        Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(mfd_pc_plist, mesh_));
-    precon = tpfa_preconditioner_;
-  } else {
-    precon = Teuchos::rcp(new Operators::MatrixMFD_TPFA_ScaledConstraint(mfd_pc_plist, mesh_));
-  }
-  set_preconditioner(precon);
   modify_predictor_with_consistent_faces_ =
     plist_.get<bool>("modify predictor with consistent faces", false);
 
@@ -251,7 +245,7 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BC data structures
   unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::Matrix::MATRIX_BC_NULL);
+  bc_markers_.resize(nfaces, Operators::MATRIX_BC_NULL);
   bc_values_.resize(nfaces, 0.0);
 
   // // Initialize elevation, whose faces need to be updated so that h=0 is a
@@ -279,9 +273,10 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
   S->GetField("upwind_overland_conductivity",name_)->set_initialized();
   S->GetField("surface_flux", name_)->set_initialized();
-  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX)
+  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
     S->GetFieldData("surface_flux_direction", name_)->PutScalar(0.);
     S->GetField("surface_flux_direction", name_)->set_initialized();
+  }
   S->GetField("surface_velocity", name_)->set_initialized();
 };
 
@@ -294,9 +289,9 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 //   solution.
 // -----------------------------------------------------------------------------
 void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Commiting state." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Commiting state." << std::endl;
 
   // update boundary conditions
   bc_head_->Compute(S->time());
@@ -326,9 +321,9 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // Update diagnostics -- used prior to vis.
 // -----------------------------------------------------------------------------
 void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Calculating diagnostic variables." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Calculating diagnostic variables." << std::endl;
 
   // update the cell velocities
   if (update_flux_ == UPDATE_FLUX_VIS) {
@@ -369,9 +364,9 @@ void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
 //   This deals with upwinding, etc.
 // -----------------------------------------------------------------------------
 bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating permeability?";
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating permeability?";
 
   bool update_perm = S->GetFieldEvaluator("overland_conductivity")
       ->HasFieldChanged(S, name_);
@@ -427,10 +422,7 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     upwinding_->Update(S);
   }
 
-  if (update_perm && out_.get() &&
-      includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << " TRUE." << std::endl;
-  }
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os() << " TRUE." << std::endl;
   return update_perm;
 }
 
@@ -439,9 +431,9 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating BCs." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating BCs." << std::endl;
 
   AmanziMesh::Entity_ID_List cells;
   const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
@@ -449,7 +441,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 
   // initialize all as null
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.0;
   }
 
@@ -457,7 +449,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   for (Functions::BoundaryFunction::Iterator bc=bc_head_->begin();
        bc!=bc_head_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
     bc_values_[f] = bc->second + elevation[0][f];
   }
 
@@ -465,7 +457,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     bc_values_[f] = bc->second;
   }
 
@@ -473,9 +465,9 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     int f = bc->first;
-    //    bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
     //    bc_values_[f] = 0.;
-    //    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+    //    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
 
     // mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     // ASSERT( cells.size()==1 ) ;
@@ -488,14 +480,14 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
 // Evaluate boundary conditions at the current time without elevation.
 // -----------------------------------------------------------------------------
 void OverlandFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "  Updating BCs Markers only." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating BCs Markers only." << std::endl;
 
   AmanziMesh::Entity_ID_List cells;
   // initialize all as null
   for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::Matrix::MATRIX_BC_NULL;
+    bc_markers_[n] = Operators::MATRIX_BC_NULL;
     bc_values_[n] = 0.;
   }
 
@@ -503,7 +495,7 @@ void OverlandFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S
   for (Functions::BoundaryFunction::Iterator bc=bc_head_->begin();
        bc!=bc_head_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
   }
 
 
@@ -511,23 +503,23 @@ void OverlandFlow::UpdateBoundaryConditionsMarkers_(const Teuchos::Ptr<State>& S
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
+    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
   }
 
   // zero gradient: grad h = 0 implies that q = -k grad z
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
     //    int f = bc->first;
-    //    bc_markers_[f] = Operators::Matrix::MATRIX_BC_FLUX;
-    //    bc_markers_[f] = Operators::Matrix::MATRIX_BC_DIRICHLET;
+    //    bc_markers_[f] = Operators::MATRIX_BC_FLUX;
+    //    bc_markers_[f] = Operators::MATRIX_BC_DIRICHLET;
   }
 }
 
 
 void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "    Tweaking BCs for the Operator." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Tweaking BCs for the Operator." << std::endl;
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
@@ -576,15 +568,15 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
 
 void OverlandFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "    Tweaking BCs for the PC." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Tweaking BCs for the PC." << std::endl;
 };
 
 void OverlandFlow::FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "    Tweaking BCs for calculation of consistent faces." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Tweaking BCs for calculation of consistent faces." << std::endl;
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
@@ -640,7 +632,7 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
   Epetra_MultiVector& pres_f = *pres->ViewComponent("face",true);
   unsigned int nfaces = pres->size("face",true);
   for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::Matrix::MATRIX_BC_DIRICHLET) {
+    if (bc_markers_[f] == Operators::MATRIX_BC_DIRICHLET) {
       pres_f[0][f] = bc_values_[f];
     }
   }
@@ -648,14 +640,14 @@ void OverlandFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
 
 
 bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-    *out_ << "Modifying predictor:" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Modifying predictor:" << std::endl;
 
   if (modify_predictor_with_consistent_faces_) {
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true))
-      *out_ << "  modifications for consistent face pressures." << std::endl;
-    CalculateConsistentFaces(u->data().ptr());
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  modifications for consistent face pressures." << std::endl;
+    CalculateConsistentFaces(u->Data().ptr());
     return true;
   }
 
@@ -665,7 +657,7 @@ bool OverlandFlow::modify_predictor(double h, Teuchos::RCP<TreeVector> u) {
 
 void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   // update boundary conditions
   bc_head_->Compute(S_next_->time());
@@ -688,18 +680,6 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
   S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev","pres_elev");
 
-#if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << "Consistent faces:" << std::endl;
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-      if (*c0 < ncells) {
-        *out_ << "  u_c = " << (*u)("cell",*c0) << ",  pres_elev_c = " << (*pres_elev)("cell",*c0) << std::endl;
-      }
-    }
-  }
-#endif
-
   // Update the preconditioner with darcy and gravity fluxes
   // skip accumulation terms, they're not needed
   // Assemble
@@ -714,23 +694,6 @@ void OverlandFlow::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>&
       ->ViewComponent("face",false);
   u->ViewComponent("face",false)->Update(1., *pres_elev->ViewComponent("face",false),
           -1., elevation, 0.);
-
-#if DEBUG_FLAG
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-      if (*c0 < ncells) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-        *out_ << "  cond = " << (*cond)("face",fnums0[0]) << std::endl;
-        *out_ << "  pres_e_f = " << (*pres_elev)("face",fnums0[0]) << std::endl;
-        *out_ << "  u_f = " << (*u)("face",fnums0[0]) << std::endl;
-      }
-    }
-  }
-#endif
 }
 
 } // namespace

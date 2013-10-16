@@ -34,9 +34,9 @@
 #include <fstream>
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "NKA_Operator.hh"
-
+#include "LinearOperatorFactory.hh"
 #include "FieldEvaluator.hh"
+#include "MatrixMFD_Factory.hh"
 #include "MatrixMFD.hh"
 #include "MatrixMFD_Coupled.hh"
 
@@ -44,15 +44,8 @@
 
 namespace Amanzi {
 
-MPCCoupledCells::MPCCoupledCells(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist,soln),
-    StrongMPC(plist,soln),
-    decoupled_(false)
-{}
-
 void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
-  StrongMPC::setup(S);
+  StrongMPC<PKPhysicalBDFBase>::setup(S);
 
   decoupled_ = plist_.get<bool>("decoupled",false);
 
@@ -66,41 +59,29 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   Key mesh_key = plist_.get<std::string>("mesh key");
   mesh_ = S->GetMesh(mesh_key);
 
+  // set up debugger
+  db_ = Teuchos::rcp(new Debugger(mesh_, name_, plist_));
+
   // Create the precon
   Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
-  mfd_preconditioner_ =
-      Teuchos::rcp(new Operators::MatrixMFD_Coupled(pc_sublist, mesh_));
+  mfd_preconditioner_ = Operators::CreateMatrixMFD_Coupled(pc_sublist, mesh_);
 
   // Set the sub-blocks from the sub-PK's preconditioners.
-  Teuchos::RCP<Operators::Matrix> pcA = sub_pks_[0]->preconditioner();
-  Teuchos::RCP<Operators::Matrix> pcB = sub_pks_[1]->preconditioner();
-
-#ifdef ENABLE_DBC
-  Teuchos::RCP<Operators::MatrixMFD> pcB_mfd =
-      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcB);
-  ASSERT(pcB_mfd != Teuchos::null);
-  Teuchos::RCP<Operators::MatrixMFD> pcA_mfd =
-      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcA);
-  ASSERT(pcA_mfd != Teuchos::null);
-#else
-  Teuchos::RCP<Operators::MatrixMFD> pcA_mfd =
-      Teuchos::rcp_static_cast<Operators::MatrixMFD>(pcA);
-  Teuchos::RCP<Operators::MatrixMFD> pcB_mfd =
-      Teuchos::rcp_static_cast<Operators::MatrixMFD>(pcB);
-#endif
-
-  mfd_preconditioner_->SetSubBlocks(pcA_mfd, pcB_mfd);
+  Teuchos::RCP<Operators::MatrixMFD> pcA = sub_pks_[0]->preconditioner();
+  Teuchos::RCP<Operators::MatrixMFD> pcB = sub_pks_[1]->preconditioner();
+  mfd_preconditioner_->SetSubBlocks(pcA, pcB);
 
   // setup and initialize the preconditioner
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
   mfd_preconditioner_->InitPreconditioner();
-  preconditioner_ = mfd_preconditioner_;
 
   // setup and initialize the linear solver for the preconditioner
   if (plist_.isSublist("Coupled Solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_.sublist("Coupled Solver");
-    linsolve_preconditioner_ =
-        Teuchos::rcp(new AmanziSolvers::NKA_Operator<TreeMatrix,TreeVector,TreeVectorFactory>(linsolve_sublist, mfd_preconditioner_));
+    AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
+    linsolve_preconditioner_ = fac.Create("coupled solver", linsolve_sublist, mfd_preconditioner_);
+  } else {
+    linsolve_preconditioner_ = mfd_preconditioner_;
   }
 }
 
@@ -108,7 +89,7 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
 // updates the preconditioner
 void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
-  StrongMPC::update_precon(t,up,h);
+  StrongMPC<PKPhysicalBDFBase>::update_precon(t,up,h);
 
   // Update and get the off-diagonal terms.
   if (!decoupled_) {
@@ -128,20 +109,16 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
         Teuchos::rcp(new Epetra_MultiVector(*dB_dy1->ViewComponent("cell",false)));
     (*Dcc) = *dB_dy1->ViewComponent("cell",false);
 
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-      const Epetra_MultiVector& dsi_dp = *S_next_->GetFieldData("dsaturation_ice_dpressure")->ViewComponent("cell",false);
-      const Epetra_MultiVector& dsi_dT = *S_next_->GetFieldData("dsaturation_ice_dtemperature")->ViewComponent("cell",false);
+    Teuchos::RCP<const CompositeVector> dsi_dp = S_next_->GetFieldData("dsaturation_ice_dpressure");
+    Teuchos::RCP<const CompositeVector> dsi_dT = S_next_->GetFieldData("dsaturation_ice_dtemperature");
 
-      for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin();
-           c0!=dc_.end(); ++c0) {
-        *out_ << "    dwc_dT(" << *c0 << "): " << (*Ccc)[0][*c0] << std::endl;
-        *out_ << "    de_dp(" << *c0 << "): " << (*Dcc)[0][*c0] << std::endl;
-        *out_ << "       dsi_dp(" << *c0 << "): " << dsi_dp[0][*c0] << std::endl;
-        *out_ << "       dsi_dT(" << *c0 << "): " << dsi_dT[0][*c0] << std::endl;
-        *out_ << "    --" << std::endl;
-
-      }
-    }
+    std::vector<std::string> vnames;
+    vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
+    vnames.push_back("    dsi_dp"); vnames.push_back("    dsi_dT");
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(dA_dy2.ptr()); vecs.push_back(dB_dy1.ptr());
+    vecs.push_back(dsi_dp.ptr()); vecs.push_back(dsi_dT.ptr());
+    db_->WriteVectors(vnames, vecs, false);
 
     // scale by 1/h
     Ccc->Scale(1./h);
@@ -165,58 +142,28 @@ void MPCCoupledCells::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 
 // applies preconditioner to u and returns the result in Pu
 void MPCCoupledCells::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (decoupled_) return StrongMPC::precon(u,Pu);
+  if (decoupled_) return StrongMPC<PKPhysicalBDFBase>::precon(u,Pu);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "Residuals:" << std::endl;
-      *out_ << "  p(" << *c0 << "): " << (*u->SubVector(0)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*u->SubVector(0)->data())("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-
-      *out_ << "  T(" << *c0 << "): " << (*u->SubVector(1)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*u->SubVector(1)->data())("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-    }
-  }
+  // write residuals
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Residuals:" << std::endl;
+  std::vector<std::string> vnames;
+  vnames.push_back("  r_p"); vnames.push_back("  r_T"); 
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(u->SubVector(0)->Data().ptr()); 
+  vecs.push_back(u->SubVector(1)->Data().ptr()); 
+  db_->WriteVectors(vnames, vecs, true);
 
   // Apply
-  if (linsolve_preconditioner_ != Teuchos::null) {
-    linsolve_preconditioner_->ApplyInverse(*u, *Pu);
-  } else {
-    mfd_preconditioner_->ApplyInverse(*u, *Pu);
-  }
+  linsolve_preconditioner_->ApplyInverse(*u, *Pu);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-      *out_ << "Preconditioned Updates:" << std::endl;
-      *out_ << "  Pp(" << *c0 << "): " << (*Pu->SubVector(0)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*Pu->SubVector(0)->data())("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-
-      *out_ << "  PT(" << *c0 << "): " << (*Pu->SubVector(1)->data())("cell",*c0);
-      for (unsigned int n=0; n!=fnums0.size(); ++n) {
-        *out_ << ",  " << (*Pu->SubVector(1)->data())("face",fnums0[n]);
-      }
-      *out_ << std::endl;
-    }
-  }
+  // write corrections
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Preconditioned Updates:" << std::endl;
+  vnames[0] = "  PC*r_p"; vnames[1] = "  PC*r_T"; 
+  vecs[0] = Pu->SubVector(0)->Data().ptr();
+  vecs[1] = Pu->SubVector(1)->Data().ptr(); 
+  db_->WriteVectors(vnames, vecs, true);
 }
 
 

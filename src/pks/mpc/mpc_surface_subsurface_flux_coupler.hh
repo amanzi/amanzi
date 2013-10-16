@@ -25,9 +25,10 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
 
  public:
   MPCSurfaceSubsurfaceFluxCoupler(Teuchos::ParameterList& plist,
+          Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, soln),
-      MPCSurfaceSubsurfaceCoupler(plist, soln) {
+      PKDefaultBase(plist, FElist, soln),
+      MPCSurfaceSubsurfaceCoupler(plist, FElist, soln) {
     modify_predictor_flux_bc_ =
       plist_.get<bool>("modify predictor for flux BCs", false);
     modify_predictor_first_flux_bc_ =

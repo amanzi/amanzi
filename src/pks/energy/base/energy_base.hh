@@ -30,9 +30,11 @@ namespace Energy {
 class EnergyBase : public PKPhysicalBDFBase {
 
 public:
-  EnergyBase(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBDFBase(plist, solution),
+  EnergyBase(Teuchos::ParameterList& plist,
+             Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution),
       modify_predictor_with_consistent_faces_(false),
       coupled_to_subsurface_via_temp_(false),
       coupled_to_subsurface_via_flux_(false),
@@ -83,7 +85,6 @@ public:
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
 
 protected:
   // These must be provided by the deriving PK.
@@ -137,7 +138,7 @@ protected:
   // operators
   Teuchos::RCP<Operators::Advection> advection_;
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
+  // note PC is in PKPhysicalBDFBase
 
   // flags and control
   double dT_max_;

@@ -18,11 +18,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 namespace Amanzi {
 
-namespace Operators {
-  class MatrixMFD_TPFA;
-}
 class MPCSurfaceSubsurfaceDirichletCoupler;
-
 
 namespace Flow {
 
@@ -36,9 +32,10 @@ class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
   OverlandFlow(Teuchos::ParameterList& plist,
+               Teuchos::ParameterList& FElist,
                const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, solution),
-      PKPhysicalBDFBase(plist, solution),
+      PKDefaultBase(plist, FElist, solution),
+      PKPhysicalBDFBase(plist, FElist, solution),
       standalone_mode_(false),
       is_source_term_(false),
       perm_update_required_(true),
@@ -79,10 +76,7 @@ public:
   virtual double enorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
-  virtual void set_preconditioner(const Teuchos::RCP<Operators::Matrix> preconditioner);
-
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> u);
-
 
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
@@ -135,6 +129,7 @@ protected:
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
   bool perm_update_required_;
+  bool tpfa_;
 
   // coupling term
   bool full_jacobian_;
@@ -144,10 +139,7 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::MatrixMFD> matrix_;
-  Teuchos::RCP<Operators::MatrixMFD> mfd_preconditioner_;
-
-  bool tpfa_;
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> tpfa_preconditioner_;
+  // note PC is in PKPhysicalBDFBase
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;

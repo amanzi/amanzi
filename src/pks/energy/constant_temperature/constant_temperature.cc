@@ -19,8 +19,8 @@
 
    ------------------------------------------------------------------------- */
 
-#include "composite_vector.hh"
-#include "composite_vector_factory.hh"
+#include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 #include "constant_temperature.hh"
 
 namespace Amanzi {
@@ -32,7 +32,7 @@ void ConstantTemperature::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
 
   // require fields for the state and solution
-  Teuchos::RCP<CompositeVectorFactory> factory =
+  Teuchos::RCP<CompositeVectorSpace> factory =
     S->RequireField(key_, name_);
 
   // Set up the data structure.
@@ -68,7 +68,7 @@ void ConstantTemperature::initialize(const Teuchos::Ptr<State>& S) {
 // Advance methods calculate the constant value
 // -- advance using the analytic value
 bool ConstantTemperature::advance_analytic_(double dt) {
-  *solution_->data() = *temp0_;
+  *solution_->Data() = *temp0_;
   return false;
 };
 
@@ -83,7 +83,7 @@ bool ConstantTemperature::advance(double dt) {
 void ConstantTemperature::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
   *f = *u_new;
-  f->data()->Update(-1.0, *temp0_, 1.0); // T - T0
+  f->Data()->Update(-1.0, *temp0_, 1.0); // T - T0
 };
 
 // -- preconditioning (the identity matrix)

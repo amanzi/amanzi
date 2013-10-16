@@ -32,14 +32,14 @@ namespace Operators { class MatrixMFD_Coupled_Surf; }
 
 class MPCDelegateEWC;
 
-class MPCPermafrost : public StrongMPC {
+class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceCoupler> {
 
  public:
   MPCPermafrost(Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, soln),
-      StrongMPC(plist, soln)
-  {}
+                Teuchos::ParameterList& FElist,
+                const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist, FElist, soln),
+      StrongMPC<MPCSurfaceSubsurfaceCoupler>(plist, FElist, soln) {}
 
 
   virtual void setup(const Teuchos::Ptr<State>& S);
@@ -89,6 +89,13 @@ class MPCPermafrost : public StrongMPC {
 
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWC> ewc_;
+
+
+  // cruft for easier global debugging
+  std::vector<AmanziMesh::Entity_ID> dc_;
+  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
+  std::vector<AmanziMesh::Entity_ID> surf_dc_;
+  std::vector<Teuchos::RCP<VerboseObject> > surf_dcvo_;
 
 
  private:

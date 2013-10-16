@@ -21,9 +21,7 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
 
  public:
   MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                       const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
-
+                         const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
   MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other);
 
   virtual void ComputeSchurComplement();
@@ -42,6 +40,8 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
                            const Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
     surface_A_ = surface_A;
     surface_B_ = surface_B;
+    ASSERT(surface_A_->Mesh() == surface_B_->Mesh());
+    surface_mesh_ = surface_A_->Mesh();
   }
 
   void GetSurfaceOperators(Teuchos::RCP<MatrixMFD_TPFA>& surface_A,

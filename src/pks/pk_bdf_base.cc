@@ -26,7 +26,7 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
   // initial timestep
   dt_ = plist_.get<double>("initial time step", 1.);
 
-  // precon assembly
+  // preconditioner assembly
   assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
 };
 
@@ -37,14 +37,8 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
   // set up the timestepping algorithm
   if (!plist_.get<bool>("strongly coupled PK", false)) {
-    // -- get the timestepper plist and grab backtracking control
-    Teuchos::ParameterList bdf_plist = plist_.sublist("time integrator");
-
-    // NOT CURRENTLY USED, would need to be added to modify_corrector()
-    backtracking_iterations_ = bdf_plist.get<int>("max backtrack count",0);
-    backtracking_ = (backtracking_iterations_ > 0);
-
     // -- instantiate time stepper
+    Teuchos::ParameterList bdf_plist = plist_.sublist("time integrator");
     bdf_plist.set("initial time", S->time());
     time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector>(*this, bdf_plist, solution_));
 
@@ -56,8 +50,6 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
     time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
   }
 
-  // set up the wallclock timer
-  //  step_walltime_ = Teuchos::TimeMonitor::getNewCounter(name_+std::string(" BDF step timer"));
 };
 
 
@@ -68,20 +60,10 @@ double PKBDFBase::get_dt() { return dt_; }
 
 
 // -----------------------------------------------------------------------------
-// Apply the preconditioner (default application).
-// -----------------------------------------------------------------------------
-void PKBDFBase::precon(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<TreeVector> Pu) {
-  preconditioner_->ApplyInverse(*u, Pu.ptr());
-}
-
-
-// -----------------------------------------------------------------------------
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
 bool PKBDFBase::advance(double dt) {
   state_to_solution(S_next_, solution_);
-  backtracking_count_ = 0;
 
   // take a bdf timestep
   double dt_solver;
@@ -89,14 +71,7 @@ bool PKBDFBase::advance(double dt) {
   if (true) { // this is here simply to create a context for timer,
               // which stops the clock when it is destroyed at the
               // closing brace.
-    //    Teuchos::TimeMonitor timer(*step_walltime_);
     fail = time_stepper_->time_step(dt, dt_solver, solution_);
-  }
-
-  // VerboseObject stuff.
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    Teuchos::OSTab tab = getOSTab();
-    //    Teuchos::TimeMonitor::summarize();
   }
 
   if (!fail) {

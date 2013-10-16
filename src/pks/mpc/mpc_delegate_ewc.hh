@@ -12,16 +12,18 @@ energy/water-content space instead of temperature/pressure space.
 #ifndef MPC_DELEGATE_EWC_HH_
 #define MPC_DELEGATE_EWC_HH_
 
+#include "VerboseObject.hh"
+#include "Debugger.hh"
 #include "tensor.hh"
 #include "State.hh"
-#include "tree_vector.hh"
+#include "TreeVector.hh"
 #include "pk_default_base.hh"
 
 namespace Amanzi {
 
 class EWCModel;
 
-class MPCDelegateEWC : public Teuchos::VerboseObject<MPCDelegateEWC> {
+class MPCDelegateEWC {
 
  public:
 
@@ -45,19 +47,16 @@ class MPCDelegateEWC : public Teuchos::VerboseObject<MPCDelegateEWC> {
   virtual bool modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up);
   virtual bool modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeVector> up);
 
-  virtual void precon_smart_ewc_(Teuchos::RCP<const TreeVector> u,
-          Teuchos::RCP<TreeVector> Pu);
   virtual void precon_ewc_(Teuchos::RCP<const TreeVector> u,
           Teuchos::RCP<TreeVector> Pu);
-
   virtual void update_precon_ewc_(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 
 
  protected:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
-  Teuchos::EVerbosityLevel verbosity_;
+  Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<Debugger> db_;
 
   // model
   Teuchos::RCP<EWCModel> model_;
@@ -101,9 +100,6 @@ class MPCDelegateEWC : public Teuchos::VerboseObject<MPCDelegateEWC> {
   Key wc_key_;
   Key poro_key_;
   Key cv_key_;
-
-  // debug cells
-  std::vector<AmanziMesh::Entity_ID> dc_;
 
 };
 

@@ -49,35 +49,27 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_FEVbrMatrix.h"
 
-#include "ml_MultiLevelPreconditioner.h"
-#include "Ifpack.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_AdditiveSchwarz.h"
-#include "Teuchos_LAPACK.hpp"
+#include "TreeVector.hh"
+#include "TreeMatrix.hh"
+#include "Preconditioner.hh"
 
-#include "tree_vector.hh"
-#include "tree_matrix.hh"
 #include "MatrixMFD.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class MatrixMFD_Coupled : public Matrix,
-                          public TreeMatrix {
+class MatrixMFD_Coupled : public TreeMatrix {
 
  public:
   MatrixMFD_Coupled(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   MatrixMFD_Coupled(const MatrixMFD_Coupled& other);
 
   void InitializeFromPList_();
 
   void SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
-                    const Teuchos::RCP<MatrixMFD>& blockB) {
-    blockA_ = blockA;
-    blockB_ = blockB;
-  }
+                    const Teuchos::RCP<MatrixMFD>& blockB);
 
   void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
                        const Teuchos::RCP<const Epetra_MultiVector>& Dcc) {
@@ -90,12 +82,12 @@ class MatrixMFD_Coupled : public Matrix,
   }
 
   // TreeMatrix stuff FIX ME!
-  virtual Teuchos::RCP<const TreeVectorFactory> domain() const {
-    return Teuchos::null; }
+  virtual const TreeVectorSpace& DomainMap() const {
+    return *space_; }
 
   // Vector space of the Matrix's range.
-  virtual Teuchos::RCP<const TreeVectorFactory> range() const {
-    return Teuchos::null; }
+  virtual const TreeVectorSpace& RangeMap() const {
+    return *space_; }
 
   // Virtual copy constructor.
   virtual Teuchos::RCP<TreeMatrix> Clone() const {
@@ -126,6 +118,9 @@ class MatrixMFD_Coupled : public Matrix,
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::ParameterList plist_;
 
+  // domain/range space
+  Teuchos::RCP<TreeVectorSpace> space_;
+
   // sub-blocks
   Teuchos::RCP<MatrixMFD> blockA_;
   Teuchos::RCP<MatrixMFD> blockB_;
@@ -152,37 +147,11 @@ class MatrixMFD_Coupled : public Matrix,
   bool is_matrix_constructed_;
   bool decoupled_;
 
-  // preconditioning (This should be moved to Matrix?)
-  enum PrecMethod { PREC_METHOD_NULL,
-                    TRILINOS_ML,
-                    TRILINOS_ILU,
-                    TRILINOS_BLOCK_ILU,
-                    HYPRE_AMG,
-                    HYPRE_EUCLID,
-                    HYPRE_PARASAILS };
-  PrecMethod prec_method_;
+  // preconditioner for Schur complement
+  Teuchos::RCP<AmanziPreconditioners::Preconditioner> S_pc_;
 
-  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
-  Teuchos::ParameterList ml_plist_;
-  Teuchos::ParameterList coupled_plist_;
-
-#ifdef HAVE_HYPRE
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
-  Teuchos::ParameterList hypre_plist_;
-  int hypre_ncycles_, hypre_nsmooth_;
-  double hypre_tol_, hypre_strong_threshold_;
-  int hypre_relax_type_, hypre_coarsen_type_, hypre_cycle_type_;
-  int hypre_print_level_,hypre_max_row_sum_,hypre_max_levels_;
-  int hypre_relax_wt_, hypre_interp_type_;
-  int hypre_agg_num_levels_, hypre_agg_num_paths_;  
-#endif
-
-  Teuchos::RCP<Ifpack_ILU> ilu_prec_;
-  Teuchos::ParameterList ilu_plist_;
-
-  Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
-  Teuchos::ParameterList ifp_plist_;
-
+  // verbose object
+  Teuchos::RCP<VerboseObject> vo_;
 
 };
 

@@ -17,18 +17,9 @@
 namespace Amanzi {
 namespace Operators {
 
-
 MatrixMFD_Surf::MatrixMFD_Surf(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
-    MatrixMFD(plist,mesh),
-    surface_mesh_(surface_mesh) {}
-
-
-MatrixMFD_Surf::MatrixMFD_Surf(const MatrixMFD& other,
-        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
-    MatrixMFD(other),
-    surface_mesh_(surface_mesh) {}
+			       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+    MatrixMFD(plist,mesh) {}
 
 
 void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,

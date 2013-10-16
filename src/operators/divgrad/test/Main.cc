@@ -5,6 +5,8 @@
 
 #include "test_mfd_surf.hh"
 
+#include "VerboseObject_objs.hh"
+
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);

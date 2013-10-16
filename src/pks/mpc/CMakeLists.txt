@@ -21,7 +21,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 
-add_library(mpc mpc.cc
+add_library(mpc
   weak_mpc.cc
   strong_mpc.cc
   mpc_coupled_cells.cc
@@ -30,8 +30,8 @@ add_library(mpc mpc.cc
   mpc_surface_subsurface_flux_coupler.cc
   mpc_water_coupler.cc
   mpc_delegate_ewc.cc
-  mpc_subsurface.cc
-  mpc_permafrost.cc)
+  mpc_subsurface.cc)
+#  mpc_permafrost.cc)
 
 
 

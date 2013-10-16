@@ -6,10 +6,8 @@ namespace Amanzi {
 namespace Operators {
 
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-        const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh) :
-    MatrixMFD_Coupled(plist,mesh),
-    surface_mesh_(surface_mesh) {}
+        const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+    MatrixMFD_Coupled(plist,mesh) {}
 
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other) :
     MatrixMFD_Coupled(other),

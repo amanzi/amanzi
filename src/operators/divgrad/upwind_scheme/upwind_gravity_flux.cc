@@ -11,7 +11,7 @@
 // -----------------------------------------------------------------------------
 
 #include "tensor.hh"
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 #include "State.hh"
 #include "upwind_gravity_flux.hh"
 
@@ -45,7 +45,7 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
   std::vector<int> dirs;
   double flow_eps = 1.e-10;
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->mesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = face_coef->Mesh();
 
   // set up gravity
   AmanziGeometry::Point gravity(g_vec.MyLength());
@@ -53,7 +53,7 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
 
   // initialize the face coefficients
   face_coef->ViewComponent("face",true)->PutScalar(0.0);
-  if (face_coef->has_component("cell")) {
+  if (face_coef->HasComponent("cell")) {
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 

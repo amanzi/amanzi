@@ -13,7 +13,7 @@
 #include "Mesh_STK.hh"
 
 #include "field.hh"
-#include "field_composite_vector.hh"
+#include "field_CompositeVector.hh"
 #include "State.hh"
 #include "constant_temperature.hh"
 

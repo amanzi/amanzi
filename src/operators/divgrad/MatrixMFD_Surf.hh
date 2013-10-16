@@ -20,12 +20,7 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
 
  public:
   MatrixMFD_Surf(Teuchos::ParameterList& plist,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
-
-  // NOTE this is not a copy constructor!
-  MatrixMFD_Surf(const MatrixMFD& other,
-                 const Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh);
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   virtual void AssembleGlobalMatrices();
 
@@ -36,6 +31,7 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
           const std::vector<double>& bc_values);
 
   virtual void SetSurfaceOperator(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
+    surface_mesh_ = surface_A->Mesh();
     surface_A_ = surface_A; }
   virtual void GetSurfaceOperator(Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
     surface_A = surface_A_; }
@@ -47,6 +43,7 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> surface_mesh_;
   Teuchos::RCP<MatrixMFD_TPFA> surface_A_;
+
 };
 
 

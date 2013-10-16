@@ -34,7 +34,6 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
     std::size_t start = name.find_last_of(">");
     my_key_ = name.substr(start+1);
   }
-  setLinePrefix(my_key_+std::string(" evaluator"));
 
   // set up dependencies
   std::size_t end = my_key_.find_first_of("_");

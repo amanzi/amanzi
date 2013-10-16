@@ -5,8 +5,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 #include "State.hh"
 #include "MatrixMFD.hh"
 #include "upwinding.hh"
@@ -23,7 +23,9 @@ namespace Flow {
 class RichardsSteadyState : public Richards {
 public:
   // Constructors.
-  RichardsSteadyState(Teuchos::ParameterList& plist, const Teuchos::RCP<TreeVector>& solution);
+  RichardsSteadyState(Teuchos::ParameterList& plist,
+                      Teuchos::ParameterList& FElist,
+                      const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~RichardsSteadyState() {}

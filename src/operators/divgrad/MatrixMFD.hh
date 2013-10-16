@@ -11,32 +11,31 @@
 
 #include <strings.h>
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+
+
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
-#include "ml_MultiLevelPreconditioner.h"
-
-#include "Ifpack.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_AdditiveSchwarz.h"
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "Epetra_SerialDenseVector.h"
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "tree_vector.hh"
-#include "composite_vector.hh"
-#include "composite_matrix.hh"
-#include "mfd3d.hh"
-
-#include "Matrix.hh"
-
+#include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
+#include "CompositeMatrix.hh"
+#include "EpetraMatrix.hh"
+#include "DenseMatrix.hh"
+#include "mfd3d_diffusion.hh"
+#include "Preconditioner.hh"
+#include "PreconditionerFactory.hh"
+#include "EpetraMatrixDefault.hh"
+#include "LinearOperator.hh"
+#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -53,9 +52,13 @@ const int MFD_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int MFD_MAX_NODES = 47;  // These polyhedron parameters must
 const int MFD_MAX_EDGES = 60;  // be calculated in Init().
 
+enum MatrixBC {
+  MATRIX_BC_NULL = 0,
+  MATRIX_BC_DIRICHLET,
+  MATRIX_BC_FLUX
+};
 
-class MatrixMFD : public Matrix,
-                  public CompositeMatrix {
+class MatrixMFD : public CompositeMatrix {
  public:
 
   enum MFDMethod {
@@ -71,7 +74,7 @@ class MatrixMFD : public Matrix,
 
   // Constructor
   MatrixMFD(Teuchos::ParameterList& plist,
-            const Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   MatrixMFD(const MatrixMFD& other);
 
@@ -79,16 +82,21 @@ class MatrixMFD : public Matrix,
   // Virtual destructor
   virtual ~MatrixMFD() {};
 
-  // CompositeMatrix stuff... FIX ME!
-  virtual Teuchos::RCP<const CompositeVectorFactory> domain() const {
-    return Teuchos::null; }
+  // CompositeMatrix methods
+  virtual const CompositeVectorSpace& DomainMap() const {
+    return *space_; }
 
-  virtual Teuchos::RCP<const CompositeVectorFactory> range() const {
-    return Teuchos::null; }
+  virtual const CompositeVectorSpace& RangeMap() const {
+    return *space_; }
 
   virtual Teuchos::RCP<CompositeMatrix> Clone() const {
     return Teuchos::rcp(new MatrixMFD(*this)); }
 
+  virtual int Apply(const CompositeVector& X,
+                     CompositeVector& Y) const;
+
+  virtual int ApplyInverse(const CompositeVector& X,
+                            CompositeVector& Y) const;
 
 
   // Access to local matrices for external tweaking.
@@ -104,6 +112,8 @@ class MatrixMFD : public Matrix,
   std::vector<Epetra_SerialDenseVector>& Afc_cells() {
     return Afc_cells_;
   }
+
+  // Access to local rhs
   std::vector<double>& Fc_cells() {
     return Fc_cells_;
   }
@@ -141,6 +151,7 @@ class MatrixMFD : public Matrix,
   bool symmetric() { return flag_symmetry_; }
   void set_symmetric(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
+  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
 
   // Main computational methods
   // -- local matrices
@@ -160,20 +171,6 @@ class MatrixMFD : public Matrix,
           const std::vector<double>& bc_values);
 
   // Operator methods.
-  virtual int Apply(const CompositeVector& X,
-                     CompositeVector& Y) const;
-  virtual int ApplyInverse(const CompositeVector& X,
-                            CompositeVector& Y) const;
-
-  virtual void Apply(const TreeVector& X,
-                     const Teuchos::Ptr<TreeVector>& Y) const {
-    Apply(*X.data(), *Y->data());
-  }
-  virtual void ApplyInverse(const TreeVector& X,
-                            const Teuchos::Ptr<TreeVector>& Y) const {
-    ApplyInverse(*X.data(), *Y->data());
-  }
-
   virtual void ComputeResidual(const CompositeVector& X,
                        const Teuchos::Ptr<CompositeVector>& F) const;
   virtual void ComputeNegativeResidual(const CompositeVector& X,
@@ -221,7 +218,7 @@ class MatrixMFD : public Matrix,
   MFDMethod method_;
 
   // local matrices
-  std::vector<Teuchos::SerialDenseMatrix<int, double> > Mff_cells_;
+  std::vector<WhetStone::DenseMatrix > Mff_cells_;
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
   std::vector<Epetra_SerialDenseVector> Acf_cells_, Afc_cells_;
   std::vector<double> Acc_cells_;  // duplication may be useful later
@@ -235,41 +232,26 @@ class MatrixMFD : public Matrix,
   Teuchos::RCP<Epetra_FECrsMatrix> Aff_;
   Teuchos::RCP<Epetra_FECrsMatrix> Sff_;  // Schur complement
 
+  // global rhs
   Teuchos::RCP<CompositeVector> rhs_;
 
   // diagnostics
   int nokay_;
   int npassed_; // performance of algorithms generating mass matrices
 
-  // available solver methods
-  enum PrecMethod { PREC_METHOD_NULL,
-                    TRILINOS_ML,
-                    TRILINOS_ILU,
-                    TRILINOS_BLOCK_ILU,
-                    HYPRE_AMG,
-                    HYPRE_EUCLID,
-                    HYPRE_PARASAILS };
-  PrecMethod prec_method_;
+  // VectorSpace describing both domain and range
+  Teuchos::RCP<CompositeVectorSpace> space_;
 
-  Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec_;
-  Teuchos::ParameterList ml_plist_;
+  // preconditioner for Schur complement
+  Teuchos::RCP<AmanziPreconditioners::Preconditioner> S_pc_;
 
-#ifdef HAVE_HYPRE
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_Sff_;
-  Teuchos::ParameterList hypre_plist_;
-  int hypre_ncycles_, hypre_nsmooth_;
-  double hypre_tol_, hypre_strong_threshold_;
-  int hypre_relax_type_, hypre_coarsen_type_, hypre_cycle_type_;
-  int hypre_print_level_,hypre_max_row_sum_,hypre_max_levels_;
-  int hypre_max_iter_, hypre_relax_wt_, hypre_interp_type_;
-  int hypre_agg_num_levels_, hypre_agg_num_paths_;
-#endif
+  // LinearOperator and Preconditioner for solving face system
+  // Aff * x_f = r_Aff c - Afc * x_c for x_f
+  Teuchos::RCP<EpetraMatrixDefault<Epetra_FECrsMatrix> > Aff_op_;
+  Teuchos::RCP<EpetraMatrix> Aff_solver_;
 
-  Teuchos::RCP<Ifpack_ILU> ilu_prec_;
-  Teuchos::ParameterList ilu_plist_;
-
-  Teuchos::RCP<Ifpack_Preconditioner> ifp_prec_;
-  Teuchos::ParameterList ifp_plist_;
+  // verbose object
+  Teuchos::RCP<VerboseObject> vo_;
 
   friend class MatrixMFD_Coupled;
 };

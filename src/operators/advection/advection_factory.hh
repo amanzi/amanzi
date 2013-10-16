@@ -14,7 +14,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Mesh.hh"
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 
 #include "advection.hh"
 

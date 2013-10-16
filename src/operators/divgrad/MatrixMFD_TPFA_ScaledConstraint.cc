@@ -23,7 +23,7 @@ namespace Operators {
 void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
     const Teuchos::Ptr<const CompositeVector>& Krel) {
 
-  if (Krel == Teuchos::null || !Krel->has_component("face")) {
+  if (Krel == Teuchos::null || !Krel->HasComponent("face")) {
     MatrixMFD_TPFA::CreateMFDstiffnessMatrices(Krel);
   } else {
     // tag global matrices as invalid
@@ -34,7 +34,7 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
     *Krel_ = *(*Krel->ViewComponent("face", true))(0);
 
     int dim = mesh_->space_dimension();
-    WhetStone::MFD3D mfd(mesh_);
+    WhetStone::MFD3D_Diffusion mfd(mesh_);
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
 
@@ -48,11 +48,11 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
-      Teuchos::SerialDenseMatrix<int, double>& Mff = Mff_cells_[c];
+      WhetStone::DenseMatrix& Mff = Mff_cells_[c];
       Teuchos::SerialDenseMatrix<int, double> Bff(nfaces,nfaces);
       Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-      if (Krel->has_component("cell")) {
+      if (Krel->HasComponent("cell")) {
         const Epetra_MultiVector& Krel_c = *Krel->ViewComponent("cell",false);
         for (int n=0; n!=nfaces; ++n) {
           Bff(n, n) = Mff(n,n) * Krel_c[0][c];

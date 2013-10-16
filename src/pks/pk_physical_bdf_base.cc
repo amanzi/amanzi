@@ -29,18 +29,6 @@ void PKPhysicalBDFBase::setup(const Teuchos::Ptr<State>& S) {
   // convergence criteria
   atol_ = plist_.get<double>("absolute error tolerance",1.0);
   rtol_ = plist_.get<double>("relative error tolerance",1.0);
-  atol0_ = atol_;
-  rtol0_ = rtol_;
-
-  // adapt the tolerances to fit the timestep
-  adapt_tols_to_h_ = plist_.get<bool>("adapt tolerances to timestep", "false");
-  if (adapt_tols_to_h_) {
-    min_tol_h_ = plist_.get<double>("cutoff timestep for adaptive tolerance", 100.0);
-  }
-
-  // continuation to steady state enables a gradually shrinking atol/rtol
-  continuation_to_ss_ = plist_.get<bool>("continuation to steady state", false);
-
 };
 
 
@@ -63,13 +51,12 @@ void PKPhysicalBDFBase::initialize(const Teuchos::Ptr<State>& S) {
 double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   // VerboseObject stuff.
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
-    *out_ << "ENorm (Infnorm) of: " << name_ << ": ";
-  }
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << "ENorm (Infnorm) of: " << name_ << ": ";
 
-  Teuchos::RCP<const CompositeVector> vec = u->data();
-  Teuchos::RCP<const CompositeVector> dvec = du->data();
+  Teuchos::RCP<const CompositeVector> vec = u->Data();
+  Teuchos::RCP<const CompositeVector> dvec = du->Data();
 
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=vec->begin();
@@ -80,21 +67,19 @@ double PKPhysicalBDFBase::enorm(Teuchos::RCP<const TreeVector> u,
       enorm_comp = std::max<double>(enorm_comp, tmp);
     }
 
-    if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       double buf(0.);
       MPI_Allreduce(&enorm_comp, &buf, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
       double infnorm_comp;
       dvec->ViewComponent(*comp,false)->NormInf(&infnorm_comp);
-
-      *out_ << *comp << " = " << buf << " (" << infnorm_comp << ")  ";
+      *vo_->os() << *comp << " = " << buf << " (" << infnorm_comp << ")  ";
     }
     enorm_val = std::max<double>(enorm_val, enorm_comp);
   }
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_MEDIUM, true)) {
-    *out_ << std::endl;
-  }
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << std::endl;
 
 #ifdef HAVE_MPI
   double buf = enorm_val;
@@ -113,15 +98,16 @@ void PKPhysicalBDFBase::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_next) {
   PKDefaultBase::set_states(S, S_inter, S_next);
 
+  // Get the FE and mark it as changed.
+  // Note that this is necessary because we need this to point at the
+  // FE in S_next_, not the one which we created in S_.
   Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
-
 #if ENABLE_DBC
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   ASSERT(solution_evaluator_ != Teuchos::null);
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
-
   changed_solution();
 };
 
