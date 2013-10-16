@@ -38,6 +38,7 @@ WHOLE_ARCHIVE(pk_flow_icy_overland)
 WHOLE_ARCHIVE(pk_prescribed_deformation)
 #WHOLE_ARCHIVE(pk_prescribed_volumetric_deformation)
 WHOLE_ARCHIVE(pk_volumetric_deformation)
+WHOLE_ARCHIVE(pk_surface_balance_SEB)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(mpc)
 
@@ -72,8 +73,9 @@ target_link_libraries(ats
                       ${pk_flow_overland_head}
                       ${pk_flow_icy_overland}
 		              ${pk_prescribed_deformation}
-			      ${pk_prescribed_volumetric_deformation}
+    			      ${pk_prescribed_volumetric_deformation}
 		              ${pk_volumetric_deformation}
+                      ${pk_surface_balance_SEB}
                       ${pk_bases}
                       ${deform_relations_porosity}
                       ${energy_relations_thermal_conductivity}
