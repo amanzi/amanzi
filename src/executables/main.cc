@@ -26,6 +26,9 @@
 #include "flow_constitutive_relations_porosity_evaluators_registration.hh"
 #include "wrm_models_evaluators_factories_registration.hh"
 #include "wrm_evaluators_factories_registration.hh"
+#include "overland_head_evaluators_factories_registration.hh"
+#include "overland_evaluators_factories_registration.hh"
+#include "icy_overland_evaluators_factories_registration.hh"
 
 
 // include fenv if it exists

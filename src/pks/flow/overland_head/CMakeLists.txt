@@ -1,8 +1,4 @@
 # -*- mode: cmake -*-
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/bc_factory)
@@ -19,4 +15,20 @@ add_library(pk_flow_overland_head
         height_evaluator.cc
         effective_height_evaluator.cc
         overland_head_water_content_evaluator.cc)
+
+register_evaluator_with_factory(
+  HEADERFILE effective_height_evaluator_reg.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE overland_head_pk_reg.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE overland_head_evaluators_factories_registration.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  INSTALL    True
+  )
 

@@ -14,9 +14,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,EffectiveHeightEvaluator> EffectiveHeightEvaluator::factory_("effective height");
-
 EffectiveHeightEvaluator::EffectiveHeightEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   // my keys are for saturation and rel perm.
