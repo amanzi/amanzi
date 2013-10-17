@@ -16,6 +16,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
+
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
@@ -28,6 +29,9 @@ include_evaluators_directories(LISTNAME WMR_EVALUATORS_FACTORIES_INCLUDES)
 include_evaluators_directories(LISTNAME FLOW_ICY_OVERLAND_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME FLOW_OVERLAND_HEAD_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME FLOW_OVERLAND_EVAL_FAC_INCLUDES)
+include_evaluators_directories(LISTNAME RICHARDS_EVAL_FAC_INCLUDES)
+include_evaluators_directories(LISTNAME PERMAFROST_EVAL_FAC_INCLUDES)
+
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
