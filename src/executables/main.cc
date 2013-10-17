@@ -21,7 +21,7 @@
 #include "deform_evaluators_reg.hh"
 
 #include "constitutive_relations_eos_evaluators_registration.hh"
-
+#include "constitutive_relations_surface_subsurface_fluxes_evaluators_registration.hh"
 
 // include fenv if it exists
 #include "boost/version.hpp"

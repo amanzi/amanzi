@@ -13,10 +13,6 @@ namespace Amanzi {
 namespace Relations {
 
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,SurfaceTopCellsEvaluator> SurfaceTopCellsEvaluator::reg_("surface top cell evaluator");
-
-
 SurfaceTopCellsEvaluator::SurfaceTopCellsEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   my_key_ = plist_.get<std::string>("surface key");
