@@ -1,0 +1,15 @@
+# -*- mode: cmake -*-
+
+#
+#  ATS
+#    Flow PK class
+#
+
+add_subdirectory(constitutive_relations)
+#add_subdirectory(Darcy)
+add_subdirectory(richards)
+add_subdirectory(permafrost)
+add_subdirectory(overland)
+add_subdirectory(icy_overland)
+add_subdirectory(overland_head)
+
