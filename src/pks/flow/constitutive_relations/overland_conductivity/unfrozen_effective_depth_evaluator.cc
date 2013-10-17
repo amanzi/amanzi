@@ -12,10 +12,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,UnfrozenEffectiveDepthEvaluator> UnfrozenEffectiveDepthEvaluator::fac_("unfrozen effective depth");
-
-
 UnfrozenEffectiveDepthEvaluator::UnfrozenEffectiveDepthEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 

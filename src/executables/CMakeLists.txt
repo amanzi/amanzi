@@ -19,6 +19,7 @@ include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
 include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_EOS_EVALUATORS_INCLUDES)
 include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_SURFACE_SUBSURFACE_FLUXES_EVALUATORS_INCLUDES)
+include_evaluators_directories(LISTNAME FLOW_CONSTITUTIVE_RELATIONS_OVERLAND_CONDUCTIVITY_INCLUDES)
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 
