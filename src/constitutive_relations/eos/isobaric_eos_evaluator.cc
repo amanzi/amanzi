@@ -13,10 +13,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,IsobaricEOSEvaluator> IsobaricEOSEvaluator::factory_("isobaric eos");
-
-
 IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist) {
 

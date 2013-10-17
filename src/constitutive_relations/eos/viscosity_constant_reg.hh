@@ -15,15 +15,9 @@
 namespace Amanzi {
 namespace Relations {
 
-ViscosityConstant::ViscosityConstant(Teuchos::ParameterList& visc_plist) :
-    visc_plist_(visc_plist) {
-  InitializeFromPlist_();
-};
-
-void ViscosityConstant::InitializeFromPlist_() {
-  // defaults to water
-  visc_ = visc_plist_.get<double>("Viscosity [kg/m-s]", 8.9e-4);
-};
+// registry of method
+Utils::RegisteredFactory<ViscosityRelation,ViscosityConstant>
+ViscosityConstant::factory_("constant");
 
 } // namespace
 } // namespace

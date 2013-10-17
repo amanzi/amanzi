@@ -7,8 +7,8 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_RELATIONS_EOS_EVALUATOR_HH_
-#define AMANZI_RELATIONS_EOS_EVALUATOR_HH_
+#ifndef AMANZI_EFFECTIVE_PRESSURE_EVALUATOR_HH_
+#define AMANZI_EFFECTIVE_PRESSURE_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
 
