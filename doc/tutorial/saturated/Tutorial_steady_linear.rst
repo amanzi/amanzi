@@ -1,6 +1,3 @@
-Tutorials
-=========
-
 One-dimensional, steady-state, saturated flow
 ---------------------------------------------
 
@@ -61,9 +58,9 @@ editor for Microsoft Windows (http://notepad-plus-plus.org/):
 		:scale: 50 %
 		:align: center
 
-A working *Amanzi* input file for this tutorial simulation is listed in a 
-separate section below. The *Amanzi* input specification provides 
-more general information on required content, options, and formatting. 
+The *Amanzi* input specification document (**insert link**) defines 
+the content and format of an XML input file. A complete *Amanzi* input file
+for this tutorial is listed in a separate section below. 
 At the top level is an XML element named ``amanzi_input``
 
 .. literalinclude:: amanzi_steady_linear-isv2.xml
@@ -87,7 +84,7 @@ and element *content*, e.g. ``998.2`` kg/m\ :sup:`3`\  in the ``density`` elemen
     :language: xml
     :lines: 25
 
-according to the *Amanzi* input specification. 
+as defined by the *Amanzi* input specification. 
 Although not required by the XML standard or *Amanzi*, 
 indentation using tabs and/or spaces is commonly used to indicate
 the hierarchy of elements and improve readibility. Tabs are used in this tutorial 
@@ -95,54 +92,200 @@ example to show the file hierarchy. Although *Amanzi* XML element names and the
 file structure are intended to be reasonably self-explanatory, selective commentary 
 is provided here for further guidance. 
 
-Currently *Amanzi* requires the SI units indicated in the ``model_description/units`` 
-element. The units of density, viscosity, pressure, hydraulic conductivity, and 
-permeability  are thus kg/m\ :sup:`3`\ , Pa :math:`\cdot` s, Pa, m/s, 
-and m\ :sup:`2`\ , respectively. 
-Simulation outputs also use these dimensional units. In the ``phases``
-element, equation-of-state (eos) computations are turned off in favor of direct 
-specification of fluid density and viscosity. 
-Under ``execution_controls`` the ``start`` and ``end``
-may both be zero for a steady-state calculation (``mode = "steady"``). Coordinates,
-such as those specified under ``mesh/generate/box``, must be comma-separated. 
-Whitespace is allowed and parenthesis may be used to bracket coordinates in the form 
-``(x,y,z)`` if desired, e.g.,
+*Amanzi* offers the user two numerical gridding approaches. 
+The ``structured`` grid option refers to an orthogonal grid of rectangular (2D) or 
+brick (3D) elements that may be further subdivided through 
+Adaptive Mesh Refinement (AMR). The ``unstructured`` grid option can accommodate a
+network of non-orthogonal cells that may not be connected on a regular
+pattern defined by :math:`(i,j,k)` coordinate indices. The ``unstructured``
+option also accommodates structured grids, but not multi-level AMR as with the
+``structured`` grid option. A simple orthogonal structured grid with no refinement
+will be used for this tutorial, and either gridding option would suffice. 
+However, the ``unstructured`` option is selected in this example through the 
+``type`` attribute in the ``amanzi_input`` XML element:
 
 .. literalinclude:: amanzi_steady_linear-isv2.xml
     :language: xml
-    :lines: 66
+    :lines: 1
 
-Location points are defined in the ``regions`` element in anticipation of 
-hydraulic head and pressure observations. 
+Nested within the ``amanzi_input`` element are additional XML elements defining
+various attributes of the numerical simulation to be performed. Although the order
+of these elements is arbitrary, users will typically want to sequence elements to 
+mirror their conceptualization of the physical problem. For this tutorial we begin
+with the ``model_description`` element:
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 3-13
+
+Besides model identification, this block defines the dimensional units to be used 
+for the numerical simulation. Currently *Amanzi* requires the SI units indicated 
+in the ``model_description/units`` element.
+The units of density, viscosity, pressure, hydraulic conductivity, and 
+permeability  are thus kg/m\ :sup:`3`\ , Pa :math:`\cdot` s, Pa, m/s, 
+and m\ :sup:`2`\ , respectively. 
+Simulation outputs also use these dimensional units. 
+
+The next input block is the ``process_kernels`` element:
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 15-20
+
+The tutorial problem involves only fully-saturated flow, so the ``saturated`` model
+is selected here, and transport and chemistry are explicitly turned ``off``. 
+The latter may be implicitly turned off by omitting those two entries.
+
+In the ``phases`` element
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 22-28
+
+``water`` is the only phase present (as a liquid), and 
+equation-of-state (eos) computations are turned off in favor of direct 
+specification of fluid density and viscosity as 998.2 kg/m\ :sup:`3`\ 
+and 1.002e-03 Pa :math:`\cdot` s, respectively.
+
+Under ``execution_controls`` the ``steady`` mode and first-order backward-difference
+(backward Euler) differencing scheme (``bdf1``) are chosen:
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 30-34
+
+The ``start`` and ``end`` times may both be zero for a steady-state calculation. 
+Controls for the selected numerical scheme are defined in the block
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 36-41
+
+Here recommended default values have been selected.
+
+The computational mesh may be imported (read from file) or, for simple geometries, 
+generated by *Amanzi*. A simple mesh is adequate for this simulation so the
+latter option is selected for this tutorial example in the ``mesh`` element:
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 43-50
+
+Note that a 3D domain is specified through the ``dimension`` element. The
+coordinates under ``mesh/generate/box`` refer to the 
+:math:`(x_{min}, y_{min}, z_{min})` and :math:`(x_{max}, y_{max}, z_{max})` 
+corners of the computational domain, and must be 
+comma-separated. Whitespace is allowed and parentheses may be used to bracket 
+coordinates in the form ``(x,y,z)`` if desired. The ``nx``, ``ny``, and ``nz``
+values define the number of computational cells in each coordinate direction. 
+Discretization is specified for the :math:`y` and :math:`z` coordinates,
+although no variability is expected in these directions.
+The user could effectively create a one-dimensional simulation by setting
+``ny = 1`` and ``nz = 1``.
+
+The ``regions`` element is used to define volumes for material property assignments
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 52-57
+
+surfaces for boundary condition assignments
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 58-65
+
+and discrete points
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 66-71
+
+The location points are defined in anticipation of 
+hydraulic head and pressure observations to be specified below. 
 To avoid ambiguity and the need for interpolation, 
 the observation points are defined so that each
 location coincides exactly with a grid node (computational cell center). 
-The grid spacing in the :math:`x`-direction is 1 meter, so cell centers are positioned at
-:math:`x_i = 0.5, 1.5, 2.5, ..., 99.5`. Similarly, the :math:`y`-coordinates of grid 
+The grid spacing in the :math:`x`-direction is :math:`1.0` meter, 
+so cell centers are positioned at :math:`x_i = 0.5, 1.5, 2.5, ..., 99.5`. 
+Similarly, the :math:`y`-coordinates of grid 
 nodes are :math:`y_i = 5, 10, 15, 20,` and :math:`25`, and finally 
 :math:`z_i = 0.5, 1.5, 2.5, ..., 49.5`. Point ``Well 1`` is located just inside the 
 inlet boundary near the center of the face. Point ``Well 3`` is similarly located 
 one-half cell inside the downstream boundary. Point ``Well 2`` is located near the 
 center of the domain (within one-half cell). Points ``Well 2t`` and ``Well 2b`` are
 positioned above and below ``Well 2`` at the top and bottom of the domain. 
+
 Although the simulation problem is steady-state, an initial condition is required
-**?why?**. The *Amanzi* ``pressure`` variable is absolute pressure. 
-Here atmospheric pressure is specified (``101325.0`` Pa). The boundary condition
-at :math:`x=0` is defined in the problem statement as a volumetric flux 
-[m\ :sup:`3`\ /m\ :sup:`2`\ d = m/d]. *Amanzi* currently requires boundary conditions
-of this type to be specified as a mass flux, 
-:math:`\rho U` [kg\ :sup:`3`\ /m\ :sup:`2`\ s]. Performing this calculation for 
-:math:`\rho = 998.2` kg/m\ :sup:`3`\  and 
+**? why ?**:
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 73-83
+
+The *Amanzi* ``pressure`` variable is absolute pressure. 
+Here atmospheric pressure(``101325.0`` Pa) is specified  over the modeling domain 
+using the ``Entire Domain`` region specified above.
+
+Next boundary conditions are specified as
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 85-105
+
+The boundary condition at :math:`x=0` is defined in the problem statement as a 
+volumetric flux :math:`U` [m\ :sup:`3`\ /m\ :sup:`2`\ d = m/d]. 
+*Amanzi* currently requires boundary conditions of this type to be specified as 
+a mass flux, :math:`\rho U` [kg\ :sup:`3`\ /m\ :sup:`2`\ s]. 
+Performing this calculation for :math:`\rho = 998.2` kg/m\ :sup:`3`\  and 
 :math:`U = 1.688` m/d = :math:`1.954 \times 10^{-5}` m/s
 yields ``1.95e-2`` kg\ :sup:`3`\ /m\ :sup:`2`\ s for ``inward_mass_flux``. 
+
+Material properties are defined in the ``materials`` element
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 107-116
+
 For this steady-state saturated flow-only simulation porosity does not affect
-the solution and its value is arbitrarily set to 0.25. 
-In the ``definitions`` element, the ``time_macro`` element defines the time at which
+the solution and its value is arbitrarily set to 0.25. The ``permeability`` values
+are intrinsic permeability :math:`k` [m\ :sup:`2`\] rather than hydraulic 
+conductivity :math:`K = \rho g k / \mu` [m/s], which is sometimes loosely referred
+to as "permeability".
+ 
+In the ``definitions`` element
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 118-124
+
+the ``time_macro`` element defines the time at which
 model observations will be written to output according to the 
 ``output/observations`` element that follows. Because the simulation is steady-state,
-the ``time`` is set to zero. Observations are requested for hydraulic head and 
-(absolute) pressure at the five well locations, and to be written to 
-``observations.out``.
+the ``time`` is set to zero. 
+
+The final input is the ``output`` block
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 126-139
+
+:math:`\vdots`
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 156-165
+
+:math:`\vdots`
+
+.. literalinclude:: amanzi_steady_linear-isv2.xml
+    :language: xml
+    :lines: 183-188
+
+Observations, to be written to ``observations.out``, are requested for hydraulic head 
+and (absolute) pressure at the five well locations previously defined under 
+``regions/point``. The ``vis`` element specifies 5 significant figures for the
+visualization file with prefix ``steady-flow``.
 
 *Amanzi* execution
 ~~~~~~~~~~~~~~~~~~
