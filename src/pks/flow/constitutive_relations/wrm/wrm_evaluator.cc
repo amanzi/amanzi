@@ -14,9 +14,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,WRMEvaluator> WRMEvaluator::factory_("WRM");
-
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     calc_other_sat_(true) {
