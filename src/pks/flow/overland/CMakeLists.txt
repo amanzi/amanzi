@@ -1,7 +1,4 @@
 # -*- mode: cmake -*-
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
 
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
@@ -12,14 +9,39 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/elevat
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
-add_library(pk_flow_overland
-        overland_pk.cc overland_ti.cc overland_physics.cc)
+add_library(
+  pk_flow_overland
+  overland_pk.cc 
+  overland_ti.cc 
+  overland_physics.cc
+#  surface_coupler_via_source_evaluator.cc
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE overland_pk_reg.hh
+  LISTNAME   FLOW_OVERLAND_EVAL_FAC
+  )
+
+#register_evaluator_with_factory(
+#  HEADERFILE surface_coupler_via_source_evaluator_reg.hh
+#  LISTNAME   FLOW_OVERLAND_EVAL_FAC
+#  )
+
+generate_evaluators_registration_header(
+  HEADERFILE overland_evaluators_factories_registration.hh
+  LISTNAME   FLOW_OVERLAND_EVAL_FAC
+  INSTALL    True
+  )
+
+
+
+
 
 
 # shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
-WHOLE_ARCHIVE(flow_relations_eos)
-WHOLE_ARCHIVE(flow_relations_wrm)
-WHOLE_ARCHIVE(pk_factory)
+#WHOLE_ARCHIVE(flow_relations_eos)
+#WHOLE_ARCHIVE(flow_relations_wrm)
+#WHOLE_ARCHIVE(pk_factory)
 
 # if ( BUILD_TESTS )
 #     # Add UnitTest includes

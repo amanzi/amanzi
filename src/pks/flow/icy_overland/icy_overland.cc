@@ -28,8 +28,6 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<IcyOverlandFlow> IcyOverlandFlow::reg_("overland flow with ice");
-
 void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   std::vector<AmanziMesh::Entity_kind> locations2(2), locations_bf(2);
   std::vector<std::string> names2(2), names_bf(2);
