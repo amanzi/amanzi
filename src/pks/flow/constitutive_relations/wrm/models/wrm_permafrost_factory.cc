@@ -14,10 +14,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// explicity instantitate the static data of Factory<WRM>
-//template<> Factory<WRM>::map_type* Factory<WRM>::map_;
-template<> Utils::Factory<WRMPermafrostModel>::map_type* Utils::Factory<WRMPermafrostModel>::map_;
-
 // method for instantiating WRM implementations
 Teuchos::RCP<WRMPermafrostModel> WRMPermafrostFactory::createWRMPermafrostModel(
     Teuchos::ParameterList& plist, const Teuchos::RCP<WRM>& wrm) {

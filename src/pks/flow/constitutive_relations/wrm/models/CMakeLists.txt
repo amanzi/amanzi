@@ -20,6 +20,59 @@ add_library(flow_relations_wrm_models
   wrm_fpd_permafrost_model.cc
   )
 
+
+register_evaluator_with_factory(
+  HEADERFILE WRM_BrooksCorey_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_factory_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_fpd_permafrost_model_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_implicit_permafrost_model_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_linear_system_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_old_permafrost_model_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_permafrost_factory_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_van_genuchten_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE wrm_zero_relperm_reg.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE wrm_models_evaluators_factories_registration.hh
+  LISTNAME   WRM_MODELS_EVALUATORS_FACTORIES
+  INSTALL    True
+  )
+
+
 if ( BUILD_TESTS )
     include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
     include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)

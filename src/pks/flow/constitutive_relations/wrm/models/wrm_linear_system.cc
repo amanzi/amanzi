@@ -11,9 +11,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<WRM,WRMLinearSystem> WRMLinearSystem::factory_("linear system");
-
 /* ******************************************************************
  * Setup fundamental parameters for this model.
  ****************************************************************** */
