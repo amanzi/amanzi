@@ -12,9 +12,6 @@
 namespace Amanzi {
 namespace Relations {
 
-Utils::RegisteredFactory<FieldEvaluator,OverlandSourceFromSubsurfaceFluxEvaluator>
-OverlandSourceFromSubsurfaceFluxEvaluator::fac_("overland source from subsurface via flux");
-
 OverlandSourceFromSubsurfaceFluxEvaluator::OverlandSourceFromSubsurfaceFluxEvaluator(
         Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
