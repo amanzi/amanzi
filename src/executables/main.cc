@@ -29,6 +29,7 @@
 #include "overland_head_evaluators_factories_registration.hh"
 #include "overland_evaluators_factories_registration.hh"
 #include "icy_overland_evaluators_factories_registration.hh"
+#include "permafrost_evaluators_factories_registration.hh"
 
 
 // include fenv if it exists
