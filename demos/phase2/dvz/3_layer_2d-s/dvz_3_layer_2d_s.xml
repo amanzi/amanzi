@@ -28,7 +28,6 @@
     <Parameter name="Transport Model" type="string" value="On"/>
     <Parameter name="Chemistry Model" type="string" value="Off"/>
     <Parameter name="Verbosity" type="string" value="Low"/>
-    <!-- <Parameter name="Restart from Checkpoint Data File" type="string" value="run_data/chk00356"/> -->
 
     <ParameterList name="Time Integration Mode">
       
@@ -195,8 +194,8 @@
         <Parameter name="Value" type="double" value="0.4082"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="1.9976E-12"/>
-        <Parameter name="Vertical" type="double" value="1.9976E-13"/>
+        <Parameter name="x" type="double" value="1.9976E-12"/>
+        <Parameter name="y" type="double" value="1.9976E-13"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="1.9467E-04"/>
@@ -211,8 +210,8 @@
         <Parameter name="Value" type="double" value="0.2206"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="6.9365E-11"/>
-        <Parameter name="Vertical" type="double" value="6.9365E-12"/>
+        <Parameter name="x" type="double" value="6.9365E-11"/>
+        <Parameter name="y" type="double" value="6.9365E-12"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.0260E-03"/>
@@ -227,8 +226,8 @@
         <Parameter name="Value" type="double" value="0.2340"/>
       </ParameterList>
       <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
-        <Parameter name="Horizontal" type="double" value="2.0706E-09"/>
-        <Parameter name="Vertical" type="double" value="2.0706E-10"/>
+        <Parameter name="x" type="double" value="2.0706E-09"/>
+        <Parameter name="y" type="double" value="2.0706E-10"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
         <Parameter name="alpha" type="double" value="2.0674E-03"/>
@@ -273,7 +272,6 @@
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -292,7 +290,6 @@
             <ParameterList name="Tc-99">
               <ParameterList name="BC: No Flow">
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -314,7 +311,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 1.881389E-06, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -336,7 +332,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant, Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 2.266885E-06, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -358,7 +353,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -380,7 +374,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -402,7 +395,6 @@
                 <Parameter name="Time Functions" type="Array(string)" value="{Constant, Constant}"/>
                 <Parameter name="Values" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
