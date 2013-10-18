@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 
+#include "dbc.hh"
 #include "SnowEnergyBalance.hh"
 
 /* THIS CODE WILL CALCULATE THE SNOWSURFACE ENERGY BALANCE THE SNOW SURFACE TEMPERUATURE.
@@ -76,32 +77,40 @@ void SurfaceEnergyBalance::ThermalConductSnow (LocalData& thermalsnow) {
     Substitute Xx for all Ts
     ####################################################################################################
 */
+double SurfaceEnergyBalance::BisectionZeroFunction(LocalData& snow, double Xx) {
+  snow.st_energy.fQlwOut = -snow.st_energy.SEs*snow.st_energy.stephB*(std::pow(Xx,4));
+  double Ri = ((snow.st_energy.gZr*(snow.st_energy.air_temp-Xx))/(snow.st_energy.air_temp*std::pow(snow.st_energy.Us,2)));
+  double Sqig = (1/(1+10*Ri));
+  snow.st_energy.fQh = snow.st_energy.rowaCp*snow.st_energy.Dhe*Sqig*(snow.st_energy.air_temp-Xx);
+  snow.vp_snow.temp=Xx;
+  VaporCalc(snow.vp_snow);
+  snow.st_energy.fQe = snow.st_energy.rowaLs*snow.st_energy.Dhe*Sqig*0.622*((snow.vp_air.actual_vaporpressure-snow.vp_snow.saturated_vaporpressure)/snow.st_energy.Apa);
+  snow.st_energy.fQc = snow.st_energy.snow_conduct_value*(Xx-snow.st_energy.Tb)/snow.st_energy.ht_snow;
+
+  // BALANCE EQUATION
+  double ZERO = snow.st_energy.fQswIn + snow.st_energy.fQlwIn + snow.st_energy.fQlwOut + snow.st_energy.fQh + snow.st_energy.fQe - snow.st_energy.fQc;
+  return ZERO;
+}
+
+
 void SurfaceEnergyBalance::BisectionEnergyCalc (LocalData& snow) {
+  double tol = 1.e-8;
+
   double a = snow.st_energy.air_temp+20; //Setting bounds of bisection proximal to Air Temp
   double b = snow.st_energy.air_temp-20; //Setting bounds of bisection proximal to Air Temp
-  double Xx =0.0;
-  double Ri=0.0;
-  double Sqig=0.0;
-  double ZERO=0.0;
-  double tol=1e-8;
-  int Iterations=100;
-  int iter=0;
 
   snow.st_energy.Dhe=(((std::pow(snow.st_energy.VKc,2)*snow.st_energy.Us))/(std::pow(log(snow.st_energy.Zr/snow.st_energy.Zo),2)));
   snow.st_energy.fQlwIn = 1.08*(1-std::exp(-0.01*(std::pow(std::pow(10,11.4-(2353/snow.vp_air.dewpoint_temp)),(snow.st_energy.air_temp/2016)))))*snow.st_energy.stephB*(std::pow(snow.st_energy.air_temp,4));
 
-  for (int i=0; i<Iterations; i++) { //Besection Iterations Loop Solve for Ts using Energy balance equation #######
+  ASSERT(BisectionZeroFunction(snow, a) * BisectionZeroFunction(snow, b)  < 0);
+
+  int maxIterations = 100;
+  double Xx, ZERO;
+  int iter;
+  for (int i=0; i<maxIterations; ++i) { //Besection Iterations Loop Solve for Ts using Energy balance equation #######
     Xx = (a+b)/2;
-    snow.st_energy.fQlwOut = -snow.st_energy.SEs*snow.st_energy.stephB*(std::pow(Xx,4));
-    Ri = ((snow.st_energy.gZr*(snow.st_energy.air_temp-Xx))/(snow.st_energy.air_temp*std::pow(snow.st_energy.Us,2)));
-    Sqig = (1/(1+10*Ri));
-    snow.st_energy.fQh = snow.st_energy.rowaCp*snow.st_energy.Dhe*Sqig*(snow.st_energy.air_temp-Xx);
-    snow.vp_snow.temp=Xx;
-    VaporCalc (snow.vp_snow);
-    snow.st_energy.fQe = snow.st_energy.rowaLs*snow.st_energy.Dhe*Sqig*0.622*((snow.vp_air.actual_vaporpressure-snow.vp_snow.saturated_vaporpressure)/snow.st_energy.Apa);
-    snow.st_energy.fQc = snow.st_energy.snow_conduct_value*(Xx-snow.st_energy.Tb)/snow.st_energy.ht_snow;
-    // BALANCE EQUATION
-    ZERO = snow.st_energy.fQswIn + snow.st_energy.fQlwIn + snow.st_energy.fQlwOut + snow.st_energy.fQh + snow.st_energy.fQe - snow.st_energy.fQc;
+    ZERO = BisectionZeroFunction(snow, Xx);
+
     if (ZERO>0) {
       b=Xx;
     } else {
@@ -112,6 +121,10 @@ void SurfaceEnergyBalance::BisectionEnergyCalc (LocalData& snow) {
     }
     iter=i;
   }//End Bisection Interatiion Loop  Solve for Ts using Energy balance equation ##################################
+
+  if (std::abs(ZERO) >= tol) {
+    ASSERT(0);
+  }
   snow.st_energy.Ts=Xx;
 }
 
@@ -159,8 +172,7 @@ void SurfaceEnergyBalance::GroundEnergyCalc (LocalData& grd) {
   if (grd.st_energy.water_depth>0.0) {// Checking for standing water
     VaporCalc (grd.vp_ground);
     grd.st_energy.fQe = grd.st_energy.rowaLe*grd.st_energy.Dhe*Sqig*0.622*((grd.vp_air.actual_vaporpressure-grd.vp_ground.saturated_vaporpressure)/grd.st_energy.Apa);
-  }
-  if (grd.st_energy.water_depth<=0.0) {// ****  We thing there needs to be a porosity term in this equation MAY NEED REFINEMENT *****
+  } else {// no standing water
     grd.st_energy.fQe = grd.st_energy.porrowaLe*grd.st_energy.Dhe*Sqig*0.622*((grd.vp_air.actual_vaporpressure-grd.vp_ground.actual_vaporpressure)/grd.st_energy.Apa);
   }
   grd.st_energy.fQc=grd.st_energy.fQswIn+grd.st_energy.fQlwIn+grd.st_energy.fQlwOut+grd.st_energy.fQh+grd.st_energy.fQe;
@@ -324,7 +336,7 @@ void SurfaceEnergyBalance::WaterTemp(LocalData& wtemp) {
 
 
 // MAIN SNOW ENERGY BALANCE FUNCTION
-void SurfaceEnergyBalance::SnowEnergyBalace (LocalData& seb) {
+void SurfaceEnergyBalance::SnowEnergyBalance (LocalData& seb) {
   // Calculated data/parameters
   double Qm=0.0, Ml=0.0;
   //Constant Parameters for Energy Equaions
@@ -376,9 +388,7 @@ void SurfaceEnergyBalance::SnowEnergyBalace (LocalData& seb) {
       }
     }//  End section to trim energy deleivered when Qc = -Ks*(Ts-Tb)/Zs;  --> blows up
 
-  }// ### END IF THERE IS SNOW CHECK  ### END IF THERE IS SNOW CHECK   ### END IF THERE IS SNOW CHECK ############################################
-
-  if (seb.st_energy.ht_snow<=0) {// ### IF THERE IS NO SNOW CHECK  ###  ### IF THERE IS NO SNOW CHECK  ###  #################
+  } else {// ### IF THERE IS NO SNOW CHECK  ###  ### IF THERE IS NO SNOW CHECK  ###  #################
     GroundEnergyCalc(seb);
     seb.st_energy.funcall="BARE";
     EvapCalc(seb);

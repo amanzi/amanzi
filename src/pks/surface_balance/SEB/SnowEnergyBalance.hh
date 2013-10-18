@@ -62,12 +62,12 @@ struct EnergyBalance {
     double density_w;
     double density_freshsnow;
     double density_frost;
-    double density_air;
+  //    double density_air;
     double Hf;
     double Ls;
     double Le;
     double VKc;
-    double Cp;
+  //    double Cp;
     double Zr;
     double Zo;
     
@@ -123,6 +123,7 @@ void ThermalConductSnow (LocalData& thermalsnow);
  (1-albedo)QswIn + Qlwin + QlwOut(Ts) + Qh(Ts) + Qc(Ts) +  Qe(Ts) = 0
                  Substitute Xx for all Ts
  ############################################################################################## */
+double BisectionZeroFunction(LocalData& snow, double Xx);
 void BisectionEnergyCalc (LocalData& snow);
 
 
@@ -193,7 +194,7 @@ void SWE (LocalData& swe);
 void WaterTemp (LocalData& wtemp);
 
 // MAIN SNOW ENERGY BALANCE FUNCTION
-void SnowEnergyBalace (LocalData& seb);
+void SnowEnergyBalance (LocalData& seb);
 
 }// Namespace
 
