@@ -45,7 +45,7 @@ RegisteredPKFactory<SurfaceBalanceSEB> SurfaceBalanceSEB::reg_("surface balance 
 
 SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& plist,
         Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
+        const Teuchos::RCP<TreeVector>& solution)  :
     PKPhysicalBase(plist,FElist,solution),
     PKDefaultBase(plist,FElist,solution) {
 
@@ -68,6 +68,9 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& plist,
 
   // timestep size
   dt_ = plist.get<double>("max time step", 1.e99);
+
+  // min wind speed
+  min_wind_speed_ = plist.get<double>("minimum wind speed", 0.5);
 }
 
 
@@ -201,6 +204,9 @@ bool SurfaceBalanceSEB::advance(double dt) {
   data.st_energy.rowaLs = density_air*data.st_energy.Ls;
   data.st_energy.rowaLe = density_air*data.st_energy.Le;
 
+  data.vp_snow.relative_humidity = 1.;
+  data.vp_ground.relative_humidity = 1.;
+
   data.st_energy.Dt = dt;
 
   // Get all data
@@ -280,9 +286,9 @@ bool SurfaceBalanceSEB::advance(double dt) {
     // MET station data
     data.st_energy.air_temp = air_temp[0][c];
     data.st_energy.QswIn = incomming_shortwave[0][c];
-    data.st_energy.Us = wind_speed[0][c];
-    data.st_energy.Pr = precip_rain[0][c];
-    data.st_energy.Ps = precip_snow[0][c];
+    data.st_energy.Us = std::max(wind_speed[0][c], min_wind_speed_);
+    data.st_energy.Pr = precip_rain[0][c] * dt; // SEB expects total precip, not rate
+    data.st_energy.Ps = precip_snow[0][c] * dt; // SEB expects total precip, not rate
     data.vp_air.temp = air_temp[0][c];
     data.vp_air.relative_humidity = relative_humidity[0][c];
 

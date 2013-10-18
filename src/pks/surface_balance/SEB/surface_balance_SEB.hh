@@ -86,6 +86,7 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wtemp_;
 
   double dt_;
+  double min_wind_speed_;
 
  private:
   // factory registration
