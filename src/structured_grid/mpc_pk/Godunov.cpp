@@ -992,11 +992,15 @@ Godunov::edge_states_tracer (const Box&  grd,
   const int *ww_lo   = work.loVect();
   const int *ww_hi   = work.hiVect();
 
-  FArrayBox capInv(C_old.box(),1);
-  capInv.copy(Sat_old,sCompC,0,1);
-  capInv.plus(Sat_new,sCompC,0,1);
-  capInv.mult(rock_phi,0,0,1);
-  capInv.invert(2,0,1);
+  // Assuming time derivative is d(phi.s.c)/dt, we can think of phi.s
+  // here as a "capacitance", C, and write as C dc/dt when we do the 
+  // Taylor series extrapolation inside the Godunov predictor.  Within
+  // Godunov, C appears only as 1/C, so we form that here as capInv.
+  Box gbox = Box(grd).grow(1); // FIXME: Just happen to know that we need 1 grow cell ... 
+  FArrayBox capInv(gbox,1);
+  capInv.copy(Sat_new,gbox,sCompC,gbox,0,1);
+  capInv.mult(rock_phi,gbox,0,0,1);
+  capInv.invert(1,0,1);
 
   const Real *capInv_dat = capInv.dataPtr();
   const int *capInv_lo   = capInv.loVect();
