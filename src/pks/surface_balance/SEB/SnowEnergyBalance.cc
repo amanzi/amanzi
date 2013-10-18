@@ -120,32 +120,60 @@ double SurfaceEnergyBalance::BisectionZeroFunction(LocalData& seb, double Xx) {
 
 
 void SurfaceEnergyBalance::BisectionEnergyCalc (LocalData& seb) {
-  double tol = 1.e-8;
+  double tol = 1.e-6;
+  double deltaX = 5;
 
-  double a = seb.st_energy.air_temp+20; //Setting bounds of bisection proximal to Air Temp
-  double b = seb.st_energy.air_temp-20; //Setting bounds of bisection proximal to Air Temp
+  double Xx = seb.st_energy.air_temp;
+  double FXx = BisectionZeroFunction(seb, Xx);
 
-  ASSERT(BisectionZeroFunction(seb, a) * BisectionZeroFunction(seb, b)  < 0);
+  // NOTE: decreasing function
+  double a,b,Fa,Fb;
+  if (FXx > 0) {
+    b = Xx;
+    Fb = FXx;
+    a = Xx;
+    Fa = FXx;
+    while (Fa > 0) {
+      b = a;
+      Fb = Fa;
+      a += deltaX;
+      Fa = BisectionZeroFunction(seb,a);
+    }
+  } else {
+    a = Xx;
+    Fa = FXx;
+    b = Xx;
+    Fb = FXx;
+    while (Fb < 0) {
+      a = b;
+      Fa = Fb;
+      b -= deltaX;
+      Fb = BisectionZeroFunction(seb,b);
+    }
+  }
 
-  int maxIterations = 100;
-  double Xx, ZERO;
+  ASSERT(Fa*Fb < 0);
+
+  int maxIterations = 200;
+  double res;
   int iter;
   for (int i=0; i<maxIterations; ++i) { //Besection Iterations Loop Solve for Ts using Energy balance equation #######
     Xx = (a+b)/2;
-    ZERO = BisectionZeroFunction(seb, Xx);
+    res = BisectionZeroFunction(seb, Xx);
 
-    if (ZERO>0) {
+    if (res>0) {
       b=Xx;
     } else {
       a=Xx;
     }
-    if (std::abs(ZERO)<tol) {
+    if (std::abs(res)<tol) {
       break;
     }
     iter=i;
   }//End Bisection Interatiion Loop  Solve for Ts using Energy balance equation ##################################
 
-  if (std::abs(ZERO) >= tol) {
+  if (std::abs(res) >= tol) {
+    std::cout << "Bisection failed to converge: interval=[" << b << "," << a << "], res = " << res << std::endl;
     ASSERT(0);
   }
   seb.st_energy.Ts=Xx;
