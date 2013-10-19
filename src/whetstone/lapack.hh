@@ -1,20 +1,18 @@
 /*
- This is the mimetic discretization component of the Amanzi code. 
+  This is the LAPACK component of the Amanzi. 
  
- Copyright 2010-20XX held jointly by LANS/LANL, LBNL, and PNNL. 
- Amanzi is released under the three-clause BSD License. 
- The terms of use and "as is" disclaimer for this license are 
- provided in the top-level COPYRIGHT file.
+  Copyright 2010-20XX held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
  
-Version: 2.0
-Release name: naka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-Usage: 
+  Version: 2.0
+  Release name: naka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef  __LAPACK_HH__
-#define  __LAPACK_HH__
+#ifndef  AMANZI_LAPACK_HH_
+#define  AMANZI_LAPACK_HH_
 
 namespace Amanzi {
 namespace WhetStone {

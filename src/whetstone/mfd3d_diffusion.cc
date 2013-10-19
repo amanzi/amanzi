@@ -599,11 +599,13 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
 
   // define transformed tensor
   Tensor T1(d, 2);
+  AmanziGeometry::Point areas(d);
   for (int i = 0; i < d; i++) {
     k = map[2*i];
     int f = faces[k];
     const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
     area1 = mesh_->face_area(f);
+    areas[i] = area1;
 
     for (int j = i; j < d; j++) {
       l = map[2*j];
@@ -621,9 +623,18 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
   }
 
   // verify SPD property
-  double lower, upper;
-  T1.SpectralBounds(&lower, &upper);
-  if (lower <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (d == 3) {
+    double lower, upper;
+    T1.SpectralBounds(&lower, &upper);
+    if (lower <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  }
+
+  // verify monotonicity property
+  AmanziGeometry::Point T1a(d);
+  T1a = T1 * areas;
+  for (int i = 0; i < d; i++) {
+    if (T1a[i] <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  }
 
   // add stability term D_ik T1_kl D_il
   double volume = mesh_->cell_volume(cell);
