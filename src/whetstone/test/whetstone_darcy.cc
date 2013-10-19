@@ -190,7 +190,7 @@ TEST(DARCY_FULL_TENSOR) {
 
   MeshFactory factory(comm);
   factory.preference(pref);
-  RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
+  RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1); 
  
   MFD3D_Diffusion mfd(mesh);
 
