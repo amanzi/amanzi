@@ -998,9 +998,16 @@ Godunov::edge_states_tracer (const Box&  grd,
   // Godunov, C appears only as 1/C, so we form that here as capInv.
   Box gbox = Box(grd).grow(1); // FIXME: Just happen to know that we need 1 grow cell ... 
   FArrayBox capInv(gbox,1);
+#if 0
+  capInv.copy(Sat_new,gbox,sCompC,gbox,0,1);
+  capInv.plus(Sat_old,gbox,sCompC,0,1);
+  capInv.mult(rock_phi,gbox,0,0,1);
+  capInv.invert(0.5,0,1);
+#else
   capInv.copy(Sat_new,gbox,sCompC,gbox,0,1);
   capInv.mult(rock_phi,gbox,0,0,1);
   capInv.invert(1,0,1);
+#endif
 
   const Real *capInv_dat = capInv.dataPtr();
   const int *capInv_lo   = capInv.loVect();

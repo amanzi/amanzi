@@ -300,8 +300,13 @@ int  PorousMedia::nGrowMG;
 int  PorousMedia::nGrowEIGEST;
 bool PorousMedia::do_constant_vel;
 Real PorousMedia::be_cn_theta_trac;
+bool PorousMedia::do_output_flow_time_in_years;
+bool PorousMedia::do_output_chemistry_time_in_years;
+bool PorousMedia::do_output_transport_time_in_years;
 
 int  PorousMedia::richard_solver_verbose;
+RichardNLSdata* PorousMedia::nld_flow;
+
 //
 // Init to steady
 //
@@ -584,7 +589,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::z_location   = 0;
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
-  PorousMedia::sum_interval = -1;
+  PorousMedia::sum_interval = 1;
   PorousMedia::NUM_SCALARS  = 0;
   PorousMedia::NUM_STATE    = 0;
   PorousMedia::full_cycle   = 0;
@@ -642,6 +647,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = 0;
   PorousMedia::be_cn_theta_trac = 0.5;
+  PorousMedia::do_output_flow_time_in_years = true;
+  PorousMedia::do_output_chemistry_time_in_years = true;
+  PorousMedia::do_output_transport_time_in_years = false;
 
   PorousMedia::richard_solver_verbose = 2;
 
@@ -652,9 +660,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_max_iterations = 15;
   PorousMedia::steady_limit_iterations = 20;
   PorousMedia::steady_time_step_reduction_factor = 0.8;
-  PorousMedia::steady_time_step_increase_factor = 1.8;
+  PorousMedia::steady_time_step_increase_factor = 1.6;
   PorousMedia::steady_time_step_increase_factor_2 = 10;
-  PorousMedia::steady_time_step_retry_factor_1 = 0.05;
+  PorousMedia::steady_time_step_retry_factor_1 = 0.2;
   PorousMedia::steady_time_step_retry_factor_2 = 0.01;
   PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
@@ -1611,6 +1619,10 @@ void PorousMedia::read_prob()
   if (execution_mode==INIT_TO_STEADY) {
     pp.get("switch_time",switch_time);
   }
+
+  pp.query("do_output_flow_time_in_years;",do_output_flow_time_in_years);
+  pp.query("do_output_transport_time_in_years;",do_output_transport_time_in_years);
+  pp.query("do_output_chemistry_time_in_years;",do_output_chemistry_time_in_years);
 
   // determine the model based on model_name
   ParmParse pb("prob");

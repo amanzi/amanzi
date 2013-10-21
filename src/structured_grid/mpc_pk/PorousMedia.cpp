@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <cmath>
+#include <ios>
 
 #include <ErrorList.H>
 #include <Interpolater.H>
@@ -1572,104 +1573,15 @@ RichardNLSdata::Build()
 bool
 RichardNLSdata::AdjustDt(Real                dt, 
 			 RichardNLSdata::Reason nl_solver_status, 
-			 Real                abs_err, 
-			 Real                rel_err, 
 			 Real&               dt_new) // Note: return bool for whether run should stop
 {
     dt_new = dt;
     if (first) {
-        //num_consecutive_increases = 0;
-        //num_consecutive_success = 0;
-        first = false;
-        prev_abs_err = -1;
+      num_consecutive_increases = 0;
+      num_consecutive_success = 0;
+      first = false;
+      prev_abs_err = -1;
     }
-
-    if (nl_solver_status == RICHARD_SUCCESS)
-    {
-        last_chance = false;
-
-        // "success" is when the error is reduced using small number of iters
-        // In this case, increment counter for this event, reset "increase" counter
-        // If this keeps happening, increase dt and reset the counter for these events
-        //  (when we do, if the problem was  particularly easy, increase dt dramatically)
-        if (nl_iterations_taken < min_nl_iterations_for_dt && 
-            (prev_abs_err <= 0  ||   prev_abs_err > abs_err) ) {
-            
-            num_consecutive_success++;
-            num_consecutive_increases = 0;
-            
-            if (num_consecutive_success >= max_num_consecutive_success)
-            {
-                num_consecutive_success = 0;
-                Real fac = time_step_increase_factor;
-                if (nl_iterations_taken < min_nl_iterations_for_dt_2) {
-                    fac = time_step_increase_factor_2;
-                }
-                dt_new = dt * fac;
-            }
-        }
-
-        // "increase" is when the error grows and used large number of iters
-        // In this case, increment counter for this event, guarantee recalc of J, and reset "success" counter
-        // If this keeps happening, reduce dt and reset the counter for these events
-        if (nl_iterations_taken > max_nl_iterations_for_dt && 
-            (prev_abs_err <= 0  ||   prev_abs_err < abs_err) )
-        {
-            ResetJacobianCounter();
-            num_consecutive_increases++;
-            num_consecutive_success = 0;        
-        
-            if (nl_iterations_taken > max_nl_iterations_for_dt)
-            {
-                ResetJacobianCounter();
-                dt_new = dt * time_step_reduction_factor;
-            }
-        }
-
-        num_consecutive_failures_1 = 0;
-        num_consecutive_failures_2 = 0;
-        prev_abs_err = abs_err;
-
-    }
-    else {
-
-        // step was rejected
-        num_consecutive_failures_1++;
-
-        if (num_consecutive_failures_1 <= max_num_consecutive_failures_1)
-        {
-            dt_new = dt * time_step_retry_factor;
-        }
-        else
-        {
-            num_consecutive_failures_2++;
-
-            if (num_consecutive_failures_2 <= max_num_consecutive_failures_2)
-            {
-                dt_new = dt * time_step_retry_factor_2;
-            }
-            else
-            {
-                if (last_chance)  return false;
-                dt_new = dt * time_step_retry_factor_f;
-                last_chance = true;
-            }
-        }
-
-        num_consecutive_success = 0;
-        ResetJacobianCounter();
-    }
-
-    dt_new = std::min(max_time_step_size,dt_new);
-    return true;
-}
-
-bool
-RichardNLSdata::AdjustDt(Real                dt, 
-			 RichardNLSdata::Reason nl_solver_status, 
-			 Real&               dt_new) // Note: return bool for whether run should stop
-{
-    dt_new = dt;
     if (nl_solver_status == RICHARD_SUCCESS)
     {
         last_chance = false;
@@ -1685,7 +1597,6 @@ RichardNLSdata::AdjustDt(Real                dt,
             
             if (num_consecutive_success >= max_num_consecutive_success)
             {
-                num_consecutive_success = 0;
                 Real fac = time_step_increase_factor;
                 if (nl_iterations_taken < min_nl_iterations_for_dt_2) {
                     fac = time_step_increase_factor_2;
@@ -1748,14 +1659,15 @@ RichardNLSdata::AdjustDt(Real                dt,
     return true;
 }
 
-RichardNLSdata
+RichardNLSdata*
 PorousMedia::BuildInitNLS()
 {
     int nlevs = parent->finestLevel() - level + 1;
     PMAmr* pm_amr = dynamic_cast<PMAmr*>(parent);
     if (!pm_amr)
       BoxLib::Abort("Bad cast in PorousMedia::BuildInitNLS");
-    RichardNLSdata nld(0,nlevs,pm_amr);
+    RichardNLSdata* nldp = new RichardNLSdata(0,nlevs,pm_amr);
+    RichardNLSdata& nld = *nldp;
     nld.SetMaxJacobianReuse(0); // Currently switched off because it didnt seem to buy anything
     
     nld.SetMaxConsecutiveFails(steady_max_consecutive_failures_1);
@@ -1781,7 +1693,7 @@ PorousMedia::BuildInitNLS()
     nld.SetMaxConsecutiveSuccess(steady_max_num_consecutive_success);
 
     nld.SetMaxDt(steady_max_time_step_size);
-    return nld;
+    return nldp;
 }
 
 #include <RichardSolver.H>
@@ -1813,7 +1725,7 @@ GetPETScReason(int flag)
 
 void
 PorousMedia::SetRichardSolverParameters(RSParams&          rsparams,
-                                        const std::string& IDstring) const
+                                        const std::string& IDstring)
 {
     // For the moment, ignore IDstring: all solver setups identical
     rsparams.max_ls_iterations = richard_max_ls_iterations;
@@ -1856,7 +1768,7 @@ PorousMedia::richard_init_to_steady()
       int old_richard_solver_verbose = richard_solver_verbose;
       richard_solver_verbose = richard_init_to_steady_verbose;
       initial_iter = 1;
-        
+
       Real cur_time = state[State_Type].curTime();
       Real prev_time = state[State_Type].prevTime();
       int  finest_level = parent->finestLevel();
@@ -1937,8 +1849,9 @@ PorousMedia::richard_init_to_steady()
         bool continue_iterations = (!solved)  &&  (k < k_max)  &&  (t < t_max);
 	  
         RichardNLSdata::Reason ret;
-        RichardNLSdata nld = BuildInitNLS();
-	  
+        RichardNLSdata* nldp = BuildInitNLS();
+	RichardNLSdata& nld = *nldp;
+
         RichardSolver* rs = 0;
         if (steady_use_PETSc_snes) {
           RSParams rsparams;
@@ -2102,7 +2015,7 @@ PorousMedia::richard_init_to_steady()
           } // Newton fail
 
           Real dt_new;
-          bool cont = nld.AdjustDt(dt,ret,abs_err,rel_err,dt_new); 
+          bool cont = nld.AdjustDt(dt,ret,dt_new); 
 
           if (ret == RichardNLSdata::RICHARD_SUCCESS) {
             k++;
@@ -2142,6 +2055,7 @@ PorousMedia::richard_init_to_steady()
         } // time-step
 		
         delete rs;
+        delete nldp;
 
         if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
           std::cout << tag << " Total psuedo-time advanced: " << t << " in " << k << " steps" << std::endl;
@@ -2931,8 +2845,9 @@ PorousMedia::multilevel_advance (Real  time,
     Real prev_time = state[State_Type].prevTime();
     Real curr_time = state[State_Type].curTime();
     PArray<Observation>& observations = PMParent()->TheObservations();
-    for (int i=0; i<observations.size(); ++i)
+    for (int i=0; i<observations.size(); ++i) {
       observations[i].process(prev_time, curr_time, parent->levelSteps(0));
+    }
   }
 
   return step_ok;
@@ -3205,9 +3120,15 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	  for (int lev=0; lev<=level; ++lev) {
 	    std::cout << "  ";
 	  }
+          std::string units_str = do_output_chemistry_time_in_years ? "Y" : "s";
+          std::pair<Real,std::string> told_subtr_output = PMAmr::convert_time_units(t_subtr,units_str);
+          std::pair<Real,std::string> tnew_subtr_output = PMAmr::convert_time_units(t_subtr+dt_subtr,units_str);
+          std::pair<Real,std::string> dt_subtr_output = PMAmr::convert_time_units(dt_subtr,units_str);
+          std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
 	  std::cout << "CHEMISTRY - FIRST HALF: Level: " << level
-		    << " TIME = " << t_subtr
-		    << " : " << t_subtr+dt_subtr << std::endl;
+		    << " TIME = " << told_subtr_output.first << told_subtr_output.second
+		    << " : " << tnew_subtr_output.first << tnew_subtr_output.second << std::endl;
+          std::cout.flags(oldflags);
 	}
 	int nGrow_chem = 0;
 	//int nGrow_chem = nGrowHYP;
@@ -3223,14 +3144,21 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	for (int lev=0; lev<=level; ++lev) {
 	  std::cout << "  ";
 	}
-	std::cout << "TRANSPORT: Level: " << level 
-		  << " TIME = " << t_subtr
-		  << " : " << t_subtr+dt_subtr
-		  << " (dt: " << dt_subtr << ")";
+
+        std::string units_str = do_output_transport_time_in_years ? "Y" : "s";
+        std::pair<Real,std::string> told_subtr_output = PMAmr::convert_time_units(t_subtr,units_str);
+        std::pair<Real,std::string> tnew_subtr_output = PMAmr::convert_time_units(t_subtr+dt_subtr,units_str);
+        std::pair<Real,std::string> dt_subtr_output = PMAmr::convert_time_units(dt_subtr,units_str);
+        std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
+	std::cout << "TRANSPORT: Level: " << level;
         if (n_subtr!=0 || (t_subtr+dt_subtr < tmax_subtr - t_eps)) {
-          std::cout << " Subcycle: " << n_subtr << ", dt_sub: " << dt_subtr;
+          std::cout << " Subcycle: " << n_subtr << " ";
         }
+        std::cout << " TIME = " << told_subtr_output.first << told_subtr_output.second
+		  << " : " << tnew_subtr_output.first << tnew_subtr_output.second
+		  << " (DT: " << dt_subtr_output.first << dt_subtr_output.second << ")";
         std::cout << std::endl;
+        std::cout.flags(oldflags);
       }
       n_subtr++;
 
@@ -3739,7 +3667,10 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     }
   }
     
-  RichardNLSdata nld = BuildInitNLS();
+  if (nld_flow == 0) {
+    nld_flow = BuildInitNLS();
+  }
+  RichardNLSdata& nld = *nld_flow;
   int nc = 0; // Component of water in state
     
   RichardNLSdata::Reason ret;
@@ -3761,12 +3692,20 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     
   nld.ResetCounters();
   nld.ResetJacobianCounter();
-    
+
+  std::string units_str = do_output_flow_time_in_years ? "Y" : "s";
+  std::pair<Real,std::string> told_flow_output = PMAmr::convert_time_units(t_flow,units_str);
+  std::pair<Real,std::string> tnew_flow_output = PMAmr::convert_time_units(t_flow+dt_flow,units_str);
+  std::pair<Real,std::string> dt_flow_output = PMAmr::convert_time_units(dt_flow,units_str);
+
+  std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
   if (richard_solver_verbose > 1 && ParallelDescriptor::IOProcessor())
-    std::cout << "  FLOW: Level " << level << " TIME = " << t_flow 
-              << " : " << t_flow + dt_flow 
-              << ", DT: " << dt_flow  
+    std::cout << "  FLOW: Level " << level
+              << " TIME = " << told_flow_output.first << told_flow_output.second
+              << " : "      << tnew_flow_output.first << tnew_flow_output.second
+              << ", DT: "   << dt_flow_output.first   << dt_flow_output.second
               << std::endl;
+  std::cout.flags(oldflags);
     
   if (steady_use_PETSc_snes) 
   {
@@ -3802,12 +3741,16 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
     
   step_ok = (ret == RichardNLSdata::RICHARD_SUCCESS);
 
+
+  std::pair<Real,std::string> dt_new_flow_output = PMAmr::convert_time_units(dt_flow_new,units_str);
   if (richard_solver_verbose > 1 && ParallelDescriptor::IOProcessor())
   {
     std::string resultStr = (step_ok ? "SUCCESS" : "FAIL");
         
+    std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
     std::cout << "  FLOW: " << resultStr << ". (iters: " << nld.NLIterationsTaken() 
-              << "). Suggest next dt: " << dt_flow_new << std::endl;
+              << "). Suggest next dt: " << dt_new_flow_output.first << dt_new_flow_output.second << std::endl;
+    std::cout.flags(oldflags);
   }
   
   if (!step_ok) {
@@ -7773,19 +7716,27 @@ PorousMedia::sum_integrated_quantities ()
 
   Real time = state[State_Type].curTime();
   Real mass = 0.0;
+  Array<Real> tmass(ntracers,0);
 
-  for (int lev = 0; lev <= finest_level; lev++)
-    {
-      PorousMedia& ns_level = getLevel(lev);
-      mass += ns_level.volWgtSum("Water",time);
+  for (int lev = 0; lev <= finest_level; lev++) {
+    PorousMedia& ns_level = getLevel(lev);
+    mass += ns_level.volWgtSum("Volumetric_Water_Content",time);
+    for (int n=0; n<ntracers; ++n) {
+      std::string VSC = "Volumetric_" + tNames[n] + "_Content";
+      tmass[n] += ns_level.volWgtSum(tNames[n],time);
     }
+  }
 
-  if (verbose > 3 && ParallelDescriptor::IOProcessor())
-    {
-      const int old_prec = std::cout.precision(12);
-      std::cout << "TIME= " << time << " MASS= " << mass << '\n';
-      std::cout.precision(old_prec);
+  if (ParallelDescriptor::IOProcessor()) {
+
+    std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
+    std::cout << "  Volume integrated diagnostics:" << '\n';
+    std::cout << "    TIME=" << time << "[s]  MASS(Water)=" << mass*density[0] << "[kg]\n";
+    for (int n=0; n<ntracers; ++n) {
+      std::cout << "    TIME=" << time << "[s]  MASS(" << tNames[n] << ")=" << tmass[n]*density[0] << "[kg]\n";
     }
+    std::cout.flags(oldflags);
+  }
 }
 
 void
@@ -8729,11 +8680,6 @@ PorousMedia::post_timestep (int crse_iteration)
     }
   }
 
-  if (level==0 && sum_interval>0 && 
-      parent->levelSteps(0)%sum_interval == 0) {
-    sum_integrated_quantities();
-  }
-    
   old_intersect_new          = grids;
   is_first_step_after_regrid = false;
 }
@@ -12643,7 +12589,8 @@ PorousMedia::derive_Cell_ID(Real      time,
 void
 PorousMedia::derive_Volumetric_Water_Content(Real      time,
                                              MultiFab& mf,
-                                             int       dcomp)
+                                             int       dcomp,
+                                             int       ntrac)
 {
   // Note, assumes one comp per phase
   int scomp = -1;
@@ -12667,6 +12614,16 @@ PorousMedia::derive_Volumetric_Water_Content(Real      time,
       mf[fpi].copy(fpi(),0,dcomp,ncomp);
       mf[fpi].mult((*rock_phi)[fpi],0,dcomp,ncomp);
       mf[fpi].mult(1/density[scomp],dcomp,ncomp);
+    }
+
+    if (ntrac >= 0) {
+      BL_ASSERT(ntrac < ntracers);
+      int ncompt = 1;
+      int scompt = ncomps + ntrac;
+      FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scompt,ncompt);
+      for ( ; fpi.isValid(); ++fpi) {
+        mf[fpi].mult(fpi(),0,dcomp,ncompt);
+      }
     }
   }            
   else {
@@ -12885,26 +12842,29 @@ PorousMedia::derive (const std::string& name,
                      Real               time,
                      int                ngrow)
 {
-    BL_ASSERT(ngrow >= 0);
-    
-    const DeriveRec* rec = derive_lst.get(name);
-    if (rec)
-    {
-        BoxArray dstBA(grids);
-        MultiFab* mf = new MultiFab(dstBA, rec->numDerive(), ngrow);
-        int dcomp = 0;
-        derive(name,time,*mf,dcomp);
-        return mf;
+  BL_ASSERT(ngrow >= 0);
+  
+  MultiFab* mf = 0;
+  const DeriveRec* rec = derive_lst.get(name);
+  if (rec) {
+    BoxArray dstBA(grids);
+    mf = new MultiFab(dstBA, rec->numDerive(), ngrow);
+    int dcomp = 0;
+    derive(name,time,*mf,dcomp);
+  }
+  else {
+    mf = AmrLevel::derive(name,time,ngrow);
+
+    if (mf == 0) {
+      //
+      // If we got here, cannot derive given name.
+      //
+      std::string msg("PorousMedia::derive(): unknown variable: ");
+      msg += name;
+      BoxLib::Error(msg.c_str());
     }
-    else
-    {
-        //
-        // If we got here, cannot derive given name.
-        //
-        std::string msg("PorousMedia::derive(): unknown variable: ");
-        msg += name;
-        BoxLib::Error(msg.c_str());
-    }
+  }
+  return mf;
 }
 
 void
@@ -12985,8 +12945,13 @@ PorousMedia::derive (const std::string& name,
   if (not_found_yet) {
     for (int n=0; n<ntracers && not_found_yet; ++n) {
       std::string tname = tNames[n] + "_Aqueous_Concentration";
+      std::string VSC = "Volumetric_" + tNames[n] + "_Content";
       if (name==tname) {
         AmrLevel::derive(tNames[n],time,mf,dcomp);
+        not_found_yet = false;
+      }
+      else if (name == VSC) {
+        derive_Volumetric_Water_Content(time,mf,dcomp,n);
         not_found_yet = false;
       }
     }
