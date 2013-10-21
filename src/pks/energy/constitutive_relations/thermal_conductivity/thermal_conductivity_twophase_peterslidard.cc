@@ -16,11 +16,6 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-// registry of method
-Utils::RegisteredFactory<ThermalConductivityTwoPhase,
-                         ThermalConductivityTwoPhasePetersLidard>
-        ThermalConductivityTwoPhasePetersLidard::factory_("two-phase Peters-Lidard");
-
 ThermalConductivityTwoPhasePetersLidard::ThermalConductivityTwoPhasePetersLidard(
       Teuchos::ParameterList& plist) : plist_(plist) {
   InitializeFromPlist_();

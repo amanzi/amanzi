@@ -81,3 +81,42 @@ generate_evaluators_registration_header(
   LISTNAME   ENERGY_CONST_REL_INTERNAL_ENERGY_REG
   INSTALL    True
   )
+
+
+# constitutive_relations/thermal_conductivity/
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_twophase_factory_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_factory_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_peterslidard_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_wetdry_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_twophase_peterslidard_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_twophase_wetdry_reg.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE energy_constitutive_relations_thermal_conductivity_registration.hh
+  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
+  INSTALL    True
+  )

@@ -38,6 +38,7 @@
 #include "energy_advection_diffusion_registration.hh"
 #include "energy_constant_temperature_registration.hh"
 #include "energy_constitutive_relations_internal_energy_registration.hh"
+#include "energy_constitutive_relations_thermal_conductivity_registration.hh"
 
 
 
