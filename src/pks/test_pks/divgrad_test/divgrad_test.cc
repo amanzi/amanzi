@@ -14,9 +14,6 @@
 namespace Amanzi {
 namespace TestPKs {
 
-RegisteredPKFactory<DivGradTest> DivGradTest::reg_("div-grad operator test");
-
-
 // -------------------------------------------------------------
 // Setup data
 // -------------------------------------------------------------
