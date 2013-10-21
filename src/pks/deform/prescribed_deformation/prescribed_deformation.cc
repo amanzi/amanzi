@@ -22,8 +22,6 @@ namespace Deform {
 
 using namespace Amanzi::AmanziMesh;
 
-RegisteredPKFactory<PrescribedDeformation> PrescribedDeformation::reg_("prescribed deformation");
-
 PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):

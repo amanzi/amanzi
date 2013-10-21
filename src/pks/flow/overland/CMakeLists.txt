@@ -17,32 +17,6 @@ add_library(
 #  surface_coupler_via_source_evaluator.cc
   )
 
-register_evaluator_with_factory(
-  HEADERFILE overland_pk_reg.hh
-  LISTNAME   FLOW_OVERLAND_EVAL_FAC
-  )
-
-#register_evaluator_with_factory(
-#  HEADERFILE surface_coupler_via_source_evaluator_reg.hh
-#  LISTNAME   FLOW_OVERLAND_EVAL_FAC
-#  )
-
-generate_evaluators_registration_header(
-  HEADERFILE overland_evaluators_factories_registration.hh
-  LISTNAME   FLOW_OVERLAND_EVAL_FAC
-  INSTALL    True
-  )
-
-
-
-
-
-
-# shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
-#WHOLE_ARCHIVE(flow_relations_eos)
-#WHOLE_ARCHIVE(flow_relations_wrm)
-#WHOLE_ARCHIVE(pk_factory)
-
 # if ( BUILD_TESTS )
 #     # Add UnitTest includes
 #     include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})

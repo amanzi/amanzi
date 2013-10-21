@@ -21,23 +21,6 @@ add_library(pk_flow_richards
     richards_steadystate.cc
 )
 
-register_evaluator_with_factory(
-  HEADERFILE richards_pk_reg.hh
-  LISTNAME   RICHARDS_EVAL_FAC
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE richards_steadystate_reg.hh
-  LISTNAME   RICHARDS_EVAL_FAC
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE richards_evaluators_factories_registration.hh
-  LISTNAME   RICHARDS_EVAL_FAC
-  INSTALL    True
-  )
-
-
 
 # if ( BUILD_TESTS )
 #     Add UnitTest includes
