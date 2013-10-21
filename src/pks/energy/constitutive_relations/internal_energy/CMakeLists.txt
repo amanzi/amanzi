@@ -6,10 +6,6 @@
 #
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 add_library(energy_relations_internal_energy
              iem_evaluator.cc
              iem_factory.cc

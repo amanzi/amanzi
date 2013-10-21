@@ -7,18 +7,15 @@
    Self-registering factory for IEM implementations.
    ------------------------------------------------------------------------- */
 
-#include <string>
 #include "iem_factory.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-// method for instantiating IEM implementations
-Teuchos::RCP<IEM> IEMFactory::createIEM(Teuchos::ParameterList& plist) {
-  std::string iem_typename = plist.get<std::string>("IEM type");
-  return Teuchos::rcp(CreateInstance(iem_typename, plist));
-};
+// explicity instantitate the static data of Factory<IEM>
+//template<> Factory<IEM>::map_type* Factory<IEM>::map_;
+template<> Utils::Factory<IEM>::map_type* Utils::Factory<IEM>::map_;
 
 } // namespace
 } // namespace
