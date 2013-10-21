@@ -1,8 +1,4 @@
 # -*- mode: cmake -*-
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
