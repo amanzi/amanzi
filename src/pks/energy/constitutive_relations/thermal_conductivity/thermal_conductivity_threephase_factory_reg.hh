@@ -7,18 +7,14 @@
    Self-registering factory for TC implementations.
    ------------------------------------------------------------------------- */
 
-#include <string>
-#include "thermal_conductivity_twophase_factory.hh"
+#include "thermal_conductivity_threephase_factory.hh"
 
 namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-// method for instantiating implementations
-Teuchos::RCP<ThermalConductivityTwoPhase> ThermalConductivityTwoPhaseFactory::createThermalConductivityModel(Teuchos::ParameterList& plist) {
-  std::string tc_typename = plist.get<std::string>("thermal conductivity type");
-  return Teuchos::rcp(CreateInstance(tc_typename, plist));
-};
+// explicity instantitate the static data of Factory<EOS>
+template<> Utils::Factory<ThermalConductivityThreePhase>::map_type* Utils::Factory<ThermalConductivityThreePhase>::map_;
 
 } // namespace
 } // namespace
