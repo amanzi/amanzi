@@ -43,6 +43,7 @@
 #include "energy_two_phase_registration.hh"
 #include "energy_three_phase_registration.hh"
 
+#include "surface_balance_SEB_registration.hh"
 
 
 
