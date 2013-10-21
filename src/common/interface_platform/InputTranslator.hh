@@ -29,6 +29,7 @@ double get_time_value(std::string time_value, Teuchos::ParameterList def_list);
 double get_double_constant(std::string pos_name, Teuchos::ParameterList def_list);
 int get_int_constant(std::string pos_name, Teuchos::ParameterList def_list);
 Teuchos::Array<std::string> make_regions_list(char* char_array);
+Teuchos::Array<double> make_coordinates(char* char_array, Teuchos::ParameterList def_list);
 
 static bool isUnstr_ ;
 static int dimension_;
