@@ -13,8 +13,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-Utils::RegisteredFactory<WRM,WRMZeroRelPerm> WRMZeroRelPerm::factory_("zero rel perm");
-
 WRMZeroRelPerm::WRMZeroRelPerm(Teuchos::ParameterList& plist) :
     plist_(plist) {
   InitializeFromPlist_();

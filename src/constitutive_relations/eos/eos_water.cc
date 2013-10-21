@@ -16,9 +16,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<EOS,EOSWater> EOSWater::factory_("liquid water");
-
 EOSWater::EOSWater(Teuchos::ParameterList& eos_plist) :
     EOSConstantMolarMass(0.0180153),
     eos_plist_(eos_plist),

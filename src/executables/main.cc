@@ -18,7 +18,17 @@
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 
 #include "state_evaluators_reg.hh"
-#include "deform_evaluators_reg.hh"
+#include "constitutive_relations_eos_evaluators_registration.hh"
+#include "constitutive_relations_surface_subsurface_fluxes_evaluators_registration.hh"
+#include "flow_constitutive_relations_overland_conductivity_registration.hh"
+#include "flow_constitutive_relations_porosity_evaluators_registration.hh"
+#include "wrm_models_evaluators_factories_registration.hh"
+#include "wrm_evaluators_factories_registration.hh"
+#include "overland_head_evaluators_factories_registration.hh"
+#include "overland_evaluators_factories_registration.hh"
+#include "icy_overland_evaluators_factories_registration.hh"
+#include "permafrost_evaluators_factories_registration.hh"
+#include "deform_constrel_porosity_evaluators_factories_registration.hh"
 
 
 // include fenv if it exists

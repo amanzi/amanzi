@@ -15,9 +15,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<EOS,EOSConstant> EOSConstant::factory_("constant");
-
 EOSConstant::EOSConstant(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist) {
   InitializeFromPlist_();

@@ -13,9 +13,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,EffectivePressureEvaluator> EffectivePressureEvaluator::factory_("effective_pressure");
-
 EffectivePressureEvaluator::EffectivePressureEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_ == std::string("")) {

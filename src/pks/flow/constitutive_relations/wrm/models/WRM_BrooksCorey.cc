@@ -19,9 +19,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-Utils::RegisteredFactory<WRM,WRMBrooksCorey> WRMBrooksCorey::factory_("Brooks Corey");
-
-
 /* ******************************************************************
  * Setup fundamental parameters for this model.
  * Default value of the regularization interval is pc0 = 0.

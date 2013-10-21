@@ -14,6 +14,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 #include "pk_factory.hh"
 #include "overland_head.hh"
+#include "icy_height_model.hh"
 
 namespace Amanzi {
 

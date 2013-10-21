@@ -13,10 +13,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,MolarFractionGasEvaluator> MolarFractionGasEvaluator::factory_("molar fraction gas");
-
-
 MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 

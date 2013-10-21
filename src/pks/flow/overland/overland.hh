@@ -6,8 +6,8 @@ License: BSD
 Authors: Ethan Coon (ecoon@lanl.gov)
 ----------------------------------------------------------------------------- */
 
-#ifndef PK_FLOW_OVERLAND_HEAD_HH_
-#define PK_FLOW_OVERLAND_HEAD_HH_
+#ifndef PK_FLOW_OVERLAND_HH_
+#define PK_FLOW_OVERLAND_HH_
 
 #include "boundary_function.hh"
 #include "MatrixMFD.hh"

@@ -1,8 +1,4 @@
 # -*- mode: cmake -*-
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
@@ -25,10 +21,23 @@ add_library(pk_flow_richards
     richards_steadystate.cc
 )
 
-# shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
-WHOLE_ARCHIVE(flow_relations_eos)
-WHOLE_ARCHIVE(flow_relations_wrm)
-WHOLE_ARCHIVE(pk_factory)
+register_evaluator_with_factory(
+  HEADERFILE richards_pk_reg.hh
+  LISTNAME   RICHARDS_EVAL_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE richards_steadystate_reg.hh
+  LISTNAME   RICHARDS_EVAL_FAC
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE richards_evaluators_factories_registration.hh
+  LISTNAME   RICHARDS_EVAL_FAC
+  INSTALL    True
+  )
+
+
 
 # if ( BUILD_TESTS )
 #     Add UnitTest includes

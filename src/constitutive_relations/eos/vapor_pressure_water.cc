@@ -15,9 +15,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<VaporPressureRelation,VaporPressureWater> VaporPressureWater::factory_("water vapor over water/ice");
-
 VaporPressureWater::VaporPressureWater(Teuchos::ParameterList& plist) :
   plist_(plist),
   ka0_(16.635764),

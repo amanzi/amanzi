@@ -27,9 +27,6 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<Permafrost> Permafrost::reg_("permafrost flow");
-
-
 // -------------------------------------------------------------
 // Create the physical evaluators for water content, water
 // retention, rel perm, etc, that are specific to Richards.

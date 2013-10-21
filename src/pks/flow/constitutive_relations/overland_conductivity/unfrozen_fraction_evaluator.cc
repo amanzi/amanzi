@@ -13,9 +13,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,UnfrozenFractionEvaluator> UnfrozenFractionEvaluator::fac_("unfrozen fraction");
-
 UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
