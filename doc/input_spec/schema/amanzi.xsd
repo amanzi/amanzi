@@ -503,9 +503,11 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
 <xs:simpleType name="typedef_verbosity_level">
 	<xs:restriction base="xs:string">
+		<xs:enumeration value="extreme"/>
 		<xs:enumeration value="high"/>
 		<xs:enumeration value="medium"/>
 		<xs:enumeration value="low"/>
+		<xs:enumeration value="none"/>
 	</xs:restriction>
 </xs:simpleType>
 
