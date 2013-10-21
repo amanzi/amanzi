@@ -11,22 +11,6 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
 add_library(pk_flow_permafrost permafrost_pk.cc permafrost_water_content.cc)
 
-register_evaluator_with_factory(
-  HEADERFILE permafrost_pk_reg.hh
-  LISTNAME   PERMAFROST_EVAL_FAC
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE permafrost_evaluators_factories_registration.hh
-  LISTNAME   PERMAFROST_EVAL_FAC
-  INSTALL    True
-  )
-
-
-
-
-
-
 # if ( BUILD_TESTS )
 #     # Add UnitTest includes
 #     set(amanzi_libs geometry mesh mesh_audit simple_mesh state whetstone mesh_functions)

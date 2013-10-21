@@ -31,6 +31,7 @@ include_evaluators_directories(LISTNAME FLOW_OVERLAND_HEAD_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME FLOW_OVERLAND_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME RICHARDS_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME PERMAFROST_EVAL_FAC_INCLUDES)
+include_evaluators_directories(LISTNAME PRESCRIBED_DEFORMATION_EVAL_INCLUDES)
 
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )

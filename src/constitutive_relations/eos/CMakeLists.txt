@@ -5,10 +5,6 @@
 #    Equations of state
 #
 
-#MACRO(WHOLE_ARCHIVE inlib)
-#  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-#ENDMACRO(WHOLE_ARCHIVE inlib)
-
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 
 add_library(relations_eos
@@ -27,82 +23,6 @@ add_library(relations_eos
  )
 
 
-register_evaluator_with_factory(
-  HEADERFILE effective_pressure_evaluator_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE eos_constant_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE eos_evaluator_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE eos_ice_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
-  HEADERFILE eos_ideal_gas_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE eos_vapor_in_gas_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE eos_water_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE isobaric_eos_evaluator_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE molar_fraction_gas_evaluator_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE vapor_pressure_water_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE viscosity_constant_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE viscosity_evaluator_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE viscosity_water_reg.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  )
-
-
-
-generate_evaluators_registration_header(
-  HEADERFILE constitutive_relations_eos_evaluators_registration.hh
-  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
-  INSTALL    True
-  )
-
-
-
-
-
 #add_library(relations_eos_factory eos_factory.cc)
 #add_library(relations_eos eos_water.cc eos_ideal_gas.cc )
 
@@ -112,9 +32,6 @@ generate_evaluators_registration_header(
 # symbols to initialize the BSS data, and therefore do not get sucked
 # into the executable?  To get them, we need the whole archive...
 #
-# this is g++ specific and needs to be generalized!
-#WHOLE_ARCHIVE(relations_eos_factory)
-#WHOLE_ARCHIVE(relations_eos)
 
 # if ( BUILD_TESTS )
 #     include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/eos)
