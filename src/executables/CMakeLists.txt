@@ -44,6 +44,7 @@ include_evaluators_directories(LISTNAME ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_RE
 include_evaluators_directories(LISTNAME ENERGY_SURFACE_ICE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_TWO_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
+include_evaluators_directories(LISTNAME SURFACE_BALANCE_SEB_REG_INCLUDES)
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 

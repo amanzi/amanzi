@@ -40,9 +40,6 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-RegisteredPKFactory<SurfaceBalanceSEB> SurfaceBalanceSEB::reg_("surface balance SEB");
-
-
 SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution)  :
