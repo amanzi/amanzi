@@ -22,4 +22,3 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-

@@ -45,6 +45,10 @@
 
 #include "surface_balance_SEB_registration.hh"
 
+#include "test_pks_divgrad_test_registration.hh"
+
+// #include "transport_passive_tracer_registration.hh"
+
 
 
 // include fenv if it exists
