@@ -124,12 +124,40 @@ generate_evaluators_registration_header(
 # surface_ice/
 
 register_evaluator_with_factory(
-  HEADERFILE surface_ice/
+  HEADERFILE surface_ice/energy_surface_ice_reg.hh
   LISTNAME   ENERGY_SURFACE_ICE_REG
   )
 
 generate_evaluators_registration_header(
   HEADERFILE energy_surface_ice_registration.hh
   LISTNAME   ENERGY_SURFACE_ICE_REG
+  INSTALL    True
+  )
+
+
+# three_phase/
+
+register_evaluator_with_factory(
+  HEADERFILE three_phase/three_phase_reg.hh
+  LISTNAME   ENERGY_THREE_PHASE_REG
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE energy_three_phase_registration.hh
+  LISTNAME   ENERGY_THREE_PHASE_REG
+  INSTALL    True
+  )
+
+
+# two_phase/
+
+register_evaluator_with_factory(
+  HEADERFILE two_phase/two_phase_reg.hh
+  LISTNAME   ENERGY_TWO_PHASE_REG
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE energy_two_phase_registration.hh
+  LISTNAME   ENERGY_TWO_PHASE_REG
   INSTALL    True
   )

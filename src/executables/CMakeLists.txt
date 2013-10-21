@@ -16,6 +16,10 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
+#include_directories(${ATS_SOURCE_DIR}/src/pks/energy/three_phase)
+#include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
+
 
 
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
@@ -38,7 +42,8 @@ include_evaluators_directories(LISTNAME ENERGY_CONSTANT_TEMPERATURE_REG_INCLUDES
 include_evaluators_directories(LISTNAME ENERGY_CONST_REL_INTERNAL_ENERGY_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_SURFACE_ICE_REG_INCLUDES)
-
+include_evaluators_directories(LISTNAME ENERGY_TWO_PHASE_REG_INCLUDES)
+include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 
 add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
 

@@ -40,6 +40,9 @@
 #include "energy_constitutive_relations_internal_energy_registration.hh"
 #include "energy_constitutive_relations_thermal_conductivity_registration.hh"
 #include "energy_surface_ice_registration.hh"
+#include "energy_two_phase_registration.hh"
+#include "energy_three_phase_registration.hh"
+
 
 
 
