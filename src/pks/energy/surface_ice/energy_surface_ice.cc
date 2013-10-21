@@ -29,8 +29,6 @@ namespace Energy {
 
 #define DEBUG_FLAG 1
 
-RegisteredPKFactory<EnergySurfaceIce> EnergySurfaceIce::reg_("surface energy");
-
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------

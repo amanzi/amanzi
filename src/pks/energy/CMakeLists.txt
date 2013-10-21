@@ -120,3 +120,16 @@ generate_evaluators_registration_header(
   LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
   INSTALL    True
   )
+
+# surface_ice/
+
+register_evaluator_with_factory(
+  HEADERFILE surface_ice/
+  LISTNAME   ENERGY_SURFACE_ICE_REG
+  )
+
+generate_evaluators_registration_header(
+  HEADERFILE energy_surface_ice_registration.hh
+  LISTNAME   ENERGY_SURFACE_ICE_REG
+  INSTALL    True
+  )
