@@ -681,7 +681,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
       }
     }
     if (gotValue) {
-      steadyPL.set<double>("Initial Time Step",get_double_constant(value,*def_list));
+      steadyPL.set<double>("Initial Time Step",get_time_value(value,*def_list));
       gotValue = false;
     } else {
       // default value to 0.0
@@ -768,7 +768,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
             gotValue = true;
 	}
         if (gotValue) {
-	    init_steps.append(get_double_constant(Value,*def_list));
+	    init_steps.append(get_time_value(Value,*def_list));
 	    gotValue = false;
 	}
 	if (ecsPL.sublist(it->first).isParameter("max_dt")) {
@@ -781,7 +781,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	  }
 	}
         if (gotValue) {
-	    max_steps.append(get_double_constant(Value,*def_list));
+	    max_steps.append(get_time_value(Value,*def_list));
 	    gotValue = false;
 	}
 	if (ecsPL.sublist(it->first).isParameter("reduction_factor") || defPL.isParameter("reduction_factor")) {
@@ -829,7 +829,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	  }
 	  if (ecsPL.sublist(it->first).isParameter("init_dt")) {
             value = ecsPL.sublist(it->first).get<std::string>("init_dt");
-	    initPL.set<double>("Steady Initial Time Step",get_double_constant(value,*def_list));
+	    initPL.set<double>("Steady Initial Time Step",get_time_value(value,*def_list));
 	  } 
 	  if (ecsPL.sublist(it->first).isParameter("method")) {
             value = ecsPL.sublist(it->first).get<std::string>("method");
@@ -863,7 +863,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	    }
 	  }
 	  if (gotValue) {
-	    init_steps.append(get_double_constant(value,*def_list));
+	    init_steps.append(get_time_value(value,*def_list));
 	    gotValue = false;
 	  }
 	}
