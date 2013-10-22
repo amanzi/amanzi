@@ -861,7 +861,7 @@ Teuchos::ParameterList create_TimePeriodControl_List(Teuchos::ParameterList* pli
 Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
   Teuchos::ParameterList mpc_list;
 
-  bool transport_on(false), chemistry_on(false);
+  bool transport_on(false), chemistry_on(false), flow_on(false);
 
   if ( plist->isSublist("Execution Control") ) {
     Teuchos::ParameterList exe_sublist = plist->sublist("Execution Control");
@@ -943,15 +943,20 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
       mpc_list.set<Teuchos::Array<std::string> >("component names", comp_names);
     }
 
+
+    
     if ( exe_sublist.isParameter("Flow Model") ) {
       if ( exe_sublist.get<std::string>("Flow Model") == "Off" || exe_sublist.get<std::string>("Flow Model") == "off") {
         mpc_list.set<std::string>("disable Flow_PK", "yes");
+	flow_on = false;
       } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" ) {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Richards");
+	flow_on = true;
       } else if (exe_sublist.get<std::string>("Flow Model") == "Single Phase") {
         mpc_list.set<std::string>("disable Flow_PK", "no");
         mpc_list.set<std::string>("Flow model","Steady State Saturated");
+	flow_on = true;
       } else {
         Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards, Single Phase, or Off"));
       }
@@ -959,7 +964,19 @@ Teuchos::ParameterList create_MPC_List(Teuchos::ParameterList* plist) {
       Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
     }
 
-
+    if (flow_on) {
+      double ti_rescue(TI_RESCUE_REDUCTION_FACTOR);
+      
+      if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	  Teuchos::ParameterList& ncpu_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	  if (ncpu_list.isSublist("MPC")) {
+	    ti_rescue = ncpu_list.sublist("MPC").get<double>("time integration rescue reduction factor",TI_RESCUE_REDUCTION_FACTOR);
+	  }
+	}
+      }
+      mpc_list.set<double>("time integration rescue reduction factor",TI_RESCUE_REDUCTION_FACTOR);
+    }
 
     if ( plist->sublist("Execution Control").isSublist("Restart from Checkpoint Data File") ) {
       mpc_list.sublist("Restart from Checkpoint Data File") =

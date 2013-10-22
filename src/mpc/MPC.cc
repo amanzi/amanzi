@@ -311,6 +311,8 @@ void MPC::read_parameter_list()  {
       Exceptions::amanzi_throw(message);
     }
   }
+
+  ti_rescue_factor_ = mpc_parameter_list.get<double>("time integration rescue reduction factor",0.5);
 }
 
 
@@ -618,7 +620,7 @@ void MPC::cycle_driver() {
               FPK->Advance(mpc_dT);
             }
             catch (int itr) {
-              mpc_dT = 0.5*mpc_dT;
+              mpc_dT =  ti_rescue_factor_*mpc_dT;
               redo = true;
               tslimiter = FLOW_LIMITS;
               *out << "will repeat time step with smaller dT = " << mpc_dT << std::endl;
