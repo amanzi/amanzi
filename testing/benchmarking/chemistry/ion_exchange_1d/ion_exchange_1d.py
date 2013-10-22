@@ -86,19 +86,22 @@ if __name__ == "__main__":
 
     CWD = os.getcwd()
     local_path = "" 
-        
-    try:
-        # hardwired for 1d-calcite: Tritium = component 0, last time = '71'
-        times = ['0','71']
-        amanzi_components = ['total_component_concentration.cell.Component 0 conc', \
-                             'total_component_concentration.cell.Component 1 conc', \
-                             'total_component_concentration.cell.Component 2 conc', \
-                             'total_component_concentration.cell.Component 3 conc']
-        amanzi_sorbed     = ['total_sorbed.cell.0', \
-                             'total_sorbed.cell.1', \
-                             'total_sorbed.cell.2', \
-                             'total_sorbed.cell.3']
- 
+    
+    # subplots
+    fig, ax = plt.subplots(2,sharex=True,figsize=(8,8))
+    
+    
+    # hardwired for 1d-exchange:  last time = '71'
+    times = ['0','71']
+    amanzi_components = ['total_component_concentration.cell.Component 0 conc', \
+                         'total_component_concentration.cell.Component 1 conc', \
+                         'total_component_concentration.cell.Component 2 conc', \
+                         'total_component_concentration.cell.Component 3 conc']
+    amanzi_sorbed     = ['total_sorbed.cell.0', \
+                         'total_sorbed.cell.1', \
+                         'total_sorbed.cell.2', \
+                         'total_sorbed.cell.3']
+    try:   
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
@@ -115,6 +118,12 @@ if __name__ == "__main__":
            for j, comp in enumerate(amanzi_sorbed):
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               v_amanzi_native[i][j] = c_amanzi_native
+
+    except:     
+
+        pass
+
+    try:
 
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
@@ -133,43 +142,52 @@ if __name__ == "__main__":
               x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
+        alq = True
+
+    except: 
+
+        alq = False
+
+
         # subplots
-        fig, ax = plt.subplots(2,sharex=True,figsize=(15,8))
+        #fig, ax = plt.subplots(2,sharex=True,figsize=(15,8))
 
-        colors= ['r','b','y','g'] # components
-        styles = ['-','--','x'] # codes
-        codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
+    colors= ['r','b','y','g'] # components
+    styles = ['-','--','x'] # codes
+    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
 
-        # lines on axes
-        # for i, time in enumerate(times):
-        i = 1
-        for j, comp in enumerate(components):
-              ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=comp)
-              ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2)
-              ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
+    # lines on axes
+    # for i, time in enumerate(times):
+    i = 1
+    for j, comp in enumerate(components):
+        if alq:
+               ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
+        ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=comp)
+        ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
 
-        # for i, time in enumerate(times):
-        i = 1
-        for j, comp in enumerate(components):
-              ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-              ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1])
-              ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
+    # for i, time in enumerate(times):
+    i = 1
+    for j, comp in enumerate(components):
+        if alq:
+               ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
+        ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1])
+        ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
 
-        # axes
-        ax[1].set_xlabel("Distance (m)",fontsize=15)
-        ax[0].set_ylabel("Total Concentration [mol/L]",fontsize=15)
-        ax[1].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
+    # axes
+    ax[1].set_xlabel("Distance (m)",fontsize=15)
+    ax[0].set_ylabel("Total Concentration [mol/L]",fontsize=15)
+    ax[1].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
 
-        # plot adjustments
-        plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
-        ax[0].legend(loc='upper left',fontsize=15)
-        ax[1].legend(loc='upper right',fontsize=15)
-        plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
-        plt.tick_params(axis='both', which='major', labelsize=15)
+    # plot adjustments
+    plt.subplots_adjust(left=0.15,bottom=0.15,right=0.99,top=0.90)
+    ax[0].legend(loc='upper left',fontsize=15)
+    ax[1].legend(loc='lower right',fontsize=15)
+    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=15)
 
         #pyplot.show()
         #plt.savefig(root+"_1d.png",format="png")
         #plt.close()
 
-    finally:
-        pass 
+    # finally:
+    #    pass 
