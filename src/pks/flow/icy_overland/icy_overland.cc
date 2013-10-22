@@ -49,12 +49,12 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
-    ASSERT(plist_.isSublist("elevation evaluator"));
-    Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
+    ASSERT(plist_->isSublist("elevation evaluator"));
+    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
     elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
-    Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
+    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
     elev_plist.set("manage communication", true);
     elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
@@ -65,17 +65,17 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
 
-  Teuchos::ParameterList pres_elev_plist = plist_.sublist("potential evaluator");
+  Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
   pres_elev_plist.set("manage communication", true);
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
   // -- source term evaluator
-  if (plist_.isSublist("source evaluator")) {
+  if (plist_->isSublist("source evaluator")) {
     is_source_term_ = true;
 
-    Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
+    Teuchos::ParameterList source_plist = plist_->sublist("source evaluator");
     source_only_if_unfrozen_ = source_plist.get<bool>("source only if unfrozen",false);
     if (source_only_if_unfrozen_) {
       S->RequireScalar("air_temperature");
@@ -92,7 +92,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content
   S->RequireField("surface_water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_.sublist("overland water content evaluator");
+  Teuchos::ParameterList wc_plist = plist_->sublist("overland water content evaluator");
   Teuchos::RCP<FlowRelations::OverlandHeadIcyWaterContentEvaluator> wc_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandHeadIcyWaterContentEvaluator(wc_plist));
   S->SetFieldEvaluator("surface_water_content", wc_evaluator);
@@ -100,7 +100,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
-  Teuchos::ParameterList height_plist = plist_.sublist("ponded depth evaluator");
+  Teuchos::ParameterList height_plist = plist_->sublist("ponded depth evaluator");
   Teuchos::RCP<FlowRelations::IcyHeightEvaluator> height_evaluator =
       Teuchos::rcp(new FlowRelations::IcyHeightEvaluator(height_plist));
   S->SetFieldEvaluator("ponded_depth", height_evaluator);
@@ -112,8 +112,8 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
-  ASSERT(plist_.isSublist("overland conductivity evaluator"));
-  Teuchos::ParameterList cond_plist = plist_.sublist("overland conductivity evaluator");
+  ASSERT(plist_->isSublist("overland conductivity evaluator"));
+  Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   // -- set the height key to be eta * h, not just h, for the frozen case.
   cond_plist.set("height key", "unfrozen_effective_depth");
   Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
@@ -123,7 +123,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- unfrozne fraction
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList uf_plist = plist_.sublist("unfrozen fraction evaluator");
+  Teuchos::ParameterList uf_plist = plist_->sublist("unfrozen fraction evaluator");
   Teuchos::RCP<FlowRelations::UnfrozenFractionEvaluator> uf_eval =
       Teuchos::rcp(new FlowRelations::UnfrozenFractionEvaluator(uf_plist));
   uf_model_ = uf_eval->get_Model();

@@ -24,7 +24,7 @@ using namespace Amanzi::AmanziMesh;
 
 RegisteredPKFactory<PrescribedVolumetricDeformation> PrescribedVolumetricDeformation::reg_("prescribed volumetric deformation");
 
-PrescribedVolumetricDeformation::PrescribedVolumetricDeformation(Teuchos::ParameterList& plist,
+PrescribedVolumetricDeformation::PrescribedVolumetricDeformation(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
     PKDefaultBase(plist, FElist, solution),
@@ -32,11 +32,11 @@ PrescribedVolumetricDeformation::PrescribedVolumetricDeformation(Teuchos::Parame
 {
   poro_key_ = plist.get<std::string>("porosity key","porosity");
 
-  bottom_surface_ = plist_.get<Teuchos::Array<std::string> >("bottom surface").toVector();
-  deform_region_ = plist_.get<std::string>("region");
-  deform_factor_ = plist_.get<double>("factor");
-  deform_time_start_ = plist_.get<double>("start time");
-  deform_time_end_ = plist_.get<double>("end time");
+  bottom_surface_ = plist_->get<Teuchos::Array<std::string> >("bottom surface").toVector();
+  deform_region_ = plist_->get<std::string>("region");
+  deform_factor_ = plist_->get<double>("factor");
+  deform_time_start_ = plist_->get<double>("start time");
+  deform_time_end_ = plist_->get<double>("end time");
 }
 
 // -- Setup data

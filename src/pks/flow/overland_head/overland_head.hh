@@ -31,7 +31,7 @@ namespace FlowRelations {
 class OverlandHeadFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandHeadFlow(Teuchos::ParameterList& plist,
+  OverlandHeadFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, FElist, solution),
@@ -45,8 +45,8 @@ public:
       full_jacobian_(false),
       niter_(0),
       source_only_if_unfrozen_(false) {
-    plist_.set("primary variable key", "surface_pressure");
-    plist_.set("domain name", "surface");
+    plist_->set("primary variable key", "surface_pressure");
+    plist_->set("domain name", "surface");
   }
 
   // Virtual destructor

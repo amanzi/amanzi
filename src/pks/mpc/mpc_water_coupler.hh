@@ -33,7 +33,7 @@ template<class BaseCoupler>
 class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
  public:
 
-  MPCWaterCoupler(Teuchos::ParameterList& plist,
+  MPCWaterCoupler(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                   Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<TreeVector>& soln);
 
@@ -71,7 +71,7 @@ class MPCWaterCoupler : public BaseCoupler, virtual public PKDefaultBase {
 // Constructor
 // -----------------------------------------------------------------------------
 template<class BaseCoupler>
-MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
+MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist, FElist, soln),
@@ -79,25 +79,25 @@ MPCWaterCoupler<BaseCoupler>::MPCWaterCoupler(Teuchos::ParameterList& plist,
 
   // predictor modifications
   modify_predictor_heuristic_ =
-      plist.get<bool>("modify predictor with heuristic", false);
+      plist_->get<bool>("modify predictor with heuristic", false);
 
   // preconditioner modifications
-  face_limiter_ = plist.get<double>("global face limiter", -1);
-  cap_the_cell_spurt_ = plist.get<bool>("cap the spurt using cells", false);
-  cap_the_spurt_ = plist.get<bool>("cap the spurt", false);
-  damp_the_spurt_ = plist.get<bool>("damp the spurt", false);
-  damp_and_cap_the_spurt_ = plist.get<bool>("damp and cap the spurt", false);
+  face_limiter_ = plist_->get<double>("global face limiter", -1);
+  cap_the_cell_spurt_ = plist_->get<bool>("cap the spurt using cells", false);
+  cap_the_spurt_ = plist_->get<bool>("cap the spurt", false);
+  damp_the_spurt_ = plist_->get<bool>("damp the spurt", false);
+  damp_and_cap_the_spurt_ = plist_->get<bool>("damp and cap the spurt", false);
   if (damp_and_cap_the_spurt_) {
     damp_the_spurt_ = true;
     cap_the_spurt_ = true;
   }
 
   if (cap_the_spurt_ || cap_the_cell_spurt_ || damp_the_spurt_) {
-    cap_size_ = plist.get<double>("cap over atmospheric", 100.0);
+    cap_size_ = plist_->get<double>("cap over atmospheric", 100.0);
   }
 
   if (face_limiter_ > 0 || cap_the_spurt_ || damp_the_spurt_) {
-    make_cells_consistent_ = plist.get<bool>("ensure consistent cells after face updates", false);
+    make_cells_consistent_ = plist_->get<bool>("ensure consistent cells after face updates", false);
   }
 }
 

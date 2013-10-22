@@ -31,7 +31,7 @@ void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
   MPCSurfaceSubsurfaceCoupler::setup(S);
 
   // get the flux key
-  flux_key_ = plist_.get<std::string>("flux key");
+  flux_key_ = plist_->get<std::string>("flux key");
 
   niter_ = 0;
 }

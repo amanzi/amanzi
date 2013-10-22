@@ -25,16 +25,16 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   dumped_ = false;
 
   // off-diagonal terms needed by MPCCoupledCells
-  plist_.set("conserved quantity A", "water_content");
-  plist_.set("conserved quantity B", "energy");
-  plist_.set("primary variable A", "pressure");
-  plist_.set("primary variable B", "temperature");
+  plist_->set("conserved quantity A", "water_content");
+  plist_->set("conserved quantity B", "energy");
+  plist_->set("primary variable A", "pressure");
+  plist_->set("primary variable B", "temperature");
 
-  plist_.set("mesh key", "domain");
+  plist_->set("mesh key", "domain");
   MPCCoupledCells::setup(S);
 
   // select the method used for preconditioning
-  std::string precon_string = plist_.get<std::string>("preconditioner type", "picard");
+  std::string precon_string = plist_->get<std::string>("preconditioner type", "picard");
   if (precon_string == "none") {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "block diagonal") {
@@ -51,12 +51,12 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // select the method used for nonlinear prediction
-  std::string predictor_string = plist_.get<std::string>("predictor type", "none");
+  std::string predictor_string = plist_->get<std::string>("predictor type", "none");
   if (predictor_string == "none") {
     predictor_type_ = PREDICTOR_NONE;
   } else if (predictor_string == "heuristic") {
     //    predictor_type_ = PREDICTOR_HEURISTIC;
-    //    modify_thaw_to_prev_ = plist_.get<bool>("modify thawing cells to previous temp",true);
+    //    modify_thaw_to_prev_ = plist_->get<bool>("modify thawing cells to previous temp",true);
   } else if (predictor_string == "ewc") {
     predictor_type_ = PREDICTOR_EWC;
   } else if (predictor_string == "smart ewc") {
@@ -69,7 +69,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   // create the EWC delegate if requested.
   if (precon_type_ == PRECON_EWC || precon_type_ == PRECON_SMART_EWC ||
       predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
-    ewc_ = Teuchos::rcp(new MPCDelegateEWC(plist_));
+    ewc_ = Teuchos::rcp(new MPCDelegateEWC(*plist_));
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);
     ewc_->setup(S);

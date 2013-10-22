@@ -24,7 +24,7 @@ namespace Energy {
 class ThreePhase : public TwoPhase {
 
 public:
-  ThreePhase(Teuchos::ParameterList& plist,
+  ThreePhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, FElist, solution),

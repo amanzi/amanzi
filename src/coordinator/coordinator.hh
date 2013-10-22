@@ -33,7 +33,7 @@ class UnstructuredObservations;
 class Coordinator : public Teuchos::VerboseObject<Coordinator> {
 
 public:
-  Coordinator(Teuchos::ParameterList parameter_list,
+  Coordinator(Teuchos::ParameterList& parameter_list,
               Teuchos::RCP<State>& S,
               Epetra_MpiComm* comm );
               //              Amanzi::ObservationData& output_observations);
@@ -60,8 +60,8 @@ private:
   Teuchos::RCP<TimeStepManager> tsm_;
 
   // misc setup information
-  Teuchos::ParameterList parameter_list_;
-  Teuchos::ParameterList coordinator_plist_;
+  Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
+  Teuchos::RCP<Teuchos::ParameterList> coordinator_plist_;
 
   double t0_, t1_;
   double max_dt_, min_dt_;

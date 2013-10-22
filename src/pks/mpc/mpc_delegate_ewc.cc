@@ -21,10 +21,10 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 MPCDelegateEWC::MPCDelegateEWC(Teuchos::ParameterList& plist) :
-    plist_(plist) {
+    plist_(Teuchos::rcpFromRef(plist)) {
   // set up the VerboseObject
-  std::string name = plist_.get<std::string>("PK name")+std::string(" EWC");
-  vo_ = Teuchos::rcp(new VerboseObject(name, plist_));
+  std::string name = plist_->get<std::string>("PK name")+std::string(" EWC");
+  vo_ = Teuchos::rcp(new VerboseObject(name, *plist_));
 }
 
 // -----------------------------------------------------------------------------
@@ -32,10 +32,10 @@ MPCDelegateEWC::MPCDelegateEWC(Teuchos::ParameterList& plist) :
 // -----------------------------------------------------------------------------
 void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   // Verbosity
-  std::string name = plist_.get<std::string>("PK name")+std::string(" EWC");
+  std::string name = plist_->get<std::string>("PK name")+std::string(" EWC");
 
   // Get the mesh
-  Key domain = plist_.get<std::string>("domain key", "");
+  Key domain = plist_->get<std::string>("domain key", "");
   if (domain.size() != 0) {
     mesh_ = S->GetMesh(domain);
   } else {
@@ -43,17 +43,17 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // set up a debugger
-  db_ = Teuchos::rcp(new Debugger(mesh_, name, plist_));
+  db_ = Teuchos::rcp(new Debugger(mesh_, name, *plist_));
 
   // Process the parameter list for data Keys
   if (domain.size() > 0) domain.append(1, '_');
-  pres_key_ = plist_.get<std::string>("pressure key", domain+std::string("pressure"));
-  temp_key_ = plist_.get<std::string>("temperature key",
+  pres_key_ = plist_->get<std::string>("pressure key", domain+std::string("pressure"));
+  temp_key_ = plist_->get<std::string>("temperature key",
           domain+std::string("temperature"));
-  e_key_ = plist_.get<std::string>("energy key", domain+std::string("energy"));
-  wc_key_ = plist_.get<std::string>("water content key",
+  e_key_ = plist_->get<std::string>("energy key", domain+std::string("energy"));
+  wc_key_ = plist_->get<std::string>("water content key",
           domain+std::string("water_content"));
-  cv_key_ = plist_.get<std::string>("cell volume key",
+  cv_key_ = plist_->get<std::string>("cell volume key",
           domain+std::string("cell_volume"));
   Key poro_default;
   if (domain.size() == 0) {
@@ -61,10 +61,10 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   } else {
     poro_default = "";
   }
-  poro_key_ = plist_.get<std::string>("porosity key", poro_default);
+  poro_key_ = plist_->get<std::string>("porosity key", poro_default);
 
   // Process the parameter list for methods
-  std::string precon_string = plist_.get<std::string>("preconditioner type", "none");
+  std::string precon_string = plist_->get<std::string>("preconditioner type", "none");
   if (precon_string == "none") {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "ewc") {
@@ -74,7 +74,7 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // select the method used for nonlinear prediction
-  std::string predictor_string = plist_.get<std::string>("predictor type", "none");
+  std::string predictor_string = plist_->get<std::string>("predictor type", "none");
   if (predictor_string == "none") {
     predictor_type_ = PREDICTOR_NONE;
   } else if (predictor_string == "ewc") {
@@ -86,12 +86,12 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   // Smart EWC uses a heuristic to guess when we need the EWC instead of using
   // it blindly.
   if (predictor_type_ == PREDICTOR_SMART_EWC || precon_type_ == PRECON_SMART_EWC) {
-    if (plist_.isParameter("cusp distance in T")) {
-      cusp_size_T_freezing_ = plist_.get<double>("cusp distance in T");
+    if (plist_->isParameter("cusp distance in T")) {
+      cusp_size_T_freezing_ = plist_->get<double>("cusp distance in T");
       cusp_size_T_thawing_ = cusp_size_T_freezing_;
     } else {
-      cusp_size_T_freezing_ = plist_.get<double>("cusp distance in T, freezing", 0.005);
-      cusp_size_T_thawing_ = plist_.get<double>("cusp distance in T, thawing", 0.005);
+      cusp_size_T_freezing_ = plist_->get<double>("cusp distance in T, freezing", 0.005);
+      cusp_size_T_thawing_ = plist_->get<double>("cusp distance in T, thawing", 0.005);
     }
   }
 }

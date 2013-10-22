@@ -44,7 +44,7 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
 
  public:
 
-  SurfaceBalanceSEB(Teuchos::ParameterList& plist,
+  SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution);
 
@@ -77,8 +77,6 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
   void CalculateSEB_();
 
  protected:
-  // misc setup information
-  Teuchos::ParameterList plist_;
 
   // multiple primary variables
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_esource_;

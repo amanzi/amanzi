@@ -40,32 +40,32 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   StrongMPC<MPCSurfaceSubsurfaceCoupler>::setup(S);
 
   // option to decoupled and revert to StrongMPC
-  decoupled_ = plist_.get<bool>("decoupled",false);
+  decoupled_ = plist_->get<bool>("decoupled",false);
 
   // off-diagonal terms needed by MPCCoupledCells
-  A_key_ = plist_.get<std::string>("conserved quantity A", "water_content");
-  B_key_ = plist_.get<std::string>("conserved quantity B", "energy");
-  y1_key_ = plist_.get<std::string>("primary variable A", "pressure");
-  y2_key_ = plist_.get<std::string>("primary variable B", "temperature");
+  A_key_ = plist_->get<std::string>("conserved quantity A", "water_content");
+  B_key_ = plist_->get<std::string>("conserved quantity B", "energy");
+  y1_key_ = plist_->get<std::string>("primary variable A", "pressure");
+  y2_key_ = plist_->get<std::string>("primary variable B", "temperature");
   dA_dy2_key_ = std::string("d")+A_key_+std::string("_d")+y2_key_;
   dB_dy1_key_ = std::string("d")+B_key_+std::string("_d")+y1_key_;
 
-  Key mesh_key = plist_.get<std::string>("mesh key", "domain");
+  Key mesh_key = plist_->get<std::string>("mesh key", "domain");
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_key);
 
-  Key surf_mesh_key = plist_.get<std::string>("surface mesh key", "surface");
+  Key surf_mesh_key = plist_->get<std::string>("surface mesh key", "surface");
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key);
 
   // cells to debug, subsurface
-  if (plist_.isParameter("debug cells")) {
+  if (plist_->isParameter("debug cells")) {
     dc_.clear();
-    Teuchos::Array<int> dc = plist_.get<Teuchos::Array<int> >("debug cells");
+    Teuchos::Array<int> dc = plist_->get<Teuchos::Array<int> >("debug cells");
     for (Teuchos::Array<int>::const_iterator c=dc.begin();
          c!=dc.end(); ++c) dc_.push_back(*c);
 
     // Enable a vo for each cell, allows parallel printing of debug cells.
-    if (plist_.isParameter("debug cell ranks")) {
-      Teuchos::Array<int> dc_ranks = plist_.get<Teuchos::Array<int> >("debug cell ranks");
+    if (plist_->isParameter("debug cell ranks")) {
+      Teuchos::Array<int> dc_ranks = plist_->get<Teuchos::Array<int> >("debug cell ranks");
       if (dc.size() != dc_ranks.size()) {
         Errors::Message message("Debug cell and debug cell ranks must be equal length.");
         Exceptions::amanzi_throw(message);
@@ -76,7 +76,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
         Teuchos::ParameterList vo_plist;
         vo_plist.sublist("VerboseObject");
         vo_plist.sublist("VerboseObject")
-            = plist_.sublist("VerboseObject");
+            = plist_->sublist("VerboseObject");
         vo_plist.sublist("VerboseObject").set("write on rank", *dcr);
 
         dcvo_.push_back(Teuchos::rcp(new VerboseObject(mesh->get_comm(), name_,vo_plist)));
@@ -89,15 +89,15 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // cells to debug, subsurface
-  if (plist_.isParameter("surface debug cells")) {
+  if (plist_->isParameter("surface debug cells")) {
     surf_dc_.clear();
-    Teuchos::Array<int> surf_dc = plist_.get<Teuchos::Array<int> >("surface debug cells");
+    Teuchos::Array<int> surf_dc = plist_->get<Teuchos::Array<int> >("surface debug cells");
     for (Teuchos::Array<int>::const_iterator c=surf_dc.begin();
          c!=surf_dc.end(); ++c) surf_dc_.push_back(*c);
 
     // Enable a vo for each cell, allows parallel printing of debug cells.
-    if (plist_.isParameter("surface debug cell ranks")) {
-      Teuchos::Array<int> surf_dc_ranks = plist_.get<Teuchos::Array<int> >("surface debug cell ranks");
+    if (plist_->isParameter("surface debug cell ranks")) {
+      Teuchos::Array<int> surf_dc_ranks = plist_->get<Teuchos::Array<int> >("surface debug cell ranks");
       if (surf_dc.size() != surf_dc_ranks.size()) {
         Errors::Message message("Debug cell and debug cell ranks must be equal length.");
         Exceptions::amanzi_throw(message);
@@ -108,7 +108,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
         Teuchos::ParameterList vo_plist;
         vo_plist.sublist("VerboseObject");
         vo_plist.sublist("VerboseObject")
-            = plist_.sublist("VerboseObject");
+            = plist_->sublist("VerboseObject");
         vo_plist.sublist("VerboseObject").set("write on rank", *surf_dcr);
 
         surf_dcvo_.push_back(Teuchos::rcp(new VerboseObject(surf_mesh->get_comm(), name_,vo_plist)));
@@ -121,7 +121,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // preconditioner
-  Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
+  Teuchos::ParameterList pc_sublist = plist_->sublist("Coupled PC");
   mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(
       pc_sublist, mesh, surf_mesh));
 
@@ -151,7 +151,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   mfd_surf_preconditioner_->InitPreconditioner();
 
   // select the method used for nonlinear prediction
-  std::string predictor_string = plist_.get<std::string>("predictor type", "none");
+  std::string predictor_string = plist_->get<std::string>("predictor type", "none");
   if (predictor_string == "none") {
     predictor_type_ = PREDICTOR_NONE;
   } else if (predictor_string == "ewc") {

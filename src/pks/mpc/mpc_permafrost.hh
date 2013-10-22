@@ -35,7 +35,7 @@ class MPCDelegateEWC;
 class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceCoupler> {
 
  public:
-  MPCPermafrost(Teuchos::ParameterList& plist,
+  MPCPermafrost(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                 Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, FElist, soln),

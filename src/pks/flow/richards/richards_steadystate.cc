@@ -7,16 +7,14 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-RichardsSteadyState::RichardsSteadyState(Teuchos::ParameterList& plist,
+RichardsSteadyState::RichardsSteadyState(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist, FElist, solution),
     Richards(plist, FElist, solution) {}
 
 void RichardsSteadyState::setup(const Teuchos::Ptr<State>& S) {
-  Teuchos::ParameterList bdf_plist = plist_.sublist("time integrator");
-  max_iters_ = bdf_plist.get<int>("max iterations", 10);
-
+  max_iters_ = plist_->sublist("time integrator").get<int>("max iterations", 10);
   Richards::setup(S);
 }
 

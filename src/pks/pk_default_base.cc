@@ -17,10 +17,10 @@ namespace Amanzi {
 
 void PKDefaultBase::setup(const Teuchos::Ptr<State>& S) {
   // THIS MAY BE CALLED MORE THAN ONCE!
-  name_ = plist_.get<std::string>("PK name");
+  name_ = plist_->get<std::string>("PK name");
 
   // set up the VerboseObject
-  vo_ = Teuchos::rcp(new VerboseObject(name_, plist_));
+  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
 }
 
 

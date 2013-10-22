@@ -28,7 +28,7 @@ class PrescribedVolumetricDeformation : public PKPhysicalBase {
 
  public:
 
-  PrescribedVolumetricDeformation(Teuchos::ParameterList& plist,
+  PrescribedVolumetricDeformation(const Teuchos::RCP<Teuchos::ParameterList>& plist,
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& solution);
 

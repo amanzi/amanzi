@@ -40,7 +40,7 @@ friend class MPCCoupledFlowEnergy;
 
 public:
   // Constructors.
-  Permafrost(Teuchos::ParameterList& plist,
+  Permafrost(const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, FElist, solution),

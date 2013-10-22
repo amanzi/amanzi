@@ -24,12 +24,12 @@ namespace Energy {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-TwoPhase::TwoPhase(Teuchos::ParameterList& plist,
+TwoPhase::TwoPhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist, FElist, solution),
     EnergyBase(plist, FElist, solution) {
-  if (!plist_.isParameter("flux key")) plist_.set("flux key", "darcy_flux");
+  if (!plist_->isParameter("flux key")) plist_->set("flux key", "darcy_flux");
 }
 
 // -------------------------------------------------------------
@@ -41,7 +41,7 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- energy, the conserved quantity
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList ee_plist = plist_.sublist("energy evaluator");
+  Teuchos::ParameterList ee_plist = plist_->sublist("energy evaluator");
   ee_plist.set("energy key", energy_key_);
   Teuchos::RCP<TwoPhaseEnergyEvaluator> ee =
     Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_plist));
@@ -50,7 +50,7 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList enth_plist = plist_.sublist("enthalpy evaluator");
+  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", enthalpy_key_);
   Teuchos::RCP<EnthalpyEvaluator> enth =
     Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
@@ -60,7 +60,7 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
-    plist_.sublist("thermal conductivity evaluator");
+    plist_->sublist("thermal conductivity evaluator");
   Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhaseEvaluator> tcm =
     Teuchos::rcp(new EnergyRelations::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);

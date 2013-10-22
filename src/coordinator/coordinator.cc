@@ -34,18 +34,18 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 namespace Amanzi {
 
-Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
+Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
                          Teuchos::RCP<State>& S,
                          Epetra_MpiComm* comm ) :
-  parameter_list_(parameter_list),
-  S_(S),
-  comm_(comm),
-  restart_(false) {
+    parameter_list_(Teuchos::rcpFromRef(parameter_list)),
+    S_(S),
+    comm_(comm),
+    restart_(false) {
   coordinator_init();
 
   setLinePrefix(Amanzi::VerbosityLevel::verbosityHeader("Coordinator"));
   setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
-  Teuchos::readVerboseObjectSublist(&parameter_list_,this);
+  Teuchos::readVerboseObjectSublist(&*parameter_list_,this);
   // get the fancy output ??
   verbosity_ = getVerbLevel();
   out_ = getOStream();
@@ -55,30 +55,30 @@ Coordinator::Coordinator(Teuchos::ParameterList parameter_list,
 };
 
 void Coordinator::coordinator_init() {
-  coordinator_plist_ = parameter_list_.sublist("coordinator");
+  coordinator_plist_ = Teuchos::rcpFromRef(parameter_list_->sublist("coordinator"));
   read_parameter_list();
 
   // create the top level PK
-  Teuchos::ParameterList pks_list = parameter_list_.sublist("PKs");
-  Teuchos::ParameterList::ConstIterator pk_item = pks_list.begin();
-  const std::string &pk_name = pks_list.name(pk_item);
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(parameter_list_, "PKs");
+  Teuchos::ParameterList::ConstIterator pk_item = pks_list->begin();
+  const std::string &pk_name = pks_list->name(pk_item);
 
   // create the solution
   soln_ = Teuchos::rcp(new TreeVector());
 
   // create the pk
   PKFactory pk_factory;
-  Teuchos::ParameterList pk_list = pks_list.sublist(pk_name);
-  pk_list.set("PK name", pk_name);
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
+  pk_list->set("PK name", pk_name);
   pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
   pk_->setup(S_.ptr());
 
   // create the checkpointing
-  Teuchos::ParameterList chkp_plist = parameter_list_.sublist("checkpoint");
+  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
   checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
 
   // create the observations
-  Teuchos::ParameterList observation_plist = parameter_list_.sublist("observations");
+  Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
   observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
           Teuchos::null, comm_));
 
@@ -139,7 +139,7 @@ void Coordinator::initialize() {
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->GetMesh("surface");
 
     std::string plist_name = "visualization surface";
-    Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
+    Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
     Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
     vis->CreateFiles();
@@ -158,11 +158,11 @@ void Coordinator::initialize() {
     } else {
       std::string plist_name = "visualization "+mesh->first;
       // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_.isSublist(plist_name)) {
+      if ((mesh->first == "domain") && !parameter_list_->isSublist(plist_name)) {
         plist_name = "visualization";
       }
 
-      Teuchos::ParameterList& vis_plist = parameter_list_.sublist(plist_name);
+      Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
       Teuchos::RCP<Visualization> vis =
         Teuchos::rcp(new Visualization(vis_plist, comm_));
       vis->set_mesh(mesh->second.first);
@@ -173,10 +173,10 @@ void Coordinator::initialize() {
 }
 
 void Coordinator::read_parameter_list() {
-  t0_ = coordinator_plist_.get<double>("start time");
-  t1_ = coordinator_plist_.get<double>("end time");
-  string t0_units = coordinator_plist_.get<string>("start time units", "s");
-  string t1_units = coordinator_plist_.get<string>("end time units", "s");
+  t0_ = coordinator_plist_->get<double>("start time");
+  t1_ = coordinator_plist_->get<double>("end time");
+  string t0_units = coordinator_plist_->get<string>("start time units", "s");
+  string t1_units = coordinator_plist_->get<string>("end time units", "s");
 
   if (t0_units == "s") {
     // internal units in s
@@ -200,15 +200,15 @@ void Coordinator::read_parameter_list() {
     Exceptions::amanzi_throw(message);
   }
 
-  max_dt_ = coordinator_plist_.get<double>("max time step size", 1.0e99);
-  min_dt_ = coordinator_plist_.get<double>("min time step size", 1.0e-12);
-  cycle0_ = coordinator_plist_.get<int>("start cycle",0);
-  cycle1_ = coordinator_plist_.get<int>("end cycle",-1);
+  max_dt_ = coordinator_plist_->get<double>("max time step size", 1.0e99);
+  min_dt_ = coordinator_plist_->get<double>("min time step size", 1.0e-12);
+  cycle0_ = coordinator_plist_->get<int>("start cycle",0);
+  cycle1_ = coordinator_plist_->get<int>("end cycle",-1);
 
   // restart control
-  restart_ = coordinator_plist_.isParameter("restart from checkpoint file");
+  restart_ = coordinator_plist_->isParameter("restart from checkpoint file");
   if (restart_) {
-    restart_filename_ = coordinator_plist_.get<std::string>("restart from checkpoint file");
+    restart_filename_ = coordinator_plist_->get<std::string>("restart from checkpoint file");
     // likely should ensure the file exists here? --etc
   }
 }

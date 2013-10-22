@@ -22,15 +22,15 @@ namespace Deform {
 
 using namespace Amanzi::AmanziMesh;
 
-PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& plist,
+PrescribedDeformation::PrescribedDeformation(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
     PKDefaultBase(plist, FElist, solution),
     PKPhysicalBase(plist, FElist, solution),
     prescribed_deformation_case_(1)
 {
-  prescribed_deformation_case_ = plist.get<int>("deformation function",1);
-  poro_key_ = plist.get<std::string>("porosity key","porosity");
+  prescribed_deformation_case_ = plist_->get<int>("deformation function",1);
+  poro_key_ = plist_->get<std::string>("porosity key","porosity");
 }
 
 // -- Setup data
@@ -125,11 +125,11 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
   // initialize functional parameters
   if (prescribed_deformation_case_ >= 2 &&
       prescribed_deformation_case_ <= 5) {
-    tmax_ = plist_.get<double>("gaussian deformation time", 3.e7);
-    sigma_ = plist_.get<double>("gaussian deformation sigma", 1.0);
-    mag_ = plist_.get<double>("gaussian deformation amplitude", 3.0);
-    z0_ = plist_.get<double>("initial height coordinate", 4.0);
-    maxpert_ = plist_.get<double>("max magnitude perturbation", 0.0);
+    tmax_ = plist_->get<double>("gaussian deformation time", 3.e7);
+    sigma_ = plist_->get<double>("gaussian deformation sigma", 1.0);
+    mag_ = plist_->get<double>("gaussian deformation amplitude", 3.0);
+    z0_ = plist_->get<double>("initial height coordinate", 4.0);
+    maxpert_ = plist_->get<double>("max magnitude perturbation", 0.0);
   }
 }
 

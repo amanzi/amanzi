@@ -28,7 +28,7 @@ namespace Energy {
 class TwoPhase : public EnergyBase {
 
 public:
-  TwoPhase(Teuchos::ParameterList& plist,
+  TwoPhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution);
 

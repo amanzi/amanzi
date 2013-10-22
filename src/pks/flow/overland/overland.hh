@@ -31,7 +31,7 @@ namespace FlowRelations {
 class OverlandFlow : public PKPhysicalBDFBase {
 
 public:
-  OverlandFlow(Teuchos::ParameterList& plist,
+  OverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                Teuchos::ParameterList& FElist,
                const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, FElist, solution),
@@ -41,8 +41,8 @@ public:
       perm_update_required_(true),
       update_flux_(UPDATE_FLUX_ITERATION),
       full_jacobian_(false) {
-    plist_.set("primary variable key", "ponded_depth");
-    plist_.set("domain name", "surface");
+    plist_->set("primary variable key", "ponded_depth");
+    plist_->set("domain name", "surface");
   }
 
   // Virtual destructor

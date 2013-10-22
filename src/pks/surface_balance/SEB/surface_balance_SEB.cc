@@ -40,7 +40,7 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& plist,
+SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution)  :
     PKPhysicalBase(plist,FElist,solution),
@@ -48,26 +48,29 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& plist,
 
   // set up additional primary variables
   // -- surface energy source
-  Teuchos::ParameterList& esource_sublist = FElist.sublist("surface_conducted_energy_source");
+  Teuchos::ParameterList& esource_sublist =
+      FElist.sublist("surface_conducted_energy_source");
   esource_sublist.set("evaluator name", "surface_conducted_energy_source");
   esource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface mass source
-  Teuchos::ParameterList& wsource_sublist = FElist.sublist("surface_mass_source");
+  Teuchos::ParameterList& wsource_sublist =
+      FElist.sublist("surface_mass_source");
   wsource_sublist.set("evaluator name", "surface_mass_source");
   wsource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface energy temperature
-  Teuchos::ParameterList& wtemp_sublist = FElist.sublist("surface_mass_source_temperature");
+  Teuchos::ParameterList& wtemp_sublist =
+      FElist.sublist("surface_mass_source_temperature");
   wtemp_sublist.set("evaluator name", "surface_mass_source_temperature");
   wtemp_sublist.set("field evaluator type", "primary variable");
 
 
   // timestep size
-  dt_ = plist.get<double>("max time step", 1.e99);
+  dt_ = plist_->get<double>("max time step", 1.e99);
 
   // min wind speed
-  min_wind_speed_ = plist.get<double>("minimum wind speed", 0.5);
+  min_wind_speed_ = plist_->get<double>("minimum wind speed", 0.5);
 }
 
 
