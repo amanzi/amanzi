@@ -1,8 +1,4 @@
 # -*- mode: cmake -*-
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
@@ -17,8 +13,6 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 add_library(pk_energy_three_phase three_phase_energy_evaluator.cc
   three_phase.cc)
-
-# WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 
 # if ( BUILD_TESTS )
 #   set(pk_factory -Wl,--whole-archive pk_factory -Wl,--no-whole-archive)

@@ -14,10 +14,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,WRMPermafrostEvaluator> WRMPermafrostEvaluator::factory_("permafrost WRM");
-
-
 /* --------------------------------------------------------------------------------
   Constructor from just a ParameterList, reads WRMs and permafrost models from list.
  -------------------------------------------------------------------------------- */

@@ -35,8 +35,6 @@ namespace Flow {
 
 #define DEBUG_FLAG 1
 
-RegisteredPKFactory<OverlandFlow> OverlandFlow::reg_("overland flow");
-
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------

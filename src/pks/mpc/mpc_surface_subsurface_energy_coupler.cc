@@ -26,9 +26,6 @@ namespace Amanzi {
 
 #define DEBUG_FLAG 0
 
-RegisteredPKFactory<MPCSurfaceSubsurfaceEnergyCoupler>
-MPCSurfaceSubsurfaceEnergyCoupler::reg_("surface-subsurface energy coupler");
-
 // applies preconditioner to u and returns the result in Pu
 void MPCSurfaceSubsurfaceEnergyCoupler::precon(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
@@ -54,7 +51,7 @@ void MPCSurfaceSubsurfaceEnergyCoupler::precon(Teuchos::RCP<const TreeVector> u,
   }
 
   // Apply the combined preconditioner
-  mfd_preconditioner_->ApplyInverse(*domain_u_new, domain_Pu.ptr());
+  mfd_preconditioner_->ApplyInverse(*domain_u_new, *domain_Pu);
 
 #if DEBUG_FLAG
   Teuchos::OSTab tab = getOSTab();

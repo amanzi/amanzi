@@ -16,9 +16,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<EOS,EOSIce> EOSIce::factory_("ice");
-
 EOSIce::EOSIce(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist),
 

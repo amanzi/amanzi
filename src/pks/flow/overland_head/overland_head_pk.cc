@@ -40,8 +40,6 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-RegisteredPKFactory<OverlandHeadFlow> OverlandHeadFlow::reg_("overland flow, head basis");
-
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------

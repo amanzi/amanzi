@@ -7,8 +7,8 @@
    Self-registering factory for EOS implementations.
    ------------------------------------------------------------------------- */
 
-#ifndef PK_ENERGY_RELATIONS_TC_FACTORY_HH_
-#define PK_ENERGY_RELATIONS_TC_FACTORY_HH_
+#ifndef PK_ENERGY_RELATIONS_TC_THREEPHASE_FACTORY_HH_
+#define PK_ENERGY_RELATIONS_TC_THREEPHASE_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

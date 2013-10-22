@@ -7,8 +7,6 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-RegisteredPKFactory<RichardsSteadyState> RichardsSteadyState::reg_("richards steady state");
-
 RichardsSteadyState::RichardsSteadyState(Teuchos::ParameterList& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :

@@ -9,10 +9,6 @@ add_subdirectory(models)
 
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
 
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 add_library(flow_relations_wrm
   wrm_partition.cc
   wrm_permafrost_evaluator.cc
@@ -21,7 +17,4 @@ add_library(flow_relations_wrm
   pc_liquid_evaluator.cc
   pc_ice_evaluator.cc
   )
-
-
-
 

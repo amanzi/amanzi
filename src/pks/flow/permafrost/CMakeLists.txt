@@ -1,8 +1,4 @@
 # -*- mode: cmake -*-
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/bc_factory)
@@ -14,11 +10,6 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
 add_library(pk_flow_permafrost permafrost_pk.cc permafrost_water_content.cc)
-
-# shouldn't this get picked up from ../constitutive_relations/eos/CMakeLists.txt?
-#WHOLE_ARCHIVE(flow_relations_eos)
-#WHOLE_ARCHIVE(flow_relations_wrm)
-#WHOLE_ARCHIVE(pk_factory)
 
 # if ( BUILD_TESTS )
 #     # Add UnitTest includes

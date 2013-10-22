@@ -15,10 +15,6 @@
 namespace Amanzi {
 namespace Relations {
 
-// registry of method
-Utils::RegisteredFactory<ViscosityRelation,ViscosityConstant>
-ViscosityConstant::factory_("constant");
-
 ViscosityConstant::ViscosityConstant(Teuchos::ParameterList& visc_plist) :
     visc_plist_(visc_plist) {
   InitializeFromPlist_();

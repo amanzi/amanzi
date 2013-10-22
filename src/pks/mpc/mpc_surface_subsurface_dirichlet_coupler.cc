@@ -26,9 +26,6 @@ namespace Amanzi {
 
 #define DEBUG_FLAG 1
 
-RegisteredPKFactory<MPCSurfaceSubsurfaceDirichletCoupler>
-MPCSurfaceSubsurfaceDirichletCoupler::reg_("surface-subsurface Dirichlet coupler");
-
 // -------------------------------------------------------------
 // Apply preconditioner to u and returns the result in Pu
 // -------------------------------------------------------------
