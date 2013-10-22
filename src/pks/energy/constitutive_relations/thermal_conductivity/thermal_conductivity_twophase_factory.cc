@@ -14,9 +14,6 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-// explicity instantitate the static data of Factory<EOS>
-template<> Utils::Factory<ThermalConductivityTwoPhase>::map_type* Utils::Factory<ThermalConductivityTwoPhase>::map_;
-
 // method for instantiating implementations
 Teuchos::RCP<ThermalConductivityTwoPhase> ThermalConductivityTwoPhaseFactory::createThermalConductivityModel(Teuchos::ParameterList& plist) {
   std::string tc_typename = plist.get<std::string>("thermal conductivity type");

@@ -14,9 +14,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<FieldEvaluator,PCIceEvaluator> PCIceEvaluator::factory_("capillary pressure, water over ice");
-
 PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 

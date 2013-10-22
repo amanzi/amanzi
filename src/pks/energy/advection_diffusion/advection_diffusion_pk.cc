@@ -17,8 +17,6 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<AdvectionDiffusion> AdvectionDiffusion::reg_("advection-diffusion energy");
-
 void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
 
   // require fields

@@ -15,10 +15,6 @@ namespace Flow {
 namespace FlowRelations {
 
 
-// registry of method
-Utils::RegisteredFactory<WRMPermafrostModel,WRMFPDPermafrostModel> WRMFPDPermafrostModel::factory_("fpd permafrost model");
-
-
 // required methods from the base class
 // sats[0] = sg, sats[1] = sl, sats[2] = si
 void

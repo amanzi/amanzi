@@ -14,8 +14,6 @@
 namespace Amanzi {
 namespace Relations {
 
-Utils::RegisteredFactory<EOS,EOSVaporInGas> EOSVaporInGas::factory_("vapor in gas");
-
 EOSVaporInGas::EOSVaporInGas(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {
   InitializeFromPlist_();
 }

@@ -33,8 +33,6 @@ subtree:
 
 namespace Amanzi {
 
-RegisteredPKFactory<MPCPermafrost> MPCPermafrost::reg_("permafrost model");
-
 // -------------------------------------------------------------
 // Setup data
 // -------------------------------------------------------------

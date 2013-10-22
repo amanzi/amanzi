@@ -26,8 +26,6 @@
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<ConstantTemperature> ConstantTemperature::reg_("constant temperature energy");
-
 void ConstantTemperature::setup(const Teuchos::Ptr<State>& S) {
   PKPhysicalBDFBase::setup(S);
 

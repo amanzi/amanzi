@@ -19,8 +19,6 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-Utils::RegisteredFactory<IEM,IEMLinear> IEMLinear::factory_("linear");
-
 IEMLinear::IEMLinear(Teuchos::ParameterList& plist) :
     plist_(plist) {
   InitializeFromPlist_();

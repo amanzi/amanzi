@@ -20,9 +20,6 @@ with freezing.
 
 namespace Amanzi {
 
-RegisteredPKFactory<MPCSubsurface> MPCSubsurface::reg_("subsurface permafrost");
-
-
 // -- Initialize owned (dependent) variables.
 void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   dumped_ = false;

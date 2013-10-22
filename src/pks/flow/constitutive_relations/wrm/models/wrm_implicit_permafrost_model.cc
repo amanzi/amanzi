@@ -15,10 +15,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// registry of method
-Utils::RegisteredFactory<WRMPermafrostModel,WRMImplicitPermafrostModel> WRMImplicitPermafrostModel::factory_("permafrost model");
-
-
 // Constructor
 WRMImplicitPermafrostModel::WRMImplicitPermafrostModel(Teuchos::ParameterList& plist) :
     WRMPermafrostModel(plist) {

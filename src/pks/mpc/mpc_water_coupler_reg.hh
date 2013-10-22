@@ -12,9 +12,6 @@ MPCSurfaceSubsurfaceFluxCoupler.
 
 ------------------------------------------------------------------------- */
 
-#include "MatrixMFD_TPFA.hh"
-#include "pk_physical_bdf_base.hh"
-
 #include "mpc_surface_subsurface_dirichlet_coupler.hh"
 #include "mpc_surface_subsurface_flux_coupler.hh"
 #include "mpc_water_coupler.hh"

@@ -14,10 +14,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-// explicity instantitate the static data of Factory<WRM>
-//template<> Factory<WRM>::map_type* Factory<WRM>::map_;
-template<> Utils::Factory<WRM>::map_type* Utils::Factory<WRM>::map_;
-
 // method for instantiating WRM implementations
 Teuchos::RCP<WRM> WRMFactory::createWRM(Teuchos::ParameterList& plist) {
   std::string wrm_typename = plist.get<std::string>("WRM Type");

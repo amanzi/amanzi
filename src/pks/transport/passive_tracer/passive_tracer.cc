@@ -14,8 +14,6 @@
 namespace Amanzi {
 namespace Transport {
 
-RegisteredPKFactory<PassiveTracer> PassiveTracer::reg_("passive tracer transport");
-
 PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
                              Teuchos::ParameterList& FElist,
                              const Teuchos::RCP<TreeVector>& solution) :

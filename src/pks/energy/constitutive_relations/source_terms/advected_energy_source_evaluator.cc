@@ -12,8 +12,6 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-Utils::RegisteredFactory<FieldEvaluator,AdvectedEnergySourceEvaluator> AdvectedEnergySourceEvaluator::factory_("advected energy source");
-
 // constructor format for all derived classes
 AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)

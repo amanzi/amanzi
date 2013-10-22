@@ -22,10 +22,6 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-// registry of method
-Utils::RegisteredFactory<ThermalConductivityTwoPhase,ThermalConductivityTwoPhaseWetDry>
-        ThermalConductivityTwoPhaseWetDry::factory_("two-phase wet/dry");
-
 // constructor
 ThermalConductivityTwoPhaseWetDry::ThermalConductivityTwoPhaseWetDry(
       Teuchos::ParameterList& plist) : plist_(plist) {

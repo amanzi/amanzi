@@ -16,8 +16,6 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 
 namespace Amanzi {
 
-RegisteredPKFactory<WeakMPC> WeakMPC::reg_("weak MPC");
-
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------

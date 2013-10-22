@@ -13,8 +13,6 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-Utils::RegisteredFactory<WRM,WRMVanGenuchten> WRMVanGenuchten::factory_("van Genuchten");
-
 /* ******************************************************************
  * Setup fundamental parameters for this model.
  ****************************************************************** */

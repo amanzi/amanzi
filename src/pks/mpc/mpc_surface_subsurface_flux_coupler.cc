@@ -26,9 +26,6 @@ namespace Amanzi {
 
 #define DEBUG_FLAG 1
 
-RegisteredPKFactory<MPCSurfaceSubsurfaceFluxCoupler>
-MPCSurfaceSubsurfaceFluxCoupler::reg_("surface-subsurface flux coupler");
-
 // -- Setup data.
 void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
   MPCSurfaceSubsurfaceCoupler::setup(S);

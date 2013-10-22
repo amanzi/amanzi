@@ -15,8 +15,6 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<ThreePhase> ThreePhase::reg_("three-phase energy");
-
 // -------------------------------------------------------------
 // Create the physical evaluators for water content, water
 // retention, rel perm, etc, that are specific to Richards.

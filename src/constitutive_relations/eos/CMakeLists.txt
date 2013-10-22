@@ -5,10 +5,6 @@
 #    Equations of state
 #
 
-MACRO(WHOLE_ARCHIVE inlib)
-  SET(${inlib} -Wl,--whole-archive ${inlib} -Wl,--no-whole-archive)
-ENDMACRO(WHOLE_ARCHIVE inlib)
-
 include_directories(${ATS_SOURCE_DIR}/src/factory)
 
 add_library(relations_eos
@@ -27,7 +23,6 @@ add_library(relations_eos
  )
 
 
-
 #add_library(relations_eos_factory eos_factory.cc)
 #add_library(relations_eos eos_water.cc eos_ideal_gas.cc )
 
@@ -37,9 +32,6 @@ add_library(relations_eos
 # symbols to initialize the BSS data, and therefore do not get sucked
 # into the executable?  To get them, we need the whole archive...
 #
-# this is g++ specific and needs to be generalized!
-#WHOLE_ARCHIVE(relations_eos_factory)
-WHOLE_ARCHIVE(relations_eos)
 
 # if ( BUILD_TESTS )
 #     include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/eos)

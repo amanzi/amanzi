@@ -16,11 +16,6 @@ namespace Amanzi {
 namespace Energy {
 namespace EnergyRelations {
 
-// registry of method
-Utils::RegisteredFactory<ThermalConductivityThreePhase,
-                         ThermalConductivityThreePhaseWetDry>
-        ThermalConductivityThreePhaseWetDry::factory_("three-phase wet/dry");
-
 ThermalConductivityThreePhaseWetDry::ThermalConductivityThreePhaseWetDry(
       Teuchos::ParameterList& plist) : plist_(plist) {
   InitializeFromPlist_();
