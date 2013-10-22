@@ -47,11 +47,8 @@ protected:
   virtual void ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& enth);
 
-  // -- Source terms
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
                            const Teuchos::Ptr<CompositeVector>& f);
-  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
-
 
  protected:
   // models for evaluating enthalpy manually... remove me once boundary faces get in

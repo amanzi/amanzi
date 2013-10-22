@@ -255,22 +255,18 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
-  // -- source term evaluator
-  if (plist_.isSublist("source evaluator")) {
-    is_source_term_ = true;
+  // -- evaluator for source term
+  is_source_term_ = plist_.get<bool>("source term");
+  if (is_source_term_) {
+    // source term itself [m/s]
+    S->RequireField("surface_mass_source")->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("surface_mass_source");
 
-    Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
-    source_only_if_unfrozen_ = source_plist.get<bool>("source only if unfrozen",false);
-    if (source_only_if_unfrozen_) {
-      S->RequireScalar("air_temperature");
-    }
-
-    source_plist.set("evaluator name", "overland_source");
-    S->RequireField("overland_source")->SetMesh(mesh_)
-        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-    Teuchos::RCP<FieldEvaluator> source_evaluator =
-        Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
-    S->SetFieldEvaluator("overland_source", source_evaluator);
+    // density of incoming water [mol/m^3]
+    S->RequireField("surface_source_molar_density")->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("surface_source_molar_density");
   }
 
   // -- water content

@@ -212,17 +212,12 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
-  // -- source term evaluator
-  if (plist_.isSublist("source evaluator")) {
-    is_source_term_ = true;
-
-    Teuchos::ParameterList source_plist = plist_.sublist("source evaluator");
-    source_plist.set("evaluator name", "overland_source");
-    S->RequireField("overland_source")->SetMesh(mesh_)
-        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-    Teuchos::RCP<FieldEvaluator> source_evaluator =
-        Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
-    S->SetFieldEvaluator("overland_source", source_evaluator);
+  // -- evaluator for source term
+  is_source_term_ = plist_.get<bool>("source term");
+  if (is_source_term_) {
+    S->RequireField("surface_mass_source")->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("surface_mass_source");
   }
 
   // -- conductivity evaluator

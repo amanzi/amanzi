@@ -16,8 +16,8 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
 #include "unfrozen_effective_depth_evaluator.hh"
-#include "unfrozen_fraction_evaluator.hh"
 #include "unfrozen_fraction_model.hh"
+#include "unfrozen_fraction_evaluator.hh"
 #include "icy_height_model.hh"
 #include "icy_height_evaluator.hh"
 
@@ -121,6 +121,15 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
+
+  // -- unfrozne fraction
+  S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList uf_plist = plist_.sublist("unfrozen fraction evaluator");
+  Teuchos::RCP<FlowRelations::UnfrozenFractionEvaluator> uf_eval =
+      Teuchos::rcp(new FlowRelations::UnfrozenFractionEvaluator(uf_plist));
+  uf_model_ = uf_eval->get_Model();
+  S->SetFieldEvaluator("unfrozen_fraction", uf_eval);
 
   // -- overwrite the upwinding, which was created with ponded_depth, to use
   // -- unfrozen ponded depth.

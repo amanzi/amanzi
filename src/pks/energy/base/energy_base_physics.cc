@@ -119,5 +119,49 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_->ComputeNegativeResidual(*temp, g);
 };
 
+
+// ---------------------------------------------------------------------
+// Add in energy source, which are accumulated by a single evaluator.
+// ---------------------------------------------------------------------
+void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
+        const Teuchos::Ptr<CompositeVector>& g) {
+  // external sources of energy
+  if (is_source_term_) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
+
+    // Add in external source term.
+    S_next_->GetFieldEvaluator(source_key_)
+        ->HasFieldChanged(S_next_.ptr(), name_);
+    S_inter_->GetFieldEvaluator(source_key_)
+        ->HasFieldChanged(S_inter_.ptr(), name_);
+
+    const Epetra_MultiVector& source0 =
+        *S_inter_->GetFieldData(source_key_)->ViewComponent("cell",false);
+    const Epetra_MultiVector& source1 =
+        *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
+
+    unsigned int ncells = g_c.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      g_c[0][c] -= 0.5* (source0[0][c] + source1[0][c]);
+    }
+  }
+}
+
+
+void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
+  if (is_source_term_ && S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
+    std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
+
+    S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
+    const Epetra_MultiVector& dsource_dT =
+        *S->GetFieldData(dsource_dT_key_)->ViewComponent("cell",false);
+    unsigned int ncells = dsource_dT.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      Acc_cells[c] -= 0.5 * dsource_dT[0][c];
+    }
+  }
+}
+
 } //namespace Energy
 } //namespace Amanzi

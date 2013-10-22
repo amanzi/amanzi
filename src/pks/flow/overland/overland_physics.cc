@@ -88,15 +88,15 @@ void OverlandFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
 
   if (is_source_term_) {
     // Add in external source term.
-    S_next_->GetFieldEvaluator("overland_source")
+    S_next_->GetFieldEvaluator("surface_mass_source")
         ->HasFieldChanged(S_next_.ptr(), name_);
-    S_inter_->GetFieldEvaluator("overland_source")
+    S_inter_->GetFieldEvaluator("surface_mass_source")
         ->HasFieldChanged(S_inter_.ptr(), name_);
 
     const Epetra_MultiVector& source0 =
-        *S_inter_->GetFieldData("overland_source")->ViewComponent("cell",false);
+        *S_inter_->GetFieldData("surface_mass_source")->ViewComponent("cell",false);
     const Epetra_MultiVector& source1 =
-        *S_next_->GetFieldData("overland_source")->ViewComponent("cell",false);
+        *S_next_->GetFieldData("surface_mass_source")->ViewComponent("cell",false);
 
     //  --   g <-- g - 0.5 * (cv*h)_t0
     g->ViewComponent("cell",false)->Multiply(-0.5, cv0, source0, 1.);

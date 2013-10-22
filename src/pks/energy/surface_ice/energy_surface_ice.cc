@@ -98,32 +98,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new EnergyRelations::ThermalConductivitySurfaceEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
-  // source terms
-  // -- external source of energy
-  if (plist_.isSublist("energy source evaluator")) {
-    Teuchos::ParameterList source_plist = plist_.sublist("energy source evaluator");
-    source_plist.set("evaluator name", "surface_energy_source");
-    is_energy_source_term_ = true;
-    S->RequireField("surface_energy_source")->SetMesh(mesh_)
-        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-    Teuchos::RCP<FieldEvaluator> source_evaluator =
-        Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
-    S->SetFieldEvaluator("surface_energy_source", source_evaluator);
-  }
-
-  // -- external mass source, plus air temp: this provides enthalpy
-  is_mass_source_term_ = S->HasFieldEvaluator("overland_source");
-  if (is_mass_source_term_) {
-    S->RequireScalar("air_temperature");
-    mass_source_only_if_unfrozen_ = plist_.get<bool>("mass source only if unfrozen", false);
-  }
-
-  is_air_conductivity_ = plist_.isParameter("air to surface conductivity");
-  if (is_air_conductivity_) {
-    K_surface_to_air_ = plist_.get<double>("air to surface conductivity");
-    S->RequireScalar("air_temperature");
-  }
-
   // -- coupling to subsurface
   coupled_to_subsurface_via_temp_ =
       plist_.get<bool>("coupled to subsurface via temperature", false);
@@ -255,129 +229,13 @@ void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S
 // -------------------------------------------------------------
 void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
+  // This covers conduction souce terms (from air) and advection of enthalpy
+  // in the mass source term.
+  EnergyBase::AddSources_(S,g);
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
-
-  // Note that energy sources are based upon face areas, which are not cell volumes.
-  Teuchos::RCP<const Epetra_MultiVector> fa0;
-  Teuchos::RCP<const Epetra_MultiVector> fa1;
-  if (standalone_mode_) {
-    fa0 = S_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
-    fa1 = S_next_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
-  } else {
-    fa0 = S_->GetFieldData("surface_3d_cell_volume")
-        ->ViewComponent("cell",false);
-    fa1 = S_next_->GetFieldData("surface_3d_cell_volume")
-        ->ViewComponent("cell",false);
-  }
-
-  // external sources of energy
-  if (is_energy_source_term_) {
-    // Add in external source term.
-    S_next_->GetFieldEvaluator("surface_energy_source")
-        ->HasFieldChanged(S_next_.ptr(), name_);
-    S_inter_->GetFieldEvaluator("surface_energy_source")
-        ->HasFieldChanged(S_inter_.ptr(), name_);
-
-    const Epetra_MultiVector& source0 =
-        *S_inter_->GetFieldData("surface_energy_source")->ViewComponent("cell",false);
-    const Epetra_MultiVector& source1 =
-        *S_next_->GetFieldData("surface_energy_source")->ViewComponent("cell",false);
-
-    unsigned int ncells = g_c.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= 0.5* ((*fa0)[0][c] * source0[0][c] + (*fa1)[0][c] * source1[0][c]);
-    }
-
-#if DEBUG_FLAG
-    db_->WriteVector("  res_source Q_E", g);
-#endif
-
-  }
-
-  // external sources of mass, bringing enthalpy
-  if (is_mass_source_term_) {
-    const double& T_air1 = *S_next_->GetScalarData("air_temperature");
-
-    if (!mass_source_only_if_unfrozen_ || (T_air1 > 273.15)) {
-      // calculate enthalpy of incoming water
-      const double& patm = *S->GetScalarData("atmospheric_pressure");
-      double time = S_next_->time();
-      double n1 = eos_liquid_->MolarDensity(T_air1, patm);
-      double u1 = iem_liquid_->InternalEnergy(T_air1);
-      double enth1 = u1;// + patm / n1;
-
-      // get enthalpy of outgoing water
-      const Epetra_MultiVector& enth_surf = *S->GetFieldData(enthalpy_key_)
-          ->ViewComponent("cell",false);
-
-      // get the source in mols / s
-      S_next_->GetFieldEvaluator("overland_source")
-          ->HasFieldChanged(S_next_.ptr(), name_);
-      S_inter_->GetFieldEvaluator("overland_source")
-          ->HasFieldChanged(S_inter_.ptr(), name_);
-      const Epetra_MultiVector& source0 =
-          *S_inter_->GetFieldData("overland_source")->ViewComponent("cell",false);
-      const Epetra_MultiVector& source1 =
-          *S_next_->GetFieldData("overland_source")->ViewComponent("cell",false);
-
-      // mass source done in cell_volume (rain falls straight down!)
-      const Epetra_MultiVector& cv1 =
-          *S_next_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
-      const Epetra_MultiVector& cv0 =
-          *S_inter_->GetFieldData("surface_cell_volume")->ViewComponent("cell",false);
-
-      // External source term is in [m water / s], not in [mols / s].  We assume
-      // it comes in at the surface density, i.e. the surface temperature.  This
-      // may need to be changed.
-      S_next_->GetFieldEvaluator("surface_molar_density_liquid")
-          ->HasFieldChanged(S_next_.ptr(), name_);
-      S_inter_->GetFieldEvaluator("surface_molar_density_liquid")
-          ->HasFieldChanged(S_inter_.ptr(), name_);
-
-      const Epetra_MultiVector& nliq0 =
-          *S_inter_->GetFieldData("surface_molar_density_liquid")
-          ->ViewComponent("cell",false);
-      const Epetra_MultiVector& nliq1 =
-          *S_next_->GetFieldData("surface_molar_density_liquid")
-          ->ViewComponent("cell",false);
-
-      unsigned int ncells = g_c.MyLength();
-      for (unsigned int c=0; c!=ncells; ++c) {
-        double molar_flux = 0.5 * (cv0[0][c] * source0[0][c] * nliq0[0][c] + cv1[0][c] * source1[0][c] * nliq1[0][c]);
-
-        // upwind the enthalpy
-        if (molar_flux > 0) {
-          g_c[0][c] -= molar_flux * enth1;
-        } else {
-          g_c[0][c] -= molar_flux * enth_surf[0][c];
-        }
-      }
-    }
-#if DEBUG_FLAG
-    db_->WriteVector("  res_source E*Q_m", g);
-#endif
-  }
-
-  // conduction of heat to air
-  if (is_air_conductivity_) {
-    double time = S->time();
-    const double& T_air1 = *S->GetScalarData("air_temperature");
-    const Epetra_MultiVector& temp_c =
-        *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
-
-    unsigned int ncells = g_c.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= K_surface_to_air_ * (T_air1 - temp_c[0][c]) * (*fa1)[0][c];
-    }
-#if DEBUG_FLAG
-    std::stringstream header;
-    header << "  res_source K[ t_air=" << T_air1 << "]";
-    db_->WriteVector(header.str(), g);
-#endif
-
-  }
 
   // coupling to subsurface
   // -- two parts -- conduction and advection
@@ -438,35 +296,6 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   }
 
 }
-
-void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
-  std::vector<double>& Acc_cells = mfd_preconditioner_->Acc_cells();
-
-  // Note that energy sources are based upon face areas, which are not cell volumes.
-  Teuchos::RCP<const Epetra_MultiVector> fa0;
-  Teuchos::RCP<const Epetra_MultiVector> fa1;
-  if (standalone_mode_) {
-    fa0 = S_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
-    fa1 = S_next_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
-  } else {
-    fa0 = S_->GetFieldData("surface_3d_cell_volume")
-        ->ViewComponent("cell",false);
-    fa1 = S_next_->GetFieldData("surface_3d_cell_volume")
-        ->ViewComponent("cell",false);
-  }
-
-  // precon from air conductivity
-  if (is_air_conductivity_) {
-    unsigned int ncells = Acc_cells.size();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] += K_surface_to_air_ * (*fa1)[0][c];
-    }
-  }
-
-}
-
-
-
 
 } // namespace
 } // namespace

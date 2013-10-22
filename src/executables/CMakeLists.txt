@@ -51,6 +51,7 @@ WHOLE_ARCHIVE(flow_relations_surface_subsurface_fluxes)
 WHOLE_ARCHIVE(flow_relations_elevation)
 WHOLE_ARCHIVE(flow_relations_porosity)
 WHOLE_ARCHIVE(energy_relations_enthalpy)
+WHOLE_ARCHIVE(energy_relations_source_terms)
 WHOLE_ARCHIVE(energy_relations_internal_energy)
 WHOLE_ARCHIVE(energy_relations_thermal_conductivity)
 WHOLE_ARCHIVE(deform_relations_porosity)
@@ -82,6 +83,7 @@ target_link_libraries(ats
                       ${energy_relations_thermal_conductivity}
                       ${energy_relations_internal_energy}
                       ${energy_relations_enthalpy}
+                      ${energy_relations_source_terms}
                       ${flow_relations_wrm}
                       ${flow_relations_wrm_models}
                       ${flow_relations_overland_conductivity}

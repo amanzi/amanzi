@@ -85,22 +85,24 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
 
   if (is_source_term_) {
     // Add in external source term.
-    S_next_->GetFieldEvaluator("overland_source")
+    S_next_->GetFieldEvaluator("surface_mass_source")
         ->HasFieldChanged(S_next_.ptr(), name_);
-    S_inter_->GetFieldEvaluator("overland_source")
+    S_inter_->GetFieldEvaluator("surface_mass_source")
         ->HasFieldChanged(S_inter_.ptr(), name_);
 
     const Epetra_MultiVector& source0 =
-        *S_inter_->GetFieldData("overland_source")->ViewComponent("cell",false);
+        *S_inter_->GetFieldData("surface_mass_source")->ViewComponent("cell",false);
     const Epetra_MultiVector& source1 =
-        *S_next_->GetFieldData("overland_source")->ViewComponent("cell",false);
+        *S_next_->GetFieldData("surface_mass_source")->ViewComponent("cell",false);
 
-    // External source term is in [m water / s], not in [mols / s].  We assume
-    // it comes in at the surface density, i.e. the surface temperature.  This
-    // may need to be changed.
+    // External source term is in [m water / s], not in [mols / s], so a density is required.
     S_next_->GetFieldEvaluator("surface_molar_density_liquid")
         ->HasFieldChanged(S_next_.ptr(), name_);
     S_inter_->GetFieldEvaluator("surface_molar_density_liquid")
+        ->HasFieldChanged(S_inter_.ptr(), name_);
+    S_next_->GetFieldEvaluator("surface_source_molar_density")
+        ->HasFieldChanged(S_next_.ptr(), name_);
+    S_inter_->GetFieldEvaluator("surface_source_molar_density")
         ->HasFieldChanged(S_inter_.ptr(), name_);
 
     const Epetra_MultiVector& nliq0 =
@@ -108,6 +110,12 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
         ->ViewComponent("cell",false);
     const Epetra_MultiVector& nliq1 =
         *S_next_->GetFieldData("surface_molar_density_liquid")
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& nliq0_s =
+        *S_inter_->GetFieldData("surface_source_molar_density")
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& nliq1_s =
+        *S_next_->GetFieldData("surface_source_molar_density")
         ->ViewComponent("cell",false);
 
     double air_temp;
@@ -118,15 +126,17 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     if (!source_only_if_unfrozen_) {
       int ncells = g_c.MyLength();
       for (int c=0; c!=ncells; ++c) {
-        g_c[0][c] -= 0.5* (cv0[0][c] * source0[0][c] * nliq0[0][c]
-                           + cv1[0][c] * source1[0][c] * nliq1[0][c]);
+        double s0 = source0[0][c] > 0. ? source0[0][c] * nliq0_s[0][c] : source0[0][c] * nliq0[0][c];
+        double s1 = source1[0][c] > 0. ? source1[0][c] * nliq1_s[0][c] : source1[0][c] * nliq1[0][c];
+        g_c[0][c] -= 0.5* (cv0[0][c] * s0 + cv1[0][c] * s1);
       }
     } else {
       int ncells = g_c.MyLength();
       for (int c=0; c!=ncells; ++c) {
         double factor = air_temp > 274.15 ? 1. : air_temp < 273.15 ? 0. : air_temp - 273.15;
-        g_c[0][c] -= factor * 0.5* (cv0[0][c] * source0[0][c] * nliq0[0][c]
-                + cv1[0][c] * source1[0][c] * nliq1[0][c]);
+        double s0 = source0[0][c] > 0. ? source0[0][c] * nliq0_s[0][c] : source0[0][c] * nliq0[0][c];
+        double s1 = source1[0][c] > 0. ? source1[0][c] * nliq1_s[0][c] : source1[0][c] * nliq1[0][c];
+        g_c[0][c] -= factor * 0.5* (cv0[0][c] * s0 + cv1[0][c] * s1);
       }
     }
   }

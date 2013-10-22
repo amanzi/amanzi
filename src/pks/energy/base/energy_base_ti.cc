@@ -208,7 +208,7 @@ double EnergyBase::enorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // Calculate water content at the solution.
-  S_next_->GetFieldEvaluator("energy")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& energy = *S_next_->GetFieldData(energy_key_)
       ->ViewComponent("cell",false);
 

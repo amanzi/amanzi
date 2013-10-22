@@ -63,6 +63,13 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     de_dT_key_ = plist_.get<std::string>("de/dT key",
             std::string("d")+energy_key_+std::string("_d")+key_);
   }
+  if (source_key_ == std::string()) {
+    source_key_ = plist_.get<std::string>("source key",
+            domain_prefix_+std::string("total_energy_source"));
+  }
+  if (dsource_dT_key_ == std::string()) {
+    dsource_dT_key_ = std::string("d")+source_key_+std::string("_d")+key_;
+  }
 
   // Require fields and evaluators for those fields.
   // primary variable: temperature on both cells and faces, ghosted, with 1 dof
@@ -91,13 +98,15 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 #endif
 
   // Require a field and evaluator for cell volume.
+  S->RequireField(cell_vol_key_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
 
   // Require a field for the mass flux for advection.
   S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted()
-                                ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("face", AmanziMesh::FACE, 1);
 
-  // Require a field for the energy flux.
+  // Require a field for the (conducted) energy flux.
   std::string updatestring = plist_.get<std::string>("update flux mode", "vis");
   if (updatestring == "iteration") {
     update_flux_ = UPDATE_FLUX_ITERATION;
@@ -111,12 +120,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     Errors::Message message(std::string("Unknown frequence for updating the overland flux: ")+updatestring);
     Exceptions::amanzi_throw(message);
   }
-
-  // boundary conditions
-  Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
-  EnergyBCFactory bc_factory(mesh_, bc_plist);
-  bc_temperature_ = bc_factory.CreateTemperature();
-  bc_flux_ = bc_factory.CreateEnthalpyFlux();
+  S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
 
   // coupling terms
   // -- subsurface PK, coupled to the surface
@@ -134,9 +139,19 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     update_flux_ = UPDATE_FLUX_ITERATION;
   }
 
-  // flux of energy
-  S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+  // source terms
+  is_source_term_ = plist_.get<bool>("source term");
+  if (is_source_term_) {
+    S->RequireField(source_key_)->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(source_key_);
+  }
+
+  // boundary conditions
+  Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
+  EnergyBCFactory bc_factory(mesh_, bc_plist);
+  bc_temperature_ = bc_factory.CreateTemperature();
+  bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;

@@ -51,18 +51,18 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& plist,
 
   // set up additional primary variables
   // -- surface energy source
-  Teuchos::ParameterList& esource_sublist = FElist.sublist("surface_energy_source");
-  esource_sublist.set("evaluator name", "surface_energy_source");
+  Teuchos::ParameterList& esource_sublist = FElist.sublist("surface_conducted_energy_source");
+  esource_sublist.set("evaluator name", "surface_conducted_energy_source");
   esource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface mass source
-  Teuchos::ParameterList& wsource_sublist = FElist.sublist("surface_water_source");
-  wsource_sublist.set("evaluator name", "surface_water_source");
+  Teuchos::ParameterList& wsource_sublist = FElist.sublist("surface_mass_source");
+  wsource_sublist.set("evaluator name", "surface_mass_source");
   wsource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface energy temperature
-  Teuchos::ParameterList& wtemp_sublist = FElist.sublist("water_source_temperature");
-  wtemp_sublist.set("evaluator name", "water_source_temperature");
+  Teuchos::ParameterList& wtemp_sublist = FElist.sublist("surface_mass_source_temperature");
+  wtemp_sublist.set("evaluator name", "surface_mass_source_temperature");
   wtemp_sublist.set("field evaluator type", "primary variable");
 
 
@@ -82,30 +82,30 @@ void SurfaceBalanceSEB::setup(const Teuchos::Ptr<State>& S) {
       SetComponent("cell", AmanziMesh::CELL, 1);
 
   // requirements: other primary variables
-  S->RequireField("surface_energy_source", name_)->SetMesh(mesh_)
+  S->RequireField("surface_conducted_energy_source", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_energy_source");
-  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("surface_energy_source");
+  S->RequireFieldEvaluator("surface_conducted_energy_source");
+  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator("surface_conducted_energy_source");
   pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_esource_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField("surface_water_source", name_)->SetMesh(mesh_)
+  S->RequireField("surface_mass_source", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_water_source");
-  fm = S->GetFieldEvaluator("surface_water_source");
+  S->RequireFieldEvaluator("surface_mass_source");
+  fm = S->GetFieldEvaluator("surface_mass_source");
   pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wsource_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField("water_source_temperature", name_)->SetMesh(mesh_)
+  S->RequireField("surface_mass_source_temperature", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("water_source_temperature");
-  fm = S->GetFieldEvaluator("water_source_temperature");
+  S->RequireFieldEvaluator("surface_mass_source_temperature");
+  fm = S->GetFieldEvaluator("surface_mass_source_temperature");
   pvfe_wtemp_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wtemp_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
@@ -211,57 +211,57 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
   // Get all data
   // ATS CALCULATED
-  S_next_->GetFieldEvaluator("surface_temperature")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("surface_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& surf_temp =
-      *S_->GetFieldData("surface_temperature")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("surface_temperature")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& ponded_depth =
-      *S_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("surface_porosity")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("surface_porosity")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& surf_porosity =
-      *S_->GetFieldData("surface_porosity")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("surface_porosity")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("surface_vapor_pressure")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("surface_vapor_pressure")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& soil_vapor_pressure =
-      *S_->GetFieldData("surface_vapor_pressure")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("surface_vapor_pressure")->ViewComponent("cell", false);
 
   // MET DATA
-  S_next_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& air_temp =
-      *S_->GetFieldData("air_temperature")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("air_temperature")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("incoming_shortwave_radiation")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("incoming_shortwave_radiation")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& incomming_shortwave =
-      *S_->GetFieldData("incoming_shortwave_radiation")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("incoming_shortwave_radiation")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& relative_humidity =
-      *S_->GetFieldData("relative_humidity")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("relative_humidity")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("wind_speed")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("wind_speed")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& wind_speed =
-      *S_->GetFieldData("wind_speed")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("wind_speed")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("precipitation_rain")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("precipitation_rain")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& precip_rain =
-      *S_->GetFieldData("precipitation_rain")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("precipitation_rain")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_next_.ptr(), name_);
+  S_inter_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& precip_snow =
-      *S_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
+      *S_inter_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
 
 
   // Get output data
   Epetra_MultiVector& surf_energy_flux =
-      *S_next_->GetFieldData("surface_energy_source", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface_conducted_energy_source", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& surface_water_flux =
-      *S_next_->GetFieldData("surface_water_source", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface_mass_source", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& surf_water_temp =
-      *S_next_->GetFieldData("water_source_temperature", name_)->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface_mass_source_temperature", name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& snow_depth =
       *S_next_->GetFieldData("snow_depth", name_)->ViewComponent("cell", false);

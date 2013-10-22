@@ -99,8 +99,8 @@ protected:
 
   // -- Add any source terms into the residual.
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
-                           const Teuchos::Ptr<CompositeVector>& f) = 0;
-  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) = 0;
+                           const Teuchos::Ptr<CompositeVector>& f);
+  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
 
   // Standard methods
   virtual void SetupEnergy_(const Teuchos::Ptr<State>& S);
@@ -144,6 +144,8 @@ protected:
   double dT_max_;
   FluxUpdateMode update_flux_;
   bool modify_predictor_with_consistent_faces_;
+  bool is_source_term_;
+  bool is_mass_source_term_;
 
   bool coupled_to_subsurface_via_temp_;
   bool coupled_to_subsurface_via_flux_;
@@ -158,6 +160,9 @@ protected:
   Key energy_flux_key_;
   Key conductivity_key_;
   Key de_dT_key_;
+  Key source_key_;
+  Key dsource_dT_key_;
+  Key mass_source_key_;
 
 };
 
