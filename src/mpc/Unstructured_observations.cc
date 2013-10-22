@@ -5,6 +5,7 @@
 #include "exceptions.hh"
 
 #include "PolygonRegion.hh"
+#include "PlaneRegion.hh"
 
 #include <map>
 
@@ -244,19 +245,24 @@ void Unstructured_observations::make_observations(State& state)
 	// get the region object
 	AmanziGeometry::GeometricModelPtr gm_ptr = state.GetMesh()->geometric_model();
 	AmanziGeometry::RegionPtr reg_ptr = gm_ptr->FindRegion((i->second).region);
-	if (reg_ptr->type() != AmanziGeometry::POLYGON) {
-	  
+	AmanziGeometry::Point reg_normal;
+	if (reg_ptr->type() == AmanziGeometry::POLYGON) {
+	  AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
+	  reg_normal = poly_reg->normal();
+	} else if (reg_ptr->type() == AmanziGeometry::PLANE) {
+	  AmanziGeometry::PlaneRegion *plane_reg = dynamic_cast<AmanziGeometry::PlaneRegion*>(reg_ptr);
+	  reg_normal = plane_reg->normal();
+	} else {
+	  // error
+	  Exceptions::amanzi_throw(Errors::Message("Observations of Aqueous mass flow rate and Aqueous volumetric flow rate are only possible for Polygon and Plane regions"));
 	}
-	AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
-	
-	AmanziGeometry::Point reg_normal = poly_reg->normal();
-	
+
 	Teuchos::RCP<const Epetra_Vector> darcy_flux = 
 	  Teuchos::rcpFromRef(*(*state.GetFieldData("darcy_flux")->ViewComponent("face", false))(0));      
 	
 	double density(1.0);
 	if (var == "Aqueous mass flow rate") {
-	  density = *state.GetScalarData("fluid_density") ;
+	  density = *state.GetScalarData("fluid_density");
 	}
 	
 	for (int i = 0; i != mesh_block_size; ++i) {

@@ -421,8 +421,6 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
           mesh_list.set<Teuchos::Array<int> >("Number of Cells",ncells);
 
 	  // get Box - generalize
-	  Teuchos::Array<double> low;
-	  Teuchos::Array<double> high;
 	  char* char_array;
 	  nodeList = elementGen->getElementsByTagName( XMLString::transcode("box"));
 	  node = nodeList->item(0);
@@ -430,22 +428,12 @@ Teuchos::ParameterList get_Mesh(xercesc::DOMDocument* xmlDoc, Teuchos::Parameter
 	  temp = xercesc::XMLString::transcode(elementNode->getAttribute(
 		  xercesc::XMLString::transcode("low_coordinates")));
 	  // translate to array
-	  char_array = strtok(temp,"(,");
-	  low.append(get_double_constant(char_array,def_list));
-	  char_array = strtok(NULL,",");
-	  low.append(get_double_constant(char_array,def_list));
-	  char_array = strtok(NULL,",");
-	  low.append(get_double_constant(char_array,def_list));
+	  Teuchos::Array<double> low = make_coordinates(temp, def_list);
 	  XMLString::release(&temp);
 	  temp = xercesc::XMLString::transcode(elementNode->getAttribute(
 		  xercesc::XMLString::transcode("high_coordinates")));
 	  // translate to array
-	  char_array = strtok(temp,"(,");
-	  high.append(get_double_constant(char_array,def_list));
-	  char_array = strtok(NULL,",");
-	  high.append(get_double_constant(char_array,def_list));
-	  char_array = strtok(NULL,",");
-	  high.append(get_double_constant(char_array,def_list));
+	  Teuchos::Array<double> high = make_coordinates(temp, def_list);
 	  XMLString::release(&temp);
           mesh_list.set<Teuchos::Array<double> >("Domain Low Corner",low);
           mesh_list.set<Teuchos::Array<double> >("Domain High Corner",high);
@@ -1749,53 +1737,26 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	    */
             if  (strcmp(nodeName,"box") == 0){
 	      attrMap = curKid->getAttributes();
-	      // get low coord
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("low_coordinates"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      char_array = strtok(textContent2,"(,");
-              Teuchos::Array<double> low;
-              Teuchos::Array<double> high;
-	      low.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      low.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      low.append(get_double_constant(char_array,def_list));
+	      Teuchos::Array<double> low = make_coordinates(textContent2, def_list);
               list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate",low);
 	      XMLString::release(&textContent2);
-	      // get high coord
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("high_coordinates"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      char_array = strtok(textContent2,"(,");
-	      high.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      high.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      high.append(get_double_constant(char_array,def_list));
+	      Teuchos::Array<double> high = make_coordinates(textContent2, def_list);
               list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
 	      XMLString::release(&textContent2);
-	      //XMLString::release(&textContent);
 	    }
             else if  (strcmp(nodeName,"plane") == 0){
-              Teuchos::Array<double> loc;
-              Teuchos::Array<double> dir;
 	      attrMap = curKid->getAttributes();
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("location"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      char_array = strtok(textContent2,"(,");
-	      loc.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      loc.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      loc.append(get_double_constant(char_array,def_list));
+	      Teuchos::Array<double> loc = make_coordinates(textContent2, def_list);
               list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
               nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
               textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	      char_array = strtok(textContent2,"(,");
-	      dir.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      dir.append(get_double_constant(char_array,def_list));
-	      char_array = strtok(NULL,",");
-	      dir.append(get_double_constant(char_array,def_list));
+	      Teuchos::Array<double> dir = make_coordinates(textContent2, def_list);
               list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
 	      XMLString::release(&textContent2);
 	    } else if  (strcmp(nodeName,"region_file") == 0){
@@ -1844,25 +1805,13 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
 	// get low coord
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("low_coordinates"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	char_array = strtok(textContent2,"(,");
-        Teuchos::Array<double> low;
-        Teuchos::Array<double> high;
-	low.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	low.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	low.append(get_double_constant(char_array,def_list));
+	Teuchos::Array<double> low = make_coordinates(textContent2, def_list);
         list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("Low Coordinate",low);
 	XMLString::release(&textContent2);
 	// get high coord
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("high_coordinates"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	char_array = strtok(textContent2,"(,");
-	high.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	high.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	high.append(get_double_constant(char_array,def_list));
+	Teuchos::Array<double> high = make_coordinates(textContent2, def_list);
         list.sublist(textContent).sublist("Region: Box").set<Teuchos::Array<double> >("High Coordinate",high);
 	XMLString::release(&textContent2);
 	XMLString::release(&textContent);
@@ -1873,13 +1822,7 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("coordinate"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	char_array = strtok(textContent2,"(,");
-        Teuchos::Array<double> coord;
-	coord.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	coord.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	coord.append(get_double_constant(char_array,def_list));
+	Teuchos::Array<double> coord = make_coordinates(textContent2, def_list);
         list.sublist(textContent).sublist("Region: Point").set<Teuchos::Array<double> >("Coordinate",coord);
 	XMLString::release(&textContent);
 	XMLString::release(&textContent2);
@@ -1889,23 +1832,11 @@ Teuchos::ParameterList get_regions(xercesc::DOMDocument* xmlDoc, Teuchos::Parame
         textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("location"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	char_array = strtok(textContent2,"(,");
-        Teuchos::Array<double> loc;
-	loc.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	loc.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	loc.append(get_double_constant(char_array,def_list));
+	Teuchos::Array<double> loc = make_coordinates(textContent2, def_list);
         list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Location",loc);
         nodeAttr = attrMap->getNamedItem(XMLString::transcode("normal"));
         textContent2 = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-        Teuchos::Array<double> dir;
-	char_array = strtok(textContent2,"(,");
-	dir.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	dir.append(get_double_constant(char_array,def_list));
-	char_array = strtok(NULL,",");
-	dir.append(get_double_constant(char_array,def_list));
+	Teuchos::Array<double> dir = make_coordinates(textContent2, def_list);
         list.sublist(textContent).sublist("Region: Plane").set<Teuchos::Array<double> >("Direction",dir);
 	XMLString::release(&textContent);
 	XMLString::release(&textContent2);
@@ -2246,8 +2177,6 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc, Teuc
 		  }
 		}
 		else if (strcmp(pressName,"linear_pressure")==0 || strcmp(pressName,"linear_saturation")==0) {
-	            Teuchos::Array<double> coord;
-	            Teuchos::Array<double> grad;
 	            char* char_array;
 		    //value
 	            attrMap = pressure->getAttributes();
@@ -2258,23 +2187,13 @@ Teuchos::ParameterList get_initial_conditions(xercesc::DOMDocument* xmlDoc, Teuc
 		    //reference_coord
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("reference_coord"));
                     attrValue = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	            char_array = strtok(attrValue,"(,");
-	            coord.append(get_double_constant(char_array,def_list));
-	            char_array = strtok(NULL,",");
-	            coord.append(get_double_constant(char_array,def_list));
-	            char_array = strtok(NULL,",");
-	            coord.append(get_double_constant(char_array,def_list));
+	            Teuchos::Array<double> coord = make_coordinates(attrValue, def_list);
 		    pressureList.set<Teuchos::Array<double> >("Reference Coordinate",coord);
 	            XMLString::release(&attrValue);
 		    //gradient
                     nodeAttr = attrMap->getNamedItem(XMLString::transcode("gradient"));
                     attrValue = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
-	            char_array = strtok(attrValue,"(,");
-	            grad.append(get_double_constant(char_array,def_list));
-	            char_array = strtok(NULL,",");
-	            grad.append(get_double_constant(char_array,def_list));
-	            char_array = strtok(NULL,",");
-	            grad.append(get_double_constant(char_array,def_list));
+	            Teuchos::Array<double> grad = make_coordinates(attrValue, def_list);
 		    pressureList.set<Teuchos::Array<double> >("Gradient Value",grad);
 	            XMLString::release(&attrValue);
                     if (strcmp(pressName,"linear_pressure")==0 ) {
@@ -3242,7 +3161,28 @@ Teuchos::Array<std::string> make_regions_list(char* char_array)
   return regs;
 }
 
+/* 
+ ******************************************************************
+ * Empty
+ ******************************************************************
+ */
+
+Teuchos::Array<double> make_coordinates(char* char_array, Teuchos::ParameterList def_list)
+{
+  Teuchos::Array<double> coords;
+  char* tmp;
+  tmp = strtok(char_array,"(,");
+  while(tmp!=NULL){
+    std::string str(tmp);
+    boost::algorithm::trim(str);
+    coords.append(get_double_constant(str, def_list));
+    tmp = strtok(NULL,",");
+  }
+
+  return coords;
 }
 
 
-}
+
+} // end namespace AmanziNewInput
+} // end namespace Amanzi

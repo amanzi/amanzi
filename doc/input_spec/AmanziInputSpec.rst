@@ -249,6 +249,7 @@ Usage:
   * [S] `"Initial Time Step Multiplier`" [Array double]: (Optional) If internally computed time step used, it will be 
     scaled by this factor (default value: 1)
   * [S] `"Maximum Time Step`"[Array double]: (Optional) The maximum time step for each time period. 
+  * [U] `"Default Initial Time Step`" [double]: (Optional) set the default initial time step, this is used for time integrator restarts that are required by boundary conditions and sources, but are not specified in this list under Start Times, the default value is 1.0. 
 
  * [SU] `"Verbosity`" [string]: (default: `"Medium`") Choose one of `"None"`, `"Low"`, `"Medium"`, `"High`", or `"Extreme`".
 
