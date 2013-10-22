@@ -106,4 +106,6 @@
 
 #define BCHYDRST_COORD                  "Absolute"
 
+#define RESTART_TIME_STEP               1.0
+
 #endif
