@@ -381,6 +381,10 @@ Usage:
 
      * [U] `"linear solver iterative method`" [string] select the iterative method to be used in linear solvers, choose one of `"pcg`", or `"gmres`". (default: `"gmres`")
 
+   * [U] `"MPC`" [list] Parameters for the multiprocess coordinator
+
+     * [U] `"time integration rescue reduction factor`" [double] when the time integrator threatens to fail, for example, due to exceeding the number of limit iterations, or by threatening to diverge, the multiprocess coordinator will repeat the current time step with a time step that is reduced by this factor (default: `"0.5`").
+
    * [U] `"Nonlinear Solver`" [list] Parameters for the nonlinear solver used in time-integration.
 
      * [U] `"Nonlinear Solver Type`" [string] select the nonlinear solver type from `"NKA`", `"Newton`", and `"inexact Newton`".
