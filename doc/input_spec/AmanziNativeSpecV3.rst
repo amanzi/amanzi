@@ -119,6 +119,8 @@ The following parameters control MPC options related to particular process kerne
 
  * `"max chemistry to transport time step ratio`" [double], default is 1.0.
 
+ * `"time integration rescue reduction factor`" [double], default is 0.5.
+
 Time Integration Mode
 ---------------------
 
