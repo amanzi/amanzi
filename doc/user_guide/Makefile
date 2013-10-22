@@ -49,10 +49,18 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo ""
-	@echo " Environment Check "
-	@echo " AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
-	@echo " AMANZI_PYTHON  = $(AMANZI_PYTHON)"
-	@echo " NEW_PYTHONPATH = $(NEW_PYTHONPATH)"
+	@echo "Environment Check "
+	@echo "  AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
+	@echo "  AMANZI_PYTHON  = $(AMANZI_PYTHON)"
+	@echo "  NEW_PYTHONPATH = $(NEW_PYTHONPATH)"
+	@echo ""
+	@echo "Use the variable AMANZI_SECTION_OPTIONS to include optional sections of the"
+	@echo "User Guide in your build,"
+	@echo ""
+	@echo "   AMANZI_SECTION_OPTIONS = $(AMANZI_SECTION_OPTIONS)"
+	@echo ""
+	@echo "This variable is passed to the collect.py script ... "
+	@python collect.py --help
 
 clean:
 	@echo "Removing the build directory: $(BUILDDIR)" ;\
