@@ -24,10 +24,10 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
   PKDefaultBase::setup(S);
 
   // initial timestep
-  dt_ = plist_.get<double>("initial time step", 1.);
+  dt_ = plist_->get<double>("initial time step", 1.);
 
   // preconditioner assembly
-  assemble_preconditioner_ = plist_.get<bool>("assemble preconditioner", true);
+  assemble_preconditioner_ = plist_->get<bool>("assemble preconditioner", true);
 };
 
 
@@ -36,9 +36,9 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
   // set up the timestepping algorithm
-  if (!plist_.get<bool>("strongly coupled PK", false)) {
+  if (!plist_->get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
-    Teuchos::ParameterList bdf_plist = plist_.sublist("time integrator");
+    Teuchos::ParameterList bdf_plist = plist_->sublist("time integrator");
     bdf_plist.set("initial time", S->time());
     time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector>(*this, bdf_plist, solution_));
 

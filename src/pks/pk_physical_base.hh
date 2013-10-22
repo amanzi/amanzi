@@ -21,7 +21,7 @@ namespace Amanzi {
 class PKPhysicalBase : public virtual PKDefaultBase {
 
  public:
-  PKPhysicalBase(Teuchos::ParameterList& plist,
+  PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<TreeVector>& solution);
 

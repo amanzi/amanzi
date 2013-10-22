@@ -32,7 +32,7 @@ namespace Energy {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& plist,
+EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist, FElist, solution),
@@ -41,8 +41,8 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& plist,
     is_energy_source_term_(false),
     is_mass_source_term_(false),
     is_air_conductivity_(false) {
-  plist_.set("primary variable key", "surface_temperature");
-  plist_.set("domain name", "surface");
+  plist_->set("primary variable key", "surface_temperature");
+  plist_->set("domain name", "surface");
 }
 
 
@@ -71,7 +71,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- energy, the conserved quantity
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList ee_plist = plist_.sublist("energy evaluator");
+  Teuchos::ParameterList ee_plist = plist_->sublist("energy evaluator");
   ee_plist.set("energy key", energy_key_);
   Teuchos::RCP<SurfaceIceEnergyEvaluator> ee =
     Teuchos::rcp(new SurfaceIceEnergyEvaluator(ee_plist));
@@ -80,7 +80,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- advection of enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList enth_plist = plist_.sublist("enthalpy evaluator");
+  Teuchos::ParameterList enth_plist = plist_->sublist("enthalpy evaluator");
   enth_plist.set("enthalpy key", enthalpy_key_);
   enth_plist.set("include work term", false);
   Teuchos::RCP<EnthalpyEvaluator> enth =
@@ -91,16 +91,16 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
-    plist_.sublist("thermal conductivity evaluator");
+    plist_->sublist("thermal conductivity evaluator");
   Teuchos::RCP<EnergyRelations::ThermalConductivitySurfaceEvaluator> tcm =
     Teuchos::rcp(new EnergyRelations::ThermalConductivitySurfaceEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
   // -- coupling to subsurface
   coupled_to_subsurface_via_temp_ =
-      plist_.get<bool>("coupled to subsurface via temperature", false);
+      plist_->get<bool>("coupled to subsurface via temperature", false);
   coupled_to_subsurface_via_flux_ =
-      plist_.get<bool>("coupled to subsurface via flux", false);
+      plist_->get<bool>("coupled to subsurface via flux", false);
   ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
@@ -129,7 +129,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   // -- set the cell initial condition if it is taken from the subsurface
-  if (!plist_.isSublist("initial condition")) {
+  if (!plist_->isSublist("initial condition")) {
     std::stringstream messagestream;
     messagestream << name_ << " has no initial condition parameter list.";
     Errors::Message message(messagestream.str());
@@ -140,7 +140,7 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   EnergyBase::initialize(S);
 
   // Set the cell initial condition if it is taken from the subsurface
-  Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
+  Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
   if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
     Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
     Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);

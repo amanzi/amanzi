@@ -10,6 +10,7 @@ Authors: Neil Carlson (version 1)
 #include "boost/math/special_functions/fpclassify.hpp"
 
 #include "Epetra_Import.h"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "flow_bc_factory.hh"
 
@@ -41,7 +42,7 @@ namespace Flow {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-Richards::Richards(Teuchos::ParameterList& plist,
+Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist, FElist, solution),
@@ -59,17 +60,21 @@ Richards::Richards(Teuchos::ParameterList& plist,
     perm_scale_(1.)
 {
   // set a few parameters before setup
-  plist_.set("primary variable key", "pressure");
-  plist_.sublist("primary variable evaluator").set("manage communication", true);
+  plist_->set("primary variable key", "pressure");
+  plist_->sublist("primary variable evaluator").set("manage communication", true);
 }
 
 // -------------------------------------------------------------
 // Setup data
 // -------------------------------------------------------------
 void Richards::setup(const Teuchos::Ptr<State>& S) {
+  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+
   PKPhysicalBDFBase::setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
+
+  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
 };
 
 
@@ -126,11 +131,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     (*K_)[c].init(mesh_->space_dimension(),1);
   }
   // scaling for permeability
-  perm_scale_ = plist_.get<double>("permeability rescaling", 1.0);
+  perm_scale_ = plist_->get<double>("permeability rescaling", 1.0);
 
 
   // Create the boundary condition data structures.
-  Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
+  Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
   bc_flux_ = bc_factory.CreateMassFlux();
@@ -139,7 +144,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_->Compute(0.); // compute at t=0 to set up
 
   // how often to update the fluxes?
-  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
+  std::string updatestring = plist_->get<std::string>("update flux mode", "iteration");
   if (updatestring == "iteration") {
     update_flux_ = UPDATE_FLUX_ITERATION;
   } else if (updatestring == "timestep") {
@@ -155,14 +160,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // coupling
   // -- coupling done by a Neumann condition
-  coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
+  coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
     S->RequireField("surface_subsurface_flux", name_)
         ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- coupling done by a Dirichlet condition
-  coupled_to_surface_via_head_ = plist_.get<bool>("coupled to surface via head", false);
+  coupled_to_surface_via_head_ = plist_->get<bool>("coupled to surface via head", false);
   if (coupled_to_surface_via_head_) {
     S->RequireField("surface_pressure");
     // override the flux update -- must happen every iteration
@@ -178,7 +183,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                     ->SetComponents(names2, locations2, num_dofs2);
   S->GetField("numerical_rel_perm",name_)->set_io_vis(false);
 
-  string method_name = plist_.get<string>("relative permeability method", "upwind with gravity");
+  string method_name = plist_->get<string>("relative permeability method", "upwind with gravity");
   symmetric_ = false;
   if (method_name == "upwind with gravity") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindGravityFlux(name_,
@@ -190,7 +195,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     symmetric_ = true;
     Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
-    upwind_from_prev_flux_ = plist_.get<bool>("upwind flux from previous iteration", false);
+    upwind_from_prev_flux_ = plist_->get<bool>("upwind flux from previous iteration", false);
     if (upwind_from_prev_flux_) {
       upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               "relative_permeability", "numerical_rel_perm", "darcy_flux"));
@@ -211,7 +216,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
 
   // operator for the diffusion terms
-  Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
   scaled_constraint_ = mfd_plist.get<bool>("scaled constraint equation", false);
   matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   symmetric_ = false;
@@ -220,7 +225,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   matrix_->InitPreconditioner();
 
   // preconditioner for the NKA system
-  Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
+  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
   mfd_pc_plist.set("scaled constraint equation", scaled_constraint_);
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
@@ -228,17 +233,17 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->InitPreconditioner();
 
   // wc preconditioner
-  precon_wc_ = plist_.get<bool>("precondition using WC", false);
+  precon_wc_ = plist_->get<bool>("precondition using WC", false);
 
   // predictors for time integration
   modify_predictor_with_consistent_faces_ =
-    plist_.get<bool>("modify predictor with consistent faces", false);
+    plist_->get<bool>("modify predictor with consistent faces", false);
   modify_predictor_bc_flux_ =
-    plist_.get<bool>("modify predictor for flux BCs", false);
+    plist_->get<bool>("modify predictor for flux BCs", false);
   modify_predictor_first_bc_flux_ =
-    plist_.get<bool>("modify predictor for initial flux BCs", false);
+    plist_->get<bool>("modify predictor for initial flux BCs", false);
   modify_predictor_wc_ =
-    plist_.get<bool>("modify predictor via water content", false);
+    plist_->get<bool>("modify predictor via water content", false);
 }
 
 
@@ -256,13 +261,13 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content, and evaluator
   S->RequireField("water_content")->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_.sublist("water content evaluator");
+  Teuchos::ParameterList wc_plist = plist_->sublist("water content evaluator");
   Teuchos::RCP<RichardsWaterContent> wc = Teuchos::rcp(new RichardsWaterContent(wc_plist));
   S->SetFieldEvaluator("water_content", wc);
 
   // -- Water retention evaluators
   // -- saturation
-  Teuchos::ParameterList wrm_plist = plist_.sublist("water retention evaluator");
+  Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMEvaluator(wrm_plist));
   S->SetFieldEvaluator("saturation_liquid", wrm);
@@ -304,6 +309,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
+  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
 

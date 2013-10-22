@@ -17,23 +17,23 @@ multiple coupler types.
 
 namespace Amanzi {
 
-MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(Teuchos::ParameterList& plist,
+MPCSurfaceSubsurfaceCoupler::MPCSurfaceSubsurfaceCoupler(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist, FElist, soln),
     StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln) {
 
-  domain_mesh_key_ = plist.get<std::string>("subsurface mesh key","domain");
-  surf_mesh_key_ = plist.get<std::string>("surface mesh key","surface");
+  domain_mesh_key_ = plist_->get<std::string>("subsurface mesh key","domain");
+  surf_mesh_key_ = plist_->get<std::string>("surface mesh key","surface");
 
-  surf_pk_name_ = plist.get<std::string>("surface PK name");
-  domain_pk_name_ = plist.get<std::string>("subsurface PK name");
+  surf_pk_name_ = plist_->get<std::string>("surface PK name");
+  domain_pk_name_ = plist_->get<std::string>("subsurface PK name");
 
   // ensure the subsurface preconditioner is a Surf
-  plist.sublist("PKs").sublist(domain_pk_name_)
+  plist_->sublist("PKs").sublist(domain_pk_name_)
       .sublist("Diffusion PC").set("coupled to surface", true);
   // ensure the surface preconditioner is TPFA
-  plist.sublist("PKs").sublist(surf_pk_name_)
+  plist_->sublist("PKs").sublist(surf_pk_name_)
       .sublist("Diffusion PC").set("TPFA", true);
 };
 
@@ -74,7 +74,10 @@ void MPCSurfaceSubsurfaceCoupler::setup(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(msg);
   }
 
+  // set surf operator and redo setup
   mfd_preconditioner_->SetSurfaceOperator(surf_preconditioner_);
+  mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
+  mfd_preconditioner_->InitPreconditioner();
 
   // get the PKs debuggers for our own use
   domain_db_ = domain_pk_->debugger();

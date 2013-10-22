@@ -28,23 +28,23 @@ using namespace Amanzi::AmanziMesh;
 
 RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
 
-VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
+VolumetricDeformation::VolumetricDeformation(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
     PKDefaultBase(plist, FElist, solution),
     PKPhysicalBase(plist, FElist, solution) {
-  poro_key_ = plist_.get<std::string>("porosity key","porosity");
-  dt_ = plist_.get<double>("initial time step");
+  poro_key_ = plist_->get<std::string>("porosity key","porosity");
+  dt_ = plist_->get<double>("initial time step");
 
   // The deformation mode describes how to calculate new cell volume from a
   // provided function and the old cell volume.
-  std::string mode_name = plist_.get<std::string>("deformation mode", "dVdt");
+  std::string mode_name = plist_->get<std::string>("deformation mode", "dVdt");
   if (mode_name == "dVdt") {
     deform_mode_ = DEFORM_MODE_DVDT;
   } else if (mode_name == "thaw front") {
     deform_mode_ = DEFORM_MODE_THAW_FRONT;
-    deform_region_ = plist_.get<std::string>("deformation region");
-    min_vol_frac_ = plist_.get<double>("minimum volume fraction");
+    deform_region_ = plist_->get<std::string>("deformation region");
+    min_vol_frac_ = plist_->get<double>("minimum volume fraction");
   } else {
     Errors::Message mesg("Unknown deformation mode specified.  Valid: [dVdt, thaw front].");
     Exceptions::amanzi_throw(mesg);
@@ -52,7 +52,7 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
 
   // The deformation strategy describes how to calculate nodal deformation
   // from cell volume change.
-  std::string strategy_name = plist_.get<std::string>("deformation strategy",
+  std::string strategy_name = plist_->get<std::string>("deformation strategy",
           "global optimization");
   if (strategy_name == "global optimization") {
     strategy_ = DEFORM_STRATEGY_GLOBAL_OPTIMIZATION;
@@ -66,14 +66,14 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& plist,
   }
 
   // collect a set of the fixed nodes
-  if (plist_.isParameter("bottom region")) {
-    fixed_regions_.push_back(plist_.get<std::string>("bottom region"));
+  if (plist_->isParameter("bottom region")) {
+    fixed_regions_.push_back(plist_->get<std::string>("bottom region"));
   } else {
     fixed_regions_ =
-        plist_.get<Teuchos::Array<std::string> >("bottom regions").toVector();
+        plist_->get<Teuchos::Array<std::string> >("bottom regions").toVector();
   }
 
-  fixed_region_type_ = plist_.get<std::string>("bottom region type", "node");
+  fixed_region_type_ = plist_->get<std::string>("bottom region type", "node");
 }
 
 // -- Setup data
@@ -102,7 +102,7 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   switch(deform_mode_) {
     case (DEFORM_MODE_DVDT): {
       // Create the deformation function
-      Teuchos::ParameterList func_plist = plist_.sublist("deformation function");
+      Teuchos::ParameterList func_plist = plist_->sublist("deformation function");
       deform_func_ = Functions::CreateCompositeVectorFunction(func_plist, *cv_fac);
       break;
     }
@@ -120,7 +120,7 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
 
       // create the function to determine the front location
       Teuchos::ParameterList func_plist =
-          plist_.sublist("thaw front function");
+          plist_->sublist("thaw front function");
       FunctionFactory fac;
       thaw_front_func_ = Teuchos::rcp(fac.Create(func_plist));
       break;
@@ -155,7 +155,7 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
   switch (strategy_) {
     case (DEFORM_STRATEGY_GLOBAL_OPTIMIZATION) : {
       // create the operator
-      Teuchos::ParameterList op_plist = plist_.sublist("global solve operator");
+      Teuchos::ParameterList op_plist = plist_->sublist("global solve operator");
       def_matrix_ = Teuchos::rcp(new Operators::MatrixVolumetricDeformation(
           op_plist, mesh_));
 

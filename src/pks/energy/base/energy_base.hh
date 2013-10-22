@@ -30,7 +30,7 @@ namespace Energy {
 class EnergyBase : public PKPhysicalBDFBase {
 
 public:
-  EnergyBase(Teuchos::ParameterList& plist,
+  EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, FElist, solution),
@@ -41,8 +41,8 @@ public:
       coupled_to_surface_via_temp_(false),
       coupled_to_surface_via_flux_(false),
       niter_(0) {
-    if (!plist_.isParameter("primary variable key"))
-      plist_.set("primary variable key", "temperature");
+    if (!plist_->isParameter("primary variable key"))
+      plist_->set("primary variable key", "temperature");
   }
 
   // Virtual destructor

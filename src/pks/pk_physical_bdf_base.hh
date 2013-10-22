@@ -25,7 +25,7 @@ namespace Amanzi {
 class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
  public:
-  PKPhysicalBDFBase(Teuchos::ParameterList& plist,
+  PKPhysicalBDFBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, FElist, solution),

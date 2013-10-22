@@ -36,6 +36,13 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
   virtual void GetSurfaceOperator(Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
     surface_A = surface_A_; }
 
+  virtual void SymbolicAssembleGlobalMatrices() {
+    // This must be protected from being called too early.
+    if (surface_mesh_ != Teuchos::null) {
+      MatrixMFD::SymbolicAssembleGlobalMatrices();
+    }
+  }
+
  protected:
   virtual void FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
           const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph);

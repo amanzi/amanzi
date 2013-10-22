@@ -24,7 +24,7 @@ class PKDefaultBase : public PK {
 
  public:
 
-  PKDefaultBase(Teuchos::ParameterList& plist,
+  PKDefaultBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                 Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& solution) :
       plist_(plist), solution_(solution) {}
@@ -49,7 +49,7 @@ class PKDefaultBase : public PK {
 
  protected:
 
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<TreeVector> solution_;
   std::string name_;
 

@@ -26,7 +26,7 @@ namespace Operators { class MatrixMFD_Surf; }
 class MPCSurfaceSubsurfaceEnergyCoupler : public MPCSurfaceSubsurfaceCoupler {
 
  public:
-  MPCSurfaceSubsurfaceEnergyCoupler(Teuchos::ParameterList& plist,
+  MPCSurfaceSubsurfaceEnergyCoupler(const Teuchos::RCP<Teuchos::ParameterList>& plist,
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, FElist, soln),

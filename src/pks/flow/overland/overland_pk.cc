@@ -73,7 +73,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator("surface_cell_volume");
 
   // Create the boundary condition data structures.
-  Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
+  Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
   bc_head_ = bc_factory.CreateHead();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
@@ -84,7 +84,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     ->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
-  std::string method_name = plist_.get<string>("upwind conductivity method",
+  std::string method_name = plist_->get<string>("upwind conductivity method",
           "upwind with total flux");
   if (method_name == "cell centered") {
     upwind_method_ = Operators::UPWIND_METHOD_CENTERED;
@@ -118,7 +118,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
                 ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // operator for the diffusion terms: must use ScaledConstraint version
-  Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
   tpfa_ = mfd_plist.get<bool>("TPFA", false);
   mfd_plist.set("scaled constraint equation", true);
   matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
@@ -129,7 +129,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   matrix_->CreateMFDmassMatrices(Teuchos::null);
   matrix_->InitPreconditioner();
 
-  Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
+  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
 
   if (!tpfa_) tpfa_ = mfd_pc_plist.get<bool>("TPFA", false);
   full_jacobian_ = false;
@@ -144,10 +144,10 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->InitPreconditioner();
 
   modify_predictor_with_consistent_faces_ =
-    plist_.get<bool>("modify predictor with consistent faces", false);
+    plist_->get<bool>("modify predictor with consistent faces", false);
 
   // how often to update the fluxes?
-  std::string updatestring = plist_.get<std::string>("update flux mode", "iteration");
+  std::string updatestring = plist_->get<std::string>("update flux mode", "iteration");
   if (updatestring == "iteration") {
     update_flux_ = UPDATE_FLUX_ITERATION;
   } else if (updatestring == "timestep") {
@@ -192,11 +192,11 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
-    ASSERT(plist_.isSublist("elevation evaluator"));
-    Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
+    ASSERT(plist_->isSublist("elevation evaluator"));
+    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
     elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
   } else {
-    Teuchos::ParameterList elev_plist = plist_.sublist("elevation evaluator");
+    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
     elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
@@ -205,13 +205,13 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- evaluator for potential field, h + z
   S->RequireField("pres_elev")->SetMesh(S->GetMesh("surface"))->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
-  Teuchos::ParameterList pres_elev_plist = plist_.sublist("potential evaluator");
+  Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
   // -- evaluator for source term
-  is_source_term_ = plist_.get<bool>("source term");
+  is_source_term_ = plist_->get<bool>("source term");
   if (is_source_term_) {
     S->RequireField("surface_mass_source")->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -221,8 +221,8 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names_bf, locations_bf, num_dofs2);
-  ASSERT(plist_.isSublist("overland conductivity evaluator"));
-  Teuchos::ParameterList cond_plist = plist_.sublist("overland conductivity evaluator");
+  ASSERT(plist_->isSublist("overland conductivity evaluator"));
+  Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);

@@ -41,7 +41,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- water content, and evaluator
   S->RequireField("water_content")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList wc_plist = plist_.sublist("water content evaluator");
+  Teuchos::ParameterList wc_plist = plist_->sublist("water content evaluator");
   Teuchos::RCP<PermafrostWaterContent> wc =
       Teuchos::rcp(new PermafrostWaterContent(wc_plist));
   S->SetFieldEvaluator("water_content", wc);
@@ -60,7 +60,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       ->AddComponents(names2,locations2,num_dofs2);
 
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
-  Teuchos::ParameterList wrm_plist = plist_.sublist("water retention evaluator");
+  Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMPermafrostEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMPermafrostEvaluator(wrm_plist));
   S->SetFieldEvaluator("saturation_liquid", wrm);

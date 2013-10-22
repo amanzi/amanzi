@@ -8,24 +8,28 @@
 
    Default base with default implementations of methods for a physical PK.
    ------------------------------------------------------------------------- */
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "pk_physical_base.hh"
 
 namespace Amanzi {
 
 
-PKPhysicalBase::PKPhysicalBase(Teuchos::ParameterList& plist,
+PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist,FElist,solution) {
 
+  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+
+
   // process the PList
   // domain
   if (domain_ == std::string("")) {
-    domain_ = plist_.get<std::string>("domain name", std::string("domain"));
+    domain_ = plist_->get<std::string>("domain name", std::string("domain"));
   }
   if (key_ == std::string("")) {
-    key_ = plist_.get<std::string>("primary variable");
+    key_ = plist_->get<std::string>("primary variable");
   }
 
   // derive the prefix
@@ -51,7 +55,7 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   mesh_ = S->GetMesh(domain_);
 
   // set up the debugger
-  db_ = Teuchos::rcp(new Debugger(mesh_, name_, plist_));
+  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 
   // require primary variable evaluator
   S->RequireFieldEvaluator(key_);
@@ -62,6 +66,8 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
+
+  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
 
 };
 
@@ -116,10 +122,12 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
 void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
 
+  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+
   if (!field->initialized()) {
     // initial conditions
     // -- Get the IC function plist.
-    if (!plist_.isSublist("initial condition")) {
+    if (!plist_->isSublist("initial condition")) {
       std::stringstream messagestream;
       messagestream << name_ << " has no initial condition parameter list.";
       Errors::Message message(messagestream.str());
@@ -127,7 +135,7 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
     }
 
     // -- Calculate the IC.
-    Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
+    Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     field->Initialize(ic_plist);
 
     // -- Update faces from cells if needed.

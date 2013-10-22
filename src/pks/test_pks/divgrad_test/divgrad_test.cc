@@ -46,13 +46,13 @@ void DivGradTest::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // Create the boundary condition data structures.
-  Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
+  Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   TestPKBCFactory bc_factory(mesh_, bc_plist);
   bc_dirichlet_ = bc_factory.CreateDirichlet();
   bc_neumann_ = bc_factory.CreateNeumann();
 
   // operator for the diffusion terms
-  Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
@@ -66,7 +66,7 @@ void DivGradTest::setup(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   // Check for PK-specific initialization
-  if (!plist_.isSublist("initial condition")) {
+  if (!plist_->isSublist("initial condition")) {
     std::stringstream messagestream;
     messagestream << name_ << " has no initial condition parameter list.";
     Errors::Message message(messagestream.str());
@@ -74,7 +74,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   // make sure the initial condition doesn't set faces in another way
-  Teuchos::ParameterList ic_plist = plist_.sublist("initial condition");
+  Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
   ic_plist.set("initialize faces from cells", false);
 
   // initialize primary variable from the ic_plist condition

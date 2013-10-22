@@ -36,35 +36,35 @@ void EnergyBase::setup(const Teuchos::Ptr<State>& S) {
 void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
   if (energy_key_ == std::string()) {
-    energy_key_ = plist_.get<std::string>("energy key",
+    energy_key_ = plist_->get<std::string>("energy key",
             domain_prefix_+std::string("energy"));
   }
   if (cell_vol_key_ == std::string()) {
-    cell_vol_key_ = plist_.get<std::string>("cell volume key",
+    cell_vol_key_ = plist_->get<std::string>("cell volume key",
             domain_prefix_+std::string("cell_volume"));
   }
   if (enthalpy_key_ == std::string()) {
-    enthalpy_key_ = plist_.get<std::string>("enthalpy key",
+    enthalpy_key_ = plist_->get<std::string>("enthalpy key",
             domain_prefix_+std::string("enthalpy"));
   }
   if (flux_key_ == std::string()) {
-    flux_key_ = plist_.get<std::string>("flux key",
+    flux_key_ = plist_->get<std::string>("flux key",
             domain_prefix_+std::string("flux"));
   }
   if (energy_flux_key_ == std::string()) {
-    energy_flux_key_ = plist_.get<std::string>("energy flux key",
+    energy_flux_key_ = plist_->get<std::string>("energy flux key",
             domain_prefix_+std::string("energy_flux"));
   }
   if (conductivity_key_ == std::string()) {
-    conductivity_key_ = plist_.get<std::string>("conductivity key",
+    conductivity_key_ = plist_->get<std::string>("conductivity key",
             domain_prefix_+std::string("thermal_conductivity"));
   }
   if (de_dT_key_ == std::string()) {
-    de_dT_key_ = plist_.get<std::string>("de/dT key",
+    de_dT_key_ = plist_->get<std::string>("de/dT key",
             std::string("d")+energy_key_+std::string("_d")+key_);
   }
   if (source_key_ == std::string()) {
-    source_key_ = plist_.get<std::string>("source key",
+    source_key_ = plist_->get<std::string>("source key",
             domain_prefix_+std::string("total_energy_source"));
   }
   if (dsource_dT_key_ == std::string()) {
@@ -107,7 +107,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("face", AmanziMesh::FACE, 1);
 
   // Require a field for the (conducted) energy flux.
-  std::string updatestring = plist_.get<std::string>("update flux mode", "vis");
+  std::string updatestring = plist_->get<std::string>("update flux mode", "vis");
   if (updatestring == "iteration") {
     update_flux_ = UPDATE_FLUX_ITERATION;
   } else if (updatestring == "timestep") {
@@ -125,14 +125,14 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // coupling terms
   // -- subsurface PK, coupled to the surface
-  coupled_to_surface_via_flux_ = plist_.get<bool>("coupled to surface via flux", false);
+  coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
     S->RequireField("surface_subsurface_energy_flux", name_)
         ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   coupled_to_surface_via_temp_ =
-      plist_.get<bool>("coupled to surface via temperature", false);
+      plist_->get<bool>("coupled to surface via temperature", false);
   if (coupled_to_surface_via_temp_) {
     // surface temperature used for BCs
     S->RequireField("surface_temperature");
@@ -140,7 +140,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
 
   // source terms
-  is_source_term_ = plist_.get<bool>("source term");
+  is_source_term_ = plist_->get<bool>("source term");
   if (is_source_term_) {
     S->RequireField(source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -148,19 +148,19 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   }
 
   // boundary conditions
-  Teuchos::ParameterList bc_plist = plist_.sublist("boundary conditions", true);
+  Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   EnergyBCFactory bc_factory(mesh_, bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_flux_ = bc_factory.CreateEnthalpyFlux();
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
-  Teuchos::ParameterList advect_plist = plist_.sublist("Advection");
+  Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
   advection_ = advection_factory.create(advect_plist, mesh_);
   advection_->set_num_dofs(1);
 
   // operator for the diffusion terms
-  Teuchos::ParameterList mfd_plist = plist_.sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
   matrix_ = Operators::CreateMatrixMFD(mfd_plist, mesh_);
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
@@ -168,7 +168,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   matrix_->InitPreconditioner(); // this is needed to calc consistent faces
 
   // preconditioner
-  Teuchos::ParameterList mfd_pc_plist = plist_.sublist("Diffusion PC");
+  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(true);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
@@ -176,11 +176,11 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->InitPreconditioner();
 
   // constraint on max delta T, which kicks us out of bad iterates faster?
-  dT_max_ = plist_.get<double>("maximum temperature change", 10.);
+  dT_max_ = plist_->get<double>("maximum temperature change", 10.);
 
   // ewc and other predictors can result in odd face values
   modify_predictor_with_consistent_faces_ =
-    plist_.get<bool>("modify predictor with consistent faces", false);
+    plist_->get<bool>("modify predictor with consistent faces", false);
 };
 
 

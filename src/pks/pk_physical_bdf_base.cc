@@ -27,8 +27,8 @@ void PKPhysicalBDFBase::setup(const Teuchos::Ptr<State>& S) {
   PKBDFBase::setup(S);
 
   // convergence criteria
-  atol_ = plist_.get<double>("absolute error tolerance",1.0);
-  rtol_ = plist_.get<double>("relative error tolerance",1.0);
+  atol_ = plist_->get<double>("absolute error tolerance",1.0);
+  rtol_ = plist_->get<double>("relative error tolerance",1.0);
 };
 
 

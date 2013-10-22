@@ -47,23 +47,23 @@ namespace Amanzi {
 void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   StrongMPC<PKPhysicalBDFBase>::setup(S);
 
-  decoupled_ = plist_.get<bool>("decoupled",false);
+  decoupled_ = plist_->get<bool>("decoupled",false);
 
-  A_key_ = plist_.get<std::string>("conserved quantity A");
-  B_key_ = plist_.get<std::string>("conserved quantity B");
-  y1_key_ = plist_.get<std::string>("primary variable A");
-  y2_key_ = plist_.get<std::string>("primary variable B");
+  A_key_ = plist_->get<std::string>("conserved quantity A");
+  B_key_ = plist_->get<std::string>("conserved quantity B");
+  y1_key_ = plist_->get<std::string>("primary variable A");
+  y2_key_ = plist_->get<std::string>("primary variable B");
   dA_dy2_key_ = std::string("d")+A_key_+std::string("_d")+y2_key_;
   dB_dy1_key_ = std::string("d")+B_key_+std::string("_d")+y1_key_;
 
-  Key mesh_key = plist_.get<std::string>("mesh key");
+  Key mesh_key = plist_->get<std::string>("mesh key");
   mesh_ = S->GetMesh(mesh_key);
 
   // set up debugger
-  db_ = Teuchos::rcp(new Debugger(mesh_, name_, plist_));
+  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 
   // Create the precon
-  Teuchos::ParameterList pc_sublist = plist_.sublist("Coupled PC");
+  Teuchos::ParameterList pc_sublist = plist_->sublist("Coupled PC");
   mfd_preconditioner_ = Operators::CreateMatrixMFD_Coupled(pc_sublist, mesh_);
 
   // Set the sub-blocks from the sub-PK's preconditioners.
@@ -76,8 +76,8 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   mfd_preconditioner_->InitPreconditioner();
 
   // setup and initialize the linear solver for the preconditioner
-  if (plist_.isSublist("Coupled Solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_.sublist("Coupled Solver");
+  if (plist_->isSublist("Coupled Solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("Coupled Solver");
     AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
     linsolve_preconditioner_ = fac.Create("coupled solver", linsolve_sublist, mfd_preconditioner_);
   } else {

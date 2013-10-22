@@ -54,7 +54,7 @@ class MPCDelegateEWC {
 
 
  protected:
-  Teuchos::ParameterList plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<Debugger> db_;
 

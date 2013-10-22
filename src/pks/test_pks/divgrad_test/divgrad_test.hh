@@ -26,13 +26,13 @@ namespace TestPKs {
 class DivGradTest : public PKPhysicalBase {
 
 public:
-  DivGradTest(Teuchos::ParameterList& plist,
+  DivGradTest(const Teuchos::RCP<Teuchos::ParameterList>& plist,
               Teuchos::ParameterList& FElist,
               const Teuchos::RCP<TreeVector>& solution) :
       PKDefaultBase(plist, FElist, solution),
       PKPhysicalBase(plist, FElist, solution) {
     // set a few parameters before setup
-    plist_.set("solution key", "solution");
+    plist_->set("solution key", "solution");
   }
 
   // Virtual destructor
