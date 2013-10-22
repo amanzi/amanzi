@@ -217,7 +217,7 @@
 			<assigned_regions>Inlet Boundary</assigned_regions>
 			<liquid_phase name="water">
 				<liquid_component name="water">
-					<inward_volumetric_flux value="1.0" start="0" function="constant"/>
+					<inward_mass_flux value="1.0" start="0" function="constant"/>
 				</liquid_component>
 				<geochemistry>
 					<constraint name="Inlet" start="0.0" function="constant"/>

@@ -1,8 +1,5 @@
-Unconfined Flow Simulations
-===========================
-
-Steady-state, constant-property, saturated flow in an unconfined aquifer with seepage
--------------------------------------------------------------------------------------
+Steady-State Unconfined Flow with a Seepage Boundary Condition
+--------------------------------------------------------------
 
 Consider the following scenario involving steady-state groundwater flow in an 
 unconfined aquifer that discharges to a sloped ground surface along a seepage face

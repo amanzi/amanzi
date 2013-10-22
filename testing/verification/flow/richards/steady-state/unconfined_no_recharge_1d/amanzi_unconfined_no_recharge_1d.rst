@@ -1,8 +1,5 @@
-Unconfined Flow Simulations
-===========================
-
-One-dimensional, steady-state, constant-property, saturated flow in an unconfined aquifer
------------------------------------------------------------------------------------------
+Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions
+------------------------------------------------------------------------------
 
 Flow in an unconfined aquifer is inherently multi-dimensional, 
 which generally precludes simple closed-form analytic solutions. 
