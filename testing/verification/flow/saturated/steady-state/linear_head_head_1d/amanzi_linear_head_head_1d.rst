@@ -1,8 +1,8 @@
-Elementary Flow Simulations
-===========================
+Steady-State One-Dimensional Flow with Head Boundary Conditions
+---------------------------------------------------------------
 
-One-dimensional, steady-state, constant-property, confined (saturated) flow
----------------------------------------------------------------------------
+Introduction
+~~~~~~~~~~~~
 
 For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply

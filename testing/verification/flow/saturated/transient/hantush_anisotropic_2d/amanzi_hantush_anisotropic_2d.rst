@@ -1,8 +1,8 @@
-Hantush and Thomas (1966) Analysis
-====================================
+Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)
+--------------------------------------------------------------------
 
 Introduction
--------------
+~~~~~~~~~~~~
 
 Hantush and Thomas (1966) developed an analytical solution for measuring drawdown
 during constant discharge for a completely penetrating well in a
@@ -44,7 +44,7 @@ redefined the well function, *W*, to apply to :math:`\phi` instead of
 
  
 Schematic
-----------
+~~~~~~~~~
 
 .. image:: schematic/ellipse.png
 	   

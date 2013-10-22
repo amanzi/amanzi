@@ -1,8 +1,5 @@
-Unconfined Flow Simulations
-===========================
-
-Steady-state, constant-property, saturated flow in an unconfined multi-aquifer system
--------------------------------------------------------------------------------------
+Steady-State Flow in an Unconfined Multi-Aquifer System
+-------------------------------------------------------
 
 Consider the following scenario involving steady-state groundwater flow
 through a layered aquifer-aquitard-aquifer system presented by 
