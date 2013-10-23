@@ -591,7 +591,7 @@ PorousMedia::PorousMedia (Amr&            papa,
       (*kr_coef).setVal(0.);
 
       BL_ASSERT(cpl_coef == 0);
-      cpl_coef = new MultiFab(grids,5,1);
+      cpl_coef = new MultiFab(grids,5,3);
       (*cpl_coef).setVal(0.);
 
       BL_ASSERT(lambda_cc == 0);
@@ -827,7 +827,7 @@ PorousMedia::restart (Amr&          papa,
       (*kr_coef).setVal(0.);
 
       BL_ASSERT(cpl_coef == 0);
-      cpl_coef = new MultiFab(grids,5,1);
+      cpl_coef = new MultiFab(grids,5,3);
       (*cpl_coef).setVal(0.);
 
       BL_ASSERT(lambda_cc == 0);
@@ -2872,6 +2872,13 @@ void
 PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
 {
   BL_ASSERT(RhoSat.boxArray()== grids);
+  BL_ASSERT(kappa->boxArray()== grids);
+  BL_ASSERT(cpl_coef->boxArray()== grids);
+  BL_ASSERT(rock_phi->boxArray()== grids);
+  BL_ASSERT(RhoSat.nGrow()>= nGrow);
+  BL_ASSERT(kappa->nGrow()>= nGrow);
+  BL_ASSERT(cpl_coef->nGrow()>= nGrow);
+  BL_ASSERT(rock_phi->nGrow()>= nGrow);
   if (model == PM_RICHARDS) {
     for (FillPatchIterator P_fpi(*this,RhoSat,nGrow,t_eval,Press_Type,0,ncomps); P_fpi.isValid(); ++P_fpi) {
       calcInvPressure(RhoSat[P_fpi],P_fpi(),(*rock_phi)[P_fpi],(*kappa)[P_fpi],(*cpl_coef)[P_fpi]);
@@ -3103,6 +3110,10 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
     bool continue_subtr = true;
     std::map<int,MultiFab*> saved_states;
     int n_subtr = 0;
+
+    bool summary_transport_out = true;
+    bool full_transport_out = false;
+
     while (continue_subtr) {
 
       // Adjust dt_sub to spread out dt changes and avoid small final step
@@ -3116,7 +3127,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 
       if (react_tracers  &&  do_full_strang) {
 	const Real strt_time_chem = ParallelDescriptor::second();
-	if (verbose > 0 &&  ParallelDescriptor::IOProcessor() && n_subtr>1) {
+	if (verbose > 0 && full_transport_out && ParallelDescriptor::IOProcessor() && n_subtr>1) {
 	  for (int lev=0; lev<=level; ++lev) {
 	    std::cout << "  ";
 	  }
@@ -3140,7 +3151,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	run_time_chem = run_time_chem + ParallelDescriptor::second() - strt_time_chem;
       }
 
-      if (verbose > 0 &&  ParallelDescriptor::IOProcessor()) {
+      if (verbose > 0 && full_transport_out &&  ParallelDescriptor::IOProcessor()) {
 	for (int lev=0; lev<=level; ++lev) {
 	  std::cout << "  ";
 	}
@@ -3184,7 +3195,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	bool do_reflux_this_call = true;
 	tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat,&Fext);
       }
-
       // Initialize diffusive flux registers
       if (do_reflux && level < parent->finestLevel()) {
         getViscFluxReg(level+1).setVal(0);
@@ -3279,9 +3289,6 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         
         if (subcycle_time_remaining > 0) {
           
-          // Prepare the state data structures (set "new" to "old", and set times correspondingly)
-          state[State_Type].swapTimeLevels(dt_subtr); // FIXME: we actually need to set new and old times only for tracers, not saturations....
-          
           //predictDT(u_macG_trac,t_subtr); // based on the new "old" state
           if (dt_cfl < dt_subtr) {
             int num_subcycles = std::max(1,(int)(subcycle_time_remaining / dt_cfl) + 1);
@@ -3303,7 +3310,31 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
         return false;
 	
       } // end of recover
+    }
 
+    if (summary_transport_out && ParallelDescriptor::IOProcessor() ) {
+
+      std::string units_str = do_output_transport_time_in_years ? "Y" : "s";
+      std::pair<Real,std::string> t_output = PMAmr::convert_time_units(t,units_str);
+      std::pair<Real,std::string> tnew_output = PMAmr::convert_time_units(t+dt,units_str);
+      std::pair<Real,std::string> dt_output = PMAmr::convert_time_units(dt,units_str);
+      std::pair<Real,std::string> dt_subtr_output = PMAmr::convert_time_units(dt_subtr,units_str);
+      std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
+      for (int lev=0; lev<=level; ++lev) {
+        std::cout << "  ";
+      }
+      std::cout << "TRANSPORT: Level: " << level
+                << " TIME: " << t_output.first << t_output.second
+                << " : " << tnew_output.first << tnew_output.second
+                << " (DT: " << dt_output.first << dt_output.second << ")" << std::endl;
+      if (n_subtr > 1) {
+        for (int lev=0; lev<=level; ++lev) {
+          std::cout << "  ";
+        }
+        std::cout << " (Nsub: " << n_subtr
+                  << ", DTsub: " << dt_subtr_output.first << dt_subtr_output.second << ")" << std::endl;
+      }
+      std::cout.flags(oldflags);
     }
 
     // Bring state up to current time, and reinstate original dt info
@@ -5475,6 +5506,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
     {
       const int i = C_old_fpi.index();
       const Box& box = grids[i];
+
       const Box gbox = Box(box).grow(1);
 
       BL_ASSERT(!use_conserv_diff);
@@ -5499,7 +5531,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
       BL_ASSERT(area[0].size()>i);
       BL_ASSERT(area[1].size()>i);
 
-      // Predict new state with forward Euler diffusion...FIXME: SRCext currently ignored by this predictor...
       godunov->AdvectTracer(grids[i], dx, dt, 
 			    area[0][i], u_macG[0][i], flux[0], 
 			    area[1][i], u_macG[1][i], flux[1], 
@@ -7716,14 +7747,14 @@ PorousMedia::sum_integrated_quantities ()
 
   Real time = state[State_Type].curTime();
   Real mass = 0.0;
-  Array<Real> tmass(ntracers,0);
+  Array<Real> tmoles(ntracers,0);
 
   for (int lev = 0; lev <= finest_level; lev++) {
     PorousMedia& ns_level = getLevel(lev);
     mass += ns_level.volWgtSum("Volumetric_Water_Content",time);
     for (int n=0; n<ntracers; ++n) {
       std::string VSC = "Volumetric_" + tNames[n] + "_Content";
-      tmass[n] += ns_level.volWgtSum(tNames[n],time);
+      tmoles[n] += ns_level.volWgtSum(VSC,time);
     }
   }
 
@@ -7731,9 +7762,9 @@ PorousMedia::sum_integrated_quantities ()
 
     std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
     std::cout << "  Volume integrated diagnostics:" << '\n';
-    std::cout << "    TIME=" << time << "[s]  MASS(Water)=" << mass*density[0] << "[kg]\n";
+    std::cout << "    TIME=" << time << "[s]  Inventory(Water)=" << mass*density[0] << "[kg]\n";
     for (int n=0; n<ntracers; ++n) {
-      std::cout << "    TIME=" << time << "[s]  MASS(" << tNames[n] << ")=" << tmass[n]*density[0] << "[kg]\n";
+      std::cout << "    TIME=" << time << "[s]  Inventory(" << tNames[n] << ")=" << tmoles[n] << "[moles]\n";
     }
     std::cout.flags(oldflags);
   }
@@ -8802,7 +8833,7 @@ PorousMedia::init_rock_properties ()
 
     // FIXME: Fix up covered cells, averaged cpl params make no sense
     bool retCpl = matFiller->SetProperty(state[State_Type].curTime(),level,*cpl_coef,
-                                         "capillary_pressure",0,kr_coef->nGrow(),0,ignore_mixed);
+                                         "capillary_pressure",0,cpl_coef->nGrow(),0,ignore_mixed);
     if (!retCpl) BoxLib::Abort("Failed to build capillary_pressure");
   }
 
@@ -12853,16 +12884,12 @@ PorousMedia::derive (const std::string& name,
     derive(name,time,*mf,dcomp);
   }
   else {
-    mf = AmrLevel::derive(name,time,ngrow);
-
-    if (mf == 0) {
-      //
-      // If we got here, cannot derive given name.
-      //
-      std::string msg("PorousMedia::derive(): unknown variable: ");
-      msg += name;
-      BoxLib::Error(msg.c_str());
-    }
+    //
+    // If we got here, cannot derive given name.
+    //
+    std::string msg("PorousMedia::derive(): unknown variable: ");
+    msg += name;
+    BoxLib::Error(msg.c_str());
   }
   return mf;
 }

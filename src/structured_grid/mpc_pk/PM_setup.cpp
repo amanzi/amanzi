@@ -2406,7 +2406,7 @@ void  PorousMedia::read_comp()
   }
 }
 
-
+using PMAMR::RlabelDEF;
 void  PorousMedia::read_tracer()
 {
   //
@@ -2471,12 +2471,19 @@ void  PorousMedia::read_tracer()
           {
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
-              if (n_tbc <= 0)
-              {
-                //BoxLib::Abort("each tracer requires boundary conditions");
-              }
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
-              tbc_array[i].resize(n_tbc,PArrayManage);
+              tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
+
+              // Explicitly build default BCs
+              int tbc_cnt = 0;
+              for (int n=0; n<BL_SPACEDIM; ++n) {
+                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
+                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n])),
+                                                           std::string("concentration"),0));
+                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n+3] + "_DEFAULT",
+                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n+3])),
+                                                           std::string("concentration"),0));
+              }
               
 
               Array<int> orient_types(6,-1);
@@ -2516,19 +2523,19 @@ void  PorousMedia::read_tracer()
                           forms.resize(0);
                       }
                       int nComp = 1;
-                      tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                      tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
                       AMR_BC_tID = 1; // Inflow
                   }
                   else if (tbc_type == "noflow")
                   {
                       Array<Real> val(1,0);
-                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 4; // Noflow
+                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 1;
                   }
                   else if (tbc_type == "outflow")
                   {
                       Array<Real> val(1,0);
-                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
                       AMR_BC_tID = 2; // Outflow
                   }
                   else {
@@ -2564,9 +2571,9 @@ void  PorousMedia::read_tracer()
                     }
                   }
               }
-              // Set the default BC type = SlipWall (noflow)
+              // Set the default BC type
               for (int k=0; k<orient_types.size(); ++k) {
-                if (orient_types[k] < 0) orient_types[k] = 4;
+                if (orient_types[k] < 0) orient_types[k] = 1;
               }
 
               BCRec phys_bc_trac;

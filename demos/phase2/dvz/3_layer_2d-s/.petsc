@@ -39,7 +39,7 @@
 #-pc_type lu
 #-pc_type ilu
 #-sub_pc_type ilu
-#-pc_type pbjacobi
+-pc_type pbjacobi
 #-sub_pc_type lu
 -pc_view
 #-pc_factor_mat_ordering_type qmd
