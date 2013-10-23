@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow test of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -68,9 +68,11 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   FS->set_fluid_viscosity(0.00089);
   FS->set_fluid_density(998);
   FS->set_gravity(-9.81);
+  FS->set_pressure_hydrostatic(30.0, 101325.0);
 
   // create Richards process kernel
   Richards_PK* RPK = new Richards_PK(parameter_list, FS);
+  RPK->DeriveFaceValuesFromCellValues(FS->ref_pressure(), FS->ref_lambda()); 
   RPK->InitPK();
   RPK->InitSteadyState(0.0, 0.01);
 
