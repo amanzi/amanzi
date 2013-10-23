@@ -300,8 +300,13 @@ int  PorousMedia::nGrowMG;
 int  PorousMedia::nGrowEIGEST;
 bool PorousMedia::do_constant_vel;
 Real PorousMedia::be_cn_theta_trac;
+bool PorousMedia::do_output_flow_time_in_years;
+bool PorousMedia::do_output_chemistry_time_in_years;
+bool PorousMedia::do_output_transport_time_in_years;
 
 int  PorousMedia::richard_solver_verbose;
+RichardNLSdata* PorousMedia::nld_flow;
+
 //
 // Init to steady
 //
@@ -584,7 +589,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::z_location   = 0;
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
-  PorousMedia::sum_interval = -1;
+  PorousMedia::sum_interval = 1;
   PorousMedia::NUM_SCALARS  = 0;
   PorousMedia::NUM_STATE    = 0;
   PorousMedia::full_cycle   = 0;
@@ -642,6 +647,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = 0;
   PorousMedia::be_cn_theta_trac = 0.5;
+  PorousMedia::do_output_flow_time_in_years = true;
+  PorousMedia::do_output_chemistry_time_in_years = true;
+  PorousMedia::do_output_transport_time_in_years = false;
 
   PorousMedia::richard_solver_verbose = 2;
 
@@ -652,9 +660,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_max_iterations = 15;
   PorousMedia::steady_limit_iterations = 20;
   PorousMedia::steady_time_step_reduction_factor = 0.8;
-  PorousMedia::steady_time_step_increase_factor = 1.8;
+  PorousMedia::steady_time_step_increase_factor = 1.6;
   PorousMedia::steady_time_step_increase_factor_2 = 10;
-  PorousMedia::steady_time_step_retry_factor_1 = 0.05;
+  PorousMedia::steady_time_step_retry_factor_1 = 0.2;
   PorousMedia::steady_time_step_retry_factor_2 = 0.01;
   PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
@@ -1612,6 +1620,10 @@ void PorousMedia::read_prob()
     pp.get("switch_time",switch_time);
   }
 
+  pp.query("do_output_flow_time_in_years;",do_output_flow_time_in_years);
+  pp.query("do_output_transport_time_in_years;",do_output_transport_time_in_years);
+  pp.query("do_output_chemistry_time_in_years;",do_output_chemistry_time_in_years);
+
   // determine the model based on model_name
   ParmParse pb("prob");
   std::string model_name;
@@ -2394,7 +2406,7 @@ void  PorousMedia::read_comp()
   }
 }
 
-
+using PMAMR::RlabelDEF;
 void  PorousMedia::read_tracer()
 {
   //
@@ -2459,12 +2471,19 @@ void  PorousMedia::read_tracer()
           {
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
-              if (n_tbc <= 0)
-              {
-                //BoxLib::Abort("each tracer requires boundary conditions");
-              }
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
-              tbc_array[i].resize(n_tbc,PArrayManage);
+              tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
+
+              // Explicitly build default BCs
+              int tbc_cnt = 0;
+              for (int n=0; n<BL_SPACEDIM; ++n) {
+                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
+                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n])),
+                                                           std::string("concentration"),0));
+                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n+3] + "_DEFAULT",
+                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n+3])),
+                                                           std::string("concentration"),0));
+              }
               
 
               Array<int> orient_types(6,-1);
@@ -2504,19 +2523,19 @@ void  PorousMedia::read_tracer()
                           forms.resize(0);
                       }
                       int nComp = 1;
-                      tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                      tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
                       AMR_BC_tID = 1; // Inflow
                   }
                   else if (tbc_type == "noflow")
                   {
                       Array<Real> val(1,0);
-                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 4; // Noflow
+                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 1;
                   }
                   else if (tbc_type == "outflow")
                   {
                       Array<Real> val(1,0);
-                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
                       AMR_BC_tID = 2; // Outflow
                   }
                   else {
@@ -2552,9 +2571,9 @@ void  PorousMedia::read_tracer()
                     }
                   }
               }
-              // Set the default BC type = SlipWall (noflow)
+              // Set the default BC type
               for (int k=0; k<orient_types.size(); ++k) {
-                if (orient_types[k] < 0) orient_types[k] = 4;
+                if (orient_types[k] < 0) orient_types[k] = 1;
               }
 
               BCRec phys_bc_trac;

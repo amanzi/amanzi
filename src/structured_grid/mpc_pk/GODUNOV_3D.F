@@ -1325,11 +1325,17 @@ c
 c     This is ESTATE_FPU with a time-independent "capacitance" factor in the time 
 c     derivative.  That is, the conservation equation solved looks like 
 c
-c                    d(s.cap)/dt + Div(s.u) = F
+c                    d(s.cap)/dt + Div(s.u) = Fc
 c
-c     whereas the default ESTATE_FPU assumes cap==1
+c            assuming   d(cap)/dt + Div(u) = F
 c
-      subroutine FORT_ESTATE_TRACER(s, DIMS(s), capInv, DIMS(capInv), 
+c     whereas the default ESTATE_FPU assumes cap==1.  We can write the discretization
+c     for s given either F or d(cap)/dt
+c
+      subroutine FORT_ESTATE_TRACER(s, DIMS(s),
+     &     capInv, DIMS(capInv), 
+     &     dcapdt, DIMS(dcapdt), 
+     &     tforces, DIMS(tforces),
      &     tforces, DIMS(tforces),
      &     xlo, xhi, sx, slxscr, stxlo, stxhi,
      &     uedge, DIMS(uedge), xstate, DIMS(xstate),
@@ -1352,6 +1358,7 @@ c
 
       integer DIMDEC(s)
       integer DIMDEC(capInv)
+      integer DIMDEC(dcapdt)
       integer DIMDEC(tforces)
       integer DIMDEC(work)
       integer DIMDEC(uedge)
@@ -1363,6 +1370,7 @@ c
 
       REAL_T s(DIMV(s))
       REAL_T capInv(DIMV(capInv))
+      REAL_T dcapdt(DIMV(dcapdt))
       REAL_T stxlo(DIM1(s)),stxhi(DIM1(s)),slxscr(DIM1(s),4)
       REAL_T stylo(DIM2(s)),styhi(DIM2(s)),slyscr(DIM2(s),4)
       REAL_T stzlo(DIM3(s)),stzhi(DIM3(s)),slzscr(DIM3(s),4)
@@ -1385,7 +1393,7 @@ c
       integer use_minion, iconserv
       integer inc
 
-      call bl_abort()
+      call bl_abort("3D Godunov tracer predict not implemented yet")
 
       end
 #else
