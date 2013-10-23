@@ -276,7 +276,7 @@ void Flow_PK::ProcessBoundaryConditions(
 #endif
     if (MyPID == 0 && nseepage > 0 && nseepage != nseepage_prev) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *(vo_->os()) << "seepage face has changed: " << area_seepage << " [m^2]n" << endl;
+      *(vo_->os()) << "seepage face has changed: " << area_seepage << " [m^2]" << endl;
     }
   }
   nseepage_prev = nseepage;

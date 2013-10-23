@@ -60,6 +60,8 @@ public:
     static void RegisterEvent(const std::string& event_label,
                               EventCoord::Event* event); // takes control of pointer
 
+    static std::pair<Real,std::string> convert_time_units(Real t, const std::string& units);
+
 protected:
     void InitializeControlEvents();
 
@@ -99,6 +101,7 @@ private:
     MatFiller* materialFiller;
     Real dt0_before_event_cut;
     Real dt0_from_previous_advance;
+    static bool do_output_time_in_years;
 };
 
 #endif /*_PMAmr_H_*/

@@ -152,7 +152,7 @@ if __name__ == "__main__":
         # subplots
         #fig, ax = plt.subplots(2,sharex=True,figsize=(15,8))
 
-    colors= ['r','b','y','g'] # components
+    colors= ['r','b','m','g'] # components
     styles = ['-','--','x'] # codes
     codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
 

@@ -1,3 +1,6 @@
+#include <ios>
+#include <algorithm>
+
 #include <PMAmr.H>
 #include <PorousMedia.H>
 #include <Observation.H>
@@ -18,6 +21,7 @@ namespace
 
 EventCoord PMAmr::event_coord;
 std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
+bool PMAmr::do_output_time_in_years;
 
 void
 PMAmr::CleanupStatics ()
@@ -37,6 +41,7 @@ PMAmr::PMAmr()
         compute_new_dt_on_regrid = 1;
         plot_file_digits         = file_name_digits;
         chk_file_digits          = file_name_digits;
+        do_output_time_in_years  = true;
 
         BoxLib::ExecOnFinalize(PMAmr::CleanupStatics);
         pmamr_initialized = true;
@@ -49,6 +54,7 @@ PMAmr::PMAmr()
     ppa.query("use_efficient_regrid",use_efficient_regrid);
     ppa.query("plotfile_on_restart",plotfile_on_restart);
     ppa.query("compute_new_dt_on_regrid",compute_new_dt_on_regrid);
+    ppa.query("do_output_time_in_years",do_output_time_in_years);
 
     ParmParse pp;
     pp.query("max_step",max_step);
@@ -439,6 +445,12 @@ PMAmr::pm_timeStep (int  level,
     level_steps[level]++;
     level_count[level]++;
 
+    int sum_interval = PorousMedia::SumInterval();
+    if (level==0 && sum_interval>0 && level_steps[0]%sum_interval == 0) {
+      pm.sum_integrated_quantities();
+    }
+
+
 #ifdef USE_STATIONDATA
     station.report(time+dt_level[level],level,amr_level[level]);
 #endif
@@ -446,6 +458,28 @@ PMAmr::pm_timeStep (int  level,
 #ifdef USE_SLABSTAT
     AmrLevel::get_slabstat_lst().update(amr_level[level],time,dt_level[level]);
 #endif
+}
+
+std::pair<Real,std::string>
+PMAmr::convert_time_units(Real t, const std::string& units)
+{
+  Real t_output;
+  std::string units_str;
+  std::string units_in = units;
+  std::transform(units_in.begin(), units_in.end(), units_in.begin(), toupper);
+
+  if (units_in == "Y") {
+    t_output = t/(3600*24*365.25);
+    units_str = "[y]";
+  } else if (units_in == "S") {
+    t_output = t;
+    units_str = "[s]";
+  }
+  else {
+    std::cout << "units_str: " << units_in << std::endl;
+    BoxLib::Abort();
+  }
+  return std::pair<Real,std::string>(t_output,units_str);
 }
 
 void
@@ -555,30 +589,34 @@ PMAmr::coarseTimeStep (Real _stop_time)
                       << min_fab_bytes << " ... " << max_fab_bytes << "]\n";
     }
 
+    std::string units_str = do_output_time_in_years ? "Y" : "s";
+    std::pair<Real,std::string> t_output = PMAmr::convert_time_units(cumtime,units_str);
+    std::pair<Real,std::string> dt_output = PMAmr::convert_time_units(dt_level[0],units_str);
+    std::ios_base::fmtflags oldflags = std::cout.flags(); std::cout << std::scientific << std::setprecision(10);
     if (verbose > 0 && ParallelDescriptor::IOProcessor())
     {
-        std::cout << "\nSTEP = "
+        std::cout << "STEP = "
                  << level_steps[0]
                   << " COMPLETE.  TIME = "
-                  << cumtime
+                  << t_output.first << t_output.second
                   << " DT = "
-                  << dt_level[0]
-                  << '\n';
+                  << dt_output.first << dt_output.second
+                  << "\n\n";
     }
     if (record_run_info && ParallelDescriptor::IOProcessor())
     {
         runlog << "STEP = "
                << level_steps[0]
                << " TIME = "
-               << cumtime
+               << t_output.first << t_output.second
                << " DT = "
-               << dt_level[0]
-               << '\n';
+               << dt_output.first << dt_output.second
+               << "\n\n";
     }
     if (record_run_info_terse && ParallelDescriptor::IOProcessor())
         runlog_terse << level_steps[0] << " " << cumtime << " " << dt_level[0] << '\n';
+    std::cout.flags(oldflags);
 
-    
     int to_checkpoint = 0;    
     int to_stop       = 0;    
     if (ParallelDescriptor::IOProcessor())

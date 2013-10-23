@@ -321,7 +321,8 @@ extern "C"
 
 #if 1
         void FORT_ESTATE_TRACER(const Real* s_dat,     ARLIM_P(s_lo),    ARLIM_P(s_hi),
-				const Real* sphi_dat,  ARLIM_P(sphi_lo), ARLIM_P(sphi_hi),
+				const Real* capi_dat,  ARLIM_P(capi_lo), ARLIM_P(capi_hi),
+				const Real* dcdt_dat,  ARLIM_P(dcdt_lo), ARLIM_P(dcdt_hi),
 				const Real* tfr_dat,   ARLIM_P(s_lo),    ARLIM_P(s_hi),
 
 				Real*       xlo_dat,   

@@ -3284,6 +3284,7 @@ namespace Amanzi {
         for (int i=0; i<solute_names.size(); ++i) {
           const std::string& name = solute_names[i];
           user_derive_list.push_back(underscore(name+" Aqueous Concentration"));
+          user_derive_list.push_back(underscore("Volumetric_" + name + "_Content"));
         }
       }
             

@@ -85,7 +85,13 @@ if __name__ == "__main__":
 
     CWD = os.getcwd()
     local_path = "" 
-        
+
+    # subplots
+    fig, ax = plt.subplots(3,sharex=True,figsize=(15,12))
+    bx =[None,]*3
+    bx[0] = ax[0].twinx()
+    bx[2] = ax[2].twinx()
+    
     try:
         # hardwired for 1d-calcite: Tritium = component 0, last time = '71'
         times = ['0','71']
@@ -118,6 +124,11 @@ if __name__ == "__main__":
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               v_amanzi_native[i][j] = c_amanzi_native
 
+    except:
+        
+        pass
+
+    try:  
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
@@ -138,69 +149,84 @@ if __name__ == "__main__":
               x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
-        # subplots
-        fig, ax = plt.subplots(3,sharex=True,figsize=(15,12))
-        bx =[None,]*3
-        bx[0] = ax[0].twinx()
-        bx[2] = ax[2].twinx()
+        alq = True
 
-        colors= ['r','b','y','g'] # components
-        styles = ['-','--','x'] # codes
-        codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
+    except:
 
-        # lines on axes
-        # for i, time in enumerate(times):
-        i = 1
-        for j, comp in enumerate(components):
-              if j == 0:
-                ax[1].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label='pH')
-                ax[1].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2)
-                ax[1].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
-              elif j == 3:
-                pass
-                bx[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=comp)
-                bx[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2)
-                bx[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
-              else:
-                ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=comp)
-                ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2)
-                ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
+        alq = False
 
-        # for i, time in enumerate(times):
-        i = 1
-        for j, comp in enumerate(components):
 
-              if j == 3:
-                #pass
-                bx[2].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-                bx[2].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1])
-                bx[2].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
-              else:
-                ax[2].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-                ax[2].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1])
-                ax[2].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
+    colors= ['r','b','m','g'] # components
+    styles = ['-','--','x'] # codes
+    codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
 
-        # axes
-        ax[2].set_xlabel("Distance (m)",fontsize=15)
-        ax[0].set_ylabel("Total Concentration [mol/L]",fontsize=15)
-        bx[0].set_ylabel("Total Concentration [mol/L]",fontsize=15,color=colors[3])
-        ax[1].set_ylabel("pH",fontsize=15)
-        ax[2].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
-        bx[2].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15,color=colors[3])
+    # lines on axes
+    # ax[0],b[0] ---> Aqueous concentrations
+    # ax[1]      ---> pH
+    # ax[2],b[2] ---> Sorbed concentrations
 
-        # plot adjustments
-        plt.subplots_adjust(left=0.20,bottom=0.15,right=0.90,top=0.90)
-        ax[0].legend(loc='center right',fontsize=15)
-        bx[0].legend(loc='center',fontsize=15)
-        ax[1].legend(loc='center right',fontsize=15)
-        ax[2].legend(loc='center right',fontsize=15)
-        #bx[2].legend(loc='center',fontsize=15)
-        plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
-        plt.tick_params(axis='both', which='major', labelsize=15)
+    # first
+    # ax[0],b[0] ---> Aqueous concentrations
+    # ax[1]      ---> pH
+    # for i, time in enumerate(times):
+    i = 0
+    for j, comp in enumerate(components):
+        if j == 0:
+            if alq:
+                   ax[1].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
+            ax[1].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label='pH')
+            ax[1].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
+        elif j == 3:
+            if alq:
+                   bx[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
+            bx[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=comp)
+            bx[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
+        else:
+            if alq:
+                   ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
+            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=comp)
+            ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
 
-        #pyplot.show()
-        plt.savefig(root+"_1d.png",format="png")
-        #plt.close()
+    # second
+    # ax[2],b[2] ---> Sorbed concentrations
+    # for i, time in enumerate(times):
+    i = 0
+    for j, comp in enumerate(components):
 
-    finally:
-        pass 
+        if j == 3:
+            if alq:
+                   bx[2].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
+            bx[2].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1])
+            bx[2].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
+        else:
+            if alq:
+                   ax[2].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
+            ax[2].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],linestyle=styles[1],linewidth=2,label=codes[j*len(styles)+1])
+            ax[2].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
+
+    # axes
+    ax[2].set_xlabel("Distance (m)",fontsize=15)
+    ax[0].set_ylabel("Total Concentration [mol/L]",fontsize=15)
+    bx[0].set_ylabel("Total Concentration [mol/L]",fontsize=15,color=colors[3])
+    ax[1].set_ylabel("pH",fontsize=15)
+    ax[2].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
+    bx[2].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15,color=colors[3])
+
+    # plot adjustments
+    plt.subplots_adjust(left=0.10,bottom=0.15,right=0.90,top=0.90)
+    ax[0].legend(loc='center right',fontsize=15)
+    bx[0].legend(loc='center left',fontsize=15)
+    ax[1].legend(loc='center right',fontsize=15)
+    ax[2].legend(loc='center right',fontsize=15)
+    ax[2].set_ylim(bottom=-0.01)
+    bx[2].set_ylim(bottom=-2.0e-6)
+    #bx[2].legend(loc='center',fontsize=15)
+    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=15)
+
+    #pyplot.show()
+    plt.savefig(root+"_1d.png",format="png")
+    #plt.close()
+
+    #finally:
+    #    pass 
