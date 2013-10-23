@@ -479,7 +479,8 @@ int MFD3D_Diffusion::MassMatrixInverseHex(
   ok = StabilityMonotoneHex(cell, permeability, Wc, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
   // if (ok) StabilityScalar(cell, R, Wc, W);
-  // return WHETSTONE_ELEMENTAL_MATRIX_OK;
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
