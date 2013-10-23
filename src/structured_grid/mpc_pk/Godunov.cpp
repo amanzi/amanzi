@@ -992,15 +992,36 @@ Godunov::edge_states_tracer (const Box&  grd,
   const int *ww_lo   = work.loVect();
   const int *ww_hi   = work.hiVect();
 
-  FArrayBox capInv(C_old.box(),1);
-  capInv.copy(Sat_old,sCompC,0,1);
-  capInv.plus(Sat_new,sCompC,0,1);
-  capInv.mult(rock_phi,0,0,1);
-  capInv.invert(2,0,1);
+  // Assuming time derivative is d(phi.s.c)/dt, we can think of phi.s
+  // here as a "capacitance", C, and write as C dc/dt when we do the 
+  // Taylor series extrapolation inside the Godunov predictor.  Within
+  // Godunov, C appears only as 1/C, so we form that here as capInv.
+  // If dC/dt != 0, there are additional terms in the predictor.  We
+  // formulate those assuming that dC/dt = (Cnew-Cold)/dt, and therefore
+  // create dC/dt here and pass it into the integrator.
+  // 
+  Box gbox = Box(grd).grow(1); // FIXME: Just happen to know that we need 1 grow cell ... 
+
+  // Compute CapInv = 1/(phi.s_new)
+  FArrayBox capInv(gbox,1);
+  capInv.copy(Sat_new,gbox,sCompC,gbox,0,1);
+  capInv.mult(rock_phi,gbox,0,0,1);
+  capInv.invert(1,0,1);
+
+  // Compute dC/dt = phi.(s_new - s_old)/dt
+  FArrayBox dcapdt(gbox,1);
+  dcapdt.copy(Sat_new,gbox,sCompC,gbox,0,1);
+  dcapdt.minus(Sat_old,gbox,sCompC,0,1);
+  dcapdt.mult(rock_phi,gbox,0,0,1);
+  dcapdt.mult(1/dt);
 
   const Real *capInv_dat = capInv.dataPtr();
   const int *capInv_lo   = capInv.loVect();
   const int *capInv_hi   = capInv.hiVect();
+
+  const Real *dcapdt_dat = dcapdt.dataPtr();
+  const int *dcapdt_lo   = dcapdt.loVect();
+  const int *dcapdt_hi   = dcapdt.hiVect();
 
   const Real *tfr_dat  = tforces.dataPtr();
   const int *tfr_lo    = tforces.loVect();
@@ -1055,6 +1076,7 @@ Godunov::edge_states_tracer (const Box&  grd,
     int iconserv = 1;
     FORT_ESTATE_TRACER(co_dat,     ARLIM(co_lo),     ARLIM(co_hi), 
 		       capInv_dat, ARLIM(capInv_lo), ARLIM(capInv_hi),
+		       dcapdt_dat, ARLIM(dcapdt_lo), ARLIM(dcapdt_hi),
 		       tfr_dat,    ARLIM(tfr_lo),    ARLIM(tfr_hi),
 		       xlo_dat, xhi_dat, slx_dat, slxscr, stxlo, stxhi, 
 		       uedge_dat,  ARLIM(ue_lo),     ARLIM(ue_hi),
@@ -1683,6 +1705,7 @@ Godunov::ComputeAofsRmn (const Box& grd,
 #endif
 		       vol.dataPtr(), ARLIM(vol.loVect()), ARLIM(vol.hiVect()),
 		       lo, hi, &nscal);
+
 }
 
 //

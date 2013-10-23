@@ -162,12 +162,6 @@ struct RichardNLSdata {
 
   bool AdjustDt(Real                dt, 
 		Reason              nl_solver_status, 
-		Real                abs_err, 
-		Real                rel_err, 
-		Real&               new_dt); // Note: return bool for whether run should stop
-      
-  bool AdjustDt(Real                dt, 
-		Reason              nl_solver_status, 
 		Real&               new_dt); // Note: return bool for whether run should stop
 
   Array < PArray <MultiFab> > Hcoeffs;
@@ -224,7 +218,7 @@ public:
 
   enum ExecutionMode {INIT_TO_STEADY, STEADY, TRANSIENT, INVALID};
 
-  RichardNLSdata BuildInitNLS();
+  RichardNLSdata* BuildInitNLS();
 
   PorousMedia ();
 
@@ -1042,6 +1036,7 @@ public:
   //
   static void check_minmax(MultiFab& mf);
   static void check_minmax(MultiFab* umac);
+  static int SumInterval() {return sum_interval;}
 
   void check_sum();
   void check_minmax();
@@ -1112,7 +1107,8 @@ public:
 
   void derive_Volumetric_Water_Content(Real      time,
                                        MultiFab& mf,
-                                       int       dcomp);
+                                       int       dcomp,
+                                       int       ntrac = -1);
 
   void derive_Aqueous_Saturation(Real      time,
                                  MultiFab& mf,
@@ -1157,14 +1153,15 @@ public:
                            int       dcomp,
                            int       dir);
 
+  static void SetRichardSolverParameters(RSParams&          rsparams,
+                                         const std::string& IDstring);
+
 protected:
 
   static void InitializeStaticVariables();
 
   void setup_bound_desc();
 
-  void SetRichardSolverParameters(RSParams&          rsparams,
-                                  const std::string& IDstring) const;
   static RichardSolver* richard_solver;
 
   // Deals with the ghost cells 
@@ -1255,6 +1252,8 @@ protected:
 #endif
   static Array<int>  rinflow_bc_lo;
   static Array<int>  rinflow_bc_hi;
+
+  static RichardNLSdata* nld_flow;
 
   typedef std::pair<Box,Array<int> > BCDesc;
   std::map<Orientation,BCDesc> bc_descriptor_map;
@@ -1444,6 +1443,10 @@ protected:
   static int nGrowMG;
   static int nGrowEIGEST;
   static bool do_constant_vel;
+  static bool do_output_flow_time_in_years;
+  static bool do_output_chemistry_time_in_years;
+  static bool do_output_transport_time_in_years;
+
 
   static int  richard_solver_verbose;
 
