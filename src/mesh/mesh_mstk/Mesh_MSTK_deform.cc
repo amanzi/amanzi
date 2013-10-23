@@ -321,9 +321,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   MSTK_FreeMarker(fixedmk);
 
   if (space_dimension() == 2)
-    MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,NULL);
+    MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,0);
   else
-    MESH_ExportToGMV(mesh,"deformed3.gmv",0,NULL,NULL,NULL);
+    MESH_ExportToGMV(mesh,"deformed3.gmv",0,NULL,NULL,0);
 
 
   // recompute all geometric quantities
