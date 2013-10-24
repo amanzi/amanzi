@@ -131,3 +131,7 @@ Amanzi verification test results
 
 .... plot:: prototype/steady-linear/amanzi_steady_linear.py
 
+.. image:: figures/hydraulic_head.png
+   :scale: 80%
+   :align: center
+

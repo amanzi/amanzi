@@ -14,6 +14,7 @@ Contents:
    background/index.rst
    capabilities/index.rst
    input/input_schema.rst
+   verification/index.rst
 
 Indices and tables
 ==================
