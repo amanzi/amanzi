@@ -33,8 +33,8 @@ class MatrixMFD_Surf : virtual public MatrixMFD {
   virtual void SetSurfaceOperator(const Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
     surface_mesh_ = surface_A->Mesh();
     surface_A_ = surface_A; }
-  virtual void GetSurfaceOperator(Teuchos::RCP<MatrixMFD_TPFA>& surface_A) {
-    surface_A = surface_A_; }
+  virtual Teuchos::RCP<MatrixMFD_TPFA> GetSurfaceOperator() {
+    return surface_A_; }
 
   virtual void SymbolicAssembleGlobalMatrices() {
     // This must be protected from being called too early.
