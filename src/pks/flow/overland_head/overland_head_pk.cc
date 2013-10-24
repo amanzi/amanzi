@@ -278,11 +278,11 @@ void OverlandHeadFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
-  Teuchos::ParameterList height_plist = plist_->sublist("ponded depth evaluator");
-  Teuchos::RCP<FlowRelations::HeightEvaluator> height_evaluator =
-      Teuchos::rcp(new FlowRelations::HeightEvaluator(height_plist));
-  S->SetFieldEvaluator("ponded_depth", height_evaluator);
-  height_model_ = height_evaluator->get_Model();
+  Teuchos::RCP<FieldEvaluator> pd_fe_eval = S->RequireFieldEvaluator("ponded_depth");
+  Teuchos::RCP<FlowRelations::HeightEvaluator> pd_eval =
+      Teuchos::rcp_dynamic_cast<FlowRelations::HeightEvaluator>(pd_fe_eval);
+  ASSERT(pd_eval != Teuchos::null);
+  height_model_ = pd_eval->get_Model();
 
   // -- conductivity evaluator
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()

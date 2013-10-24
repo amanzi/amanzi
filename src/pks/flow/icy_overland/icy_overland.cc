@@ -72,21 +72,17 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
   // -- source term evaluator
-  if (plist_->isSublist("source evaluator")) {
-    is_source_term_ = true;
+  is_source_term_ = plist_->get<bool>("source term");
+  if (is_source_term_) {
+    // source term itself [m/s]
+    S->RequireField("surface_mass_source")->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("surface_mass_source");
 
-    Teuchos::ParameterList source_plist = plist_->sublist("source evaluator");
-    source_only_if_unfrozen_ = source_plist.get<bool>("source only if unfrozen",false);
-    if (source_only_if_unfrozen_) {
-      S->RequireScalar("air_temperature");
-    }
-
-    source_plist.set("evaluator name", "overland_source");
-    S->RequireField("overland_source")->SetMesh(mesh_)
-        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-    Teuchos::RCP<FieldEvaluator> source_evaluator =
-        Teuchos::rcp(new IndependentVariableFieldEvaluator(source_plist));
-    S->SetFieldEvaluator("overland_source", source_evaluator);
+    // density of incoming water [mol/m^3]
+    S->RequireField("surface_source_molar_density")->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator("surface_source_molar_density");
   }
 
   // -- water content
@@ -100,11 +96,11 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- ponded depth
   S->RequireField("ponded_depth")->SetMesh(mesh_)->SetGhosted()
                 ->AddComponents(names2, locations2, num_dofs2);
-  Teuchos::ParameterList height_plist = plist_->sublist("ponded depth evaluator");
-  Teuchos::RCP<FlowRelations::IcyHeightEvaluator> height_evaluator =
-      Teuchos::rcp(new FlowRelations::IcyHeightEvaluator(height_plist));
-  S->SetFieldEvaluator("ponded_depth", height_evaluator);
-  height_model_ = height_evaluator->get_Model();
+  Teuchos::RCP<FieldEvaluator> pd_fe_eval = S->RequireFieldEvaluator("ponded_depth");
+  Teuchos::RCP<FlowRelations::IcyHeightEvaluator> pd_eval =
+      Teuchos::rcp_dynamic_cast<FlowRelations::IcyHeightEvaluator>(pd_fe_eval);
+  ASSERT(pd_eval != Teuchos::null);
+  height_model_ = pd_eval->get_Model();
 
   // -- conductivity evaluator
   locations2[1] = AmanziMesh::BOUNDARY_FACE;

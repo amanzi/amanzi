@@ -14,6 +14,7 @@ FieldEvaluator for enthalpy.
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -40,6 +41,10 @@ class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
   Key dens_key_;
   Key ie_key_;
   bool include_work_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,EnthalpyEvaluator> factory_;
+
 };
 
 } // namespace

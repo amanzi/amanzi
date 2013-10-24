@@ -34,6 +34,9 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC<PKPhysicalBDFBase> {
 
   virtual bool modify_predictor(double h, Teuchos::RCP<TreeVector> up);
 
+  Teuchos::RCP<Operators::MatrixMFD_Surf> coupled_preconditioner() {
+    return mfd_preconditioner_; }
+
  protected:
   bool modify_predictor_copy_surf_to_subsurf_(double h, Teuchos::RCP<TreeVector> up);
   bool modify_predictor_copy_subsurf_to_surf_(double h, Teuchos::RCP<TreeVector> up);

@@ -130,6 +130,10 @@ generate_evaluators_registration_header(
   )
 
 # icy_overland/
+register_evaluator_with_factory(
+  HEADERFILE icy_overland/icy_height_evaluator_reg.hh
+  LISTNAME   FLOW_ICY_OVERLAND_EVAL_FAC
+  )
 
 register_evaluator_with_factory(
   HEADERFILE icy_overland/icy_overland_reg.hh
@@ -162,6 +166,10 @@ generate_evaluators_registration_header(
 
 
 # overland_head/
+register_evaluator_with_factory(
+  HEADERFILE overland_head/height_evaluator_reg.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  )
 
 register_evaluator_with_factory(
   HEADERFILE overland_head/effective_height_evaluator_reg.hh

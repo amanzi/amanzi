@@ -47,7 +47,12 @@ generate_evaluators_registration_header(
   LISTNAME   ENERGY_CONSTANT_TEMPERATURE_REG
   INSTALL    True
   )
- 
+
+# constitutive_relations/source_terms/
+register_evaluator_with_factory(
+  HEADERFILE constitutive_relations/enthalpy/enthalpy_evaluator_reg.hh
+  LISTNAME   ENERGY_CONST_REL_SOURCE_TERMS_REG
+  )
 
 # constitutive_relations/source_terms/
 register_evaluator_with_factory(
