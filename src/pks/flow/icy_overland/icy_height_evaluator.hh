@@ -44,6 +44,9 @@ class IcyHeightEvaluator : public HeightEvaluator {
   Key unfrozen_frac_key_;
   Teuchos::RCP<IcyHeightModel> icy_model_;
 
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,IcyHeightEvaluator> factory_;
+
 };
 
 } //namespace

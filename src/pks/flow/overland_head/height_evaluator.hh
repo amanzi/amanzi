@@ -50,6 +50,10 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
   Key patm_key_;
 
   Teuchos::RCP<HeightModel> model_;
+
+ private:
+  static Utils::RegisteredFactory<FieldEvaluator,HeightEvaluator> factory_;
+
 };
 
 } //namespace

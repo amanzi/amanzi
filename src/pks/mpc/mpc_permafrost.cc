@@ -29,7 +29,7 @@ subtree:
 #include "mpc_surface_subsurface_flux_coupler.hh"
 #include "mpc_permafrost.hh"
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 namespace Amanzi {
 
@@ -37,7 +37,10 @@ namespace Amanzi {
 // Setup data
 // -------------------------------------------------------------
 void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
-  StrongMPC<MPCSurfaceSubsurfaceCoupler>::setup(S);
+  StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::setup(S);
+
+  // ensure the order of PKs is correct
+  // TODO --etc
 
   // option to decoupled and revert to StrongMPC
   decoupled_ = plist_->get<bool>("decoupled",false);
@@ -56,94 +59,20 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   Key surf_mesh_key = plist_->get<std::string>("surface mesh key", "surface");
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key);
 
-  // cells to debug, subsurface
-  if (plist_->isParameter("debug cells")) {
-    dc_.clear();
-    Teuchos::Array<int> dc = plist_->get<Teuchos::Array<int> >("debug cells");
-    for (Teuchos::Array<int>::const_iterator c=dc.begin();
-         c!=dc.end(); ++c) dc_.push_back(*c);
-
-    // Enable a vo for each cell, allows parallel printing of debug cells.
-    if (plist_->isParameter("debug cell ranks")) {
-      Teuchos::Array<int> dc_ranks = plist_->get<Teuchos::Array<int> >("debug cell ranks");
-      if (dc.size() != dc_ranks.size()) {
-        Errors::Message message("Debug cell and debug cell ranks must be equal length.");
-        Exceptions::amanzi_throw(message);
-      }
-      for (Teuchos::Array<int>::const_iterator dcr=dc_ranks.begin();
-           dcr!=dc_ranks.end(); ++dcr) {
-        // make a verbose object for each case
-        Teuchos::ParameterList vo_plist;
-        vo_plist.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject")
-            = plist_->sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject").set("write on rank", *dcr);
-
-        dcvo_.push_back(Teuchos::rcp(new VerboseObject(mesh->get_comm(), name_,vo_plist)));
-
-      }
-    } else {
-      // Simply use the pk's vo
-      dcvo_.resize(dc_.size(), vo_);
-    }
-  }
-
-  // cells to debug, subsurface
-  if (plist_->isParameter("surface debug cells")) {
-    surf_dc_.clear();
-    Teuchos::Array<int> surf_dc = plist_->get<Teuchos::Array<int> >("surface debug cells");
-    for (Teuchos::Array<int>::const_iterator c=surf_dc.begin();
-         c!=surf_dc.end(); ++c) surf_dc_.push_back(*c);
-
-    // Enable a vo for each cell, allows parallel printing of debug cells.
-    if (plist_->isParameter("surface debug cell ranks")) {
-      Teuchos::Array<int> surf_dc_ranks = plist_->get<Teuchos::Array<int> >("surface debug cell ranks");
-      if (surf_dc.size() != surf_dc_ranks.size()) {
-        Errors::Message message("Debug cell and debug cell ranks must be equal length.");
-        Exceptions::amanzi_throw(message);
-      }
-      for (Teuchos::Array<int>::const_iterator surf_dcr=surf_dc_ranks.begin();
-           surf_dcr!=surf_dc_ranks.end(); ++surf_dcr) {
-        // make a verbose object for each case
-        Teuchos::ParameterList vo_plist;
-        vo_plist.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject")
-            = plist_->sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject").set("write on rank", *surf_dcr);
-
-        surf_dcvo_.push_back(Teuchos::rcp(new VerboseObject(surf_mesh->get_comm(), name_,vo_plist)));
-
-      }
-    } else {
-      // Simply use the pk's vo
-      surf_dcvo_.resize(surf_dc_.size(), vo_);
-    }
-  }
-
   // preconditioner
   Teuchos::ParameterList pc_sublist = plist_->sublist("Coupled PC");
   mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(
-      pc_sublist, mesh, surf_mesh));
+      pc_sublist, mesh));
 
   // Set the subblocks.  Note these are the flux-coupled PCs, which are
   // MatrixMFD_Surfs.
-  Teuchos::RCP<Operators::MatrixMFD> pcA = sub_pks_[0]->preconditioner();
-  Teuchos::RCP<Operators::Matrix> pcB = sub_pks_[1]->preconditioner();
+  Teuchos::RCP<Operators::MatrixMFD_Surf> pcA = sub_pks_[0]->coupled_preconditioner();
+  Teuchos::RCP<Operators::MatrixMFD_Surf> pcB = sub_pks_[1]->coupled_preconditioner();
 
-  // MUST be dynamic cast as these are part of a multiple inheritance diamond
-  Teuchos::RCP<Operators::MatrixMFD_Surf> pcB_mfd =
-      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(pcB);
-  ASSERT(pcB_mfd != Teuchos::null);
-  Teuchos::RCP<Operators::MatrixMFD_Surf> pcA_mfd =
-      Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(pcA);
-  ASSERT(pcA_mfd != Teuchos::null);
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> pcA_surf = pcA->GetSurfaceOperator();
+  Teuchos::RCP<Operators::MatrixMFD_TPFA> pcB_surf = pcB->GetSurfaceOperator();
 
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> pcA_surf;
-  pcA_mfd->GetSurfaceOperator(pcA_surf);
-  Teuchos::RCP<Operators::MatrixMFD_TPFA> pcB_surf;
-  pcB_mfd->GetSurfaceOperator(pcB_surf);
-
-  mfd_surf_preconditioner_->SetSubBlocks(pcA_mfd, pcB_mfd);
+  mfd_surf_preconditioner_->SetSubBlocks(pcA, pcB);
   mfd_surf_preconditioner_->SetSurfaceOperators(pcA_surf, pcB_surf);
 
   // setup and initialize the preconditioner
@@ -165,7 +94,7 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
 
   // create the EWC delegate if requested.
   if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
-    ewc_ = Teuchos::rcp(new MPCDelegateEWC(plist_));
+    ewc_ = Teuchos::rcp(new MPCDelegateEWC(*plist_));
 
     Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
     ewc_->set_model(model);
@@ -173,17 +102,13 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   }
 
   // grab the PKs
-  coupled_flow_pk_ =
-      Teuchos::rcp_dynamic_cast<MPCSurfaceSubsurfaceFluxCoupler>(sub_pks_[0]);
-  ASSERT(coupled_flow_pk_ != Teuchos::null);
-  coupled_energy_pk_ =
-      Teuchos::rcp_dynamic_cast<MPCSurfaceSubsurfaceFluxCoupler>(sub_pks_[1]);
-  ASSERT(coupled_energy_pk_ != Teuchos::null);
+  coupled_flow_pk_ = sub_pks_[0];
+  coupled_energy_pk_ = sub_pks_[1];
 }
 
 
 void MPCPermafrost::initialize(const Teuchos::Ptr<State>& S) {
-  StrongMPC<MPCSurfaceSubsurfaceCoupler>::initialize(S);
+  StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::initialize(S);
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 }
 
@@ -191,61 +116,61 @@ void MPCPermafrost::initialize(const Teuchos::Ptr<State>& S) {
 void MPCPermafrost::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,
         const Teuchos::RCP<State>& S_next) {
-  StrongMPC<MPCSurfaceSubsurfaceCoupler>::set_states(S,S_inter,S_next);
+  StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::set_states(S,S_inter,S_next);
   if (ewc_ != Teuchos::null) ewc_->set_states(S,S_inter,S_next);
 }
 
 
 void MPCPermafrost::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  StrongMPC<MPCSurfaceSubsurfaceCoupler>::commit_state(dt,S);
+  StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::commit_state(dt,S);
   if (ewc_ != Teuchos::null) ewc_->commit_state(dt,S);
 }
 
 
 // update the predictor to be physically consistent
 bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
-  Teuchos::OSTab tab = getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    *out_ << "Modifying predictor, MPCPermafrost." << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    *vo_->os() << "Modifying predictor, MPCPermafrost." << std::endl;
 
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      up->SubVector(0)->SubVector(0)->Data()->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+    // for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    //   AmanziMesh::Entity_ID_List fnums0;
+    //   std::vector<int> dirs;
+    //   up->SubVector(0)->SubVector(0)->Data()->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-      *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->Data())("cell",*c0)
-            << ", " << (*up->SubVector(0)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-      *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->Data())("cell",*c0)
-            << ", " << (*up->SubVector(1)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-    }
+    //   *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->Data())("cell",*c0)
+    //         << ", " << (*up->SubVector(0)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
+    //   *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->Data())("cell",*c0)
+    //         << ", " << (*up->SubVector(1)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
+    // }
   }
 
 
   bool changed(false);
   if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
     // make a new TreeVector that is just the subsurface values (by pointer).
-    Teuchos::RCP<TreeVector> domain_u_tv = Teuchos::rcp(new TreeVector("domain_u_tv"));
+    Teuchos::RCP<TreeVector> domain_u_tv = Teuchos::rcp(new TreeVector());
     domain_u_tv->PushBack(up->SubVector(0)->SubVector(0));
     domain_u_tv->PushBack(up->SubVector(1)->SubVector(0));
     changed = ewc_->modify_predictor(h, domain_u_tv);
   }
 
   // potentially update faces
-  changed |= StrongMPC<MPCSurfaceSubsurfaceCoupler>::modify_predictor(h, up);
+  changed |= StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::modify_predictor(h, up);
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      up->SubVector(0)->SubVector(0)->Data()->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+  // if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
+  //   for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+  //     AmanziMesh::Entity_ID_List fnums0;
+  //     std::vector<int> dirs;
+  //     up->SubVector(0)->SubVector(0)->Data()->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-      *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->Data())("cell",*c0)
-            << ", " << (*up->SubVector(0)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-      *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->Data())("cell",*c0)
-            << ", " << (*up->SubVector(1)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-    }
-  }
+  //     *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->Data())("cell",*c0)
+  //           << ", " << (*up->SubVector(0)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
+  //     *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->Data())("cell",*c0)
+  //           << ", " << (*up->SubVector(1)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
+  //   }
+  // }
 
   return changed;
 }
@@ -256,11 +181,11 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
 // coupling terms.
 void MPCPermafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "Precon update at t = " << t << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "Precon update at t = " << t << std::endl;
 
-  StrongMPC<MPCSurfaceSubsurfaceCoupler>::update_precon(t,up,h);
+  StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::update_precon(t,up,h);
 
   if (!decoupled_) {
     S_next_->GetFieldEvaluator(A_key_)
@@ -291,30 +216,30 @@ void MPCPermafrost::update_precon(double t, Teuchos::RCP<const TreeVector> up,
 
 void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<TreeVector> Pu) {
-  Teuchos::OSTab tab = getOSTab();
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "Precon application:" << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "Precon application:" << std::endl;
 
-  if (decoupled_) return StrongMPC<MPCSurfaceSubsurfaceCoupler>::precon(u,Pu);
+  if (decoupled_) return StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::precon(u,Pu);
 
   // make a new TreeVector that is just the subsurface values (by pointer).
   // -- note these const casts are necessary to create the new TreeVector, but
   //    since the TreeVector COULD be const (it is only used in a single method,
   //    in which it is const), const-correctness is not violated here.
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Precon pulling subsurface vectors." << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Precon pulling subsurface vectors." << std::endl;
 
-  Teuchos::RCP<TreeVector> domain_u_tv = Teuchos::rcp(new TreeVector("domain_u_tv"));
+  Teuchos::RCP<TreeVector> domain_u_tv = Teuchos::rcp(new TreeVector());
   domain_u_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(u->SubVector(0)->SubVector(0)));
   domain_u_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(u->SubVector(1)->SubVector(0)));
 
-  Teuchos::RCP<TreeVector> domain_Pu_tv = Teuchos::rcp(new TreeVector("domain_Pu_tv"));
+  Teuchos::RCP<TreeVector> domain_Pu_tv = Teuchos::rcp(new TreeVector());
   domain_Pu_tv->PushBack(Pu->SubVector(0)->SubVector(0));
   domain_Pu_tv->PushBack(Pu->SubVector(1)->SubVector(0));
 
   // call the operator's inverse
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true))
-    *out_ << "  Precon applying coupled subsurface operator." << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "  Precon applying coupled subsurface operator." << std::endl;
   mfd_surf_preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
 
   // Update surface cells and faces on both
@@ -334,76 +259,76 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const CompositeVector> surf_PT = Pu->SubVector(1)->SubVector(1)->Data();
   Teuchos::RCP<const CompositeVector> domain_PT = Pu->SubVector(1)->SubVector(0)->Data();
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << "Preconditioner application" << std::endl;
-    *out_ << " SubSurface precon:" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Preconditioner application" << std::endl
+               << " SubSurface precon:" << std::endl;
 
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      domain_p->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+    // for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
+    //   AmanziMesh::Entity_ID_List fnums0;
+    //   std::vector<int> dirs;
+    //   domain_p->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-      *out_ << "  p(" << *c0 << "): " << (*domain_p)("cell",*c0);
-      for (unsigned int n=0;n!=fnums0.size();++n)
-        *out_ << ", " << (*domain_p)("face", fnums0[n]);
-      *out_ << std::endl;
+    //   *out_ << "  p(" << *c0 << "): " << (*domain_p)("cell",*c0);
+    //   for (unsigned int n=0;n!=fnums0.size();++n)
+    //     *out_ << ", " << (*domain_p)("face", fnums0[n]);
+    //   *out_ << std::endl;
 
-      *out_ << "  PC*p(" << *c0 << "): " << (*domain_Pp)("cell",*c0);
-      for (unsigned int n=0;n!=fnums0.size();++n)
-        *out_ << ", " << (*domain_Pp)("face", fnums0[n]);
-      *out_ << std::endl;
+    //   *out_ << "  PC*p(" << *c0 << "): " << (*domain_Pp)("cell",*c0);
+    //   for (unsigned int n=0;n!=fnums0.size();++n)
+    //     *out_ << ", " << (*domain_Pp)("face", fnums0[n]);
+    //   *out_ << std::endl;
 
-      *out_ << "  ---" << std::endl;
+    //   *out_ << "  ---" << std::endl;
 
-      *out_ << "  T(" << *c0 << "): " << (*domain_T)("cell",*c0);
-      for (unsigned int n=0;n!=fnums0.size();++n)
-        *out_ << ", " << (*domain_T)("face", fnums0[n]);
-      *out_ << std::endl;
+    //   *out_ << "  T(" << *c0 << "): " << (*domain_T)("cell",*c0);
+    //   for (unsigned int n=0;n!=fnums0.size();++n)
+    //     *out_ << ", " << (*domain_T)("face", fnums0[n]);
+    //   *out_ << std::endl;
 
-      *out_ << "  PC*T(" << *c0 << "): " << (*domain_PT)("cell",*c0);
-      for (unsigned int n=0;n!=fnums0.size();++n)
-        *out_ << ", " << (*domain_PT)("face", fnums0[n]);
-      *out_ << std::endl;
+    //   *out_ << "  PC*T(" << *c0 << "): " << (*domain_PT)("cell",*c0);
+    //   for (unsigned int n=0;n!=fnums0.size();++n)
+    //     *out_ << ", " << (*domain_PT)("face", fnums0[n]);
+    //   *out_ << std::endl;
 
-      *out_ << "  ---" << std::endl;
-    }
+    //   *out_ << "  ---" << std::endl;
+    // }
   }
 
-  if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_HIGH, true)) {
-    *out_ << " Surface precon:" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << " Surface precon:" << std::endl;
 
-    for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=coupled_flow_pk_->surf_dc_.begin();
-         c0!=coupled_flow_pk_->surf_dc_.end(); ++c0) {
-      if (*c0 < surf_p->size("cell",false)) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        surf_p->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+    // for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=coupled_flow_pk_->surf_dc_.begin();
+    //      c0!=coupled_flow_pk_->surf_dc_.end(); ++c0) {
+    //   if (*c0 < surf_p->size("cell",false)) {
+    //     AmanziMesh::Entity_ID_List fnums0;
+    //     std::vector<int> dirs;
+    //     surf_p->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
 
-        *out_ << "  p(" << *c0 << "): " << (*surf_p)("cell",*c0);
-        for (unsigned int n=0;n!=fnums0.size();++n)
-          *out_ << ", " << (*surf_p)("face", fnums0[n]);
-        *out_ << std::endl;
+    //     *out_ << "  p(" << *c0 << "): " << (*surf_p)("cell",*c0);
+    //     for (unsigned int n=0;n!=fnums0.size();++n)
+    //       *out_ << ", " << (*surf_p)("face", fnums0[n]);
+    //     *out_ << std::endl;
 
-        *out_ << "  PC*p(" << *c0 << "): " << (*surf_Pp)("cell",*c0);
-        for (unsigned int n=0;n!=fnums0.size();++n)
-          *out_ << ", " << (*surf_Pp)("face", fnums0[n]);
-        *out_ << std::endl;
+    //     *out_ << "  PC*p(" << *c0 << "): " << (*surf_Pp)("cell",*c0);
+    //     for (unsigned int n=0;n!=fnums0.size();++n)
+    //       *out_ << ", " << (*surf_Pp)("face", fnums0[n]);
+    //     *out_ << std::endl;
 
-        *out_ << "  ---" << std::endl;
+    //     *out_ << "  ---" << std::endl;
 
-        *out_ << "  T(" << *c0 << "): " << (*surf_T)("cell",*c0);
-        for (unsigned int n=0;n!=fnums0.size();++n)
-          *out_ << ", " << (*surf_T)("face", fnums0[n]);
-        *out_ << std::endl;
+    //     *out_ << "  T(" << *c0 << "): " << (*surf_T)("cell",*c0);
+    //     for (unsigned int n=0;n!=fnums0.size();++n)
+    //       *out_ << ", " << (*surf_T)("face", fnums0[n]);
+    //     *out_ << std::endl;
 
-        *out_ << "  PC*T(" << *c0 << "): " << (*surf_PT)("cell",*c0);
-        for (unsigned int n=0;n!=fnums0.size();++n)
-          *out_ << ", " << (*surf_PT)("face", fnums0[n]);
-        *out_ << std::endl;
+    //     *out_ << "  PC*T(" << *c0 << "): " << (*surf_PT)("cell",*c0);
+    //     for (unsigned int n=0;n!=fnums0.size();++n)
+    //       *out_ << ", " << (*surf_PT)("face", fnums0[n]);
+    //     *out_ << std::endl;
 
-        *out_ << "  ---" << std::endl;
-      }
-    }
+    //     *out_ << "  ---" << std::endl;
+    //   }
+    // }
   }
 #endif
 

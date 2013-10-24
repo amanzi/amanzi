@@ -24,7 +24,7 @@ class SurfaceTopCellsEvaluator : public SecondaryVariableFieldEvaluator {
   SurfaceTopCellsEvaluator(Teuchos::ParameterList& plist);
 
   SurfaceTopCellsEvaluator(const SurfaceTopCellsEvaluator& other);
-  Teuchos::RCP<FieldEvaluator> Clone() const;
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,

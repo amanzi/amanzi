@@ -26,7 +26,7 @@ SurfaceTopCellsEvaluator::SurfaceTopCellsEvaluator(const SurfaceTopCellsEvaluato
 
 Teuchos::RCP<FieldEvaluator>
 SurfaceTopCellsEvaluator::Clone() const {
-  Teuchos::rcp(new SurfaceTopCellsEvaluator(*this));
+  return Teuchos::rcp(new SurfaceTopCellsEvaluator(*this));
 }
 
 // Required methods from SecondaryVariableFieldEvaluator
@@ -56,8 +56,9 @@ SurfaceTopCellsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void
 SurfaceTopCellsEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
-  // Ensure my field exists.  Requirements should be already set.
+  // Ensure my field exists.  Requirements should be already set.  Claim ownership.
   ASSERT(my_key_ != std::string(""));
+  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);

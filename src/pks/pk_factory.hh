@@ -31,6 +31,8 @@
 #include <string>
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+
+#include "errors.hh"
 #include "TreeVector.hh"
 #include "PK.hh"
 
@@ -50,13 +52,14 @@ public:
     std::string s = plist->get<string>("PK type");
     map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
-      std::cout << "cannot get item of type: " << s << std::endl;
-
+      std::stringstream errmsg;
+      errmsg << "PK Factory: cannot find PK type \"" << s << "\"";
       for (map_type::iterator iter=GetMap()->begin();
            iter!=GetMap()->end(); ++iter) {
-        std::cout << "  option: " << iter->first << std::endl;
+        errmsg << std::endl << "  option: " << iter->first;
       }
-      return Teuchos::null;
+      Errors::Message message(errmsg.str());
+      Exceptions::amanzi_throw(message);
     }
     return Teuchos::rcp(iter->second(plist, FElist, soln));
   }

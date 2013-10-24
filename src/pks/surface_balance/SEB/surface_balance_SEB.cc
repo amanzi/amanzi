@@ -175,6 +175,14 @@ void SurfaceBalanceSEB::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("days_of_nosnow",name_)->PutScalar(0.);
   S->GetField("days_of_nosnow", name_)->set_initialized();
 
+  // initialize sources, temps
+  S->GetFieldData("surface_conducted_energy_source",name_)->PutScalar(0.);
+  S->GetField("surface_conducted_energy_source",name_)->set_initialized();
+  S->GetFieldData("surface_mass_source",name_)->PutScalar(0.);
+  S->GetField("surface_mass_source",name_)->set_initialized();
+  S->GetFieldData("surface_mass_source_temperature",name_)->PutScalar(273.15);
+  S->GetField("surface_mass_source_temperature",name_)->set_initialized();
+
 };
 
 
@@ -229,26 +237,32 @@ bool SurfaceBalanceSEB::advance(double dt) {
 
   // MET DATA
   S_inter_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& air_temp =
       *S_inter_->GetFieldData("air_temperature")->ViewComponent("cell", false);
 
   S_inter_->GetFieldEvaluator("incoming_shortwave_radiation")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& incomming_shortwave =
+  S_next_->GetFieldEvaluator("incoming_shortwave_radiation")->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& incoming_shortwave =
       *S_inter_->GetFieldData("incoming_shortwave_radiation")->ViewComponent("cell", false);
 
   S_inter_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& relative_humidity =
       *S_inter_->GetFieldData("relative_humidity")->ViewComponent("cell", false);
 
   S_inter_->GetFieldEvaluator("wind_speed")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("wind_speed")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& wind_speed =
       *S_inter_->GetFieldData("wind_speed")->ViewComponent("cell", false);
 
   S_inter_->GetFieldEvaluator("precipitation_rain")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("precipitation_rain")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& precip_rain =
       *S_inter_->GetFieldData("precipitation_rain")->ViewComponent("cell", false);
 
   S_inter_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator("precipitation_snow")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& precip_snow =
       *S_inter_->GetFieldData("precipitation_snow")->ViewComponent("cell", false);
 
@@ -285,7 +299,7 @@ bool SurfaceBalanceSEB::advance(double dt) {
     data.st_energy.porrowaLe = data.st_energy.por*density_air*data.st_energy.Le;
     // MET station data
     data.st_energy.air_temp = air_temp[0][c];
-    data.st_energy.QswIn = incomming_shortwave[0][c];
+    data.st_energy.QswIn = incoming_shortwave[0][c];
     data.st_energy.Us = std::max(wind_speed[0][c], min_wind_speed_);
     data.st_energy.Pr = precip_rain[0][c] * dt; // SEB expects total precip, not rate
     data.st_energy.Ps = precip_snow[0][c] * dt; // SEB expects total precip, not rate
@@ -319,6 +333,21 @@ bool SurfaceBalanceSEB::advance(double dt) {
   pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
 
+  // debug
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    std::vector<std::string> vnames;
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vnames.push_back("air_temp"); vecs.push_back(S_inter_->GetFieldData("air_temperature").ptr());
+    vnames.push_back("air_temp2"); vecs.push_back(S_next_->GetFieldData("air_temperature").ptr());
+    vnames.push_back("Qsw_in"); vecs.push_back(S_inter_->GetFieldData("incoming_shortwave_radiation").ptr());
+    vnames.push_back("precip_rain"); vecs.push_back(S_inter_->GetFieldData("precipitation_rain").ptr());
+    vnames.push_back("precip_snow"); vecs.push_back(S_inter_->GetFieldData("precipitation_snow").ptr());
+    vnames.push_back("water_source"); vecs.push_back(S_next_->GetFieldData("surface_mass_source").ptr());
+    vnames.push_back("e_source"); vecs.push_back(S_next_->GetFieldData("surface_conducted_energy_source").ptr());
+    db_->WriteVectors(vnames, vecs, true);
+  }
+
+  return false;
 };
 
 

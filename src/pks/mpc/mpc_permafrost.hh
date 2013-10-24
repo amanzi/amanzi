@@ -24,22 +24,22 @@ subtree:
 #ifndef MPC_PERMAFROST_HH_
 #define MPC_PERMAFROST_HH_
 
+#include "mpc_surface_subsurface_flux_coupler.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
 
 namespace Operators { class MatrixMFD_Coupled_Surf; }
-
 class MPCDelegateEWC;
 
-class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceCoupler> {
+class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceFluxCoupler> {
 
  public:
   MPCPermafrost(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                 Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, FElist, soln),
-      StrongMPC<MPCSurfaceSubsurfaceCoupler>(plist, FElist, soln) {}
+      StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>(plist, FElist, soln) {}
 
 
   virtual void setup(const Teuchos::Ptr<State>& S);
@@ -89,14 +89,6 @@ class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceCoupler> {
 
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWC> ewc_;
-
-
-  // cruft for easier global debugging
-  std::vector<AmanziMesh::Entity_ID> dc_;
-  std::vector<Teuchos::RCP<VerboseObject> > dcvo_;
-  std::vector<AmanziMesh::Entity_ID> surf_dc_;
-  std::vector<Teuchos::RCP<VerboseObject> > surf_dcvo_;
-
 
  private:
   // factory registration

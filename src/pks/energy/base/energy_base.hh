@@ -40,10 +40,7 @@ public:
       coupled_to_subsurface_via_flux_(false),
       coupled_to_surface_via_temp_(false),
       coupled_to_surface_via_flux_(false),
-      niter_(0) {
-    if (!plist_->isParameter("primary variable key"))
-      plist_->set("primary variable key", "temperature");
-  }
+      niter_(0) {}
 
   // Virtual destructor
   virtual ~EnergyBase() {}
