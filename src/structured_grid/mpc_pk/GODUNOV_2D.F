@@ -1086,11 +1086,16 @@ c
 c     This is ESTATE_FPU with a time-independent "capacitance" factor in the time 
 c     derivative.  That is, the conservation equation solved looks like 
 c
-c                    d(s.cap)/dt + Div(s.u) = F
+c                    d(s.cap)/dt + Div(s.u) = Fc
 c
-c     whereas the default ESTATE_FPU assumes cap==1
+c            assuming   d(cap)/dt + Div(u) = F
 c
-      subroutine FORT_ESTATE_TRACER(s, DIMS(s), capInv, DIMS(capInv), 
+c     whereas the default ESTATE_FPU assumes cap==1.  We can write the discretization
+c     for s given either F or d(cap)/dt
+c
+      subroutine FORT_ESTATE_TRACER(s, DIMS(s),
+     &     capInv, DIMS(capInv), 
+     &     dcapdt, DIMS(dcapdt), 
      &     tforces, DIMS(tforces),
      &     xlo, xhi, sx, slxscr, stxlo, stxhi,
      &     uedge, DIMS(uedge), xstate, DIMS(xstate),
@@ -1111,6 +1116,7 @@ c
 
       integer DIMDEC(s)
       integer DIMDEC(capInv)
+      integer DIMDEC(dcapdt)
       integer DIMDEC(tforces)
       integer DIMDEC(work)
       integer DIMDEC(uedge)
@@ -1120,6 +1126,7 @@ c
 
       REAL_T s(DIMV(s))
       REAL_T capInv(DIMV(capInv))
+      REAL_T dcapdt(DIMV(dcapdt))
       REAL_T stxlo(DIM1(s)),stxhi(DIM1(s)),slxscr(DIM1(s),4)
       REAL_T stylo(DIM2(s)),styhi(DIM2(s)),slyscr(DIM2(s),4)
 
@@ -1131,9 +1138,7 @@ c
       REAL_T  sx(DIMV(work))
       REAL_T  sy(DIMV(work))
       REAL_T tforces(DIMV(tforces))
-      REAL_T seps
-     
-      REAL_T spx,smx,spy,smy,strans,spip,spim
+      REAL_T seps, smx, spx, smy, spy, strans, divu
 
       integer use_minion, iconserv
       integer inc
@@ -1227,8 +1232,8 @@ c
      &              +  (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
                divum = (uedge(i  ,j  )-uedge(i-1,j  ))*hxi
      &              +  (vedge(i-1,j+1)-vedge(i-1,j  ))*hyi
-               xlo(i,j) = xlo(i,j) - dth*s(i-1,j)*divum*capInv(i-1,j)
-               xhi(i,j) = xhi(i,j) - dth*s(i  ,j)*divup*capInv(i  ,j)
+               xlo(i,j) = xlo(i,j) - dth*s(i-1,j)*(divum + dcapdt(i-1,j))*capInv(i-1,j)
+               xhi(i,j) = xhi(i,j) - dth*s(i  ,j)*(divup + dcapdt(i  ,j))*capInv(i  ,j)
             end do
            end do
          end if
@@ -1249,7 +1254,6 @@ c
 
       do j = jmin,  jmax+1
          do i = imin-1,imax+1
-            spip = 1.d0 
             ylo(i,j) = s(i,j-1) + (half  - dthy*vedge(i,j)*capInv(i,j-1))*sy(i,j-1)
             yhi(i,j) = s(i,j)   + (-half - dthy*vedge(i,j)*capInv(i,j  ))*sy(i,j  )
          end do
@@ -1262,7 +1266,6 @@ c
                yhi(i,j) = yhi(i,j) + dth*tforces(i,j  )*capInv(i,j  )
             end do
          end do
-
          if (iconserv .eq. 1) then
            do j = jmin-1,jmax+1
             do i = imin,  imax+1
@@ -1270,8 +1273,8 @@ c
      &              +  (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
                divum = (uedge(i  ,j  )-uedge(i-1,j  ))*hxi
      &              +  (vedge(i+1,j-1)-vedge(i  ,j-1))*hyi
-               ylo(i,j) = ylo(i,j) - dth*spim*s(i,j-1)*divum*capInv(i,j-1)
-               yhi(i,j) = yhi(i,j) - dth*spip*s(i,j  )*divup*capInv(i,j  )
+               ylo(i,j) = ylo(i,j) - dth*s(i,j-1)*(divum + dcapdt(i,j-1))*capInv(i,j-1)
+               yhi(i,j) = yhi(i,j) - dth*s(i,j  )*(divup + dcapdt(i,j  ))*capInv(i,j  )
             end do
            end do
          end if
@@ -1295,12 +1298,15 @@ c
       do j = jmin,jmax
 
             do i = imin-1,imax+1
-               spx = s(i,j) + half * sx(i,j)
-               smx = s(i,j) - half * sx(i,j)
+
+               divu = (uedge(i+1,j  )-uedge(i  ,j  ))*hxi
+     &              + (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
+               spx = s(i,j) + half * sx(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
+               smx = s(i,j) - half * sx(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
 
                if (iconserv.eq.1) then
                   strans = -(vedge(i,j+1)*ylo(i,j+1) - vedge(i,j)*ylo(i,j))*hyi
-     &                 + s(i,j)*(vedge(i,j+1)-vedge(i,j))/hy
+     &                 + s(i,j)*(vedge(i,j+1)-vedge(i,j))*hyi
                else
                   if (vedge(i,j)*vedge(i,j+1).le.0.d0) then
                      vbar = 0.5d0*(vedge(i,j)+vedge(i,j+1))
@@ -1359,8 +1365,10 @@ c
       do i = imin,imax
             
             do j = jmin-1,jmax+1
-               spy = s(i,j) + half * sy(i,j)
-               smy = s(i,j) - half * sy(i,j)
+               divu = (uedge(i+1,j  )-uedge(i  ,j  ))*hxi
+     &              + (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
+               spy = s(i,j) + half * sy(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
+               smy = s(i,j) - half * sy(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
 
                if (iconserv.eq.1) then
                   strans = -(uedge(i+1,j)*xlo(i+1,j) - uedge(i,j)*xlo(i,j))*hxi
@@ -5471,7 +5479,6 @@ c     FIXME: Assume first component is water, and that all tracers of interest a
       cWater = 1
 
 c     idx_total is an array of 0-based indices selecting a subset of the tracers to update
-
       do n = 1,idx_total_n
          idx = idx_total(n) + 1
 

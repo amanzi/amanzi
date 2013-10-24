@@ -3690,7 +3690,7 @@ void Mesh_MSTK::init_set_info() {
       Entity_kind int_to_kind[3] = {NODE,FACE,CELL};
 
       for (int k = 0; k < 3; k++) {
-        Entity_kind kind = int_to_kind[i];
+        Entity_kind kind = int_to_kind[k];
         
         std::string internal_name = internal_name_of_set(rgn,kind);
 

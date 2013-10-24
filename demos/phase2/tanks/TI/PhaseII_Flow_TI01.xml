@@ -353,7 +353,6 @@
               <ParameterList name="IC: Uniform Concentration">
                 <Parameter name="Value" type="double" value="0"/>
               </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -372,7 +371,6 @@
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tracer">
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
             </ParameterList>
@@ -390,7 +388,6 @@
         <ParameterList name="Aqueous">
           <ParameterList name="Water">
             <ParameterList name="Tracer">
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
               <ParameterList name="BC: Zero Gradient">
               </ParameterList>
             </ParameterList>
