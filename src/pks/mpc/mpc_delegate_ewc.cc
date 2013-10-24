@@ -55,13 +55,6 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
           domain+std::string("water_content"));
   cv_key_ = plist_->get<std::string>("cell volume key",
           domain+std::string("cell_volume"));
-  Key poro_default;
-  if (domain.size() == 0) {
-    poro_default = "base_porosity";
-  } else {
-    poro_default = "";
-  }
-  poro_key_ = plist_->get<std::string>("porosity key", poro_default);
 
   // Process the parameter list for methods
   std::string precon_string = plist_->get<std::string>("preconditioner type", "none");
@@ -149,12 +142,6 @@ void MPCDelegateEWC::commit_state(double dt, const Teuchos::RCP<State>& S) {
     *wc_prev2_ = *S_inter_->GetFieldData("water_content")->ViewComponent("cell",false);
     *e_prev2_ = *S_inter_->GetFieldData("energy")->ViewComponent("cell",false);
     time_prev2_ = S_inter_->time();
-  }
-
-  if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC ||
-      precon_type_ == PRECON_EWC || precon_type_ == PRECON_SMART_EWC) {
-    // set model's value scalars and check it is setup
-    model_->UpdateModel(S.ptr());
   }
 }
 
@@ -245,8 +232,6 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
   e2.Update(dt_ratio, e1, 1. - dt_ratio);
 
   // -- extra data
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData(poro_key_)
-      ->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
@@ -272,7 +257,8 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
       }
     }
 #endif
-    ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
+    model_->UpdateModel(S_next_.ptr(), c);
+    ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
 
     if (!ierr) { // valid solution, no zero determinates, etc
       temp_guess_c[0][c] = T;
@@ -325,8 +311,6 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
   e2.Update(dt_ratio, e1, 1. - dt_ratio);
 
   // -- extra data
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData(poro_key_)
-      ->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
@@ -352,7 +336,6 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
     if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
       *dcvo->os() << "Predicting: c = " << c << std::endl
                   << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl
-                  << "   porosity = " << poro[0][c] << std::endl
                   << "   -------------" << std::endl
                   << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl
                   << "   Prev p,T: " << p << ", " << T << std::endl
@@ -360,7 +343,8 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
                   << "   Extrap wc,e: " << wc2[0][c] << ", " << e2[0][c] << std::endl
                   << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << T_guess << std::endl;
 
-    ierr = model_->Evaluate(T_guess, pres_guess_c[0][c], poro[0][c],
+    model_->UpdateModel(S_next_.ptr(), c);
+    ierr = model_->Evaluate(T_guess, pres_guess_c[0][c],
                             e_tmp, wc_tmp);
     ASSERT(!ierr);
 
@@ -378,9 +362,9 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
         // pass, guesses are good
       } else {
         // -- invert for T,p at the projected ewc
-        ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
+        ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
         double s_g, s_l, s_i;
-        ierr |= model_->EvaluateSaturations(T,p,poro[0][c],s_g,s_l,s_i);
+        ierr |= model_->EvaluateSaturations(T,p,s_g,s_l,s_i);
         if (ierr) {
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "FAILED EWC PREDICTOR" << std::endl;
@@ -419,7 +403,7 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
       } else {
         double s_g, s_l, s_i;
         ierr = model_->EvaluateSaturations(temp_guess_c[0][c],pres_guess_c[0][c],
-                poro[0][c],s_g,s_l,s_i);
+                s_g,s_l,s_i);
         ASSERT(!ierr);
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
             *dcvo->os() << "   saturations extrap pT values (g,l,i): " << s_g << ", " << s_l << ", " << s_i << std::endl
@@ -431,7 +415,7 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
               *dcvo->os() << "     outside the transition zone." << std::endl;
         } else {
           // in the transition zone of latent heat exchange
-          ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], poro[0][c], T, p);
+          ierr = model_->InverseEvaluate(e2[0][c]/cv[0][c], wc2[0][c]/cv[0][c], T, p);
           if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
               *dcvo->os() << "     kept within the transition zone." << std::endl
                           << "   p,T = " << p << ", " << T << std::endl;
@@ -484,8 +468,6 @@ bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector>
 
 
   // -- extra data
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData(poro_key_)
-      ->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
@@ -514,7 +496,6 @@ bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector>
     if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
       *dcvo->os() << "Inverting: c = " << c << std::endl
                   << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl
-                  << "   porosity = " << poro[0][c] << std::endl
                   << "   -------------" << std::endl
                   << "   2Prev e: " << e0[0][c] << std::endl
                   << "   2Prev T: " << T_prev2 << std::endl
@@ -524,7 +505,8 @@ bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector>
                   << "   -------------" << std::endl
                   << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << temp_guess_c[0][c] << std::endl;
 
-    ierr = model_->Evaluate(temp_guess_c[0][c], pres_guess_c[0][c], poro[0][c],
+    model_->UpdateModel(S_next_.ptr(), c);
+    ierr = model_->Evaluate(temp_guess_c[0][c], pres_guess_c[0][c],
                             e_tmp, wc_tmp);
     ASSERT(!ierr);
 
@@ -535,7 +517,7 @@ bool MPCDelegateEWC::modify_predictor_energy_(double h, Teuchos::RCP<TreeVector>
 
     if (std::abs(e_tmp - e1[0][c]) > std::abs(e2[0][c] - e1[0][c])) { // extrap energy change is smaller
       // uses intensive forms, so must divide by cell volume.
-      ierr = model_->InverseEvaluateEnergy(e2[0][c]/cv[0][c], pres_guess_c[0][c], poro[0][c], T);
+      ierr = model_->InverseEvaluateEnergy(e2[0][c]/cv[0][c], pres_guess_c[0][c], T);
 
       if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
         *dcvo->os() << "   Inverted T = " << T << std::endl;
@@ -593,8 +575,6 @@ bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeV
 
 
   // -- extra data
-  const Epetra_MultiVector& poro = *S_next_->GetFieldData(poro_key_)
-      ->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
@@ -650,7 +630,6 @@ bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeV
       if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
         *dcvo->os() << "Inverting: c = " << c << std::endl
                     << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl
-                    << "   porosity = " << poro[0][c] << std::endl
                     << "   -------------" << std::endl
                     << "   2Prev e: " << e0[0][c] << std::endl
                     << "   2Prev T: " << T_prev2 << std::endl
@@ -660,8 +639,8 @@ bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeV
                     << "   -------------" << std::endl
                     << "   Extrap p,T: " << pres_guess_c[0][c] << ", " << temp_guess_c[0][c] << std::endl;
 
-
-      ierr = model_->Evaluate(temp_guess_c[0][c], pres_guess_c[0][c], poro[0][c],
+      model_->UpdateModel(S_next_.ptr(), c);
+      ierr = model_->Evaluate(temp_guess_c[0][c], pres_guess_c[0][c],
               e_tmp, wc_tmp);
       ASSERT(!ierr);
 
@@ -672,7 +651,7 @@ bool MPCDelegateEWC::modify_predictor_smart_energy_(double h, Teuchos::RCP<TreeV
 
       if (std::abs(e_tmp - e1[0][c]) > std::abs(e2[0][c] - e1[0][c])) { // extrap energy change is smaller
         // uses intensive forms, so must divide by cell volume.
-        ierr = model_->InverseEvaluateEnergy(e2[0][c]/cv[0][c], pres_guess_c[0][c], poro[0][c], T);
+        ierr = model_->InverseEvaluateEnergy(e2[0][c]/cv[0][c], pres_guess_c[0][c], T);
 
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   Inverted T = " << T << std::endl;
@@ -715,7 +694,6 @@ void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
   Epetra_MultiVector& dT_std = *Pu->SubVector(1)->Data()->ViewComponent("cell",false);
 
   // additional data required
-  const Epetra_MultiVector& base_poro = *S_next_->GetFieldData("base_porosity")->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData("cell_volume")->ViewComponent("cell",false);
 
   // old values
@@ -729,8 +707,9 @@ void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
   double dp_min = 100.;
 
   int rank = mesh_->get_comm()->MyPID();
-  int ncells = base_poro.MyLength();
+  int ncells = cv.MyLength();
   for (int c=0; c!=ncells; ++c) {
+
     // debugger
     Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -745,6 +724,7 @@ void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
       *dcvo->os() << "Precon: c = " << c << std::endl;
 
     // only do EWC if corrections are large, ie not clearly converging
+    model_->UpdateModel(S_next_.ptr(), c);
     if (std::abs(dT_std[0][c]) > dT_min || std::abs(dp_std[0][c]) > dp_min) {
       if (-dT_std[0][c] < 0.) {  // decreasing, freezing
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
@@ -772,9 +752,9 @@ void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
           // -- invert for T,p at the projected ewc
           double T(T_prev), p(p_old[0][c]);
           int ierr = model_->InverseEvaluate(e_ewc/cv[0][c], wc_ewc/cv[0][c],
-                  base_poro[0][c], T, p);
+                  T, p);
           double s_g, s_l, s_i;
-          ierr |= model_->EvaluateSaturations(T,p,base_poro[0][c],s_g,s_l,s_i);
+          ierr |= model_->EvaluateSaturations(T,p,s_g,s_l,s_i);
 
           if (ierr) {
             if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
@@ -820,7 +800,7 @@ void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
         } else {
           double s_g, s_l, s_i;
           double p_std = p_old[0][c] - dT_std[0][c];
-          int ierr = model_->EvaluateSaturations(T_std,p_std,base_poro[0][c],s_g,s_l,s_i);
+          int ierr = model_->EvaluateSaturations(T_std,p_std,s_g,s_l,s_i);
           ASSERT(!ierr);
 
           if (( s_i / (s_l + s_i) > 0.99)) {
@@ -842,7 +822,7 @@ void MPCDelegateEWC::precon_ewc_(Teuchos::RCP<const TreeVector> u,
             // -- invert for T,p at the projected ewc
             double T(T_prev), p(p_old[0][c]);
             int ierr = model_->InverseEvaluate(e_ewc/cv[0][c], wc_ewc/cv[0][c],
-                    base_poro[0][c], T, p);
+                    T, p);
 
             if (!ierr && T < 273.15) {
               double dT_ewc = T_old[0][c] - T;

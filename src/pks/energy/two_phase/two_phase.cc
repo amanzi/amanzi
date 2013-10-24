@@ -65,8 +65,6 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new EnergyRelations::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
-  // require a density for rock to get total internal energy
-  S->RequireScalar("density_rock");
 }
 
 

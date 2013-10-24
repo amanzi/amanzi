@@ -27,13 +27,13 @@ class EWCModel {
 
  public:
   virtual void InitializeModel(const Teuchos::Ptr<State>& S) = 0;
-  virtual void UpdateModel(const Teuchos::Ptr<State>& S) = 0;
+  virtual void UpdateModel(const Teuchos::Ptr<State>& S, int c) = 0;
 
-  virtual int Evaluate(double T, double p, double base_poro, double& energy, double& wc) = 0;
-  virtual int InverseEvaluate(double energy, double wc, double base_poro, double& T, double& p, bool verbose=false) = 0;
-  virtual int InverseEvaluateEnergy(double energy, double p, double base_poro, double& T) = 0;
+  virtual int Evaluate(double T, double p, double& energy, double& wc) = 0;
+  virtual int InverseEvaluate(double energy, double wc, double& T, double& p, bool verbose=false) = 0;
+  virtual int InverseEvaluateEnergy(double energy, double p, double& T) = 0;
 
-  virtual int EvaluateSaturations(double T, double p, double base_poro, double& s_gas, double& s_liq, double& s_ice) = 0;
+  virtual int EvaluateSaturations(double T, double p, double& s_gas, double& s_liq, double& s_ice) = 0;
 };
 
 

@@ -16,14 +16,19 @@
 #include "tensor.hh"
 #include "Point.hh"
 
+#include "wrm_partition.hh"
 #include "ewc_model.hh"
 
 namespace Amanzi {
 
-namespace Flow { namespace FlowRelations { class WRMPermafrostModel; } }
-namespace Flow { namespace FlowRelations { class PCIceWater;
-                                           class PCLiqAtm;
-                                           class CompressiblePorosityModel; } }
+namespace Flow {
+namespace FlowRelations {
+class PCIceWater;
+class PCLiqAtm;
+class CompressiblePorosityModel;
+}
+}
+
 namespace Energy { namespace EnergyRelations { class IEM; class IEMWaterVapor;} }
 namespace Relations { class EOS; class VaporPressureRelation; }
 
@@ -33,25 +38,26 @@ class PermafrostModel : public EWCModel {
  public:
   PermafrostModel() {}
   virtual void InitializeModel(const Teuchos::Ptr<State>& S);
-  virtual void UpdateModel(const Teuchos::Ptr<State>& S);
-  virtual int Evaluate(double T, double p, double base_poro, double& energy, double& wc);
-  virtual int InverseEvaluate(double energy, double wc, double base_poro, double& T, double& p, bool verbose=false);
-  virtual int InverseEvaluateEnergy(double energy, double p, double base_poro, double& T);
-  virtual int EvaluateSaturations(double T, double p, double base_poro, double& s_gas, double& s_liq, double& s_ice);
+  virtual void UpdateModel(const Teuchos::Ptr<State>& S, int c);
+  virtual int Evaluate(double T, double p, double& energy, double& wc);
+  virtual int InverseEvaluate(double energy, double wc, double& T, double& p, bool verbose=false);
+  virtual int InverseEvaluateEnergy(double energy, double p, double& T);
+  virtual int EvaluateSaturations(double T, double p, double& s_gas, double& s_liq, double& s_ice);
 
  protected:
   bool IsSetUp_();
 
-  int EvaluateEnergyAndWaterContent_(double T, double p, double base_poro,
+  int EvaluateEnergyAndWaterContent_(double T, double p,
           AmanziGeometry::Point& result);
 
-  int EvaluateEnergyAndWaterContentAndJacobian_(double T, double p, double base_poro,
+  int EvaluateEnergyAndWaterContentAndJacobian_(double T, double p,
           AmanziGeometry::Point& result, WhetStone::Tensor& jac);
 
-  int EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p, double base_poro,
+  int EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p,
           AmanziGeometry::Point& result, WhetStone::Tensor& jac);
 
  protected:
+  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModelPartition> wrms_;
   Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModel> wrm_;
   Teuchos::RCP<Relations::EOS> liquid_eos_;
   Teuchos::RCP<Relations::EOS> gas_eos_;
@@ -64,8 +70,9 @@ class PermafrostModel : public EWCModel {
   Teuchos::RCP<Energy::EnergyRelations::IEM> ice_iem_;
   Teuchos::RCP<Energy::EnergyRelations::IEM> rock_iem_;
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModel> poro_model_;
-  double rho_rock_;
   double p_atm_;
+  double poro_;
+  double rho_rock_;
 
 };
 

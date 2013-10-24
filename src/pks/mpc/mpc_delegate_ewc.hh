@@ -98,7 +98,6 @@ class MPCDelegateEWC {
   Key temp_key_;
   Key e_key_;
   Key wc_key_;
-  Key poro_key_;
   Key cv_key_;
 
 };

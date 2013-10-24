@@ -48,15 +48,7 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Flow::FlowRelations::WRMPermafrostEvaluator> wrm_me =
       Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMPermafrostEvaluator>(me);
   ASSERT(wrm_me != Teuchos::null);
-  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModelPartition> wrms =
-      wrm_me->get_WRMPermafrostModels();
-
-  // this needs fixed eventually, but for now assuming one WRM, and therefore
-  // one model --etc
-  ASSERT(wrms->second.size() == 1);
-
-  // -- WRMs
-  wrm_ = wrms->second[0];
+  wrms_ = wrm_me->get_WRMPermafrostModels();
 
   // -- liquid EOS
   me = S->GetFieldEvaluator("molar_density_liquid");
@@ -138,21 +130,22 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S) {
 }
 
 
-void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S) {
+void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
   // update scalars
-  rho_rock_ = *S->GetScalarData("density_rock");
   p_atm_ = *S->GetScalarData("atmospheric_pressure");
-
+  rho_rock_ = (*S->GetFieldData("density_rock")->ViewComponent("cell"))[0][c];
+  poro_ = (*S->GetFieldData("base_porosity")->ViewComponent("cell"))[0][c];
+  wrm_ = wrms_->second[(*wrms_->first)[c]];
   ASSERT(IsSetUp_());
 }
 
 // ----------------------------------------------------------------------
 // Lightweight wrapper to forward-evaluate the model.
 // ----------------------------------------------------------------------
-int PermafrostModel::Evaluate(double T, double p, double poro,
+int PermafrostModel::Evaluate(double T, double p,
         double& energy, double& wc) {
   AmanziGeometry::Point res(2);
-  int ierr = EvaluateEnergyAndWaterContent_(T,p,poro,res);
+  int ierr = EvaluateEnergyAndWaterContent_(T,p,res);
   energy = res[0];
   wc = res[1];
   return ierr;
@@ -173,7 +166,7 @@ Error codes:
   2 = Iteration did not converge in max_steps (hard-coded to be 100 for
       now).
 ---------------------------------------------------------------------- */
-int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
+int PermafrostModel::InverseEvaluate(double energy, double wc,
         double& T, double& p, bool verbose) {
 
   // -- scaling for the norms
@@ -188,7 +181,7 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
   // get the initial residual
   AmanziGeometry::Point res(2);
   WhetStone::Tensor jac(2,2);
-  int ierr = EvaluateEnergyAndWaterContentAndJacobian_(T,p,poro,res,jac);
+  int ierr = EvaluateEnergyAndWaterContentAndJacobian_(T,p,res,jac);
   if (ierr) {
     std::cout << "Error in evaluation: " << ierr << std::endl;
     return ierr + 10;
@@ -248,7 +241,7 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
 
     // perform the update
     x_tmp = x - correction;
-    ierr = EvaluateEnergyAndWaterContentAndJacobian_(x_tmp[0],x_tmp[1],poro,res,jac);
+    ierr = EvaluateEnergyAndWaterContentAndJacobian_(x_tmp[0],x_tmp[1],res,jac);
     if (ierr) {
       std::cout << "Error in evaluation: " << ierr << std::endl;
       return ierr + 10;
@@ -275,7 +268,7 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
       x_tmp = x - (damp * correction);
 
       // evaluate the damped value
-      ierr = EvaluateEnergyAndWaterContent_(x_tmp[0],x_tmp[1],poro,res);
+      ierr = EvaluateEnergyAndWaterContent_(x_tmp[0],x_tmp[1],res);
       if (ierr) {
         std::cout << "Error in evaluation: " << ierr << std::endl;
         return ierr + 10;
@@ -296,7 +289,7 @@ int PermafrostModel::InverseEvaluate(double energy, double wc, double poro,
 
     if (backtracking_required) {
       // must recalculate the Jacobian at the new value
-      ierr = EvaluateEnergyAndWaterContentAndJacobian_(x_tmp[0],x_tmp[1],poro,res,jac);
+      ierr = EvaluateEnergyAndWaterContentAndJacobian_(x_tmp[0],x_tmp[1],res,jac);
       if (ierr) {
         std::cout << "Error in evaluation: " << ierr << std::endl;
         return ierr + 10;
@@ -341,7 +334,7 @@ Error codes:
       now).
 ---------------------------------------------------------------------- */
 int PermafrostModel::InverseEvaluateEnergy(double energy, double p,
-        double poro, double& T) {
+        double& T) {
 
   // -- scaling for the norms
   double e_scale = 10000.;
@@ -353,7 +346,7 @@ int PermafrostModel::InverseEvaluateEnergy(double energy, double p,
   // get the initial residual
   AmanziGeometry::Point res(2);
   WhetStone::Tensor jac(2,2);
-  int ierr = EvaluateEnergyAndWaterContentAndJacobian_(T,p,poro,res,jac);
+  int ierr = EvaluateEnergyAndWaterContentAndJacobian_(T,p,res,jac);
   if (ierr) {
     std::cout << "Error in evaluation: " << ierr << std::endl;
     return ierr + 10;
@@ -396,7 +389,7 @@ int PermafrostModel::InverseEvaluateEnergy(double energy, double p,
 
     // perform the update
     T_tmp2 = T_tmp - correction;
-    ierr = EvaluateEnergyAndWaterContentAndJacobian_(T_tmp2,p,poro,res,jac);
+    ierr = EvaluateEnergyAndWaterContentAndJacobian_(T_tmp2,p,res,jac);
     if (ierr) {
       std::cout << "Error in evaluation: " << ierr << std::endl;
       return ierr + 10;
@@ -421,7 +414,7 @@ int PermafrostModel::InverseEvaluateEnergy(double energy, double p,
       T_tmp2 = T_tmp - (damp * correction);
 
       // evaluate the damped value
-      ierr = EvaluateEnergyAndWaterContent_(T_tmp2,p,poro,res);
+      ierr = EvaluateEnergyAndWaterContent_(T_tmp2,p,res);
       if (ierr) {
         std::cout << "Error in evaluation: " << ierr << std::endl;
         return ierr + 10;
@@ -440,7 +433,7 @@ int PermafrostModel::InverseEvaluateEnergy(double energy, double p,
 
     if (backtracking_required) {
       // must recalculate the Jacobian at the new value
-      ierr = EvaluateEnergyAndWaterContentAndJacobian_(T_tmp2,p,poro,res,jac);
+      ierr = EvaluateEnergyAndWaterContentAndJacobian_(T_tmp2,p,res,jac);
       if (ierr) {
         std::cout << "Error in evaluation: " << ierr << std::endl;
         return ierr + 10;
@@ -484,7 +477,7 @@ bool PermafrostModel::IsSetUp_() {
 }
 
 
-int PermafrostModel::EvaluateSaturations(double T, double p, double base_poro, double& s_gas, double& s_liq, double& s_ice) {
+int PermafrostModel::EvaluateSaturations(double T, double p, double& s_gas, double& s_liq, double& s_ice) {
   int ierr = 0;
   try {
     double eff_p = std::max(p_atm_, p);
@@ -515,11 +508,11 @@ int PermafrostModel::EvaluateSaturations(double T, double p, double base_poro, d
   return ierr;
 }
 
-int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, double base_poro, AmanziGeometry::Point& result) {
+int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGeometry::Point& result) {
   if (T < 100) return 1; // invalid temperature
   int ierr = 0;
   try {
-    double poro = poro_model_->Porosity(base_poro, p, p_atm_);
+    double poro = poro_model_->Porosity(poro_, p, p_atm_);
     double eff_p = std::max(p_atm_, p);
 
     double rho_l = liquid_eos_->MolarDensity(T,eff_p);
@@ -567,17 +560,17 @@ int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, double b
 
 
 int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_(double T, double p,
-        double poro, AmanziGeometry::Point& result, WhetStone::Tensor& jac) {
-  return EvaluateEnergyAndWaterContentAndJacobian_FD_(T, p, poro, result, jac);
+        AmanziGeometry::Point& result, WhetStone::Tensor& jac) {
+  return EvaluateEnergyAndWaterContentAndJacobian_FD_(T, p, result, jac);
 }
 
 
 int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, double p,
-        double poro, AmanziGeometry::Point& result, WhetStone::Tensor& jac) {
+        AmanziGeometry::Point& result, WhetStone::Tensor& jac) {
   double eps_T = 1.e-7;
   double eps_p = 1.e-3;
 
-  int ierr = EvaluateEnergyAndWaterContent_(T, p, poro, result);
+  int ierr = EvaluateEnergyAndWaterContent_(T, p, result);
   if (ierr) return ierr;
   AmanziGeometry::Point test(result);
   AmanziGeometry::Point test2(result);
@@ -589,7 +582,7 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
   bool done = false;
   int its = 0;
   while (!done) {
-    ierr = EvaluateEnergyAndWaterContent_(T + eps_T, p, poro, test);
+    ierr = EvaluateEnergyAndWaterContent_(T + eps_T, p, test);
     if (ierr) return ierr;
 
     jac(0,0) = (test[0] - result[0]) / (eps_T);
@@ -609,9 +602,9 @@ int PermafrostModel::EvaluateEnergyAndWaterContentAndJacobian_FD_(double T, doub
   done = false;
   its = 0;
   while (!done) {
-    ierr = EvaluateEnergyAndWaterContent_(T, p + eps_p, poro, test);
+    ierr = EvaluateEnergyAndWaterContent_(T, p + eps_p, test);
     if (ierr) return ierr;
-    ierr = EvaluateEnergyAndWaterContent_(T, p - eps_p, poro, test2);
+    ierr = EvaluateEnergyAndWaterContent_(T, p - eps_p, test2);
     if (ierr) return ierr;
 
     jac(0,1) = (test[0] - test2[0]) / (2*eps_p);
