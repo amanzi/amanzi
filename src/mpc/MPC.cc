@@ -283,6 +283,7 @@ void MPC::read_parameter_list()  {
     T0 = steady_list.get<double>("Start");
     T1 = steady_list.get<double>("End");
     dTsteady = steady_list.get<double>("Initial Time Step");
+    dTtransient = 1e+99;
 
     do_picard_ = steady_list.get<bool>("Use Picard",false);
   } else if ( ti_list.isSublist("Transient") ) {
@@ -293,6 +294,7 @@ void MPC::read_parameter_list()  {
     T0 = transient_list.get<double>("Start");
     T1 = transient_list.get<double>("End");
     dTtransient =  transient_list.get<double>("Initial Time Step");
+    dTsteady = 1e+99;
 
     do_picard_ = false;
   } else {
@@ -428,12 +430,30 @@ void MPC::cycle_driver() {
 	FPK->InitTransient(S->time(), dTtransient);
       }
     } else if (ti_mode == INIT_TO_STEADY) {
-      if (S->time() < Tswitch) {
-        FPK->InitSteadyState(S->time(), dTsteady);
+      if (!restart_requested) {
+	if (S->time() < Tswitch) {
+	  FPK->InitSteadyState(S->time(), dTsteady);
+	} else {
+	  if (flow_model !=std::string("Steady State Richards")) {
+	    FPK->InitTransient(S->time(), dTtransient);
+	  }
+	}
       } else {
-        if (flow_model !=std::string("Steady State Richards")) {
-          FPK->InitTransient(S->time(), dTtransient);
-        }
+	if (S->time() < Tswitch) {
+	  FPK->InitSteadyState(S->time(), restart_dT);
+	} else {
+	  if (flow_model != std::string("Steady State Richards")) {
+	    // only initialize here if we're not on a time integrator restart time
+	    // in that case we initialize later
+	    std::vector<double>::const_iterator it;
+	    for (it = reset_times_.begin(); it != reset_times_.end(); ++it) {
+	      if (*it == S->time()) break;
+	    }
+	    if (it == reset_times_.end() && fabs(S->time()-Tswitch)>1e-7) {
+	      FPK->InitTransient(S->time(), restart_dT);
+	    }
+	  }
+	}
       }
     }
   }
@@ -444,27 +464,33 @@ void MPC::cycle_driver() {
   Amanzi::timer_manager.start("I/O");
   visualization->set_mesh(mesh_maps);
   visualization->CreateFiles();
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
-  }
-  
-  if (flow_enabled) FPK->UpdateAuxilliaryData();
-  if (chemistry_enabled) {
-    // get the auxillary data from chemistry
-    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-    // write visualization data for timestep
-    WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
-  } else {
-    //always write the initial visualization dump
-    WriteVis(visualization,S.ptr());
-  }
 
-  // write a restart dump if requested (determined in dump_state)
-  if (restart->DumpRequested(S->cycle(),S->time())) {
+  if (!restart_requested) {
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
-      *out << "Cycle " << S->cycle() << ": writing checkpoint" << std::endl;
+      *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
     }
-    WriteCheckpoint(restart,S.ptr(),restart_dT);
+    if (flow_enabled) FPK->UpdateAuxilliaryData();
+    if (chemistry_enabled) {
+      // get the auxillary data from chemistry
+      Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+      // write visualization data for timestep
+      WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
+    } else {
+      //always write the initial visualization dump
+      WriteVis(visualization,S.ptr());
+    }
+    
+    // write a restart dump if requested (determined in dump_state)
+    if (restart->DumpRequested(S->cycle(),S->time())) {
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+	*out << "Cycle " << S->cycle() << ": writing checkpoint" << std::endl;
+      }
+      if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY) {
+	WriteCheckpoint(restart,S.ptr(),dTsteady);
+      } else if (ti_mode == TRANSIENT) {
+	WriteCheckpoint(restart,S.ptr(),dTtransient);
+      }
+    }
   }
   Amanzi::timer_manager.stop("I/O");
 
@@ -497,39 +523,46 @@ void MPC::cycle_driver() {
       double mpc_dT = 1e+99, limiter_dT = 1e+99, observation_dT = 1e+99;
 
       // Update our reset times (delete the next one if we just did it)
-      if (!reset_times_.empty()) {
-        if (S->last_time()>=reset_times_.front()) {
-          reset_times_.erase(reset_times_.begin());
-          reset_times_dt_.erase(reset_times_dt_.begin());
-        }
+      if (!restart_requested) {
+	if (!reset_times_.empty()) {
+	  if (S->last_time()>=reset_times_.front()) {
+	    reset_times_.erase(reset_times_.begin());
+	    reset_times_dt_.erase(reset_times_dt_.begin());
+	  }
+	}
       }
 
       // catch the switchover time to transient
       Amanzi::timer_manager.start("Flow PK");
       if (flow_enabled) {
-        if (ti_mode == INIT_TO_STEADY && S->last_time() < Tswitch && S->time() >= Tswitch) {
-          if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-            *out << "Steady state computation complete... now running in transient mode." << std::endl;
+	//if (ti_mode == INIT_TO_STEADY && S->last_time() < Tswitch && S->time() >= Tswitch) {
+	if (ti_mode == INIT_TO_STEADY && fabs(S->time() - Tswitch) < 1e-7) {	
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
 	    *out << "Tswitch = " << Tswitch << " S->time() = " << S->time() << " S->last_time() = " << S->last_time() << std::endl;
-          }
-          // only init the transient problem if we need to
-          if (flow_model != "Steady State Richards") { //  && flow_model != "Steady State Saturated" )  {
-            FPK->InitTransient(S->time(), dTtransient);
 	  }
-        }
+	  // only init the transient problem if we need to
+	  if (flow_model != "Steady State Richards") { //  && flow_model != "Steady State Saturated" )  {
+	    FPK->InitTransient(S->time(), dTtransient);
+	  }
+	}
       }
 
       // find the flow time step
       if (flow_enabled) {
         // only if we are actually running with flow
-
-        if ((ti_mode == STEADY) ||
-            (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
-            (ti_mode == INIT_TO_STEADY &&
-             ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
-               (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
-	       (flow_model == std::string("Richards") ) ) ) ) {
-          flow_dT = FPK->CalculateFlowDt();
+	
+	if (!restart_requested) {
+	  if ((ti_mode == STEADY) ||
+	      (ti_mode == TRANSIENT && flow_model != std::string("Steady State Richards")) ||
+	      (ti_mode == INIT_TO_STEADY &&
+	       ( (flow_model == std::string("Steady State Richards") && S->time() >= Tswitch) ||
+		 (flow_model == std::string("Steady State Saturated") && S->time() >= Tswitch) ||
+		 (flow_model == std::string("Richards") ) ) ) ) {
+	    flow_dT = FPK->CalculateFlowDt();
+	  }
+	} else {
+	  flow_dT = restart_dT;
 	}
       }
       Amanzi::timer_manager.stop("Flow PK");
@@ -590,7 +623,7 @@ void MPC::cycle_driver() {
       }
 
       if (restart_requested) {
-	mpc_dT = restart_dT;
+	//mpc_dT = restart_dT;
 	restart_requested = false;
       } 	
       
