@@ -71,17 +71,14 @@ class MFD3D_Diffusion : public MFD3D {
                                        DenseMatrix& W);
 
   // primary related discetization methods
-  int MassMatrixInverseHex(int cell, const Tensor& permeability,
-                           DenseMatrix& W);
+  int MassMatrixInverseMMatrixHex(int cell, const Tensor& permeability, DenseMatrix& W);
+  int MassMatrixInverseMMatrix(int cell, const Tensor& permeability, DenseMatrix& W);
 
-  int MassMatrixInverseSO(int cell, const Tensor& permeability,
-                          DenseMatrix& W);
+  int MassMatrixInverseSO(int cell, const Tensor& permeability, DenseMatrix& W);
 
-  int MassMatrixInverseTPFA(int cell, const Tensor& permeability,
-                            DenseMatrix& W);
+  int MassMatrixInverseTPFA(int cell, const Tensor& permeability, DenseMatrix& W);
 
-  int MassMatrixInverseDiagonal(int cell, const Tensor& permeability,
-                                DenseMatrix& W);
+  int MassMatrixInverseDiagonal(int cell, const Tensor& permeability, DenseMatrix& W);
 
   // a posteriori error estimate
   int RecoverGradient_MassMatrix(int cell,
@@ -94,11 +91,13 @@ class MFD3D_Diffusion : public MFD3D {
 
  private:  
   // stability methods (add matrix Ms in M = Mc + Ms)
-  int StabilityMonotoneHex(int cell, const Tensor& T,
-                           DenseMatrix& Mc, DenseMatrix& M);
+  int StabilityMMatrixHex_(int cell, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
 
- private:
+  int StabilityMMatrix_(int cell, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M);
+
   void RescaleMassMatrixInverse_(int cell, DenseMatrix& W);
+
+  int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int* izrow, int* iypos);
 };
 
 }  // namespace WhetStone

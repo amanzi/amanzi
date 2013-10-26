@@ -31,6 +31,8 @@ const int WHETSTONE_MAX_SPATIAL_DIMENSION = 3;
 
 const double WHETSTONE_TOLERANCE_DECOMPOSITION = 1e-12;
 
+const double WHETSTONE_SIMPLEX_TOLERANCE = 1e-12;
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

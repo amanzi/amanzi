@@ -78,9 +78,16 @@ class DenseMatrix {
     }
     return os;
   }
- 
+
+  // first level routines
+  void MaxRowValue(int irow, int* j, double* value) { 
+    MaxRowValue(irow, 0, n_, j, value); 
+  } 
+  void MaxRowValue(int irow, int jmin, int jmax, int* j, double* value); 
+
   // second level routines
   int Inverse();
+  int NullSpace(DenseMatrix& D);
 
  private:
   int m_, n_, access_;

@@ -80,7 +80,7 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
       ok = mfd.MassMatrixInverseOptimized(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.MassMatrixInverseHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseMMatrixHex(c, K[c], Mff);
       else
         ok = mfd.MassMatrixInverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_DEVELOPER_TESTING) {
@@ -138,7 +138,7 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
 
     if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.MassMatrixInverseHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseMMatrixHex(c, K[c], Mff);
       else
         ok = mfd.MassMatrixInverse(c, K[c], Mff);
     } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_DEVELOPER_TESTING) {

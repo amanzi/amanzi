@@ -464,7 +464,7 @@ int MFD3D_Diffusion::MassMatrixInverseScaled(int cell, const Tensor& permeabilit
 /* ******************************************************************
 * Darcy mass matrix for a hexahedral element, a brick for now.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseHex(
+int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
     int cell, const Tensor& permeability, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
@@ -476,9 +476,28 @@ int MFD3D_Diffusion::MassMatrixInverseHex(
   int ok = L2consistencyInverse(cell, permeability, R, Wc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityMonotoneHex(cell, permeability, Wc, W);
+  ok = StabilityMMatrixHex_(cell, permeability, Wc, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
-  // if (ok) StabilityScalar(cell, R, Wc, W);
+}
+
+
+/* ******************************************************************
+* Darcy mass matrix for a hexahedral element, a brick for now.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverseMMatrix(
+    int cell, const Tensor& permeability, DenseMatrix& W)
+{
+  int d = mesh_->space_dimension();
+  int nfaces = W.NumRows();
+
+  DenseMatrix R(nfaces, d);
+  DenseMatrix Wc(nfaces, nfaces);
+
+  int ok = L2consistencyInverse(cell, permeability, R, Wc);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  ok = StabilityMMatrix_(cell, R, Wc, W);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -554,7 +573,7 @@ void MFD3D_Diffusion::RescaleMassMatrixInverse_(int cell, DenseMatrix& W)
 /* ******************************************************************
 * A simple monotone stability term for a 2D or 3D brick element. 
 ****************************************************************** */
-int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
+int MFD3D_Diffusion::StabilityMMatrixHex_(int cell, const Tensor& T,
                                           DenseMatrix& Mc, DenseMatrix& M)
 {
   int d = mesh_->space_dimension();
@@ -655,6 +674,231 @@ int MFD3D_Diffusion::StabilityMonotoneHex(int cell, const Tensor& T,
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+
+/* ******************************************************************
+* A wrapper for the simplex method that finds monotone parameters. 
+****************************************************************** */
+int MFD3D_Diffusion::StabilityMMatrix_(
+    int cell, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M)
+{
+  int d = mesh_->space_dimension();
+  int nrows = N.NumRows();
+  int ncols = N.NumCols();
+
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i; j < nrows; j++) M(j, i) = M(i, j) = Mc(i, j);
+  }
+
+  // compute null space
+  int mcols = ncols - mcols;
+  DenseMatrix D(nrows, mcols);
+  int ierr = N.NullSpace(D);
+cout << D << endl;
+  //D(0,0) = 1.0; D(0,1) = 0.0;
+  //D(1,0) = 0.0; D(1,1) = 1.0;
+  //D(2,0) = 1.0; D(2,1) = 0.0;
+  //D(3,0) = 0.0; D(3,1) = 1.0;
+
+  // populate the tableau
+  int m1(0), m2(nrows), m12, n12, mx, nx, ir;
+  double tmp;
+
+  m12 = nrows * (nrows + 1) / 2;
+  mx = mcols * mcols;
+
+  // Simplex method requires one auxiliary row in the tableau.
+  DenseMatrix T(m12 + 2, mx + 1);
+  T.PutScalar(0.0);
+
+  // first condition M_ij < 0
+  n12 = m12 - nrows;
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i + 1; j < nrows; j++) {
+      double b = M(i, j);
+      if (b < 0.0) {
+        ir = ++m1;
+      } else {
+        ir = n12--;
+        m2++;
+      }
+      T(ir, 0) = b;
+      
+      nx = 0;
+      for (int k = 0; k < mcols; k++) {
+        tmp = D(i, k) * D(j, k);
+        T(ir, ++nx) = tmp;
+        for (int l = k + 1; l < mcols; l++) {
+          tmp = D(i, k) * D(j, l) + D(j, k) * D(i, l);
+          T(ir, ++nx) = tmp;
+          T(ir, ++nx) = -tmp;
+        }
+      }
+
+      if (b < 0.0) {
+        for (int k = 0; k < mx + 1; k++) T(ir, k) *= -1;
+      }
+    }
+  }
+
+  // second condition sum_j M_ij > 0
+  for (int i = 0; i < nrows; i++) {
+    for (int j = i; j < nrows; j++) {
+      nx = 0;
+      for (int k = 0; k < mcols; k++) {
+        tmp = D(i, k) * D(j, k);
+        nx++;
+        T(m12 - i, nx) -= tmp;
+        if (i != j) T(m12 - j, nx) -= tmp;
+
+        for (int l = k + 1; l < mcols; l++) {
+          tmp = D(i, k) * D(j, l) + D(j, k) * D(i, l);
+          nx++;
+          T(m12 - i, nx) -= tmp;
+          if (i != j) T(m12 - j, nx) -= tmp;
+
+          nx++;
+          T(m12 - i, nx) += tmp;
+          if (i != j) T(m12 - j, nx) += tmp;
+        }
+      }
+    }
+  }
+
+  // find a feasible basic solution
+  int izrow[mx + 1], iypos[m12 + 1], itrs;
+  itrs = SimplexFindFeasibleSolution_(T, m1, m2, izrow, iypos);
+// cout << T << endl;
+cout << "number of itrs=" << itrs << endl;
+//for (int i = 0; i < m12 + 1; i++) cout << iypos[i] << " "; cout << endl;
+//for (int k = 0; k < mx + 1; k++) cout << izrow[k] << " "; cout << endl;
+
+  double u[mx];
+  for (int i = 0; i < mx; i++) u[i] = 0.0;
+  for (int i = 1; i < m12 + 1; i++) {
+    int k = iypos[i] - 1;
+    if (k < mx) u[k] = T(i,0);
+  }
+
+cout << "u:" << endl;
+for(int i=0; i<mx; i++) cout << u[i] << " "; cout << endl << endl;;
+
+  // add matrix D' U D
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < nrows; j++) { 
+      nx = 0;
+      for (int k = 0; k < mcols; k++) {
+        M(i, j) += D(i, k) * D(j, k) * u[nx];
+        nx++;
+        for (int l = k + 1; l < mcols; l++) {
+          M(i, j) += D(i, k) * D(j, l) * (u[nx] - u[nx + 1]);
+          M(i, j) += D(j, k) * D(i, l) * (u[nx] - u[nx + 1]);
+          nx += 2;
+        }
+      }
+    }
+  }
+cout << M << endl;
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* A simplex method for fining monotone parameters. 
+****************************************************************** */
+int MFD3D_Diffusion::SimplexFindFeasibleSolution_(
+    DenseMatrix& T, int m1, int m2, int* izrow, int* iypos)
+{
+  if (m2 == 0) return 0;
+
+  int m = m1 + m2;          // Number of constraints.
+  int n = T.NumCols() - 1;  // Number of unknwons.
+  
+  for (int k = 0; k < n + 1; k++) {
+    double q1 = 0.0;
+    for (int i = m1 + 1; i < m + 1; i++) q1 += T(i, k);
+    T(m + 1, k) = -q1;
+  }
+// cout << T << endl;
+
+  // work memory
+  int l3[m2];
+  for (int k = 0; k < n + 1; k++) izrow[k] = k;
+  for (int i = 0; i < m + 1; i++) iypos[i] = n + i;
+  for (int i = 0; i < m2; i++) l3[i] = 1;
+
+  int kp, itr_max = std::pow(2, m);
+cout << itr_max << endl;
+  double vmax;
+  for (int itr = 0; itr < itr_max; itr++) {
+    // find maximum coeffient of the auxiliary functional
+    T.MaxRowValue(m + 1, 1, n, &kp, &vmax); 
+
+    // feasible solution does not exist 
+    if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
+        T(m + 1, 0) < -WHETSTONE_SIMPLEX_TOLERANCE) return -1;
+
+    // feasible solution has been found
+    if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
+        fabs(T(m + 1, 0)) < WHETSTONE_SIMPLEX_TOLERANCE) {
+      for (int i = m1 + 1; i < m + 1; i++) {
+        if (l3[i - m1 - 1] == 1) {
+          for (int k = 0; k < n + 1; k++) T(i, k) *= -1; 
+        }
+      }
+      return itr;
+    }
+
+    // locate a pivot element in column kp (skipping degeneracy)
+    int ip(0);
+    double qmin, q, tmp; 
+    for (int i = 1; i < m + 1; i++) {
+      tmp = T(i, kp);
+      if (tmp < -WHETSTONE_SIMPLEX_TOLERANCE) {
+        q = -T(i, 0) / tmp; 
+
+        if (ip == 0) {
+          ip = i;
+          qmin = q;
+        } else if (q < qmin) {
+          ip = i;
+          qmin = q;
+        }
+      }
+    }
+    // Maximum is unbounded: no feasible solution exists.
+    if (ip == 0) return -1;
+
+    // exchange left and right-hand variables
+    tmp = 1.0 / T(ip, kp);
+    for (int i = 0; i < m + 2; i++) {
+      if (i != ip) {
+        T(i, kp) *= tmp;
+        for (int k = 0; k < n + 1; k++) {
+          if (k != kp) T(i, k) -= T(ip, k) * T(i, kp);
+        }
+      }
+    }
+    for (int k = 0; k < n + 1; k++) {
+      if (k != kp) T(ip, k) *= -tmp;
+    }
+    T(ip, kp) = tmp;
+
+    if (iypos[ip] > n + m1) {
+      int kh = iypos[ip] - m1 - n - 1;
+      if (l3[kh] == 1) {
+        l3[kh] = 0;
+        T(m + 1, kp) += 1.0;
+        for (int i = 0; i < m + 2; i++) T(i, kp) *= -1;
+      }
+    }
+    int is = izrow[kp];
+    izrow[kp] = iypos[ip];
+    iypos[ip] = is;
+  }
+
+  return itr_max;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi
