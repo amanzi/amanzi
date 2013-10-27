@@ -28,7 +28,7 @@ include(PrintVariable)
 include(AddPackageDependency)
 
 if (ENABLE_PETSC)
-    find_package(X11 QUIET REQUIRED)
+    find_package(X11 QUIET)
     if (NOT X11_FOUND)
         message(WARNING "If ENABLE_PETSC, need X11 but cmake failed to find"
                         " Build will likely fail.")
