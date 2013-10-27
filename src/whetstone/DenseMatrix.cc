@@ -12,6 +12,7 @@
 */
 
 #include <vector>
+#include <cmath>
 
 #include "lapack.hh"
 #include "WhetStoneDefs.hh"
@@ -155,8 +156,9 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose)
   return 0;
 }
 
+
 /* ******************************************************************
-* Second level routine: inversion
+* Second level routine: max values
 ****************************************************************** */
 void DenseMatrix::MaxRowValue(int irow, int jmin, int jmax, int* j, double* value)
 {
@@ -169,6 +171,25 @@ void DenseMatrix::MaxRowValue(int irow, int jmin, int jmax, int* j, double* valu
     if (*data > *value) {
       *j = k;
       *value = *data; 
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Second level routine: max absolute value
+****************************************************************** */
+void DenseMatrix::MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* value)
+{
+  double* data = data_ + jmin * m_ + irow;
+  *j = jmin;
+  *value = fabs(*data); 
+
+  for (int k = jmin + 1; k < jmax + 1; k++) {
+    data += m_;
+    if (fabs(*data) > *value) {
+      *j = k;
+      *value = fabs(*data); 
     }
   }
 }

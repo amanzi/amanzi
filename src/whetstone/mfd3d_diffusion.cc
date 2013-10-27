@@ -690,14 +690,9 @@ int MFD3D_Diffusion::StabilityMMatrix_(
   }
 
   // compute null space
-  int mcols = ncols - mcols;
+  int mcols = nrows - ncols;
   DenseMatrix D(nrows, mcols);
   int ierr = N.NullSpace(D);
-cout << D << endl;
-  //D(0,0) = 1.0; D(0,1) = 0.0;
-  //D(1,0) = 0.0; D(1,1) = 1.0;
-  //D(2,0) = 1.0; D(2,1) = 0.0;
-  //D(3,0) = 0.0; D(3,1) = 1.0;
 
   // populate the tableau
   int m1(0), m2(nrows), m12, n12, mx, nx, ir;
@@ -764,13 +759,18 @@ cout << D << endl;
     }
   }
 
+  // objective functional
+  n12 = m12 - nrows + 1;
+  for (int k = 0; k < mx + 1; k++) {
+    double q1 = 0.0;
+    for (int i = n12; i < m12; i++) q1 += T(i, k);
+    T(0, k) = -q1;
+  }
+
   // find a feasible basic solution
   int izrow[mx + 1], iypos[m12 + 1], itrs;
-  itrs = SimplexFindFeasibleSolution_(T, m1, m2, izrow, iypos);
-// cout << T << endl;
-cout << "number of itrs=" << itrs << endl;
-//for (int i = 0; i < m12 + 1; i++) cout << iypos[i] << " "; cout << endl;
-//for (int k = 0; k < mx + 1; k++) cout << izrow[k] << " "; cout << endl;
+  itrs = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
+cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
 
   double u[mx];
   for (int i = 0; i < mx; i++) u[i] = 0.0;
@@ -778,9 +778,6 @@ cout << "number of itrs=" << itrs << endl;
     int k = iypos[i] - 1;
     if (k < mx) u[k] = T(i,0);
   }
-
-cout << "u:" << endl;
-for(int i=0; i<mx; i++) cout << u[i] << " "; cout << endl << endl;;
 
   // add matrix D' U D
   for (int i = 0; i < nrows; i++) {
@@ -797,7 +794,6 @@ for(int i=0; i<mx; i++) cout << u[i] << " "; cout << endl << endl;;
       }
     }
   }
-cout << M << endl;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -805,99 +801,175 @@ cout << M << endl;
 
 /* ******************************************************************
 * A simplex method for fining monotone parameters. 
+* We assume that m3 = 0; otherwise, routine MaxRowValue() has 
+* to be modified by looping over columns in array l1.
 ****************************************************************** */
 int MFD3D_Diffusion::SimplexFindFeasibleSolution_(
-    DenseMatrix& T, int m1, int m2, int* izrow, int* iypos)
+    DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos)
 {
-  if (m2 == 0) return 0;
-
-  int m = m1 + m2;          // Number of constraints.
-  int n = T.NumCols() - 1;  // Number of unknwons.
+  int m = m1 + m2 + m3;     // Number of constraints.
+  int n = T.NumCols() - 1;  // Number of unknowns.
   
   for (int k = 0; k < n + 1; k++) {
     double q1 = 0.0;
     for (int i = m1 + 1; i < m + 1; i++) q1 += T(i, k);
     T(m + 1, k) = -q1;
   }
-// cout << T << endl;
 
   // work memory
-  int l3[m2];
-  for (int k = 0; k < n + 1; k++) izrow[k] = k;
+  int ip, kp, itr_max = WHETSTONE_SIMPLEX_MAX_ITERATIONS * n;
+  int itr1(0), itr2(0), nl1(n), l1[n + 1];
+
+  for (int k = 0; k < n + 1; k++) l1[k] = izrow[k] = k;
   for (int i = 0; i < m + 1; i++) iypos[i] = n + i;
-  for (int i = 0; i < m2; i++) l3[i] = 1;
 
-  int kp, itr_max = std::pow(2, m);
-cout << itr_max << endl;
-  double vmax;
+  // Start of phase I.
+  if (m2 + m3 > 0) {
+    int flag(0), l3[m2];
+    for (int i = 0; i < m2; i++) l3[i] = 1;
+
+    for (int itr = 0; itr < itr_max; itr++) {
+      // find maximum coeffient of the auxiliary functional
+      double vmax;
+      T.MaxRowValue(m + 1, 1, n, &kp, &vmax); 
+
+      // feasible solution does not exist 
+      if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
+          T(m + 1, 0) < -WHETSTONE_SIMPLEX_TOLERANCE) 
+          return WHETSTONE_SIMPLEX_NO_FEASIBLE_SET;
+
+      // feasible solution has been found
+      if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
+          fabs(T(m + 1, 0)) < WHETSTONE_SIMPLEX_TOLERANCE) {
+        /*
+        for (int ip = m1 + m2 + 1; ip < m + 1; ip++) {
+          if (iypos[ip] == ip + n) {
+            // Found an artificial variable for an equality constraint.
+            T.MaxRowMagnitude(ip, 1, n, &kp, &vmax);
+            if (vmax > WHETSTONE_SIMPLEX_TOLERANCE) goto one;
+          }
+        }
+        */
+
+        for (int i = m1 + 1; i < m + 1; i++) {
+          if (l3[i - m1 - 1] == 1) {
+            for (int k = 0; k < n + 1; k++) T(i, k) *= -1; 
+          }
+        }
+        itr1 = itr;
+        flag = 1;
+        break;
+      }
+
+      // locate a pivot element in column kp (skipping degeneracy)
+      SimplexPivotElement_(T, kp, &ip);
+      if (ip == 0) return WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM;
+
+      // Exchange left and right-hand variables
+      SimplexExchangeVariables_(T, kp, ip);
+
+      // Exchanged out an artificial variable foranequality constraint.
+      // Make sure it stays out by removing it from the l1 list.
+      if (iypos[ip] >= n + m1 + m2 + 1) {
+        for (int k = 1; k <= nl1; k++) {
+          if (l1[k] == kp) { 
+            --nl1;
+            for (int i = k; i <= nl1; i++) l1[i] = l1[i + 1];
+            break;
+          }
+        }
+      } else {
+      // Exchanged out an m2 type constraint for the first time. 
+      // Correct sign of the pivot column and the implicit artificial variable.
+        int kh = iypos[ip] - m1 - n - 1;
+        if (iypos[ip] >= 0 && l3[kh] == 1) {
+          l3[kh] = 0;
+          T(m + 1, kp) += 1.0;
+          for (int i = 0; i < m + 2; i++) T(i, kp) *= -1;
+        }
+      }
+      // Update lists of left-hand and right-hand variables.
+      int is = izrow[kp];
+      izrow[kp] = iypos[ip];
+      iypos[ip] = is;
+    }
+    if (flag == 0) return WHETSTONE_SIMPLEX_NO_CONVERGENCE;
+  }
+
+  // Start of phase II.
   for (int itr = 0; itr < itr_max; itr++) {
-    // find maximum coeffient of the auxiliary functional
-    T.MaxRowValue(m + 1, 1, n, &kp, &vmax); 
+    double vmax;
+    T.MaxRowValue(0, 1, n, &kp, &vmax);
 
-    // feasible solution does not exist 
-    if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
-        T(m + 1, 0) < -WHETSTONE_SIMPLEX_TOLERANCE) return -1;
-
-    // feasible solution has been found
-    if (vmax < WHETSTONE_SIMPLEX_TOLERANCE && 
-        fabs(T(m + 1, 0)) < WHETSTONE_SIMPLEX_TOLERANCE) {
-      for (int i = m1 + 1; i < m + 1; i++) {
-        if (l3[i - m1 - 1] == 1) {
-          for (int k = 0; k < n + 1; k++) T(i, k) *= -1; 
-        }
-      }
-      return itr;
+    // solution has been found
+    if (vmax < WHETSTONE_SIMPLEX_TOLERANCE) {
+      itr2 = itr;
+      break;
     }
 
-    // locate a pivot element in column kp (skipping degeneracy)
-    int ip(0);
-    double qmin, q, tmp; 
-    for (int i = 1; i < m + 1; i++) {
-      tmp = T(i, kp);
-      if (tmp < -WHETSTONE_SIMPLEX_TOLERANCE) {
-        q = -T(i, 0) / tmp; 
+    // Locate a pivot element.
+    SimplexPivotElement_(T, kp, &ip);
+    if (ip == 0) return WHETSTONE_SIMPLEX_UNBOUNDED_PROBLEM;
 
-        if (ip == 0) {
-          ip = i;
-          qmin = q;
-        } else if (q < qmin) {
-          ip = i;
-          qmin = q;
-        }
-      }
-    }
-    // Maximum is unbounded: no feasible solution exists.
-    if (ip == 0) return -1;
+    // Exchange a left-hand and a right-hand variables.
+    SimplexExchangeVariables_(T, kp, ip);
 
-    // exchange left and right-hand variables
-    tmp = 1.0 / T(ip, kp);
-    for (int i = 0; i < m + 2; i++) {
-      if (i != ip) {
-        T(i, kp) *= tmp;
-        for (int k = 0; k < n + 1; k++) {
-          if (k != kp) T(i, k) -= T(ip, k) * T(i, kp);
-        }
-      }
-    }
-    for (int k = 0; k < n + 1; k++) {
-      if (k != kp) T(ip, k) *= -tmp;
-    }
-    T(ip, kp) = tmp;
-
-    if (iypos[ip] > n + m1) {
-      int kh = iypos[ip] - m1 - n - 1;
-      if (l3[kh] == 1) {
-        l3[kh] = 0;
-        T(m + 1, kp) += 1.0;
-        for (int i = 0; i < m + 2; i++) T(i, kp) *= -1;
-      }
-    }
     int is = izrow[kp];
     izrow[kp] = iypos[ip];
     iypos[ip] = is;
   }
 
-  return itr_max;
+  return itr1 + itr2;
+}
+
+
+/* ******************************************************************
+* Locates a pivot elements taking degeneracy into account.
+****************************************************************** */
+void MFD3D_Diffusion::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
+{
+  int m = T.NumRows() - 2;
+  double qmin, q, tmp;
+
+  *ip = 0;
+  for (int i = 1; i < m + 1; i++) {
+    tmp = T(i, kp);
+    if (tmp < -WHETSTONE_SIMPLEX_TOLERANCE) {
+      q = -T(i, 0) / tmp;
+
+      if (*ip == 0) {
+        *ip = i;
+        qmin = q;
+      } else if (q < qmin) {
+        *ip = i;
+        qmin = q;
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Exchanges lenf-hand and rihgt-hand variables.
+****************************************************************** */
+void MFD3D_Diffusion::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
+{
+  int m = T.NumRows() - 2;
+  int n = T.NumCols() - 1;
+
+  double tmp = 1.0 / T(ip, kp);
+  for (int i = 0; i < m + 2; i++) {
+    if (i != ip) {
+      T(i, kp) *= tmp;
+      for (int k = 0; k < n + 1; k++) {
+        if (k != kp) T(i, k) -= T(ip, k) * T(i, kp);
+      }
+    }
+  }
+  for (int k = 0; k < n + 1; k++) {
+    if (k != kp) T(ip, k) *= -tmp;
+  }
+  T(ip, kp) = tmp;
 }
 
 }  // namespace WhetStone

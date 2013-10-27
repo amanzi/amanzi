@@ -97,7 +97,9 @@ class MFD3D_Diffusion : public MFD3D {
 
   void RescaleMassMatrixInverse_(int cell, DenseMatrix& W);
 
-  int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int* izrow, int* iypos);
+  int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);
+  void SimplexPivotElement_(DenseMatrix& T, int kp, int* ip);
+  void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
 };
 
 }  // namespace WhetStone
