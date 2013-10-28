@@ -474,9 +474,11 @@ void MPC::cycle_driver() {
       // get the auxillary data from chemistry
       Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
       // write visualization data for timestep
+      if (flow_enabled) FPK->UpdateAuxilliaryData();
       WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
     } else {
       //always write the initial visualization dump
+      if (flow_enabled) FPK->UpdateAuxilliaryData();
       WriteVis(visualization,S.ptr());
     }
     
@@ -901,7 +903,7 @@ void MPC::cycle_driver() {
       iter++;
       S->set_cycle(iter);
 
-      if (flow_enabled) FPK->UpdateAuxilliaryData();
+
 
       // make observations
       if (observations) {
@@ -932,6 +934,7 @@ void MPC::cycle_driver() {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
 	    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
 	  }
+	  if (flow_enabled) FPK->UpdateAuxilliaryData();
 	  WriteVis(visualization,S.ptr());
 	}
       } else {
@@ -939,6 +942,7 @@ void MPC::cycle_driver() {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
 	    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
 	  }
+	  if (flow_enabled) FPK->UpdateAuxilliaryData();
 	  WriteVis(visualization,S.ptr());
 	}
       }
@@ -974,8 +978,9 @@ void MPC::cycle_driver() {
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
       *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
     }
+    if (flow_enabled) FPK->UpdateAuxilliaryData();   
     WriteVis(visualization,S.ptr());
-
+    
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
       *out << "Cycle " << S->cycle() << ": writing checkpoint file" << std::endl;
     }
