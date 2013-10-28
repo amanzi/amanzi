@@ -91,7 +91,7 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
    Teuchos::ParameterList plist;
    Teuchos::ParameterList& slist = plist.sublist("gmres");
    slist.set<string>("iterative method", "gmres");
-   slist.set<double>("error tolerance", 1e-8);
+   slist.set<double>("error tolerance", 1e-8 );
    slist.set<int>("maximum number of iterations", 100);
    Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
    vlist.set("Verbosity Level", "low");
@@ -135,7 +135,7 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 {
   double error;
   error = ErrorNormSTOMP(u, du);
-  // error = ErrorNormRC1(u, du);
+  //error = ErrorNormRC1(u, du);
 
   return error;
 }
@@ -235,7 +235,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
 {
   double max_sat_pert = 0.25;
   bool ret_val = false;
-  double dumping_factor = 0.6;
+  double dumping_factor = 0.7;
   double reference_pressure = 101325.;
 
   int ncells_clipped(0);
@@ -267,6 +267,30 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
       ncells_clipped++;
       ret_val = true;
     }    
+  }
+
+  for (int c = 0; c < ncells_owned; c++) {
+
+    double unew = u[c] - du[c];
+    double tmp = du[c];
+
+    if ((unew < atm_pressure) && ( u[c] > atm_pressure)){
+       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+	 *(vo_->os()) << "S -> U: "<<u[c]<<" -> "<<unew<<endl;
+       }
+       //cout << "S -> U: "<<u[c]<<" -> "<<unew<<endl;
+    }
+    else if ((unew > atm_pressure) && ( u[c] < atm_pressure)){
+      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+	 *(vo_->os()) << "U -> S: "<<u[c]<<" -> "<<unew<<endl;
+      }
+      //cout << "U -> S: "<<u[c]<<" -> before "<<unew<<" "<<du[c]<<endl;
+      du[c] = tmp*dumping_factor;
+      //cout << "U -> S: "<<u[c]<<" -> after "<<u[c] - du[c]<<" "<<du[c]<<endl;
+      cout << "Verb level "<<vo_->getVerbLevel() <<endl;
+      ncells_clipped++;
+    }
+
   }
 
   //  if (verbosity >= FLOW_VERBOSITY_HIGH) {

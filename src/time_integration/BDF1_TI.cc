@@ -481,6 +481,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     // we use inf norms here
     previous_du_norm = du_norm;
     du.NormInf(&du_norm);
+    //du.Norm2(&du_norm);
 
     // protect against floating point overflow
     if (itr > 1 && du_norm > state.divergence_factor * previous_du_norm) {
