@@ -287,7 +287,6 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
       //cout << "U -> S: "<<u[c]<<" -> before "<<unew<<" "<<du[c]<<endl;
       du[c] = tmp*dumping_factor;
       //cout << "U -> S: "<<u[c]<<" -> after "<<u[c] - du[c]<<" "<<du[c]<<endl;
-      cout << "Verb level "<<vo_->getVerbLevel() <<endl;
       ncells_clipped++;
     }
 
