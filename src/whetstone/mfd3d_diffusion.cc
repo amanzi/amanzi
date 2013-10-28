@@ -770,6 +770,7 @@ int MFD3D_Diffusion::StabilityMMatrix_(
   // find a feasible basic solution
   int izrow[mx + 1], iypos[m12 + 1], itrs;
   itrs = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
+  if (itrs < 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
 
   double u[mx];
@@ -781,17 +782,18 @@ cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
 
   // add matrix D' U D
   for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < nrows; j++) { 
+    for (int j = i; j < nrows; j++) { 
       nx = 0;
       for (int k = 0; k < mcols; k++) {
         M(i, j) += D(i, k) * D(j, k) * u[nx];
         nx++;
         for (int l = k + 1; l < mcols; l++) {
-          M(i, j) += D(i, k) * D(j, l) * (u[nx] - u[nx + 1]);
-          M(i, j) += D(j, k) * D(i, l) * (u[nx] - u[nx + 1]);
+          double tmp = D(i, k) * D(j, l) + D(j, k) * D(i, l);
+          M(i, j) += tmp * (u[nx] - u[nx + 1]);
           nx += 2;
         }
       }
+      M(j, i) = M(i, j);
     }
   }
 
@@ -882,7 +884,7 @@ int MFD3D_Diffusion::SimplexFindFeasibleSolution_(
       // Exchanged out an m2 type constraint for the first time. 
       // Correct sign of the pivot column and the implicit artificial variable.
         int kh = iypos[ip] - m1 - n - 1;
-        if (iypos[ip] >= 0 && l3[kh] == 1) {
+        if (kh >= 0 && l3[kh] == 1) {
           l3[kh] = 0;
           T(m + 1, kp) += 1.0;
           for (int i = 0; i < m + 2; i++) T(i, kp) *= -1;
@@ -929,7 +931,8 @@ int MFD3D_Diffusion::SimplexFindFeasibleSolution_(
 void MFD3D_Diffusion::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
 {
   int m = T.NumRows() - 2;
-  double qmin, q, tmp;
+  int n = T.NumCols() - 1;
+  double qmin, q, qp, q0, tmp;
 
   *ip = 0;
   for (int i = 1; i < m + 1; i++) {
@@ -943,6 +946,14 @@ void MFD3D_Diffusion::SimplexPivotElement_(DenseMatrix& T, int kp, int* ip)
       } else if (q < qmin) {
         *ip = i;
         qmin = q;
+      } else if (q == qmin) {  // we have a degeneracy.
+        double tmp0 = T(*ip, kp);
+        for (int k = 1; k <= n; k++) {
+          qp = -T(*ip, k) / tmp0;
+          q0 = -T(i, k) / tmp;
+          if (q0 != qp) break;
+        }
+        if (q0 < qp) *ip = i;
       }
     }
   }

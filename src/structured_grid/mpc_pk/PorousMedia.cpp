@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <ios>
+#include <iomanip>
 
 #include <ErrorList.H>
 #include <Interpolater.H>
