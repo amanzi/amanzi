@@ -465,20 +465,22 @@ void MPC::cycle_driver() {
   visualization->set_mesh(mesh_maps);
   visualization->CreateFiles();
 
+
+  if (!restart_requested) {
+    if (flow_enabled) FPK->UpdateAuxilliaryData();
+  }
+
   if (!restart_requested) {
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
       *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
     }
-    if (flow_enabled) FPK->UpdateAuxilliaryData();
     if (chemistry_enabled) {
       // get the auxillary data from chemistry
       Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
       // write visualization data for timestep
-      if (flow_enabled) FPK->UpdateAuxilliaryData();
       WriteVis(visualization,S.ptr()); // TODO: make sure that aux names are used for vis
     } else {
       //always write the initial visualization dump
-      if (flow_enabled) FPK->UpdateAuxilliaryData();
       WriteVis(visualization,S.ptr());
     }
     
@@ -925,7 +927,21 @@ void MPC::cycle_driver() {
         if (abs(S->time() - Tswitch) < 1e-7) {
           force = true;
         }
+
+      // figure out if in the next iteration, we
+      // will reset the time integrator, if so we
+      // force a checkpoint
+      bool force_checkpoint(false);
+      if (! ti_mode == STEADY) 
+        if (!reset_times_.empty()) 
+	  if (S->time() == reset_times_.front())
+	    force_checkpoint = true;      
       
+      if (force || force_checkpoint || visualization->DumpRequested(S->cycle(), S->time()) || 
+	  restart->DumpRequested(S->cycle(), S->time())) {
+	if (flow_enabled) FPK->UpdateAuxilliaryData();
+      }
+	    
       Amanzi::timer_manager.start("I/O");
       if (chemistry_enabled) {
         // get the auxillary data
@@ -934,7 +950,6 @@ void MPC::cycle_driver() {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
 	    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
 	  }
-	  if (flow_enabled) FPK->UpdateAuxilliaryData();
 	  WriteVis(visualization,S.ptr());
 	}
       } else {
@@ -942,21 +957,10 @@ void MPC::cycle_driver() {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
 	    *out << "Cycle " << S->cycle() << ": writing visualization file" << std::endl;
 	  }
-	  if (flow_enabled) FPK->UpdateAuxilliaryData();
 	  WriteVis(visualization,S.ptr());
 	}
       }
 
-      
-      // figure out if in the next iteration, we
-      // will reset the time integrator, if so we
-      // force a checkpoint
-      bool force_checkpoint(false);
-      if (! ti_mode == STEADY) 
-        if (!reset_times_.empty()) 
-	  if (S->time() == reset_times_.front())
-	    force_checkpoint = true;
-      
       // write restart dump if requested
       if (force || force_checkpoint || restart->DumpRequested(S->cycle(), S->time())) {
 	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
