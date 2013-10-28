@@ -771,7 +771,7 @@ int MFD3D_Diffusion::StabilityMMatrix_(
   int izrow[mx + 1], iypos[m12 + 1], itrs;
   itrs = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
   if (itrs < 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
-// cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
+cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
 
   double u[mx];
   for (int i = 0; i < mx; i++) u[i] = 0.0;
@@ -884,7 +884,7 @@ int MFD3D_Diffusion::SimplexFindFeasibleSolution_(
       // Exchanged out an m2 type constraint for the first time. 
       // Correct sign of the pivot column and the implicit artificial variable.
         int kh = iypos[ip] - m1 - n - 1;
-        if (iypos[ip] >= 0 && l3[kh] == 1) {
+        if (kh >= 0 && l3[kh] == 1) {
           l3[kh] = 0;
           T(m + 1, kp) += 1.0;
           for (int i = 0; i < m + 2; i++) T(i, kp) *= -1;
