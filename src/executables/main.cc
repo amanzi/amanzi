@@ -17,7 +17,7 @@
 #include "errors.hh"
 #include "amanzi_unstructured_grid_simulation_driver.hh"
 
-#include "state_evaluators_reg.hh"
+#include "state_evaluators_registration.hh"
 
 #include "constitutive_relations_eos_registration.hh"
 #include "constitutive_relations_surface_subsurface_fluxes_registration.hh"
