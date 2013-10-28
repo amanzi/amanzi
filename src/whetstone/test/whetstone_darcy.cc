@@ -524,23 +524,24 @@ TEST(DARCY_INVERSE_MASS_2D) {
   factory.preference(pref);
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
-   RCP<Mesh> mesh = factory("test/one_cell2.exo"); 
+  RCP<Mesh> mesh = factory("test/one_cell2.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
-  int nfaces = 5, cell = 0, dim = mesh->space_dimension();
+  int ok, nfaces = 5, cell = 0, dim = mesh->space_dimension();
   Tensor T(dim, 2);  // tensor of rank 1
   T(0, 0) = 1.0;
   T(1, 1) = 1.0;
   // T(2, 2) = 1.0;
-  T(0, 1) = T(1, 0) = 0.1;
+  T(0, 1) = T(1, 0) = 0.5;
 
   DenseMatrix W(nfaces, nfaces);
   for (int method = 0; method < 1; method++) {
-    if (method == 0) 
-      mfd.MassMatrixInverseMMatrix(cell, T, W);
+    if (method == 0) {
+      ok = mfd.MassMatrixInverseMMatrix(cell, T, W);
+    }
 
-    printf("Inverse of mass matrix for method=%d\n", method);
+    printf("Inverse of mass matrix for method=%d  ierr=%d\n", method, ok);
     for (int i = 0; i < nfaces; i++) {
       for (int j = 0; j < nfaces; j++ ) printf("%8.4f ", W(i, j)); 
       printf("\n");
