@@ -500,6 +500,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   char* tagName;
   char* attrName;
   char* textContent;
+  char* elemContent;
   std::string meshbase;
 
   // This actually includes: process kernels, execution controls, and numerical controls
@@ -1447,6 +1448,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 	    } else if (strcmp(textContent,"inexact newton")==0) {
               nlPL.set<std::string>("Nonlinear Solver Type","inexact Newton");
 	    }
+            XMLString::release(&textContent);
 	    list.sublist("Numerical Control Parameters").sublist(meshbase).sublist("Nonlinear Solver") = nlPL;
 	  }
           else if (strcmp(nodeName,"linear_solver")==0) {
@@ -1471,40 +1473,102 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
                         textContent = XMLString::transcode(currentNode->getTextContent());
                         lsPL.set<double>("linear solver tolerance",get_double_constant(textContent,*def_list));
                         XMLString::release(&textContent);
-                } else if (strcmp(tagname,"ml_cycle_applications")==0) {
-                        textContent = XMLString::transcode(currentNode->getTextContent());
-                        pcPL.sublist("Trilinos ML").set<int>("ML cycle applications",get_int_constant(textContent,*def_list));
-                        XMLString::release(&textContent);
-			usePCPL = true;
-                } else if (strcmp(tagname,"use_hypre_amg")==0) {
-                        //TODO: EIB - not sure what to do with this, sublists get created later
-                } else if (strcmp(tagname,"use_block_ilu")==0) {
-                        //TODO: EIB - not sure what to do with this, sublists get created later
-                } else if (strcmp(tagname,"hypre_amg_cycle_applications")==0) {
-                        textContent = XMLString::transcode(currentNode->getTextContent());
-                        pcPL.sublist("Hypre AMG").set<int>("Hypre AMG cycle applications",get_int_constant(textContent,*def_list));
-                        XMLString::release(&textContent);
-			usePCPL = true;
-                } else if (strcmp(tagname,"hypre_amg_smoother_sweeps")==0) {
-                        textContent = XMLString::transcode(currentNode->getTextContent());
-                        pcPL.sublist("Hypre AMG").set<int>("Hypre AMG smoother sweeps",get_int_constant(textContent,*def_list));
-                        XMLString::release(&textContent);
-			usePCPL = true;
-                } else if (strcmp(tagname,"hypre_amg_tolerance")==0) {
-                        textContent = XMLString::transcode(currentNode->getTextContent());
-                        pcPL.sublist("Hypre AMG").set<double>("Hypre AMG tolerance",get_double_constant(textContent,*def_list));
-                        XMLString::release(&textContent);
-			usePCPL = true;
-                } else if (strcmp(tagname,"hypre_amg_threshold")==0) {
-                        textContent = XMLString::transcode(currentNode->getTextContent());
-                        pcPL.sublist("Hypre AMG").set<double>("Hypre AMG strong threshold",get_double_constant(textContent,*def_list));
-                        XMLString::release(&textContent);
-			usePCPL = true;
-                } else if (strcmp(tagname,"ml_smoother_type")==0) {
-                        textContent = XMLString::transcode(currentNode->getTextContent());
-                        pcPL.sublist("Trilinos ML").set<std::string>("ML smoother type",textContent);
-                        XMLString::release(&textContent);
-			usePCPL = true;
+                } else if (strcmp(tagname,"preconditioner")==0) {
+		    // which precondition is stored in attribute, options are: trilinos_ml, hypre_amg, block_ilu
+	            attrMap = currentNode->getAttributes();
+                    nodeAttr = attrMap->getNamedItem(XMLString::transcode("name"));
+                    textContent = xercesc::XMLString::transcode(nodeAttr->getNodeValue());
+		    usePCPL = true;
+		    if (strcmp(textContent,"hypre_amg")==0) {
+                        // loop through children and deal with them
+                        xercesc::DOMNodeList* preconChildren= currentNode->getChildNodes();
+                        for (int l=0; l<preconChildren->getLength();l++) {
+                          xercesc::DOMNode* currentKid = preconChildren->item(l) ;
+                          if (xercesc::DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
+    	                    char* kidname = xercesc::XMLString::transcode(currentKid->getNodeName());
+                            if (strcmp(kidname,"hypre_cycle_applications")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Hypre AMG").set<int>("Hypre AMG cycle applications",get_int_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"hypre_smoother_sweeps")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Hypre AMG").set<int>("Hypre AMG smoother sweeps",get_int_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"hypre_tolerance")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Hypre AMG").set<double>("Hypre AMG tolerance",get_double_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"hypre_strong_threshold")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Hypre AMG").set<double>("Hypre AMG strong threshold",get_double_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    }
+			  }
+			}
+		    } else if (strcmp(textContent,"trilinos_ml")==0) {
+                        // loop through children and deal with them
+                        xercesc::DOMNodeList* preconChildren= currentNode->getChildNodes();
+                        for (int l=0; l<preconChildren->getLength();l++) {
+                          xercesc::DOMNode* currentKid = preconChildren->item(l) ;
+                          if (xercesc::DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
+    	                    char* kidname = xercesc::XMLString::transcode(currentKid->getNodeName());
+                            if (strcmp(kidname,"trilinos_smoother_type")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+		                if (strcmp(elemContent,"jacobi")==0) {
+                                  pcPL.sublist("Trilinos ML").set<std::string>("ML smoother type","Jacobi");
+		                }else if (strcmp(elemContent,"gauss_seidel")==0) {
+                                  pcPL.sublist("Trilinos ML").set<std::string>("ML smoother type","Gauss-Seidel");
+		                }else if (strcmp(elemContent,"ilu")==0) {
+                                  pcPL.sublist("Trilinos ML").set<std::string>("ML smoother type","ILU");
+		                }
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"trilinos_threshold")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Trilinos ML").set<double>("ML aggregation threshold",get_double_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"trilinos_smoother_sweeps")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Trilinos ML").set<int>("ML smoother sweeps",get_int_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"trilinos_cycle_applications")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Trilinos ML").set<int>("ML cycle applications",get_int_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    }
+			  }
+			}
+		    } else if (strcmp(textContent,"block_ilu")==0) {
+                        // loop through children and deal with them
+                        xercesc::DOMNodeList* preconChildren= currentNode->getChildNodes();
+                        for (int l=0; l<preconChildren->getLength();l++) {
+                          xercesc::DOMNode* currentKid = preconChildren->item(l) ;
+                          if (xercesc::DOMNode::ELEMENT_NODE == currentKid->getNodeType()) {
+    	                    char* kidname = xercesc::XMLString::transcode(currentKid->getNodeName());
+                            if (strcmp(kidname,"ilu_overlap")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Block ILU").set<int>("Block ILU overlap",get_int_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"ilu_relax")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Block ILU").set<double>("Block ILU relax value",get_double_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"ilu_rel_threshold")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Block ILU").set<double>("Block ILU relative threshold",get_double_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"ilu_abs_threshold")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Block ILU").set<double>("Block ILU absolute threshold",get_double_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    } else if (strcmp(kidname,"ilu_level_of_fill")==0) {
+                                elemContent = XMLString::transcode(currentKid->getTextContent());
+                                pcPL.sublist("Block ILU").set<int>("Block ILU level of fill",get_int_constant(elemContent,*def_list));
+                                XMLString::release(&elemContent);
+			    }
+			  }
+			}
+		    }
+                    XMLString::release(&textContent);
                 }
               }
             }
