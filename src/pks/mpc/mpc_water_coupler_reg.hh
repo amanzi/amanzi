@@ -26,6 +26,6 @@ MPCWaterCoupler<MPCSurfaceSubsurfaceDirichletCoupler>::reg_("surface-subsurface 
 
 template<>
 RegisteredPKFactory< MPCWaterCoupler<MPCSurfaceSubsurfaceFluxCoupler> >
-MPCWaterCoupler<MPCSurfaceSubsurfaceFluxCoupler>::reg_("surface-subsurface flux water coupler");
+MPCWaterCoupler<MPCSurfaceSubsurfaceFluxCoupler>::reg_("old surface-subsurface flux water coupler");
 
 }

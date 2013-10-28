@@ -1,18 +1,18 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-ATS
+   ATS
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+   License: see $ATS_DIR/COPYRIGHT
+   Author: Ethan Coon
 
-Interface for the derived MPC for water coupling between surface and subsurface.
+   Interface for the derived MPC for water coupling between surface and subsurface.
 
-In this method, a Dirichlet BC is used on the subsurface boundary for
-the operator, but the preconditioner is for the flux system with no
-extra unknowns.  On the surface, the TPFA is used, resulting in a
-subsurface-face-only Schur complement that captures all terms.
+   In this method, a Dirichlet BC is used on the subsurface boundary for
+   the operator, but the preconditioner is for the flux system with no
+   extra unknowns.  On the surface, the TPFA is used, resulting in a
+   subsurface-face-only Schur complement that captures all terms.
 
-------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "MatrixMFD_Surf.hh"
@@ -83,13 +83,15 @@ void MPCSurfaceSubsurfaceFluxCoupler::precon(Teuchos::RCP<const TreeVector> u,
   // write residuals
   if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Preconditioner Application:" << std::endl;
   std::vector<std::string> vnames;
-  vnames.push_back("  r_sub"); vnames.push_back("  PC*r_sub"); 
+  vnames.push_back("  r_sub");
+  vnames.push_back("  PC*r_sub");
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-  vecs.push_back(u->SubVector(0)->Data().ptr()); 
-  vecs.push_back(Pu->SubVector(0)->Data().ptr()); 
+  vecs.push_back(u->SubVector(0)->Data().ptr());
+  vecs.push_back(Pu->SubVector(0)->Data().ptr());
   domain_db_->WriteVectors(vnames, vecs, true);
 
-  vnames[0] = "  r_surf"; vnames[1] = "  PC*r_surf";
+  vnames[0] = "  r_surf";
+  vnames[1] = "  PC*r_surf";
   vecs[0] = u->SubVector(1)->Data().ptr();
   vecs[1] = Pu->SubVector(1)->Data().ptr();
   surf_db_->WriteVectors(vnames, vecs, true);
@@ -192,44 +194,44 @@ void MPCSurfaceSubsurfaceFluxCoupler::update_precon(double t,
   /*
   // TEST
   if (S_next_->cycle() == 151) {
-    // Dump the Schur complement
-    Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
-    std::stringstream filename_s;
-    filename_s << "schur_" << S_next_->cycle() << ".txt";
-    EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
+  // Dump the Schur complement
+  Teuchos::RCP<Epetra_FECrsMatrix> sc = mfd_preconditioner_->Schur();
+  std::stringstream filename_s;
+  filename_s << "schur_" << S_next_->cycle() << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
 
-    std::cout << "CYCLE 176, ITER " << niter_ << "!!!!!!!!" << std::endl;
+  std::cout << "CYCLE 176, ITER " << niter_ << "!!!!!!!!" << std::endl;
 
-    changed_solution();
-    Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
-    Teuchos::RCP<TreeVector> up2 = Teuchos::rcp(new TreeVector(*up));
-    Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
-    Teuchos::RCP<TreeVector> f2 = Teuchos::rcp(new TreeVector(*up));
-    fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f1);
+  changed_solution();
+  Teuchos::RCP<TreeVector> up_nc = Teuchos::rcp_const_cast<TreeVector>(up);
+  Teuchos::RCP<TreeVector> up2 = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
+  Teuchos::RCP<TreeVector> f2 = Teuchos::rcp(new TreeVector(*up));
+  fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f1);
 
-    *up2 = *up;
-    int c = 4;
-    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    (*up_nc->SubVector(domain_pk_index_)->Data())("face",f) =
-        (*up_nc->SubVector(domain_pk_index_)->Data())("face",f) + .001;
-    (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) =
-        (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) + .001;
-    changed_solution();
-    fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
+  *up2 = *up;
+  int c = 4;
+  int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, c);
+  (*up_nc->SubVector(domain_pk_index_)->Data())("face",f) =
+  (*up_nc->SubVector(domain_pk_index_)->Data())("face",f) + .001;
+  (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) =
+  (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) + .001;
+  changed_solution();
+  fun(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
 
-    std::cout << "DFDP: " << std::endl;
-    std::cout << "  p0 = " << (*up2->SubVector(domain_pk_index_)->Data())("face",f);
-    std::cout << "  sp0 = " << (*up2->SubVector(surf_pk_index_)->Data())("cell",c) << std::endl;
-    std::cout << "  p1 = " << (*up_nc->SubVector(domain_pk_index_)->Data())("face",f);
-    std::cout << "  sp1 = " << (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) << std::endl;
-    std::cout << "  f0 = " << (*f1->SubVector(domain_pk_index_)->Data())("face",f) << std::endl;
-    std::cout << "  f1 = " << (*f2->SubVector(domain_pk_index_)->Data())("face",f) << std::endl;
+  std::cout << "DFDP: " << std::endl;
+  std::cout << "  p0 = " << (*up2->SubVector(domain_pk_index_)->Data())("face",f);
+  std::cout << "  sp0 = " << (*up2->SubVector(surf_pk_index_)->Data())("cell",c) << std::endl;
+  std::cout << "  p1 = " << (*up_nc->SubVector(domain_pk_index_)->Data())("face",f);
+  std::cout << "  sp1 = " << (*up_nc->SubVector(surf_pk_index_)->Data())("cell",c) << std::endl;
+  std::cout << "  f0 = " << (*f1->SubVector(domain_pk_index_)->Data())("face",f) << std::endl;
+  std::cout << "  f1 = " << (*f2->SubVector(domain_pk_index_)->Data())("face",f) << std::endl;
 
 
 
-    double df_dp = ((*f2->SubVector(domain_pk_index_)->Data())("face",f)
-                    -(*f1->SubVector(domain_pk_index_)->Data())("face",f)) / .001;
-    std::cout << "DFDP = " << df_dp << std::endl;
+  double df_dp = ((*f2->SubVector(domain_pk_index_)->Data())("face",f)
+  -(*f1->SubVector(domain_pk_index_)->Data())("face",f)) / .001;
+  std::cout << "DFDP = " << df_dp << std::endl;
   }
   */
 }
@@ -295,4 +297,3 @@ bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor(double h,
 
 
 } // namespace
-
