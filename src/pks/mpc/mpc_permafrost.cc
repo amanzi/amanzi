@@ -339,14 +339,19 @@ bool MPCPermafrost::modify_correction(double h,
         Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   // Now post-process
-  coupled_flow_pk_->PreconPostprocess_(res->SubVector(0), Pu->SubVector(0));
-  coupled_energy_pk_->PreconPostprocess_(res->SubVector(1), Pu->SubVector(1));
+  bool flow_modified = coupled_flow_pk_->PreconPostprocess_(res->SubVector(0), Pu->SubVector(0));
+  bool energy_modified = coupled_energy_pk_->PreconPostprocess_(res->SubVector(1), Pu->SubVector(1));
 
-  // Update surface cells and faces on both
-  coupled_flow_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(0));
-  coupled_energy_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(1));
-  coupled_flow_pk_->PreconUpdateSurfaceFaces_(res->SubVector(0), Pu->SubVector(0));
-  coupled_energy_pk_->PreconUpdateSurfaceFaces_(res->SubVector(1), Pu->SubVector(1));
-  return true;
+  // Update surface cells and faces
+  if (flow_modified) {
+    coupled_flow_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(0));
+    coupled_flow_pk_->PreconUpdateSurfaceFaces_(res->SubVector(0), Pu->SubVector(0));
+  }
+
+  if (energy_modified) {
+    coupled_energy_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(1));
+    coupled_energy_pk_->PreconUpdateSurfaceFaces_(res->SubVector(1), Pu->SubVector(1));
+  }
+  return flow_modified || energy_modified;
 }
 } // namespace
