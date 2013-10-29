@@ -235,7 +235,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
 {
   double max_sat_pert = 0.25;
   bool ret_val = false;
-  double dumping_factor = 0.7;
+  double dumping_factor = 0.6;
   double reference_pressure = 101325.;
 
   int ncells_clipped(0);
@@ -252,7 +252,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
     double press_pert = atm_pressure - WRM[mb]->capillaryPressure(sat_pert);
     double du_pert_max = fabs(u[c] - press_pert); 
 
-    if (fabs(du[c]) > du_pert_max) {
+    if ((fabs(du[c]) > du_pert_max)&&(1 - sat > 1e-5)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *(vo_->os()) << "saturation clipping in cell " << c 
@@ -260,12 +260,15 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
       }
 
       double tmp = du[c];
-       
+
       if (du[c] >= 0.0) du[c] = fabs(du_pert_max);
       else du[c] = -fabs(du_pert_max);
-
+      
       ncells_clipped++;
       ret_val = true;
+      // cout<< "saturation clipping in cell " << c <<" is "<< sat 
+      //              << " pressure change: " << du[c] << " -> " << du_pert_max << endl;
+
     }    
   }
 
@@ -278,15 +281,14 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
        if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
 	 *(vo_->os()) << "S -> U: "<<u[c]<<" -> "<<unew<<endl;
        }
-       //cout << "S -> U: "<<u[c]<<" -> "<<unew<<endl;
     }
     else if ((unew > atm_pressure) && ( u[c] < atm_pressure)){
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
 	 *(vo_->os()) << "U -> S: "<<u[c]<<" -> "<<unew<<endl;
       }
-      //cout << "U -> S: "<<u[c]<<" -> before "<<unew<<" "<<du[c]<<endl;
+      // cout << "U -> S: "<<u[c]<<" -> before "<<unew<<" "<<du[c]<<endl;
       du[c] = tmp*dumping_factor;
-      //cout << "U -> S: "<<u[c]<<" -> after "<<u[c] - du[c]<<" "<<du[c]<<endl;
+      // cout << "U -> S: "<<u[c]<<" -> after "<<u[c] - du[c]<<" "<<du[c]<<endl;
       ncells_clipped++;
     }
 
