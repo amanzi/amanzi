@@ -138,9 +138,11 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     int nfaces = domain_Pu_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
       if (std::abs(domain_Pu_f[0][f]) > face_limiter_) {
-        std::cout << "  LIMITING: dp_old = " << domain_Pu_f[0][f];
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << "  LIMITING: dp_old = " << domain_Pu_f[0][f];
         domain_Pu_f[0][f] = domain_Pu_f[0][f] > 0. ? face_limiter_ : -face_limiter_;
-        std::cout << ", dp_new = " << domain_Pu_f[0][f] << std::endl;
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << ", dp_new = " << domain_Pu_f[0][f] << std::endl;
         n_modified++;
       }
     }
@@ -168,7 +170,8 @@ bool MPCWaterCoupler<BaseCoupler>::PreconPostprocess_(Teuchos::RCP<const TreeVec
     double proc_damp = damp;
     this->surf_mesh_->get_comm()->MinAll(&proc_damp, &damp, 1);
     if (damp < 1.0) {
-      std::cout << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
       domain_Pu->Scale(damp);
       modified = true;
     }
@@ -306,23 +309,25 @@ template<class BaseCoupler>
 bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
         Teuchos::RCP<TreeVector> up) {
   Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "MPCWaterCoupler: Modifying predictor" << std::endl;
 
   // Make sure surface values match the subsurface values.
   bool changed = BaseCoupler::modify_predictor_copy_subsurf_to_surf_(h, up);
 
   // modify predictor via heuristic stops spurting in the surface flow
+  Epetra_MultiVector& domain_u_f =
+      *up->SubVector(this->domain_pk_index_)->Data()->ViewComponent("face",false);
+  Epetra_MultiVector& surf_u_c =
+      *up->SubVector(this->surf_pk_index_)->Data()->ViewComponent("cell",false);
+
   if (modify_predictor_heuristic_) {
     if (vo_->os_OK(Teuchos::VERB_HIGH))
-      *vo_->os() << " Modifying predictor with water heuristic" << std::endl;
+      *vo_->os() << "  MPCWaterCoupler: Modifying predictor with water heuristic" << std::endl;
 
     const Epetra_MultiVector& surf_u_prev_c =
         *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
-
-    Epetra_MultiVector& domain_u_f =
-        *up->SubVector(this->domain_pk_index_)->Data()->ViewComponent("face",false);
-    Epetra_MultiVector& surf_u_c =
-        *up->SubVector(this->surf_pk_index_)->Data()->ViewComponent("cell",false);
 
     int ncells = surf_u_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
@@ -352,9 +357,6 @@ bool MPCWaterCoupler<BaseCoupler>::modify_predictor(double h,
     }
     changed = true;
   }
-
-  // call the base coupler's modify.
-  changed |= BaseCoupler::modify_predictor(h, up);
 
   return changed;
 }

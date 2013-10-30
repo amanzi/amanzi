@@ -86,14 +86,14 @@ void Richards::fun(double t_old,
   vecs.push_back(S_next_->GetFieldData("relative_permeability").ptr());
   db_->WriteVectors(vnames,vecs,true);
 
-  db_->WriteVector("res (post diffusion)", res.ptr(), true);
+  db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
   // accumulation term
   AddAccumulation_(res.ptr());
 
 #if DEBUG_FLAG
-  db_->WriteVector("res (post accumulation)", res.ptr(), true);
+  db_->WriteVector("res (acc)", res.ptr(), true);
 #endif
 
 #if DEBUG_RES_FLAG
