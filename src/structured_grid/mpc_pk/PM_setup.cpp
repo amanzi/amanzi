@@ -2479,12 +2479,13 @@ void  PorousMedia::read_tracer()
               for (int n=0; n<BL_SPACEDIM; ++n) {
                 tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
                                                            build_region_PArray(Array<std::string>(1,RlabelDEF[n])),
-                                                           std::string("concentration"),0));
+                                                           std::string("noflow"),0));
+		//std::string("concentration"),0));
                 tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n+3] + "_DEFAULT",
                                                            build_region_PArray(Array<std::string>(1,RlabelDEF[n+3])),
-                                                           std::string("concentration"),0));
+                                                           std::string("noflow"),0));
+		//std::string("concentration"),0));
               }
-              
 
               Array<int> orient_types(6,-1);
               for (int n = 0; n<n_tbc; n++)
@@ -2530,13 +2531,13 @@ void  PorousMedia::read_tracer()
                   {
                       Array<Real> val(1,0);
                       tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 1;
+                      AMR_BC_tID = 2;
                   }
                   else if (tbc_type == "outflow")
                   {
                       Array<Real> val(1,0);
                       tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 2; // Outflow
+                      AMR_BC_tID = 3; // Outflow
                   }
                   else {
                       std::string m = "Tracer BC: \"" + tbc_names[n] 
@@ -2573,7 +2574,7 @@ void  PorousMedia::read_tracer()
               }
               // Set the default BC type
               for (int k=0; k<orient_types.size(); ++k) {
-                if (orient_types[k] < 0) orient_types[k] = 1;
+                if (orient_types[k] < 0) orient_types[k] = 2;
               }
 
               BCRec phys_bc_trac;
