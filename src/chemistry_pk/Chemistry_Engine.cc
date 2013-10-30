@@ -32,6 +32,22 @@ Chemistry_Engine::Chemistry_Engine(const Teuchos::ParameterList& param_list):
 
 Chemistry_Engine::~Chemistry_Engine()
 {
+  if (chem_initialized_)
+  {
+    chem_.Shutdown(&chem_data_.engine_state, &chem_status_);
+    FreeAlquimiaData(&chem_data_);
+
+    // Delete the various geochemical conditions.
+    for (size_t i = 0; i < all_chem_conditions_.size(); ++i)
+      FreeAlquimiaGeochemicalCondition(all_chem_conditions_[i]);
+
+    FreeAlquimiaEngineStatus(&chem_status_);
+  }
+}
+
+const std::string& Chemistry_Engine::Name() const
+{
+  return chem_engine_name_;
 }
 
 void Chemistry_Engine::Initialize()
@@ -177,7 +193,10 @@ void Chemistry_Engine::CopyFromBuffersToAlquimia(const double* component_concent
                                                  double water_density,
                                                  double porosity,
                                                  double volume,
-                                                 double saturation)
+                                                 double saturation,
+                                                 const double* isotherm_kd,
+                                                 const double* isotherm_freundlich_n,
+                                                 const double* isotherm_langmuir_b)
 {
   AlquimiaState* alquimia_state = &chem_data_.state;
   AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
@@ -212,6 +231,12 @@ void Chemistry_Engine::CopyFromBuffersToAlquimia(const double* component_concent
   // Material properties.
   alquimia_mat_props->volume = volume;
   alquimia_mat_props->saturation = saturation;
+  for (int i = 0; i < alquimia_mat_props->isotherm_kd.size; ++i)
+    alquimia_mat_props->isotherm_kd.data[i] = isotherm_kd[i];
+  for (int i = 0; i < alquimia_mat_props->freundlich_n.size; ++i)
+    alquimia_mat_props->freundlich_n.data[i] = isotherm_kd[i];
+  for (int i = 0; i < alquimia_mat_props->langmuir_b.size; ++i)
+    alquimia_mat_props->langmuir_b.data[i] = isotherm_kd[i];
 }
 
 void Chemistry_Engine::CopyFromAlquimiaToBuffers(double* component_concentrations,
@@ -224,6 +249,9 @@ void Chemistry_Engine::CopyFromAlquimiaToBuffers(double* component_concentration
                                                  double& porosity,
                                                  double& volume,
                                                  double& saturation,
+                                                 double* isotherm_kd,
+                                                 double* isotherm_freundlich_n,
+                                                 double* isotherm_langmuir_b,
                                                  double* free_ion_species,
                                                  double* primary_activity_coeffs,
                                                  double* secondary_activity_coeffs,
@@ -264,6 +292,12 @@ void Chemistry_Engine::CopyFromAlquimiaToBuffers(double* component_concentration
   const AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
   volume = alquimia_mat_props->volume;
   saturation = alquimia_mat_props->saturation;
+  for (int i = 0; i < alquimia_mat_props->isotherm_kd.size; ++i)
+    isotherm_kd[i] = alquimia_mat_props->isotherm_kd.data[i];
+  for (int i = 0; i < alquimia_mat_props->freundlich_n.size; ++i)
+    isotherm_kd[i] = alquimia_mat_props->freundlich_n.data[i];
+  for (int i = 0; i < alquimia_mat_props->langmuir_b.size; ++i)
+    isotherm_kd[i] = alquimia_mat_props->langmuir_b.data[i];
   
   // Auxiliary data follows.
   const AlquimiaAuxiliaryOutputData* aux_output = &chem_data_.aux_output;
@@ -311,7 +345,25 @@ void Chemistry_Engine::CopyFromAlquimiaToBuffers(double* component_concentration
 
 void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
                                         double time,
-                                        double* concentrations)
+                                        double* component_concentrations,
+                                        double* sorbed_components,
+                                        double* mineral_volume_fractions,
+                                        double* mineral_specific_surface_areas,
+                                        double* cation_exchange_capacity,
+                                        double* sorption_sites,
+                                        double& water_density,
+                                        double& porosity,
+                                        double& volume,
+                                        double& saturation,
+                                        double* isotherm_kd,
+                                        double* isotherm_freundlich_n,
+                                        double* isotherm_langmuir_b,
+                                        double* free_ion_species,
+                                        double* primary_activity_coeffs,
+                                        double* secondary_activity_coeffs,
+                                        double* ion_exchange_ref_cation_concs,
+                                        double* surface_complex_free_site_concs,
+                                        double& pH)
 {
   Errors::Message msg;
 
@@ -322,6 +374,21 @@ void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
     msg << "Chemistry_Engine::EnforceCondition: No condition '" << conditionName << "' was found!\n";
     Exceptions::amanzi_throw(msg); 
   }
+
+  // Copy stuff into Alquimia.
+  this->CopyFromBuffersToAlquimia(component_concentrations,
+                                  sorbed_components,
+                                  mineral_volume_fractions,
+                                  mineral_specific_surface_areas,
+                                  cation_exchange_capacity,
+                                  sorption_sites,
+                                  water_density,
+                                  porosity,
+                                  volume,
+                                  saturation,
+                                  isotherm_kd,
+                                  isotherm_freundlich_n,
+                                  isotherm_langmuir_b);
 
   // Process the condition on the given array at the given time.
   // FIXME: Time is ignored for the moment.
@@ -350,11 +417,114 @@ void Chemistry_Engine::EnforceCondition(const std::string& conditionName,
     Exceptions::amanzi_throw(msg); 
   }  
 #endif
+
+  // Copy stuff out again.
+  this->CopyFromAlquimiaToBuffers(component_concentrations,
+                                  sorbed_components,
+                                  mineral_volume_fractions,
+                                  mineral_specific_surface_areas,
+                                  cation_exchange_capacity,
+                                  sorption_sites,
+                                  water_density,
+                                  porosity,
+                                  volume,
+                                  saturation,
+                                  isotherm_kd,
+                                  isotherm_freundlich_n,
+                                  isotherm_langmuir_b,
+                                  free_ion_species,
+                                  primary_activity_coeffs,
+                                  secondary_activity_coeffs,
+                                  ion_exchange_ref_cation_concs,
+                                  surface_complex_free_site_concs,
+                                  pH);
 }
 
-void Chemistry_Engine::Advance(double deltaTime,
-                               double* concentrations)
+void Chemistry_Engine::Advance(double delta_time,
+                               double* component_concentrations,
+                               double* sorbed_components,
+                               double* mineral_volume_fractions,
+                               double* mineral_specific_surface_areas,
+                               double* cation_exchange_capacity,
+                               double* sorption_sites,
+                               double& water_density,
+                               double& porosity,
+                               double& volume,
+                               double& saturation,
+                               double* isotherm_kd,
+                               double* isotherm_freundlich_n,
+                               double* isotherm_langmuir_b,
+                               double* free_ion_species,
+                               double* primary_activity_coeffs,
+                               double* secondary_activity_coeffs,
+                               double* ion_exchange_ref_cation_concs,
+                               double* surface_complex_free_site_concs,
+                               double& pH,
+                               int& num_iterations)
 {
+  // Copy stuff into Alquimia.
+  this->CopyFromBuffersToAlquimia(component_concentrations,
+                                  sorbed_components,
+                                  mineral_volume_fractions,
+                                  mineral_specific_surface_areas,
+                                  cation_exchange_capacity,
+                                  sorption_sites,
+                                  water_density,
+                                  porosity,
+                                  volume,
+                                  saturation,
+                                  isotherm_kd,
+                                  isotherm_freundlich_n,
+                                  isotherm_langmuir_b);
+
+  // Advance the chemical reaction all operator-split-like.
+  chem_.ReactionStepOperatorSplit(&chem_data_.engine_state,
+                                  &delta_time,
+                                  &chem_data_.material_properties,
+                                  &chem_data_.state,
+                                  &chem_data_.aux_data,
+                                  &chem_status_);
+
+// FIXME: Figure out a neutral parallel-friendly way to report errors.
+  assert(chem_status_.error == 0);
+
+#if 0
+  if (chem_status_.error != 0)
+    ierr = -1;
+
+  // figure out if any of the processes threw an error, if so all processes will re-throw
+  int recv = 0;
+  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
+  if (recv != 0) 
+  {
+    msg << "Error in advance of chemical reactions.";
+    Exceptions::amanzi_throw(msg); 
+  }  
+#endif
+
+  // Write down the number of Newton iterations.
+  num_iterations = chem_status_.num_newton_iterations;
+
+  // Copy stuff out again.
+  this->CopyFromAlquimiaToBuffers(component_concentrations,
+                                  sorbed_components,
+                                  mineral_volume_fractions,
+                                  mineral_specific_surface_areas,
+                                  cation_exchange_capacity,
+                                  sorption_sites,
+                                  water_density,
+                                  porosity,
+                                  volume,
+                                  saturation,
+                                  isotherm_kd,
+                                  isotherm_freundlich_n,
+                                  isotherm_langmuir_b,
+                                  free_ion_species,
+                                  primary_activity_coeffs,
+                                  secondary_activity_coeffs,
+                                  ion_exchange_ref_cation_concs,
+                                  surface_complex_free_site_concs,
+                                  pH);
 }
 
 void Chemistry_Engine::ParseChemicalConditions(const Teuchos::ParameterList& param_list,

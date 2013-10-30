@@ -42,6 +42,9 @@ class Chemistry_Engine {
   // Destructor.
   ~Chemistry_Engine();
 
+  // Returns the name of the backend that does the chemistry.
+  const std::string& Name() const;
+
   // Returns the number of primary chemical species in the present simulation.
 
   // These query methods return metadata for the chemical configuration represented 
@@ -57,19 +60,57 @@ class Chemistry_Engine {
   void GetIonExchangeNames(std::vector<std::string>& ionExchangeNames) const;
   int NumIsothermSpecies() const;
   void GetIsothermSpeciesNames(std::vector<std::string>& speciesNames) const;
+  int NumFreeIonSpecies() const;
 
   // Enforces the geochemical condition with the given name on the chemical configuration 
   // represented by the given array of concentrations at the given time. The order of the 
   // concentrations in the array matches that of the species names returned by GetSpeciesNames.
   void EnforceCondition(const std::string& conditionName,
                         double time,
-                        double* concentrations);
+                        double* component_concentrations,
+                        double* sorbed_components,
+                        double* mineral_volume_fractions,
+                        double* mineral_specific_surface_areas,
+                        double* cation_exchange_capacity,
+                        double* sorption_sites,
+                        double& water_density,
+                        double& porosity,
+                        double& volume,
+                        double& saturation,
+                        double* isotherm_kd,
+                        double* isotherm_freundlich_n,
+                        double* isotherm_langmuir_b,
+                        double* free_ion_species,
+                        double* primary_activity_coeffs,
+                        double* secondary_activity_coeffs,
+                        double* ion_exchange_ref_cation_concs,
+                        double* surface_complex_free_site_concs,
+                        double& pH);
 
   // Advances the species represented by the given array of concentrations, replacing old values 
   // with new values. The order of the concentrations in the array matches that of the species names 
   // returned by GetSpeciesNames.
-  void Advance(double deltaTime,
-               double* concentrations);
+  void Advance(double delta_time,
+               double* component_concentrations,
+               double* sorbed_components,
+               double* mineral_volume_fractions,
+               double* mineral_specific_surface_areas,
+               double* cation_exchange_capacity,
+               double* sorption_sites,
+               double& water_density,
+               double& porosity,
+               double& volume,
+               double& saturation,
+               double* isotherm_kd,
+               double* isotherm_freundlich_n,
+               double* isotherm_langmuir_b,
+               double* free_ion_species,
+               double* primary_activity_coeffs,
+               double* secondary_activity_coeffs,
+               double* ion_exchange_ref_cation_concs,
+               double* surface_complex_free_site_concs,
+               double& pH,
+               int& num_iterations);
 
   // FIXME: How is auxiliary output handled?
  private:
@@ -95,7 +136,10 @@ class Chemistry_Engine {
                                  double water_density,
                                  double porosity,
                                  double volume,
-                                 double saturation);
+                                 double saturation,
+                                 const double* isotherm_kd,
+                                 const double* isotherm_freundlich_n,
+                                 const double* isotherm_langmuir_b);
 
   // Copies data from Alquimia to the given buffers to Alquimia after computation.
   void CopyFromAlquimiaToBuffers(double* component_concentrations,
@@ -108,6 +152,9 @@ class Chemistry_Engine {
                                  double& porosity,
                                  double& volume,
                                  double& saturation,
+                                 double* isotherm_kd,
+                                 double* isotherm_freundlich_n,
+                                 double* isotherm_langmuir_b,
                                  double* free_ion_species,
                                  double* primary_activity_coeffs,
                                  double* secondary_activity_coeffs,

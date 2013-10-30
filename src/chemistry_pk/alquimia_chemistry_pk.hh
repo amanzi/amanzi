@@ -10,12 +10,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "chemistry_pk_base.hh"
-
-#include "alquimia_memory.h"
-#include "alquimia_util.h"
-#include "alquimia_constants.h"
-#include "alquimia_containers.h"
-#include "alquimia_interface.h"
+#include "Chemistry_Engine.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -33,7 +28,8 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // to this PK so that it has access to all information about the 
   // problem.
   Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
-                        Teuchos::RCP<Chemistry_State> chem_state);
+                        Teuchos::RCP<Chemistry_State> chem_state,
+                        Teuchos::RCP<Chemistry_Engine> chemistry_engine);
 
   ~Alquimia_Chemistry_PK();
 
@@ -107,27 +103,16 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   // parameter lists
   Teuchos::ParameterList main_param_list_, chem_param_list_;
 
-  // Alquimia data structures.
   bool chem_initialized_;
-  AlquimiaInterface chem_;
-  AlquimiaEngineStatus chem_status_;
-  AlquimiaData chem_data_;
 
-  // Mapping of region names to geochemical conditions. A region is identified 
+  // Chemistry engine.
+  Teuchos::RCP<Chemistry_Engine> chem_engine_;
+
+  // Mapping of region names to geochemical condition names. A region is identified 
   // by a string, and all cells within a region will have all geochemical 
-  // conditions in the corresponding condition vector applied to them. NOTE
-  // that these maps do not own the geochemical conditions--they only hold 
-  // pointers to the objects.
-  std::map<std::string, AlquimiaGeochemicalCondition*> chem_initial_conditions_;
-  std::map<std::string, AlquimiaGeochemicalCondition*> chem_boundary_conditions_;
+  // conditions in the corresponding condition vector applied to them. 
+  std::map<std::string, std::string> chem_initial_conditions_;
   
-  // Vector that takes responsibility for ownership of geochemical conditions.
-  std::vector<AlquimiaGeochemicalCondition*> all_chem_conditions_;
-
-  // Back-end engine name and input file.
-  std::string chem_engine_inputfile_;
-  std::string chem_engine_name_;
-
   double current_time_;
   double saved_time_;
 
@@ -136,30 +121,54 @@ class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
   void UpdateChemistryStateStorage(void);
-  int InitializeSingleCell(int cellIndex, AlquimiaGeochemicalCondition* condition);
+  int InitializeSingleCell(int cellIndex, const std::string& condition);
   int AdvanceSingleCell(double delta_time, 
                         Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
-                        int cellIndex, AlquimiaGeochemicalCondition* condition);
+                        int cellIndex);
 
   void ParseChemicalConditions(const Teuchos::ParameterList& param_list,
-                               std::map<std::string, AlquimiaGeochemicalCondition*>& conditions);
+                               std::map<std::string, std::string>& conditions);
   void XMLParameters(void);
   void SetupAuxiliaryOutput(void);
 
-  // These helpers copy data at the given cell from Amanzi's chemistry state to 
-  // their corresponding locations within Alquimia.
-  void CopyAmanziStateToAlquimia(
-      const int cell_id,
-      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyAmanziMaterialPropertiesToAlquimia(
-      const int cell_id,
-      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-
-  // These helpers copy Alquimia's data to Amanzi's chemistry state at the 
+  // These helpers copy data back and forth between a set of buffers and the chemistry state.
   // given cell.
-  void CopyAlquimiaStateToAmanzi(const int cell_id);
-  void CopyAlquimiaMaterialPropertiesToAmanzi(const int cell_id);
+  void CopyAmanziStateToBuffers(const int cell_id,
+                                Teuchos::RCP<const Epetra_MultiVector> aqueous_components, 
+                                std::vector<double>& component_concentrations,
+                                std::vector<double>& sorbed_components,
+                                std::vector<double>& mineral_volume_fractions,
+                                std::vector<double>& mineral_specific_surface_areas,
+                                std::vector<double>& cation_exchange_capacity,
+                                std::vector<double>& sorption_sites,
+                                double& water_density,
+                                double& porosity,
+                                double& volume,
+                                double& saturation,
+                                std::vector<double>& isotherm_kd,
+                                std::vector<double>& isotherm_freundlich_n,
+                                std::vector<double>& isotherm_langmuir_b);
 
+  void CopyBuffersToAmanziState(const int cell_id,
+                                const std::vector<double>& component_concentrations,
+                                const std::vector<double>& sorbed_components,
+                                const std::vector<double>& mineral_volume_fractions,
+                                const std::vector<double>& mineral_specific_surface_areas,
+                                const std::vector<double>& cation_exchange_capacity,
+                                const std::vector<double>& sorption_sites,
+                                double water_density,
+                                double porosity,
+                                double volume,
+                                double saturation,
+                                const std::vector<double>& isotherm_kd,
+                                const std::vector<double>& isotherm_freundlich_n,
+                                const std::vector<double>& isotherm_langmuir_b,
+                                const std::vector<double>& free_ion_species,
+                                const std::vector<double>& primary_activity_coeffs,
+                                const std::vector<double>& secondary_activity_coeffs,
+                                const std::vector<double>& ion_exchange_ref_cation_concs,
+                                const std::vector<double>& surface_complex_free_site_concs,
+                                double pH);
 };
 
 }  // namespace AmanziChemistry
