@@ -1,32 +1,27 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Version: 2.0
-Release name: naka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Version: 2.0
+  Release name: naka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __MFD3D_DIFFUSION_HH__
-#define __MFD3D_DIFFUSION_HH__
+#ifndef AMANZI_WHETSTONE_MFD3D_DIFFUSION_HH_
+#define AMANZI_WHETSTONE_MFD3D_DIFFUSION_HH_
 
 /*
-This is the discretization package.
+  The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
+  consistency condition (Mc N = R) and matrix Ms is build from a stability 
+  condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
+  of physics packages: flow, transport, thermal, and geomechanics. 
+  The material properties are imbedded into the the matrix Mc. 
 
-The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
-consistency condition (Mc N = R) and matrix Ms is build from a stability 
-condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
-of physics packages: flow, transport, thermal, and geomechanics. 
-The material properties are imbedded into the the matrix Mc. 
-
-Notation used below: M (mass), W (inverse of M), A (stiffness).
-
-IMPORTANT: all matrices must be reshaped before calling member functions.
+  Notation used below: M (mass), W (inverse of M), A (stiffness).
 */
 
 #include "Teuchos_RCP.hpp"
@@ -76,17 +71,14 @@ class MFD3D_Diffusion : public MFD3D {
                                        DenseMatrix& W);
 
   // primary related discetization methods
-  int MassMatrixInverseHex(int cell, const Tensor& permeability,
-                           DenseMatrix& W);
+  int MassMatrixInverseMMatrixHex(int cell, const Tensor& permeability, DenseMatrix& W);
+  int MassMatrixInverseMMatrix(int cell, const Tensor& permeability, DenseMatrix& W);
 
-  int MassMatrixInverseSO(int cell, const Tensor& permeability,
-                          DenseMatrix& W);
+  int MassMatrixInverseSO(int cell, const Tensor& permeability, DenseMatrix& W);
 
-  int MassMatrixInverseTPFA(int cell, const Tensor& permeability,
-                            DenseMatrix& W);
+  int MassMatrixInverseTPFA(int cell, const Tensor& permeability, DenseMatrix& W);
 
-  int MassMatrixInverseDiagonal(int cell, const Tensor& permeability,
-                                DenseMatrix& W);
+  int MassMatrixInverseDiagonal(int cell, const Tensor& permeability, DenseMatrix& W);
 
   // a posteriori error estimate
   int RecoverGradient_MassMatrix(int cell,
@@ -97,14 +89,17 @@ class MFD3D_Diffusion : public MFD3D {
                                       const std::vector<double>& solution, 
                                       AmanziGeometry::Point& gradient);
 
-
  private:  
-  // supporting stability methods (add matrix Ms in M = Mc + Ms)
-  int StabilityMonotoneHex(int cell, const Tensor& T,
-                           DenseMatrix& Mc, DenseMatrix& M);
+  // stability methods (add matrix Ms in M = Mc + Ms)
+  int StabilityMMatrixHex_(int cell, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
 
- private:
+  int StabilityMMatrix_(int cell, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M);
+
   void RescaleMassMatrixInverse_(int cell, DenseMatrix& W);
+
+  int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);
+  void SimplexPivotElement_(DenseMatrix& T, int kp, int* ip);
+  void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
 };
 
 }  // namespace WhetStone

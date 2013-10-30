@@ -271,9 +271,34 @@ Mesh
 
 Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface.  "Mesh`" is used to select between the following options:
 
-* `"Structured`": This instructs Amanzi to use BoxLib data structures and an associated paradigm to numerically represent the flow equations.  Data containers in the BoxLib software library, developed by CCSE at LBNL, are based on a hierarchical set of uniform Cartesian grid patches.  `"Structured`" requires that the simulation domain be a single coordinate-aligned rectangle, and that the "base mesh" consists of a logically rectangular set of uniform hexahedral cells.  This option supports a block-structured approach to dynamic mesh refinement, wherein successively refined subregions of the solution are constructed dynamically to track "interesting" features of the evolving solution.  The numerical solution approach implemented under the `"Structured`" framework is highly optimized to exploit regular data and access patterns on massively parallel computing architectures.
+* `"Structured`": This instructs Amanzi to use BoxLib data structures
+  and an associated paradigm to numerically represent the flow
+  equations.  Data containers in the BoxLib software library,
+  developed by CCSE at LBNL, are based on a hierarchical set of
+  uniform Cartesian grid patches.  `"Structured`" requires that the
+  simulation domain be a single coordinate-aligned rectangle, and that
+  the "base mesh" consists of a logically rectangular set of uniform
+  hexahedral cells.  This option supports a block-structured approach
+  to dynamic mesh refinement, wherein successively refined subregions
+  of the solution are constructed dynamically to track "interesting"
+  features of the evolving solution.  The numerical solution approach
+  implemented under the `"Structured`" framework is highly optimized
+  to exploit regular data and access patterns on massively parallel
+  computing architectures. 
 
-* `"Unstructured`": This instructs Amanzi to use data structures provided in the Trilinos software framework.  To the extent possible, the discretization algorithms implemented under this option are largely independent of the shape and connectivity of the underlying cells.  As a result, this option supports an arbitrarily complex computational mesh structure that enables users to work with numerical meshes that can be aligned with geometrically complex man-made or geostatigraphical features.  Under this option, the user typically provides a mesh file that was generated with an external software package.  The following mesh file formats are currently supported: `"Exodus 2`" (see example), `"MSTK`" (see example), `"MOAB`" (see example).  Amanzi also provides a rudmentary capability to generate unstructured meshes automatically.
+* `"Unstructured`": This instructs Amanzi to use data structures
+  provided in the Trilinos software framework.  To the extent
+  possible, the discretization algorithms implemented under this
+  option are largely independent of the shape and connectivity of the
+  underlying cells.  As a result, this option supports an arbitrarily
+  complex computational mesh structure that enables users to work with
+  numerical meshes that can be aligned with geometrically complex
+  man-made or geostatigraphical features.  Under this option, the user
+  typically provides a mesh file that was generated with an external
+  software package.  The following mesh file formats are currently
+  supported: `"Exodus 2`".  Amanzi also provides a rudmentary
+  capability to generate regular meshes within the unstructured
+  framework internally.
 
 .. code-block:: xml
 

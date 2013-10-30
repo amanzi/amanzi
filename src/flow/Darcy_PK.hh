@@ -99,7 +99,6 @@ class Darcy_PK : public Flow_PK {
   // auxilliary data management
   void UpdateAuxilliaryData();
 
-
  private:
   Teuchos::ParameterList dp_list_;
 

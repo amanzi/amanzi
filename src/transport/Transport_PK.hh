@@ -1,16 +1,16 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of Amanzi. 
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
-  Transport_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Transport_State> TS);
-  double time_step = TPK.calculate_transport_dT();
-  TPK.advance(time_step);
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Usage: 
+    Transport_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Transport_State> TS);
+    double time_step = TPK.calculate_transport_dT();
+    TPK.advance(time_step);
 */
 
 #ifndef AMANZI_TRANSPORT_PK_HH_
@@ -34,7 +34,7 @@ Usage:
 #include "TransportDefs.hh"
 #include "Transport_State.hh"
 #include "Transport_SourceFactory.hh"
-#include "Matrix_Dispersion.hh"
+#include "Dispersion.hh"
 
 
 /*
@@ -76,10 +76,17 @@ class Transport_PK : public Explicit_TI::fnBase {
   // access members  
   Teuchos::RCP<Transport_State> transport_state() { return TS; }
   Teuchos::RCP<Transport_State> transport_state_next() { return TS_nextMPC; }
-  Transport_State& ref_transport_state_next() { return *TS_nextBIG; }
+  Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
+
+  double TimeStep() { return dT; }
+  void TimeStep(double dT_) { dT = dT_; }
 
   inline double cfl() { return cfl_; }
   inline int get_transport_status() { return status; }
+
+  // for unit tests only
+  std::vector<Teuchos::RCP<DispersionModel> >& dispersion_models() { return dispersion_models_; }
+  void init_dispersion_matrix(Teuchos::RCP<Dispersion> matrix) { dispersion_matrix_ = matrix; } 
 
   // control members
   void PrintStatistics() const;
@@ -137,13 +144,15 @@ class Transport_PK : public Explicit_TI::fnBase {
   void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
 
-  // obsolete methods
-  //void CreateConcentration(Teuchos::ParameterList& bcs_list);
-
   // miscaleneous methods
   double TracerVolumeChangePerSecond(int idx_tracer);
 
  public:
+  Teuchos::ParameterList parameter_list;
+  Teuchos::ParameterList preconditioners_list;
+  Teuchos::ParameterList solvers_list;
+  Teuchos::ParameterList nonlin_solvers_list;
+
   int MyPID;  // parallel information: will be moved to private
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
@@ -158,10 +167,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Transport_State> TS_nextBIG;  // involves both owned and ghost values
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
   
-  Teuchos::ParameterList parameter_list;
-  Teuchos::ParameterList preconditioners_list;
-  Teuchos::ParameterList solvers_list;
-
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
@@ -185,8 +190,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
-  Teuchos::RCP<Matrix_Dispersion> dispersion_matrix; // data for dispersion
-  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models;
+  Teuchos::RCP<Dispersion> dispersion_matrix_;  // data for dispersion
+  std::vector<Teuchos::RCP<DispersionModel> > dispersion_models_;
   int dispersion_method;
   std::string dispersion_preconditioner;
   std::string dispersion_solver;

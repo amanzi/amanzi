@@ -1,10 +1,10 @@
-#ifndef   __TENSOR_HH__
-#define   __TENSOR_HH__
+#ifndef AMANZI_TENSOR_HH_
+#define AMANZI_TENSOR_HH_
 
 /*
-Tensors of rank 1 are numbers in all dimensions.
-Tensors of rank 2 are square matrices in all dimensions.
-Only symmetric tensors of rank 4 are considered here.
+  Tensors of rank 1 are numbers in all dimensions.
+  Tensors of rank 2 are square matrices in all dimensions.
+  Only symmetric tensors of rank 4 are considered here.
 */
 
 #include <iostream>
@@ -36,12 +36,12 @@ class Tensor {
 
   // primary members
   int init(int d, int rank);
-  double trace() const;
-  double det();
-  void inverse();
-  void transpose();
-  double determinant();
-  void spectral_bounds(double* lower, double* upper) const;
+  void PutScalar(double val);
+  double Trace() const;
+  double Det();
+  void Inverse();
+  void Transpose();
+  void SpectralBounds(double* lower, double* upper) const;
 
   // elementary operators
   Tensor& operator*=(const double& c);
@@ -52,8 +52,8 @@ class Tensor {
   // access members
   double& operator()(int i, int j) { return data_[i * size_ + j]; }
   double& operator()(int i, int j) const { return data_[i * size_ + j]; }
-  int add_column(const int column, const AmanziGeometry::Point& p); 
-  int add_row(const int row, const AmanziGeometry::Point& p); 
+  int AddColumn(const int column, const AmanziGeometry::Point& p); 
+  int AddRow(const int row, const AmanziGeometry::Point& p); 
 
   int dimension() const { return d_; }
   int rank() const { return rank_; }

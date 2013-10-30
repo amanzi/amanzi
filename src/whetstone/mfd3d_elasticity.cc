@@ -46,7 +46,7 @@ int MFD3D_Elasticity::L2consistency(int cell, const Tensor& T,
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
 
   Tensor Tinv(T);
-  Tinv.inverse();
+  Tinv.Inverse();
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
@@ -101,7 +101,8 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
   int nd = TE.size();
 
   // to calculate matrix R, we use temporary matrix N
-  N.PutScalar(0.0);
+  DenseMatrix R(nrows, nd, N.Values(), WHETSTONE_DATA_ACCESS_VIEW);
+  R.PutScalar(0.0);
 
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
@@ -140,30 +141,30 @@ int MFD3D_Elasticity::H1consistency(int cell, const Tensor& T,
       int pos = FindPosition_(v, nodes);
       for (int k = 0; k < nd; k++) {
         v1 = TE[k] * normal;
-        for (int l = 0; l < d; l++) N(l * num_nodes + pos, k) += v1[l] * u;
+        for (int l = 0; l < d; l++) R(l * num_nodes + pos, k) += v1[l] * u;
       }
     }
   }
 
   // calculate R inv(T) R^T / volume
   Tensor Tinv(T);
-  Tinv.inverse();
+  Tinv.Inverse();
 
   double volume = mesh_->cell_volume(cell);
   Tinv *= 1.0 / volume;
 
-  DenseMatrix RT(nrows, nd);  // R = N at this point
+  DenseMatrix RT(nrows, nd);
   if (Tinv.rank() == 1) {
-    double* data_N = N.Values();
+    double* data_N = R.Values();  // We stress that memory belongs to matrix N.
     double* data_RT = RT.Values();
     double s = Tinv(0, 0);
     for (int i = 0; i < nrows * nd; i++) data_RT[i] = data_N[i] * s;
   } else if (Tinv.rank() == 4) {
     DenseMatrix Ttmp(nd, nd, Tinv.data(), WHETSTONE_DATA_ACCESS_VIEW);
-    MatrixMatrixProduct_(N, Ttmp, false, RT);
+    MatrixMatrixProduct_(R, Ttmp, false, RT);
   }
   DenseMatrix AcAc(nrows, nrows);
-  MatrixMatrixProduct_(RT, N, true, AcAc);
+  MatrixMatrixProduct_(RT, R, true, AcAc);
   for (int i = 0; i < nrows; i++)
   for (int j = 0; j < nrows; j++) Ac(i, j) = AcAc(i, j);
 

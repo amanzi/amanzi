@@ -119,6 +119,8 @@ The following parameters control MPC options related to particular process kerne
 
  * `"max chemistry to transport time step ratio`" [double], default is 1.0.
 
+ * `"time integration rescue reduction factor`" [double], default is 0.5.
+
 Time Integration Mode
 ---------------------
 
@@ -820,6 +822,8 @@ The remaining `"Flow`" parameters are
   The third option is recommended for orthogonal meshes and diagonal absolute permeability.
   The second option is still experimental (no papers were published) and produces 
   an optimal discretization.
+
+* `"plot time history`" [bool] produces an ASCII file with time history when exists.
 
 * `"VerboseObject`" [list] defines default verbosity level for the process kernel.
   If it does not exists, it will be created on a fly and verbosity level will be set to `"high`".

@@ -45,7 +45,8 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Library: transport
 #
 set(transport_inc_files
-  Matrix_Dispersion.hh
+  Dispersion.hh
+  Dispersion_TPFA.hh
   Reconstruction.hh
   Transport_BC_Factory.hh
   transport_boundary_function.hh
@@ -58,7 +59,9 @@ set(transport_inc_files
 set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc 
                         Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
                         Transport_BC_Factory.cc Transport_SourceFactory.cc
-                        Reconstruction.cc Matrix_Dispersion.cc
+                        Reconstruction.cc 
+                        DispersionMatrixFactory.cc Dispersion.cc 
+                        Dispersion_TPFA.cc Dispersion_MFD.cc Dispersion_NLFV.cc
                         transport_boundary_function.cc transport_domain_function.cc)
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
@@ -149,6 +152,11 @@ if ( BUILD_TESTS )
         add_amanzi_test(transport_subcycling transport_subcycling
 	                KIND unit
                         SOURCE test/Main.cc test/transport_subcycling.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+        add_amanzi_test(transport_matrix transport_matrix
+	                KIND unit
+                        SOURCE test/Main.cc test/transport_matrix.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
 

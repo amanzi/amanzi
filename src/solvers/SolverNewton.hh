@@ -167,7 +167,7 @@ int SolverNewton<Vector, VectorSpace>::Solve(const Teuchos::RCP<Vector>& u) {
       if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
            *vo_->os() << "Solver threatens to overflow: FAIL." << endl
-                      << "  ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << endl;
+                      << "||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << endl;
         return SOLVER_OVERFLOW;
       }
     }

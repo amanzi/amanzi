@@ -104,7 +104,7 @@ Darcy_PK::~Darcy_PK()
   delete bc_flux;
   delete bc_seepage;
 
-  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
 }
 
 
@@ -217,7 +217,7 @@ void Darcy_PK::InitializeSteadySaturated()
 ****************************************************************** */
 void Darcy_PK::InitSteadyState(double T0, double dT0)
 {
-  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_sss_;
 
   InitNextTI(T0, dT0, ti_specs_sss_);
@@ -233,7 +233,7 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Darcy_PK::InitTransient(double T0, double dT0)
 {
-  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(dp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_trs_;
 
   InitNextTI(T0, dT0, ti_specs_trs_);

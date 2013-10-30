@@ -118,7 +118,7 @@ Richards_PK::~Richards_PK()
   delete bc_head;
   delete bc_seepage;
 
-  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
 }
 
 
@@ -289,7 +289,7 @@ void Richards_PK::InitPicard(double T0)
 ****************************************************************** */
 void Richards_PK::InitSteadyState(double T0, double dT0)
 {
-  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_sss_;
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]
@@ -313,7 +313,7 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
 ****************************************************************** */
 void Richards_PK::InitTransient(double T0, double dT0)
 {
-  if (ti_specs != NULL) OutputTimeHistory(ti_specs->dT_history);
+  if (ti_specs != NULL) OutputTimeHistory(rp_list_, ti_specs->dT_history);
   ti_specs = &ti_specs_trs_;
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE +  // usually 1 [Pa]

@@ -144,13 +144,10 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
     // error/exit because we can't handle type
   }
   
-
- 
   H5Dclose(dataset_id);
   H5Sclose(dataspace);
   H5Tclose(ds_type);
   cout << "  E>> done in upermute" << endl;
-  
 }
 
 int main (int argc, char *argv[])

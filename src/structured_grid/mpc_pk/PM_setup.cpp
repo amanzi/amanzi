@@ -300,8 +300,13 @@ int  PorousMedia::nGrowMG;
 int  PorousMedia::nGrowEIGEST;
 bool PorousMedia::do_constant_vel;
 Real PorousMedia::be_cn_theta_trac;
+bool PorousMedia::do_output_flow_time_in_years;
+bool PorousMedia::do_output_chemistry_time_in_years;
+bool PorousMedia::do_output_transport_time_in_years;
 
 int  PorousMedia::richard_solver_verbose;
+RichardNLSdata* PorousMedia::nld_flow;
+
 //
 // Init to steady
 //
@@ -584,7 +589,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::z_location   = 0;
   PorousMedia::initial_step = false;
   PorousMedia::initial_iter = false;
-  PorousMedia::sum_interval = -1;
+  PorousMedia::sum_interval = 1;
   PorousMedia::NUM_SCALARS  = 0;
   PorousMedia::NUM_STATE    = 0;
   PorousMedia::full_cycle   = 0;
@@ -642,6 +647,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = 0;
   PorousMedia::be_cn_theta_trac = 0.5;
+  PorousMedia::do_output_flow_time_in_years = true;
+  PorousMedia::do_output_chemistry_time_in_years = true;
+  PorousMedia::do_output_transport_time_in_years = false;
 
   PorousMedia::richard_solver_verbose = 2;
 
@@ -652,9 +660,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_max_iterations = 15;
   PorousMedia::steady_limit_iterations = 20;
   PorousMedia::steady_time_step_reduction_factor = 0.8;
-  PorousMedia::steady_time_step_increase_factor = 1.8;
+  PorousMedia::steady_time_step_increase_factor = 1.6;
   PorousMedia::steady_time_step_increase_factor_2 = 10;
-  PorousMedia::steady_time_step_retry_factor_1 = 0.05;
+  PorousMedia::steady_time_step_retry_factor_1 = 0.2;
   PorousMedia::steady_time_step_retry_factor_2 = 0.01;
   PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
@@ -1383,6 +1391,7 @@ PorousMedia::read_rock()
         delete kappa_func;
         delete Dmolec_func;
         delete Tortuosity_func;
+        delete Dispersivity_func;
         delete SpecificStorage_func;
         delete krel_func;
         delete cpl_func;
@@ -1610,6 +1619,10 @@ void PorousMedia::read_prob()
   if (execution_mode==INIT_TO_STEADY) {
     pp.get("switch_time",switch_time);
   }
+
+  pp.query("do_output_flow_time_in_years;",do_output_flow_time_in_years);
+  pp.query("do_output_transport_time_in_years;",do_output_transport_time_in_years);
+  pp.query("do_output_chemistry_time_in_years;",do_output_chemistry_time_in_years);
 
   // determine the model based on model_name
   ParmParse pb("prob");
@@ -2393,7 +2406,7 @@ void  PorousMedia::read_comp()
   }
 }
 
-
+using PMAMR::RlabelDEF;
 void  PorousMedia::read_tracer()
 {
   //
@@ -2405,8 +2418,8 @@ void  PorousMedia::read_tracer()
   ntracers = pp.countval("tracers");
   if (ntracers > 0)
   {
-      tic_array.resize(ntracers);
-      tbc_array.resize(ntracers);
+    tic_array.resize(ntracers);
+    tbc_array.resize(ntracers);
       pp.getarr("tracers",tNames,0,ntracers);
 
       for (int i = 0; i<ntracers; i++)
@@ -2458,13 +2471,21 @@ void  PorousMedia::read_tracer()
           {
               Array<std::string> tbc_names;
               int n_tbc = ppr.countval("tbcs");
-              if (n_tbc <= 0)
-              {
-                //BoxLib::Abort("each tracer requires boundary conditions");
-              }
               ppr.getarr("tbcs",tbc_names,0,n_tbc);
-              tbc_array[i].resize(n_tbc,PArrayManage);
-              
+              tbc_array[i].resize(n_tbc+2*BL_SPACEDIM,PArrayManage);
+
+              // Explicitly build default BCs
+              int tbc_cnt = 0;
+              for (int n=0; n<BL_SPACEDIM; ++n) {
+                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n] + "_DEFAULT",
+                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n])),
+                                                           std::string("noflow"),0));
+		//std::string("concentration"),0));
+                tbc_array[i].set(tbc_cnt++, new RegionData(RlabelDEF[n+3] + "_DEFAULT",
+                                                           build_region_PArray(Array<std::string>(1,RlabelDEF[n+3])),
+                                                           std::string("noflow"),0));
+		//std::string("concentration"),0));
+              }
 
               Array<int> orient_types(6,-1);
               for (int n = 0; n<n_tbc; n++)
@@ -2503,20 +2524,20 @@ void  PorousMedia::read_tracer()
                           forms.resize(0);
                       }
                       int nComp = 1;
-                      tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
+                      tbc_array[i].set(tbc_cnt++, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
                       AMR_BC_tID = 1; // Inflow
                   }
                   else if (tbc_type == "noflow")
                   {
                       Array<Real> val(1,0);
-                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 4; // Noflow
+                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 2;
                   }
                   else if (tbc_type == "outflow")
                   {
                       Array<Real> val(1,0);
-                      tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
-                      AMR_BC_tID = 2; // Outflow
+                      tbc_array[i].set(tbc_cnt++, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
+                      AMR_BC_tID = 3; // Outflow
                   }
                   else {
                       std::string m = "Tracer BC: \"" + tbc_names[n] 
@@ -2551,9 +2572,9 @@ void  PorousMedia::read_tracer()
                     }
                   }
               }
-              // Set the default BC type = SlipWall (noflow)
+              // Set the default BC type
               for (int k=0; k<orient_types.size(); ++k) {
-                if (orient_types[k] < 0) orient_types[k] = 4;
+                if (orient_types[k] < 0) orient_types[k] = 2;
               }
 
               BCRec phys_bc_trac;
@@ -2568,6 +2589,17 @@ void  PorousMedia::read_tracer()
   }
 }
 
+static
+int loc_in_array(const std::string& val,const Array<std::string>& arr)
+{
+  int location = -1;
+  for (int i=0; i<arr.size() && location<0; ++i) {
+    if (val == arr[i]) location = i;
+  }
+  return location;
+}
+
+
 void  PorousMedia::read_source()
 {
   //
@@ -2579,7 +2611,7 @@ void  PorousMedia::read_source()
 
   int nsources = pp.countval("sources");
   if (nsources>0) {
-    source_array.resize(nsources);
+    source_array.resize(nsources,PArrayManage);
     tsource_array.resize(nsources);
     Array<std::string> source_names(nsources);
     pp.getarr("sources",source_names,0,nsources);
@@ -2593,58 +2625,91 @@ void  PorousMedia::read_source()
       pps.getarr("regions",src_region_names,0,n_src_regions);
       const PArray<Region> source_regions = build_region_PArray(src_region_names);
 
-      for (int ic=0; ic<cNames.size(); ++ic) {
-	const std::string& cName = cNames[ic];
-	const std::string c_prefix(prefix+"."+cName);
-	ParmParse pps_c(c_prefix.c_str());
-
-	if (pps_c.countval("type")) {
-	  std::string source_type; pps_c.get("type",source_type);              
-	  if (source_type == "uniform"
-              || source_type == "volume_weighted"
-              || source_type == "permeability_weighted")
-            {
-              int nvars = pps_c.countval("vals");
-              BL_ASSERT(nvars>0);
-              Array<Real> vals; pps_c.getarr("vals",vals,0,nvars);
-              source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
-            }
-	  else {
-	    std::string m = "Source: \"" + source_names[i] 
-	      + "\": Unsupported source type: \"" + source_type + "\"";
-	    BoxLib::Abort(m.c_str());
+      if (pps.countval("type")) {
+	std::string source_type; pps.get("type",source_type);
+	if (source_type == "uniform"
+	    || source_type == "volume_weighted"
+	    || source_type == "permeability_weighted")
+	  {
+	    int nvars = pps.countval("vals");
+	    BL_ASSERT(nvars>0);
+	    Array<Real> vals; pps.getarr("vals",vals,0,nvars);
+	    source_array.set(i, new RegionData(source_name,source_regions,source_type,vals));
 	  }
+	else {
+	  std::string m = "Source: \"" + source_names[i] 
+	    + "\": Unsupported source type: \"" + source_type + "\"";
+	  BoxLib::Abort(m.c_str());
 	}
-	int ntracers_with_sources = pps_c.countval("tracers_with_sources");
-	if (ntracers_with_sources>0) {
-	  Array<std::string> tracers_with_sources;
-	  pps_c.getarr("tracers_with_sources",tracers_with_sources,0,ntracers_with_sources);
-	  tsource_array[i].resize(ntracers_with_sources);
+      }
+      else {
+	std::string m = "Source: \"" + source_names[i] 
+	  + "\": Requires \"type\" specifier";
+	BoxLib::Abort(m.c_str());
+      }
 
-	  for (int it=0; it<tracers_with_sources.size(); ++it) {
-	    const std::string& tName = tracers_with_sources[it]; // FIXME: verify this exists
-	    const std::string c_t_prefix(c_prefix+".tracer_sources."+tName);
-	    ParmParse pps_c_t(c_t_prefix.c_str());
+      for (int ip=0; ip<pNames.size(); ++ip) {
+	const std::string& pName = pNames[ip];
+	const std::string p_prefix(prefix+"."+pName);
+	ParmParse pps_p(p_prefix.c_str());
+	
+	for (int ic=0; ic<cNames.size(); ++ic) {
+	  const std::string& cName = cNames[ic];
+	  const std::string c_prefix(p_prefix+"."+cName);
+	  ParmParse pps_c(c_prefix.c_str());
 
-	    if (pps_c_t.countval("type")) {
-	      std::string tsource_type; pps_c_t.get("type",tsource_type);              
-	      if (tsource_type == "uniform"
-		  || tsource_type == "flow_weighted")
-                {
-                  int ntvars = pps_c_t.countval("vals");
-                  BL_ASSERT(ntvars>0);
-                  Array<Real> tvals; pps_c_t.getarr("vals",tvals,0,ntvars);
-                  tsource_array[i].set(it, new RegionData(source_name,source_regions,tsource_type,tvals));
-                }
+	  int ntracers_with_sources = pps_c.countval("tracers_with_sources");
+	  if (ntracers_with_sources>0) {
+	    Array<std::string> tracers_with_sources;
+	    pps_c.getarr("tracers_with_sources",tracers_with_sources,0,ntracers_with_sources);
+	    tsource_array[i].resize(ntracers, PArrayManage);
+	    
+	    for (int it=0; it<tracers_with_sources.size(); ++it) {
+	      const std::string& tName = tracers_with_sources[it];
+	      int t_pos = loc_in_array(tName,tNames);
+	      if (t_pos>=0) {
+		const std::string c_t_prefix(c_prefix+"."+tName);
+		ParmParse pps_c_t(c_t_prefix.c_str());
+	      
+		if (pps_c_t.countval("type")) {
+		  std::string tsource_type; pps_c_t.get("type",tsource_type);              
+		  if (tsource_type == "uniform"
+		      || tsource_type == "flow_weighted")
+		    {
+		      int ntvars = pps_c_t.countval("vals");
+		      BL_ASSERT(ntvars>0);
+		      Array<Real> tvals; pps_c_t.getarr("vals",tvals,0,ntvars);
+		      tsource_array[i].set(t_pos, new RegionData(source_name,source_regions,tsource_type,tvals));
+		    }
+		  else {
+		    BoxLib::Abort(std::string("Source: \"" + source_names[i] + 
+					      " \"" + cName + "\" Solute SOURCE: \"" + tName
+					      + "\": Unsupported source type: \"" + tsource_type + "\"").c_str());
+		  }
+		} else {
+		  BoxLib::Abort(std::string("Source: \"" + source_names[i] 
+					    + "\": Requires \"type\" specifier for solute \""+tName+"\"").c_str());
+		}
+		if (pps_c_t.countval("Concentration_Units")) {
+		  // FIXME: We do not currently do anything with this parameter
+		}
+	      }
 	      else {
-		std::string m = "Source: \"" + source_names[i] + 
-		  " \"" + cName + "\" Solute SOURCE: \"" + tName
-		  + "\": Unsupported source type: \"" + tsource_type + "\"";
-		BoxLib::Abort(m.c_str());
+		BoxLib::Abort(std::string("Source: \"" + source_names[i]
+					  + "\" contains unknown tracer: \""+tName+"\"").c_str());
+	      }
+	    }
+
+	    // Set default source (uniform=0) for all tracers not set explicitly
+	    const std::string default_tsource_type = "uniform";
+	    const Array<Real> default_tsource_tvals(1,0);
+	    for (int it=0; it<ntracers; ++it) {
+	      if ( !(tsource_array[i].defined(it)) ) {
+		tsource_array[i].set(it, new RegionData(source_name,source_regions,default_tsource_type,default_tsource_tvals));
 	      }
 	    }
 	  }
-        }
+	}
       }
     }
   }

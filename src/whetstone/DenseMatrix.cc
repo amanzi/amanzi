@@ -1,21 +1,21 @@
 /*
- This is the discretization component of the Amanzi code. 
+  This is the discretization component of the Amanzi code. 
 
- Copyright 2010-20XX held jointly by LANS/LANL, LBNL, and PNNL. 
- Amanzi is released under the three-clause BSD License. 
- The terms of use and "as is" disclaimer for this license are 
- provided in the top-level COPYRIGHT file.
+  Copyright 2010-20XX held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Version: 2.0
-Release name: naka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-Usage: 
+  Version: 2.0
+  Release name: naka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <vector>
+#include <cmath>
 
 #include "lapack.hh"
+#include "WhetStoneDefs.hh"
 #include "DenseMatrix.hh"
 
 namespace Amanzi {
@@ -158,6 +158,44 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose)
 
 
 /* ******************************************************************
+* Second level routine: max values
+****************************************************************** */
+void DenseMatrix::MaxRowValue(int irow, int jmin, int jmax, int* j, double* value)
+{
+  double* data = data_ + jmin * m_ + irow;
+  *j = jmin;
+  *value = *data; 
+
+  for (int k = jmin + 1; k < jmax + 1; k++) {
+    data += m_;
+    if (*data > *value) {
+      *j = k;
+      *value = *data; 
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Second level routine: max absolute value
+****************************************************************** */
+void DenseMatrix::MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* value)
+{
+  double* data = data_ + jmin * m_ + irow;
+  *j = jmin;
+  *value = fabs(*data); 
+
+  for (int k = jmin + 1; k < jmax + 1; k++) {
+    data += m_;
+    if (fabs(*data) > *value) {
+      *j = k;
+      *value = fabs(*data); 
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Second level routine: inversion
 ****************************************************************** */
 int DenseMatrix::Inverse() 
@@ -173,6 +211,38 @@ int DenseMatrix::Inverse()
   double dwork[lwork];
   DGETRI_F77(&n_, data_, &n_, iwork, dwork, &lwork, &ierr);
   return ierr;
+}
+
+
+/* ******************************************************************
+* Second level routine: calculates matrix D such that (*this)^T D = 0.
+* The matrix (*this) must have a full rank and have more rows than
+* columns.
+****************************************************************** */
+int DenseMatrix::NullSpace(DenseMatrix& D)
+{
+  // We can treat only one type of rectangular matrix.
+  if (m_ <= n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+  // D must have proper size.
+  int m = D.NumRows(), n = D.NumCols();
+  if (m != m_ || n != m_ - n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+  // Allocate memory for Lapack routine.
+  int ldv(1), lwork, info; 
+  lwork = std::max(m_ + 3 * n_, 5*n_);
+  double U[m_ * m_], V, S[n_], work[lwork];
+
+  DGESVD_F77("A", "N", &m_,  &n_, data_, &m_, 
+             S, U, &m, &V, &ldv, work, &lwork, &info);
+
+  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+  
+  double* data = D.Values();
+  int offset = m_ * n_;
+  for (int i = 0; i < m * n; i++) data[i] = U[offset + i];
+
+  return 0;
 }
 
 }  // namespace WhetStone

@@ -161,6 +161,15 @@ CONSTRAINT west
   /
 END
 
+CONSTRAINT east
+  CONCENTRATIONS
+    H+     5.0     P
+    Na+    1.0e-5  Z
+    NO3-   1.0e-1  T
+    Zn++   1.0e-7  T
+  /
+END
+
 :=========================== condition couplers ===============================
 : initial condition
 INITIAL_CONDITION

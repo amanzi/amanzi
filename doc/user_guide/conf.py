@@ -57,7 +57,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Amanzi'
-copyright = u'2012, Amanzi Development Team'
+copyright = u'2013, Amanzi Development Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -80,8 +80,8 @@ release = '0.2.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-#exclude_patterns = ['_build','testing','prototype','viz','install']
-exclude_patterns = ['_build','testing','install']
+exclude_patterns = ['_build','testing','prototype','viz','install']
+# exclude_patterns = ['_build','testing','install']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -196,7 +196,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\usepackage[version=3]{mhchem}',
+'preamble': '\usepackage[version=3]{mhchem} \usepackage{amssymb,grffile}',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

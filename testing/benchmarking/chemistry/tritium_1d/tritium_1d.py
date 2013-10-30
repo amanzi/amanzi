@@ -73,7 +73,10 @@ if __name__ == "__main__":
     x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)    
     
     CWD = os.getcwd()
-    local_path = "" 
+    local_path = ""
+
+    # subplots
+    fig, ax = plt.subplots() 
         
     try:
         # hardwired for 1d-calcite: Tritium = component 0, last time = '71'
@@ -85,6 +88,12 @@ if __name__ == "__main__":
         path_to_amanzi = "amanzi-native-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
         x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+     
+    except:
+
+        pass
+
+    try:
 
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
@@ -92,27 +101,34 @@ if __name__ == "__main__":
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
         x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
 
+        alquim = True
+
+    except:
+
+        alquim = False
+
         # subplots
-        fig, ax = plt.subplots()
+        # fig, ax = plt.subplots()
 
-        # lines on axes
+    # lines on axes
+    if alquim:
         alq = ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
-        ama = ax.plot(x_amanzi_native, c_amanzi_native,'ro',label='Amanzi Native Chemistry')
-        pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
+    ama = ax.plot(x_amanzi_native, c_amanzi_native,'ro',label='Amanzi Native Chemistry')
+    pfl = ax.plot(x_pflotran, c_pflotran,'b-',label='PFloTran',linewidth=2)
 
-        # axes
-        ax.set_xlabel("Distance (m)",fontsize=20)
-        ax.set_ylabel("Total "+root.title()+" concentration [mol/L]",fontsize=20)
+    # axes
+    ax.set_xlabel("Distance (m)",fontsize=20)
+    ax.set_ylabel("Total "+root.title()+" concentration [mol/L]",fontsize=20)
 
-        # plot adjustments
-        plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
-        plt.legend(loc='upper left',fontsize=13)
-        plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
-        plt.tick_params(axis='both', which='major', labelsize=20)
+    # plot adjustments
+    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
+    plt.legend(loc='upper right',fontsize=13)
+    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=20)
 
         #pyplot.show()
-        plt.savefig(root+"_1d.png",format="png")
+        #plt.savefig(root+"_1d.png",format="png")
         #plt.close()
 
-    finally:
-        pass 
+    # finally:
+    #    pass 

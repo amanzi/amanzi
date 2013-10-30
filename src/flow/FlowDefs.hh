@@ -1,16 +1,16 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
-#ifndef __FLOW_CONSTANTS_HH__
-#define __FLOW_CONSTANTS_HH__
+#ifndef AMANZI_FLOW_CONSTANTS_HH_
+#define AMANZI_FLOW_CONSTANTS_HH_
 
 
 namespace Amanzi {
@@ -73,12 +73,13 @@ const int FLOW_PERMFLAG_BOUNDARY = 4;
 
 const int FLOW_MFD3D_POLYHEDRA = 1;  // default
 const int FLOW_MFD3D_POLYHEDRA_SCALED = 2;
-const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;  // for developers
-const int FLOW_MFD3D_TWO_POINT_FLUX = 4;  // lacks consistency in some cases
-const int FLOW_MFD3D_SUPPORT_OPERATOR = 5;
-const int FLOW_MFD3D_OPTIMIZED = 6;
-const int FLOW_MFD3D_OPTIMIZED_SCALED = 7;  // better version of 6
-const int FLOW_MFD3D_DEVELOPER_TESTING = 8;  // for developers only
+const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 3;  // brand-new method
+const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 4;  // for developers
+const int FLOW_MFD3D_TWO_POINT_FLUX = 5;  // lacks consistency in some cases
+const int FLOW_MFD3D_SUPPORT_OPERATOR = 6;
+const int FLOW_MFD3D_OPTIMIZED = 7;
+const int FLOW_MFD3D_OPTIMIZED_SCALED = 8;  // better version of 6
+const int FLOW_MFD3D_DEVELOPER_TESTING = 9;  // for developers only
 
 const int FLOW_PRECONDITIONER_TRILINOS_ML = 1;  // preconditioners
 const int FLOW_PRECONDITIONER_HYPRE_AMG = 2;

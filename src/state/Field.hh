@@ -64,26 +64,32 @@ public:
   virtual Teuchos::RCP<const double> GetScalarData() const {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
+    return Teuchos::null;
   }
   virtual Teuchos::RCP<double> GetScalarData() {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
+    return Teuchos::null;
   }
   virtual Teuchos::RCP<const Epetra_Vector> GetConstantVectorData() const {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
+    return Teuchos::null;
   }
   virtual Teuchos::RCP<Epetra_Vector> GetConstantVectorData() {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
+    return Teuchos::null;
   }
   virtual Teuchos::RCP<const CompositeVector> GetFieldData() const {
     assert_type_or_die_(COMPOSITE_VECTOR_FIELD);
     not_implemented_error_();
+    return Teuchos::null;
   }
   virtual Teuchos::RCP<CompositeVector> GetFieldData() {
     assert_type_or_die_(COMPOSITE_VECTOR_FIELD);
     not_implemented_error_();
+    return Teuchos::null;
   }
 
   // set data by pointer -- does not copy

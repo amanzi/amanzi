@@ -1,14 +1,11 @@
-Unconfined Flow Simulations
-===========================
-
-Steady-state, constant-property, saturated flow in an unconfined aquifer with seepage
--------------------------------------------------------------------------------------
+Steady-State Unconfined Flow with a Seepage Boundary Condition
+--------------------------------------------------------------
 
 Consider the following scenario involving steady-state groundwater flow in an 
 unconfined aquifer that discharges to a sloped ground surface along a seepage face
 (Aleman 2007, Section 4.4): 
 
-	.. image:: PORFLOW_4.4.1.png
+	.. image:: schematic/porflow_4.4.1.png
 		:scale: 35 %
 		:align: center
 
@@ -62,7 +59,7 @@ for the specific parameters defined in the test problem schematic yields :math:`
 
 Aleman, S. 2007. *PORFLOW Testing and Verification Document*. Savannah River National Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
 
-Dupuit, J. 1863. *Estudes Thèoriques et Pratiques sur le mouvement des Eaux dans les canaux dècouverts et à travers les terrains permèables* (Second Edition ed.). Paris: Dunod.
+Dupuit, J. 1863. *Estudes ThÃ¨oriques et Pratiques sur le mouvement des Eaux dans les canaux dÃ¨couverts et Ã  travers les terrains permÃ¨ables* (Second Edition ed.). Paris: Dunod.
 
 Forchheimer, P. 1930. *Hydraulik*. 3d ed., Teubner, Leipzig, Berlin. 
 
@@ -74,7 +71,7 @@ Amanzi verification test problem
 To conform to the physical domain depicted in the test problem schematic, a conformal
 grid is used for the *Amanzi* simulation:
 
-	.. image:: PORFLOW_4.4.3.png
+	.. image:: mesh/porflow_4.4.3.png
 		:scale: 35 %
 		:align: center
 
@@ -116,11 +113,11 @@ Input parameters for the numerical simulation are summarized as:
 	* variable: :math:`2.5 ft \leqslant \Delta z \leqslant 5 ft`
 
 
-Mualem, Y. 1976. *A new model predicting the hydraulic conductivity of unsaturated porous media*. Water Resour. Res. 12:513–522.
+Mualem, Y. 1976. *A new model predicting the hydraulic conductivity of unsaturated porous media*. Water Resour. Res. 12:513-522.
 
-Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. Physics 1 (5): 318–333.
+Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. Physics 1 (5): 318-333.
 
-van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892–898.
+van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892-898.
 
 
 Amanzi verification test results
@@ -128,9 +125,13 @@ Amanzi verification test results
 
 (TBD) somehow insert table comparing analytic and Amanzi hydraulic head
 
-.. include:: table_values.txt
+.... include:: table_values.txt
 
 (TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
 
-.. plot:: prototype/steady-linear/amanzi_steady_linear.py
+.... plot:: prototype/steady-linear/amanzi_steady_linear.py
+
+.. image:: figures/hydraulic_head.png
+   :scale: 80%
+   :align: center
 

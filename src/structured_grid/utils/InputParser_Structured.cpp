@@ -211,7 +211,8 @@ namespace Amanzi {
       ParameterList& mac_out_list     = struc_out_list.sublist("mac");
       ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
       ParameterList& io_out_list      = struc_out_list.sublist("vismf");
-      ParameterList& fab_out_list     = struc_out_list.sublist("fabarray");
+      ParameterList& fabarr_out_list  = struc_out_list.sublist("fabarray");
+      ParameterList& fab_out_list     = struc_out_list.sublist("fab");
 
       ParameterList& chem_out_list    = prob_out_list.sublist("amanzi");
 
@@ -231,7 +232,7 @@ namespace Amanzi {
       if (flow_mode == "Off") {
         model_name = "steady-saturated";
         prob_out_list.set("have_capillary",0);
-        prob_out_list.set("cfl",-1);
+        prob_out_list.set("cfl",1);
       }
       else if (flow_mode == "Richards") {
         model_name = "richards";
@@ -905,7 +906,7 @@ namespace Amanzi {
       cg_out_list.set("v",cg_v);
       prob_out_list.set("v",prob_v);
       io_out_list.set("v",io_v);
-      fab_out_list.set("verbose",fab_v);
+      fabarr_out_list.set("verbose",fab_v);
             
       for (int i=0; i<optL.size(); ++i)
       {
@@ -2046,12 +2047,8 @@ namespace Amanzi {
                 const ParameterList& solutePL = compPL.sublist(soluteNames[ics]);
                           
                 Array<std::string> funcL, funcP;
-                funcP.push_back("Concentration Units");
                 PLoptions soluteOPTf(solutePL,nullList,funcP,false,true);
                           
-                // Get units
-                const std::string& units = solutePL.get<std::string>(funcP[0]);
-
                 // Get function name/list
                 const Array<std::string>& funcNames = soluteOPTf.OptLists();
                 if (funcNames.size()!=1) {
@@ -2061,7 +2058,7 @@ namespace Amanzi {
                 const std::string& Amanzi_solute_type = funcNames[0];
                 ParameterList solute_func_plist = solutePL.sublist(Amanzi_solute_type);
                 s[BClabel][phaseNames[icp]][compNames[icc]][soluteNames[ics]]
-                  = ICBCFunc(solute_func_plist,Amanzi_solute_type,units,BClabel);
+                  = ICBCFunc(solute_func_plist,Amanzi_solute_type,BClabel);
               }
             }
           }
@@ -2203,7 +2200,6 @@ namespace Amanzi {
       const ParameterList& fPLin = solute_ic.PList();
       const std::string& solute_ic_Amanzi_type = solute_ic.Amanzi_Type();
       const std::string& solute_ic_label = solute_ic.Label();
-      const std::string& solute_ic_units = solute_ic.Units();
 
       Array<std::string> reqP, nullList;
       const std::string val_name="Value"; reqP.push_back(val_name);
@@ -2217,22 +2213,22 @@ namespace Amanzi {
         fPLout.set<double>(underscore(ion_name),fPLin.get<double>(ion_name));
       }
       // Adjust dimensions of data
-      if (solute_ic_units=="Molar Concentration" 
-          || solute_ic_units=="Molal Concentration")
-      {
+      //if (solute_ic_units=="Molar Concentration" 
+      //    || solute_ic_units=="Molal Concentration")
+      //{
         //std::cerr << "IC label \"" << solute_ic_label
         //            << "\" function: \"" << solute_ic_Amanzi_type
         //            << "\" requests unsupported units: \"" << solute_ic_units
         //            << "\"" << std::endl;
         //  throw std::exception();
-      }
-      else if (solute_ic_units=="Specific Concentration") {
+      //}
+      //else if (solute_ic_units=="Specific Concentration") {
         // This is the units expected by the structured code
-      }
-      else {
+      //}
+      //else {
         //std::cerr << "Unsupported Solute IC function: \"" << solute_ic_units << "\"" << std::endl;
         //throw std::exception();
-      }
+      //}
     
       fPLout.set<std::string>("type","concentration");
     }
@@ -2528,7 +2524,6 @@ namespace Amanzi {
       const ParameterList& fPLin = solute_bc.PList();
       const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
       const std::string& solute_bc_label = solute_bc.Label();
-      const std::string& solute_bc_units = solute_bc.Units();
 
       Array<std::string> reqP, nullList;
       const std::string val_name="Values"; reqP.push_back(val_name);
@@ -2544,22 +2539,22 @@ namespace Amanzi {
       }
     
       // Adjust dimensions of data
-      if (solute_bc_units=="Molar Concentration" 
-          || solute_bc_units=="Molal Concentration")
-      {
+      //if (solute_bc_units=="Molar Concentration" 
+      //    || solute_bc_units=="Molal Concentration")
+      //{
         //std::cerr << "BC label \"" << solute_bc_label
         //           << "\" function: \"" << solute_bc_Amanzi_type
         //          << "\" requests unsupported units: \"" << solute_bc_units
         //          << "\"" << std::endl;
         //throw std::exception();
-      }
-      else if (solute_bc_units=="Specific Concentration") {
+      //}
+      //else if (solute_bc_units=="Specific Concentration") {
         // This is the units expected by the structured code
-      } 
-      else {
+      //} 
+      //else {
         //std::cerr << "Solute BC - invalid units: \"" << solute_bc_units << "\"" << std::endl;
         //throw std::exception();
-      }
+      //}
     
       fPLout.set<std::string>("type","concentration");
     }
@@ -2781,7 +2776,7 @@ namespace Amanzi {
               const ParameterList& fPLin = solute_bc.PList();
               const std::string& solute_bc_Amanzi_type = solute_bc.Amanzi_Type();
               const std::string& solute_bc_label = solute_bc.Label();
-              const std::string& solute_bc_units = solute_bc.Units();
+              //const std::string& solute_bc_units = solute_bc.Units();
                     
               ParameterList fPL;
               if (solute_bc_Amanzi_type == "BC: Uniform Concentration")
@@ -2939,6 +2934,9 @@ namespace Amanzi {
 	  fPLout.set<std::string>("type","permeability_weighted");
 	}
       }
+      else {
+        MyAbort("Unrecognized solute source function: "+Amanzi_type);
+      }
     }
 
     void convert_Solute_Sources(const ParameterList& fPLin,
@@ -2949,7 +2947,6 @@ namespace Amanzi {
       const std::string Source_Flow_Weighted_str = "Source: Flow Weighted Concentration";
 
       Array<std::string> nullList, reqP;
-
       if (Amanzi_type == Source_Uniform_str 
 	  || Amanzi_type == Source_Flow_Weighted_str) {
         const std::string val_name="Values"; reqP.push_back(val_name);
@@ -3134,73 +3131,94 @@ namespace Amanzi {
         Array<std::string> nullList;
         PLoptions s_opt(src_list,nullList,nullList,false,true);
         const Array<std::string> src_labels = s_opt.OptLists(); // src labels
+	struct_src_list.set<Array<std::string> >("sources",underscore(src_labels));
         for (int i=0; i< src_labels.size(); ++i) {
           const std::string& src_label = src_labels[i];
           ParameterList struct_src_label_list;
           const ParameterList& src_label_pl = src_list.sublist(src_label);
           Array<std::string> src_label_reqd_params; src_label_reqd_params.push_back(Assigned_Regions_str);
           PLoptions sl_opt(src_label_pl,nullList,src_label_reqd_params,false,true);
-          const Array<std::string>& src_clabels = sl_opt.OptLists(); // Must be known comp names
           const Array<std::string>& regions = src_label_pl.get<Array<std::string> >(Assigned_Regions_str);
           struct_src_label_list.set("regions",regions);
-          for (int j=0; j<src_clabels.size(); ++j) {
-            const std::string& src_clabel = src_clabels[j];
-            const ParameterList& src_comp_pl = src_label_pl.sublist(src_clabel);
-            PLoptions sp_opt(src_comp_pl,nullList,nullList,false,true);
-            ParameterList struct_src_comp_list;
-	    PLoptions src_comp_opt(src_comp_pl,nullList,nullList,false,true);
-	    const Array<std::string>& src_comp_opt_lists = src_comp_opt.OptLists(); // must be a known src func or "Solute SOURCE"
-	    bool function_set = false;
-	    bool solute_functions_set = false;
-	    for (int L=0; L<src_comp_opt_lists.size(); ++L) {
-	      if (src_comp_opt_lists[L] == Solute_Source_str) {
-		if (solute_functions_set) {
-		  MyAbort("Exactly one source function section allowed for solutes in "+Sources_str+"->"+src_label+"->"
-			  +src_clabel);
-		}
-		const ParameterList& src_solute_pl = src_comp_pl.sublist(Solute_Source_str);
-		PLoptions src_solute_opt(src_solute_pl,nullList,nullList,false,true);
-		const Array<std::string>& src_solute_labels = src_solute_opt.OptLists(); // each label must be a solute name
-		ParameterList struct_src_solute_list;
-		for (int M=0; M<src_solute_labels.size(); ++M) {
-		  const std::string& solute_label = src_solute_labels[M];
-		  const ParameterList& src_solute_func_pl = src_solute_pl.sublist(solute_label);
-		  PLoptions src_solute_func_opt(src_solute_func_pl,nullList,nullList,false,true);
-		  const Array<std::string>& src_solute_funcs = src_solute_func_opt.OptLists();
-		  if (src_solute_funcs.size() == 1) {
-		    const std::string& Amanzi_type = src_solute_funcs[0];
-		    const ParameterList& fPLin = src_solute_func_pl.sublist(Amanzi_type);
-		    ParameterList fPLout;
-		    convert_Solute_Sources(fPLin,Amanzi_type,fPLout);
-		    struct_src_solute_list.set(underscore(solute_label),fPLout);
-		  } else {
-		    MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"
-			    +src_clabel+"->"+Solute_Source_str+"->"+solute_label);
+          bool function_set = false;
+          const Array<std::string>& src_f_or_s_labels = sl_opt.OptLists(); // must be a known src func or "Solute SOURCE"
+          for (int j=0; j<src_f_or_s_labels.size(); ++j) {
+            const std::string& src_f_or_s_label = src_f_or_s_labels[j];
+
+            bool function_set = false;
+            if (src_f_or_s_label == Solute_Source_str) {
+              // Do solute sources
+
+              ParameterList struct_src_solute_phase_list;
+              const ParameterList& src_solute_phase_pl = src_label_pl.sublist(Solute_Source_str);
+              PLoptions sl_solute_phase_opt(src_solute_phase_pl,nullList,nullList,false,true);
+              const Array<std::string>& src_solute_phase_labels = sl_solute_phase_opt.OptLists(); // must be known phase labels
+              for (int L=0; L<src_solute_phase_labels.size(); ++L) {
+                const std::string& src_solute_phase_label = src_solute_phase_labels[L];
+
+                ParameterList struct_src_solute_phase_list;
+
+
+                const ParameterList& src_solute_phase_comp_pl = src_solute_phase_pl.sublist(src_solute_phase_label);
+                PLoptions src_solute_phase_comp_opt(src_solute_phase_comp_pl,nullList,nullList,false,true);
+                const Array<std::string>& src_solute_phase_clabels = src_solute_phase_comp_opt.OptLists();
+                for (int M=0; M<src_solute_phase_clabels.size(); ++M) {
+                  const std::string& src_solute_phase_clabel = src_solute_phase_clabels[M];
+                  const ParameterList& src_solute_pl = src_solute_phase_comp_pl.sublist(src_solute_phase_clabel);
+                  PLoptions src_solute_opt(src_solute_pl,nullList,nullList,false,true);
+                  const Array<std::string>& src_solute_labels = src_solute_opt.OptLists();
+
+		  ParameterList struct_src_solute_phase_comp_list;
+
+
+                  for (int N=0; N<src_solute_labels.size(); ++N) {
+                    const std::string& src_solute_label = src_solute_labels[N];
+                    const ParameterList& src_solute_func_pl = src_solute_pl.sublist(src_solute_label);
+
+                    PLoptions src_solute_func_opt(src_solute_func_pl,nullList,nullList,false,false);
+                    const Array<std::string>& src_solute_opt_params = src_solute_func_opt.OptParms();
+
+		    ParameterList struct_src_solute_phase_comp_solute_list;
+		    for (int LL=0; LL<src_solute_opt_params.size(); ++LL) {
+		      const std::string& src_solute_opt_param = src_solute_opt_params[LL];
+		      if (src_solute_opt_param == "Concentration Units") {
+			const std::string& param = underscore(src_solute_func_pl.get<std::string>(src_solute_opt_param));
+			struct_src_solute_phase_comp_solute_list.set<std::string>(underscore(src_solute_opt_param),param);
+		      }
+		      else {
+			MyAbort("Unrecognized option for Solute source function: \""+src_solute_opt_param+"\"");
+		      }
+		    }
+                    const Array<std::string>& src_solute_func_labels = src_solute_func_opt.OptLists();
+                    if (src_solute_func_labels.size() == 1) {
+                      const std::string& Amanzi_type = src_solute_func_labels[0];
+                      const ParameterList& fPLin = src_solute_func_pl.sublist(Amanzi_type);
+		      convert_Solute_Sources(fPLin,Amanzi_type,struct_src_solute_phase_comp_solute_list);
+		    } else {
+		      MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"
+			      +Solute_Source_str+"->"+src_solute_phase_clabel);
+		    }
+		    struct_src_solute_phase_comp_list.set(underscore(src_solute_label),struct_src_solute_phase_comp_solute_list);
 		  }
-		}
-		solute_functions_set = true;
-		struct_src_comp_list.set("tracers_with_sources",underscore(src_solute_labels));
-		struct_src_comp_list.set("tracer_sources",struct_src_solute_list);
-	      } else {
-		if (function_set) {
-		  MyAbort("Exactly one source function allowed for "+Sources_str+"->"+src_label+"->"+src_clabel);
-		}
-		const std::string& Amanzi_type = src_comp_opt_lists[L];
-		const ParameterList& fPLin = src_comp_pl.sublist(Amanzi_type);
-		ParameterList fPLout;
-		convert_Sources(fPLin,Amanzi_type,struct_src_comp_list);
-		function_set = true;
-	      }
-	    }
-            struct_src_label_list.set(underscore(src_clabel),struct_src_comp_list);
+		  struct_src_solute_phase_comp_list.set("tracers_with_sources",underscore(src_solute_labels));
+		  struct_src_solute_phase_list.set(src_solute_phase_clabel,struct_src_solute_phase_comp_list);
+                }
+
+		struct_src_label_list.set(src_solute_phase_label,struct_src_solute_phase_list);
+              }
+            }
+            else {
+              // Must be a src function
+              const std::string& Amanzi_type = src_f_or_s_label;
+              const ParameterList& src_func_pl = src_label_pl.sublist(Amanzi_type);
+              convert_Sources(src_func_pl,Amanzi_type,struct_src_label_list);
+	      function_set = true;
+            }
           }
           struct_src_list.set(underscore(src_label),struct_src_label_list);
         }
-        if (src_labels.size()>0) {
-          struct_src_list.set<Array<std::string> >("sources",underscore(src_labels));
-          struc_list.set("source",struct_src_list);
-          do_source_term = true;
-        }
+	struc_list.set("source",struct_src_list);
+	do_source_term = true;
       }
       struc_list.sublist("prob").set<bool>("do_source_term",do_source_term);
 
@@ -3250,8 +3268,8 @@ namespace Amanzi {
 #endif
 
       user_derive_list.push_back(underscore("Molecular Diffusion Coefficient"));
-      user_derive_list.push_back(underscore("Dispersivity_L"));
-      user_derive_list.push_back(underscore("Dispersivity_T"));
+      user_derive_list.push_back(underscore("Dispersivity L"));
+      user_derive_list.push_back(underscore("Dispersivity T"));
       user_derive_list.push_back(underscore("Tortuosity"));
       user_derive_list.push_back(underscore("Specific Storage"));
 
@@ -3266,6 +3284,7 @@ namespace Amanzi {
         for (int i=0; i<solute_names.size(); ++i) {
           const std::string& name = solute_names[i];
           user_derive_list.push_back(underscore(name+" Aqueous Concentration"));
+          user_derive_list.push_back(underscore("Volumetric_" + name + "_Content"));
         }
       }
             

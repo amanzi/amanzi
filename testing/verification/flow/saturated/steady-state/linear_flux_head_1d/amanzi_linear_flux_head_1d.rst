@@ -1,8 +1,8 @@
-Elementary Flow Simulations
-===========================
+Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions
+------------------------------------------------------------------------
 
-One-dimensional, steady-state, constant-property, confined (saturated) flow
----------------------------------------------------------------------------
+Introduction
+~~~~~~~~~~~~
 
 For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
@@ -100,5 +100,5 @@ Amanzi verification test results
 
 (TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
 
-.. plot:: prototype/steady-linear/amanzi_steady_linear.py
+.. plot:: prototype/steady-linear/amanzi_linear_flux_head_1d.py
 

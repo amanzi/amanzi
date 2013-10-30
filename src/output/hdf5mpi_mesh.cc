@@ -206,7 +206,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     each_conn[i] = nodeids.size();
     local_conn += each_conn[i]+1;  // add 1 for elem_typeID
     type = mesh_maps_->cell_get_type(i); 
-    if ( getCellTypeID_(type) == 3) local_conn += 1; // add 1 if polygon
+    if (getCellTypeID_(type) == 3) local_conn += 1; // add 1 if polygon
   }
   std::vector<int> local_connAll(viz_comm_.NumProc(),0);
   viz_comm_.GatherAll(&local_conn, &local_connAll[0], 1);
@@ -234,7 +234,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     idx++;
     // TODO(barker): this shouldn't be a hardcoded value
     if (type == 3) {
-      cells[idx+1] = each_conn[i];
+      cells[idx] = each_conn[i];
       idx++;
     } 
     // store mapped node ids for connectivity

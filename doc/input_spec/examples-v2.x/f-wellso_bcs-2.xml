@@ -37,8 +37,8 @@
 
 	<execution_controls>
 		<verbosity level="high"/>
-		<execution_control_defaults mode="steady" method="picard"/>
-		<execution_control  start="0.0" end="0.0" mode = "steady"  method="picard"/>
+		<execution_control_defaults mode="steady" method="bdf1"/>
+		<execution_control  start="0.0" end="0.0" mode = "steady"  method="bdf1"/>
 	</execution_controls>
 
 	<numerical_controls>
@@ -130,7 +130,7 @@
 			<assigned_regions>Entire Domain</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<uniform_saturation value = "1.0"/>
+					<uniform_pressure value = "5001325.0"/>
 				</liquid_component>
 			</liquid_phase>
          	</initial_condition>

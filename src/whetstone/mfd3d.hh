@@ -1,32 +1,29 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Version: 2.0
-Release name: naka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Version: 2.0
+  Release name: naka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __MFD3D_HH__
-#define __MFD3D_HH__
+#ifndef AMANZI_MFD3D_HH_
+#define AMANZI_MFD3D_HH_
 
 /*
-This is the discretization package.
+  The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
+  consistency condition (Mc N = R) and matrix Ms is build from a stability 
+  condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
+  of physics packages: flow, transport, thermal, and geomechanics. 
+  The material properties are imbedded into the the matrix Mc. 
 
-The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
-consistency condition (Mc N = R) and matrix Ms is build from a stability 
-condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
-of physics packages: flow, transport, thermal, and geomechanics. 
-The material properties are imbedded into the the matrix Mc. 
+  Notation used below: M (mass), W (inverse of M), A (stiffness).
 
-Notation used below: M (mass), W (inverse of M), A (stiffness).
-
-IMPORTANT: all matrices must be reshaped before calling member functions.
+  IMPORTANT: all matrices must be reshaped before calling member functions.
 */
 
 #include "Teuchos_RCP.hpp"
@@ -34,24 +31,13 @@ IMPORTANT: all matrices must be reshaped before calling member functions.
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "WhetStoneDefs.hh"
 #include "WhetStone_typedefs.hh"
 #include "DenseMatrix.hh"
 #include "tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
-
-const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
-const int WHETSTONE_ELEMENTAL_MATRIX_WRONG = 1;
-const int WHETSTONE_ELEMENTAL_MATRIX_PASSED = 2;
-const int WHETSTONE_ELEMENTAL_MATRIX_FAILED = 4;  // only for unexpected situations
-
-const int WHETSTONE_STABILITY_GENERIC = 1;
-const int WHETSTONE_STABILITY_GENERIC_SCALED = 2;
-const int WHETSTONE_STABILITY_OPTIMIZED_DMP = 3;
-const int WHETSTONE_STABILITY_OPTIMIZED_GEOMETRY = 4;
-
-const int WHETSTONE_MAX_SPATIAL_DIMENSION = 3;
 
 class MFD3D { 
  public:

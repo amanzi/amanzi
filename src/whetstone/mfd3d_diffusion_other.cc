@@ -41,14 +41,18 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int cell, const Tensor& permeability,
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
+  AmanziGeometry::Point a(d);
 
   W.PutScalar(0.0);
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double Knn = (permeability * normal) * normal;
-    double dxn = (xf - xc) * normal;
+
+    a = xf - xc;
+    double s = mesh_->face_area(f) * dirs[n] / norm(a);
+    double Knn = ((permeability * a) * normal) * s;
+    double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -97,7 +101,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
   int nnodes = nodes.size();
 
   Tensor K(permeability);
-  K.inverse();
+  K.Inverse();
 
   // collect all corner matrices
   std::vector<Tensor> Mv;
@@ -117,14 +121,14 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int cell, const Tensor& permeability,
 
     for (int i = 0; i < d; i++) {
       int f = corner_faces[i];
-      N.add_column(i, mesh_->face_normal(f));
+      N.AddColumn(i, mesh_->face_normal(f));
     }
-    double cwgt_tmp = fabs(N.determinant());
+    double cwgt_tmp = fabs(N.Det());
 
-    N.inverse();
+    N.Inverse();
     NK = N * K;
 
-    N.transpose();
+    N.Transpose();
     Mv_tmp = NK * N;
     Mv.push_back(Mv_tmp);
 

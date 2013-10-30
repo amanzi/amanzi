@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <vector>
@@ -70,24 +70,29 @@ void Matrix_MFD::CreateMFDmassMatrices(int mfd3d_method, std::vector<WhetStone::
 
     WhetStone::DenseMatrix Mff(nfaces, nfaces);
 
-    if (mfd3d_method == AmanziFlow::FLOW_MFD3D_POLYHEDRA_SCALED) {
+    if (mfd3d_method == FLOW_MFD3D_POLYHEDRA_SCALED) {
       ok = mfd.MassMatrixInverseScaled(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_POLYHEDRA) {
+    } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA_MONOTONE) {
+      ok = mfd.MassMatrixInverseMMatrix(c, K[c], Mff);
+      if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
+        ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
+      }
+    } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA) {
       ok = mfd.MassMatrixInverse(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED_SCALED) {
+    } else if (mfd3d_method == FLOW_MFD3D_OPTIMIZED_SCALED) {
       ok = mfd.MassMatrixInverseOptimizedScaled(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
+    } else if (mfd3d_method == FLOW_MFD3D_OPTIMIZED) {
       ok = mfd.MassMatrixInverseOptimized(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+    } else if (mfd3d_method == FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.MassMatrixInverseHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseMMatrixHex(c, K[c], Mff);
       else
         ok = mfd.MassMatrixInverse(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_DEVELOPER_TESTING) {
+    } else if (mfd3d_method == FLOW_MFD3D_DEVELOPER_TESTING) {
       ok = mfd.MassMatrixInverseDiagonal(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
+    } else if (mfd3d_method == FLOW_MFD3D_TWO_POINT_FLUX) {
       ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
+    } else if (mfd3d_method == FLOW_MFD3D_SUPPORT_OPERATOR) {
       ok = mfd.MassMatrixInverseSO(c, K[c], Mff);
     } else {
       Errors::Message msg("Flow PK: unexpected discretization methods (contact lipnikov@lanl.gov).");
@@ -136,18 +141,23 @@ void Matrix_MFD::CreateMFDmassMatrices_ScaledStability(
 
     WhetStone::DenseMatrix Mff(nfaces, nfaces);
 
-    if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+    if (mfd3d_method == FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2))
-        ok = mfd.MassMatrixInverseHex(c, K[c], Mff);
+        ok = mfd.MassMatrixInverseMMatrixHex(c, K[c], Mff);
       else
         ok = mfd.MassMatrixInverse(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_DEVELOPER_TESTING) {
+    } else if (mfd3d_method == FLOW_MFD3D_POLYHEDRA_MONOTONE) {
+      ok = mfd.MassMatrixInverseMMatrix(c, K[c], Mff);
+      if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_WRONG) {
+        ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
+      }
+    } else if (mfd3d_method == FLOW_MFD3D_DEVELOPER_TESTING) {
       ok = mfd.MassMatrixInverseDiagonal(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_TWO_POINT_FLUX) {
+    } else if (mfd3d_method == FLOW_MFD3D_TWO_POINT_FLUX) {
       ok = mfd.MassMatrixInverseTPFA(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_SUPPORT_OPERATOR) {
+    } else if (mfd3d_method == FLOW_MFD3D_SUPPORT_OPERATOR) {
       ok = mfd.MassMatrixInverseSO(c, K[c], Mff);
-    } else if (mfd3d_method == AmanziFlow::FLOW_MFD3D_OPTIMIZED) {
+    } else if (mfd3d_method == FLOW_MFD3D_OPTIMIZED) {
       ok = mfd.MassMatrixInverseOptimized(c, K[c], Mff);
     } else {
       ok = mfd.MassMatrixInverse(c, K[c], Mff);

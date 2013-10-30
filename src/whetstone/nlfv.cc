@@ -1,17 +1,17 @@
 /*
-This is the mimetic discretization component of the Amanzi code. 
+  This is the mimetic discretization component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Release name: aka-to.
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-Usage: 
+  Release name: aka-to.
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
+#include "WhetStoneDefs.hh"
 #include "nlfv.hh"
 
 
@@ -23,7 +23,8 @@ namespace WhetStone {
 * materials where (a) continuity conditions are satisfied for 
 * continuous piecewise linear pressure functions and (b) pressure 
 * value is a convex combination of two neighboring cell-based 
-* prossures.
+* pressures p_0 and p_1:
+*   p = w p_0 + (1-x) p_1. 
 ****************************************************************** */
 void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
                                   AmanziGeometry::Point& p, double& weight)
@@ -66,36 +67,101 @@ void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
 
 
 /* ******************************************************************
-* Decompose: conormal = w1 * tau[i1] + w2 * tau[i2],  w1,w2 >= 0.
-* Requires some modification.
+* Decomposion: conormal = w1 * tau[i1] + w2 * tau[i2] + w3 * tau[i3],
+* where the weights ws = (w1, w2, w3) >= 0.
 ****************************************************************** */
-void NLFV::MaximumDecomposition(const AmanziGeometry::Point& conormal, 
-                                const std::vector<AmanziGeometry::Point>& tau,
-                                double* w1, double* w2, int* i1, int* i2)
+int NLFV::PositiveDecomposition(
+    int id1, const std::vector<AmanziGeometry::Point>& tau,
+    const AmanziGeometry::Point& conormal, double* ws, int* ids)
 {
-  // calculate all projections
+  int d = mesh_->space_dimension();
   int ntau = tau.size();
-  double cs[ntau];
-  
-  for (int i = 0; i < ntau; i++) {
-    cs[i] = conormal * tau[i];
+
+  // default is the TPFA stencil 
+  double c1 = norm(tau[id1]);
+  double c2 = norm(conormal);
+
+  ids[0] = id1;
+  ws[0] = c2 / c1;
+  for (int k = 1; k < d; k++) {
+    ids[k] = (id1 + k) % ntau;
+    ws[k] = 0.0;
   }
 
-  // find the largest value in these projections
-  int k = 0;
-  for (int i = 1; i < ntau; i++) {
-    if (cs[i] > cs[k]) k = i;
-  }
-  *i1 = k;
-  *w1 = cs[k];
+  // Check that the first direction is sufficient.
+  double cs = (conormal * tau[id1]) / (c1 * c2);
+  if (fabs(cs - 1.0) < WHETSTONE_TOLERANCE_DECOMPOSITION) return 0;
 
-  // find the closest to zero in these projections
-  k = 0;
-  for (int i = 1; i < ntau; i++) {
-    if (fabs(cs[i]) < fabs(cs[k])) k = i;
+  // Find the other directions
+  Tensor T(d, 2);
+  double det = 0.0;
+
+  if (d == 2) {
+    for (int i = 0; i < ntau; i++) {
+      if (i == id1) continue;
+
+      T.AddRow(0, tau[id1]);
+      T.AddRow(1, tau[i]);
+
+      // We skip almost colinear pairs.
+      c2 = norm(tau[i]);
+      double tmp = fabs(T.Det()) / (c1 * c2);
+      if (tmp < WHETSTONE_TOLERANCE_DECOMPOSITION) continue;
+
+      T.Inverse();
+      AmanziGeometry::Point p = T * conormal;
+
+      // We look for the strongest pair of vectors and try to 
+      // avoid degenerate cases to improve robustness.
+      if (p[0] >= 0.0 && 
+          p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
+        if (tmp > det) {
+          det = tmp;
+          ws[0] = p[0];
+          ws[1] = fabs(p[1]);
+          ids[1] = i; 
+        }
+      }
+    }
+  } else if (d == 3) {
+    for (int i = 0; i < ntau; i++) {
+      if (i == id1) continue;
+
+      c2 = norm(tau[i]);
+      for (int j = i + 1; j < ntau; j++) {
+        if (j == id1) continue;
+
+        T.AddRow(0, tau[id1]);
+        T.AddRow(1, tau[i]);
+        T.AddRow(2, tau[j]);
+
+        // We skip almost colinear pairs.
+        double c3 = norm(tau[j]);
+        double tmp = fabs(T.Det()) / (c1 * c2 * c3);
+        if (tmp < WHETSTONE_TOLERANCE_DECOMPOSITION) continue;
+
+        T.Inverse();
+        AmanziGeometry::Point p = T * conormal;
+
+        // We look for the strongest triple of vectors and try to 
+        // avoid degenerate cases to improve robustness.
+        if (p[0] >= 0.0 && 
+            p[1] >= -WHETSTONE_TOLERANCE_DECOMPOSITION &&
+            p[2] >= -WHETSTONE_TOLERANCE_DECOMPOSITION) {
+          if (tmp > det) {
+            det = tmp;
+            ws[0] = p[0];
+            ws[1] = fabs(p[1]);
+            ws[2] = fabs(p[2]);
+            ids[1] = i; 
+            ids[2] = j; 
+          }
+        }
+      }
+    }
   }
-  *i2 = k;
-  *w2 = cs[k];
+
+  return 0;
 }
 
 }  // namespace WhetStone

@@ -1081,16 +1081,28 @@ c ::: convert the second auxiliary variable to c instead of c*s
 
       end
 
-#if 0
-      subroutine FORT_ESTATE_TRACER(s, sphi, tforces, DIMS(s),
+#if 1
+c
+c     This is ESTATE_FPU with a time-independent "capacitance" factor in the time 
+c     derivative.  That is, the conservation equation solved looks like 
+c
+c                    d(s.cap)/dt + Div(s.u) = Fc
+c
+c            assuming   d(cap)/dt + Div(u) = F
+c
+c     whereas the default ESTATE_FPU assumes cap==1.  We can write the discretization
+c     for s given either F or d(cap)/dt
+c
+      subroutine FORT_ESTATE_TRACER(s, DIMS(s),
+     &     capInv, DIMS(capInv), 
+     &     dcapdt, DIMS(dcapdt), 
+     &     tforces, DIMS(tforces),
      &     xlo, xhi, sx, slxscr, stxlo, stxhi,
      &     uedge, DIMS(uedge), xstate, DIMS(xstate),
-
      &     ylo, yhi, sy, slyscr, stylo, styhi,
      &     vedge, DIMS(vedge), ystate, DIMS(ystate),
-
      &     DIMS(work),
-     &     bc,lo,hi,dt,dx,n,use_minion,iconserv,seps)
+     &     bc,lo,hi,dt,dx,use_minion,iconserv,seps)
       implicit none
 
       integer i,j,n
@@ -1103,7 +1115,9 @@ c ::: convert the second auxiliary variable to c instead of c*s
       parameter( eps_for_bc = zero )
 
       integer DIMDEC(s)
-      integer DIMDEC(sphi)
+      integer DIMDEC(capInv)
+      integer DIMDEC(dcapdt)
+      integer DIMDEC(tforces)
       integer DIMDEC(work)
       integer DIMDEC(uedge)
       integer DIMDEC(xstate)
@@ -1111,7 +1125,8 @@ c ::: convert the second auxiliary variable to c instead of c*s
       integer DIMDEC(ystate)
 
       REAL_T s(DIMV(s))
-      REAL_T sphi(DIMV(s))
+      REAL_T capInv(DIMV(capInv))
+      REAL_T dcapdt(DIMV(dcapdt))
       REAL_T stxlo(DIM1(s)),stxhi(DIM1(s)),slxscr(DIM1(s),4)
       REAL_T stylo(DIM2(s)),styhi(DIM2(s)),slyscr(DIM2(s),4)
 
@@ -1122,10 +1137,8 @@ c ::: convert the second auxiliary variable to c instead of c*s
       REAL_T ylo(DIMV(work)), yhi(DIMV(work))
       REAL_T  sx(DIMV(work))
       REAL_T  sy(DIMV(work))
-      REAL_T tforces(DIMV(work))
-      REAL_T seps
-     
-      REAL_T spx,smx,spy,smy,strans,spip,spim
+      REAL_T tforces(DIMV(tforces))
+      REAL_T seps, smx, spx, smy, spy, strans, divu
 
       integer use_minion, iconserv
       integer inc
@@ -1149,41 +1162,82 @@ c
      &     sx,sy,DIMS(work),
      &     lo,hi,slxscr,slyscr,bc,seps)
 
+#ifndef NDEBUG
+      xlo = 1.d30
+      xhi = 1.d30
+      ylo = 1.d30
+      yhi = 1.d30
+#endif
+
+      i = imin-1
+      if (bc(1,1).eq.EXT_DIR) then
+         do j = jmin,jmax
+            uedge(i,j) = uedge(imin,j)
+         enddo
+      endif
+
+      i = imax+2
+      if (bc(1,2).eq.EXT_DIR) then
+         do j = jmin,jmax
+            uedge(i,j) = uedge(imax+1,j)
+         enddo
+      endif
+
+      j = jmin-1
+      if (bc(2,1).eq.EXT_DIR) then
+         do i = imin,imax
+            vedge(i,j) = vedge(i,jmin)
+         enddo
+      endif
+
+      j = jmax+2
+      if (bc(2,2).eq.EXT_DIR) then
+         do i = imin,imax
+            vedge(i,j) = vedge(i,jmax+1)
+         enddo
+      endif
+
+#ifndef NDEBUG
+      if ( (ARG_L1(work).gt.imin-1) .or.
+     &     (ARG_H1(work).lt.imax+1) .or.
+     &     (ARG_L2(work).gt.jmin-1) .or.
+     &     (ARG_H2(work).lt.jmax+1) ) then
+         print *,'lo, hi',lo,hi
+         print *,DIMS(work)
+         call bl_abort('Work is not large enough')
+      endif
+#endif
+
 c
 c     trace the state to the cell edges
 c
       do j = jmin-1,jmax+1
          do i = imin,  imax+1
-            xlo(i,j) = s(i-1,j) + (half  - dthx*uedge(i,j)/sphi(i-1,j))*sx(i-1,j)
-            xhi(i,j) = s(i,  j) + (-half - dthx*uedge(i,j)/sphi(i  ,j))*sx(i,  j)
+            xlo(i,j) = s(i-1,j) + (half  - dthx*uedge(i,j)*capInv(i-1,j))*sx(i-1,j)
+            xhi(i,j) = s(i,  j) + (-half - dthx*uedge(i,j)*capInv(i  ,j))*sx(i,  j)
          end do
       end do
 
       if(use_minion.eq.1)then
          do j = jmin-1,jmax+1
             do i = imin,  imax+1
-               xlo(i,j) = xlo(i,j) + dth*tforces(i-1,j)/sphi(i-1,j)
-               xhi(i,j) = xhi(i,j) + dth*tforces(i,  j)/sphi(i  ,j)
+               xlo(i,j) = xlo(i,j) + dth*tforces(i-1,j)*capInv(i-1,j)
+               xhi(i,j) = xhi(i,j) + dth*tforces(i,  j)*capInv(i  ,j)
             end do
          end do
          if (iconserv .eq. 1) then
            do j = jmin-1,jmax+1
             do i = imin,  imax+1
-               divup = (uedge(i+1,j)-uedge(i,j))*hxi
-     &              +  (vedge(i,j+1)-vedge(i,j))*hyi
-               divum = (uedge(i,j)-uedge(i-1,j))*hxi
-     &              +  (vedge(i-1,j+1)-vedge(i-1,j))*hyi
-               xlo(i,j) = xlo(i,j) - dth*s(i-1,j)*divum/sphi(i-1,j)
-               xhi(i,j) = xhi(i,j) - dth*s(i  ,j)*divup/sphi(i  ,j)
+               divup = (uedge(i+1,j  )-uedge(i  ,j  ))*hxi
+     &              +  (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
+               divum = (uedge(i  ,j  )-uedge(i-1,j  ))*hxi
+     &              +  (vedge(i-1,j+1)-vedge(i-1,j  ))*hyi
+               xlo(i,j) = xlo(i,j) - dth*s(i-1,j)*(divum + dcapdt(i-1,j))*capInv(i-1,j)
+               xhi(i,j) = xhi(i,j) - dth*s(i  ,j)*(divup + dcapdt(i  ,j))*capInv(i  ,j)
             end do
            end do
          end if
       end if
-
-      call trans_xbc(
-     &     s,DIMS(s),
-     &     xlo,xhi,DIMS(work),uedge,DIMS(uedge),
-     &     lo,hi,n,bc,eps_for_bc)
 
       do j = jmin-1,jmax+1
          do i = imin,  imax+1
@@ -1193,30 +1247,34 @@ c
          end do
       end do
 
+      call trans_xbc(
+     &     s,DIMS(s),
+     &     xlo,xhi,DIMS(work),uedge,DIMS(uedge),
+     &     lo,hi,n,bc,eps_for_bc)
+
       do j = jmin,  jmax+1
          do i = imin-1,imax+1
-            spip = 1.d0 
-            ylo(i,j) = s(i,j-1) + (half  - dthy*vedge(i,j)/sphi(i,j-1))*sy(i,j-1)
-            yhi(i,j) = s(i,j)   + (-half - dthy*vedge(i,j)/sphi(i,j  ))*sy(i,j  )
+            ylo(i,j) = s(i,j-1) + (half  - dthy*vedge(i,j)*capInv(i,j-1))*sy(i,j-1)
+            yhi(i,j) = s(i,j)   + (-half - dthy*vedge(i,j)*capInv(i,j  ))*sy(i,j  )
          end do
       end do
 
       if (use_minion.eq.1)then
          do j = jmin, jmax+1
             do i = imin-1,  imax+1
-               ylo(i,j) = ylo(i,j) + dth*tforces(i,j-1)/sphi(i,j-1)
-               yhi(i,j) = yhi(i,j) + dth*tforces(i,j  )/sphi(i,j  )
+               ylo(i,j) = ylo(i,j) + dth*tforces(i,j-1)*capInv(i,j-1)
+               yhi(i,j) = yhi(i,j) + dth*tforces(i,j  )*capInv(i,j  )
             end do
          end do
          if (iconserv .eq. 1) then
-           do j = jmin-1,jmax+1
-            do i = imin,  imax+1
-               divup = (uedge(i+1,j+1)-uedge(i,j+1))*hxi
-     &              +  (vedge(i,j+1)-vedge(i,j))*hyi
-               divum = (uedge(i+1,j)-uedge(i,j))*hxi
-     &              +  (vedge(i,j)-vedge(i,j-1))*hyi
-               ylo(i,j) = ylo(i,j) - dth*spim*s(i,j-1)*divum/sphi(i,j-1)
-               yhi(i,j) = yhi(i,j) - dth*spip*s(i,j  )*divup/sphi(i,j  )
+           do j = jmin,jmax+1
+            do i = imin-1, imax+1
+               divup = (uedge(i+1,j  )-uedge(i  ,j  ))*hxi
+     &              +  (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
+               divum = (uedge(i+1,j-1)-uedge(i  ,j-1))*hxi
+     &              +  (vedge(i  ,j  )-vedge(i  ,j-1))*hyi
+               ylo(i,j) = ylo(i,j) - dth*s(i,j-1)*(divum + dcapdt(i,j-1))*capInv(i,j-1)
+               yhi(i,j) = yhi(i,j) - dth*s(i,j  )*(divup + dcapdt(i,j  ))*capInv(i,j  )
             end do
            end do
          end if
@@ -1235,18 +1293,20 @@ c
          end do
       end do
 
-c
 c     compute the xedge states
 c
       do j = jmin,jmax
 
             do i = imin-1,imax+1
-               spx = s(i,j) + half * sx(i,j)
-               smx = s(i,j) - half * sx(i,j)
+
+               divu = (uedge(i+1,j  )-uedge(i  ,j  ))*hxi
+     &              + (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
+               spx = s(i,j) + half * sx(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
+               smx = s(i,j) - half * sx(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
 
                if (iconserv.eq.1) then
                   strans = -(vedge(i,j+1)*ylo(i,j+1) - vedge(i,j)*ylo(i,j))*hyi
-     &                 + s(i,j)*(vedge(i,j+1)-vedge(i,j))/hy
+     &                 + s(i,j)*(vedge(i,j+1)-vedge(i,j))*hyi
                else
                   if (vedge(i,j)*vedge(i,j+1).le.0.d0) then
                      vbar = 0.5d0*(vedge(i,j)+vedge(i,j+1))
@@ -1263,10 +1323,8 @@ c
                   strans =  -tr
                endif
 
-               spi = 1.d0/sphi(i,j)
-               stxlo(i+1)= spx - dthx*spi*uedge(i+1,j)*sx(i,j) + dth*spi*(strans + tforces(i,j))
-               stxhi(i  )= smx - dthx*spi*uedge(i  ,j)*sx(i,j) + dth*spi*(strans + tforces(i,j))
-
+               stxlo(i+1)= spx - dthx*capInv(i,j)*uedge(i+1,j)*sx(i,j) + dth*capInv(i,j)*(strans + tforces(i,j))
+               stxhi(i  )= smx - dthx*capInv(i,j)*uedge(i  ,j)*sx(i,j) + dth*capInv(i,j)*(strans + tforces(i,j))
             end do
 
             if (bc(1,1).eq.EXT_DIR .and. uedge(imin,j).ge.zero) then
@@ -1298,6 +1356,7 @@ c
                xstate(i,j) = merge(stxlo(i),stxhi(i),uedge(i,j)>=zero)
                xstate(i,j) = merge(half*(stxlo(i)+stxhi(i)),xstate(i,j)
      &              ,abs(uedge(i,j)).lt.eps)
+               xstate(i,j) = xstate(i,j) * uedge(i,j)
             end do
       end do
 c
@@ -1306,8 +1365,10 @@ c
       do i = imin,imax
             
             do j = jmin-1,jmax+1
-               spy = s(i,j) + half * sy(i,j)
-               smy = s(i,j) - half * sy(i,j)
+               divu = (uedge(i+1,j  )-uedge(i  ,j  ))*hxi
+     &              + (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
+               spy = s(i,j) + half * sy(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
+               smy = s(i,j) - half * sy(i,j) - dth*s(i,j)*(divu + dcapdt(i,j))*capInv(i,j)
 
                if (iconserv.eq.1) then
                   strans = -(uedge(i+1,j)*xlo(i+1,j) - uedge(i,j)*xlo(i,j))*hxi
@@ -1329,9 +1390,8 @@ c
 
                endif
 
-               spi = 1.d0/sphi(i,j)
-               stylo(j+1)= spy - dthy*spi*vedge(i,j+1)*sy(i,j) + dth*spi*(strans + tforces(i,j))
-               styhi(j  )= smy - dthy*spi*vedge(i,j  )*sy(i,j) + dth*spi*(strans + tforces(i,j))
+               stylo(j+1)= spy - dthy*capInv(i,j)*vedge(i,j+1)*sy(i,j) + dth*capInv(i,j)*(strans + tforces(i,j))
+               styhi(j  )= smy - dthy*capInv(i,j)*vedge(i,j  )*sy(i,j) + dth*capInv(i,j)*(strans + tforces(i,j))
             end do
             
             if (bc(2,1).eq.EXT_DIR .and. vedge(i,jmin).ge.zero) then
@@ -1359,13 +1419,14 @@ c
                stylo(jmax+1) = zero
                styhi(jmax+1) = zero
             end if
+
             do j=jmin,jmax+1
                ystate(i,j) = merge(stylo(j),styhi(j),vedge(i,j)>=zero)
                ystate(i,j) = merge(half*(stylo(j)+styhi(j)),ystate(i,j),
      &              abs(vedge(i,j)).lt.eps)
+               ystate(i,j) = ystate(i,j) * vedge(i,j)
             end do
       end do
-      
       end
 #else
       subroutine FORT_ESTATE_TRACER (s, DIMS(s),
@@ -4530,42 +4591,52 @@ c
       REAL_T eps
       
       logical ltest
-      integer j
+      integer i,j
       integer imin,jmin,imax,jmax
 
       imin = lo(1)
       jmin = lo(2)
       imax = hi(1)
       jmax = hi(2)
-      
+
       if (xbc(1,1).eq.EXT_DIR) then
          if (n .eq. XVEL) then
             do j = jmin-1,jmax+1
              if (uad(imin,j) .ge. zero) then
-                xlo(imin,j) = s(imin-1,j)
-                xlo(imin,j) = s(imin-1,j)
+                do i = ARG_L1(xx),imin
+                   xlo(i,j) = s(imin-1,j)
+                   xlo(i,j) = s(imin-1,j)
+                enddo
               else 
-                 xlo(imin,j) = xhi(imin,j)
+                do i = ARG_L1(xx),imin
+                   xlo(i,j) = xhi(imin,j)
+                enddo
               end if
             end do
          else
            do j = jmin-1,jmax+1
-               ltest = uad(imin,j).le.eps
-               stx   = merge(xhi(imin,j),s(imin-1,j),ltest)
-               xhi(imin,j) = stx
-               xlo(imin,j) = stx
+              ltest = uad(imin,j).le.eps
+              stx   = merge(xhi(imin,j),s(imin-1,j),ltest)
+              do i = ARG_L1(xx),imin
+                 xhi(i,j) = stx
+                 xlo(i,j) = stx
+              enddo
             end do
          end if
 
       else if (xbc(1,1).eq.FOEXTRAP.or.xbc(1,1).eq.HOEXTRAP
      &        .or.xbc(1,1).eq.REFLECT_EVEN) then
          do j = jmin-1,jmax+1
-            xlo(imin,j) = xhi(imin,j)
+            do i = ARG_L1(xx),imin
+               xlo(i,j) = xhi(imin,j)
+            enddo
          end do
       else if (xbc(1,1).eq.REFLECT_ODD) then
          do j = jmin-1,jmax+1
-            xhi(imin,j) = zero
-            xlo(imin,j) = zero
+            do i = ARG_L1(xx),imin
+               xhi(i,j) = zero
+               xlo(i,j) = zero
+            enddo
          end do
       end if
 
@@ -4573,32 +4644,41 @@ c
          if (n .eq. XVEL) then
             do j = jmin-1,jmax+1
               if (uad(imax+1,j) .le. zero) then
-                 xhi(imax+1,j) = s(imax+1,j)
-                 xlo(imax+1,j) = s(imax+1,j)
+                 do i = imax+1,ARG_H1(xx)
+                    xhi(i,j) = s(imax+1,j)
+                    xlo(i,j) = s(imax+1,j)
+                 enddo
                else 
-                 xhi(imax+1,j) = xlo(imax+1,j)
+                 do i = imax+1,ARG_H1(xx)
+                    xhi(i,j) = xlo(imax+1,j)
+                 enddo
                end if
              end do
          else
             do j = jmin-1,jmax+1
                ltest = uad(imax+1,j).ge.-eps
                stx   = merge(xlo(imax+1,j),s(imax+1,j),ltest)
-               xhi(imax+1,j) = stx
-               xlo(imax+1,j) = stx
+               do i = imax+1,ARG_H1(xx)
+                  xhi(i,j) = stx
+                  xlo(i,j) = stx
+               enddo
             end do
          end if
       else if (xbc(1,2).eq.FOEXTRAP.or.xbc(1,2).eq.HOEXTRAP
      &        .or.xbc(1,2).eq.REFLECT_EVEN) then
          do j = jmin-1,jmax+1
-            xhi(imax+1,j) = xlo(imax+1,j)
+            do i = imax+1,ARG_H1(xx)
+               xhi(i,j) = xlo(imax+1,j)
+            enddo
          end do
       else if (xbc(1,2).eq.REFLECT_ODD) then
          do j = jmin-1,jmax+1
-            xhi(imax+1,j) = zero
-            xlo(imax+1,j) = zero
+            do i = imax+1,ARG_H1(xx)
+               xhi(i,j) = zero
+               xlo(i,j) = zero
+            enddo
          end do
       end if
-
       end
 
       subroutine trans_ybc(
@@ -4624,7 +4704,7 @@ c
       REAL_T eps
 
       logical ltest
-      integer i
+      integer i,j
       integer imin,jmin,imax,jmax
 
       imin = lo(1)
@@ -4636,29 +4716,39 @@ c
          if (n .eq. YVEL) then
             do i = imin-1,imax+1
               if (vad(i,jmin).ge.zero) then
-                 yhi(i,jmin) = s(i,jmin-1)
-                 ylo(i,jmin) = s(i,jmin-1)
+                 do j=ARG_L2(yy),jmin
+                    yhi(i,j) = s(i,jmin-1)
+                    ylo(i,j) = s(i,jmin-1)
+                 enddo
               else
-                 ylo(i,jmin) = yhi(i,jmin)
+                 do j=ARG_L2(yy),jmin
+                    ylo(i,j) = yhi(i,jmin)
+                 enddo
               end if
             end do
          else
             do i = imin-1,imax+1
                ltest = vad(i,jmin).le.eps
                sty   = merge(yhi(i,jmin),s(i,jmin-1),ltest)
-               yhi(i,jmin) = sty
-               ylo(i,jmin) = sty
+               do j=ARG_L2(yy),jmin
+                  yhi(i,j) = sty
+                  ylo(i,j) = sty
+               enddo
             end do
          end if
       else if (ybc(2,1).eq.FOEXTRAP.or.ybc(2,1).eq.HOEXTRAP
      &        .or.ybc(2,1).eq.REFLECT_EVEN) then
          do i = imin-1,imax+1
-            ylo(i,jmin) = yhi(i,jmin)
+            do j=ARG_L2(yy),jmin
+               ylo(i,j) = yhi(i,jmin)
+            enddo
          end do
       else if (ybc(2,1).eq.REFLECT_ODD) then
          do i = imin-1,imax+1
-            yhi(i,jmin) = zero
-            ylo(i,jmin) = zero
+            do j=ARG_L2(yy),jmin
+               yhi(i,j) = zero
+               ylo(i,j) = zero
+            enddo
          end do
       end if
 
@@ -4666,29 +4756,39 @@ c
          if (n .eq. YVEL) then
             do i = imin-1,imax+1
               if (vad(i,jmax+1).le.zero) then
-                 ylo(i,jmax+1) = s(i,jmax+1)
-                 yhi(i,jmax+1) = s(i,jmax+1)
+                 do j=jmax+1,ARG_H2(yy)
+                    ylo(i,j) = s(i,jmax+1)
+                    yhi(i,j) = s(i,jmax+1)
+                 enddo
               else
-                 yhi(i,jmax+1) = ylo(i,jmax+1)
+                 do j=jmax+1,ARG_H2(yy)
+                    yhi(i,j) = ylo(i,jmax+1)
+                 enddo
               end if
             end do
          else
             do i = imin-1,imax+1
                ltest = vad(i,jmax+1).ge.-eps
                sty   = merge(ylo(i,jmax+1),s(i,jmax+1),ltest)
-               yhi(i,jmax+1) = sty
-               ylo(i,jmax+1) = sty
+               do j=jmax+1,ARG_H2(yy)
+                  yhi(i,j) = sty
+                  ylo(i,j) = sty
+               enddo
             end do
          end if
       else if (ybc(2,2).eq.FOEXTRAP.or.ybc(2,2).eq.HOEXTRAP
      &        .or.ybc(2,2).eq.REFLECT_EVEN) then
          do i = imin-1,imax+1
-            yhi(i,jmax+1) = ylo(i,jmax+1)
+            do j=jmax+1,ARG_H2(yy)
+               yhi(i,j) = ylo(i,jmax+1)
+            enddo
          end do
       else if (ybc(2,2).eq.REFLECT_ODD) then
          do i = imin-1,imax+1
-            ylo(i,jmax+1) = zero
-            yhi(i,jmax+1) = zero
+            do j=jmax+1,ARG_H2(yy)
+               ylo(i,j) = zero
+               yhi(i,j) = zero
+            enddo
          end do
       end if
 
@@ -5379,7 +5479,6 @@ c     FIXME: Assume first component is water, and that all tracers of interest a
       cWater = 1
 
 c     idx_total is an array of 0-based indices selecting a subset of the tracers to update
-
       do n = 1,idx_total_n
          idx = idx_total(n) + 1
 
@@ -5387,12 +5486,11 @@ c     idx_total is an array of 0-based indices selecting a subset of the tracers
             do i = lo(1), hi(1)
                if (sn(i,j,cWater) .gt. zero) then
                   cn(i,j,idx) = (so(i,j,cWater)*co(i,j,idx)
-     &                 - dt*(aofs(i,j,idx)+tforces(i,j,idx))/rockphi(i,j))/sn(i,j,cWater)
+     &                 + dt*(tforces(i,j,idx)-aofs(i,j,idx))/rockphi(i,j))/sn(i,j,cWater)
                end if
             end do
          end do
       end do
-
       end 
 
       subroutine slope_alpha(s,DIMS(s),slx,sly,DIMS(sl),

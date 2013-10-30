@@ -121,19 +121,21 @@ void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* metho
 **************************************************************** */
 void Flow_PK::ProcessStringMFD3D(const std::string name, int* method)
 {
-  if (name == "monotone mfd") {
+  if (name == "monotone mfd hex") {  // two monotone methods
     *method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
+  } else if (name == "monotone mfd") {
+    *method = FLOW_MFD3D_POLYHEDRA_MONOTONE;
   } else if (name == "support operator") {
     *method = FLOW_MFD3D_SUPPORT_OPERATOR;
   } else if (name == "developer testing") {
     *method = FLOW_MFD3D_DEVELOPER_TESTING;
   } else if (name == "two point flux approximation") {
     *method = FLOW_MFD3D_TWO_POINT_FLUX;
-  } else if (name == "optimized mfd") {
+  } else if (name == "optimized mfd") {  // two optimization methods
     *method = FLOW_MFD3D_OPTIMIZED;
   } else if (name == "optimized mfd scaled") {
     *method = FLOW_MFD3D_OPTIMIZED_SCALED;
-  } else if (name == "mfd") {
+  } else if (name == "mfd") {  // two basic methods
     *method = FLOW_MFD3D_POLYHEDRA;
   } else if (name == "mfd scaled") {
     *method = FLOW_MFD3D_POLYHEDRA_SCALED;
@@ -234,9 +236,11 @@ std::string Flow_PK::FindStringLinearSolver(const Teuchos::ParameterList& list,
 /* ****************************************************************
 * Find string for the preconditoner.
 **************************************************************** */
-void Flow_PK::OutputTimeHistory(std::vector<dt_tuple>& dT_history)
+void Flow_PK::OutputTimeHistory(
+    const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history)
 {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  if (plist.isParameter("plot time history") && 
+      vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "saving time history in file flow_dt_history.txt..." << endl;
 

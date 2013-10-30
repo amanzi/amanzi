@@ -49,15 +49,29 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo ""
-	@echo " Environment Check "
-	@echo " AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
-	@echo " AMANZI_PYTHON  = $(AMANZI_PYTHON)"
-	@echo " NEW_PYTHONPATH = $(NEW_PYTHONPATH)"
+	@echo "Environment Check "
+	@echo "  AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
+	@echo "  AMANZI_PYTHON  = $(AMANZI_PYTHON)"
+	@echo "  NEW_PYTHONPATH = $(NEW_PYTHONPATH)"
+	@echo ""
+	@echo "Use the variable AMANZI_SECTION_OPTIONS to include optional sections of the"
+	@echo "User Guide in your build,"
+	@echo ""
+	@echo "   AMANZI_SECTION_OPTIONS = $(AMANZI_SECTION_OPTIONS)"
+	@echo ""
+	@echo "This variable is passed to the collect.py script ... "
+	@python collect.py --help
 
 clean:
-	-rm -rf $(BUILDDIR)/*
+	@echo "Removing the build directory: $(BUILDDIR)" ;\
+	rm -rf $(BUILDDIR)/*  ;\
+	echo "Removing the section subdirectories: verification, tutorial, benchmarking, mycase" ;\
+	rm -rf verification tutorial benchmarking mycase  ;\
+	echo "Reverting ./index.rst"   ;\
+	hg revert ./index.rst
 
-html:
+html: 
+	python collect.py $(AMANZI_SECTION_OPTIONS) 
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -122,6 +136,7 @@ latex:
 	      "(use \`make latexpdf' here to do that automatically)."
 
 latexpdf:
+	python collect.py $(AMANZI_SECTION_OPTIONS) 
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo "Running LaTeX files through pdflatex..."
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf

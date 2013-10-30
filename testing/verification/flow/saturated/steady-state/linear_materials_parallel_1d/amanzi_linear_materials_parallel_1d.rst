@@ -1,8 +1,8 @@
-Elementary Flow Simulations
-===========================
+Steady-State One-Dimensional Flow: Materials in Parallel
+--------------------------------------------------------
 
-One-dimensional, steady-state, confined (saturated) flow: materials in parallel
--------------------------------------------------------------------------------
+Introduction
+~~~~~~~~~~~~
 
 For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
@@ -111,9 +111,9 @@ Amanzi verification test results
 
 (TBD) somehow insert table comparing analytic and Amanzi hydraulic head
 
-.. include:: table_values.txt
+.... include:: table_values.txt
 
 (TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
 
-.. plot:: prototype/steady-linear/amanzi_steady_linear.py
+.... plot:: prototype/steady-linear/amanzi_steady_linear.py
 
