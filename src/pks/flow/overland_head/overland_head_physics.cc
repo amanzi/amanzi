@@ -126,7 +126,6 @@ void OverlandHeadFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& g) {
     if (!source_only_if_unfrozen_) {
       int ncells = g_c.MyLength();
       for (int c=0; c!=ncells; ++c) {
-        std::cout << "source: " << source1[0][c] << ", nliq = " << nliq0_s[0][c] << std::endl;
         double s0 = source0[0][c] > 0. ? source0[0][c] * nliq0_s[0][c] : source0[0][c] * nliq0[0][c];
         double s1 = source1[0][c] > 0. ? source1[0][c] * nliq1_s[0][c] : source1[0][c] * nliq1[0][c];
         g_c[0][c] -= 0.5* (cv0[0][c] * s0 + cv1[0][c] * s1);

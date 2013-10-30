@@ -89,19 +89,19 @@ void OverlandHeadFlow::fun( double t_old,
 
 #if DEBUG_FLAG
   db_->WriteVector("k_s", S_next_->GetFieldData("upwind_overland_conductivity").ptr(), true);
-  db_->WriteVector("res (post diffusion)", res.ptr(), true);
+  db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
   // accumulation term
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
-  db_->WriteVector("res (post advection)", res.ptr(), true);
+  db_->WriteVector("res (adv)", res.ptr(), true);
 #endif
 
   // add rhs load value
   AddSourceTerms_(res.ptr());
 #if DEBUG_FLAG
-  db_->WriteVector("res (post source)", res.ptr(), true);
+  db_->WriteVector("res (src)", res.ptr(), true);
 #endif
 
 #if DEBUG_RES_FLAG

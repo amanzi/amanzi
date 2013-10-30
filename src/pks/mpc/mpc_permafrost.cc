@@ -29,7 +29,7 @@ subtree:
 #include "mpc_surface_subsurface_flux_coupler.hh"
 #include "mpc_permafrost.hh"
 
-#define DEBUG_FLAG 0
+#define DEBUG_FLAG 1
 
 namespace Amanzi {
 
@@ -54,15 +54,15 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   dB_dy1_key_ = std::string("d")+B_key_+std::string("_d")+y1_key_;
 
   Key mesh_key = plist_->get<std::string>("mesh key", "domain");
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(mesh_key);
+  domain_mesh_ = S->GetMesh(mesh_key);
 
   Key surf_mesh_key = plist_->get<std::string>("surface mesh key", "surface");
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key);
+  surf_mesh_ = S->GetMesh(surf_mesh_key);
 
   // preconditioner
   Teuchos::ParameterList pc_sublist = plist_->sublist("Coupled PC");
   mfd_surf_preconditioner_ = Teuchos::rcp(new Operators::MatrixMFD_Coupled_Surf(
-      pc_sublist, mesh));
+      pc_sublist, domain_mesh_));
 
   // Set the subblocks.  Note these are the flux-coupled PCs, which are
   // MatrixMFD_Surfs.
@@ -104,6 +104,10 @@ void MPCPermafrost::setup(const Teuchos::Ptr<State>& S) {
   // grab the PKs
   coupled_flow_pk_ = sub_pks_[0];
   coupled_energy_pk_ = sub_pks_[1];
+
+  // grab the debuggers
+  domain_db_ = coupled_flow_pk_->domain_debugger();
+  surf_db_ = coupled_flow_pk_->surface_debugger();
 }
 
 
@@ -134,18 +138,21 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << "Modifying predictor, MPCPermafrost." << std::endl;
 
-    // for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-    //   AmanziMesh::Entity_ID_List fnums0;
-    //   std::vector<int> dirs;
-    //   up->SubVector(0)->SubVector(0)->Data()->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+    std::vector<std::string> vnames(2);
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs(2);
 
-    //   *out_ << "  old vals: p = " << (*up->SubVector(0)->SubVector(0)->Data())("cell",*c0)
-    //         << ", " << (*up->SubVector(0)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-    //   *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->Data())("cell",*c0)
-    //         << ", " << (*up->SubVector(1)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-    // }
+    vnames[0] = "surf p";
+    vnames[1] = "surf T";
+    vecs[0] = up->SubVector(0)->SubVector(1)->Data().ptr();
+    vecs[1] = up->SubVector(1)->SubVector(1)->Data().ptr();
+    surf_db_->WriteVectors(vnames, vecs, true);
+
+    vnames[0] = "sub p";
+    vnames[1] = "sub T";
+    vecs[0] = up->SubVector(0)->SubVector(0)->Data().ptr();
+    vecs[1] = up->SubVector(1)->SubVector(0)->Data().ptr();
+    domain_db_->WriteVectors(vnames, vecs, true);
   }
-
 
   bool changed(false);
   if (predictor_type_ == PREDICTOR_EWC || predictor_type_ == PREDICTOR_SMART_EWC) {
@@ -154,25 +161,69 @@ bool MPCPermafrost::modify_predictor(double h, Teuchos::RCP<TreeVector> up) {
     domain_u_tv->PushBack(up->SubVector(0)->SubVector(0));
     domain_u_tv->PushBack(up->SubVector(1)->SubVector(0));
     changed = ewc_->modify_predictor(h, domain_u_tv);
+
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Modifying predictor, EWC." << std::endl;
+
+      std::vector<std::string> vnames(2);
+      std::vector< Teuchos::Ptr<const CompositeVector> > vecs(2);
+
+      vnames[0] = "surf p";
+      vnames[1] = "surf T";
+      vecs[0] = up->SubVector(0)->SubVector(1)->Data().ptr();
+      vecs[1] = up->SubVector(1)->SubVector(1)->Data().ptr();
+      surf_db_->WriteVectors(vnames, vecs, true);
+        
+      vnames[0] = "sub p";
+      vnames[1] = "sub T";
+      vecs[0] = up->SubVector(0)->SubVector(0)->Data().ptr();
+      vecs[1] = up->SubVector(1)->SubVector(0)->Data().ptr();
+      domain_db_->WriteVectors(vnames, vecs, true);
+    }
   }
+
+  // potentially change for source of water onto ice
+  changed |= modify_predictor_for_source_on_ice_(h, up);
 
   // potentially update faces
   changed |= StrongMPC<MPCSurfaceSubsurfaceFluxCoupler>::modify_predictor(h, up);
 
-  // if (out_.get() && includesVerbLevel(verbosity_, Teuchos::VERB_EXTREME, true)) {
-  //   for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-  //     AmanziMesh::Entity_ID_List fnums0;
-  //     std::vector<int> dirs;
-  //     up->SubVector(0)->SubVector(0)->Data()->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-  //     *out_ << "  new vals: p = " << (*up->SubVector(0)->SubVector(0)->Data())("cell",*c0)
-  //           << ", " << (*up->SubVector(0)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-  //     *out_ << "            T = " << (*up->SubVector(1)->SubVector(0)->Data())("cell",*c0)
-  //           << ", " << (*up->SubVector(1)->SubVector(0)->Data())("face",fnums0[0]) << std::endl;
-  //   }
-  // }
-
   return changed;
+}
+
+
+// update the predictor to be physically consistent
+bool MPCPermafrost::modify_predictor_for_source_on_ice_(double h, Teuchos::RCP<TreeVector> up) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Modifying predictor, source on ice." << std::endl;
+
+  Teuchos::RCP<const CompositeVector> surf_T = up->SubVector(1)->SubVector(1)->Data();
+  const Epetra_MultiVector& surf_T_c = *surf_T->ViewComponent("cell",false);
+  const Epetra_MultiVector& mass_src = *S_next_->GetFieldData("surface_mass_source")
+      ->ViewComponent("cell",false);
+  
+  Epetra_MultiVector& surf_p_c = *up->SubVector(0)->SubVector(1)->Data()
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& domain_p_f = *up->SubVector(0)->SubVector(0)->Data()
+      ->ViewComponent("face",false);
+
+  int nchanged_l = 0;
+  for (unsigned int sc=0; sc!=surf_T_c.MyLength(); ++sc) {
+    if (surf_T_c[0][sc] <= 272.15        // cutoff for 0 water, so surface is all ice
+        && mass_src[0][sc] > 0.          // water source is on
+        && surf_p_c[0][sc] < 101325.) {  // no ponded water yet
+      surf_p_c[0][sc] = 101425.;
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+      domain_p_f[0][f] = surf_p_c[0][sc];
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "  Modified at surf cell " << sc << ", T = " << surf_T_c[0][sc] << std::endl;
+      nchanged_l++;
+    }
+  }
+  int nchanged = nchanged_l;
+  domain_mesh_->get_comm()->SumAll(&nchanged_l, &nchanged, 1);
+  return nchanged > 0;
 }
 
 
@@ -242,95 +293,65 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
     *vo_->os() << "  Precon applying coupled subsurface operator." << std::endl;
   mfd_surf_preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
 
+  // Update source on ice terms
+  const Epetra_MultiVector& dWC_dp = *S_next_->GetFieldData("dsurface_water_content_dsurface_pressure")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& uf = *S_next_->GetFieldData("unfrozen_fraction")
+      ->ViewComponent("cell",false);
+  const Epetra_MultiVector& surf_p_c = *u->SubVector(0)->SubVector(1)->Data()
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& domain_Pp_f = *Pu->SubVector(0)->SubVector(0)->Data()
+      ->ViewComponent("face",false);
+  double dt = S_next_->time() - S_inter_->time();
+  for (unsigned int sc=0; sc!=uf.MyLength(); ++sc) {
+    if (surf_p_c[0][sc] > 0. && uf[0][sc] == 0.) {
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+      domain_Pp_f[0][f] = surf_p_c[0][sc] / (dWC_dp[0][sc] / dt);
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "Ice precon: dp surface c[" << sc << "] = " << domain_Pp_f[0][f] << " due to res = " << surf_p_c[0][sc] << std::endl;
+    }
+  }
+  
   // Update surface cells and faces on both
   coupled_flow_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(0));
-  coupled_energy_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(1));
   coupled_flow_pk_->PreconUpdateSurfaceFaces_(u->SubVector(0), Pu->SubVector(0));
+  coupled_energy_pk_->PreconUpdateSurfaceCells_(Pu->SubVector(1));
   coupled_energy_pk_->PreconUpdateSurfaceFaces_(u->SubVector(1), Pu->SubVector(1));
 
-#if DEBUG_FLAG
-  Teuchos::RCP<const CompositeVector> surf_p = u->SubVector(0)->SubVector(1)->Data();
-  Teuchos::RCP<const CompositeVector> domain_p = u->SubVector(0)->SubVector(0)->Data();
-  Teuchos::RCP<const CompositeVector> surf_Pp = Pu->SubVector(0)->SubVector(1)->Data();
-  Teuchos::RCP<const CompositeVector> domain_Pp = Pu->SubVector(0)->SubVector(0)->Data();
-
-  Teuchos::RCP<const CompositeVector> surf_T = u->SubVector(1)->SubVector(1)->Data();
-  Teuchos::RCP<const CompositeVector> domain_T = u->SubVector(1)->SubVector(0)->Data();
-  Teuchos::RCP<const CompositeVector> surf_PT = Pu->SubVector(1)->SubVector(1)->Data();
-  Teuchos::RCP<const CompositeVector> domain_PT = Pu->SubVector(1)->SubVector(0)->Data();
-
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "Preconditioner application" << std::endl
+    Teuchos::RCP<const CompositeVector> surf_p = u->SubVector(0)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_p = u->SubVector(0)->SubVector(0)->Data();
+    Teuchos::RCP<const CompositeVector> surf_Pp = Pu->SubVector(0)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_Pp = Pu->SubVector(0)->SubVector(0)->Data();
+
+    Teuchos::RCP<const CompositeVector> surf_T = u->SubVector(1)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_T = u->SubVector(1)->SubVector(0)->Data();
+    Teuchos::RCP<const CompositeVector> surf_PT = Pu->SubVector(1)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_PT = Pu->SubVector(1)->SubVector(0)->Data();
+
+    std::vector<std::string> vnames;
+    vnames.push_back("p");
+    vnames.push_back("PC*p");
+    vnames.push_back("T");
+    vnames.push_back("PC*T");
+    *vo_->os() << "FINAL Preconditioner application" << std::endl
                << " SubSurface precon:" << std::endl;
 
-    // for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=dc_.begin(); c0!=dc_.end(); ++c0) {
-    //   AmanziMesh::Entity_ID_List fnums0;
-    //   std::vector<int> dirs;
-    //   domain_p->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(domain_p.ptr());
+    vecs.push_back(domain_Pp.ptr());
+    vecs.push_back(domain_T.ptr());
+    vecs.push_back(domain_PT.ptr());
+    domain_db_->WriteVectors(vnames, vecs, true);
 
-    //   *out_ << "  p(" << *c0 << "): " << (*domain_p)("cell",*c0);
-    //   for (unsigned int n=0;n!=fnums0.size();++n)
-    //     *out_ << ", " << (*domain_p)("face", fnums0[n]);
-    //   *out_ << std::endl;
-
-    //   *out_ << "  PC*p(" << *c0 << "): " << (*domain_Pp)("cell",*c0);
-    //   for (unsigned int n=0;n!=fnums0.size();++n)
-    //     *out_ << ", " << (*domain_Pp)("face", fnums0[n]);
-    //   *out_ << std::endl;
-
-    //   *out_ << "  ---" << std::endl;
-
-    //   *out_ << "  T(" << *c0 << "): " << (*domain_T)("cell",*c0);
-    //   for (unsigned int n=0;n!=fnums0.size();++n)
-    //     *out_ << ", " << (*domain_T)("face", fnums0[n]);
-    //   *out_ << std::endl;
-
-    //   *out_ << "  PC*T(" << *c0 << "): " << (*domain_PT)("cell",*c0);
-    //   for (unsigned int n=0;n!=fnums0.size();++n)
-    //     *out_ << ", " << (*domain_PT)("face", fnums0[n]);
-    //   *out_ << std::endl;
-
-    //   *out_ << "  ---" << std::endl;
-    // }
-  }
-
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << " Surface precon:" << std::endl;
 
-    // for (std::vector<AmanziMesh::Entity_ID>::const_iterator c0=coupled_flow_pk_->surf_dc_.begin();
-    //      c0!=coupled_flow_pk_->surf_dc_.end(); ++c0) {
-    //   if (*c0 < surf_p->size("cell",false)) {
-    //     AmanziMesh::Entity_ID_List fnums0;
-    //     std::vector<int> dirs;
-    //     surf_p->Mesh()->cell_get_faces_and_dirs(*c0, &fnums0, &dirs);
-
-    //     *out_ << "  p(" << *c0 << "): " << (*surf_p)("cell",*c0);
-    //     for (unsigned int n=0;n!=fnums0.size();++n)
-    //       *out_ << ", " << (*surf_p)("face", fnums0[n]);
-    //     *out_ << std::endl;
-
-    //     *out_ << "  PC*p(" << *c0 << "): " << (*surf_Pp)("cell",*c0);
-    //     for (unsigned int n=0;n!=fnums0.size();++n)
-    //       *out_ << ", " << (*surf_Pp)("face", fnums0[n]);
-    //     *out_ << std::endl;
-
-    //     *out_ << "  ---" << std::endl;
-
-    //     *out_ << "  T(" << *c0 << "): " << (*surf_T)("cell",*c0);
-    //     for (unsigned int n=0;n!=fnums0.size();++n)
-    //       *out_ << ", " << (*surf_T)("face", fnums0[n]);
-    //     *out_ << std::endl;
-
-    //     *out_ << "  PC*T(" << *c0 << "): " << (*surf_PT)("cell",*c0);
-    //     for (unsigned int n=0;n!=fnums0.size();++n)
-    //       *out_ << ", " << (*surf_PT)("face", fnums0[n]);
-    //     *out_ << std::endl;
-
-    //     *out_ << "  ---" << std::endl;
-    //   }
-    // }
+    vecs[0] = surf_p.ptr();
+    vecs[1] = surf_Pp.ptr();
+    vecs[2] = surf_T.ptr();
+    vecs[3] = surf_PT.ptr();
+    surf_db_->WriteVectors(vnames, vecs, true);
   }
-#endif
 
 }
 

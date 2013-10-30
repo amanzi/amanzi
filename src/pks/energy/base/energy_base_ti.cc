@@ -65,25 +65,25 @@ void EnergyBase::fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
   // diffusion term, implicit
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
-  db_->WriteVector("res (post diffusion)", res.ptr(), true);
+  db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
   // accumulation term
   AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
-  db_->WriteVector("res (post accumulation)", res.ptr());
+  db_->WriteVector("res (acc)", res.ptr());
 #endif
 
   // advection term, implicit
   AddAdvection_(S_next_.ptr(), res.ptr(), true);
 #if DEBUG_FLAG
-  db_->WriteVector("res (post advection)", res.ptr());
+  db_->WriteVector("res (adv)", res.ptr());
 #endif
 
   // source terms
   AddSources_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
-  db_->WriteVector("res (post source)", res.ptr());
+  db_->WriteVector("res (src)", res.ptr());
 #endif
 
   // Dump residual to state for visual debugging.
