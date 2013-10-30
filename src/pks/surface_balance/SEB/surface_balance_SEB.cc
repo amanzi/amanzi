@@ -187,6 +187,12 @@ void SurfaceBalanceSEB::initialize(const Teuchos::Ptr<State>& S) {
 
 
 bool SurfaceBalanceSEB::advance(double dt) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << S_inter_->time()
+               << " t1 = " << S_next_->time() << " h = " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
   // Create the SEB data structure
   SurfaceEnergyBalance::LocalData data;
 
@@ -324,6 +330,9 @@ bool SurfaceBalanceSEB::advance(double dt) {
     snow_density[0][c]=data.st_energy.density_snow;
     days_of_nosnow[0][c]=data.st_energy.nosnowdays;
 
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Snow depth, temp = " << data.st_energy.ht_snow << ", " << data.vp_snow.temp << std::endl;
+    }
 
   }
 

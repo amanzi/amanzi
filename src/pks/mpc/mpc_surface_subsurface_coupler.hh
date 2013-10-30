@@ -37,6 +37,13 @@ class MPCSurfaceSubsurfaceCoupler : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<Operators::MatrixMFD_Surf> coupled_preconditioner() {
     return mfd_preconditioner_; }
 
+  // Accessor for debugger, for use by coupling MPCs
+  Teuchos::RCP<Debugger> domain_debugger() { return domain_db_; }
+
+  // Accessor for debugger, for use by coupling MPCs
+  Teuchos::RCP<Debugger> surface_debugger() { return surf_db_; }
+
+
  protected:
   bool modify_predictor_copy_surf_to_subsurf_(double h, Teuchos::RCP<TreeVector> up);
   bool modify_predictor_copy_subsurf_to_surf_(double h, Teuchos::RCP<TreeVector> up);

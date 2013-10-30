@@ -226,7 +226,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // preconditioner for the NKA system
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
-  mfd_pc_plist.set("scaled constraint equation", scaled_constraint_);
+  if (scaled_constraint_ && !mfd_pc_plist.isParameter("scaled constraint equation"))
+    mfd_pc_plist.set("scaled constraint equation", scaled_constraint_);
   mfd_preconditioner_ = Operators::CreateMatrixMFD(mfd_pc_plist, mesh_);
   mfd_preconditioner_->set_symmetric(symmetric_);
   mfd_preconditioner_->SymbolicAssembleGlobalMatrices();
@@ -563,7 +564,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
           // -- set that value to the unfrozen fraction to ensure we
           // -- don't advect ice
-          uw_rel_perm_f[0][f] = uf[0][c];
+          uw_rel_perm_f[0][f] = std::max(1.e-8, uf[0][c]);
         }
       } else {
         Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);

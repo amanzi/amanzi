@@ -268,10 +268,6 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         g_c[0][c] -= flux * enth_surf[0][c];
       }
     }
-
-#if DEBUG_FLAG
-    db_->WriteVector("  res_source E*q_m_ss", g);
-#endif
   }
 
   // -- conduction source
@@ -286,11 +282,6 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       g_c[0][c] -= e_source1[0][cells[0]];
     }
-
-#if DEBUG_FLAG
-    db_->WriteVector("  res_source q^E_ss", g);
-#endif
-
   }
 
 }
