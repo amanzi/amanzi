@@ -1267,12 +1267,12 @@ c
             end do
          end do
          if (iconserv .eq. 1) then
-           do j = jmin-1,jmax+1
-            do i = imin,  imax+1
+           do j = jmin,jmax+1
+            do i = imin-1, imax+1
                divup = (uedge(i+1,j  )-uedge(i  ,j  ))*hxi
      &              +  (vedge(i  ,j+1)-vedge(i  ,j  ))*hyi
-               divum = (uedge(i  ,j  )-uedge(i-1,j  ))*hxi
-     &              +  (vedge(i+1,j-1)-vedge(i  ,j-1))*hyi
+               divum = (uedge(i+1,j-1)-uedge(i  ,j-1))*hxi
+     &              +  (vedge(i  ,j  )-vedge(i  ,j-1))*hyi
                ylo(i,j) = ylo(i,j) - dth*s(i,j-1)*(divum + dcapdt(i,j-1))*capInv(i,j-1)
                yhi(i,j) = yhi(i,j) - dth*s(i,j  )*(divup + dcapdt(i,j  ))*capInv(i,j  )
             end do

@@ -537,6 +537,7 @@ PorousMedia::PorousMedia (Amr&            papa,
   //
   diffn_cc   = 0;
   diffnp1_cc = 0;
+
   if (variable_scal_diff || ntracers>0) 
     {
       int num_diff = (diffuse_tracers ? ndiff+ntracers : ndiff);
@@ -788,7 +789,7 @@ PorousMedia::restart (Amr&          papa,
   //
   diffn_cc   = 0;
   diffnp1_cc = 0;    
-  if (variable_scal_diff) 
+  if (variable_scal_diff || ntracers>0) 
     {
       diffn_cc   = new MultiFab(grids, ndiff, 1);
       diffnp1_cc = new MultiFab(grids, ndiff, 1);
@@ -2874,13 +2875,13 @@ PorousMedia::get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow)
 {
   BL_ASSERT(RhoSat.boxArray()== grids);
   BL_ASSERT(kappa->boxArray()== grids);
-  BL_ASSERT(cpl_coef->boxArray()== grids);
   BL_ASSERT(rock_phi->boxArray()== grids);
   BL_ASSERT(RhoSat.nGrow()>= nGrow);
   BL_ASSERT(kappa->nGrow()>= nGrow);
-  BL_ASSERT(cpl_coef->nGrow()>= nGrow);
   BL_ASSERT(rock_phi->nGrow()>= nGrow);
   if (model == PM_RICHARDS) {
+    BL_ASSERT(cpl_coef->boxArray()== grids);
+    BL_ASSERT(cpl_coef->nGrow()>= nGrow);
     for (FillPatchIterator P_fpi(*this,RhoSat,nGrow,t_eval,Press_Type,0,ncomps); P_fpi.isValid(); ++P_fpi) {
       calcInvPressure(RhoSat[P_fpi],P_fpi(),(*rock_phi)[P_fpi],(*kappa)[P_fpi],(*cpl_coef)[P_fpi]);
     }
@@ -3196,6 +3197,7 @@ PorousMedia::advance_richards_transport_chemistry (Real  t,
 	bool do_reflux_this_call = true;
 	tracer_advection(u_macG_trac,do_reflux_this_call,use_cached_sat,&Fext);
       }
+
       // Initialize diffusive flux registers
       if (do_reflux && level < parent->finestLevel()) {
         getViscFluxReg(level+1).setVal(0);
@@ -10909,6 +10911,7 @@ PorousMedia::calcDiffusivity (const Real time,
     BL_ASSERT(whichTime == AmrOldTime || whichTime == AmrNewTime);
 
     MultiFab* diff_cc = (whichTime == AmrOldTime) ? diffn_cc : diffnp1_cc;
+    BL_ASSERT(diff_cc != 0);
     const int nGrow   = 1;
 
     MultiFab S(grids,1,nGrow);
@@ -10945,7 +10948,8 @@ PorousMedia::calcDiffusivity (const Real time,
 
       int first_tracer = ncomps;
       int dComp_tracs = std::max(0,src_comp-ncomps) + first_tracer;
-      BL_ASSERT(dComp_tracs + num_tracs < diff_cc->nComp());
+
+      BL_ASSERT(dComp_tracs + num_tracs <= diff_cc->nComp());
 
       MatFiller* matFiller = PMParent()->GetMatFiller();
       bool retD = matFiller->SetProperty(time,level,*diff_cc,"molecular_diffusion_coefficient",dComp_tracs,nGrow);
