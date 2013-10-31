@@ -64,24 +64,24 @@ void AdvectionDonorUpwind::Apply(const Teuchos::RCP<Functions::BoundaryFunction>
     }
   }
 
-  // patch up Neumann bcs -- only works for 1 dof?
-  for (Functions::BoundaryFunction::Iterator bc = bc_flux->begin();
-       bc!=bc_flux->end(); ++bc) {
-    if (include_bc_fluxes) {
-      if ((*upwind_cell_)[bc->first] >= 0) {
-        field_f[0][bc->first] = bc->second*mesh_->face_area(bc->second);
-      } else {
-        field_f[0][bc->first] = -bc->second*mesh_->face_area(bc->second);
-      }
-    } else {
-      // HACKED for fluxes included in diffusion term.  This needs
-      // rethought. --etc
-      field_f[0][bc->first] = 0.;
-    }
-  }
+  // // patch up Neumann bcs -- only works for 1 dof?
+  // for (Functions::BoundaryFunction::Iterator bc = bc_flux->begin();
+  //      bc!=bc_flux->end(); ++bc) {
+  //   if (include_bc_fluxes) {
+  //     if ((*upwind_cell_)[bc->first] >= 0) {
+  //       field_f[0][bc->first] = bc->second*mesh_->face_area(bc->second);
+  //     } else {
+  //       field_f[0][bc->first] = -bc->second*mesh_->face_area(bc->second);
+  //     }
+  //   } else {
+  //     // HACKED for fluxes included in diffusion term.  This needs
+  //     // rethought. --etc
+  //     field_f[0][bc->first] = 0.;
+  //   }
+  // }
 
-  field_c.PutScalar(0.);
   // put fluxes in cell
+  field_c.PutScalar(0.);
   for (int f=f_begin_; f!=f_end_; ++f) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
