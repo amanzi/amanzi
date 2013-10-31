@@ -19,6 +19,10 @@
 #include "checkpoint.hh"
 #include "chemistry_data.hh"
 
+#ifdef ALQUIMIA_ENABLED
+#include "Chemistry_Engine.hh"
+#endif
+
 namespace Amanzi {
 
 enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY };
@@ -46,6 +50,11 @@ class MPC : public Teuchos::VerboseObject<MPC> {
   Teuchos::RCP<AmanziChemistry::Chemistry_State> CS;
   Teuchos::RCP<AmanziTransport::Transport_State> TS; 
   Teuchos::RCP<AmanziFlow::Flow_State> FS;
+
+#ifdef ALQUIMIA_ENABLED
+  // Chemistry engine -- used for transport boundary conditions and for the Alquimia chemistry PK.
+  Teuchos::RCP<AmanziChemistry::Chemistry_Engine> chem_engine;
+#endif
     
   // misc setup information
   Teuchos::ParameterList parameter_list;

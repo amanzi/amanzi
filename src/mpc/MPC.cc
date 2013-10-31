@@ -178,7 +178,8 @@ void MPC::mpc_init() {
     try {
       if (chemistry_model == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS) );
+        chem_engine = Teuchos::rcp( new AmanziChemistry::Chemistry_Engine(parameter_list) );
+        CPK = Teuchos::rcp( new AmanziChemistry::Alquimia_Chemistry_PK(parameter_list, CS, chem_engine) );
 #else
         cout << "MPC: Alquimia chemistry model is not enabled for this build.\n";
         throw std::exception();

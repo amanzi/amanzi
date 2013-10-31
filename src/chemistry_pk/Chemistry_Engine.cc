@@ -184,6 +184,11 @@ void Chemistry_Engine::GetIsothermSpeciesNames(std::vector<std::string>& species
     speciesNames[i] = std::string(metadata->isotherm_species_names.data[i]);
 }
 
+int Chemistry_Engine::NumFreeIonSpecies() const
+{
+  return chem_data_.aux_output.primary_free_ion_concentration.size;
+}
+
 void Chemistry_Engine::CopyFromBuffersToAlquimia(const double* component_concentrations,
                                                  const double* sorbed_components,
                                                  const double* mineral_volume_fractions,
