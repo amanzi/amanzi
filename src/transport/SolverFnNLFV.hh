@@ -4,8 +4,8 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_TRANSPORT_SOLVER_FN_NLFV_
-#define AMANZI_TRANSPORT_SOLVER_FN_NLFV_
+#ifndef AMANZI_TRANSPORT_SOLVER_FN_NLFV_HH_
+#define AMANZI_TRANSPORT_SOLVER_FN_NLFV_HH_
 
 #include <vector>
 
@@ -17,7 +17,6 @@
 #include "LinearOperatorFactory.hh"
 #include "SolverFnBase.hh"
 #include "Transport_PK.hh"
-#include "Transport_State.hh"
 
 namespace Amanzi {
 namespace AmanziTransport {

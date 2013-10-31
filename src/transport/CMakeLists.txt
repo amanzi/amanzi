@@ -53,10 +53,9 @@ set(transport_inc_files
   TransportDefs.hh
   transport_domain_function.hh
   Transport_PK.hh
-  Transport_SourceFactory.hh
-  Transport_State.hh)
+  Transport_SourceFactory.hh)
 
-set(transport_src_files Transport_PK.cc Transport_State.cc Transport_TI.cc 
+set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_Limiters.cc Transport_VandV.cc Transport_IO.cc 
                         Transport_BC_Factory.cc Transport_SourceFactory.cc
                         Reconstruction.cc 

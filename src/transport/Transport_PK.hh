@@ -23,6 +23,7 @@
 
 #include "VerboseObject.hh"
 
+#include "composite_vector.hh"
 #include "tensor.hh"
 #include "Explicit_TI_FnBase.hh"
 #include "transport_boundary_function.hh"
@@ -32,7 +33,6 @@
 #include "Reconstruction.hh"
 
 #include "TransportDefs.hh"
-#include "Transport_State.hh"
 #include "Transport_SourceFactory.hh"
 #include "Dispersion.hh"
 
@@ -56,16 +56,17 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 class Transport_PK : public Explicit_TI::fnBase {
  public:
   Transport_PK();
-  Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
-               Teuchos::RCP<Transport_State> TS_MPC);
+  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
   ~Transport_PK();
 
   // primary members
   int InitPK();
+  void Initialize();  // support of the state
+
   double EstimateTransportDt();
   double CalculateTransportDt();
   void Advance(double dT);
-  void CommitState(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
+  void CommitState(Teuchos::RCP<State> S);
 
   void CheckDivergenceProperty();
   void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
@@ -74,15 +75,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   void CheckInfluxBC() const;
 
   // access members  
-  Teuchos::RCP<Transport_State> transport_state() { return TS; }
-  Teuchos::RCP<Transport_State> transport_state_next() { return TS_nextMPC; }
   Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
 
   double TimeStep() { return dT; }
   void TimeStep(double dT_) { dT = dT_; }
-
   inline double cfl() { return cfl_; }
-  inline int get_transport_status() { return status; }
 
   // for unit tests only
   std::vector<Teuchos::RCP<DispersionModel> >& dispersion_models() { return dispersion_models_; }
@@ -90,7 +87,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // control members
   void PrintStatistics() const;
-  void WriteGMVfile(Teuchos::RCP<Transport_State> TS) const;
+  void WriteGMVfile(Teuchos::RCP<State> S) const;
 
   // limiters
   void LimiterBarthJespersen(const int component,
@@ -134,8 +131,12 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   void IdentifyUpwindCells();
 
-  const Teuchos::RCP<Epetra_IntVector>& get_upwind_cell() { return upwind_cell_; }
-  const Teuchos::RCP<Epetra_IntVector>& get_downwind_cell() { return downwind_cell_; }  
+  void InterpolateCellVector(
+      const Epetra_Vector& v0, const Epetra_Vector& v1, 
+      double dT_int, double dT, Epetra_Vector& v_int);
+
+  const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
+  const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
 
   // I/O methods
   void ProcessParameterList();
@@ -163,9 +164,10 @@ class Transport_PK : public Explicit_TI::fnBase {
   VerboseObject* vo_;
 
  private:
-  Teuchos::RCP<Transport_State> TS;
-  Teuchos::RCP<Transport_State> TS_nextBIG;  // involves both owned and ghost values
-  Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
+  Teuchos::RCP<State> S_;  // state info
+  std::string name_;
+
+  Teuchos::RCP<CompositeVector> tcc_tmp;  // next time step
   
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
@@ -197,9 +199,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::string dispersion_solver;
 
   double cfl_, dT, dT_debug, T_physics;  
-  int number_components; 
-  int status;
-  int flow_mode;  // steady-sate or transient
 
   std::vector<Functions::TransportBoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 

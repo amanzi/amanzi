@@ -9,8 +9,8 @@
  communicate itself.
 ------------------------------------------------------------------------- */
 
-#ifndef COMPOSITEVECTOR_HH_
-#define COMPOSITEVECTOR_HH_
+#ifndef AMANZI_COMPOSITEVECTOR_HH_
+#define AMANZI_COMPOSITEVECTOR_HH_
 
 #include <vector>
 #include "Teuchos_RCP.hpp"

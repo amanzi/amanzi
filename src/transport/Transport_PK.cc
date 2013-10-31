@@ -39,22 +39,16 @@ namespace AmanziTransport {
 * We set up minimum default values and call Init() routine to 
 * complete initialization.
 ****************************************************************** */
-Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
-                           Teuchos::RCP<Transport_State> TS_MPC)
+Transport_PK::Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S)
+    : S_(S)
 {
-  status = TRANSPORT_NULL;
-
-  parameter_list = parameter_list_MPC.sublist("Transport");
-  preconditioners_list = parameter_list_MPC.sublist("Preconditioners");
-  solvers_list = parameter_list_MPC.sublist("Solvers");
-  nonlin_solvers_list = parameter_list_MPC.sublist("Nonlinear solvers");
-
-  number_components = TS_MPC->total_component_concentration()->NumVectors();
-
-  TS = Teuchos::rcp(new Transport_State(*TS_MPC, Transport_State::CONSTRUCT_MODE_COPY_POINTERS));
+  parameter_list = glist.sublist("Transport");
+  preconditioners_list = glist.sublist("Preconditioners");
+  solvers_list = glist.sublist("Solvers");
+  nonlin_solvers_list = glist.sublist("Nonlinear solvers");
 
   dT = dT_debug = T_physics = 0.0;
-  double time = TS->initial_time();
+  double time = S->initial_time();
   if (time >= 0.0) T_physics = time;
 
   dispersion_method = TRANSPORT_DISPERSION_METHOD_TPFA; 
@@ -64,10 +58,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   MyPID = 0;
-  mesh_ = TS->mesh();
+  mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
-  flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
   mass_tracer_exact = 0.0;  // Tracer is defined as species #0.
 }
@@ -84,15 +77,40 @@ Transport_PK::~Transport_PK()
 }
 
 
+/* ****************************************************************
+* Complete initialization of transport.
+**************************************************************** */
+void Transport_PK::Initialize() 
+{
+  name_ = "state";  //  state password
+  Teuchos::RCP<Field> field;
+
+  field = S_->GetField("darcy_flux", name_);
+  if (!field->initialized()) {
+    S_->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
+    field->set_initialized();
+  }
+
+  field = S_->GetField("water_saturation", name_);
+  if (!field->initialized()) {
+    S_->GetFieldData("water_saturation", name_)->PutScalar(1.0);
+    field->set_initialized();
+  }
+
+  field = S_->GetField("prev_water_saturation", name_);
+  if (!S_->GetField("prev_water_saturation",name_)->initialized()) {
+    S_->GetFieldData("prev_water_saturation", name_)->PutScalar(1.0);
+    field->set_initialized();
+  }
+}
+ 
+
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
 int Transport_PK::InitPK()
 {
-  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, Transport_State::CONSTRUCT_MODE_COPY_DATA_GHOSTED));
-  TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, Transport_State::CONSTRUCT_MODE_VIEW_DATA));
-
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
@@ -169,50 +187,48 @@ int Transport_PK::InitPK()
  ****************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
-  // flow could not be available at initialization, copy it again
-  if (status == TRANSPORT_NULL) {
-    TS->CopyMasterMultiCell2GhostMultiCell(TS->ref_total_component_concentration(),
-                                           TS_nextBIG->ref_total_component_concentration());
-    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+  // check if temporary CV was initialized
+  if (tcc_tmp == Teuchos::null) {
+    tcc_tmp = Teuchos::rcp(new CompositeVector(S_->GetFieldData("total_component_concentration")));
+    tcc_tmp->ScatterMasterToGhosted(name_);
+    S_->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted(name_);
 
     if (internal_tests) CheckDivergenceProperty();
     IdentifyUpwindCells();
-
-    status = TRANSPORT_FLOW_AVAILABLE;
-
-  } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
-    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
-
-    IdentifyUpwindCells();
-
-    status = TRANSPORT_FLOW_AVAILABLE;
   }
 
   // loop over faces and accumulate upwinding fluxes
-  int  i, f, c, c1;
-
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
-  const Epetra_Map& fmap = mesh->face_map(true);
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  Teuchos::RCP<CompositeVector> cv;
+  cv = S_->GetFieldData("darcy_flux", name_);
+  Teuchos::RCP<Epetra_Vector> darcy_flux = cv->ViewComponent(name_, true);
 
   std::vector<double> total_outflux(ncells_wghost, 0.0);
 
-  for (f = 0; f < nfaces_wghost; f++) {
-    c = (*upwind_cell_)[f];
-    if (c >= 0) total_outflux[c] += fabs(darcy_flux[f]);
+  for (int f = 0; f < nfaces_wghost; f++) {
+    int c = (*upwind_cell_)[f];
+    if (c >= 0) total_outflux[c] += fabs((*darcy_flux)[f]);
   }
 
-  // loop over cells and calculate minimal dT
-  double outflux, dT_cell;
-  const Epetra_Vector& ws_prev = TS->ref_prev_water_saturation();
-  const Epetra_Vector& ws = TS->ref_water_saturation();
-  const Epetra_Vector& phi = TS->ref_porosity();
+  // get Epetra vectors
+  cv = S_->GetFieldData("prev_water_saturation", name_);
+  Teuchos::RCP<Epetra_Vector> ws_prev = cv->ViewComponent(name_, false);
 
+  cv = S_->GetFieldData("water_saturation", name_);
+  Teuchos::RCP<Epetra_Vector> ws = cv->ViewComponent(name_, false);
+
+  cv = S_->GetFieldData("porosity", name_);
+  Teuchos::RCP<Epetra_Vector> phi = cv->ViewComponent(name_, false);
+
+  // loop over cells and calculate minimal dT
+  double vol, outflux, dT_cell;
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dT = 0;
-  for (c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) dT_cell = mesh->cell_volume(c) * phi[c] * std::min(ws_prev[c], ws[c]) / outflux;
+    if (outflux) {
+      vol = mesh_->cell_volume(c);
+      dT_cell = vol * (*phi)[c] * std::min((*ws_prev)[c], (*ws)[c]) / outflux;
+    }
     if (dT_cell < dT) {
       dT = dT_cell;
       cmin_dT = c;
@@ -223,7 +239,7 @@ double Transport_PK::CalculateTransportDt()
   // communicate global time step
   double dT_tmp = dT;
 #ifdef HAVE_MPI
-  const Epetra_Comm& comm = ws_prev.Comm();
+  const Epetra_Comm& comm = ws_prev->Comm();
   comm.MinAll(&dT_tmp, &dT, 1);
 #endif
 
@@ -271,19 +287,32 @@ double Transport_PK::EstimateTransportDt()
 ******************************************************************* */
 void Transport_PK::Advance(double dT_MPC)
 {
-  Epetra_MultiVector& tcc = TS->ref_total_component_concentration();
-  Epetra_MultiVector& tcc_next = TS_nextBIG->ref_total_component_concentration();
+  // check if temporary CV was initialized
+  Teuchos::RCP<CompositeVector> cv;
+  cv = S_->GetFieldData("total_component_concentration");
+  Teuchos::RCP<Epetra_MultiVector> tcc = cv->ViewComponent(name_, false);
+  int number_components = tcc->NumVectors();
 
-  const Epetra_Vector& ws_prev = TS->ref_prev_water_saturation();
-  const Epetra_Vector& ws = TS->ref_water_saturation();
+  if (tcc_tmp == Teuchos::null) {
+    tcc_tmp = Teuchos::rcp(new CompositeVector(cv));
+    tcc_tmp->ScatterMasterToGhosted(name_);
+    S_->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted(name_);
+  }
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent(name_, false);
+
+  cv = S_->GetFieldData("prev_water_saturation", name_);
+  Teuchos::RCP<Epetra_Vector> ws_prev = cv->ViewComponent(name_, false);
+
+  cv = S_->GetFieldData("water_saturation", name_);
+  Teuchos::RCP<Epetra_Vector> ws = cv->ViewComponent(name_, false);
 
   // calculate stable time step dT
   double dT_shift = 0.0, dT_global = dT_MPC;
-  double time = TS->intermediate_time();
+  double time = S_->intermediate_time();
   if (time >= 0.0) { 
     T_physics = time;
-    dT_shift = TS->initial_time() - time;
-    dT_global = TS->final_time() - TS->initial_time();
+    dT_shift = S_->initial_time() - time;
+    dT_global = S_->final_time() - S_->initial_time();
   }
 
   CalculateTransportDt();
@@ -292,18 +321,14 @@ void Transport_PK::Advance(double dT_MPC)
 
   // start subcycling
   double dT_sum = 0.0;
-  if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
-    TS->CopyMasterFace2GhostFace(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
-  }
-
   double dT_cycle;
   if (interpolate_ws) {
     dT_cycle = dT_original;
-    TS->InterpolateCellVector(ws_prev, ws, dT_shift, dT_global, *ws_subcycle_start);
+    InterpolateCellVector(*ws_prev, *ws, dT_shift, dT_global, *ws_subcycle_start);
   } else {
     dT_cycle = dT_MPC;
-    water_saturation_start = TS->prev_water_saturation();
-    water_saturation_end = TS->water_saturation();
+    water_saturation_start = ws_prev;
+    water_saturation_end = ws;
   }
 
   int ncycles = 0, swap = 1;
@@ -332,13 +357,13 @@ void Transport_PK::Advance(double dT_MPC)
         water_saturation_end = ws_subcycle_end;
 
         double dT_int = dT_sum + dT_shift;
-        TS->InterpolateCellVector(ws_prev, ws, dT_int, dT_global, *ws_subcycle_end);
+        InterpolateCellVector(*ws_prev, *ws, dT_int, dT_global, *ws_subcycle_end);
       } else {  // Initial water saturation is in 'end'.
         water_saturation_start = ws_subcycle_end;
         water_saturation_end = ws_subcycle_start;
 
         double dT_int = dT_sum + dT_shift;
-        TS->InterpolateCellVector(ws_prev, ws, dT_int, dT_global, *ws_subcycle_start);
+        InterpolateCellVector(*ws_prev, *ws, dT_int, dT_global, *ws_subcycle_start);
       }
       swap = 1 - swap;
     }
@@ -352,7 +377,9 @@ void Transport_PK::Advance(double dT_MPC)
       // AdvanceSecondOrderUpwindGeneric(dT_cycle);
     }
 
-    if (! final_cycle) TS->CopyMasterMultiCell2GhostMultiCell(tcc_next, tcc, 0);  // rotate concentrations
+    if (! final_cycle) {  // rotate concentrations
+      *tcc = *tcc_next;
+    }
 
     ncycles++;
   }
@@ -365,21 +392,27 @@ void Transport_PK::Advance(double dT_MPC)
     *(vo_->os()) << ncycles << " sub-cycles, dT_stable=" << dT_original 
                  << " [sec]  dT_MPC=" << dT_MPC << " [sec]" << endl;
 
+    cv = S_->GetFieldData("total_component_concentration");
+    Teuchos::RCP<Epetra_MultiVector> tcc_next = cv->ViewComponent(name_, false);
+
     double tccmin_vec[number_components];
     double tccmax_vec[number_components];
 
-    TS->MinValueMasterCells(tcc_next, tccmin_vec);
-    TS->MaxValueMasterCells(tcc_next, tccmax_vec);
+    tcc_next->MinValue(tccmin_vec);
+    tcc_next->MaxValue(tccmax_vec);
 
     double tccmin, tccmax;
-    tcc_next.Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
-    tcc_next.Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
+    tcc_next->Comm().MinAll(tccmin_vec, &tccmin, 1);  // find the global extrema
+    tcc_next->Comm().MaxAll(tccmax_vec, &tccmax, 1);  // find the global extrema
 
-    const Epetra_Vector& phi = TS->ref_porosity();
+    cv = S_->GetFieldData("porosity", name_);
+    Teuchos::RCP<Epetra_Vector> phi = cv->ViewComponent(name_, false);
+
     mass_tracer_exact += TracerVolumeChangePerSecond(0) * dT_MPC;
     double mass_tracer = 0.0;
     for (int c = 0; c < ncells_owned; c++) {
-      mass_tracer += ws[c] * phi[c] * tcc_next[0][c] * mesh_->cell_volume(c);
+      double vol = mesh_->cell_volume(c);
+      mass_tracer += (*ws)[c] * (*phi)[c] * (*tcc_next)[0][c] * vol;
     }
 
     double mass_tracer_tmp = mass_tracer, mass_exact_tmp = mass_tracer_exact, mass_exact;
@@ -392,21 +425,23 @@ void Transport_PK::Advance(double dT_MPC)
   }
 
   if (dispersion_models_.size() != 0) {
-    const Epetra_Vector& phi = TS->ref_porosity();
-    const Epetra_Vector& ws = TS->ref_water_saturation();
-    const Epetra_Vector& flux = TS_nextBIG->ref_darcy_flux();
+    cv = S_->GetFieldData("porosity", name_);
+    Teuchos::RCP<Epetra_Vector> phi = cv->ViewComponent(name_, false);
+
+    cv = S_->GetFieldData("darcy_flux", name_);
+    Teuchos::RCP<Epetra_Vector> flux = cv->ViewComponent(name_, true);
 
     std::string scheme("tpfa");
     if (mesh_->mesh_type() == AmanziMesh::RECTANGULAR) scheme = "mfd";
 
     DispersionMatrixFactory mfactory;
-    dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, TS_nextBIG);
+    dispersion_matrix_ = mfactory.Create(scheme, &dispersion_models_, mesh_, S_);
 
-    dispersion_matrix_->CalculateDispersionTensor(flux, phi, ws);
+    dispersion_matrix_->CalculateDispersionTensor(*flux, *phi, *ws);
     dispersion_matrix_->SymbolicAssembleMatrix();
     dispersion_matrix_->ModifySymbolicAssemble();
-    dispersion_matrix_->AssembleMatrix(phi);
-    dispersion_matrix_->AddTimeDerivative(dT_MPC, phi, ws);
+    dispersion_matrix_->AssembleMatrix(*phi);
+    dispersion_matrix_->AddTimeDerivative(dT_MPC, *phi, *ws);
 
     dispersion_matrix_->InitPreconditioner(dispersion_preconditioner, preconditioners_list);
     dispersion_matrix_->UpdatePreconditioner();
@@ -425,9 +460,9 @@ void Transport_PK::Advance(double dT_MPC)
     
     for (int i = 0; i < number_components; i++) {
       for (int c = 0; c < ncells_owned; c++) {
-        double factor = mesh_->cell_volume(c) * ws[c] * phi[c] / dT_MPC;
-        rhs[c] = tcc_next[i][c] * factor;
-        sol[c] = tcc_next[i][c];
+        double factor = mesh_->cell_volume(c) * (*ws)[c] * (*phi)[c] / dT_MPC;
+        rhs[c] = (*tcc_next)[i][c] * factor;
+        sol[c] = (*tcc_next)[i][c];
       }
 
       solver->ApplyInverse(rhs, sol);
@@ -436,7 +471,7 @@ void Transport_PK::Advance(double dT_MPC)
       num_itrs += solver->num_itrs();
 
       for (int c = 0; c < ncells_owned; c++) {
-        tcc_next[i][c] = sol[c];
+        (*tcc_next)[i][c] = sol[c];
       }
     }
 
@@ -454,20 +489,39 @@ void Transport_PK::Advance(double dT_MPC)
 
 
 /* ******************************************************************* 
+* Updates states 
+******************************************************************* */
+void Transport_PK::CommitState(Teuchos::RCP<State> S) 
+{
+  Teuchos::RCP<CompositeVector> cv;
+  cv = S->GetFieldData("total_component_concentration", name_);
+
+  *cv = *tcc_tmp;
+  tcc_tmp = Teuchos::null;
+}
+
+
+/* ******************************************************************* 
  * A simple first-order transport method 
  ****************************************************************** */
 void Transport_PK::AdvanceDonorUpwind(double dT_cycle)
 {
-  status = TRANSPORT_STATE_BEGIN;
   dT = dT_cycle;  // overwrite the maximum stable transport step
   mass_tracer_source = 0.0;
 
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
+  Teuchos::RCP<CompositeVector> cv;
+  cv = S_->GetFieldData("darcy_flux", name_);
+  Teuchos::RCP<Epetra_Vector> darcy_flux = cv->ViewComponent(name_, true);
+
+  cv = S_->GetFieldData("porosity", name_);
+  Teuchos::RCP<Epetra_Vector> phi = cv->ViewComponent(name_, false);
 
   // populating next state of concentrations
-  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
+  cv = S_->GetFieldData("total_component_concentration");
+  Teuchos::RCP<Epetra_MultiVector> tcc = cv->ViewComponent(name_, false);
+
+  tcc_tmp->ScatterMasterToGhosted(name_);
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent(name_, true);
   TS_nextBIG->CopyMasterMultiCell2GhostMultiCell(*tcc, *tcc_next);
 
   // prepare conservative state in master and slave cells
@@ -755,6 +809,21 @@ void Transport_PK::IdentifyUpwindCells()
       }
     }
   }
+}
+
+
+/* *******************************************************************
+* Interpolate linearly in time between two values v0 and v1. The time 
+* is measuared relative to value v0; so that v1 is at time dT. The
+* interpolated data are at time dT_int.            
+******************************************************************* */
+void Transport_PK::InterpolateCellVector(
+    const Epetra_Vector& v0, const Epetra_Vector& v1, 
+    double dT_int, double dT, Epetra_Vector& v_int) 
+{
+  double a = dT_int / dT;
+  double b = 1.0 - a;
+  v_int.Update(b, v0, a, v1, 0.);
 }
 
 }  // namespace AmanziTransport

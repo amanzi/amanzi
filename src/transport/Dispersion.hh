@@ -20,7 +20,6 @@
 
 #include "tensor.hh"
 #include "Preconditioner.hh"
-#include "Transport_State.hh"
 #include "TransportDefs.hh"
 
 namespace Amanzi {
@@ -48,8 +47,8 @@ class Dispersion {
  public:
   Dispersion() {};
   Dispersion(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-             Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS) 
-      : specs_(specs), mesh_(mesh), TS_(TS) {};
+             Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S) 
+      : specs_(specs), mesh_(mesh), S_(S) {};
   ~Dispersion() {};
 
   // required members
@@ -77,7 +76,7 @@ class Dispersion {
  protected:
   std::vector<Teuchos::RCP<DispersionModel> >* specs_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<Transport_State> TS_;
+  Teuchos::RCP<State> S_;
 
   int dim;
   int ncells_owned, ncells_wghost;

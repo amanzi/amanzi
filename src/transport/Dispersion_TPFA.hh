@@ -19,7 +19,6 @@
 #include "Epetra_Vector.h"
 
 #include "Preconditioner.hh"
-#include "Transport_State.hh"
 #include "Dispersion.hh"
 
 namespace Amanzi {

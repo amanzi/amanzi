@@ -20,7 +20,6 @@
 #include "Epetra_Map.h"
 
 #include "Preconditioner.hh"
-#include "Transport_State.hh"
 #include "Dispersion.hh"
 
 namespace Amanzi {
