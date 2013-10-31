@@ -73,8 +73,7 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleGlobalMatrices() {
       indices_global[m] = fmap_wghost.GID(indices[m]);
 
       // SCALING: -- divide by rel perm to keep constraint equation consistent
-      if (std::abs(values[m]) > 0.) {
-        ASSERT( (*Krel_)[frow] > 0.);
+      if (std::abs(values[m]) > 0. && (*Krel_)[frow] > 0.) {
         values[m] /= (*Krel_)[frow];
       }
     }
@@ -179,9 +178,8 @@ void MatrixMFD_Surf_ScaledConstraint::ComputeSchurComplement(const std::vector<M
 
       // additionally divide by rel perm to keep constraint equation
       // consistent
-      if (std::abs(values[m]) > 0.) {
-        ASSERT( (*Krel_)[frow] > 0.);
-        values[m] /= (*Krel_)[frow];
+      if (std::abs(values[m]) > 0. && (*Krel_)[frow] > 0.) {
+          values[m] /= (*Krel_)[frow];
       }
     }
 
