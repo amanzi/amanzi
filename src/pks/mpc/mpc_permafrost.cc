@@ -207,6 +207,8 @@ bool MPCPermafrost::modify_predictor_for_source_on_ice_(double h, Teuchos::RCP<T
       ->ViewComponent("cell",false);
   Epetra_MultiVector& domain_p_f = *up->SubVector(0)->SubVector(0)->Data()
       ->ViewComponent("face",false);
+  const Epetra_MultiVector& domain_p_c = *up->SubVector(0)->SubVector(0)->Data()
+      ->ViewComponent("cell",false);
 
   int nchanged_l = 0;
   for (unsigned int sc=0; sc!=surf_T_c.MyLength(); ++sc) {
@@ -219,6 +221,13 @@ bool MPCPermafrost::modify_predictor_for_source_on_ice_(double h, Teuchos::RCP<T
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "  Modified at surf cell " << sc << ", T = " << surf_T_c[0][sc] << std::endl;
       nchanged_l++;
+    } else if (surf_T_c[0][sc] < 273.15
+               && surf_p_c[0][sc] > 101325.) {
+      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
+      AmanziMesh::Entity_ID_list cells;
+      domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      if (
     }
   }
   int nchanged = nchanged_l;
@@ -293,6 +302,40 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
     *vo_->os() << "  Precon applying coupled subsurface operator." << std::endl;
   mfd_surf_preconditioner_->ApplyInverse(*domain_u_tv, domain_Pu_tv.ptr());
 
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::RCP<const CompositeVector> surf_p = u->SubVector(0)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_p = u->SubVector(0)->SubVector(0)->Data();
+    Teuchos::RCP<const CompositeVector> surf_Pp = Pu->SubVector(0)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_Pp = Pu->SubVector(0)->SubVector(0)->Data();
+
+    Teuchos::RCP<const CompositeVector> surf_T = u->SubVector(1)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_T = u->SubVector(1)->SubVector(0)->Data();
+    Teuchos::RCP<const CompositeVector> surf_PT = Pu->SubVector(1)->SubVector(1)->Data();
+    Teuchos::RCP<const CompositeVector> domain_PT = Pu->SubVector(1)->SubVector(0)->Data();
+
+    std::vector<std::string> vnames;
+    vnames.push_back("p");
+    vnames.push_back("PC*p");
+    vnames.push_back("T");
+    vnames.push_back("PC*T");
+    *vo_->os() << " SubSurface precon:" << std::endl;
+
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(domain_p.ptr());
+    vecs.push_back(domain_Pp.ptr());
+    vecs.push_back(domain_T.ptr());
+    vecs.push_back(domain_PT.ptr());
+    domain_db_->WriteVectors(vnames, vecs, true);
+
+    *vo_->os() << " Surface precon:" << std::endl;
+
+    vecs[0] = surf_p.ptr();
+    vecs[1] = surf_Pp.ptr();
+    vecs[2] = surf_T.ptr();
+    vecs[3] = surf_PT.ptr();
+    surf_db_->WriteVectors(vnames, vecs, true);
+  }
+  
   // Update source on ice terms
   const Epetra_MultiVector& dWC_dp = *S_next_->GetFieldData("dsurface_water_content_dsurface_pressure")
       ->ViewComponent("cell",false);
@@ -304,7 +347,7 @@ void MPCPermafrost::precon(Teuchos::RCP<const TreeVector> u,
       ->ViewComponent("face",false);
   double dt = S_next_->time() - S_inter_->time();
   for (unsigned int sc=0; sc!=uf.MyLength(); ++sc) {
-    if (surf_p_c[0][sc] > 0. && uf[0][sc] == 0.) {
+    if (std::abs(surf_p_c[0][sc]) > 0. && uf[0][sc] == 0.) {
       AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
       domain_Pp_f[0][f] = surf_p_c[0][sc] / (dWC_dp[0][sc] / dt);
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
