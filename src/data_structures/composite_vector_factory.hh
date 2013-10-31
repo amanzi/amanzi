@@ -113,6 +113,12 @@ private:
 
 };
 
+
+// Nonmember-function factory
+Teuchos::RCP<CompositeVector>
+CreateCompositeVector(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                      AmanziMesh::Entity_kind entity, int ndofs, bool ghosted=true);
+
 } // namespace amanzi
 
 #endif
