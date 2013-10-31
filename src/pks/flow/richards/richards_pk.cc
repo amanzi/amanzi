@@ -564,7 +564,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
           // -- set that value to the unfrozen fraction to ensure we
           // -- don't advect ice
-          uw_rel_perm_f[0][f] = std::max(1.e-8, uf[0][c]);
+          uw_rel_perm_f[0][f] = uf[0][c];
         }
       } else {
         Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
