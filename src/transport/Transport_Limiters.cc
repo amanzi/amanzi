@@ -25,8 +25,6 @@ void Transport_PK::LimiterTensorial(const int component,
                                     Teuchos::RCP<Epetra_Vector> scalar_field,
                                     Teuchos::RCP<Epetra_MultiVector> gradient)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-
   double u1, u2, u1f, u2f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
@@ -162,7 +160,7 @@ void Transport_PK::LimiterTensorial(const int component,
           if (a > 0) b = u1 - component_local_min_[c];
           else       b = u1 - component_local_max_[c];
 
-          flux = fabs(darcy_flux[f]);
+          flux = fabs((*darcy_flux)[f]);
           outflux += flux;
           if (b) {
             outflux_weigted += flux * a / b;
@@ -196,8 +194,6 @@ void Transport_PK::LimiterBarthJespersen(const int component,
                                          Teuchos::RCP<Epetra_MultiVector> gradient,
                                          Teuchos::RCP<Epetra_Vector> limiter)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-
   limiter->PutScalar(1.0);
 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
@@ -315,7 +311,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
           if (a > 0) b = u1 - component_local_min_[c];
           else       b = u1 - component_local_max_[c];
 
-          flux = fabs(darcy_flux[f]);
+          flux = fabs((*darcy_flux)[f]);
           outflux += flux;
           if (b) {
             outflux_weigted += flux * a / b;
@@ -452,7 +448,6 @@ void Transport_PK::LimiterKuzmin(const int component,
 
   // Step 4: enforcing a priori time step estimate (division of dT by 2).
   // Experimental version is limited to 2D (lipnikov@lanl.gov).
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
@@ -482,7 +477,7 @@ void Transport_PK::LimiterKuzmin(const int component,
             else
               b = u1 - component_local_max_[c];
 
-            flux = fabs(darcy_flux[f]);
+            flux = fabs((*darcy_flux)[f]);
             outflux += flux;
             if (b) {
               outflux_weigted += flux * a / b;

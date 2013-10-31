@@ -56,7 +56,8 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 class Transport_PK : public Explicit_TI::fnBase {
  public:
   Transport_PK();
-  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S);
+  Transport_PK(Teuchos::ParameterList& glist, Teuchos::RCP<State> S,
+               std::vector<std::string>& component_names);
   ~Transport_PK();
 
   // primary members
@@ -164,10 +165,16 @@ class Transport_PK : public Explicit_TI::fnBase {
   VerboseObject* vo_;
 
  private:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int dim;
+
   Teuchos::RCP<State> S_;  // state info
   std::string name_;
 
-  Teuchos::RCP<CompositeVector> tcc_tmp;  // next time step
+  Teuchos::RCP<CompositeVector> tcc_tmp;  // updated tcc
+  Teuchos::RCP<Epetra_MultiVector> tcc;  // static variables
+  Teuchos::RCP<Epetra_Vector> darcy_flux;
+  Teuchos::RCP<const Epetra_Vector> ws, ws_prev, phi;
   
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
@@ -179,7 +186,6 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   int advection_limiter;  // data for limiters
   int current_component_;
-  Teuchos::RCP<Epetra_Vector> component_, component_next_;
   Teuchos::RCP<Epetra_Vector> limiter_;
   Reconstruction lifting;
   std::vector<double> component_local_min_;
@@ -210,8 +216,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   int nfaces_owned, nfaces_wghost;
   int nnodes_wghost;
  
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int dim;
+  std::map<std::string, int> component_numbers_;
+  std::vector<std::string> component_names_;
 };
 
 }  // namespace AmanziTransport

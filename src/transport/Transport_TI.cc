@@ -22,9 +22,7 @@ namespace AmanziTransport {
  ****************************************************************** */
 void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-  const Epetra_Vector& ws  = *water_saturation_start;
-  const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
+  const Epetra_Vector& wss = *water_saturation_start;
 
   // transport routines need an RCP pointer
   Epetra_Vector* component_tmp = const_cast<Epetra_Vector*> (&component);
@@ -65,7 +63,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       u1 = u2 = umin = umax = component[c2];
     }
 
-    u = fabs(darcy_flux[f]);
+    u = fabs((*darcy_flux)[f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
@@ -99,7 +97,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
-    double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c];
+    double vol_phi_ws = mesh_->cell_volume(c) * (*phi)[c] * wss[c];
     f_component[c] /= vol_phi_ws;
   }
 
@@ -111,16 +109,14 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
         c2 = (*downwind_cell_)[f];
 
         if (c2 >= 0 && f < nfaces_owned) {
-          u = fabs(darcy_flux[f]);
-          double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2];
+          u = fabs((*darcy_flux)[f]);
+          double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[c2] * wss[c2];
           tcc_flux = u * bc->second;
           f_component[c2] += tcc_flux / vol_phi_ws;
         }
       }
     }
   }
-
-  TS_nextBIG->CopyMasterCell2GhostCell(f_component);
 }
 
 }  // namespace AmanziTransport

@@ -31,26 +31,23 @@ void Transport_PK::CheckDivergenceProperty()
   int i, c, f;
   double div, u, umax, error_max, error_avg;
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = TS->mesh();
-  Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-
   error_max = error_avg = 0.0;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
     int nfaces = faces.size();
 
     div = umax = 0;
     for (i = 0; i < nfaces; i++) {
       f = faces[i];
-      u = darcy_flux[f];
+      u = (*darcy_flux)[f];
       div += u * fdirs[i];
-      umax = std::max(umax, fabs(u) / pow(mesh->face_area(f), 0.5));
+      umax = std::max(umax, fabs(u) / pow(mesh_->face_area(f), 0.5));
     }
-    div /= mesh->cell_volume(c);
+    div /= mesh_->cell_volume(c);
 
     if (umax) {
       error_max = std::max(error_max, fabs(div) / umax);
@@ -85,7 +82,7 @@ void Transport_PK::CheckDivergenceProperty()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
 #ifdef HAVE_MPI
     double global_max;
-    const Epetra_Comm& comm = darcy_flux.Comm();
+    const Epetra_Comm& comm = darcy_flux->Comm();
 
     comm.MinAll(&error_max, &global_max, 1);
     error_max = global_max;
@@ -104,7 +101,7 @@ void Transport_PK::CheckDivergenceProperty()
  ****************************************************************** */
 void Transport_PK::CheckInfluxBC() const
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  int number_components = tcc->NumVectors();
   std::vector<int> influx_face(nfaces_wghost);
 
   for (int i = 0; i < number_components; i++) {
@@ -123,7 +120,7 @@ void Transport_PK::CheckInfluxBC() const
       if (i == bcs_tcc_index[n]) {
         for (Amanzi::Functions::TransportBoundaryFunction::Iterator bc = bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
           int f = bc->first;
-          if (darcy_flux[f] < 0 && influx_face[f] == 0) {
+          if ((*darcy_flux)[f] < 0 && influx_face[f] == 0) {
             char component[3];
             std::sprintf(component, "%3d", i);
 
@@ -178,8 +175,6 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
                                      double upper_bound,
                                      double tol) const
 {
-  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-
   for (int c = 0; c < ncells_owned; c++) {
     double value = tracer[component][c];
     if (value < lower_bound - tol || value > upper_bound + tol) {
@@ -208,7 +203,6 @@ void Transport_PK::CheckTracerBounds(Epetra_MultiVector& tracer,
 ****************************************************************** */
 double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
 {
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   double volume = 0.0;
 
   for (int n = 0; n < bcs.size(); n++) {
@@ -220,7 +214,7 @@ double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
         int c2 = (*downwind_cell_)[f];
 
         if (c2 >= 0) {
-          double u = fabs(darcy_flux[f]);
+          double u = fabs((*darcy_flux)[f]);
           volume += u * bc->second;
         }
       }
