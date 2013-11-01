@@ -209,9 +209,9 @@ int MatrixMFD_Coupled::Apply(const TreeVector& X,
   blockB_->Apply(*XB, *YB);
 
   // add in the off-diagonals
-  YA->ViewComponent("cell",false)->Multiply(1., *Ccc_,
+  YA->ViewComponent("cell",false)->Multiply(scaling_, *Ccc_,
           *XB->ViewComponent("cell",false), 1.);
-  YB->ViewComponent("cell",false)->Multiply(1., *Dcc_,
+  YB->ViewComponent("cell",false)->Multiply(scaling_, *Dcc_,
           *XA->ViewComponent("cell",false), 1.);
   return 0;
 }
@@ -271,12 +271,12 @@ void MatrixMFD_Coupled::ComputeSchurComplement(bool dump) {
     }
 
     // Invert the cell block
-    double det_cell = Acc[c] * Bcc[c] - (*Ccc_)[0][c] * (*Dcc_)[0][c];
+    double det_cell = Acc[c] * Bcc[c] - (*Ccc_)[0][c] * (*Dcc_)[0][c] * scaling_ * scaling_;
     if (std::abs(det_cell) > 1.e-30) {
       cell_inv(0, 0) = Bcc[c]/det_cell;
       cell_inv(1, 1) = Acc[c]/det_cell;
-      cell_inv(0, 1) = -(*Ccc_)[0][c]/det_cell;
-      cell_inv(1, 0) = -(*Dcc_)[0][c]/det_cell;
+      cell_inv(0, 1) = -(*Ccc_)[0][c] * scaling_ / det_cell;
+      cell_inv(1, 0) = -(*Dcc_)[0][c] * scaling_ / det_cell;
     } else {
       std::cout << "MatrixMFD_Coupled: Division by zero: determinant of the cell block is zero" << std::endl;
       //      ASSERT(0);

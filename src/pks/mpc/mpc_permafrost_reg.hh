@@ -21,9 +21,11 @@ subtree:
 
 ------------------------------------------------------------------------- */
 #include "mpc_permafrost.hh"
+#include "mpc_permafrost2.hh"
 
 namespace Amanzi {
 
 RegisteredPKFactory<MPCPermafrost> MPCPermafrost::reg_("permafrost model");
+RegisteredPKFactory<MPCPermafrost2> MPCPermafrost2::reg_("new permafrost model");
 
 } // namespace

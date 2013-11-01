@@ -162,8 +162,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- coupling done by a Neumann condition
   coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
-    S->RequireField("surface_subsurface_flux", name_)
-        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField("surface_subsurface_flux")
+        ->SetMesh(S->GetMesh("surface"))
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- coupling done by a Dirichlet condition
