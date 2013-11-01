@@ -7,13 +7,17 @@ namespace Operators {
 
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    MatrixMFD_Coupled(plist,mesh) {}
+    MatrixMFD_Coupled(plist,mesh),
+    scaling_(1.)
+{}
 
 MatrixMFD_Coupled_Surf::MatrixMFD_Coupled_Surf(const MatrixMFD_Coupled_Surf& other) :
     MatrixMFD_Coupled(other),
     surface_mesh_(other.surface_mesh_),
     surface_A_(other.surface_A_),
-    surface_B_(other.surface_B_) {}
+    surface_B_(other.surface_B_),
+    scaling_(other.scaling_)
+{}
 
 
 void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
@@ -83,19 +87,19 @@ void MatrixMFD_Coupled_Surf::ComputeSchurComplement() {
     ASSERT(!ierr);
 
     for (int m=0; m!=entriesA; ++m) {
-      if (indicesA[m] == 500) {
-        std::cout << "Adding Value from TPFA on surface to subsurface." << std::endl;
-        std::cout << "  val from A = " << valuesA[m] << std::endl;
-        std::cout << "  val from B = " << valuesB[m] << std::endl;
-      }
+      // if (indicesA[m] == 500) {
+      //   std::cout << "Adding Value from TPFA on surface to subsurface." << std::endl;
+      //   std::cout << "  val from A = " << valuesA[m] << std::endl;
+      //   std::cout << "  val from B = " << valuesB[m] << std::endl;
+      // }
 
       block(0,0) = valuesA[m];
       block(1,1) = valuesB[m];
 
-      // if (frow_global == indicesA[m]) {
-      //   block(0,1) = (*Ccc_surf_)[0][sc];
-      //   block(1,0) = (*Dcc_surf_)[0][sc];
-      // }
+      if (frow_global == indicesA[m]) {
+        block(0,1) = (*Ccc_surf_)[0][sc] * scaling_;
+        block(1,0) = (*Dcc_surf_)[0][sc] * scaling_;
+      }
 
       ierr = P2f2f_->SubmitBlockEntry(block.A(), block.LDA(), block.M(), block.N());
       ASSERT(!ierr);

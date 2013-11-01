@@ -29,8 +29,10 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
                        const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
                        const Teuchos::RCP<const Epetra_MultiVector>& Ccc_surf=Teuchos::null,
-                       const Teuchos::RCP<const Epetra_MultiVector>& Dcc_surf=Teuchos::null) {
-    MatrixMFD_Coupled::SetOffDiagonals(Ccc,Dcc);
+                       const Teuchos::RCP<const Epetra_MultiVector>& Dcc_surf=Teuchos::null,
+                       double scaling=1.) {
+    scaling_ = scaling;
+    MatrixMFD_Coupled::SetOffDiagonals(Ccc,Dcc,scaling);
     Ccc_surf_ = Ccc_surf;
     Dcc_surf_ = Dcc_surf;
   }
@@ -58,6 +60,7 @@ class MatrixMFD_Coupled_Surf : public MatrixMFD_Coupled {
   Teuchos::RCP<const Epetra_MultiVector> Ccc_surf_;
   Teuchos::RCP<const Epetra_MultiVector> Dcc_surf_;
 
+  double scaling_;
 };
 
 

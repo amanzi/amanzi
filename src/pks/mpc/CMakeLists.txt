@@ -24,13 +24,17 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 add_library(mpc
   weak_mpc.cc
   mpc_coupled_cells.cc
+  mpc_surface_subsurface_helpers.cc
   mpc_surface_subsurface_coupler.cc
   mpc_surface_subsurface_dirichlet_coupler.cc
   mpc_surface_subsurface_flux_coupler.cc
   mpc_surface_subsurface_energy_coupler.cc
+  mpc_water_flux_coupler.cc
   mpc_delegate_ewc.cc
   mpc_subsurface.cc
-  mpc_permafrost.cc)
+  mpc_permafrost.cc
+  mpc_permafrost2.cc)
+
 
 
 # register factories
@@ -71,6 +75,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE mpc_water_coupler_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_water_flux_coupler_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 

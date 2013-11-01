@@ -318,7 +318,6 @@ void EnergyBase::UpdateBoundaryConditions_() {
       // -- set that value to Neumann
       bc_markers_[f] = Operators::MATRIX_BC_FLUX;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
-      std::cout << " setting BC from surface energy flux = " << flux[0][c] << std::endl;
     }
   }
 };

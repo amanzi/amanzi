@@ -101,6 +101,7 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_surf_to_subsurf_(double 
     domain_u_f[0][f] = surf_u_c[0][c];
   }
 
+  domain_db_->WriteVector("    domain_u", up->SubVector(domain_pk_index_)->Data().ptr(), true);
   return true;
 }
 
@@ -122,6 +123,7 @@ bool MPCSurfaceSubsurfaceCoupler::modify_predictor_copy_subsurf_to_surf_(double 
     surf_u_c[0][c] = domain_u_f[0][f];
   }
 
+  surf_db_->WriteVector("    surf_u", up->SubVector(surf_pk_index_)->Data().ptr(), true);
   return true;
 }
 
