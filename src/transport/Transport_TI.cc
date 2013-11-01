@@ -22,15 +22,13 @@ namespace AmanziTransport {
  ****************************************************************** */
 void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
-  const Epetra_Vector& wss = *water_saturation_start;
-
   // transport routines need an RCP pointer
   Epetra_Vector* component_tmp = const_cast<Epetra_Vector*> (&component);
   const Teuchos::RCP<Epetra_Vector> component_rcp(component_tmp, false);
 
-  lifting.reset_field(mesh_, component_rcp);
-  lifting.calculateCellGradient();
-  Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
+  lifting.ResetField(mesh_, component_rcp);
+  lifting.CalculateCellGradient();
+  Teuchos::RCP<CompositeVector> gradient = lifting.gradient();
 
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
@@ -63,7 +61,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       u1 = u2 = umin = umax = component[c2];
     }
 
-    u = fabs((*darcy_flux)[f]);
+    u = fabs((*darcy_flux)[0][f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
@@ -97,7 +95,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
-    double vol_phi_ws = mesh_->cell_volume(c) * (*phi)[c] * wss[c];
+    double vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
     f_component[c] /= vol_phi_ws;
   }
 
@@ -109,8 +107,8 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
         c2 = (*downwind_cell_)[f];
 
         if (c2 >= 0 && f < nfaces_owned) {
-          u = fabs((*darcy_flux)[f]);
-          double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[c2] * wss[c2];
+          u = fabs((*darcy_flux)[0][f]);
+          double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
           tcc_flux = u * bc->second;
           f_component[c2] += tcc_flux / vol_phi_ws;
         }

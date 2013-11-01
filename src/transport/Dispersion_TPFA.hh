@@ -28,8 +28,8 @@ class Dispersion_TPFA : public Dispersion {
  public:
   Dispersion_TPFA() {};
   Dispersion_TPFA(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
-      : Dispersion(specs, mesh, TS) {};
+                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S)
+      : Dispersion(specs, mesh, S) {};
   ~Dispersion_TPFA() {};
 
   // primary members

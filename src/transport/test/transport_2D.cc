@@ -19,13 +19,9 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "MeshAudit.hh"
 #include "GMVMesh.hh"
 
-#include "Transport_State.hh"
+#include "State.hh"
 #include "Transport_PK.hh"
 
-
-Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t) { 
-  return Amanzi::AmanziGeometry::Point(1.0, 1.0);
-}
 
 
 /* **************************************************************** */
@@ -60,38 +56,47 @@ cout << "Test: Advance on a 2D square mesh" << endl;
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  RCP<Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
 
-  /* create a transport state from the MPC state and populate it */
+  /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  RCP<Transport_State> TS = rcp(new Transport_State(mesh,2));
-  TS->Initialize();
-  TS->set_darcy_flux(f_velocity, 0.0);
-  TS->set_porosity(0.2);
-  TS->set_water_saturation(1.0);
-  TS->set_prev_water_saturation(1.0);
-  TS->set_water_density(1000.0);
-  TS->set_total_component_concentration(0.0,0);
-  TS->set_total_component_concentration(0.0,1);
+  std::vector<std::string> component_names;
+  component_names.push_back("component0");
+  component_names.push_back("component1");
+
+  std::string name("state"); 
+  RCP<State> S = rcp(new State());
+  S->RegisterDomainMesh(mesh);
+
+  Transport_PK TPK(plist, S, component_names);
+  TPK.CreateDefaultState(mesh, 2);
+
+  Teuchos::RCP<Epetra_MultiVector> 
+      flux = S->GetFieldData("darcy_flux", name)->ViewComponent("face", false);
+
+  AmanziGeometry::Point velocity(1.0, 1.0);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    (*flux)[0][f] = velocity * normal;
+  }
 
   /* initialize a transport process kernel from a transport state */
-  Transport_PK TPK(plist, TS);
   TPK.InitPK();
   TPK.PrintStatistics();
 
   /* advance the state */
   int iter, k;
   double T = 0.0;
-  RCP<Transport_State> TS_next = TPK.transport_state_next();
-
-  RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> 
+      tcc = S->GetFieldData("total_component_concentration", name)->ViewComponent("cell", false);
 
   iter = 0;
   while (T < 1.0) {
     double dT = TPK.CalculateTransportDt();
     TPK.Advance(dT);
+    TPK.CommitState(S);
     T += dT;
     iter++;
 
@@ -99,27 +104,24 @@ cout << "Test: Advance on a 2D square mesh" << endl;
       printf( "T=%8.4f  C_0(x):", T );
       for( int k=0; k<9; k++ ) {
         int k1 = 9 - k;  // reflects cell numbering in the exodus file
-        printf("%7.4f", (*tcc_next)[0][k1]); 
+        printf("%7.4f", (*tcc)[0][k1]); 
       }
       printf("\n");
     }
 
-    //for( int k=0; k<8; k++ )
-    //  CHECK( ((*tcc_next)[0][k+1] - (*tcc_next)[0][k]) > -1e-15 );
     if (iter == 15) {
       GMV::open_data_file(*mesh, (std::string)"transport.gmv");
       GMV::start_data();
-      GMV::write_cell_data(*tcc_next, 0, "component0");
-      GMV::write_cell_data(*tcc_next, 1, "component1");
+      GMV::write_cell_data(*tcc, 0, "component0");
+      GMV::write_cell_data(*tcc, 1, "component1");
       GMV::close_data_file();
     }
-
-    *tcc = *tcc_next;
   }
 
   /* check that the final state is constant */
-  for (int k=0; k<10; k++) 
-    CHECK_CLOSE(1.0, (*tcc_next)[0][k], 1e-6);
+  for (int k=0; k<10; k++) {
+    CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
+  }
 
   delete comm;
 }

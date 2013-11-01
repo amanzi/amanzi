@@ -19,6 +19,7 @@
 #include "Epetra_Vector.h"
 
 #include "tensor.hh"
+#include "State.hh"
 #include "Preconditioner.hh"
 #include "TransportDefs.hh"
 
@@ -54,7 +55,7 @@ class Dispersion {
   // required members
   virtual void SymbolicAssembleMatrix() {};  // It fixes a large stencil S.
   virtual void ModifySymbolicAssemble() {};  // It allows to tweak the stencil a little.
-  virtual void AssembleMatrix(const Epetra_Vector& p) {};
+  virtual void AssembleMatrix(const Epetra_MultiVector& p) {};
 
   virtual void Apply(const Epetra_Vector& v,  Epetra_Vector& av) const {};
   virtual int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const { return 0; }
@@ -62,11 +63,11 @@ class Dispersion {
   // generic members
   void Init();
   void CalculateDispersionTensor(
-      const Epetra_Vector& darcy_flux,
-      const Epetra_Vector& porosity, const Epetra_Vector& saturation);
+      const Epetra_MultiVector& darcy_flux,
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   void AddTimeDerivative(
-      double dT, const Epetra_Vector& porosity, const Epetra_Vector& saturation);
+      double dT, const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   const Epetra_Map& Range() { return App_->RowMap(); }
 

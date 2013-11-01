@@ -48,7 +48,8 @@ void Reconstruction::Init()
                                                  TRANSPORT_MAX_FACES);
 
   dim = mesh_->space_dimension();
-  gradient_ = Teuchos::rcp(new Epetra_MultiVector(cmap, 3));
+  gradient_ = CreateCompositeVector(mesh_, AmanziMesh::CELL, dim, true);
+
 
   status = RECONSTRUCTION_INIT;
 }
@@ -58,8 +59,10 @@ void Reconstruction::Init()
 * Implementation is tuned up for gradient (first-order reconstruction).
 * It can be extended easily if needed in the future.
 ****************************************************************** */
-void Reconstruction::calculateCellGradient()
+void Reconstruction::CalculateCellGradient()
 {
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+
   Epetra_Vector& u = *scalar_field_;  // a few aliases
   Teuchos::LAPACK<int, double> lapack;
 
@@ -101,18 +104,12 @@ void Reconstruction::calculateCellGradient()
     }
 
     // rhs[0] = rhs[1] = rhs[2] = 0.0;  // TESTING COMPATABILITY
-    for (int i = 0; i < dim; i++) (*gradient_)[i][c] = rhs[i];
+    for (int i = 0; i < dim; i++) (*grad)[i][c] = rhs[i];
   }
 
   delete [] rhs;
 
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = (*gradient_).Map();
-  const Epetra_BlockMap& target_fmap = (*gradient_).Map();
-
-  Epetra_Import importer(target_fmap, source_fmap);
-  (*gradient_).Import(*gradient_, importer, Insert);
-#endif
+  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
@@ -121,8 +118,10 @@ void Reconstruction::calculateCellGradient()
 ****************************************************************** */
 void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 {
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+
   for (int c = 0; c <= cmax; c++) {
-    for (int i = 0; i < dim; i++) (*gradient_)[i][c] *= (*limiter)[c];
+    for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[c];
   }
 }
 
@@ -132,10 +131,11 @@ void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 ****************************************************************** */
 double Reconstruction::getValue(const int cell, const AmanziGeometry::Point& p)
 {
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
   double value = (*scalar_field_)[cell];
-  for (int i = 0; i < dim; i++) value += (*gradient_)[i][cell] * (p[i] - xc[i]);
+  for (int i = 0; i < dim; i++) value += (*grad)[i][cell] * (p[i] - xc[i]);
 
   return value;
 }

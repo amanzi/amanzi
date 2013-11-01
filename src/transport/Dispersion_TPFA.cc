@@ -72,8 +72,8 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_Vector& p)
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
-  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  Epetra_Vector T(fmap_wghost);
+  Teuchos::RCP<CompositeVector> T = CreateCompositeVector(mesh_, AmanziMesh::FACE, 1, true);
+  Teuchos::RCP<Epetra_MultiVector> Ttmp = T->ViewComponent("face", true);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -84,10 +84,10 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_Vector& p)
    
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      T[f] += 1.0 / Mff(n, n);
+      (*Ttmp)[0][f] += 1.0 / Mff(n, n);
     }
   }
-  TS_->CombineGhostFace2MasterFace(T, Add);
+  T->GatherGhostedToMaster();
  
   // populate the global matrix
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
@@ -104,7 +104,7 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_Vector& p)
     for (int n = 0; n < ncells; n++) {
       cells_GID[n] = cmap_wghost.GID(cells[n]);
 
-      double coef = 1.0 / T[f];
+      double coef = 1.0 / (*Ttmp)[0][f];
       Bpp(0, 0) =  coef;
       Bpp(1, 1) =  coef;
       Bpp(0, 1) = -coef;

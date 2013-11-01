@@ -69,12 +69,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   void Advance(double dT);
   void CommitState(Teuchos::RCP<State> S);
 
-  void CheckDivergenceProperty();
-  void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
-  void CheckTracerBounds(Epetra_MultiVector& tracer, int component,
-                         double lower_bound, double upper_bound, double tol = 0.0) const;
-  void CheckInfluxBC() const;
-
   // access members  
   Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
 
@@ -90,10 +84,18 @@ class Transport_PK : public Explicit_TI::fnBase {
   void PrintStatistics() const;
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
+  void CheckDivergenceProperty();
+  void CheckGEDproperty(Epetra_MultiVector& tracer) const; 
+  void CheckTracerBounds(Epetra_MultiVector& tracer, int component,
+                         double lower_bound, double upper_bound, double tol = 0.0) const;
+  void CheckInfluxBC() const;
+
+  void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
+
   // limiters
   void LimiterBarthJespersen(const int component,
                              Teuchos::RCP<Epetra_Vector> scalar_field, 
-                             Teuchos::RCP<Epetra_MultiVector> gradient, 
+                             Teuchos::RCP<CompositeVector> gradient, 
                              Teuchos::RCP<Epetra_Vector> limiter);
 
   // sources and sinks
@@ -114,11 +116,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   // limiters 
   void LimiterTensorial(const int component,
                         Teuchos::RCP<Epetra_Vector> scalar_field, 
-                        Teuchos::RCP<Epetra_MultiVector> gradient);
+                        Teuchos::RCP<CompositeVector> gradient);
 
   void LimiterKuzmin(const int component,
                      Teuchos::RCP<Epetra_Vector> scalar_field, 
-                     Teuchos::RCP<Epetra_MultiVector> gradient);
+                     Teuchos::RCP<CompositeVector> gradient);
 
   void CalculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
                                  AmanziGeometry::Point& normal_new,
@@ -133,20 +135,20 @@ class Transport_PK : public Explicit_TI::fnBase {
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(
-      const Epetra_Vector& v0, const Epetra_Vector& v1, 
-      double dT_int, double dT, Epetra_Vector& v_int);
+      const Epetra_MultiVector& v0, const Epetra_MultiVector& v1, 
+      double dT_int, double dT, Epetra_MultiVector& v_int);
 
   const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
 
   // I/O methods
   void ProcessParameterList();
-  void ProcessStringFlowMode(const std::string name, int* method);
   void ProcessStringDispersionModel(const std::string name, int* model);
   void ProcessStringDispersionMethod(const std::string name, int* method);
   void ProcessStringAdvectionLimiter(const std::string name, int* method);
 
   // miscaleneous methods
+  int FindComponentNumber(const std::string component_name);
   double TracerVolumeChangePerSecond(int idx_tracer);
 
  public:
@@ -173,16 +175,14 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // updated tcc
   Teuchos::RCP<Epetra_MultiVector> tcc;  // static variables
-  Teuchos::RCP<Epetra_Vector> darcy_flux;
-  Teuchos::RCP<const Epetra_Vector> ws, ws_prev, phi;
+  Teuchos::RCP<Epetra_MultiVector> darcy_flux;
+  Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
-  Teuchos::RCP<Epetra_Vector> water_saturation_start;  // data for subcycling 
-  Teuchos::RCP<Epetra_Vector> water_saturation_end;
-  Teuchos::RCP<Epetra_Vector> ws_subcycle_start;  // ws = water saturation 
-  Teuchos::RCP<Epetra_Vector> ws_subcycle_end;
+  Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
+  Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
 
   int advection_limiter;  // data for limiters
   int current_component_;

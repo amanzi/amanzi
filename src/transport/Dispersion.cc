@@ -60,8 +60,8 @@ void Dispersion::InitPreconditioner(
  * assumed to be scaled by face area.
  ****************************************************************** */
 void Dispersion::CalculateDispersionTensor(
-    const Epetra_Vector& darcy_flux, 
-    const Epetra_Vector& porosity, const Epetra_Vector& saturation)
+    const Epetra_MultiVector& darcy_flux, 
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
   for (int mb = 0; mb < specs_->size(); mb++) {
     Teuchos::RCP<DispersionModel> spec = (*specs_)[mb]; 
@@ -78,7 +78,7 @@ void Dispersion::CalculateDispersionTensor(
           for (int i = 0; i < dim; i++) {
             D[*c](i, i) = spec->alphaL + spec->D * spec->tau;
           }
-          D[*c] *= porosity[*c] * saturation[*c];
+          D[*c] *= porosity[0][*c] * saturation[0][*c];
         } else {
           WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
@@ -90,9 +90,9 @@ void Dispersion::CalculateDispersionTensor(
           int nfaces = faces.size();
 
           std::vector<double> flux(nfaces);
-          for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[faces[n]];
+          for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[0][faces[n]];
           mfd3d.RecoverGradient_MassMatrix(*c, flux, velocity);
-          velocity /= porosity[*c];  // pore velocity
+          velocity /= porosity[0][*c];  // pore velocity
 
           double velocity_value = norm(velocity);
           double anisotropy = spec->alphaL - spec->alphaT;
@@ -106,7 +106,7 @@ void Dispersion::CalculateDispersionTensor(
             }
           }
 
-          D[*c] *= porosity[*c] * saturation[*c];
+          D[*c] *= porosity[0][*c] * saturation[0][*c];
         }
       }
     }
@@ -118,13 +118,13 @@ void Dispersion::CalculateDispersionTensor(
 * Adds time derivative to the cell-based part of MFD algebraic system.
 ****************************************************************** */
 void Dispersion::AddTimeDerivative(
-    double dT, const Epetra_Vector& porosity, const Epetra_Vector& saturation)
+    double dT, const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume * porosity[c] * saturation[c] / dT;
+    double factor = volume * porosity[0][c] * saturation[0][c] / dT;
 
     int c_GID = cmap_wghost.GID(c);
     App_->SumIntoGlobalValues(1, &c_GID, &factor);

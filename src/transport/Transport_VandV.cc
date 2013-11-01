@@ -1,12 +1,12 @@
 /*
-This is the transport component of the Amanzi code. 
+  This is the transport component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <algorithm>
@@ -22,6 +22,69 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 namespace Amanzi {
 namespace AmanziTransport {
+
+/* ****************************************************************
+* Construct default state for unit tests.
+**************************************************************** */
+void Transport_PK::CreateDefaultState(
+    Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents) 
+{
+  std::string name("state"); 
+  S_->RequireScalar("fluid_density", name);
+
+  S_->RequireField("porosity", name)->SetMesh(mesh)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+ 
+  S_->RequireField("water_saturation", name)->SetMesh(mesh)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  
+  S_->RequireField("prev_water_saturation", name)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  S_->RequireField("darcy_flux", name)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  
+  std::vector<std::vector<std::string> > subfield_names(1);
+  if (component_names_.size() == ncomponents) {
+    for (std::vector<std::string>::const_iterator compname = component_names_.begin();
+      compname != component_names_.end(); ++compname) {    
+      subfield_names[0].push_back(*compname + std::string(" conc"));
+    }
+  } else {
+    for (int icn = 0; icn != ncomponents; ++icn) {
+      std::stringstream ss;
+      ss << "Component " << icn; 
+      subfield_names[0].push_back(ss.str());
+    }
+  }
+  S_->RequireField("total_component_concentration", name, subfield_names)->SetMesh(mesh_)
+      ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+
+  // initialize fields
+  S_->Setup();
+
+  // set popular default values
+  S_->GetFieldData("porosity", name)->PutScalar(0.2);
+  S_->GetField("porosity", name)->set_initialized();
+
+  *(S_->GetScalarData("fluid_density", name)) = 1000.0;
+  S_->GetField("fluid_density", name)->set_initialized();
+
+  S_->GetFieldData("water_saturation", name)->PutScalar(1.0);
+  S_->GetField("water_saturation", name)->set_initialized();
+
+  S_->GetFieldData("prev_water_saturation", name)->PutScalar(1.0);
+  S_->GetField("prev_water_saturation", name)->set_initialized();
+
+  S_->GetFieldData("total_component_concentration", name)->PutScalar(0.0);
+  S_->GetField("total_component_concentration", name)->set_initialized();
+
+  S_->GetFieldData("darcy_flux", name)->PutScalar(0.0);
+  S_->GetField("darcy_flux", name)->set_initialized();
+
+  S_->Initialize();
+}
+
 
 /* *******************************************************************
  * Routine verifies that the velocity field is divergence free                 
@@ -43,7 +106,7 @@ void Transport_PK::CheckDivergenceProperty()
     div = umax = 0;
     for (i = 0; i < nfaces; i++) {
       f = faces[i];
-      u = (*darcy_flux)[f];
+      u = (*darcy_flux)[0][f];
       div += u * fdirs[i];
       umax = std::max(umax, fabs(u) / pow(mesh_->face_area(f), 0.5));
     }
@@ -214,7 +277,7 @@ double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
         int c2 = (*downwind_cell_)[f];
 
         if (c2 >= 0) {
-          double u = fabs((*darcy_flux)[f]);
+          double u = fabs((*darcy_flux)[0][f]);
           volume += u * bc->second;
         }
       }

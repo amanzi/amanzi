@@ -49,8 +49,8 @@ class Dispersion_NLFV : public Dispersion {
  public:
   Dispersion_NLFV() {};
   Dispersion_NLFV(std::vector<Teuchos::RCP<DispersionModel> >* specs,
-                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<Transport_State> TS)
-      : Dispersion(specs, mesh, TS) {};
+                  Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State> S)
+      : Dispersion(specs, mesh, S) {};
   ~Dispersion_NLFV() {};
 
   // primary members
