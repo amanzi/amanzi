@@ -72,7 +72,9 @@ class MatrixMFD_Coupled : public TreeMatrix {
                     const Teuchos::RCP<MatrixMFD>& blockB);
 
   void SetOffDiagonals(const Teuchos::RCP<const Epetra_MultiVector>& Ccc,
-                       const Teuchos::RCP<const Epetra_MultiVector>& Dcc) {
+                       const Teuchos::RCP<const Epetra_MultiVector>& Dcc,
+                       double scaling=1.) {
+    scaling_ = scaling;
     Ccc_ = Ccc;
     Dcc_ = Dcc;
   }
@@ -128,6 +130,7 @@ class MatrixMFD_Coupled : public TreeMatrix {
   // off diagonal blocks
   Teuchos::RCP<const Epetra_MultiVector> Ccc_;
   Teuchos::RCP<const Epetra_MultiVector> Dcc_;
+  double scaling_;
 
   // local matrices
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells_;
