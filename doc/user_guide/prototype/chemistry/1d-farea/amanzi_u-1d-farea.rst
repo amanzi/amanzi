@@ -97,7 +97,7 @@ Here go the figure and table.
 References
 ----------
 
-.. [Bea2012] Sergio A. Bea, Haruko Wainwright, Nicolas Spycher, Boris    Faybishenko, Susan S. Hubbard, Miles E. Denham (2013) Identifying key controls on the behavior of an acidic-U(VI) plume in the Savannah River Site using reactive transport modeling, Journal of Contaminant Hydrology, 151:34-54. 
+.. [Bea2012] Sergio A. Bea, Haruko Wainwright, Nicolas Spycher, Boris Faybishenko, Susan S. Hubbard, Miles E. Denham (2013) Identifying key controls on the behavior of an acidic-U(VI) plume in the Savannah River Site using reactive transport modeling, Journal of Contaminant Hydrology, 151:34-54. 
 
 .. [Davis1998] Davis, J.A., J.A. Coston, D.B. Kent, and C. C. Fuller (1998). Application of the Surface Complexation Concept to Complex Mineral Assemblages, Environmental Science & Technology, Vo. 32, No. 19, 2820-2828.
 
