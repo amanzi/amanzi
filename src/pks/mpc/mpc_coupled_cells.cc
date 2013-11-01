@@ -79,7 +79,7 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
   if (plist_->isSublist("Coupled Solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_->sublist("Coupled Solver");
     AmanziSolvers::LinearOperatorFactory<TreeMatrix,TreeVector,TreeVectorSpace> fac;
-    linsolve_preconditioner_ = fac.Create("coupled solver", linsolve_sublist, mfd_preconditioner_);
+    linsolve_preconditioner_ = fac.Create(linsolve_sublist, mfd_preconditioner_);
   } else {
     linsolve_preconditioner_ = mfd_preconditioner_;
   }
