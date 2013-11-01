@@ -125,9 +125,9 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 // ---------------------------------------------------------------------
 void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   // external sources of energy
   if (is_source_term_) {
-    Teuchos::OSTab tab = vo_->getOSTab();
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
     // Add in external source term.
@@ -145,6 +145,13 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       g_c[0][c] -= 0.5* (source0[0][c] + source1[0][c]);
     }
+
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Adding external source term" << std::endl;
+      db_->WriteVector("  Q_ext", S_next_->GetFieldData(source_key_).ptr(), false);
+      db_->WriteVector("res (src)", g, false);
+    }
+
   }
 }
 

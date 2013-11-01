@@ -63,6 +63,13 @@ double PKBDFBase::get_dt() { return dt_; }
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
 bool PKBDFBase::advance(double dt) {
+  Teuchos::OSTab out = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << S_inter_->time()
+               << " t1 = " << S_next_->time() << " h = " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
+
   state_to_solution(S_next_, solution_);
 
   // take a bdf timestep

@@ -65,6 +65,11 @@ class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceFluxCoupler> {
   virtual void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h);
 
  protected:
+  // update the predictor to be physically consistent
+  bool modify_predictor_for_source_on_ice_(double h, Teuchos::RCP<TreeVector> up);
+
+  
+ protected:
   Key dA_dy2_key_;
   Key dB_dy1_key_;
   Key A_key_;
@@ -90,6 +95,14 @@ class MPCPermafrost : public StrongMPC<MPCSurfaceSubsurfaceFluxCoupler> {
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWC> ewc_;
 
+  // meshes
+  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
+  
+  // debugger for dumping vectors
+  Teuchos::RCP<Debugger> domain_db_;
+  Teuchos::RCP<Debugger> surf_db_;
+  
  private:
   // factory registration
   static RegisteredPKFactory<MPCPermafrost> reg_;
