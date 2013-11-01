@@ -221,13 +221,6 @@ bool MPCPermafrost::modify_predictor_for_source_on_ice_(double h, Teuchos::RCP<T
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "  Modified at surf cell " << sc << ", T = " << surf_T_c[0][sc] << std::endl;
       nchanged_l++;
-    } else if (surf_T_c[0][sc] < 273.15
-               && surf_p_c[0][sc] > 101325.) {
-      AmanziMesh::Entity_ID f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
-      AmanziMesh::Entity_ID_list cells;
-      domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-      if (
     }
   }
   int nchanged = nchanged_l;
