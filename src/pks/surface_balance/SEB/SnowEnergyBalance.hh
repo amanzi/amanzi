@@ -90,6 +90,9 @@ struct EnergyBalance {
   double CiL;
   double TotwLoss;
 
+  double AlbedoTrans;
+  double snow_groundTrans;
+
   double varvar;
   std::string funcall;
 
@@ -145,6 +148,11 @@ void MeltEnergyCalc (LocalData& dat);
      ############################################################################################### */
 void GroundEnergyCalc (LocalData& dat);
 
+
+// FUNCTION TO CALCULATE Qc CONDUCTIVE HEAT FLUX THROUGH THE SNOW PACK
+// This value needs to be calculated here because Zs was multiblied through Energy balance equation
+// in order to avoid    Qc = -Ks*(Ts-Tb)/Zs;  --> blowing up when Zs is really small
+void CalcQc (LocalData& dat);
 
 //  FUNCTION TO CALCULATE MELT & SUBLIMATION RATE WHEN SNOW IS PRESSENT
 void MeltSublRateCalc (LocalData& dat);
