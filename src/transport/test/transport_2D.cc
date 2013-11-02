@@ -1,7 +1,7 @@
 /*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  The transport component of the Amanzi code, serial unit tests.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <iostream>
@@ -23,7 +23,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_PK.hh"
 
 
-
 /* **************************************************************** */
 TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Teuchos;
@@ -34,17 +33,15 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
 cout << "Test: Advance on a 2D square mesh" << endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+  Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
   /* read parameter list */
-  ParameterList plist;
   string xmlFileName = "test/transport_2D.xml";
-
   ParameterXMLFileReader xmlreader(xmlFileName);
-  plist = xmlreader.getParameters();
+  ParameterList plist = xmlreader.getParameters();
 
   /* create an MSTK mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
@@ -65,13 +62,14 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   component_names.push_back("Component 0");
   component_names.push_back("Component 1");
 
-  std::string passwd("state"); 
   RCP<State> S = rcp(new State());
   S->RegisterDomainMesh(mesh);
 
   Transport_PK TPK(plist, S, component_names);
   TPK.CreateDefaultState(mesh, 2);
 
+  /* modify the default state for the problem at hand */
+  std::string passwd("state"); 
   Teuchos::RCP<Epetra_MultiVector> 
       flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
@@ -86,7 +84,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   TPK.InitPK();
   TPK.PrintStatistics();
 
-  /* advance the state */
+  /* advance the transport state */
   int iter, k;
   double T = 0.0;
   Teuchos::RCP<Epetra_MultiVector> 
@@ -101,8 +99,8 @@ cout << "Test: Advance on a 2D square mesh" << endl;
     iter++;
 
     if (iter < 15) {
-      printf( "T=%8.4f  C_0(x):", T );
-      for( int k=0; k<9; k++ ) {
+      printf("T=%8.4f  C_0(x):", T);
+      for (int k = 0; k < 9; k++) {
         int k1 = 9 - k;  // reflects cell numbering in the exodus file
         printf("%7.4f", (*tcc)[0][k1]); 
       }
