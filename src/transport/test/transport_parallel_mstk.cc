@@ -1,3 +1,9 @@
+/*
+  The transport component of the Amanzi code, serial unit tests.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
@@ -74,7 +80,16 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
     (*flux)[0][f] = velocity * normal;
   }
 
-  /* initialize a transport process kernel from a transport state */
+  Teuchos::RCP<Epetra_MultiVector>
+      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; c++) {
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    (*tcc)[0][c] = f_step(xc, 0.0);
+  }
+
+  /* initialize a transport process kernel */
   TPK.InitPK();
   TPK.PrintStatistics();
 
@@ -82,10 +97,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   double dT = TPK.CalculateTransportDt();
   TPK.Advance(dT);
 
-  /* printing cell concentration */
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
-
+  /* print cell concentrations */
   double T = 0.0;
   int iter = 0;
   while(T < 1.0) {
