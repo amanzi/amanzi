@@ -628,7 +628,7 @@
   <ParameterList name="Chemistry">
     <ParameterList name="Thermodynamic Database">
       <Parameter name="Format" type="string" value="simple" />
-      <Parameter name="File" type="string" value="ascem-2012-farea.bgd" />
+      <Parameter name="File" type="string" value="ascem-2012-farea-full.bgd" />
     </ParameterList>
     <Parameter name="Engine" type="string" value="PFloTran"/>
     <Parameter name="Engine Input File" type="string" value="ascem-2012-1d-farea-full.in"/>

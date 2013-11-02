@@ -133,7 +133,7 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                         'index' : 
                         {'index_title' : 'Chemistry',
                          'index_file' : 'doc/user_guide/benchmarking/chemistry/index.rst',
-                         'index_list' : ['tracer', 'calcite', 'ion_exchange', 'tritium']
+                         'index_list' : ['tracer', 'tritium', 'calcite', 'ion_exchange', 'farea']
                          },
                         'tracer' : 
                             {'from_dir' : 'testing/benchmarking/chemistry/tracer_1d',
@@ -154,6 +154,11 @@ benchmark['chemistry']={'index_entry' : 'chemistry/index.rst',
                             {'from_dir' : 'testing/benchmarking/chemistry/tritium_1d',
                              'dest_dir' : 'doc/user_guide/benchmarking/chemistry/tritium_1d',
                              'index_entry' : 'tritium_1d/amanzi_u-1d-tritium.rst'
+                             },
+                        'farea':
+                            {'from_dir' : 'testing/benchmarking/chemistry/farea_1d',
+                             'dest_dir' : 'doc/user_guide/benchmarking/chemistry/farea_1d',
+                             'index_entry' : 'farea_1d/amanzi_u-1d-farea.rst'
                              },
                         }
 

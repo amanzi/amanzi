@@ -4,8 +4,11 @@
 Overview
 --------
 
-This test example performs the simulation of a complex geochemical network in a simple 1D flow domain, combining reaction types described separately in :doc:`../1d-tritium/amanzi_u-1d-tritium`, :doc:`../1d-calcite/amanzi_u-1d-calcite`, :doc:`../1d-ion-exchange/amanzi_u-1d-ion-exchange`, and :doc:`../1d-surface-complexation/amanzi_u-1d-surface-complexation`
-. The reaction network is based on the Savannah River Site F-Area geochemstry. 
+This test example performs the simulation of a complex geochemical network in a simple 1D flow domain, combining reaction types described separately in :doc:`../tritium_1d/amanzi_u-1d-tritium`, :doc:`../calcite_1d/amanzi_u-1d-calcite`, and :doc:`../ion_exchange_1d/amanzi_u-1d-ion-exchange`. The reaction network is based on the Savannah River Site F-Area geochemistry. 
+
+..  comment out for now
+    , and :doc:`../surface_complexation_1d/amanzi_u-1d-surface-complexation`
+
 
 Capabilities tested
 ~~~~~~~~~~~~~~~~~~~
@@ -34,7 +37,7 @@ About
 * Location: amanzi/examples/examples/phase2/chemistry/1d-farea
 * Author: B. Andre, G. Hammond
 * Testing and Documentation: S. Molins, H.M. Wainright
-* Last tested on: Aug 31, 2013
+* Last tested on: November 1, 2013
 	
 Introduction
 ------------
@@ -51,12 +54,12 @@ Model
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 
 Geochemistry
 ~~~~~~~~~~~~
 
-The primary geochemical system consists of 13 reactive chemical components and 8 minerals [Bea2012]_. A detailed list of reactions and geochemical parameters is included in Table 1-6. Further detail can be found in [Freshley2012]_.
+The primary geochemical system consists of 13 reactive chemical components and 8 minerals [Bea2012]_. A detailed list of reactions and geochemical parameters is included in the table below. Further detail can be found in [Freshley2012]_.
 
 The geochemical processes include:
 
@@ -73,7 +76,7 @@ Problem Specification
 Flow and transport 
 ~~~~~~~~~~~~~~~~~~
 
-See the :doc:`../1d-tracer/amanzi_u-1d-tracer` example.
+See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 
 Geochemistry 
 ~~~~~~~~~~~~
@@ -92,7 +95,11 @@ These are the expected results.
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-Here go the figure and table.
+These are the simulation results.
+
+.. plot:: prototype/chemistry/farea_1d/farea_1d.py
+
+..   :align: left
 
 References
 ----------
