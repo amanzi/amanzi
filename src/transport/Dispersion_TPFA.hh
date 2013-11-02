@@ -37,7 +37,7 @@ class Dispersion_TPFA : public Dispersion {
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
   void SymbolicAssembleMatrix();
-  void AssembleMatrix(const Epetra_Vector& p);
+  void AssembleMatrix(const Epetra_MultiVector& p);
 };
 
 }  // namespace AmanziTransport

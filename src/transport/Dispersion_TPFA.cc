@@ -64,7 +64,7 @@ void Dispersion_TPFA::SymbolicAssembleMatrix()
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
 ****************************************************************** */
-void Dispersion_TPFA::AssembleMatrix(const Epetra_Vector& p)
+void Dispersion_TPFA::AssembleMatrix(const Epetra_MultiVector& p)
 {
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -73,6 +73,7 @@ void Dispersion_TPFA::AssembleMatrix(const Epetra_Vector& p)
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
   Teuchos::RCP<CompositeVector> T = CreateCompositeVector(mesh_, AmanziMesh::FACE, 1, true);
+  T->CreateData();
   Teuchos::RCP<Epetra_MultiVector> Ttmp = T->ViewComponent("face", true);
 
   for (int c = 0; c < ncells_owned; c++) {

@@ -86,7 +86,7 @@ void Dispersion_MFD::SymbolicAssembleMatrix()
 /* ******************************************************************
 * Calculate and assemble fluxes using the MFD method.
 ****************************************************************** */
-void Dispersion_MFD::AssembleMatrix(const Epetra_Vector& p)
+void Dispersion_MFD::AssembleMatrix(const Epetra_MultiVector& p)
 {
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 

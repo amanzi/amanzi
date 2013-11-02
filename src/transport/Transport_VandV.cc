@@ -279,6 +279,26 @@ double Transport_PK::TracerVolumeChangePerSecond(int idx_tracer)
 
 
 /* *******************************************************************
+* Error estimate uses analytic function and solution.
+* ***************************************************************** */
+void Transport_PK::CalculateLpErrors(
+    AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2)
+{
+  *L1 = *L2 = 0.0;
+  for (int c = 0; c < sol->MyLength(); c++) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double d = (*sol)[c] - f(xc, t);
+
+    double volume = mesh_->cell_volume(c);
+    *L1 += fabs(d) * volume;
+    *L2 += d * d * volume;
+  }
+
+  *L2 = sqrt(*L2);
+}
+
+
+/* *******************************************************************
  * Calculates best least square fit for data (h[i], error[i]).                       
  ****************************************************************** */
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
@@ -297,6 +317,7 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 
   return (a * b - n * d) / (a * a - n * c);
 }
+
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi

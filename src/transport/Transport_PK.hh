@@ -52,6 +52,7 @@ namespace Amanzi {
 namespace AmanziTransport {
 
 double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
+typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 class Transport_PK : public Explicit_TI::fnBase {
  public:
@@ -69,6 +70,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   void CommitState(Teuchos::RCP<State> S);
 
   // access members  
+  Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<Dispersion> dispersion_matrix() { return dispersion_matrix_; }
 
   double TimeStep() { return dT; }
@@ -91,10 +93,18 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
 
+  void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
+
   // sources and sinks
   void ComputeAddSourceTerms(double Tp, double dTp, 
                              Functions::TransportDomainFunction* src_sink, 
                              Epetra_MultiVector& tcc);
+
+  // limiters 
+  void LimiterBarthJespersen(const int component,
+                             Teuchos::RCP<const Epetra_Vector> scalar_field, 
+                             Teuchos::RCP<CompositeVector> gradient, 
+                             Teuchos::RCP<Epetra_Vector> limiter);
 
  private:
   // advection members
@@ -107,11 +117,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   // limiters 
-  void LimiterBarthJespersen(const int component,
-                             Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                             Teuchos::RCP<CompositeVector> gradient, 
-                             Teuchos::RCP<Epetra_Vector> limiter);
-
   void LimiterTensorial(const int component,
                         Teuchos::RCP<const Epetra_Vector> scalar_field, 
                         Teuchos::RCP<CompositeVector> gradient);

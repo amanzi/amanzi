@@ -59,7 +59,7 @@ class Dispersion_NLFV : public Dispersion {
 
   void SymbolicAssembleMatrix();
   void ModifySymbolicAssemble();
-  void AssembleMatrix(const Epetra_Vector& p);
+  void AssembleMatrix(const Epetra_MultiVector& p);
 
   // additional members
   void InitNLFV();  // additional initialization of nonlinear scheme

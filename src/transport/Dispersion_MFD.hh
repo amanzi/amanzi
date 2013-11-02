@@ -38,7 +38,7 @@ class Dispersion_MFD : public Dispersion {
   int ApplyInverse(const Epetra_Vector& v,  Epetra_Vector& hv) const;
 
   void SymbolicAssembleMatrix();
-  void AssembleMatrix(const Epetra_Vector& p);
+  void AssembleMatrix(const Epetra_MultiVector& p);
 
   // access (now only for unit tests)
   const Epetra_Map& super_map() { return *super_map_; }

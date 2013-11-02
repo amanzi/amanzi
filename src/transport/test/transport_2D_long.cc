@@ -23,7 +23,6 @@
 #include "Transport_PK.hh"
 
 
-/* **************************************************************** */
 TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -31,7 +30,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: 2D transport on a square mesh for long time" << endl;
+  cout << "Test: 2D transport on a square mesh for long time" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -60,7 +59,6 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
-  component_names.push_back("Component 1");
 
   RCP<State> S = rcp(new State());
   S->RegisterDomainMesh(mesh);
@@ -80,17 +78,16 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
     (*flux)[0][f] = velocity * normal;
   }
 
-  /* initialize a transport process kernel from a transport state */
+  /* initialize a transport process kernel */
   TPK.InitPK();
   TPK.PrintStatistics();
 
   /* advance the transport state */
-  int iter, k;
   double T = 0.0;
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
-  iter = 0;
+  int iter = 0;
   bool flag = true;
   while (T < 0.3) {
     double dT = TPK.CalculateTransportDt();

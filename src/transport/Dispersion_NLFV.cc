@@ -136,7 +136,7 @@ void Dispersion_NLFV::ModifySymbolicAssemble()
 * Calculate and assemble fluxes using the NLFV scheme. We avoid 
 * round-off operations since the stencils already incorporate them.
 ****************************************************************** */
-void Dispersion_NLFV::AssembleMatrix(const Epetra_Vector& p)
+void Dispersion_NLFV::AssembleMatrix(const Epetra_MultiVector& p)
 {
   AmanziMesh::Entity_ID_List cells;
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
