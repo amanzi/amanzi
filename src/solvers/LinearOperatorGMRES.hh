@@ -188,7 +188,9 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     s[i + 1] = 0.0;
 
     v[i + 1] = new Vector(w);
-    v[i + 1]->Update(0.0, r, 1.0 / tmp);
+    if (tmp != 0.0) {  // zero occurs in exact arithmetic
+      v[i + 1]->Update(0.0, r, 1.0 / tmp);
+    }
 
     for (int k = 0; k < i; k++) {
       ApplyGivensRotation_(T(k, i), T(k + 1, i), cs[k], sn[k]);

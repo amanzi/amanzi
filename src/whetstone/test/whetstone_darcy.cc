@@ -525,6 +525,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
   RCP<Mesh> mesh = factory("test/one_cell2.exo"); 
+  // RCP<Mesh> mesh = factory("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
