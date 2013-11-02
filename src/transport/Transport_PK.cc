@@ -80,33 +80,6 @@ Transport_PK::~Transport_PK()
 }
 
 
-/* ****************************************************************
-* Complete initialization of transport.
-**************************************************************** */
-void Transport_PK::Initialize() 
-{
-  Teuchos::RCP<Field> field;
-
-  field = S_->GetField("darcy_flux", name_);
-  if (!field->initialized()) {
-    S_->GetFieldData("darcy_flux", name_)->PutScalar(0.0);
-    field->set_initialized();
-  }
-
-  field = S_->GetField("water_saturation", name_);
-  if (!field->initialized()) {
-    S_->GetFieldData("water_saturation", name_)->PutScalar(1.0);
-    field->set_initialized();
-  }
-
-  field = S_->GetField("prev_water_saturation", name_);
-  if (!S_->GetField("prev_water_saturation",name_)->initialized()) {
-    S_->GetFieldData("prev_water_saturation", name_)->PutScalar(1.0);
-    field->set_initialized();
-  }
-}
- 
-
 /* ******************************************************************
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
@@ -182,25 +155,20 @@ int Transport_PK::InitPK()
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
 
-  // create dummy component names
-  for (int i = 0; i < component_names_.size(); ++i) {
-    component_numbers_[component_names_[i]] = i;
-  }  
-
   return 0;
 }
 
 
 /* *******************************************************************
- * Estimation of the time step based on T.Barth (Lecture Notes   
- * presented at VKI Lecture Series 1994-05, Theorem 4.2.2.       
- * Routine must be called every time we update a flow field.
- *
- * Warning: Barth calculates influx, we calculate outflux. The methods
- * are equivalent for divergence-free flows and gurantee EMP. Outflux 
- * takes into account sinks and sources but preserves only positivity
- * of an advected mass.
- ****************************************************************** */
+* Estimation of the time step based on T.Barth (Lecture Notes   
+* presented at VKI Lecture Series 1994-05, Theorem 4.2.2.       
+* Routine must be called every time we update a flow field.
+*
+* Warning: Barth calculates influx, we calculate outflux. The methods
+* are equivalent for divergence-free flows and gurantee EMP. Outflux 
+* takes into account sinks and sources but preserves only positivity
+* of an advected mass.
+* ***************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
   // loop over faces and accumulate upwinding fluxes
@@ -460,9 +428,7 @@ void Transport_PK::CommitState(Teuchos::RCP<State> S)
 {
   Teuchos::RCP<CompositeVector> cv;
   cv = S->GetFieldData("total_component_concentration", name_);
-
   *cv = *tcc_tmp;
-  tcc_tmp = Teuchos::null;
 }
 
 
@@ -578,7 +544,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
     current_component_ = i;  // needed by BJ 
 
     double T = T_physics;
-    Epetra_Vector*& component = (*tcc_next)(i);
+    Epetra_Vector*& component = (*tcc)(i);
     fun(T, *component, f_component);
 
     double ws_ratio;
@@ -623,7 +589,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
     current_component_ = i;  // needed by BJ 
 
     double T = T_physics;
-    Epetra_Vector*& component = (*tcc_next)(i);
+    Epetra_Vector*& component = (*tcc)(i);
     fun(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {

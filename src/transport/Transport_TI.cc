@@ -23,8 +23,7 @@ namespace AmanziTransport {
 void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
   // transport routines need an RCP pointer
-  Epetra_Vector* component_tmp = const_cast<Epetra_Vector*> (&component);
-  const Teuchos::RCP<Epetra_Vector> component_rcp(component_tmp, false);
+  Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
   lifting.ResetField(mesh_, component_rcp);
   lifting.CalculateCellGradient();
@@ -32,7 +31,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
 
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
-    lifting.applyLimiter(limiter_);
+    lifting.ApplyLimiter(limiter_);
   } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
     LimiterTensorial(current_component_, component_rcp, gradient);
   } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {

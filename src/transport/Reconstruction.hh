@@ -33,7 +33,7 @@ const double RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
 
 class Reconstruction {  
  public:
-  Reconstruction() { status = RECONSTRUCTION_NULL; }
+  Reconstruction() {};
   Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, 
                  Teuchos::RCP<Epetra_Vector> scalar_field) :
     mesh_(mesh), scalar_field_(scalar_field) {}
@@ -42,14 +42,13 @@ class Reconstruction {
 
   void Init();
   void ResetField(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                  Teuchos::RCP<Epetra_Vector> scalar_field) { 
+                  Teuchos::RCP<const Epetra_Vector> scalar_field) { 
     mesh_ = mesh;
     scalar_field_ = scalar_field;
-    if (status == RECONSTRUCTION_NULL) Init();
   }
 
   void CalculateCellGradient();
-  void applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter);
+  void ApplyLimiter(Teuchos::RCP<Epetra_Vector>& limiter);
  
   // access
   double getValue(const int cell, const AmanziGeometry::Point& p);
@@ -58,26 +57,25 @@ class Reconstruction {
   Teuchos::RCP<CompositeVector> gradient() { return gradient_; }
 
  private:
-  void populateLeastSquareSystem(AmanziGeometry::Point& centroid, 
+  void PopulateLeastSquareSystem(AmanziGeometry::Point& centroid, 
                                  double field_value, 
                                  Teuchos::SerialDenseMatrix<int, double>& matrix, 
                                  double* rhs);
-  double calculateMatrixNorm(Teuchos::SerialDenseMatrix<int, double>& matrix);
-  double calculateMatrixDeterminant(Teuchos::SerialDenseMatrix<int, double>& matrix);
-  int findMinimalDiagonalEntry(Teuchos::SerialDenseMatrix<int, double>& matrix);
-  void printLeastSquareSystem(Teuchos::SerialDenseMatrix<int, double>matrix, double* rhs);
+  double CalculateMatrixNorm(Teuchos::SerialDenseMatrix<int, double>& matrix);
+  double CalculateMatrixDeterminant(Teuchos::SerialDenseMatrix<int, double>& matrix);
+  int FindMinimalDiagonalEntry(Teuchos::SerialDenseMatrix<int, double>& matrix);
+  void PrintLeastSquareSystem(Teuchos::SerialDenseMatrix<int, double>matrix, double* rhs);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  Teuchos::RCP<Epetra_Vector> scalar_field_;  // scalar cell-centered field
+  Teuchos::RCP<const Epetra_Vector> scalar_field_;  // scalar cell-centered field
   Teuchos::RCP<CompositeVector> gradient_;
 
   int cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
 
   Teuchos::SerialDenseMatrix<int, double> matrix;
-
-  int status, dim;
+  int dim;
 };
 
 }  // namespace AmanziTransport

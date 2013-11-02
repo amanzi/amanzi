@@ -22,7 +22,7 @@ namespace AmanziTransport {
  * calculation of a 3x3 matrix.
  ****************************************************************** */
 void Transport_PK::LimiterTensorial(const int component,
-                                    Teuchos::RCP<Epetra_Vector> scalar_field,
+                                    Teuchos::RCP<const Epetra_Vector> scalar_field,
                                     Teuchos::RCP<CompositeVector> gradient)
 {
   double u1, u2, u1f, u2f, umin, umax, L22normal_new;
@@ -192,7 +192,7 @@ void Transport_PK::LimiterTensorial(const int component,
  * time step estimate.
  ****************************************************************** */
 void Transport_PK::LimiterBarthJespersen(const int component, 
-                                         Teuchos::RCP<Epetra_Vector> scalar_field,
+                                         Teuchos::RCP<const Epetra_Vector> scalar_field,
                                          Teuchos::RCP<CompositeVector> gradient,
                                          Teuchos::RCP<Epetra_Vector> limiter)
 {
@@ -340,7 +340,7 @@ void Transport_PK::LimiterBarthJespersen(const int component,
  * Kuzmin's limiter use all neighbors of a computational cell.  
  ****************************************************************** */
 void Transport_PK::LimiterKuzmin(const int component,
-                                 Teuchos::RCP<Epetra_Vector> scalar_field,
+                                 Teuchos::RCP<const Epetra_Vector> scalar_field,
                                  Teuchos::RCP<CompositeVector> gradient)
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient->ViewComponent("cell", false);

@@ -141,14 +141,11 @@ void Transport_PK::ProcessParameterList()
 **************************************************************** */
 int Transport_PK::FindComponentNumber(const std::string component_name)
 {
-  std::map<std::string, int>::const_iterator 
-      lb = component_numbers_.lower_bound(component_name);
-  if (lb != component_numbers_.end() && 
-      !(component_numbers_.key_comp()(component_name, lb->first))) {
-    return lb->second;
-  } else {
-    return -1;
-  }
+  int ncomponents = component_names_.size();
+  for (int i = 0; i < ncomponents; i++) {
+    if (component_names_[i] == component_name) return i;
+  } 
+  return -1;
 }
 
 

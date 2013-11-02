@@ -45,17 +45,8 @@ void Transport_PK::CreateDefaultState(
       ->SetComponent("face", AmanziMesh::FACE, 1);
   
   std::vector<std::vector<std::string> > subfield_names(1);
-  if (component_names_.size() == ncomponents) {
-    for (std::vector<std::string>::const_iterator compname = component_names_.begin();
-      compname != component_names_.end(); ++compname) {    
-      subfield_names[0].push_back(*compname + std::string(" conc"));
-    }
-  } else {
-    for (int icn = 0; icn != ncomponents; ++icn) {
-      std::stringstream ss;
-      ss << "Component " << icn; 
-      subfield_names[0].push_back(ss.str());
-    }
+  for (int i = 0; i != ncomponents; ++i) {
+    subfield_names[0].push_back(component_names_[i]);
   }
   S_->RequireField("total_component_concentration", name, subfield_names)->SetMesh(mesh_)
       ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);

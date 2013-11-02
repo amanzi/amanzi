@@ -62,7 +62,6 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   // primary members
   int InitPK();
-  void Initialize();  // support of the state
 
   double EstimateTransportDt();
   double CalculateTransportDt();
@@ -92,12 +91,6 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
 
-  // limiters
-  void LimiterBarthJespersen(const int component,
-                             Teuchos::RCP<Epetra_Vector> scalar_field, 
-                             Teuchos::RCP<CompositeVector> gradient, 
-                             Teuchos::RCP<Epetra_Vector> limiter);
-
   // sources and sinks
   void ComputeAddSourceTerms(double Tp, double dTp, 
                              Functions::TransportDomainFunction* src_sink, 
@@ -114,12 +107,17 @@ class Transport_PK : public Explicit_TI::fnBase {
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   // limiters 
+  void LimiterBarthJespersen(const int component,
+                             Teuchos::RCP<const Epetra_Vector> scalar_field, 
+                             Teuchos::RCP<CompositeVector> gradient, 
+                             Teuchos::RCP<Epetra_Vector> limiter);
+
   void LimiterTensorial(const int component,
-                        Teuchos::RCP<Epetra_Vector> scalar_field, 
+                        Teuchos::RCP<const Epetra_Vector> scalar_field, 
                         Teuchos::RCP<CompositeVector> gradient);
 
   void LimiterKuzmin(const int component,
-                     Teuchos::RCP<Epetra_Vector> scalar_field, 
+                     Teuchos::RCP<const Epetra_Vector> scalar_field, 
                      Teuchos::RCP<CompositeVector> gradient);
 
   void CalculateDescentDirection(std::vector<AmanziGeometry::Point>& normals,
@@ -216,7 +214,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   int nfaces_owned, nfaces_wghost;
   int nnodes_wghost;
  
-  std::map<std::string, int> component_numbers_;
   std::vector<std::string> component_names_;
 };
 

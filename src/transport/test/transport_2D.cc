@@ -62,10 +62,10 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   std::vector<std::string> component_names;
-  component_names.push_back("component0");
-  component_names.push_back("component1");
+  component_names.push_back("Component 0");
+  component_names.push_back("Component 1");
 
-  std::string name("state"); 
+  std::string passwd("state"); 
   RCP<State> S = rcp(new State());
   S->RegisterDomainMesh(mesh);
 
@@ -73,7 +73,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   TPK.CreateDefaultState(mesh, 2);
 
   Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", name)->ViewComponent("face", false);
+      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 1.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -90,7 +90,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   int iter, k;
   double T = 0.0;
   Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", name)->ViewComponent("cell", false);
+      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
   iter = 0;
   while (T < 1.0) {
@@ -112,8 +112,8 @@ cout << "Test: Advance on a 2D square mesh" << endl;
     if (iter == 15) {
       GMV::open_data_file(*mesh, (std::string)"transport.gmv");
       GMV::start_data();
-      GMV::write_cell_data(*tcc, 0, "component0");
-      GMV::write_cell_data(*tcc, 1, "component1");
+      GMV::write_cell_data(*tcc, 0, "Component_0");
+      GMV::write_cell_data(*tcc, 1, "Component_1");
       GMV::close_data_file();
     }
   }
