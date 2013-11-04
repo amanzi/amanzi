@@ -147,7 +147,6 @@ void MPC::mpc_init() {
   }
 
   S->CheckInitialized();
- 
 
   if (transport_enabled) {
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);

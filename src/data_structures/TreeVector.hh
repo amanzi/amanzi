@@ -29,7 +29,10 @@ assumed in several places.
 #include "Epetra_Vector.h"
 
 #include "data_structures_types.hh"
-#include "composite_vector.hh"
+
+#include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
+#include "TreeVectorSpace.hh"
 
 namespace Amanzi {
 
@@ -38,44 +41,26 @@ class TreeVector {
  public:
   // -- Constructors --
 
-  // Basic constructor of an empty TreeVector
+  // Basic constructors of a TreeVector
   TreeVector();
+  explicit TreeVector(const TreeVectorSpace& space);
 
-  // Basic constructor of an empty TreeVector with a name.
-  explicit TreeVector(std::string name);
-
-  // Copy constructor.
-  //
-  // Available modes are:
-  //  CONSTRUCT_WITH_NEW_DATA : creates the vector with new uninitialized data
-  //  CONSTRUCT_WITH_OLD_DATA : creates a new vector shell with pointers to
-  //                            the same old data
-  TreeVector(const TreeVector& other,
-             ConstructMode mode=CONSTRUCT_WITH_NEW_DATA);
-
-  // Copy constructor with a new name.
-  //
-  // Available modes are:
-  //  CONSTRUCT_WITH_NEW_DATA : creates the vector with new uninitialized data
-  //  CONSTRUCT_WITH_OLD_DATA : creates a new vector shell with pointers to
-  //                            the same old data
-  TreeVector(std::string name, const TreeVector& other,
-             ConstructMode mode=CONSTRUCT_WITH_NEW_DATA);
+  // copy constructors
+  TreeVector(const TreeVector& other);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
 
   // -- Accessors --
 
-  // name accessor
-  std::string name() { return name_; }
-
   // Access to ANY communicator (this may be ill-posed!)
   const Epetra_MpiComm& Comm() {
     if (data_ != Teuchos::null) return data_->Comm();
     if (subvecs_.size() > 0) return subvecs_[0]->Comm();
-    ASSERT(0);
   }
+
+  // Access to the space.
+  const TreeVectorSpace& Map() const { return *map_; }
 
   // Access to SubVectors
   std::vector< Teuchos::RCP<TreeVector> > SubVectors() { return subvecs_; }
@@ -84,12 +69,6 @@ class TreeVector {
   const std::vector< Teuchos::RCP<TreeVector> > SubVectors() const {
     return subvecs_; }
 
-  // Access to a sub-vector by name.
-  Teuchos::RCP<TreeVector> SubVector(std::string subname);
-
-  // Const access to a sub-vector by name.
-  Teuchos::RCP<const TreeVector> SubVector(std::string subname) const;
-
   // Access to the sub-vector by index
   Teuchos::RCP<TreeVector> SubVector(int index);
 
@@ -97,24 +76,18 @@ class TreeVector {
   Teuchos::RCP<const TreeVector> SubVector(int index) const;
 
   // Access to the data CompositeVector.
-  Teuchos::RCP<CompositeVector> data() { return data_; }
+  Teuchos::RCP<CompositeVector> Data() { return data_; }
 
   // Const access to the data CompositeVector.
-  Teuchos::RCP<const CompositeVector> data() const { return data_; }
+  Teuchos::RCP<const CompositeVector> Data() const { return data_; }
 
-  // -- Mutators --
-
-  // name mutator
-  void set_name(std::string name) { name_ = name; }
 
   // Add a sub-vector as a child of this node.
   void PushBack(const Teuchos::RCP<TreeVector>& subvec);
 
   // Set data by pointer
-  void set_data(const Teuchos::RCP<CompositeVector>& data) { data_ = data; }
+  void SetData(const Teuchos::RCP<CompositeVector>& data);
 
-  // Set data by copy
-  void set_data(const CompositeVector& data) { *data_ = data; }
 
   // -- Assorted vector operations, this implements a Vec --
 
@@ -149,12 +122,17 @@ class TreeVector {
   // non-inherited extras
   void Print(ostream &os) const;
 
+ private:
+  // Init's version of PushBack, which does not add to the space.
+  void InitPushBack_(const Teuchos::RCP<TreeVector>& subvec);
+  void Init_();
 
-  private:
-    std::string name_;
-    Teuchos::RCP<CompositeVector> data_;
-    std::vector< Teuchos::RCP<TreeVector> > subvecs_;
-  };
+ private:
+  Teuchos::RCP<TreeVectorSpace> map_;
+
+  Teuchos::RCP<CompositeVector> data_;
+  std::vector< Teuchos::RCP<TreeVector> > subvecs_;
+};
 
 } // namespace
 

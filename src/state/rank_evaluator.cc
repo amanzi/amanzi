@@ -102,10 +102,11 @@ bool RankEvaluator::ProvidesKey(Key key) const { return key == my_key_; }
 void RankEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
   // NOTE: RankEvaluator owns its own data.
   Teuchos::RCP<CompositeVector> rank = S->GetFieldData(my_key_, my_key_);
+  Epetra_MultiVector& rank_c = *rank->ViewComponent("cell",false);
 
   // initialize from mesh
-  for (int c=0; c!=rank->size("cell"); ++c) {
-    (*rank)("cell",0,c) = rank->mesh()->get_comm()->MyPID();
+  for (int c=0; c!=rank_c.MyLength(); ++c) {
+    rank_c[0][c] = rank->Comm().MyPID();
   }
 }
 
