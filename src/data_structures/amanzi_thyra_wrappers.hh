@@ -18,8 +18,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Thyra_VectorBase.hpp"
 
-#include "composite_vector.hh"
-#include "tree_vector.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
 
 namespace Amanzi {
 namespace ThyraWrappers {

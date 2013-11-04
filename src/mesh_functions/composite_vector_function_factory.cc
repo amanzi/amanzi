@@ -19,10 +19,10 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVector& sample) {
+        const CompositeVectorSpace& sample) {
 
   Teuchos::RCP<MeshFunction> mesh_func =
-    Teuchos::rcp(new MeshFunction(sample.mesh()));
+    Teuchos::rcp(new MeshFunction(sample.Mesh()));
   std::vector<std::string> componentname_list;
 
   // top level plist contains sublists containing the entry
@@ -91,11 +91,11 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
            component!=components.end(); ++component) {
 
         // get the entity kind based upon the sample vector
-        if (!sample.has_component(*component)) {
+        if (!sample.HasComponent(*component)) {
           // ERROR -- invalid component name
           ASSERT(0);
         }
-        AmanziMesh::Entity_kind kind = sample.location(*component);
+        AmanziMesh::Entity_kind kind = sample.Location(*component);
 
         // -- Create the domain,
         Teuchos::RCP<MeshFunction::Domain> domain =
@@ -117,14 +117,6 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   // create the function
   return Teuchos::rcp(new CompositeVectorFunction(mesh_func,
           componentname_list));
-};
-
-
-Teuchos::RCP<CompositeVectorFunction>
-CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorFactory& factory) {
-  Teuchos::RCP<CompositeVector> sample = factory.CreateVector(true);
-  return CreateCompositeVectorFunction(plist, *sample);
 };
 
 } // namespace
