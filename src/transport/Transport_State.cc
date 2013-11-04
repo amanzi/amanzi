@@ -76,7 +76,8 @@ Transport_State::Transport_State(Transport_State& other,
 
     CompositeVectorSpace fac_tcc;
     fac_tcc.SetMesh(mesh_);
-    fac_tcc.SetComponent("cell", AmanziMesh::CELL, other.total_component_concentration()->NumVectors()   );
+    fac_tcc.SetGhosted(true);
+    fac_tcc.SetComponent("cell", AmanziMesh::CELL, other.total_component_concentration()->NumVectors());
 
     Teuchos::RCP<CompositeVector> tcc = Teuchos::rcp(new CompositeVector(fac_tcc));
     *tcc->ViewComponent("cell",false) = *other.total_component_concentration();
@@ -94,6 +95,7 @@ Transport_State::Transport_State(Transport_State& other,
 
     CompositeVectorSpace fac;
     fac.SetMesh(mesh_);
+    fac.SetGhosted(true);
     fac.SetComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(fac));

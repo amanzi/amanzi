@@ -320,25 +320,4 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
 };
 
 
-Teuchos::RCP<CompositeVector>
-CreateCompositeVector(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                      AmanziMesh::Entity_kind entity, int ndofs, bool ghosted)
-{
-  CompositeVectorFactory fac;
-  std::string name;
-  if (entity == AmanziMesh::CELL) {
-    name = "cell";
-  } else if (entity == AmanziMesh::FACE) {
-    name = "face";
-  } else if (entity == AmanziMesh::NODE) {
-    name = "node";
-  } else if (entity == AmanziMesh::BOUNDARY_FACE) {
-    name = "boundary_face";
-  } else {
-    ASSERT(0);
-  }
-  fac.SetMesh(mesh)->SetComponent(name, entity, ndofs);
-  return fac.CreateVector(ghosted);
-};
-
 } // namespace Amanzi
