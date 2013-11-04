@@ -19,7 +19,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "block_vector.hh"
+#include "BlockVector.hh"
 
 namespace Amanzi {
 
@@ -38,12 +38,6 @@ BlockVector::BlockVector(const Epetra_MpiComm& comm,
   // Check consistency of input args.
   ASSERT(names_.size() == num_components_);
   ASSERT(num_dofs_.size() == num_components_);
-  for (int i=0; i!=num_components_; ++i) {
-    if (num_dofs_[i] < 1) {
-      Errors::Message message("Attempted creation of CompositeVector with num_dofs < 1");
-      Exceptions::amanzi_throw(message);
-    }
-  }
 
   data_.resize(num_components_);
 
@@ -134,23 +128,23 @@ void BlockVector::CreateData() {
 // I would prefer these be private, but for now...
 Teuchos::RCP<const Epetra_MultiVector>
 BlockVector::ViewComponent(std::string name) const {
-  return data_[index_(name)];
+  return data_[Index_(name)];
 };
 
 
 // View data, non-const version.
 Teuchos::RCP<Epetra_MultiVector>
 BlockVector::ViewComponent(std::string name) {
-  return data_[index_(name)];
+  return data_[Index_(name)];
 };
 
 
 // Set data
 void BlockVector::SetComponent(std::string name,
         const Teuchos::RCP<Epetra_MultiVector>& data) {
-  ASSERT(map(name)->SameAs(data->Map()));
-  ASSERT(num_dofs(name) == data->NumVectors());
-  data_[index_(name)] = data;
+  ASSERT(ComponentMap(name)->SameAs(data->Map()));
+  ASSERT(NumVectors(name) == data->NumVectors());
+  data_[Index_(name)] = data;
 }
 
 // Vector operations.
@@ -180,13 +174,13 @@ int BlockVector::PutScalar(std::vector<double> scalar) {
 
 // -- Insert value into component [name].
 int BlockVector::PutScalar(std::string name, double scalar) {
-  return data_[index_(name)]->PutScalar(scalar);
+  return data_[Index_(name)]->PutScalar(scalar);
 };
 
 
 // -- Insert values into data of component [name].
 int BlockVector::PutScalar(std::string name, std::vector<double> scalar) {
-  int i = index_(name);
+  int i = Index_(name);
   ASSERT(scalar.size() == num_dofs_[i]);
 
   for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
@@ -209,7 +203,7 @@ int BlockVector::Scale(double value) {
 
 // Scale() applied to component name.
 int BlockVector::Scale(std::string name, double value) {
-  return data_[index_(name)]->Scale(value);
+  return data_[Index_(name)]->Scale(value);
 };
 
 
@@ -228,7 +222,7 @@ int BlockVector::Shift(double scalarA) {
 
 // Shift() applied to component name.
 int BlockVector::Shift(std::string name, double scalarA) {
-  int i = index_(name);
+  int i = Index_(name);
   for (int j=0; j!=num_dofs_[i]; ++j) {
     for (int k=0; k!=sizes_[i]; ++k) {
       operator()(names_[i], j, k) += scalarA;

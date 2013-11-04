@@ -13,48 +13,45 @@
    ------------------------------------------------------------------------- */
 
 #include "dbc.hh"
-#include "tree_vector.hh"
+#include "TreeVector.hh"
+
 
 namespace Amanzi {
 
-// Basic constructor of an empty TreeVector
-TreeVector::TreeVector() {};
-TreeVector::TreeVector(std::string name) : name_(name) {};
+// Basic constructors
+TreeVector::TreeVector() :
+    map_(Teuchos::rcp(new TreeVectorSpace()))
+{}
 
-TreeVector::TreeVector(std::string name,
-                       const TreeVector& other,
-                       ConstructMode mode) :
-    name_(name) {
-  if (other.data_ != Teuchos::null) {
-    data_ = Teuchos::rcp(new CompositeVector(*other.data_, mode));
+TreeVector::TreeVector(const TreeVectorSpace& space)
+{
+  map_ = Teuchos::rcp(new TreeVectorSpace(space));
+  Init_();
+}
+
+TreeVector::TreeVector(const TreeVector& other)
+{
+  map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
+  Init_();
+}
+
+
+void TreeVector::Init_() {
+  if (map_->Data() != Teuchos::null) {
+    data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
   }
 
-  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator other_subvec =
-         other.subvecs_.begin(); other_subvec != other.subvecs_.end(); ++other_subvec) {
-    Teuchos::RCP<Amanzi::TreeVector> new_subvec
-      = Teuchos::rcp(new TreeVector((*other_subvec)->name_, **other_subvec, mode));
-    subvecs_.push_back(new_subvec);
+  for (int i=0; i!=map_->SubVectors().size(); ++i) {
+    InitPushBack_(Teuchos::rcp(new TreeVector(*map_->SubVectors()[i])));
   }
-};
+}
 
-TreeVector::TreeVector(const TreeVector& other, ConstructMode mode) :
-    name_(std::string("")) {
-  if (other.data_ != Teuchos::null) {
-    data_ = Teuchos::rcp(new CompositeVector(*other.data_, mode));
-  }
-
-  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator other_subvec =
-         other.subvecs_.begin(); other_subvec != other.subvecs_.end(); ++other_subvec) {
-    Teuchos::RCP<Amanzi::TreeVector> new_subvec
-      = Teuchos::rcp(new TreeVector((*other_subvec)->name_, **other_subvec, mode));
-    subvecs_.push_back(new_subvec);
-  }
-};
 
 TreeVector& TreeVector::operator=(const TreeVector &other) {
   if (&other != this) {
-    // Copy values at this node and all child nodes.
-    ASSERT(subvecs_.size() == other.subvecs_.size());
+    // Ensure the maps match.
+    bool same = map_->SameAs(*other.map_);
+    ASSERT(same);
 
     if (other.data_ != Teuchos::null) {
       *data_ = *other.data_;
@@ -157,8 +154,6 @@ int TreeVector::Norm2(double* n2) const {
 
 void TreeVector::Print(ostream &os) const {
   // Print data to ostream for this node and all children.
-  os << name_ << std::endl;
-
   if (data_ != Teuchos::null) data_->Print(os);
 
   for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
@@ -204,7 +199,7 @@ int TreeVector::Dot(const TreeVector& other, double* result) const {
   // viewed as one flat vector
   if (result == NULL) return 1;
   if (data_ == Teuchos::null && subvecs_.size() == 0) return 1;
-  ASSERT(subvecs_.size() == other.subvecs_.size());
+  if (!map_->SameAs(*other.map_)) return 1;
 
   int ierr = 0;
   *result = 0.0;
@@ -224,7 +219,7 @@ int TreeVector::Dot(const TreeVector& other, double* result) const {
 
 // this <- scalarA*A + scalarThis*this
 TreeVector& TreeVector::Update(double scalarA, const TreeVector& A, double scalarThis) {
-  ASSERT(subvecs_.size() == A.subvecs_.size());
+  ASSERT(map_->SameAs(*A.map_));
 
   if (data_ != Teuchos::null) {
     data_->Update(scalarA, *A.data_, scalarThis);
@@ -237,8 +232,8 @@ TreeVector& TreeVector::Update(double scalarA, const TreeVector& A, double scala
 
 TreeVector& TreeVector::Update(double scalarA, const TreeVector& A,
         double scalarB, const TreeVector& B, double scalarThis) {
-  ASSERT(subvecs_.size() == A.subvecs_.size());
-  ASSERT(subvecs_.size() == B.subvecs_.size());
+  ASSERT(map_->SameAs(*A.map_));
+  ASSERT(map_->SameAs(*B.map_));
 
   if (data_ != Teuchos::null) {
     data_->Update(scalarA, *A.data_, scalarB, *B.data_, scalarThis);
@@ -251,8 +246,8 @@ TreeVector& TreeVector::Update(double scalarA, const TreeVector& A,
 
 int TreeVector::Multiply(double scalarAB, const TreeVector& A, const TreeVector& B,
                          double scalarThis) {
-  ASSERT(subvecs_.size() == A.subvecs_.size());
-  ASSERT(subvecs_.size() == B.subvecs_.size());
+  ASSERT(map_->SameAs(*A.map_));
+  ASSERT(map_->SameAs(*B.map_));
 
   int ierr = 0;
   if (data_ != Teuchos::null) {
@@ -265,28 +260,6 @@ int TreeVector::Multiply(double scalarAB, const TreeVector& A, const TreeVector&
     if (ierr) return ierr;
   }
   return ierr;
-};
-
-Teuchos::RCP<TreeVector> TreeVector::SubVector(std::string subname) {
-  // Get a pointer to the sub-vector "subname".
-  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end(); ++subvec) {
-    if (subname == (*subvec)->name()) {
-      return *subvec;
-    }
-  }
-  return Teuchos::null;
-};
-
-Teuchos::RCP<const TreeVector> TreeVector::SubVector(std::string subname) const {
-  // Get a pointer to the sub-vector "subname".
-  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end(); ++subvec) {
-    if (subname == (*subvec)->name()) {
-      return *subvec;
-    }
-  }
-  return Teuchos::null;
 };
 
 Teuchos::RCP<TreeVector> TreeVector::SubVector(int index) {
@@ -306,7 +279,20 @@ Teuchos::RCP<const TreeVector> TreeVector::SubVector(int index) const {
 };
 
 void TreeVector::PushBack(const Teuchos::RCP<TreeVector>& subvec) {
+  map_->PushBack(subvec->map_);
+  InitPushBack_(subvec);
+};
+
+void TreeVector::InitPushBack_(const Teuchos::RCP<TreeVector>& subvec) {
   subvecs_.push_back(subvec);
+};
+
+
+void TreeVector::SetData(const Teuchos::RCP<CompositeVector>& data) {
+  data_ = data;
+  if (map_->Data() == Teuchos::null || !map_->Data()->SameAs(data->Map())) {
+    map_->SetData(Teuchos::rcp(new CompositeVectorSpace(data->Map())));
+  }
 };
 
 } // namespace
