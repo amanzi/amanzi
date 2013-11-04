@@ -88,6 +88,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*tcc)[0][c] = f_step(xc, 0.0);
+    (*tcc)[1][c] = f_step(xc, 0.0);
   }
 
   /* initialize a transport process kernel */

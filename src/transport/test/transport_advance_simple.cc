@@ -55,7 +55,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 1, 1, gm); 
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");

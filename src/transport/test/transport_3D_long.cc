@@ -58,7 +58,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   //audit.Verify();   
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");

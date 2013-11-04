@@ -92,7 +92,7 @@ SUITE(DISPERSION_MATRIX) {
         (*darcy_flux)[0][f] = velocity * normal;
       }
 
-      S->GetFieldData("porosity", passwd)->PutScalar(1.0);
+      S->GetFieldData("porosity", passwd)->PutScalar(0.5);
 
       /* initialize a transport process kernel */
       TPK->InitPK();

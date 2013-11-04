@@ -52,7 +52,7 @@ TEST(ADVANCE_WITH_STK) {
   RCP<const Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
   
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");

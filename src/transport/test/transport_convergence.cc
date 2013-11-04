@@ -64,7 +64,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2, gm);
 
     /* create a simple state and populate it */
-    Amanzi::VerboseObject::hide_line_prefix = true;
+    Amanzi::VerboseObject::hide_line_prefix = false;
     Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
     std::vector<std::string> component_names;
@@ -173,7 +173,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
 
     /* create a simple state and populate it */
-    Amanzi::VerboseObject::hide_line_prefix = true;
+    Amanzi::VerboseObject::hide_line_prefix = false;
     Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
     std::vector<std::string> component_names;

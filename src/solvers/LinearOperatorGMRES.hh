@@ -187,9 +187,6 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
 
-    v[i + 1] = new Vector(w);
-    v[i + 1]->Update(0.0, r, 1.0 / tmp);
-
     for (int k = 0; k < i; k++) {
       ApplyGivensRotation_(T(k, i), T(k + 1, i), cs[k], sn[k]);
     }
@@ -221,6 +218,13 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
       if (residual_ < tol) {
         ComputeSolution_(x, i, T, s, v);  // vector s is overwritten
         return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      }
+    }
+
+    if (i < krylov_dim_ - 1) {
+      v[i + 1] = new Vector(w);
+      if (tmp != 0.0) {  // zero occurs in exact arithmetic
+        v[i + 1]->Update(0.0, r, 1.0 / tmp);
       }
     }
   }

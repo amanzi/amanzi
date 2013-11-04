@@ -55,7 +55,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   RCP<const Mesh> mesh = meshfactory("test/rect2D_50x50_ss.exo", gm);
   
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::hide_line_prefix = false;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");

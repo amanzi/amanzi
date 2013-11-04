@@ -15,7 +15,6 @@
 #include "Flow_State.hh"
 #include "Darcy_PK.hh"
 #include "Richards_PK.hh"
-#include "Transport_State.hh"
 #include "Transport_PK.hh"
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
@@ -106,17 +105,6 @@ void MPC::mpc_init() {
     CS = Teuchos::rcp( new AmanziChemistry::Chemistry_State( chemistry_parameter_list, S ) );
   }
       
-  // transport...
-  if (transport_enabled) {
-    if (mpc_parameter_list.isParameter("component names")) {
-      Teuchos::Array<std::string> comp_names;
-      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
-      TS = Teuchos::rcp(new AmanziTransport::Transport_State(S, comp_names.toVector() ));
-    } else {
-      
-    }
-  }
-
   // transport and chemistry...
   chem_trans_dt_ratio = CHEM_TRANS_DT_RATIO;
   if (transport_enabled && chemistry_enabled) {
@@ -139,9 +127,6 @@ void MPC::mpc_init() {
   if (chemistry_enabled) {
     CS->Initialize();
   }
-  if (transport_enabled) {
-    TS->Initialize();
-  }
   if (flow_enabled) {
     FS->Initialize();
   }
@@ -152,7 +137,16 @@ void MPC::mpc_init() {
   if (transport_enabled) {
     bool subcycling = parameter_list.sublist("MPC").get<bool>("transport subcycling", false);
     transport_subcycling = (subcycling) ? 1 : 0;
-    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, TS));
+
+    Teuchos::Array<std::string> comp_names;
+    if (mpc_parameter_list.isParameter("component names")) {
+      comp_names = mpc_parameter_list.get<Teuchos::Array<std::string> >("component names");
+    }
+    std::vector<std::string> names;
+    for (int i = 0; i < comp_names.length(); i++) {
+      names.push_back(comp_names[i]);
+    }
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(parameter_list, S, names));
     TPK->InitPK();
   }
     
@@ -770,14 +764,7 @@ void MPC::cycle_driver() {
               if (transport_enabled) {
                 Amanzi::timer_manager.start("Transport PK");
                 TPK->Advance(tc_dT);
-                if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
-                  // get the transport state and commit it to the state
-                  Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->transport_state_next();
-                  *total_component_concentration_star = *TS_next->total_component_concentration();
-                } else {
-                  Errors::Message message("MPC: error... Transport_PK.advance returned an error status");
-                  Exceptions::amanzi_throw(message);
-                }
+                TPK->CommitState(S);
                 Amanzi::timer_manager.stop("Transport PK");
               } else if (chemistry_enabled ) { // if we're not advancing transport we still need to prepare for chemistry
 		*total_component_concentration_star = *S->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
@@ -808,9 +795,6 @@ void MPC::cycle_driver() {
               // all went well, so we can advance intermediate time, and call commit state
               // for each pk
               S->set_intermediate_time(S->intermediate_time() + tc_dT);
-              Amanzi::timer_manager.start("Transport PK");
-              if (transport_enabled) TPK->CommitState(TS);
-              Amanzi::timer_manager.stop("Transport PK");
               Amanzi::timer_manager.start("Chemistry PK");
 	      if (chemistry_enabled) CPK->commit_state(CS, tc_dT);
               Amanzi::timer_manager.stop("Chemistry PK");
@@ -885,10 +869,6 @@ void MPC::cycle_driver() {
       // in the process kernels
 
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->time() >= Tswitch) ) {
-        Amanzi::timer_manager.start("Transport PK");
-        if (transport_enabled) TPK->CommitState(TS);
-        Amanzi::timer_manager.stop("Transport PK");
-
         Amanzi::timer_manager.start("Chemistry PK");
         if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
         Amanzi::timer_manager.stop("Chemistry PK");

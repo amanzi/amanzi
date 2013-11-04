@@ -99,10 +99,27 @@ int Transport_PK::InitPK()
   // extract control parameters
   ProcessParameterList();
 
+  // complete state initialization (it should not be here! lipnikov@lanl.gov)
+  if (!S_->HasField("darcy_flux")) {
+    S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+  if (!S_->HasField("total_component_concentration")) {
+    std::vector<std::vector<std::string> > subfield_names(1);
+    int ncomponents = component_names_.size();
+    for (int i = 0; i != ncomponents; ++i) {
+      subfield_names[0].push_back(component_names_[i]);
+    }
+
+    S_->RequireField("total_component_concentration", name_, subfield_names)->SetMesh(mesh_)
+      ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  }
+
+  S_->Setup();
+  S_->Initialize();
+
   // state pre-prosessing
   Teuchos::RCP<CompositeVector> cv1;
-  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("total_component_concentration"))));
-
   S_->GetFieldData("darcy_flux", name_)->ScatterMasterToGhosted("face");
   cv1 = S_->GetFieldData("darcy_flux", name_);
   darcy_flux = cv1->ViewComponent("face", true);
@@ -119,6 +136,10 @@ int Transport_PK::InitPK()
 
   cv2 = S_->GetFieldData("porosity");
   phi = cv2->ViewComponent("cell", false);
+
+  // memory for new components
+  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("total_component_concentration"))));
+  tcc_tmp->PutScalar(0.0);
 
   // upwind 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -536,7 +557,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dT_cycle)
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute vector of concentrations
-  tcc_tmp->ScatterMasterToGhosted("cell");
+  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
   Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent("cell", true);
 
   int ncomponents = tcc->NumVectors();
@@ -577,8 +598,8 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dT_cycle)
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   Epetra_Vector f_component(cmap_wghost);
 
-  // distribute vector of concentrations
-  tcc_tmp->ScatterMasterToGhosted("cell");
+  // distribute old vector of concentrations
+  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
   Teuchos::RCP<Epetra_MultiVector> tcc_next = tcc_tmp->ViewComponent("cell", true);
 
   Epetra_Vector ws_ratio(Copy, *ws_start, 0);
