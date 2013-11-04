@@ -23,6 +23,7 @@ double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) {
 TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   using namespace std;
   using namespace Teuchos;
+  using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
