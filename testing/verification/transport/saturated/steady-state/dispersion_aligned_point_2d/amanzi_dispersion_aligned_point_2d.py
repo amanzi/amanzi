@@ -54,9 +54,6 @@ def CollectObservations(Obs_xml, Obs_data, Obs_lines):
 
         for obs in Obs_data.observations.itervalues(): 
 
-            print obs.coordinate, obs.data
-            print obs.coordinate[slice_coord], Obs_lines[key]['slice'][1]
-            
             if ( obs.coordinate[slice_coord] == Obs_lines[key]['slice'][1] ):
                 Obs_scatter[key]['distance'].append(obs.coordinate[vary_coord])
                 Obs_scatter[key]['Tc99'].append(obs.data)
@@ -220,7 +217,7 @@ if __name__ == "__main__":
     try: 
 
         for st in subtests:
-            print st, subtests[st]['directory']
+
             run_amanzi.run_amanzi(input_filename, subtests[st]['directory'], subtests[st]['parameters'])
             obs_xml[st]=loadInputXML(input_filename)
             obs_data[st]=loadDataFile(obs_xml[st],subtests[st]['directory'])
@@ -234,7 +231,7 @@ if __name__ == "__main__":
 
     try:
 
-        overwrite=True
+        overwrite=False
         for a in analytic:
             run_at123d_at.run_at123d(analytic[a]['input_file'], analytic[a]['directory'],overwrite)
             analytic_soln[a]=CollectAnalyticSolutions(analytic[a]['input_file'],analytic[a]['directory'])
@@ -260,9 +257,7 @@ if __name__ == "__main__":
         PlotObservations(obs_scatter,slice,subtests,axes1)
         PlotAnalyticSoln(analytic_soln,analytic,slice,obs_slices,axes1)
         
-        plt.show()
-        # Plot the data:
-        #cmap = plotTestObservations(obs_xml,obs_data,axes1)
+        # plt.show()
 
     finally:
         pass

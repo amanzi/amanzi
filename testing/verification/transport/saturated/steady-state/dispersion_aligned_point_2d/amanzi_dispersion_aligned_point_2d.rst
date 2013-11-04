@@ -152,3 +152,6 @@ Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
 Yeh, G.T. 1981. AT123D: Analytical transient one-, two-, and three-dimensional 
 simulation of transport in the aquifer system, Oak Ridge National Lab., Tennessee, Report No. ORNL-5602.
 
+
+.. plot:: amanzi_dispersion_aligned_point_2d.py
+
