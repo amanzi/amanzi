@@ -32,7 +32,7 @@ include_directories(${NOX_INCLUDE_DIRS})
 #
 # Library: solvers
 #
-file(GLOB solver_inc_files "*.hh")
+file(GLOB solvers_inc_files "*.hh")
 set(solvers_source_files NKA.cc
                          PreconditionerFactory.cc PreconditionerHypre.cc PreconditionerML.cc
                          PreconditionerBlockILU.cc)
