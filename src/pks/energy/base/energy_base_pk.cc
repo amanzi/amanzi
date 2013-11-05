@@ -127,8 +127,9 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // -- subsurface PK, coupled to the surface
   coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
-    S->RequireField("surface_subsurface_energy_flux", name_)
-        ->SetMesh(S->GetMesh("surface"))->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField("surface_subsurface_energy_flux")
+        ->SetMesh(S->GetMesh("surface"))
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   coupled_to_surface_via_temp_ =
@@ -214,13 +215,6 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
   // initialize flux
   S->GetFieldData(energy_flux_key_, name_)->PutScalar(0.0);
   S->GetField(energy_flux_key_, name_)->set_initialized();
-
-  // initialize coupling terms
-  if (coupled_to_surface_via_flux_) {
-    S->GetFieldData("surface_subsurface_energy_flux", name_)->PutScalar(0.);
-    S->GetField("surface_subsurface_energy_flux", name_)->set_initialized();
-  }
-
 };
 
 

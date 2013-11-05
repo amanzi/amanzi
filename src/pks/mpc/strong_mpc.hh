@@ -102,6 +102,18 @@ StrongMPC<PK_t>::StrongMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // -----------------------------------------------------------------------------
 template<class PK_t>
 void StrongMPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
+  // tweak the sub-PK parameter lists
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
+  for (Teuchos::ParameterList::ConstIterator param=pks_list->begin();
+       param!=pks_list->end(); ++param) {
+    std::string pname = param->first;
+    if (pks_list->isSublist(pname)) {
+      pks_list->sublist(pname).set("strongly coupled PK", true);
+    } else {
+      ASSERT(0);
+    }
+  }
+
   MPC<PK_t>::setup(S);
   PKBDFBase::setup(S);
 

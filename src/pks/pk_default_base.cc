@@ -8,7 +8,6 @@ Author: Ethan Coon
 
 Default base with a few methods implemented in standard ways.
 ------------------------------------------------------------------------- */
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "pk_default_base.hh"
 

@@ -28,5 +28,4 @@ CopySubsurfaceToSurface(const CompositeVector& sub,
   }
 }
 
-
 } // namespace
