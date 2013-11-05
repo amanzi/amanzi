@@ -250,8 +250,12 @@ void SurfaceEnergyBalance::GroundEnergyCalc (LocalData& seb) {
     Sqig = 0.;
   } else {
     double Ri = ((seb.st_energy.gZr*(seb.st_energy.air_temp-seb.st_energy.Tb))/(seb.st_energy.air_temp*std::pow(seb.st_energy.Us,2)));
+   if (Ri<0){ // Unstable condtition 
+       Sqig = (1-10*Ri);
+    }else{// Stable Condition
     Sqig = (1/(1+10*Ri));
-  }
+    }
+  } 
 
   seb.st_energy.fQh = seb.st_energy.rowaCp*seb.st_energy.Dhe*Sqig*(seb.st_energy.air_temp-seb.st_energy.Tb);
 
