@@ -38,6 +38,9 @@ class MPCSurfaceSubsurfaceFluxCoupler : public MPCSurfaceSubsurfaceCoupler {
   // -- Setup data.
   virtual void setup(const Teuchos::Ptr<State>& S);
 
+  // -- Setup data.
+  virtual void initialize(const Teuchos::Ptr<State>& S);
+  
   // evaluate the flux
   virtual void fun(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);

@@ -74,7 +74,7 @@ void Richards::setup(const Teuchos::Ptr<State>& S) {
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
-  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
+  flux_tol_ = plist_->get<double>("flux tolerance", 1.e-4);
 };
 
 
@@ -350,12 +350,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("darcy_flux_direction", name_)->set_initialized();
   S->GetFieldData("darcy_velocity", name_)->PutScalar(0.0);
   S->GetField("darcy_velocity", name_)->set_initialized();
-
-  // initialize coupling terms
-  if (coupled_to_surface_via_flux_) {
-    S->GetFieldData("surface_subsurface_flux", name_)->PutScalar(0.);
-    S->GetField("surface_subsurface_flux", name_)->set_initialized();
-  }
 
   // absolute perm
   SetAbsolutePermeabilityTensor_(S);

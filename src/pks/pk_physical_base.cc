@@ -8,8 +8,6 @@
 
    Default base with default implementations of methods for a physical PK.
    ------------------------------------------------------------------------- */
-#include "Teuchos_XMLParameterListHelpers.hpp"
-
 #include "pk_physical_base.hh"
 
 namespace Amanzi {
@@ -19,10 +17,6 @@ PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(plist,FElist,solution) {
-
-  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
-
-
   // process the PList
   // domain
   if (domain_ == std::string("")) {
@@ -66,9 +60,6 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
-
-  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
-
 };
 
 
@@ -121,8 +112,6 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
 // -----------------------------------------------------------------------------
 void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
-
-  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
 
   if (!field->initialized()) {
     // initial conditions
