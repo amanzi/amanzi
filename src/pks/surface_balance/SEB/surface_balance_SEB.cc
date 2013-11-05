@@ -70,7 +70,7 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(const Teuchos::RCP<Teuchos::ParameterList>&
   dt_ = plist_->get<double>("max time step", 1.e99);
 
   // min wind speed
-  min_wind_speed_ = plist_->get<double>("minimum wind speed", 0.5);
+  min_wind_speed_ = plist_->get<double>("minimum wind speed", 1.0);
 
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("minimum snow depth", 0.02);
