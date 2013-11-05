@@ -92,11 +92,11 @@ if __name__ == "__main__":
     timesama  = ['71']
     
     # hardwired selected components / add or remove here
-    search = ['SiO2(aq)']  # ['Ca++', 'Mg++','SiO2(aq)','SO4--']
+    search = ['UO2++'] # ['Ca++','Mg++','K+','Cl-'] # ['Ca++', 'Mg++','SiO2(aq)']
     index = [components.index(comp) for comp in search]
 
     # hardwired selected minerals / add or remove here
-    searchm = ['Gibbsite'] # ['Goethite', 'Kaolinite', 'Gibbsite']
+    searchm = ['Kaolinite'] #['Goethite', 'Kaolinite', 'Gibbsite']
     indexm = [minerals.index(min) for min in searchm] 
 
     # pflotran selected output

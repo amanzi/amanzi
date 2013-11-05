@@ -86,37 +86,37 @@ CHEMISTRY
   MINERAL_KINETICS
     Quartz
       :RATE_CONSTANT 4.51856e-14
-      RATE_CONSTANT -13.345
+      RATE_CONSTANT -13.345 mol/cm^2-sec
     /
     Kaolinite
-      RATE_CONSTANT -12.967
+      RATE_CONSTANT -12.967 mol/cm^2-sec
       PREFACTOR
       : acid
-        RATE_CONSTANT -12.967
+        RATE_CONSTANT -12.967 mol/cm^2-sec
         PREFACTOR_SPECIES H+
           ALPHA 0.777
         /
       /
     /
     Goethite
-      RATE_CONSTANT -7.94
+      RATE_CONSTANT -7.94 mol/cm^2-sec
     /
     Schoepite
       : equilibrium => fast rate
-      RATE_CONSTANT 2.0
+      RATE_CONSTANT 2.0 mol/cm^2-sec
     /
     Gibbsite
-      RATE_CONSTANT -11.5
+      RATE_CONSTANT -11.5 mol/cm^2-sec
     /
     Jurbanite
-      RATE_CONSTANT -8.0
+      RATE_CONSTANT -8.0 mol/cm^2-sec
     /
     Basaluminite
-      RATE_CONSTANT -8.0
+      RATE_CONSTANT -8.0 mol/cm^2-sec
     /
     Opal
       : dissolution
-      RATE_CONSTANT -12.135
+      RATE_CONSTANT -12.135 mol/cm^2-sec
     /
   /
 
@@ -277,14 +277,14 @@ CONSTRAINT background
     UO2++    1.25e-10   T
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
-    Quartz        0.88      3262.3
-    Kaolinite     0.11     59093.9
-    Goethite      0.016    11076.3
-    Schoepite     0.0      0.1
-    Gibbsite      0.0      0.1
-    Basaluminite  0.0      0.1
-    Opal          0.0      0.1
-    Jurbanite     0.0      0.1
+    Quartz        0.88      3262.3 cm^2/cm^3
+    Kaolinite     0.11     59093.9 cm^2/cm^3
+    Goethite      0.016    11076.3 cm^2/cm^3
+    Schoepite     0.0      0.1 cm^2/cm^3
+    Gibbsite      0.0      0.1 cm^2/cm^3
+    Basaluminite  0.0      0.1 cm^2/cm^3
+    Opal          0.0      0.1 cm^2/cm^3
+    Jurbanite     0.0      0.1 cm^2/cm^3
   /
 
 END
@@ -308,14 +308,14 @@ CONSTRAINT seepage
     UO2++    3.01e-5    T
   /
   MINERALS : volume_fraction   SSA [cm^2 mineral/cm^3 bulk]
-    Quartz        0.88      3262.3
-    Kaolinite     0.11     59093.9
-    Goethite      0.016    11076.3
-    Schoepite     0.0      0.1
-    Gibbsite      0.0      0.1
-    Basaluminite  0.0      0.1
-    Opal          0.0      0.1
-    Jurbanite     0.0      0.1
+    Quartz        0.88      3262.3 cm^2/cm^3
+    Kaolinite     0.11     59093.9 cm^2/cm^3
+    Goethite      0.016    11076.3 cm^2/cm^3
+    Schoepite     0.0      0.1 cm^2/cm^3
+    Gibbsite      0.0      0.1 cm^2/cm^3
+    Basaluminite  0.0      0.1 cm^2/cm^3
+    Opal          0.0      0.1 cm^2/cm^3
+    Jurbanite     0.0      0.1 cm^2/cm^3
   /
 
 END
