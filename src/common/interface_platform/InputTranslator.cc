@@ -518,6 +518,7 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   Teuchos::ParameterList defPL;
   bool hasSteady = false;
   bool hasTrans = false;
+  bool hasRestart = false;
   Teuchos::Array<double> start_times;
   double sim_start=-1.;
   double sim_end=-1.;
@@ -605,6 +606,10 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
 		    hasTrans = true;
 		  }
 		}
+		if (strcmp(attrName,"restart")==0) {
+		    hasRestart = true;
+		    name = attrName;
+		}
 	      }
 	      ecsPL.sublist(name) = ecPL;
 	  }
@@ -626,6 +631,14 @@ Teuchos::ParameterList get_execution_controls(xercesc::DOMDocument* xmlDoc, Teuc
   bool haveSSF = false; // have steady-steady incr/red factors for later
   bool haveTF = false;  // have transient incr/red factors for later
   
+  // Restart
+  if (hasRestart) {
+      std::string value = ecsPL.sublist("restart").get<std::string>("restart");
+      Teuchos::ParameterList restartPL;
+      restartPL.set<std::string>("Checkpoint Data File Name",value);
+      list.sublist("Restart from Checkpoint Data File") = restartPL;
+  }
+
   // Steady case
   if (hasSteady && !hasTrans) {
     Teuchos::ParameterList steadyPL;
