@@ -271,14 +271,20 @@ bool MPCDelegateEWC::modify_predictor_ewc_(double h, Teuchos::RCP<TreeVector> up
 
 bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVector> up) {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "  Modifying predictor using SmartEWC algorithm" << std::endl;
-
   // projected guesses for T and p
   Teuchos::RCP<CompositeVector> temp_guess = up->SubVector(1)->Data();
   Epetra_MultiVector& temp_guess_c = *temp_guess->ViewComponent("cell",false);
   Teuchos::RCP<CompositeVector> pres_guess = up->SubVector(0)->Data();
   Epetra_MultiVector& pres_guess_c = *pres_guess->ViewComponent("cell",false);
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "  Modifying predictor using SmartEWC algorithm" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("p_extrap"); vnames.push_back("T_extrap");
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(pres_guess.ptr()); vecs.push_back(temp_guess.ptr());
+    db_->WriteVectors(vnames, vecs, true);
+  }
 
   // T, p at the previous step
   const Epetra_MultiVector& T1 = *S_inter_->GetFieldData("temperature")
@@ -381,8 +387,13 @@ bool MPCDelegateEWC::modify_predictor_smart_ewc_(double h, Teuchos::RCP<TreeVect
                           << "   p,T = " << p << ", " << T << std::endl;
 
             // in the transition zone of latent heat exchange
-            temp_guess_c[0][c] = T;
-            pres_guess_c[0][c] = p;
+            if (T > 200.) {
+              temp_guess_c[0][c] = T;
+              pres_guess_c[0][c] = p;
+            } else {
+              if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+                *dcvo->os() << "       not admissible!" << std::endl;
+            }
           } else {
             // pass, past the transition and we are just chilling ice
             if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
