@@ -155,7 +155,7 @@ void Flow_State::Initialize() {
     // file need to be tested and initialized 'by hand' here
 
     if (!S_->GetField("pressure",name_)->initialized()) {
-      darcy_flux()->PutScalar(0.0);
+      pressure()->PutScalar(0.0);
       S_->GetField("pressure",name_)->set_initialized();
     }
     if (!S_->GetField("darcy_flux",name_)->initialized()) {
