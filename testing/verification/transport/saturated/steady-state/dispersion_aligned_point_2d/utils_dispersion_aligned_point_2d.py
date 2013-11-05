@@ -1,23 +1,27 @@
 import matplotlib.pyplot as plt
 import numpy
-#import model_dispersion_aligned_point_2d
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable 
 import os, re
 
-# load input xml file
-#  -- create an ObservationXML object
 def loadInputXML(filename):
+
+    # load input xml file
+    #  -- create an ObservationXML object
+
     Obs_xml = ObsXML(filename)
+
     return Obs_xml
-            
-# load the data file
-#  -- use above xml object to get observation filename
-#  -- create an ObservationData object
-#  -- load the data using this object
+
 def loadDataFile(Obs_xml,directory):
+
+    # load the data file
+    #  -- use above xml object to get observation filename
+    #  -- create an ObservationData object
+    #  -- load the data using this object
+    
     output_file =  Obs_xml.getObservationFilename()
     Obs_data = ObsDATA(os.path.join(directory,output_file))
     Obs_data.getObservationData()
@@ -26,8 +30,8 @@ def loadDataFile(Obs_xml,directory):
     for obs in Obs_data.observations.itervalues():
         region = obs.region
         obs.coordinate = coords[region]
-    return Obs_data
 
+    return Obs_data
 
 def CollectObservations(Obs_xml, Obs_data, Obs_lines):
 
@@ -147,6 +151,7 @@ def CollectAnalyticSolutions(input_file,directory):
 def PlotAnalyticSoln(solution, analytic, slice, obs_slices, axes1):
 
     soln = solution[slice]
+    plot_props = analytic[slice]['plot_props']
     obs_slice = obs_slices[slice]
 
     # Set the key for the horizontal axis
@@ -155,41 +160,30 @@ def PlotAnalyticSoln(solution, analytic, slice, obs_slices, axes1):
     # Convert horizontal axis to float and shift to align the source
     hv = [float(i) - float(soln['source'][coord]) for i in soln[coord]]
     vv = [float(i) for i in soln['c']]
-    axes1.plot(hv,vv)
+    axes1.plot(hv,vv,label=plot_props['label'],c=plot_props['color'],)
 
-
-if __name__ == "__main__":
-
-    import os
-    import run_amanzi, run_at123d_at
-
-    input_filename = "amanzi_dispersion_aligned_point_2d.xml"
+def SetupTests():
 
     # Collect slices of concentration from the observations
     #
     # Slice should be all fixed quantities, i.e., Time is fixed as well 
     # Should include observation type (or return slices sorted with observation type as a key).
+
     obs_slices = { 'centerline'  : {'slice': [ 'y', 0.0 ], 'vary': 'x', 'domain': [-270.0,960.0] },
                    'x=0.0'       : {'slice': [ 'x', 0.0 ], 'vary': 'y', 'domain': [-5.0,270.0] },
                    'x=424.0'     : {'slice': [ 'x', 424.0 ], 'vary': 'y', 'domain': [-5.0,270.0] },
     }
 
-    #
-    # Create emtpy dictionaries
-    #
-    obs_scatter={}
-    obs_data={}
-    obs_xml={}
 
     subtests = { 'amanzi_first' : 
                  { 'directory'  : 'amanzi-output-first-order',
                    'parameters' : { 'Transport Integration Algorithm': 'Explicit First-Order' },
-                   'plot_props' : { 'marker':'s', 'color':'r', 'label': 'Amanzi 1st' } 
+                   'plot_props' : { 'marker':'s', 'color':'r', 'label': 'Amanzi: First Order' } 
                  },
                  'amanzi_second' : 
                  { 'directory'  : 'amanzi-output-second-order',
                    'parameters' : { 'Transport Integration Algorithm': "Explicit Second-Order" },
-                   'plot_props' : { 'marker':'o', 'color':'b', 'label': 'Amanzi 2nd' }
+                   'plot_props' : { 'marker':'o', 'color':'b', 'label': 'Amanzi: Second Order' }
                  },
              }
    
@@ -197,22 +191,34 @@ if __name__ == "__main__":
     analytic = { 'centerline'   : 
                  { 'directory'  : 'at123d-at',
                    'input_file' : 'at123d-at_centerline.list',
-                   'plot_props' : { 'color': 'blue', 'linestyle' : '-' }
+                   'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
                  },
                  'x=0.0'      : 
                  { 'directory' : 'at123d-at', 
                    'input_file' : 'at123d-at_slice_x=0.list', 
-                   'plot_props' : { 'color': 'blue', 'linestyle' : '-' }
+                   'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
                  },
                  'x=424.0'      :   
                  { 'directory'  : 'at123d-at', 
                    'input_file' : 'at123d-at_slice_x=420.list',
-                   'plot_props' : { 'color': 'blue', 'linestyle' : '-' }
+                   'plot_props' : { 'color': 'blue', 'linestyle' : '-', 'label':'Analytic (AT123D-AT)' }
                  },
                }
 
 
-    analytic_soln = {} 
+    return obs_slices, subtests, analytic
+
+
+def AmanziResults(input_filename,subtests,obs_slices):
+    
+    import run_amanzi
+
+    #
+    # Create emtpy dictionaries
+    #
+    obs_scatter={}
+    obs_data={}
+    obs_xml={}
 
     try: 
 
@@ -228,10 +234,16 @@ if __name__ == "__main__":
     finally: 
         pass
 
+    return obs_xml, obs_data, obs_scatter
+
+def AnalyticSolutions(analytic,overwrite):
+
+    import run_at123d_at
+
+    analytic_soln={}
 
     try:
 
-        overwrite=False
         for a in analytic:
             run_at123d_at.run_at123d(analytic[a]['input_file'], analytic[a]['directory'],overwrite)
             analytic_soln[a]=CollectAnalyticSolutions(analytic[a]['input_file'],analytic[a]['directory'])
@@ -239,26 +251,5 @@ if __name__ == "__main__":
     finally:
         pass
 
-
-
-    try:
-        
-        slice='centerline'
-        #slice='x=0.0'
-        #slice='x=424.0'
-
-        # Plot the data:
-        fig1 = plt.figure()
-        axes1 = fig1.add_axes([0.15,0.15,0.80,0.80])
-        axes1.set_yscale('log')
-        axes1.set_xlim(obs_slices[slice]['domain'][0],obs_slices[slice]['domain'][1])
-        
-        # Plot centerline (y=0) 
-        PlotObservations(obs_scatter,slice,subtests,axes1)
-        PlotAnalyticSoln(analytic_soln,analytic,slice,obs_slices,axes1)
-        
-        # plt.show()
-
-    finally:
-        pass
+    return analytic_soln
 

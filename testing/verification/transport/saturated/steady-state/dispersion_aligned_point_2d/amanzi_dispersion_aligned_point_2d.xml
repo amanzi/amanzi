@@ -82,14 +82,14 @@
         <Parameter name="Coordinate" type="Array(double)" value="{-30.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Dnstrm030">
-      <ParameterList name="Region: Point">
-        <Parameter name="Coordinate" type="Array(double)" value="{30.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Origin">
       <ParameterList name="Region: Point">
         <Parameter name="Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dnstrm030">
+      <ParameterList name="Region: Point">
+        <Parameter name="Coordinate" type="Array(double)" value="{30.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Dnstrm090">
