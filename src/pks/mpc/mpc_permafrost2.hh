@@ -8,6 +8,7 @@
 #include "MatrixMFD_Surf.hh"
 #include "MatrixMFD_TPFA.hh"
 #include "mpc_delegate_ewc.hh"
+#include "mpc_delegate_water.hh"
 #include "pk_physical_bdf_base.hh"
 
 #include "strong_mpc.hh"
@@ -47,6 +48,11 @@ class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
           Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
+  void
+  UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
+          const Teuchos::RCP<TreeVector>& Pu);
+
+ protected:
 
   // sub PKs
   Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
@@ -65,9 +71,13 @@ class MPCPermafrost2 : public StrongMPC<PKPhysicalBDFBase> {
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_flow_;
   Teuchos::RCP<Operators::MatrixMFD_TPFA> pc_surf_energy_;
 
-
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWC> ewc_;
+
+  // Water delegate
+  Teuchos::RCP<MPCDelegateWater> water_;
+  bool consistent_cells_;
+  
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> domain_db_;

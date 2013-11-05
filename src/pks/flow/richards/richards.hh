@@ -154,8 +154,7 @@ protected:
   // note PC is in PKPhysicalBDFBase
 
   // custom enorm tolerances
-  double mass_atol_;
-  double mass_rtol_;
+  double flux_tol_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;

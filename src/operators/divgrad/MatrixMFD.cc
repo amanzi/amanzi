@@ -91,18 +91,6 @@ void MatrixMFD::InitializeFromPList_() {
   // verbose object
   vo_ = Teuchos::rcp(new VerboseObject("MatrixMFD", plist_));
 
-  // Aff solutions
-  if (plist_.isSublist("consistent face solver")) {
-    Teuchos::ParameterList Aff_plist = plist_.sublist("consistent face solver");
-    Aff_op_ = Teuchos::rcp(new EpetraMatrixDefault<Epetra_FECrsMatrix>(Aff_plist));
-
-    if (Aff_plist.isParameter("iterative method")) {
-      AmanziSolvers::LinearOperatorFactory<EpetraMatrix,Epetra_Vector,Epetra_BlockMap> op_fac;
-      Aff_solver_ = op_fac.Create(Aff_plist, Aff_op_);
-    } else {
-      Aff_solver_ = Aff_op_;
-    }
-  }
 }
 
 
@@ -780,11 +768,24 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
 void MatrixMFD::UpdateConsistentFaceConstraints(const Teuchos::Ptr<CompositeVector>& u) {
   AssertAssembledOperator_or_die_();
   
-  if (Aff_op_ == Teuchos::null) {
-    Errors::Message msg("MatrixMFD::UpdateConsistentFaceConstraints was called, but no consistent face solver sublist was provided.");
-    Exceptions::amanzi_throw(msg);
-  }
+  // Aff solutions
+  if (Aff_solver_ == Teuchos::null) {
+    if (plist_.isSublist("consistent face solver")) {
+      Teuchos::ParameterList Aff_plist = plist_.sublist("consistent face solver");
+      Aff_op_ = Teuchos::rcp(new EpetraMatrixDefault<Epetra_FECrsMatrix>(Aff_plist));
+      Aff_op_->Update(Aff_);
 
+      if (Aff_plist.isParameter("iterative method")) {
+        AmanziSolvers::LinearOperatorFactory<EpetraMatrix,Epetra_Vector,Epetra_BlockMap> op_fac;
+        Aff_solver_ = op_fac.Create(Aff_plist, Aff_op_);
+      } else {
+        Aff_solver_ = Aff_op_;
+      }
+    } else {
+      Errors::Message msg("MatrixMFD::UpdateConsistentFaceConstraints was called, but no consistent face solver sublist was provided.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 
   Teuchos::RCP<Epetra_MultiVector> uc = u->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> rhs_f = rhs_->ViewComponent("face", false);
@@ -808,9 +809,23 @@ void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
         const Teuchos::Ptr<CompositeVector>& Pu) {
   AssertAssembledOperator_or_die_();
 
-  if (Aff_op_ == Teuchos::null) {
-    Errors::Message msg("MatrixMFD::UpdateConsistentFaceCorrection was called, but no consistent face solver sublist was provided.");
-    Exceptions::amanzi_throw(msg);
+  // Aff solutions
+  if (Aff_solver_ == Teuchos::null) {
+    if (plist_.isSublist("consistent face solver")) {
+      Teuchos::ParameterList Aff_plist = plist_.sublist("consistent face solver");
+      Aff_op_ = Teuchos::rcp(new EpetraMatrixDefault<Epetra_FECrsMatrix>(Aff_plist));
+      Aff_op_->Update(Aff_);
+
+      if (Aff_plist.isParameter("iterative method")) {
+        AmanziSolvers::LinearOperatorFactory<EpetraMatrix,Epetra_Vector,Epetra_BlockMap> op_fac;
+        Aff_solver_ = op_fac.Create(Aff_plist, Aff_op_);
+      } else {
+        Aff_solver_ = Aff_op_;
+      }
+    } else {
+      Errors::Message msg("MatrixMFD::UpdateConsistentFaceConstraints was called, but no consistent face solver sublist was provided.");
+      Exceptions::amanzi_throw(msg);
+    }
   }
 
   Teuchos::RCP<const Epetra_MultiVector> Pu_c = Pu->ViewComponent("cell", false);

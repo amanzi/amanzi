@@ -28,14 +28,30 @@ namespace Amanzi {
 
 // -- Setup data.
 void MPCSurfaceSubsurfaceFluxCoupler::setup(const Teuchos::Ptr<State>& S) {
+  // -- turn off PC assembly: <Parameter name="assemble preconditioner" type="bool" value="false"/>
+  Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
+  plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", false);
+  plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", false);
+  plist_->sublist("PKs").sublist(names[0]).set("coupled to surface via flux", true);
+  plist_->sublist("PKs").sublist(names[1]).set("coupled to subsurface via flux", true);
+  plist_->sublist("PKs").sublist(names[0]).sublist("Diffusion PC").set("coupled to surface", true);
+  plist_->sublist("PKs").sublist(names[1]).sublist("Diffusion PC").set("TPFA", true);
+
   MPCSurfaceSubsurfaceCoupler::setup(S);
 
   // get the flux key
   flux_key_ = plist_->get<std::string>("flux key");
+  S->RequireField(flux_key_, name_)->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   niter_ = 0;
 }
 
+// -- Setup data.
+void MPCSurfaceSubsurfaceFluxCoupler::initialize(const Teuchos::Ptr<State>& S) {
+  MPCSurfaceSubsurfaceCoupler::initialize(S);
+  S->GetField(flux_key_, name_)->set_initialized();
+}
 
 // -------------------------------------------------------------
 // Special function evaluation process
@@ -54,7 +70,7 @@ void MPCSurfaceSubsurfaceFluxCoupler::fun(double t_old, double t_new,
   // The residual of the surface equation provides the flux.  This is the mass
   // imbalance on the surface, and is used in the subsurface PK.
   Teuchos::RCP<CompositeVector> source =
-      S_next_->GetFieldData(flux_key_, domain_pk_name_);
+      S_next_->GetFieldData(flux_key_, name_);
   *source->ViewComponent("cell",false) = *surf_g->Data()->ViewComponent("cell",false);
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
@@ -260,7 +276,7 @@ bool MPCSurfaceSubsurfaceFluxCoupler::modify_predictor_for_flux_bc_(double h,
 
   // -- set the flux BCs
   Teuchos::RCP<CompositeVector> source =
-      S_next_->GetFieldData(flux_key_, domain_pk_name_);
+      S_next_->GetFieldData(flux_key_, name_);
   *source->ViewComponent("cell",false) = *surf_g->Data()->ViewComponent("cell",false);
 
   // -- call the subsurface modify_predictor(), which uses those BCs

@@ -103,11 +103,8 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   height_model_ = pd_eval->get_Model();
 
   // -- conductivity evaluator
-  locations2[1] = AmanziMesh::BOUNDARY_FACE;
-  names2[1] = "boundary_face";
-
   S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponents(names2, locations2, num_dofs2);
+      ->AddComponents(names_bf, locations_bf, num_dofs2);
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   // -- set the height key to be eta * h, not just h, for the frozen case.
@@ -116,7 +113,7 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
 
-  // -- unfrozne fraction
+  // -- unfrozen fraction
   S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList uf_plist = plist_->sublist("unfrozen fraction evaluator");
@@ -124,6 +121,13 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::UnfrozenFractionEvaluator(uf_plist));
   uf_model_ = uf_eval->get_Model();
   S->SetFieldEvaluator("unfrozen_fraction", uf_eval);
+
+  S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  
+  // -- temperature -- fix me!
+  S->RequireField("surface_temperature")->SetMesh(mesh_)
+      ->AddComponents(names2, locations2, num_dofs2);
 
   // -- overwrite the upwinding, which was created with ponded_depth, to use
   // -- unfrozen ponded depth.
