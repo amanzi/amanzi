@@ -16,7 +16,6 @@ Contents:
    input/input_schema.rst
    tutorial/index.rst
    verification/index.rst
-   benchmarking/index.rst
 
 Indices and tables
 ==================
