@@ -25,7 +25,6 @@ Authors: Neil Carlson (version 1)
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
 #include "Flow_SourceFactory.hh"
-#include "Flow_State.hh"
 #include "Matrix_MFD.hh"
 #include "Matrix_TPFA.hh"
 
@@ -125,7 +124,7 @@ void Darcy_PK::InitPK()
   ProcessParameterList();
 
   // Select a proper matrix class. No optionos at the moment.
-  matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
+  matrix_ = Teuchos::rcp(new Matrix_MFD(mesh_, super_map_));
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_MATRIX);
   matrix_->AddActionProperty(AmanziFlow::FLOW_MATRIX_ACTION_PRECONDITIONER);
 
@@ -168,8 +167,6 @@ void Darcy_PK::InitPK()
   if (src_sink_distribution & Amanzi::Functions::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
     Kxy = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   }
-
-  flow_status_ = FLOW_STATUS_INIT;
 };
 
 
@@ -223,8 +220,6 @@ void Darcy_PK::InitSteadyState(double T0, double dT0)
   InitNextTI(T0, dT0, ti_specs_sss_);
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
-
-  flow_status_ = FLOW_STATUS_STEADY_STATE;
 }
 
 
@@ -239,8 +234,6 @@ void Darcy_PK::InitTransient(double T0, double dT0)
   InitNextTI(T0, dT0, ti_specs_trs_);
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4
-
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 
   // DEBUG
   // SolveFullySaturatedProblem(0.0, *solution);

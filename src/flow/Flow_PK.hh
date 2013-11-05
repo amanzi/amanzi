@@ -1,12 +1,13 @@
 /*
-This is the Flow component of the Amanzi code. 
-License: BSD
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
-Usage: 
-  Flow_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<Flow_State> FS);
-  double time_step = FPK.calculateFlowDt();
-  FPK.advance(any_dT);
+  This is the Flow component of the Amanzi code. 
+  License: BSD
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+
+  Usage: 
+    Flow_PK TPK(Teuchos::ParameterList& list, Teuchos::RCP<State> S);
+    double time_step = FPK.calculateFlowDt();
+    FPK.advance(any_dT);
 */
 
 #ifndef AMANZI_FLOW_PK_HH_
@@ -43,7 +44,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual ~Flow_PK() {};
 
   // main methods
-  void Init(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC);
+  void Init(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S);
   virtual void InitPK() = 0;
   virtual void InitSteadyState(double T0, double dT0) = 0;
   virtual void InitTransient(double T0, double dT0) = 0;
@@ -55,7 +56,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual void InitializeAuxiliaryData() = 0;
   virtual void InitializeSteadySaturated() = 0;
 
-  virtual void CommitState(Teuchos::RCP<Flow_State> FS) = 0;
+  virtual void CommitState(Teuchos::RCP<State> S) = 0;
 
   // boundary condition members
   void ProcessStaticBCsubmodels(const std::vector<int>& bc_submodel,
@@ -98,15 +99,11 @@ class Flow_PK : public BDF2::fnBase {
   //                         const Epetra_Vector& pressure_faces, const Epetra_Vector& flux,
   //                         Epetra_Vector& rhs, Matrix_MFD_PLambda* matrix);
 
-  // access members 
-  Teuchos::RCP<Flow_State> flow_state() { return FS; }
-  int flow_status() { return flow_status_; }
-
   // control members
   void ValidateBoundaryConditions(Functions::FlowBoundaryFunction *bc_pressure, 
                                   Functions::FlowBoundaryFunction *bc_head, 
                                   Functions::FlowBoundaryFunction *bc_flux) const;
-  void WriteGMVfile(Teuchos::RCP<Flow_State> FS) const;
+  void WriteGMVfile(Teuchos::RCP<State> S) const;
  
   void ResetPKtimes(double T0, double dT0) { T_physics = T0; dT = dT0; }
   
@@ -159,12 +156,8 @@ public:
   int verbosity_AztecOO;  // output information
   int missed_bc_faces_;
 
-  Teuchos::RCP<Flow_State> FS;
-  Teuchos::RCP<Flow_State> FS_aux;  // adds ghosts to selected state variables 
-
   int ti_phase_counter;
   double T_physics, dT, dTnext;
-  int flow_status_;
   int dim;
 
  protected:
@@ -172,6 +165,7 @@ public:
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<State> S_;
 
   AmanziGeometry::Point gravity_;
   double rho_, mu_;

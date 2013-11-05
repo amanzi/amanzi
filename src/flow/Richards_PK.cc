@@ -9,7 +9,7 @@ provided Reconstruction.cppin the top-level COPYRIGHT file.
 Authors: Neil Carlson (nnc@lanl.gov), 
          Konstantin Lipnikov (lipnikov@lanl.gov)
 
-Usage: Richards_PK FPK(parameter_list, flow_state);
+Usage: Richards_PK FPK(parameter_list, state);
        FPK->InitPK();
        FPK->Initialize();  // optional
        FPK->InitSteadyState(T, dT);
@@ -33,7 +33,6 @@ Usage: Richards_PK FPK(parameter_list, flow_state);
 #include "Matrix_TPFA.hh"
 
 #include "Flow_BC_Factory.hh"
-#include "Flow_State.hh"
 #include "Richards_PK.hh"
 
 
@@ -193,8 +192,8 @@ void Richards_PK::InitPK()
     // matrix_ = new Matrix_MFD_PLambda(FS, *super_map_);
     // preconditioner_ = new Matrix_MFD_PLambda(FS, *super_map_);
   } else if (experimental_solver_ == FLOW_SOLVER_NEWTON) {
-    matrix_ = Teuchos::rcp(new Matrix_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
-    preconditioner_ = Teuchos::rcp(new Matrix_TPFA(FS, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    matrix_ = Teuchos::rcp(new Matrix_TPFA(S_, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
+    preconditioner_ = Teuchos::rcp(new Matrix_TPFA(S_, super_map_, rel_perm->Krel_faces_ptr(), Transmis_faces, Grav_term_faces));
   } else {
     matrix_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
     preconditioner_ = Teuchos::rcp(new Matrix_MFD(FS, super_map_));
@@ -216,8 +215,6 @@ void Richards_PK::InitPK()
 
   // injected water mass
   mass_bc = 0.0;
-
-  flow_status_ = FLOW_STATUS_INIT;
 }
 
 
@@ -279,8 +276,6 @@ void Richards_PK::InitPicard(double T0)
   Epetra_Vector& ws_prev = FS->ref_prev_water_saturation();
   DeriveSaturationFromPressure(*solution_cells, ws);
   ws_prev = ws;
-
-  flow_status_ = FLOW_STATUS_INITIAL_GUESS;
 }
 
 
@@ -297,8 +292,6 @@ void Richards_PK::InitSteadyState(double T0, double dT0)
   error_control_ |= ti_specs->error_control_options;
 
   InitNextTI(T0, dT0, ti_specs_sss_);
-
-  flow_status_ = FLOW_STATUS_STEADY_STATE;
 
   // DEBUG
   // AdvanceToSteadyState();
@@ -321,8 +314,6 @@ void Richards_PK::InitTransient(double T0, double dT0)
   error_control_ |= ti_specs->error_control_options;
 
   InitNextTI(T0, dT0, ti_specs_trs_);
-
-  flow_status_ = FLOW_STATUS_TRANSIENT_STATE;
 }
 
 

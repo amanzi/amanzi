@@ -1,13 +1,13 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
-         Daniil Svyatskiy (dasvyat@lanl.gov)
+  Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+           Daniil Svyatskiy (dasvyat@lanl.gov)
 */
 
 #include <vector>
@@ -35,8 +35,8 @@ int FindPosition(const std::vector<T>& v, const T& value) {
 /* ******************************************************************
 * Constructor.                                           
 ****************************************************************** */
-Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<Flow_State> FS, Teuchos::RCP<const Epetra_Map> map) 
-   :  Matrix_MFD(FS, map)
+Matrix_TPFA::Matrix_TPFA(Teuchos::RCP<const State>& S, Teuchos::RCP<const Epetra_Map> map) 
+   :  Matrix_MFD(S, map)
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); 
   Acc_cells_.resize(ncells);

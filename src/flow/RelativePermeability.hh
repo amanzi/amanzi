@@ -24,8 +24,8 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "tensor.hh"
 
+#include "State.hh"
 #include "WaterRetentionModel.hh"
-#include "Flow_State.hh"
 #include "Flow_typedefs.hh"
 
 namespace Amanzi {
@@ -39,7 +39,7 @@ class RelativePermeability {
   ~RelativePermeability() {};
 
   // main methods
-  void Init(double p0, const Teuchos::RCP<Flow_State> FS);
+  void Init(double p0, Teuchos::RCP<State> S);
   void ProcessParameterList();
 
   void Compute(const Epetra_Vector& p, 
@@ -132,7 +132,7 @@ class RelativePermeability {
 
   // obsolete, must go away (lipnikov@lanl.gov)
   int experimental_solver_; 
-  Teuchos::RCP<Flow_State> FS_;
+  Teuchos::RCP<State> S_;
 };
 
 }  // namespace AmanziFlow

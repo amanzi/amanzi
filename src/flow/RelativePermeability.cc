@@ -25,7 +25,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initialize internal data.
 ****************************************************************** */
-void RelativePermeability::Init(double p0, const Teuchos::RCP<Flow_State> FS)
+void RelativePermeability::Init(double p0, Teuchos::RCP<State> S)
 {
   atm_pressure = p0;
   FS_ = FS;

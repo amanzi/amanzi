@@ -1,12 +1,12 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_MATRIX_MFD_HH_
@@ -32,7 +32,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "DenseMatrix.hh"
 #include "boundary_function.hh"
 
-#include "Flow_State.hh"
+#include "State.hh"
 #include "Flow_typedefs.hh"
 #include "RelativePermeability.hh"
 
@@ -42,7 +42,7 @@ namespace AmanziFlow {
 class Matrix_MFD {
  public:
   Matrix_MFD() {};
-  Matrix_MFD(Teuchos::RCP<Flow_State> FS_, Teuchos::RCP<const Epetra_Map> map_);
+  Matrix_MFD(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, Teuchos::RCP<const Epetra_Map> map);
   ~Matrix_MFD();
 
   // main methods
@@ -112,7 +112,6 @@ class Matrix_MFD {
   int npassed() { return npassed_; }
 
  protected:
-  Teuchos::RCP<Flow_State> FS_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const Epetra_Map> map_;
 

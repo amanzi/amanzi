@@ -1,13 +1,13 @@
 /*
-This is the flow component of the Amanzi code. 
+  This is the flow component of the Amanzi code. 
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson (version 1) 
-         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <string>
@@ -19,8 +19,8 @@ Authors: Neil Carlson (version 1)
 #include "mfd3d.hh"
 
 #include "Mesh.hh"
+#include "State.hh"
 #include "Flow_PK.hh"
-#include "Flow_State.hh"
 
 
 namespace Amanzi {
@@ -29,14 +29,11 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.                                              
 ****************************************************************** */
-void Flow_PK::Init(Teuchos::ParameterList& global_list, Teuchos::RCP<Flow_State> FS_MPC)
+void Flow_PK::Init(Teuchos::ParameterList& global_list, Teuchos::RCP<State> S)
 {
-  flow_status_ = FLOW_STATUS_NULL;
+  S_ = S;
 
-  FS = Teuchos::rcp(new Flow_State(*FS_MPC, Flow_State::CONSTRUCT_MODE_VIEW_DATA));
-  FS_aux = Teuchos::rcp(new Flow_State(*FS_MPC, Flow_State::CONSTRUCT_MODE_COPY_DATA_GHOSTED));
-
-  mesh_ = FS->mesh();
+  mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
   MyPID = 0;
 
