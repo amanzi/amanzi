@@ -560,13 +560,11 @@ void Alquimia_Chemistry_PK::CopyAmanziStateToAlquimia(const int cell_id,
     {
       double* cell_aux_ints = (*aux_data_)[i];
       chem_data_.aux_data.aux_ints.data[i] = (int)cell_aux_ints[cell_id];
-printf("Copied aux int %d in cell %d: %d\n", i, cell_id, chem_data_.aux_data.aux_ints.data[i]);
     }
     for (int i = 0; i < num_aux_doubles; i++) 
     {
       double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
       chem_data_.aux_data.aux_doubles.data[i] = cell_aux_doubles[cell_id];
-printf("Copied aux double %d in cell %d: %g\n", i, cell_id, chem_data_.aux_data.aux_doubles.data[i]);
     }
   }
 
@@ -839,11 +837,10 @@ void Alquimia_Chemistry_PK::CopyAlquimiaMaterialPropertiesToAmanzi(const int cel
 
   AlquimiaMaterialProperties* alquimia_mat_props = &chem_data_.material_properties;
 
-  // FIXME: Do we need to copy over volume and saturation, too?
+  // NOTE: volume and water saturation are read-only from the chemistry state, so they can't be 
+  // NOTE: altered by Alquimia.
 
-  //
   // sorption isotherms
-  //
   if (using_sorption_isotherms()) 
   {
     for (unsigned int i = 0; i < number_aqueous_components(); ++i) 
