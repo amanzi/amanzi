@@ -100,6 +100,7 @@ int Transport_PK::InitPK()
   ProcessParameterList();
 
   // complete state initialization (it should not be here! lipnikov@lanl.gov)
+  /*
   if (!S_->HasField("darcy_flux")) {
     S_->RequireField("darcy_flux", name_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -117,6 +118,7 @@ int Transport_PK::InitPK()
 
   S_->Setup();
   S_->Initialize();
+  */
 
   // state pre-prosessing
   Teuchos::RCP<CompositeVector> cv1;
