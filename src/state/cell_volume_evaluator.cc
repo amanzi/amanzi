@@ -56,9 +56,9 @@ CellVolumeEvaluator::Clone() const {
 // ---------------------------------------------------------------------------
 void CellVolumeEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Require the field
-  Teuchos::RCP<CompositeVectorFactory> my_fac = S->RequireField(my_key_);
+  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_);
 
-  if (!my_fac->owned()) {
+  if (!my_fac->Owned()) {
     // requirements not yet set, claim ownership and set valid component
     S->RequireField(my_key_, my_key_)->SetMesh(S->GetMesh(my_mesh_))
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -126,7 +126,7 @@ void CellVolumeEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
   }
 
   // communicate if requested
-  if (cv->ghosted() && communicate_) {
+  if (cv->Ghosted() && communicate_) {
     cv->ScatterMasterToGhosted();
   }
 }

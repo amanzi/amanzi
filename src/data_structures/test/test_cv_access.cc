@@ -18,7 +18,7 @@
 
 #include "MeshFactory.hh"
 #include "Mesh_simple.hh"
-#include "composite_vector.hh"
+#include "CompositeVector.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;

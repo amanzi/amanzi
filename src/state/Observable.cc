@@ -101,11 +101,11 @@ void Observable::Update_(const State& S,
   } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
     // vector field
     Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
-    ASSERT(vec->has_component(location_));
+    ASSERT(vec->HasComponent(location_));
 
-    AmanziMesh::Entity_kind entity = vec->location(location_);
+    AmanziMesh::Entity_kind entity = vec->Location(location_);
     AmanziMesh::Entity_ID_List ids;
-    vec->mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids);
+    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids);
 
     double value(0.);
     double volume(0.);
@@ -114,14 +114,14 @@ void Observable::Update_(const State& S,
     if (entity == AmanziMesh::CELL) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
-        double vol = vec->mesh()->cell_volume(*id);
+        double vol = vec->Mesh()->cell_volume(*id);
         value += subvec[0][*id] * vol;
         volume += vol;
       }
     } else if (entity == AmanziMesh::FACE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
-        double vol = vec->mesh()->face_area(*id);
+        double vol = vec->Mesh()->face_area(*id);
         value += subvec[0][*id] * vol;
         volume += vol;
       }
