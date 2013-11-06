@@ -22,7 +22,6 @@ def run_at123d(input_file, directory=None, overwrite=False):
 
     # Return if the log file is already there.
     if ( os.path.isfile(at123d_setup) and os.path.isfile(at123d_soln) and not overwrite ):
-        print 'I did not have to compute anything'
         os.chdir(CWD)
         return
 

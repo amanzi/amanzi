@@ -174,6 +174,8 @@ terminated because its allocation of time ran out.
 
   * `"Checkpoint Data File Name`" [string] file name of the specific Checkpoint Data file to restart from
 
+  * `"initialize from checkpoint data file and do not restart`" [bool] (optional) If this is set to false (default), then a restart is performed, if it is set to true, then all fields are initialized from the checkpoint data file.
+
 Example
 
 .. code-block:: xml

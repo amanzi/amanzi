@@ -84,10 +84,8 @@ void Richards_PK::fun(
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
  if (experimental_solver_ != FLOW_SOLVER_NEWTON) {
-  preconditioner_->ApplyInverse(X, Y);
- }
- else {
-
+   preconditioner_->ApplyInverse(X, Y);
+ } else {
    Teuchos::ParameterList plist;
    Teuchos::ParameterList& slist = plist.sublist("gmres");
    slist.set<string>("iterative method", "gmres");
@@ -96,15 +94,11 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
    Teuchos::ParameterList& vlist = slist.sublist("VerboseObject");
    vlist.set("Verbosity Level", "low");
 
-
    AmanziSolvers::LinearOperatorFactory<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> factory;
    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix_MFD, Epetra_Vector, Epetra_BlockMap> > 
      solver = factory.Create("gmres", plist, preconditioner_, preconditioner_);
    
- 
    solver->ApplyInverse(X,Y);
-
-   
  }
 }
 
@@ -236,7 +230,7 @@ bool Richards_PK::modify_update_step(double h, Epetra_Vector& u, Epetra_Vector& 
   double max_sat_pert = 0.25;
   bool ret_val = false;
   double dumping_factor = 0.6;
-  double reference_pressure = 101325.;
+  double reference_pressure = 101325.0;
 
   int ncells_clipped(0);
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm->WRM(); 

@@ -141,8 +141,8 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
     S->Setup();
-    FS->Initialize();
     S->Initialize();
+    FS->Initialize();
 
     Richards_PK* RPK = new Richards_PK(parameter_list, FS);
 

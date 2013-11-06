@@ -1,87 +1,116 @@
 Chemistry Models
 ----------------
 
-The chemistry component of Amanzi models a set of geochemical processes that lead to the transformation of reactant to products according to a stoichiometric relationship. 
+The chemistry component of Amanzi models a set of geochemical processes that lead to the transformation of reactant species to product species. Amanzi can simulate a comprehensive set of reaction types.  These reactions can be classified into homogeneous if they occur within the aqueous phase or heterogeneous if in addition to the aqueous phase they involve the solid phase. These reactions can also be classified into equilibrium or kinetic depending on whether local equilibrium can be assumed. The following table summarizes the reactions available by type.
+
++--------------------+----------------------------+---------------------------------------+
+| *Reaction Types*   | Homogeneous                | Heterogeneous                         |
++--------------------+----------------------------+---------------------------------------+
+| Equilibrium        | **Aqueous Complexation**   | **Surface Complexation**,             |
+|                    |                            | **Ion Exchange**                      |
++--------------------+----------------------------+---------------------------------------+
+| Kinetic            | **Aqueous Kinetics**       | **Mineral Dissolution-Precipitation** |
++--------------------+----------------------------+---------------------------------------+
 
 Stoichiometry
 ~~~~~~~~~~~~~
 
-The stoichiometric relation for a generic reaction involving :math:`N_c` reactants (:math:`A_j`) and a product (:math:`A_i`) can be written as
+The transformation from reactant to product species occurs according to a stoichiometric relationship. The stoichiometry of a generic reaction involving :math:`N_c` reactants (:math:`A_j`) and a product (:math:`A_i`) can be written as
 
 .. math::
   \sum_{j=1}^{N_c} \nu_{ij}~A_j = A_i
   :label: stoichiometry
 
-where :math:`\nu_{ij}` is the stoichiometric coefficients of the :math:`j-th` reactant in the :math:`i-th` reaction. 
+where :math:`\nu_{ij}` is the stoichiometric coefficients of reactant *j* in reaction *i*. 
 
-Total component concentrations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In the operator splitting approach employed by Amanzi (see below), the transport solver does not operate on the concentrations of each reactant (:math:`C_j`) and product (:math:`C_i`) species. Rather, transport operates on total concentrations of geochemical components (:math:`U_j`), defined as geochemical entities whose mass is not affected by geochemical equilibrium reactions. For a set of :math:`N_r` equilibrium reactions, the total mass of a component is the sum of the mass of a primary species (or component species) and the secondary species multiplied by the corresponding stoichiometric coefficients.
-
-.. math::
-  U_j = C_j + \sum_{i=1}^{N_r}{\nu_{ij}~C_i}
-  :label: totalcomponent
-
-Geochemical equilibrium
+Geochemical Equilibrium
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The local equilibrium assumption is applicable when reaction rates are much faster than transport rates, and therefore the concentrations of products and reactants can be expressed with the mass action law:
+The local equilibrium assumption is applicable when reaction rates are much faster than transport rates, and therefore the relationship between the concentrations of products and reactants can be expressed with the law of mass action:
 
 .. math::
   \log(K_i) = \sum_{j=1}^{N_c}{\nu_{ij}~log(\gamma_j \cdot C_j)} - log(\gamma_i \cdot C_i)
   :label: equilibrium
 
-where :math:`K_i` is the equilibrium constant, and :math:`gamma_i` are the activity coefficients. 
+where :math:`K_i` is the equilibrium constant, :math:`C_i` and :math:`C_j` are the concentrations of reactant and product species, and :math:`\gamma_i` and :math:`\gamma_j` are the corresponding activity coefficients. 
 
-Geochemical kinetics
-~~~~~~~~~~~~~~~~~~~~
+Total Component Concentrations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When local equilibrium cannot be assumed, reaction rates are calculated explicitly. E.g. for reaction :math::`i`:
-
-.. math::
-  r_i = f(C_i,C_j)
-  :label: kinetics
-
-Here, we choose to write the rate expression as a generic function but several forms of this function are used depending on the reaction of interest. 
-
-Operator Splitting Approach
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The operator splitting approach involves solving the mass balance equation of each component for a given timestep in two steps. The first step involves the transport operators (see :doc:`transport`). Then, for the same timestep geochemical processes are solved:
+Geochemical equilibrium between aqueous species makes it possible to calculate the concentration of a set of secondary species as a function of a set of primary species. Further, one can define a set of components, one for each primary species, the mass of which are not affected by geochemical aqueous equilibrium reactions. The total mass of a component  (:math:`U_j`) is defined as the sum of the mass of a primary species and the mass of a number of secondary species multiplied by the corresponding stoichiometric coefficient:
 
 .. math::
-   \frac{\partial (\phi s_l U_i)}{\partial t} 
-  = r_i
+  U_j = C_j + \sum_{i=1}^{N_r}{\nu_{ij}~C_i}
+  :label: totalcomponent
+
+where :math:`N_r` is the number of aqueous equilibrium reactions.
+
+This approach is widely used in geochemical models ([Lichtner1985]_, [Yeh-Tripathi1989]_, [Steefel-Lasaga1994]_, [Steefel-MacQuarrie1996]_) to reduce the size of the system to solve, and more specifically the number of transport equations.
+
+Transport and Chemistry Coupling: Operator Splitting Approach
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Amanzi uses the so-called Operator Spliting Aproach to couple transport and reaction processes [Yeh-Tripathi1989]_. In the operator splitting approach, transport and chemistry are solved sequentially over the same time step, first transport and then chemistry. One advantage of this approach is that transport equations can be solved using linear solvers. Additionally, the non-linear chemical equations can be solved on a cell-by-cell basis in what is an embarassingly parallel problem. To access these advantages, the transport solver does not operate on the concentrations of each reactant (:math:`C_j`) and product species (:math:`C_i`). Rather, transport operates on the total component concentrations (:math:`U_j`) as defined in eq. :eq:`totalcomponent`. Please see :doc:`transport` for details of the transport capabilities of Amanzi. Following transport, the chemical processes affecting the mass balance of all components are solved over the same timestep:
+
+.. math::
+   \frac{\partial (\phi s_l U_j)}{\partial t} 
+  = r_j
   :label: operatorsplitting
 
-This equation is solved together with eqs. :eq:`totalcomponent`, :eq:`equilibrium` and :eq:`kinetics`.
+This set of equations is solved together with eqs. :eq:`totalcomponent` and :eq:`equilibrium` to know the concentration of the individual species, as well as with the equations that describe the kinetic reaction rates :math:`r_j` (see eq. :eq:`kinetics` below).
+
+Geochemical Kinetics
+~~~~~~~~~~~~~~~~~~~~
+
+When local equilibrium cannot be assumed, reaction rates need to be calculated explicitly. The reaction rates are in general a non-linear function of concentrations of the geochemical species. Additionally, for heterogeneous reactions, the rates can be a function of material properties (symbolically: :math:`\Psi`), e.g. reactive surface area in the case of mineral dissolution-precipitation. The particular expression depends on the reaction type. For example, mathematical formulations include the transition state theory rate law for mineral dissolution-precipitation or a first order dependence on concentration for radioactive decay. For the sake of brevitiy, the rate expression for reaction *k* is provided here only as a generic function:
+
+.. math::
+  r_k = f(C_i,\Psi)
+  :label: kinetics
+
+The specific mathematical formulations employed for the rate expression depend on the geochemical engine. The choices for geochemical engines are discussed below.
 
 Geochemical Engines
 ~~~~~~~~~~~~~~~~~~~
 
-Taking advantage of the operator splitting approach, Amanzi offers a flexible approach to use geochemical engines that solve eqs. :eq:`operatorsplitting`, :eq:`totalcomponent`, :eq:`equilibrium` and :eq:`kinetics`. Amanzi has its own geochemical engine (native geochemistry) but it also uses the Alquimia API to couple existing geochemical engines to Amanzi. 
+Taking advantage of the operator splitting approach, whereby transport and chemistry are solved sequentially, Amanzi offers a flexible approach to use geochemical engines. The objective of these geochemical engines is to solve the chemistry problem, i.e. equations :eq:`operatorsplitting`, :eq:`totalcomponent`, :eq:`equilibrium` and :eq:`kinetics`. These geochemical engines can be grouped into two groups:
+
+* Amanzi's native geochemical engine: a set of basic geochemical capabilites included in Amanzi.
+* External geochemical engines: any existing geochemical code that is coupled to Amanzi through using the Alquimia API.
 
 Native Geochemistry
 ~~~~~~~~~~~~~~~~~~~
 
-The native geochemical engine can simulate a comprehensive set of types of reactions. These include:
+The native geochemical engine implements in Amanzi the methods to solve the equations eqs. :eq:`operatorsplitting`, :eq:`totalcomponent`, :eq:`equilibrium` and :eq:`kinetics` for the types of reactions outlined above. Specifically for kinetic reactions, the following mathematical formulation are available for reaction rate expressions (:math:`r_k`)
 
-* Equilibrium: 
++-----------------------------------+----------------------------+-----------------------------------------------------------+
+|  Kinetic Reaction Types           | Rate Expression Type       | Mathematical Formulation                                  |
++===================================+============================+===========================================================+
+| Mineral Dissolution-Precipitation | Transition State Theory    | :math:`r_k = k \times A_s \times (1 -Q/K_s)`              |
++-----------------------------------+----------------------------+-----------------------------------------------------------+
+| Aqueous Kinetics                  | First order dependence     | :math:`r_k = \lambda \times C_i`                          |
++-----------------------------------+----------------------------+-----------------------------------------------------------+
 
-  * Aqueous complexation
-  * Surface complexation
-  * Ion exchange
+where :math:`k` and :math:`\lambda` are rate constants; :math:`A_s` is the reactive surface area of the mineral, a material property; :math:`Q` is the ion activity product; and :math:`K_s` is the solubility or equlibrium constant of the mineral reaction.
 
-* Kinetics:
+The reaction network is specified through a its own geochemical database file (typically with extension .bgd) that is specific to the problem at hand. The total concentrations of all components (:math:`U_i`) are specified in the Amanzi input file.  
 
-  * Mineral dissolution/preciptation
-  * First-order decay (kinetic)
+The reader is kindly directed to the chemistry benchmarking tests for examples (see :doc:`../benchmarking/chemistry/index`).
 
-A detailed description of these reaction types and their formulation is provided in this user guide as a set of benchmarking examples (see :doc:`../testing/index`).
+Alquimia API
+~~~~~~~~~~~~
 
+Alquimia is an Application Programming Interface (API) that exposes the functionality of a geochemical engine to Amanzi. Alquimia does not perform any geochemical calculations itself. The geochemical engine is responsible for all geochemical calculations, and must provide a wrapper library that exactly conforms to the Alquimia API. Thus, the geochemical capabilities of Amanzi when using the Alquimia interface will depend on the geochemical engine of choice. That means that they can provide Amanzi with those capabilities or specific formulation not available in the native geochemical engine. 
 
-Alquimia Geochemistry
-~~~~~~~~~~~~~~~~~~~~~
+Currently, the geochemical capabilities of the reactive transport code PFloTran (http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran/pflotran-dev/wiki/Home) are available within Amanzi through the Alquimia interface. These capabilities are described in the PFloTran's documentation. Some examples are available in the Amanzi documentation (see :doc:`../benchmarking/chemistry/index`).
 
-The geochemical capabilities when using the Alquimia interface depend on the simulation capabilites of the geochemical engine of choice. Currently, the geochemical capabilities of the reactive transport code PFloTran can be accessed in Amanzi through the Alquimia interface. For full details of PFloTran, see http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran/pflotran-dev/wiki/Home.
+References
+~~~~~~~~~~
+
+.. [Lichtner1985] Lichtner, P. (1985), Continuum model for simultaneous chemical-reactions and mass-transport in hydrothermal systems, Geochim. Cosmochim. Acta, 49(3), 779–800, doi:10.1016/0016-7037(85)90172-3.
+
+.. [Steefel-Lasaga1994] Steefel, C. I., and A. C. Lasaga (1994), A coupled model for transport of Hydrothermal fluxes of major elements, Juan de Fuca flank 1755 multiple chemical species and kinetic precipitation/dissolution reactions with application to reactive flow in single phase hydrothermal systems, Am. J. Sci., 294, 529–592.
+
+.. [Steefel-MacQuarrie1996] Steefel, C. I., and K. MacQuarrie (1996), Approaches to modeling of reactive transport in porous media, in Reactive Transport In Porous Media, Rev. in Min., vol. 34, edited by P. C. Lichtner, C. I. Steefel, and E. H. Oelkers, pp. 83–129, Min. Soc. Am., Washington, D.C.
+
+.. [Yeh-Tripathi1989] Yeh, G. T., and V. S. Tripathi (1989), A critical evaluation of recent developments in hydrogeochemical transport models of reactive multichemical components, Water Resour. Res., 25, 93–108.

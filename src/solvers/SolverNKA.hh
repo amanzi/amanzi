@@ -91,6 +91,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
+  nka_lag_iterations_ = plist_.get<int>("lag iterations", 0);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
   if (monitor_name == "monitor residual") {
@@ -108,6 +109,8 @@ void SolverNKA<Vector, VectorSpace>::Init_()
   fun_calls_ = 0;
   pc_calls_ = 0;
   update_pc_calls_ = 0;
+  pc_lag_ = 0;
+  nka_lag_space_ = 0;
 
   // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("AmanziSolver::NKA", plist_));

@@ -433,7 +433,6 @@ int MFD3D_Diffusion::L2consistencyInverseScaled(int cell, const Tensor& T,
       }
     }
   }
-  cout << cell << " " << NtR << endl;
   */
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -771,7 +770,7 @@ int MFD3D_Diffusion::StabilityMMatrix_(
   int izrow[mx + 1], iypos[m12 + 1], itrs;
   itrs = SimplexFindFeasibleSolution_(T, m1, m2, 0, izrow, iypos);
   if (itrs < 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
-cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
+// cout << "number of itrs=" << itrs << " functional=" << T(0,0) << endl;
 
   double u[mx];
   for (int i = 0; i < mx; i++) u[i] = 0.0;
