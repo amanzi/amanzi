@@ -65,8 +65,8 @@ help:
 clean:
 	@echo "Removing the build directory: $(BUILDDIR)" ;\
 	rm -rf $(BUILDDIR)/*  ;\
-	echo "Removing the section subdirectories: verification, tutorial, benchmarking, mycase" ;\
-	rm -rf verification tutorial benchmarking mycase  ;\
+	echo "Removing the section subdirectories: verification, tutorial, benchmarking, install, mycase" ;\
+	rm -rf verification tutorial benchmarking install mycase  ;\
 	echo "Reverting ./index.rst"   ;\
 	hg revert ./index.rst
 
